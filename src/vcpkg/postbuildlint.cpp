@@ -423,13 +423,20 @@ namespace vcpkg::PostBuildLint
         for (const Path& dll : dlls)
         {
             auto cmd_line = Command(dumpbin_exe).string_arg("/exports").string_arg(dll);
-            ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line);
-            Checks::check_exit(
-                VCPKG_LINE_INFO, ec_data.exit_code == 0, "Running command:\n   %s\n failed", cmd_line.command_line());
-
-            if (ec_data.output.find("ordinal hint RVA      name") == std::string::npos)
+            const auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd_line), "dumpbin");
+            if (const auto output = maybe_output.get())
             {
-                dlls_with_no_exports.push_back(dll);
+                if (output->find("ordinal hint RVA      name") == std::string::npos)
+                {
+                    dlls_with_no_exports.push_back(dll);
+                }
+            }
+            else
+            {
+                Checks::exit_with_message(VCPKG_LINE_INFO,
+                                          "Running command:\n   %s\n failed:\n%s\n",
+                                          cmd_line.command_line(),
+                                          maybe_output.error());
             }
         }
 
@@ -461,13 +468,20 @@ namespace vcpkg::PostBuildLint
         for (const Path& dll : dlls)
         {
             auto cmd_line = Command(dumpbin_exe).string_arg("/headers").string_arg(dll);
-            ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line);
-            Checks::check_exit(
-                VCPKG_LINE_INFO, ec_data.exit_code == 0, "Running command:\n   %s\n failed", cmd_line.command_line());
-
-            if (ec_data.output.find("App Container") == std::string::npos)
+            const auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd_line), "dumpbin");
+            if (const auto output = maybe_output.get())
             {
-                dlls_with_improper_uwp_bit.push_back(dll);
+                if (output->find("App Container") == std::string::npos)
+                {
+                    dlls_with_improper_uwp_bit.push_back(dll);
+                }
+            }
+            else
+            {
+                Checks::exit_with_message(VCPKG_LINE_INFO,
+                                          "Running command:\n   %s\n failed:\n%s\n",
+                                          cmd_line.command_line(),
+                                          maybe_output.error());
             }
         }
 
@@ -567,19 +581,16 @@ namespace vcpkg::PostBuildLint
                                    Strings::case_insensitive_ascii_equals(file.extension(), ".lib"),
                                    "The file extension was not .lib: %s",
                                    file);
-                const auto machine_types = read_lib_machine_types(fs.open_for_read(file, VCPKG_LINE_INFO));
 
-                // This is zero for folly's debug library
-                // TODO: Why?
-                if (machine_types.empty()) break;
-
-                Checks::check_exit(
-                    VCPKG_LINE_INFO, machine_types.size() == 1, "Found more than 1 architecture in file %s", file);
-
-                const std::string actual_architecture = get_actual_architecture(machine_types.front());
-                if (expected_architecture != actual_architecture)
+                const auto machine_types = Util::fmap(read_lib_machine_types(fs.open_for_read(file, VCPKG_LINE_INFO)),
+                                                      [](MachineType mt) { return get_actual_architecture(mt); });
+                // Either machine_types is empty (meaning this lib is architecture independent), or
+                // we need at least one of the machine types to match.
+                // Agnostic example: Folly's debug library
+                // Multiple example: arm64x libraries
+                if (!machine_types.empty() && !Util::Vectors::contains(machine_types, expected_architecture))
                 {
-                    binaries_with_invalid_architecture.push_back({file, actual_architecture});
+                    binaries_with_invalid_architecture.push_back({file, Strings::join(",", machine_types)});
                 }
             }
         }
@@ -589,19 +600,21 @@ namespace vcpkg::PostBuildLint
             for (const Path& file : files)
             {
                 auto cmd_line = Command("lipo").string_arg("-archs").string_arg(file);
-                ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line);
-                if (ec_data.exit_code != 0)
+                auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd_line), "lipo");
+                if (const auto output = maybe_output.get())
+                {
+                    if (!Util::Vectors::contains(Strings::split(Strings::trim(*output), ' '), requested_arch))
+                    {
+                        binaries_with_invalid_architecture.push_back({file, std::move(*output)});
+                    }
+                }
+                else
                 {
                     printf(Color::warning,
-                           "Error: unable to determine the architectures of binary file %s. Running lipo failed "
-                           "with status code %d\n    %s",
+                           "error: unable to determine the architectures of %s.\n%s\n%s\n",
                            file,
-                           ec_data.exit_code,
-                           cmd_line.command_line());
-                }
-                else if (!Util::Vectors::contains(Strings::split(Strings::trim(ec_data.output), ' '), requested_arch))
-                {
-                    binaries_with_invalid_architecture.push_back({file, ec_data.output});
+                           cmd_line.command_line(),
+                           maybe_output.error());
                 }
             }
         }
@@ -900,20 +913,24 @@ namespace vcpkg::PostBuildLint
         for (const Path& lib : libs)
         {
             auto cmd_line = Command(dumpbin_exe).string_arg("/directives").string_arg(lib);
-            ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line);
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               ec_data.exit_code == 0,
-                               "Running command:\n   %s\n failed with message:\n%s",
-                               cmd_line.command_line(),
-                               ec_data.output);
-
-            for (const BuildType& bad_build_type : bad_build_types)
+            const auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd_line), "dumpbin");
+            if (const auto output = maybe_output.get())
             {
-                if (bad_build_type.has_crt_linker_option(ec_data.output))
+                for (const BuildType& bad_build_type : bad_build_types)
                 {
-                    libs_with_invalid_crt.push_back({lib, bad_build_type});
-                    break;
+                    if (bad_build_type.has_crt_linker_option(*output))
+                    {
+                        libs_with_invalid_crt.push_back({lib, bad_build_type});
+                        break;
+                    }
                 }
+            }
+            else
+            {
+                Checks::exit_with_message(VCPKG_LINE_INFO,
+                                          "Running command:\n   %s\n failed:\n%s\n",
+                                          cmd_line.command_line(),
+                                          maybe_output.error());
             }
         }
 
@@ -953,17 +970,25 @@ namespace vcpkg::PostBuildLint
         for (const Path& dll : dlls)
         {
             auto cmd_line = Command(dumpbin_exe).string_arg("/dependents").string_arg(dll);
-            ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line);
-            Checks::check_exit(
-                VCPKG_LINE_INFO, ec_data.exit_code == 0, "Running command:\n   %s\n failed", cmd_line.command_line());
-
-            for (const OutdatedDynamicCrt& outdated_crt : get_outdated_dynamic_crts(pre_build_info.platform_toolset))
+            const auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd_line), "dumpbin");
+            if (const auto output = maybe_output.get())
             {
-                if (Strings::case_insensitive_ascii_contains(ec_data.output, outdated_crt.name))
+                for (const OutdatedDynamicCrt& outdated_crt :
+                     get_outdated_dynamic_crts(pre_build_info.platform_toolset))
                 {
-                    dlls_with_outdated_crt.push_back({dll, outdated_crt});
-                    break;
+                    if (Strings::case_insensitive_ascii_contains(*output, outdated_crt.name))
+                    {
+                        dlls_with_outdated_crt.push_back({dll, outdated_crt});
+                        break;
+                    }
                 }
+            }
+            else
+            {
+                Checks::exit_with_message(VCPKG_LINE_INFO,
+                                          "Running command:\n   %s\n failed:\n%s\n",
+                                          cmd_line.command_line(),
+                                          maybe_output.error());
             }
         }
 

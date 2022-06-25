@@ -101,7 +101,9 @@ namespace vcpkg
     {
         SourceControlFile clone() const;
 
-        static ParseExpected<SourceControlFile> parse_manifest_object(StringView origin, const Json::Object& object);
+        static ParseExpected<SourceControlFile> parse_manifest_object(StringView origin,
+                                                                      const Json::Object& object,
+                                                                      MessageSink& warnings_sink);
 
         static ParseExpected<SourceControlFile> parse_control_file(StringView origin,
                                                                    std::vector<Paragraph>&& control_paragraphs);
@@ -111,7 +113,7 @@ namespace vcpkg
         std::vector<std::unique_ptr<FeatureParagraph>> feature_paragraphs;
         Json::Object extra_features_info;
 
-        Optional<const FeatureParagraph&> find_feature(const std::string& featurename) const;
+        Optional<const FeatureParagraph&> find_feature(StringView featurename) const;
         Optional<const std::vector<Dependency>&> find_dependencies_for_feature(const std::string& featurename) const;
         bool has_qualified_dependencies() const;
 

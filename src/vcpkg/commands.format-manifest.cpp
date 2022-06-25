@@ -29,9 +29,9 @@ namespace
         Debug::print("Reading ", path_string, "\n");
         auto contents = fs.read_contents(manifest_path, VCPKG_LINE_INFO);
         auto parsed_json_opt = Json::parse(contents, manifest_path);
-        if (!parsed_json_opt.has_value())
+        if (!parsed_json_opt)
         {
-            vcpkg::printf(Color::error, "Failed to parse %s: %s\n", path_string, parsed_json_opt.error()->format());
+            vcpkg::printf(Color::error, "Failed to parse %s: %s\n", path_string, parsed_json_opt.error()->to_string());
             return nullopt;
         }
 
@@ -44,8 +44,8 @@ namespace
 
         auto parsed_json_obj = parsed_json.object();
 
-        auto scf = SourceControlFile::parse_manifest_object(manifest_path, parsed_json_obj);
-        if (!scf.has_value())
+        auto scf = SourceControlFile::parse_manifest_object(path_string, parsed_json_obj, stdout_sink);
+        if (!scf)
         {
             vcpkg::printf(Color::error, "Failed to parse manifest file: %s\n", path_string);
             print_error_message(scf.error());
@@ -104,7 +104,7 @@ namespace
         }
         auto res = serialize_manifest(data.scf);
 
-        auto check = SourceControlFile::parse_manifest_object(StringView{}, res);
+        auto check = SourceControlFile::parse_manifest_object(StringView{}, res, null_sink);
         if (!check)
         {
             vcpkg::printf(Color::error,

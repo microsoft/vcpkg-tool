@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/fwd/system.process.h>
 
+#include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/view.h>
@@ -89,10 +90,15 @@ namespace vcpkg
     struct Environment
     {
 #if defined(_WIN32)
-        std::wstring m_env_data;
-#else  // ^^^ _WIN32 // !_WIN32 vvv
-        std::string m_env_data;
-#endif // ^^^ !_WIN32
+        using string_t = std::wstring;
+#else
+        using string_t = std::string;
+#endif
+        void add_entry(StringView key, StringView value);
+        const string_t& get() const;
+
+    private:
+        string_t m_env_data;
     };
 
     const Environment& get_clean_environment();
@@ -107,10 +113,10 @@ namespace vcpkg
     extern const WorkingDirectory default_working_directory;
     extern const Environment default_environment;
 
-    int cmd_execute(const Command& cmd_line,
-                    const WorkingDirectory& wd = default_working_directory,
-                    const Environment& env = default_environment);
-    int cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd = default_working_directory);
+    ExpectedL<int> cmd_execute(const Command& cmd_line,
+                               const WorkingDirectory& wd = default_working_directory,
+                               const Environment& env = default_environment);
+    ExpectedL<int> cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd = default_working_directory);
 
 #if defined(_WIN32)
     Environment cmd_execute_and_capture_environment(const Command& cmd_line,
@@ -119,28 +125,28 @@ namespace vcpkg
     void cmd_execute_background(const Command& cmd_line);
 #endif
 
-    ExitCodeAndOutput cmd_execute_and_capture_output(const Command& cmd_line,
-                                                     const WorkingDirectory& wd = default_working_directory,
-                                                     const Environment& env = default_environment,
-                                                     Encoding encoding = Encoding::Utf8,
-                                                     EchoInDebug echo_in_debug = EchoInDebug::Hide);
+    ExpectedL<ExitCodeAndOutput> cmd_execute_and_capture_output(const Command& cmd_line,
+                                                                const WorkingDirectory& wd = default_working_directory,
+                                                                const Environment& env = default_environment,
+                                                                Encoding encoding = Encoding::Utf8,
+                                                                EchoInDebug echo_in_debug = EchoInDebug::Hide);
 
-    std::vector<ExitCodeAndOutput> cmd_execute_and_capture_output_parallel(
+    std::vector<ExpectedL<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(
         View<Command> cmd_lines,
         const WorkingDirectory& wd = default_working_directory,
         const Environment& env = default_environment);
 
-    int cmd_execute_and_stream_lines(const Command& cmd_line,
-                                     std::function<void(StringView)> per_line_cb,
-                                     const WorkingDirectory& wd = default_working_directory,
-                                     const Environment& env = default_environment,
-                                     Encoding encoding = Encoding::Utf8);
+    ExpectedL<int> cmd_execute_and_stream_lines(const Command& cmd_line,
+                                                std::function<void(StringView)> per_line_cb,
+                                                const WorkingDirectory& wd = default_working_directory,
+                                                const Environment& env = default_environment,
+                                                Encoding encoding = Encoding::Utf8);
 
-    int cmd_execute_and_stream_data(const Command& cmd_line,
-                                    std::function<void(StringView)> data_cb,
-                                    const WorkingDirectory& wd = default_working_directory,
-                                    const Environment& env = default_environment,
-                                    Encoding encoding = Encoding::Utf8);
+    ExpectedL<int> cmd_execute_and_stream_data(const Command& cmd_line,
+                                               std::function<void(StringView)> data_cb,
+                                               const WorkingDirectory& wd = default_working_directory,
+                                               const Environment& env = default_environment,
+                                               Encoding encoding = Encoding::Utf8);
 
     uint64_t get_subproccess_stats();
 
@@ -150,4 +156,14 @@ namespace vcpkg
     void enter_interactive_subprocess();
     void exit_interactive_subprocess();
 #endif
+
+    bool succeeded(const ExpectedL<int>& maybe_exit) noexcept;
+
+    // If exit code is 0, returns a 'success' ExpectedL.
+    // Otherwise, returns an ExpectedL containing error text
+    ExpectedL<Unit> flatten(const ExpectedL<ExitCodeAndOutput>&, StringView tool_name);
+
+    // If exit code is 0, returns a 'success' ExpectedL containing the output
+    // Otherwise, returns an ExpectedL containing error text
+    ExpectedL<std::string> flatten_out(ExpectedL<ExitCodeAndOutput>&&, StringView tool_name);
 }

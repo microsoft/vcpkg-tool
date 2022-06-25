@@ -1,11 +1,11 @@
 #pragma once
 
 #include <vcpkg/base/fwd/downloads.h>
-#include <vcpkg/base/fwd/expected.h>
 #include <vcpkg/base/fwd/files.h>
 
 #include <vcpkg/fwd/tools.h>
 
+#include <vcpkg/base/expected.h>
 #include <vcpkg/base/stringview.h>
 
 #include <string>
@@ -33,15 +33,22 @@ namespace vcpkg
         static constexpr StringLiteral IFW_INSTALLER_BASE = "ifw_installerbase";
         // This duplicate of 7zip uses msiexec to unpack, which is a fallback for Windows 7.
         static constexpr StringLiteral SEVEN_ZIP_MSI = "7zip_msi";
+        static constexpr StringLiteral PYTHON3 = "python3";
+        static constexpr StringLiteral PYTHON3_WITH_VENV = "python3_with_venv";
     }
 
     struct ToolCache
     {
         virtual ~ToolCache() = default;
 
-        virtual const Path& get_tool_path(StringView tool) const = 0;
-        virtual const std::string& get_tool_version(StringView tool) const = 0;
+        virtual const Path& get_tool_path(StringView tool, MessageSink& status_sink) const = 0;
+        virtual const std::string& get_tool_version(StringView tool, MessageSink& status_sink) const = 0;
     };
+
+    ExpectedS<std::string> extract_prefixed_nonwhitespace(StringLiteral prefix,
+                                                          StringLiteral tool_name,
+                                                          std::string&& output,
+                                                          const Path& exe_path);
 
     ExpectedL<Path> find_system_tar(const Filesystem& fs);
 

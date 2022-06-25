@@ -168,25 +168,19 @@ namespace vcpkg::Export
         // -NoDefaultExcludes is needed for ".vcpkg-root"
         Command cmd;
 #ifndef _WIN32
-        cmd.string_arg(paths.get_tool_exe(Tools::MONO));
+        cmd.string_arg(paths.get_tool_exe(Tools::MONO, stdout_sink));
 #endif
-        cmd.string_arg(paths.get_tool_exe(Tools::NUGET))
+        cmd.string_arg(paths.get_tool_exe(Tools::NUGET, stdout_sink))
             .string_arg("pack")
             .string_arg(nuspec_file_path)
             .string_arg("-OutputDirectory")
             .string_arg(output_dir)
             .string_arg("-NoDefaultExcludes");
 
-        const auto output = cmd_execute_and_capture_output(cmd, default_working_directory, get_clean_environment());
-        const auto exit_code = output.exit_code;
-        if (exit_code != 0)
-        {
-            print2(output.output, '\n');
-        }
-        Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: NuGet package creation failed");
-
-        const auto output_path = output_dir / (nuget_id + "." + nuget_version + ".nupkg");
-        return output_path;
+        return flatten(cmd_execute_and_capture_output(cmd, default_working_directory, get_clean_environment()),
+                       Tools::NUGET)
+            .map([&](Unit) { return output_dir / (nuget_id + "." + nuget_version + ".nupkg"); })
+            .value_or_exit(VCPKG_LINE_INFO);
     }
 
     struct ArchiveFormat final
@@ -225,7 +219,7 @@ namespace vcpkg::Export
                                   const Path& output_dir,
                                   const ArchiveFormat& format)
     {
-        const Path& cmake_exe = paths.get_tool_exe(Tools::CMAKE);
+        const Path& cmake_exe = paths.get_tool_exe(Tools::CMAKE, stdout_sink);
 
         const auto exported_dir_filename = raw_exported_dir.filename();
         const auto exported_archive_filename = Strings::format("%s.%s", exported_dir_filename, format.extension());
@@ -241,7 +235,8 @@ namespace vcpkg::Export
             .string_arg("--")
             .string_arg(raw_exported_dir);
 
-        const int exit_code = cmd_execute_clean(cmd, WorkingDirectory{raw_exported_dir.parent_path()});
+        const int exit_code =
+            cmd_execute_clean(cmd, WorkingDirectory{raw_exported_dir.parent_path()}).value_or_exit(VCPKG_LINE_INFO);
         Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: %s creation failed", exported_archive_path);
         return exported_archive_path;
     }
@@ -619,7 +614,8 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         const auto opts = handle_export_command_arguments(paths, args, default_triplet, status_db);
 
         // Load ports from ports dirs
-        PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
+        PortFileProvider::PathsPortFileProvider provider(
+            paths, PortFileProvider::make_overlay_provider(paths, args.overlay_ports));
 
         // create the plan
         std::vector<ExportPlanAction> export_plan = Dependencies::create_export_plan(opts.specs, status_db);

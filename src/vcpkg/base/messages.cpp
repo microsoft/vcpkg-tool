@@ -2,6 +2,8 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 
+using namespace vcpkg;
+
 namespace vcpkg::msg
 {
     DECLARE_AND_REGISTER_MESSAGE(NoLocalizationForMessages, (), "", "No localization for the following messages:");
@@ -34,22 +36,19 @@ namespace vcpkg::msg
     }
     static DWORD size_to_write(::size_t size) { return size > MAXDWORD ? MAXDWORD : static_cast<DWORD>(size); }
 
-    void write_unlocalized_text_to_stdout(Color c, StringView sv)
+    static void write_unlocalized_text_impl(Color c, StringView sv, HANDLE the_handle, bool is_console)
     {
         if (sv.empty()) return;
 
-        static const HANDLE stdout_handle = ::GetStdHandle(STD_OUTPUT_HANDLE);
-        static const bool stdout_is_console = is_console(stdout_handle);
-
-        if (stdout_is_console)
+        if (is_console)
         {
             WORD original_color = 0;
             if (c != Color::none)
             {
                 CONSOLE_SCREEN_BUFFER_INFO console_screen_buffer_info{};
-                ::GetConsoleScreenBufferInfo(stdout_handle, &console_screen_buffer_info);
+                ::GetConsoleScreenBufferInfo(the_handle, &console_screen_buffer_info);
                 original_color = console_screen_buffer_info.wAttributes;
-                ::SetConsoleTextAttribute(stdout_handle, static_cast<WORD>(c) | (original_color & 0xF0));
+                ::SetConsoleTextAttribute(the_handle, static_cast<WORD>(c) | (original_color & 0xF0));
             }
 
             auto as_wstr = Strings::to_utf16(sv);
@@ -60,14 +59,14 @@ namespace vcpkg::msg
             while (size != 0)
             {
                 DWORD written = 0;
-                check_write(::WriteConsoleW(stdout_handle, pointer, size_to_write(size), &written, nullptr));
+                check_write(::WriteConsoleW(the_handle, pointer, size_to_write(size), &written, nullptr));
                 pointer += written;
                 size -= written;
             }
 
             if (c != Color::none)
             {
-                ::SetConsoleTextAttribute(stdout_handle, original_color);
+                ::SetConsoleTextAttribute(the_handle, original_color);
             }
         }
         else
@@ -78,18 +77,32 @@ namespace vcpkg::msg
             while (size != 0)
             {
                 DWORD written = 0;
-                check_write(::WriteFile(stdout_handle, pointer, size_to_write(size), &written, nullptr));
+                check_write(::WriteFile(the_handle, pointer, size_to_write(size), &written, nullptr));
                 pointer += written;
                 size -= written;
             }
         }
     }
+
+    void write_unlocalized_text_to_stdout(Color c, StringView sv)
+    {
+        static const HANDLE stdout_handle = ::GetStdHandle(STD_OUTPUT_HANDLE);
+        static const bool stdout_is_console = is_console(stdout_handle);
+        return write_unlocalized_text_impl(c, sv, stdout_handle, stdout_is_console);
+    }
+
+    void write_unlocalized_text_to_stderr(Color c, StringView sv)
+    {
+        static const HANDLE stderr_handle = ::GetStdHandle(STD_ERROR_HANDLE);
+        static const bool stderr_is_console = is_console(stderr_handle);
+        return write_unlocalized_text_impl(c, sv, stderr_handle, stderr_is_console);
+    }
 #else
-    static void write_all(const char* ptr, size_t to_write)
+    static void write_all(const char* ptr, size_t to_write, int fd)
     {
         while (to_write != 0)
         {
-            auto written = ::write(STDOUT_FILENO, ptr, to_write);
+            auto written = ::write(fd, ptr, to_write);
             if (written == -1)
             {
                 ::fprintf(stderr, "[DEBUG] Failed to print to stdout: %d\n", errno);
@@ -100,13 +113,11 @@ namespace vcpkg::msg
         }
     }
 
-    void write_unlocalized_text_to_stdout(Color c, StringView sv)
+    static void write_unlocalized_text_impl(Color c, StringView sv, int fd, bool is_a_tty)
     {
         static constexpr char reset_color_sequence[] = {'\033', '[', '0', 'm'};
 
         if (sv.empty()) return;
-
-        static bool is_a_tty = ::isatty(STDOUT_FILENO);
 
         bool reset_color = false;
         if (is_a_tty && c != Color::none)
@@ -114,15 +125,27 @@ namespace vcpkg::msg
             reset_color = true;
 
             const char set_color_sequence[] = {'\033', '[', '9', static_cast<char>(c), 'm'};
-            write_all(set_color_sequence, sizeof(set_color_sequence));
+            write_all(set_color_sequence, sizeof(set_color_sequence), fd);
         }
 
-        write_all(sv.data(), sv.size());
+        write_all(sv.data(), sv.size(), fd);
 
         if (reset_color)
         {
-            write_all(reset_color_sequence, sizeof(reset_color_sequence));
+            write_all(reset_color_sequence, sizeof(reset_color_sequence), fd);
         }
+    }
+
+    void write_unlocalized_text_to_stdout(Color c, StringView sv)
+    {
+        static bool is_a_tty = ::isatty(STDOUT_FILENO);
+        return write_unlocalized_text_impl(c, sv, STDOUT_FILENO, is_a_tty);
+    }
+
+    void write_unlocalized_text_to_stderr(Color c, StringView sv)
+    {
+        static bool is_a_tty = ::isatty(STDERR_FILENO);
+        return write_unlocalized_text_impl(c, sv, STDERR_FILENO, is_a_tty);
     }
 #endif
 
@@ -250,6 +273,28 @@ namespace vcpkg::msg
 
     ::size_t detail::number_of_messages() { return messages().names.size(); }
 
+    std::string detail::format_examples_for_args(StringView extra_comment,
+                                                 const detail::FormatArgAbi* args,
+                                                 std::size_t arg_count)
+    {
+        std::vector<std::string> blocks;
+        if (!extra_comment.empty())
+        {
+            blocks.emplace_back(extra_comment.data(), extra_comment.size());
+        }
+
+        for (std::size_t idx = 0; idx < arg_count; ++idx)
+        {
+            auto& arg = args[idx];
+            if (arg.example[0] != '\0')
+            {
+                blocks.emplace_back(fmt::format("An example of {{{}}} is {}.", arg.name, arg.example));
+            }
+        }
+
+        return Strings::join(" ", blocks);
+    }
+
     ::size_t detail::startup_register_message(StringLiteral name, StringLiteral format_string, std::string&& comment)
     {
         Messages& m = messages();
@@ -320,4 +365,45 @@ namespace vcpkg::msg
             }
         }
     }
+
+    void println_warning(const LocalizedString& s)
+    {
+        print(Color::warning, format(msgWarningMessage).append(s).append_raw('\n'));
+    }
+
+    void println_error(const LocalizedString& s)
+    {
+        print(Color::error, format(msgErrorMessage).append(s).append_raw('\n'));
+    }
+}
+
+namespace
+{
+    struct NullMessageSink : MessageSink
+    {
+        virtual void print(Color, StringView) override { }
+    };
+
+    NullMessageSink null_sink_instance;
+
+    struct StdOutMessageSink : MessageSink
+    {
+        virtual void print(Color c, StringView sv) override { msg::write_unlocalized_text_to_stdout(c, sv); }
+    };
+
+    StdOutMessageSink stdout_sink_instance;
+
+    struct StdErrMessageSink : MessageSink
+    {
+        virtual void print(Color c, StringView sv) override { msg::write_unlocalized_text_to_stderr(c, sv); }
+    };
+
+    StdErrMessageSink stderr_sink_instance;
+}
+
+namespace vcpkg
+{
+    MessageSink& null_sink = null_sink_instance;
+    MessageSink& stdout_sink = stdout_sink_instance;
+    MessageSink& stderr_sink = stderr_sink_instance;
 }

@@ -29,8 +29,8 @@ namespace vcpkg
     };
 
     inline NugetReference make_nugetref(const PackageSpec& spec,
-                                        const std::string& raw_version,
-                                        const std::string& abi_tag,
+                                        StringView raw_version,
+                                        StringView abi_tag,
                                         const std::string& prefix)
     {
         return {Strings::concat(prefix, spec.dir()), format_version_for_nugetref(raw_version, abi_tag)};

@@ -7,7 +7,7 @@ import { MetadataFile } from './amf/metadata-file';
 import { Activation, deactivate } from './artifacts/activation';
 import { Artifact, InstalledArtifact } from './artifacts/artifact';
 import { Registry } from './artifacts/registry';
-import { defaultConfig, globalConfigurationFile, postscriptVarible, profileNames, registryIndexFile, undo, vcpkgDownloadFolder } from './constants';
+import { defaultConfig, globalConfigurationFile, postscriptVariable, profileNames, registryIndexFile, undo, vcpkgDownloadFolder } from './constants';
 import { FileSystem, FileType } from './fs/filesystem';
 import { HttpsFileSystem } from './fs/http-filesystem';
 import { LocalFileSystem } from './fs/local-filesystem';
@@ -71,6 +71,7 @@ export class Session {
   readonly tmpFolder: Uri;
   readonly installFolder: Uri;
   readonly registryFolder: Uri;
+  readonly vcpkgCommand?: string;
   readonly activation: Activation = new Activation(this);
 
   readonly globalConfig: Uri;
@@ -105,6 +106,8 @@ export class Session {
     this.homeFolder = this.fileSystem.file(settings['homeFolder']!);
     this.cache = this.environment[vcpkgDownloadFolder] ? this.parseUri(this.environment[vcpkgDownloadFolder]!) : this.homeFolder.join('downloads');
     this.globalConfig = this.homeFolder.join(globalConfigurationFile);
+
+    this.vcpkgCommand = settings['vcpkgCommand'];
 
     this.tmpFolder = this.homeFolder.join('tmp');
     this.installFolder = this.homeFolder.join('artifacts');
@@ -250,7 +253,7 @@ export class Session {
 
   #postscriptFile?: Uri;
   get postscriptFile() {
-    return this.#postscriptFile || (this.#postscriptFile = this.environment[postscriptVarible] ? this.fileSystem.file(this.environment[postscriptVarible]!) : undefined);
+    return this.#postscriptFile || (this.#postscriptFile = this.environment[postscriptVariable] ? this.fileSystem.file(this.environment[postscriptVariable]!) : undefined);
   }
 
   async init() {

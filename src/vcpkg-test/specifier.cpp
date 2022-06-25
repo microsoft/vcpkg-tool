@@ -85,7 +85,7 @@ TEST_CASE ("specifier parsing", "[specifier]")
 
     SECTION ("parsed specifier wildcard feature")
     {
-        auto spec = Test::unwrap(vcpkg::parse_qualified_specifier("zlib[*]"));
+        auto spec = vcpkg::parse_qualified_specifier("zlib[*]").value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(spec.features.value_or(std::vector<std::string>{}) == std::vector<std::string>{"*"});
     }
 

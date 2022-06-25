@@ -1097,13 +1097,13 @@ namespace vcpkg::Json
         auto ret = parse_file(fs, json_file, ec);
         if (ec)
         {
-            msg::print_error(msgJsonErrorFailedToRead, msg::path = json_file, msg::error_msg = ec);
+            msg::println_error(msgJsonErrorFailedToRead, msg::path = json_file, msg::error_msg = ec);
             Checks::exit_fail(li);
         }
         else if (!ret)
         {
-            msg::print_error(msgJsonErrorFailedToParse, msg::path = json_file);
-            msg::write_unlocalized_text_to_stdout(Color::error, ret.error()->format());
+            msg::println_error(msgJsonErrorFailedToParse, msg::path = json_file);
+            msg::write_unlocalized_text_to_stdout(Color::error, ret.error()->to_string());
             msg::println();
             Checks::exit_fail(li);
         }
@@ -1392,6 +1392,11 @@ namespace vcpkg::Json
             }
             add_extra_field_error(type_name.to_string(), f, *best_it);
         }
+    }
+
+    void Reader::add_warning(StringView type, StringView msg)
+    {
+        m_warnings.push_back(LocalizedString::from_raw(Strings::concat(path(), " (", type, "): ", msg)));
     }
 
     std::string Reader::path() const noexcept

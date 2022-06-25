@@ -90,15 +90,16 @@ namespace vcpkg::Commands::CIVerifyVersions
             for (auto&& version_entry : versions)
             {
                 bool version_ok = false;
-                for (const std::string& control_file : {"CONTROL", "vcpkg.json"})
+                for (StringView control_file : {"CONTROL", "vcpkg.json"})
                 {
                     auto treeish = Strings::concat(version_entry.second, ':', control_file);
                     auto maybe_file = paths.git_show(Strings::concat(treeish), paths.root / ".git");
-                    if (!maybe_file.has_value()) continue;
+                    if (!maybe_file) continue;
 
                     const auto& file = maybe_file.value_or_exit(VCPKG_LINE_INFO);
-                    auto maybe_scf = Paragraphs::try_load_port_text(file, treeish, control_file == "vcpkg.json");
-                    if (!maybe_scf.has_value())
+                    auto maybe_scf =
+                        Paragraphs::try_load_port_text(file, treeish, control_file == "vcpkg.json", stdout_sink);
+                    if (!maybe_scf)
                     {
                         return {
                             Strings::format("Error: While reading versions for port %s from file: %s\n"
@@ -155,7 +156,7 @@ namespace vcpkg::Commands::CIVerifyVersions
         }
 
         auto maybe_scf = Paragraphs::try_load_port(paths.get_filesystem(), port_path);
-        if (!maybe_scf.has_value())
+        if (!maybe_scf)
         {
             return {
                 Strings::format("Error: While attempting to load local port %s.\n"
@@ -294,10 +295,13 @@ namespace vcpkg::Commands::CIVerifyVersions
         }
 
         auto maybe_port_git_tree_map = paths.git_get_local_port_treeish_map();
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           maybe_port_git_tree_map.has_value(),
-                           "Fatal error: Failed to obtain git SHAs for local ports.\n%s",
-                           maybe_port_git_tree_map.error());
+        if (!maybe_port_git_tree_map)
+        {
+            Checks::exit_with_message(VCPKG_LINE_INFO,
+                                      "Fatal error: Failed to obtain git SHAs for local ports.\n%s",
+                                      maybe_port_git_tree_map.error());
+        }
+
         auto port_git_tree_map = maybe_port_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
 
         // Baseline is required.
@@ -378,7 +382,7 @@ namespace vcpkg::Commands::CIVerifyVersions
             auto maybe_ok = verify_version_in_db(
                 paths, baseline, port_name, port_path, versions_file_path, git_tree, verify_git_trees);
 
-            if (!maybe_ok.has_value())
+            if (!maybe_ok)
             {
                 vcpkg::printf(Color::error, "FAIL: %s\n", port_name);
                 errors.emplace(maybe_ok.error());

@@ -21,7 +21,10 @@ namespace vcpkg::Paragraphs
     bool is_port_directory(const Filesystem& fs, const Path& maybe_directory);
 
     ParseExpected<SourceControlFile> try_load_port(const Filesystem& fs, const Path& port_directory);
-    ParseExpected<SourceControlFile> try_load_port_text(const std::string& text, StringView origin, bool is_manifest);
+    ParseExpected<SourceControlFile> try_load_port_text(const std::string& text,
+                                                        StringView origin,
+                                                        bool is_manifest,
+                                                        MessageSink& warning_sink);
 
     ExpectedS<BinaryControlFile> try_load_cached_package(const Filesystem& fs,
                                                          const Path& package_dir,

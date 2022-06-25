@@ -28,11 +28,10 @@ namespace vcpkg::Commands::PortHistory
             VersionScheme scheme;
         };
 
-        ExitCodeAndOutput run_git_command(const VcpkgPaths& paths, const Command& cmd)
+        ExpectedL<std::string> run_git_command(const VcpkgPaths& paths, const Command& cmd)
         {
             auto full_cmd = paths.git_cmd_builder(paths.root / ".git", paths.root).raw_arg(cmd.command_line());
-
-            return cmd_execute_and_capture_output(full_cmd);
+            return flatten_out(cmd_execute_and_capture_output(full_cmd), Tools::GIT);
         }
 
         vcpkg::Optional<HistoryVersion> get_version_from_text(const std::string& text,
@@ -42,7 +41,8 @@ namespace vcpkg::Commands::PortHistory
                                                               const std::string& port_name,
                                                               bool is_manifest)
         {
-            auto res = Paragraphs::try_load_port_text(text, Strings::concat(commit_id, ":", port_name), is_manifest);
+            auto res = Paragraphs::try_load_port_text(
+                text, Strings::concat(commit_id, ":", port_name), is_manifest, stdout_sink);
             if (const auto& maybe_scf = res.get())
             {
                 if (const auto& scf = maybe_scf->get())
@@ -72,28 +72,25 @@ namespace vcpkg::Commands::PortHistory
                                                                 const std::string& port_name)
         {
             auto rev_parse_cmd = Command("rev-parse").string_arg(Strings::concat(commit_id, ":ports/", port_name));
-            auto rev_parse_output = run_git_command(paths, rev_parse_cmd);
-            if (rev_parse_output.exit_code == 0)
+            auto maybe_rev_parse_output = run_git_command(paths, rev_parse_cmd);
+            if (auto rev_parse_output = maybe_rev_parse_output.get())
             {
                 // Remove newline character
-                const auto git_tree = Strings::trim(std::move(rev_parse_output.output));
+                const auto git_tree = Strings::trim(std::move(*rev_parse_output));
 
                 // Do we have a manifest file?
                 auto manifest_cmd = Command("show").string_arg(Strings::concat(git_tree, ":vcpkg.json"));
-                auto manifest_output = run_git_command(paths, manifest_cmd);
-                if (manifest_output.exit_code == 0)
+                auto maybe_manifest_output = run_git_command(paths, manifest_cmd);
+                if (auto manifest_output = maybe_manifest_output.get())
                 {
-                    return get_version_from_text(
-                        manifest_output.output, git_tree, commit_id, commit_date, port_name, true);
+                    return get_version_from_text(*manifest_output, git_tree, commit_id, commit_date, port_name, true);
                 }
 
                 auto cmd = Command("show").string_arg(Strings::concat(git_tree, ":CONTROL"));
-                auto control_output = run_git_command(paths, cmd);
-
-                if (control_output.exit_code == 0)
+                auto maybe_control_output = run_git_command(paths, cmd);
+                if (auto control_output = maybe_control_output.get())
                 {
-                    return get_version_from_text(
-                        control_output.output, git_tree, commit_id, commit_date, port_name, false);
+                    return get_version_from_text(*control_output, git_tree, commit_id, commit_date, port_name, false);
                 }
             }
 
@@ -110,32 +107,35 @@ namespace vcpkg::Commands::PortHistory
             builder.string_arg("--left-only");
             builder.string_arg("--"); // Begin pathspec
             builder.string_arg(Strings::format("ports/%s/.", port_name));
-            const auto output = run_git_command(paths, builder);
-
-            auto commits = Util::fmap(
-                Strings::split(output.output, '\n'), [](const std::string& line) -> auto {
-                    auto parts = Strings::split(line, ' ');
-                    return std::make_pair(parts[0], parts[1]);
-                });
-
             std::vector<HistoryVersion> ret;
-            std::string last_version;
-            for (auto&& commit_date_pair : commits)
+            const auto maybe_output = run_git_command(paths, builder);
+            if (auto output = maybe_output.get())
             {
-                auto maybe_version =
-                    get_version_from_commit(paths, commit_date_pair.first, commit_date_pair.second, port_name);
-                if (maybe_version.has_value())
-                {
-                    const auto version = maybe_version.value_or_exit(VCPKG_LINE_INFO);
+                auto commits = Util::fmap(
+                    Strings::split(*output, '\n'), [](const std::string& line) -> auto {
+                        auto parts = Strings::split(line, ' ');
+                        return std::make_pair(parts[0], parts[1]);
+                    });
 
-                    // Keep latest port with the current version string
-                    if (last_version != version.version_string)
+                std::string last_version;
+                for (auto&& commit_date_pair : commits)
+                {
+                    auto maybe_version =
+                        get_version_from_commit(paths, commit_date_pair.first, commit_date_pair.second, port_name);
+                    if (maybe_version.has_value())
                     {
-                        last_version = version.version_string;
-                        ret.emplace_back(version);
+                        const auto version = maybe_version.value_or_exit(VCPKG_LINE_INFO);
+
+                        // Keep latest port with the current version string
+                        if (last_version != version.version_string)
+                        {
+                            last_version = version.version_string;
+                            ret.emplace_back(version);
+                        }
                     }
                 }
             }
+
             return ret;
         }
     }

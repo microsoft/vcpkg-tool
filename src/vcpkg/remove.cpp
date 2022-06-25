@@ -212,7 +212,8 @@ namespace vcpkg::Remove
             }
 
             // Load ports from ports dirs
-            PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
+            PortFileProvider::PathsPortFileProvider provider(
+                paths, PortFileProvider::make_overlay_provider(paths, args.overlay_ports));
 
             specs = Util::fmap(Update::find_outdated_packages(provider, status_db),
                                [](auto&& outdated) { return outdated.spec; });

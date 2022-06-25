@@ -364,9 +364,9 @@ namespace vcpkg
         parser.optional_field(SourceParagraphFields::BUILD_DEPENDS, {buf, textrowcol});
 
         auto maybe_dependencies = parse_dependencies_list(buf, origin, textrowcol);
-        if (maybe_dependencies.has_value())
+        if (const auto dependencies = maybe_dependencies.get())
         {
-            spgh->dependencies = maybe_dependencies.value_or_exit(VCPKG_LINE_INFO);
+            spgh->dependencies = *dependencies;
         }
         else
         {
@@ -380,9 +380,9 @@ namespace vcpkg
         parser.optional_field(SourceParagraphFields::DEFAULT_FEATURES, {buf, textrowcol});
 
         auto maybe_default_features = parse_default_features_list(buf, origin, textrowcol);
-        if (maybe_default_features.has_value())
+        if (const auto default_features = maybe_default_features.get())
         {
-            spgh->default_features = maybe_default_features.value_or_exit(VCPKG_LINE_INFO);
+            spgh->default_features = *default_features;
         }
         else
         {
@@ -1022,16 +1022,16 @@ namespace vcpkg
         // but with whitespace normalized
         virtual Optional<std::string> visit_string(Json::Reader& r, StringView sv) override
         {
-            auto parser = SpdxLicenseExpressionParser(sv, "<manifest>");
+            auto parser = SpdxLicenseExpressionParser(sv, "");
             auto res = parser.parse();
 
             for (const auto& warning : parser.messages().warnings)
             {
-                msg::println(Color::warning, warning.format("<manifest>", MessageKind::Warning));
+                r.add_warning(type_name(), warning.format("", MessageKind::Warning));
             }
             if (auto err = parser.get_error())
             {
-                r.add_generic_error(type_name(), err->format());
+                r.add_generic_error(type_name(), err->to_string());
                 return std::string();
             }
 
@@ -1270,11 +1270,17 @@ namespace vcpkg
     }
 
     ParseExpected<SourceControlFile> SourceControlFile::parse_manifest_object(StringView origin,
-                                                                              const Json::Object& manifest)
+                                                                              const Json::Object& manifest,
+                                                                              MessageSink& warnings_sink)
     {
         Json::Reader reader;
 
         auto res = reader.visit(manifest, ManifestDeserializer::instance);
+
+        for (auto&& w : reader.warnings())
+        {
+            warnings_sink.print(Color::warning, LocalizedString::from_raw(Strings::concat(origin, ": ", w, '\n')));
+        }
 
         if (!reader.errors().empty())
         {
@@ -1380,91 +1386,90 @@ namespace vcpkg
         return nullopt;
     }
 
-    void print_error_message(Span<const std::unique_ptr<ParseControlErrorInfo>> error_info_list)
+    std::string ParseControlErrorInfo::format_errors(View<std::unique_ptr<ParseControlErrorInfo>> error_info_list)
     {
-        Checks::check_exit(VCPKG_LINE_INFO, error_info_list.size() > 0);
+        std::string message;
 
-        for (auto&& error_info : error_info_list)
+        if (!error_info_list.empty())
         {
-            Checks::check_exit(VCPKG_LINE_INFO, error_info != nullptr);
-            if (!error_info->error.empty())
+            error_info_list[0]->to_string(message);
+            for (std::size_t idx = 1; idx < error_info_list.size(); ++idx)
             {
-                print2(Color::error, "Error: while loading ", error_info->name, ":\n", error_info->error, '\n');
+                message.push_back('\n');
+                error_info_list[1]->to_string(message);
             }
 
-            if (!error_info->other_errors.empty())
+            if (std::any_of(
+                    error_info_list.begin(),
+                    error_info_list.end(),
+                    [](const std::unique_ptr<ParseControlErrorInfo>& ppcei) { return !ppcei->extra_fields.empty(); }))
             {
-                print2(Color::error, "Errors occurred while parsing ", error_info->name, "\n");
-                for (auto&& msg : error_info->other_errors)
-                    print2("    ", msg, '\n');
-            }
-        }
-
-        bool have_remaining_fields = false;
-        for (auto&& error_info : error_info_list)
-        {
-            if (!error_info->extra_fields.empty())
-            {
-                print2(Color::error,
-                       "Error: There are invalid fields in the control or manifest file of ",
-                       error_info->name,
-                       '\n');
-                print2("The following fields were not expected:\n");
-
-                for (const auto& pr : error_info->extra_fields)
-                {
-                    print2("    In ", pr.first, ": ", Strings::join(", ", pr.second), "\n");
-                }
-                have_remaining_fields = true;
-            }
-        }
-
-        if (have_remaining_fields)
-        {
-            print2("This is the list of valid fields for CONTROL files (case-sensitive): \n\n    ",
-                   Strings::join("\n    ", get_list_of_valid_fields()),
-                   "\n\n");
+                Strings::append(message,
+                                "This is the list of valid fields for CONTROL files (case-sensitive): \n\n    ",
+                                Strings::join("\n    ", get_list_of_valid_fields()),
+                                "\n\n");
 #if defined(_WIN32)
-            auto bootstrap = ".\\bootstrap-vcpkg.bat";
+                auto bootstrap = ".\\bootstrap-vcpkg.bat";
 #else
-            auto bootstrap = "./bootstrap-vcpkg.sh";
+                auto bootstrap = "./bootstrap-vcpkg.sh";
 #endif
-            vcpkg::printf("You may need to update the vcpkg binary; try running %s to update.\n\n", bootstrap);
-        }
-
-        for (auto&& error_info : error_info_list)
-        {
-            if (!error_info->missing_fields.empty())
-            {
-                print2(Color::error, "Error: There are missing fields in the control file of ", error_info->name, '\n');
-                print2("The following fields were missing:\n");
-                for (const auto& pr : error_info->missing_fields)
-                {
-                    print2("    In ", pr.first, ": ", Strings::join(", ", pr.second), "\n");
-                }
+                Strings::append(
+                    message, "You may need to update the vcpkg binary; try running ", bootstrap, " to update.\n\n");
             }
         }
 
-        for (auto&& error_info : error_info_list)
-        {
-            if (!error_info->expected_types.empty())
-            {
-                print2(Color::error,
-                       "Error: There are invalid field types in the CONTROL or manifest file of ",
-                       error_info->name,
-                       '\n');
-                print2("The following fields had the wrong types:\n\n");
-
-                for (const auto& pr : error_info->expected_types)
-                {
-                    vcpkg::printf("    %s was expected to be %s\n", pr.first, pr.second);
-                }
-                print2("\n");
-            }
-        }
+        return message;
     }
 
-    Optional<const FeatureParagraph&> SourceControlFile::find_feature(const std::string& featurename) const
+    static const char* after_nl(const char* first, const char* last)
+    {
+        const auto it = std::find(first, last, '\n');
+        return it == last ? last : it + 1;
+    }
+
+    static bool starts_with_error(StringView sv)
+    {
+        return Strings::starts_with(sv, "Error") || Strings::starts_with(sv, "error: ");
+    }
+
+    void print_error_message(Span<const std::unique_ptr<ParseControlErrorInfo>> error_info_list)
+    {
+        auto msg = ParseControlErrorInfo::format_errors(error_info_list);
+
+        // To preserve previous behavior, each line starting with "Error" should be error-colored. All other lines
+        // should be neutral color.
+
+        // To minimize the number of print calls on Windows (which is a significant performance bottleneck), this
+        // algorithm chunks groups of similarly-colored lines.
+        const char* start_of_chunk = msg.data();
+        const char* end_of_chunk = msg.data();
+        const char* const last = msg.data() + msg.size();
+        while (end_of_chunk != last)
+        {
+            while (end_of_chunk != last && starts_with_error({end_of_chunk, last}))
+            {
+                end_of_chunk = after_nl(end_of_chunk, last);
+            }
+            if (start_of_chunk != end_of_chunk)
+            {
+                print2(Color::error, StringView{start_of_chunk, end_of_chunk});
+                start_of_chunk = end_of_chunk;
+            }
+
+            while (end_of_chunk != last && !starts_with_error({end_of_chunk, last}))
+            {
+                end_of_chunk = after_nl(end_of_chunk, last);
+            }
+            if (start_of_chunk != end_of_chunk)
+            {
+                print2(StringView{start_of_chunk, end_of_chunk});
+                start_of_chunk = end_of_chunk;
+            }
+        }
+        print2('\n');
+    }
+
+    Optional<const FeatureParagraph&> SourceControlFile::find_feature(StringView featurename) const
     {
         auto it = Util::find_if(feature_paragraphs,
                                 [&](const std::unique_ptr<FeatureParagraph>& p) { return p->name == featurename; });

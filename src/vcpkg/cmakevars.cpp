@@ -253,7 +253,7 @@ endfunction()
                                  "",
                                  "command:\n"
                                  "{command_line}\n"
-                                 "failed with the following results:\n");
+                                 "failed with the following results:");
 
     void TripletCMakeVarProvider::launch_and_split(
         const Path& script_path, std::vector<std::vector<std::pair<std::string, std::string>>>& vars) const
@@ -267,16 +267,17 @@ endfunction()
 
         std::vector<std::string> lines;
         auto const exit_code = cmd_execute_and_stream_lines(
-            cmd_launch_cmake,
-            [&](StringView sv) { lines.emplace_back(sv.begin(), sv.end()); },
-            default_working_directory);
+                                   cmd_launch_cmake,
+                                   [&](StringView sv) { lines.emplace_back(sv.begin(), sv.end()); },
+                                   default_working_directory)
+                                   .value_or_exit(VCPKG_LINE_INFO);
 
         if (exit_code != 0)
         {
             Checks::msg_exit_with_message(
                 VCPKG_LINE_INFO,
                 msg::format(msgCommandFailed, msg::command_line = cmd_launch_cmake.command_line())
-                    .appendnl()
+                    .append_raw('\n')
                     .append_raw(Strings::join(", ", lines)));
         }
 
