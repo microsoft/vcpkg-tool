@@ -357,7 +357,11 @@ namespace vcpkg
 
     void to_string(std::string& out, VersionScheme scheme)
     {
-        if (scheme == VersionScheme::String)
+        if (scheme == VersionScheme::Missing)
+        {
+            out.append("missing");
+        }
+        else if (scheme == VersionScheme::String)
         {
             out.append("string");
         }

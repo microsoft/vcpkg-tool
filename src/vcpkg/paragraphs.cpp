@@ -364,7 +364,7 @@ namespace vcpkg::Paragraphs
         {
             if (val->first.is_object())
             {
-                return SourceControlFile::parse_manifest_object(origin, val->first.object(), warning_sink);
+                return SourceControlFile::parse_port_manifest_object(origin, val->first.object(), warning_sink);
             }
 
             error = "Manifest files must have a top-level object";
