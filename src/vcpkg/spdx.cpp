@@ -15,7 +15,7 @@ static void append_move_if_exists_and_array(Json::Array& out, Json::Object& obj,
     {
         if (p->is_array())
         {
-            for (auto& e : p->array())
+            for (auto& e : p->array(VCPKG_LINE_INFO))
             {
                 out.push_back(std::move(e));
             }
@@ -238,7 +238,7 @@ std::string vcpkg::create_spdx_sbom(const Dependencies::InstallPlanAction& actio
     for (auto&& rdoc : resource_docs)
     {
         if (!rdoc.is_object()) continue;
-        auto robj = std::move(rdoc).object();
+        auto robj = std::move(rdoc).object(VCPKG_LINE_INFO);
         append_move_if_exists_and_array(rels, robj, "relationships");
         append_move_if_exists_and_array(files, robj, "files");
         append_move_if_exists_and_array(packages, robj, "packages");

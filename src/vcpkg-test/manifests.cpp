@@ -20,7 +20,7 @@ static Json::Object parse_json_object(StringView sv)
     // we're not testing json parsing here, so just fail on errors
     if (auto r = json.get())
     {
-        return std::move(r->first.object());
+        return std::move(r->first.object(VCPKG_LINE_INFO));
     }
     else
     {
@@ -797,7 +797,7 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
     REQUIRE(maybe_config.has_value());
     auto config = *maybe_config.get();
     REQUIRE(config.first.is_object());
-    auto config_obj = config.first.object();
+    auto config_obj = config.first.object(VCPKG_LINE_INFO);
     REQUIRE(pgh.core_paragraph->vcpkg_configuration.has_value());
     auto parsed_config_obj = *pgh.core_paragraph->vcpkg_configuration.get();
     REQUIRE(Json::stringify(parsed_config_obj, Json::JsonStyle::with_spaces(4)) ==
@@ -860,10 +860,10 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     auto contact_a = pgh.core_paragraph->contacts.get("a");
     REQUIRE(contact_a);
     REQUIRE(contact_a->is_object());
-    auto contact_a_aa = contact_a->object().get("aa");
+    auto contact_a_aa = contact_a->object(VCPKG_LINE_INFO).get("aa");
     REQUIRE(contact_a_aa);
     REQUIRE(contact_a_aa->is_string());
-    REQUIRE(contact_a_aa->string() == "aa");
+    REQUIRE(contact_a_aa->string(VCPKG_LINE_INFO) == "aa");
     REQUIRE(pgh.core_paragraph->summary.size() == 1);
     REQUIRE(pgh.core_paragraph->summary[0] == "d");
     REQUIRE(pgh.core_paragraph->description.size() == 1);
@@ -1081,7 +1081,7 @@ static std::string test_serialized_license(StringView license)
     auto m_pgh = test_parse_port_manifest(manifest_with_license(license));
     REQUIRE(m_pgh.has_value());
 
-    return serialize_manifest(**m_pgh.get())["license"].string().to_string();
+    return serialize_manifest(**m_pgh.get())["license"].string(VCPKG_LINE_INFO).to_string();
 }
 
 static bool license_is_parsable(StringView license)

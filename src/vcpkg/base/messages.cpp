@@ -227,7 +227,7 @@ namespace vcpkg::msg
             const auto& name = m.names[index];
             if (auto p = message_map.get(m.names[index]))
             {
-                m.localized_strings[index] = p->string().to_string();
+                m.localized_strings[index] = p->string(VCPKG_LINE_INFO).to_string();
             }
             else if (Debug::g_debugging)
             {
@@ -268,7 +268,7 @@ namespace vcpkg::msg
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
-        load_from_message_map(message_map.first.object());
+        load_from_message_map(message_map.first.object(VCPKG_LINE_INFO));
     }
 
     ::size_t detail::number_of_messages() { return messages().names.size(); }

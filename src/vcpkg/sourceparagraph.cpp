@@ -1172,7 +1172,7 @@ namespace vcpkg
                 }
                 else
                 {
-                    spgh.vcpkg_configuration = make_optional(configuration->object());
+                    spgh.vcpkg_configuration = make_optional(configuration->object(VCPKG_LINE_INFO));
                 }
             }
 

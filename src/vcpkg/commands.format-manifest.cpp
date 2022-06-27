@@ -42,7 +42,7 @@ namespace
             return nullopt;
         }
 
-        auto parsed_json_obj = parsed_json.object();
+        auto parsed_json_obj = parsed_json.object(VCPKG_LINE_INFO);
 
         auto scf = SourceControlFile::parse_project_manifest_object(path_string, parsed_json_obj, stdout_sink);
         if (!scf)

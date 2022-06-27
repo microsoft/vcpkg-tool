@@ -103,18 +103,18 @@ namespace vcpkg::Json
         bool is_object() const noexcept;
 
         // a.x() asserts when !a.is_x()
-        bool boolean() const noexcept;
-        int64_t integer() const noexcept;
-        double number() const noexcept;
-        StringView string() const noexcept;
+        bool boolean(LineInfo li) const noexcept;
+        int64_t integer(LineInfo li) const noexcept;
+        double number(LineInfo li) const noexcept;
+        StringView string(LineInfo li) const noexcept;
 
-        const Array& array() const& noexcept;
-        Array& array() & noexcept;
-        Array&& array() && noexcept;
+        const Array& array(LineInfo li) const& noexcept;
+        Array& array(LineInfo li) & noexcept;
+        Array&& array(LineInfo li) && noexcept;
 
-        const Object& object() const& noexcept;
-        Object& object() & noexcept;
-        Object&& object() && noexcept;
+        const Object& object(LineInfo li) const& noexcept;
+        Object& object(LineInfo li) & noexcept;
+        Object&& object(LineInfo li) && noexcept;
 
         static Value null(std::nullptr_t) noexcept;
         static Value boolean(bool) noexcept;

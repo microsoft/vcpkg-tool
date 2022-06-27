@@ -23,7 +23,7 @@ namespace vcpkg::Commands::List
                 if (status_paragraph->package.is_feature())
                 {
                     Json::Value* value_obj = obj.get(current_spec.to_string());
-                    auto& feature_list = value_obj->object()["features"].array();
+                    auto& feature_list = value_obj->object(VCPKG_LINE_INFO)["features"].array(VCPKG_LINE_INFO);
                     feature_list.push_back(Json::Value::string(status_paragraph->package.feature));
                 }
             }
