@@ -192,7 +192,7 @@ namespace vcpkg
             auto address = reinterpret_cast<sockaddr_dl*>(interface->ifa_addr);
             if (address->sdl_alen != MAC_BYTES_LENGTH) continue;
             // The macro LLADDR() returns the start of the link-layer network address.
-            auto mac_bytes = Span<char>(reinterpret_cast<char*>(LLADDR(address), MAC_BYTES_LENGTH);
+            auto mac_bytes = Span<char>(reinterpret_cast<char*>(LLADDR(address)), MAC_BYTES_LENGTH);
 #endif
             auto mac = mac_bytes_to_string(mac_bytes);
             if (is_valid_mac_for_telemetry(mac))
