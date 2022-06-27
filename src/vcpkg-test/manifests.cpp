@@ -191,26 +191,26 @@ TEST_CASE ("manifest versioning", "[manifests]")
     };
     for (auto&& v : data)
     {
+        auto portManifest = Json::parse_object(std::get<0>(v)).value_or_exit(VCPKG_LINE_INFO);
         { // project manifest
-            // clang-format off
-            static constexpr StringLiteral zlib_name =
-                R"json(    "name": "zlib",)json" "\n";
-            // clang-format on
-            auto with_name_removed = Strings::replace_all(std::get<0>(v).to_string(), zlib_name, "");
-            auto m_pgh = test_parse_project_manifest(with_name_removed);
+            auto projectManifest = portManifest;
+            projectManifest.remove("name");
+            auto m_pgh = test_parse_project_manifest(projectManifest);
             REQUIRE(m_pgh.has_value());
             auto& pgh = **m_pgh.get();
-            CHECK(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) == with_name_removed);
+            CHECK(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) ==
+                  Json::stringify(projectManifest, Json::JsonStyle::with_spaces(4)));
             CHECK(pgh.core_paragraph->version_scheme == std::get<1>(v));
             CHECK(pgh.core_paragraph->raw_version == std::get<2>(v));
             CHECK(pgh.core_paragraph->port_version == 0);
         }
 
         { // port manifest
-            auto m_pgh = test_parse_port_manifest(std::get<0>(v));
+            auto m_pgh = test_parse_port_manifest(portManifest);
             REQUIRE(m_pgh.has_value());
             auto& pgh = **m_pgh.get();
-            CHECK(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) == std::get<0>(v));
+            CHECK(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) ==
+                  Json::stringify(portManifest, Json::JsonStyle::with_spaces(4)));
             CHECK(pgh.core_paragraph->version_scheme == std::get<1>(v));
             CHECK(pgh.core_paragraph->raw_version == std::get<2>(v));
             CHECK(pgh.core_paragraph->port_version == 0);
