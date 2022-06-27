@@ -74,6 +74,7 @@ TEST_CASE ("BinaryConfigParser files provider", "[binaryconfigparser]")
 
         REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"files"}});
         REQUIRE(!state.archives_to_read.empty());
+        REQUIRE(state.archives_to_write.empty());
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH ",write", {});
