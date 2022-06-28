@@ -23,6 +23,10 @@ export async function installGit(session: Session, name: string, targetLocation:
 
   const gitTool = new Git(session, gitPath, await session.activation.getEnvironmentBlock(), targetDirectory);
 
+  // changing the clone process to do an init/add remote/fetch/checkout beacuse
+  // it's far faster to clone a specific commit and this allows us to support 
+  // recursive shallow submodules as well.
+
   if (! await gitTool.init()) {
     events.heartbeat?.(i`Initializing repository folder`);
     throw new Error(i`Failed to initialize git repository folder (${targetDirectory.fsPath})`);
