@@ -9,7 +9,7 @@ import { Session } from '../session';
 import { Uri } from '../util/uri';
 import { Vcpkg } from '../vcpkg';
 
-export async function installGit(session: Session, name: string, targetLocation: Uri, install: GitInstaller, events: Partial<InstallEvents>, options: Partial<InstallOptions & CloneOptions & CloneSettings>): Promise<void> {
+export async function installGit(session: Session, name: string, version: string, targetLocation: Uri, install: GitInstaller, events: Partial<InstallEvents>, options: Partial<InstallOptions & CloneOptions & CloneSettings>): Promise<void> {
   const vcpkg = new Vcpkg(session);
 
   const gitPath = await vcpkg.fetch('git');
@@ -24,7 +24,7 @@ export async function installGit(session: Session, name: string, targetLocation:
   const gitTool = new Git(session, gitPath, await session.activation.getEnvironmentBlock(), targetDirectory);
 
   // changing the clone process to do an init/add remote/fetch/checkout beacuse
-  // it's far faster to clone a specific commit and this allows us to support 
+  // it's far faster to clone a specific commit and this allows us to support
   // recursive shallow submodules as well.
 
   if (! await gitTool.init()) {
@@ -42,7 +42,7 @@ export async function installGit(session: Session, name: string, targetLocation:
     throw new Error(i`Unable to fetch git data for (${repo.toString()}) in folder (${targetDirectory.fsPath})`);
   }
 
-  if (!await gitTool.checkout(events, { commit: "FETCH_HEAD" })) {
+  if (!await gitTool.checkout(events, { commit: 'FETCH_HEAD' })) {
     events.heartbeat?.(i`Checking out commit ${install.commit} for ${repo.toString()} to git repostory folder`);
     throw new Error(i`Unable to checkout data for (${repo.toString()}) in folder (${targetDirectory.fsPath})`);
   }

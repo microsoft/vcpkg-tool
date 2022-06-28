@@ -159,7 +159,7 @@ export class Artifact extends ArtifactBase {
         if (!installer) {
           fail(i`Unknown installer type ${installInfo!.installerKind}`);
         }
-        await installer(this.session, this.id, this.targetLocation, installInfo, events, options);
+        await installer(this.session, this.id, this.version, this.targetLocation, installInfo, events, options);
       }
 
       // after we unpack it, write out the installed manifest
