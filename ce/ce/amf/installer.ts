@@ -220,6 +220,14 @@ class GitCloneNode extends Installer implements GitInstaller {
     this.setMember('subdirectory', value);
   }
 
+  get espidf() {
+    return this.flags.has('espidf');
+  }
+
+  set espidf(value: boolean) {
+    this.flags.set('espidf', value);
+  }
+
   override *validate(): Iterable<ValidationError> {
     yield* super.validate();
     yield* this.validateChildKeys(['git', 'commit', 'subdirectory', 'options', 'lang', 'nametag']);

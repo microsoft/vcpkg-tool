@@ -9,6 +9,7 @@ import { MetadataFile } from '../amf/metadata-file';
 import { latestVersion } from '../constants';
 import { FileType } from '../fs/filesystem';
 import { i } from '../i18n';
+import { activateEspIdf, installEspIdf } from '../installers/espidf';
 import { InstallEvents } from '../interfaces/events';
 import { Registries } from '../registries/registries';
 import { Session } from '../session';
@@ -37,19 +38,20 @@ class ArtifactBase {
   constructor(protected session: Session, public readonly metadata: MetadataFile) {
     this.applicableDemands = new SetOfDemands(this.metadata, this.session);
     this.registries = new Registries(session);
-
-    // load the registries from the project file
-    for (const [name, registry] of this.metadata.registries) {
-      const reg = session.loadRegistry(registry.location.get(0), registry.registryKind || 'artifact');
-      if (reg) {
-        this.registries.add(reg, name);
-      }
-    }
   }
 
   /** Async Initializer */
   async init(session: Session) {
     await this.applicableDemands.init(session);
+
+    // load the registries from the project file
+    for (const [name, registry] of this.metadata.registries) {
+      const reg = await session.loadRegistry(registry.location.get(0), registry.registryKind || 'artifact');
+      if (reg) {
+        this.registries.add(reg, name);
+      }
+    }
+
     return this;
   }
 
@@ -230,6 +232,17 @@ export class Artifact extends ArtifactBase {
     this.allPaths = (await this.targetLocation.readDirectory(undefined, { recursive: true })).select(([name, stat]) => stat === FileType.Directory ? name.fsPath + '/' : name.fsPath);
     for (const exportsBlock of this.applicableDemands.exports) {
       this.session.activation.addExports(exportsBlock, this.targetLocation);
+    }
+
+    // if espressif install
+    if (this.metadata.info.flags.has('espidf')) {
+      // check for some file that espressif installs to see if it's installed.
+      if (!await this.targetLocation.exists('.espressif')) {
+        await installEspIdf(this.session, events, this.targetLocation);
+      }
+
+      // activate
+      await activateEspIdf(this.session, this.targetLocation);
     }
 
     return true;

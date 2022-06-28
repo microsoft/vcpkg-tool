@@ -23,28 +23,34 @@ export async function installGit(session: Session, name: string, targetLocation:
 
   const gitTool = new Git(session, gitPath, await session.activation.getEnvironmentBlock(), targetDirectory);
 
-  await gitTool.clone(repo, events, {
-    recursive: install.recurse,
-    depth: install.full ? undefined : 1,
-  });
+  if (! await gitTool.init()) {
+    events.heartbeat?.(i`Initializing repository folder`);
+    throw new Error(i`Failed to initialize git repository folder (${targetDirectory.fsPath})`);
+  }
 
-  if (install.commit) {
-    if (install.full) {
-      await gitTool.reset(events, {
-        commit: install.commit,
-        recurse: install.recurse,
-        hard: true
-      });
+  if (!await gitTool.addRemote('origin', repo)) {
+    events.heartbeat?.(i`Adding remote ${repo.toString()} to git repostory folder`);
+    throw new Error(i`Failed to set git origin (${repo.toString()}) in folder (${targetDirectory.fsPath})`);
+  }
+
+  if (!await gitTool.fetch('origin', events, { commit: install.commit, depth: install.full ? undefined : 1 })) {
+    events.heartbeat?.(i`Fetching remote ${repo.toString()} for git repostory folder`);
+    throw new Error(i`Unable to fetch git data for (${repo.toString()}) in folder (${targetDirectory.fsPath})`);
+  }
+
+  if (!await gitTool.checkout(events, { commit: "FETCH_HEAD" })) {
+    events.heartbeat?.(i`Checking out commit ${install.commit} for ${repo.toString()} to git repostory folder`);
+    throw new Error(i`Unable to checkout data for (${repo.toString()}) in folder (${targetDirectory.fsPath})`);
+  }
+
+  if (install.recurse) {
+    events.heartbeat?.(i`Updating submodules for repository ${repo.toString()} in the git repostory folder`);
+    if (!await gitTool.config('.gitmodules', 'submodule.*.shallow', 'true')) {
+      throw new Error(i`Unable to set submodule shallow data for (${repo.toString()}) in folder (${targetDirectory.fsPath})`);
     }
-    else {
-      await gitTool.fetch('origin', events, {
-        commit: install.commit,
-        recursive: install.recurse,
-        depth: install.full ? undefined : 1
-      });
-      await gitTool.checkout(events, {
-        commit: install.commit
-      });
+
+    if (!await gitTool.updateSubmodules(events, { init: true, recursive: true, depth: install.full ? undefined : 1 })) {
+      throw new Error(i`Unable update submodules for (${repo.toString()}) in folder (${targetDirectory.fsPath})`);
     }
   }
 }
