@@ -639,8 +639,21 @@ export class Activation {
 
     const [variables, undo] = await this.generateEnvironmentVariables(currentEnvironment);
 
-    const aliases = (await toArrayAsync(this.aliases)).reduce((aliases, [name, alias]) => { aliases[name] = alias; return aliases; }, <Record<string, string>>{});
+    const transformtoRecord = async (orig: AsyncGenerator<Promise<Tuple<string, string>>, any, unknown>) => 
+    (await toArrayAsync(orig)).reduce((newRecord, [key, val]) => { newRecord[key] = val; return newRecord; }, <Record<string, string>>{});
 
+    const defines = await transformtoRecord(this.defines);
+    const aliases = await transformtoRecord(this.aliases);
+    const locations = await transformtoRecord(this.locations);
+    const tools = await transformtoRecord(this.tools);
+    
+    const properties = <Record<string, string>>{};
+    for await (const [k, v] of this.properties) { properties[k] = linq.join(v, ';');}
+
+    const paths = <Record<string, string>>{};
+    for await (const [k, v] of this.paths) { paths[k] = linq.join(v, ';');}
+
+    
     // generate undo file if requested
     if (undoEnvironmentFile) {
       const undoContents = {
@@ -673,7 +686,7 @@ export class Activation {
     }
 
     if(dumpEnv) {
-      const contents = generateEnvVarDump(variables);
+      const contents = generateEnvVarDump(variables, defines, aliases, properties, locations, paths, tools);
       this.#session.channels.verbose(`--------[START ENV VAR FILE]--------\n${contents}\n--------[END ENV VAR FILE]---------`);
       await dumpEnv.writeUTF8(contents); 
     }
@@ -746,8 +759,18 @@ function generateScriptContent(kind: string, variables: Record<string, string>, 
   return '';
 }
 
-function generateEnvVarDump(variables: Record<string, string>): string {
-  var contents = {"version": 1, "env": variables}
+function generateEnvVarDump(variables: Record<string, string>, defines: Record<string, string>, aliases: Record<string, string>, 
+  properties:Record<string, string>, locations: Record<string, string>, paths: Record<string, string>, tools: Record<string, string>): string {
+    
+  var contents = {"version": 1, 
+  "env": variables,
+  "defines": defines, 
+  "aliases": aliases, 
+  "properties": properties, 
+  "locations": locations, 
+  "paths": paths, 
+  "tools":tools}
+  
   return JSON.stringify(contents);
 }
 

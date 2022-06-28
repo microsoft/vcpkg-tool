@@ -9,7 +9,7 @@ import { Switch } from '../switch';
 
 export class DumpEnv extends Switch {
   
-  switch = 'dump-env';
+  switch = 'json';
   override multipleAllowed = false;
   get help() {
     return [
