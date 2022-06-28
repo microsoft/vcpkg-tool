@@ -1103,18 +1103,12 @@ namespace vcpkg
             return t;
         }
 
-        virtual void parse_name_version(vcpkg::Json::Reader& r,
-                                        const vcpkg::Json::Object& obj,
-                                        vcpkg::SourceParagraph& spgh) = 0;
-
-        virtual Optional<std::unique_ptr<SourceControlFile>> visit_object(Json::Reader& r,
-                                                                          const Json::Object& obj) override
+        vcpkg::Optional<std::unique_ptr<vcpkg::SourceControlFile>> visit_object_common(
+            const vcpkg::Json::Object& obj,
+            vcpkg::SourceParagraph& spgh,
+            vcpkg::Json::Reader& r,
+            std::unique_ptr<vcpkg::SourceControlFile>& control_file)
         {
-            auto control_file = std::make_unique<SourceControlFile>();
-            control_file->core_paragraph = std::make_unique<SourceParagraph>();
-
-            auto& spgh = *control_file->core_paragraph;
-
             for (const auto& el : obj)
             {
                 if (Strings::starts_with(el.first, "$"))
@@ -1122,8 +1116,6 @@ namespace vcpkg
                     spgh.extra_info.insert_or_replace(el.first.to_string(), el.second);
                 }
             }
-
-            parse_name_version(r, obj, spgh);
 
             r.optional_object_field(obj, MAINTAINERS, spgh.maintainers, Json::ParagraphDeserializer::instance);
             r.optional_object_field(obj, CONTACTS, spgh.contacts, ContactsDeserializer::instance);
@@ -1202,10 +1194,14 @@ namespace vcpkg
 
     struct ProjectManifestDeserializer final : ManifestDeserializer
     {
-        virtual void parse_name_version(vcpkg::Json::Reader& r,
-                                        const vcpkg::Json::Object& obj,
-                                        vcpkg::SourceParagraph& spgh) override
+        virtual Optional<std::unique_ptr<SourceControlFile>> visit_object(Json::Reader& r,
+                                                                          const Json::Object& obj) override
         {
+            auto control_file = std::make_unique<SourceControlFile>();
+            control_file->core_paragraph = std::make_unique<SourceParagraph>();
+
+            auto& spgh = *control_file->core_paragraph;
+
             r.optional_object_field(obj, NAME, spgh.name, Json::IdentifierDeserializer::instance);
             auto maybe_schemed_version = visit_optional_schemed_deserializer(type_name(), r, obj, false);
             if (auto p = maybe_schemed_version.get())
@@ -1218,6 +1214,8 @@ namespace vcpkg
             {
                 spgh.version_scheme = VersionScheme::Missing;
             }
+
+            return visit_object_common(obj, spgh, r, control_file);
         }
 
         static ProjectManifestDeserializer instance;
@@ -1227,15 +1225,21 @@ namespace vcpkg
 
     struct PortManifestDeserializer final : ManifestDeserializer
     {
-        virtual void parse_name_version(vcpkg::Json::Reader& r,
-                                        const vcpkg::Json::Object& obj,
-                                        vcpkg::SourceParagraph& spgh) override
+        virtual Optional<std::unique_ptr<SourceControlFile>> visit_object(Json::Reader& r,
+                                                                          const Json::Object& obj) override
         {
+            auto control_file = std::make_unique<SourceControlFile>();
+            control_file->core_paragraph = std::make_unique<SourceParagraph>();
+
+            auto& spgh = *control_file->core_paragraph;
+
             r.required_object_field(type_name(), obj, NAME, spgh.name, Json::IdentifierDeserializer::instance);
             auto schemed_version = visit_required_schemed_deserializer(type_name(), r, obj, false);
             spgh.raw_version = schemed_version.version.text();
             spgh.version_scheme = schemed_version.scheme;
             spgh.port_version = schemed_version.version.port_version();
+
+            return visit_object_common(obj, spgh, r, control_file);
         }
 
         static PortManifestDeserializer instance;
