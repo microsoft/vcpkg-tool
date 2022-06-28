@@ -343,10 +343,7 @@ namespace vcpkg::Dependencies
                     if (!maybe_scfl)
                     {
                         Checks::exit_with_message(
-                            VCPKG_LINE_INFO,
-                            "info: while planning to install %s:\n%s",
-                            spec,
-                            maybe_scfl.error());
+                            VCPKG_LINE_INFO, "info: while planning to install %s:\n%s", spec, maybe_scfl.error());
                     }
 
                     it = m_graph
