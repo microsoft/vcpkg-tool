@@ -141,7 +141,7 @@ async function https(session: Session, uris: Array<Uri>, outputFilename: string,
           const algorithm = <Algorithm>(await locations.algorithm);
           const value = await locations.hash;
           session.channels.debug(`Acquire '${outputFilename}': remote alg/hash: '${algorithm}'/'${value}`);
-          if (algorithm && value && outputFile.hashValid(events, { algorithm, value, ...options })) {
+          if (algorithm && value && await outputFile.hashValid(events, { algorithm, value, ...options })) {
             session.channels.debug(`Acquire '${outputFilename}': on disk file hash matches the server hash`);
             // so *we* don't have the hash, but ... if the server has a hash, we could see if what we have is what they have?
             // it does match what the server has.
