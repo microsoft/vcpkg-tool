@@ -46,16 +46,8 @@ export class Git {
       '--progress'
     ], {
       env: this.#environment,
-      onStdErrData: (chunk) => {
-        // generate progress events
-        const regex = /\s([0-9]*?)%/;
-        chunk.toString().split(/^/gim).map((x: string) => x.trim()).filter((each: any) => each).forEach((line: string) => {
-          const match_array = line.match(regex);
-          if (match_array !== null) {
-            events.heartbeat?.(line.trim());
-          }
-        });
-      }
+      onStdErrData: chunkToHeartbeat(events),
+      onStdOutData: chunkToHeartbeat(events)
     });
 
     return result.code === 0 ? true : false;
@@ -102,16 +94,8 @@ export class Git {
     ], {
       env: this.#environment,
       cwd: this.#targetFolder.fsPath,
-      onStdErrData: (chunk) => {
-        // generate progress events
-        const regex = /\s([0-9]*?)%/;
-        chunk.toString().split(/^/gim).map((x: string) => x.trim()).filter((each: any) => each).forEach((line: string) => {
-          const match_array = line.match(regex);
-          if (match_array !== null) {
-            events.heartbeat?.(line.trim());
-          }
-        });
-      }
+      onStdErrData: chunkToHeartbeat(events),
+      onStdOutData: chunkToHeartbeat(events)
     });
     return result.code === 0 ? true : false;
   }
@@ -135,16 +119,8 @@ export class Git {
     ], {
       env: this.#environment,
       cwd: this.#targetFolder.fsPath,
-      onStdErrData: (chunk) => {
-        // generate progress events
-        const regex = /\s([0-9]*?)%/;
-        chunk.toString().split(/^/gim).map((x: string) => x.trim()).filter((each: any) => each).forEach((line: string) => {
-          const match_array = line.match(regex);
-          if (match_array !== null) {
-            events.heartbeat?.(line.trim());
-          }
-        });
-      }
+      onStdErrData: chunkToHeartbeat(events),
+      onStdOutData: chunkToHeartbeat(events)
     });
     return result.code === 0 ? true : false;
   }
@@ -211,16 +187,8 @@ export class Git {
     ], {
       env: this.#environment,
       cwd: this.#targetFolder.fsPath,
-      onStdErrData: (chunk) => {
-        // generate progress events
-        const regex = /\s([0-9]*?)%/;
-        chunk.toString().split(/^/gim).map((x: string) => x.trim()).filter((each: any) => each).forEach((line: string) => {
-          const match_array = line.match(regex);
-          if (match_array !== null) {
-            events.heartbeat?.(line.trim());
-          }
-        });
-      }
+      onStdErrData: chunkToHeartbeat(events),
+      onStdOutData: chunkToHeartbeat(events)
     });
 
     return result.code === 0;
@@ -246,4 +214,15 @@ export class Git {
     });
     return result.code === 0;
   }
+}
+function chunkToHeartbeat(events: Partial<InstallEvents>): (chunk: any) => void {
+  return (chunk: any) => {
+    const regex = /\s([0-9]*?)%/;
+    chunk.toString().split(/^/gim).map((x: string) => x.trim()).filter((each: any) => each).forEach((line: string) => {
+      const match_array = line.match(regex);
+      if (match_array !== null) {
+        events.heartbeat?.(line.trim());
+      }
+    });
+  };
 }
