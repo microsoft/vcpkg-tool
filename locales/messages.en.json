@@ -147,7 +147,6 @@
   "InvalidArgumentRequiresPrefix": "invalid argument: binary config '{binary_source}' requires at least a prefix",
   "InvalidArgumentRequiresSingleArgument": "invalid argument: binary config '{binary_source}' does not take more than 1 argument",
   "InvalidArgumentRequiresSingleStringArgument": "invalid argument: binary config '{binary_source}' expects a single string argument",
-  "InvalidArgumentRequiresSource": "invalid argument: binary config '{binary_source}' requires non-empty source",
   "InvalidArgumentRequiresSourceArgument": "invalid argument: binary config '{binary_source}' requires at least a source argument",
   "InvalidArgumentRequiresTwoOrThreeArguments": "invalid argument: binary config '{binary_source}' requires 2 or 3 arguments",
   "InvalidArgumentRequiresValidToken": "invalid argument: binary config '{binary_source}' requires a SAS token without a preceeding '?' as the second argument",

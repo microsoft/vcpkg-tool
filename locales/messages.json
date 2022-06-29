@@ -258,8 +258,6 @@
   "_InvalidArgumentRequiresSingleArgument.comment": "An example of {binary_source} is azblob.",
   "InvalidArgumentRequiresSingleStringArgument": "invalid argument: binary config '{binary_source}' expects a single string argument",
   "_InvalidArgumentRequiresSingleStringArgument.comment": "An example of {binary_source} is azblob.",
-  "InvalidArgumentRequiresSource": "invalid argument: binary config '{binary_source}' requires non-empty source",
-  "_InvalidArgumentRequiresSource.comment": "An example of {binary_source} is azblob.",
   "InvalidArgumentRequiresSourceArgument": "invalid argument: binary config '{binary_source}' requires at least a source argument",
   "_InvalidArgumentRequiresSourceArgument.comment": "An example of {binary_source} is azblob.",
   "InvalidArgumentRequiresTwoOrThreeArguments": "invalid argument: binary config '{binary_source}' requires 2 or 3 arguments",

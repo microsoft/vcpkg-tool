@@ -99,10 +99,6 @@ namespace
                                  (msg::binary_source),
                                  "",
                                  "invalid argument: binary config '{binary_source}' expects a single string argument");
-    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresSource,
-                                 (msg::binary_source),
-                                 "",
-                                 "invalid argument: binary config '{binary_source}' requires non-empty source");
     DECLARE_AND_REGISTER_MESSAGE(
         InvalidArgumentRequiresSourceArgument,
         (msg::binary_source),
@@ -1861,7 +1857,8 @@ namespace
                 auto&& p = segments[1].second;
                 if (p.empty())
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresSource, msg::binary_source = "nuget"));
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresSourceArgument, msg::binary_source = "nuget"));
                 }
 
                 handle_readwrite(state->sources_to_read, state->sources_to_write, std::move(p), segments, 2);
