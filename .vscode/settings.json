@@ -31,4 +31,5 @@
     "source.organizeImports": true
   },
   "eslint.format.enable": true,
+  "files.eol": "\n"
 }
