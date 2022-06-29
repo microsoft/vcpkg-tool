@@ -12,8 +12,6 @@ if ($output -match "vcpkg-internal-e2e-test-port3") {
     throw "Should not emit messages about -port3 while checking -port2"
 }
 
-return
-
 Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e_ports/overlays" install vcpkg-empty-port
 Throw-IfFailed
 Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e_ports" install vcpkg-internal-e2e-test-port
@@ -22,3 +20,8 @@ if ($IsWindows) {
     Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e_ports" install vcpkg-find-acquire-program
     Throw-IfFailed
 }
+
+Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e_ports/overlays" install broken-no-name
+Throw-IfNotFailed
+Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e_ports/overlays" install broken-no-version
+Throw-IfNotFailed
