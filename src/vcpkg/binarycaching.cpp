@@ -1646,7 +1646,8 @@ namespace vcpkg
 
     void BinaryConfigParserState::clear()
     {
-        m_cleared = true;
+        binary_cache_providers.clear();
+        binary_cache_providers.insert("clear");
         interactive = false;
         nugettimeout = "100";
         archives_to_read.clear();
@@ -1763,6 +1764,7 @@ namespace
                         msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "files"),
                         segments[3].first);
                 }
+                state->binary_cache_providers.insert("files");
             }
             else if (segments[0].second == "interactive")
             {
@@ -1799,6 +1801,7 @@ namespace
                         msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "nugetconfig"),
                         segments[3].first);
                 }
+                state->binary_cache_providers.insert("nuget");
             }
             else if (segments[0].second == "nuget")
             {
@@ -1822,6 +1825,7 @@ namespace
                         msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "nuget"),
                         segments[3].first);
                 }
+                state->binary_cache_providers.insert("nuget");
             }
             else if (segments[0].second == "nugettimeout")
             {
@@ -1847,7 +1851,9 @@ namespace
                 {
                     return add_error("invalid value: binary config 'nugettimeout' requires integers greater than 0");
                 }
+
                 state->nugettimeout = std::to_string(timeout);
+                state->binary_cache_providers.insert("nuget");
             }
             else if (segments[0].second == "default")
             {
@@ -1866,6 +1872,7 @@ namespace
 
                 handle_readwrite(
                     state->archives_to_read, state->archives_to_write, Path(*maybe_home.get()), segments, 1);
+                state->binary_cache_providers.insert("default");
             }
             else if (segments[0].second == "x-azblob")
             {
@@ -1917,6 +1924,8 @@ namespace
                 url_template.headers_for_put.assign(headers.begin(), headers.end());
                 handle_readwrite(
                     state->url_templates_to_get, state->url_templates_to_put, std::move(url_template), segments, 3);
+
+                state->binary_cache_providers.insert("azblob");
             }
             else if (segments[0].second == "x-gcs")
             {
@@ -1949,6 +1958,8 @@ namespace
                 }
 
                 handle_readwrite(state->gcs_read_prefixes, state->gcs_write_prefixes, std::move(p), segments, 2);
+
+                state->binary_cache_providers.insert("gcs");
             }
             else if (segments[0].second == "x-aws")
             {
@@ -1981,6 +1992,8 @@ namespace
                 }
 
                 handle_readwrite(state->aws_read_prefixes, state->aws_write_prefixes, std::move(p), segments, 2);
+
+                state->binary_cache_providers.insert("aws");
             }
             else if (segments[0].second == "x-aws-config")
             {
@@ -2001,6 +2014,7 @@ namespace
                 }
 
                 state->aws_no_sign_request = no_sign_request;
+                state->binary_cache_providers.insert("aws");
             }
             else if (segments[0].second == "x-cos")
             {
@@ -2033,6 +2047,7 @@ namespace
                 }
 
                 handle_readwrite(state->cos_read_prefixes, state->cos_write_prefixes, std::move(p), segments, 2);
+                state->binary_cache_providers.insert("cos");
             }
             else if (segments[0].second == "http")
             {
@@ -2069,12 +2084,19 @@ namespace
                     url_template.headers_for_get.push_back(segments[3].second);
                     url_template.headers_for_put.push_back(segments[3].second);
                 }
+
                 handle_readwrite(
                     state->url_templates_to_get, state->url_templates_to_put, std::move(url_template), segments, 2);
+                state->binary_cache_providers.insert("http");
             }
             else
             {
                 return add_error(msg::format(msgUnknownBinaryProviderType), segments[0].first);
+            }
+
+            for (const auto& cache_provider : state->binary_cache_providers)
+            {
+                LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching_" + cache_provider, "defined");
             }
         }
     };
@@ -2297,11 +2319,6 @@ ExpectedS<BinaryConfigParserState> vcpkg::create_binary_providers_from_configs_p
         }
     }
 
-    if (s.m_cleared)
-    {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-clear", "defined");
-    }
-
     return s;
 }
 
@@ -2359,7 +2376,6 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
 
     if (!s.url_templates_to_get.empty())
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-url-get", "defined");
         providers.push_back(
             std::make_unique<HttpGetBinaryProvider>(paths, std::move(s.url_templates_to_get), s.secrets));
     }
@@ -2367,7 +2383,6 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
     if (!s.sources_to_read.empty() || !s.sources_to_write.empty() || !s.configs_to_read.empty() ||
         !s.configs_to_write.empty())
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-nuget", "defined");
         providers.push_back(std::make_unique<NugetBinaryProvider>(paths,
                                                                   std::move(s.sources_to_read),
                                                                   std::move(s.sources_to_write),

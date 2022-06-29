@@ -11,6 +11,7 @@
 #include <vcpkg/packagespec.h>
 
 #include <iterator>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -81,8 +82,9 @@ namespace vcpkg
 
     struct BinaryConfigParserState
     {
-        bool m_cleared = false;
         bool interactive = false;
+        std::set<StringLiteral> binary_cache_providers;
+
         std::string nugettimeout = "100";
 
         std::vector<Path> archives_to_read;

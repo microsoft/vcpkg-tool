@@ -24,7 +24,8 @@
     ],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "newLine": "LF"
+    "newLine": "LF",
+    "incremental": true
   },
   "exclude": [
     "../**/dist/**",
