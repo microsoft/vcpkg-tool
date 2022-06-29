@@ -58,17 +58,12 @@ namespace
         "",
         "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details"
         "on how to provide credentials.");
-    DECLARE_AND_REGISTER_MESSAGE(HelpTableFormat,
-                                 (msg::value),
-                                 "'{value}' is vcpkg::HelpTableFormatter as a string.",
-                                 "'{value}'");
     DECLARE_AND_REGISTER_MESSAGE(InvalidArgument, (), "", "invalid argument");
     DECLARE_AND_REGISTER_MESSAGE(
         InvalidArgumentRequiresAbsolutePath,
         (msg::binary_source),
         "",
         "invalid argument: binary config '{binary_source}' path arguments for binary config strings must be absolute");
-
     DECLARE_AND_REGISTER_MESSAGE(
         InvalidArgumentRequiresBaseUrl,
         (msg::base_url, msg::binary_source),
@@ -134,19 +129,16 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(RestoredPackage, (msg::path), "", "Restored package from '{path}'");
     DECLARE_AND_REGISTER_MESSAGE(
         RestoredPackagesFromVendor,
-        (msg::count, msg::elapsed, msg::vendor),
-        "",
-        "Restored {count} package(s) from {vendor} in {elapsed}. Use --debug to see more details.");
+        (msg::count, msg::elapsed, msg::value),
+        "{value} may be either a 'vendor' like 'Azure' or 'NuGet', or a file path like C:\\example or /usr/example",
+        "Restored {count} package(s) from {value} in {elapsed}. Use --debug to see more details.");
     DECLARE_AND_REGISTER_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: '{path}'");
     DECLARE_AND_REGISTER_MESSAGE(UnknownBinaryProviderType,
                                  (),
                                  "",
                                  "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', "
-                                 "'nugetconfig', 'interactive', and 'files'");
-    DECLARE_AND_REGISTER_MESSAGE(UnknownKey,
-                                 (msg::value),
-                                 "'{value}' is one of 'version', 'name', 'triplet', or 'sha'.",
-                                 "unknown key: '{value}'.");
+                                 "'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', "
+                                 "'x-aws-config', 'http', and 'files'");
     DECLARE_AND_REGISTER_MESSAGE(
         UnknownVariablesInTemplate,
         (msg::value, msg::list),
@@ -368,7 +360,7 @@ namespace
                 msg::println(msgRestoredPackagesFromVendor,
                              msg::count = num_restored,
                              msg::elapsed = timer.elapsed(),
-                             msg::vendor = archives_root_dir.native());
+                             msg::value = archives_root_dir.native());
             }
         }
 
@@ -640,7 +632,7 @@ namespace
             msg::println(msgRestoredPackagesFromVendor,
                          msg::count = this_restore_count,
                          msg::elapsed = timer.elapsed(),
-                         msg::vendor = "HTTP servers");
+                         msg::value = "HTTP servers");
         }
 
         void precheck(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
@@ -952,7 +944,7 @@ namespace
             msg::println(msgRestoredPackagesFromVendor,
                          msg::count = total_restore_attempts - attempts.size(),
                          msg::elapsed = timer.elapsed(),
-                         msg::vendor = "NuGet");
+                         msg::value = "NuGet");
         }
 
         RestoreResult try_restore(const Dependencies::InstallPlanAction&) const override
@@ -1155,7 +1147,7 @@ namespace
             msg::println(msgRestoredPackagesFromVendor,
                          msg::count = restored_count,
                          msg::elapsed = timer.elapsed(),
-                         msg::vendor = vendor());
+                         msg::value = vendor());
         }
 
         RestoreResult try_restore(const Dependencies::InstallPlanAction&) const override
@@ -1452,7 +1444,7 @@ namespace vcpkg
                                      }
                                      else
                                      {
-                                         msg::println(msgUnknownKey, msg::value = key);
+                                         Debug::println("Unknown key: ", key);
                                          // We do a input validation while parsing the config
                                          Checks::unreachable(VCPKG_LINE_INFO);
                                      };
@@ -2615,7 +2607,7 @@ void vcpkg::help_topic_asset_caching(const VcpkgPaths&)
     tbl.text("The `<rw>` optional parameter for certain strings controls how they will be accessed. It can be "
              "specified as `read`, `write`, or `readwrite` and defaults to `read`.");
     tbl.blank();
-    msg::println(msgHelpTableFormat, msg::value = tbl.m_str);
+    print2(tbl.m_str);
     msg::println(msgExtendedDocumenationAtUrl, msg::url = docs::assetcaching_url);
 }
 
@@ -2691,14 +2683,14 @@ void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
     tbl.text("NuGet's cache is not used by default. To use it for every nuget-based source, set the environment "
              "variable `VCPKG_USE_NUGET_CACHE` to `true` (case-insensitive) or `1`.\n");
     tbl.blank();
-    msg::println(msgHelpTableFormat, msg::value = tbl.m_str);
+    print2(tbl.m_str);
     const auto& maybe_cachepath = default_cache_path();
     if (auto p = maybe_cachepath.get())
     {
         msg::println(msgDefaultPathToBinaries, msg::path = *p);
     }
 
-    msg::println(msgExtendedDocumenationAtUrl, msg::url = docs::assetcaching_url);
+    msg::println(msgExtendedDocumenationAtUrl, msg::url = docs::binarycaching_url);
 }
 
 std::string vcpkg::generate_nuget_packages_config(const Dependencies::ActionPlan& action)
