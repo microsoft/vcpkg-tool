@@ -148,6 +148,7 @@
   "InvalidFormatString": "invalid format string: {actual}",
   "JsonErrorFailedToParse": "failed to parse {path}:",
   "JsonErrorFailedToRead": "failed to read {path}: {error_msg}",
+  "JsonErrorMustBeAnObject": "Expected {path} to be an object.",
   "LaunchingProgramFailed": "Launching {tool_name}:",
   "LicenseExpressionContainsExtraPlus": "SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.",
   "LicenseExpressionContainsInvalidCharacter": "SPDX license expression contains an invalid character (0x{value:02X} '{value}').",

@@ -261,6 +261,8 @@
   "_JsonErrorFailedToParse.comment": "An example of {path} is /foo/bar.",
   "JsonErrorFailedToRead": "failed to read {path}: {error_msg}",
   "_JsonErrorFailedToRead.comment": "An example of {path} is /foo/bar. An example of {error_msg} is File Not Found.",
+  "JsonErrorMustBeAnObject": "Expected {path} to be an object.",
+  "_JsonErrorMustBeAnObject.comment": "An example of {path} is /foo/bar.",
   "LaunchingProgramFailed": "Launching {tool_name}:",
   "_LaunchingProgramFailed.comment": "A platform API call failure message is appended after this An example of {tool_name} is aria2.",
   "LicenseExpressionContainsExtraPlus": "SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.",

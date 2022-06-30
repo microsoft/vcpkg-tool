@@ -123,7 +123,7 @@ namespace vcpkg::Commands
             synthesized_registry.kind = "builtin";
             if (auto p = manifest.manifest.get("builtin-baseline"))
             {
-                synthesized_registry.baseline = p->string().to_string();
+                synthesized_registry.baseline = p->string(VCPKG_LINE_INFO).to_string();
             }
 
             update_baseline_in_config(paths, synthesized_registry);
