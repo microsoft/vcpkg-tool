@@ -1,6 +1,5 @@
 . "$PSScriptRoot/../end-to-end-tests-prelude.ps1"
 
-
 Write-Trace "test manifest features"
 $manifestDir = "$TestingRoot/manifest-dir"
 
@@ -15,8 +14,6 @@ function feature {
 }
 
 $vcpkgJson = @{
-    'name' = "manifest-test";
-    'version' = "1.0.0";
     'default-features' = @( 'default-fail' );
     'features' = @{
         'default-fail' = feature 'vcpkg-fail-if-depended-upon';
