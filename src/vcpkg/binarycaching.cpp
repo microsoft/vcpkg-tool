@@ -121,7 +121,7 @@ namespace
                                  (msg::vendor, msg::path),
                                  "",
                                  "Pushing {vendor} to '{path}' failed.  Use --debug for more information.");
-    DECLARE_AND_REGISTER_MESSAGE(ReplaceSecretsError, (msg::error_msg), "", "'{error_msg}'");
+    DECLARE_AND_REGISTER_MESSAGE(ReplaceSecretsError, (msg::error_msg), "", "Replace secretes produced the following error: '{error_msg}'");
     DECLARE_AND_REGISTER_MESSAGE(RestoredPackage, (msg::path), "", "Restored package from '{path}'");
     DECLARE_AND_REGISTER_MESSAGE(
         RestoredPackagesFromVendor,
