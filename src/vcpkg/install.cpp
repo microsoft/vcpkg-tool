@@ -833,31 +833,6 @@ namespace vcpkg::Install
         return ret;
     }
 
-    DECLARE_AND_REGISTER_MESSAGE(
-        ErrorIndividualPackagesUnsupported,
-        (),
-        "",
-        "In manifest mode, `vcpkg install` does not support individual package arguments.\nTo install "
-        "additional "
-        "packages, edit vcpkg.json and then run `vcpkg install` without any package arguments.");
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorRequirePackagesList,
-                                 (),
-                                 "",
-                                 "`vcpkg install` requires a list of packages to install in classic mode.");
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorInvalidClassicModeOption,
-                                 (msg::option),
-                                 "",
-                                 "The option --{option} is not supported in classic mode and no manifest was found.");
-
-    DECLARE_AND_REGISTER_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorInvalidManifestModeOption,
-                                 (msg::option),
-                                 "",
-                                 "The option --{option} is not supported in manifest mode.");
-
     void perform_and_exit(const VcpkgCmdArguments& args,
                           const VcpkgPaths& paths,
                           Triplet default_triplet,

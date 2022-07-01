@@ -1001,4 +1001,149 @@ namespace vcpkg
         (msg::path),
         "Printed after ErrorMessage and before the specific failing filesystem operation (like file not found)",
         "failed to read file '{path}' for hashing: ");
+    DECLARE_MESSAGE(FuzzInvalidKind, (msg::value), "example of {value} is 'utf-8'", "invalid kind: '{value}'");
+    DECLARE_MESSAGE(FuzzExpectedOneOf,
+                    (),
+                    "the list after the colon should stay the same, they're literal values",
+                    "expected one of: utf-8, json, platform-expr");
+    DECLARE_MESSAGE(FuzzUnknownOption, (msg::option), "", "unknown option: --{option}");
+
+    DECLARE_MESSAGE(FuzzHelpUsage, (), "", "usage: vcpkg-fuzz --kind=<kind>");
+    DECLARE_MESSAGE(FuzzHelpInput, (), "", "accepts input on stdin.");
+    DECLARE_MESSAGE(FuzzHelpOptions, (), "", "options:");
+    DECLARE_MESSAGE(FuzzHelpOptionKind, (), "", "one of {{utf-8, json, platform-expr}}");
+    DECLARE_MESSAGE(InstallWithSystemManager,
+                    (),
+                    "",
+                    "You may be able to install this tool via your system package manager.");
+
+    DECLARE_MESSAGE(InstallWithSystemManagerPkg,
+                    (msg::command_line),
+                    "",
+                    "You may be able to install this tool via your system package manager ({command_line}).");
+
+    DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
+                    (msg::tool_name, msg::path),
+                    "Additional information, such as the command line output, if any, will be appended on "
+                    "the line after this message",
+                    "Failed to run {path} to determine the {tool_name} version.");
+    DECLARE_MESSAGE(UnexpectedToolOutput,
+                    (msg::tool_name, msg::path),
+                    "The actual command line output will be appended after this message.",
+                    "{tool_name} ({path}) produced unexpected output when attempting to determine the version:");
+    DECLARE_MESSAGE(MonoInstructions,
+                    (),
+                    "",
+                    "This may be caused by an incomplete mono installation. Full mono is "
+                    "available on some systems via `sudo apt install mono-complete`. Ubuntu 18.04 users may "
+                    "need a newer version of mono, available at https://www.mono-project.com/download/stable/");
+    DECLARE_MESSAGE(InstallWithSystemManagerMono,
+                    (msg::url),
+                    "",
+                    "Ubuntu 18.04 users may need a newer version of mono, available at {url}.");
+    DECLARE_MESSAGE(WaitingForChildrenToExit, (), "", "Waiting for child processes to exit...");
+    DECLARE_MESSAGE(LaunchingProgramFailed,
+                    (msg::tool_name),
+                    "A platform API call failure message is appended after this",
+                    "Launching {tool_name}:");
+    DECLARE_MESSAGE(ProgramReturnedNonzeroExitCode,
+                    (msg::tool_name, msg::exit_code),
+                    "The program's console output is appended after this.",
+                    "{tool_name} failed with exit code: ({exit_code}).");
+    DECLARE_MESSAGE(SystemApiErrorMessage,
+                    (msg::system_api, msg::exit_code, msg::error_msg),
+                    "",
+                    "calling {system_api} failed with {exit_code} ({error_msg})");
+
+    DECLARE_MESSAGE(ErrorIndividualPackagesUnsupported,
+                    (),
+                    "",
+                    "In manifest mode, `vcpkg install` does not support individual package arguments.\nTo install "
+                    "additional "
+                    "packages, edit vcpkg.json and then run `vcpkg install` without any package arguments.");
+
+    DECLARE_MESSAGE(ErrorRequirePackagesList,
+                    (),
+                    "",
+                    "`vcpkg install` requires a list of packages to install in classic mode.");
+
+    DECLARE_MESSAGE(ErrorInvalidClassicModeOption,
+                    (msg::option),
+                    "",
+                    "The option --{option} is not supported in classic mode and no manifest was found.");
+
+    DECLARE_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
+
+    DECLARE_MESSAGE(ErrorInvalidManifestModeOption,
+                    (msg::option),
+                    "",
+                    "The option --{option} is not supported in manifest mode.");
+
+    DECLARE_MESSAGE(PortNotInBaseline,
+                    (msg::package_name),
+                    "",
+                    "the baseline does not contain an entry for port {package_name}");
+
+    DECLARE_MESSAGE(ErrorRequireBaseline,
+                    (),
+                    "",
+                    "this vcpkg instance requires a manifest with a specified baseline in order to "
+                    "interact with ports. Please add 'builtin-baseline' to the manifest or add a "
+                    "'vcpkg-configuration.json' that redefines the default registry.");
+    DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
+    DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
+
+    DECLARE_MESSAGE(FormattedParseMessageExpression,
+                    (msg::value),
+                    "Example of {value} is 'x64 & windows'",
+                    "on expression: {value}");
+
+    DECLARE_MESSAGE(
+        ExpectedCharacterHere,
+        (msg::expected),
+        "{expected} is a locale-invariant delimiter; for example, the ':' or '=' in 'zlib:x64-windows=skip'",
+        "expected '{expected}' here");
+    DECLARE_MESSAGE(VersionSpecMismatch,
+                    (msg::path, msg::expected_version, msg::actual_version),
+                    "",
+                    "Failed to load port because versions are inconsistent. The file \"{path}\" contains the version "
+                    "{actual_version}, but the version database indicates that it should be {expected_version}.");
+    DECLARE_MESSAGE(IllegalPlatformSpec, (), "", "Platform qualifier is not allowed in this context");
+    DECLARE_MESSAGE(IllegalFeatures, (), "", "List of features is not allowed in this context");
+    DECLARE_MESSAGE(CiBaselineRegressionHeader,
+                    (),
+                    "Printed before a series of CiBaselineRegression and/or CiBaselineUnexpectedPass messages.",
+                    "REGRESSIONS:");
+
+    DECLARE_MESSAGE(CiBaselineAllowUnexpectedPassingRequiresBaseline,
+                    (),
+                    "",
+                    "--allow-unexpected-passing can only be used if a baseline is provided via --ci-baseline.");
+    DECLARE_MESSAGE(CommandFailed,
+                    (msg::command_line),
+                    "",
+                    "command:\n"
+                    "{command_line}\n"
+                    "failed with the following results:");
+    DECLARE_MESSAGE(ProcessorArchitectureW6432Malformed,
+                    (msg::arch),
+                    "",
+                    "Failed to parse %PROCESSOR_ARCHITEW6432% ({arch}) as a valid CPU architecture. "
+                    "Falling back to %PROCESSOR_ARCHITECTURE%.");
+
+    DECLARE_MESSAGE(ProcessorArchitectureMissing,
+                    (),
+                    "",
+                    "The required environment variable %PROCESSOR_ARCHITECTURE% is missing.");
+
+    DECLARE_MESSAGE(ProcessorArchitectureMalformed,
+                    (msg::arch),
+                    "",
+                    "Failed to parse %PROCESSOR_ARCHITECTURE% ({arch}) as a valid CPU architecture.");
+    DECLARE_MESSAGE(InvalidFormatString,
+                    (msg::actual),
+                    "{actual} is the provided format string",
+                    "invalid format string: {actual}");
+    DECLARE_MESSAGE(JsonErrorFailedToRead, (msg::path, msg::error_msg), "", "failed to read {path}: {error_msg}");
+    DECLARE_MESSAGE(JsonErrorFailedToParse, (msg::path), "", "failed to parse {path}:");
 }

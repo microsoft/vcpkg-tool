@@ -81,18 +81,6 @@ namespace
     private:
         Path base_path;
     };
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        CiBaselineRegressionHeader,
-        (),
-        "Printed before a series of CiBaselineRegression and/or CiBaselineUnexpectedPass messages.",
-        "REGRESSIONS:");
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        CiBaselineAllowUnexpectedPassingRequiresBaseline,
-        (),
-        "",
-        "--allow-unexpected-passing can only be used if a baseline is provided via --ci-baseline.");
 }
 
 namespace vcpkg::Commands::CI

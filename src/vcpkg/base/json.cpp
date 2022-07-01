@@ -9,16 +9,6 @@
 
 #include <inttypes.h>
 
-namespace
-{
-    using namespace vcpkg;
-    DECLARE_AND_REGISTER_MESSAGE(JsonErrorFailedToRead,
-                                 (msg::path, msg::error_msg),
-                                 "",
-                                 "failed to read {path}: {error_msg}");
-    DECLARE_AND_REGISTER_MESSAGE(JsonErrorFailedToParse, (msg::path), "", "failed to parse {path}:");
-}
-
 namespace vcpkg::Json
 {
     static std::atomic<uint64_t> g_json_parsing_stats(0);
