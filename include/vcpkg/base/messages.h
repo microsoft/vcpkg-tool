@@ -900,4 +900,46 @@ namespace vcpkg
                     "Example of {value} is 'unknownexception'",
                     "Unknown license exception identifier '{value}'. Known values are listed at "
                     "https://spdx.org/licenses/exceptions-index.html");
+    DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
+    DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
+    DECLARE_MESSAGE(DownloadAvailable,
+                    (msg::env_var),
+                    "",
+                    "A downloadable copy of this tool is available and can be used by unsetting {env_var}.");
+    DECLARE_MESSAGE(UnknownTool, (), "", "vcpkg does not have a definition of this tool for this platform.");
+
+    DECLARE_MESSAGE(VersionInvalidRelaxed,
+                    (msg::version),
+                    "",
+                    "`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).");
+
+    DECLARE_MESSAGE(VersionInvalidSemver,
+                    (msg::version),
+                    "",
+                    "`{version}` is not a valid semantic version, consult <https://semver.org>.");
+
+    DECLARE_MESSAGE(
+        VersionInvalidDate,
+        (msg::version),
+        "",
+        "`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be "
+        "dot-separated positive integer values without leading zeroes.");
+    DECLARE_MESSAGE(VSExaminedPaths, (), "", "The following paths were examined for Visual Studio instances:");
+
+    DECLARE_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance");
+
+    DECLARE_MESSAGE(VSExaminedInstances, (), "", "The following Visual Studio instances were considered:");
+    DECLARE_MESSAGE(VcpkgInvalidCommand, (msg::command_name), "", "invalid command: {command_name}");
+    DECLARE_MESSAGE(VcpkgSendMetricsButDisabled, (), "", "passed --sendmetrics, but metrics are disabled.");
+    DECLARE_MESSAGE(
+        VcpkgHasCrashed,
+        (),
+        "Printed at the start of a crash report.",
+        "vcpkg has crashed. Please create an issue at https://github.com/microsoft/vcpkg containing a brief summary of "
+        "what you were trying to do and the following information.");
+    DECLARE_MESSAGE(
+        ForceSystemBinariesOnWeirdPlatforms,
+        (),
+        "",
+        "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.");
 }

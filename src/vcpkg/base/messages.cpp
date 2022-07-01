@@ -542,4 +542,18 @@ namespace vcpkg
     REGISTER_MESSAGE(LicenseExpressionExpectCompoundFoundWord);
     REGISTER_MESSAGE(LicenseExpressionUnknownLicense);
     REGISTER_MESSAGE(LicenseExpressionUnknownException);
+    REGISTER_MESSAGE(ToolFetchFailed);
+    REGISTER_MESSAGE(ToolInWin10);
+    REGISTER_MESSAGE(DownloadAvailable);
+    REGISTER_MESSAGE(UnknownTool);
+    REGISTER_MESSAGE(VersionInvalidRelaxed);
+    REGISTER_MESSAGE(VersionInvalidSemver);
+    REGISTER_MESSAGE(VersionInvalidDate);
+    REGISTER_MESSAGE(VSExaminedPaths);
+    REGISTER_MESSAGE(VSNoInstances);
+    REGISTER_MESSAGE(VSExaminedInstances);
+    REGISTER_MESSAGE(VcpkgInvalidCommand);
+    REGISTER_MESSAGE(VcpkgSendMetricsButDisabled);
+    REGISTER_MESSAGE(VcpkgHasCrashed);
+    REGISTER_MESSAGE(ForceSystemBinariesOnWeirdPlatforms);
 }

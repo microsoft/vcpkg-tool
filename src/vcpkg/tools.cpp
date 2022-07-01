@@ -20,18 +20,6 @@
 
 namespace vcpkg
 {
-    DECLARE_AND_REGISTER_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
-    DECLARE_AND_REGISTER_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
-    DECLARE_AND_REGISTER_MESSAGE(
-        DownloadAvailable,
-        (msg::env_var),
-        "",
-        "A downloadable copy of this tool is available and can be used by unsetting {env_var}.");
-    DECLARE_AND_REGISTER_MESSAGE(UnknownTool,
-                                 (),
-                                 "",
-                                 "vcpkg does not have a definition of this tool for this platform.");
-
     // /\d+\.\d+(\.\d+)?/
     Optional<std::array<int, 3>> parse_tool_version_string(StringView string_version)
     {
