@@ -82,10 +82,11 @@ namespace
                                  (msg::binary_source),
                                  "",
                                  "invalid argument: binary config '{binary_source}' requires 1 or 2 arguments");
-    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresPathArgument,
-                                 (msg::binary_source),
-                                 "",
-                                 "invalid argument: binary config '{binary_source}' requires at least one path argument");
+    DECLARE_AND_REGISTER_MESSAGE(
+        InvalidArgumentRequiresPathArgument,
+        (msg::binary_source),
+        "",
+        "invalid argument: binary config '{binary_source}' requires at least one path argument");
     DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresPrefix,
                                  (msg::binary_source),
                                  "",
@@ -121,7 +122,10 @@ namespace
                                  (msg::vendor, msg::path),
                                  "",
                                  "Pushing {vendor} to '{path}' failed.  Use --debug for more information.");
-    DECLARE_AND_REGISTER_MESSAGE(ReplaceSecretsError, (msg::error_msg), "", "Replace secretes produced the following error: '{error_msg}'");
+    DECLARE_AND_REGISTER_MESSAGE(ReplaceSecretsError,
+                                 (msg::error_msg),
+                                 "",
+                                 "Replace secretes produced the following error: '{error_msg}'");
     DECLARE_AND_REGISTER_MESSAGE(RestoredPackage, (msg::path), "", "Restored package from '{path}'");
     DECLARE_AND_REGISTER_MESSAGE(
         RestoredPackagesFromVendor,
