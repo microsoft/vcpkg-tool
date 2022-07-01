@@ -780,4 +780,40 @@ namespace vcpkg
                     (),
                     "This message is normally displayed only in development.",
                     "Downloading latest vcpkg-ce bundle...");
+    DECLARE_MESSAGE(VersionConstraintViolated,
+                    (msg::spec, msg::expected_version, msg::actual_version),
+                    "",
+                    "dependency {spec} was expected to be at least version "
+                    "{expected_version}, but is currently {actual_version}.");
+    DECLARE_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
+    DECLARE_MESSAGE(CmakeTargetsExcluded, (msg::count), "", "note: {count} additional targets are not displayed.");
+    DECLARE_MESSAGE(AlreadyInstalledNotHead,
+                    (msg::spec),
+                    "'HEAD' means the most recent version of source code",
+                    "{spec} is already installed -- not building from HEAD");
+    DECLARE_MESSAGE(AlreadyInstalled, (msg::spec), "", "{spec} is already installed");
+    DECLARE_MESSAGE(BuildingPackage, (msg::spec), "", "Building {spec}...");
+    DECLARE_MESSAGE(BuildingFromHead,
+                    (msg::spec),
+                    "'HEAD' means the most recent version of source code",
+                    "Building {spec} from HEAD...");
+    DECLARE_MESSAGE(DownloadedSources, (msg::spec), "", "Downloaded sources for {spec}");
+    DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
+    DECLARE_MESSAGE(InstallingPackage,
+                    (msg::action_index, msg::count, msg::spec),
+                    "",
+                    "Installing {action_index}/{count} {spec}...");
+    DECLARE_MESSAGE(HeaderOnlyUsage,
+                    (msg::package_name),
+                    "'header' refers to C/C++ .h files",
+                    "{package_name} is header-only and can be used from CMake via:");
+    DECLARE_MESSAGE(
+        CMakeTargetsUsageHeuristicMessage,
+        (),
+        "Displayed after CMakeTargetsUsage; the # must be kept at the beginning so that the message remains a comment.",
+        "# this is heuristically generated, and may not be correct");
+    DECLARE_MESSAGE(CMakeTargetsUsage,
+                    (msg::package_name),
+                    "'targets' are a CMake and Makefile concept",
+                    "{package_name} provides CMake targets:");
 }

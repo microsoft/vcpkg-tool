@@ -506,4 +506,17 @@ namespace vcpkg
     REGISTER_MESSAGE(VcpkgCeIsExperimental);
     REGISTER_MESSAGE(DownloadingVcpkgCeBundle);
     REGISTER_MESSAGE(DownloadingVcpkgCeBundleLatest);
+    REGISTER_MESSAGE(VersionConstraintViolated);
+    REGISTER_MESSAGE(ResultsHeader);
+    REGISTER_MESSAGE(CmakeTargetsExcluded);
+    REGISTER_MESSAGE(AlreadyInstalledNotHead);
+    REGISTER_MESSAGE(AlreadyInstalled);
+    REGISTER_MESSAGE(BuildingPackage);
+    REGISTER_MESSAGE(BuildingFromHead);
+    REGISTER_MESSAGE(DownloadedSources);
+    REGISTER_MESSAGE(ExcludedPackage);
+    REGISTER_MESSAGE(InstallingPackage);
+    REGISTER_MESSAGE(HeaderOnlyUsage);
+    REGISTER_MESSAGE(CMakeTargetsUsageHeuristicMessage);
+    REGISTER_MESSAGE(CMakeTargetsUsage);
 }
