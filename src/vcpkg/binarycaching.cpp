@@ -85,7 +85,7 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresPathArgument,
                                  (msg::binary_source),
                                  "",
-                                 "invalid argument: binary config '{binary_source}' requires at least a path argument");
+                                 "invalid argument: binary config '{binary_source}' requires at least one path argument");
     DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresPrefix,
                                  (msg::binary_source),
                                  "",
