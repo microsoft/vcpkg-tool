@@ -18,7 +18,6 @@ import { DeleteCommand } from './cli/commands/delete';
 import { FindCommand } from './cli/commands/find';
 import { HelpCommand } from './cli/commands/help';
 import { ListCommand } from './cli/commands/list';
-import { NewCommand } from './cli/commands/new';
 import { RegenerateCommand } from './cli/commands/regenerate-index';
 import { RemoveCommand } from './cli/commands/remove';
 import { UpdateCommand } from './cli/commands/update';
@@ -92,8 +91,6 @@ async function main() {
 
   const activate = new ActivateCommand(commandline);
   const deactivate = new DeactivateCommand(commandline);
-
-  const newcmd = new NewCommand(commandline);
 
   const regenerate = new RegenerateCommand(commandline);
   const update = new UpdateCommand(commandline);

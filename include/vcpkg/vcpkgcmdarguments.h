@@ -22,6 +22,8 @@ namespace vcpkg
         std::set<std::string, std::less<>> switches;
         std::map<std::string, std::string, std::less<>> settings;
         std::map<std::string, std::vector<std::string>, std::less<>> multisettings;
+
+        const std::string* read_setting(StringLiteral setting) const noexcept;
     };
 
     struct CommandSwitch

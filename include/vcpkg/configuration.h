@@ -71,6 +71,5 @@ namespace vcpkg
     };
 
     Json::IDeserializer<Configuration>& get_configuration_deserializer();
-    Json::IDeserializer<ManifestConfiguration>& get_manifest_configuration_deserializer();
     std::vector<std::string> find_unknown_fields(const Configuration& config);
 }
