@@ -1343,8 +1343,25 @@ namespace vcpkg::Install
         return m_install_action && m_install_action->request_type == RequestType::USER_REQUESTED;
     }
 
+    struct InstallPlanActionMetrics
+    {
+        enum Action
+        {
+            Install,
+            Remove
+        };
+
+        Action action;
+        std::string port_hash;
+        std::string triplet_hash;
+        std::string version_hash;
+        std::string origin;
+    };
+
     void track_install_plan(Dependencies::ActionPlan& plan)
     {
+        std::vector<InstallPlanActionMetrics> metrics;
+
         Cache<Triplet, std::string> triplet_hashes;
 
         auto hash_triplet = [&triplet_hashes](Triplet t) -> const std::string& {
@@ -1355,25 +1372,27 @@ namespace vcpkg::Install
         std::string specs_string;
         for (auto&& remove_action : plan.remove_actions)
         {
-            if (!specs_string.empty()) specs_string.push_back(',');
-            specs_string += Strings::concat("R$",
-                                            Hash::get_string_hash(remove_action.spec.name(), Hash::Algorithm::Sha256),
-                                            ":",
-                                            hash_triplet(remove_action.spec.triplet()));
+            InstallPlanActionMetrics action_metrics;
+            action_metrics.action = InstallPlanActionMetrics::Action::Remove;
+            action_metrics.port_hash = Hash::get_string_hash(remove_action.spec.name(), Hash::Algorithm::Sha256);
+            action_metrics.triplet_hash = hash_triplet(remove_action.spec.triplet());
+            metrics.push_back(action_metrics);
         }
 
         for (auto&& install_action : plan.install_actions)
         {
-            auto&& version_as_string =
-                install_action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version().to_string();
-            if (!specs_string.empty()) specs_string.push_back(',');
-            specs_string += Strings::concat(Hash::get_string_hash(install_action.spec.name(), Hash::Algorithm::Sha256),
-                                            ":",
-                                            hash_triplet(install_action.spec.triplet()),
-                                            ":",
-                                            Hash::get_string_hash(version_as_string, Hash::Algorithm::Sha256));
+            const auto& spec = install_action.spec;
+            const auto& scfl = install_action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
+
+            InstallPlanActionMetrics action_metrics;
+            action_metrics.action = InstallPlanActionMetrics::Action::Install;
+            action_metrics.port_hash = Hash::get_string_hash(spec.name(), Hash::Algorithm::Sha256);
+            action_metrics.triplet_hash = hash_triplet(spec.triplet());
+            action_metrics.version_hash = Hash::get_string_hash(scfl.to_version().to_string(), Hash::Algorithm::Sha256);
+            action_metrics.origin = scfl.origin;
+            metrics.push_back(action_metrics);
         }
 
-        LockGuardPtr<Metrics>(g_metrics)->track_property("installplan_1", specs_string);
+        LockGuardPtr<Metrics>(g_metrics)->track_property("installplan_1", "defined");
     }
 }

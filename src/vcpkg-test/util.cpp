@@ -86,7 +86,8 @@ namespace vcpkg::Test
                                         const std::vector<std::pair<const char*, const char*>>& features,
                                         const std::vector<const char*>& default_features)
     {
-        auto scfl = SourceControlFileAndLocation{make_control_file(name, depends, features, default_features), ""};
+        auto scfl =
+            SourceControlFileAndLocation("test", make_control_file(name, depends, features, default_features), "", "");
         return emplace(std::move(scfl));
     }
 

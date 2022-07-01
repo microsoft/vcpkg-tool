@@ -9,9 +9,8 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
     using namespace Dependencies;
 
     PackageSpec spec{"zlib", Test::ARM_UWP};
-    SourceControlFileAndLocation scfl;
-    scfl.registry_location = "git://some-vcs-url";
-    auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
+    auto scfl = SourceControlFileAndLocation("test", std::make_unique<SourceControlFile>(), "", "git://some-vcs-url");
+    auto& scf = *scfl.source_control_file;
     auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
     cpgh.name = "zlib";
     cpgh.summary = {"summary"};
@@ -170,8 +169,8 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
     using namespace Dependencies;
 
     PackageSpec spec{"zlib", Test::ARM_UWP};
-    SourceControlFileAndLocation scfl;
-    auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
+    SourceControlFileAndLocation scfl("test", std::make_unique<SourceControlFile>(), "", "");
+    auto& scf = *scfl.source_control_file;
     auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
     cpgh.name = "zlib";
     cpgh.port_version = 0;
@@ -300,8 +299,8 @@ TEST_CASE ("spdx concat resources", "[spdx]")
     using namespace Dependencies;
 
     PackageSpec spec{"zlib", Test::ARM_UWP};
-    SourceControlFileAndLocation scfl;
-    auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
+    SourceControlFileAndLocation scfl("test", std::make_unique<SourceControlFile>(), "", "");
+    auto& scf = *scfl.source_control_file;
     auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
     cpgh.name = "zlib";
     cpgh.port_version = 0;

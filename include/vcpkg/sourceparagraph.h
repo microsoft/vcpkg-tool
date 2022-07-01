@@ -145,6 +145,17 @@ namespace vcpkg
     /// </summary>
     struct SourceControlFileAndLocation
     {
+        SourceControlFileAndLocation(const std::string& origin,
+                                     std::unique_ptr<SourceControlFile> scf,
+                                     const Path& scf_location,
+                                     const std::string& registry_location)
+            : origin(origin)
+            , source_control_file(std::move(scf))
+            , source_location(scf_location)
+            , registry_location(registry_location)
+        {
+        }
+
         Version to_version() const { return source_control_file->to_version(); }
 
         std::unique_ptr<SourceControlFile> source_control_file;
@@ -152,6 +163,9 @@ namespace vcpkg
         /// Should model SPDX PackageDownloadLocation. Empty implies NOASSERTION.
         /// See https://spdx.github.io/spdx-spec/package-information/#77-package-download-location-field
         std::string registry_location;
+
+        // where was this port loaded from?
+        std::string origin;
     };
 
     void print_error_message(Span<const std::unique_ptr<ParseControlErrorInfo>> error_info_list);

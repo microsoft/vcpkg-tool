@@ -183,11 +183,8 @@ namespace vcpkg::PortFileProvider
                             auto scf_vspec = scf->get()->to_version_spec();
                             if (scf_vspec == version_spec)
                             {
-                                return std::unique_ptr<SourceControlFileAndLocation>(new SourceControlFileAndLocation{
-                                    std::move(*scf),
-                                    std::move(path->path),
-                                    std::move(path->location),
-                                });
+                                return std::make_unique<SourceControlFileAndLocation>(
+                                    "default", std::move(*scf), path->path, path->location);
                             }
                             else
                             {
@@ -290,7 +287,7 @@ namespace vcpkg::PortFileProvider
                             auto& scf = *scfp;
                             if (scf->core_paragraph->name == port_name)
                             {
-                                return SourceControlFileAndLocation{std::move(scf), ports_dir};
+                                return SourceControlFileAndLocation("overlay", std::move(scf), ports_dir, "");
                             }
                         }
                         else
@@ -312,7 +309,7 @@ namespace vcpkg::PortFileProvider
                             auto& scf = *scfp;
                             if (scf->core_paragraph->name == port_name)
                             {
-                                return SourceControlFileAndLocation{std::move(scf), std::move(ports_spec)};
+                                return SourceControlFileAndLocation("overlay", std::move(scf), ports_spec, "");
                             }
                             Checks::exit_maybe_upgrade(
                                 VCPKG_LINE_INFO,
@@ -356,7 +353,7 @@ namespace vcpkg::PortFileProvider
                         auto maybe_scf = Paragraphs::try_load_port(m_fs, ports_dir);
                         if (auto scfp = maybe_scf.get())
                         {
-                            SourceControlFileAndLocation scfl{std::move(*scfp), ports_dir};
+                            SourceControlFileAndLocation scfl("overlay", std::move(*scfp), ports_dir, "");
                             auto name = scfl.source_control_file->core_paragraph->name;
                             auto it = m_overlay_cache.emplace(std::move(name), std::move(scfl)).first;
                             Checks::check_exit(VCPKG_LINE_INFO, it->second.get());
@@ -397,7 +394,7 @@ namespace vcpkg::PortFileProvider
                                  const Path& manifest_path,
                                  std::unique_ptr<SourceControlFile>&& manifest_scf)
                 : m_overlay_ports{paths, overlay_ports}
-                , m_manifest_scf_and_location{std::move(manifest_scf), manifest_path}
+                , m_manifest_scf_and_location{"manifest", std::move(manifest_scf), manifest_path, ""}
             {
             }
 

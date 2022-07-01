@@ -531,11 +531,10 @@ namespace vcpkg::Paragraphs
             auto maybe_spgh = try_load_port(fs, port_location.get()->path);
             if (const auto spgh = maybe_spgh.get())
             {
-                ret.paragraphs.push_back({
-                    std::move(*spgh),
-                    std::move(port_location.get()->path),
-                    std::move(port_location.get()->location),
-                });
+                ret.paragraphs.push_back(SourceControlFileAndLocation(impl->kind().to_string(),
+                                                                      std::move(*spgh),
+                                                                      std::move(port_location.get()->path),
+                                                                      std::move(port_location.get()->location)));
             }
             else
             {
@@ -588,7 +587,7 @@ namespace vcpkg::Paragraphs
             auto maybe_spgh = try_load_port(fs, path);
             if (const auto spgh = maybe_spgh.get())
             {
-                ret.paragraphs.push_back({std::move(*spgh), std::move(path)});
+                ret.paragraphs.push_back(SourceControlFileAndLocation("overlay", std::move(*spgh), path, ""));
             }
             else
             {

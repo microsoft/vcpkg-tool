@@ -254,8 +254,7 @@ Build-Depends: bzip
     REQUIRE(pghs.has_value());
     auto maybe_scf = SourceControlFile::parse_control_file("", std::move(*pghs.get()));
     REQUIRE(maybe_scf.has_value());
-    SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
-
+    SourceControlFileAndLocation scfl("test", std::move(*maybe_scf.get()), "", "");
     Dependencies::InstallPlanAction ipa(PackageSpec{"zlib2", Test::X64_WINDOWS},
                                         scfl,
                                         Dependencies::RequestType::USER_REQUESTED,
@@ -385,7 +384,7 @@ Description:
     REQUIRE(pghs.has_value());
     auto maybe_scf = SourceControlFile::parse_control_file("", std::move(*pghs.get()));
     REQUIRE(maybe_scf.has_value());
-    SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
+    SourceControlFileAndLocation scfl("test", std::move(*maybe_scf.get()), "", "");
     std::vector<Dependencies::InstallPlanAction> install_plan;
     install_plan.emplace_back(PackageSpec{"someheadpackage", Test::X64_WINDOWS},
                               scfl,
@@ -462,7 +461,7 @@ Description: a spiffy compression library wrapper
     REQUIRE(pghs.has_value());
     auto maybe_scf = SourceControlFile::parse_control_file("", std::move(*pghs.get()));
     REQUIRE(maybe_scf.has_value());
-    SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
+    SourceControlFileAndLocation scfl("test", std::move(*maybe_scf.get()), "", "");
     plan.install_actions.push_back(Dependencies::InstallPlanAction());
     plan.install_actions[0].spec = PackageSpec("zlib", Test::X64_ANDROID);
     plan.install_actions[0].source_control_file_and_location = scfl;
@@ -485,7 +484,7 @@ Description: a spiffy compression library wrapper
     REQUIRE(pghs2.has_value());
     auto maybe_scf2 = SourceControlFile::parse_control_file("", std::move(*pghs2.get()));
     REQUIRE(maybe_scf2.has_value());
-    SourceControlFileAndLocation scfl2{std::move(*maybe_scf2.get()), Path()};
+    SourceControlFileAndLocation scfl2("test", std::move(*maybe_scf2.get()), "", "");
     plan.install_actions.push_back(Dependencies::InstallPlanAction());
     plan.install_actions[1].spec = PackageSpec("zlib2", Test::X64_ANDROID);
     plan.install_actions[1].source_control_file_and_location = scfl2;
