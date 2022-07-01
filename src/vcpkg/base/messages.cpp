@@ -484,4 +484,14 @@ namespace vcpkg
     REGISTER_MESSAGE(ErrorVsCodeNotFound);
     REGISTER_MESSAGE(ErrorVsCodeNotFoundPathExamined);
     REGISTER_MESSAGE(InfoSetEnvVar);
+    REGISTER_MESSAGE(AllFormatArgsUnbalancedBraces);
+    REGISTER_MESSAGE(AllFormatArgsRawArgument);
+    REGISTER_MESSAGE(ErrorMessageMustUsePrintError);
+    REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
+    REGISTER_MESSAGE(LocalizedMessageMustNotContainIndents);
+    REGISTER_MESSAGE(LocalizedMessageMustNotEndWithNewline);
+    REGISTER_MESSAGE(GenerateMsgErrorParsingFormatArgs);
+    REGISTER_MESSAGE(GenerateMsgIncorrectComment);
+    REGISTER_MESSAGE(GenerateMsgNoCommentValue);
+    REGISTER_MESSAGE(GenerateMsgNoArgumentValue);
 }
