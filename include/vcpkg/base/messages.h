@@ -399,80 +399,120 @@ namespace vcpkg
     extern MessageSink& stdout_sink;
     extern MessageSink& stderr_sink;
 
+    DECLARE_MESSAGE(AddArtifactOnlyOne,
+                    (msg::command_line),
+                    "",
+                    "'{command_line}' can only add one artifact at a time.");
+    DECLARE_MESSAGE(AddFirstArgument,
+                    (msg::command_line),
+                    "",
+                    "The first argument to '{command_line}' must be 'artifact' or 'port'.");
+    DECLARE_MESSAGE(AddPortRequiresManifest,
+                    (msg::command_line),
+                    "",
+                    "'{command_line}' requires an active manifest file.");
+    DECLARE_MESSAGE(AddPortSucceded, (), "", "Succeeded in adding ports to vcpkg.json file.");
+    DECLARE_MESSAGE(AddTripletExpressionNotAllowed,
+                    (msg::package_name, msg::triplet),
+                    "",
+                    "triplet expressions are not allowed here. You may want to change "
+                    "`{package_name}:{triplet}` to `{package_name}` instead.");
+    DECLARE_MESSAGE(AddVersionAddedVersionToFile, (msg::version, msg::path), "", "added version {version} to {path}");
+    DECLARE_MESSAGE(AddVersionCommitChangesReminder, (), "", "Did you remember to commit your changes?");
+    DECLARE_MESSAGE(AddVersionCommitResultReminder, (), "", "Don't forget to commit the result!");
+    DECLARE_MESSAGE(AddVersionDetectLocalChangesError,
+                    (),
+                    "",
+                    "skipping detection of local changes due to unexpected format in git status output");
+    DECLARE_MESSAGE(AddVersionFileNotFound, (msg::path), "", "couldn't find required file {path}");
+    DECLARE_MESSAGE(AddVersionFormatPortSuggestion, (msg::command_line), "", "Run `{command_line}` to format the file");
+    DECLARE_MESSAGE(AddVersionIgnoringOptionAll,
+                    (msg::option),
+                    "The -- before {option} must be preserved as they're part of the help message for the user.",
+                    "ignoring --{option} since a port name argument was provided");
+    DECLARE_MESSAGE(AddVersionNewFile, (), "", "(new file)");
+    DECLARE_MESSAGE(AddVersionNewShaIs, (msg::value), "{value} is a 40-digit hexadecimal SHA", "new SHA: {value}");
+    DECLARE_MESSAGE(AddVersionNoFilesUpdated, (), "", "No files were updated");
+    DECLARE_MESSAGE(AddVersionNoFilesUpdatedForPort,
+                    (msg::package_name),
+                    "",
+                    "No files were updated for {package_name}");
+    DECLARE_MESSAGE(AddVersionNoGitSha, (msg::package_name), "", "can't obtain SHA for port {package_name}");
+    DECLARE_MESSAGE(AddVersionOldShaIs, (msg::value), "{value} is a 40-digit hexadecimal SHA", "old SHA: {value}");
+    DECLARE_MESSAGE(AddVersionOverwriteOptionSuggestion,
+                    (msg::option),
+                    "The -- before {option} must be preserved as they're part of the help message for the user.",
+                    "Use --{option} to bypass this check");
+    DECLARE_MESSAGE(AddVersionPortDoesNotExist, (msg::package_name), "", "{package_name} does not exist");
+    DECLARE_MESSAGE(AddVersionPortFilesShaChanged,
+                    (msg::package_name),
+                    "",
+                    "checked-in files for {package_name} have changed but the version was not updated");
+    DECLARE_MESSAGE(AddVersionPortFilesShaUnchanged,
+                    (msg::package_name, msg::version),
+                    "",
+                    "checked-in files for {package_name} are unchanged from version {version}");
+    DECLARE_MESSAGE(AddVersionPortHasImproperFormat,
+                    (msg::package_name),
+                    "",
+                    "{package_name} is not properly formatted");
+    DECLARE_MESSAGE(AddVersionSuggestNewVersionScheme,
+                    (msg::new_scheme, msg::old_scheme, msg::package_name, msg::option),
+                    "The -- before {option} must be preserved as they're part of the help message for the user.",
+                    "Use the version scheme \"{new_scheme}\" instead of \"{old_scheme}\" in port "
+                    "\"{package_name}\".\nUse --{option} to disable this check.");
+    DECLARE_MESSAGE(AddVersionUnableToParseVersionsFile, (msg::path), "", "unable to parse versions file {path}");
+    DECLARE_MESSAGE(AddVersionUncommittedChanges,
+                    (msg::package_name),
+                    "",
+                    "there are uncommitted changes for {package_name}");
+    DECLARE_MESSAGE(AddVersionUpdateVersionReminder, (), "", "Did you remember to update the version or port version?");
+    DECLARE_MESSAGE(AddVersionUseOptionAll,
+                    (msg::command_name, msg::option),
+                    "The -- before {option} must be preserved as they're part of the help message for the user.",
+                    "{command_name} with no arguments requires passing --{option} to update all port versions at once");
+    DECLARE_MESSAGE(AddVersionLoadPortFailed, (msg::package_name), "", "can't load port {package_name}");
+    DECLARE_MESSAGE(AddVersionVersionAlreadyInFile,
+                    (msg::version, msg::path),
+                    "",
+                    "version {version} is already in {path}");
+    DECLARE_MESSAGE(AddVersionVersionIs, (msg::version), "", "version: {version}");
+    DECLARE_MESSAGE(AllFormatArgsRawArgument,
+                    (msg::value),
+                    "example of {value} is 'foo {} bar'",
+                    "format string \"{value}\" contains a raw format argument");
+    DECLARE_MESSAGE(AllFormatArgsUnbalancedBraces,
+                    (msg::value),
+                    "example of {value} is 'foo bar {'",
+                    "unbalanced brace in format string \"{value}\"");
+    DECLARE_MESSAGE(AlreadyInstalled, (msg::spec), "", "{spec} is already installed");
+    DECLARE_MESSAGE(AlreadyInstalledNotHead,
+                    (msg::spec),
+                    "'HEAD' means the most recent version of source code",
+                    "{spec} is already installed -- not building from HEAD");
     DECLARE_MESSAGE(AttemptingToFetchPackagesFromVendor,
                     (msg::count, msg::vendor),
                     "",
                     "Attempting to fetch {count} package(s) from {vendor}");
-    DECLARE_MESSAGE(MsiexecFailedToExtract,
-                    (msg::path, msg::exit_code),
+    DECLARE_MESSAGE(AutoSettingEnvVar,
+                    (msg::env_var, msg::url),
+                    "An example of env_var is \"HTTP(S)_PROXY\""
+                    "'--' at the beginning must be preserved",
+                    "-- Automatically setting {env_var} environment variables to \"{url}\".");
+    DECLARE_MESSAGE(BuildAlreadyInstalled,
+                    (msg::spec),
                     "",
-                    "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:");
-    DECLARE_MESSAGE(CouldNotDeduceNugetIdAndVersion,
-                    (msg::path),
+                    "{spec} is already installed; please remove {spec} before attempting to build it.");
+    DECLARE_MESSAGE(BuildDependenciesMissing,
+                    (),
                     "",
-                    "Could not deduce nuget id and version from filename: {path}");
-    DECLARE_MESSAGE(BuildResultSummaryHeader,
-                    (msg::triplet),
-                    "Displayed before a list of a summary installation results.",
-                    "SUMMARY FOR {triplet}");
-    DECLARE_MESSAGE(BuildResultSummaryLine,
-                    (msg::build_result, msg::count),
-                    "Displayed to show a count of results of a build_result in a summary.",
-                    "{build_result}: {count}");
-
-    DECLARE_MESSAGE(
-        BuildResultSucceeded,
-        (),
-        "Printed after the name of an installed entity to indicate that it was built and installed successfully.",
-        "SUCCEEDED");
-
-    DECLARE_MESSAGE(BuildResultBuildFailed,
-                    (),
-                    "Printed after the name of an installed entity to indicate that it failed to build.",
-                    "BUILD_FAILED");
-
-    DECLARE_MESSAGE(
-        BuildResultFileConflicts,
-        (),
-        "Printed after the name of an installed entity to indicate that it conflicts with something already installed",
-        "FILE_CONFLICTS");
-
-    DECLARE_MESSAGE(BuildResultPostBuildChecksFailed,
-                    (),
-                    "Printed after the name of an installed entity to indicate that it built "
-                    "successfully, but that it failed post build checks.",
-                    "POST_BUILD_CHECKS_FAILED");
-
-    DECLARE_MESSAGE(BuildResultCascadeDueToMissingDependencies,
-                    (),
-                    "Printed after the name of an installed entity to indicate that it could not attempt "
-                    "to be installed because one of its transitive dependencies failed to install.",
-                    "CASCADED_DUE_TO_MISSING_DEPENDENCIES");
-
-    DECLARE_MESSAGE(BuildResultExcluded,
-                    (),
-                    "Printed after the name of an installed entity to indicate that the user explicitly "
-                    "requested it not be installed.",
-                    "EXCLUDED");
-
-    DECLARE_MESSAGE(
-        BuildResultCacheMissing,
-        (),
-        "Printed after the name of an installed entity to indicate that it was not present in the binary cache when "
-        "the user has requested that things may only be installed from the cache rather than built.",
-        "CACHE_MISSING");
-
-    DECLARE_MESSAGE(BuildResultDownloaded,
-                    (),
-                    "Printed after the name of an installed entity to indicate that it was successfully "
-                    "downloaded but no build or install was requested.",
-                    "DOWNLOADED");
-
-    DECLARE_MESSAGE(BuildResultRemoved,
-                    (),
-                    "Printed after the name of an uninstalled entity to indicate that it was successfully uninstalled.",
-                    "REMOVED");
-
+                    "The build command requires all dependencies to be already installed.\nThe following "
+                    "dependencies are missing:");
+    DECLARE_MESSAGE(BuildingFromHead,
+                    (msg::spec),
+                    "'HEAD' means the most recent version of source code",
+                    "Building {spec} from HEAD...");
+    DECLARE_MESSAGE(BuildingPackage, (msg::spec), "", "Building {spec}...");
     DECLARE_MESSAGE(BuildingPackageFailed,
                     (msg::spec, msg::build_result),
                     "",
@@ -481,25 +521,58 @@ namespace vcpkg
                     (),
                     "Printed after BuildingPackageFailed, and followed by a list of dependencies that were missing.",
                     "due to the following missing dependencies:");
-
-    DECLARE_MESSAGE(BuildAlreadyInstalled,
-                    (msg::spec),
-                    "",
-                    "{spec} is already installed; please remove {spec} before attempting to build it.");
-
-    DECLARE_MESSAGE(SourceFieldPortNameMismatch,
-                    (msg::package_name, msg::path),
-                    "{package_name} and {path} are both names of installable ports/packages. 'Source', "
-                    "'CONTROL', 'vcpkg.json', and 'name' references are locale-invariant.",
-                    "The 'Source' field inside the CONTROL file, or \"name\" field inside the vcpkg.json "
-                    "file has the name {package_name} and does not match the port directory {path}.");
-
-    DECLARE_MESSAGE(BuildDependenciesMissing,
+    DECLARE_MESSAGE(BuildResultBuildFailed,
                     (),
-                    "",
-                    "The build command requires all dependencies to be already installed.\nThe following "
-                    "dependencies are missing:");
-
+                    "Printed after the name of an installed entity to indicate that it failed to build.",
+                    "BUILD_FAILED");
+    DECLARE_MESSAGE(
+        BuildResultCacheMissing,
+        (),
+        "Printed after the name of an installed entity to indicate that it was not present in the binary cache when "
+        "the user has requested that things may only be installed from the cache rather than built.",
+        "CACHE_MISSING");
+    DECLARE_MESSAGE(BuildResultCascadeDueToMissingDependencies,
+                    (),
+                    "Printed after the name of an installed entity to indicate that it could not attempt "
+                    "to be installed because one of its transitive dependencies failed to install.",
+                    "CASCADED_DUE_TO_MISSING_DEPENDENCIES");
+    DECLARE_MESSAGE(BuildResultDownloaded,
+                    (),
+                    "Printed after the name of an installed entity to indicate that it was successfully "
+                    "downloaded but no build or install was requested.",
+                    "DOWNLOADED");
+    DECLARE_MESSAGE(BuildResultExcluded,
+                    (),
+                    "Printed after the name of an installed entity to indicate that the user explicitly "
+                    "requested it not be installed.",
+                    "EXCLUDED");
+    DECLARE_MESSAGE(
+        BuildResultFileConflicts,
+        (),
+        "Printed after the name of an installed entity to indicate that it conflicts with something already installed",
+        "FILE_CONFLICTS");
+    DECLARE_MESSAGE(BuildResultPostBuildChecksFailed,
+                    (),
+                    "Printed after the name of an installed entity to indicate that it built "
+                    "successfully, but that it failed post build checks.",
+                    "POST_BUILD_CHECKS_FAILED");
+    DECLARE_MESSAGE(BuildResultRemoved,
+                    (),
+                    "Printed after the name of an uninstalled entity to indicate that it was successfully uninstalled.",
+                    "REMOVED");
+    DECLARE_MESSAGE(
+        BuildResultSucceeded,
+        (),
+        "Printed after the name of an installed entity to indicate that it was built and installed successfully.",
+        "SUCCEEDED");
+    DECLARE_MESSAGE(BuildResultSummaryHeader,
+                    (msg::triplet),
+                    "Displayed before a list of a summary installation results.",
+                    "SUMMARY FOR {triplet}");
+    DECLARE_MESSAGE(BuildResultSummaryLine,
+                    (msg::build_result, msg::count),
+                    "Displayed to show a count of results of a build_result in a summary.",
+                    "{build_result}: {count}");
     DECLARE_MESSAGE(BuildTroubleshootingMessage1,
                     (),
                     "First part of build troubleshooting message, printed before the URI to look for existing bugs.",
@@ -522,457 +595,49 @@ namespace vcpkg
                     "Fourth optional part of build troubleshooting message, printed after the version"
                     "information about vcpkg itself.",
                     "You can also use the prefilled template from {path}.");
-    DECLARE_MESSAGE(DetectCompilerHash, (msg::triplet), "", "Detecting compiler hash for triplet \"{triplet}\"...");
-    DECLARE_MESSAGE(UseEnvVar,
-                    (msg::env_var),
-                    "An example of env_var is \"HTTP(S)_PROXY\""
-                    "'--' at the beginning must be preserved",
-                    "-- Using {env_var} in environment variables.");
-    DECLARE_MESSAGE(SettingEnvVar,
-                    (msg::env_var, msg::url),
-                    "An example of env_var is \"HTTP(S)_PROXY\""
-                    "'--' at the beginning must be preserved",
-                    "-- Setting \"{env_var}\" environment variables to \"{url}\".");
-    DECLARE_MESSAGE(AutoSettingEnvVar,
-                    (msg::env_var, msg::url),
-                    "An example of env_var is \"HTTP(S)_PROXY\""
-                    "'--' at the beginning must be preserved",
-                    "-- Automatically setting {env_var} environment variables to \"{url}\".");
-    DECLARE_MESSAGE(ErrorDetectingCompilerInfo,
-                    (msg::path),
-                    "",
-                    "while detecting compiler information:\nThe log file content at \"{path}\" is:");
-    DECLARE_MESSAGE(
-        ErrorUnableToDetectCompilerInfo,
-        (),
-        "failure output will be displayed at the top of this",
-        "vcpkg was unable to detect the active compiler's information. See above for the CMake failure output.");
-    DECLARE_MESSAGE(UsingCommunityTriplet,
-                    (msg::triplet),
-                    "'--' at the beginning must be preserved",
-                    "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.");
-    DECLARE_MESSAGE(LoadingCommunityTriplet,
-                    (msg::path),
-                    "'-- [COMMUNITY]' at the beginning must be preserved",
-                    "-- [COMMUNITY] Loading triplet configuration from: {path}");
-    DECLARE_MESSAGE(LoadingOverlayTriplet,
-                    (msg::path),
-                    "'-- [OVERLAY]' at the beginning must be preserved",
-                    "-- [OVERLAY] Loading triplet configuration from: {path}");
-    DECLARE_MESSAGE(InstallingFromLocation,
-                    (msg::path),
-                    "'--' at the beginning must be preserved",
-                    "-- Installing port from location: {path}");
-    DECLARE_MESSAGE(UnsupportedToolchain,
-                    (msg::triplet, msg::arch, msg::path, msg::list),
-                    "example for {list} is 'x86, arm64'",
-                    "in triplet {triplet}: Unable to find a valid toolchain for requested target architecture {arch}.\n"
-                    "The selected Visual Studio instance is at: {path}\n"
-                    "The available toolchain combinations are: {list}");
-
-    DECLARE_MESSAGE(UnsupportedSystemName,
-                    (msg::system_name),
-                    "",
-                    "Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. "
-                    "Supported system names are '', 'Windows' and 'WindowsStore'.");
-    DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
-    DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
-    DECLARE_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' here");
-    DECLARE_MESSAGE(UnknownBaselineFileContent,
+    DECLARE_MESSAGE(ChecksFailedCheck, (), "", "vcpkg has crashed; no additional details are available.");
+    DECLARE_MESSAGE(ChecksUnreachableCode, (), "", "unreachable code was reached");
+    DECLARE_MESSAGE(ChecksUpdateVcpkg, (), "", "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.");
+    DECLARE_MESSAGE(CiBaselineAllowUnexpectedPassingRequiresBaseline,
                     (),
                     "",
-                    "unrecognizable baseline entry; expected 'port:triplet=(fail|skip|pass)'");
-
-    DECLARE_MESSAGE(CiBaselineRegression,
-                    (msg::spec, msg::build_result, msg::path),
-                    "",
-                    "REGRESSION: {spec} failed with {build_result}. If expected, add {spec}=fail to {path}.");
-
-    DECLARE_MESSAGE(CiBaselineUnexpectedPass,
-                    (msg::spec, msg::path),
-                    "",
-                    "PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).");
-
+                    "--allow-unexpected-passing can only be used if a baseline is provided via --ci-baseline.");
     DECLARE_MESSAGE(CiBaselineDisallowedCascade,
                     (msg::spec, msg::path),
                     "",
                     "REGRESSION: {spec} cascaded, but it is required to pass. ({path}).");
-    DECLARE_MESSAGE(AddTripletExpressionNotAllowed,
-                    (msg::package_name, msg::triplet),
+    DECLARE_MESSAGE(CiBaselineRegression,
+                    (msg::spec, msg::build_result, msg::path),
                     "",
-                    "triplet expressions are not allowed here. You may want to change "
-                    "`{package_name}:{triplet}` to `{package_name}` instead.");
-    DECLARE_MESSAGE(AddFirstArgument,
-                    (msg::command_line),
-                    "",
-                    "The first argument to '{command_line}' must be 'artifact' or 'port'.");
-
-    DECLARE_MESSAGE(AddPortSucceded, (), "", "Succeeded in adding ports to vcpkg.json file.");
-    DECLARE_MESSAGE(AddPortRequiresManifest,
-                    (msg::command_line),
-                    "",
-                    "'{command_line}' requires an active manifest file.");
-
-    DECLARE_MESSAGE(AddArtifactOnlyOne,
-                    (msg::command_line),
-                    "",
-                    "'{command_line}' can only add one artifact at a time.");
-    DECLARE_MESSAGE(AddVersionSuggestNewVersionScheme,
-                    (msg::new_scheme, msg::old_scheme, msg::package_name, msg::option),
-                    "The -- before {option} must be preserved as they're part of the help message for the user.",
-                    "Use the version scheme \"{new_scheme}\" instead of \"{old_scheme}\" in port "
-                    "\"{package_name}\".\nUse --{option} to disable this check.");
-    DECLARE_MESSAGE(AddVersionVersionAlreadyInFile,
-                    (msg::version, msg::path),
-                    "",
-                    "version {version} is already in {path}");
-    DECLARE_MESSAGE(AddVersionAddedVersionToFile, (msg::version, msg::path), "", "added version {version} to {path}");
-    DECLARE_MESSAGE(AddVersionNewFile, (), "", "(new file)");
-    DECLARE_MESSAGE(AddVersionUncommittedChanges,
-                    (msg::package_name),
-                    "",
-                    "there are uncommitted changes for {package_name}");
-    DECLARE_MESSAGE(AddVersionPortFilesShaUnchanged,
-                    (msg::package_name, msg::version),
-                    "",
-                    "checked-in files for {package_name} are unchanged from version {version}");
-    DECLARE_MESSAGE(AddVersionCommitChangesReminder, (), "", "Did you remember to commit your changes?");
-    DECLARE_MESSAGE(AddVersionNoFilesUpdated, (), "", "No files were updated");
-    DECLARE_MESSAGE(AddVersionNoFilesUpdatedForPort,
-                    (msg::package_name),
-                    "",
-                    "No files were updated for {package_name}");
-    DECLARE_MESSAGE(AddVersionPortFilesShaChanged,
-                    (msg::package_name),
-                    "",
-                    "checked-in files for {package_name} have changed but the version was not updated");
-    DECLARE_MESSAGE(AddVersionVersionIs, (msg::version), "", "version: {version}");
-    DECLARE_MESSAGE(AddVersionOldShaIs, (msg::value), "{value} is a 40-digit hexadecimal SHA", "old SHA: {value}");
-    DECLARE_MESSAGE(AddVersionNewShaIs, (msg::value), "{value} is a 40-digit hexadecimal SHA", "new SHA: {value}");
-    DECLARE_MESSAGE(AddVersionUpdateVersionReminder, (), "", "Did you remember to update the version or port version?");
-    DECLARE_MESSAGE(AddVersionOverwriteOptionSuggestion,
-                    (msg::option),
-                    "The -- before {option} must be preserved as they're part of the help message for the user.",
-                    "Use --{option} to bypass this check");
-    DECLARE_MESSAGE(AddVersionUnableToParseVersionsFile, (msg::path), "", "unable to parse versions file {path}");
-    DECLARE_MESSAGE(AddVersionFileNotFound, (msg::path), "", "couldn't find required file {path}");
-    DECLARE_MESSAGE(AddVersionIgnoringOptionAll,
-                    (msg::option),
-                    "The -- before {option} must be preserved as they're part of the help message for the user.",
-                    "ignoring --{option} since a port name argument was provided");
-    DECLARE_MESSAGE(AddVersionUseOptionAll,
-                    (msg::command_name, msg::option),
-                    "The -- before {option} must be preserved as they're part of the help message for the user.",
-                    "{command_name} with no arguments requires passing --{option} to update all port versions at once");
-    DECLARE_MESSAGE(AddVersionLoadPortFailed, (msg::package_name), "", "can't load port {package_name}");
-    DECLARE_MESSAGE(AddVersionPortHasImproperFormat,
-                    (msg::package_name),
-                    "",
-                    "{package_name} is not properly formatted");
-    DECLARE_MESSAGE(AddVersionFormatPortSuggestion, (msg::command_line), "", "Run `{command_line}` to format the file");
-    DECLARE_MESSAGE(AddVersionCommitResultReminder, (), "", "Don't forget to commit the result!");
-    DECLARE_MESSAGE(AddVersionNoGitSha, (msg::package_name), "", "can't obtain SHA for port {package_name}");
-    DECLARE_MESSAGE(AddVersionPortDoesNotExist, (msg::package_name), "", "{package_name} does not exist");
-    DECLARE_MESSAGE(AddVersionDetectLocalChangesError,
+                    "REGRESSION: {spec} failed with {build_result}. If expected, add {spec}=fail to {path}.");
+    DECLARE_MESSAGE(CiBaselineRegressionHeader,
                     (),
+                    "Printed before a series of CiBaselineRegression and/or CiBaselineUnexpectedPass messages.",
+                    "REGRESSIONS:");
+    DECLARE_MESSAGE(CiBaselineUnexpectedPass,
+                    (msg::spec, msg::path),
                     "",
-                    "skipping detection of local changes due to unexpected format in git status output");
-    DECLARE_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:");
-
-    DECLARE_MESSAGE(ErrorVsCodeNotFound,
-                    (msg::env_var),
-                    "",
-                    "Visual Studio Code was not found and the environment variable '{env_var}' is not set or invalid.");
-
-    DECLARE_MESSAGE(ErrorVsCodeNotFoundPathExamined, (), "", "The following paths were examined:");
-
-    DECLARE_MESSAGE(InfoSetEnvVar,
-                    (msg::env_var),
-                    "In this context 'editor' means IDE",
-                    "You can also set the environment variable '{env_var}' to your editor of choice.");
-    DECLARE_MESSAGE(AllFormatArgsUnbalancedBraces,
-                    (msg::value),
-                    "example of {value} is 'foo bar {'",
-                    "unbalanced brace in format string \"{value}\"");
-    DECLARE_MESSAGE(AllFormatArgsRawArgument,
-                    (msg::value),
-                    "example of {value} is 'foo {} bar'",
-                    "format string \"{value}\" contains a raw format argument");
-
-    DECLARE_MESSAGE(
-        ErrorMessageMustUsePrintError,
-        (msg::value),
-        "{value} is is a localized message name like ErrorMessageMustUsePrintError",
-        "The message named {value} starts with error:, it must be changed to prepend ErrorMessage in code instead.");
-    DECLARE_MESSAGE(WarningMessageMustUsePrintWarning,
-                    (msg::value),
-                    "{value} is is a localized message name like WarningMessageMustUsePrintWarning",
-                    "The message named {value} starts with warning:, it must be changed to prepend "
-                    "WarningMessage in code instead.");
-    DECLARE_MESSAGE(LocalizedMessageMustNotContainIndents,
-                    (msg::value),
-                    "{value} is is a localized message name like LocalizedMessageMustNotContainIndents. "
-                    "The 'LocalizedString::append_indent' part is locale-invariant.",
-                    "The message named {value} contains what appears to be indenting which must be "
-                    "changed to use LocalizedString::append_indent instead.");
-    DECLARE_MESSAGE(LocalizedMessageMustNotEndWithNewline,
-                    (msg::value),
-                    "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
-                    "The message named {value} ends with a newline which should be added by formatting "
-                    "rather than by localization.");
-    DECLARE_MESSAGE(GenerateMsgErrorParsingFormatArgs,
-                    (msg::value),
-                    "example of {value} 'GenerateMsgNoComment'",
-                    "parsing format string for {value}:");
-
-    DECLARE_MESSAGE(GenerateMsgIncorrectComment,
-                    (msg::value),
-                    "example of {value} is 'GenerateMsgNoComment'",
-                    R"(message {value} has an incorrect comment:)");
-    DECLARE_MESSAGE(GenerateMsgNoCommentValue,
-                    (msg::value),
-                    "example of {value} is 'arch'",
-                    R"({{{value}}} was used in the message, but not commented.)");
-    DECLARE_MESSAGE(GenerateMsgNoArgumentValue,
-                    (msg::value),
-                    "example of {value} is 'arch'",
-                    R"({{{value}}} was specified in a comment, but was not used in the message.)");
-    DECLARE_MESSAGE(UpdateBaselineNoConfiguration,
-                    (),
-                    "",
-                    "neither `vcpkg.json` nor `vcpkg-configuration.json` exist to update.");
-
-    DECLARE_MESSAGE(UpdateBaselineNoExistingBuiltinBaseline,
-                    (msg::option),
-                    "",
-                    "the manifest file currently does not contain a `builtin-baseline` field; in order to "
-                    "add one, pass the --{option} switch.");
-    DECLARE_MESSAGE(
-        UpdateBaselineAddBaselineNoManifest,
-        (msg::option),
-        "",
-        "the --{option} switch was passed, but there is no manifest file to add a `builtin-baseline` field to.");
-
-    DECLARE_MESSAGE(UpdateBaselineUpdatedBaseline,
-                    (msg::url, msg::old_value, msg::new_value),
-                    "example of {old_value}, {new_value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
-                    "updated registry '{url}': baseline '{old_value}' -> '{new_value}'");
-    DECLARE_MESSAGE(UpdateBaselineNoUpdate,
-                    (msg::url, msg::value),
-                    "example of {value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
-                    "registry '{url}' not updated: '{value}'");
-    DECLARE_MESSAGE(VersionCommandHeader,
-                    (msg::version),
-                    "",
-                    "vcpkg package management program version {version}\n\nSee LICENSE.txt for license information.");
-    DECLARE_MESSAGE(UpdateBaselineRemoteGitError, (msg::url), "", "git failed to fetch remote repository '{url}'");
-    DECLARE_MESSAGE(UpdateBaselineLocalGitError,
-                    (msg::path),
-                    "",
-                    "git failed to parse HEAD for the local vcpkg registry at '{path}'");
-    DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
-    DECLARE_MESSAGE(VcpkgCeIsExperimental,
-                    (),
-                    "",
-                    "vcpkg-ce ('configure environment') is experimental and may change at any time.");
-    DECLARE_MESSAGE(DownloadingVcpkgCeBundle, (msg::version), "", "Downloading vcpkg-ce bundle {version}...");
-    DECLARE_MESSAGE(DownloadingVcpkgCeBundleLatest,
-                    (),
-                    "This message is normally displayed only in development.",
-                    "Downloading latest vcpkg-ce bundle...");
-    DECLARE_MESSAGE(VersionConstraintViolated,
-                    (msg::spec, msg::expected_version, msg::actual_version),
-                    "",
-                    "dependency {spec} was expected to be at least version "
-                    "{expected_version}, but is currently {actual_version}.");
-    DECLARE_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
+                    "PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).");
     DECLARE_MESSAGE(CmakeTargetsExcluded, (msg::count), "", "note: {count} additional targets are not displayed.");
-    DECLARE_MESSAGE(AlreadyInstalledNotHead,
-                    (msg::spec),
-                    "'HEAD' means the most recent version of source code",
-                    "{spec} is already installed -- not building from HEAD");
-    DECLARE_MESSAGE(AlreadyInstalled, (msg::spec), "", "{spec} is already installed");
-    DECLARE_MESSAGE(BuildingPackage, (msg::spec), "", "Building {spec}...");
-    DECLARE_MESSAGE(BuildingFromHead,
-                    (msg::spec),
-                    "'HEAD' means the most recent version of source code",
-                    "Building {spec} from HEAD...");
-    DECLARE_MESSAGE(DownloadedSources, (msg::spec), "", "Downloaded sources for {spec}");
-    DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
-    DECLARE_MESSAGE(InstallingPackage,
-                    (msg::action_index, msg::count, msg::spec),
-                    "",
-                    "Installing {action_index}/{count} {spec}...");
-    DECLARE_MESSAGE(HeaderOnlyUsage,
+    DECLARE_MESSAGE(CMakeTargetsUsage,
                     (msg::package_name),
-                    "'header' refers to C/C++ .h files",
-                    "{package_name} is header-only and can be used from CMake via:");
+                    "'targets' are a CMake and Makefile concept",
+                    "{package_name} provides CMake targets:");
     DECLARE_MESSAGE(
         CMakeTargetsUsageHeuristicMessage,
         (),
         "Displayed after CMakeTargetsUsage; the # must be kept at the beginning so that the message remains a comment.",
         "# this is heuristically generated, and may not be correct");
-    DECLARE_MESSAGE(CMakeTargetsUsage,
-                    (msg::package_name),
-                    "'targets' are a CMake and Makefile concept",
-                    "{package_name} provides CMake targets:");
-
-    DECLARE_MESSAGE(ParseControlErrorInfoWhileLoading,
+    DECLARE_MESSAGE(CommandFailed,
+                    (msg::command_line),
+                    "",
+                    "command:\n"
+                    "{command_line}\n"
+                    "failed with the following results:");
+    DECLARE_MESSAGE(CouldNotDeduceNugetIdAndVersion,
                     (msg::path),
-                    "Error messages are is printed after this.",
-                    "while loading {path}:");
-
-    DECLARE_MESSAGE(ParseControlErrorInfoInvalidFields, (), "", "The following fields were not expected:");
-    DECLARE_MESSAGE(ParseControlErrorInfoMissingFields, (), "", "The following fields were missing:");
-    DECLARE_MESSAGE(ParseControlErrorInfoWrongTypeFields, (), "", "The following fields had the wrong types:");
-    DECLARE_MESSAGE(ParseControlErrorInfoTypesEntry,
-                    (msg::value, msg::expected),
-                    "{value} is the name of a field in an on-disk file, {expected} is a short description "
-                    "of what it should be like 'a non-negative integer' (which isn't localized yet)",
-                    "{value} was expected to be {expected}");
-    DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
-    DECLARE_MESSAGE(LicenseExpressionContainsUnicode,
-                    (msg::value, msg::pretty_value),
-                    "example of {value:04X} is '22BB'\nexample of {pretty_value} is '⊻'",
-                    "SPDX license expression contains a unicode character (U+{value:04X} "
-                    "'{pretty_value}'), but these expressions are ASCII-only.");
-    DECLARE_MESSAGE(LicenseExpressionContainsInvalidCharacter,
-                    (msg::value),
-                    "example of {value:02X} is '7B'\nexample of {value} is '{'",
-                    "SPDX license expression contains an invalid character (0x{value:02X} '{value}').");
-    DECLARE_MESSAGE(LicenseExpressionContainsExtraPlus,
-                    (),
                     "",
-                    "SPDX license expression contains an extra '+'. These are only allowed directly "
-                    "after a license identifier.");
-    DECLARE_MESSAGE(LicenseExpressionDocumentRefUnsupported,
-                    (),
-                    "",
-                    "The current implementation does not support DocumentRef- SPDX references.");
-    DECLARE_MESSAGE(LicenseExpressionExpectLicenseFoundEof,
-                    (),
-                    "",
-                    "Expected a license name, found the end of the string.");
-    DECLARE_MESSAGE(LicenseExpressionExpectExceptionFoundEof,
-                    (),
-                    "",
-                    "Expected an exception name, found the end of the string.");
-    DECLARE_MESSAGE(LicenseExpressionExpectCompoundFoundParen,
-                    (),
-                    "",
-                    "Expected a compound or the end of the string, found a parenthesis.");
-    DECLARE_MESSAGE(LicenseExpressionExpectLicenseFoundParen, (), "", "Expected a license name, found a parenthesis.");
-    DECLARE_MESSAGE(LicenseExpressionExpectExceptionFoundParen,
-                    (),
-                    "",
-                    "Expected an exception name, found a parenthesis.");
-    DECLARE_MESSAGE(LicenseExpressionImbalancedParens,
-                    (),
-                    "",
-                    "There was a close parenthesis without an opening parenthesis.");
-    DECLARE_MESSAGE(LicenseExpressionExpectLicenseFoundCompound,
-                    (msg::value),
-                    "Example of {value} is 'AND'",
-                    "Expected a license name, found the compound {value}.");
-    DECLARE_MESSAGE(LicenseExpressionExpectExceptionFoundCompound,
-                    (msg::value),
-                    "Example of {value} is 'AND'",
-                    "Expected an exception name, found the compound {value}.");
-    DECLARE_MESSAGE(LicenseExpressionExpectCompoundFoundWith,
-                    (),
-                    "AND, OR, and WITH are all keywords and should not be translated.",
-                    "Expected either AND or OR, found WITH (WITH is only allowed after license names, not "
-                    "parenthesized expressions).");
-    DECLARE_MESSAGE(LicenseExpressionExpectCompoundOrWithFoundWord,
-                    (msg::value),
-                    "example of {value} is 'MIT'.\nAND, OR, and WITH are all keywords and should not be translated.",
-                    "Expected either AND, OR, or WITH, found a license or exception name: '{value}'.");
-    DECLARE_MESSAGE(LicenseExpressionExpectCompoundFoundWord,
-                    (msg::value),
-                    "Example of {value} is 'MIT'.\nAND and OR are both keywords and should not be translated.",
-                    "Expected either AND or OR, found a license or exception name: '{value}'.");
-    DECLARE_MESSAGE(LicenseExpressionUnknownLicense,
-                    (msg::value),
-                    "Example of {value} is 'unknownlicense'",
-                    "Unknown license identifier '{value}'. Known values are listed at https://spdx.org/licenses/");
-    DECLARE_MESSAGE(LicenseExpressionUnknownException,
-                    (msg::value),
-                    "Example of {value} is 'unknownexception'",
-                    "Unknown license exception identifier '{value}'. Known values are listed at "
-                    "https://spdx.org/licenses/exceptions-index.html");
-    DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
-    DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
-    DECLARE_MESSAGE(DownloadAvailable,
-                    (msg::env_var),
-                    "",
-                    "A downloadable copy of this tool is available and can be used by unsetting {env_var}.");
-    DECLARE_MESSAGE(UnknownTool, (), "", "vcpkg does not have a definition of this tool for this platform.");
-
-    DECLARE_MESSAGE(VersionInvalidRelaxed,
-                    (msg::version),
-                    "",
-                    "`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).");
-
-    DECLARE_MESSAGE(VersionInvalidSemver,
-                    (msg::version),
-                    "",
-                    "`{version}` is not a valid semantic version, consult <https://semver.org>.");
-
-    DECLARE_MESSAGE(
-        VersionInvalidDate,
-        (msg::version),
-        "",
-        "`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be "
-        "dot-separated positive integer values without leading zeroes.");
-    DECLARE_MESSAGE(VSExaminedPaths, (), "", "The following paths were examined for Visual Studio instances:");
-
-    DECLARE_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance");
-
-    DECLARE_MESSAGE(VSExaminedInstances, (), "", "The following Visual Studio instances were considered:");
-    DECLARE_MESSAGE(VcpkgInvalidCommand, (msg::command_name), "", "invalid command: {command_name}");
-    DECLARE_MESSAGE(VcpkgSendMetricsButDisabled, (), "", "passed --sendmetrics, but metrics are disabled.");
-    DECLARE_MESSAGE(
-        VcpkgHasCrashed,
-        (),
-        "Printed at the start of a crash report.",
-        "vcpkg has crashed. Please create an issue at https://github.com/microsoft/vcpkg containing a brief summary of "
-        "what you were trying to do and the following information.");
-    DECLARE_MESSAGE(
-        ForceSystemBinariesOnWeirdPlatforms,
-        (),
-        "",
-        "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.");
-    DECLARE_MESSAGE(
-        ErrorMissingVcpkgRoot,
-        (),
-        "",
-        "Could not detect vcpkg-root. If you are trying to use a copy of vcpkg that you've built, you must "
-        "define the VCPKG_ROOT environment variable to point to a cloned copy of https://github.com/Microsoft/vcpkg.");
-    DECLARE_MESSAGE(ErrorVcvarsUnsupported,
-                    (msg::triplet),
-                    "",
-                    "in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported "
-                    "on non-Windows hosts.\nDefine 'VCPKG_CMAKE_SYSTEM_NAME' or "
-                    "'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.");
-
-    DECLARE_MESSAGE(ErrorNoVSInstance,
-                    (msg::triplet),
-                    "",
-                    "in triplet {triplet}: Unable to find a valid Visual Studio instance");
-
-    DECLARE_MESSAGE(ErrorNoVSInstanceVersion, (msg::version), "", "with toolset version {version}");
-
-    DECLARE_MESSAGE(ErrorNoVSInstanceFullVersion, (msg::version), "", "with toolset version prefix {version}");
-
-    DECLARE_MESSAGE(ErrorNoVSInstanceAt, (msg::path), "", "at \"{path}\"");
-    DECLARE_MESSAGE(VcpkgDisallowedClassicMode,
-                    (),
-                    "",
-                    "Could not locate a manifest (vcpkg.json) above the current working "
-                    "directory.\nThis vcpkg distribution does not have a classic mode instance.");
-    DECLARE_MESSAGE(ChecksUnreachableCode, (), "", "unreachable code was reached");
-    DECLARE_MESSAGE(ChecksFailedCheck, (), "", "vcpkg has crashed; no additional details are available.");
-    DECLARE_MESSAGE(ChecksUpdateVcpkg, (), "", "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.");
+                    "Could not deduce nuget id and version from filename: {path}");
     DECLARE_MESSAGE(CurlReportedUnexpectedResults,
                     (msg::command_line, msg::actual),
                     "{command_line} is the command line to call curl.exe, {actual} is the console output "
@@ -984,166 +649,448 @@ namespace vcpkg
                     "=== curl output ===\n"
                     "{actual}\n"
                     "=== end curl output ===");
-    DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.");
-    DECLARE_MESSAGE(FailedToStoreBackToMirror, (), "", "failed to store back to mirror:");
-    DECLARE_MESSAGE(WaitingToTakeFilesystemLock, (msg::path), "", "waiting to take filesystem lock on {path}...");
-    DECLARE_MESSAGE(GitCommandFailed, (msg::command_line), "", "failed to execute: {command_line}");
-    DECLARE_MESSAGE(GitUnexpectedCommandOutput, (), "", "unexpected git output");
-    DECLARE_MESSAGE(GitStatusUnknownFileStatus,
-                    (msg::value),
-                    "{value} is a single character indicating file status, for example: A, U, M, D",
-                    "unknown file status: {value}");
-    DECLARE_MESSAGE(GitStatusOutputExpectedNewLine, (), "", "expected new line");
-    DECLARE_MESSAGE(GitStatusOutputExpectedFileName, (), "", "expected a file name");
-    DECLARE_MESSAGE(GitStatusOutputExpectedRenameOrNewline, (), "", "expected renamed file or new lines");
-    DECLARE_MESSAGE(
-        HashFileFailureToRead,
-        (msg::path),
-        "Printed after ErrorMessage and before the specific failing filesystem operation (like file not found)",
-        "failed to read file '{path}' for hashing: ");
-    DECLARE_MESSAGE(FuzzInvalidKind, (msg::value), "example of {value} is 'utf-8'", "invalid kind: '{value}'");
-    DECLARE_MESSAGE(FuzzExpectedOneOf,
+    DECLARE_MESSAGE(DetectCompilerHash, (msg::triplet), "", "Detecting compiler hash for triplet \"{triplet}\"...");
+    DECLARE_MESSAGE(DownloadAvailable,
+                    (msg::env_var),
+                    "",
+                    "A downloadable copy of this tool is available and can be used by unsetting {env_var}.");
+    DECLARE_MESSAGE(DownloadedSources, (msg::spec), "", "Downloaded sources for {spec}");
+    DECLARE_MESSAGE(DownloadingVcpkgCeBundle, (msg::version), "", "Downloading vcpkg-ce bundle {version}...");
+    DECLARE_MESSAGE(DownloadingVcpkgCeBundleLatest,
                     (),
-                    "the list after the colon should stay the same, they're literal values",
-                    "expected one of: utf-8, json, platform-expr");
-    DECLARE_MESSAGE(FuzzUnknownOption, (msg::option), "", "unknown option: --{option}");
-
-    DECLARE_MESSAGE(FuzzHelpUsage, (), "", "usage: vcpkg-fuzz --kind=<kind>");
-    DECLARE_MESSAGE(FuzzHelpInput, (), "", "accepts input on stdin.");
-    DECLARE_MESSAGE(FuzzHelpOptions, (), "", "options:");
-    DECLARE_MESSAGE(FuzzHelpOptionKind, (), "", "one of {{utf-8, json, platform-expr}}");
-    DECLARE_MESSAGE(InstallWithSystemManager,
-                    (),
+                    "This message is normally displayed only in development.",
+                    "Downloading latest vcpkg-ce bundle...");
+    DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
+    DECLARE_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:");
+    DECLARE_MESSAGE(ErrorDetectingCompilerInfo,
+                    (msg::path),
                     "",
-                    "You may be able to install this tool via your system package manager.");
-
-    DECLARE_MESSAGE(InstallWithSystemManagerPkg,
-                    (msg::command_line),
-                    "",
-                    "You may be able to install this tool via your system package manager ({command_line}).");
-
-    DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
-                    (msg::tool_name, msg::path),
-                    "Additional information, such as the command line output, if any, will be appended on "
-                    "the line after this message",
-                    "Failed to run {path} to determine the {tool_name} version.");
-    DECLARE_MESSAGE(UnexpectedToolOutput,
-                    (msg::tool_name, msg::path),
-                    "The actual command line output will be appended after this message.",
-                    "{tool_name} ({path}) produced unexpected output when attempting to determine the version:");
-    DECLARE_MESSAGE(MonoInstructions,
-                    (),
-                    "",
-                    "This may be caused by an incomplete mono installation. Full mono is "
-                    "available on some systems via `sudo apt install mono-complete`. Ubuntu 18.04 users may "
-                    "need a newer version of mono, available at https://www.mono-project.com/download/stable/");
-    DECLARE_MESSAGE(InstallWithSystemManagerMono,
-                    (msg::url),
-                    "",
-                    "Ubuntu 18.04 users may need a newer version of mono, available at {url}.");
-    DECLARE_MESSAGE(WaitingForChildrenToExit, (), "", "Waiting for child processes to exit...");
-    DECLARE_MESSAGE(LaunchingProgramFailed,
-                    (msg::tool_name),
-                    "A platform API call failure message is appended after this",
-                    "Launching {tool_name}:");
-    DECLARE_MESSAGE(ProgramReturnedNonzeroExitCode,
-                    (msg::tool_name, msg::exit_code),
-                    "The program's console output is appended after this.",
-                    "{tool_name} failed with exit code: ({exit_code}).");
-    DECLARE_MESSAGE(SystemApiErrorMessage,
-                    (msg::system_api, msg::exit_code, msg::error_msg),
-                    "",
-                    "calling {system_api} failed with {exit_code} ({error_msg})");
-
+                    "while detecting compiler information:\nThe log file content at \"{path}\" is:");
     DECLARE_MESSAGE(ErrorIndividualPackagesUnsupported,
                     (),
                     "",
                     "In manifest mode, `vcpkg install` does not support individual package arguments.\nTo install "
                     "additional "
                     "packages, edit vcpkg.json and then run `vcpkg install` without any package arguments.");
-
-    DECLARE_MESSAGE(ErrorRequirePackagesList,
-                    (),
-                    "",
-                    "`vcpkg install` requires a list of packages to install in classic mode.");
-
     DECLARE_MESSAGE(ErrorInvalidClassicModeOption,
                     (msg::option),
                     "",
                     "The option --{option} is not supported in classic mode and no manifest was found.");
-
-    DECLARE_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
-
     DECLARE_MESSAGE(ErrorInvalidManifestModeOption,
                     (msg::option),
                     "",
                     "The option --{option} is not supported in manifest mode.");
-
-    DECLARE_MESSAGE(PortNotInBaseline,
-                    (msg::package_name),
+    DECLARE_MESSAGE(
+        ErrorMessageMustUsePrintError,
+        (msg::value),
+        "{value} is is a localized message name like ErrorMessageMustUsePrintError",
+        "The message named {value} starts with error:, it must be changed to prepend ErrorMessage in code instead.");
+    DECLARE_MESSAGE(
+        ErrorMissingVcpkgRoot,
+        (),
+        "",
+        "Could not detect vcpkg-root. If you are trying to use a copy of vcpkg that you've built, you must "
+        "define the VCPKG_ROOT environment variable to point to a cloned copy of https://github.com/Microsoft/vcpkg.");
+    DECLARE_MESSAGE(ErrorNoVSInstance,
+                    (msg::triplet),
                     "",
-                    "the baseline does not contain an entry for port {package_name}");
-
+                    "in triplet {triplet}: Unable to find a valid Visual Studio instance");
+    DECLARE_MESSAGE(ErrorNoVSInstanceAt, (msg::path), "", "at \"{path}\"");
+    DECLARE_MESSAGE(ErrorNoVSInstanceFullVersion, (msg::version), "", "with toolset version prefix {version}");
+    DECLARE_MESSAGE(ErrorNoVSInstanceVersion, (msg::version), "", "with toolset version {version}");
     DECLARE_MESSAGE(ErrorRequireBaseline,
                     (),
                     "",
                     "this vcpkg instance requires a manifest with a specified baseline in order to "
                     "interact with ports. Please add 'builtin-baseline' to the manifest or add a "
                     "'vcpkg-configuration.json' that redefines the default registry.");
-    DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
-    DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
-
-    DECLARE_MESSAGE(FormattedParseMessageExpression,
-                    (msg::value),
-                    "Example of {value} is 'x64 & windows'",
-                    "on expression: {value}");
-
+    DECLARE_MESSAGE(ErrorRequirePackagesList,
+                    (),
+                    "",
+                    "`vcpkg install` requires a list of packages to install in classic mode.");
+    DECLARE_MESSAGE(
+        ErrorUnableToDetectCompilerInfo,
+        (),
+        "failure output will be displayed at the top of this",
+        "vcpkg was unable to detect the active compiler's information. See above for the CMake failure output.");
+    DECLARE_MESSAGE(ErrorVcvarsUnsupported,
+                    (msg::triplet),
+                    "",
+                    "in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported "
+                    "on non-Windows hosts.\nDefine 'VCPKG_CMAKE_SYSTEM_NAME' or "
+                    "'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.");
+    DECLARE_MESSAGE(ErrorVsCodeNotFound,
+                    (msg::env_var),
+                    "",
+                    "Visual Studio Code was not found and the environment variable '{env_var}' is not set or invalid.");
+    DECLARE_MESSAGE(ErrorVsCodeNotFoundPathExamined, (), "", "The following paths were examined:");
+    DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
     DECLARE_MESSAGE(
         ExpectedCharacterHere,
         (msg::expected),
         "{expected} is a locale-invariant delimiter; for example, the ':' or '=' in 'zlib:x64-windows=skip'",
         "expected '{expected}' here");
-    DECLARE_MESSAGE(VersionSpecMismatch,
-                    (msg::path, msg::expected_version, msg::actual_version),
-                    "",
-                    "Failed to load port because versions are inconsistent. The file \"{path}\" contains the version "
-                    "{actual_version}, but the version database indicates that it should be {expected_version}.");
-    DECLARE_MESSAGE(IllegalPlatformSpec, (), "", "Platform qualifier is not allowed in this context");
+    DECLARE_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' here");
+    DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
+    DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
+    DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
+    DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
+                    (msg::tool_name, msg::path),
+                    "Additional information, such as the command line output, if any, will be appended on "
+                    "the line after this message",
+                    "Failed to run {path} to determine the {tool_name} version.");
+    DECLARE_MESSAGE(FailedToStoreBackToMirror, (), "", "failed to store back to mirror:");
+    DECLARE_MESSAGE(
+        ForceSystemBinariesOnWeirdPlatforms,
+        (),
+        "",
+        "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.");
+    DECLARE_MESSAGE(FormattedParseMessageExpression,
+                    (msg::value),
+                    "Example of {value} is 'x64 & windows'",
+                    "on expression: {value}");
+    DECLARE_MESSAGE(FuzzExpectedOneOf,
+                    (),
+                    "the list after the colon should stay the same, they're literal values",
+                    "expected one of: utf-8, json, platform-expr");
+    DECLARE_MESSAGE(FuzzHelpInput, (), "", "accepts input on stdin.");
+    DECLARE_MESSAGE(FuzzHelpOptionKind, (), "", "one of {{utf-8, json, platform-expr}}");
+    DECLARE_MESSAGE(FuzzHelpOptions, (), "", "options:");
+    DECLARE_MESSAGE(FuzzHelpUsage, (), "", "usage: vcpkg-fuzz --kind=<kind>");
+    DECLARE_MESSAGE(FuzzInvalidKind, (msg::value), "example of {value} is 'utf-8'", "invalid kind: '{value}'");
+    DECLARE_MESSAGE(FuzzUnknownOption, (msg::option), "", "unknown option: --{option}");
+    DECLARE_MESSAGE(GenerateMsgErrorParsingFormatArgs,
+                    (msg::value),
+                    "example of {value} 'GenerateMsgNoComment'",
+                    "parsing format string for {value}:");
+    DECLARE_MESSAGE(GenerateMsgIncorrectComment,
+                    (msg::value),
+                    "example of {value} is 'GenerateMsgNoComment'",
+                    R"(message {value} has an incorrect comment:)");
+    DECLARE_MESSAGE(GenerateMsgNoArgumentValue,
+                    (msg::value),
+                    "example of {value} is 'arch'",
+                    R"({{{value}}} was specified in a comment, but was not used in the message.)");
+    DECLARE_MESSAGE(GenerateMsgNoCommentValue,
+                    (msg::value),
+                    "example of {value} is 'arch'",
+                    R"({{{value}}} was used in the message, but not commented.)");
+    DECLARE_MESSAGE(GitCommandFailed, (msg::command_line), "", "failed to execute: {command_line}");
+    DECLARE_MESSAGE(GitStatusOutputExpectedFileName, (), "", "expected a file name");
+    DECLARE_MESSAGE(GitStatusOutputExpectedNewLine, (), "", "expected new line");
+    DECLARE_MESSAGE(GitStatusOutputExpectedRenameOrNewline, (), "", "expected renamed file or new lines");
+    DECLARE_MESSAGE(GitStatusUnknownFileStatus,
+                    (msg::value),
+                    "{value} is a single character indicating file status, for example: A, U, M, D",
+                    "unknown file status: {value}");
+    DECLARE_MESSAGE(GitUnexpectedCommandOutput, (), "", "unexpected git output");
+    DECLARE_MESSAGE(
+        HashFileFailureToRead,
+        (msg::path),
+        "Printed after ErrorMessage and before the specific failing filesystem operation (like file not found)",
+        "failed to read file '{path}' for hashing: ");
+    DECLARE_MESSAGE(HeaderOnlyUsage,
+                    (msg::package_name),
+                    "'header' refers to C/C++ .h files",
+                    "{package_name} is header-only and can be used from CMake via:");
     DECLARE_MESSAGE(IllegalFeatures, (), "", "List of features is not allowed in this context");
-    DECLARE_MESSAGE(CiBaselineRegressionHeader,
-                    (),
-                    "Printed before a series of CiBaselineRegression and/or CiBaselineUnexpectedPass messages.",
-                    "REGRESSIONS:");
-
-    DECLARE_MESSAGE(CiBaselineAllowUnexpectedPassingRequiresBaseline,
+    DECLARE_MESSAGE(IllegalPlatformSpec, (), "", "Platform qualifier is not allowed in this context");
+    DECLARE_MESSAGE(InfoSetEnvVar,
+                    (msg::env_var),
+                    "In this context 'editor' means IDE",
+                    "You can also set the environment variable '{env_var}' to your editor of choice.");
+    DECLARE_MESSAGE(InstallingFromLocation,
+                    (msg::path),
+                    "'--' at the beginning must be preserved",
+                    "-- Installing port from location: {path}");
+    DECLARE_MESSAGE(InstallingPackage,
+                    (msg::action_index, msg::count, msg::spec),
+                    "",
+                    "Installing {action_index}/{count} {spec}...");
+    DECLARE_MESSAGE(InstallWithSystemManager,
                     (),
                     "",
-                    "--allow-unexpected-passing can only be used if a baseline is provided via --ci-baseline.");
-    DECLARE_MESSAGE(CommandFailed,
+                    "You may be able to install this tool via your system package manager.");
+    DECLARE_MESSAGE(InstallWithSystemManagerMono,
+                    (msg::url),
+                    "",
+                    "Ubuntu 18.04 users may need a newer version of mono, available at {url}.");
+    DECLARE_MESSAGE(InstallWithSystemManagerPkg,
                     (msg::command_line),
                     "",
-                    "command:\n"
-                    "{command_line}\n"
-                    "failed with the following results:");
+                    "You may be able to install this tool via your system package manager ({command_line}).");
+    DECLARE_MESSAGE(InvalidFormatString,
+                    (msg::actual),
+                    "{actual} is the provided format string",
+                    "invalid format string: {actual}");
+    DECLARE_MESSAGE(JsonErrorFailedToParse, (msg::path), "", "failed to parse {path}:");
+    DECLARE_MESSAGE(JsonErrorFailedToRead, (msg::path, msg::error_msg), "", "failed to read {path}: {error_msg}");
+    DECLARE_MESSAGE(LaunchingProgramFailed,
+                    (msg::tool_name),
+                    "A platform API call failure message is appended after this",
+                    "Launching {tool_name}:");
+    DECLARE_MESSAGE(LicenseExpressionContainsExtraPlus,
+                    (),
+                    "",
+                    "SPDX license expression contains an extra '+'. These are only allowed directly "
+                    "after a license identifier.");
+    DECLARE_MESSAGE(LicenseExpressionContainsInvalidCharacter,
+                    (msg::value),
+                    "example of {value:02X} is '7B'\nexample of {value} is '{'",
+                    "SPDX license expression contains an invalid character (0x{value:02X} '{value}').");
+    DECLARE_MESSAGE(LicenseExpressionContainsUnicode,
+                    (msg::value, msg::pretty_value),
+                    "example of {value:04X} is '22BB'\nexample of {pretty_value} is '⊻'",
+                    "SPDX license expression contains a unicode character (U+{value:04X} "
+                    "'{pretty_value}'), but these expressions are ASCII-only.");
+    DECLARE_MESSAGE(LicenseExpressionDocumentRefUnsupported,
+                    (),
+                    "",
+                    "The current implementation does not support DocumentRef- SPDX references.");
+    DECLARE_MESSAGE(LicenseExpressionExpectCompoundFoundParen,
+                    (),
+                    "",
+                    "Expected a compound or the end of the string, found a parenthesis.");
+    DECLARE_MESSAGE(LicenseExpressionExpectCompoundFoundWith,
+                    (),
+                    "AND, OR, and WITH are all keywords and should not be translated.",
+                    "Expected either AND or OR, found WITH (WITH is only allowed after license names, not "
+                    "parenthesized expressions).");
+    DECLARE_MESSAGE(LicenseExpressionExpectCompoundFoundWord,
+                    (msg::value),
+                    "Example of {value} is 'MIT'.\nAND and OR are both keywords and should not be translated.",
+                    "Expected either AND or OR, found a license or exception name: '{value}'.");
+    DECLARE_MESSAGE(LicenseExpressionExpectCompoundOrWithFoundWord,
+                    (msg::value),
+                    "example of {value} is 'MIT'.\nAND, OR, and WITH are all keywords and should not be translated.",
+                    "Expected either AND, OR, or WITH, found a license or exception name: '{value}'.");
+    DECLARE_MESSAGE(LicenseExpressionExpectExceptionFoundCompound,
+                    (msg::value),
+                    "Example of {value} is 'AND'",
+                    "Expected an exception name, found the compound {value}.");
+    DECLARE_MESSAGE(LicenseExpressionExpectExceptionFoundEof,
+                    (),
+                    "",
+                    "Expected an exception name, found the end of the string.");
+    DECLARE_MESSAGE(LicenseExpressionExpectExceptionFoundParen,
+                    (),
+                    "",
+                    "Expected an exception name, found a parenthesis.");
+    DECLARE_MESSAGE(LicenseExpressionExpectLicenseFoundCompound,
+                    (msg::value),
+                    "Example of {value} is 'AND'",
+                    "Expected a license name, found the compound {value}.");
+    DECLARE_MESSAGE(LicenseExpressionExpectLicenseFoundEof,
+                    (),
+                    "",
+                    "Expected a license name, found the end of the string.");
+    DECLARE_MESSAGE(LicenseExpressionExpectLicenseFoundParen, (), "", "Expected a license name, found a parenthesis.");
+    DECLARE_MESSAGE(LicenseExpressionImbalancedParens,
+                    (),
+                    "",
+                    "There was a close parenthesis without an opening parenthesis.");
+    DECLARE_MESSAGE(LicenseExpressionUnknownException,
+                    (msg::value),
+                    "Example of {value} is 'unknownexception'",
+                    "Unknown license exception identifier '{value}'. Known values are listed at "
+                    "https://spdx.org/licenses/exceptions-index.html");
+    DECLARE_MESSAGE(LicenseExpressionUnknownLicense,
+                    (msg::value),
+                    "Example of {value} is 'unknownlicense'",
+                    "Unknown license identifier '{value}'. Known values are listed at https://spdx.org/licenses/");
+    DECLARE_MESSAGE(LoadingCommunityTriplet,
+                    (msg::path),
+                    "'-- [COMMUNITY]' at the beginning must be preserved",
+                    "-- [COMMUNITY] Loading triplet configuration from: {path}");
+    DECLARE_MESSAGE(LoadingOverlayTriplet,
+                    (msg::path),
+                    "'-- [OVERLAY]' at the beginning must be preserved",
+                    "-- [OVERLAY] Loading triplet configuration from: {path}");
+    DECLARE_MESSAGE(LocalizedMessageMustNotContainIndents,
+                    (msg::value),
+                    "{value} is is a localized message name like LocalizedMessageMustNotContainIndents. "
+                    "The 'LocalizedString::append_indent' part is locale-invariant.",
+                    "The message named {value} contains what appears to be indenting which must be "
+                    "changed to use LocalizedString::append_indent instead.");
+    DECLARE_MESSAGE(LocalizedMessageMustNotEndWithNewline,
+                    (msg::value),
+                    "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
+                    "The message named {value} ends with a newline which should be added by formatting "
+                    "rather than by localization.");
+    DECLARE_MESSAGE(MonoInstructions,
+                    (),
+                    "",
+                    "This may be caused by an incomplete mono installation. Full mono is "
+                    "available on some systems via `sudo apt install mono-complete`. Ubuntu 18.04 users may "
+                    "need a newer version of mono, available at https://www.mono-project.com/download/stable/");
+    DECLARE_MESSAGE(MsiexecFailedToExtract,
+                    (msg::path, msg::exit_code),
+                    "",
+                    "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:");
+    DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
+    DECLARE_MESSAGE(ParseControlErrorInfoInvalidFields, (), "", "The following fields were not expected:");
+    DECLARE_MESSAGE(ParseControlErrorInfoMissingFields, (), "", "The following fields were missing:");
+    DECLARE_MESSAGE(ParseControlErrorInfoTypesEntry,
+                    (msg::value, msg::expected),
+                    "{value} is the name of a field in an on-disk file, {expected} is a short description "
+                    "of what it should be like 'a non-negative integer' (which isn't localized yet)",
+                    "{value} was expected to be {expected}");
+    DECLARE_MESSAGE(ParseControlErrorInfoWhileLoading,
+                    (msg::path),
+                    "Error messages are is printed after this.",
+                    "while loading {path}:");
+    DECLARE_MESSAGE(ParseControlErrorInfoWrongTypeFields, (), "", "The following fields had the wrong types:");
+    DECLARE_MESSAGE(PortNotInBaseline,
+                    (msg::package_name),
+                    "",
+                    "the baseline does not contain an entry for port {package_name}");
+    DECLARE_MESSAGE(ProcessorArchitectureMalformed,
+                    (msg::arch),
+                    "",
+                    "Failed to parse %PROCESSOR_ARCHITECTURE% ({arch}) as a valid CPU architecture.");
+    DECLARE_MESSAGE(ProcessorArchitectureMissing,
+                    (),
+                    "",
+                    "The required environment variable %PROCESSOR_ARCHITECTURE% is missing.");
     DECLARE_MESSAGE(ProcessorArchitectureW6432Malformed,
                     (msg::arch),
                     "",
                     "Failed to parse %PROCESSOR_ARCHITEW6432% ({arch}) as a valid CPU architecture. "
                     "Falling back to %PROCESSOR_ARCHITECTURE%.");
-
-    DECLARE_MESSAGE(ProcessorArchitectureMissing,
+    DECLARE_MESSAGE(ProgramReturnedNonzeroExitCode,
+                    (msg::tool_name, msg::exit_code),
+                    "The program's console output is appended after this.",
+                    "{tool_name} failed with exit code: ({exit_code}).");
+    DECLARE_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
+    DECLARE_MESSAGE(SettingEnvVar,
+                    (msg::env_var, msg::url),
+                    "An example of env_var is \"HTTP(S)_PROXY\""
+                    "'--' at the beginning must be preserved",
+                    "-- Setting \"{env_var}\" environment variables to \"{url}\".");
+    DECLARE_MESSAGE(SourceFieldPortNameMismatch,
+                    (msg::package_name, msg::path),
+                    "{package_name} and {path} are both names of installable ports/packages. 'Source', "
+                    "'CONTROL', 'vcpkg.json', and 'name' references are locale-invariant.",
+                    "The 'Source' field inside the CONTROL file, or \"name\" field inside the vcpkg.json "
+                    "file has the name {package_name} and does not match the port directory {path}.");
+    DECLARE_MESSAGE(SystemApiErrorMessage,
+                    (msg::system_api, msg::exit_code, msg::error_msg),
+                    "",
+                    "calling {system_api} failed with {exit_code} ({error_msg})");
+    DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
+    DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
+    DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.");
+    DECLARE_MESSAGE(UnexpectedToolOutput,
+                    (msg::tool_name, msg::path),
+                    "The actual command line output will be appended after this message.",
+                    "{tool_name} ({path}) produced unexpected output when attempting to determine the version:");
+    DECLARE_MESSAGE(UnknownBaselineFileContent,
                     (),
                     "",
-                    "The required environment variable %PROCESSOR_ARCHITECTURE% is missing.");
-
-    DECLARE_MESSAGE(ProcessorArchitectureMalformed,
-                    (msg::arch),
+                    "unrecognizable baseline entry; expected 'port:triplet=(fail|skip|pass)'");
+    DECLARE_MESSAGE(UnknownTool, (), "", "vcpkg does not have a definition of this tool for this platform.");
+    DECLARE_MESSAGE(UnsupportedSystemName,
+                    (msg::system_name),
                     "",
-                    "Failed to parse %PROCESSOR_ARCHITECTURE% ({arch}) as a valid CPU architecture.");
-    DECLARE_MESSAGE(InvalidFormatString,
-                    (msg::actual),
-                    "{actual} is the provided format string",
-                    "invalid format string: {actual}");
-    DECLARE_MESSAGE(JsonErrorFailedToRead, (msg::path, msg::error_msg), "", "failed to read {path}: {error_msg}");
-    DECLARE_MESSAGE(JsonErrorFailedToParse, (msg::path), "", "failed to parse {path}:");
+                    "Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. "
+                    "Supported system names are '', 'Windows' and 'WindowsStore'.");
+    DECLARE_MESSAGE(UnsupportedToolchain,
+                    (msg::triplet, msg::arch, msg::path, msg::list),
+                    "example for {list} is 'x86, arm64'",
+                    "in triplet {triplet}: Unable to find a valid toolchain for requested target architecture {arch}.\n"
+                    "The selected Visual Studio instance is at: {path}\n"
+                    "The available toolchain combinations are: {list}");
+    DECLARE_MESSAGE(
+        UpdateBaselineAddBaselineNoManifest,
+        (msg::option),
+        "",
+        "the --{option} switch was passed, but there is no manifest file to add a `builtin-baseline` field to.");
+    DECLARE_MESSAGE(UpdateBaselineLocalGitError,
+                    (msg::path),
+                    "",
+                    "git failed to parse HEAD for the local vcpkg registry at '{path}'");
+    DECLARE_MESSAGE(UpdateBaselineNoConfiguration,
+                    (),
+                    "",
+                    "neither `vcpkg.json` nor `vcpkg-configuration.json` exist to update.");
+    DECLARE_MESSAGE(UpdateBaselineNoExistingBuiltinBaseline,
+                    (msg::option),
+                    "",
+                    "the manifest file currently does not contain a `builtin-baseline` field; in order to "
+                    "add one, pass the --{option} switch.");
+    DECLARE_MESSAGE(UpdateBaselineNoUpdate,
+                    (msg::url, msg::value),
+                    "example of {value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
+                    "registry '{url}' not updated: '{value}'");
+    DECLARE_MESSAGE(UpdateBaselineRemoteGitError, (msg::url), "", "git failed to fetch remote repository '{url}'");
+    DECLARE_MESSAGE(UpdateBaselineUpdatedBaseline,
+                    (msg::url, msg::old_value, msg::new_value),
+                    "example of {old_value}, {new_value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
+                    "updated registry '{url}': baseline '{old_value}' -> '{new_value}'");
+    DECLARE_MESSAGE(UseEnvVar,
+                    (msg::env_var),
+                    "An example of env_var is \"HTTP(S)_PROXY\""
+                    "'--' at the beginning must be preserved",
+                    "-- Using {env_var} in environment variables.");
+    DECLARE_MESSAGE(UsingCommunityTriplet,
+                    (msg::triplet),
+                    "'--' at the beginning must be preserved",
+                    "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.");
+    DECLARE_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
+    DECLARE_MESSAGE(VcpkgCeIsExperimental,
+                    (),
+                    "",
+                    "vcpkg-ce ('configure environment') is experimental and may change at any time.");
+    DECLARE_MESSAGE(VcpkgDisallowedClassicMode,
+                    (),
+                    "",
+                    "Could not locate a manifest (vcpkg.json) above the current working "
+                    "directory.\nThis vcpkg distribution does not have a classic mode instance.");
+    DECLARE_MESSAGE(
+        VcpkgHasCrashed,
+        (),
+        "Printed at the start of a crash report.",
+        "vcpkg has crashed. Please create an issue at https://github.com/microsoft/vcpkg containing a brief summary of "
+        "what you were trying to do and the following information.");
+    DECLARE_MESSAGE(VcpkgInvalidCommand, (msg::command_name), "", "invalid command: {command_name}");
+    DECLARE_MESSAGE(VcpkgSendMetricsButDisabled, (), "", "passed --sendmetrics, but metrics are disabled.");
+    DECLARE_MESSAGE(VersionCommandHeader,
+                    (msg::version),
+                    "",
+                    "vcpkg package management program version {version}\n\nSee LICENSE.txt for license information.");
+    DECLARE_MESSAGE(VersionConstraintViolated,
+                    (msg::spec, msg::expected_version, msg::actual_version),
+                    "",
+                    "dependency {spec} was expected to be at least version "
+                    "{expected_version}, but is currently {actual_version}.");
+    DECLARE_MESSAGE(
+        VersionInvalidDate,
+        (msg::version),
+        "",
+        "`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be "
+        "dot-separated positive integer values without leading zeroes.");
+    DECLARE_MESSAGE(VersionInvalidRelaxed,
+                    (msg::version),
+                    "",
+                    "`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).");
+    DECLARE_MESSAGE(VersionInvalidSemver,
+                    (msg::version),
+                    "",
+                    "`{version}` is not a valid semantic version, consult <https://semver.org>.");
+    DECLARE_MESSAGE(VersionSpecMismatch,
+                    (msg::path, msg::expected_version, msg::actual_version),
+                    "",
+                    "Failed to load port because versions are inconsistent. The file \"{path}\" contains the version "
+                    "{actual_version}, but the version database indicates that it should be {expected_version}.");
+    DECLARE_MESSAGE(VSExaminedInstances, (), "", "The following Visual Studio instances were considered:");
+    DECLARE_MESSAGE(VSExaminedPaths, (), "", "The following paths were examined for Visual Studio instances:");
+    DECLARE_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance");
+    DECLARE_MESSAGE(WaitingForChildrenToExit, (), "", "Waiting for child processes to exit...");
+    DECLARE_MESSAGE(WaitingToTakeFilesystemLock, (msg::path), "", "waiting to take filesystem lock on {path}...");
+    DECLARE_MESSAGE(WarningMessageMustUsePrintWarning,
+                    (msg::value),
+                    "{value} is is a localized message name like WarningMessageMustUsePrintWarning",
+                    "The message named {value} starts with warning:, it must be changed to prepend "
+                    "WarningMessage in code instead.");
+    DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
 }
