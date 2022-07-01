@@ -60,6 +60,7 @@ namespace vcpkg
 
     enum class VersionScheme
     {
+        Missing,
         Relaxed,
         Semver,
         Date,

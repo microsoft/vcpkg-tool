@@ -370,7 +370,7 @@ namespace
                 continue;
             }
 
-            const auto& demand_obj = el.second.object();
+            const auto& demand_obj = el.second.object(VCPKG_LINE_INFO);
             if (demand_obj.contains(CE_DEMANDS))
             {
                 r.add_generic_error(type_name(),
@@ -460,7 +460,7 @@ namespace
                 }
 
                 Json::Object serialized_demands;
-                for (const auto& el : demands->object())
+                for (const auto& el : demands->object(VCPKG_LINE_INFO))
                 {
                     auto key = el.first;
                     if (Strings::starts_with(key, "$"))
@@ -472,7 +472,7 @@ namespace
                     if (el.second.is_object())
                     {
                         auto& inserted = serialized_demands.insert_or_replace(key, Json::Object{});
-                        serialize_ce_metadata(el.second.object(), inserted);
+                        serialize_ce_metadata(el.second.object(VCPKG_LINE_INFO), inserted);
                     }
                 }
                 put_into.insert_or_replace(DemandsDeserializer::CE_DEMANDS, serialized_demands);
@@ -525,7 +525,7 @@ namespace
                     continue;
                 }
 
-                for (const auto& demand : el.second.object())
+                for (const auto& demand : el.second.object(VCPKG_LINE_INFO))
                 {
                     if (Strings::starts_with(demand.first, "$"))
                     {
@@ -533,7 +533,7 @@ namespace
                     }
 
                     find_unknown_fields_impl(
-                        demand.second.object(),
+                        demand.second.object(VCPKG_LINE_INFO),
                         out,
                         Strings::concat(path, ".", DemandsDeserializer::CE_DEMANDS, ".", demand.first));
                 }

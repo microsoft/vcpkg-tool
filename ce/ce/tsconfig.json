@@ -2,11 +2,7 @@
   "extends": "../common/tsconfig.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": ".",
-    "types": [
-      "node"
-    ],
-    "inlineSourceMap": true
+    "rootDir": "."
   },
   "include": [
     "./**/*.ts"

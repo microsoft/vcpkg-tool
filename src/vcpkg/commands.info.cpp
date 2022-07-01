@@ -112,7 +112,7 @@ namespace vcpkg::Commands::Info
         {
             Json::Object response;
             Json::Object results;
-            PathsPortFileProvider provider(paths, args.overlay_ports);
+            PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
 
             for (auto&& arg : args.command_arguments)
             {

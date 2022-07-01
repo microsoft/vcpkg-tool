@@ -158,7 +158,7 @@ namespace vcpkg::Commands::SetInstalled
                                          ? KeepGoing::YES
                                          : KeepGoing::NO;
 
-        PathsPortFileProvider provider(paths, args.overlay_ports);
+        PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
 
         Optional<Path> pkgsconfig;

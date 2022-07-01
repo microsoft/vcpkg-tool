@@ -762,21 +762,21 @@ namespace vcpkg
         if (auto vcpkg_recursive_data = maybe_vcpkg_recursive_data.get())
         {
             auto rec_doc = Json::parse(*vcpkg_recursive_data).value_or_exit(VCPKG_LINE_INFO).first;
-            const auto& obj = rec_doc.object();
+            const auto& obj = rec_doc.object(VCPKG_LINE_INFO);
 
             if (auto entry = obj.get(VCPKG_ROOT_DIR_ENV))
             {
-                args.vcpkg_root_dir = std::make_unique<std::string>(entry->string().to_string());
+                args.vcpkg_root_dir = std::make_unique<std::string>(entry->string(VCPKG_LINE_INFO).to_string());
             }
 
             if (auto entry = obj.get(DOWNLOADS_ROOT_DIR_ENV))
             {
-                args.downloads_root_dir = std::make_unique<std::string>(entry->string().to_string());
+                args.downloads_root_dir = std::make_unique<std::string>(entry->string(VCPKG_LINE_INFO).to_string());
             }
 
             if (auto entry = obj.get(ASSET_SOURCES_ENV))
             {
-                args.asset_sources_template_env = entry->string().to_string();
+                args.asset_sources_template_env = entry->string(VCPKG_LINE_INFO).to_string();
             }
 
             if (obj.get(DISABLE_METRICS_ENV))

@@ -5,6 +5,7 @@ import { isScalar, isSeq, YAMLMap } from 'yaml';
 import { i } from '../i18n';
 import { ErrorKind } from '../interfaces/error-kind';
 import { ValidationError } from '../interfaces/validation-error';
+import { Uri } from './uri';
 
 /** @internal */
 export function isPrimitive(value: any): value is (string | number | boolean) {
@@ -66,4 +67,8 @@ export function* checkOptionalArrayOfStrings(parent: YAMLMap, range: [number, nu
   if (checkOptionalArrayOfStringsImpl(parent, range, name)) {
     yield { message: i`${name} must be an array of strings, or unset`, range: range, category: ErrorKind.IncorrectType };
   }
+}
+
+export function isGithubRepo(uri: Uri): boolean {
+  return uri.authority.toLowerCase() === 'github.com' && !!(/\/[a-zA-Z0-9-_]*\/[a-zA-Z0-9-_]*$/g.exec(uri.path));
 }

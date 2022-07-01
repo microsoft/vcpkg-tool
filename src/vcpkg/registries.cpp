@@ -925,7 +925,7 @@ namespace
             return Strings::format("Error: versions file for `%s` does not have a top level object.", port_name);
         }
 
-        const auto& versions_object = maybe_versions_json.get()->first.object();
+        const auto& versions_object = maybe_versions_json.get()->first.object(VCPKG_LINE_INFO);
         auto maybe_versions_array = versions_object.get("versions");
         if (!maybe_versions_array || !maybe_versions_array->is_array())
         {
@@ -966,7 +966,7 @@ namespace
 
         auto real_baseline = baseline.size() == 0 ? "default" : baseline;
 
-        const auto& obj = value.first.object();
+        const auto& obj = value.first.object(VCPKG_LINE_INFO);
         auto baseline_value = obj.get(real_baseline);
         if (!baseline_value)
         {
@@ -1203,7 +1203,7 @@ namespace vcpkg
         if (auto pversions = maybe_versions.get())
         {
             return Util::fmap(
-                *pversions, [](auto&& entry) -> auto {
+                *pversions, [](auto&& entry) -> auto{
                     return std::make_pair(SchemedVersion{entry.scheme, entry.version}, entry.git_tree);
                 });
         }

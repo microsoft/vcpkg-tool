@@ -48,7 +48,7 @@ export class RegenerateCommand extends Command {
           // see if the name is a location
           const location = await session.parseLocation(registryNameOrLocation);
           registry = location ?
-            session.loadRegistry(location, 'artifact') :  // a folder
+            await session.loadRegistry(location, 'artifact') :  // a folder
             registries.getRegistry(registryNameOrLocation); // a registry name or other location.
         }
         if (registry) {

@@ -1,4 +1,5 @@
 #pragma once
+#include <vcpkg/fwd/build.h>
 #include <vcpkg/fwd/ci-baseline.h>
 
 #include <vcpkg/base/expected.h>
@@ -54,7 +55,19 @@ namespace vcpkg
 
     std::vector<CiBaselineLine> parse_ci_baseline(StringView text, StringView origin, ParseMessages& messages);
 
-    SortedVector<PackageSpec> parse_and_apply_ci_baseline(View<CiBaselineLine> lines,
-                                                          ExclusionsMap& exclusions_map,
-                                                          SkipFailures skip_failures);
+    struct CiBaselineData
+    {
+        SortedVector<PackageSpec> expected_failures;
+        SortedVector<PackageSpec> required_success;
+    };
+
+    CiBaselineData parse_and_apply_ci_baseline(View<CiBaselineLine> lines,
+                                               ExclusionsMap& exclusions_map,
+                                               SkipFailures skip_failures);
+
+    LocalizedString format_ci_result(const PackageSpec& spec,
+                                     BuildResult result,
+                                     const CiBaselineData& cidata,
+                                     StringView cifile,
+                                     bool allow_unexpected_passing);
 }

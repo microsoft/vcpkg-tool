@@ -89,7 +89,7 @@ namespace vcpkg
                    ": Manifest files must have a top-level object\n");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
-        return {std::move(manifest_value.first.object()), std::move(manifest_path)};
+        return {std::move(manifest_value.first.object(VCPKG_LINE_INFO)), std::move(manifest_path)};
     }
 
     static Optional<ManifestConfiguration> config_from_manifest(const Path& manifest_path,
@@ -117,7 +117,7 @@ namespace vcpkg
             msg::println(Color::error, msg::msgSeeURL, msg::url = docs::registries_url);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
-        const auto& obj = parsed_config.first.object();
+        const auto& obj = parsed_config.first.object(VCPKG_LINE_INFO);
 
         Json::Reader reader;
         auto parsed_config_opt = reader.visit(obj, get_configuration_deserializer());
@@ -285,20 +285,20 @@ namespace vcpkg
                 auto maybe_bundle_doc = Json::parse(bundle_file, bundle_file);
                 if (auto bundle_doc = maybe_bundle_doc.get())
                 {
-                    const auto& first_object = bundle_doc->first.object();
+                    const auto& first_object = bundle_doc->first.object(VCPKG_LINE_INFO);
                     if (auto v = first_object.get("readonly"))
                     {
-                        ret.m_readonly = v->boolean();
+                        ret.m_readonly = v->boolean(VCPKG_LINE_INFO);
                     }
 
                     if (auto v = first_object.get("usegitregistry"))
                     {
-                        ret.m_usegitregistry = v->boolean();
+                        ret.m_usegitregistry = v->boolean(VCPKG_LINE_INFO);
                     }
 
                     if (auto v = first_object.get("embeddedsha"))
                     {
-                        ret.m_embedded_git_sha = v->string().to_string();
+                        ret.m_embedded_git_sha = v->string(VCPKG_LINE_INFO).to_string();
                     }
                 }
                 else
@@ -800,7 +800,7 @@ namespace vcpkg
                 return ret;
             }
 
-            for (auto&& reference_to_commit : ref_info_value.object())
+            for (auto&& reference_to_commit : ref_info_value.object(VCPKG_LINE_INFO))
             {
                 auto reference = reference_to_commit.first;
                 const auto& commit = reference_to_commit.second;
@@ -810,7 +810,7 @@ namespace vcpkg
                     Debug::print("Lockfile value for key '", reference, "' was not a string\n");
                     return ret;
                 }
-                auto sv = commit.string();
+                auto sv = commit.string(VCPKG_LINE_INFO);
                 if (!is_git_commit_sha(sv))
                 {
                     Debug::print("Lockfile value for key '", reference, "' was not a git commit sha\n");
@@ -862,7 +862,7 @@ namespace vcpkg
                 return ret;
             }
 
-            ret.lockdata = lockdata_from_json_object(doc.object());
+            ret.lockdata = lockdata_from_json_object(doc.object(VCPKG_LINE_INFO));
 
             return ret;
         }
@@ -899,7 +899,7 @@ namespace vcpkg
     const Path VcpkgPaths::get_triplet_file_path(Triplet triplet) const
     {
         return m_pimpl->m_triplets_cache.get_lazy(
-            triplet, [&]() -> auto {
+            triplet, [&]() -> auto{
                 for (const auto& triplet_dir : m_pimpl->triplets_dirs)
                 {
                     auto path = triplet_dir / (triplet.canonical_name() + ".cmake");

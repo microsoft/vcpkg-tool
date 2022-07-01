@@ -575,19 +575,16 @@ namespace vcpkg::PostBuildLint
                                    Strings::case_insensitive_ascii_equals(file.extension(), ".lib"),
                                    "The file extension was not .lib: %s",
                                    file);
-                const auto machine_types = read_lib_machine_types(fs.open_for_read(file, VCPKG_LINE_INFO));
 
-                // This is zero for folly's debug library
-                // TODO: Why?
-                if (machine_types.empty()) break;
-
-                Checks::check_exit(
-                    VCPKG_LINE_INFO, machine_types.size() == 1, "Found more than 1 architecture in file %s", file);
-
-                const std::string actual_architecture = get_actual_architecture(machine_types.front());
-                if (expected_architecture != actual_architecture)
+                const auto machine_types = Util::fmap(read_lib_machine_types(fs.open_for_read(file, VCPKG_LINE_INFO)),
+                                                      [](MachineType mt) { return get_actual_architecture(mt); });
+                // Either machine_types is empty (meaning this lib is architecture independent), or
+                // we need at least one of the machine types to match.
+                // Agnostic example: Folly's debug library
+                // Multiple example: arm64x libraries
+                if (!machine_types.empty() && !Util::Vectors::contains(machine_types, expected_architecture))
                 {
-                    binaries_with_invalid_architecture.push_back({file, actual_architecture});
+                    binaries_with_invalid_architecture.push_back({file, Strings::join(",", machine_types)});
                 }
             }
         }

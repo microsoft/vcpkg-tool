@@ -101,7 +101,8 @@ namespace vcpkg::Commands
                 specs.push_back(std::move(value));
             }
 
-            auto maybe_manifest_scf = SourceControlFile::parse_manifest_object(manifest->path, manifest->manifest);
+            auto maybe_manifest_scf =
+                SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest, stdout_sink);
             if (!maybe_manifest_scf)
             {
                 print_error_message(maybe_manifest_scf.error());
