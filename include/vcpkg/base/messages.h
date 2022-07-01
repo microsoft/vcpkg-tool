@@ -761,4 +761,8 @@ namespace vcpkg
                     (msg::url, msg::value),
                     "example of {value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
                     "registry '{url}' not updated: '{value}'");
+    DECLARE_MESSAGE(VersionCommandHeader,
+                    (msg::version),
+                    "",
+                    "vcpkg package management program version {version}\n\nSee LICENSE.txt for license information.");
 }

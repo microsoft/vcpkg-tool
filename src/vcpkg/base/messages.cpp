@@ -499,4 +499,5 @@ namespace vcpkg
     REGISTER_MESSAGE(UpdateBaselineAddBaselineNoManifest);
     REGISTER_MESSAGE(UpdateBaselineUpdatedBaseline);
     REGISTER_MESSAGE(UpdateBaselineNoUpdate);
+    REGISTER_MESSAGE(VersionCommandHeader);
 }
