@@ -47,7 +47,7 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(ExtendedDocumenationAtUrl,
                                  (msg::url),
                                  "",
-                                 "Extendend documentation available at '{url}'.");
+                                 "Extended documentation available at '{url}'.");
     DECLARE_AND_REGISTER_MESSAGE(FailedToStoreBinaryCache,
                                  (msg::path, msg::error_msg),
                                  "",
