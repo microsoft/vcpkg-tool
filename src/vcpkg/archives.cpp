@@ -12,16 +12,6 @@ namespace
 {
     using namespace vcpkg;
 
-    DECLARE_AND_REGISTER_MESSAGE(
-        MsiexecFailedToExtract,
-        (msg::path, msg::exit_code),
-        "",
-        "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:");
-    DECLARE_AND_REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion,
-                                 (msg::path),
-                                 "",
-                                 "Could not deduce nuget id and version from filename: {path}");
-
 #if defined(_WIN32)
     void win32_extract_nupkg(const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
     {

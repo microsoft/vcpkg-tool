@@ -27,10 +27,6 @@ using namespace vcpkg;
 
 namespace
 {
-    DECLARE_AND_REGISTER_MESSAGE(AttemptingToFetchPackagesFromVendor,
-                                 (msg::count, msg::vendor),
-                                 "",
-                                 "Attempting to fetch {count} package(s) from {vendor}");
     DECLARE_AND_REGISTER_MESSAGE(RestoredPackagesFromVendor,
                                  (msg::count, msg::elapsed, msg::vendor),
                                  "",
