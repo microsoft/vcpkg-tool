@@ -89,7 +89,7 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresPrefix,
                                  (msg::binary_source),
                                  "",
-                                 "invalid argument: binary config '{binary_source}' requires at least a prefix");
+                                 "invalid argument: binary config '{binary_source}' requires at least one prefix");
     DECLARE_AND_REGISTER_MESSAGE(
         InvalidArgumentRequiresSingleArgument,
         (msg::binary_source),
