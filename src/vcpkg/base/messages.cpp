@@ -502,4 +502,8 @@ namespace vcpkg
     REGISTER_MESSAGE(VersionCommandHeader);
     REGISTER_MESSAGE(UpdateBaselineRemoteGitError);
     REGISTER_MESSAGE(UpdateBaselineLocalGitError);
+    REGISTER_MESSAGE(FailedToProvisionCe);
+    REGISTER_MESSAGE(VcpkgCeIsExperimental);
+    REGISTER_MESSAGE(DownloadingVcpkgCeBundle);
+    REGISTER_MESSAGE(DownloadingVcpkgCeBundleLatest);
 }

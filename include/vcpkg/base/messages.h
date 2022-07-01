@@ -770,4 +770,14 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "git failed to parse HEAD for the local vcpkg registry at '{path}'");
+    DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
+    DECLARE_MESSAGE(VcpkgCeIsExperimental,
+                    (),
+                    "",
+                    "vcpkg-ce ('configure environment') is experimental and may change at any time.");
+    DECLARE_MESSAGE(DownloadingVcpkgCeBundle, (msg::version), "", "Downloading vcpkg-ce bundle {version}...");
+    DECLARE_MESSAGE(DownloadingVcpkgCeBundleLatest,
+                    (),
+                    "This message is normally displayed only in development.",
+                    "Downloading latest vcpkg-ce bundle...");
 }
