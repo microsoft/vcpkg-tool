@@ -490,10 +490,10 @@ namespace vcpkg
                     (msg::spec),
                     "'HEAD' means the most recent version of source code",
                     "{spec} is already installed -- not building from HEAD");
-    DECLARE_MESSAGE(AttemptingToFetchPackagesFromVendor,
-                    (msg::count, msg::vendor),
+    DECLARE_MESSAGE(AnotherInstallationInProgress,
+                    (),
                     "",
-                    "Attempting to fetch {count} package(s) from {vendor}");
+                    "Another installation is in progress on the machine, sleeping 6s before retrying.");
     DECLARE_MESSAGE(AutoSettingEnvVar,
                     (msg::env_var, msg::url),
                     "An example of env_var is \"HTTP(S)_PROXY\""
@@ -1093,4 +1093,125 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
+    DECLARE_MESSAGE(AttemptingToFetchPackagesFromVendor,
+                    (msg::count, msg::vendor),
+                    "",
+                    "Attempting to fetch {count} package(s) from {vendor}");
+    DECLARE_MESSAGE(AuthenticationMayRequireManualAction,
+                    (msg::vendor),
+                    "",
+                    "One or more {vendor} credential providers requested manual action. Add the binary source "
+                    "'interactive' to allow interactivity.");
+    DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder '{path}':");
+    DECLARE_MESSAGE(DefaultPathToBinaries,
+                    (msg::path),
+                    "",
+                    "Based on your system settings, the default path to store binaries is \n '{path}'. This consults "
+                    "%LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.");
+    DECLARE_MESSAGE(ExtendedDocumenationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
+    DECLARE_MESSAGE(FailedToStoreBinaryCache,
+                    (msg::path, msg::error_msg),
+                    "",
+                    "Failed to store binary cache '{path}':'{error_msg}'");
+    DECLARE_MESSAGE(FailedVendorAuthentication,
+                    (msg::vendor, msg::url),
+                    "",
+                    "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details "
+                    "on how to provide credentials.");
+    DECLARE_MESSAGE(InvalidArgument, (), "", "invalid argument");
+    DECLARE_MESSAGE(
+        InvalidArgumentRequiresAbsolutePath,
+        (msg::binary_source),
+        "",
+        "invalid argument: binary config '{binary_source}' path arguments for binary config strings must be absolute");
+    DECLARE_MESSAGE(
+        InvalidArgumentRequiresBaseUrl,
+        (msg::base_url, msg::binary_source),
+        "",
+        "invalid argument: binary config '{binary_source}' requires a {base_url} base url as the first argument");
+    DECLARE_MESSAGE(InvalidArgumentRequiresBaseUrlAndToken,
+                    (msg::binary_source),
+                    "",
+                    "invalid argument: binary config '{binary_source}' requires at least a base-url and a SAS token");
+    DECLARE_MESSAGE(InvalidArgumentRequiresNoneArguments,
+                    (msg::binary_source),
+                    "",
+                    "invalid argument: binary config '{binary_source}' does not take arguments");
+    DECLARE_MESSAGE(InvalidArgumentRequiresOneOrTwoArguments,
+                    (msg::binary_source),
+                    "",
+                    "invalid argument: binary config '{binary_source}' requires 1 or 2 arguments");
+    DECLARE_MESSAGE(InvalidArgumentRequiresPathArgument,
+                    (msg::binary_source),
+                    "",
+                    "invalid argument: binary config '{binary_source}' requires at least one path argument");
+    DECLARE_MESSAGE(InvalidArgumentRequiresPrefix,
+                    (msg::binary_source),
+                    "",
+                    "invalid argument: binary config '{binary_source}' requires at least one prefix");
+    DECLARE_MESSAGE(InvalidArgumentRequiresSingleArgument,
+                    (msg::binary_source),
+                    "",
+                    "invalid argument: binary config '{binary_source}' does not take more than 1 argument");
+    DECLARE_MESSAGE(InvalidArgumentRequiresSingleStringArgument,
+                    (msg::binary_source),
+                    "",
+                    "invalid argument: binary config '{binary_source}' expects a single string argument");
+    DECLARE_MESSAGE(InvalidArgumentRequiresSourceArgument,
+                    (msg::binary_source),
+                    "",
+                    "invalid argument: binary config '{binary_source}' requires at least one source argument");
+    DECLARE_MESSAGE(InvalidArgumentRequiresTwoOrThreeArguments,
+                    (msg::binary_source),
+                    "",
+                    "invalid argument: binary config '{binary_source}' requires 2 or 3 arguments");
+    DECLARE_MESSAGE(InvalidArgumentRequiresValidToken,
+                    (msg::binary_source),
+                    "",
+                    "invalid argument: binary config '{binary_source}' requires a SAS token without a "
+                    "preceeding '?' as the second argument");
+    DECLARE_MESSAGE(PackingVendorFailed,
+                    (msg::vendor),
+                    "",
+                    "Packing {vendor} failed.  Use --debug for more information.");
+    DECLARE_MESSAGE(PushingVendorFailed,
+                    (msg::vendor, msg::path),
+                    "",
+                    "Pushing {vendor} to '{path}' failed.  Use --debug for more information.");
+    DECLARE_MESSAGE(ReplaceSecretsError,
+                    (msg::error_msg),
+                    "",
+                    "Replace secretes produced the following error: '{error_msg}'");
+    DECLARE_MESSAGE(RestoredPackage, (msg::path), "", "Restored package from '{path}'");
+    DECLARE_MESSAGE(
+        RestoredPackagesFromVendor,
+        (msg::count, msg::elapsed, msg::value),
+        "{value} may be either a 'vendor' like 'Azure' or 'NuGet', or a file path like C:\\example or /usr/example",
+        "Restored {count} package(s) from {value} in {elapsed}. Use --debug to see more details.");
+    DECLARE_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: '{path}'");
+    DECLARE_MESSAGE(UnknownBinaryProviderType,
+                    (),
+                    "",
+                    "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', "
+                    "'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', "
+                    "'x-aws-config', 'http', and 'files'");
+    DECLARE_MESSAGE(
+        UnknownVariablesInTemplate,
+        (msg::value, msg::list),
+        "{value} is the value provided by the user and {list} a list of unknown variables seperated by comma",
+        "invalid argument: url template '{value}' contains unknown variables: {list}");
+    DECLARE_MESSAGE(UploadedBinaries, (msg::count, msg::vendor), "", "Uploaded binaries to '{count}' '{vendor}'.");
+    DECLARE_MESSAGE(UploadedPackagesToVendor,
+                    (msg::count, msg::elapsed, msg::vendor),
+                    "",
+                    "Uploaded {count} package(s) to {vendor} in {elapsed}");
+
+    DECLARE_MESSAGE(UploadingBinariesToVendor,
+                    (msg::spec, msg::vendor, msg::path),
+                    "",
+                    "Uploading binaries for '{spec}' to '{vendor}' source '{path}'.");
+    DECLARE_MESSAGE(UploadingBinariesUsingVendor,
+                    (msg::spec, msg::vendor, msg::path),
+                    "",
+                    "Uploading binaries for '{spec}' using '{vendor}' '{path}'.");
 }
