@@ -556,4 +556,25 @@ namespace vcpkg
     REGISTER_MESSAGE(VcpkgSendMetricsButDisabled);
     REGISTER_MESSAGE(VcpkgHasCrashed);
     REGISTER_MESSAGE(ForceSystemBinariesOnWeirdPlatforms);
+    REGISTER_MESSAGE(ErrorMissingVcpkgRoot);
+    REGISTER_MESSAGE(ErrorVcvarsUnsupported);
+    REGISTER_MESSAGE(ErrorNoVSInstance);
+    REGISTER_MESSAGE(ErrorNoVSInstanceVersion);
+    REGISTER_MESSAGE(ErrorNoVSInstanceFullVersion);
+    REGISTER_MESSAGE(ErrorNoVSInstanceAt);
+    REGISTER_MESSAGE(VcpkgDisallowedClassicMode);
+    REGISTER_MESSAGE(ChecksUnreachableCode);
+    REGISTER_MESSAGE(ChecksFailedCheck);
+    REGISTER_MESSAGE(ChecksUpdateVcpkg);
+    REGISTER_MESSAGE(CurlReportedUnexpectedResults);
+    REGISTER_MESSAGE(UnexpectedErrorDuringBulkDownload);
+    REGISTER_MESSAGE(FailedToStoreBackToMirror);
+    REGISTER_MESSAGE(GitCommandFailed);
+    REGISTER_MESSAGE(GitUnexpectedCommandOutput);
+    REGISTER_MESSAGE(GitStatusUnknownFileStatus);
+    REGISTER_MESSAGE(GitStatusOutputExpectedNewLine);
+    REGISTER_MESSAGE(GitStatusOutputExpectedFileName);
+    REGISTER_MESSAGE(GitStatusOutputExpectedRenameOrNewline);
+    REGISTER_MESSAGE(HashFileFailureToRead);
+    REGISTER_MESSAGE(WaitingToTakeFilesystemLock);
 }

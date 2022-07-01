@@ -942,4 +942,63 @@ namespace vcpkg
         (),
         "",
         "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.");
+    DECLARE_MESSAGE(
+        ErrorMissingVcpkgRoot,
+        (),
+        "",
+        "Could not detect vcpkg-root. If you are trying to use a copy of vcpkg that you've built, you must "
+        "define the VCPKG_ROOT environment variable to point to a cloned copy of https://github.com/Microsoft/vcpkg.");
+    DECLARE_MESSAGE(ErrorVcvarsUnsupported,
+                    (msg::triplet),
+                    "",
+                    "in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported "
+                    "on non-Windows hosts.\nDefine 'VCPKG_CMAKE_SYSTEM_NAME' or "
+                    "'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.");
+
+    DECLARE_MESSAGE(ErrorNoVSInstance,
+                    (msg::triplet),
+                    "",
+                    "in triplet {triplet}: Unable to find a valid Visual Studio instance");
+
+    DECLARE_MESSAGE(ErrorNoVSInstanceVersion, (msg::version), "", "with toolset version {version}");
+
+    DECLARE_MESSAGE(ErrorNoVSInstanceFullVersion, (msg::version), "", "with toolset version prefix {version}");
+
+    DECLARE_MESSAGE(ErrorNoVSInstanceAt, (msg::path), "", "at \"{path}\"");
+    DECLARE_MESSAGE(VcpkgDisallowedClassicMode,
+                    (),
+                    "",
+                    "Could not locate a manifest (vcpkg.json) above the current working "
+                    "directory.\nThis vcpkg distribution does not have a classic mode instance.");
+    DECLARE_MESSAGE(ChecksUnreachableCode, (), "", "unreachable code was reached");
+    DECLARE_MESSAGE(ChecksFailedCheck, (), "", "vcpkg has crashed; no additional details are available.");
+    DECLARE_MESSAGE(ChecksUpdateVcpkg, (), "", "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.");
+    DECLARE_MESSAGE(CurlReportedUnexpectedResults,
+                    (msg::command_line, msg::actual),
+                    "{command_line} is the command line to call curl.exe, {actual} is the console output "
+                    "of curl.exe locale-invariant download results.",
+                    "curl has reported unexpected results to vcpkg and vcpkg cannot continue.\n"
+                    "Please review the following text for sensitive information and open an issue on the "
+                    "Microsoft/vcpkg GitHub to help fix this problem!\n"
+                    "cmd: {command_line}\n"
+                    "=== curl output ===\n"
+                    "{actual}\n"
+                    "=== end curl output ===");
+    DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.");
+    DECLARE_MESSAGE(FailedToStoreBackToMirror, (), "", "failed to store back to mirror:");
+    DECLARE_MESSAGE(WaitingToTakeFilesystemLock, (msg::path), "", "waiting to take filesystem lock on {path}...");
+    DECLARE_MESSAGE(GitCommandFailed, (msg::command_line), "", "failed to execute: {command_line}");
+    DECLARE_MESSAGE(GitUnexpectedCommandOutput, (), "", "unexpected git output");
+    DECLARE_MESSAGE(GitStatusUnknownFileStatus,
+                    (msg::value),
+                    "{value} is a single character indicating file status, for example: A, U, M, D",
+                    "unknown file status: {value}");
+    DECLARE_MESSAGE(GitStatusOutputExpectedNewLine, (), "", "expected new line");
+    DECLARE_MESSAGE(GitStatusOutputExpectedFileName, (), "", "expected a file name");
+    DECLARE_MESSAGE(GitStatusOutputExpectedRenameOrNewline, (), "", "expected renamed file or new lines");
+    DECLARE_MESSAGE(
+        HashFileFailureToRead,
+        (msg::path),
+        "Printed after ErrorMessage and before the specific failing filesystem operation (like file not found)",
+        "failed to read file '{path}' for hashing: ");
 }

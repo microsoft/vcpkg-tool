@@ -557,12 +557,6 @@ namespace vcpkg
         };
     }
 
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgDisallowedClassicMode,
-                                 (),
-                                 "",
-                                 "Could not locate a manifest (vcpkg.json) above the current working "
-                                 "directory.\nThis vcpkg distribution does not have a classic mode instance.");
-
     const InstalledPaths& VcpkgPaths::installed() const
     {
         if (auto i = m_pimpl->m_installed.get())
@@ -597,13 +591,6 @@ namespace vcpkg
     const Optional<InstalledPaths>& VcpkgPaths::maybe_installed() const { return m_pimpl->m_installed; }
     const Optional<Path>& VcpkgPaths::maybe_buildtrees() const { return m_pimpl->buildtrees; }
     const Optional<Path>& VcpkgPaths::maybe_packages() const { return m_pimpl->packages; }
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        ErrorMissingVcpkgRoot,
-        (),
-        "",
-        "Could not detect vcpkg-root. If you are trying to use a copy of vcpkg that you've built, you must "
-        "define the VCPKG_ROOT environment variable to point to a cloned copy of https://github.com/Microsoft/vcpkg.");
 
     // Guaranteed to return non-empty
     static Path determine_root(const Filesystem& fs, const Path& original_cwd, const VcpkgCmdArguments& args)
@@ -1309,27 +1296,6 @@ namespace vcpkg
         return *m_pimpl->m_registry_set;
     }
     const DownloadManager& VcpkgPaths::get_download_manager() const { return *m_pimpl->m_download_manager.get(); }
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorVcvarsUnsupported,
-                                 (msg::triplet),
-                                 "",
-                                 "in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported "
-                                 "on non-Windows hosts.\nDefine 'VCPKG_CMAKE_SYSTEM_NAME' or "
-                                 "'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.");
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstance,
-                                 (msg::triplet),
-                                 "",
-                                 "in triplet {triplet}: Unable to find a valid Visual Studio instance");
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceVersion, (msg::version), "", "with toolset version {version}");
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceFullVersion,
-                                 (msg::version),
-                                 "",
-                                 "with toolset version prefix {version}");
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceAt, (msg::path), "", "at \"{path}\"");
 
 #if defined(_WIN32)
     static const ToolsetsInformation& get_all_toolsets(details::VcpkgPathsImpl& impl, const Filesystem& fs)
