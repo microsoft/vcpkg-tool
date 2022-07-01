@@ -90,7 +90,7 @@ namespace
                 if (i < 19 && code_and_output->exit_code == 1618)
                 {
                     // ERROR_INSTALL_ALREADY_RUNNING
-                    print2("Another installation is in progress on the machine, sleeping 6s before retrying.\n");
+                    msg::println(msgAnotherInstallationInProgress);
                     std::this_thread::sleep_for(std::chrono::seconds(6));
                     continue;
                 }
