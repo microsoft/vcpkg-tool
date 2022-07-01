@@ -184,8 +184,7 @@ namespace vcpkg::Commands::PortHistory
             Json::Object root;
             root.insert("versions", versions_json);
 
-            auto json_string = Json::stringify(root, vcpkg::Json::JsonStyle::with_spaces(2));
-
+            auto json_string = Json::stringify(root);
             if (maybe_output_file.has_value())
             {
                 auto output_file_path = maybe_output_file.value_or_exit(VCPKG_LINE_INFO);

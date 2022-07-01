@@ -118,7 +118,7 @@ Error:)",
 === Serialized manifest file ===
 %s
 )",
-                                       Json::stringify(res, {}));
+                                       Json::stringify(res));
         }
 
         auto check_scf = std::move(check).value_or_exit(VCPKG_LINE_INFO);
@@ -143,13 +143,13 @@ Please open an issue at https://github.com/microsoft/vcpkg, with the following o
 )",
                 data.original_source,
                 Json::stringify(res, {}),
-                Json::stringify(serialize_debug_manifest(data.scf), {}),
-                Json::stringify(serialize_debug_manifest(*check_scf), {}));
+                Json::stringify(serialize_debug_manifest(data.scf)),
+                Json::stringify(serialize_debug_manifest(*check_scf)));
         }
 
         // the manifest scf is correct
         std::error_code ec;
-        fs.write_contents(data.file_to_write, Json::stringify(res, {}), ec);
+        fs.write_contents(data.file_to_write, Json::stringify(res), ec);
         if (ec)
         {
             Checks::exit_with_message(

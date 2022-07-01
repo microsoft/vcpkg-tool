@@ -244,5 +244,5 @@ std::string vcpkg::create_spdx_sbom(const Dependencies::InstallPlanAction& actio
         append_move_if_exists_and_array(packages, robj, "packages");
     }
 
-    return Json::stringify(doc, {});
+    return Json::stringify(doc);
 }

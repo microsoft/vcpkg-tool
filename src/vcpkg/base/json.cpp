@@ -1325,6 +1325,7 @@ namespace vcpkg::Json
         };
     }
 
+    std::string stringify(const Value& value) { return stringify(value, JsonStyle{}); }
     std::string stringify(const Value& value, JsonStyle style)
     {
         std::string res;
@@ -1332,6 +1333,7 @@ namespace vcpkg::Json
         res.push_back('\n');
         return res;
     }
+    std::string stringify(const Object& obj) { return stringify(obj, JsonStyle{}); }
     std::string stringify(const Object& obj, JsonStyle style)
     {
         std::string res;
@@ -1339,6 +1341,7 @@ namespace vcpkg::Json
         res.push_back('\n');
         return res;
     }
+    std::string stringify(const Array& arr) { return stringify(arr, JsonStyle{}); }
     std::string stringify(const Array& arr, JsonStyle style)
     {
         std::string res;
