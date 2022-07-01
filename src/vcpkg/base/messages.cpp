@@ -519,4 +519,27 @@ namespace vcpkg
     REGISTER_MESSAGE(HeaderOnlyUsage);
     REGISTER_MESSAGE(CMakeTargetsUsageHeuristicMessage);
     REGISTER_MESSAGE(CMakeTargetsUsage);
+    REGISTER_MESSAGE(ParseControlErrorInfoWhileLoading);
+    REGISTER_MESSAGE(ParseControlErrorInfoInvalidFields);
+    REGISTER_MESSAGE(ParseControlErrorInfoMissingFields);
+    REGISTER_MESSAGE(ParseControlErrorInfoWrongTypeFields);
+    REGISTER_MESSAGE(ParseControlErrorInfoTypesEntry);
+    REGISTER_MESSAGE(EmptyLicenseExpression);
+    REGISTER_MESSAGE(LicenseExpressionContainsUnicode);
+    REGISTER_MESSAGE(LicenseExpressionContainsInvalidCharacter);
+    REGISTER_MESSAGE(LicenseExpressionContainsExtraPlus);
+    REGISTER_MESSAGE(LicenseExpressionDocumentRefUnsupported);
+    REGISTER_MESSAGE(LicenseExpressionExpectLicenseFoundEof);
+    REGISTER_MESSAGE(LicenseExpressionExpectExceptionFoundEof);
+    REGISTER_MESSAGE(LicenseExpressionExpectCompoundFoundParen);
+    REGISTER_MESSAGE(LicenseExpressionExpectLicenseFoundParen);
+    REGISTER_MESSAGE(LicenseExpressionExpectExceptionFoundParen);
+    REGISTER_MESSAGE(LicenseExpressionImbalancedParens);
+    REGISTER_MESSAGE(LicenseExpressionExpectLicenseFoundCompound);
+    REGISTER_MESSAGE(LicenseExpressionExpectExceptionFoundCompound);
+    REGISTER_MESSAGE(LicenseExpressionExpectCompoundFoundWith);
+    REGISTER_MESSAGE(LicenseExpressionExpectCompoundOrWithFoundWord);
+    REGISTER_MESSAGE(LicenseExpressionExpectCompoundFoundWord);
+    REGISTER_MESSAGE(LicenseExpressionUnknownLicense);
+    REGISTER_MESSAGE(LicenseExpressionUnknownException);
 }
