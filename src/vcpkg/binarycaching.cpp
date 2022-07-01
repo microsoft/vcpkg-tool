@@ -56,7 +56,7 @@ namespace
         FailedVendorAuthentication,
         (msg::vendor, msg::url),
         "",
-        "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details"
+        "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details "
         "on how to provide credentials.");
     DECLARE_AND_REGISTER_MESSAGE(InvalidArgument, (), "", "invalid argument");
     DECLARE_AND_REGISTER_MESSAGE(
