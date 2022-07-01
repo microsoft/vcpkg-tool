@@ -8,13 +8,14 @@ and `locales/messages.json` -- everything else will be generated and modified by
 ## Declaring a Message
 
 The process of writing a user-visible message starts with declaring it.
-Most user-facing messages can be declared and registered at the same time in a source file with:
+Most user-facing messages can be declared in [`messages.h`] and registered in [`messages.cpp`]:
 
-```cxx
-DECLARE_AND_REGISTER_MESSAGE(<message-name>, <parameters>, <comment>, <english-message>);
+```messages.h
+DECLARE_MESSAGE(<message-name>, <parameters>, <comment>, <english-message>);
 ```
-
-for example, in [`sourceparagraph.cpp`].
+```messages.cpp
+REGISTER_MESSAGE(<message-name>);
+```
 
 If you need to declare a message in a header file
 (for example, if a templated function uses it),
