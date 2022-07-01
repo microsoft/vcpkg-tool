@@ -103,7 +103,7 @@ namespace
         InvalidArgumentRequiresSourceArgument,
         (msg::binary_source),
         "",
-        "invalid argument: binary config '{binary_source}' requires at least a source argument");
+        "invalid argument: binary config '{binary_source}' requires at least one source argument");
     DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresTwoOrThreeArguments,
                                  (msg::binary_source),
                                  "",
