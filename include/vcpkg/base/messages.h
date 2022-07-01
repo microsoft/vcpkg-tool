@@ -765,4 +765,9 @@ namespace vcpkg
                     (msg::version),
                     "",
                     "vcpkg package management program version {version}\n\nSee LICENSE.txt for license information.");
+    DECLARE_MESSAGE(UpdateBaselineRemoteGitError, (msg::url), "", "git failed to fetch remote repository '{url}'");
+    DECLARE_MESSAGE(UpdateBaselineLocalGitError,
+                    (msg::path),
+                    "",
+                    "git failed to parse HEAD for the local vcpkg registry at '{path}'");
 }

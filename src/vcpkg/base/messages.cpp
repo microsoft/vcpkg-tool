@@ -500,4 +500,6 @@ namespace vcpkg
     REGISTER_MESSAGE(UpdateBaselineUpdatedBaseline);
     REGISTER_MESSAGE(UpdateBaselineNoUpdate);
     REGISTER_MESSAGE(VersionCommandHeader);
+    REGISTER_MESSAGE(UpdateBaselineRemoteGitError);
+    REGISTER_MESSAGE(UpdateBaselineLocalGitError);
 }
