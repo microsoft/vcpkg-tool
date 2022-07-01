@@ -494,4 +494,9 @@ namespace vcpkg
     REGISTER_MESSAGE(GenerateMsgIncorrectComment);
     REGISTER_MESSAGE(GenerateMsgNoCommentValue);
     REGISTER_MESSAGE(GenerateMsgNoArgumentValue);
+    REGISTER_MESSAGE(UpdateBaselineNoConfiguration);
+    REGISTER_MESSAGE(UpdateBaselineNoExistingBuiltinBaseline);
+    REGISTER_MESSAGE(UpdateBaselineAddBaselineNoManifest);
+    REGISTER_MESSAGE(UpdateBaselineUpdatedBaseline);
+    REGISTER_MESSAGE(UpdateBaselineNoUpdate);
 }

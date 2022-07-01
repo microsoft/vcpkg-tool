@@ -737,4 +737,28 @@ namespace vcpkg
                     (msg::value),
                     "example of {value} is 'arch'",
                     R"({{{value}}} was specified in a comment, but was not used in the message.)");
+    DECLARE_MESSAGE(UpdateBaselineNoConfiguration,
+                    (),
+                    "",
+                    "neither `vcpkg.json` nor `vcpkg-configuration.json` exist to update.");
+
+    DECLARE_MESSAGE(UpdateBaselineNoExistingBuiltinBaseline,
+                    (msg::option),
+                    "",
+                    "the manifest file currently does not contain a `builtin-baseline` field; in order to "
+                    "add one, pass the --{option} switch.");
+    DECLARE_MESSAGE(
+        UpdateBaselineAddBaselineNoManifest,
+        (msg::option),
+        "",
+        "the --{option} switch was passed, but there is no manifest file to add a `builtin-baseline` field to.");
+
+    DECLARE_MESSAGE(UpdateBaselineUpdatedBaseline,
+                    (msg::url, msg::old_value, msg::new_value),
+                    "example of {old_value}, {new_value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
+                    "updated registry '{url}': baseline '{old_value}' -> '{new_value}'");
+    DECLARE_MESSAGE(UpdateBaselineNoUpdate,
+                    (msg::url, msg::value),
+                    "example of {value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
+                    "registry '{url}' not updated: '{value}'");
 }
