@@ -857,7 +857,10 @@ namespace vcpkg::Install
                     {
                         auto omitted = targets.size() - 4;
                         library_target_pair.second.erase(targets.begin() + 4, targets.end());
-                        msg.append_indent().append_raw("# ").append(msgCmakeTargetsExcluded, msg::count = omitted).append_raw('\n');
+                        msg.append_indent()
+                            .append_raw("# ")
+                            .append(msgCmakeTargetsExcluded, msg::count = omitted)
+                            .append_raw('\n');
                     }
 
                     msg.append_indent()
