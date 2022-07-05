@@ -17,6 +17,7 @@
 
 namespace
 {
+    using namespace vcpkg;
 #if !defined(VCPKG_ARTIFACTS_PATH)
     void extract_ce_tarball(const VcpkgPaths& paths,
                             const Path& ce_tarball,
