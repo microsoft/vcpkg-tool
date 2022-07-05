@@ -1008,7 +1008,7 @@ namespace vcpkg
     DECLARE_MESSAGE(PackingVendorFailed,
                     (msg::vendor),
                     "",
-                    "Packing {vendor} failed.Use --debug for more information.");
+                    "Packing {vendor} failed. Use --debug for more information.");
     DECLARE_MESSAGE(ParseControlErrorInfoInvalidFields, (), "", "The following fields were not expected:");
     DECLARE_MESSAGE(ParseControlErrorInfoMissingFields, (), "", "The following fields were missing:");
     DECLARE_MESSAGE(ParseControlErrorInfoTypesEntry,
@@ -1045,7 +1045,7 @@ namespace vcpkg
     DECLARE_MESSAGE(PushingVendorFailed,
                     (msg::vendor, msg::path),
                     "",
-                    "Pushing {vendor} to '{path}' failed.Use --debug for more information.");
+                    "Pushing {vendor} to '{path}' failed. Use --debug for more information.");
     DECLARE_MESSAGE(ReplaceSecretsError,
                     (msg::error_msg),
                     "",
