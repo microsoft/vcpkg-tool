@@ -1022,7 +1022,8 @@ namespace vcpkg::Install
                 LockGuardPtr<Metrics>(g_metrics)->track_property("x-write-nuget-packages-config", "defined");
                 pkgsconfig = Path(it_pkgsconfig->second);
             }
-            auto maybe_manifest_scf = SourceControlFile::parse_manifest_object(manifest->path, manifest->manifest);
+            auto maybe_manifest_scf =
+                SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest, stdout_sink);
             if (!maybe_manifest_scf)
             {
                 print_error_message(maybe_manifest_scf.error());

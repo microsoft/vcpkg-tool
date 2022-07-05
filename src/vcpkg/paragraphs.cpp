@@ -353,7 +353,9 @@ namespace vcpkg::Paragraphs
                fs.exists(maybe_directory / "vcpkg.json", IgnoreErrors{});
     }
 
-    static ParseExpected<SourceControlFile> try_load_manifest_text(const std::string& text, StringView origin)
+    static ParseExpected<SourceControlFile> try_load_manifest_text(const std::string& text,
+                                                                   StringView origin,
+                                                                   MessageSink& warning_sink)
     {
         auto res = Json::parse(text, origin);
 
@@ -362,7 +364,8 @@ namespace vcpkg::Paragraphs
         {
             if (val->first.is_object())
             {
-                return SourceControlFile::parse_manifest_object(origin, val->first.object());
+                return SourceControlFile::parse_port_manifest_object(
+                    origin, val->first.object(VCPKG_LINE_INFO), warning_sink);
             }
 
             error = "Manifest files must have a top-level object";
@@ -377,13 +380,16 @@ namespace vcpkg::Paragraphs
         return error_info;
     }
 
-    ParseExpected<SourceControlFile> try_load_port_text(const std::string& text, StringView origin, bool is_manifest)
+    ParseExpected<SourceControlFile> try_load_port_text(const std::string& text,
+                                                        StringView origin,
+                                                        bool is_manifest,
+                                                        MessageSink& warning_sink)
     {
         StatsTimer timer(g_load_ports_stats);
 
         if (is_manifest)
         {
-            return try_load_manifest_text(text, origin);
+            return try_load_manifest_text(text, origin, warning_sink);
         }
 
         ExpectedS<std::vector<Paragraph>> pghs = get_paragraphs_text(text, origin);
@@ -424,7 +430,7 @@ namespace vcpkg::Paragraphs
                                       "Found both manifest and CONTROL file in port %s; please rename one or the other",
                                       port_directory);
 
-            return try_load_manifest_text(manifest_contents, manifest_path);
+            return try_load_manifest_text(manifest_contents, manifest_path, stdout_sink);
         }
 
         if (fs.exists(control_path, IgnoreErrors{}))
