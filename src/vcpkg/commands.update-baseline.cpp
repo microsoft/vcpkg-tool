@@ -158,8 +158,7 @@ namespace vcpkg::Commands
 
         if (!dry_run && has_manifest)
         {
-            paths.get_filesystem().write_contents(
-                manifest.path, Json::stringify(manifest.manifest), VCPKG_LINE_INFO);
+            paths.get_filesystem().write_contents(manifest.path, Json::stringify(manifest.manifest), VCPKG_LINE_INFO);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
