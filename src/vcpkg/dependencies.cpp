@@ -339,18 +339,19 @@ namespace vcpkg::Dependencies
                 if (it == m_graph.end())
                 {
                     auto maybe_scfl = m_port_provider.get_control_file(spec.name());
-
-                    if (!maybe_scfl)
+                    if (auto scfl = maybe_scfl.get())
+                    {
+                        it = m_graph
+                                 .emplace(std::piecewise_construct,
+                                          std::forward_as_tuple(spec),
+                                          std::forward_as_tuple(spec, *scfl))
+                                 .first;
+                    }
+                    else
                     {
                         Checks::exit_with_message(
-                            VCPKG_LINE_INFO, "info: while planning to install %s:\n%s", spec, maybe_scfl.error());
+                            VCPKG_LINE_INFO, "info: while looking for %s:\n%s", spec, maybe_scfl.error());
                     }
-
-                    it = m_graph
-                             .emplace(std::piecewise_construct,
-                                      std::forward_as_tuple(spec),
-                                      std::forward_as_tuple(spec, *maybe_scfl.get()))
-                             .first;
                 }
 
                 return it->second;
