@@ -518,12 +518,6 @@ namespace vcpkg
     REGISTER_MESSAGE(ForceSystemBinariesOnWeirdPlatforms);
     REGISTER_MESSAGE(FormattedParseMessageExpression);
     REGISTER_MESSAGE(FuzzExpectedOneOf);
-    REGISTER_MESSAGE(FuzzHelpInput);
-    REGISTER_MESSAGE(FuzzHelpOptionKind);
-    REGISTER_MESSAGE(FuzzHelpOptions);
-    REGISTER_MESSAGE(FuzzHelpUsage);
-    REGISTER_MESSAGE(FuzzInvalidKind);
-    REGISTER_MESSAGE(FuzzUnknownOption);
     REGISTER_MESSAGE(GenerateMsgErrorParsingFormatArgs);
     REGISTER_MESSAGE(GenerateMsgIncorrectComment);
     REGISTER_MESSAGE(GenerateMsgNoArgumentValue);

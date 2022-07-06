@@ -297,6 +297,10 @@ namespace vcpkg::msg
         NAME##_msg_t::default_format_string,                                                                           \
         ::vcpkg::msg::detail::get_examples_for_args(NAME##_msg_t::extra_comment, NAME##_msg_t{}))
 
+#define DECLARE_AND_REGISTER_MESSAGE(NAME, ARGS, COMMENT, ...)                                                         \
+    DECLARE_MESSAGE(NAME, ARGS, COMMENT, __VA_ARGS__);                                                                 \
+    REGISTER_MESSAGE(NAME)
+
     DECLARE_MESSAGE(SeeURL, (msg::url), "", "See {url} for more information.");
     DECLARE_MESSAGE(NoteMessage, (), "", "note: ");
     DECLARE_MESSAGE(WarningMessage, (), "", "warning: ");
@@ -776,12 +780,6 @@ namespace vcpkg
                     (),
                     "the list after the colon should stay the same, they're literal values",
                     "expected one of: utf-8, json, platform-expr");
-    DECLARE_MESSAGE(FuzzHelpInput, (), "", "accepts input on stdin.");
-    DECLARE_MESSAGE(FuzzHelpOptionKind, (), "", "one of {{utf-8, json, platform-expr}}");
-    DECLARE_MESSAGE(FuzzHelpOptions, (), "", "options:");
-    DECLARE_MESSAGE(FuzzHelpUsage, (), "", "usage: vcpkg-fuzz --kind=<kind>");
-    DECLARE_MESSAGE(FuzzInvalidKind, (msg::value), "example of {value} is 'utf-8'", "invalid kind: '{value}'");
-    DECLARE_MESSAGE(FuzzUnknownOption, (msg::option), "", "unknown option: --{option}");
     DECLARE_MESSAGE(GenerateMsgErrorParsingFormatArgs,
                     (msg::value),
                     "example of {value} 'GenerateMsgNoComment'",
