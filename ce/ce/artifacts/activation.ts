@@ -639,7 +639,6 @@ export class Activation {
 
     const [variables, undo] = await this.generateEnvironmentVariables(currentEnvironment);
 
-  
     async function transformtoRecord<T, U = T> (
       orig: AsyncGenerator<Promise<Tuple<string, T>>, any, unknown>, 
       // this type cast to U isn't *technically* correct but since it's locally scoped for this next block of code it shouldn't cause problems
@@ -655,7 +654,6 @@ export class Activation {
     const properties = await transformtoRecord(this.properties, (set) => Array.from(set));
     const paths = await transformtoRecord(this.paths, (set) => Array.from(set));
 
-    
     // generate undo file if requested
     if (undoEnvironmentFile) {
       const undoContents = {

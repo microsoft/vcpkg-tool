@@ -13,7 +13,7 @@ export class Json extends Switch {
   override multipleAllowed = false;
   get help() {
     return [
-      i`Dump environment variables to a json file with the path provided by the user.`
+      i`Dump environment variables and other properties to a json file with the path provided by the user.`
     ];
   }
 
