@@ -63,6 +63,9 @@ static void invalid_command(const std::string& cmd)
 
 static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 {
+    // track version on each invocation
+    LockGuardPtr<Metrics>(g_metrics)->track_property("vcpkg_version", Commands::Version::version.to_string());
+
     if (args.command.empty())
     {
         print_usage();
@@ -241,8 +244,6 @@ int main(const int argc, const char* const* const argv)
                                                                   " us)\n"));
         }
     });
-
-    LockGuardPtr<Metrics>(g_metrics)->track_property("version", Commands::Version::version.to_string());
 
     register_console_ctrl_handler();
 

@@ -85,10 +85,10 @@ namespace
 
 namespace vcpkg
 {
-    static Optional<SchemedVersion> visit_optional_schemed_deserializer(StringView parent_type,
-                                                                        Json::Reader& r,
-                                                                        const Json::Object& obj,
-                                                                        bool allow_hash_portversion)
+    Optional<SchemedVersion> visit_optional_schemed_deserializer(StringView parent_type,
+                                                                 Json::Reader& r,
+                                                                 const Json::Object& obj,
+                                                                 bool allow_hash_portversion)
     {
         VersionScheme version_scheme = VersionScheme::String;
         std::pair<std::string, Optional<int>> version;

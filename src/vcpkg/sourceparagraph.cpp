@@ -1022,12 +1022,12 @@ namespace vcpkg
         // but with whitespace normalized
         virtual Optional<std::string> visit_string(Json::Reader& r, StringView sv) override
         {
-            auto parser = SpdxLicenseExpressionParser(sv, "<manifest>");
+            auto parser = SpdxLicenseExpressionParser(sv, "");
             auto res = parser.parse();
 
             for (const auto& warning : parser.messages().warnings)
             {
-                msg::println(Color::warning, warning.format("<manifest>", MessageKind::Warning));
+                r.add_warning(type_name(), warning.format("", MessageKind::Warning));
             }
             if (auto err = parser.get_error())
             {
@@ -1103,46 +1103,38 @@ namespace vcpkg
             return t;
         }
 
-        virtual Optional<std::unique_ptr<SourceControlFile>> visit_object(Json::Reader& r,
-                                                                          const Json::Object& obj) override
+        vcpkg::Optional<std::unique_ptr<vcpkg::SourceControlFile>> visit_object_common(
+            const vcpkg::Json::Object& obj,
+            vcpkg::SourceParagraph& spgh,
+            vcpkg::Json::Reader& r,
+            std::unique_ptr<vcpkg::SourceControlFile>& control_file)
         {
-            auto control_file = std::make_unique<SourceControlFile>();
-            control_file->core_paragraph = std::make_unique<SourceParagraph>();
-
-            auto& spgh = control_file->core_paragraph;
-
             for (const auto& el : obj)
             {
                 if (Strings::starts_with(el.first, "$"))
                 {
-                    spgh->extra_info.insert_or_replace(el.first.to_string(), el.second);
+                    spgh.extra_info.insert_or_replace(el.first.to_string(), el.second);
                 }
             }
 
+            r.optional_object_field(obj, MAINTAINERS, spgh.maintainers, Json::ParagraphDeserializer::instance);
+            r.optional_object_field(obj, CONTACTS, spgh.contacts, ContactsDeserializer::instance);
+            r.optional_object_field(obj, SUMMARY, spgh.summary, Json::ParagraphDeserializer::instance);
+            r.optional_object_field(obj, DESCRIPTION, spgh.description, Json::ParagraphDeserializer::instance);
             static Json::StringDeserializer url_deserializer{"a url"};
-            r.required_object_field(type_name(), obj, NAME, spgh->name, Json::IdentifierDeserializer::instance);
-            auto schemed_version = visit_required_schemed_deserializer(type_name(), r, obj, false);
-            spgh->raw_version = schemed_version.version.text();
-            spgh->version_scheme = schemed_version.scheme;
-            spgh->port_version = schemed_version.version.port_version();
-
-            r.optional_object_field(obj, MAINTAINERS, spgh->maintainers, Json::ParagraphDeserializer::instance);
-            r.optional_object_field(obj, CONTACTS, spgh->contacts, ContactsDeserializer::instance);
-            r.optional_object_field(obj, SUMMARY, spgh->summary, Json::ParagraphDeserializer::instance);
-            r.optional_object_field(obj, DESCRIPTION, spgh->description, Json::ParagraphDeserializer::instance);
-            r.optional_object_field(obj, HOMEPAGE, spgh->homepage, url_deserializer);
-            r.optional_object_field(obj, DOCUMENTATION, spgh->documentation, url_deserializer);
+            r.optional_object_field(obj, HOMEPAGE, spgh.homepage, url_deserializer);
+            r.optional_object_field(obj, DOCUMENTATION, spgh.documentation, url_deserializer);
 
             std::string license;
             if (r.optional_object_field(obj, LICENSE, license, LicenseExpressionDeserializer::instance))
             {
-                spgh->license = {std::move(license)};
+                spgh.license = {std::move(license)};
             }
 
-            r.optional_object_field(obj, DEPENDENCIES, spgh->dependencies, DependencyArrayDeserializer::instance);
+            r.optional_object_field(obj, DEPENDENCIES, spgh.dependencies, DependencyArrayDeserializer::instance);
             static Json::ArrayDeserializer<DependencyOverrideDeserializer> overrides_deserializer{
                 "an array of overrides"};
-            r.optional_object_field(obj, OVERRIDES, spgh->overrides, overrides_deserializer);
+            r.optional_object_field(obj, OVERRIDES, spgh.overrides, overrides_deserializer);
 
             if (obj.contains(DEV_DEPENDENCIES))
             {
@@ -1151,13 +1143,13 @@ namespace vcpkg
             std::string baseline;
             if (r.optional_object_field(obj, BUILTIN_BASELINE, baseline, BaselineCommitDeserializer::instance))
             {
-                spgh->builtin_baseline = std::move(baseline);
+                spgh.builtin_baseline = std::move(baseline);
             }
 
-            r.optional_object_field(obj, SUPPORTS, spgh->supports_expression, PlatformExprDeserializer::instance);
+            r.optional_object_field(obj, SUPPORTS, spgh.supports_expression, PlatformExprDeserializer::instance);
 
             r.optional_object_field(
-                obj, DEFAULT_FEATURES, spgh->default_features, Json::IdentifierArrayDeserializer::instance);
+                obj, DEFAULT_FEATURES, spgh.default_features, Json::IdentifierArrayDeserializer::instance);
 
             FeaturesObject features_tmp;
             r.optional_object_field(obj, FEATURES, features_tmp, FeaturesFieldDeserializer::instance);
@@ -1172,7 +1164,7 @@ namespace vcpkg
                 }
                 else
                 {
-                    spgh->vcpkg_configuration = make_optional(configuration->object());
+                    spgh.vcpkg_configuration = make_optional(configuration->object(VCPKG_LINE_INFO));
                 }
             }
 
@@ -1183,10 +1175,7 @@ namespace vcpkg
 
             return std::move(control_file); // gcc-7 bug workaround redundant move
         }
-
-        static ManifestDeserializer instance;
     };
-    ManifestDeserializer ManifestDeserializer::instance;
 
     constexpr StringLiteral ManifestDeserializer::NAME;
     constexpr StringLiteral ManifestDeserializer::MAINTAINERS;
@@ -1202,6 +1191,61 @@ namespace vcpkg
     constexpr StringLiteral ManifestDeserializer::OVERRIDES;
     constexpr StringLiteral ManifestDeserializer::BUILTIN_BASELINE;
     constexpr StringLiteral ManifestDeserializer::VCPKG_CONFIGURATION;
+
+    struct ProjectManifestDeserializer final : ManifestDeserializer
+    {
+        virtual Optional<std::unique_ptr<SourceControlFile>> visit_object(Json::Reader& r,
+                                                                          const Json::Object& obj) override
+        {
+            auto control_file = std::make_unique<SourceControlFile>();
+            control_file->core_paragraph = std::make_unique<SourceParagraph>();
+
+            auto& spgh = *control_file->core_paragraph;
+
+            r.optional_object_field(obj, NAME, spgh.name, Json::IdentifierDeserializer::instance);
+            auto maybe_schemed_version = visit_optional_schemed_deserializer(type_name(), r, obj, false);
+            if (auto p = maybe_schemed_version.get())
+            {
+                spgh.raw_version = p->version.text();
+                spgh.version_scheme = p->scheme;
+                spgh.port_version = p->version.port_version();
+            }
+            else
+            {
+                spgh.version_scheme = VersionScheme::Missing;
+            }
+
+            return visit_object_common(obj, spgh, r, control_file);
+        }
+
+        static ProjectManifestDeserializer instance;
+    };
+
+    ProjectManifestDeserializer ProjectManifestDeserializer::instance;
+
+    struct PortManifestDeserializer final : ManifestDeserializer
+    {
+        virtual Optional<std::unique_ptr<SourceControlFile>> visit_object(Json::Reader& r,
+                                                                          const Json::Object& obj) override
+        {
+            auto control_file = std::make_unique<SourceControlFile>();
+            control_file->core_paragraph = std::make_unique<SourceParagraph>();
+
+            auto& spgh = *control_file->core_paragraph;
+
+            r.required_object_field(type_name(), obj, NAME, spgh.name, Json::IdentifierDeserializer::instance);
+            auto schemed_version = visit_required_schemed_deserializer(type_name(), r, obj, false);
+            spgh.raw_version = schemed_version.version.text();
+            spgh.version_scheme = schemed_version.scheme;
+            spgh.port_version = schemed_version.version.port_version();
+
+            return visit_object_common(obj, spgh, r, control_file);
+        }
+
+        static PortManifestDeserializer instance;
+    };
+
+    PortManifestDeserializer PortManifestDeserializer::instance;
 
     // Extracts just the configuration information from a manifest object
     struct ManifestConfigurationDeserializer final : Json::IDeserializer<ManifestConfiguration>
@@ -1269,12 +1313,19 @@ namespace vcpkg
         return ret;
     }
 
-    ParseExpected<SourceControlFile> SourceControlFile::parse_manifest_object(StringView origin,
-                                                                              const Json::Object& manifest)
+    template<class ManifestDeserializerType>
+    static ParseExpected<SourceControlFile> parse_manifest_object_impl(StringView origin,
+                                                                       const Json::Object& manifest,
+                                                                       MessageSink& warnings_sink)
     {
         Json::Reader reader;
 
-        auto res = reader.visit(manifest, ManifestDeserializer::instance);
+        auto res = reader.visit(manifest, ManifestDeserializerType::instance);
+
+        for (auto&& w : reader.warnings())
+        {
+            warnings_sink.print(Color::warning, LocalizedString::from_raw(Strings::concat(origin, ": ", w, '\n')));
+        }
 
         if (!reader.errors().empty())
         {
@@ -1291,6 +1342,20 @@ namespace vcpkg
         {
             Checks::unreachable(VCPKG_LINE_INFO);
         }
+    }
+
+    ParseExpected<SourceControlFile> SourceControlFile::parse_project_manifest_object(StringView origin,
+                                                                                      const Json::Object& manifest,
+                                                                                      MessageSink& warnings_sink)
+    {
+        return parse_manifest_object_impl<ProjectManifestDeserializer>(origin, manifest, warnings_sink);
+    }
+
+    ParseExpected<SourceControlFile> SourceControlFile::parse_port_manifest_object(StringView origin,
+                                                                                   const Json::Object& manifest,
+                                                                                   MessageSink& warnings_sink)
+    {
+        return parse_manifest_object_impl<PortManifestDeserializer>(origin, manifest, warnings_sink);
     }
 
     Optional<std::string> SourceControlFile::check_against_feature_flags(const Path& origin,
@@ -1421,6 +1486,11 @@ namespace vcpkg
         return it == last ? last : it + 1;
     }
 
+    static bool starts_with_error(StringView sv)
+    {
+        return Strings::starts_with(sv, "Error") || Strings::starts_with(sv, "error: ");
+    }
+
     void print_error_message(Span<const std::unique_ptr<ParseControlErrorInfo>> error_info_list)
     {
         auto msg = ParseControlErrorInfo::format_errors(error_info_list);
@@ -1435,7 +1505,7 @@ namespace vcpkg
         const char* const last = msg.data() + msg.size();
         while (end_of_chunk != last)
         {
-            while (end_of_chunk != last && Strings::starts_with({end_of_chunk, last}, "Error"))
+            while (end_of_chunk != last && starts_with_error({end_of_chunk, last}))
             {
                 end_of_chunk = after_nl(end_of_chunk, last);
             }
@@ -1445,7 +1515,7 @@ namespace vcpkg
                 start_of_chunk = end_of_chunk;
             }
 
-            while (end_of_chunk != last && !Strings::starts_with({end_of_chunk, last}, "Error"))
+            while (end_of_chunk != last && !starts_with_error({end_of_chunk, last}))
             {
                 end_of_chunk = after_nl(end_of_chunk, last);
             }
@@ -1455,6 +1525,7 @@ namespace vcpkg
                 start_of_chunk = end_of_chunk;
             }
         }
+        print2('\n');
     }
 
     Optional<const FeatureParagraph&> SourceControlFile::find_feature(StringView featurename) const
@@ -1636,13 +1707,16 @@ namespace vcpkg
                        maybe_configuration.value_or_exit(VCPKG_LINE_INFO).serialize());
         }
 
-        obj.insert(ManifestDeserializer::NAME, Json::Value::string(scf.core_paragraph->name));
+        serialize_optional_string(obj, ManifestDeserializer::NAME, scf.core_paragraph->name);
 
-        serialize_schemed_version(obj,
-                                  scf.core_paragraph->version_scheme,
-                                  scf.core_paragraph->raw_version,
-                                  scf.core_paragraph->port_version,
-                                  debug);
+        if (scf.core_paragraph->version_scheme != VersionScheme::Missing)
+        {
+            serialize_schemed_version(obj,
+                                      scf.core_paragraph->version_scheme,
+                                      scf.core_paragraph->raw_version,
+                                      scf.core_paragraph->port_version,
+                                      debug);
+        }
 
         serialize_paragraph(obj, ManifestDeserializer::MAINTAINERS, scf.core_paragraph->maintainers);
         if (scf.core_paragraph->contacts.size() > 0)

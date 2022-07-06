@@ -31,37 +31,34 @@ namespace
                                  (msg::count, msg::vendor),
                                  "",
                                  "Attempting to fetch {count} package(s) from {vendor}");
-    DECLARE_AND_REGISTER_MESSAGE(RestoredPackagesFromVendor,
-                                 (msg::count, msg::elapsed, msg::vendor),
-                                 "",
-                                 "Restored {count} package(s) from {vendor} in {elapsed}");
-    DECLARE_AND_REGISTER_MESSAGE(UploadedPackagesToVendor,
-                                 (msg::count, msg::elapsed, msg::vendor),
-                                 "",
-                                 "Uploaded {count} package(s) to {vendor} in {elapsed}");
-    DECLARE_AND_REGISTER_MESSAGE(UnknownBinaryProviderType,
-                                 (),
-                                 "",
-                                 "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', "
-                                 "'nugetconfig', 'interactive', and 'files'");
-    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresPrefix,
-                                 (msg::binary_source),
-                                 "",
-                                 "invalid argument: binary config '{binary_source}' requires at least a prefix");
-    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresSource,
-                                 (msg::binary_source),
-                                 "",
-                                 "invalid argument: binary config '{binary_source}' requires non-empty source");
-    DECLARE_AND_REGISTER_MESSAGE(InvalidArgument, (), "", "invalid argument");
     DECLARE_AND_REGISTER_MESSAGE(
-        InvalidArgumentRequiresSourceArgument,
-        (msg::binary_source),
+        AuthenticationMayRequireManualAction,
+        (msg::vendor),
         "",
-        "invalid argument: binary config '{binary_source}' requires at least a source argument");
-    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresPathArgument,
-                                 (msg::binary_source),
+        "One or more {vendor} credential providers requested manual action. Add the binary source "
+        "'interactive' to allow interactivity.");
+    DECLARE_AND_REGISTER_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder '{path}':");
+    DECLARE_AND_REGISTER_MESSAGE(
+        DefaultPathToBinaries,
+        (msg::path),
+        "",
+        "Based on your system settings, the default path to store binaries is \n '{path}'. This consults "
+        "%LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.");
+    DECLARE_AND_REGISTER_MESSAGE(ExtendedDocumenationAtUrl,
+                                 (msg::url),
                                  "",
-                                 "invalid argument: binary config '{binary_source}' requires at least a path argument");
+                                 "Extended documentation available at '{url}'.");
+    DECLARE_AND_REGISTER_MESSAGE(FailedToStoreBinaryCache,
+                                 (msg::path, msg::error_msg),
+                                 "",
+                                 "Failed to store binary cache '{path}':'{error_msg}'");
+    DECLARE_AND_REGISTER_MESSAGE(
+        FailedVendorAuthentication,
+        (msg::vendor, msg::url),
+        "",
+        "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details "
+        "on how to provide credentials.");
+    DECLARE_AND_REGISTER_MESSAGE(InvalidArgument, (), "", "invalid argument");
     DECLARE_AND_REGISTER_MESSAGE(
         InvalidArgumentRequiresAbsolutePath,
         (msg::binary_source),
@@ -77,15 +74,23 @@ namespace
         (msg::binary_source),
         "",
         "invalid argument: binary config '{binary_source}' requires at least a base-url and a SAS token");
-    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresValidToken,
-                                 (msg::binary_source),
-                                 "",
-                                 "invalid argument: binary config '{binary_source}' requires a SAS token without a "
-                                 "preceeding '?' as the second argument");
     DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresNoneArguments,
                                  (msg::binary_source),
                                  "",
                                  "invalid argument: binary config '{binary_source}' does not take arguments");
+    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresOneOrTwoArguments,
+                                 (msg::binary_source),
+                                 "",
+                                 "invalid argument: binary config '{binary_source}' requires 1 or 2 arguments");
+    DECLARE_AND_REGISTER_MESSAGE(
+        InvalidArgumentRequiresPathArgument,
+        (msg::binary_source),
+        "",
+        "invalid argument: binary config '{binary_source}' requires at least one path argument");
+    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresPrefix,
+                                 (msg::binary_source),
+                                 "",
+                                 "invalid argument: binary config '{binary_source}' requires at least one prefix");
     DECLARE_AND_REGISTER_MESSAGE(
         InvalidArgumentRequiresSingleArgument,
         (msg::binary_source),
@@ -95,20 +100,67 @@ namespace
                                  (msg::binary_source),
                                  "",
                                  "invalid argument: binary config '{binary_source}' expects a single string argument");
-    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresOneOrTwoArguments,
-                                 (msg::binary_source),
-                                 "",
-                                 "invalid argument: binary config '{binary_source}' requires 1 or 2 arguments");
+    DECLARE_AND_REGISTER_MESSAGE(
+        InvalidArgumentRequiresSourceArgument,
+        (msg::binary_source),
+        "",
+        "invalid argument: binary config '{binary_source}' requires at least one source argument");
     DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresTwoOrThreeArguments,
                                  (msg::binary_source),
                                  "",
                                  "invalid argument: binary config '{binary_source}' requires 2 or 3 arguments");
-    DECLARE_AND_REGISTER_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder '{path}':");
+    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresValidToken,
+                                 (msg::binary_source),
+                                 "",
+                                 "invalid argument: binary config '{binary_source}' requires a SAS token without a "
+                                 "preceeding '?' as the second argument");
+    DECLARE_AND_REGISTER_MESSAGE(PackingVendorFailed,
+                                 (msg::vendor),
+                                 "",
+                                 "Packing {vendor} failed.  Use --debug for more information.");
+    DECLARE_AND_REGISTER_MESSAGE(PushingVendorFailed,
+                                 (msg::vendor, msg::path),
+                                 "",
+                                 "Pushing {vendor} to '{path}' failed.  Use --debug for more information.");
+    DECLARE_AND_REGISTER_MESSAGE(ReplaceSecretsError,
+                                 (msg::error_msg),
+                                 "",
+                                 "Replace secretes produced the following error: '{error_msg}'");
+    DECLARE_AND_REGISTER_MESSAGE(RestoredPackage, (msg::path), "", "Restored package from '{path}'");
+    DECLARE_AND_REGISTER_MESSAGE(
+        RestoredPackagesFromVendor,
+        (msg::count, msg::elapsed, msg::value),
+        "{value} may be either a 'vendor' like 'Azure' or 'NuGet', or a file path like C:\\example or /usr/example",
+        "Restored {count} package(s) from {value} in {elapsed}. Use --debug to see more details.");
+    DECLARE_AND_REGISTER_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: '{path}'");
+    DECLARE_AND_REGISTER_MESSAGE(UnknownBinaryProviderType,
+                                 (),
+                                 "",
+                                 "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', "
+                                 "'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', "
+                                 "'x-aws-config', 'http', and 'files'");
     DECLARE_AND_REGISTER_MESSAGE(
         UnknownVariablesInTemplate,
         (msg::value, msg::list),
         "{value} is the value provided by the user and {list} a list of unknown variables seperated by comma",
         "invalid argument: url template '{value}' contains unknown variables: {list}");
+    DECLARE_AND_REGISTER_MESSAGE(UploadedBinaries,
+                                 (msg::count, msg::vendor),
+                                 "",
+                                 "Uploaded binaries to '{count}' '{vendor}'.");
+    DECLARE_AND_REGISTER_MESSAGE(UploadedPackagesToVendor,
+                                 (msg::count, msg::elapsed, msg::vendor),
+                                 "",
+                                 "Uploaded {count} package(s) to {vendor} in {elapsed}");
+
+    DECLARE_AND_REGISTER_MESSAGE(UploadingBinariesToVendor,
+                                 (msg::spec, msg::vendor, msg::path),
+                                 "",
+                                 "Uploading binaries for '{spec}' to '{vendor}' source '{path}'.");
+    DECLARE_AND_REGISTER_MESSAGE(UploadingBinariesUsingVendor,
+                                 (msg::spec, msg::vendor, msg::path),
+                                 "",
+                                 "Uploading binaries for '{spec}' using '{vendor}' '{path}'.");
 
     struct ConfigSegmentsParser : ParserBase
     {
@@ -305,14 +357,10 @@ namespace
                         ++num_restored;
                     }
                 }
-
-                print2("Restored ",
-                       num_restored,
-                       " packages from ",
-                       archives_root_dir.native(),
-                       " in ",
-                       timer.elapsed(),
-                       ". Use --debug to see more details.\n");
+                msg::println(msgRestoredPackagesFromVendor,
+                             msg::count = num_restored,
+                             msg::elapsed = timer.elapsed(),
+                             msg::value = archives_root_dir.native());
             }
         }
 
@@ -379,7 +427,7 @@ namespace
             {
                 if (try_restore_n({&p_action, 1}, archives_root_dir)[0] == RestoreResult::restored)
                 {
-                    print2("Restored from ", archives_root_dir.native(), "\n");
+                    msg::println(msgRestoredPackage, msg::path = archives_root_dir.native());
                     return RestoreResult::restored;
                 }
             }
@@ -402,14 +450,12 @@ namespace
                 fs, paths.get_tool_cache(), stdout_sink, paths.package_dir(spec), tmp_archive_path);
             if (!compress_result)
             {
-                vcpkg::print2(Color::warning,
-                              "Failed to compress folder '",
-                              paths.package_dir(spec),
-                              "': ",
-                              compress_result.error());
+                msg::println(Color::warning,
+                             msg::format_warning(msgCompressFolderFailed, msg::path = paths.package_dir(spec))
+                                 .append_raw(' ')
+                                 .append_raw(compress_result.error()));
                 return;
             }
-
             size_t http_remotes_pushed = 0;
             for (auto&& put_url_template : m_put_url_templates)
             {
@@ -422,12 +468,12 @@ namespace
                 }
 
                 auto errors = replace_secrets(std::move(maybe_success).error(), m_secrets);
-                print2(Color::warning, errors);
+                msg::println(Color::warning, msgReplaceSecretsError, msg::error_msg = errors);
             }
 
             if (!m_put_url_templates.empty())
             {
-                print2("Uploaded binaries to ", http_remotes_pushed, " HTTP remotes.\n");
+                msg::println(msgUploadedBinaries, msg::count = http_remotes_pushed, msg::vendor = "HTTP remotes");
             }
 
             for (const auto& archives_root_dir : m_write_dirs)
@@ -446,11 +492,14 @@ namespace
 
                 if (ec)
                 {
-                    vcpkg::printf(Color::warning, "Failed to store binary cache %s: %s\n", archive_path, ec.message());
+                    msg::println(Color::warning,
+                                 msgFailedToStoreBinaryCache,
+                                 msg::path = archive_path,
+                                 msg::error_msg = ec.message());
                 }
                 else
                 {
-                    vcpkg::printf("Stored binary cache: %s\n", archive_path);
+                    msg::println(msgStoredBinaryCache, msg::path = archive_path);
                 }
             }
             // In the case of 1 write dir, the file will be moved instead of copied
@@ -545,7 +594,9 @@ namespace
 
                 if (url_paths.empty()) break;
 
-                print2("Attempting to fetch ", url_paths.size(), " packages from HTTP servers.\n");
+                msg::println(msgAttemptingToFetchPackagesFromVendor,
+                             msg::count = url_paths.size(),
+                             msg::vendor = "HTTP servers");
 
                 auto codes = download_files(fs, url_paths, url_template.headers_for_get);
                 std::vector<size_t> action_idxs;
@@ -578,11 +629,10 @@ namespace
                 }
             }
 
-            print2("Restored ",
-                   this_restore_count,
-                   " packages from HTTP servers in ",
-                   timer.elapsed(),
-                   ". Use --debug for more information.\n");
+            msg::println(msgRestoredPackagesFromVendor,
+                         msg::count = this_restore_count,
+                         msg::elapsed = timer.elapsed(),
+                         msg::value = "HTTP servers");
         }
 
         void precheck(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
@@ -679,14 +729,12 @@ namespace
                 .then([&](ExitCodeAndOutput&& res) -> ExpectedS<Unit> {
                     if (Debug::g_debugging)
                     {
-                        print2(res.output);
+                        msg::write_unlocalized_text_to_stdout(Color::error, res.output);
                     }
 
                     if (res.output.find("Authentication may require manual action.") != std::string::npos)
                     {
-                        print2(Color::warning,
-                               "One or more NuGet credential providers requested manual action. Add the binary "
-                               "source 'interactive' to allow interactivity.\n");
+                        msg::println(Color::warning, msgAuthenticationMayRequireManualAction, msg::vendor = "Nuget");
                     }
 
                     if (res.exit_code == 0)
@@ -697,10 +745,10 @@ namespace
                     if (res.output.find("Response status code does not indicate success: 401 (Unauthorized)") !=
                         std::string::npos)
                     {
-                        print2(Color::warning,
-                               "One or more NuGet credential providers failed to authenticate. See ",
-                               docs::binarycaching_url,
-                               " for more details on how to provide credentials.\n");
+                        msg::println(Color::warning,
+                                     msgFailedVendorAuthentication,
+                                     msg::vendor = "NuGet",
+                                     msg::url = docs::binarycaching_url);
                     }
                     else if (res.output.find("for example \"-ApiKey AzureDevOps\"") != std::string::npos)
                     {
@@ -711,7 +759,7 @@ namespace
                             .then([](ExitCodeAndOutput&& res) -> ExpectedS<Unit> {
                                 if (Debug::g_debugging)
                                 {
-                                    print2(res.output);
+                                    msg::write_unlocalized_text_to_stdout(Color::error, res.output);
                                 }
 
                                 if (res.exit_code == 0)
@@ -785,7 +833,7 @@ namespace
                 return;
             }
 
-            print2("Attempting to fetch ", attempts.size(), " packages from nuget.\n");
+            msg::println(msgAttemptingToFetchPackagesFromVendor, msg::count = attempts.size(), msg::vendor = "nuget");
 
             auto packages_config = paths.buildtrees() / "packages.config";
             const auto& nuget_exe = paths.get_tool_exe("nuget", stdout_sink);
@@ -893,12 +941,10 @@ namespace
                     return false;
                 });
             }
-
-            print2("Restored ",
-                   total_restore_attempts - attempts.size(),
-                   " packages from NuGet in ",
-                   timer.elapsed(),
-                   ". Use --debug for more information.\n");
+            msg::println(msgRestoredPackagesFromVendor,
+                         msg::count = total_restore_attempts - attempts.size(),
+                         msg::elapsed = timer.elapsed(),
+                         msg::value = "NuGet");
         }
 
         RestoreResult try_restore(const Dependencies::InstallPlanAction&) const override
@@ -941,7 +987,7 @@ namespace
 
             if (!run_nuget_commandline(cmdline))
             {
-                print2(Color::error, "Packing NuGet failed. Use --debug for more information.\n");
+                msg::println(Color::error, msgPackingVendorFailed, msg::vendor = "NuGet");
                 return;
             }
 
@@ -965,12 +1011,11 @@ namespace
                 {
                     cmd.string_arg("-NonInteractive");
                 }
-
-                print2("Uploading binaries for ", spec, " to NuGet source ", write_src, ".\n");
+                msg::println(
+                    msgUploadingBinariesToVendor, msg::spec = spec, msg::vendor = "NuGet", msg::path = write_src);
                 if (!run_nuget_commandline(cmd))
                 {
-                    print2(
-                        Color::error, "Pushing NuGet to ", write_src, " failed. Use --debug for more information.\n");
+                    msg::println(Color::error, msgPushingVendorFailed, msg::vendor = "NuGet", msg::path = write_src);
                 }
             }
             for (auto&& write_cfg : m_write_configs)
@@ -991,13 +1036,14 @@ namespace
                 {
                     cmd.string_arg("-NonInteractive");
                 }
-
-                print2("Uploading binaries for ", spec, " using NuGet config ", write_cfg, ".\n");
-
+                msg::println(Color::error,
+                             msgUploadingBinariesUsingVendor,
+                             msg::spec = spec,
+                             msg::vendor = "NuGet config",
+                             msg::path = write_cfg);
                 if (!run_nuget_commandline(cmd))
                 {
-                    print2(
-                        Color::error, "Pushing NuGet with ", write_cfg, " failed. Use --debug for more information.\n");
+                    msg::println(Color::error, msgPushingVendorFailed, msg::vendor = "NuGet", msg::path = write_cfg);
                 }
             }
 
@@ -1101,7 +1147,7 @@ namespace
             msg::println(msgRestoredPackagesFromVendor,
                          msg::count = restored_count,
                          msg::elapsed = timer.elapsed(),
-                         msg::vendor = vendor());
+                         msg::value = vendor());
         }
 
         RestoreResult try_restore(const Dependencies::InstallPlanAction&) const override
@@ -1398,7 +1444,7 @@ namespace vcpkg
                                      }
                                      else
                                      {
-                                         print2("unknown key: ", key, '\n');
+                                         Debug::println("Unknown key: ", key);
                                          // We do a input validation while parsing the config
                                          Checks::unreachable(VCPKG_LINE_INFO);
                                      };
@@ -1646,7 +1692,8 @@ namespace vcpkg
 
     void BinaryConfigParserState::clear()
     {
-        m_cleared = true;
+        binary_cache_providers.clear();
+        binary_cache_providers.insert("clear");
         interactive = false;
         nugettimeout = "100";
         archives_to_read.clear();
@@ -1763,6 +1810,7 @@ namespace
                         msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "files"),
                         segments[3].first);
                 }
+                state->binary_cache_providers.insert("files");
             }
             else if (segments[0].second == "interactive")
             {
@@ -1799,6 +1847,7 @@ namespace
                         msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "nugetconfig"),
                         segments[3].first);
                 }
+                state->binary_cache_providers.insert("nuget");
             }
             else if (segments[0].second == "nuget")
             {
@@ -1812,7 +1861,8 @@ namespace
                 auto&& p = segments[1].second;
                 if (p.empty())
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresSource, msg::binary_source = "nuget"));
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresSourceArgument, msg::binary_source = "nuget"));
                 }
 
                 handle_readwrite(state->sources_to_read, state->sources_to_write, std::move(p), segments, 2);
@@ -1822,6 +1872,7 @@ namespace
                         msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "nuget"),
                         segments[3].first);
                 }
+                state->binary_cache_providers.insert("nuget");
             }
             else if (segments[0].second == "nugettimeout")
             {
@@ -1847,7 +1898,9 @@ namespace
                 {
                     return add_error("invalid value: binary config 'nugettimeout' requires integers greater than 0");
                 }
+
                 state->nugettimeout = std::to_string(timeout);
+                state->binary_cache_providers.insert("nuget");
             }
             else if (segments[0].second == "default")
             {
@@ -1866,6 +1919,7 @@ namespace
 
                 handle_readwrite(
                     state->archives_to_read, state->archives_to_write, Path(*maybe_home.get()), segments, 1);
+                state->binary_cache_providers.insert("default");
             }
             else if (segments[0].second == "x-azblob")
             {
@@ -1917,6 +1971,8 @@ namespace
                 url_template.headers_for_put.assign(headers.begin(), headers.end());
                 handle_readwrite(
                     state->url_templates_to_get, state->url_templates_to_put, std::move(url_template), segments, 3);
+
+                state->binary_cache_providers.insert("azblob");
             }
             else if (segments[0].second == "x-gcs")
             {
@@ -1949,6 +2005,8 @@ namespace
                 }
 
                 handle_readwrite(state->gcs_read_prefixes, state->gcs_write_prefixes, std::move(p), segments, 2);
+
+                state->binary_cache_providers.insert("gcs");
             }
             else if (segments[0].second == "x-aws")
             {
@@ -1981,6 +2039,8 @@ namespace
                 }
 
                 handle_readwrite(state->aws_read_prefixes, state->aws_write_prefixes, std::move(p), segments, 2);
+
+                state->binary_cache_providers.insert("aws");
             }
             else if (segments[0].second == "x-aws-config")
             {
@@ -2001,6 +2061,7 @@ namespace
                 }
 
                 state->aws_no_sign_request = no_sign_request;
+                state->binary_cache_providers.insert("aws");
             }
             else if (segments[0].second == "x-cos")
             {
@@ -2033,6 +2094,7 @@ namespace
                 }
 
                 handle_readwrite(state->cos_read_prefixes, state->cos_write_prefixes, std::move(p), segments, 2);
+                state->binary_cache_providers.insert("cos");
             }
             else if (segments[0].second == "http")
             {
@@ -2069,12 +2131,19 @@ namespace
                     url_template.headers_for_get.push_back(segments[3].second);
                     url_template.headers_for_put.push_back(segments[3].second);
                 }
+
                 handle_readwrite(
                     state->url_templates_to_get, state->url_templates_to_put, std::move(url_template), segments, 2);
+                state->binary_cache_providers.insert("http");
             }
             else
             {
                 return add_error(msg::format(msgUnknownBinaryProviderType), segments[0].first);
+            }
+
+            for (const auto& cache_provider : state->binary_cache_providers)
+            {
+                LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching_" + cache_provider, "defined");
             }
         }
     };
@@ -2297,11 +2366,6 @@ ExpectedS<BinaryConfigParserState> vcpkg::create_binary_providers_from_configs_p
         }
     }
 
-    if (s.m_cleared)
-    {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-clear", "defined");
-    }
-
     return s;
 }
 
@@ -2359,7 +2423,6 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
 
     if (!s.url_templates_to_get.empty())
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-url-get", "defined");
         providers.push_back(
             std::make_unique<HttpGetBinaryProvider>(paths, std::move(s.url_templates_to_get), s.secrets));
     }
@@ -2367,7 +2430,6 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
     if (!s.sources_to_read.empty() || !s.sources_to_write.empty() || !s.configs_to_read.empty() ||
         !s.configs_to_write.empty())
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-nuget", "defined");
         providers.push_back(std::make_unique<NugetBinaryProvider>(paths,
                                                                   std::move(s.sources_to_read),
                                                                   std::move(s.sources_to_write),
@@ -2547,8 +2609,7 @@ void vcpkg::help_topic_asset_caching(const VcpkgPaths&)
              "specified as `read`, `write`, or `readwrite` and defaults to `read`.");
     tbl.blank();
     print2(tbl.m_str);
-
-    print2("\nExtended documentation is available at ", docs::assetcaching_url, "\n");
+    msg::println(msgExtendedDocumenationAtUrl, msg::url = docs::assetcaching_url);
 }
 
 void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
@@ -2627,13 +2688,10 @@ void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
     const auto& maybe_cachepath = default_cache_path();
     if (auto p = maybe_cachepath.get())
     {
-        print2(
-            "\nBased on your system settings, the default path to store binaries is\n    ",
-            *p,
-            "\nThis consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.\n");
+        msg::println(msgDefaultPathToBinaries, msg::path = *p);
     }
 
-    print2("\nExtended documentation is available at ", docs::binarycaching_url, "\n");
+    msg::println(msgExtendedDocumenationAtUrl, msg::url = docs::binarycaching_url);
 }
 
 std::string vcpkg::generate_nuget_packages_config(const Dependencies::ActionPlan& action)
