@@ -621,7 +621,7 @@ export class Activation {
     return [env, undo];
   }
 
-  async activate(artifacts: Iterable<Artifact>, currentEnvironment: Record<string, string | undefined>, shellScriptFile: Uri | undefined, undoEnvironmentFile: Uri | undefined, msbuildFile: Uri | undefined, dumpEnv: Uri | undefined) {
+  async activate(artifacts: Iterable<Artifact>, currentEnvironment: Record<string, string | undefined>, shellScriptFile: Uri | undefined, undoEnvironmentFile: Uri | undefined, msbuildFile: Uri | undefined, json: Uri | undefined) {
     let undoDeactivation = '';
     const scriptKind = extname(shellScriptFile?.fsPath || '');
 
@@ -639,19 +639,21 @@ export class Activation {
 
     const [variables, undo] = await this.generateEnvironmentVariables(currentEnvironment);
 
-    const transformtoRecord = async (orig: AsyncGenerator<Promise<Tuple<string, string>>, any, unknown>) => 
-    (await toArrayAsync(orig)).reduce((newRecord, [key, val]) => { newRecord[key] = val; return newRecord; }, <Record<string, string>>{});
+  
+    async function transformtoRecord<T, U = T> (
+      orig: AsyncGenerator<Promise<Tuple<string, T>>, any, unknown>, 
+      // this type cast to U isn't *technically* correct but since it's locally scoped for this next block of code it shouldn't cause problems
+      func: (value: T) => U = (x => x as unknown as U)) {  
 
+      return linq.values((await toArrayAsync(orig))).toObject(tuple => [tuple[0], func(tuple[1])]); 
+    }
+    
     const defines = await transformtoRecord(this.defines);
     const aliases = await transformtoRecord(this.aliases);
     const locations = await transformtoRecord(this.locations);
     const tools = await transformtoRecord(this.tools);
-    
-    const properties = <Record<string, string>>{};
-    for await (const [k, v] of this.properties) { properties[k] = linq.join(v, ';');}
-
-    const paths = <Record<string, string>>{};
-    for await (const [k, v] of this.paths) { paths[k] = linq.join(v, ';');}
+    const properties = await transformtoRecord(this.properties, (set) => Array.from(set));
+    const paths = await transformtoRecord(this.paths, (set) => Array.from(set));
 
     
     // generate undo file if requested
@@ -685,10 +687,10 @@ export class Activation {
       await msbuildFile.writeUTF8(await this.generateMSBuild(artifacts));
     }
 
-    if(dumpEnv) {
-      const contents = generateEnvVarDump(variables, defines, aliases, properties, locations, paths, tools);
+    if(json) {
+      const contents = generateJson(variables, defines, aliases, properties, locations, paths, tools);
       this.#session.channels.verbose(`--------[START ENV VAR FILE]--------\n${contents}\n--------[END ENV VAR FILE]---------`);
-      await dumpEnv.writeUTF8(contents); 
+      await json.writeUTF8(contents); 
     }
   }
 
@@ -759,17 +761,19 @@ function generateScriptContent(kind: string, variables: Record<string, string>, 
   return '';
 }
 
-function generateEnvVarDump(variables: Record<string, string>, defines: Record<string, string>, aliases: Record<string, string>, 
-  properties:Record<string, string>, locations: Record<string, string>, paths: Record<string, string>, tools: Record<string, string>): string {
+function generateJson(variables: Record<string, string>, defines: Record<string, string>, aliases: Record<string, string>, 
+  properties:Record<string, string[]>, locations: Record<string, string>, paths: Record<string, string[]>, tools: Record<string, string>): string {
     
-  var contents = {"version": 1, 
-  "env": variables,
-  "defines": defines, 
-  "aliases": aliases, 
-  "properties": properties, 
-  "locations": locations, 
-  "paths": paths, 
-  "tools":tools}
+  var contents = {
+    "version": 1, 
+    variables,
+    defines, 
+    aliases, 
+    properties, 
+    locations, 
+    paths, 
+    tools
+  };
   
   return JSON.stringify(contents);
 }

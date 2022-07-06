@@ -7,7 +7,7 @@ import { Uri } from '../../util/uri';
 import { resolvePath } from '../command-line';
 import { Switch } from '../switch';
 
-export class DumpEnv extends Switch {
+export class Json extends Switch {
   
   switch = 'json';
   override multipleAllowed = false;

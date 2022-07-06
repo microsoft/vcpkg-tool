@@ -6,7 +6,7 @@ import { session } from '../../main';
 import { Command } from '../command';
 import { activateProject } from '../project';
 import { error } from '../styling';
-import { DumpEnv } from '../switches/dump-env';
+import { Json } from '../switches/json';
 import { MSBuildProps } from '../switches/msbuild-props';
 import { Project } from '../switches/project';
 import { WhatIf } from '../switches/whatIf';
@@ -19,7 +19,7 @@ export class ActivateCommand extends Command {
   whatIf = new WhatIf(this);
   project: Project = new Project(this);
   msbuildProps: MSBuildProps = new MSBuildProps(this);
-  dumpEnv : DumpEnv = new DumpEnv(this);
+  json : Json = new Json(this);
 
   get summary() {
     return i`Activates the tools required for a project`;
@@ -44,7 +44,7 @@ export class ActivateCommand extends Command {
       allLanguages: this.commandLine.allLanguages,
       language: this.commandLine.language,
       msbuildProps: await this.msbuildProps.value,
-      dumpEnv: await this.dumpEnv.value
+      json: await this.json.value
     });
   }
 }
