@@ -6,8 +6,6 @@ using namespace vcpkg;
 
 namespace vcpkg::msg
 {
-    DECLARE_AND_REGISTER_MESSAGE(NoLocalizationForMessages, (), "", "No localization for the following messages:");
-
     REGISTER_MESSAGE(SeeURL);
     REGISTER_MESSAGE(NoteMessage);
     REGISTER_MESSAGE(WarningMessage);
@@ -587,6 +585,7 @@ namespace vcpkg
     REGISTER_MESSAGE(LocalizedMessageMustNotEndWithNewline);
     REGISTER_MESSAGE(MonoInstructions);
     REGISTER_MESSAGE(MsiexecFailedToExtract);
+    REGISTER_MESSAGE(NoLocalizationForMessages);
     REGISTER_MESSAGE(NoRegistryForPort);
     REGISTER_MESSAGE(PackingVendorFailed);
     REGISTER_MESSAGE(ParseControlErrorInfoInvalidFields);

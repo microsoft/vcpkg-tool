@@ -185,7 +185,7 @@
   "LocalizedMessageMustNotEndWithNewline": "The message named {value} ends with a newline which should be added by formatting rather than by localization.",
   "MonoInstructions": "This may be caused by an incomplete mono installation. Full mono is available on some systems via `sudo apt install mono-complete`. Ubuntu 18.04 users may need a newer version of mono, available at https://www.mono-project.com/download/stable/",
   "MsiexecFailedToExtract": "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:",
-  "NoLocalizationForMessages": "No localization for the following messages:",
+  "NoLocalizationForMessages": "No localized messages for the following: ",
   "NoRegistryForPort": "no registry configured for port {package_name}",
   "NoteMessage": "note: ",
   "PackingVendorFailed": "Packing {vendor} failed. Use --debug for more information.",

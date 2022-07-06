@@ -290,14 +290,12 @@ namespace vcpkg::msg
         static constexpr ::vcpkg::StringLiteral default_format_string = __VA_ARGS__;                                   \
         static const ::size_t index;                                                                                   \
     } msg##NAME VCPKG_UNUSED = {}
+
 #define REGISTER_MESSAGE(NAME)                                                                                         \
     const ::size_t NAME##_msg_t::index = ::vcpkg::msg::detail::startup_register_message(                               \
         NAME##_msg_t::name,                                                                                            \
         NAME##_msg_t::default_format_string,                                                                           \
         ::vcpkg::msg::detail::get_examples_for_args(NAME##_msg_t::extra_comment, NAME##_msg_t{}))
-#define DECLARE_AND_REGISTER_MESSAGE(NAME, ARGS, COMMENT, ...)                                                         \
-    DECLARE_MESSAGE(NAME, ARGS, COMMENT, __VA_ARGS__);                                                                 \
-    REGISTER_MESSAGE(NAME)
 
     DECLARE_MESSAGE(SeeURL, (msg::url), "", "See {url} for more information.");
     DECLARE_MESSAGE(NoteMessage, (), "", "note: ");
@@ -1005,6 +1003,7 @@ namespace vcpkg
                     (msg::path, msg::exit_code),
                     "",
                     "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:");
+    DECLARE_MESSAGE(NoLocalizationForMessages, (), "", "No localized messages for the following: ");
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
     DECLARE_MESSAGE(PackingVendorFailed,
                     (msg::vendor),
