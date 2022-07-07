@@ -266,13 +266,6 @@ endfunction()
         return dep_info_path;
     }
 
-    DECLARE_AND_REGISTER_MESSAGE(CommandFailed,
-                                 (msg::command_line),
-                                 "",
-                                 "command:\n"
-                                 "{command_line}\n"
-                                 "failed with the following results:");
-
     void TripletCMakeVarProvider::launch_and_split(
         const Path& script_path, std::vector<std::vector<std::pair<std::string, std::string>>>& vars) const
     {

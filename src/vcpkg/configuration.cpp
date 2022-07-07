@@ -10,15 +10,6 @@ namespace
 {
     using namespace vcpkg;
 
-    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineRemoteGitError,
-                                 (msg::url),
-                                 "",
-                                 "git failed to fetch remote repository '{url}'");
-    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineLocalGitError,
-                                 (msg::path),
-                                 "",
-                                 "git failed to parse HEAD for the local vcpkg registry at '{path}'");
-
     struct RegistryConfigDeserializer : Json::IDeserializer<RegistryConfig>
     {
         constexpr static StringLiteral KIND = "kind";

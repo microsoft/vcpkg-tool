@@ -18,12 +18,6 @@
 
 namespace vcpkg::Hash
 {
-    DECLARE_AND_REGISTER_MESSAGE(
-        HashFileFailureToRead,
-        (msg::path),
-        "Printed after ErrorMessage and before the specific failing filesystem operation (like file not found)",
-        "failed to read file '{path}' for hashing: ");
-
     using uchar = unsigned char;
 
     Optional<Algorithm> algorithm_from_string(StringView sv) noexcept

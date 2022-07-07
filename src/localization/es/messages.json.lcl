@@ -331,11 +331,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AnotherInstallationInProgress" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Another installation is in progress on the machine, sleeping 6s before retrying.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Hay otra instalación en curso en la máquina, en suspensión 6 s antes de volver a intentarlo.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AttemptingToFetchPackagesFromVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Attempting to fetch {count} package(s) from {vendor}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Intentando capturar {count} paquetes de {vendor}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AuthenticationMayRequireManualAction" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[One or more {vendor} credential providers requested manual action. Add the binary source 'interactive' to allow interactivity.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Uno o más proveedores de credenciales de {vendor} solicitaron una acción manual. Agregue el origen binario "interactivo" para permitir la interactividad.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -703,6 +721,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DefaultPathToBinaries" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Based on your system settings, the default path to store binaries is ]A; '{path}'. This consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Según la configuración del sistema, la ruta de acceso predeterminada para almacenar archivos binarios es ]A; "{path}". Esto efectúa una consulta %LOCALAPPDATA%/%APPDATA% en Windows y $XDG_CACHE_HOME o $HOME en otras plataformas.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DetectCompilerHash" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Detecting compiler hash for triplet "{triplet}"...]]></Val>
@@ -1009,6 +1036,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExtendedDocumenationAtUrl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Extended documentation available at '{url}'.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Documentación ampliada disponible en "{url}".]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FailedToProvisionCe" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to provision vcpkg-ce.]]></Val>
@@ -1032,6 +1068,24 @@
           <Val><![CDATA[failed to store back to mirror:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[no se pudo almacenar en el reflejo:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToStoreBinaryCache" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to store binary cache '{path}':'{error_msg}']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[No se pudo almacenar la caché binaria "{path}":"{error_msg}"]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedVendorAuthentication" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[One or more {vendor} credential providers failed to authenticate. See '{url}' for more details on how to provide credentials.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[No se pudieron autenticar uno o varios proveedores de credenciales de {vendor}. Consulte "{url}" para obtener más detalles sobre cómo proporcionar credenciales.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1341,19 +1395,25 @@
       </Item>
       <Item ItemId=";InvalidArgumentRequiresPathArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires at least a path argument]]></Val>
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires at least one path argument]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[argumento no válido: '{binary_source}' de configuración binaria requiere como mínimo un argumento de ruta de acceso]]></Val>
+            <Val><![CDATA[argumento no válido: "{binary_source}" de configuración binaria requiere como mínimo un argumento de ruta de acceso]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[invalid argument: binary config '{binary_source}' requires at least a path argument]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";InvalidArgumentRequiresPrefix" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires at least a prefix]]></Val>
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires at least one prefix]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[argumento no válido: '{binary_source}' de configuración binaria requiere al menos un prefijo]]></Val>
+            <Val><![CDATA[argumento no válido: "{binary_source}" de configuración binaria requiere al menos un prefijo]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[invalid argument: binary config '{binary_source}' requires at least a prefix]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1375,21 +1435,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InvalidArgumentRequiresSource" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires non-empty source]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[argumento no válido: configuración binaria '{binary_source}' requiere un origen no vacío]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";InvalidArgumentRequiresSourceArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires at least a source argument]]></Val>
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires at least one source argument]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[argumento no válido: la '{binary_source}' de configuración binaria requiere como mínimo un argumento de origen]]></Val>
+            <Val><![CDATA[argumento no válido: la configuración binaria "{binary_source}" requiere como mínimo un argumento de origen]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[invalid argument: binary config '{binary_source}' requires at least a source argument]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1434,6 +1488,15 @@
           <Val><![CDATA[failed to read {path}: {error_msg}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[no se pudo leer {path}: {error_msg}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";JsonErrorMustBeAnObject" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Expected {path} to be an object.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Se esperaba que {path} fuera un objeto.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1681,6 +1744,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PackingVendorFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Packing {vendor} failed.  Use --debug for more information.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Error al empaquetar {vendor}.  Use --debug para obtener más información.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ParseControlErrorInfoInvalidFields" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The following fields were not expected:]]></Val>
@@ -1771,6 +1843,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PushingVendorFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Pushing {vendor} to '{path}' failed.  Use --debug for more information.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Error al insertar {vendor} en "{path}".  Use --debug para obtener más información.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";RemovingPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Removing {action_index}/{count} {spec}]]></Val>
@@ -1783,12 +1864,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ReplaceSecretsError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Replace secretes produced the following error: '{error_msg}']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Al reemplazar secretos se produjo el siguiente error: "{error_msg}"]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RestoredPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Restored package from '{path}']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Paquete restaurado desde "{path}"]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";RestoredPackagesFromVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Restored {count} package(s) from {vendor} in {elapsed}]]></Val>
+          <Val><![CDATA[Restored {count} package(s) from {value} in {elapsed}. Use --debug to see more details.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{count} paquetes restaurados de {vendor} en {elapsed}]]></Val>
+            <Val><![CDATA[Se restauraron {count} paquetes de {value} en {elapsed}. Use --debug para ver más detalles.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Restored {count} package(s) from {vendor} in {elapsed}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1824,6 +1926,15 @@
           <Val><![CDATA[The 'Source' field inside the CONTROL file, or "name" field inside the vcpkg.json file has the name {package_name} and does not match the port directory {path}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[El campo "Source" dentro del archivo CONTROL o "name" dentro del archivo vcpkg.json tiene el nombre {package_name} y no coincide con el directorio de puerto {path}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";StoredBinaryCache" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Stored binary cache: '{path}']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Caché binaria almacenada: "{path}"]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1887,10 +1998,13 @@
       </Item>
       <Item ItemId=";UnknownBinaryProviderType" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig', 'interactive', and 'files']]></Val>
+          <Val><![CDATA[unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', 'x-aws-config', 'http', and 'files']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[tipo de proveedor binario desconocido: los proveedores válidos son 'clear', 'default', 'nuget', 'nugetconfig', 'interactive' y 'files']]></Val>
+            <Val><![CDATA[tipo de proveedor binario desconocido: los proveedores válidos son "clear", "default", "nuget", "nugetconfig", "nugettimeout", "interactive", "x-azblob", "x-gcs", "x-aws", "x-aws-config", "http" y "files".]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig', 'interactive', and 'files']]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1999,11 +2113,38 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UploadedBinaries" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Uploaded binaries to '{count}' '{vendor}'.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Archivos binarios cargados en "{count}" "{vendor}".]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UploadedPackagesToVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Uploaded {count} package(s) to {vendor} in {elapsed}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{count} paquetes cargados en {vendor} en {elapsed}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UploadingBinariesToVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Uploading binaries for '{spec}' to '{vendor}' source '{path}'.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Cargando archivos binarios para "{spec}" en "{vendor}" con origen "{path}".]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UploadingBinariesUsingVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Uploading binaries for '{spec}' using '{vendor}' '{path}'.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Cargando archivos binarios para "{spec}" mediante "{vendor}" "{path}".]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
