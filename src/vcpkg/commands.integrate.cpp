@@ -11,7 +11,18 @@
 #include <vcpkg/userconfig.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
+#include <vcpkg/base/system.debug.h>
 
+namespace
+{
+    using namespace vcpkg; 
+    DECLARE_AND_REGISTER_MESSAGE(AppliedUserIntegration, (), "", "Applied user-wide integration for this vcpkg root.");
+    DECLARE_AND_REGISTER_MESSAGE(CMakeToolChainFile,
+                                 (msg::command_name),
+                                 "",
+                                 "CMake projects should use: DCMAKE_TOOLCHAIN_FILE = '{command_name}'");
+
+}
 namespace vcpkg::Commands::Integrate
 {
     Optional<int> find_targets_file_version(StringView contents)
@@ -284,7 +295,7 @@ namespace vcpkg::Commands::Integrate
                 {
                     case ElevationPromptChoice::YES: break;
                     case ElevationPromptChoice::NO:
-                        print2(Color::warning, "Warning: Previous integration file was not removed\n");
+                        Debug::print(Color::warning, "Warning: Previous integration file was not removed\n");
                         Checks::exit_fail(VCPKG_LINE_INFO);
                     default: Checks::unreachable(VCPKG_LINE_INFO);
                 }
@@ -316,7 +327,7 @@ namespace vcpkg::Commands::Integrate
             {
                 case ElevationPromptChoice::YES: break;
                 case ElevationPromptChoice::NO:
-                    print2(Color::warning, "Warning: integration was not applied\n");
+                    Debug::print(Color::warning, "Warning: integration was not applied\n");
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
@@ -362,27 +373,17 @@ namespace vcpkg::Commands::Integrate
 
         const auto pathtxt = get_path_txt_path();
         fs.write_contents(pathtxt, paths.root.generic_u8string(), VCPKG_LINE_INFO);
-
-        print2(Color::success, "Applied user-wide integration for this vcpkg root.\n");
+        msg::println(Color::success, msgAppliedUserIntegration);
         const auto cmake_toolchain = paths.buildsystems / "vcpkg.cmake";
+
 #if defined(_WIN32)
-        vcpkg::printf(
-            R"(
-All MSBuild C++ projects can now #include any installed libraries.
-Linking will be handled automatically.
-Installing new libraries will make them instantly available.
-
-CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
-)",
-            cmake_toolchain.generic_u8string());
+        msg::println(
+            msg::format(msgCMakeToolChainFile, msg::command_name = cmake_toolchain.generic_u8string())
+                .append_raw("\nAll MSBuild C++ projects can now #include any installed libraries. Linking will be "
+                            "handled automatically. Installing new libraries will make them instantly available."));
 #else
-        vcpkg::printf(
-            R"(
-CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
-)",
-            cmake_toolchain.generic_u8string());
+        msg::println(msgCMakeToolChainFile, msg::command_name = cmake_toolchain.generic_u8string());
 #endif
-
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
@@ -399,11 +400,11 @@ CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
 
         if (was_deleted)
         {
-            print2(Color::success, "User-wide integration was removed\n");
+            msg::write_unlocalized_text_to_stdout(Color::success, "User-wide integration was removed\n");
         }
         else
         {
-            print2(Color::success, "User-wide integration is not installed\n");
+            msg::write_unlocalized_text_to_stdout(Color::success, "User-wide integration is not installed\n");
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
