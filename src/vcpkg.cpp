@@ -34,26 +34,6 @@
 
 using namespace vcpkg;
 
-namespace
-{
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgInvalidCommand, (msg::command_name), "", "invalid command: {command_name}");
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgSendMetricsButDisabled,
-                                 (),
-                                 "",
-                                 "passed --sendmetrics, but metrics are disabled.");
-    DECLARE_AND_REGISTER_MESSAGE(
-        VcpkgHasCrashed,
-        (),
-        "Printed at the start of a crash report.",
-        "vcpkg has crashed. Please create an issue at https://github.com/microsoft/vcpkg containing a brief summary of "
-        "what you were trying to do and the following information.");
-    DECLARE_AND_REGISTER_MESSAGE(
-        ForceSystemBinariesOnWeirdPlatforms,
-        (),
-        "",
-        "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.");
-}
-
 static void invalid_command(const std::string& cmd)
 {
     msg::println(Color::error, msgVcpkgInvalidCommand, msg::command_name = cmd);

@@ -17,18 +17,6 @@
 
 #include <vcpkg/base/messages.h>
 
-namespace
-{
-    DECLARE_AND_REGISTER_MESSAGE(VSExaminedPaths,
-                                 (),
-                                 "",
-                                 "The following paths were examined for Visual Studio instances:");
-
-    DECLARE_AND_REGISTER_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance");
-
-    DECLARE_AND_REGISTER_MESSAGE(VSExaminedInstances, (), "", "The following Visual Studio instances were considered:");
-}
-
 #if defined(_WIN32)
 
 namespace vcpkg::VisualStudio
