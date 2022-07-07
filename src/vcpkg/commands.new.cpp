@@ -22,25 +22,6 @@ namespace
     static constexpr StringLiteral OPTION_VERSION_DATE = "version-date";
     static constexpr StringLiteral OPTION_VERSION_STRING = "version-string";
 
-    DECLARE_AND_REGISTER_MESSAGE(NewManifestAlreadyExists, (msg::path), "", "A manifest is already present at {path}.");
-    DECLARE_AND_REGISTER_MESSAGE(NewConfigurationAlreadyExists,
-                                 (msg::path),
-                                 "",
-                                 "Creating a manifest would overwrite a vcpkg-configuration.json at {path}.");
-    DECLARE_AND_REGISTER_MESSAGE(
-        NewOnlyOneVersionKind,
-        (),
-        "",
-        "Only one of --version-relaxed, --version-date, or --version-string may be specified.");
-    DECLARE_AND_REGISTER_MESSAGE(
-        NewSpecifyNameVersionOrApplication,
-        (),
-        "",
-        "Either specify --name and --version to produce a manifest intended for C++ libraries, or specify "
-        "--application to indicate that the manifest is not intended to be used as a port.");
-    DECLARE_AND_REGISTER_MESSAGE(NewNameCannotBeEmpty, (), "", "--name cannot be empty.");
-    DECLARE_AND_REGISTER_MESSAGE(NewVersionCannotBeEmpty, (), "", "--version cannot be empty.");
-
     const CommandSwitch SWITCHES[] = {
         {OPTION_APPLICATION, "Create an application manifest (don't require name or version)."},
         {OPTION_SINGLE_FILE, "Embed vcpkg-configuration.json into vcpkg.json."},

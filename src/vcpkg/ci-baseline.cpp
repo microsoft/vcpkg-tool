@@ -8,33 +8,6 @@
 
 using namespace vcpkg;
 
-namespace
-{
-    DECLARE_AND_REGISTER_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
-    DECLARE_AND_REGISTER_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
-    DECLARE_AND_REGISTER_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' here");
-    DECLARE_AND_REGISTER_MESSAGE(UnknownBaselineFileContent,
-                                 (),
-                                 "",
-                                 "unrecognizable baseline entry; expected 'port:triplet=(fail|skip|pass)'");
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        CiBaselineRegression,
-        (msg::spec, msg::build_result, msg::path),
-        "",
-        "REGRESSION: {spec} failed with {build_result}. If expected, add {spec}=fail to {path}.");
-
-    DECLARE_AND_REGISTER_MESSAGE(CiBaselineUnexpectedPass,
-                                 (msg::spec, msg::path),
-                                 "",
-                                 "PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).");
-
-    DECLARE_AND_REGISTER_MESSAGE(CiBaselineDisallowedCascade,
-                                 (msg::spec, msg::path),
-                                 "",
-                                 "REGRESSION: {spec} cascaded, but it is required to pass. ({path}).");
-}
-
 namespace vcpkg
 {
     TripletExclusions::TripletExclusions(const Triplet& triplet) : triplet(triplet), exclusions() { }

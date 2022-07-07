@@ -27,45 +27,6 @@
 
 #include <iterator>
 
-namespace
-{
-    using namespace vcpkg;
-    DECLARE_AND_REGISTER_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
-    DECLARE_AND_REGISTER_MESSAGE(CmakeTargetsExcluded,
-                                 (msg::count),
-                                 "",
-                                 "note: {count} additional targets are not displayed.");
-    DECLARE_AND_REGISTER_MESSAGE(AlreadyInstalledNotHead,
-                                 (msg::spec),
-                                 "'HEAD' means the most recent version of source code",
-                                 "{spec} is already installed -- not building from HEAD");
-    DECLARE_AND_REGISTER_MESSAGE(AlreadyInstalled, (msg::spec), "", "{spec} is already installed");
-    DECLARE_AND_REGISTER_MESSAGE(BuildingPackage, (msg::spec), "", "Building {spec}...");
-    DECLARE_AND_REGISTER_MESSAGE(BuildingFromHead,
-                                 (msg::spec),
-                                 "'HEAD' means the most recent version of source code",
-                                 "Building {spec} from HEAD...");
-    DECLARE_AND_REGISTER_MESSAGE(DownloadedSources, (msg::spec), "", "Downloaded sources for {spec}");
-    DECLARE_AND_REGISTER_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
-    DECLARE_AND_REGISTER_MESSAGE(InstallingPackage,
-                                 (msg::action_index, msg::count, msg::spec),
-                                 "",
-                                 "Installing {action_index}/{count} {spec}...");
-    DECLARE_AND_REGISTER_MESSAGE(HeaderOnlyUsage,
-                                 (msg::package_name),
-                                 "'header' refers to C/C++ .h files",
-                                 "{package_name} is header-only and can be used from CMake via:");
-    DECLARE_AND_REGISTER_MESSAGE(
-        CMakeTargetsUsageHeuristicMessage,
-        (),
-        "Displayed after CMakeTargetsUsage; the # must be kept at the beginning so that the message remains a comment.",
-        "# this is heuristically generated, and may not be correct");
-    DECLARE_AND_REGISTER_MESSAGE(CMakeTargetsUsage,
-                                 (msg::package_name),
-                                 "'targets' are a CMake and Makefile concept",
-                                 "{package_name} provides CMake targets:");
-}
-
 namespace vcpkg::Install
 {
     using namespace vcpkg;
@@ -857,7 +818,10 @@ namespace vcpkg::Install
                     {
                         auto omitted = targets.size() - 4;
                         library_target_pair.second.erase(targets.begin() + 4, targets.end());
-                        msg.append_indent().append_raw("# ").append(msgCmakeTargetsExcluded, msg::count = omitted);
+                        msg.append_indent()
+                            .append_raw("# ")
+                            .append(msgCmakeTargetsExcluded, msg::count = omitted)
+                            .append_raw('\n');
                     }
 
                     msg.append_indent()
@@ -871,31 +835,6 @@ namespace vcpkg::Install
         }
         return ret;
     }
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        ErrorIndividualPackagesUnsupported,
-        (),
-        "",
-        "In manifest mode, `vcpkg install` does not support individual package arguments.\nTo install "
-        "additional "
-        "packages, edit vcpkg.json and then run `vcpkg install` without any package arguments.");
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorRequirePackagesList,
-                                 (),
-                                 "",
-                                 "`vcpkg install` requires a list of packages to install in classic mode.");
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorInvalidClassicModeOption,
-                                 (msg::option),
-                                 "",
-                                 "The option --{option} is not supported in classic mode and no manifest was found.");
-
-    DECLARE_AND_REGISTER_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorInvalidManifestModeOption,
-                                 (msg::option),
-                                 "",
-                                 "The option --{option} is not supported in manifest mode.");
 
     void perform_and_exit(const VcpkgCmdArguments& args,
                           const VcpkgPaths& paths,
