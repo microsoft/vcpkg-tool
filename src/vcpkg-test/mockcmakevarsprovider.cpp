@@ -25,4 +25,11 @@ namespace vcpkg::Test
         if (it == tag_vars.end()) return nullopt;
         return it->second;
     }
+
+    Optional<std::string> MockCMakeVarProvider::get_triplet_hash(const PackageSpec& spec) const
+    {
+        auto it = triplet_hashs.find(spec);
+        if (it == triplet_hashs.end()) return nullopt;
+        return it->second;
+    }
 }

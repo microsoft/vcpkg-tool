@@ -166,7 +166,7 @@ namespace vcpkg
         Filesystem& get_filesystem() const;
 
         const Environment& get_action_env(const Build::AbiInfo& abi_info) const;
-        const std::string& get_triplet_info(const Build::AbiInfo& abi_info) const;
+        const std::string& get_toolchain_abi(const Build::AbiInfo& abi_info) const;
         const Build::CompilerInfo& get_compiler_info(const Build::AbiInfo& abi_info) const;
         bool manifest_mode_enabled() const { return get_manifest().has_value(); }
 
