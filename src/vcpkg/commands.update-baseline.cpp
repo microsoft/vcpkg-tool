@@ -6,36 +6,6 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace
-{
-    using namespace vcpkg;
-
-    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineNoConfiguration,
-                                 (),
-                                 "",
-                                 "neither `vcpkg.json` nor `vcpkg-configuration.json` exist to update.");
-
-    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineNoExistingBuiltinBaseline,
-                                 (msg::option),
-                                 "",
-                                 "the manifest file currently does not contain a `builtin-baseline` field; in order to "
-                                 "add one, pass the --{option} switch.");
-    DECLARE_AND_REGISTER_MESSAGE(
-        UpdateBaselineAddBaselineNoManifest,
-        (msg::option),
-        "",
-        "the --{option} switch was passed, but there is no manifest file to add a `builtin-baseline` field to.");
-
-    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineUpdatedBaseline,
-                                 (msg::url, msg::old_value, msg::new_value),
-                                 "example of {old_value}, {new_value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
-                                 "updated registry '{url}': baseline '{old_value}' -> '{new_value}'");
-    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineNoUpdate,
-                                 (msg::url, msg::value),
-                                 "example of {value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
-                                 "registry '{url}' not updated: '{value}'");
-}
-
 namespace vcpkg::Commands
 {
     static constexpr StringLiteral OPTION_ADD_INITIAL_BASELINE = "add-initial-baseline";
