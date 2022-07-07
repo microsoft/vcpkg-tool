@@ -20,12 +20,6 @@ namespace vcpkg::Dependencies
 {
     namespace
     {
-        DECLARE_AND_REGISTER_MESSAGE(VersionConstraintViolated,
-                                     (msg::spec, msg::expected_version, msg::actual_version),
-                                     "",
-                                     "dependency {spec} was expected to be at least version "
-                                     "{expected_version}, but is currently {actual_version}.");
-
         struct ClusterGraph;
 
         struct ClusterInstalled

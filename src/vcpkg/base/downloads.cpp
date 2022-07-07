@@ -10,28 +10,6 @@
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
 
-namespace
-{
-    using namespace vcpkg;
-
-    DECLARE_AND_REGISTER_MESSAGE(CurlReportedUnexpectedResults,
-                                 (msg::command_line, msg::actual),
-                                 "{command_line} is the command line to call curl.exe, {actual} is the console output "
-                                 "of curl.exe locale-invariant download results.",
-                                 "curl has reported unexpected results to vcpkg and vcpkg cannot continue.\n"
-                                 "Please review the following text for sensitive information and open an issue on the "
-                                 "Microsoft/vcpkg GitHub to help fix this problem!\n"
-                                 "cmd: {command_line}\n"
-                                 "=== curl output ===\n"
-                                 "{actual}\n"
-                                 "=== end curl output ===");
-    DECLARE_AND_REGISTER_MESSAGE(UnexpectedErrorDuringBulkDownload,
-                                 (),
-                                 "",
-                                 "an unexpected error occurred during bulk download.");
-    DECLARE_AND_REGISTER_MESSAGE(FailedToStoreBackToMirror, (), "", "failed to store back to mirror:");
-}
-
 namespace vcpkg
 {
 #if defined(_WIN32)
