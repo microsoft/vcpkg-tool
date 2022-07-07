@@ -26,27 +26,6 @@ namespace
         {{}, {}},
         nullptr,
     };
-
-    DECLARE_AND_REGISTER_MESSAGE(AddTripletExpressionNotAllowed,
-                                 (msg::package_name, msg::triplet),
-                                 "",
-                                 "triplet expressions are not allowed here. You may want to change "
-                                 "`{package_name}:{triplet}` to `{package_name}` instead.");
-    DECLARE_AND_REGISTER_MESSAGE(AddFirstArgument,
-                                 (msg::command_line),
-                                 "",
-                                 "The first argument to '{command_line}' must be 'artifact' or 'port'.");
-
-    DECLARE_AND_REGISTER_MESSAGE(AddPortSucceded, (), "", "Succeeded in adding ports to vcpkg.json file.");
-    DECLARE_AND_REGISTER_MESSAGE(AddPortRequiresManifest,
-                                 (msg::command_line),
-                                 "",
-                                 "'{command_line}' requires an active manifest file.");
-
-    DECLARE_AND_REGISTER_MESSAGE(AddArtifactOnlyOne,
-                                 (msg::command_line),
-                                 "",
-                                 "'{command_line}' can only add one artifact at a time.");
 }
 
 namespace vcpkg::Commands

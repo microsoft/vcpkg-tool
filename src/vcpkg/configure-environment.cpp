@@ -18,20 +18,6 @@
 namespace
 {
     using namespace vcpkg;
-    DECLARE_AND_REGISTER_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgCeIsExperimental,
-                                 (),
-                                 "",
-                                 "vcpkg-ce ('configure environment') is experimental and may change at any time.");
-    DECLARE_AND_REGISTER_MESSAGE(DownloadingVcpkgCeBundle,
-                                 (msg::version),
-                                 "",
-                                 "Downloading vcpkg-ce bundle {version}...");
-    DECLARE_AND_REGISTER_MESSAGE(DownloadingVcpkgCeBundleLatest,
-                                 (),
-                                 "This message is normally displayed only in development.",
-                                 "Downloading latest vcpkg-ce bundle...");
-
 #if !defined(VCPKG_ARTIFACTS_PATH)
     void extract_ce_tarball(const VcpkgPaths& paths,
                             const Path& ce_tarball,

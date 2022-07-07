@@ -27,19 +27,6 @@
 namespace
 {
     using namespace vcpkg;
-    DECLARE_AND_REGISTER_MESSAGE(WaitingForChildrenToExit, (), "", "Waiting for child processes to exit...");
-    DECLARE_AND_REGISTER_MESSAGE(LaunchingProgramFailed,
-                                 (msg::tool_name),
-                                 "A platform API call failure message is appended after this",
-                                 "Launching {tool_name}:");
-    DECLARE_AND_REGISTER_MESSAGE(ProgramReturnedNonzeroExitCode,
-                                 (msg::tool_name, msg::exit_code),
-                                 "The program's console output is appended after this.",
-                                 "{tool_name} failed with exit code: ({exit_code}).");
-    DECLARE_AND_REGISTER_MESSAGE(SystemApiErrorMessage,
-                                 (msg::system_api, msg::exit_code, msg::error_msg),
-                                 "",
-                                 "calling {system_api} failed with {exit_code} ({error_msg})");
 
 #if defined(_WIN32)
     using error_value_type = unsigned long;
