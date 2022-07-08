@@ -9,7 +9,7 @@ import { Session } from '../session';
 import { Uri } from '../util/uri';
 import { Vcpkg } from '../vcpkg';
 
-export async function installGit(session: Session, name: string, targetLocation: Uri, install: GitInstaller, events: Partial<InstallEvents>, options: Partial<InstallOptions & CloneOptions & CloneSettings>): Promise<void> {
+export async function installGit(session: Session, name: string, version: string, targetLocation: Uri, install: GitInstaller, events: Partial<InstallEvents>, options: Partial<InstallOptions & CloneOptions & CloneSettings>): Promise<void> {
   const vcpkg = new Vcpkg(session);
 
   const gitPath = await vcpkg.fetch('git');
