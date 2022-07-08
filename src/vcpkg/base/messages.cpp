@@ -510,6 +510,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ExpectedPortName);
     REGISTER_MESSAGE(ExpectedTripletName);
     REGISTER_MESSAGE(ExtendedDocumenationAtUrl);
+    REGISTER_MESSAGE(FailedToExtract);
     REGISTER_MESSAGE(FailedToProvisionCe);
     REGISTER_MESSAGE(FailedToRunToolToDetermineVersion);
     REGISTER_MESSAGE(FailedToStoreBackToMirror);
@@ -577,6 +578,8 @@ namespace vcpkg
     REGISTER_MESSAGE(LoadingOverlayTriplet);
     REGISTER_MESSAGE(LocalizedMessageMustNotContainIndents);
     REGISTER_MESSAGE(LocalizedMessageMustNotEndWithNewline);
+    REGISTER_MESSAGE(MissingExtension);
+    REGISTER_MESSAGE(MissingHeader);
     REGISTER_MESSAGE(MonoInstructions);
     REGISTER_MESSAGE(MsiexecFailedToExtract);
     REGISTER_MESSAGE(NoLocalizationForMessages);
@@ -587,6 +590,8 @@ namespace vcpkg
     REGISTER_MESSAGE(ParseControlErrorInfoTypesEntry);
     REGISTER_MESSAGE(ParseControlErrorInfoWhileLoading);
     REGISTER_MESSAGE(ParseControlErrorInfoWrongTypeFields);
+    REGISTER_MESSAGE(PortFailedtWhileExtracting);
+    REGISTER_MESSAGE(PortFailedtWhileExtractingWithMessage);
     REGISTER_MESSAGE(PortNotInBaseline);
     REGISTER_MESSAGE(ProcessorArchitectureMalformed);
     REGISTER_MESSAGE(ProcessorArchitectureMissing);
@@ -603,7 +608,9 @@ namespace vcpkg
     REGISTER_MESSAGE(SystemApiErrorMessage);
     REGISTER_MESSAGE(ToolFetchFailed);
     REGISTER_MESSAGE(ToolInWin10);
+    REGISTER_MESSAGE(UnableToExtractArchive);
     REGISTER_MESSAGE(UnexpectedErrorDuringBulkDownload);
+    REGISTER_MESSAGE(UnexpectedExtension);
     REGISTER_MESSAGE(UnexpectedToolOutput);
     REGISTER_MESSAGE(UnknownBaselineFileContent);
     REGISTER_MESSAGE(UnknownBinaryProviderType);
@@ -643,11 +650,4 @@ namespace vcpkg
     REGISTER_MESSAGE(WaitingToTakeFilesystemLock);
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
-    REGISTER_MESSAGE(FailedToExtract);
-    REGISTER_MESSAGE(PortFailedtWhileExtractingWithMessage);
-    REGISTER_MESSAGE(PortFailedtWhileExtracting);
-    REGISTER_MESSAGE(UnexpectedExtension);
-    REGISTER_MESSAGE(UnableToExtractArchive);
-    REGISTER_MESSAGE(MissingExtension);
-    REGISTER_MESSAGE(MissingHeader);
 }

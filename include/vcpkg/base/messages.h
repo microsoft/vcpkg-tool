@@ -753,6 +753,10 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
     DECLARE_MESSAGE(ExtendedDocumenationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
+    DECLARE_MESSAGE(FailedToExtract,
+                    (msg::path, msg::error),
+                    "'{error}' is the error message.",
+                    "Failed to extract '{path}' with message '{error}'.");
     DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
     DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                     (msg::tool_name, msg::path),
@@ -993,6 +997,8 @@ namespace vcpkg
                     "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
                     "The message named {value} ends with a newline which should be added by formatting "
                     "rather than by localization.");
+    DECLARE_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
+    DECLARE_MESSAGE(MissingHeader, (msg::package_name), "", "Unable to find '{package_name}' header.");
     DECLARE_MESSAGE(MonoInstructions,
                     (),
                     "",
@@ -1021,6 +1027,14 @@ namespace vcpkg
                     "Error messages are is printed after this.",
                     "while loading {path}:");
     DECLARE_MESSAGE(ParseControlErrorInfoWrongTypeFields, (), "", "The following fields had the wrong types:");
+    DECLARE_MESSAGE(PortFailedtWhileExtracting,
+                    (msg::package_name, msg::path),
+                    "",
+                    "'{package_name}' failed while extracting '{path}'.");
+    DECLARE_MESSAGE(PortFailedtWhileExtractingWithMessage,
+                    (msg::package_name, msg::path, msg::error),
+                    "'{error}' is the error message.",
+                    "'{package_name}' failed while extracting '{path}' with message '{error}'.");
     DECLARE_MESSAGE(PortNotInBaseline,
                     (msg::package_name),
                     "",
@@ -1075,7 +1089,15 @@ namespace vcpkg
                     "calling {system_api} failed with {exit_code} ({error_msg})");
     DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
     DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
+    DECLARE_MESSAGE(UnableToExtractArchive,
+                    (msg::package_name, msg::path),
+                    "",
+                    "Unable to extract '{package_name}' archive from Installer '{path}'.");
     DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.");
+    DECLARE_MESSAGE(UnexpectedExtension,
+                    (msg::value),
+                    "'{value}' is the archive extension.",
+                    "Unexpected archive extension: '{value}'.");
     DECLARE_MESSAGE(UnexpectedToolOutput,
                     (msg::tool_name, msg::path),
                     "The actual command line output will be appended after this message.",
@@ -1213,26 +1235,4 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
-    DECLARE_MESSAGE(FailedToExtract,
-                    (msg::path, msg::error),
-                    "'{error}' is the error message.",
-                    "Failed to extract '{path}' with message '{error}'.");
-    DECLARE_MESSAGE(PortFailedtWhileExtractingWithMessage,
-                    (msg::package_name, msg::path, msg::error),
-                    "'{error}' is the error message.",
-                    "'{package_name}' failed while extracting '{path}' with message '{error}'.");
-    DECLARE_MESSAGE(PortFailedtWhileExtracting,
-                    (msg::package_name, msg::path),
-                    "",
-                    "'{package_name}' failed while extracting '{path}'.");
-    DECLARE_MESSAGE(UnexpectedExtension,
-                    (msg::value),
-                    "'{value}' is the archive extension.",
-                    "Unexpected archive extension: '{value}'.");
-    DECLARE_MESSAGE(UnableToExtractArchive,
-                    (msg::package_name, msg::path),
-                    "",
-                    "Unable to extract '{package_name}' archive from Installer '{path}'.");
-    DECLARE_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
-    DECLARE_MESSAGE(MissingHeader, (msg::package_name), "", "Unable to find '{package_name}' header.");
 }
