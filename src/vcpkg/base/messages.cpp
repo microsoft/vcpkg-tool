@@ -407,6 +407,8 @@ namespace vcpkg
 
     REGISTER_MESSAGE(AddArtifactOnlyOne);
     REGISTER_MESSAGE(AddFirstArgument);
+    REGISTER_MESSAGE(AddingCompletionEntry);
+    REGISTER_MESSAGE(AddingVcpkgCompletion);
     REGISTER_MESSAGE(AddPortRequiresManifest);
     REGISTER_MESSAGE(AddPortSucceded);
     REGISTER_MESSAGE(AddTripletExpressionNotAllowed);
@@ -441,6 +443,7 @@ namespace vcpkg
     REGISTER_MESSAGE(AlreadyInstalled);
     REGISTER_MESSAGE(AlreadyInstalledNotHead);
     REGISTER_MESSAGE(AnotherInstallationInProgress);
+    REGISTER_MESSAGE(AppliedUserIntegration);
     REGISTER_MESSAGE(AttemptingToFetchPackagesFromVendor);
     REGISTER_MESSAGE(AuthenticationMayRequireManualAction);
     REGISTER_MESSAGE(AutoSettingEnvVar);
@@ -476,9 +479,11 @@ namespace vcpkg
     REGISTER_MESSAGE(CmakeTargetsExcluded);
     REGISTER_MESSAGE(CMakeTargetsUsage);
     REGISTER_MESSAGE(CMakeTargetsUsageHeuristicMessage);
+    REGISTER_MESSAGE(CMakeToolChainFile);
     REGISTER_MESSAGE(CommandFailed);
     REGISTER_MESSAGE(CompressFolderFailed);
     REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion);
+    REGISTER_MESSAGE(CreatedNuGetPackage);
     REGISTER_MESSAGE(CurlReportedUnexpectedResults);
     REGISTER_MESSAGE(DefaultPathToBinaries);
     REGISTER_MESSAGE(DetectCompilerHash);
@@ -515,6 +520,7 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedToStoreBackToMirror);
     REGISTER_MESSAGE(FailedToStoreBinaryCache);
     REGISTER_MESSAGE(FailedVendorAuthentication);
+    REGISTER_MESSAGE(FishCompletion);
     REGISTER_MESSAGE(ForceSystemBinariesOnWeirdPlatforms);
     REGISTER_MESSAGE(FormattedParseMessageExpression);
     REGISTER_MESSAGE(FuzzExpectedOneOf);
@@ -535,9 +541,11 @@ namespace vcpkg
     REGISTER_MESSAGE(InfoSetEnvVar);
     REGISTER_MESSAGE(InstallingFromLocation);
     REGISTER_MESSAGE(InstallingPackage);
+    REGISTER_MESSAGE(InstallPackageInstruction);
     REGISTER_MESSAGE(InstallWithSystemManager);
     REGISTER_MESSAGE(InstallWithSystemManagerMono);
     REGISTER_MESSAGE(InstallWithSystemManagerPkg);
+    REGISTER_MESSAGE(IntegrationFailed);
     REGISTER_MESSAGE(InvalidArgument);
     REGISTER_MESSAGE(InvalidArgumentRequiresAbsolutePath);
     REGISTER_MESSAGE(InvalidArgumentRequiresBaseUrl);
@@ -577,10 +585,13 @@ namespace vcpkg
     REGISTER_MESSAGE(LoadingOverlayTriplet);
     REGISTER_MESSAGE(LocalizedMessageMustNotContainIndents);
     REGISTER_MESSAGE(LocalizedMessageMustNotEndWithNewline);
+    REGISTER_MESSAGE(MissingCompletionDirectory);
     REGISTER_MESSAGE(MonoInstructions);
     REGISTER_MESSAGE(MsiexecFailedToExtract);
     REGISTER_MESSAGE(NoLocalizationForMessages);
     REGISTER_MESSAGE(NoRegistryForPort);
+    REGISTER_MESSAGE(NugetPackageCreationFailed);
+    REGISTER_MESSAGE(NugetPackageFileCreationFailed);
     REGISTER_MESSAGE(PackingVendorFailed);
     REGISTER_MESSAGE(ParseControlErrorInfoInvalidFields);
     REGISTER_MESSAGE(ParseControlErrorInfoMissingFields);
@@ -588,6 +599,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ParseControlErrorInfoWhileLoading);
     REGISTER_MESSAGE(ParseControlErrorInfoWrongTypeFields);
     REGISTER_MESSAGE(PortNotInBaseline);
+    REGISTER_MESSAGE(PreviousIntegrationFileRemains);
     REGISTER_MESSAGE(ProcessorArchitectureMalformed);
     REGISTER_MESSAGE(ProcessorArchitectureMissing);
     REGISTER_MESSAGE(ProcessorArchitectureW6432Malformed);
@@ -597,6 +609,7 @@ namespace vcpkg
     REGISTER_MESSAGE(RestoredPackage);
     REGISTER_MESSAGE(RestoredPackagesFromVendor);
     REGISTER_MESSAGE(ResultsHeader);
+    REGISTER_MESSAGE(ScriptFailed);
     REGISTER_MESSAGE(SettingEnvVar);
     REGISTER_MESSAGE(SourceFieldPortNameMismatch);
     REGISTER_MESSAGE(StoredBinaryCache);
@@ -607,6 +620,7 @@ namespace vcpkg
     REGISTER_MESSAGE(UnexpectedToolOutput);
     REGISTER_MESSAGE(UnknownBaselineFileContent);
     REGISTER_MESSAGE(UnknownBinaryProviderType);
+    REGISTER_MESSAGE(UnknownParameterForIntegrate);
     REGISTER_MESSAGE(UnknownTool);
     REGISTER_MESSAGE(UnknownVariablesInTemplate);
     REGISTER_MESSAGE(UnsupportedSystemName);
@@ -623,9 +637,11 @@ namespace vcpkg
     REGISTER_MESSAGE(UploadingBinariesToVendor);
     REGISTER_MESSAGE(UploadingBinariesUsingVendor);
     REGISTER_MESSAGE(UseEnvVar);
+    REGISTER_MESSAGE(UserWideIntegration);
     REGISTER_MESSAGE(UsingCommunityTriplet);
     REGISTER_MESSAGE(UsingManifestAt);
     REGISTER_MESSAGE(VcpkgCeIsExperimental);
+    REGISTER_MESSAGE(VcpkgCompletion);
     REGISTER_MESSAGE(VcpkgDisallowedClassicMode);
     REGISTER_MESSAGE(VcpkgHasCrashed);
     REGISTER_MESSAGE(VcpkgInvalidCommand);

@@ -1211,4 +1211,46 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
+    DECLARE_MESSAGE(AppliedUserIntegration, (), "", "Applied user-wide integration for this vcpkg root.");
+    DECLARE_MESSAGE(CMakeToolChainFile,
+                    (msg::command_name),
+                    "",
+                    "CMake projects should use: DCMAKE_TOOLCHAIN_FILE = '{command_name}'");
+    DECLARE_MESSAGE(UserWideIntegration, (), "", "User-wide integration ");
+    DECLARE_MESSAGE(NugetPackageCreationFailed,
+                    (msg::error),
+                    "'{error}' is the NuGet output message.",
+                    "NuGet package creation failed: '{error}' ");
+    DECLARE_MESSAGE(NugetPackageFileCreationFailed,
+                    (msg::path),
+                    "",
+                    "NuGet package creation failed. No .nupkg was produced. '{path}' ");
+    DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: '{path}'");
+    DECLARE_MESSAGE(InstallPackageInstruction,
+                    (msg::value, msg::path),
+                    "'{value}' is the nuget id.",
+                    "With a project open, go to Tools->NuGet Package Manager->Package Manager Console and "
+                    "paste:\n Install-Package '{value}' -Source '{path}'");
+    DECLARE_MESSAGE(ScriptFailed,
+                    (msg::value, msg::path),
+                    "'{value}' is script title.",
+                    "'{value}'\n Could not run:\n '{path}'");
+    DECLARE_MESSAGE(AddingVcpkgCompletion, (msg::path), "", "Adding vcpkg completion entry to '{path}'.");
+    DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.");
+    DECLARE_MESSAGE(IntegrationFailed, (), "", "Integration was not applied.");
+    DECLARE_MESSAGE(AddingCompletionEntry, (msg::path), "", "Adding vcpkg completion entry to '{path}'.");
+    DECLARE_MESSAGE(UnknownParameterForIntegrate,
+                    (msg::value),
+                    "'{value}' is the parameter",
+                    "Unknown parameter '{value}' for integrate.");
+    DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at '{path}'.");
+    DECLARE_MESSAGE(MissingCompletionDirectory,
+                    (msg::value, msg::path, msg::error),
+                    "'{value}' is the target completion. Ex: fish, zsg, bash, etc.. '{error}' is the error code.",
+                    "Failed to create '{value}' completion directory: '{path}' : '{error}'.");
+    DECLARE_MESSAGE(
+        VcpkgCompletion,
+        (msg::value, msg::path),
+        "'{value}' is the subject for completion. i.e. bash, zsh, etc.",
+        "vcpkg '{value}' completion is already imported to your '{path}' file.\nThe following entries were found: ");
 }

@@ -13,56 +13,6 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace
-{
-    using namespace vcpkg;
-    DECLARE_AND_REGISTER_MESSAGE(AppliedUserIntegration, (), "", "Applied user-wide integration for this vcpkg root.");
-    DECLARE_AND_REGISTER_MESSAGE(CMakeToolChainFile,
-                                 (msg::command_name),
-                                 "",
-                                 "CMake projects should use: DCMAKE_TOOLCHAIN_FILE = '{command_name}'");
-    DECLARE_AND_REGISTER_MESSAGE(UserWideIntegration, (), "", "User-wide integration ");
-    DECLARE_AND_REGISTER_MESSAGE(NugetPackageCreationFailed,
-                                 (msg::error),
-                                 "'{error}' is the NuGet output message.",
-                                 "NuGet package creation failed: '{error}' ");
-    DECLARE_AND_REGISTER_MESSAGE(NugetPackageFileCreationFailed,
-                                 (msg::path),
-                                 "",
-                                 "NuGet package creation failed. No .nupkg was produced. '{path}' ");
-    DECLARE_AND_REGISTER_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: '{path}'");
-    DECLARE_AND_REGISTER_MESSAGE(InstallPackageInstruction,
-                                 (msg::value, msg::path),
-                                 "'{value}' is the nuget id.",
-                                 "With a project open, go to Tools->NuGet Package Manager->Package Manager Console and "
-                                 "paste:\n Install-Package '{value}' -Source '{path}'");
-    DECLARE_AND_REGISTER_MESSAGE(ScriptFailed,
-                                 (msg::value, msg::path),
-                                 "'{value}' is script title.",
-                                 "'{value}'\n Could not run:\n '{path}'");
-    DECLARE_AND_REGISTER_MESSAGE(AddingVcpkgCompletion, (msg::path), "", "Adding vcpkg completion entry to '{path}'.");
-    DECLARE_AND_REGISTER_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.");
-    DECLARE_AND_REGISTER_MESSAGE(IntegrationFailed, (), "", "Integration was not applied.");
-    DECLARE_AND_REGISTER_MESSAGE(AddingCompletionEntry, (msg::path), "", "Adding vcpkg completion entry to '{path}'.");
-    DECLARE_AND_REGISTER_MESSAGE(UnknownParameterForIntegrate,
-                                 (msg::value),
-                                 "'{value}' is the parameter",
-                                 "Unknown parameter '{value}' for integrate.");
-    DECLARE_AND_REGISTER_MESSAGE(FishCompletion,
-                                 (msg::path),
-                                 "",
-                                 "vcpkg fish completion is already added at '{path}'.");
-    DECLARE_AND_REGISTER_MESSAGE(
-        MissingCompletionDirectory,
-        (msg::value, msg::path, msg::error),
-        "'{value}' is the target completion. Ex: fish, zsg, bash, etc.. '{error}' is the error code.",
-        "Failed to create '{value}' completion directory: '{path}' : '{error}'.");
-    DECLARE_AND_REGISTER_MESSAGE(
-        VcpkgCompletion,
-        (msg::value, msg::path),
-        "'{value}' is the subject for completion. i.e. bash, zsh, etc.",
-        "vcpkg '{value}' completion is already imported to your '{path}' file.\nThe following entries were found: ");
-}
 namespace vcpkg::Commands::Integrate
 {
     Optional<int> find_targets_file_version(StringView contents)
