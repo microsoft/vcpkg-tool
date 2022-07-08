@@ -279,6 +279,8 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(version, "1.3.8");
     DECLARE_MSG_ARG(action_index, "340");
     DECLARE_MSG_ARG(env_var, "VCPKG_DEFAULT_TRIPLET");
+    DECLARE_MSG_ARG(extension, ".exe");
+
 #undef DECLARE_MSG_ARG
 
 #define DECLARE_MESSAGE(NAME, ARGS, COMMENT, ...)                                                                      \
