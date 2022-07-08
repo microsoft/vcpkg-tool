@@ -20,12 +20,6 @@ namespace vcpkg::Dependencies
 {
     namespace
     {
-        DECLARE_AND_REGISTER_MESSAGE(VersionConstraintViolated,
-                                     (msg::spec, msg::expected_version, msg::actual_version),
-                                     "",
-                                     "dependency {spec} was expected to be at least version "
-                                     "{expected_version}, but is currently {actual_version}.");
-
         struct ClusterGraph;
 
         struct ClusterInstalled
@@ -338,19 +332,20 @@ namespace vcpkg::Dependencies
                 auto it = m_graph.find(spec);
                 if (it == m_graph.end())
                 {
-                    const SourceControlFileAndLocation* scfl = m_port_provider.get_control_file(spec.name()).get();
-
-                    Checks::check_exit(VCPKG_LINE_INFO,
-                                       scfl != nullptr,
-                                       "Error: Cannot find definition for package `%s` while getting `%s`.",
-                                       spec.name(),
-                                       spec);
-
-                    it = m_graph
-                             .emplace(std::piecewise_construct,
-                                      std::forward_as_tuple(spec),
-                                      std::forward_as_tuple(spec, *scfl))
-                             .first;
+                    auto maybe_scfl = m_port_provider.get_control_file(spec.name());
+                    if (auto scfl = maybe_scfl.get())
+                    {
+                        it = m_graph
+                                 .emplace(std::piecewise_construct,
+                                          std::forward_as_tuple(spec),
+                                          std::forward_as_tuple(spec, *scfl))
+                                 .first;
+                    }
+                    else
+                    {
+                        Checks::exit_with_message(
+                            VCPKG_LINE_INFO, "info: while looking for %s:\n%s", spec, maybe_scfl.error());
+                    }
                 }
 
                 return it->second;

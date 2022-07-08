@@ -89,7 +89,7 @@ namespace vcpkg
                    ": Manifest files must have a top-level object\n");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
-        return {std::move(manifest_value.first.object()), std::move(manifest_path)};
+        return {std::move(manifest_value.first.object(VCPKG_LINE_INFO)), std::move(manifest_path)};
     }
 
     static Optional<ManifestConfiguration> config_from_manifest(const Path& manifest_path,
@@ -117,7 +117,7 @@ namespace vcpkg
             msg::println(Color::error, msg::msgSeeURL, msg::url = docs::registries_url);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
-        const auto& obj = parsed_config.first.object();
+        const auto& obj = parsed_config.first.object(VCPKG_LINE_INFO);
 
         Json::Reader reader;
         auto parsed_config_opt = reader.visit(obj, get_configuration_deserializer());
@@ -285,20 +285,20 @@ namespace vcpkg
                 auto maybe_bundle_doc = Json::parse(bundle_file, bundle_file);
                 if (auto bundle_doc = maybe_bundle_doc.get())
                 {
-                    const auto& first_object = bundle_doc->first.object();
+                    const auto& first_object = bundle_doc->first.object(VCPKG_LINE_INFO);
                     if (auto v = first_object.get("readonly"))
                     {
-                        ret.m_readonly = v->boolean();
+                        ret.m_readonly = v->boolean(VCPKG_LINE_INFO);
                     }
 
                     if (auto v = first_object.get("usegitregistry"))
                     {
-                        ret.m_usegitregistry = v->boolean();
+                        ret.m_usegitregistry = v->boolean(VCPKG_LINE_INFO);
                     }
 
                     if (auto v = first_object.get("embeddedsha"))
                     {
-                        ret.m_embedded_git_sha = v->string().to_string();
+                        ret.m_embedded_git_sha = v->string(VCPKG_LINE_INFO).to_string();
                     }
                 }
                 else
@@ -557,12 +557,6 @@ namespace vcpkg
         };
     }
 
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgDisallowedClassicMode,
-                                 (),
-                                 "",
-                                 "Could not locate a manifest (vcpkg.json) above the current working "
-                                 "directory.\nThis vcpkg distribution does not have a classic mode instance.");
-
     const InstalledPaths& VcpkgPaths::installed() const
     {
         if (auto i = m_pimpl->m_installed.get())
@@ -597,13 +591,6 @@ namespace vcpkg
     const Optional<InstalledPaths>& VcpkgPaths::maybe_installed() const { return m_pimpl->m_installed; }
     const Optional<Path>& VcpkgPaths::maybe_buildtrees() const { return m_pimpl->buildtrees; }
     const Optional<Path>& VcpkgPaths::maybe_packages() const { return m_pimpl->packages; }
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        ErrorMissingVcpkgRoot,
-        (),
-        "",
-        "Could not detect vcpkg-root. If you are trying to use a copy of vcpkg that you've built, you must "
-        "define the VCPKG_ROOT environment variable to point to a cloned copy of https://github.com/Microsoft/vcpkg.");
 
     // Guaranteed to return non-empty
     static Path determine_root(const Filesystem& fs, const Path& original_cwd, const VcpkgCmdArguments& args)
@@ -800,7 +787,7 @@ namespace vcpkg
                 return ret;
             }
 
-            for (auto&& reference_to_commit : ref_info_value.object())
+            for (auto&& reference_to_commit : ref_info_value.object(VCPKG_LINE_INFO))
             {
                 auto reference = reference_to_commit.first;
                 const auto& commit = reference_to_commit.second;
@@ -810,7 +797,7 @@ namespace vcpkg
                     Debug::print("Lockfile value for key '", reference, "' was not a string\n");
                     return ret;
                 }
-                auto sv = commit.string();
+                auto sv = commit.string(VCPKG_LINE_INFO);
                 if (!is_git_commit_sha(sv))
                 {
                     Debug::print("Lockfile value for key '", reference, "' was not a git commit sha\n");
@@ -862,7 +849,7 @@ namespace vcpkg
                 return ret;
             }
 
-            ret.lockdata = lockdata_from_json_object(doc.object());
+            ret.lockdata = lockdata_from_json_object(doc.object(VCPKG_LINE_INFO));
 
             return ret;
         }
@@ -1309,27 +1296,6 @@ namespace vcpkg
         return *m_pimpl->m_registry_set;
     }
     const DownloadManager& VcpkgPaths::get_download_manager() const { return *m_pimpl->m_download_manager.get(); }
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorVcvarsUnsupported,
-                                 (msg::triplet),
-                                 "",
-                                 "in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported "
-                                 "on non-Windows hosts.\nDefine 'VCPKG_CMAKE_SYSTEM_NAME' or "
-                                 "'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.");
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstance,
-                                 (msg::triplet),
-                                 "",
-                                 "in triplet {triplet}: Unable to find a valid Visual Studio instance");
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceVersion, (msg::version), "", "with toolset version {version}");
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceFullVersion,
-                                 (msg::version),
-                                 "",
-                                 "with toolset version prefix {version}");
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceAt, (msg::path), "", "at \"{path}\"");
 
 #if defined(_WIN32)
     static const ToolsetsInformation& get_all_toolsets(details::VcpkgPathsImpl& impl, const Filesystem& fs)

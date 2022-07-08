@@ -12,16 +12,6 @@ namespace
 {
     using namespace vcpkg;
 
-    DECLARE_AND_REGISTER_MESSAGE(
-        MsiexecFailedToExtract,
-        (msg::path, msg::exit_code),
-        "",
-        "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:");
-    DECLARE_AND_REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion,
-                                 (msg::path),
-                                 "",
-                                 "Could not deduce nuget id and version from filename: {path}");
-
 #if defined(_WIN32)
     void win32_extract_nupkg(const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
     {
@@ -100,7 +90,7 @@ namespace
                 if (i < 19 && code_and_output->exit_code == 1618)
                 {
                     // ERROR_INSTALL_ALREADY_RUNNING
-                    print2("Another installation is in progress on the machine, sleeping 6s before retrying.\n");
+                    msg::println(msgAnotherInstallationInProgress);
                     std::this_thread::sleep_for(std::chrono::seconds(6));
                     continue;
                 }

@@ -81,18 +81,6 @@ namespace
     private:
         Path base_path;
     };
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        CiBaselineRegressionHeader,
-        (),
-        "Printed before a series of CiBaselineRegression and/or CiBaselineUnexpectedPass messages.",
-        "REGRESSIONS:");
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        CiBaselineAllowUnexpectedPassingRequiresBaseline,
-        (),
-        "",
-        "--allow-unexpected-passing can only be used if a baseline is provided via --ci-baseline.");
 }
 
 namespace vcpkg::Commands::CI
@@ -486,13 +474,13 @@ namespace vcpkg::Commands::CI
         {
             const Path parent_hashes_path = paths.original_cwd / it_parent_hashes->second;
             auto parsed_json = Json::parse_file(VCPKG_LINE_INFO, filesystem, parent_hashes_path);
-            parent_hashes = Util::fmap(parsed_json.first.array(), [](const auto& json_object) {
-                auto abi = json_object.object().get("abi");
+            parent_hashes = Util::fmap(parsed_json.first.array(VCPKG_LINE_INFO), [](const auto& json_object) {
+                auto abi = json_object.object(VCPKG_LINE_INFO).get("abi");
                 Checks::check_exit(VCPKG_LINE_INFO, abi);
 #ifdef _MSC_VER
                 _Analysis_assume_(abi);
 #endif
-                return abi->string().to_string();
+                return abi->string(VCPKG_LINE_INFO).to_string();
             });
         }
 

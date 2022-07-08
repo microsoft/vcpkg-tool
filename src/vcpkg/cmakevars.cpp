@@ -239,21 +239,32 @@ endfunction()
 
         for (const PackageSpec& spec : specs)
         {
-            Strings::append(
-                extraction_file, "vcpkg_get_dep_info(", spec.name(), " ", emitted_triplets[spec.triplet()], ")\n");
+            const auto& spec_name = spec.name();
+            // Note that "_manifest_" is valid as a CMake parameter name, but isn't
+            // a valid name of a real port.
+            static constexpr StringLiteral manifest_port_name = "_manifest_";
+            StringView vcpkg_get_dep_info_name;
+            if (spec_name.empty())
+            {
+                vcpkg_get_dep_info_name = manifest_port_name;
+            }
+            else
+            {
+                vcpkg_get_dep_info_name = spec_name;
+            }
+
+            Strings::append(extraction_file,
+                            "vcpkg_get_dep_info(",
+                            vcpkg_get_dep_info_name,
+                            " ",
+                            emitted_triplets[spec.triplet()],
+                            ")\n");
         }
 
         auto dep_info_path = paths.buildtrees() / Strings::concat(dep_info_id++, ".vcpkg_dep_info.cmake");
         fs.write_contents_and_dirs(dep_info_path, extraction_file, VCPKG_LINE_INFO);
         return dep_info_path;
     }
-
-    DECLARE_AND_REGISTER_MESSAGE(CommandFailed,
-                                 (msg::command_line),
-                                 "",
-                                 "command:\n"
-                                 "{command_line}\n"
-                                 "failed with the following results:");
 
     void TripletCMakeVarProvider::launch_and_split(
         const Path& script_path, std::vector<std::vector<std::pair<std::string, std::string>>>& vars) const
