@@ -44,6 +44,10 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.");
     DECLARE_AND_REGISTER_MESSAGE(IntegrationFailed, (), "", "Integration was not applied.");
     DECLARE_AND_REGISTER_MESSAGE(AddingCompletionEntry, (msg::path), "", "Adding vcpkg completion entry to '{path}'.");
+    DECLARE_AND_REGISTER_MESSAGE(UnknownParameterForIntegrate,
+                                 (msg::value),
+                                 "'{value}' is the parameter",
+                                 "Unknown parameter '{value}' for integrate.");
     DECLARE_AND_REGISTER_MESSAGE(FishCompletion,
                                  (msg::path),
                                  "",
@@ -731,8 +735,8 @@ namespace vcpkg::Commands::Integrate
             return integrate_fish(paths);
         }
 #endif
-
-        Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Unknown parameter %s for integrate", args.command_arguments[0]);
+        Checks::msg_exit_maybe_upgrade(
+            VCPKG_LINE_INFO, msgUnknownParameterForIntegrate, msg::value = args.command_arguments[0]);
     }
 
     void IntegrateCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
