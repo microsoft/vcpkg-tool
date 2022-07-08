@@ -1213,4 +1213,26 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
+    DECLARE_MESSAGE(FailedToExtract,
+                    (msg::path, msg::error),
+                    "'{error}' is the error message.",
+                    "Failed to extract '{path}' with message '{error}'.");
+    DECLARE_MESSAGE(PortFailedtWhileExtractingWithMessage,
+                    (msg::package_name, msg::path, msg::error),
+                    "'{error}' is the error message.",
+                    "'{package_name}' failed while extracting '{path}' with message '{error}'.");
+    DECLARE_MESSAGE(PortFailedtWhileExtracting,
+                    (msg::package_name, msg::path),
+                    "",
+                    "'{package_name}' failed while extracting '{path}'.");
+    DECLARE_MESSAGE(UnexpectedExtension,
+                    (msg::value),
+                    "'{value}' is the archive extension.",
+                    "Unexpected archive extension: '{value}'.");
+    DECLARE_MESSAGE(UnableToExtractArchive,
+                    (msg::package_name, msg::path),
+                    "",
+                    "Unable to extract '{package_name}' archive from Installer '{path}'.");
+    DECLARE_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
+    DECLARE_MESSAGE(MissingHeader, (msg::package_name), "", "Unable to find '{package_name}' header.");
 }

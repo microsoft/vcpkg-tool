@@ -643,4 +643,11 @@ namespace vcpkg
     REGISTER_MESSAGE(WaitingToTakeFilesystemLock);
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
+    REGISTER_MESSAGE(FailedToExtract);
+    REGISTER_MESSAGE(PortFailedtWhileExtractingWithMessage);
+    REGISTER_MESSAGE(PortFailedtWhileExtracting);
+    REGISTER_MESSAGE(UnexpectedExtension);
+    REGISTER_MESSAGE(UnableToExtractArchive);
+    REGISTER_MESSAGE(MissingExtension);
+    REGISTER_MESSAGE(MissingHeader);
 }

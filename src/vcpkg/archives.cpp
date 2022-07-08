@@ -11,28 +11,7 @@
 namespace
 {
     using namespace vcpkg;
-    DECLARE_AND_REGISTER_MESSAGE(FailedToExtract,
-                                 (msg::path, msg::error),
-                                 "'{error}' is the error message.",
-                                 "Failed to extract '{path}' with message '{error}'.");
-    DECLARE_AND_REGISTER_MESSAGE(PortFailedtWhileExtractingWithMessage,
-                                 (msg::package_name, msg::path, msg::error),
-                                 "'{error}' is the error message.",
-                                 "'{package_name}' failed while extracting '{path}' with message '{error}'.");
-    DECLARE_AND_REGISTER_MESSAGE(PortFailedtWhileExtracting,
-                                 (msg::package_name, msg::path),
-                                 "",
-                                 "'{package_name}' failed while extracting '{path}'.");
-    DECLARE_AND_REGISTER_MESSAGE(UnexpectedExtension,
-                                 (msg::value),
-                                 "'{value}' is the archive extension.",
-                                 "Unexpected archive extension: '{value}'.");
-    DECLARE_AND_REGISTER_MESSAGE(UnableToExtractArchive,
-                                 (msg::package_name, msg::path),
-                                 "",
-                                 "Unable to extract '{package_name}' archive from Installer '{path}'.");
-    DECLARE_AND_REGISTER_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
-    DECLARE_AND_REGISTER_MESSAGE(MissingHeader, (msg::package_name), "", "Unable to find '{package_name}' header.");
+
 #if defined(_WIN32)
     void win32_extract_nupkg(const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
     {
