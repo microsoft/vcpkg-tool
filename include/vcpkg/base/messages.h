@@ -409,6 +409,8 @@ namespace vcpkg
                     (msg::command_line),
                     "",
                     "The first argument to '{command_line}' must be 'artifact' or 'port'.");
+    DECLARE_MESSAGE(AddingCompletionEntry, (msg::path), "", "Adding vcpkg completion entry to '{path}'.");
+    DECLARE_MESSAGE(AddingVcpkgCompletion, (msg::path), "", "Adding vcpkg completion entry to '{path}'.");
     DECLARE_MESSAGE(AddPortRequiresManifest,
                     (msg::command_line),
                     "",
@@ -496,6 +498,7 @@ namespace vcpkg
                     (),
                     "",
                     "Another installation is in progress on the machine, sleeping 6s before retrying.");
+    DECLARE_MESSAGE(AppliedUserIntegration, (), "", "Applied user-wide integration for this vcpkg root.");
     DECLARE_MESSAGE(AttemptingToFetchPackagesFromVendor,
                     (msg::count, msg::vendor),
                     "",
@@ -639,6 +642,10 @@ namespace vcpkg
         (),
         "Displayed after CMakeTargetsUsage; the # must be kept at the beginning so that the message remains a comment.",
         "# this is heuristically generated, and may not be correct");
+    DECLARE_MESSAGE(CMakeToolChainFile,
+                    (msg::command_name),
+                    "",
+                    "CMake projects should use: DCMAKE_TOOLCHAIN_FILE = '{command_name}'");
     DECLARE_MESSAGE(CommandFailed,
                     (msg::command_line),
                     "",
@@ -650,6 +657,7 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "Could not deduce nuget id and version from filename: {path}");
+    DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: '{path}'");
     DECLARE_MESSAGE(CurlReportedUnexpectedResults,
                     (msg::command_line, msg::actual),
                     "{command_line} is the command line to call curl.exe, {actual} is the console output "
@@ -767,6 +775,7 @@ namespace vcpkg
                     "",
                     "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details "
                     "on how to provide credentials.");
+    DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at '{path}'.");
     DECLARE_MESSAGE(
         ForceSystemBinariesOnWeirdPlatforms,
         (),
@@ -828,6 +837,11 @@ namespace vcpkg
                     (msg::action_index, msg::count, msg::spec),
                     "",
                     "Installing {action_index}/{count} {spec}...");
+    DECLARE_MESSAGE(InstallPackageInstruction,
+                    (msg::value, msg::path),
+                    "'{value}' is the nuget id.",
+                    "With a project open, go to Tools->NuGet Package Manager->Package Manager Console and "
+                    "paste:\n Install-Package '{value}' -Source '{path}'");
     DECLARE_MESSAGE(InstallWithSystemManager,
                     (),
                     "",
@@ -840,6 +854,7 @@ namespace vcpkg
                     (msg::command_line),
                     "",
                     "You may be able to install this tool via your system package manager ({command_line}).");
+    DECLARE_MESSAGE(IntegrationFailed, (), "", "Integration was not applied.");
     DECLARE_MESSAGE(InvalidArgument, (), "", "invalid argument");
     DECLARE_MESSAGE(
         InvalidArgumentRequiresAbsolutePath,
@@ -991,6 +1006,10 @@ namespace vcpkg
                     "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
                     "The message named {value} ends with a newline which should be added by formatting "
                     "rather than by localization.");
+    DECLARE_MESSAGE(MissingCompletionDirectory,
+                    (msg::value, msg::path, msg::error),
+                    "'{value}' is the target completion. Ex: fish, zsg, bash, etc.. '{error}' is the error code.",
+                    "Failed to create '{value}' completion directory: '{path}' : '{error}'.");
     DECLARE_MESSAGE(MonoInstructions,
                     (),
                     "",
@@ -1003,6 +1022,14 @@ namespace vcpkg
                     "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:");
     DECLARE_MESSAGE(NoLocalizationForMessages, (), "", "No localized messages for the following: ");
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
+    DECLARE_MESSAGE(NugetPackageCreationFailed,
+                    (msg::error),
+                    "'{error}' is the NuGet output message.",
+                    "NuGet package creation failed: '{error}' ");
+    DECLARE_MESSAGE(NugetPackageFileCreationFailed,
+                    (msg::path),
+                    "",
+                    "NuGet package creation failed. No .nupkg was produced. '{path}' ");
     DECLARE_MESSAGE(PackingVendorFailed,
                     (msg::vendor),
                     "",
@@ -1023,6 +1050,7 @@ namespace vcpkg
                     (msg::package_name),
                     "",
                     "the baseline does not contain an entry for port {package_name}");
+    DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.");
     DECLARE_MESSAGE(ProcessorArchitectureMalformed,
                     (msg::arch),
                     "",
@@ -1055,6 +1083,10 @@ namespace vcpkg
         "{value} may be either a 'vendor' like 'Azure' or 'NuGet', or a file path like C:\\example or /usr/example",
         "Restored {count} package(s) from {value} in {elapsed}. Use --debug to see more details.");
     DECLARE_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
+    DECLARE_MESSAGE(ScriptFailed,
+                    (msg::value, msg::path),
+                    "'{value}' is script title.",
+                    "'{value}'\n Could not run:\n '{path}'");
     DECLARE_MESSAGE(SettingEnvVar,
                     (msg::env_var, msg::url),
                     "An example of env_var is \"HTTP(S)_PROXY\""
@@ -1088,6 +1120,10 @@ namespace vcpkg
                     "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', "
                     "'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', "
                     "'x-aws-config', 'http', and 'files'");
+    DECLARE_MESSAGE(UnknownParameterForIntegrate,
+                    (msg::value),
+                    "'{value}' is the parameter",
+                    "Unknown parameter '{value}' for integrate.");
     DECLARE_MESSAGE(UnknownTool, (), "", "vcpkg does not have a definition of this tool for this platform.");
     DECLARE_MESSAGE(
         UnknownVariablesInTemplate,
@@ -1150,6 +1186,7 @@ namespace vcpkg
                     "An example of env_var is \"HTTP(S)_PROXY\""
                     "'--' at the beginning must be preserved",
                     "-- Using {env_var} in environment variables.");
+    DECLARE_MESSAGE(UserWideIntegration, (), "", "User-wide integration ");
     DECLARE_MESSAGE(UsingCommunityTriplet,
                     (msg::triplet),
                     "'--' at the beginning must be preserved",
@@ -1159,6 +1196,11 @@ namespace vcpkg
                     (),
                     "",
                     "vcpkg-ce ('configure environment') is experimental and may change at any time.");
+    DECLARE_MESSAGE(
+        VcpkgCompletion,
+        (msg::value, msg::path),
+        "'{value}' is the subject for completion. i.e. bash, zsh, etc.",
+        "vcpkg '{value}' completion is already imported to your '{path}' file.\nThe following entries were found: ");
     DECLARE_MESSAGE(VcpkgDisallowedClassicMode,
                     (),
                     "",
@@ -1211,46 +1253,4 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
-    DECLARE_MESSAGE(AppliedUserIntegration, (), "", "Applied user-wide integration for this vcpkg root.");
-    DECLARE_MESSAGE(CMakeToolChainFile,
-                    (msg::command_name),
-                    "",
-                    "CMake projects should use: DCMAKE_TOOLCHAIN_FILE = '{command_name}'");
-    DECLARE_MESSAGE(UserWideIntegration, (), "", "User-wide integration ");
-    DECLARE_MESSAGE(NugetPackageCreationFailed,
-                    (msg::error),
-                    "'{error}' is the NuGet output message.",
-                    "NuGet package creation failed: '{error}' ");
-    DECLARE_MESSAGE(NugetPackageFileCreationFailed,
-                    (msg::path),
-                    "",
-                    "NuGet package creation failed. No .nupkg was produced. '{path}' ");
-    DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: '{path}'");
-    DECLARE_MESSAGE(InstallPackageInstruction,
-                    (msg::value, msg::path),
-                    "'{value}' is the nuget id.",
-                    "With a project open, go to Tools->NuGet Package Manager->Package Manager Console and "
-                    "paste:\n Install-Package '{value}' -Source '{path}'");
-    DECLARE_MESSAGE(ScriptFailed,
-                    (msg::value, msg::path),
-                    "'{value}' is script title.",
-                    "'{value}'\n Could not run:\n '{path}'");
-    DECLARE_MESSAGE(AddingVcpkgCompletion, (msg::path), "", "Adding vcpkg completion entry to '{path}'.");
-    DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.");
-    DECLARE_MESSAGE(IntegrationFailed, (), "", "Integration was not applied.");
-    DECLARE_MESSAGE(AddingCompletionEntry, (msg::path), "", "Adding vcpkg completion entry to '{path}'.");
-    DECLARE_MESSAGE(UnknownParameterForIntegrate,
-                    (msg::value),
-                    "'{value}' is the parameter",
-                    "Unknown parameter '{value}' for integrate.");
-    DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at '{path}'.");
-    DECLARE_MESSAGE(MissingCompletionDirectory,
-                    (msg::value, msg::path, msg::error),
-                    "'{value}' is the target completion. Ex: fish, zsg, bash, etc.. '{error}' is the error code.",
-                    "Failed to create '{value}' completion directory: '{path}' : '{error}'.");
-    DECLARE_MESSAGE(
-        VcpkgCompletion,
-        (msg::value, msg::path),
-        "'{value}' is the subject for completion. i.e. bash, zsh, etc.",
-        "vcpkg '{value}' completion is already imported to your '{path}' file.\nThe following entries were found: ");
 }
