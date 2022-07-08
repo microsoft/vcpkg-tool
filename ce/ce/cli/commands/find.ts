@@ -43,12 +43,13 @@ export class FindCommand extends Command {
     const table = new Table('Artifact', 'Version', 'Summary');
 
     for (const each of this.inputs) {
+      const hasColon = each.indexOf(':') > -1;
       // eslint-disable-next-line prefer-const
       for (let [registry, id, artifacts] of await registries.search({
         // use keyword search if no registry is specified
-        keyword: each.indexOf(':') === -1 ? each : undefined,
+        keyword: hasColon ? undefined : each,
         // otherwise use the criteria as an id
-        idOrShortName: each.indexOf(':') > -1 ? each : undefined,
+        idOrShortName: hasColon ? each : undefined,
         version: this.version.value
       })) {
         if (!this.version.isRangeOfVersions) {
