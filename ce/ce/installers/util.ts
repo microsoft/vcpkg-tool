@@ -17,7 +17,7 @@ export function artifactFileName(name: string, version: string, install: Install
     result += install.lang;
   }
   // add the version number into the filename too.
-  result += '-' + (version || '');
+  result += '-' + version;
 
   // if there is a sha256 or sha512 hash in the install, add it to the filename
   const hash = (install.sha256 || install.sha512 || '');
