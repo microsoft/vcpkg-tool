@@ -11,7 +11,22 @@
 namespace
 {
     using namespace vcpkg;
-
+    DECLARE_AND_REGISTER_MESSAGE(FailedToExtract,
+                                 (msg::path, msg::error),
+                                 "'{error}' is the error message.",
+                                 "Failed to extract '{path}' with message '{error}'.");
+    DECLARE_AND_REGISTER_MESSAGE(PortFailedtWhileExtractingWithMessage,
+                                 (msg::package_name, msg::path, msg::error),
+                                 "'{error}' is the error message.",
+                                 "'{package_name}' failed while extracting '{path}' with message '{error}'.");
+    DECLARE_AND_REGISTER_MESSAGE(PortFailedtWhileExtracting,
+                                 (msg::package_name, msg::path),
+                                 "",
+                                 "'{package_name}' failed while extracting '{path}'.");
+    DECLARE_AND_REGISTER_MESSAGE(UnexpectedExtension,
+                                 (msg::value),
+                                 "'{value}' is the archive extension.",
+                                 "Unexpected archive extension: '{value}'.");
 #if defined(_WIN32)
     void win32_extract_nupkg(const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
     {
@@ -51,8 +66,8 @@ namespace
         const auto result = flatten(cmd_execute_and_capture_output(nuget_command), Tools::NUGET);
         if (!result)
         {
-            Checks::exit_with_message(
-                VCPKG_LINE_INFO, "Failed to extract '%s' with message:\n%s", archive, result.error());
+            Checks::msg_exit_with_message(
+                VCPKG_LINE_INFO, msgFailedToExtract, msg::path = archive, msg::error = result.error());
         }
     }
 
@@ -115,8 +130,11 @@ namespace
 
         if (!maybe_output)
         {
-            Checks::exit_with_message(
-                VCPKG_LINE_INFO, "7zip failed while extracting '%s' with message:\n%s", archive, maybe_output.error());
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                          msgPortFailedtWhileExtractingWithMessage,
+                                          msg::package_name = "7zip",
+                                          msg::path = archive,
+                                          msg::error = maybe_output.error());
         }
 
         recursion_limiter_sevenzip = false;
@@ -156,7 +174,11 @@ namespace
             const auto code =
                 cmd_execute(Command{"unzip"}.string_arg("-qqo").string_arg(archive), WorkingDirectory{to_path})
                     .value_or_exit(VCPKG_LINE_INFO);
-            Checks::check_exit(VCPKG_LINE_INFO, code == 0, "unzip failed while extracting %s", archive);
+            Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                   code == 0,
+                                   msgPortFailedtWhileExtracting,
+                                   msg::package_name = "unzip",
+                                   msg::path = archive);
         }
 #endif
         else if (ext == ".gz" || ext == ".bz2" || ext == ".tgz")
@@ -165,7 +187,7 @@ namespace
         }
         else
         {
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Unexpected archive extension: %s", ext);
+            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgUnexpectedExtension, msg::value = ext);
         }
     }
 
