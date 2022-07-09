@@ -57,7 +57,7 @@ namespace vcpkg
             return *this;
         }
 
-        template <typename... Args>
+        template<typename... Args>
         Command& string_args(Args... args)
         {
             // get total size
