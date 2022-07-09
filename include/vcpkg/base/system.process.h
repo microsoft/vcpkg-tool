@@ -48,7 +48,7 @@ namespace vcpkg
         Command& forwarded_args(View<std::string> args) &
         {
             buf.reserve(buf.size() + args.size());
-            
+
             for (auto&& arg : args)
             {
                 string_arg(arg);
