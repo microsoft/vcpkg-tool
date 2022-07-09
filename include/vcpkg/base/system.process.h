@@ -8,6 +8,8 @@
 #include <vcpkg/base/view.h>
 
 #include <functional>
+#include <initializer_list>
+#include <numeric>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -45,11 +47,28 @@ namespace vcpkg
 
         Command& forwarded_args(View<std::string> args) &
         {
+            buf.reserve(buf.size() + args.size());
+            
             for (auto&& arg : args)
             {
                 string_arg(arg);
             }
 
+            return *this;
+        }
+
+        template <typename... Args>
+        Command& string_args(Args... args)
+        {
+            // get total size
+            ::size_t length = (static_cast<StringView>(args).size() + ...);
+            buf.reserve(buf.size() + length);
+
+            // append all strings
+            for (StringView arg : std::initializer_list<StringView>{args...})
+            {
+                string_arg(arg);
+            }
             return *this;
         }
 

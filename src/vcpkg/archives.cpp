@@ -66,12 +66,12 @@ namespace
             // until it finishes (wrap in cmd /c).
             const auto maybe_code_and_output = cmd_execute_and_capture_output(
                 Command{"cmd"}
-                    .string_arg("/c")
-                    .string_arg("msiexec")
-                    // "/a" is administrative mode, which unpacks without modifying the system
-                    .string_arg("/a")
-                    .string_arg(archive)
-                    .string_arg("/qn")
+                    .string_args("/c",
+                                 "msiexec",
+                                 // "/a" is administrative mode, which unpacks without modifying the system
+                                 "/a",
+                                 archive,
+                                 "/qn")
                     // msiexec requires quotes to be after "TARGETDIR=":
                     //      TARGETDIR="C:\full\path\to\dest"
                     .raw_arg(Strings::concat("TARGETDIR=", Command{to_path}.extract())),
