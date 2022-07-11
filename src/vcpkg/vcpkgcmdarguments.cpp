@@ -11,6 +11,14 @@
 
 namespace vcpkg
 {
+    DECLARE_AND_REGISTER_MESSAGE(HelpSearchCommand, (), "", "Search for packages available to be built.");
+    DECLARE_AND_REGISTER_MESSAGE(HelpInstallCommand, (), "", "Install a package.");
+    DECLARE_AND_REGISTER_MESSAGE(HelpRemoveCommand, (), "", "Uninstall a package.");
+    DECLARE_AND_REGISTER_MESSAGE(HelpListCommand, (), "", "List installed packages.");
+    DECLARE_AND_REGISTER_MESSAGE(HelpUpdateCommand, (), "", "List Update packages.");
+    DECLARE_AND_REGISTER_MESSAGE(HelpTopicsCommand, (), "", "Display the list of help topics.");
+    DECLARE_AND_REGISTER_MESSAGE(HelpTopicCommand, (), "", "Display help for a specific topic.");
+
     static void set_from_feature_flag(const std::vector<std::string>& flags, StringView flag, Optional<bool>& place)
     {
         if (!place.has_value())
@@ -559,17 +567,17 @@ namespace vcpkg
     {
         HelpTableFormatter table;
         table.header("Commands");
-        table.format("vcpkg search [pat]", "Search for packages available to be built");
-        table.format("vcpkg install <pkg>...", "Install a package");
-        table.format("vcpkg remove <pkg>...", "Uninstall a package");
+        table.format("vcpkg search [pat]", msg::format(msgHelpSearchCommand));
+        table.format("vcpkg install <pkg>...", msg::format(msgHelpInstallCommand));
+        table.format("vcpkg remove <pkg>...", msg::format(msgHelpRemoveCommand));
+        table.format("vcpkg update", msg::format(msgHelpUpdateCommand));
         table.format("vcpkg remove --outdated", "Uninstall all out-of-date packages");
-        table.format("vcpkg list", "List installed packages");
-        table.format("vcpkg update", "Display list of packages for updating");
         table.format("vcpkg upgrade", "Rebuild all outdated packages");
         table.format("vcpkg x-history <pkg>", "(Experimental) Shows the history of CONTROL versions of a package");
         table.format("vcpkg hash <file> [alg]", "Hash a file by specific algorithm, default SHA512");
-        table.format("vcpkg help topics", "Display the list of help topics");
-        table.format("vcpkg help <topic>", "Display help for a specific topic");
+        table.format("vcpkg help topics", msg::format(msgHelpTopicsCommand));
+        table.format("vcpkg help <topic>", msg::format(msgHelpTopicCommand));
+        table.format("vcpkg list", msg::format(msgHelpListCommand));
         table.blank();
         Commands::Integrate::append_helpstring(table);
         table.blank();
