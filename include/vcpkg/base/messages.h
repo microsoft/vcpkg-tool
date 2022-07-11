@@ -1011,6 +1011,14 @@ namespace vcpkg
                     "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:");
     DECLARE_MESSAGE(NoLocalizationForMessages, (), "", "No localized messages for the following: ");
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
+    DECLARE_MESSAGE(PackageFailedtWhileExtracting,
+                    (msg::package_name, msg::path),
+                    "",
+                    "'{package_name}' failed while extracting '{path}'.");
+    DECLARE_MESSAGE(PackageFailedtWhileExtractingWithMessage,
+                    (msg::package_name, msg::path, msg::error),
+                    "'{error}' is the error message.",
+                    "'{package_name}' failed while extracting '{path}' with message '{error}'.");
     DECLARE_MESSAGE(PackingVendorFailed,
                     (msg::vendor),
                     "",
@@ -1027,14 +1035,6 @@ namespace vcpkg
                     "Error messages are is printed after this.",
                     "while loading {path}:");
     DECLARE_MESSAGE(ParseControlErrorInfoWrongTypeFields, (), "", "The following fields had the wrong types:");
-    DECLARE_MESSAGE(PackageFailedtWhileExtracting,
-                    (msg::package_name, msg::path),
-                    "",
-                    "'{package_name}' failed while extracting '{path}'.");
-    DECLARE_MESSAGE(PackageFailedtWhileExtractingWithMessage,
-                    (msg::package_name, msg::path, msg::error),
-                    "'{error}' is the error message.",
-                    "'{package_name}' failed while extracting '{path}' with message '{error}'.");
     DECLARE_MESSAGE(PortNotInBaseline,
                     (msg::package_name),
                     "",

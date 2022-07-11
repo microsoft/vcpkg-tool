@@ -584,14 +584,14 @@ namespace vcpkg
     REGISTER_MESSAGE(MsiexecFailedToExtract);
     REGISTER_MESSAGE(NoLocalizationForMessages);
     REGISTER_MESSAGE(NoRegistryForPort);
+    REGISTER_MESSAGE(PackageFailedtWhileExtracting);
+    REGISTER_MESSAGE(PackageFailedtWhileExtractingWithMessage);
     REGISTER_MESSAGE(PackingVendorFailed);
     REGISTER_MESSAGE(ParseControlErrorInfoInvalidFields);
     REGISTER_MESSAGE(ParseControlErrorInfoMissingFields);
     REGISTER_MESSAGE(ParseControlErrorInfoTypesEntry);
     REGISTER_MESSAGE(ParseControlErrorInfoWhileLoading);
     REGISTER_MESSAGE(ParseControlErrorInfoWrongTypeFields);
-    REGISTER_MESSAGE(PackageFailedtWhileExtracting);
-    REGISTER_MESSAGE(PackageFailedtWhileExtractingWithMessage);
     REGISTER_MESSAGE(PortNotInBaseline);
     REGISTER_MESSAGE(ProcessorArchitectureMalformed);
     REGISTER_MESSAGE(ProcessorArchitectureMissing);
