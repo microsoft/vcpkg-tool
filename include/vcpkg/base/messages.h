@@ -1027,11 +1027,11 @@ namespace vcpkg
                     "Error messages are is printed after this.",
                     "while loading {path}:");
     DECLARE_MESSAGE(ParseControlErrorInfoWrongTypeFields, (), "", "The following fields had the wrong types:");
-    DECLARE_MESSAGE(PortFailedtWhileExtracting,
+    DECLARE_MESSAGE(PackageFailedtWhileExtracting,
                     (msg::package_name, msg::path),
                     "",
                     "'{package_name}' failed while extracting '{path}'.");
-    DECLARE_MESSAGE(PortFailedtWhileExtractingWithMessage,
+    DECLARE_MESSAGE(PackageFailedtWhileExtractingWithMessage,
                     (msg::package_name, msg::path, msg::error),
                     "'{error}' is the error message.",
                     "'{package_name}' failed while extracting '{path}' with message '{error}'.");

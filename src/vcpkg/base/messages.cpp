@@ -590,8 +590,8 @@ namespace vcpkg
     REGISTER_MESSAGE(ParseControlErrorInfoTypesEntry);
     REGISTER_MESSAGE(ParseControlErrorInfoWhileLoading);
     REGISTER_MESSAGE(ParseControlErrorInfoWrongTypeFields);
-    REGISTER_MESSAGE(PortFailedtWhileExtracting);
-    REGISTER_MESSAGE(PortFailedtWhileExtractingWithMessage);
+    REGISTER_MESSAGE(PackageFailedtWhileExtracting);
+    REGISTER_MESSAGE(PackageFailedtWhileExtractingWithMessage);
     REGISTER_MESSAGE(PortNotInBaseline);
     REGISTER_MESSAGE(ProcessorArchitectureMalformed);
     REGISTER_MESSAGE(ProcessorArchitectureMissing);

@@ -116,7 +116,7 @@ namespace
         if (!maybe_output)
         {
             Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                          msgPortFailedtWhileExtractingWithMessage,
+                                          msgPackageFailedtWhileExtractingWithMessage,
                                           msg::package_name = "7zip",
                                           msg::path = archive,
                                           msg::error = maybe_output.error());
@@ -161,7 +161,7 @@ namespace
                     .value_or_exit(VCPKG_LINE_INFO);
             Checks::msg_check_exit(VCPKG_LINE_INFO,
                                    code == 0,
-                                   msgPortFailedtWhileExtracting,
+                                   msgPackageFailedtWhileExtracting,
                                    msg::package_name = "unzip",
                                    msg::path = archive);
         }
@@ -252,7 +252,7 @@ namespace vcpkg
             cmd_execute(Command{tar_tool}.string_arg("xzf").string_arg(archive), WorkingDirectory{to_path});
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                succeeded(code),
-                               msgPortFailedtWhileExtracting,
+                               msgPackageFailedtWhileExtracting,
                                msg::package_name = "tar",
                                msg::path = archive);
     }
@@ -265,7 +265,7 @@ namespace vcpkg
                         WorkingDirectory{to_path});
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                succeeded(code),
-                               msgPortFailedtWhileExtracting,
+                               msgPackageFailedtWhileExtracting,
                                msg::package_name = "CMake",
                                msg::path = archive);
     }
