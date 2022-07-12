@@ -1,6 +1,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
@@ -284,7 +285,7 @@ namespace vcpkg::Commands::Integrate
                 {
                     case ElevationPromptChoice::YES: break;
                     case ElevationPromptChoice::NO:
-                        print2(Color::warning, "Warning: Previous integration file was not removed\n");
+                        msg::println_warning(msgPreviousIntegrationFileRemains);
                         Checks::exit_fail(VCPKG_LINE_INFO);
                     default: Checks::unreachable(VCPKG_LINE_INFO);
                 }
@@ -316,7 +317,7 @@ namespace vcpkg::Commands::Integrate
             {
                 case ElevationPromptChoice::YES: break;
                 case ElevationPromptChoice::NO:
-                    print2(Color::warning, "Warning: integration was not applied\n");
+                    msg::println_warning(msgIntegrationFailed);
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
@@ -362,27 +363,17 @@ namespace vcpkg::Commands::Integrate
 
         const auto pathtxt = get_path_txt_path();
         fs.write_contents(pathtxt, paths.root.generic_u8string(), VCPKG_LINE_INFO);
-
-        print2(Color::success, "Applied user-wide integration for this vcpkg root.\n");
+        msg::println(Color::success, msgAppliedUserIntegration);
         const auto cmake_toolchain = paths.buildsystems / "vcpkg.cmake";
+
 #if defined(_WIN32)
-        vcpkg::printf(
-            R"(
-All MSBuild C++ projects can now #include any installed libraries.
-Linking will be handled automatically.
-Installing new libraries will make them instantly available.
-
-CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
-)",
-            cmake_toolchain.generic_u8string());
+        msg::println(
+            msg::format(msgCMakeToolChainFile, msg::command_name = cmake_toolchain.generic_u8string())
+                .append_raw("\nAll MSBuild C++ projects can now #include any installed libraries. Linking will be "
+                            "handled automatically. Installing new libraries will make them instantly available."));
 #else
-        vcpkg::printf(
-            R"(
-CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
-)",
-            cmake_toolchain.generic_u8string());
+        msg::println(msgCMakeToolChainFile, msg::command_name = cmake_toolchain.generic_u8string());
 #endif
-
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
@@ -396,14 +387,14 @@ CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
 #endif
 
         was_deleted |= fs.remove(get_path_txt_path(), VCPKG_LINE_INFO);
-
+        auto message = msg::format(msgUserWideIntegration);
         if (was_deleted)
         {
-            print2(Color::success, "User-wide integration was removed\n");
+            msg::println(message.append_raw("was removed."));
         }
         else
         {
-            print2(Color::success, "User-wide integration is not installed\n");
+            msg::println(message.append_raw("is not installed."));
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
@@ -444,27 +435,20 @@ CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
             cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()), Tools::NUGET);
         if (!maybe_nuget_output)
         {
-            Checks::exit_with_message(
-                VCPKG_LINE_INFO, "Error: NuGet package creation failed: %s\n", maybe_nuget_output.error());
+            msg::println_error(msgNugetPackageCreationFailed, msg::error = maybe_nuget_output.error());
+            Checks::unreachable(VCPKG_LINE_INFO);
         }
 
         const auto nuget_package = buildsystems_dir / Strings::format("%s.%s.nupkg", nuget_id, nupkg_version);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           fs.exists(nuget_package, IgnoreErrors{}),
-                           "Error: NuGet package creation \"succeeded\", but no .nupkg was produced. Expected %s",
-                           nuget_package);
-        print2(Color::success, "Created nupkg: ", nuget_package, '\n');
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               fs.exists(nuget_package, IgnoreErrors{}),
+                               msgNugetPackageFileCreationFailed,
+                               msg::path = nuget_package);
+        msg::println(Color::success, msgCreatedNuGetPackage, msg::path = nuget_package);
 
         auto source_path = Strings::replace_all(buildsystems_dir, "`", "``");
 
-        vcpkg::printf(R"(
-With a project open, go to Tools->NuGet Package Manager->Package Manager Console and paste:
-    Install-Package %s -Source "%s"
-
-)",
-                      nuget_id,
-                      source_path);
-
+        msg::println(msgInstallPackageInstruction, msg::value = nuget_id, msg::path = source_path);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 #endif
@@ -485,12 +469,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         const int rc = cmd_execute(cmd).value_or_exit(VCPKG_LINE_INFO);
         if (rc)
         {
-            vcpkg::printf(Color::error,
-                          "%s\n"
-                          "Could not run:\n"
-                          "    '%s'\n",
-                          TITLE,
-                          script_path.generic_u8string());
+            msg::println_error(msgScriptFailed, msg::value = TITLE, msg::path = script_path.generic_u8string());
 
             {
                 auto locked_metrics = LockGuardPtr<Metrics>(g_metrics);
@@ -519,16 +498,13 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
 
         if (!matches.empty())
         {
-            vcpkg::printf("vcpkg bash completion is already imported to your %s file.\n"
-                          "The following entries were found:\n"
-                          "    %s\n"
-                          "Please make sure you have started a new bash shell for the changes to take effect.\n",
-                          bashrc_path,
-                          Strings::join("\n    ", matches));
+            msg::println(
+                msg::format(msgVcpkgCompletion, msg::value = "bash", msg::path = bashrc_path)
+                    .append_raw(Strings::join("\n   ", matches))
+                    .append_raw("Please make sure you have started a new bash shell for the change to take effect."));
             Checks::exit_success(VCPKG_LINE_INFO);
         }
-
-        vcpkg::printf("Adding vcpkg completion entry to %s\n", bashrc_path);
+        msg::println(msgAddingVcpkgCompletion, msg::path = bashrc_path);
         bashrc_content.append("\nsource ");
         bashrc_content.append(completion_script_path.native());
         bashrc_content.push_back('\n');
@@ -551,16 +527,13 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
 
         if (!data.source_completion_lines.empty())
         {
-            printf("vcpkg zsh completion is already imported to your %s file.\n"
-                   "The following entries were found:\n"
-                   "    %s\n"
-                   "Please make sure you have started a new zsh shell for the changes to take effect.\n",
-                   zshrc_path,
-                   Strings::join("\n    ", data.source_completion_lines));
+            msg::println(
+                msg::format(msgVcpkgCompletion, msg::value = "zsh", msg::path = zshrc_path)
+                    .append_raw(Strings::join("\n   ", data.source_completion_lines))
+                    .append_raw("Please make sure you have started a new zsh shell for the changes to take effect."));
             Checks::exit_success(VCPKG_LINE_INFO);
         }
-
-        printf("Adding vcpkg completion entry to %s\n", zshrc_path);
+        msg::println(msgAddingCompletionEntry, msg::path = zshrc_path);
         if (!data.has_autoload_bashcompinit)
         {
             zshrc_content.append("\nautoload bashcompinit");
@@ -599,12 +572,10 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
 
         if (ec)
         {
-            print2(Color::error,
-                   "Error: Failed to create fish completions directory: ",
-                   fish_completions_path,
-                   ": ",
-                   ec.message(),
-                   "\n");
+            msg::println_error(msgMissingCompletionDirectory,
+                               msg::value = "fish",
+                               msg::path = fish_completions_path,
+                               msg::error = ec.message());
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
@@ -612,12 +583,12 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
 
         if (fs.exists(fish_completions_path, IgnoreErrors{}))
         {
-            vcpkg::printf("vcpkg fish completion is already added at %s.\n", fish_completions_path);
+            msg::println(msgFishCompletion, msg::path = fish_completions_path);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
         const auto completion_script_path = paths.scripts / "vcpkg_completion.fish";
-        vcpkg::printf("Adding vcpkg completion entry at %s.\n", fish_completions_path);
+        msg::println(msgAddingCompletionEntry, msg::path = fish_completions_path);
         fs.create_symlink(completion_script_path, fish_completions_path, VCPKG_LINE_INFO);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
@@ -626,17 +597,16 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
     void append_helpstring(HelpTableFormatter& table)
     {
 #if defined(_WIN32)
-        table.format("vcpkg integrate install",
-                     "Make installed packages available user-wide. Requires admin privileges on first use");
-        table.format("vcpkg integrate remove", "Remove user-wide integration");
-        table.format("vcpkg integrate project", "Generate a referencing nuget package for individual VS project use");
-        table.format("vcpkg integrate powershell", "Enable PowerShell tab-completion");
+        table.format("vcpkg integrate install", msg::format(msgHelpIntegrateInstall));
+        table.format("vcpkg integrate remove", msg::format(msgHelpIntegrateRemove));
+        table.format("vcpkg integrate project", msg::format(msgHelpIntegrateProject));
+        table.format("vcpkg integrate powershell", msg::format(msgHelpIntegratePowershell));
 #else  // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
-        table.format("vcpkg integrate install", "Make installed packages available user-wide");
-        table.format("vcpkg integrate remove", "Remove user-wide integration");
-        table.format("vcpkg integrate bash", "Enable bash tab-completion");
-        table.format("vcpkg integrate zsh", "Enable zsh tab-completion");
-        table.format("vcpkg integrate x-fish", "Enable fish tab-completion");
+        table.format("vcpkg integrate install", msg::format(msgHelpIntegrateInstall));
+        table.format("vcpkg integrate remove", msg::format(msgHelpIntegrateRemove));
+        table.format("vcpkg integrate bash", msg::format(msgHelpIntegrateBash));
+        table.format("vcpkg integrate zsh", msg::format(msgHelpIntegrateZsh));
+        table.format("vcpkg integrate x-fish", msg::format(msgHelpIntegrateFish));
 #endif // ^^^ !defined(_WIN32)
     }
 
@@ -714,8 +684,8 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
             return integrate_fish(paths);
         }
 #endif
-
-        Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Unknown parameter %s for integrate", args.command_arguments[0]);
+        Checks::msg_exit_maybe_upgrade(
+            VCPKG_LINE_INFO, msgUnknownParameterForIntegrate, msg::value = args.command_arguments[0]);
     }
 
     void IntegrateCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
