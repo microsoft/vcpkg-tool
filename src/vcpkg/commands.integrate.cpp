@@ -598,15 +598,16 @@ namespace vcpkg::Commands::Integrate
     {
 #if defined(_WIN32)
         table.format("vcpkg integrate install", msg::format(msgHelpIntegrateInstall));
-        table.format("vcpkg integrate remove", msg::format(msgHelpIntegrateRemove));
-        table.format("vcpkg integrate project", msg::format(msgHelpIntegrateProject));
-        table.format("vcpkg integrate powershell", msg::format(msgHelpIntegratePowershell));
+        table.format("vcpkg integrate remove", "Remove user-wide integration");
+        table.format("vcpkg integrate project", "Generate a referencing nuget package for individual VS project use");
+        table.format("vcpkg integrate powershell", "Enable PowerShell tab-completion");
 #else  // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
-        table.format("vcpkg integrate install", msg::format(msgHelpIntegrateInstall));
-        table.format("vcpkg integrate remove", msg::format(msgHelpIntegrateRemove));
-        table.format("vcpkg integrate bash", msg::format(msgHelpIntegrateBash));
-        table.format("vcpkg integrate zsh", msg::format(msgHelpIntegrateZsh));
-        table.format("vcpkg integrate x-fish", msg::format(msgHelpIntegrateFish));
+        table.format("vcpkg integrate install",
+                     "Make installed packages available user - wide.Requires admin privileges on first use");
+        table.format("vcpkg integrate remove", "Remove user-wide integration");
+        table.format("vcpkg integrate bash", "Enable bash tab-completion");
+        table.format("vcpkg integrate zsh", "Enable zsh tab-completion");
+        table.format("vcpkg integrate x-fish", "Enable fish tab-completion");
 #endif // ^^^ !defined(_WIN32)
     }
 
