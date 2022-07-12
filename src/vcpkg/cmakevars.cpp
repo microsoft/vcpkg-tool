@@ -296,9 +296,7 @@ endfunction()
 
         auto port_start = std::find(lines.cbegin(), end, PORT_START_GUID);
         auto port_end = std::find(port_start, end, PORT_END_GUID);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           port_start != end && port_end != end,
-                           "Failed to parse CMake console output to locate port start/end markers");
+        Checks::msg_check_exit(VCPKG_LINE_INFO, port_start != end && port_end != end, msgFailedToParseCMakeConsoleOut);
 
         for (auto var_itr = vars.begin(); port_start != end && var_itr != vars.end(); ++var_itr)
         {
