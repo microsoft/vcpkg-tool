@@ -35,6 +35,7 @@ import { isYAML } from './yaml/yaml';
 type InstallerTool<T extends Installer = any> = (
   session: Session,
   name: string,
+  version: string,
   targetLocation: Uri,
   install: T,
   events: Partial<InstallEvents>,
@@ -162,7 +163,6 @@ export class Session {
     }
     return undefined;
   }
-
 
   async loadRegistry(registryLocation: Uri | string | undefined, registryKind = 'artifact'): Promise<Registry | undefined> {
     // normalize the location first.

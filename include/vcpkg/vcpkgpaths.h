@@ -42,12 +42,9 @@ namespace vcpkg
         std::vector<ToolsetArchOption> supported_architectures;
     };
 
-    namespace Build
-    {
-        struct PreBuildInfo;
-        struct AbiInfo;
-        struct CompilerInfo;
-    }
+    struct PreBuildInfo;
+    struct AbiInfo;
+    struct CompilerInfo;
 
     namespace details
     {
@@ -160,13 +157,13 @@ namespace vcpkg
         const RegistrySet& get_registry_set() const;
 
         // Retrieve a toolset matching the requirements in prebuildinfo
-        const Toolset& get_toolset(const Build::PreBuildInfo& prebuildinfo) const;
+        const Toolset& get_toolset(const PreBuildInfo& prebuildinfo) const;
 
         Filesystem& get_filesystem() const;
 
-        const Environment& get_action_env(const Build::AbiInfo& abi_info) const;
-        const std::string& get_triplet_info(const Build::AbiInfo& abi_info) const;
-        const Build::CompilerInfo& get_compiler_info(const Build::AbiInfo& abi_info) const;
+        const Environment& get_action_env(const AbiInfo& abi_info) const;
+        const std::string& get_triplet_info(const AbiInfo& abi_info) const;
+        const CompilerInfo& get_compiler_info(const AbiInfo& abi_info) const;
         bool manifest_mode_enabled() const { return get_manifest().has_value(); }
 
         const FeatureFlagSettings& get_feature_flags() const;

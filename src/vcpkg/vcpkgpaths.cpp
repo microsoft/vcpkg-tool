@@ -516,7 +516,7 @@ namespace vcpkg
             const Optional<Path> buildtrees;
             const Optional<Path> packages;
             const std::unique_ptr<ToolCache> m_tool_cache;
-            Build::EnvCache m_env_cache;
+            EnvCache m_env_cache;
             std::vector<Path> triplets_dirs;
             const Path m_artifacts_dir;
 
@@ -1287,7 +1287,7 @@ namespace vcpkg
     }
 #endif
 
-    const Toolset& VcpkgPaths::get_toolset(const Build::PreBuildInfo& prebuildinfo) const
+    const Toolset& VcpkgPaths::get_toolset(const PreBuildInfo& prebuildinfo) const
     {
         if (!prebuildinfo.using_vcvars())
         {
@@ -1346,17 +1346,17 @@ namespace vcpkg
 #endif
     }
 
-    const Environment& VcpkgPaths::get_action_env(const Build::AbiInfo& abi_info) const
+    const Environment& VcpkgPaths::get_action_env(const AbiInfo& abi_info) const
     {
         return m_pimpl->m_env_cache.get_action_env(*this, abi_info);
     }
 
-    const std::string& VcpkgPaths::get_triplet_info(const Build::AbiInfo& abi_info) const
+    const std::string& VcpkgPaths::get_triplet_info(const AbiInfo& abi_info) const
     {
         return m_pimpl->m_env_cache.get_triplet_info(*this, abi_info);
     }
 
-    const Build::CompilerInfo& VcpkgPaths::get_compiler_info(const Build::AbiInfo& abi_info) const
+    const CompilerInfo& VcpkgPaths::get_compiler_info(const AbiInfo& abi_info) const
     {
         return m_pimpl->m_env_cache.get_compiler_info(*this, abi_info);
     }

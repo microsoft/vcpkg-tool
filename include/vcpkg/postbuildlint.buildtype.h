@@ -12,13 +12,13 @@ namespace vcpkg::PostBuildLint
     {
         BuildType() = delete;
 
-        constexpr BuildType(Build::ConfigurationType c, Build::LinkageType l) : config(c), linkage(l) { }
+        constexpr BuildType(ConfigurationType c, LinkageType l) : config(c), linkage(l) { }
 
         bool has_crt_linker_option(StringView sv) const;
         StringLiteral to_string() const;
 
-        Build::ConfigurationType config;
-        Build::LinkageType linkage;
+        ConfigurationType config;
+        LinkageType linkage;
 
         friend bool operator==(const BuildType& lhs, const BuildType& rhs)
         {

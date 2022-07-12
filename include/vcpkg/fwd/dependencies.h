@@ -1,6 +1,6 @@
 #pragma once
 
-namespace vcpkg::Dependencies
+namespace vcpkg
 {
     struct InstallPlanAction;
     struct ActionPlan;
