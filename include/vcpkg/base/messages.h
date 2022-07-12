@@ -1211,4 +1211,107 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
+    DECLARE_MESSAGE(HelpSearchCommand, (), "", "Search for packages available to be built.");
+    DECLARE_MESSAGE(HelpInstallCommand, (), "", "Install a package.");
+    DECLARE_MESSAGE(HelpRemoveCommand, (), "", "Uninstall a package.");
+    DECLARE_MESSAGE(HelpListCommand, (), "", "List installed packages.");
+    DECLARE_MESSAGE(HelpUpdateCommand, (), "", "List Packages that can be updated.");
+    DECLARE_MESSAGE(HelpTopicsCommand, (), "", "Display the list of help topics.");
+    DECLARE_MESSAGE(HelpTopicCommand, (), "", "Display help for a specific topic.");
+    DECLARE_MESSAGE(HelpRemoveOutdatedCommand, (), "", "Uninstall all out-of-date packages.");
+    DECLARE_MESSAGE(HelpUpgradeCommand, (), "", "Rebuild all outdated packages.");
+    DECLARE_MESSAGE(HelpHistoryCommand, (), "", "(Experimental) Show the history of CONTROL versions of a package.");
+    DECLARE_MESSAGE(HelpHashCommand, (), "", "Hash a file by specific algorithm, default SHA512.");
+
+    DECLARE_MESSAGE(HelpExportCommand, (), "", "Exports a package.");
+    DECLARE_MESSAGE(HelpEditCommand,
+                    (msg::env_var),
+                    "",
+                    "Open up a port for editing (uses '{env_var}' default 'code'.");
+    DECLARE_MESSAGE(HelpCreateCommand, (), "", "Create a new package.");
+    DECLARE_MESSAGE(HelpInitializeRegistryCommand, (), "", "Initializes a registry in the directory <path>.");
+    DECLARE_MESSAGE(HelpFormatManifestCommand,
+                    (),
+                    "",
+                    "Formats all vcpkg.json files. Run this before committing to vcpkg.");
+    DECLARE_MESSAGE(HelpOwnsCommand, (), "", "Search for files in installed packages.");
+    DECLARE_MESSAGE(HelpDependInfoCommand, (), "", "Display a list of dependencies for packages.");
+    DECLARE_MESSAGE(HelpEnvCommand, (), "", "Creates a clean shell environment for development or compiling.");
+    DECLARE_MESSAGE(HelpVersionCommand, (), "", "Display version information.");
+    DECLARE_MESSAGE(HelpContactCommand, (), "", "Display contact information to send feedback.");
+    DECLARE_MESSAGE(HelpResponseFileCommand, (), "", "Specify a response file to provide additional parameters.");
+    DECLARE_MESSAGE(HelpExampleCommand,
+                    (),
+                    "",
+                    "For more help (including examples) see the accompanying README.md and docs folder.");
+
+    DECLARE_MESSAGE(SpecifyTargetArch,
+                    (msg::env_var),
+                    "",
+                    "Specify the target architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')");
+    DECLARE_MESSAGE(SpecifyHostArch,
+                    (msg::env_var),
+                    "",
+                    "Specify the host architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')");
+    DECLARE_MESSAGE(SpecifyDirectoriesWhenSearching,
+                    (msg::env_var),
+                    "",
+                    "Specify directories to be used when searching for ports.\n(also: '{env_var}')");
+    DECLARE_MESSAGE(SpecifyDirectoriesContaining,
+                    (msg::env_var),
+                    "",
+                    "Specifiy directories containing triplets files.\n(also: '{env_var}')");
+    DECLARE_MESSAGE(BinarySourcesArg, (), "", "Add sources for binary caching. See 'vcpkg help binarycaching'.");
+    DECLARE_MESSAGE(AssetSourcesArg, (), "", "Add sources for asset caching. See 'vcpkg help assetcaching'.");
+    DECLARE_MESSAGE(DownloadRootsDir,
+                    (msg::env_var),
+                    "",
+                    "Specify the downloads root directory.\n(default: '{env_var}')");
+    DECLARE_MESSAGE(VcpkgRootsDir, (msg::env_var), "", "Specify the vcpkg root directory.\n(default: '{env_var}')");
+    DECLARE_MESSAGE(BuildTreesRootDir, (), "", "(Experimental) Specify the buildtrees root directory.");
+    DECLARE_MESSAGE(InstallRootDir, (), "", "(Experimental) Specify the install root directory.");
+    DECLARE_MESSAGE(PackageRootDir, (), "", "(Experimental) Specify the packages root directory.");
+    DECLARE_MESSAGE(JsonSwitch, (), "", "(Experimental) Request JSON output.");
+    DECLARE_MESSAGE(TwoFeatureFlagsSpecified,
+                    (msg::value),
+                    "'{value}' is a feature flag.",
+                    "Both '{value}' and -'{value}' were specified as feature flags.");
+    DECLARE_MESSAGE(DuplicateOptions,
+                    (msg::value),
+                    "'{value}' is a command option.",
+                    "--'{value}' specified multiple times.");
+    DECLARE_MESSAGE(ConflictingValuesForOption,
+                    (msg::value),
+                    "'{value}' is a command option.",
+                    "conflicting values specified for --'{value}'.");
+    DECLARE_MESSAGE(ExpectedValueForOption,
+                    (msg::value),
+                    "'{value}' is a command option.",
+                    "expected value after '{value}.'");
+    DECLARE_MESSAGE(UnsupportedShortOptions,
+                    (msg::value),
+                    "'{value}' is the short option given",
+                    "short options are not supported: '{value}'");
+    DECLARE_MESSAGE(IncorrectNumberOfArgs,
+                    (msg::command_name, msg::count, msg::count),
+                    "",
+                    "'{command_name}' requires '{count}' arguments, but '{count}' were provided.");
+    DECLARE_MESSAGE(NoArgumentsForOption,
+                    (msg::command_name),
+                    "",
+                    "The option '{command_name}' does not accept an argument.");
+    DECLARE_MESSAGE(DuplicateCommandOption,
+                    (msg::command_name),
+                    "",
+                    "The option '{command_name}'can only be passed once.");
+    DECLARE_MESSAGE(EmptyArg,
+                    (msg::command_name),
+                    "",
+                    "The option '{command_name}'must be passed a non-empty argument.");
+    DECLARE_MESSAGE(UnknownOptions, (msg::command_name), "", "Unknown option(s) for command '{command_name}':");
+    DECLARE_MESSAGE(SpecifiedFeatureTurnedOff,
+                    (msg::command_name, msg::command_name),
+                    "",
+                    "'{command_name}' feature specifically turned off, but --'{command_name}' was specified.");
+    DECLARE_MESSAGE(DefaultFlag, (msg::command_name), "", "Defaulting to '{command_name}' being on.");
 }
