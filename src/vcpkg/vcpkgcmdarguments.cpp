@@ -66,11 +66,11 @@ namespace vcpkg
         SpecifyHostArch,
         (msg::env_var),
         "",
-        "Specify the host architecture triplet. See 'vcpkg help triplet'\n(default: '{env_var}')");
+        "Specify the host architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')");
     DECLARE_AND_REGISTER_MESSAGE(SpecifyDirectoriesWhenSearching,
                                  (msg::env_var),
                                  "",
-                                 "Specify directories to be used when searching for ports\n(also: '{env_var}')");
+                                 "Specify directories to be used when searching for ports.\n(also: '{env_var}')");
     DECLARE_AND_REGISTER_MESSAGE(SpecifyDirectoriesContaining,
                                  (msg::env_var),
                                  "",
@@ -78,24 +78,43 @@ namespace vcpkg
     DECLARE_AND_REGISTER_MESSAGE(BinarySourcesArg,
                                  (),
                                  "",
-                                 "Add sources for binary caching. See 'vcpkg help binarycaching'");
+                                 "Add sources for binary caching. See 'vcpkg help binarycaching'.");
     DECLARE_AND_REGISTER_MESSAGE(AssetSourcesArg,
                                  (),
                                  "",
-                                 "Add sources for asset caching. See 'vcpkg help assetcaching'");
+                                 "Add sources for asset caching. See 'vcpkg help assetcaching'.");
     DECLARE_AND_REGISTER_MESSAGE(DownloadRootsDir,
                                  (msg::env_var),
                                  "",
-                                 "Specify the downloads root directory\n(default: '{env_var}')");
+                                 "Specify the downloads root directory.\n(default: '{env_var}')");
     DECLARE_AND_REGISTER_MESSAGE(VcpkgRootsDir,
                                  (msg::env_var),
                                  "",
-                                 "Specify the vcpkg root directory\n(default: '{env_var}')");
-    DECLARE_AND_REGISTER_MESSAGE(BuildTreesRootDir, (), "", "(Experimental) Specify the buildtrees root directory");
-    DECLARE_AND_REGISTER_MESSAGE(InstallRootDir, (), "", "(Experimental) Specify the install root directory");
-    DECLARE_AND_REGISTER_MESSAGE(PackageRootDir, (), "", "(Experimental) Specify the packages root directory");
-    DECLARE_AND_REGISTER_MESSAGE(JsonSwitch, (), "", "(Experimental) Request JSON output");
-
+                                 "Specify the vcpkg root directory.\n(default: '{env_var}')");
+    DECLARE_AND_REGISTER_MESSAGE(BuildTreesRootDir, (), "", "(Experimental) Specify the buildtrees root directory.");
+    DECLARE_AND_REGISTER_MESSAGE(InstallRootDir, (), "", "(Experimental) Specify the install root directory.");
+    DECLARE_AND_REGISTER_MESSAGE(PackageRootDir, (), "", "(Experimental) Specify the packages root directory.");
+    DECLARE_AND_REGISTER_MESSAGE(JsonSwitch, (), "", "(Experimental) Request JSON output.");
+    DECLARE_AND_REGISTER_MESSAGE(TwoFeatureFlagsSpecified,
+                                 (msg::value),
+                                 "'{value}' is a feature flag.",
+                                 "Both '{value}' and -'{value}' were specified as feature flags.");
+    DECLARE_AND_REGISTER_MESSAGE(DuplicateOptions,
+                                 (msg::value),
+                                 "'{value}' is a command option.",
+                                 "--'{value}' specified multiple times.");
+    DECLARE_AND_REGISTER_MESSAGE(ConflictingValuesForOption,
+                                 (msg::value),
+                                 "'{value}' is a command option.",
+                                 "conflicting values specified for --'{value}'.");
+    DECLARE_AND_REGISTER_MESSAGE(ExpectedValueForOption,
+                                 (msg::value),
+                                 "'{value}' is a command option.",
+                                 "expected value after '{value}.'");
+    DECLARE_AND_REGISTER_MESSAGE(UnsupportedShortOptions,
+                                 (msg::value),
+                                 "'{value}' is the short option given",
+                                 "short options are not supported: '{value}'");
     static void set_from_feature_flag(const std::vector<std::string>& flags, StringView flag, Optional<bool>& place)
     {
         if (!place.has_value())
@@ -112,7 +131,7 @@ namespace vcpkg
             {
                 if (place.has_value())
                 {
-                    vcpkg::printf(Color::error, "Error: both %s and -%s were specified as feature flags\n", flag, flag);
+                    msg::println_error(msgTwoFeatureFlagsSpecified, msg::value = flag);
                     LockGuardPtr<Metrics>(g_metrics)->track_property("error",
                                                                      "error feature flag +-" + flag.to_string());
                     Checks::exit_fail(VCPKG_LINE_INFO);
@@ -152,7 +171,7 @@ namespace vcpkg
     {
         if (nullptr != option_field)
         {
-            vcpkg::printf(Color::error, "Error: --%s specified multiple times\n", option_name);
+            msg::println_error(msgDuplicateOptions, msg::value = option_name);
             LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option specified multiple times");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -165,7 +184,7 @@ namespace vcpkg
     {
         if (option_field && option_field != new_setting)
         {
-            print2(Color::error, "Error: conflicting values specified for --", option_name, '\n');
+            msg::println_error(msgConflictingValuesForOption, msg::value = option_name);
             LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error conflicting switches");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -179,7 +198,7 @@ namespace vcpkg
     {
         if (new_value.size() == 0)
         {
-            print2(Color::error, "Error: expected value after ", option_name, '\n');
+            msg::println_error(msgExpectedValueForOption, msg::value = option_name);
             LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option name");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -194,7 +213,7 @@ namespace vcpkg
     {
         if (new_value.size() == 0)
         {
-            print2(Color::error, "Error: expected value after ", option_name, '\n');
+            msg::println_error(msgExpectedValueForOption, msg::value = option_name);
             LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option name");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -261,7 +280,7 @@ namespace vcpkg
                     return TryParseArgumentResult::FoundAndConsumedLookahead;
                 }
 
-                print2(Color::error, "Error: expected value after ", option, '\n');
+                msg::println_error(msgExpectedValueForOption, msg::value = option);
                 LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option name");
                 print_usage();
                 Checks::exit_fail(VCPKG_LINE_INFO);
@@ -336,7 +355,7 @@ namespace vcpkg
             if (basic_arg.size() >= 2 && basic_arg[0] == '-' && basic_arg[1] != '-')
             {
                 LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error short options are not supported");
-                Checks::exit_with_message(VCPKG_LINE_INFO, "Error: short options are not supported: %s", basic_arg);
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgUnsupportedShortOptions, msg::value = basic_arg);
             }
 
             if (basic_arg.size() < 2 || basic_arg[0] != '-')
