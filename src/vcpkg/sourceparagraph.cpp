@@ -1211,8 +1211,8 @@ namespace vcpkg
             {
                 Strings::append(ret, "    ", err, "\n");
             }
-            print2("See ", docs::registries_url, " for more information.\n");
-            print2("See ", docs::manifests_url, " for more information.\n");
+            msg::println(msgSeeDocumentation, msg::url = docs::registries_url);
+            msg::println(msgSeeDocumentation, msg::url = docs::manifests_url);
             return std::move(ret);
         }
         else

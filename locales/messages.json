@@ -353,6 +353,8 @@
   "_RestoredPackagesFromVendor.comment": "{value} may be either a 'vendor' like 'Azure' or 'NuGet', or a file path like C:\\example or /usr/example An example of {count} is 42. An example of {elapsed} is 3.532 min.",
   "ResultsHeader": "RESULTS",
   "_ResultsHeader.comment": "Displayed before a list of installation results.",
+  "SeeDocumentation": "See {url} for more information",
+  "_SeeDocumentation.comment": "An example of {url} is https://github.com/microsoft/vcpkg.",
   "SeeURL": "See {url} for more information.",
   "_SeeURL.comment": "An example of {url} is https://github.com/microsoft/vcpkg.",
   "SerializedDoesNotMatchOriginalBinPar": "[sanity check] The serialized binary paragraph was different from the original binary paragraph.\nPlease open an issue at {url}, with the following output:\n=== Original BinaryParagraph ===\nspec: '{spec}'\nversion: '{version}'\nport_version: {version}\ndescription: ['{value}']\nmaintainers: ['{value}']\nfeature: '{value}'\ndefault feature: ['{value}']\ndependencies: ['{value}']\nabi: '{value}'\ntype: {value}\n\n=== Serialized BinaryParagraph ===\nspec: '{spec}'\nversion: '{version}'\nport_version: {version}\ndescription: ['{value}']\nmaintainers: ['{value}']\nfeature: '{value}'\ndefault feature: ['{value}']\ndependencies: ['{value}']\nabi: '{value}'\ntype: {value}",

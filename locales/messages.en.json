@@ -202,6 +202,7 @@
   "RestoredPackage": "Restored package from '{path}'",
   "RestoredPackagesFromVendor": "Restored {count} package(s) from {value} in {elapsed}. Use --debug to see more details.",
   "ResultsHeader": "RESULTS",
+  "SeeDocumentation": "See {url} for more information",
   "SeeURL": "See {url} for more information.",
   "SerializedDoesNotMatchOriginalBinPar": "[sanity check] The serialized binary paragraph was different from the original binary paragraph.\nPlease open an issue at {url}, with the following output:\n=== Original BinaryParagraph ===\nspec: '{spec}'\nversion: '{version}'\nport_version: {version}\ndescription: ['{value}']\nmaintainers: ['{value}']\nfeature: '{value}'\ndefault feature: ['{value}']\ndependencies: ['{value}']\nabi: '{value}'\ntype: {value}\n\n=== Serialized BinaryParagraph ===\nspec: '{spec}'\nversion: '{version}'\nport_version: {version}\ndescription: ['{value}']\nmaintainers: ['{value}']\nfeature: '{value}'\ndefault feature: ['{value}']\ndependencies: ['{value}']\nabi: '{value}'\ntype: {value}",
   "SettingEnvVar": "-- Setting \"{env_var}\" environment variables to \"{url}\".",
