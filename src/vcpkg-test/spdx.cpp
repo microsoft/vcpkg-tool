@@ -6,8 +6,6 @@ using namespace vcpkg;
 
 TEST_CASE ("spdx maximum serialization", "[spdx]")
 {
-    using namespace Dependencies;
-
     PackageSpec spec{"zlib", Test::ARM_UWP};
     SourceControlFileAndLocation scfl;
     scfl.registry_location = "git://some-vcs-url";
@@ -23,7 +21,7 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
     cpgh.version_scheme = VersionScheme::Relaxed;
 
     InstallPlanAction ipa(spec, scfl, RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {});
-    auto& abi = *(ipa.abi_info = Build::AbiInfo{}).get();
+    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "ABIHASH";
 
     const auto sbom =
@@ -167,8 +165,6 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
 
 TEST_CASE ("spdx minimum serialization", "[spdx]")
 {
-    using namespace Dependencies;
-
     PackageSpec spec{"zlib", Test::ARM_UWP};
     SourceControlFileAndLocation scfl;
     auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
@@ -179,7 +175,7 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
     cpgh.version_scheme = VersionScheme::String;
 
     InstallPlanAction ipa(spec, scfl, RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {});
-    auto& abi = *(ipa.abi_info = Build::AbiInfo{}).get();
+    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "deadbeef";
 
     const auto sbom = create_spdx_sbom(ipa,
@@ -297,8 +293,6 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
 
 TEST_CASE ("spdx concat resources", "[spdx]")
 {
-    using namespace Dependencies;
-
     PackageSpec spec{"zlib", Test::ARM_UWP};
     SourceControlFileAndLocation scfl;
     auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
@@ -309,7 +303,7 @@ TEST_CASE ("spdx concat resources", "[spdx]")
     cpgh.version_scheme = VersionScheme::String;
 
     InstallPlanAction ipa(spec, scfl, RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {});
-    auto& abi = *(ipa.abi_info = Build::AbiInfo{}).get();
+    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "deadbeef";
 
     auto doc1 = Json::parse(R"json(

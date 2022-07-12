@@ -124,7 +124,7 @@ Json::Value vcpkg::run_resource_heuristics(StringView contents)
     return Json::Value::object(std::move(ret));
 }
 
-std::string vcpkg::create_spdx_sbom(const Dependencies::InstallPlanAction& action,
+std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
                                     View<Path> relative_paths,
                                     View<std::string> hashes,
                                     std::string created_time,

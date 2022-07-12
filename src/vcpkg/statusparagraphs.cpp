@@ -170,7 +170,7 @@ namespace vcpkg
         {
             iobj.insert("features", std::move(features));
         }
-        auto usage = Install::get_cmake_usage(fs, installed, ipv.core->package);
+        auto usage = get_cmake_usage(fs, installed, ipv.core->package);
         if (!usage.message.empty())
         {
             iobj.insert("usage", Json::Value::string(std::move(usage.message)));

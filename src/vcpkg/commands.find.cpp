@@ -115,8 +115,7 @@ namespace vcpkg::Commands
                                     Optional<StringView> filter,
                                     View<std::string> overlay_ports)
     {
-        PortFileProvider::PathsPortFileProvider provider(paths,
-                                                         PortFileProvider::make_overlay_provider(paths, overlay_ports));
+        PathsPortFileProvider provider(paths, make_overlay_provider(paths, overlay_ports));
         auto source_paragraphs =
             Util::fmap(provider.load_all_control_files(),
                        [](auto&& port) -> const SourceControlFile* { return port->source_control_file.get(); });

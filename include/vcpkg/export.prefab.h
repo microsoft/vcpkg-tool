@@ -76,7 +76,7 @@ namespace vcpkg::Export::Prefab
         std::string to_json();
     };
 
-    void do_export(const std::vector<Dependencies::ExportPlanAction>& export_plan,
+    void do_export(const std::vector<ExportPlanAction>& export_plan,
                    const VcpkgPaths& paths,
                    const Options& prefab_options,
                    const Triplet& triplet);

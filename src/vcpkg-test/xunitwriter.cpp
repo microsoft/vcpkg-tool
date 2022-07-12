@@ -7,7 +7,6 @@
 #include <utility>
 
 using namespace vcpkg;
-using Build::BuildResult;
 
 TEST_CASE ("Simple XunitWriter", "[xunitwriter]")
 {
