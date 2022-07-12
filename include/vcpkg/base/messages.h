@@ -496,6 +496,7 @@ namespace vcpkg
                     (),
                     "",
                     "Another installation is in progress on the machine, sleeping 6s before retrying.");
+    DECLARE_MESSAGE(AssetSourcesArg, (), "", "Add sources for asset caching. See 'vcpkg help assetcaching'.");
     DECLARE_MESSAGE(AttemptingToFetchPackagesFromVendor,
                     (msg::count, msg::vendor),
                     "",
@@ -510,6 +511,7 @@ namespace vcpkg
                     "An example of env_var is \"HTTP(S)_PROXY\""
                     "'--' at the beginning must be preserved",
                     "-- Automatically setting {env_var} environment variables to \"{url}\".");
+    DECLARE_MESSAGE(BinarySourcesArg, (), "", "Add sources for binary caching. See 'vcpkg help binarycaching'.");
     DECLARE_MESSAGE(BuildAlreadyInstalled,
                     (msg::spec),
                     "",
@@ -584,6 +586,7 @@ namespace vcpkg
                     (msg::build_result, msg::count),
                     "Displayed to show a count of results of a build_result in a summary.",
                     "{build_result}: {count}");
+    DECLARE_MESSAGE(BuildTreesRootDir, (), "", "(Experimental) Specify the buildtrees root directory.");
     DECLARE_MESSAGE(BuildTroubleshootingMessage1,
                     (),
                     "First part of build troubleshooting message, printed before the URI to look for existing bugs.",
@@ -646,6 +649,10 @@ namespace vcpkg
                     "{command_line}\n"
                     "failed with the following results:");
     DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder '{path}':");
+    DECLARE_MESSAGE(ConflictingValuesForOption,
+                    (msg::value),
+                    "'{value}' is a command option.",
+                    "conflicting values specified for --'{value}'.");
     DECLARE_MESSAGE(CouldNotDeduceNugetIdAndVersion,
                     (msg::path),
                     "",
@@ -661,6 +668,7 @@ namespace vcpkg
                     "=== curl output ===\n"
                     "{actual}\n"
                     "=== end curl output ===");
+    DECLARE_MESSAGE(DefaultFlag, (msg::command_name), "", "Defaulting to '{command_name}' being on.");
     DECLARE_MESSAGE(DefaultPathToBinaries,
                     (msg::path),
                     "",
@@ -677,6 +685,22 @@ namespace vcpkg
                     (),
                     "This message is normally displayed only in development.",
                     "Downloading latest vcpkg-ce bundle...");
+    DECLARE_MESSAGE(DownloadRootsDir,
+                    (msg::env_var),
+                    "",
+                    "Specify the downloads root directory.\n(default: '{env_var}')");
+    DECLARE_MESSAGE(DuplicateCommandOption,
+                    (msg::command_name),
+                    "",
+                    "The option '{command_name}'can only be passed once.");
+    DECLARE_MESSAGE(DuplicateOptions,
+                    (msg::value),
+                    "'{value}' is a command option.",
+                    "--'{value}' specified multiple times.");
+    DECLARE_MESSAGE(EmptyArg,
+                    (msg::command_name),
+                    "",
+                    "The option '{command_name}'must be passed a non-empty argument.");
     DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
     DECLARE_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:");
     DECLARE_MESSAGE(ErrorDetectingCompilerInfo,
@@ -750,6 +774,10 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' here");
     DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
+    DECLARE_MESSAGE(ExpectedValueForOption,
+                    (msg::value),
+                    "'{value}' is a command option.",
+                    "expected value after '{value}.'");
     DECLARE_MESSAGE(ExtendedDocumenationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
     DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
     DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
@@ -814,8 +842,44 @@ namespace vcpkg
                     (msg::package_name),
                     "'header' refers to C/C++ .h files",
                     "{package_name} is header-only and can be used from CMake via:");
+    DECLARE_MESSAGE(HelpContactCommand, (), "", "Display contact information to send feedback.");
+    DECLARE_MESSAGE(HelpCreateCommand, (), "", "Create a new package.");
+    DECLARE_MESSAGE(HelpDependInfoCommand, (), "", "Display a list of dependencies for packages.");
+    DECLARE_MESSAGE(HelpEditCommand,
+                    (msg::env_var),
+                    "",
+                    "Open up a port for editing (uses '{env_var}' default 'code'.");
+    DECLARE_MESSAGE(HelpEnvCommand, (), "", "Creates a clean shell environment for development or compiling.");
+    DECLARE_MESSAGE(HelpExampleCommand,
+                    (),
+                    "",
+                    "For more help (including examples) see the accompanying README.md and docs folder.");
+    DECLARE_MESSAGE(HelpExportCommand, (), "", "Exports a package.");
+    DECLARE_MESSAGE(HelpFormatManifestCommand,
+                    (),
+                    "",
+                    "Formats all vcpkg.json files. Run this before committing to vcpkg.");
+    DECLARE_MESSAGE(HelpHashCommand, (), "", "Hash a file by specific algorithm, default SHA512.");
+    DECLARE_MESSAGE(HelpHistoryCommand, (), "", "(Experimental) Show the history of CONTROL versions of a package.");
+    DECLARE_MESSAGE(HelpInitializeRegistryCommand, (), "", "Initializes a registry in the directory <path>.");
+    DECLARE_MESSAGE(HelpInstallCommand, (), "", "Install a package.");
+    DECLARE_MESSAGE(HelpListCommand, (), "", "List installed packages.");
+    DECLARE_MESSAGE(HelpOwnsCommand, (), "", "Search for files in installed packages.");
+    DECLARE_MESSAGE(HelpRemoveCommand, (), "", "Uninstall a package.");
+    DECLARE_MESSAGE(HelpRemoveOutdatedCommand, (), "", "Uninstall all out-of-date packages.");
+    DECLARE_MESSAGE(HelpResponseFileCommand, (), "", "Specify a response file to provide additional parameters.");
+    DECLARE_MESSAGE(HelpSearchCommand, (), "", "Search for packages available to be built.");
+    DECLARE_MESSAGE(HelpTopicCommand, (), "", "Display help for a specific topic.");
+    DECLARE_MESSAGE(HelpTopicsCommand, (), "", "Display the list of help topics.");
+    DECLARE_MESSAGE(HelpUpdateCommand, (), "", "List Packages that can be updated.");
+    DECLARE_MESSAGE(HelpUpgradeCommand, (), "", "Rebuild all outdated packages.");
+    DECLARE_MESSAGE(HelpVersionCommand, (), "", "Display version information.");
     DECLARE_MESSAGE(IllegalFeatures, (), "", "List of features is not allowed in this context");
     DECLARE_MESSAGE(IllegalPlatformSpec, (), "", "Platform qualifier is not allowed in this context");
+    DECLARE_MESSAGE(IncorrectNumberOfArgs,
+                    (msg::command_name, msg::count, msg::count),
+                    "",
+                    "'{command_name}' requires '{count}' arguments, but '{count}' were provided.");
     DECLARE_MESSAGE(InfoSetEnvVar,
                     (msg::env_var),
                     "In this context 'editor' means IDE",
@@ -828,6 +892,7 @@ namespace vcpkg
                     (msg::action_index, msg::count, msg::spec),
                     "",
                     "Installing {action_index}/{count} {spec}...");
+    DECLARE_MESSAGE(InstallRootDir, (), "", "(Experimental) Specify the install root directory.");
     DECLARE_MESSAGE(InstallWithSystemManager,
                     (),
                     "",
@@ -899,6 +964,7 @@ namespace vcpkg
     DECLARE_MESSAGE(JsonErrorFailedToParse, (msg::path), "", "failed to parse {path}:");
     DECLARE_MESSAGE(JsonErrorFailedToRead, (msg::path, msg::error_msg), "", "failed to read {path}: {error_msg}");
     DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected {path} to be an object.");
+    DECLARE_MESSAGE(JsonSwitch, (), "", "(Experimental) Request JSON output.");
     DECLARE_MESSAGE(LaunchingProgramFailed,
                     (msg::tool_name),
                     "A platform API call failure message is appended after this",
@@ -1001,8 +1067,13 @@ namespace vcpkg
                     (msg::path, msg::exit_code),
                     "",
                     "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:");
+    DECLARE_MESSAGE(NoArgumentsForOption,
+                    (msg::command_name),
+                    "",
+                    "The option '{command_name}' does not accept an argument.");
     DECLARE_MESSAGE(NoLocalizationForMessages, (), "", "No localized messages for the following: ");
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
+    DECLARE_MESSAGE(PackageRootDir, (), "", "(Experimental) Specify the packages root directory.");
     DECLARE_MESSAGE(PackingVendorFailed,
                     (msg::vendor),
                     "",
@@ -1066,6 +1137,26 @@ namespace vcpkg
                     "'CONTROL', 'vcpkg.json', and 'name' references are locale-invariant.",
                     "The 'Source' field inside the CONTROL file, or \"name\" field inside the vcpkg.json "
                     "file has the name {package_name} and does not match the port directory {path}.");
+    DECLARE_MESSAGE(SpecifiedFeatureTurnedOff,
+                    (msg::command_name, msg::command_name),
+                    "",
+                    "'{command_name}' feature specifically turned off, but --'{command_name}' was specified.");
+    DECLARE_MESSAGE(SpecifyDirectoriesContaining,
+                    (msg::env_var),
+                    "",
+                    "Specifiy directories containing triplets files.\n(also: '{env_var}')");
+    DECLARE_MESSAGE(SpecifyDirectoriesWhenSearching,
+                    (msg::env_var),
+                    "",
+                    "Specify directories to be used when searching for ports.\n(also: '{env_var}')");
+    DECLARE_MESSAGE(SpecifyHostArch,
+                    (msg::env_var),
+                    "",
+                    "Specify the host architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')");
+    DECLARE_MESSAGE(SpecifyTargetArch,
+                    (msg::env_var),
+                    "",
+                    "Specify the target architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')");
     DECLARE_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: '{path}'");
     DECLARE_MESSAGE(SystemApiErrorMessage,
                     (msg::system_api, msg::exit_code, msg::error_msg),
@@ -1073,6 +1164,10 @@ namespace vcpkg
                     "calling {system_api} failed with {exit_code} ({error_msg})");
     DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
     DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
+    DECLARE_MESSAGE(TwoFeatureFlagsSpecified,
+                    (msg::value),
+                    "'{value}' is a feature flag.",
+                    "Both '{value}' and -'{value}' were specified as feature flags.");
     DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.");
     DECLARE_MESSAGE(UnexpectedToolOutput,
                     (msg::tool_name, msg::path),
@@ -1088,12 +1183,17 @@ namespace vcpkg
                     "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', "
                     "'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', "
                     "'x-aws-config', 'http', and 'files'");
+    DECLARE_MESSAGE(UnknownOptions, (msg::command_name), "", "Unknown option(s) for command '{command_name}':");
     DECLARE_MESSAGE(UnknownTool, (), "", "vcpkg does not have a definition of this tool for this platform.");
     DECLARE_MESSAGE(
         UnknownVariablesInTemplate,
         (msg::value, msg::list),
         "{value} is the value provided by the user and {list} a list of unknown variables seperated by comma",
         "invalid argument: url template '{value}' contains unknown variables: {list}");
+    DECLARE_MESSAGE(UnsupportedShortOptions,
+                    (msg::value),
+                    "'{value}' is the short option given",
+                    "short options are not supported: '{value}'");
     DECLARE_MESSAGE(UnsupportedSystemName,
                     (msg::system_name),
                     "",
@@ -1171,6 +1271,7 @@ namespace vcpkg
         "vcpkg has crashed. Please create an issue at https://github.com/microsoft/vcpkg containing a brief summary of "
         "what you were trying to do and the following information.");
     DECLARE_MESSAGE(VcpkgInvalidCommand, (msg::command_name), "", "invalid command: {command_name}");
+    DECLARE_MESSAGE(VcpkgRootsDir, (msg::env_var), "", "Specify the vcpkg root directory.\n(default: '{env_var}')");
     DECLARE_MESSAGE(VcpkgSendMetricsButDisabled, (), "", "passed --sendmetrics, but metrics are disabled.");
     DECLARE_MESSAGE(VersionCommandHeader,
                     (msg::version),
@@ -1211,107 +1312,4 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
-    DECLARE_MESSAGE(HelpSearchCommand, (), "", "Search for packages available to be built.");
-    DECLARE_MESSAGE(HelpInstallCommand, (), "", "Install a package.");
-    DECLARE_MESSAGE(HelpRemoveCommand, (), "", "Uninstall a package.");
-    DECLARE_MESSAGE(HelpListCommand, (), "", "List installed packages.");
-    DECLARE_MESSAGE(HelpUpdateCommand, (), "", "List Packages that can be updated.");
-    DECLARE_MESSAGE(HelpTopicsCommand, (), "", "Display the list of help topics.");
-    DECLARE_MESSAGE(HelpTopicCommand, (), "", "Display help for a specific topic.");
-    DECLARE_MESSAGE(HelpRemoveOutdatedCommand, (), "", "Uninstall all out-of-date packages.");
-    DECLARE_MESSAGE(HelpUpgradeCommand, (), "", "Rebuild all outdated packages.");
-    DECLARE_MESSAGE(HelpHistoryCommand, (), "", "(Experimental) Show the history of CONTROL versions of a package.");
-    DECLARE_MESSAGE(HelpHashCommand, (), "", "Hash a file by specific algorithm, default SHA512.");
-
-    DECLARE_MESSAGE(HelpExportCommand, (), "", "Exports a package.");
-    DECLARE_MESSAGE(HelpEditCommand,
-                    (msg::env_var),
-                    "",
-                    "Open up a port for editing (uses '{env_var}' default 'code'.");
-    DECLARE_MESSAGE(HelpCreateCommand, (), "", "Create a new package.");
-    DECLARE_MESSAGE(HelpInitializeRegistryCommand, (), "", "Initializes a registry in the directory <path>.");
-    DECLARE_MESSAGE(HelpFormatManifestCommand,
-                    (),
-                    "",
-                    "Formats all vcpkg.json files. Run this before committing to vcpkg.");
-    DECLARE_MESSAGE(HelpOwnsCommand, (), "", "Search for files in installed packages.");
-    DECLARE_MESSAGE(HelpDependInfoCommand, (), "", "Display a list of dependencies for packages.");
-    DECLARE_MESSAGE(HelpEnvCommand, (), "", "Creates a clean shell environment for development or compiling.");
-    DECLARE_MESSAGE(HelpVersionCommand, (), "", "Display version information.");
-    DECLARE_MESSAGE(HelpContactCommand, (), "", "Display contact information to send feedback.");
-    DECLARE_MESSAGE(HelpResponseFileCommand, (), "", "Specify a response file to provide additional parameters.");
-    DECLARE_MESSAGE(HelpExampleCommand,
-                    (),
-                    "",
-                    "For more help (including examples) see the accompanying README.md and docs folder.");
-
-    DECLARE_MESSAGE(SpecifyTargetArch,
-                    (msg::env_var),
-                    "",
-                    "Specify the target architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')");
-    DECLARE_MESSAGE(SpecifyHostArch,
-                    (msg::env_var),
-                    "",
-                    "Specify the host architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')");
-    DECLARE_MESSAGE(SpecifyDirectoriesWhenSearching,
-                    (msg::env_var),
-                    "",
-                    "Specify directories to be used when searching for ports.\n(also: '{env_var}')");
-    DECLARE_MESSAGE(SpecifyDirectoriesContaining,
-                    (msg::env_var),
-                    "",
-                    "Specifiy directories containing triplets files.\n(also: '{env_var}')");
-    DECLARE_MESSAGE(BinarySourcesArg, (), "", "Add sources for binary caching. See 'vcpkg help binarycaching'.");
-    DECLARE_MESSAGE(AssetSourcesArg, (), "", "Add sources for asset caching. See 'vcpkg help assetcaching'.");
-    DECLARE_MESSAGE(DownloadRootsDir,
-                    (msg::env_var),
-                    "",
-                    "Specify the downloads root directory.\n(default: '{env_var}')");
-    DECLARE_MESSAGE(VcpkgRootsDir, (msg::env_var), "", "Specify the vcpkg root directory.\n(default: '{env_var}')");
-    DECLARE_MESSAGE(BuildTreesRootDir, (), "", "(Experimental) Specify the buildtrees root directory.");
-    DECLARE_MESSAGE(InstallRootDir, (), "", "(Experimental) Specify the install root directory.");
-    DECLARE_MESSAGE(PackageRootDir, (), "", "(Experimental) Specify the packages root directory.");
-    DECLARE_MESSAGE(JsonSwitch, (), "", "(Experimental) Request JSON output.");
-    DECLARE_MESSAGE(TwoFeatureFlagsSpecified,
-                    (msg::value),
-                    "'{value}' is a feature flag.",
-                    "Both '{value}' and -'{value}' were specified as feature flags.");
-    DECLARE_MESSAGE(DuplicateOptions,
-                    (msg::value),
-                    "'{value}' is a command option.",
-                    "--'{value}' specified multiple times.");
-    DECLARE_MESSAGE(ConflictingValuesForOption,
-                    (msg::value),
-                    "'{value}' is a command option.",
-                    "conflicting values specified for --'{value}'.");
-    DECLARE_MESSAGE(ExpectedValueForOption,
-                    (msg::value),
-                    "'{value}' is a command option.",
-                    "expected value after '{value}.'");
-    DECLARE_MESSAGE(UnsupportedShortOptions,
-                    (msg::value),
-                    "'{value}' is the short option given",
-                    "short options are not supported: '{value}'");
-    DECLARE_MESSAGE(IncorrectNumberOfArgs,
-                    (msg::command_name, msg::count, msg::count),
-                    "",
-                    "'{command_name}' requires '{count}' arguments, but '{count}' were provided.");
-    DECLARE_MESSAGE(NoArgumentsForOption,
-                    (msg::command_name),
-                    "",
-                    "The option '{command_name}' does not accept an argument.");
-    DECLARE_MESSAGE(DuplicateCommandOption,
-                    (msg::command_name),
-                    "",
-                    "The option '{command_name}'can only be passed once.");
-    DECLARE_MESSAGE(EmptyArg,
-                    (msg::command_name),
-                    "",
-                    "The option '{command_name}'must be passed a non-empty argument.");
-    DECLARE_MESSAGE(UnknownOptions, (msg::command_name), "", "Unknown option(s) for command '{command_name}':");
-    DECLARE_MESSAGE(SpecifiedFeatureTurnedOff,
-                    (msg::command_name, msg::command_name),
-                    "",
-                    "'{command_name}' feature specifically turned off, but --'{command_name}' was specified.");
-    DECLARE_MESSAGE(DefaultFlag, (msg::command_name), "", "Defaulting to '{command_name}' being on.");
 }
