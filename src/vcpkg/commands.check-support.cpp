@@ -107,19 +107,17 @@ namespace vcpkg::Commands
         Json::Array json_to_print; // only used when `use_json`
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
-            return Input::check_and_get_full_package_spec(
+            return check_and_get_full_package_spec(
                 std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
 
-        PortFileProvider::PathsPortFileProvider provider(
-            paths, PortFileProvider::make_overlay_provider(paths, args.overlay_ports));
+        PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
 
         // for each spec in the user-requested specs, check all dependencies
         for (const auto& user_spec : specs)
         {
-            auto action_plan =
-                Dependencies::create_feature_install_plan(provider, *cmake_vars, {&user_spec, 1}, {}, {host_triplet});
+            auto action_plan = create_feature_install_plan(provider, *cmake_vars, {&user_spec, 1}, {}, {host_triplet});
 
             cmake_vars->load_tag_vars(action_plan, provider, host_triplet);
 

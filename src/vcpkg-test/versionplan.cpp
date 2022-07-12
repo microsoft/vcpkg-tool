@@ -86,18 +86,16 @@ TEST_CASE ("qualified dependency", "[dependencies]")
     spec_map.emplace("a", "b, b[b1] (linux)");
     spec_map.emplace("b", "", {{"b1", ""}});
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
     var_provider.dep_info_vars[{"a", Triplet::from_canonical_name("x64-linux")}].emplace("VCPKG_CMAKE_SYSTEM_NAME",
                                                                                          "Linux");
 
-    auto plan =
-        vcpkg::Dependencies::create_feature_install_plan(map_port, var_provider, Test::parse_test_fspecs("a"), {});
+    auto plan = vcpkg::create_feature_install_plan(map_port, var_provider, Test::parse_test_fspecs("a"), {});
     REQUIRE(plan.install_actions.size() == 2);
     REQUIRE(plan.install_actions.at(0).feature_list == std::vector<std::string>{"core"});
 
-    auto plan2 = vcpkg::Dependencies::create_feature_install_plan(
-        map_port, var_provider, Test::parse_test_fspecs("a:x64-linux"), {});
+    auto plan2 = vcpkg::create_feature_install_plan(map_port, var_provider, Test::parse_test_fspecs("a:x64-linux"), {});
     REQUIRE(plan2.install_actions.size() == 2);
     REQUIRE(plan2.install_actions.at(0).feature_list == std::vector<std::string>{"b1", "core"});
 }
