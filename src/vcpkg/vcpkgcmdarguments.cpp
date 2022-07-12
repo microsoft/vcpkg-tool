@@ -115,6 +115,32 @@ namespace vcpkg
                                  (msg::value),
                                  "'{value}' is the short option given",
                                  "short options are not supported: '{value}'");
+    DECLARE_AND_REGISTER_MESSAGE(IncorrectNumberOfArgs,
+                                 (msg::command_name, msg::count, msg::count),
+                                 "",
+                                 "'{command_name}' requires '{count}' arguments, but '{count}' were provided.");
+    DECLARE_AND_REGISTER_MESSAGE(NoArgumentsForOption,
+                                 (msg::command_name),
+                                 "",
+                                 "The option '{command_name}' does not accept an argument.");
+    DECLARE_AND_REGISTER_MESSAGE(DuplicateCommandOption,
+                                 (msg::command_name),
+                                 "",
+                                 "The option '{command_name}'can only be passed once.");
+    DECLARE_AND_REGISTER_MESSAGE(EmptyArg,
+                                 (msg::command_name),
+                                 "",
+                                 "The option '{command_name}'must be passed a non-empty argument.");
+    DECLARE_AND_REGISTER_MESSAGE(UnknownOptions,
+                                 (msg::command_name),
+                                 "",
+                                 "Unknown option(s) for command '{command_name}':");
+    DECLARE_AND_REGISTER_MESSAGE(
+        SpecifiedFeatureTurnedOff,
+        (msg::command_name, msg::command_name),
+        "",
+        "'{command_name}' feature specifically turned off, but --'{command_name}' was specified.");
+    DECLARE_AND_REGISTER_MESSAGE(DefaultFlag, (msg::command_name), "", "Defaulting to '{command_name}' being on.");
     static void set_from_feature_flag(const std::vector<std::string>& flags, StringView flag, Optional<bool>& place)
     {
         if (!place.has_value())
@@ -498,11 +524,10 @@ namespace vcpkg
         {
             if (actual_arg_count != command_structure.minimum_arity)
             {
-                vcpkg::printf(Color::error,
-                              "Error: '%s' requires %u arguments, but %u were provided.\n",
-                              this->command,
-                              command_structure.minimum_arity,
-                              actual_arg_count);
+                msg::println_error(msgIncorrectNumberOfArgs,
+                                   msg::command_name = this->command,
+                                   msg::count = command_structure.minimum_arity,
+                                   msg::count = actual_arg_count);
                 failed = true;
             }
         }
@@ -510,20 +535,18 @@ namespace vcpkg
         {
             if (actual_arg_count < command_structure.minimum_arity)
             {
-                vcpkg::printf(Color::error,
-                              "Error: '%s' requires at least %u arguments, but %u were provided\n",
-                              this->command,
-                              command_structure.minimum_arity,
-                              actual_arg_count);
+                msg::println_error(msgIncorrectNumberOfArgs,
+                                   msg::command_name = this->command,
+                                   msg::count = command_structure.minimum_arity,
+                                   msg::count = actual_arg_count);
                 failed = true;
             }
             if (actual_arg_count > command_structure.maximum_arity)
             {
-                vcpkg::printf(Color::error,
-                              "Error: '%s' requires at most %u arguments, but %u were provided\n",
-                              this->command,
-                              command_structure.maximum_arity,
-                              actual_arg_count);
+                msg::println_error(msgIncorrectNumberOfArgs,
+                                   msg::command_name = this->command,
+                                   msg::count = command_structure.minimum_arity,
+                                   msg::count = actual_arg_count);
                 failed = true;
             }
         }
@@ -553,7 +576,7 @@ namespace vcpkg
             if (option_it != options_copy.end())
             {
                 // This means that the switch was passed like '--a=xyz'
-                vcpkg::printf(Color::error, "Error: The option '--%s' does not accept an argument.\n", switch_.name);
+                msg::println_error(msgNoArgumentsForOption, msg::command_name = switch_.name);
                 options_copy.erase(option_it);
                 failed = true;
             }
@@ -572,14 +595,13 @@ namespace vcpkg
 
                 if (value.size() > 1)
                 {
-                    vcpkg::printf(Color::error, "Error: The option '%s' can only be passed once.\n", option.name);
+                    msg::println_error(msgDuplicateCommandOption, msg::command_name = option.name);
                     failed = true;
                 }
                 else if (value.front().empty())
                 {
                     // Fail when not given a value, e.g.: "vcpkg install sqlite3 --additional-ports="
-                    vcpkg::printf(
-                        Color::error, "Error: The option '--%s' must be passed a non-empty argument.\n", option.name);
+                    msg::println_error(msgEmptyArg, msg::command_name = option.name);
                     failed = true;
                 }
                 else
@@ -592,7 +614,7 @@ namespace vcpkg
             if (switch_it != switches_copy.end())
             {
                 // This means that the option was passed like '--a'
-                vcpkg::printf(Color::error, "Error: The option '--%s' must be passed an argument.\n", option.name);
+                msg::println_error(msgEmptyArg, msg::command_name = option.name);
                 switches_copy.erase(switch_it);
                 failed = true;
             }
@@ -608,9 +630,7 @@ namespace vcpkg
                 {
                     if (v.empty())
                     {
-                        vcpkg::printf(Color::error,
-                                      "Error: The option '--%s' must be passed non-empty arguments.\n",
-                                      option.name);
+                        msg::println_error(msgEmptyArg, msg::command_name = option.name);
                         failed = true;
                     }
                     else
@@ -624,7 +644,7 @@ namespace vcpkg
             if (switch_it != switches_copy.end())
             {
                 // This means that the option was passed like '--a'
-                vcpkg::printf(Color::error, "Error: The option '--%s' must be passed an argument.\n", option.name);
+                msg::println_error(msgEmptyArg, msg::command_name = option.name);
                 switches_copy.erase(switch_it);
                 failed = true;
             }
@@ -632,16 +652,16 @@ namespace vcpkg
 
         if (!switches_copy.empty() || !options_copy.empty())
         {
-            vcpkg::printf(Color::error, "Unknown option(s) for command '%s':\n", this->command);
+            auto message = msg::format(msgUnknownOptions, msg::command_name = this->command);
             for (auto&& switch_ : switches_copy)
             {
-                print2("    '--", switch_, "'\n");
+                message.append_indent().append_raw("\'--" + switch_ + "\'\n");
             }
             for (auto&& option : options_copy)
             {
-                print2("    '--", option.first, "'\n");
+                message.append_indent().append_raw("\'--" + option.first + "\'\n");
             }
-            print2("\n");
+
             failed = true;
         }
 
@@ -731,7 +751,7 @@ namespace vcpkg
         }
 
         VcpkgCmdArguments::append_common_options(table);
-        print2(table.m_str);
+        msg::println(LocalizedString::from_raw(table.m_str));
     }
 
     void VcpkgCmdArguments::append_common_options(HelpTableFormatter& table)
@@ -934,11 +954,9 @@ namespace vcpkg
         {
             if (el.is_inconsistent)
             {
-                vcpkg::printf(Color::warning,
-                              "Warning: %s feature specifically turned off, but --%s was specified.\n",
-                              el.flag,
-                              el.option);
-                vcpkg::printf(Color::warning, "Warning: Defaulting to %s being on.\n", el.flag);
+                msg::println_warning(
+                    msgSpecifiedFeatureTurnedOff, msg::command_name = el.flag, msg::command_name = el.option);
+                msg::println_warning(msgDefaultFlag, msg::command_name = el.flag);
                 LockGuardPtr<Metrics>(g_metrics)->track_property(
                     "warning", Strings::format("warning %s alongside %s", el.flag, el.option));
             }
