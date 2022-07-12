@@ -327,6 +327,26 @@ namespace vcpkg
             {
                 LockGuardPtr<Metrics>(g_metrics)->track_property("X_VCPKG_REGISTRIES_CACHE", "defined");
                 ret = *args.registries_cache_dir;
+                const auto status = get_real_filesystem().status(ret, VCPKG_LINE_INFO);
+                if (!vcpkg::exists(status))
+                {
+                    Checks::exit_with_message(VCPKG_LINE_INFO,
+                                              "Path to X_VCPKG_REGISTRIES_CACHE does not exist: " + ret.native());
+                }
+
+                if (!vcpkg::is_directory(status))
+                {
+                    Checks::exit_with_message(
+                        VCPKG_LINE_INFO,
+                        "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not a directory: " + ret.native());
+                }
+
+                if (!ret.is_absolute())
+                {
+                    Checks::exit_with_message(
+                        VCPKG_LINE_INFO,
+                        "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute: " + ret.native());
+                }
             }
             else
             {
