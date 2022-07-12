@@ -1212,5 +1212,52 @@ namespace vcpkg
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
     DECLARE_MESSAGE(ErrorParsingBinaryParagraph, (msg::spec), "", "while parsing the Binary Paragraph for {spec}");
-
+    DECLARE_MESSAGE(MultiArch, (msg::option), "", "Multi-Arch must be 'same' but was {option}");
+    DECLARE_MESSAGE(FailedToParseBinParagraph,
+                    (msg::url, msg::error_msg, msg::value),
+                    "'{error_msg}' is the error message for failing to parse the Binary Paragraph, '{value}' is the "
+                    "Binary Paragraph",
+                    "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at {url}, "
+                    "with the following output:\n{error_msg}\n=== Serialized BinaryParagraph ===\n{value}");
+    DECLARE_MESSAGE(
+        SerializedDoesNotMatchOriginalBinPar,
+        (msg::url,
+         msg::spec,
+         msg::version,
+         msg::version,
+         msg::value,
+         msg::value,
+         msg::value,
+         msg::value,
+         msg::value,
+         msg::value,
+         msg::value,
+         msg::spec,
+         msg::version,
+         msg::version,
+         msg::value,
+         msg::value,
+         msg::value,
+         msg::value,
+         msg::value,
+         msg::value,
+         msg::value),
+        "{value} is the original BinaryParagraph description.\n{value} is the original BinaryParagraph "
+        "maintainers.\n{value} is the original BinaryParagraph feature.\n{value} is the original BinaryParagraph "
+        "default_features.\n{value} is the original "
+        "BinaryParagraph dependencies.\n{value} is the original BinaryParagraph abi.\n{value} is the original "
+        "BinaryParagraph type.\n{value} is the serialized BinaryParagraph description.\n{value} is the serialized "
+        "BinaryParagraph "
+        "maintainers.\n{value} is the serialized BinaryParagraph feature.\n{value} is the serialized BinaryParagraph "
+        "default_features.\n{value} is the serialized "
+        "BinaryParagraph dependencies.\n{value} is the serialized BinaryParagraph abi.\n{value} is the serialized "
+        "BinaryParagraph type.",
+        "[sanity check] The serialized binary paragraph was different from the original binary "
+        "paragraph.\nPlease open an issue at {url}, with the following output:\n=== Original "
+        "BinaryParagraph ===\nspec: '{spec}'\nversion: '{version}'\nport_version: {version}\ndescription: "
+        "['{value}']\nmaintainers: ['{value}']\nfeature: '{value}'\ndefault feature: ['{value}']\ndependencies: "
+        "['{value}']\nabi: '{value}'\ntype: {value}\n\n=== Serialized BinaryParagraph ===\nspec: "
+        "'{spec}'\nversion: '{version}'\nport_version: {version}\ndescription: "
+        "['{value}']\nmaintainers: ['{value}']\nfeature: '{value}'\ndefault feature: ['{value}']\ndependencies: "
+        "['{value}']\nabi: '{value}'\ntype: {value}");
 }

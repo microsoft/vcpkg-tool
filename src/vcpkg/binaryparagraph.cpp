@@ -96,7 +96,7 @@ namespace vcpkg
         }
 
         // prefer failing above when possible because it gives better information
-        Checks::check_exit(VCPKG_LINE_INFO, multi_arch == "same", "Multi-Arch must be 'same' but was %s", multi_arch);
+        Checks::msg_check_exit(VCPKG_LINE_INFO, multi_arch == "same", msgMultiArch, msg::option = multi_arch);
 
         canonicalize();
     }
@@ -280,71 +280,40 @@ namespace vcpkg
             out_str.substr(initial_end), "vcpkg::serialize(const BinaryParagraph&, std::string&)");
         if (!parsed_paragraph)
         {
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                       R"([sanity check] Failed to parse a serialized binary paragraph.
-Please open an issue at https://github.com/microsoft/vcpkg, with the following output:
-    Error: %s
-
-=== Serialized BinaryParagraph ===
-%s
-            )",
-                                       parsed_paragraph.error(),
-                                       my_paragraph);
+            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                           msgFailedToParseBinParagraph,
+                                           msg::url = "https://github.com/microsoft/vcpkg",
+                                           msg::error_msg = parsed_paragraph.error(),
+                                           msg ::value = my_paragraph);
         }
 
         auto binary_paragraph = BinaryParagraph(*parsed_paragraph.get());
         if (binary_paragraph != pgh)
         {
             const auto& join_str = R"(", ")";
-            Checks::exit_maybe_upgrade(
-                VCPKG_LINE_INFO,
-                R"([sanity check] The serialized binary paragraph was different from the original binary paragraph.
-Please open an issue at https://github.com/microsoft/vcpkg, with the following output:
-
-=== Original BinaryParagraph ===
-spec: "%s"
-version: "%s"
-port_version: %d
-description: ["%s"]
-maintainers: ["%s"]
-feature: "%s"
-default_features: ["%s"]
-dependencies: ["%s"]
-abi: "%s"
-type: %s
-
-=== Serialized BinaryParagraph ===
-spec: "%s"
-version: "%s"
-port_version: %d
-description: ["%s"]
-maintainers: ["%s"]
-feature: "%s"
-default_features: ["%s"]
-dependencies: ["%s"]
-abi: "%s"
-type: %s
-)",
-                pgh.spec.to_string(),
-                pgh.version,
-                pgh.port_version,
-                Strings::join(join_str, pgh.description),
-                Strings::join(join_str, pgh.maintainers),
-                pgh.feature,
-                Strings::join(join_str, pgh.default_features),
-                Strings::join(join_str, pgh.dependencies),
-                pgh.abi,
-                Type::to_string(pgh.type),
-                binary_paragraph.spec.to_string(),
-                binary_paragraph.version,
-                binary_paragraph.port_version,
-                Strings::join(join_str, binary_paragraph.description),
-                Strings::join(join_str, binary_paragraph.maintainers),
-                binary_paragraph.feature,
-                Strings::join(join_str, binary_paragraph.default_features),
-                Strings::join(join_str, binary_paragraph.dependencies),
-                binary_paragraph.abi,
-                Type::to_string(binary_paragraph.type));
+            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                           msgSerializedDoesNotMatchOriginalBinPar,
+                                           msg::url = "https://github.com/microsoft/vcpkg",
+                                           msg::spec = pgh.spec,
+                                           msg::version = pgh.version,
+                                           msg::version = pgh.port_version,
+                                           msg::value = Strings::join(join_str, pgh.description),
+                                           msg::value = Strings::join(join_str, pgh.maintainers),
+                                           msg::value = pgh.feature,
+                                           msg::value = Strings::join(join_str, pgh.default_features),
+                                           msg::value = Strings::join(join_str, pgh.dependencies),
+                                           msg::value = pgh.abi,
+                                           msg::value = Type::to_string(pgh.type),
+                                           msg::spec = binary_paragraph.spec,
+                                           msg::version = binary_paragraph.version,
+                                           msg::version = binary_paragraph.port_version,
+                                           msg::value = Strings::join(join_str, binary_paragraph.description),
+                                           msg::value = Strings::join(join_str, binary_paragraph.maintainers),
+                                           msg::value = binary_paragraph.feature,
+                                           msg::value = Strings::join(join_str, binary_paragraph.default_features),
+                                           msg::value = Strings::join(join_str, binary_paragraph.dependencies),
+                                           msg::value = binary_paragraph.abi,
+                                           msg::value = Type::to_string(binary_paragraph.type));
         }
     }
 }

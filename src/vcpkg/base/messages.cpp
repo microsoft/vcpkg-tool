@@ -644,4 +644,7 @@ namespace vcpkg
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
     REGISTER_MESSAGE(ErrorParsingBinaryParagraph);
+    REGISTER_MESSAGE(MultiArch);
+    REGISTER_MESSAGE(FailedToParseBinParagraph);
+    REGISTER_MESSAGE(SerializedDoesNotMatchOriginalBinPar);
 }
