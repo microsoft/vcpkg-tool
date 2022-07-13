@@ -408,7 +408,6 @@ namespace vcpkg
     REGISTER_MESSAGE(AddArtifactOnlyOne);
     REGISTER_MESSAGE(AddFirstArgument);
     REGISTER_MESSAGE(AddingCompletionEntry);
-    REGISTER_MESSAGE(AddingVcpkgCompletion);
     REGISTER_MESSAGE(AddPortRequiresManifest);
     REGISTER_MESSAGE(AddPortSucceded);
     REGISTER_MESSAGE(AddTripletExpressionNotAllowed);
@@ -659,11 +658,4 @@ namespace vcpkg
     REGISTER_MESSAGE(WaitingToTakeFilesystemLock);
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
-    REGISTER_MESSAGE(HelpIntegrateInstall);
-    REGISTER_MESSAGE(HelpIntegrateRemove);
-    REGISTER_MESSAGE(HelpIntegrateProject);
-    REGISTER_MESSAGE(HelpIntegrateBash);
-    REGISTER_MESSAGE(HelpIntegrateZsh);
-    REGISTER_MESSAGE(HelpIntegrateFish);
-    REGISTER_MESSAGE(HelpIntegratePowershell);
 }

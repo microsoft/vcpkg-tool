@@ -409,8 +409,7 @@ namespace vcpkg
                     (msg::command_line),
                     "",
                     "The first argument to '{command_line}' must be 'artifact' or 'port'.");
-    DECLARE_MESSAGE(AddingCompletionEntry, (msg::path), "", "Adding vcpkg completion entry to '{path}'.");
-    DECLARE_MESSAGE(AddingVcpkgCompletion, (msg::path), "", "Adding vcpkg completion entry to '{path}'.");
+    DECLARE_MESSAGE(AddingCompletionEntry, (msg::path), "", "Adding vcpkg completion entry to {path}.");
     DECLARE_MESSAGE(AddPortRequiresManifest,
                     (msg::command_line),
                     "",
@@ -1253,14 +1252,4 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
-    DECLARE_MESSAGE(HelpIntegrateInstall,
-                    (),
-                    "",
-                    "Make installed packages available user-wide. Requires admin privileges on first use.");
-    DECLARE_MESSAGE(HelpIntegrateRemove, (), "", "Remove user-wide integration");
-    DECLARE_MESSAGE(HelpIntegrateProject, (), "", "Generate a referencing nuget package for individual VS project use");
-    DECLARE_MESSAGE(HelpIntegratePowershell, (), "", "Enable PowerShell tab-completion");
-    DECLARE_MESSAGE(HelpIntegrateBash, (), "", "Enable bash tab-completion");
-    DECLARE_MESSAGE(HelpIntegrateZsh, (), "", "Enable zsh tab-completion");
-    DECLARE_MESSAGE(HelpIntegrateFish, (), "", "Enable fish tab-completion");
 }

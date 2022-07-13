@@ -504,7 +504,7 @@ namespace vcpkg::Commands::Integrate
                     .append_raw("Please make sure you have started a new bash shell for the change to take effect."));
             Checks::exit_success(VCPKG_LINE_INFO);
         }
-        msg::println(msgAddingVcpkgCompletion, msg::path = bashrc_path);
+        msg::println(msgAddingCompletionEntry, msg::path = bashrc_path);
         bashrc_content.append("\nsource ");
         bashrc_content.append(completion_script_path.native());
         bashrc_content.push_back('\n');
@@ -597,7 +597,8 @@ namespace vcpkg::Commands::Integrate
     void append_helpstring(HelpTableFormatter& table)
     {
 #if defined(_WIN32)
-        table.format("vcpkg integrate install", msg::format(msgHelpIntegrateInstall));
+        table.format("vcpkg integrate install",
+                     "Make installed packages available user-wide. Requires admin privileges on first use.");
         table.format("vcpkg integrate remove", "Remove user-wide integration");
         table.format("vcpkg integrate project", "Generate a referencing nuget package for individual VS project use");
         table.format("vcpkg integrate powershell", "Enable PowerShell tab-completion");
