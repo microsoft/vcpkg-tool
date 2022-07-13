@@ -367,8 +367,6 @@
   "_RestoredPackagesFromVendor.comment": "{value} may be either a 'vendor' like 'Azure' or 'NuGet', or a file path like C:\\example or /usr/example An example of {count} is 42. An example of {elapsed} is 3.532 min.",
   "ResultsHeader": "RESULTS",
   "_ResultsHeader.comment": "Displayed before a list of installation results.",
-  "ScriptFailed": "'{value}'\n Could not run:\n '{path}'",
-  "_ScriptFailed.comment": "'{value}' is script title. An example of {path} is /foo/bar.",
   "SeeURL": "See {url} for more information.",
   "_SeeURL.comment": "An example of {url} is https://github.com/microsoft/vcpkg.",
   "SettingEnvVar": "-- Setting \"{env_var}\" environment variables to \"{url}\".",

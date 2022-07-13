@@ -670,7 +670,6 @@ namespace vcpkg::Commands::Integrate
         if (args.command_arguments[0] == Subcommand::ZSH)
         {
             return integrate_zsh(paths);
-            ScriptFailed
         }
         if (args.command_arguments[0] == Subcommand::FISH)
         {
