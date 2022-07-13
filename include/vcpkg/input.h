@@ -2,7 +2,7 @@
 
 #include <vcpkg/packagespec.h>
 
-namespace vcpkg::Input
+namespace vcpkg
 {
     PackageSpec check_and_get_package_spec(std::string&& spec_string,
                                            Triplet default_triplet,

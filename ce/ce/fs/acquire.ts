@@ -27,8 +27,8 @@ export interface AcquireOptions extends Hash {
 }
 
 export async function acquireArtifactFile(session: Session, uris: Array<Uri>, outputFilename: string, events: Partial<AcquireEvents>, options?: AcquireOptions) {
-  await session.cache.createDirectory();
-  const outputFile = session.cache.join(outputFilename);
+  await session.downloads.createDirectory();
+  const outputFile = session.downloads.join(outputFilename);
   session.channels.debug(`Acquire file '${outputFilename}' from [${uris.map(each => each.toString()).join(',')}]`);
 
   if (options?.algorithm && options?.value) {
@@ -85,8 +85,8 @@ async function https(session: Session, uris: Array<Uri>, outputFilename: string,
   session.channels.debug(`Attempting to download file '${outputFilename}' from [${uris.map(each => each.toString()).join(',')}]`);
 
   let resumeAtOffset = 0;
-  await session.cache.createDirectory();
-  const outputFile = session.cache.join(outputFilename);
+  await session.downloads.createDirectory();
+  const outputFile = session.downloads.join(outputFilename);
 
   if (options?.force) {
     session.channels.debug(`Acquire '${outputFilename}': force specified, forcing download`);
@@ -246,4 +246,3 @@ export async function resolveNugetUrl(session: Session, pkg: string) {
 export async function acquireNugetFile(session: Session, pkg: string, outputFilename: string, events: Partial<AcquireEvents>, options?: AcquireOptions): Promise<Uri> {
   return https(session, [await resolveNugetUrl(session, pkg)], outputFilename, events, options);
 }
-

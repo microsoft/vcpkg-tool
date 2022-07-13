@@ -22,7 +22,7 @@ namespace vcpkg::Remove
                     "Removing {action_index}/{count} {spec}");
 
     void perform_remove_plan_action(const VcpkgPaths& paths,
-                                    const Dependencies::RemovePlanAction& action,
+                                    const RemovePlanAction& action,
                                     const Purge purge,
                                     StatusParagraphs* status_db);
 

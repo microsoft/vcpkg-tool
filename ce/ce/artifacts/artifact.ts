@@ -27,7 +27,7 @@ export type Selection = [Artifact, ID, VersionRange]
 
 export class ArtifactMap extends Map<UID, Selection>{
   get artifacts() {
-    return [...linq.values(this).select(([artifact, id, range]) => artifact)].sort((a, b) => (b.metadata.info.priority || 0) - (a.metadata.info.priority || 0));
+    return Array.from([...linq.values(this).select(([artifact, id, range]) => artifact)].sort((a, b) => (b.metadata.info.priority || 0) - (a.metadata.info.priority || 0)));
   }
 }
 
@@ -159,7 +159,7 @@ export class Artifact extends ArtifactBase {
         if (!installer) {
           fail(i`Unknown installer type ${installInfo!.installerKind}`);
         }
-        await installer(this.session, this.id, this.targetLocation, installInfo, events, options);
+        await installer(this.session, this.id, this.version, this.targetLocation, installInfo, events, options);
       }
 
       // after we unpack it, write out the installed manifest
