@@ -14,10 +14,6 @@
 
 #include <vector>
 
-using vcpkg::Dependencies::ActionPlan;
-using vcpkg::Dependencies::InstallPlanAction;
-using vcpkg::PortFileProvider::PathsPortFileProvider;
-
 namespace vcpkg::Commands::DependInfo
 {
     namespace
@@ -309,20 +305,19 @@ namespace vcpkg::Commands::DependInfo
         const bool show_depth = Util::Sets::contains(options.switches, OPTION_SHOW_DEPTH);
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
-            return Input::check_and_get_full_package_spec(
+            return check_and_get_full_package_spec(
                 std::string{arg}, default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
 
-        PortFileProvider::PathsPortFileProvider provider(
-            paths, PortFileProvider::make_overlay_provider(paths, args.overlay_ports));
+        PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
         // By passing an empty status_db, we should get a plan containing all dependencies.
         // All actions in the plan should be install actions, as there's no installed packages to remove.
         StatusParagraphs status_db;
-        auto action_plan = Dependencies::create_feature_install_plan(
-            provider, var_provider, specs, status_db, {host_triplet, Dependencies::UnsupportedPortAction::Warn});
+        auto action_plan = create_feature_install_plan(
+            provider, var_provider, specs, status_db, {host_triplet, UnsupportedPortAction::Warn});
         for (const auto& warning : action_plan.warnings)
         {
             print2(Color::warning, warning, '\n');

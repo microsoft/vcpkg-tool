@@ -17,7 +17,7 @@ namespace vcpkg
     /// https://spdx.github.io/spdx-spec/document-creation-information/#65-spdx-document-namespace-field
     /// @param resource_docs Additional documents to concatenate into the created document. These are intended to
     /// capture fetched resources, such as tools or source archives.
-    std::string create_spdx_sbom(const Dependencies::InstallPlanAction& action,
+    std::string create_spdx_sbom(const InstallPlanAction& action,
                                  View<Path> relative_paths,
                                  View<std::string> hashes,
                                  std::string created_time,

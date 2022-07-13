@@ -13,7 +13,6 @@
 #include <vcpkg-test/util.h>
 
 using namespace vcpkg;
-using vcpkg::Build::BuildResult;
 
 namespace vcpkg
 {
