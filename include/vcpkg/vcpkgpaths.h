@@ -81,7 +81,6 @@ namespace vcpkg
         Path build_dir(const PackageSpec& spec) const;
         Path build_dir(StringView package_name) const;
         Path build_info_file_path(const PackageSpec& spec) const;
-        Path spdx_resource_dir(const PackageSpec& spec) const;
 
         bool is_valid_triplet(Triplet t) const;
         const std::vector<std::string> get_available_triplets_names() const;
@@ -175,5 +174,8 @@ namespace vcpkg
         const Path& builtin_ports_directory() const;
 
         bool use_git_default_registry() const;
+
+        const Path& artifacts() const;
+        const Path& registries_cache() const;
     };
 }
