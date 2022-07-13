@@ -408,6 +408,7 @@ namespace vcpkg
     REGISTER_MESSAGE(AddArtifactOnlyOne);
     REGISTER_MESSAGE(AddFirstArgument);
     REGISTER_MESSAGE(AddingCompletionEntry);
+    REGISTER_MESSAGE(AddingVcpkgCompletion);
     REGISTER_MESSAGE(AddPortRequiresManifest);
     REGISTER_MESSAGE(AddPortSucceded);
     REGISTER_MESSAGE(AddTripletExpressionNotAllowed);
@@ -585,10 +586,12 @@ namespace vcpkg
     REGISTER_MESSAGE(LoadingOverlayTriplet);
     REGISTER_MESSAGE(LocalizedMessageMustNotContainIndents);
     REGISTER_MESSAGE(LocalizedMessageMustNotEndWithNewline);
+    REGISTER_MESSAGE(MissingCompletionDirectory);
     REGISTER_MESSAGE(MonoInstructions);
     REGISTER_MESSAGE(MsiexecFailedToExtract);
     REGISTER_MESSAGE(NoLocalizationForMessages);
     REGISTER_MESSAGE(NoRegistryForPort);
+    REGISTER_MESSAGE(NugetPackageCreationFailed);
     REGISTER_MESSAGE(NugetPackageFileCreationFailed);
     REGISTER_MESSAGE(PackingVendorFailed);
     REGISTER_MESSAGE(ParseControlErrorInfoInvalidFields);
@@ -607,6 +610,7 @@ namespace vcpkg
     REGISTER_MESSAGE(RestoredPackage);
     REGISTER_MESSAGE(RestoredPackagesFromVendor);
     REGISTER_MESSAGE(ResultsHeader);
+    REGISTER_MESSAGE(ScriptFailed);
     REGISTER_MESSAGE(SettingEnvVar);
     REGISTER_MESSAGE(SourceFieldPortNameMismatch);
     REGISTER_MESSAGE(StoredBinaryCache);

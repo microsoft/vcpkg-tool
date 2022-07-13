@@ -1010,6 +1010,10 @@ namespace vcpkg
                     "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
                     "The message named {value} ends with a newline which should be added by formatting "
                     "rather than by localization.");
+    DECLARE_MESSAGE(MissingCompletionDirectory,
+                    (msg::value, msg::path, msg::error),
+                    "'{value}' is the target completion. Ex: fish, zsg, bash, etc.. '{error}' is the error code.",
+                    "Failed to create '{value}' completion directory: '{path}' : '{error}'.");
     DECLARE_MESSAGE(MonoInstructions,
                     (),
                     "",
@@ -1022,6 +1026,10 @@ namespace vcpkg
                     "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:");
     DECLARE_MESSAGE(NoLocalizationForMessages, (), "", "No localized messages for the following: ");
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
+    DECLARE_MESSAGE(NugetPackageCreationFailed,
+                    (msg::error),
+                    "'{error}' is the NuGet output message.",
+                    "NuGet package creation failed: '{error}' ");
     DECLARE_MESSAGE(NugetPackageFileCreationFailed,
                     (msg::path),
                     "",
@@ -1079,6 +1087,10 @@ namespace vcpkg
         "{value} may be either a 'vendor' like 'Azure' or 'NuGet', or a file path like C:\\example or /usr/example",
         "Restored {count} package(s) from {value} in {elapsed}. Use --debug to see more details.");
     DECLARE_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
+    DECLARE_MESSAGE(ScriptFailed,
+                    (msg::value, msg::path),
+                    "'{value}' is script title.",
+                    "'{value}'\n Could not run:\n '{path}'");
     DECLARE_MESSAGE(SettingEnvVar,
                     (msg::env_var, msg::url),
                     "An example of env_var is \"HTTP(S)_PROXY\""
