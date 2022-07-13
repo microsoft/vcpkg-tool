@@ -323,8 +323,6 @@
   "_LocalizedMessageMustNotContainIndents.comment": "{value} is is a localized message name like LocalizedMessageMustNotContainIndents. The 'LocalizedString::append_indent' part is locale-invariant.",
   "LocalizedMessageMustNotEndWithNewline": "The message named {value} ends with a newline which should be added by formatting rather than by localization.",
   "_LocalizedMessageMustNotEndWithNewline.comment": "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
-  "MissingCompletionDirectory": "Failed to create '{value}' completion directory: '{path}' : '{error}'.",
-  "_MissingCompletionDirectory.comment": "'{value}' is the target completion. Ex: fish, zsg, bash, etc.. '{error}' is the error code. An example of {path} is /foo/bar.",
   "MonoInstructions": "This may be caused by an incomplete mono installation. Full mono is available on some systems via `sudo apt install mono-complete`. Ubuntu 18.04 users may need a newer version of mono, available at https://www.mono-project.com/download/stable/",
   "MsiexecFailedToExtract": "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:",
   "_MsiexecFailedToExtract.comment": "An example of {path} is /foo/bar. An example of {exit_code} is 127.",
