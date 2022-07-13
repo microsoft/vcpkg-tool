@@ -1010,10 +1010,6 @@ namespace vcpkg
                     "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
                     "The message named {value} ends with a newline which should be added by formatting "
                     "rather than by localization.");
-    DECLARE_MESSAGE(MissingCompletionDirectory,
-                    (msg::value, msg::path, msg::error),
-                    "'{value}' is the target completion. Ex: fish, zsg, bash, etc.. '{error}' is the error code.",
-                    "Failed to create '{value}' completion directory: '{path}' : '{error}'.");
     DECLARE_MESSAGE(MonoInstructions,
                     (),
                     "",
