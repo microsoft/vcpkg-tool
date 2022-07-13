@@ -3,7 +3,7 @@
 [CmdletBinding()]
 $Root = Resolve-Path -LiteralPath "$PSScriptRoot/.."
 
-$clangFormat = Get-Command 'clang-format-12' -ErrorAction 'SilentlyContinue'
+$clangFormat = Get-Command 'clang-format-14' -ErrorAction 'SilentlyContinue'
 if ($null -eq $clangFormat)
 {
     $clangFormat = Get-Command 'clang-format' -ErrorAction 'SilentlyContinue'
