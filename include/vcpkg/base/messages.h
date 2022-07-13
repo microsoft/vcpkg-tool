@@ -507,6 +507,11 @@ namespace vcpkg
                     "",
                     "One or more {vendor} credential providers requested manual action. Add the binary source "
                     "'interactive' to allow interactivity.");
+    DECLARE_MESSAGE(AutomaticLinkingForMSBuildProjects,
+                    (),
+                    "",
+                    "All MSBuild C++ projects can now #include any installed libraries. Linking will be handled "
+                    "automatically. Installing new libraries will make them instantly available.");
     DECLARE_MESSAGE(AutoSettingEnvVar,
                     (msg::env_var, msg::url),
                     "An example of env_var is \"HTTP(S)_PROXY\""
@@ -644,13 +649,13 @@ namespace vcpkg
     DECLARE_MESSAGE(CMakeToolChainFile,
                     (msg::command_name),
                     "",
-                    "CMake projects should use: DCMAKE_TOOLCHAIN_FILE = '{command_name}'");
+                    "CMake projects should use: \"DCMAKE_TOOLCHAIN_FILE={command_name}\"");
     DECLARE_MESSAGE(CommandFailed,
                     (msg::command_line),
                     "",
                     "command:\n"
                     "{command_line}\n"
-                    "failed with the following results:");
+                    "Failed with the following results:");
     DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder '{path}':");
     DECLARE_MESSAGE(CouldNotDeduceNugetIdAndVersion,
                     (msg::path),
@@ -840,7 +845,7 @@ namespace vcpkg
                     (msg::value, msg::path),
                     "'{value}' is the nuget id.",
                     "With a project open, go to Tools->NuGet Package Manager->Package Manager Console and "
-                    "paste:\n Install-Package '{value}' -Source '{path}'");
+                    "paste:\n Install-Package \"{value}\" -Source \"{path}\"");
     DECLARE_MESSAGE(InstallWithSystemManager,
                     (),
                     "",
@@ -1005,10 +1010,6 @@ namespace vcpkg
                     "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
                     "The message named {value} ends with a newline which should be added by formatting "
                     "rather than by localization.");
-    DECLARE_MESSAGE(MissingCompletionDirectory,
-                    (msg::value, msg::path, msg::error),
-                    "'{value}' is the target completion. Ex: fish, zsg, bash, etc.. '{error}' is the error code.",
-                    "Failed to create '{value}' completion directory: '{path}' : '{error}'.");
     DECLARE_MESSAGE(MonoInstructions,
                     (),
                     "",
@@ -1021,10 +1022,6 @@ namespace vcpkg
                     "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:");
     DECLARE_MESSAGE(NoLocalizationForMessages, (), "", "No localized messages for the following: ");
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
-    DECLARE_MESSAGE(NugetPackageCreationFailed,
-                    (msg::error),
-                    "'{error}' is the NuGet output message.",
-                    "NuGet package creation failed: '{error}' ");
     DECLARE_MESSAGE(NugetPackageFileCreationFailed,
                     (msg::path),
                     "",
@@ -1082,10 +1079,6 @@ namespace vcpkg
         "{value} may be either a 'vendor' like 'Azure' or 'NuGet', or a file path like C:\\example or /usr/example",
         "Restored {count} package(s) from {value} in {elapsed}. Use --debug to see more details.");
     DECLARE_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
-    DECLARE_MESSAGE(ScriptFailed,
-                    (msg::value, msg::path),
-                    "'{value}' is script title.",
-                    "'{value}'\n Could not run:\n '{path}'");
     DECLARE_MESSAGE(SettingEnvVar,
                     (msg::env_var, msg::url),
                     "An example of env_var is \"HTTP(S)_PROXY\""
@@ -1098,6 +1091,10 @@ namespace vcpkg
                     "The 'Source' field inside the CONTROL file, or \"name\" field inside the vcpkg.json "
                     "file has the name {package_name} and does not match the port directory {path}.");
     DECLARE_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: '{path}'");
+    DECLARE_MESSAGE(SuggestStartingBashShell,
+                    (),
+                    "",
+                    "Please make sure you have started a new bash shell for the change to take effect.");
     DECLARE_MESSAGE(SystemApiErrorMessage,
                     (msg::system_api, msg::exit_code, msg::error_msg),
                     "",
@@ -1185,7 +1182,8 @@ namespace vcpkg
                     "An example of env_var is \"HTTP(S)_PROXY\""
                     "'--' at the beginning must be preserved",
                     "-- Using {env_var} in environment variables.");
-    DECLARE_MESSAGE(UserWideIntegration, (), "", "User-wide integration ");
+    DECLARE_MESSAGE(UserWideIntegrationDeleted, (), "", "User-wide integration is not installed.");
+    DECLARE_MESSAGE(UserWideIntegrationRemoved, (), "", "User-wide integration was removed.");
     DECLARE_MESSAGE(UsingCommunityTriplet,
                     (msg::triplet),
                     "'--' at the beginning must be preserved",

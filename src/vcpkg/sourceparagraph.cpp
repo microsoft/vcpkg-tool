@@ -1391,6 +1391,7 @@ namespace vcpkg
 #else
                 auto bootstrap = "./bootstrap-vcpkg.sh";
 #endif
+
                 Strings::append(
                     message, "You may need to update the vcpkg binary; try running ", bootstrap, " to update.\n\n");
             }

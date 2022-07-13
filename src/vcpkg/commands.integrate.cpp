@@ -367,10 +367,8 @@ namespace vcpkg::Commands::Integrate
         const auto cmake_toolchain = paths.buildsystems / "vcpkg.cmake";
 
 #if defined(_WIN32)
-        msg::println(
-            msg::format(msgCMakeToolChainFile, msg::command_name = cmake_toolchain.generic_u8string())
-                .append_raw("\nAll MSBuild C++ projects can now #include any installed libraries. Linking will be "
-                            "handled automatically. Installing new libraries will make them instantly available."));
+        msg::println(msg::format(msgCMakeToolChainFile, msg::command_name = cmake_toolchain.generic_u8string())
+                         .append(msgAutomaticLinkingForMSBuildProjects));
 #else
         msg::println(msgCMakeToolChainFile, msg::command_name = cmake_toolchain.generic_u8string());
 #endif
@@ -387,14 +385,13 @@ namespace vcpkg::Commands::Integrate
 #endif
 
         was_deleted |= fs.remove(get_path_txt_path(), VCPKG_LINE_INFO);
-        auto message = msg::format(msgUserWideIntegration);
         if (was_deleted)
         {
-            msg::println(message.append_raw("was removed."));
+            msg::println(msgUserWideIntegrationRemoved);
         }
         else
         {
-            msg::println(message.append_raw("is not installed."));
+            msg::println(msgUserWideIntegrationDeleted);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
@@ -435,7 +432,9 @@ namespace vcpkg::Commands::Integrate
             cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()), Tools::NUGET);
         if (!maybe_nuget_output)
         {
-            msg::println_error(msgNugetPackageCreationFailed, msg::error = maybe_nuget_output.error());
+            msg::println_error(msg::format(msgCommandFailed, msg::command_line = cmd_line.command_line())
+                                   .append_raw("\n")
+                                   .append(maybe_nuget_output.error()));
             Checks::unreachable(VCPKG_LINE_INFO);
         }
 
@@ -469,8 +468,8 @@ namespace vcpkg::Commands::Integrate
         const int rc = cmd_execute(cmd).value_or_exit(VCPKG_LINE_INFO);
         if (rc)
         {
-            msg::println_error(msgScriptFailed, msg::value = TITLE, msg::path = script_path.generic_u8string());
-
+            msg::println_error(msg::format(msgCommandFailed, msg::command_line = TITLE)
+                                   .append_raw("\n" + script_path.generic_u8string()));
             {
                 auto locked_metrics = LockGuardPtr<Metrics>(g_metrics);
                 locked_metrics->track_property("error", "powershell script failed");
@@ -498,10 +497,10 @@ namespace vcpkg::Commands::Integrate
 
         if (!matches.empty())
         {
-            msg::println(
-                msg::format(msgVcpkgCompletion, msg::value = "bash", msg::path = bashrc_path)
-                    .append_raw(Strings::join("\n   ", matches))
-                    .append_raw("Please make sure you have started a new bash shell for the change to take effect."));
+            msg::println(msg::format(msgVcpkgCompletion, msg::value = "bash", msg::path = bashrc_path)
+                             .append_raw(Strings::join("\n   ", matches))
+                             .append_raw("\n")
+                             .append(msgSuggestStartingBashShell));
             Checks::exit_success(VCPKG_LINE_INFO);
         }
         msg::println(msgAddingCompletionEntry, msg::path = bashrc_path);
@@ -527,10 +526,10 @@ namespace vcpkg::Commands::Integrate
 
         if (!data.source_completion_lines.empty())
         {
-            msg::println(
-                msg::format(msgVcpkgCompletion, msg::value = "zsh", msg::path = zshrc_path)
-                    .append_raw(Strings::join("\n   ", data.source_completion_lines))
-                    .append_raw("Please make sure you have started a new zsh shell for the changes to take effect."));
+            msg::println(msg::format(msgVcpkgCompletion, msg::value = "zsh", msg::path = zshrc_path)
+                             .append_raw(Strings::join("\n   ", data.source_completion_lines))
+                             .append_raw("\n")
+                             .append(msgSuggestStartingBashShell));
             Checks::exit_success(VCPKG_LINE_INFO);
         }
         msg::println(msgAddingCompletionEntry, msg::path = zshrc_path);
@@ -569,15 +568,6 @@ namespace vcpkg::Commands::Integrate
 
         std::error_code ec;
         fs.create_directories(fish_completions_path, ec);
-
-        if (ec)
-        {
-            msg::println_error(msgMissingCompletionDirectory,
-                               msg::value = "fish",
-                               msg::path = fish_completions_path,
-                               msg::error = ec.message());
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
 
         fish_completions_path = fish_completions_path / "vcpkg.fish";
 
@@ -680,6 +670,7 @@ namespace vcpkg::Commands::Integrate
         if (args.command_arguments[0] == Subcommand::ZSH)
         {
             return integrate_zsh(paths);
+            ScriptFailed
         }
         if (args.command_arguments[0] == Subcommand::FISH)
         {
