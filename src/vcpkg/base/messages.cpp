@@ -509,7 +509,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ExpectedFailOrSkip);
     REGISTER_MESSAGE(ExpectedPortName);
     REGISTER_MESSAGE(ExpectedTripletName);
-    REGISTER_MESSAGE(ExtendedDocumentionAtUrl);
+    REGISTER_MESSAGE(ExtendedDocumentationAtUrl);
     REGISTER_MESSAGE(FailedToParseCMakeConsoleOut);
     REGISTER_MESSAGE(FailedToProvisionCe);
     REGISTER_MESSAGE(FailedToRunToolToDetermineVersion);
