@@ -995,7 +995,10 @@ namespace vcpkg
                     "The message named {value} ends with a newline which should be added by formatting "
                     "rather than by localization.");
     DECLARE_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
-    DECLARE_MESSAGE(MissingHeader, (msg::package_name), "", "Unable to find '{package_name}' header.");
+    DECLARE_MESSAGE(MissingHeader,
+                    (msg::value),
+                    "'{value}' is a header name. i.e. 7z for .7z files.",
+                    "Unable to find '{value}' header.");
     DECLARE_MESSAGE(MonoInstructions,
                     (),
                     "",
@@ -1083,9 +1086,9 @@ namespace vcpkg
     DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
     DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
     DECLARE_MESSAGE(UnableToExtractArchive,
-                    (msg::value, msg::path),
-                    "'{value}' is an archive name. i.e. 7z header etc.",
-                    "Unable to extract '{value}' archive from Installer \"{path}\".");
+                    (msg::package_name, msg::path),
+                    "",
+                    "Unable to extract '{package_name}' archive from Installer \"{path}\".");
     DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.");
     DECLARE_MESSAGE(UnexpectedExtension, (msg::extension), "", "Unexpected archive extension: '{extension}'.");
     DECLARE_MESSAGE(UnexpectedToolOutput,

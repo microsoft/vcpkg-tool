@@ -203,15 +203,15 @@ namespace vcpkg
         const auto subext = stem.extension();
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                Strings::case_insensitive_ascii_equals(subext, ".7z"),
-                               msg::format(msgUnableToExtractArchive, msg::value = "7zip", msg::path = archive)
+                               msg::format(msgUnableToExtractArchive, msg::package_name = "7zip", msg::path = archive)
                                    .append(msgMissingExtension, msg::extension = ".7.exe"));
 
         auto contents = fs.read_contents(archive, VCPKG_LINE_INFO);
         const auto pos = contents.find(header_7z);
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                pos != std::string::npos,
-                               msg::format(msgUnableToExtractArchive, msg::value = "7zip", msg::path = archive)
-                                   .append(msgMissingHeader, msg::package_name = "7z"));
+                               msg::format(msgUnableToExtractArchive, msg::package_name = "7zip", msg::path = archive)
+                                   .append(msgMissingHeader, msg::value = "7z"));
 
         contents = contents.substr(pos);
         fs.write_contents(to_path, std::move(contents), VCPKG_LINE_INFO);
