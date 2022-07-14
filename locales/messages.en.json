@@ -135,7 +135,7 @@
   "HeaderOnlyUsage": "{package_name} is header-only and can be used from CMake via:",
   "IllegalFeatures": "List of features is not allowed in this context",
   "IllegalPlatformSpec": "Platform qualifier is not allowed in this context",
-  "InfoSetEnvVar": "You can also set the environment variable '{env_var}' to your editor of choice.",
+  "InfoSetEnvVar": "You can also set the environment variable {env_var} to your editor of choice.",
   "InstallPackageInstruction": "With a project open, go to Tools->NuGet Package Manager->Package Manager Console and paste:\n Install-Package \"{value}\" -Source \"{path}\"",
   "InstallWithSystemManager": "You may be able to install this tool via your system package manager.",
   "InstallWithSystemManagerMono": "Ubuntu 18.04 users may need a newer version of mono, available at {url}.",

@@ -136,7 +136,7 @@
   "_CiBaselineUnexpectedPass.comment": "An example of {spec} is zlib:x64-windows. An example of {path} is /foo/bar.",
   "CmakeTargetsExcluded": "note: {count} additional targets are not displayed.",
   "_CmakeTargetsExcluded.comment": "An example of {count} is 42.",
-  "CommandFailed": "command:\n{command_line}\nFailed with the following results:",
+  "CommandFailed": "command:\n{command_line}\nfailed with the following results:",
   "_CommandFailed.comment": "An example of {command_line} is vcpkg install zlib.",
   "CompressFolderFailed": "Failed to compress folder \"{path}\":",
   "_CompressFolderFailed.comment": "An example of {path} is /foo/bar.",
