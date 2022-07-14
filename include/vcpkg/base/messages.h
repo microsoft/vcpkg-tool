@@ -1076,10 +1076,6 @@ namespace vcpkg
         "{value} may be either a 'vendor' like 'Azure' or 'NuGet', or a file path like C:\\example or /usr/example",
         "Restored {count} package(s) from {value} in {elapsed}. Use --debug to see more details.");
     DECLARE_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
-    DECLARE_MESSAGE(ScriptFailed,
-                    (msg::value, msg::path),
-                    "'{value}' is script title.",
-                    "'{value}'\n Could not run:\n '{path}'");
     DECLARE_MESSAGE(SettingEnvVar,
                     (msg::env_var, msg::url),
                     "An example of env_var is \"HTTP(S)_PROXY\""
