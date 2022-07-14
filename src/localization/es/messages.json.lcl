@@ -1111,6 +1111,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FuzzExpectedOneOf" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected one of: utf-8, json, platform-expr]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[se esperaba uno de los siguientes: utf-8, json, platform-expr]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";GenerateMsgErrorParsingFormatArgs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[parsing format string for {value}:]]></Val>
@@ -1719,10 +1728,13 @@
       </Item>
       <Item ItemId=";NoLocalizationForMessages" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[No localization for the following messages:]]></Val>
+          <Val><![CDATA[No localized messages for the following: ]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[No hay localización para los siguientes mensajes:]]></Val>
+            <Val><![CDATA[No hay mensajes localizados para lo siguiente: ]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[No localization for the following messages:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1746,10 +1758,13 @@
       </Item>
       <Item ItemId=";PackingVendorFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Packing {vendor} failed.  Use --debug for more information.]]></Val>
+          <Val><![CDATA[Packing {vendor} failed. Use --debug for more information.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Error al empaquetar {vendor}.  Use --debug para obtener más información.]]></Val>
+            <Val><![CDATA[Error al empaquetar {vendor}. Use --debug para más información.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Packing {vendor} failed.  Use --debug for more information.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1845,10 +1860,13 @@
       </Item>
       <Item ItemId=";PushingVendorFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Pushing {vendor} to '{path}' failed.  Use --debug for more information.]]></Val>
+          <Val><![CDATA[Pushing {vendor} to '{path}' failed. Use --debug for more information.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Error al insertar {vendor} en "{path}".  Use --debug para obtener más información.]]></Val>
+            <Val><![CDATA[Error al insertar {vendor} en "{path}". Use --debug para obtener más información.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Pushing {vendor} to '{path}' failed.  Use --debug for more information.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>

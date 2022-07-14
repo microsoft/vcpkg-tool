@@ -415,7 +415,7 @@ namespace vcpkg
                     (msg::command_line),
                     "",
                     "'{command_line}' requires an active manifest file.");
-    DECLARE_MESSAGE(AddPortSucceded, (), "", "Succeeded in adding ports to vcpkg.json file.");
+    DECLARE_MESSAGE(AddPortSucceeded, (), "", "Succeeded in adding ports to vcpkg.json file.");
     DECLARE_MESSAGE(AddTripletExpressionNotAllowed,
                     (msg::package_name, msg::triplet),
                     "",
@@ -647,7 +647,7 @@ namespace vcpkg
                     "command:\n"
                     "{command_line}\n"
                     "failed with the following results:");
-    DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder '{path}':");
+    DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":");
     DECLARE_MESSAGE(CouldNotDeduceNugetIdAndVersion,
                     (msg::path),
                     "",
@@ -666,9 +666,9 @@ namespace vcpkg
     DECLARE_MESSAGE(DefaultPathToBinaries,
                     (msg::path),
                     "",
-                    "Based on your system settings, the default path to store binaries is \n '{path}'. This consults "
+                    "Based on your system settings, the default path to store binaries is \"{path}\". This consults "
                     "%LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.");
-    DECLARE_MESSAGE(DetectCompilerHash, (msg::triplet), "", "Detecting compiler hash for triplet \"{triplet}\"...");
+    DECLARE_MESSAGE(DetectCompilerHash, (msg::triplet), "", "Detecting compiler hash for triplet {triplet}...");
     DECLARE_MESSAGE(DownloadAvailable,
                     (msg::env_var),
                     "",
@@ -741,7 +741,7 @@ namespace vcpkg
     DECLARE_MESSAGE(ErrorVsCodeNotFound,
                     (msg::env_var),
                     "",
-                    "Visual Studio Code was not found and the environment variable '{env_var}' is not set or invalid.");
+                    "Visual Studio Code was not found and the environment variable {env_var} is not set or invalid.");
     DECLARE_MESSAGE(ErrorVsCodeNotFoundPathExamined, (), "", "The following paths were examined:");
     DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
     DECLARE_MESSAGE(
@@ -761,10 +761,7 @@ namespace vcpkg
                     "the line after this message",
                     "Failed to run {path} to determine the {tool_name} version.");
     DECLARE_MESSAGE(FailedToStoreBackToMirror, (), "", "failed to store back to mirror:");
-    DECLARE_MESSAGE(FailedToStoreBinaryCache,
-                    (msg::path, msg::error_msg),
-                    "",
-                    "Failed to store binary cache '{path}':'{error_msg}'");
+    DECLARE_MESSAGE(FailedToStoreBinaryCache, (msg::path), "", "Failed to store binary cache {path}");
     DECLARE_MESSAGE(FailedVendorAuthentication,
                     (msg::vendor, msg::url),
                     "",
@@ -779,10 +776,6 @@ namespace vcpkg
                     (msg::value),
                     "Example of {value} is 'x64 & windows'",
                     "on expression: {value}");
-    DECLARE_MESSAGE(FuzzExpectedOneOf,
-                    (),
-                    "the list after the colon should stay the same, they're literal values",
-                    "expected one of: utf-8, json, platform-expr");
     DECLARE_MESSAGE(GenerateMsgErrorParsingFormatArgs,
                     (msg::value),
                     "example of {value} 'GenerateMsgNoComment'",
@@ -822,7 +815,7 @@ namespace vcpkg
     DECLARE_MESSAGE(InfoSetEnvVar,
                     (msg::env_var),
                     "In this context 'editor' means IDE",
-                    "You can also set the environment variable '{env_var}' to your editor of choice.");
+                    "You can also set the environment variable {env_var} to your editor of choice.");
     DECLARE_MESSAGE(InstallingFromLocation,
                     (msg::path),
                     "'--' at the beginning must be preserved",
@@ -1146,7 +1139,7 @@ namespace vcpkg
                     (msg::url, msg::old_value, msg::new_value),
                     "example of {old_value}, {new_value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
                     "updated registry '{url}': baseline '{old_value}' -> '{new_value}'");
-    DECLARE_MESSAGE(UploadedBinaries, (msg::count, msg::vendor), "", "Uploaded binaries to '{count}' '{vendor}'.");
+    DECLARE_MESSAGE(UploadedBinaries, (msg::count, msg::vendor), "", "Uploaded binaries to {count} {vendor}.");
     DECLARE_MESSAGE(UploadedPackagesToVendor,
                     (msg::count, msg::elapsed, msg::vendor),
                     "",

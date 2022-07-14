@@ -114,13 +114,14 @@ export abstract class ArtifactRegistry implements Registry {
 
     if (criteria?.idOrShortName) {
       query.id.nameOrShortNameIs(criteria.idOrShortName);
-      if (criteria.version) {
-        query.version.rangeMatch(criteria.version);
-      }
     }
 
     if (criteria?.keyword) {
       query.id.contains(criteria.keyword);
+    }
+
+    if (criteria?.version) {
+      query.version.rangeMatch(criteria.version);
     }
 
     return [...(await this.openArtifacts(query.items, parent)).entries()].map(each => [this, ...each]);
