@@ -876,7 +876,7 @@ namespace vcpkg
     DECLARE_MESSAGE(InfoSetEnvVar,
                     (msg::env_var),
                     "In this context 'editor' means IDE",
-                    "You can also set the environment variable {env_var} to your editor of choice.");
+                    "You can also set the environment variable '{env_var}' to your editor of choice.");
     DECLARE_MESSAGE(InstallingFromLocation,
                     (msg::path),
                     "'--' at the beginning must be preserved",

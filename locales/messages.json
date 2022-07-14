@@ -143,7 +143,6 @@
   "_CouldNotDeduceNugetIdAndVersion.comment": "An example of {path} is /foo/bar.",
   "CurlReportedUnexpectedResults": "curl has reported unexpected results to vcpkg and vcpkg cannot continue.\nPlease review the following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix this problem!\ncmd: {command_line}\n=== curl output ===\n{actual}\n=== end curl output ===",
   "_CurlReportedUnexpectedResults.comment": "{command_line} is the command line to call curl.exe, {actual} is the console output of curl.exe locale-invariant download results. An example of {command_line} is vcpkg install zlib.",
-
   "DefaultFlag": "Defaulting to '{command_name}' being on.",
   "_DefaultFlag.comment": "An example of {command_name} is install.",
   "DefaultPathToBinaries": "Based on your system settings, the default path to store binaries is \"{path}\". This consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.",
@@ -270,7 +269,7 @@
   "IllegalPlatformSpec": "Platform qualifier is not allowed in this context",
   "IncorrectNumberOfArgs": "'{command_name}' requires '{count}' arguments, but '{count}' were provided.",
   "_IncorrectNumberOfArgs.comment": "An example of {command_name} is install. An example of {count} is 42. An example of {count} is 42.",
-  "InfoSetEnvVar": "You can also set the environment variable {env_var} to your editor of choice.",
+  "InfoSetEnvVar": "You can also set the environment variable '{env_var}' to your editor of choice.",
   "_InfoSetEnvVar.comment": "In this context 'editor' means IDE An example of {env_var} is VCPKG_DEFAULT_TRIPLET.",
   "InstallRootDir": "(Experimental) Specify the install root directory.",
   "InstallWithSystemManager": "You may be able to install this tool via your system package manager.",
