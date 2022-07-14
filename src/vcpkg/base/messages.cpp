@@ -644,4 +644,6 @@ namespace vcpkg
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
     REGISTER_MESSAGE(FailedToParseCMakeConsoleOut);
+    REGISTER_MESSAGE(UnexpectedFormat);
+    REGISTER_MESSAGE(LoadingDependencyInformation);
 }

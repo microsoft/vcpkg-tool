@@ -1211,5 +1211,16 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
-    DECLARE_MESSAGE(FailedToParseCMakeConsoleOut, (), "", "Failed to parse CMake console output to locate block start/end markers.");
+    DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
+                    (),
+                    "",
+                    "Failed to parse CMake console output to locate block start/end markers.");
+    DECLARE_MESSAGE(UnexpectedFormat,
+                    (msg::env_var, msg::env_var),
+                    "",
+                    "Expected format is [{env_var}], but was [{env_var}].");
+    DECLARE_MESSAGE(LoadingDependencyInformation,
+                    (msg::count),
+                    "",
+                    "Loading dependency information for {count} packages...");
 }
