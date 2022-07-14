@@ -52,7 +52,8 @@ namespace
         if (!result)
         {
             Checks::msg_exit_with_message(
-                VCPKG_LINE_INFO, msgFailedToExtract, msg::path = archive, msg::error = result.error());
+                VCPKG_LINE_INFO,
+                msg::format(msgFailedToExtract, msg::path = archive).append_raw("\n").append(result.error()));
         }
     }
 
@@ -115,11 +116,11 @@ namespace
 
         if (!maybe_output)
         {
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                          msgPackageFailedtWhileExtractingWithMessage,
-                                          msg::package_name = "7zip",
-                                          msg::path = archive,
-                                          msg::error = maybe_output.error());
+            Checks::msg_exit_with_message(
+                VCPKG_LINE_INFO,
+                msg::format(msgPackageFailedtWhileExtracting, msg::package_name = "7zip", msg::path = archive)
+                    .append_raw("\n")
+                    .append(maybe_output.error()));
         }
 
         recursion_limiter_sevenzip = false;
@@ -172,7 +173,7 @@ namespace
         }
         else
         {
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgUnexpectedExtension, msg::value = ext);
+            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgUnexpectedExtension, msg::extension = ext);
         }
     }
 
@@ -202,14 +203,14 @@ namespace vcpkg
         const auto subext = stem.extension();
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                Strings::case_insensitive_ascii_equals(subext, ".7z"),
-                               msg::format(msgUnableToExtractArchive, msg::package_name = "7zip", msg::path = archive)
+                               msg::format(msgUnableToExtractArchive, msg::value = "7zip", msg::path = archive)
                                    .append(msgMissingExtension, msg::extension = ".7.exe"));
 
         auto contents = fs.read_contents(archive, VCPKG_LINE_INFO);
         const auto pos = contents.find(header_7z);
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                pos != std::string::npos,
-                               msg::format(msgUnableToExtractArchive, msg::package_name = "7zip", msg::path = archive)
+                               msg::format(msgUnableToExtractArchive, msg::value = "7zip", msg::path = archive)
                                    .append(msgMissingHeader, msg::package_name = "7z"));
 
         contents = contents.substr(pos);

@@ -753,10 +753,7 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
     DECLARE_MESSAGE(ExtendedDocumenationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
-    DECLARE_MESSAGE(FailedToExtract,
-                    (msg::path, msg::error),
-                    "'{error}' is the error message.",
-                    "Failed to extract '{path}' with message '{error}'.");
+    DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":");
     DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
     DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                     (msg::tool_name, msg::path),
@@ -1015,10 +1012,6 @@ namespace vcpkg
                     (msg::package_name, msg::path),
                     "",
                     "'{package_name}' failed while extracting '{path}'.");
-    DECLARE_MESSAGE(PackageFailedtWhileExtractingWithMessage,
-                    (msg::package_name, msg::path, msg::error),
-                    "'{error}' is the error message.",
-                    "'{package_name}' failed while extracting '{path}' with message '{error}'.");
     DECLARE_MESSAGE(PackingVendorFailed,
                     (msg::vendor),
                     "",
@@ -1090,14 +1083,11 @@ namespace vcpkg
     DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
     DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
     DECLARE_MESSAGE(UnableToExtractArchive,
-                    (msg::package_name, msg::path),
-                    "",
-                    "Unable to extract '{package_name}' archive from Installer '{path}'.");
+                    (msg::value, msg::path),
+                    "'{value}' is an archive name. i.e. 7z header etc.",
+                    "Unable to extract '{value}' archive from Installer \"{path}\".");
     DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.");
-    DECLARE_MESSAGE(UnexpectedExtension,
-                    (msg::value),
-                    "'{value}' is the archive extension.",
-                    "Unexpected archive extension: '{value}'.");
+    DECLARE_MESSAGE(UnexpectedExtension, (msg::extension), "", "Unexpected archive extension: '{extension}'.");
     DECLARE_MESSAGE(UnexpectedToolOutput,
                     (msg::tool_name, msg::path),
                     "The actual command line output will be appended after this message.",
