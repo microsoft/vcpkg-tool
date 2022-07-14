@@ -106,7 +106,7 @@
   "ExpectedFailOrSkip": "expected 'fail', 'skip', or 'pass' here",
   "ExpectedPortName": "expected a port name here",
   "ExpectedTripletName": "expected a triplet name here",
-  "ExtendedDocumenationAtUrl": "Extended documentation available at '{url}'.",
+  "ExtendedDocumentionAtUrl": "Extended documentation available at '{url}'.",
   "FailedToParseCMakeConsoleOut": "Failed to parse CMake console output to locate block start/end markers.",
   "FailedToProvisionCe": "Failed to provision vcpkg-ce.",
   "FailedToRunToolToDetermineVersion": "Failed to run {path} to determine the {tool_name} version.",

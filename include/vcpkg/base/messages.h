@@ -751,6 +751,10 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
     DECLARE_MESSAGE(ExtendedDocumentionAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
+    DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
+                    (),
+                    "",
+                    "Failed to parse CMake console output to locate block start/end markers.");
     DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
     DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                     (msg::tool_name, msg::path),
@@ -976,6 +980,10 @@ namespace vcpkg
                     (msg::path),
                     "'-- [COMMUNITY]' at the beginning must be preserved",
                     "-- [COMMUNITY] Loading triplet configuration from: {path}");
+    DECLARE_MESSAGE(LoadingDependencyInformation,
+                    (msg::count),
+                    "",
+                    "Loading dependency information for {count} packages...");
     DECLARE_MESSAGE(LoadingOverlayTriplet,
                     (msg::path),
                     "'-- [OVERLAY]' at the beginning must be preserved",
@@ -1074,6 +1082,10 @@ namespace vcpkg
     DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
     DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
     DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.");
+    DECLARE_MESSAGE(UnexpectedFormat,
+                    (msg::env_var, msg::env_var),
+                    "",
+                    "Expected format is [{env_var}], but was [{env_var}].");
     DECLARE_MESSAGE(UnexpectedToolOutput,
                     (msg::tool_name, msg::path),
                     "The actual command line output will be appended after this message.",
@@ -1211,16 +1223,4 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
-    DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
-                    (),
-                    "",
-                    "Failed to parse CMake console output to locate block start/end markers.");
-    DECLARE_MESSAGE(UnexpectedFormat,
-                    (msg::env_var, msg::env_var),
-                    "",
-                    "Expected format is [{env_var}], but was [{env_var}].");
-    DECLARE_MESSAGE(LoadingDependencyInformation,
-                    (msg::count),
-                    "",
-                    "Loading dependency information for {count} packages...");
 }

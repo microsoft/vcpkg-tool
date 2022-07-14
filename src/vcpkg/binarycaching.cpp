@@ -2474,7 +2474,7 @@ void vcpkg::help_topic_asset_caching(const VcpkgPaths&)
              "specified as `read`, `write`, or `readwrite` and defaults to `read`.");
     tbl.blank();
     print2(tbl.m_str);
-    msg::println(msgExtendedDocumenationAtUrl, msg::url = docs::assetcaching_url);
+    msg::println(msgExtendedDocumentionAtUrl, msg::url = docs::assetcaching_url);
 }
 
 void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
@@ -2556,7 +2556,7 @@ void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
         msg::println(msgDefaultPathToBinaries, msg::path = *p);
     }
 
-    msg::println(msgExtendedDocumenationAtUrl, msg::url = docs::binarycaching_url);
+    msg::println(msgExtendedDocumentionAtUrl, msg::url = docs::binarycaching_url);
 }
 
 std::string vcpkg::generate_nuget_packages_config(const Dependencies::ActionPlan& action)
