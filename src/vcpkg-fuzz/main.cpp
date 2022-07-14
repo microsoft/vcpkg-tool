@@ -16,18 +16,19 @@ using namespace vcpkg;
 
 namespace
 {
-    DECLARE_AND_REGISTER_MESSAGE(FuzzInvalidKind, (msg::value), "example of {value} is 'utf-8'", "invalid kind: {}");
     DECLARE_AND_REGISTER_MESSAGE(FuzzExpectedOneOf,
                                  (),
                                  "the list after the colon should stay the same, they're literal values",
                                  "expected one of: utf-8, json, platform-expr");
-    DECLARE_AND_REGISTER_MESSAGE(FuzzUnknownOption, (msg::option), "", "unknown option: --{option}");
-
-    DECLARE_AND_REGISTER_MESSAGE(FuzzHelpUsage, (), "", "usage: vcpkg-fuzz --kind=<kind>");
     DECLARE_AND_REGISTER_MESSAGE(FuzzHelpInput, (), "", "accepts input on stdin.");
-    DECLARE_AND_REGISTER_MESSAGE(FuzzHelpOptions, (), "", "options:");
     DECLARE_AND_REGISTER_MESSAGE(FuzzHelpOptionKind, (), "", "one of {{utf-8, json, platform-expr}}");
-
+    DECLARE_AND_REGISTER_MESSAGE(FuzzHelpOptions, (), "", "options:");
+    DECLARE_AND_REGISTER_MESSAGE(FuzzHelpUsage, (), "", "usage: vcpkg-fuzz --kind=<kind>");
+    DECLARE_AND_REGISTER_MESSAGE(FuzzInvalidKind,
+                                 (msg::value),
+                                 "example of {value} is 'utf-8'",
+                                 "invalid kind: '{value}'");
+    DECLARE_AND_REGISTER_MESSAGE(FuzzUnknownOption, (msg::option), "", "unknown option: --{option}");
     enum class FuzzKind
     {
         None,

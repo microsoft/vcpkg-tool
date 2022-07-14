@@ -36,6 +36,7 @@ marked.setOptions({
 export class Table {
   private readonly rows = new Array<string>();
   private numberOfColumns = 0;
+  public anyRows = false;
   constructor(...columnNames: Array<string>) {
     this.numberOfColumns = columnNames.length;
     this.rows.push(`|${columnNames.join('|')}|`);
@@ -44,6 +45,7 @@ export class Table {
   push(...values: Array<string>) {
     strict.equal(values.length, this.numberOfColumns, 'unexpected number of arguments in table row');
     this.rows.push(`|${values.join('|')}|`);
+    this.anyRows = true;
   }
   toString() {
     return marked.marked(this.rows.join('\n'));

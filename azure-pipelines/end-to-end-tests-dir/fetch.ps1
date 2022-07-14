@@ -92,7 +92,10 @@ if (-not $IsMacOS -and -not $IsLinux) {
     Require-FileNotExists "$TestingRoot/down loads/tools/ninja-1.10.2-windows/ninja.exe"
 
     Remove-Item env:VCPKG_FORCE_SYSTEM_BINARIES
-    Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "ninja", "--vcpkg-root=$TestingRoot"))
+    $out = Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "ninja", "--vcpkg-root=$TestingRoot", "--x-stderr-status"))
     Throw-IfFailed
-    Require-FileExists "$TestingRoot/down loads/tools/ninja-1.10.2-windows/ninja.exe"
+    & $out --version
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Couldn''t run resulting ninja'
+    }
 }

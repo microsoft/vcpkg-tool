@@ -13,6 +13,7 @@
 #include <vcpkg/commands.civerifyversions.h>
 #include <vcpkg/commands.contact.h>
 #include <vcpkg/commands.create.h>
+#include <vcpkg/commands.deactivate.h>
 #include <vcpkg/commands.dependinfo.h>
 #include <vcpkg/commands.edit.h>
 #include <vcpkg/commands.env.h>
@@ -89,6 +90,7 @@ namespace vcpkg::Commands
         static const CIClean::CICleanCommand ciclean{};
         static const CIVerifyVersions::CIVerifyVersionsCommand ci_verify_versions{};
         static const Create::CreateCommand create{};
+        static const DeactivateCommand deactivate{};
         static const Edit::EditCommand edit{};
         static const Fetch::FetchCommand fetch{};
         static const FindCommand find_{};
@@ -117,6 +119,7 @@ namespace vcpkg::Commands
             {"autocomplete", &autocomplete},
             {"cache", &cache},
             {"create", &create},
+            {"deactivate", &deactivate},
             {"edit", &edit},
             {"fetch", &fetch},
             {"find", &find_},
@@ -144,12 +147,12 @@ namespace vcpkg::Commands
 
     Span<const PackageNameAndFunction<const TripletCommand*>> get_available_triplet_commands()
     {
-        static const Install::InstallCommand install{};
+        static const InstallCommand install{};
         static const SetInstalled::SetInstalledCommand set_installed{};
         static const CI::CICommand ci{};
         static const Remove::RemoveCommand remove{};
         static const Upgrade::UpgradeCommand upgrade{};
-        static const Build::BuildCommand build{};
+        static const BuildCommand build{};
         static const Env::EnvCommand env{};
         static const BuildExternal::BuildExternalCommand build_external{};
         static const Export::ExportCommand export_command{};

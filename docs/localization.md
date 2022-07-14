@@ -8,13 +8,14 @@ and `locales/messages.json` -- everything else will be generated and modified by
 ## Declaring a Message
 
 The process of writing a user-visible message starts with declaring it.
-Most user-facing messages can be declared and registered at the same time in a source file with:
+Most user-facing messages can be declared in [`messages.h`] and registered in [`messages.cpp`]:
 
-```cxx
-DECLARE_AND_REGISTER_MESSAGE(<message-name>, <parameters>, <comment>, <english-message>);
+```messages.h
+DECLARE_MESSAGE(<message-name>, <parameters>, <comment>, <english-message>);
 ```
-
-for example, in [`sourceparagraph.cpp`].
+```messages.cpp
+REGISTER_MESSAGE(<message-name>);
+```
 
 If you need to declare a message in a header file
 (for example, if a templated function uses it),
@@ -104,11 +105,11 @@ namespace
     };
 
     // note that we add additional context in the comment here
-    DECLARE_AND_REGISTER_MESSAGE(World, (), "We will say hello to 'world' if no name is given", "world");
+    DECLARE_MESSAGE(World, (), "We will say hello to 'world' if no name is given", "world");
     // here, `{value}` is a placeholder that doesn't have example text, so we need to give it ourselves
-    DECLARE_AND_REGISTER_MESSAGE(Hello, (msg::value), "example for {value} is 'world'", "Hello, {value}!");
+    DECLARE_MESSAGE(Hello, (msg::value), "example for {value} is 'world'", "Hello, {value}!");
     // here, `{triplet}` _already has_ example text, so it's fine to not give a comment
-    DECLARE_AND_REGISTER_MESSAGE(MyTripletIs, (msg::triplet), "", "My triplet is {triplet}.");
+    DECLARE_MESSAGE(MyTripletIs, (msg::triplet), "", "My triplet is {triplet}.");
 }
 
 namespace vcpkg::Commands

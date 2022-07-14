@@ -285,6 +285,7 @@ namespace vcpkg
                     {SCRIPTS_ROOT_DIR_ARG, &VcpkgCmdArguments::scripts_root_dir},
                     {BUILTIN_PORTS_ROOT_DIR_ARG, &VcpkgCmdArguments::builtin_ports_root_dir},
                     {BUILTIN_REGISTRY_VERSIONS_DIR_ARG, &VcpkgCmdArguments::builtin_registry_versions_dir},
+                    {REGISTRIES_CACHE_DIR_ARG, &VcpkgCmdArguments::registries_cache_dir},
                     {ASSET_SOURCES_ARG, &VcpkgCmdArguments::asset_sources_template_arg},
                 };
 
@@ -713,6 +714,7 @@ namespace vcpkg
         from_env(get_env, DOWNLOADS_ROOT_DIR_ENV, downloads_root_dir);
         from_env(get_env, DEFAULT_VISUAL_STUDIO_PATH_ENV, default_visual_studio_path);
         from_env(get_env, ASSET_SOURCES_ENV, asset_sources_template_env);
+        from_env(get_env, REGISTRIES_CACHE_DIR_ENV, registries_cache_dir);
 
         {
             const auto vcpkg_disable_lock = get_env(IGNORE_LOCK_FAILURES_ENV);
@@ -762,21 +764,21 @@ namespace vcpkg
         if (auto vcpkg_recursive_data = maybe_vcpkg_recursive_data.get())
         {
             auto rec_doc = Json::parse(*vcpkg_recursive_data).value_or_exit(VCPKG_LINE_INFO).first;
-            const auto& obj = rec_doc.object();
+            const auto& obj = rec_doc.object(VCPKG_LINE_INFO);
 
             if (auto entry = obj.get(VCPKG_ROOT_DIR_ENV))
             {
-                args.vcpkg_root_dir = std::make_unique<std::string>(entry->string().to_string());
+                args.vcpkg_root_dir = std::make_unique<std::string>(entry->string(VCPKG_LINE_INFO).to_string());
             }
 
             if (auto entry = obj.get(DOWNLOADS_ROOT_DIR_ENV))
             {
-                args.downloads_root_dir = std::make_unique<std::string>(entry->string().to_string());
+                args.downloads_root_dir = std::make_unique<std::string>(entry->string(VCPKG_LINE_INFO).to_string());
             }
 
             if (auto entry = obj.get(ASSET_SOURCES_ENV))
             {
-                args.asset_sources_template_env = entry->string().to_string();
+                args.asset_sources_template_env = entry->string(VCPKG_LINE_INFO).to_string();
             }
 
             if (obj.get(DISABLE_METRICS_ENV))

@@ -27,19 +27,6 @@
 namespace
 {
     using namespace vcpkg;
-    DECLARE_AND_REGISTER_MESSAGE(WaitingForChildrenToExit, (), "", "Waiting for child processes to exit...");
-    DECLARE_AND_REGISTER_MESSAGE(LaunchingProgramFailed,
-                                 (msg::tool_name),
-                                 "A platform API call failure message is appended after this",
-                                 "Launching {tool_name}:");
-    DECLARE_AND_REGISTER_MESSAGE(ProgramReturnedNonzeroExitCode,
-                                 (msg::tool_name, msg::exit_code),
-                                 "The program's console output is appended after this.",
-                                 "{tool_name} failed with exit code: ({exit_code}).");
-    DECLARE_AND_REGISTER_MESSAGE(SystemApiErrorMessage,
-                                 (msg::system_api, msg::exit_code, msg::error_msg),
-                                 "",
-                                 "calling {system_api} failed with {exit_code} ({error_msg})");
 
 #if defined(_WIN32)
     using error_value_type = unsigned long;
@@ -293,7 +280,7 @@ namespace vcpkg
     {
         const std::string& system_root_env = get_system_root().value_or_exit(VCPKG_LINE_INFO).native();
         const std::string& system32_env = get_system32().value_or_exit(VCPKG_LINE_INFO).native();
-        std::string new_path = "PATH=";
+        std::string new_path;
         if (!prepend_to_path.empty())
         {
             Strings::append(new_path, prepend_to_path);
@@ -313,80 +300,80 @@ namespace vcpkg
                         system32_env,
                         "\\WindowsPowerShell\\v1.0\\");
 
-        std::vector<std::wstring> env_wstrings = {
-            L"ALLUSERSPROFILE",
-            L"APPDATA",
-            L"CommonProgramFiles",
-            L"CommonProgramFiles(x86)",
-            L"CommonProgramW6432",
-            L"COMPUTERNAME",
-            L"ComSpec",
-            L"HOMEDRIVE",
-            L"HOMEPATH",
-            L"LOCALAPPDATA",
-            L"LOGONSERVER",
-            L"NUMBER_OF_PROCESSORS",
-            L"OS",
-            L"PATHEXT",
-            L"PROCESSOR_ARCHITECTURE",
-            L"PROCESSOR_ARCHITEW6432",
-            L"PROCESSOR_IDENTIFIER",
-            L"PROCESSOR_LEVEL",
-            L"PROCESSOR_REVISION",
-            L"ProgramData",
-            L"ProgramFiles",
-            L"ProgramFiles(x86)",
-            L"ProgramW6432",
-            L"PROMPT",
-            L"PSModulePath",
-            L"PUBLIC",
-            L"SystemDrive",
-            L"SystemRoot",
-            L"TEMP",
-            L"TMP",
-            L"USERDNSDOMAIN",
-            L"USERDOMAIN",
-            L"USERDOMAIN_ROAMINGPROFILE",
-            L"USERNAME",
-            L"USERPROFILE",
-            L"windir",
+        std::vector<std::string> env_strings = {
+            "ALLUSERSPROFILE",
+            "APPDATA",
+            "CommonProgramFiles",
+            "CommonProgramFiles(x86)",
+            "CommonProgramW6432",
+            "COMPUTERNAME",
+            "ComSpec",
+            "HOMEDRIVE",
+            "HOMEPATH",
+            "LOCALAPPDATA",
+            "LOGONSERVER",
+            "NUMBER_OF_PROCESSORS",
+            "OS",
+            "PATHEXT",
+            "PROCESSOR_ARCHITECTURE",
+            "PROCESSOR_ARCHITEW6432",
+            "PROCESSOR_IDENTIFIER",
+            "PROCESSOR_LEVEL",
+            "PROCESSOR_REVISION",
+            "ProgramData",
+            "ProgramFiles",
+            "ProgramFiles(x86)",
+            "ProgramW6432",
+            "PROMPT",
+            "PSModulePath",
+            "PUBLIC",
+            "SystemDrive",
+            "SystemRoot",
+            "TEMP",
+            "TMP",
+            "USERDNSDOMAIN",
+            "USERDOMAIN",
+            "USERDOMAIN_ROAMINGPROFILE",
+            "USERNAME",
+            "USERPROFILE",
+            "windir",
             // Enables proxy information to be passed to Curl, the underlying download library in cmake.exe
-            L"http_proxy",
-            L"https_proxy",
+            "http_proxy",
+            "https_proxy",
             // Environment variables to tell git to use custom SSH executable or command
-            L"GIT_SSH",
-            L"GIT_SSH_COMMAND",
+            "GIT_SSH",
+            "GIT_SSH_COMMAND",
             // Points to a credential-manager binary for git authentication
-            L"GIT_ASKPASS",
+            "GIT_ASKPASS",
             // Environment variables needed for ssh-agent based authentication
-            L"SSH_AUTH_SOCK",
-            L"SSH_AGENT_PID",
+            "SSH_AUTH_SOCK",
+            "SSH_AGENT_PID",
             // Enables find_package(CUDA) and enable_language(CUDA) in CMake
-            L"CUDA_PATH",
-            L"CUDA_PATH_V9_0",
-            L"CUDA_PATH_V9_1",
-            L"CUDA_PATH_V10_0",
-            L"CUDA_PATH_V10_1",
-            L"CUDA_PATH_V10_2",
-            L"CUDA_PATH_V11_0",
-            L"CUDA_PATH_V11_1",
-            L"CUDA_PATH_V11_2",
-            L"CUDA_TOOLKIT_ROOT_DIR",
+            "CUDA_PATH",
+            "CUDA_PATH_V9_0",
+            "CUDA_PATH_V9_1",
+            "CUDA_PATH_V10_0",
+            "CUDA_PATH_V10_1",
+            "CUDA_PATH_V10_2",
+            "CUDA_PATH_V11_0",
+            "CUDA_PATH_V11_1",
+            "CUDA_PATH_V11_2",
+            "CUDA_TOOLKIT_ROOT_DIR",
             // Environment variable generated automatically by CUDA after installation
-            L"NVCUDASAMPLES_ROOT",
-            L"NVTOOLSEXT_PATH",
+            "NVCUDASAMPLES_ROOT",
+            "NVTOOLSEXT_PATH",
             // Enables find_package(Vulkan) in CMake. Environment variable generated by Vulkan SDK installer
-            L"VULKAN_SDK",
+            "VULKAN_SDK",
             // Enable targeted Android NDK
-            L"ANDROID_NDK_HOME",
+            "ANDROID_NDK_HOME",
             // Environment variables generated automatically by Intel oneAPI after installation
-            L"ONEAPI_ROOT",
-            L"IFORT_COMPILER19",
-            L"IFORT_COMPILER20",
-            L"IFORT_COMPILER21",
+            "ONEAPI_ROOT",
+            "IFORT_COMPILER19",
+            "IFORT_COMPILER20",
+            "IFORT_COMPILER21",
             // Environment variables used by wrapper scripts to allow us to set environment variables in parent shells
-            L"Z_VCPKG_POSTSCRIPT",
-            L"Z_VCPKG_UNDO",
+            "Z_VCPKG_POSTSCRIPT",
+            "Z_VCPKG_UNDO",
         };
 
         const Optional<std::string> keep_vars = get_environment_variable("VCPKG_KEEP_ENV_VARS");
@@ -398,63 +385,71 @@ namespace vcpkg
 
             for (auto&& var : vars)
             {
-                env_wstrings.push_back(Strings::to_utf16(var));
+                env_strings.push_back(var);
             }
         }
 
-        std::wstring env_cstr;
+        Environment env;
 
-        for (auto&& env_wstring : env_wstrings)
+        for (auto&& env_string : env_strings)
         {
-            const Optional<std::string> value = get_environment_variable(Strings::to_utf8(env_wstring.c_str()));
+            const Optional<std::string> value = get_environment_variable(env_string.c_str());
             const auto v = value.get();
             if (!v || v->empty()) continue;
 
-            env_cstr.append(env_wstring);
-            env_cstr.push_back(L'=');
-            env_cstr.append(Strings::to_utf16(*v));
-            env_cstr.push_back(L'\0');
+            env.add_entry(env_string, *v);
         }
 
         if (extra_env.find("PATH") != extra_env.end())
             new_path += Strings::format(";%s", extra_env.find("PATH")->second);
-        env_cstr.append(Strings::to_utf16(new_path));
-        env_cstr.push_back(L'\0');
+        env.add_entry("PATH", new_path);
         // NOTE: we support VS's without the english language pack,
         // but we still want to default to english just in case your specific
         // non-standard build system doesn't support non-english
-        env_cstr.append(L"VSLANG=1033");
-        env_cstr.push_back(L'\0');
-        env_cstr.append(L"VSCMD_SKIP_SENDTELEMETRY=1");
-        env_cstr.push_back(L'\0');
+        env.add_entry("VSLANG", "1033");
+        env.add_entry("VSCMD_SKIP_SENDTELEMETRY", "1");
 
         for (const auto& item : extra_env)
         {
             if (item.first == "PATH") continue;
-            env_cstr.append(Strings::to_utf16(item.first));
-            env_cstr.push_back(L'=');
-            env_cstr.append(Strings::to_utf16(item.second));
-            env_cstr.push_back(L'\0');
+            env.add_entry(item.first, item.second);
         }
 
-        return {env_cstr};
+        return env;
     }
 #else
     Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>&,
                                                StringView prepend_to_path)
     {
-        std::string result;
+        Environment env;
         if (!prepend_to_path.empty())
         {
-            result = "PATH=";
-            append_shell_escaped(
-                result,
+            env.add_entry(
+                "PATH",
                 Strings::concat(prepend_to_path, ':', get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO)));
         }
 
-        return {result};
+        return env;
     }
 #endif
+
+    void Environment::add_entry(StringView key, StringView value)
+    {
+#if defined(_WIN32)
+        m_env_data.append(Strings::to_utf16(key));
+        m_env_data.push_back(L'=');
+        m_env_data.append(Strings::to_utf16(value));
+        m_env_data.push_back(L'\0');
+#else
+        Strings::append(m_env_data, key);
+        m_env_data.push_back('=');
+        append_shell_escaped(m_env_data, value);
+        m_env_data.push_back(' ');
+#endif
+    }
+
+    const Environment::string_t& Environment::get() const { return m_env_data; }
+
     const Environment& get_clean_environment()
     {
         static const Environment clean_env = get_modified_clean_environment({});
@@ -584,7 +579,8 @@ namespace vcpkg
                 Strings::to_utf16(get_real_filesystem().absolute(wd.working_directory, VCPKG_LINE_INFO));
         }
 
-        auto environment_block = env.m_env_data;
+        auto environment_block = env.get();
+        environment_block.push_back('\0');
         // Leaking process information handle 'process_info.proc_info.hProcess'
         // /analyze can't tell that we transferred ownership here
         VCPKG_MSVC_WARNING(suppress : 6335)
@@ -594,7 +590,7 @@ namespace vcpkg
                            nullptr,
                            TRUE,
                            IDLE_PRIORITY_CLASS | CREATE_UNICODE_ENVIRONMENT | dwCreationFlags,
-                           environment_block.empty() ? nullptr : &environment_block[0],
+                           env.get().empty() ? nullptr : &environment_block[0],
                            working_directory.empty() ? nullptr : working_directory.data(),
                            &startup_info,
                            &process_info.proc_info))
@@ -770,7 +766,7 @@ namespace vcpkg
         it = std::find_if_not(it + magic_string.size(), last, ::isspace);
         Checks::check_exit(VCPKG_LINE_INFO, it != last);
 
-        std::wstring out_env;
+        Environment new_env;
 
         for (;;)
         {
@@ -781,14 +777,13 @@ namespace vcpkg
             if (newline_it == last) break;
             StringView value(equal_it + 1, newline_it);
 
-            out_env.append(Strings::to_utf16(Strings::concat(variable_name, '=', value)));
-            out_env.push_back(L'\0');
+            new_env.add_entry(variable_name, value);
 
             it = newline_it + 1;
             if (it != last && *it == '\n') ++it;
         }
 
-        return {std::move(out_env)};
+        return new_env;
     }
 #endif
 
@@ -815,9 +810,9 @@ namespace vcpkg
             real_command_line_builder.raw_arg("&&");
         }
 
-        if (!env.m_env_data.empty())
+        if (!env.get().empty())
         {
-            real_command_line_builder.raw_arg(env.m_env_data);
+            real_command_line_builder.raw_arg(env.get());
         }
 
         real_command_line_builder.raw_arg(cmd_line.command_line());
@@ -882,17 +877,18 @@ namespace vcpkg
 #else  // ^^^ _WIN32 // !_WIN32 vvv
         Checks::check_exit(VCPKG_LINE_INFO, encoding == Encoding::Utf8);
         const auto proc_id = std::to_string(::getpid());
-        (void)env;
+
         std::string actual_cmd_line;
         if (wd.working_directory.empty())
         {
-            actual_cmd_line = Strings::format(R"(%s 2>&1)", cmd_line.command_line());
+            actual_cmd_line = Strings::format(R"(%s %s 2>&1)", env.get(), cmd_line.command_line());
         }
         else
         {
             actual_cmd_line = Command("cd")
                                   .string_arg(wd.working_directory)
                                   .raw_arg("&&")
+                                  .raw_arg(env.get())
                                   .raw_arg(cmd_line.command_line())
                                   .raw_arg("2>&1")
                                   .extract();
@@ -1047,4 +1043,5 @@ namespace vcpkg
                     .append_raw(maybe_exit.error().to_string()),
                 expected_right_tag};
     }
+
 }

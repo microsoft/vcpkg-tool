@@ -10,28 +10,6 @@
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
 
-namespace
-{
-    using namespace vcpkg;
-
-    DECLARE_AND_REGISTER_MESSAGE(CurlReportedUnexpectedResults,
-                                 (msg::command_line, msg::actual),
-                                 "{command_line} is the command line to call curl.exe, {actual} is the console output "
-                                 "of curl.exe locale-invariant download results.",
-                                 "curl has reported unexpected results to vcpkg and vcpkg cannot continue.\n"
-                                 "Please review the following text for sensitive information and open an issue on the "
-                                 "Microsoft/vcpkg GitHub to help fix this problem!\n"
-                                 "cmd: {command_line}\n"
-                                 "=== curl output ===\n"
-                                 "{actual}\n"
-                                 "=== end curl output ===");
-    DECLARE_AND_REGISTER_MESSAGE(UnexpectedErrorDuringBulkDownload,
-                                 (),
-                                 "",
-                                 "an unexpected error occurred during bulk download.");
-    DECLARE_AND_REGISTER_MESSAGE(FailedToStoreBackToMirror, (), "", "failed to store back to mirror:");
-}
-
 namespace vcpkg
 {
 #if defined(_WIN32)
@@ -353,7 +331,10 @@ namespace vcpkg
         return input;
     }
 
-    static void download_files_inner(Filesystem&, View<std::pair<std::string, Path>> url_pairs, std::vector<int>* out)
+    static void download_files_inner(Filesystem&,
+                                     View<std::pair<std::string, Path>> url_pairs,
+                                     View<std::string> headers,
+                                     std::vector<int>* out)
     {
         for (auto i : {100, 1000, 10000, 0})
         {
@@ -366,6 +347,10 @@ namespace vcpkg
                 .string_arg("--location")
                 .string_arg("-w")
                 .string_arg(Strings::concat(guid_marker, " %{http_code}\\n"));
+            for (StringView header : headers)
+            {
+                cmd.string_arg("-H").string_arg(header);
+            }
             for (auto&& url : url_pairs)
             {
                 cmd.string_arg(url.first).string_arg("-o").string_arg(url.second);
@@ -392,7 +377,9 @@ namespace vcpkg
             }
         }
     }
-    std::vector<int> download_files(Filesystem& fs, View<std::pair<std::string, Path>> url_pairs)
+    std::vector<int> download_files(Filesystem& fs,
+                                    View<std::pair<std::string, Path>> url_pairs,
+                                    View<std::string> headers)
     {
         static constexpr size_t batch_size = 50;
 
@@ -401,9 +388,9 @@ namespace vcpkg
         size_t i = 0;
         for (; i + batch_size <= url_pairs.size(); i += batch_size)
         {
-            download_files_inner(fs, {url_pairs.data() + i, batch_size}, &ret);
+            download_files_inner(fs, {url_pairs.data() + i, batch_size}, headers, &ret);
         }
-        if (i != url_pairs.size()) download_files_inner(fs, {url_pairs.begin() + i, url_pairs.end()}, &ret);
+        if (i != url_pairs.size()) download_files_inner(fs, {url_pairs.begin() + i, url_pairs.end()}, headers, &ret);
 
         Checks::check_exit(
             VCPKG_LINE_INFO,

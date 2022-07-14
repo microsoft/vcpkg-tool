@@ -20,18 +20,6 @@
 
 namespace vcpkg
 {
-    DECLARE_AND_REGISTER_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
-    DECLARE_AND_REGISTER_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
-    DECLARE_AND_REGISTER_MESSAGE(
-        DownloadAvailable,
-        (msg::env_var),
-        "",
-        "A downloadable copy of this tool is available and can be used by unsetting {env_var}.");
-    DECLARE_AND_REGISTER_MESSAGE(UnknownTool,
-                                 (),
-                                 "",
-                                 "vcpkg does not have a definition of this tool for this platform.");
-
     // /\d+\.\d+(\.\d+)?/
     Optional<std::array<int, 3>> parse_tool_version_string(StringView string_version)
     {
@@ -153,23 +141,6 @@ namespace vcpkg
         std::string version;
     };
 
-    DECLARE_AND_REGISTER_MESSAGE(InstallWithSystemManager,
-                                 (),
-                                 "",
-                                 "You may be able to install this tool via your system package manager.");
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        InstallWithSystemManagerPkg,
-        (msg::command_line),
-        "",
-        "You may be able to install this tool via your system package manager ({command_line}).");
-
-    DECLARE_AND_REGISTER_MESSAGE(FailedToRunToolToDetermineVersion,
-                                 (msg::tool_name, msg::path),
-                                 "Additional information, such as the command line output, if any, will be appended on "
-                                 "the line after this message",
-                                 "Failed to run {path} to determine the {tool_name} version.");
-
     static ExpectedS<std::string> run_to_extract_version(StringLiteral tool_name, const Path& exe_path, Command&& cmd)
     {
         return flatten_out(cmd_execute_and_capture_output(cmd), exe_path).map_error([&](LocalizedString&& output) {
@@ -180,12 +151,6 @@ namespace vcpkg
                 .extract_data();
         });
     }
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        UnexpectedToolOutput,
-        (msg::tool_name, msg::path),
-        "The actual command line output will be appended after this message.",
-        "{tool_name} ({path}) produced unexpected output when attempting to determine the version:");
 
     ExpectedS<std::string> extract_prefixed_nonwhitespace(StringLiteral prefix,
                                                           StringLiteral tool_name,
@@ -234,6 +199,13 @@ namespace vcpkg
         virtual ExpectedS<std::string> get_version(const ToolCache& cache,
                                                    MessageSink& status_sink,
                                                    const Path& exe_path) const = 0;
+
+        // returns true if and only if `exe_path` is a usable version of this tool
+        virtual bool is_acceptable(const Path& exe_path) const
+        {
+            (void)exe_path;
+            return true;
+        }
 
         virtual void add_system_package_info(LocalizedString& out) const
         {
@@ -310,14 +282,6 @@ namespace vcpkg
             return run_to_extract_version(Tools::NINJA, exe_path, Command(exe_path).string_arg("--version"));
         }
     };
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        MonoInstructions,
-        (),
-        "",
-        "This may be caused by an incomplete mono installation. Full mono is "
-        "available on some systems via `sudo apt install mono-complete`. Ubuntu 18.04 users may "
-        "need a newer version of mono, available at https://www.mono-project.com/download/stable/");
 
     struct NuGetProvider : ToolProvider
     {
@@ -430,11 +394,6 @@ namespace vcpkg
                 });
         }
     };
-
-    DECLARE_AND_REGISTER_MESSAGE(InstallWithSystemManagerMono,
-                                 (msg::url),
-                                 "",
-                                 "Ubuntu 18.04 users may need a newer version of mono, available at {url}.");
 
     struct MonoProvider : ToolProvider
     {
@@ -607,6 +566,38 @@ namespace vcpkg
                     return extract_prefixed_nonwhitespace("Python ", Tools::PYTHON3, std::move(output), exe_path);
                 });
         }
+
+        virtual void add_system_package_info(LocalizedString& out) const override
+        {
+#if defined(__APPLE__)
+            out.append_raw(" ").append(msgInstallWithSystemManagerPkg, msg::command_line = "brew install python3");
+#else
+            out.append_raw(" ").append(msgInstallWithSystemManagerPkg, msg::command_line = "sudo apt install python3");
+#endif
+        }
+    };
+
+    struct Python3WithVEnvProvider : Python3Provider
+    {
+        virtual StringView tool_data_name() const override { return Tools::PYTHON3_WITH_VENV; }
+
+        virtual bool is_acceptable(const Path& exe_path) const override
+        {
+            return flatten(cmd_execute_and_capture_output(
+                               Command(exe_path).string_arg("-m").string_arg("venv").string_arg("-h")),
+                           Tools::PYTHON3)
+                .has_value();
+        }
+
+        virtual void add_system_package_info(LocalizedString& out) const override
+        {
+#if defined(__APPLE__)
+            out.append_raw(" ").append(msgInstallWithSystemManagerPkg, msg::command_line = "brew install python3");
+#else
+            out.append_raw(" ").append(msgInstallWithSystemManagerPkg,
+                                       msg::command_line = "sudo apt install python3-virtualenv");
+#endif
+        }
     };
 
     struct ToolCacheImpl final : ToolCache
@@ -652,6 +643,7 @@ namespace vcpkg
                 if (!parsed_version) continue;
                 auto& actual_version = *parsed_version.get();
                 if (!accept_version(actual_version)) continue;
+                if (!tool_provider.is_acceptable(candidate)) continue;
 
                 return PathAndVersion{candidate, *version};
             }
@@ -789,10 +781,12 @@ namespace vcpkg
             if (ignore_version)
             {
                 // If we are forcing the system copy (and therefore ignoring versions), take the first entry that
-                // exists.
-                const auto it = std::find_if(candidate_paths.begin(), candidate_paths.end(), [this](const Path& p) {
-                    return this->fs.exists(p, IgnoreErrors{});
-                });
+                // is acceptable.
+                const auto it =
+                    std::find_if(candidate_paths.begin(), candidate_paths.end(), [this, &tool](const Path& p) {
+                        return this->fs.is_regular_file(p) && tool.is_acceptable(p);
+                    });
+
                 if (it != candidate_paths.end())
                 {
                     return {*it, "0"};
@@ -872,6 +866,7 @@ namespace vcpkg
                 if (tool == Tools::AWSCLI) return get_path(AwsCliProvider(), status_sink);
                 if (tool == Tools::COSCLI) return get_path(CosCliProvider(), status_sink);
                 if (tool == Tools::PYTHON3) return get_path(Python3Provider(), status_sink);
+                if (tool == Tools::PYTHON3_WITH_VENV) return get_path(Python3WithVEnvProvider(), status_sink);
                 if (tool == Tools::TAR)
                 {
                     return {find_system_tar(fs).value_or_exit(VCPKG_LINE_INFO), {}};

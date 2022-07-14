@@ -5,24 +5,6 @@
 #include <algorithm>
 #include <utility>
 
-using namespace vcpkg;
-
-namespace
-{
-    DECLARE_AND_REGISTER_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
-
-    DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessageExpression,
-                                 (msg::value),
-                                 "Example of {value} is 'x64 & windows'",
-                                 "on expression: {value}");
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        ExpectedCharacterHere,
-        (msg::expected),
-        "{expected} is a locale-invariant delimiter; for example, the ':' or '=' in 'zlib:x64-windows=skip'",
-        "expected '{expected}' here");
-}
-
 namespace vcpkg
 {
     static void advance_rowcol(char32_t ch, int& row, int& column)
@@ -51,8 +33,9 @@ namespace vcpkg
 
     LocalizedString ParseMessage::format(StringView origin, MessageKind kind) const
     {
-        LocalizedString res =
-            LocalizedString::from_raw(fmt::format("{}:{}:{}: ", origin, location.row, location.column));
+        LocalizedString res;
+        if (!origin.empty())
+            res = LocalizedString::from_raw(fmt::format("{}:{}:{}: ", origin, location.row, location.column));
         if (kind == MessageKind::Warning)
         {
             res.append(msg::msgWarningMessage);

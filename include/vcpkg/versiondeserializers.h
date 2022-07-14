@@ -17,6 +17,11 @@ namespace vcpkg
         Version version;
     };
 
+    Optional<SchemedVersion> visit_optional_schemed_deserializer(StringView parent_type,
+                                                                 Json::Reader& r,
+                                                                 const Json::Object& obj,
+                                                                 bool allow_hash_portversion);
+
     SchemedVersion visit_required_schemed_deserializer(StringView parent_type,
                                                        Json::Reader& r,
                                                        const Json::Object& obj,
