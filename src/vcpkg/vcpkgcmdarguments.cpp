@@ -285,6 +285,7 @@ namespace vcpkg
                     {SCRIPTS_ROOT_DIR_ARG, &VcpkgCmdArguments::scripts_root_dir},
                     {BUILTIN_PORTS_ROOT_DIR_ARG, &VcpkgCmdArguments::builtin_ports_root_dir},
                     {BUILTIN_REGISTRY_VERSIONS_DIR_ARG, &VcpkgCmdArguments::builtin_registry_versions_dir},
+                    {REGISTRIES_CACHE_DIR_ARG, &VcpkgCmdArguments::registries_cache_dir},
                     {ASSET_SOURCES_ARG, &VcpkgCmdArguments::asset_sources_template_arg},
                 };
 
@@ -713,6 +714,7 @@ namespace vcpkg
         from_env(get_env, DOWNLOADS_ROOT_DIR_ENV, downloads_root_dir);
         from_env(get_env, DEFAULT_VISUAL_STUDIO_PATH_ENV, default_visual_studio_path);
         from_env(get_env, ASSET_SOURCES_ENV, asset_sources_template_env);
+        from_env(get_env, REGISTRIES_CACHE_DIR_ENV, registries_cache_dir);
 
         {
             const auto vcpkg_disable_lock = get_env(IGNORE_LOCK_FAILURES_ENV);

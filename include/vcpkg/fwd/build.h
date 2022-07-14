@@ -1,6 +1,6 @@
 #pragma once
 
-namespace vcpkg::Build
+namespace vcpkg
 {
     struct BuildInfo;
     struct PreBuildInfo;

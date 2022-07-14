@@ -87,9 +87,9 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
     }
 
     Triplet default_triplet = vcpkg::default_triplet(args);
-    Input::check_triplet(default_triplet, paths);
+    check_triplet(default_triplet, paths);
     Triplet host_triplet = vcpkg::default_host_triplet(args);
-    Input::check_triplet(host_triplet, paths);
+    check_triplet(host_triplet, paths);
 
     if (const auto command_function = find_command(Commands::get_available_triplet_commands()))
     {

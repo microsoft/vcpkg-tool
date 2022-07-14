@@ -26,11 +26,12 @@ if( $ENV:VCPKG_ROOT ) {
 $env:Z_VCPKG_POSTSCRIPT = resolve "${VCPKG_ROOT}/VCPKG_tmp_$(Get-Random -SetSeed $PID).ps1"
 
 [string]$vcpkgPath = "$PSScriptRoot/vcpkg"
-if ($IsWindows) {
+# The variable:IsWindows test is a workaround for $IsWindows not existing in Windows PowerShell
+if (-not (Test-Path variable:IsWindows) -or $IsWindows) {
   $vcpkgPath += ".exe"
 }
 
-& $vcpkgPath @args 
+& $vcpkgPath @args
 
 # dot-source the postscript file to modify the environment
 if ($env:Z_VCPKG_POSTSCRIPT -and (Test-Path $env:Z_VCPKG_POSTSCRIPT)) {

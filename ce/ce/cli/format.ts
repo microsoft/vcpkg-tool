@@ -16,7 +16,7 @@ export function artifactIdentity(registryName: string, identity: string, alias?:
 }
 
 export function artifactReference(registryName: string, identity: string, version: string) {
-  return version && version !== '*' ? `${artifactIdentity(registryName, identity)}-v${gray(version)}` : artifactIdentity(registryName, identity);
+  return version && version !== '*' ? `${artifactIdentity(registryName, identity)}-${gray(version)}` : artifactIdentity(registryName, identity);
 }
 
 export function heading(text: string, level = 1) {
