@@ -12,12 +12,10 @@
 #include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
-using vcpkg::Optional;
-
 namespace vcpkg::CMakeVars
 {
-    void CMakeVarProvider::load_tag_vars(const vcpkg::Dependencies::ActionPlan& action_plan,
-                                         const PortFileProvider::PortFileProvider& port_provider,
+    void CMakeVarProvider::load_tag_vars(const ActionPlan& action_plan,
+                                         const PortFileProvider& port_provider,
                                          Triplet host_triplet) const
     {
         std::vector<FullPackageSpec> install_package_specs;
@@ -54,7 +52,7 @@ namespace vcpkg::CMakeVars
             void load_dep_info_vars(View<PackageSpec> specs, Triplet host_triplet) const override;
 
             void load_tag_vars(View<FullPackageSpec> specs,
-                               const PortFileProvider::PortFileProvider& port_provider,
+                               const PortFileProvider& port_provider,
                                Triplet host_triplet) const override;
 
             Optional<const std::unordered_map<std::string, std::string>&> get_generic_triplet_vars(
@@ -371,7 +369,7 @@ endfunction()
     }
 
     void TripletCMakeVarProvider::load_tag_vars(View<FullPackageSpec> specs,
-                                                const PortFileProvider::PortFileProvider& port_provider,
+                                                const PortFileProvider& port_provider,
                                                 Triplet host_triplet) const
     {
         if (specs.size() == 0) return;

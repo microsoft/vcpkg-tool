@@ -117,24 +117,24 @@ set(CMAKE_IMPORT_FILE_VERSION)
 cmake_policy(POP)
 )cmake";
 
-    auto res = Install::get_cmake_add_library_names("");
+    auto res = get_cmake_add_library_names("");
     CHECK(res.empty());
 
-    res = Install::get_cmake_add_library_names(fmt_targets);
+    res = get_cmake_add_library_names(fmt_targets);
     CHECK(res == std::vector<std::string>{"fmt::fmt", "fmt::fmt-header-only"});
 
-    res = Install::get_cmake_add_library_names("add_library(bar) foo_add_library(baz)");
+    res = get_cmake_add_library_names("add_library(bar) foo_add_library(baz)");
     CHECK(res == std::vector<std::string>{"bar"});
 
-    res = Install::get_cmake_add_library_names("add_library(bar) add_library(baz-bar) add_library(baz_%_bar)");
+    res = get_cmake_add_library_names("add_library(bar) add_library(baz-bar) add_library(baz_%_bar)");
     CHECK(res == std::vector<std::string>{"bar", "baz-bar", "baz_%_bar"});
 
-    res = Install::get_cmake_add_library_names("add_library(bar${foo})");
+    res = get_cmake_add_library_names("add_library(bar${foo})");
     CHECK(res == std::vector<std::string>{"bar"});
 
-    res = Install::get_cmake_add_library_names("add_library() add_library(foo) add_library(   \nbar)");
+    res = get_cmake_add_library_names("add_library() add_library(foo) add_library(   \nbar)");
     CHECK(res == std::vector<std::string>{"foo", "bar"});
 
-    res = Install::get_cmake_add_library_names("add_library(foo) add_library(foo) add_library(foo)");
+    res = get_cmake_add_library_names("add_library(foo) add_library(foo) add_library(foo)");
     CHECK(res == std::vector<std::string>{"foo", "foo", "foo"});
 }

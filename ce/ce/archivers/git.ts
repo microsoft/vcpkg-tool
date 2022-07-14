@@ -181,6 +181,7 @@ export class Git {
       this.#targetFolder.fsPath,
       'submodule',
       'update',
+      '--progress',
       options.init ? '--init' : '',
       options.depth ? `--depth=${options.depth}` : '',
       options.recursive ? '--recursive' : '',
