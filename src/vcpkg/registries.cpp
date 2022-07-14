@@ -1186,7 +1186,7 @@ namespace vcpkg
         if (auto pversions = maybe_versions.get())
         {
             return Util::fmap(
-                *pversions, [](auto&& entry) -> auto{
+                *pversions, [](auto&& entry) -> auto {
                     return std::make_pair(SchemedVersion{entry.scheme, entry.version}, entry.git_tree);
                 });
         }

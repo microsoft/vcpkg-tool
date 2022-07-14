@@ -1211,8 +1211,8 @@ namespace vcpkg
             {
                 Strings::append(ret, "    ", err, "\n");
             }
-            msg::println(msgSeeDocumentation, msg::url = docs::registries_url);
-            msg::println(msgSeeDocumentation, msg::url = docs::manifests_url);
+            msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
+            msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url);
             return std::move(ret);
         }
         else
@@ -1383,7 +1383,7 @@ namespace vcpkg
                     [](const std::unique_ptr<ParseControlErrorInfo>& ppcei) { return !ppcei->extra_fields.empty(); }))
             {
                 Strings::append(message,
-                                "This is the list of valid fields for CONTROL files (case-sensitive): \n\n    ",
+                                msg::format(msgListOfValidFieldsForControlFiles).data(),
                                 Strings::join("\n    ", get_list_of_valid_fields()),
                                 "\n\n");
 #if defined(_WIN32)
@@ -1391,8 +1391,7 @@ namespace vcpkg
 #else
                 auto bootstrap = "./bootstrap-vcpkg.sh";
 #endif
-                Strings::append(
-                    message, "You may need to update the vcpkg binary; try running ", bootstrap, " to update.\n\n");
+                Strings::append(message, msg::format(msgSuggestUpdateVcpkg, msg::command_line = bootstrap).data());
             }
         }
 

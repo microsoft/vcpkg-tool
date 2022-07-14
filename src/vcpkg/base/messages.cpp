@@ -646,5 +646,6 @@ namespace vcpkg
     REGISTER_MESSAGE(MultiArch);
     REGISTER_MESSAGE(FailedToParseBinParagraph);
     REGISTER_MESSAGE(SerializedDoesNotMatchOriginalBinPar);
-    REGISTER_MESSAGE(SeeDocumentation);
+    REGISTER_MESSAGE(ListOfValidFieldsForControlFiles);
+    REGISTER_MESSAGE(SuggestUpdateVcpkg);
 }

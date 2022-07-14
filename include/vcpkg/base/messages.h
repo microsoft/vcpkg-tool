@@ -1253,5 +1253,12 @@ namespace vcpkg
         "'{spec}'\nversion: '{version}'\nport_version: {version}\ndescription: "
         "['{value}']\nmaintainers: ['{value}']\nfeature: '{value}'\ndefault feature: ['{value}']\ndependencies: "
         "['{value}']\nabi: '{value}'\ntype: {value}");
-    DECLARE_MESSAGE(SeeDocumentation, (msg::url), "", "See {url} for more information");
+    DECLARE_MESSAGE(ListOfValidFieldsForControlFiles,
+                    (),
+                    "",
+                    "This is the list of valid fields for CONTROL files (case-sensitive):");
+    DECLARE_MESSAGE(SuggestUpdateVcpkg,
+                    (msg::command_line),
+                    "",
+                    "You may need to update the vcpkg binary; try running {command_line} to update.");
 }
