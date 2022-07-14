@@ -11,8 +11,8 @@ struct vcpkg::XunitTest
     std::string name;
     std::string method;
     std::string owner;
-    vcpkg::Build::BuildResult result;
-    vcpkg::ElapsedTime time;
+    BuildResult result;
+    ElapsedTime time;
     std::chrono::system_clock::time_point start_time;
     std::string abi_tag;
     std::vector<std::string> features;
@@ -20,8 +20,6 @@ struct vcpkg::XunitTest
 
 namespace
 {
-    using vcpkg::Build::BuildResult;
-
     static void xml_test(XmlSerializer& xml, const XunitTest& test)
     {
         StringLiteral result_string = "";
@@ -95,7 +93,7 @@ XunitWriter::XunitWriter() { }
 XunitWriter::~XunitWriter() { }
 
 void XunitWriter::add_test_results(const PackageSpec& spec,
-                                   Build::BuildResult build_result,
+                                   BuildResult build_result,
                                    const ElapsedTime& elapsed_time,
                                    const std::chrono::system_clock::time_point& start_time,
                                    const std::string& abi_tag,

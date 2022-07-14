@@ -19,7 +19,7 @@ namespace vcpkg::Test
         }
 
         void load_tag_vars(Span<const FullPackageSpec> specs,
-                           const PortFileProvider::PortFileProvider& port_provider,
+                           const PortFileProvider& port_provider,
                            Triplet host_triplet) const override
         {
             for (auto&& spec : specs)

@@ -66,7 +66,7 @@ namespace vcpkg
                                                SkipFailures skip_failures);
 
     LocalizedString format_ci_result(const PackageSpec& spec,
-                                     Build::BuildResult result,
+                                     BuildResult result,
                                      const CiBaselineData& cidata,
                                      StringView cifile,
                                      bool allow_unexpected_passing);

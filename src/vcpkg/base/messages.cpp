@@ -408,7 +408,7 @@ namespace vcpkg
     REGISTER_MESSAGE(AddArtifactOnlyOne);
     REGISTER_MESSAGE(AddFirstArgument);
     REGISTER_MESSAGE(AddPortRequiresManifest);
-    REGISTER_MESSAGE(AddPortSucceded);
+    REGISTER_MESSAGE(AddPortSucceeded);
     REGISTER_MESSAGE(AddTripletExpressionNotAllowed);
     REGISTER_MESSAGE(AddVersionAddedVersionToFile);
     REGISTER_MESSAGE(AddVersionCommitChangesReminder);
@@ -519,7 +519,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ExpectedPortName);
     REGISTER_MESSAGE(ExpectedTripletName);
     REGISTER_MESSAGE(ExpectedValueForOption);
-    REGISTER_MESSAGE(ExtendedDocumenationAtUrl);
+    REGISTER_MESSAGE(ExtendedDocumentationAtUrl);
     REGISTER_MESSAGE(FailedToProvisionCe);
     REGISTER_MESSAGE(FailedToRunToolToDetermineVersion);
     REGISTER_MESSAGE(FailedToStoreBackToMirror);
@@ -527,7 +527,6 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedVendorAuthentication);
     REGISTER_MESSAGE(ForceSystemBinariesOnWeirdPlatforms);
     REGISTER_MESSAGE(FormattedParseMessageExpression);
-    REGISTER_MESSAGE(FuzzExpectedOneOf);
     REGISTER_MESSAGE(GenerateMsgErrorParsingFormatArgs);
     REGISTER_MESSAGE(GenerateMsgIncorrectComment);
     REGISTER_MESSAGE(GenerateMsgNoArgumentValue);

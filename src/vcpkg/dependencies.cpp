@@ -14,9 +14,7 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
-using namespace vcpkg;
-
-namespace vcpkg::Dependencies
+namespace vcpkg
 {
     namespace
     {
@@ -290,7 +288,7 @@ namespace vcpkg::Dependencies
 
         struct PackageGraph
         {
-            PackageGraph(const PortFileProvider::PortFileProvider& provider,
+            PackageGraph(const PortFileProvider& provider,
                          const CMakeVars::CMakeVarProvider& var_provider,
                          const StatusParagraphs& status_db,
                          Triplet host_triplet);
@@ -300,7 +298,7 @@ namespace vcpkg::Dependencies
             void upgrade(Span<const PackageSpec> specs, UnsupportedPortAction unsupported_port_action);
             void mark_user_requested(const PackageSpec& spec);
 
-            ActionPlan serialize(Graphs::Randomizer* randomizer) const;
+            ActionPlan serialize(GraphRandomizer* randomizer) const;
 
             void mark_for_reinstall(const PackageSpec& spec, std::vector<FeatureSpec>& out_reinstall_requirements);
             const CMakeVars::CMakeVarProvider& m_var_provider;
@@ -314,7 +312,7 @@ namespace vcpkg::Dependencies
         /// </summary>
         struct ClusterGraph
         {
-            explicit ClusterGraph(const PortFileProvider::PortFileProvider& port_provider, Triplet host_triplet)
+            explicit ClusterGraph(const PortFileProvider& port_provider, Triplet host_triplet)
                 : m_port_provider(port_provider), m_host_triplet(host_triplet)
             {
             }
@@ -386,7 +384,7 @@ namespace vcpkg::Dependencies
 
         private:
             std::map<PackageSpec, Cluster> m_graph;
-            const PortFileProvider::PortFileProvider& m_port_provider;
+            const PortFileProvider& m_port_provider;
 
         public:
             const Triplet m_host_triplet;
@@ -395,7 +393,7 @@ namespace vcpkg::Dependencies
 
     static std::string to_output_string(RequestType request_type,
                                         const ZStringView s,
-                                        const Build::BuildPackageOptions& options,
+                                        const BuildPackageOptions& options,
                                         const SourceControlFileAndLocation* scfl,
                                         const InstalledPackageView* ipv,
                                         const Path& builtin_ports_dir)
@@ -416,7 +414,7 @@ namespace vcpkg::Dependencies
         {
             Strings::append(ret, " -> ", Version{ipv->core->package.version, ipv->core->package.port_version});
         }
-        if (options.use_head_version == Build::UseHeadVersion::YES)
+        if (options.use_head_version == UseHeadVersion::YES)
         {
             Strings::append(ret, " (+HEAD)");
         }
@@ -431,9 +429,7 @@ namespace vcpkg::Dependencies
         return ret;
     }
 
-    std::string to_output_string(RequestType request_type,
-                                 const ZStringView s,
-                                 const Build::BuildPackageOptions& options)
+    std::string to_output_string(RequestType request_type, const ZStringView s, const BuildPackageOptions& options)
     {
         return to_output_string(request_type, s, options, {}, {}, {});
     }
@@ -532,7 +528,7 @@ namespace vcpkg::Dependencies
         if (!p || p->package_abi.empty()) return nullopt;
         return p->package_abi;
     }
-    const Build::PreBuildInfo& InstallPlanAction::pre_build_info(LineInfo li) const
+    const PreBuildInfo& InstallPlanAction::pre_build_info(LineInfo li) const
     {
         return *abi_info.value_or_exit(li).pre_build_info.get();
     }
@@ -604,7 +600,7 @@ namespace vcpkg::Dependencies
     std::vector<RemovePlanAction> create_remove_plan(const std::vector<PackageSpec>& specs,
                                                      const StatusParagraphs& status_db)
     {
-        struct RemoveAdjacencyProvider final : Graphs::AdjacencyProvider<PackageSpec, RemovePlanAction>
+        struct RemoveAdjacencyProvider final : AdjacencyProvider<PackageSpec, RemovePlanAction>
         {
             const StatusParagraphs& status_db;
             const std::vector<InstalledPackageView>& installed_ports;
@@ -656,14 +652,14 @@ namespace vcpkg::Dependencies
 
         auto installed_ports = get_installed_ports(status_db);
         const std::unordered_set<PackageSpec> specs_as_set(specs.cbegin(), specs.cend());
-        return Graphs::topological_sort(
+        return topological_sort(
             std::move(specs), RemoveAdjacencyProvider{status_db, installed_ports, specs_as_set}, {});
     }
 
     std::vector<ExportPlanAction> create_export_plan(const std::vector<PackageSpec>& specs,
                                                      const StatusParagraphs& status_db)
     {
-        struct ExportAdjacencyProvider final : Graphs::AdjacencyProvider<PackageSpec, ExportPlanAction>
+        struct ExportAdjacencyProvider final : AdjacencyProvider<PackageSpec, ExportPlanAction>
         {
             const StatusParagraphs& status_db;
             const std::unordered_set<PackageSpec>& specs_as_set;
@@ -699,7 +695,7 @@ namespace vcpkg::Dependencies
 
         const std::unordered_set<PackageSpec> specs_as_set(specs.cbegin(), specs.cend());
         std::vector<ExportPlanAction> toposort =
-            Graphs::topological_sort(specs, ExportAdjacencyProvider{status_db, specs_as_set}, {});
+            topological_sort(specs, ExportAdjacencyProvider{status_db, specs_as_set}, {});
         return toposort;
     }
 
@@ -708,7 +704,7 @@ namespace vcpkg::Dependencies
         m_graph->get(spec).request_type = RequestType::USER_REQUESTED;
     }
 
-    ActionPlan create_feature_install_plan(const PortFileProvider::PortFileProvider& port_provider,
+    ActionPlan create_feature_install_plan(const PortFileProvider& port_provider,
                                            const CMakeVars::CMakeVarProvider& var_provider,
                                            View<FullPackageSpec> specs,
                                            const StatusParagraphs& status_db,
@@ -919,7 +915,7 @@ namespace vcpkg::Dependencies
         install(reinstall_reqs, unsupported_port_action);
     }
 
-    ActionPlan create_upgrade_plan(const PortFileProvider::PortFileProvider& port_provider,
+    ActionPlan create_upgrade_plan(const PortFileProvider& port_provider,
                                    const CMakeVars::CMakeVarProvider& var_provider,
                                    const std::vector<PackageSpec>& specs,
                                    const StatusParagraphs& status_db,
@@ -932,9 +928,9 @@ namespace vcpkg::Dependencies
         return pgraph.serialize(options.randomizer);
     }
 
-    ActionPlan PackageGraph::serialize(Graphs::Randomizer* randomizer) const
+    ActionPlan PackageGraph::serialize(GraphRandomizer* randomizer) const
     {
-        struct BaseEdgeProvider : Graphs::AdjacencyProvider<PackageSpec, const Cluster*>
+        struct BaseEdgeProvider : AdjacencyProvider<PackageSpec, const Cluster*>
         {
             BaseEdgeProvider(const ClusterGraph& parent) : m_parent(parent) { }
 
@@ -992,8 +988,8 @@ namespace vcpkg::Dependencies
                 installed_vertices.push_back(kv.first);
             }
         }
-        auto remove_toposort = Graphs::topological_sort(removed_vertices, removeedgeprovider, randomizer);
-        auto insert_toposort = Graphs::topological_sort(installed_vertices, installedgeprovider, randomizer);
+        auto remove_toposort = topological_sort(removed_vertices, removeedgeprovider, randomizer);
+        auto insert_toposort = topological_sort(installed_vertices, installedgeprovider, randomizer);
 
         ActionPlan plan;
 
@@ -1070,10 +1066,9 @@ namespace vcpkg::Dependencies
         return plan;
     }
 
-    static std::unique_ptr<ClusterGraph> create_feature_install_graph(
-        const PortFileProvider::PortFileProvider& port_provider,
-        const StatusParagraphs& status_db,
-        Triplet host_triplet)
+    static std::unique_ptr<ClusterGraph> create_feature_install_graph(const PortFileProvider& port_provider,
+                                                                      const StatusParagraphs& status_db,
+                                                                      Triplet host_triplet)
     {
         std::unique_ptr<ClusterGraph> graph = std::make_unique<ClusterGraph>(port_provider, host_triplet);
 
@@ -1104,7 +1099,7 @@ namespace vcpkg::Dependencies
         return graph;
     }
 
-    PackageGraph::PackageGraph(const PortFileProvider::PortFileProvider& port_provider,
+    PackageGraph::PackageGraph(const PortFileProvider& port_provider,
                                const CMakeVars::CMakeVarProvider& var_provider,
                                const StatusParagraphs& status_db,
                                Triplet host_triplet)
@@ -1235,14 +1230,9 @@ namespace vcpkg::Dependencies
     {
         struct VersionedPackageGraph
         {
-        private:
-            using IVersionedPortfileProvider = PortFileProvider::IVersionedPortfileProvider;
-            using IBaselineProvider = PortFileProvider::IBaselineProvider;
-
-        public:
             VersionedPackageGraph(const IVersionedPortfileProvider& ver_provider,
                                   const IBaselineProvider& base_provider,
-                                  const PortFileProvider::IOverlayProvider& oprovider,
+                                  const IOverlayProvider& oprovider,
                                   const CMakeVars::CMakeVarProvider& var_provider,
                                   Triplet host_triplet)
                 : m_ver_provider(ver_provider)
@@ -1263,7 +1253,7 @@ namespace vcpkg::Dependencies
         private:
             const IVersionedPortfileProvider& m_ver_provider;
             const IBaselineProvider& m_base_provider;
-            const PortFileProvider::IOverlayProvider& m_o_provider;
+            const IOverlayProvider& m_o_provider;
             const CMakeVars::CMakeVarProvider& m_var_provider;
             const Triplet m_host_triplet;
 
@@ -2065,9 +2055,9 @@ namespace vcpkg::Dependencies
         }
     }
 
-    ExpectedS<ActionPlan> create_versioned_install_plan(const PortFileProvider::IVersionedPortfileProvider& provider,
-                                                        const PortFileProvider::IBaselineProvider& bprovider,
-                                                        const PortFileProvider::IOverlayProvider& oprovider,
+    ExpectedS<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& provider,
+                                                        const IBaselineProvider& bprovider,
+                                                        const IOverlayProvider& oprovider,
                                                         const CMakeVars::CMakeVarProvider& var_provider,
                                                         const std::vector<Dependency>& deps,
                                                         const std::vector<DependencyOverride>& overrides,
