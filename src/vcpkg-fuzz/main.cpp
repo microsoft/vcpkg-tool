@@ -16,6 +16,10 @@ using namespace vcpkg;
 
 namespace
 {
+    DECLARE_AND_REGISTER_MESSAGE(FuzzExpectedOneOf,
+                                 (),
+                                 "the list after the colon should stay the same, they're literal values",
+                                 "expected one of: utf-8, json, platform-expr");
     DECLARE_AND_REGISTER_MESSAGE(FuzzHelpInput, (), "", "accepts input on stdin.");
     DECLARE_AND_REGISTER_MESSAGE(FuzzHelpOptionKind, (), "", "one of {{utf-8, json, platform-expr}}");
     DECLARE_AND_REGISTER_MESSAGE(FuzzHelpOptions, (), "", "options:");

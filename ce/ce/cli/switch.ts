@@ -46,4 +46,7 @@ export abstract class Switch implements Help {
     const v = this.values;
     return !!v && v.length > 0 && v[0] !== 'false';
   }
+  get isRangeOfVersions() {
+    return !!/[*[\]()~^]/.exec(this.value);
+  }
 }

@@ -35,7 +35,7 @@ namespace vcpkg
     {
         return {Strings::concat(prefix, spec.dir()), format_version_for_nugetref(raw_version, abi_tag)};
     }
-    inline NugetReference make_nugetref(const Dependencies::InstallPlanAction& action, const std::string& prefix)
+    inline NugetReference make_nugetref(const InstallPlanAction& action, const std::string& prefix)
     {
         return make_nugetref(action.spec,
                              action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
@@ -57,7 +57,7 @@ namespace vcpkg
     }
 
     std::string generate_nuspec(const Path& package_dir,
-                                const Dependencies::InstallPlanAction& action,
+                                const InstallPlanAction& action,
                                 const NugetReference& ref,
                                 details::NuGetRepoInfo rinfo = details::get_nuget_repo_info_from_env());
 }

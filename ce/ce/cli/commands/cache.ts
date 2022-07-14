@@ -32,14 +32,14 @@ export class CacheCommand extends Command {
 
   override async run() {
     if (this.clear.active) {
-      await session.cache.delete({ recursive: true });
-      await session.cache.createDirectory();
-      log(i`Cache folder cleared (${session.cache.fsPath}) `);
+      await session.downloads.delete({ recursive: true });
+      await session.downloads.createDirectory();
+      log(i`Downloads folder cleared (${session.downloads.fsPath}) `);
       return true;
     }
     let files: Array<[Uri, FileType]> = [];
     try {
-      files = await session.cache.readDirectory();
+      files = await session.downloads.readDirectory();
     } catch {
       // shh
     }
