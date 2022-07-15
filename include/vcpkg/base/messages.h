@@ -692,15 +692,15 @@ namespace vcpkg
     DECLARE_MESSAGE(DuplicateCommandOption,
                     (msg::command_name),
                     "",
-                    "The option '{command_name}'can only be passed once.");
+                    "The option '{command_name}' can only be passed once.");
     DECLARE_MESSAGE(DuplicateOptions,
                     (msg::value),
-                    "'{value}' is a command option.",
-                    "--'{value}' specified multiple times.");
+                    "'{value}' is a command line option.",
+                    "'--{value}' specified multiple times.");
     DECLARE_MESSAGE(EmptyArg,
                     (msg::command_name),
                     "",
-                    "The option '{command_name}'must be passed a non-empty argument.");
+                    "The option '{command_name}' must be passed a non-empty argument.");
     DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
     DECLARE_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:");
     DECLARE_MESSAGE(ErrorDetectingCompilerInfo,
@@ -777,7 +777,7 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedValueForOption,
                     (msg::value),
                     "'{value}' is a command option.",
-                    "expected value after '{value}.'");
+                    "expected value after '{value}'.");
     DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
     DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
     DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
@@ -841,7 +841,7 @@ namespace vcpkg
     DECLARE_MESSAGE(HelpEditCommand,
                     (msg::env_var),
                     "",
-                    "Open up a port for editing (uses '{env_var}' default 'code'.");
+                    "Open up a port for editing (use '{env_var}' to set an editor program, defaults to 'code').");
     DECLARE_MESSAGE(HelpEnvCommand, (), "", "Creates a clean shell environment for development or compiling.");
     DECLARE_MESSAGE(HelpExampleCommand,
                     (),
@@ -853,7 +853,7 @@ namespace vcpkg
                     "",
                     "Formats all vcpkg.json files. Run this before committing to vcpkg.");
     DECLARE_MESSAGE(HelpHashCommand, (), "", "Hash a file by specific algorithm, default SHA512.");
-    DECLARE_MESSAGE(HelpHistoryCommand, (), "", "(Experimental) Show the history of CONTROL versions of a package.");
+    DECLARE_MESSAGE(HelpHistoryCommand, (), "", "(Experimental) Show the history of versions of a package.");
     DECLARE_MESSAGE(HelpInitializeRegistryCommand, (), "", "Initializes a registry in the directory <path>.");
     DECLARE_MESSAGE(HelpInstallCommand, (), "", "Install a package.");
     DECLARE_MESSAGE(HelpListCommand, (), "", "List installed packages.");
@@ -864,7 +864,7 @@ namespace vcpkg
     DECLARE_MESSAGE(HelpSearchCommand, (), "", "Search for packages available to be built.");
     DECLARE_MESSAGE(HelpTopicCommand, (), "", "Display help for a specific topic.");
     DECLARE_MESSAGE(HelpTopicsCommand, (), "", "Display the list of help topics.");
-    DECLARE_MESSAGE(HelpUpdateCommand, (), "", "List Packages that can be updated.");
+    DECLARE_MESSAGE(HelpUpdateCommand, (), "", "List packages that can be updated.");
     DECLARE_MESSAGE(HelpUpgradeCommand, (), "", "Rebuild all outdated packages.");
     DECLARE_MESSAGE(HelpVersionCommand, (), "", "Display version information.");
     DECLARE_MESSAGE(IllegalFeatures, (), "", "List of features is not allowed in this context");
