@@ -208,7 +208,7 @@
   "ToolFetchFailed": "Could not fetch {tool_name}.",
   "ToolInWin10": "This utility is bundled with Windows 10 or later.",
   "UnexpectedErrorDuringBulkDownload": "an unexpected error occurred during bulk download.",
-  "UnexpectedFormat": "Expected format is [{env_var}], but was [{env_var}].",
+  "UnexpectedFormat": "Expected format is [{expected}], but was [{actual}].",
   "UnexpectedToolOutput": "{tool_name} ({path}) produced unexpected output when attempting to determine the version:",
   "UnknownBaselineFileContent": "unrecognizable baseline entry; expected 'port:triplet=(fail|skip|pass)'",
   "UnknownBinaryProviderType": "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', 'x-aws-config', 'http', and 'files'",

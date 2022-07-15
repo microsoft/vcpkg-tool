@@ -312,8 +312,8 @@ endfunction()
                     Checks::msg_check_exit(VCPKG_LINE_INFO,
                                            s.size() == 1 || s.size() == 2,
                                            msgUnexpectedFormat,
-                                           msg::env_var = "VARIABLE_NAME=VARIABLE_VALUE",
-                                           msg::env_var = line);
+                                           msg::expected = "VARIABLE_NAME=VARIABLE_VALUE",
+                                           msg::actual = line);
 
                     var_itr->emplace_back(std::move(s[0]), s.size() == 1 ? "" : std::move(s[1]));
 

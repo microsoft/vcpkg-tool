@@ -1076,9 +1076,9 @@ namespace vcpkg
     DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
     DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.");
     DECLARE_MESSAGE(UnexpectedFormat,
-                    (msg::env_var, msg::env_var),
-                    "",
-                    "Expected format is [{env_var}], but was [{env_var}].");
+                    (msg::expected, msg::actual),
+                    "{expected} is the expected format, {actual} is the actual format.",
+                    "Expected format is [{expected}], but was [{actual}].");
     DECLARE_MESSAGE(UnexpectedToolOutput,
                     (msg::tool_name, msg::path),
                     "The actual command line output will be appended after this message.",
