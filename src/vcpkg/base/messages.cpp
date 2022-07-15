@@ -647,4 +647,5 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedToFindDependencyAbi);
     REGISTER_MESSAGE(InvalidLinkage);
     REGISTER_MESSAGE(UnknownPolicySetting);
+    REGISTER_MESSAGE(InvalidBuildInfo);
 }

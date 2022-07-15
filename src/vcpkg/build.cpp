@@ -1598,7 +1598,7 @@ namespace vcpkg
         const ExpectedS<Paragraph> pghs = Paragraphs::get_single_paragraph(fs, filepath);
         if (!pghs)
         {
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Invalid BUILD_INFO file for package: %s", pghs.error());
+            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgInvalidBuildInfo, msg::error_msg = pghs.error());
         }
 
         return inner_create_buildinfo(*pghs.get());

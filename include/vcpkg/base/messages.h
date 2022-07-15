@@ -1223,4 +1223,5 @@ namespace vcpkg
                     (msg::option, msg::value),
                     "'{value}' is the policy.",
                     "Unknown setting for policy '{value}': {option}");
+    DECLARE_MESSAGE(InvalidBuildInfo, (msg::error_msg), "", "Invalid BUILD_INFO file for package: {error_msg}");
 }
