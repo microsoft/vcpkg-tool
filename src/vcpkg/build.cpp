@@ -1544,7 +1544,7 @@ namespace vcpkg
             else
             {
                 Checks::msg_exit_with_message(
-                    VCPKG_LINE_INFO, msgInvalidCrtLinkage, msg::value = crt_linkage_as_string);
+                    VCPKG_LINE_INFO, msgInvalidLinkage, msg::system_name = "crt", msg::value = crt_linkage_as_string);
             }
         }
 

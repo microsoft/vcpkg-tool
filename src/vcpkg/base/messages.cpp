@@ -645,5 +645,5 @@ namespace vcpkg
     REGISTER_MESSAGE(ErrorWhileWriting);
     REGISTER_MESSAGE(UndeterminedToolChainForTriplet);
     REGISTER_MESSAGE(FailedToFindDependencyAbi);
-    REGISTER_MESSAGE(InvalidCrtLinkage);
+    REGISTER_MESSAGE(InvalidLinkage);
 }
