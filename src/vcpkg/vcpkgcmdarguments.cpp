@@ -398,8 +398,8 @@ namespace vcpkg
             {
                 msg::println_error(msgIncorrectNumberOfArgs,
                                    msg::command_name = this->command,
-                                   msg::count = command_structure.minimum_arity,
-                                   msg::count = actual_arg_count);
+                                   msg::expected = command_structure.minimum_arity,
+                                   msg::actual = actual_arg_count);
                 failed = true;
             }
         }
@@ -409,16 +409,16 @@ namespace vcpkg
             {
                 msg::println_error(msgIncorrectNumberOfArgs,
                                    msg::command_name = this->command,
-                                   msg::count = command_structure.minimum_arity,
-                                   msg::count = actual_arg_count);
+                                   msg::expected = command_structure.minimum_arity,
+                                   msg::actual = actual_arg_count);
                 failed = true;
             }
             if (actual_arg_count > command_structure.maximum_arity)
             {
                 msg::println_error(msgIncorrectNumberOfArgs,
                                    msg::command_name = this->command,
-                                   msg::count = command_structure.minimum_arity,
-                                   msg::count = actual_arg_count);
+                                   msg::expected = command_structure.minimum_arity,
+                                   msg::actual = actual_arg_count);
                 failed = true;
             }
         }

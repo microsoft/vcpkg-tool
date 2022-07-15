@@ -162,7 +162,7 @@
   "HelpVersionCommand": "Display version information.",
   "IllegalFeatures": "List of features is not allowed in this context",
   "IllegalPlatformSpec": "Platform qualifier is not allowed in this context",
-  "IncorrectNumberOfArgs": "'{command_name}' requires '{count}' arguments, but '{count}' were provided.",
+  "IncorrectNumberOfArgs": "'{command_name}' requires '{expected}' arguments, but '{actual}' were provided.",
   "InfoSetEnvVar": "You can also set the environment variable '{env_var}' to your editor of choice.",
   "InstallRootDir": "(Experimental) Specify the install root directory.",
   "InstallWithSystemManager": "You may be able to install this tool via your system package manager.",

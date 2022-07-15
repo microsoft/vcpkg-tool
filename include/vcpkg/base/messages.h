@@ -870,9 +870,9 @@ namespace vcpkg
     DECLARE_MESSAGE(IllegalFeatures, (), "", "List of features is not allowed in this context");
     DECLARE_MESSAGE(IllegalPlatformSpec, (), "", "Platform qualifier is not allowed in this context");
     DECLARE_MESSAGE(IncorrectNumberOfArgs,
-                    (msg::command_name, msg::count, msg::count),
-                    "",
-                    "'{command_name}' requires '{count}' arguments, but '{count}' were provided.");
+                    (msg::command_name, msg::expected, msg::actual),
+                    "'{expected}' is the required number of arguments. '{actual}' is the number of arguments provided.",
+                    "'{command_name}' requires '{expected}' arguments, but '{actual}' were provided.");
     DECLARE_MESSAGE(InfoSetEnvVar,
                     (msg::env_var),
                     "In this context 'editor' means IDE",

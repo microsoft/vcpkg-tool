@@ -112,7 +112,7 @@ namespace vcpkg::Commands::PortHistory
             if (auto output = maybe_output.get())
             {
                 auto commits = Util::fmap(
-                    Strings::split(*output, '\n'), [](const std::string& line) -> auto{
+                    Strings::split(*output, '\n'), [](const std::string& line) -> auto {
                         auto parts = Strings::split(line, ' ');
                         return std::make_pair(parts[0], parts[1]);
                     });
