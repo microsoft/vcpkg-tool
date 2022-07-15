@@ -504,12 +504,14 @@ namespace vcpkg
     REGISTER_MESSAGE(ErrorVcvarsUnsupported);
     REGISTER_MESSAGE(ErrorVsCodeNotFound);
     REGISTER_MESSAGE(ErrorVsCodeNotFoundPathExamined);
+    REGISTER_MESSAGE(ErrorWhileWriting);
     REGISTER_MESSAGE(ExcludedPackage);
     REGISTER_MESSAGE(ExpectedCharacterHere);
     REGISTER_MESSAGE(ExpectedFailOrSkip);
     REGISTER_MESSAGE(ExpectedPortName);
     REGISTER_MESSAGE(ExpectedTripletName);
     REGISTER_MESSAGE(ExtendedDocumentationAtUrl);
+    REGISTER_MESSAGE(FailedToFindDependencyAbi);
     REGISTER_MESSAGE(FailedToProvisionCe);
     REGISTER_MESSAGE(FailedToRunToolToDetermineVersion);
     REGISTER_MESSAGE(FailedToStoreBackToMirror);
@@ -550,7 +552,9 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidArgumentRequiresSourceArgument);
     REGISTER_MESSAGE(InvalidArgumentRequiresTwoOrThreeArguments);
     REGISTER_MESSAGE(InvalidArgumentRequiresValidToken);
+    REGISTER_MESSAGE(InvalidBuildInfo);
     REGISTER_MESSAGE(InvalidFormatString);
+    REGISTER_MESSAGE(InvalidLinkage);
     REGISTER_MESSAGE(JsonErrorFailedToParse);
     REGISTER_MESSAGE(JsonErrorFailedToRead);
     REGISTER_MESSAGE(JsonErrorMustBeAnObject);
@@ -602,10 +606,13 @@ namespace vcpkg
     REGISTER_MESSAGE(SystemApiErrorMessage);
     REGISTER_MESSAGE(ToolFetchFailed);
     REGISTER_MESSAGE(ToolInWin10);
+    REGISTER_MESSAGE(UndeterminedToolChainForTriplet);
     REGISTER_MESSAGE(UnexpectedErrorDuringBulkDownload);
     REGISTER_MESSAGE(UnexpectedToolOutput);
     REGISTER_MESSAGE(UnknownBaselineFileContent);
     REGISTER_MESSAGE(UnknownBinaryProviderType);
+    REGISTER_MESSAGE(UnknownPolicySetting);
+    REGISTER_MESSAGE(UnknownSettingForBuildType);
     REGISTER_MESSAGE(UnknownTool);
     REGISTER_MESSAGE(UnknownVariablesInTemplate);
     REGISTER_MESSAGE(UnsupportedSystemName);
@@ -642,11 +649,4 @@ namespace vcpkg
     REGISTER_MESSAGE(WaitingToTakeFilesystemLock);
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
-    REGISTER_MESSAGE(ErrorWhileWriting);
-    REGISTER_MESSAGE(UndeterminedToolChainForTriplet);
-    REGISTER_MESSAGE(FailedToFindDependencyAbi);
-    REGISTER_MESSAGE(InvalidLinkage);
-    REGISTER_MESSAGE(UnknownPolicySetting);
-    REGISTER_MESSAGE(InvalidBuildInfo);
-    REGISTER_MESSAGE(UnknownSettingForBuildType);
 }

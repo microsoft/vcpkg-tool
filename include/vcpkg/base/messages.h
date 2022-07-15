@@ -741,6 +741,7 @@ namespace vcpkg
                     "",
                     "Visual Studio Code was not found and the environment variable {env_var} is not set or invalid.");
     DECLARE_MESSAGE(ErrorVsCodeNotFoundPathExamined, (), "", "The following paths were examined:");
+    DECLARE_MESSAGE(ErrorWhileWriting, (msg::error_msg), "", "Error occured while writing {error_msg}");
     DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
     DECLARE_MESSAGE(
         ExpectedCharacterHere,
@@ -751,6 +752,10 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
     DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
+    DECLARE_MESSAGE(FailedToFindDependencyAbi,
+                    (msg::spec, msg::spec),
+                    "",
+                    "Failed to find dependency abi for {spec} -> {spec}");
     DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
     DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                     (msg::tool_name, msg::path),
@@ -885,10 +890,15 @@ namespace vcpkg
                     "",
                     "invalid argument: binary config '{binary_source}' requires a SAS token without a "
                     "preceeding '?' as the second argument");
+    DECLARE_MESSAGE(InvalidBuildInfo, (msg::error_msg), "", "Invalid BUILD_INFO file for package: {error_msg}");
     DECLARE_MESSAGE(InvalidFormatString,
                     (msg::actual),
                     "{actual} is the provided format string",
                     "invalid format string: {actual}");
+    DECLARE_MESSAGE(InvalidLinkage,
+                    (msg::system_name, msg::value),
+                    "'{value}' is the linkage type.",
+                    "Invalid {system_name} linkage type: [{value}]");
     DECLARE_MESSAGE(JsonErrorFailedToParse, (msg::path), "", "failed to parse {path}:");
     DECLARE_MESSAGE(JsonErrorFailedToRead, (msg::path, msg::error_msg), "", "failed to read {path}: {error_msg}");
     DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected {path} to be an object.");
@@ -1066,6 +1076,12 @@ namespace vcpkg
                     "calling {system_api} failed with {exit_code} ({error_msg})");
     DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
     DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
+    DECLARE_MESSAGE(UndeterminedToolChainForTriplet,
+                    (msg::triplet, msg::system_name),
+                    "",
+                    "Unable to determine toolchain use for {triplet} with with CMAKE_SYSTEM_NAME {system_name}. Did "
+                    "you mean to use "
+                    "VCPKG_CHAINLOAD_TOOLCHAIN_FILE?");
     DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.");
     DECLARE_MESSAGE(UnexpectedToolOutput,
                     (msg::tool_name, msg::path),
@@ -1081,6 +1097,14 @@ namespace vcpkg
                     "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', "
                     "'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', "
                     "'x-aws-config', 'http', and 'files'");
+    DECLARE_MESSAGE(UnknownPolicySetting,
+                    (msg::option, msg::value),
+                    "'{value}' is the policy.",
+                    "Unknown setting for policy '{value}': {option}");
+    DECLARE_MESSAGE(UnknownSettingForBuildType,
+                    (msg::option),
+                    "",
+                    "Unknown setting for VCPKG_BUILD_TYPE {option}. Valid settings are '', 'debug', and 'release'.");
     DECLARE_MESSAGE(UnknownTool, (), "", "vcpkg does not have a definition of this tool for this platform.");
     DECLARE_MESSAGE(
         UnknownVariablesInTemplate,
@@ -1204,28 +1228,4 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
-    DECLARE_MESSAGE(ErrorWhileWriting, (msg::error_msg), "", "Error occured while writing {error_msg}");
-    DECLARE_MESSAGE(UndeterminedToolChainForTriplet,
-                    (msg::triplet, msg::system_name),
-                    "",
-                    "Unable to determine toolchain use for {triplet} with with CMAKE_SYSTEM_NAME {system_name}. Did "
-                    "you mean to use "
-                    "VCPKG_CHAINLOAD_TOOLCHAIN_FILE?");
-    DECLARE_MESSAGE(FailedToFindDependencyAbi,
-                    (msg::spec, msg::spec),
-                    "",
-                    "Failed to find dependency abi for {spec} -> {spec}");
-    DECLARE_MESSAGE(InvalidLinkage,
-                    (msg::system_name, msg::value),
-                    "'{value}' is the linkage type.",
-                    "Invalid {system_name} linkage type: [{value}]");
-    DECLARE_MESSAGE(UnknownPolicySetting,
-                    (msg::option, msg::value),
-                    "'{value}' is the policy.",
-                    "Unknown setting for policy '{value}': {option}");
-    DECLARE_MESSAGE(InvalidBuildInfo, (msg::error_msg), "", "Invalid BUILD_INFO file for package: {error_msg}");
-    DECLARE_MESSAGE(UnknownSettingForBuildType,
-                    (msg::option),
-                    "",
-                    "Unknown setting for VCPKG_BUILD_TYPE {option}. Valid settings are '', 'debug', and 'release'.");
 }
