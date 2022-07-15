@@ -510,6 +510,24 @@ namespace vcpkg
                     "An example of env_var is \"HTTP(S)_PROXY\""
                     "'--' at the beginning must be preserved",
                     "-- Automatically setting {env_var} environment variables to \"{url}\".");
+    DECLARE_MESSAGE(
+        BinaryParagraphDescription,
+        (msg::spec,
+         msg::version,
+         msg::version,
+         msg::value,
+         msg::value,
+         msg::value,
+         msg::value,
+         msg::value,
+         msg::value,
+         msg::value),
+        "['{value}'] is the paragraph description.\n['{value}'] is the paragraph's maintainers.\n'{value}' is the "
+        "paragraph's feature.\n['{value}'] is the paragraphs default_feature.\n['{value}'] is the paragraphs "
+        "dependencies.\n'{value}' is the paragraphs abi.\n'{value}' is the paragraphs type.",
+        "\nspec: '{spec}'\n\nversion: {version}\nport_version: {version}\ndescription: "
+        "['{value}']\nmaintainers: ['{value}']\nfeature: '{value}'\ndefault_feature: "
+        "['{value}']\ndependencies: ['{value}']\nabi: '{value}'\ntype: {value}");
     DECLARE_MESSAGE(BuildAlreadyInstalled,
                     (msg::spec),
                     "",
@@ -715,6 +733,7 @@ namespace vcpkg
     DECLARE_MESSAGE(ErrorNoVSInstanceAt, (msg::path), "", "at \"{path}\"");
     DECLARE_MESSAGE(ErrorNoVSInstanceFullVersion, (msg::version), "", "with toolset version prefix {version}");
     DECLARE_MESSAGE(ErrorNoVSInstanceVersion, (msg::version), "", "with toolset version {version}");
+    DECLARE_MESSAGE(ErrorParsingBinaryParagraph, (msg::spec), "", "while parsing the Binary Paragraph for {spec}");
     DECLARE_MESSAGE(ErrorRequireBaseline,
                     (),
                     "",
@@ -741,6 +760,10 @@ namespace vcpkg
                     "",
                     "Visual Studio Code was not found and the environment variable {env_var} is not set or invalid.");
     DECLARE_MESSAGE(ErrorVsCodeNotFoundPathExamined, (), "", "The following paths were examined:");
+    DECLARE_MESSAGE(ErrorWhileParsing,
+                    (msg::value),
+                    "'{value}' is the file name.",
+                    "Errors occurred while parsing '{value}'.");
     DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
     DECLARE_MESSAGE(
         ExpectedCharacterHere,
@@ -751,6 +774,12 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
     DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
+    DECLARE_MESSAGE(FailedToParseBinParagraph,
+                    (msg::url, msg::error_msg, msg::value),
+                    "'{error_msg}' is the error message for failing to parse the Binary Paragraph, '{value}' is the "
+                    "Binary Paragraph",
+                    "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at {url}, "
+                    "with the following output:\n{error_msg}\n=== Serialized BinaryParagraph ===\n{value}");
     DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
     DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                     (msg::tool_name, msg::path),
@@ -965,6 +994,10 @@ namespace vcpkg
                     (msg::value),
                     "Example of {value} is 'unknownlicense'",
                     "Unknown license identifier '{value}'. Known values are listed at https://spdx.org/licenses/");
+    DECLARE_MESSAGE(ListOfValidFieldsForControlFiles,
+                    (),
+                    "",
+                    "This is the list of valid fields for CONTROL files (case-sensitive):");
     DECLARE_MESSAGE(LoadingCommunityTriplet,
                     (msg::path),
                     "'-- [COMMUNITY]' at the beginning must be preserved",
@@ -984,6 +1017,11 @@ namespace vcpkg
                     "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
                     "The message named {value} ends with a newline which should be added by formatting "
                     "rather than by localization.");
+    DECLARE_MESSAGE(MismatchedBinaryParagraphs,
+                    (msg::url),
+                    "",
+                    "[sanity check] The serialized binary paragraph was different from the original binary "
+                    "paragraph.\nPlease open an issue at {url}, with the following output:");
     DECLARE_MESSAGE(MonoInstructions,
                     (),
                     "",
@@ -994,8 +1032,13 @@ namespace vcpkg
                     (msg::path, msg::exit_code),
                     "",
                     "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:");
+    DECLARE_MESSAGE(MultiArch, (msg::option), "", "Multi-Arch must be 'same' but was {option}");
     DECLARE_MESSAGE(NoLocalizationForMessages, (), "", "No localized messages for the following: ");
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
+    DECLARE_MESSAGE(OriginalBinaryParagraphHeader,
+                    (),
+                    "The binary paragraph description is expected after this.",
+                    "\n=== Original Binary Paragraph ===");
     DECLARE_MESSAGE(PackingVendorFailed,
                     (msg::vendor),
                     "",
@@ -1048,6 +1091,10 @@ namespace vcpkg
         "{value} may be either a 'vendor' like 'Azure' or 'NuGet', or a file path like C:\\example or /usr/example",
         "Restored {count} package(s) from {value} in {elapsed}. Use --debug to see more details.");
     DECLARE_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
+    DECLARE_MESSAGE(SerializedBinaryParagraphHeader,
+                    (),
+                    "The binary paragraph description is expected after this.",
+                    "\n=== Serialized Binary Paragraph ===");
     DECLARE_MESSAGE(SettingEnvVar,
                     (msg::env_var, msg::url),
                     "An example of env_var is \"HTTP(S)_PROXY\""
@@ -1060,6 +1107,10 @@ namespace vcpkg
                     "The 'Source' field inside the CONTROL file, or \"name\" field inside the vcpkg.json "
                     "file has the name {package_name} and does not match the port directory {path}.");
     DECLARE_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: '{path}'");
+    DECLARE_MESSAGE(SuggestUpdateVcpkg,
+                    (msg::command_line),
+                    "",
+                    "You may need to update the vcpkg binary; try running {command_line} to update.");
     DECLARE_MESSAGE(SystemApiErrorMessage,
                     (msg::system_api, msg::exit_code, msg::error_msg),
                     "",
@@ -1204,55 +1255,4 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
-    DECLARE_MESSAGE(ErrorParsingBinaryParagraph, (msg::spec), "", "while parsing the Binary Paragraph for {spec}");
-    DECLARE_MESSAGE(MultiArch, (msg::option), "", "Multi-Arch must be 'same' but was {option}");
-    DECLARE_MESSAGE(FailedToParseBinParagraph,
-                    (msg::url, msg::error_msg, msg::value),
-                    "'{error_msg}' is the error message for failing to parse the Binary Paragraph, '{value}' is the "
-                    "Binary Paragraph",
-                    "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at {url}, "
-                    "with the following output:\n{error_msg}\n=== Serialized BinaryParagraph ===\n{value}");
-    DECLARE_MESSAGE(MismatchedBinaryParagraphs,
-                    (msg::url),
-                    "",
-                    "[sanity check] The serialized binary paragraph was different from the original binary "
-                    "paragraph.\nPlease open an issue at {url}, with the following output:");
-    DECLARE_MESSAGE(OriginalBinaryParagraphHeader,
-                    (),
-                    "The binary paragraph description is expected after this.",
-                    "\n=== Original Binary Paragraph ===");
-    DECLARE_MESSAGE(SerializedBinaryParagraphHeader,
-                    (),
-                    "The binary paragraph description is expected after this.",
-                    "\n=== Serialized Binary Paragraph ===");
-    DECLARE_MESSAGE(
-        BinaryParagraphDescription,
-        (msg::spec,
-         msg::version,
-         msg::version,
-         msg::value,
-         msg::value,
-         msg::value,
-         msg::value,
-         msg::value,
-         msg::value,
-         msg::value),
-        "['{value}'] is the paragraph description.\n['{value}'] is the paragraph's maintainers.\n'{value}' is the "
-        "paragraph's feature.\n['{value}'] is the paragraphs default_feature.\n['{value}'] is the paragraphs "
-        "dependencies.\n'{value}' is the paragraphs abi.\n'{value}' is the paragraphs type.",
-        "\nspec: '{spec}'\n\nversion: {version}\nport_version: {version}\ndescription: "
-        "['{value}']\nmaintainers: ['{value}']\nfeature: '{value}'\ndefault_feature: "
-        "['{value}']\ndependencies: ['{value}']\nabi: '{value}'\ntype: {value}");
-    DECLARE_MESSAGE(ListOfValidFieldsForControlFiles,
-                    (),
-                    "",
-                    "This is the list of valid fields for CONTROL files (case-sensitive):");
-    DECLARE_MESSAGE(SuggestUpdateVcpkg,
-                    (msg::command_line),
-                    "",
-                    "You may need to update the vcpkg binary; try running {command_line} to update.");
-    DECLARE_MESSAGE(ErrorWhileParsing,
-                    (msg::value),
-                    "'{value}' is the file name.",
-                    "Errors occurred while parsing '{value}'.");
 }
