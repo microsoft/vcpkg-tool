@@ -913,11 +913,11 @@ namespace vcpkg
             return_code = cmd_execute_and_stream_data(
                 command,
                 [&](StringView sv) {
-                    print2(sv);
-                    Checks::check_exit(VCPKG_LINE_INFO,
-                                       out_file.write(sv.data(), 1, sv.size()) == sv.size(),
-                                       "Error occurred while writing '%s'",
-                                       stdoutlog);
+                    msg::println(LocalizedString::from_raw(sv));
+                    Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                           out_file.write(sv.data(), 1, sv.size()) == sv.size(),
+                                           msgErrorWhileWriting,
+                                           msg::error_msg = stdoutlog);
                 },
                 default_working_directory,
                 env);
