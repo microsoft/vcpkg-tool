@@ -30,6 +30,11 @@
           "name": "VCPKG_BUILD_FUZZING",
           "value": "True",
           "type": "BOOL"
+        },
+        {
+          "name": "CLANG_FORMAT",
+          "value": "C:/Program Files/LLVM/bin/clang-format.exe",
+          "type": "FILEPATH"
         }
       ]
     },
