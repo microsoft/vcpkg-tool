@@ -239,7 +239,7 @@
   "SeeURL": "See {url} for more information.",
   "SettingEnvVar": "-- Setting \"{env_var}\" environment variables to \"{url}\".",
   "SourceFieldPortNameMismatch": "The 'Source' field inside the CONTROL file, or \"name\" field inside the vcpkg.json file has the name {package_name} and does not match the port directory {path}.",
-  "SpecifiedFeatureTurnedOff": "'{command_name}' feature specifically turned off, but --'{command_name}' was specified.",
+  "SpecifiedFeatureTurnedOff": "'{command_name}' feature specifically turned off, but --'{option}' was specified.",
   "SpecifyDirectoriesContaining": "Specifiy directories containing triplets files.\n(also: '{env_var}')",
   "SpecifyDirectoriesWhenSearching": "Specify directories to be used when searching for ports.\n(also: '{env_var}')",
   "SpecifyHostArch": "Specify the host architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')",

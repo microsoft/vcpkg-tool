@@ -1131,9 +1131,9 @@ namespace vcpkg
                     "The 'Source' field inside the CONTROL file, or \"name\" field inside the vcpkg.json "
                     "file has the name {package_name} and does not match the port directory {path}.");
     DECLARE_MESSAGE(SpecifiedFeatureTurnedOff,
-                    (msg::command_name, msg::command_name),
+                    (msg::command_name, msg::option),
                     "",
-                    "'{command_name}' feature specifically turned off, but --'{command_name}' was specified.");
+                    "'{command_name}' feature specifically turned off, but --'{option}' was specified.");
     DECLARE_MESSAGE(SpecifyDirectoriesContaining,
                     (msg::env_var),
                     "",

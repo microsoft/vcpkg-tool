@@ -828,7 +828,7 @@ namespace vcpkg
             if (el.is_inconsistent)
             {
                 msg::println_warning(
-                    msgSpecifiedFeatureTurnedOff, msg::command_name = el.flag, msg::command_name = el.option);
+                    msgSpecifiedFeatureTurnedOff, msg::command_name = el.flag, msg::option = el.option);
                 msg::println_warning(msgDefaultFlag, msg::command_name = el.flag);
                 LockGuardPtr<Metrics>(g_metrics)->track_property(
                     "warning", Strings::format("warning %s alongside %s", el.flag, el.option));
