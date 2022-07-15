@@ -877,7 +877,7 @@ namespace vcpkg
     const Path VcpkgPaths::get_triplet_file_path(Triplet triplet) const
     {
         return m_pimpl->m_triplets_cache.get_lazy(
-            triplet, [&]() -> auto {
+            triplet, [&]() -> auto{
                 for (const auto& triplet_dir : m_pimpl->triplets_dirs)
                 {
                     auto path = triplet_dir / (triplet.canonical_name() + ".cmake");

@@ -830,7 +830,7 @@ namespace vcpkg
         HashFileFailureToRead,
         (msg::path),
         "Printed after ErrorMessage and before the specific failing filesystem operation (like file not found)",
-        "failed to read file '{path}' for hashing: ");
+        "failed to read file \"{path}\" for hashing: ");
     DECLARE_MESSAGE(HeaderOnlyUsage,
                     (msg::package_name),
                     "'header' refers to C/C++ .h files",
@@ -1059,7 +1059,7 @@ namespace vcpkg
     DECLARE_MESSAGE(MsiexecFailedToExtract,
                     (msg::path, msg::exit_code),
                     "",
-                    "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:");
+                    "msiexec failed while extracting \"{path}\" with launch or exit code {exit_code} and message:");
     DECLARE_MESSAGE(NoArgumentsForOption,
                     (msg::command_name),
                     "",
@@ -1107,12 +1107,12 @@ namespace vcpkg
     DECLARE_MESSAGE(PushingVendorFailed,
                     (msg::vendor, msg::path),
                     "",
-                    "Pushing {vendor} to '{path}' failed. Use --debug for more information.");
+                    "Pushing {vendor} to \"{path}\" failed. Use --debug for more information.");
     DECLARE_MESSAGE(ReplaceSecretsError,
                     (msg::error_msg),
                     "",
                     "Replace secretes produced the following error: '{error_msg}'");
-    DECLARE_MESSAGE(RestoredPackage, (msg::path), "", "Restored package from '{path}'");
+    DECLARE_MESSAGE(RestoredPackage, (msg::path), "", "Restored package from \"{path}\"");
     DECLARE_MESSAGE(
         RestoredPackagesFromVendor,
         (msg::count, msg::elapsed, msg::value),
@@ -1150,7 +1150,7 @@ namespace vcpkg
                     (msg::env_var),
                     "",
                     "Specify the target architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')");
-    DECLARE_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: '{path}'");
+    DECLARE_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: \"{path}\"");
     DECLARE_MESSAGE(SystemApiErrorMessage,
                     (msg::system_api, msg::exit_code, msg::error_msg),
                     "",
@@ -1206,7 +1206,7 @@ namespace vcpkg
     DECLARE_MESSAGE(UpdateBaselineLocalGitError,
                     (msg::path),
                     "",
-                    "git failed to parse HEAD for the local vcpkg registry at '{path}'");
+                    "git failed to parse HEAD for the local vcpkg registry at \"{path}\"");
     DECLARE_MESSAGE(UpdateBaselineNoConfiguration,
                     (),
                     "",
@@ -1233,11 +1233,11 @@ namespace vcpkg
     DECLARE_MESSAGE(UploadingBinariesToVendor,
                     (msg::spec, msg::vendor, msg::path),
                     "",
-                    "Uploading binaries for '{spec}' to '{vendor}' source '{path}'.");
+                    "Uploading binaries for '{spec}' to '{vendor}' source \"{path}\".");
     DECLARE_MESSAGE(UploadingBinariesUsingVendor,
                     (msg::spec, msg::vendor, msg::path),
                     "",
-                    "Uploading binaries for '{spec}' using '{vendor}' '{path}'.");
+                    "Uploading binaries for '{spec}' using '{vendor}' \"{path}\".");
     DECLARE_MESSAGE(UseEnvVar,
                     (msg::env_var),
                     "An example of env_var is \"HTTP(S)_PROXY\""
