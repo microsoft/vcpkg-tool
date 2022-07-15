@@ -206,6 +206,7 @@
   "SystemApiErrorMessage": "calling {system_api} failed with {exit_code} ({error_msg})",
   "ToolFetchFailed": "Could not fetch {tool_name}.",
   "ToolInWin10": "This utility is bundled with Windows 10 or later.",
+  "UndeterminedToolChainForTriplet": "Unable to determine toolchain use for {triplet} with with CMAKE_SYSTEM_NAME {system_name}. Did you mean to use VCPKG_CHAINLOAD_TOOLCHAIN_FILE?",
   "UnexpectedErrorDuringBulkDownload": "an unexpected error occurred during bulk download.",
   "UnexpectedToolOutput": "{tool_name} ({path}) produced unexpected output when attempting to determine the version:",
   "UnknownBaselineFileContent": "unrecognizable baseline entry; expected 'port:triplet=(fail|skip|pass)'",

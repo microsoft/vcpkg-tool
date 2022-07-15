@@ -1205,4 +1205,10 @@ namespace vcpkg
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
     DECLARE_MESSAGE(ErrorWhileWriting, (msg::error_msg), "", "Error occured while writing {error_msg}");
+    DECLARE_MESSAGE(UndeterminedToolChainForTriplet,
+                    (msg::triplet, msg::system_name),
+                    "",
+                    "Unable to determine toolchain use for {triplet} with with CMAKE_SYSTEM_NAME {system_name}. Did "
+                    "you mean to use "
+                    "VCPKG_CHAINLOAD_TOOLCHAIN_FILE?");
 }

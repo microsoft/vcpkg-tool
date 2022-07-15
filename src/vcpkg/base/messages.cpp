@@ -643,4 +643,5 @@ namespace vcpkg
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
     REGISTER_MESSAGE(ErrorWhileWriting);
+    REGISTER_MESSAGE(UndeterminedToolChainForTriplet);
 }

@@ -834,11 +834,10 @@ namespace vcpkg
         }
         else
         {
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                       "Unable to determine toolchain to use for triplet %s with CMAKE_SYSTEM_NAME %s; "
-                                       "maybe you meant to use VCPKG_CHAINLOAD_TOOLCHAIN_FILE?",
-                                       triplet,
-                                       cmake_system_name);
+            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                           msgUndeterminedToolChainForTriplet,
+                                           msg::triplet = triplet,
+                                           msg::system_name = cmake_system_name);
         }
     }
 

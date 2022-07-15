@@ -360,6 +360,8 @@
   "ToolFetchFailed": "Could not fetch {tool_name}.",
   "_ToolFetchFailed.comment": "An example of {tool_name} is aria2.",
   "ToolInWin10": "This utility is bundled with Windows 10 or later.",
+  "UndeterminedToolChainForTriplet": "Unable to determine toolchain use for {triplet} with with CMAKE_SYSTEM_NAME {system_name}. Did you mean to use VCPKG_CHAINLOAD_TOOLCHAIN_FILE?",
+  "_UndeterminedToolChainForTriplet.comment": "An example of {triplet} is x64-windows. An example of {system_name} is Darwin.",
   "UnexpectedErrorDuringBulkDownload": "an unexpected error occurred during bulk download.",
   "UnexpectedToolOutput": "{tool_name} ({path}) produced unexpected output when attempting to determine the version:",
   "_UnexpectedToolOutput.comment": "The actual command line output will be appended after this message. An example of {tool_name} is aria2. An example of {path} is /foo/bar.",
