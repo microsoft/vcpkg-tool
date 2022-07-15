@@ -606,7 +606,6 @@ namespace vcpkg
     REGISTER_MESSAGE(SystemApiErrorMessage);
     REGISTER_MESSAGE(ToolFetchFailed);
     REGISTER_MESSAGE(ToolInWin10);
-    REGISTER_MESSAGE(UnableToExtractArchive);
     REGISTER_MESSAGE(UnexpectedErrorDuringBulkDownload);
     REGISTER_MESSAGE(UnexpectedExtension);
     REGISTER_MESSAGE(UnexpectedToolOutput);

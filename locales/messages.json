@@ -365,8 +365,6 @@
   "ToolFetchFailed": "Could not fetch {tool_name}.",
   "_ToolFetchFailed.comment": "An example of {tool_name} is aria2.",
   "ToolInWin10": "This utility is bundled with Windows 10 or later.",
-  "UnableToExtractArchive": "Unable to extract '{package_name}' archive from Installer \"{path}\".",
-  "_UnableToExtractArchive.comment": "An example of {package_name} is zlib. An example of {path} is /foo/bar.",
   "UnexpectedErrorDuringBulkDownload": "an unexpected error occurred during bulk download.",
   "UnexpectedExtension": "Unexpected archive extension: '{extension}'.",
   "_UnexpectedExtension.comment": "An example of {extension} is .exe.",

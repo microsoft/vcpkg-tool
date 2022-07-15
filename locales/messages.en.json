@@ -209,7 +209,6 @@
   "SystemApiErrorMessage": "calling {system_api} failed with {exit_code} ({error_msg})",
   "ToolFetchFailed": "Could not fetch {tool_name}.",
   "ToolInWin10": "This utility is bundled with Windows 10 or later.",
-  "UnableToExtractArchive": "Unable to extract '{package_name}' archive from Installer \"{path}\".",
   "UnexpectedErrorDuringBulkDownload": "an unexpected error occurred during bulk download.",
   "UnexpectedExtension": "Unexpected archive extension: '{extension}'.",
   "UnexpectedToolOutput": "{tool_name} ({path}) produced unexpected output when attempting to determine the version:",
