@@ -578,7 +578,7 @@ namespace vcpkg
     REGISTER_MESSAGE(LocalizedMessageMustNotContainIndents);
     REGISTER_MESSAGE(LocalizedMessageMustNotEndWithNewline);
     REGISTER_MESSAGE(MissingExtension);
-    REGISTER_MESSAGE(MissingHeader);
+    REGISTER_MESSAGE(Missing7zHeader);
     REGISTER_MESSAGE(MonoInstructions);
     REGISTER_MESSAGE(MsiexecFailedToExtract);
     REGISTER_MESSAGE(NoLocalizationForMessages);

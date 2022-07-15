@@ -118,7 +118,7 @@ namespace
         {
             Checks::msg_exit_with_message(
                 VCPKG_LINE_INFO,
-                msg::format(msgPackageFailedtWhileExtracting, msg::package_name = "7zip", msg::path = archive)
+                msg::format(msgPackageFailedtWhileExtracting, msg::value = "7zip", msg::path = archive)
                     .append_raw("\n")
                     .append(maybe_output.error()));
         }
@@ -163,7 +163,7 @@ namespace
             Checks::msg_check_exit(VCPKG_LINE_INFO,
                                    code == 0,
                                    msgPackageFailedtWhileExtracting,
-                                   msg::package_name = "unzip",
+                                   msg::value = "unzip",
                                    msg::path = archive);
         }
 #endif
@@ -203,15 +203,15 @@ namespace vcpkg
         const auto subext = stem.extension();
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                Strings::case_insensitive_ascii_equals(subext, ".7z"),
-                               msg::format(msgUnableToExtractArchive, msg::package_name = "7zip", msg::path = archive)
+                               msg::format(msgPackageFailedtWhileExtracting, msg::value = "7zip", msg::path = archive)
                                    .append(msgMissingExtension, msg::extension = ".7.exe"));
 
         auto contents = fs.read_contents(archive, VCPKG_LINE_INFO);
         const auto pos = contents.find(header_7z);
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                pos != std::string::npos,
-                               msg::format(msgUnableToExtractArchive, msg::package_name = "7zip", msg::path = archive)
-                                   .append(msgMissingHeader, msg::value = "7z"));
+                               msg::format(msgPackageFailedtWhileExtracting, msg::value = "7zip", msg::path = archive)
+                                   .append(msgMissing7zHeader));
 
         contents = contents.substr(pos);
         fs.write_contents(to_path, std::move(contents), VCPKG_LINE_INFO);
@@ -254,7 +254,7 @@ namespace vcpkg
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                succeeded(code),
                                msgPackageFailedtWhileExtracting,
-                               msg::package_name = "tar",
+                               msg::value = "tar",
                                msg::path = archive);
     }
 
@@ -267,7 +267,7 @@ namespace vcpkg
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                succeeded(code),
                                msgPackageFailedtWhileExtracting,
-                               msg::package_name = "CMake",
+                               msg::value = "CMake",
                                msg::path = archive);
     }
 
