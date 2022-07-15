@@ -675,10 +675,10 @@ namespace vcpkg
                     const auto old_buf_size = buf.size();
                     Strings::append(buf, s, '\n');
                     const auto write_size = buf.size() - old_buf_size;
-                    Checks::check_exit(VCPKG_LINE_INFO,
-                                       out_file.write(buf.c_str() + old_buf_size, 1, write_size) == write_size,
-                                       "Error occurred while writing '%s'",
-                                       stdoutlog);
+                    Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                           out_file.write(buf.c_str() + old_buf_size, 1, write_size) == write_size,
+                                           msgErrorWhileWriting,
+                                           msg::error_msg = stdoutlog);
                 },
                 default_working_directory,
                 env);

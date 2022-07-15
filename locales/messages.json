@@ -182,6 +182,8 @@
   "ErrorVsCodeNotFound": "Visual Studio Code was not found and the environment variable {env_var} is not set or invalid.",
   "_ErrorVsCodeNotFound.comment": "An example of {env_var} is VCPKG_DEFAULT_TRIPLET.",
   "ErrorVsCodeNotFoundPathExamined": "The following paths were examined:",
+  "ErrorWhileWriting": "Error occured while writing {error_msg}",
+  "_ErrorWhileWriting.comment": "An example of {error_msg} is File Not Found.",
   "ExcludedPackage": "Excluded {spec}",
   "_ExcludedPackage.comment": "An example of {spec} is zlib:x64-windows.",
   "ExpectedCharacterHere": "expected '{expected}' here",
