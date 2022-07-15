@@ -1543,7 +1543,8 @@ namespace vcpkg
             }
             else
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO, "Invalid crt linkage type: [%s]", crt_linkage_as_string);
+                Checks::msg_exit_with_message(
+                    VCPKG_LINE_INFO, msgInvalidCrtLinkage, msg::value = crt_linkage_as_string);
             }
         }
 

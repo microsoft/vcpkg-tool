@@ -1215,4 +1215,8 @@ namespace vcpkg
                     (msg::spec, msg::spec),
                     "",
                     "Failed to find dependency abi for {spec} -> {spec}");
+    DECLARE_MESSAGE(InvalidCrtLinkage,
+                    (msg::value),
+                    "'{value}' is the crt linkage type.",
+                    "Invalid crt linkage type: [{value}]");
 }
