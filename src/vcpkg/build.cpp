@@ -1558,8 +1558,10 @@ namespace vcpkg
             }
             else
             {
-                Checks::exit_with_message(
-                    VCPKG_LINE_INFO, "Invalid library linkage type: [%s]", library_linkage_as_string);
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                              msgInvalidLinkage,
+                                              msg::system_name = "library",
+                                              msg::value = library_linkage_as_string);
             }
         }
 
