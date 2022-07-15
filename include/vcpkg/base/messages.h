@@ -651,7 +651,7 @@ namespace vcpkg
     DECLARE_MESSAGE(ConflictingValuesForOption,
                     (msg::value),
                     "'{value}' is a command option.",
-                    "conflicting values specified for --'{value}'.");
+                    "conflicting values specified for '--{value}'.");
     DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":");
     DECLARE_MESSAGE(CouldNotDeduceNugetIdAndVersion,
                     (msg::path),
