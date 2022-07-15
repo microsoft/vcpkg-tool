@@ -17,11 +17,11 @@ export class All extends Switch {
   }
 }
 
-export class Cache extends Switch {
-  switch = 'cache';
+export class Downloads extends Switch {
+  switch = 'downloads';
   get help() {
     return [
-      i`cleans out the cache`
+      i`cleans out the downloads cache`
     ];
   }
 }
@@ -42,7 +42,7 @@ export class CleanCommand extends Command {
   argumentsHelp = [];
   all = new All(this);
   artifacts = new Artifacts(this);
-  cache = new Cache(this);
+  downloads = new Downloads(this);
   whatIf = new WhatIf(this);
 
   get summary() {
@@ -67,10 +67,10 @@ export class CleanCommand extends Command {
       log(i`Installed Artifact folder cleared (${session.installFolder.fsPath}) `);
     }
 
-    if (this.all.active || this.cache.active) {
-      await session.cache.delete({ recursive: true });
-      await session.cache.createDirectory();
-      log(i`Cache folder cleared (${session.cache.fsPath}) `);
+    if (this.all.active || this.downloads.active) {
+      await session.downloads.delete({ recursive: true });
+      await session.downloads.createDirectory();
+      log(i`Cache folder cleared (${session.downloads.fsPath}) `);
     }
 
     return true;

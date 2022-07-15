@@ -115,7 +115,7 @@ namespace vcpkg::Commands
 
             paths.get_filesystem().write_contents(
                 manifest->path, Json::stringify(serialize_manifest(manifest_scf)), VCPKG_LINE_INFO);
-            msg::println(msgAddPortSucceded);
+            msg::println(msgAddPortSucceeded);
 
             auto command_args_hash = Strings::join(" ", Util::fmap(specs, [](auto&& spec) -> std::string {
                                                        return Hash::get_string_hash(spec.name, Hash::Algorithm::Sha256);
