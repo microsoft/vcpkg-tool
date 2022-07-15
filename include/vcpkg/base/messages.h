@@ -753,9 +753,9 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
     DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
     DECLARE_MESSAGE(FailedToFindDependencyAbi,
-                    (msg::spec, msg::spec),
-                    "",
-                    "Failed to find dependency abi for {spec} -> {spec}");
+                    (msg::old_value, msg::new_value),
+                    "{old_value} is the old spec, {new_value} is the new spec.",
+                    "Failed to find dependency abi for {old_value} -> {new_value}");
     DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
     DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                     (msg::tool_name, msg::path),

@@ -1228,8 +1228,8 @@ namespace vcpkg
                         {
                             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
                                                            msgFailedToFindDependencyAbi,
-                                                           msg::spec = action.spec,
-                                                           msg::spec = pspec);
+                                                           msg::old_value = action.spec,
+                                                           msg::new_value = pspec);
                         }
 
                         dependency_abis.emplace_back(AbiEntry{pspec.name(), status_it->get()->package.abi});

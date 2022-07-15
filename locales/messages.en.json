@@ -108,7 +108,7 @@
   "ExpectedPortName": "expected a port name here",
   "ExpectedTripletName": "expected a triplet name here",
   "ExtendedDocumentationAtUrl": "Extended documentation available at '{url}'.",
-  "FailedToFindDependencyAbi": "Failed to find dependency abi for {spec} -> {spec}",
+  "FailedToFindDependencyAbi": "Failed to find dependency abi for {old_value} -> {new_value}",
   "FailedToProvisionCe": "Failed to provision vcpkg-ce.",
   "FailedToRunToolToDetermineVersion": "Failed to run {path} to determine the {tool_name} version.",
   "FailedToStoreBackToMirror": "failed to store back to mirror:",
