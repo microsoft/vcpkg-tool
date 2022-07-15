@@ -646,4 +646,5 @@ namespace vcpkg
     REGISTER_MESSAGE(UndeterminedToolChainForTriplet);
     REGISTER_MESSAGE(FailedToFindDependencyAbi);
     REGISTER_MESSAGE(InvalidLinkage);
+    REGISTER_MESSAGE(UnknownPolicySetting);
 }

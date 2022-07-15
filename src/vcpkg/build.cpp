@@ -1578,8 +1578,8 @@ namespace vcpkg
             else if (setting == "disabled")
                 policies.emplace(policy, false);
             else
-                Checks::exit_maybe_upgrade(
-                    VCPKG_LINE_INFO, "Unknown setting for policy '%s': %s", to_string(policy), setting);
+                Checks::msg_exit_maybe_upgrade(
+                    VCPKG_LINE_INFO, msgUnknownPolicySetting, msg::option = setting, msg::value = to_string(policy));
         }
 
         if (const auto err = parser.error_info("PostBuildInformation"))

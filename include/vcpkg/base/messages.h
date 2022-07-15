@@ -1219,4 +1219,8 @@ namespace vcpkg
                     (msg::system_name, msg::value),
                     "'{value}' is the linkage type.",
                     "Invalid {system_name} linkage type: [{value}]");
+    DECLARE_MESSAGE(UnknownPolicySetting,
+                    (msg::option, msg::value),
+                    "'{value}' is the policy.",
+                    "Unknown setting for policy '{value}': {option}");
 }
