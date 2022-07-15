@@ -1019,7 +1019,7 @@ namespace vcpkg
                     "rather than by localization.");
     DECLARE_MESSAGE(MismatchedBinaryParagraphs,
                     (msg::url),
-                    "",
+                    "A comparison of the original binary paragraph and serialized binary paragraph is expected.",
                     "[sanity check] The serialized binary paragraph was different from the original binary "
                     "paragraph.\nPlease open an issue at {url}, with the following output:");
     DECLARE_MESSAGE(MonoInstructions,
