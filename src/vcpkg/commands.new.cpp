@@ -55,7 +55,7 @@ namespace vcpkg::Commands
                                                      bool option_version_date,
                                                      bool option_version_string)
     {
-        if (Util::zero_or_one_set(option_application, option_version_relaxed, option_version_string))
+        if (!Util::zero_or_one_set(option_version_relaxed, option_version_date, option_version_string))
         {
             return msg::format_error(msgNewOnlyOneVersionKind);
         }
