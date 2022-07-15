@@ -1705,10 +1705,8 @@ namespace vcpkg
                     else if (Strings::case_insensitive_ascii_equals(variable_value, "release"))
                         build_type = ConfigurationType::RELEASE;
                     else
-                        Checks::exit_with_message(
-                            VCPKG_LINE_INFO,
-                            "Unknown setting for VCPKG_BUILD_TYPE: %s. Valid settings are '', 'debug' and 'release'.",
-                            variable_value);
+                        Checks::msg_exit_with_message(
+                            VCPKG_LINE_INFO, msgUnknownSettingForBuildType, msg::option = variable_value);
                     break;
                 case VcpkgTripletVar::ENV_PASSTHROUGH:
                     passthrough_env_vars_tracked = Strings::split(variable_value, ';');

@@ -375,6 +375,8 @@
   "UnknownBinaryProviderType": "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', 'x-aws-config', 'http', and 'files'",
   "UnknownPolicySetting": "Unknown setting for policy '{value}': {option}",
   "_UnknownPolicySetting.comment": "'{value}' is the policy. An example of {option} is editable.",
+  "UnknownSettingForBuildType": "Unknown setting for VCPKG_BUILD_TYPE {option}. Valid settings are '', 'debug', and 'release'.",
+  "_UnknownSettingForBuildType.comment": "An example of {option} is editable.",
   "UnknownTool": "vcpkg does not have a definition of this tool for this platform.",
   "UnknownVariablesInTemplate": "invalid argument: url template '{value}' contains unknown variables: {list}",
   "_UnknownVariablesInTemplate.comment": "{value} is the value provided by the user and {list} a list of unknown variables seperated by comma",

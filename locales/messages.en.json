@@ -215,6 +215,7 @@
   "UnknownBaselineFileContent": "unrecognizable baseline entry; expected 'port:triplet=(fail|skip|pass)'",
   "UnknownBinaryProviderType": "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', 'x-aws-config', 'http', and 'files'",
   "UnknownPolicySetting": "Unknown setting for policy '{value}': {option}",
+  "UnknownSettingForBuildType": "Unknown setting for VCPKG_BUILD_TYPE {option}. Valid settings are '', 'debug', and 'release'.",
   "UnknownTool": "vcpkg does not have a definition of this tool for this platform.",
   "UnknownVariablesInTemplate": "invalid argument: url template '{value}' contains unknown variables: {list}",
   "UnsupportedSystemName": "Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. Supported system names are '', 'Windows' and 'WindowsStore'.",

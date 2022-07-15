@@ -1224,4 +1224,8 @@ namespace vcpkg
                     "'{value}' is the policy.",
                     "Unknown setting for policy '{value}': {option}");
     DECLARE_MESSAGE(InvalidBuildInfo, (msg::error_msg), "", "Invalid BUILD_INFO file for package: {error_msg}");
+    DECLARE_MESSAGE(UnknownSettingForBuildType,
+                    (msg::option),
+                    "",
+                    "Unknown setting for VCPKG_BUILD_TYPE {option}. Valid settings are '', 'debug', and 'release'.");
 }

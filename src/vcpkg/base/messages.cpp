@@ -648,4 +648,5 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidLinkage);
     REGISTER_MESSAGE(UnknownPolicySetting);
     REGISTER_MESSAGE(InvalidBuildInfo);
+    REGISTER_MESSAGE(UnknownSettingForBuildType);
 }
