@@ -291,29 +291,35 @@ namespace vcpkg
         if (binary_paragraph != pgh)
         {
             const auto& join_str = R"(", ")";
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                           msgSerializedDoesNotMatchOriginalBinPar,
-                                           msg::url = "https://github.com/microsoft/vcpkg",
-                                           msg::spec = pgh.spec,
-                                           msg::version = pgh.version,
-                                           msg::version = pgh.port_version,
-                                           msg::value = Strings::join(join_str, pgh.description),
-                                           msg::value = Strings::join(join_str, pgh.maintainers),
-                                           msg::value = pgh.feature,
-                                           msg::value = Strings::join(join_str, pgh.default_features),
-                                           msg::value = Strings::join(join_str, pgh.dependencies),
-                                           msg::value = pgh.abi,
-                                           msg::value = Type::to_string(pgh.type),
-                                           msg::spec = binary_paragraph.spec,
-                                           msg::version = binary_paragraph.version,
-                                           msg::version = binary_paragraph.port_version,
-                                           msg::value = Strings::join(join_str, binary_paragraph.description),
-                                           msg::value = Strings::join(join_str, binary_paragraph.maintainers),
-                                           msg::value = binary_paragraph.feature,
-                                           msg::value = Strings::join(join_str, binary_paragraph.default_features),
-                                           msg::value = Strings::join(join_str, binary_paragraph.dependencies),
-                                           msg::value = binary_paragraph.abi,
-                                           msg::value = Type::to_string(binary_paragraph.type));
+            Checks::msg_exit_maybe_upgrade(
+                VCPKG_LINE_INFO,
+                msg::format(msgMismatchedBinaryParagraphs, msg::url = "https://github.com/microsoft/vcpkg")
+                    .append_raw("\n")
+                    .append(msgOriginalBinaryParagraphHeader)
+                    .append(msgBinaryParagraphDescription,
+                            msg::spec = pgh.spec,
+                            msg::version = pgh.version,
+                            msg::version = pgh.port_version,
+                            msg::value = Strings::join(join_str, pgh.description),
+                            msg::value = Strings::join(join_str, pgh.maintainers),
+                            msg::value = pgh.feature,
+                            msg::value = Strings::join(join_str, pgh.default_features),
+                            msg::value = Strings::join(join_str, pgh.dependencies),
+                            msg::value = pgh.abi,
+                            msg::value = Type::to_string(pgh.type))
+                    .append_raw("\n")
+                    .append(msgSerializedBinaryParagraphHeader)
+                    .append(msgBinaryParagraphDescription,
+                            msg::spec = binary_paragraph.spec,
+                            msg::version = binary_paragraph.version,
+                            msg::version = binary_paragraph.port_version,
+                            msg::value = Strings::join(join_str, binary_paragraph.description),
+                            msg::value = Strings::join(join_str, binary_paragraph.maintainers),
+                            msg::value = binary_paragraph.feature,
+                            msg::value = Strings::join(join_str, binary_paragraph.default_features),
+                            msg::value = Strings::join(join_str, binary_paragraph.dependencies),
+                            msg::value = binary_paragraph.abi,
+                            msg::value = Type::to_string(binary_paragraph.type)));
         }
     }
 }

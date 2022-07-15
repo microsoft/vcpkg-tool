@@ -645,7 +645,10 @@ namespace vcpkg
     REGISTER_MESSAGE(ErrorParsingBinaryParagraph);
     REGISTER_MESSAGE(MultiArch);
     REGISTER_MESSAGE(FailedToParseBinParagraph);
-    REGISTER_MESSAGE(SerializedDoesNotMatchOriginalBinPar);
     REGISTER_MESSAGE(ListOfValidFieldsForControlFiles);
     REGISTER_MESSAGE(SuggestUpdateVcpkg);
+    REGISTER_MESSAGE(MismatchedBinaryParagraphs);
+    REGISTER_MESSAGE(OriginalBinaryParagraphHeader);
+    REGISTER_MESSAGE(SerializedBinaryParagraphHeader);
+    REGISTER_MESSAGE(BinaryParagraphDescription);
 }

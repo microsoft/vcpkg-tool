@@ -1212,20 +1212,16 @@ namespace vcpkg
                     "Binary Paragraph",
                     "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at {url}, "
                     "with the following output:\n{error_msg}\n=== Serialized BinaryParagraph ===\n{value}");
+    DECLARE_MESSAGE(MismatchedBinaryParagraphs,
+                    (msg::url),
+                    "",
+                    "[sanity check] The serialized binary paragraph was different from the original binary "
+                    "paragraph.\nPlease open an issue at {url}, with the following output:");
+    DECLARE_MESSAGE(OriginalBinaryParagraphHeader, (), "", "\n=== Original Binary Paragraph ===");
+    DECLARE_MESSAGE(SerializedBinaryParagraphHeader, (), "", "\n=== Serialized Binary Paragraph ===");
     DECLARE_MESSAGE(
-        SerializedDoesNotMatchOriginalBinPar,
-        (msg::url,
-         msg::spec,
-         msg::version,
-         msg::version,
-         msg::value,
-         msg::value,
-         msg::value,
-         msg::value,
-         msg::value,
-         msg::value,
-         msg::value,
-         msg::spec,
+        BinaryParagraphDescription,
+        (msg::spec,
          msg::version,
          msg::version,
          msg::value,
@@ -1235,24 +1231,12 @@ namespace vcpkg
          msg::value,
          msg::value,
          msg::value),
-        "{value} is the original BinaryParagraph description.\n{value} is the original BinaryParagraph "
-        "maintainers.\n{value} is the original BinaryParagraph feature.\n{value} is the original BinaryParagraph "
-        "default_features.\n{value} is the original "
-        "BinaryParagraph dependencies.\n{value} is the original BinaryParagraph abi.\n{value} is the original "
-        "BinaryParagraph type.\n{value} is the serialized BinaryParagraph description.\n{value} is the serialized "
-        "BinaryParagraph "
-        "maintainers.\n{value} is the serialized BinaryParagraph feature.\n{value} is the serialized BinaryParagraph "
-        "default_features.\n{value} is the serialized "
-        "BinaryParagraph dependencies.\n{value} is the serialized BinaryParagraph abi.\n{value} is the serialized "
-        "BinaryParagraph type.",
-        "[sanity check] The serialized binary paragraph was different from the original binary "
-        "paragraph.\nPlease open an issue at {url}, with the following output:\n=== Original "
-        "BinaryParagraph ===\nspec: '{spec}'\nversion: '{version}'\nport_version: {version}\ndescription: "
-        "['{value}']\nmaintainers: ['{value}']\nfeature: '{value}'\ndefault feature: ['{value}']\ndependencies: "
-        "['{value}']\nabi: '{value}'\ntype: {value}\n\n=== Serialized BinaryParagraph ===\nspec: "
-        "'{spec}'\nversion: '{version}'\nport_version: {version}\ndescription: "
-        "['{value}']\nmaintainers: ['{value}']\nfeature: '{value}'\ndefault feature: ['{value}']\ndependencies: "
-        "['{value}']\nabi: '{value}'\ntype: {value}");
+        "['{value}'] is the paragraph description.\n['{value}'] is the paragraph's maintainers.\n'{value}' is the "
+        "paragraph's feature.\n['{value}'] is the paragraphs default_feature.\n['{value}'] is the paragraphs "
+        "dependencies.\n'{value}' is the paragraphs abi.\n'{value}' is the paragraphs type.",
+        "\nspec: '{spec}'\n\nversion: {version}\nport_version: {version}\ndescription: "
+        "['{value}']\nmaintainers: ['{value}']\nfeature: '{value}'\ndefault_feature: "
+        "['{value}']\ndependencies: ['{value}']\nabi: '{value}'\ntype: {value}");
     DECLARE_MESSAGE(ListOfValidFieldsForControlFiles,
                     (),
                     "",
