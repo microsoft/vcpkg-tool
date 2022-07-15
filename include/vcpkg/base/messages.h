@@ -1211,4 +1211,8 @@ namespace vcpkg
                     "Unable to determine toolchain use for {triplet} with with CMAKE_SYSTEM_NAME {system_name}. Did "
                     "you mean to use "
                     "VCPKG_CHAINLOAD_TOOLCHAIN_FILE?");
+    DECLARE_MESSAGE(FailedToFindDependencyAbi,
+                    (msg::spec, msg::spec),
+                    "",
+                    "Failed to find dependency abi for {spec} -> {spec}");
 }
