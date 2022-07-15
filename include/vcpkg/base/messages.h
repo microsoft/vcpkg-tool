@@ -1217,8 +1217,14 @@ namespace vcpkg
                     "",
                     "[sanity check] The serialized binary paragraph was different from the original binary "
                     "paragraph.\nPlease open an issue at {url}, with the following output:");
-    DECLARE_MESSAGE(OriginalBinaryParagraphHeader, (), "", "\n=== Original Binary Paragraph ===");
-    DECLARE_MESSAGE(SerializedBinaryParagraphHeader, (), "", "\n=== Serialized Binary Paragraph ===");
+    DECLARE_MESSAGE(OriginalBinaryParagraphHeader,
+                    (),
+                    "The binary paragraph description is expected after this.",
+                    "\n=== Original Binary Paragraph ===");
+    DECLARE_MESSAGE(SerializedBinaryParagraphHeader,
+                    (),
+                    "The binary paragraph description is expected after this.",
+                    "\n=== Serialized Binary Paragraph ===");
     DECLARE_MESSAGE(
         BinaryParagraphDescription,
         (msg::spec,
@@ -1245,4 +1251,8 @@ namespace vcpkg
                     (msg::command_line),
                     "",
                     "You may need to update the vcpkg binary; try running {command_line} to update.");
+    DECLARE_MESSAGE(ErrorWhileParsing,
+                    (msg::value),
+                    "'{value}' is the file name.",
+                    "Errors occurred while parsing '{value}'.");
 }

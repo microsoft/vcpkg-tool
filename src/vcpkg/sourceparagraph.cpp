@@ -1429,7 +1429,7 @@ namespace vcpkg
             }
             if (start_of_chunk != end_of_chunk)
             {
-                print2(Color::error, StringView{start_of_chunk, end_of_chunk});
+                msg::println_error(LocalizedString::from_raw(StringView{start_of_chunk, end_of_chunk}));
                 start_of_chunk = end_of_chunk;
             }
 
@@ -1439,11 +1439,10 @@ namespace vcpkg
             }
             if (start_of_chunk != end_of_chunk)
             {
-                print2(StringView{start_of_chunk, end_of_chunk});
+                msg::println_error(LocalizedString::from_raw(StringView{start_of_chunk, end_of_chunk}));
                 start_of_chunk = end_of_chunk;
             }
         }
-        print2('\n');
     }
 
     Optional<const FeatureParagraph&> SourceControlFile::find_feature(StringView featurename) const
@@ -1614,11 +1613,12 @@ namespace vcpkg
             auto maybe_configuration = reader.visit(*configuration, get_configuration_deserializer());
             if (!reader.errors().empty())
             {
-                print2(Color::error, "Errors occurred while parsing ", ManifestDeserializer::VCPKG_CONFIGURATION, "\n");
+                msg::println_error(msgErrorWhileParsing, msg::value = ManifestDeserializer::VCPKG_CONFIGURATION);
                 for (auto&& msg : reader.errors())
-                    print2("    ", msg, '\n');
-
-                print2("See ", docs::registries_url, " for more information.\n");
+                {
+                    msg::println_error(LocalizedString::from_raw("").append_indent().append_raw(msg));
+                }
+                msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
             obj.insert(ManifestDeserializer::VCPKG_CONFIGURATION,

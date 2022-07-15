@@ -651,4 +651,5 @@ namespace vcpkg
     REGISTER_MESSAGE(OriginalBinaryParagraphHeader);
     REGISTER_MESSAGE(SerializedBinaryParagraphHeader);
     REGISTER_MESSAGE(BinaryParagraphDescription);
+    REGISTER_MESSAGE(ErrorWhileParsing);
 }
