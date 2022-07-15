@@ -1,4 +1,5 @@
 #include <vcpkg/base/basic_checks.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.new.h>
 #include <vcpkg/configuration.h>
@@ -54,9 +55,7 @@ namespace vcpkg::Commands
                                                      bool option_version_date,
                                                      bool option_version_string)
     {
-        if (static_cast<int>(option_version_relaxed) + static_cast<int>(option_version_date) +
-                static_cast<int>(option_version_string) >=
-            2)
+        if (Util::zero_or_one_set(option_application, option_version_relaxed, option_version_string))
         {
             return msg::format_error(msgNewOnlyOneVersionKind);
         }
