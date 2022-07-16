@@ -444,6 +444,15 @@ namespace vcpkg
     REGISTER_MESSAGE(AttemptingToFetchPackagesFromVendor);
     REGISTER_MESSAGE(AuthenticationMayRequireManualAction);
     REGISTER_MESSAGE(AutoSettingEnvVar);
+    REGISTER_MESSAGE(BinParagraphAbi);
+    REGISTER_MESSAGE(BinParagraphDefaultFeature);
+    REGISTER_MESSAGE(BinParagraphDependencies);
+    REGISTER_MESSAGE(BinParagraphDescription);
+    REGISTER_MESSAGE(BinParagraphFeature);
+    REGISTER_MESSAGE(BinParagraphMaintainers);
+    REGISTER_MESSAGE(BinParagraphPortVersion);
+    REGISTER_MESSAGE(BinParagraphSpecAndVersion);
+    REGISTER_MESSAGE(BinParagraphType);
     REGISTER_MESSAGE(BuildAlreadyInstalled);
     REGISTER_MESSAGE(BuildDependenciesMissing);
     REGISTER_MESSAGE(BuildingFromHead);
@@ -651,13 +660,4 @@ namespace vcpkg
     REGISTER_MESSAGE(WaitingToTakeFilesystemLock);
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
-    REGISTER_MESSAGE(BinParagraphPortVersion);
-    REGISTER_MESSAGE(BinParagraphDependencies);
-    REGISTER_MESSAGE(BinParagraphMaintainers);
-    REGISTER_MESSAGE(BinParagraphDefaultFeature);
-    REGISTER_MESSAGE(BinParagraphDescription);
-    REGISTER_MESSAGE(BinParagraphFeature);
-    REGISTER_MESSAGE(BinParagraphAbi);
-    REGISTER_MESSAGE(BinParagraphType);
-    REGISTER_MESSAGE(BinParagraphSpecAndVersion);
 }
