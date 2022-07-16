@@ -296,30 +296,32 @@ namespace vcpkg
                 msg::format(msgMismatchedBinaryParagraphs, msg::url = "https://github.com/microsoft/vcpkg")
                     .append_raw("\n")
                     .append(msgOriginalBinaryParagraphHeader)
-                    .append(msgBinaryParagraphDescription,
-                            msg::spec = pgh.spec,
-                            msg::version = pgh.version,
-                            msg::version = pgh.port_version,
-                            msg::value = Strings::join(join_str, pgh.description),
-                            msg::value = Strings::join(join_str, pgh.maintainers),
-                            msg::value = pgh.feature,
-                            msg::value = Strings::join(join_str, pgh.default_features),
-                            msg::value = Strings::join(join_str, pgh.dependencies),
-                            msg::value = pgh.abi,
-                            msg::value = Type::to_string(pgh.type))
+                    .append(msgBinParagraphSpecAndVersion, msg::spec = pgh.spec, msg::version = pgh.version)
+                    .append(msgBinParagraphPortVersion, msg::version = pgh.port_version)
+                    .append(msgBinParagraphDescription, msg::value = Strings::join(join_str, pgh.description))
+                    .append(msgBinParagraphMaintainers, msg::value = Strings::join(join_str, pgh.maintainers))
+                    .append(msgBinParagraphFeature, msg::value = pgh.feature)
+                    .append(msgBinParagraphDefaultFeature, msg::value = Strings::join(join_str, pgh.default_features))
+                    .append(msgBinParagraphDependencies, msg::value = Strings::join(join_str, pgh.dependencies))
+                    .append(msgBinParagraphAbi, msg::value = pgh.abi)
+                    .append(msgBinParagraphType, msg::value = Type::to_string(pgh.type))
                     .append_raw("\n")
                     .append(msgSerializedBinaryParagraphHeader)
-                    .append(msgBinaryParagraphDescription,
+                    .append(msgBinParagraphSpecAndVersion,
                             msg::spec = binary_paragraph.spec,
-                            msg::version = binary_paragraph.version,
-                            msg::version = binary_paragraph.port_version,
-                            msg::value = Strings::join(join_str, binary_paragraph.description),
-                            msg::value = Strings::join(join_str, binary_paragraph.maintainers),
-                            msg::value = binary_paragraph.feature,
-                            msg::value = Strings::join(join_str, binary_paragraph.default_features),
-                            msg::value = Strings::join(join_str, binary_paragraph.dependencies),
-                            msg::value = binary_paragraph.abi,
-                            msg::value = Type::to_string(binary_paragraph.type)));
+                            msg::version = binary_paragraph.version)
+                    .append(msgBinParagraphPortVersion, msg::version = pgh.port_version)
+                    .append(msgBinParagraphDescription,
+                            msg::value = Strings::join(join_str, binary_paragraph.description))
+                    .append(msgBinParagraphMaintainers,
+                            msg::value = Strings::join(join_str, binary_paragraph.maintainers))
+                    .append(msgBinParagraphFeature, msg::value = binary_paragraph.feature)
+                    .append(msgBinParagraphDefaultFeature,
+                            msg::value = Strings::join(join_str, binary_paragraph.default_features))
+                    .append(msgBinParagraphDependencies,
+                            msg::value = Strings::join(join_str, binary_paragraph.dependencies))
+                    .append(msgBinParagraphAbi, msg::value = binary_paragraph.abi)
+                    .append(msgBinParagraphType, msg::value = Type::to_string(binary_paragraph.type)));
         }
     }
 }

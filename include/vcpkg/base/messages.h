@@ -510,24 +510,33 @@ namespace vcpkg
                     "An example of env_var is \"HTTP(S)_PROXY\""
                     "'--' at the beginning must be preserved",
                     "-- Automatically setting {env_var} environment variables to \"{url}\".");
-    DECLARE_MESSAGE(
-        BinaryParagraphDescription,
-        (msg::spec,
-         msg::version,
-         msg::version,
-         msg::value,
-         msg::value,
-         msg::value,
-         msg::value,
-         msg::value,
-         msg::value,
-         msg::value),
-        "['{value}'] is the paragraph description.\n['{value}'] is the paragraph's maintainers.\n'{value}' is the "
-        "paragraph's feature.\n['{value}'] is the paragraphs default_feature.\n['{value}'] is the paragraphs "
-        "dependencies.\n'{value}' is the paragraphs abi.\n'{value}' is the paragraphs type.",
-        "\nspec: '{spec}'\n\nversion: {version}\nport_version: {version}\ndescription: "
-        "['{value}']\nmaintainers: ['{value}']\nfeature: '{value}'\ndefault_feature: "
-        "['{value}']\ndependencies: ['{value}']\nabi: '{value}'\ntype: {value}");
+    DECLARE_MESSAGE(BinParagraphPortVersion, (msg::version), "", "\nport_version: {version}");
+    DECLARE_MESSAGE(BinParagraphDependencies,
+                    (msg::value),
+                    "'{value}' is the binary paragraph's dependencies.",
+                    "\ndependencies: ['{value}']");
+    DECLARE_MESSAGE(BinParagraphMaintainers,
+                    (msg::value),
+                    "'{value}' is the binary paragraph's maintainers.",
+                    "\nmaintainers: ['{value}']");
+    DECLARE_MESSAGE(BinParagraphDefaultFeature,
+                    (msg::value),
+                    "'{value}' is the binary paragraph's default feature.",
+                    "\ndefault_feature: ['{value}']");
+    DECLARE_MESSAGE(BinParagraphDescription,
+                    (msg::value),
+                    "'{value}' is the binary paragraph's description.",
+                    "\ndescription: ['{value}']");
+    DECLARE_MESSAGE(BinParagraphFeature,
+                    (msg::value),
+                    "'{value}' is the value of feature in the binary paragraph.",
+                    "\nfeature: '{value}'");
+    DECLARE_MESSAGE(BinParagraphAbi,
+                    (msg::value),
+                    "'{value}' is the value of abi in the binary paragraph.",
+                    "\nabi: '{value}'");
+    DECLARE_MESSAGE(BinParagraphType, (msg::value), "'{value}' is the binary paragraph type", "\ntype: '{value}'");
+    DECLARE_MESSAGE(BinParagraphSpecAndVersion, (msg::spec, msg::version), "", "\nspec: '{spec}'\nversion: {version}");
     DECLARE_MESSAGE(BuildAlreadyInstalled,
                     (msg::spec),
                     "",
