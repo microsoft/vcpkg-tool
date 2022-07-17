@@ -691,8 +691,8 @@
       <Item ItemId=";CompressFolderFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to compress folder "{path}":]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[無法壓縮資料夾 '{path}':]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[無法壓縮資料夾 "{path}":]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Failed to compress folder '{path}':]]></Val>
@@ -724,8 +724,8 @@
       <Item ItemId=";DefaultPathToBinaries" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Based on your system settings, the default path to store binaries is "{path}". This consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[根據您的系統設定，儲存二進位檔的預設路徑是 ]A; '{path}'。這會在 Windows 上諮詢 %LOCALAPPDATA%/%APPDATA% 或在其他平台上諮詢 $XDG_CACHE_HOME 或 $HOME。]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[根據您的系統設定，儲存二進位檔的預設路徑是 "{path}"。這會在 Windows 上諮詢 %LOCALAPPDATA%/%APPDATA% 或在其他平台上諮詢 $XDG_CACHE_HOME 或 $HOME。]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Based on your system settings, the default path to store binaries is ]A; '{path}'. This consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.]]></Val>
@@ -736,8 +736,8 @@
       <Item ItemId=";DetectCompilerHash" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Detecting compiler hash for triplet {triplet}...]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[正在偵測三重 "{triplet}" 的編譯器雜湊...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[正在偵測三重 {triplet} 的編譯器雜湊...]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Detecting compiler hash for triplet "{triplet}"...]]></Val>
@@ -979,8 +979,8 @@
       <Item ItemId=";ErrorVsCodeNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Visual Studio Code was not found and the environment variable {env_var} is not set or invalid.]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[找不到 Visual Studio Code，且環境變數 '{env_var}' 未設定或無效。]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[找不到 Visual Studio Code，且環境變數 {env_var} 未設定或無效。]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Visual Studio Code was not found and the environment variable '{env_var}' is not set or invalid.]]></Val>
@@ -1084,8 +1084,8 @@
       <Item ItemId=";FailedToStoreBinaryCache" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to store binary cache {path}]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[無法儲存二進位快取 '{path}': {error_msg}']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[無法儲存二進位快取 {path}]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Failed to store binary cache '{path}':'{error_msg}']]></Val>
@@ -1279,8 +1279,8 @@
       <Item ItemId=";InfoSetEnvVar" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[You can also set the environment variable {env_var} to your editor of choice.]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[您也可以將環境變數 '{env_var}' 設為您選擇的編輯器。]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[您也可以將環境變數 {env_var} 設為您選擇的編輯器。]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[You can also set the environment variable '{env_var}' to your editor of choice.]]></Val>
@@ -2140,8 +2140,8 @@
       <Item ItemId=";UploadedBinaries" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Uploaded binaries to {count} {vendor}.]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[已將二進位檔上傳至 '{count}' 位 '{vendor}'。]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[已將二進位檔上傳至 {count} 位 {vendor}。]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Uploaded binaries to '{count}' '{vendor}'.]]></Val>

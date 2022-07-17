@@ -691,8 +691,8 @@
       <Item ItemId=";CompressFolderFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to compress folder "{path}":]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Échec de la compression du dossier « {path} » :]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Échec de la compression du dossier « {path} » :]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Failed to compress folder '{path}':]]></Val>
@@ -724,8 +724,8 @@
       <Item ItemId=";DefaultPathToBinaries" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Based on your system settings, the default path to store binaries is "{path}". This consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[En fonction de vos paramètres système, le chemin d’accès par défaut pour stocker les fichiers binaires est ]A; '{path}'. Cette opération consulte %LOCALAPPDATA%/%APPDATA% sur Windows et $XDG_CACHE_HOME ou $HOME sur d’autres plateformes.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[En fonction de vos paramètres système, le chemin d’accès par défaut pour stocker les fichiers binaires est '{path}'. Cette opération consulte %LOCALAPPDATA%/%APPDATA% sur Windows et $XDG_CACHE_HOME ou $HOME sur d’autres plateformes.]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Based on your system settings, the default path to store binaries is ]A; '{path}'. This consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.]]></Val>
@@ -736,8 +736,8 @@
       <Item ItemId=";DetectCompilerHash" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Detecting compiler hash for triplet {triplet}...]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Détection du hachage du compilateur pour le triplet « {triplet} »...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Détection du hachage du compilateur pour le triplet {triplet}...]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Detecting compiler hash for triplet "{triplet}"...]]></Val>
@@ -979,7 +979,7 @@
       <Item ItemId=";ErrorVsCodeNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Visual Studio Code was not found and the environment variable {env_var} is not set or invalid.]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Visual Studio Code est introuvable et la variable d’environnement '{env_var}' n’est pas définie ou n’est pas valide.]]></Val>
           </Tgt>
           <Prev Cat="Text">
@@ -1084,8 +1084,8 @@
       <Item ItemId=";FailedToStoreBinaryCache" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to store binary cache {path}]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Échec du stockage du cache binaire '{path}':'{error_msg}']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Échec du stockage du cache binaire {path}]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Failed to store binary cache '{path}':'{error_msg}']]></Val>
@@ -1279,7 +1279,7 @@
       <Item ItemId=";InfoSetEnvVar" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[You can also set the environment variable {env_var} to your editor of choice.]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Vous pouvez également définir la variable d’environnement '{env_var}' sur l’éditeur de votre choix.]]></Val>
           </Tgt>
           <Prev Cat="Text">
@@ -2140,8 +2140,8 @@
       <Item ItemId=";UploadedBinaries" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Uploaded binaries to {count} {vendor}.]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Fichiers binaires chargés sur '{count}' '{vendor}']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Fichiers binaires chargés sur {count} {vendor}]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Uploaded binaries to '{count}' '{vendor}'.]]></Val>
