@@ -691,8 +691,8 @@
       <Item ItemId=";CompressFolderFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to compress folder "{path}":]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[データを圧縮できませんでした]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[フォルダー "{path}":を圧縮できませんでした:]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Failed to compress folder '{path}':]]></Val>
@@ -724,8 +724,8 @@
       <Item ItemId=";DefaultPathToBinaries" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Based on your system settings, the default path to store binaries is "{path}". This consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[システム設定に基づいて、バイナリを格納するための既定のパスは '{path}' ]A; です。これは、Windows では %LOCALAPPDATA%/%APPDATA% を参照し、他のプラットフォームでは $XDG_CACHE_HOME または$HOMEを参照します。]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[システム設定に基づいて、バイナリを格納するための既定のパスは “{path}” です。これは、Windows では %LOCALAPPDATA%/%APPDATA% を参照し、他のプラットフォームでは $XDG_CACHE_HOME または $HOME を参照します。]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Based on your system settings, the default path to store binaries is ]A; '{path}'. This consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.]]></Val>
@@ -736,8 +736,8 @@
       <Item ItemId=";DetectCompilerHash" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Detecting compiler hash for triplet {triplet}...]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[トリプレット "{triplet}" のコンパイラ ハッシュを検出しています...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[トリプレット「{triplet}」のコンパイラ ハッシュを検出しています...]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Detecting compiler hash for triplet "{triplet}"...]]></Val>
@@ -979,7 +979,7 @@
       <Item ItemId=";ErrorVsCodeNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Visual Studio Code was not found and the environment variable {env_var} is not set or invalid.]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Visual Studio Code が見つかりませんでした。環境変数「{env_var}」が設定されていないか、設定された値が無効です。]]></Val>
           </Tgt>
           <Prev Cat="Text">
@@ -1084,8 +1084,8 @@
       <Item ItemId=";FailedToStoreBinaryCache" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to store binary cache {path}]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[バイナリ キャッシュ '{path}':'{error_msg}' を格納できませんでした]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[バイナリ キャッシュ {path} を格納できませんでした]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Failed to store binary cache '{path}':'{error_msg}']]></Val>
@@ -1279,7 +1279,7 @@
       <Item ItemId=";InfoSetEnvVar" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[You can also set the environment variable {env_var} to your editor of choice.]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[環境変数「{env_var}」を選択したエディターに設定することもできます。]]></Val>
           </Tgt>
           <Prev Cat="Text">
@@ -2140,8 +2140,8 @@
       <Item ItemId=";UploadedBinaries" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Uploaded binaries to {count} {vendor}.]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA['{count}' '{vendor}' にバイナリをアップロードしました。]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{count} {vendor} にバイナリをアップロードしました。]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Uploaded binaries to '{count}' '{vendor}'.]]></Val>
