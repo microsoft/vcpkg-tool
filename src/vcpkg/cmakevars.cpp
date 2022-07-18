@@ -294,16 +294,12 @@ endfunction()
 
         auto port_start = std::find(lines.cbegin(), end, PORT_START_GUID);
         auto port_end = std::find(port_start, end, PORT_END_GUID);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           port_start != end && port_end != end,
-                           "Failed to parse CMake console output to locate port start/end markers");
+        Checks::msg_check_exit(VCPKG_LINE_INFO, port_start != end && port_end != end, msgFailedToParseCMakeConsoleOut);
 
         for (auto var_itr = vars.begin(); port_start != end && var_itr != vars.end(); ++var_itr)
         {
             auto block_start = std::find(port_start, port_end, BLOCK_START_GUID);
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               block_start != port_end,
-                               "Failed to parse CMake console output to locate block start marker");
+            Checks::msg_check_exit(VCPKG_LINE_INFO, block_start != port_end, msgFailedToParseCMakeConsoleOut);
             auto block_end = std::find(++block_start, port_end, BLOCK_END_GUID);
 
             while (block_start != port_end)
@@ -313,10 +309,11 @@ endfunction()
                     const std::string& line = *block_start;
 
                     std::vector<std::string> s = Strings::split(line, '=');
-                    Checks::check_exit(VCPKG_LINE_INFO,
-                                       s.size() == 1 || s.size() == 2,
-                                       "Expected format is [VARIABLE_NAME=VARIABLE_VALUE], but was [%s]",
-                                       line);
+                    Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                           s.size() == 1 || s.size() == 2,
+                                           msgUnexpectedFormat,
+                                           msg::expected = "VARIABLE_NAME=VARIABLE_VALUE",
+                                           msg::actual = line);
 
                     var_itr->emplace_back(std::move(s[0]), s.size() == 1 ? "" : std::move(s[1]));
 
@@ -353,7 +350,7 @@ endfunction()
         const auto file_path = create_dep_info_extraction_file(specs);
         if (specs.size() > 100)
         {
-            print2("Loading dependency information for ", specs.size(), " packages...\n");
+            msg::println(msgLoadingDependencyInformation, msg::count = specs.size());
         }
         launch_and_split(file_path, vars);
         paths.get_filesystem().remove(file_path, VCPKG_LINE_INFO);

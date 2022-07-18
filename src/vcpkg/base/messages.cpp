@@ -511,6 +511,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ExpectedTripletName);
     REGISTER_MESSAGE(ExtendedDocumenationAtUrl);
     REGISTER_MESSAGE(FailedToExtract);
+    REGISTER_MESSAGE(FailedToParseCMakeConsoleOut);
     REGISTER_MESSAGE(FailedToProvisionCe);
     REGISTER_MESSAGE(FailedToRunToolToDetermineVersion);
     REGISTER_MESSAGE(FailedToStoreBackToMirror);
@@ -574,6 +575,7 @@ namespace vcpkg
     REGISTER_MESSAGE(LicenseExpressionUnknownException);
     REGISTER_MESSAGE(LicenseExpressionUnknownLicense);
     REGISTER_MESSAGE(LoadingCommunityTriplet);
+    REGISTER_MESSAGE(LoadingDependencyInformation);
     REGISTER_MESSAGE(LoadingOverlayTriplet);
     REGISTER_MESSAGE(LocalizedMessageMustNotContainIndents);
     REGISTER_MESSAGE(LocalizedMessageMustNotEndWithNewline);
@@ -608,6 +610,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ToolInWin10);
     REGISTER_MESSAGE(UnexpectedErrorDuringBulkDownload);
     REGISTER_MESSAGE(UnexpectedExtension);
+    REGISTER_MESSAGE(UnexpectedFormat);
     REGISTER_MESSAGE(UnexpectedToolOutput);
     REGISTER_MESSAGE(UnknownBaselineFileContent);
     REGISTER_MESSAGE(UnknownBinaryProviderType);
