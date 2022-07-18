@@ -655,4 +655,5 @@ namespace vcpkg
     REGISTER_MESSAGE(UnsupportedPort);
     REGISTER_MESSAGE(PortDependencyConflict);
     REGISTER_MESSAGE(PortSupportsField);
+    REGISTER_MESSAGE(UnsupportedPortDependency);
 }

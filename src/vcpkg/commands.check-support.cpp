@@ -77,28 +77,26 @@ namespace vcpkg::Commands
 
                 return;
             }
-
+            auto message = msg::format(msgUnsupportedPort, msg::package_name = full_port_name(p)).append_raw("\n");
             if (is_top_level_supported)
             {
-                msg::println(msg::format(msgUnsupportedPort, msg::package_name = full_port_name(p))
-                                 .append_raw("\n")
-                                 .append(msgPortDependencyConflict, msg::package_name = full_port_name(p)));
+                message.append(msgPortDependencyConflict, msg::package_name = full_port_name(p));
             }
             else
             {
-                msg::println(msg::format(msgUnsupportedPort, msg::package_name = full_port_name(p))
-                                 .append_raw("\n")
-                                 .append(msgPortSupportsField, msg::value = p.supports_expr)
-                                 .append_raw("\n")
-                                 .append(msgPortDependencyConflict, msg::package_name = full_port_name(p)));
+                message.append(msgPortSupportsField, msg::value = p.supports_expr)
+                    .append_raw("\n")
+                    .append(msgPortDependencyConflict, msg::package_name = full_port_name(p));
             }
 
             for (const Port& reason : reasons)
             {
-                vcpkg::printf("  - dependency %s is not supported (supports: \"%s\")\n",
-                              full_port_name(reason),
-                              reason.supports_expr);
+                message.append_raw("\n")
+                    .append_indent()
+                    .append(msgUnsupportedPortDependency, msg::value = full_port_name(p))
+                    .append(msgPortSupportsField, msg::value = reason.supports_expr);
             }
+            msg::println(message);
         }
     }
 

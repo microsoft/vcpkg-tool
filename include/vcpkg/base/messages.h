@@ -1234,6 +1234,10 @@ namespace vcpkg
                     "'{value}' is the value of the 'supports' field in the port's vcpkg.json.",
                     "(supports: \"{value}\")");
     DECLARE_MESSAGE(UnsupportedPort, (msg::package_name), "", "Port {package_name} is not supported.");
+    DECLARE_MESSAGE(UnsupportedPortDependency,
+                    (msg::value),
+                    "'{value}' is the name of a port dependency.",
+                    "- dependency {value} is not supported.");
     DECLARE_MESSAGE(PortDependencyConflict,
                     (msg::package_name),
                     "",
