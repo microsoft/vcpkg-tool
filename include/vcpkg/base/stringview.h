@@ -6,10 +6,10 @@
 #include <stddef.h>
 #include <string.h>
 
+#include <array>
 #include <iterator>
 #include <limits>
 #include <string>
-#include <array>
 
 namespace vcpkg
 {
@@ -107,22 +107,27 @@ struct StringArray : public std::array<char, N - 1>
     constexpr StringArray(const char (&str)[N]) noexcept : std::array<char, N - 1>(to_array(str)) { }
 
     template<::size_t L, ::size_t R>
-    friend constexpr StringArray<L + R - 1> operator+(const StringArray<L>& lhs, const StringArray<R>& rhs) noexcept;
+    friend constexpr StringArray<L + R - 1> operator+(const StringArray<L> lhs, const StringArray<R> rhs) noexcept;
 };
 
 template<::size_t L, ::size_t R>
-constexpr StringArray<L + R - 1> operator+(const StringArray<L>& lhs, const StringArray<R>& rhs) noexcept
+constexpr StringArray<L + R - 1> operator+(const StringArray<L> lhs, const StringArray<R> rhs) noexcept
 {
-    StringArray<L + R - 1> out;
-    
-    for (size_t i = 0; i < lhs.size(); i++)
+    if constexpr (lhs.empty())
+        return rhs;
+    else
     {
-        out.at(i) = lhs[i];
-    }
+        StringArray<L + R - 1> out;
 
-    for (size_t i = L; i < L + R - 1; i++)
-    {
-        out.at(i - 1) = rhs[i - L];
+        for (size_t i = 0; i < lhs.size(); i++)
+        {
+            out.at(i) = lhs[i];
+        }
+
+        for (size_t i = L; i < L + R - 1; i++)
+        {
+            out.at(i - 1) = rhs[i - L];
+        }
+        return out;
     }
-    return out;
 }
