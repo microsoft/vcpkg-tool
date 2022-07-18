@@ -1226,4 +1226,6 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
+    DECLARE_MESSAGE(NoCachedPackages, (), "", "No packages are cached.");
+    DECLARE_MESSAGE(SupportedPort, (msg::package_name), "", "Port {package_name} is supported.");
 }

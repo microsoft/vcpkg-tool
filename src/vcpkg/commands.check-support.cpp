@@ -66,7 +66,7 @@ namespace vcpkg::Commands
                 if (is_top_level_supported)
                 {
                     // supported!
-                    vcpkg::printf("port %s is supported\n", full_port_name(p));
+                    msg::println(msgSupportedPort, msg::package_name = full_port_name(p));
                 }
                 else
                 {
