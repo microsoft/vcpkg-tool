@@ -480,12 +480,14 @@ namespace vcpkg
     REGISTER_MESSAGE(CompressFolderFailed);
     REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion);
     REGISTER_MESSAGE(CurlReportedUnexpectedResults);
+    REGISTER_MESSAGE(DefaultBrowserLaunched);
     REGISTER_MESSAGE(DefaultPathToBinaries);
     REGISTER_MESSAGE(DetectCompilerHash);
     REGISTER_MESSAGE(DownloadAvailable);
     REGISTER_MESSAGE(DownloadedSources);
     REGISTER_MESSAGE(DownloadingVcpkgCeBundle);
     REGISTER_MESSAGE(DownloadingVcpkgCeBundleLatest);
+    REGISTER_MESSAGE(EmailVcpkgTeam);
     REGISTER_MESSAGE(EmptyLicenseExpression);
     REGISTER_MESSAGE(EnvStrFailedToExtract);
     REGISTER_MESSAGE(ErrorDetectingCompilerInfo);
@@ -517,6 +519,7 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedToStoreBackToMirror);
     REGISTER_MESSAGE(FailedToStoreBinaryCache);
     REGISTER_MESSAGE(FailedVendorAuthentication);
+    REGISTER_MESSAGE(FeedbackAppreciated);
     REGISTER_MESSAGE(ForceSystemBinariesOnWeirdPlatforms);
     REGISTER_MESSAGE(FormattedParseMessageExpression);
     REGISTER_MESSAGE(GenerateMsgErrorParsingFormatArgs);
@@ -579,10 +582,12 @@ namespace vcpkg
     REGISTER_MESSAGE(LoadingOverlayTriplet);
     REGISTER_MESSAGE(LocalizedMessageMustNotContainIndents);
     REGISTER_MESSAGE(LocalizedMessageMustNotEndWithNewline);
-    REGISTER_MESSAGE(MissingExtension);
     REGISTER_MESSAGE(Missing7zHeader);
+    REGISTER_MESSAGE(MissingExtension);
     REGISTER_MESSAGE(MonoInstructions);
     REGISTER_MESSAGE(MsiexecFailedToExtract);
+    REGISTER_MESSAGE(NavigateToNPS);
+    REGISTER_MESSAGE(NoCachedPackages);
     REGISTER_MESSAGE(NoLocalizationForMessages);
     REGISTER_MESSAGE(NoRegistryForPort);
     REGISTER_MESSAGE(PackageFailedtWhileExtracting);
@@ -592,7 +597,9 @@ namespace vcpkg
     REGISTER_MESSAGE(ParseControlErrorInfoTypesEntry);
     REGISTER_MESSAGE(ParseControlErrorInfoWhileLoading);
     REGISTER_MESSAGE(ParseControlErrorInfoWrongTypeFields);
+    REGISTER_MESSAGE(PortDependencyConflict);
     REGISTER_MESSAGE(PortNotInBaseline);
+    REGISTER_MESSAGE(PortSupportsField);
     REGISTER_MESSAGE(ProcessorArchitectureMalformed);
     REGISTER_MESSAGE(ProcessorArchitectureMissing);
     REGISTER_MESSAGE(ProcessorArchitectureW6432Malformed);
@@ -605,6 +612,7 @@ namespace vcpkg
     REGISTER_MESSAGE(SettingEnvVar);
     REGISTER_MESSAGE(SourceFieldPortNameMismatch);
     REGISTER_MESSAGE(StoredBinaryCache);
+    REGISTER_MESSAGE(SupportedPort);
     REGISTER_MESSAGE(SystemApiErrorMessage);
     REGISTER_MESSAGE(ToolFetchFailed);
     REGISTER_MESSAGE(ToolInWin10);
@@ -616,6 +624,8 @@ namespace vcpkg
     REGISTER_MESSAGE(UnknownBinaryProviderType);
     REGISTER_MESSAGE(UnknownTool);
     REGISTER_MESSAGE(UnknownVariablesInTemplate);
+    REGISTER_MESSAGE(UnsupportedPort);
+    REGISTER_MESSAGE(UnsupportedPortDependency);
     REGISTER_MESSAGE(UnsupportedSystemName);
     REGISTER_MESSAGE(UnsupportedToolchain);
     REGISTER_MESSAGE(UpdateBaselineAddBaselineNoManifest);
@@ -650,14 +660,4 @@ namespace vcpkg
     REGISTER_MESSAGE(WaitingToTakeFilesystemLock);
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
-    REGISTER_MESSAGE(NoCachedPackages);
-    REGISTER_MESSAGE(SupportedPort);
-    REGISTER_MESSAGE(UnsupportedPort);
-    REGISTER_MESSAGE(PortDependencyConflict);
-    REGISTER_MESSAGE(PortSupportsField);
-    REGISTER_MESSAGE(UnsupportedPortDependency);
-    REGISTER_MESSAGE(FeedbackAppreciated);
-    REGISTER_MESSAGE(DefaultBrowserLaunched);
-    REGISTER_MESSAGE(NavigateToNPS);
-    REGISTER_MESSAGE(EmailVcpkgTeam);
 }
