@@ -70,8 +70,9 @@ namespace vcpkg::Commands
                 }
                 else
                 {
-                    msg::println(
-                        msgUnsupportedPort, msg::package_name = full_port_name(p), msg::value = p.supports_expr);
+                    msg::println(msg::format(msgUnsupportedPort, msg::package_name = full_port_name(p))
+                                     .append_raw("\n")
+                                     .append(msgPortSupportsField, msg::value = p.supports_expr));
                 }
 
                 return;
@@ -79,14 +80,17 @@ namespace vcpkg::Commands
 
             if (is_top_level_supported)
             {
-                vcpkg::printf("port %s is not supported due to the following dependencies:\n", full_port_name(p));
+                msg::println(msg::format(msgUnsupportedPort, msg::package_name = full_port_name(p))
+                                 .append_raw("\n")
+                                 .append(msgPortDependencyConflict, msg::package_name = full_port_name(p)));
             }
             else
             {
-                vcpkg::printf(
-                    "port %s is not supported (supports: \"%s\"), and has the following unsupported dependencies:\n",
-                    full_port_name(p),
-                    p.supports_expr);
+                msg::println(msg::format(msgUnsupportedPort, msg::package_name = full_port_name(p))
+                                 .append_raw("\n")
+                                 .append(msgPortSupportsField, msg::value = p.supports_expr)
+                                 .append_raw("\n")
+                                 .append(msgPortDependencyConflict, msg::package_name = full_port_name(p)));
             }
 
             for (const Port& reason : reasons)

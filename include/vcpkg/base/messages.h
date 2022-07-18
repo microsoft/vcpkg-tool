@@ -1227,9 +1227,15 @@ namespace vcpkg
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
     DECLARE_MESSAGE(NoCachedPackages, (), "", "No packages are cached.");
+
     DECLARE_MESSAGE(SupportedPort, (msg::package_name), "", "Port {package_name} is supported.");
-    DECLARE_MESSAGE(UnsupportedPort,
-                    (msg::package_name, msg::value),
+    DECLARE_MESSAGE(PortSupportsField,
+                    (msg::value),
                     "'{value}' is the value of the 'supports' field in the port's vcpkg.json.",
-                    "Port {package_name} is not supported. (supports: \"{value}\")");
+                    "(supports: \"{value}\")");
+    DECLARE_MESSAGE(UnsupportedPort, (msg::package_name), "", "Port {package_name} is not supported.");
+    DECLARE_MESSAGE(PortDependencyConflict,
+                    (msg::package_name),
+                    "",
+                    "Port {package_name} has the following unsupported dependencies:");
 }

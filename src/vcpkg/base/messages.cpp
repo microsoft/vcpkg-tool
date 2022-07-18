@@ -653,4 +653,6 @@ namespace vcpkg
     REGISTER_MESSAGE(NoCachedPackages);
     REGISTER_MESSAGE(SupportedPort);
     REGISTER_MESSAGE(UnsupportedPort);
+    REGISTER_MESSAGE(PortDependencyConflict);
+    REGISTER_MESSAGE(PortSupportsField);
 }
