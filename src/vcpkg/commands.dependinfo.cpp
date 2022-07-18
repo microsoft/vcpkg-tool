@@ -34,7 +34,7 @@ namespace vcpkg::Commands::DependInfo
         {
             if (prefix_buf.size() > 400)
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO, "Recursion depth exceeded.");
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgExceededRecursionDepth);
             }
             auto currPos = std::find_if(
                 allDepends.begin(), allDepends.end(), [&currDepend](const auto& p) { return p.package == currDepend; });
@@ -50,7 +50,7 @@ namespace vcpkg::Commands::DependInfo
             {
                 // If we've already printed the set of dependencies, print an elipsis instead
                 Strings::append(prefix_buf, "+- ...\n");
-                print2(prefix_buf);
+                msg::write_unlocalized_text_to_stdout(Color::none, prefix_buf);
                 prefix_buf.resize(original_size);
             }
             else
@@ -61,7 +61,7 @@ namespace vcpkg::Commands::DependInfo
                 {
                     // Print the current level
                     Strings::append(prefix_buf, "+-- ", *i, "\n");
-                    print2(prefix_buf);
+                    msg::write_unlocalized_text_to_stdout(Color::none, prefix_buf);
                     prefix_buf.resize(original_size);
 
                     // Recurse
@@ -72,7 +72,7 @@ namespace vcpkg::Commands::DependInfo
 
                 // Print the last of the current level
                 Strings::append(prefix_buf, "+-- ", currPos->dependencies.back(), "\n");
-                print2(prefix_buf);
+                msg::write_unlocalized_text_to_stdout(Color::none, prefix_buf);
                 prefix_buf.resize(original_size);
 
                 // Recurse

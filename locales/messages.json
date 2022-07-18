@@ -182,6 +182,7 @@
   "ErrorVsCodeNotFound": "Visual Studio Code was not found and the environment variable {env_var} is not set or invalid.",
   "_ErrorVsCodeNotFound.comment": "An example of {env_var} is VCPKG_DEFAULT_TRIPLET.",
   "ErrorVsCodeNotFoundPathExamined": "The following paths were examined:",
+  "ExceededRecursionDepth": "Recursion depth exceeded.",
   "ExcludedPackage": "Excluded {spec}",
   "_ExcludedPackage.comment": "An example of {spec} is zlib:x64-windows.",
   "ExpectedCharacterHere": "expected '{expected}' here",

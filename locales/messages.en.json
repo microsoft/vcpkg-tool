@@ -101,6 +101,7 @@
   "ErrorVcvarsUnsupported": "in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported on non-Windows hosts.\nDefine 'VCPKG_CMAKE_SYSTEM_NAME' or 'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.",
   "ErrorVsCodeNotFound": "Visual Studio Code was not found and the environment variable {env_var} is not set or invalid.",
   "ErrorVsCodeNotFoundPathExamined": "The following paths were examined:",
+  "ExceededRecursionDepth": "Recursion depth exceeded.",
   "ExcludedPackage": "Excluded {spec}",
   "ExpectedCharacterHere": "expected '{expected}' here",
   "ExpectedFailOrSkip": "expected 'fail', 'skip', or 'pass' here",
