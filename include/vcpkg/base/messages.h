@@ -1231,8 +1231,11 @@ namespace vcpkg
                     (msg::value, msg::path),
                     "'{value}' is a list of invalid characters. I.e. \\/:*?<>|",
                     "Filename cannot contain invalid chars {value}, but was {path}");
-    DECLARE_MESSAGE(InvalidCommandArgIntegerRequired,
-                    (msg::command_name),
+    DECLARE_MESSAGE(InvalidCommandArgMaxDepth, (), "", "Value of --max-depth must be an integer.");
+    DECLARE_MESSAGE(InvalidCommandArgSort,
+                    (),
                     "",
-                    "Value of {command_name} must be an integer.");
+                    "Value of --sort must be one of 'lexicographical', 'topological', 'reverse'.");
+    DECLARE_MESSAGE(PackageNotFoundDependencyGraph, (), "", "Package not found in dependency graph.");
+    DECLARE_MESSAGE(InvalidActionsInstall, (), "", "Only install actions should exist in the plan.");
 }

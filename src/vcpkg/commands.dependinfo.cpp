@@ -123,8 +123,7 @@ namespace vcpkg::Commands::DependInfo
                 }
                 catch (std::exception&)
                 {
-                    Checks::msg_exit_with_message(
-                        VCPKG_LINE_INFO, msgInvalidCommandArgIntegerRequired, msg::command_name = "--max-depth");
+                    Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidCommandArgMaxDepth);
                 }
             }
             // No --max-depth set, default to no limit.
@@ -154,11 +153,7 @@ namespace vcpkg::Commands::DependInfo
                 {
                     return it->second;
                 }
-                Checks::exit_with_message(VCPKG_LINE_INFO,
-                                          "Value of --sort must be one of `%s`, `%s`, or `%s`",
-                                          OPTION_SORT_LEXICOGRAPHICAL,
-                                          OPTION_SORT_TOPOLOGICAL,
-                                          OPTION_SORT_REVERSE);
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidCommandArgSort);
             }
             return Default;
         }
@@ -238,8 +233,7 @@ namespace vcpkg::Commands::DependInfo
                                           std::map<std::string, PackageDependInfo>& dependencies_map)
         {
             auto iter = dependencies_map.find(package);
-            Checks::check_exit(
-                VCPKG_LINE_INFO, iter != dependencies_map.end(), "Package not found in dependency graph");
+            Checks::msg_check_exit(VCPKG_LINE_INFO, iter != dependencies_map.end(), msgPackageNotFoundDependencyGraph);
 
             PackageDependInfo& info = iter->second;
 
@@ -321,10 +315,11 @@ namespace vcpkg::Commands::DependInfo
             provider, var_provider, specs, status_db, {host_triplet, UnsupportedPortAction::Warn});
         for (const auto& warning : action_plan.warnings)
         {
-            print2(Color::warning, warning, '\n');
+            msg::write_unlocalized_text_to_stdout(Color::warning, warning + '\n');
         }
-        Checks::check_exit(
-            VCPKG_LINE_INFO, action_plan.remove_actions.empty(), "Only install actions should exist in the plan");
+
+        Checks::msg_check_exit(VCPKG_LINE_INFO, action_plan.remove_actions.empty(), msgInvalidActionsInstall);
+
         std::vector<const InstallPlanAction*> install_actions =
             Util::fmap(action_plan.already_installed, [&](const auto& action) { return &action; });
         for (auto&& action : action_plan.install_actions)
@@ -342,7 +337,7 @@ namespace vcpkg::Commands::DependInfo
                 });
 
             const std::string graph_as_string = create_graph_as_string(options.switches, depend_info);
-            print2(graph_as_string, '\n');
+            msg::write_unlocalized_text_to_stdout(Color::none, graph_as_string + '\n');
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
