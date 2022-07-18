@@ -221,6 +221,7 @@
   "UnknownBinaryProviderType": "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', 'x-aws-config', 'http', and 'files'",
   "UnknownTool": "vcpkg does not have a definition of this tool for this platform.",
   "UnknownVariablesInTemplate": "invalid argument: url template '{value}' contains unknown variables: {list}",
+  "UnsupportedPort": "Port {package_name} is not supported. (supports: \"{value}\")",
   "UnsupportedSystemName": "Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. Supported system names are '', 'Windows' and 'WindowsStore'.",
   "UnsupportedToolchain": "in triplet {triplet}: Unable to find a valid toolchain for requested target architecture {arch}.\nThe selected Visual Studio instance is at: {path}\nThe available toolchain combinations are: {list}",
   "UpdateBaselineAddBaselineNoManifest": "the --{option} switch was passed, but there is no manifest file to add a `builtin-baseline` field to.",

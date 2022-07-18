@@ -652,4 +652,5 @@ namespace vcpkg
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
     REGISTER_MESSAGE(NoCachedPackages);
     REGISTER_MESSAGE(SupportedPort);
+    REGISTER_MESSAGE(UnsupportedPort);
 }

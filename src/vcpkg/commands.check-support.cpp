@@ -70,7 +70,8 @@ namespace vcpkg::Commands
                 }
                 else
                 {
-                    vcpkg::printf("port %s is not supported (supports: \"%s\")\n", full_port_name(p), p.supports_expr);
+                    msg::println(
+                        msgUnsupportedPort, msg::package_name = full_port_name(p), msg::value = p.supports_expr);
                 }
 
                 return;

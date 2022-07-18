@@ -383,6 +383,8 @@
   "UnknownTool": "vcpkg does not have a definition of this tool for this platform.",
   "UnknownVariablesInTemplate": "invalid argument: url template '{value}' contains unknown variables: {list}",
   "_UnknownVariablesInTemplate.comment": "{value} is the value provided by the user and {list} a list of unknown variables seperated by comma",
+  "UnsupportedPort": "Port {package_name} is not supported. (supports: \"{value}\")",
+  "_UnsupportedPort.comment": "'{value}' is the value of the 'supports' field in the port's vcpkg.json. An example of {package_name} is zlib.",
   "UnsupportedSystemName": "Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. Supported system names are '', 'Windows' and 'WindowsStore'.",
   "_UnsupportedSystemName.comment": "An example of {system_name} is Darwin.",
   "UnsupportedToolchain": "in triplet {triplet}: Unable to find a valid toolchain for requested target architecture {arch}.\nThe selected Visual Studio instance is at: {path}\nThe available toolchain combinations are: {list}",
