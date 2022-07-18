@@ -511,7 +511,6 @@ namespace vcpkg
     REGISTER_MESSAGE(ExpectedPortName);
     REGISTER_MESSAGE(ExpectedTripletName);
     REGISTER_MESSAGE(ExtendedDocumentationAtUrl);
-    REGISTER_MESSAGE(FailedToFindDependencyAbi);
     REGISTER_MESSAGE(FailedToProvisionCe);
     REGISTER_MESSAGE(FailedToRunToolToDetermineVersion);
     REGISTER_MESSAGE(FailedToStoreBackToMirror);

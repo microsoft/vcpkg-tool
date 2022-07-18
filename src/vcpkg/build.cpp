@@ -678,7 +678,7 @@ namespace vcpkg
                     Checks::msg_check_exit(VCPKG_LINE_INFO,
                                            out_file.write(buf.c_str() + old_buf_size, 1, write_size) == write_size,
                                            msgErrorWhileWriting,
-                                           msg::error_msg = stdoutlog);
+                                           msg::path = stdoutlog);
                 },
                 default_working_directory,
                 env);
@@ -917,7 +917,7 @@ namespace vcpkg
                     Checks::msg_check_exit(VCPKG_LINE_INFO,
                                            out_file.write(sv.data(), 1, sv.size()) == sv.size(),
                                            msgErrorWhileWriting,
-                                           msg::error_msg = stdoutlog);
+                                           msg::path = stdoutlog);
                 },
                 default_working_directory,
                 env);
@@ -1226,10 +1226,8 @@ namespace vcpkg
                         auto status_it = status_db.find(pspec);
                         if (status_it == status_db.end())
                         {
-                            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                                           msgFailedToFindDependencyAbi,
-                                                           msg::old_value = action.spec,
-                                                           msg::new_value = pspec);
+                            Debug::println("Failed to find dependency abi for %s -> %s", action.spec, pspec);
+                            Checks::unreachable(VCPKG_LINE_INFO);
                         }
 
                         dependency_abis.emplace_back(AbiEntry{pspec.name(), status_it->get()->package.abi});

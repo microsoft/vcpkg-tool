@@ -741,7 +741,7 @@ namespace vcpkg
                     "",
                     "Visual Studio Code was not found and the environment variable {env_var} is not set or invalid.");
     DECLARE_MESSAGE(ErrorVsCodeNotFoundPathExamined, (), "", "The following paths were examined:");
-    DECLARE_MESSAGE(ErrorWhileWriting, (msg::error_msg), "", "Error occured while writing {error_msg}");
+    DECLARE_MESSAGE(ErrorWhileWriting, (msg::path), "", "Error occured while writing {path}");
     DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
     DECLARE_MESSAGE(
         ExpectedCharacterHere,
@@ -752,10 +752,6 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
     DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
-    DECLARE_MESSAGE(FailedToFindDependencyAbi,
-                    (msg::old_value, msg::new_value),
-                    "{old_value} is the old spec, {new_value} is the new spec.",
-                    "Failed to find dependency abi for {old_value} -> {new_value}");
     DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
     DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                     (msg::tool_name, msg::path),
@@ -895,10 +891,11 @@ namespace vcpkg
                     (msg::actual),
                     "{actual} is the provided format string",
                     "invalid format string: {actual}");
-    DECLARE_MESSAGE(InvalidLinkage,
-                    (msg::system_name, msg::value),
-                    "'{value}' is the linkage type.",
-                    "Invalid {system_name} linkage type: [{value}]");
+    DECLARE_MESSAGE(
+        InvalidLinkage,
+        (msg::system_name, msg::value),
+        "'{value}' is the linkage type vcpkg would did not understand. (Correct values would be static ofr dynamic)",
+        "Invalid {system_name} linkage type: [{value}]");
     DECLARE_MESSAGE(JsonErrorFailedToParse, (msg::path), "", "failed to parse {path}:");
     DECLARE_MESSAGE(JsonErrorFailedToRead, (msg::path, msg::error_msg), "", "failed to read {path}: {error_msg}");
     DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected {path} to be an object.");
@@ -1099,7 +1096,9 @@ namespace vcpkg
                     "'x-aws-config', 'http', and 'files'");
     DECLARE_MESSAGE(UnknownPolicySetting,
                     (msg::option, msg::value),
-                    "'{value}' is the policy.",
+                    "'{value}' is the policy in question. These are unlocalized names that ports use to control post "
+                    "build checks. Some examples are VCPKG_POLICY_DLLS_WITHOUT_EXPORTS, "
+                    "VCPKG_POLICY_MISMATCHED_NUMBER_OF_BINARIES, or VCPKG_POLICY_ALLOW_OBSOLETE_MSVCRT",
                     "Unknown setting for policy '{value}': {option}");
     DECLARE_MESSAGE(UnknownSettingForBuildType,
                     (msg::option),
