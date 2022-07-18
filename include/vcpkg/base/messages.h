@@ -22,7 +22,7 @@ namespace vcpkg
     namespace msg
     {
         template<class Message, class... Tags, class... Ts>
-        constexpr LocalizedString format(Message, detail::MessageArgument<Tags, Ts>... args);
+        LocalizedString format(Message, detail::MessageArgument<Tags, Ts>... args);
     }
 
     struct LocalizedString
@@ -202,7 +202,7 @@ namespace vcpkg::msg
     void threadunsafe_initialize_context();
 
     template<class Message, class... Tags, class... Ts>
-    constexpr LocalizedString format(Message, detail::MessageArgument<Tags, Ts>... args)
+    LocalizedString format(Message, detail::MessageArgument<Tags, Ts>... args)
     {
         // avoid generating code, but still typecheck
         // (and avoid unused typedef warnings)
