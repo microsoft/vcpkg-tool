@@ -367,10 +367,10 @@ namespace vcpkg::Commands::Integrate
         const auto cmake_toolchain = paths.buildsystems / "vcpkg.cmake";
 
 #if defined(_WIN32)
-        msg::println(msg::format(msgCMakeToolChainFile, msg::command_name = cmake_toolchain.generic_u8string())
+        msg::println(msg::format(msgCMakeToolChainFile, msg::path = cmake_toolchain.generic_u8string())
                          .append(msgAutomaticLinkingForMSBuildProjects));
 #else
-        msg::println(msgCMakeToolChainFile, msg::command_name = cmake_toolchain.generic_u8string());
+        msg::println(msgCMakeToolChainFile, msg::path = cmake_toolchain.generic_u8string());
 #endif
         Checks::exit_success(VCPKG_LINE_INFO);
     }
@@ -441,7 +441,7 @@ namespace vcpkg::Commands::Integrate
         const auto nuget_package = buildsystems_dir / Strings::format("%s.%s.nupkg", nuget_id, nupkg_version);
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                fs.exists(nuget_package, IgnoreErrors{}),
-                               msgNugetPackageFileCreationFailed,
+                               msgNugetPackageFileSucceededButCreationFailed,
                                msg::path = nuget_package);
         msg::println(Color::success, msgCreatedNuGetPackage, msg::path = nuget_package);
 

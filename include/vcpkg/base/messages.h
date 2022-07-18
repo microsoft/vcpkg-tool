@@ -648,10 +648,7 @@ namespace vcpkg
         (),
         "Displayed after CMakeTargetsUsage; the # must be kept at the beginning so that the message remains a comment.",
         "# this is heuristically generated, and may not be correct");
-    DECLARE_MESSAGE(CMakeToolChainFile,
-                    (msg::command_name),
-                    "",
-                    "CMake projects should use: \"DCMAKE_TOOLCHAIN_FILE={command_name}\"");
+    DECLARE_MESSAGE(CMakeToolChainFile, (msg::path), "", "CMake projects should use: \"DCMAKE_TOOLCHAIN_FILE={path}\"");
     DECLARE_MESSAGE(CommandFailed,
                     (msg::command_line),
                     "",
@@ -1020,14 +1017,10 @@ namespace vcpkg
                     "msiexec failed while extracting \"{path}\" with launch or exit code {exit_code} and message:");
     DECLARE_MESSAGE(NoLocalizationForMessages, (), "", "No localized messages for the following: ");
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
-    DECLARE_MESSAGE(NugetPackageCreationFailed,
-                    (msg::error),
-                    "'{error}' is the NuGet output message.",
-                    "NuGet package creation failed: '{error}' ");
-    DECLARE_MESSAGE(NugetPackageFileCreationFailed,
+    DECLARE_MESSAGE(NugetPackageFileSucceededButCreationFailed,
                     (msg::path),
                     "",
-                    "NuGet package creation failed. No .nupkg was produced. \"{path}\" ");
+                    "NuGet package creation succeeded, but no .nupkg was produced. Expected: \"{path}\"");
     DECLARE_MESSAGE(PackageFailedtWhileExtracting,
                     (msg::value, msg::path),
                     "'{value}' is either a tool name or a package name.",
@@ -1125,7 +1118,8 @@ namespace vcpkg
                     "'x-aws-config', 'http', and 'files'");
     DECLARE_MESSAGE(UnknownParameterForIntegrate,
                     (msg::value),
-                    "'{value}' is the parameter",
+                    "'{value}' is a user-supplied command line option. For example, given vcpkg integrate frobinate, "
+                    "{value} would be frobinate.",
                     "Unknown parameter '{value}' for integrate.");
     DECLARE_MESSAGE(UnknownTool, (), "", "vcpkg does not have a definition of this tool for this platform.");
     DECLARE_MESSAGE(
@@ -1204,7 +1198,7 @@ namespace vcpkg
         VcpkgCompletion,
         (msg::value, msg::path),
         "'{value}' is the subject for completion. i.e. bash, zsh, etc.",
-        "vcpkg '{value}' completion is already imported to your \"{path}\" file.\nThe following entries were found: ");
+        "vcpkg {value} completion is already imported to your \"{path}\" file.\nThe following entries were found:");
     DECLARE_MESSAGE(VcpkgDisallowedClassicMode,
                     (),
                     "",

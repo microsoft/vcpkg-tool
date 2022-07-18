@@ -591,8 +591,7 @@ namespace vcpkg
     REGISTER_MESSAGE(MsiexecFailedToExtract);
     REGISTER_MESSAGE(NoLocalizationForMessages);
     REGISTER_MESSAGE(NoRegistryForPort);
-    REGISTER_MESSAGE(NugetPackageCreationFailed);
-    REGISTER_MESSAGE(NugetPackageFileCreationFailed);
+    REGISTER_MESSAGE(NugetPackageFileSucceededButCreationFailed);
     REGISTER_MESSAGE(PackageFailedtWhileExtracting);
     REGISTER_MESSAGE(PackingVendorFailed);
     REGISTER_MESSAGE(ParseControlErrorInfoInvalidFields);
