@@ -279,6 +279,8 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(version, "1.3.8");
     DECLARE_MSG_ARG(action_index, "340");
     DECLARE_MSG_ARG(env_var, "VCPKG_DEFAULT_TRIPLET");
+    DECLARE_MSG_ARG(extension, ".exe");
+
 #undef DECLARE_MSG_ARG
 
 #define DECLARE_MESSAGE(NAME, ARGS, COMMENT, ...)                                                                      \
@@ -778,13 +780,18 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is a command option.",
                     "expected value after '{value}'.");
-    DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
+    DECLARE_MESSAGE(ExtendedDocumenationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
+    DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":");
+    DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
+                    (),
+                    "",
+                    "Failed to parse CMake console output to locate block start/end markers.");
     DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
     DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                     (msg::tool_name, msg::path),
                     "Additional information, such as the command line output, if any, will be appended on "
                     "the line after this message",
-                    "Failed to run {path} to determine the {tool_name} version.");
+                    "Failed to run \"{path}\" to determine the {tool_name} version.");
     DECLARE_MESSAGE(FailedToStoreBackToMirror, (), "", "failed to store back to mirror:");
     DECLARE_MESSAGE(FailedToStoreBinaryCache, (msg::path), "", "Failed to store binary cache {path}");
     DECLARE_MESSAGE(FailedVendorAuthentication,
@@ -956,7 +963,7 @@ namespace vcpkg
                     "invalid format string: {actual}");
     DECLARE_MESSAGE(JsonErrorFailedToParse, (msg::path), "", "failed to parse {path}:");
     DECLARE_MESSAGE(JsonErrorFailedToRead, (msg::path, msg::error_msg), "", "failed to read {path}: {error_msg}");
-    DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected {path} to be an object.");
+    DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected \"{path}\" to be an object.");
     DECLARE_MESSAGE(JsonSwitch, (), "", "(Experimental) Request JSON output.");
     DECLARE_MESSAGE(LaunchingProgramFailed,
                     (msg::tool_name),
@@ -1035,6 +1042,10 @@ namespace vcpkg
                     (msg::path),
                     "'-- [COMMUNITY]' at the beginning must be preserved",
                     "-- [COMMUNITY] Loading triplet configuration from: {path}");
+    DECLARE_MESSAGE(LoadingDependencyInformation,
+                    (msg::count),
+                    "",
+                    "Loading dependency information for {count} packages...");
     DECLARE_MESSAGE(LoadingOverlayTriplet,
                     (msg::path),
                     "'-- [OVERLAY]' at the beginning must be preserved",
@@ -1050,6 +1061,8 @@ namespace vcpkg
                     "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
                     "The message named {value} ends with a newline which should be added by formatting "
                     "rather than by localization.");
+    DECLARE_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
+    DECLARE_MESSAGE(Missing7zHeader, (), "", "Unable to find 7z header.");
     DECLARE_MESSAGE(MonoInstructions,
                     (),
                     "",
@@ -1066,6 +1079,10 @@ namespace vcpkg
                     "The option '{command_name}' does not accept an argument.");
     DECLARE_MESSAGE(NoLocalizationForMessages, (), "", "No localized messages for the following: ");
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
+    DECLARE_MESSAGE(PackageFailedtWhileExtracting,
+                    (msg::value, msg::path),
+                    "'{value}' is either a tool name or a package name.",
+                    "'{value}' failed while extracting {path}.");
     DECLARE_MESSAGE(PackageRootDir, (), "", "(Experimental) Specify the packages root directory.");
     DECLARE_MESSAGE(PackingVendorFailed,
                     (msg::vendor),
@@ -1126,10 +1143,10 @@ namespace vcpkg
                     "-- Setting \"{env_var}\" environment variables to \"{url}\".");
     DECLARE_MESSAGE(SourceFieldPortNameMismatch,
                     (msg::package_name, msg::path),
-                    "{package_name} and {path} are both names of installable ports/packages. 'Source', "
+                    "{package_name} and \"{path}\" are both names of installable ports/packages. 'Source', "
                     "'CONTROL', 'vcpkg.json', and 'name' references are locale-invariant.",
                     "The 'Source' field inside the CONTROL file, or \"name\" field inside the vcpkg.json "
-                    "file has the name {package_name} and does not match the port directory {path}.");
+                    "file has the name {package_name} and does not match the port directory \"{path}\".");
     DECLARE_MESSAGE(SpecifiedFeatureTurnedOff,
                     (msg::command_name, msg::option),
                     "",
@@ -1162,6 +1179,11 @@ namespace vcpkg
                     "'{value}' is a feature flag.",
                     "Both '{value}' and -'{value}' were specified as feature flags.");
     DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.");
+    DECLARE_MESSAGE(UnexpectedExtension, (msg::extension), "", "Unexpected archive extension: '{extension}'.");
+    DECLARE_MESSAGE(UnexpectedFormat,
+                    (msg::expected, msg::actual),
+                    "{expected} is the expected format, {actual} is the actual format.",
+                    "Expected format is [{expected}], but was [{actual}].");
     DECLARE_MESSAGE(UnexpectedToolOutput,
                     (msg::tool_name, msg::path),
                     "The actual command line output will be appended after this message.",
