@@ -407,6 +407,7 @@ namespace vcpkg
 
     REGISTER_MESSAGE(AddArtifactOnlyOne);
     REGISTER_MESSAGE(AddFirstArgument);
+    REGISTER_MESSAGE(AddingCompletionEntry);
     REGISTER_MESSAGE(AddPortRequiresManifest);
     REGISTER_MESSAGE(AddPortSucceeded);
     REGISTER_MESSAGE(AddTripletExpressionNotAllowed);
@@ -441,9 +442,11 @@ namespace vcpkg
     REGISTER_MESSAGE(AlreadyInstalled);
     REGISTER_MESSAGE(AlreadyInstalledNotHead);
     REGISTER_MESSAGE(AnotherInstallationInProgress);
+    REGISTER_MESSAGE(AppliedUserIntegration);
     REGISTER_MESSAGE(AssetSourcesArg);
     REGISTER_MESSAGE(AttemptingToFetchPackagesFromVendor);
     REGISTER_MESSAGE(AuthenticationMayRequireManualAction);
+    REGISTER_MESSAGE(AutomaticLinkingForMSBuildProjects);
     REGISTER_MESSAGE(AutoSettingEnvVar);
     REGISTER_MESSAGE(BinarySourcesArg);
     REGISTER_MESSAGE(BuildAlreadyInstalled);
@@ -479,10 +482,12 @@ namespace vcpkg
     REGISTER_MESSAGE(CmakeTargetsExcluded);
     REGISTER_MESSAGE(CMakeTargetsUsage);
     REGISTER_MESSAGE(CMakeTargetsUsageHeuristicMessage);
+    REGISTER_MESSAGE(CMakeToolChainFile);
     REGISTER_MESSAGE(CommandFailed);
     REGISTER_MESSAGE(CompressFolderFailed);
     REGISTER_MESSAGE(ConflictingValuesForOption);
     REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion);
+    REGISTER_MESSAGE(CreatedNuGetPackage);
     REGISTER_MESSAGE(CurlReportedUnexpectedResults);
     REGISTER_MESSAGE(DefaultFlag);
     REGISTER_MESSAGE(DefaultPathToBinaries);
@@ -527,6 +532,7 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedToStoreBackToMirror);
     REGISTER_MESSAGE(FailedToStoreBinaryCache);
     REGISTER_MESSAGE(FailedVendorAuthentication);
+    REGISTER_MESSAGE(FishCompletion);
     REGISTER_MESSAGE(ForceSystemBinariesOnWeirdPlatforms);
     REGISTER_MESSAGE(FormattedParseMessageExpression);
     REGISTER_MESSAGE(GenerateMsgErrorParsingFormatArgs);
@@ -570,10 +576,12 @@ namespace vcpkg
     REGISTER_MESSAGE(InfoSetEnvVar);
     REGISTER_MESSAGE(InstallingFromLocation);
     REGISTER_MESSAGE(InstallingPackage);
+    REGISTER_MESSAGE(InstallPackageInstruction);
     REGISTER_MESSAGE(InstallRootDir);
     REGISTER_MESSAGE(InstallWithSystemManager);
     REGISTER_MESSAGE(InstallWithSystemManagerMono);
     REGISTER_MESSAGE(InstallWithSystemManagerPkg);
+    REGISTER_MESSAGE(IntegrationFailed);
     REGISTER_MESSAGE(InvalidArgument);
     REGISTER_MESSAGE(InvalidArgumentRequiresAbsolutePath);
     REGISTER_MESSAGE(InvalidArgumentRequiresBaseUrl);
@@ -622,6 +630,7 @@ namespace vcpkg
     REGISTER_MESSAGE(NoArgumentsForOption);
     REGISTER_MESSAGE(NoLocalizationForMessages);
     REGISTER_MESSAGE(NoRegistryForPort);
+    REGISTER_MESSAGE(NugetPackageFileSucceededButCreationFailed);
     REGISTER_MESSAGE(PackageFailedtWhileExtracting);
     REGISTER_MESSAGE(PackageRootDir);
     REGISTER_MESSAGE(PackingVendorFailed);
@@ -631,6 +640,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ParseControlErrorInfoWhileLoading);
     REGISTER_MESSAGE(ParseControlErrorInfoWrongTypeFields);
     REGISTER_MESSAGE(PortNotInBaseline);
+    REGISTER_MESSAGE(PreviousIntegrationFileRemains);
     REGISTER_MESSAGE(ProcessorArchitectureMalformed);
     REGISTER_MESSAGE(ProcessorArchitectureMissing);
     REGISTER_MESSAGE(ProcessorArchitectureW6432Malformed);
@@ -648,6 +658,7 @@ namespace vcpkg
     REGISTER_MESSAGE(SpecifyHostArch);
     REGISTER_MESSAGE(SpecifyTargetArch);
     REGISTER_MESSAGE(StoredBinaryCache);
+    REGISTER_MESSAGE(SuggestStartingBashShell);
     REGISTER_MESSAGE(SystemApiErrorMessage);
     REGISTER_MESSAGE(ToolFetchFailed);
     REGISTER_MESSAGE(ToolInWin10);
@@ -659,6 +670,7 @@ namespace vcpkg
     REGISTER_MESSAGE(UnknownBaselineFileContent);
     REGISTER_MESSAGE(UnknownBinaryProviderType);
     REGISTER_MESSAGE(UnknownOptions);
+    REGISTER_MESSAGE(UnknownParameterForIntegrate);
     REGISTER_MESSAGE(UnknownTool);
     REGISTER_MESSAGE(UnknownVariablesInTemplate);
     REGISTER_MESSAGE(UnsupportedShortOptions);
@@ -676,9 +688,12 @@ namespace vcpkg
     REGISTER_MESSAGE(UploadingBinariesToVendor);
     REGISTER_MESSAGE(UploadingBinariesUsingVendor);
     REGISTER_MESSAGE(UseEnvVar);
+    REGISTER_MESSAGE(UserWideIntegrationDeleted);
+    REGISTER_MESSAGE(UserWideIntegrationRemoved);
     REGISTER_MESSAGE(UsingCommunityTriplet);
     REGISTER_MESSAGE(UsingManifestAt);
     REGISTER_MESSAGE(VcpkgCeIsExperimental);
+    REGISTER_MESSAGE(VcpkgCompletion);
     REGISTER_MESSAGE(VcpkgDisallowedClassicMode);
     REGISTER_MESSAGE(VcpkgHasCrashed);
     REGISTER_MESSAGE(VcpkgInvalidCommand);
