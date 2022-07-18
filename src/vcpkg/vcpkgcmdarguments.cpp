@@ -11,6 +11,17 @@
 
 namespace vcpkg
 {
+    const std::string* ParsedArguments::read_setting(StringLiteral setting) const noexcept
+    {
+        auto loc = settings.find(setting);
+        if (loc == settings.end())
+        {
+            return nullptr;
+        }
+
+        return &loc->second;
+    }
+
     static void set_from_feature_flag(const std::vector<std::string>& flags, StringView flag, Optional<bool>& place)
     {
         if (!place.has_value())

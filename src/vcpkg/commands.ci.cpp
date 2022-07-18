@@ -454,7 +454,7 @@ namespace vcpkg::Commands::CI
                     obj.insert("abi", Json::Value::string(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi));
                     arr.push_back(std::move(obj));
                 }
-                filesystem.write_contents(output_hash_json, Json::stringify(arr, Json::JsonStyle{}), VCPKG_LINE_INFO);
+                filesystem.write_contents(output_hash_json, Json::stringify(arr), VCPKG_LINE_INFO);
             }
         }
 

@@ -1026,6 +1026,22 @@ namespace vcpkg
                     (msg::path, msg::exit_code),
                     "",
                     "msiexec failed while extracting \"{path}\" with launch or exit code {exit_code} and message:");
+    DECLARE_MESSAGE(NewConfigurationAlreadyExists,
+                    (msg::path),
+                    "",
+                    "Creating a manifest would overwrite a vcpkg-configuration.json at {path}.");
+    DECLARE_MESSAGE(NewManifestAlreadyExists, (msg::path), "", "A manifest is already present at {path}.");
+    DECLARE_MESSAGE(NewNameCannotBeEmpty, (), "", "--name cannot be empty.");
+    DECLARE_MESSAGE(NewOnlyOneVersionKind,
+                    (),
+                    "",
+                    "Only one of --version-relaxed, --version-date, or --version-string may be specified.");
+    DECLARE_MESSAGE(NewSpecifyNameVersionOrApplication,
+                    (),
+                    "",
+                    "Either specify --name and --version to produce a manifest intended for C++ libraries, or specify "
+                    "--application to indicate that the manifest is not intended to be used as a port.");
+    DECLARE_MESSAGE(NewVersionCannotBeEmpty, (), "", "--version cannot be empty.");
     DECLARE_MESSAGE(NoLocalizationForMessages, (), "", "No localized messages for the following: ");
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
     DECLARE_MESSAGE(NugetPackageFileSucceededButCreationFailed,

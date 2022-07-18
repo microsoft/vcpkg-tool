@@ -591,6 +591,12 @@ namespace vcpkg
     REGISTER_MESSAGE(Missing7zHeader);
     REGISTER_MESSAGE(MonoInstructions);
     REGISTER_MESSAGE(MsiexecFailedToExtract);
+    REGISTER_MESSAGE(NewConfigurationAlreadyExists);
+    REGISTER_MESSAGE(NewManifestAlreadyExists);
+    REGISTER_MESSAGE(NewNameCannotBeEmpty);
+    REGISTER_MESSAGE(NewOnlyOneVersionKind);
+    REGISTER_MESSAGE(NewSpecifyNameVersionOrApplication);
+    REGISTER_MESSAGE(NewVersionCannotBeEmpty);
     REGISTER_MESSAGE(NoLocalizationForMessages);
     REGISTER_MESSAGE(NoRegistryForPort);
     REGISTER_MESSAGE(NugetPackageFileSucceededButCreationFailed);
