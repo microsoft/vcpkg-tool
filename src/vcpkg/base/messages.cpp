@@ -656,4 +656,8 @@ namespace vcpkg
     REGISTER_MESSAGE(PortDependencyConflict);
     REGISTER_MESSAGE(PortSupportsField);
     REGISTER_MESSAGE(UnsupportedPortDependency);
+    REGISTER_MESSAGE(FeedbackAppreciated);
+    REGISTER_MESSAGE(DefaultBrowserLaunched);
+    REGISTER_MESSAGE(NavigateToNPS);
+    REGISTER_MESSAGE(EmailVcpkgTeam);
 }
