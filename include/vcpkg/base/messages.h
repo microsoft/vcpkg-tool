@@ -648,7 +648,10 @@ namespace vcpkg
         (),
         "Displayed after CMakeTargetsUsage; the # must be kept at the beginning so that the message remains a comment.",
         "# this is heuristically generated, and may not be correct");
-    DECLARE_MESSAGE(CMakeToolChainFile, (msg::path), "", "CMake projects should use: \"DCMAKE_TOOLCHAIN_FILE={path}\"");
+    DECLARE_MESSAGE(CMakeToolChainFile,
+                    (msg::path),
+                    "",
+                    "CMake projects should use: \"-DCMAKE_TOOLCHAIN_FILE={path}\"");
     DECLARE_MESSAGE(CommandFailed,
                     (msg::command_line),
                     "",

@@ -120,7 +120,7 @@
   "_CMakeTargetsUsage.comment": "'targets' are a CMake and Makefile concept An example of {package_name} is zlib.",
   "CMakeTargetsUsageHeuristicMessage": "# this is heuristically generated, and may not be correct",
   "_CMakeTargetsUsageHeuristicMessage.comment": "Displayed after CMakeTargetsUsage; the # must be kept at the beginning so that the message remains a comment.",
-  "CMakeToolChainFile": "CMake projects should use: \"DCMAKE_TOOLCHAIN_FILE={path}\"",
+  "CMakeToolChainFile": "CMake projects should use: \"-DCMAKE_TOOLCHAIN_FILE={path}\"",
   "_CMakeToolChainFile.comment": "An example of {path} is /foo/bar.",
   "ChecksFailedCheck": "vcpkg has crashed; no additional details are available.",
   "ChecksUnreachableCode": "unreachable code was reached",

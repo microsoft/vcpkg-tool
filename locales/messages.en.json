@@ -65,7 +65,7 @@
   "BuildingPackageFailedDueToMissingDeps": "due to the following missing dependencies:",
   "CMakeTargetsUsage": "{package_name} provides CMake targets:",
   "CMakeTargetsUsageHeuristicMessage": "# this is heuristically generated, and may not be correct",
-  "CMakeToolChainFile": "CMake projects should use: \"DCMAKE_TOOLCHAIN_FILE={path}\"",
+  "CMakeToolChainFile": "CMake projects should use: \"-DCMAKE_TOOLCHAIN_FILE={path}\"",
   "ChecksFailedCheck": "vcpkg has crashed; no additional details are available.",
   "ChecksUnreachableCode": "unreachable code was reached",
   "ChecksUpdateVcpkg": "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.",
