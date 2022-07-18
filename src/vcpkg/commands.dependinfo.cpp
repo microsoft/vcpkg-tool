@@ -123,7 +123,8 @@ namespace vcpkg::Commands::DependInfo
                 }
                 catch (std::exception&)
                 {
-                    Checks::exit_with_message(VCPKG_LINE_INFO, "Value of --max-depth must be an integer");
+                    Checks::msg_exit_with_message(
+                        VCPKG_LINE_INFO, msgInvalidCommandArgIntegerRequired, msg::command_name = "--max-depth");
                 }
             }
             // No --max-depth set, default to no limit.

@@ -652,4 +652,5 @@ namespace vcpkg
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
     REGISTER_MESSAGE(InvalidFilename);
     REGISTER_MESSAGE(ExceededRecursionDepth);
+    REGISTER_MESSAGE(InvalidCommandArgIntegerRequired);
 }

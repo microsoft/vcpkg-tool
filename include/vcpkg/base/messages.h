@@ -1231,4 +1231,8 @@ namespace vcpkg
                     (msg::value, msg::path),
                     "'{value}' is a list of invalid characters. I.e. \\/:*?<>|",
                     "Filename cannot contain invalid chars {value}, but was {path}");
+    DECLARE_MESSAGE(InvalidCommandArgIntegerRequired,
+                    (msg::command_name),
+                    "",
+                    "Value of {command_name} must be an integer.");
 }

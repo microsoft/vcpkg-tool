@@ -153,6 +153,7 @@
   "InvalidArgumentRequiresSourceArgument": "invalid argument: binary config '{binary_source}' requires at least one source argument",
   "InvalidArgumentRequiresTwoOrThreeArguments": "invalid argument: binary config '{binary_source}' requires 2 or 3 arguments",
   "InvalidArgumentRequiresValidToken": "invalid argument: binary config '{binary_source}' requires a SAS token without a preceeding '?' as the second argument",
+  "InvalidCommandArgIntegerRequired": "Value of {command_name} must be an integer.",
   "InvalidFilename": "Filename cannot contain invalid chars {value}, but was {path}",
   "InvalidFormatString": "invalid format string: {actual}",
   "JsonErrorFailedToParse": "failed to parse {path}:",
