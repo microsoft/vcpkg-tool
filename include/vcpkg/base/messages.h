@@ -151,12 +151,12 @@ namespace vcpkg::msg
         template<::size_t M, ::size_t N>
         inline std::string get_examples_for_args(const StringArray<M>& comment, const StringArray<N>& example)
         {
-            if constexpr (comment.empty())
+            if (comment.empty())
             {
                 return std::string(comment.begin(), comment.end());
             }
 
-            if constexpr (example.empty())
+            if (example.empty())
             {
                 return std::string(example.begin(), example.end());
             }

@@ -9,6 +9,7 @@
 #include <iterator>
 #include <limits>
 #include <string>
+#include <array>
 
 namespace vcpkg
 {
@@ -112,7 +113,6 @@ struct StringArray : public std::array<char, N - 1>
 template<::size_t L, ::size_t R>
 constexpr StringArray<L + R - 1> operator+(const StringArray<L>& lhs, const StringArray<R>& rhs) noexcept
 {
-    if constexpr (lhs.size() == 0) return rhs;
     StringArray<L + R - 1> out;
     
     for (size_t i = 0; i < lhs.size(); i++)
