@@ -420,7 +420,7 @@ endif()
 
 # === Target: format ===
 
-find_program(CLANG_FORMAT clang-format)
+find_program(CLANG_FORMAT clang-format PATHS "$ENV{PROGRAMFILES}/LLVM/bin")
 if(CLANG_FORMAT)
     # doing all of these formats in one line has a tendency to overflow the command line length
     add_custom_target(format
