@@ -763,6 +763,10 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
     DECLARE_MESSAGE(ExtendedDocumenationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
     DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":");
+    DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
+                    (),
+                    "",
+                    "Failed to parse CMake console output to locate block start/end markers.");
     DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
     DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                     (msg::tool_name, msg::path),
@@ -988,6 +992,10 @@ namespace vcpkg
                     (msg::path),
                     "'-- [COMMUNITY]' at the beginning must be preserved",
                     "-- [COMMUNITY] Loading triplet configuration from: {path}");
+    DECLARE_MESSAGE(LoadingDependencyInformation,
+                    (msg::count),
+                    "",
+                    "Loading dependency information for {count} packages...");
     DECLARE_MESSAGE(LoadingOverlayTriplet,
                     (msg::path),
                     "'-- [OVERLAY]' at the beginning must be preserved",
@@ -1102,6 +1110,10 @@ namespace vcpkg
     DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
     DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.");
     DECLARE_MESSAGE(UnexpectedExtension, (msg::extension), "", "Unexpected archive extension: '{extension}'.");
+    DECLARE_MESSAGE(UnexpectedFormat,
+                    (msg::expected, msg::actual),
+                    "{expected} is the expected format, {actual} is the actual format.",
+                    "Expected format is [{expected}], but was [{actual}].");
     DECLARE_MESSAGE(UnexpectedToolOutput,
                     (msg::tool_name, msg::path),
                     "The actual command line output will be appended after this message.",
