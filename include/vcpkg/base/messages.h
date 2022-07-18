@@ -22,7 +22,7 @@ namespace vcpkg
     namespace msg
     {
         template<class Message, class... Tags, class... Ts>
-        LocalizedString format(Message, detail::MessageArgument<Tags, Ts>... args);
+        constexpr LocalizedString format(Message, detail::MessageArgument<Tags, Ts>... args);
     }
 
     struct LocalizedString
@@ -63,7 +63,7 @@ namespace vcpkg
             return *this;
         }
         template<class Message, class... Args>
-        LocalizedString& append(Message m, const Args&... args)
+        constexpr LocalizedString& append(Message m, const Args&... args)
         {
             return append(msg::format(m, args...));
         }
@@ -148,16 +148,38 @@ namespace vcpkg::msg
 
         std::string format_examples_for_args(StringView extra_comment, const FormatArgAbi* args, std::size_t arg_count);
 
-        inline std::string get_examples_for_args(StringView extra_comment, const MessageCheckFormatArgs<>&)
+        template<::size_t M, ::size_t N>
+        inline std::string get_examples_for_args(const StringArray<M>& comment, const StringArray<N>& example)
         {
-            return extra_comment.to_string();
+            if constexpr (comment.empty())
+            {
+                return std::string(comment.begin(), comment.end());
+            }
+
+            if constexpr (example.empty())
+            {
+                return std::string(example.begin(), example.end());
+            }
+
+            const auto out = comment + StringArray(" ") + example;
+            return std::string(out.begin(), out.end());
         }
 
+        inline constexpr auto get_examples() { return StringArray{""}; }
+
         template<class Arg0, class... Args>
-        std::string get_examples_for_args(StringView extra_comment, const MessageCheckFormatArgs<Arg0, Args...>&)
+        inline constexpr auto get_examples(const Arg0& arg, Args... args)
         {
-            FormatArgAbi abi[] = {FormatArgAbi{Arg0::name, Arg0::example}, FormatArgAbi{Args::name, Args::example}...};
-            return format_examples_for_args(extra_comment, abi, 1 + sizeof...(Args));
+            if constexpr (sizeof...(args) == 0)
+            {
+                const StringArray out = arg.example_str;
+                return out;
+            }
+            else
+            {
+                const StringArray out = arg.example_str + StringArray(" ") + ((args.example_str + StringArray(" ")) + ...);
+                return out;
+            }
         }
 
         ::size_t startup_register_message(StringLiteral name, StringLiteral format_string, std::string&& comment);
@@ -180,7 +202,7 @@ namespace vcpkg::msg
     void threadunsafe_initialize_context();
 
     template<class Message, class... Tags, class... Ts>
-    LocalizedString format(Message, detail::MessageArgument<Tags, Ts>... args)
+    constexpr LocalizedString format(Message, detail::MessageArgument<Tags, Ts>... args)
     {
         // avoid generating code, but still typecheck
         // (and avoid unused typedef warnings)
@@ -233,6 +255,7 @@ namespace vcpkg::msg
     {                                                                                                                  \
         constexpr static const char* name = #NAME;                                                                     \
         constexpr static const char* example = EXAMPLE;                                                                \
+        constexpr static StringArray example_str = "An example of {{" #NAME "}} is " EXAMPLE ".";                      \
         template<class T>                                                                                              \
         detail::MessageArgument<NAME##_t, T> operator=(const T& t) const noexcept                                      \
         {                                                                                                              \
@@ -288,16 +311,17 @@ namespace vcpkg::msg
     {                                                                                                                  \
         using is_message_type = void;                                                                                  \
         static constexpr ::vcpkg::StringLiteral name = #NAME;                                                          \
-        static constexpr ::vcpkg::StringLiteral extra_comment = COMMENT;                                               \
+        static constexpr StringArray extra_comment = COMMENT;                                                          \
         static constexpr ::vcpkg::StringLiteral default_format_string = __VA_ARGS__;                                   \
         static const ::size_t index;                                                                                   \
+        static constexpr StringArray example_str = vcpkg::msg::detail::get_examples ARGS;                              \
     } msg##NAME VCPKG_UNUSED = {}
 
 #define REGISTER_MESSAGE(NAME)                                                                                         \
     const ::size_t NAME##_msg_t::index = ::vcpkg::msg::detail::startup_register_message(                               \
         NAME##_msg_t::name,                                                                                            \
         NAME##_msg_t::default_format_string,                                                                           \
-        ::vcpkg::msg::detail::get_examples_for_args(NAME##_msg_t::extra_comment, NAME##_msg_t{}))
+        ::vcpkg::msg::detail::get_examples_for_args(NAME##_msg_t::extra_comment, NAME##_msg_t::example_str))
 
 #define DECLARE_AND_REGISTER_MESSAGE(NAME, ARGS, COMMENT, ...)                                                         \
     DECLARE_MESSAGE(NAME, ARGS, COMMENT, __VA_ARGS__);                                                                 \

@@ -86,3 +86,43 @@ namespace vcpkg
 
 VCPKG_FORMAT_AS(vcpkg::ZStringView, vcpkg::StringView);
 VCPKG_FORMAT_AS(vcpkg::StringLiteral, vcpkg::StringView);
+
+template<std::size_t N, std::size_t... Is>
+constexpr std::array<char, N - 1> to_array(const char (&a)[N], std::index_sequence<Is...>)
+{
+    return {{a[Is]...}};
+}
+
+template<std::size_t N>
+constexpr std::array<char, N - 1> to_array(const char (&a)[N])
+{
+    return to_array(a, std::make_index_sequence<N - 1>());
+}
+
+template<::size_t N>
+struct StringArray : public std::array<char, N - 1>
+{
+    constexpr StringArray() noexcept : std::array<char, N - 1>() { }
+    constexpr StringArray(const char (&str)[N]) noexcept : std::array<char, N - 1>(to_array(str)) { }
+
+    template<::size_t L, ::size_t R>
+    friend constexpr StringArray<L + R - 1> operator+(const StringArray<L>& lhs, const StringArray<R>& rhs) noexcept;
+};
+
+template<::size_t L, ::size_t R>
+constexpr StringArray<L + R - 1> operator+(const StringArray<L>& lhs, const StringArray<R>& rhs) noexcept
+{
+    if constexpr (lhs.size() == 0) return rhs;
+    StringArray<L + R - 1> out;
+    
+    for (size_t i = 0; i < lhs.size(); i++)
+    {
+        out.at(i) = lhs[i];
+    }
+
+    for (size_t i = L; i < L + R - 1; i++)
+    {
+        out.at(i - 1) = rhs[i - L];
+    }
+    return out;
+}
