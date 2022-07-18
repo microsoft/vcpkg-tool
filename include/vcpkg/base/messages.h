@@ -663,6 +663,7 @@ namespace vcpkg
                     "=== curl output ===\n"
                     "{actual}\n"
                     "=== end curl output ===");
+    DECLARE_MESSAGE(DefaultBrowserLaunched, (msg::url), "", "Default browser launched to {url}.");
     DECLARE_MESSAGE(DefaultPathToBinaries,
                     (msg::path),
                     "",
@@ -679,6 +680,7 @@ namespace vcpkg
                     (),
                     "This message is normally displayed only in development.",
                     "Downloading latest vcpkg-ce bundle...");
+    DECLARE_MESSAGE(EmailVcpkgTeam, (msg::url), "", "Send an email to {url} with any feedback.");
     DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
     DECLARE_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:");
     DECLARE_MESSAGE(ErrorDetectingCompilerInfo,
@@ -771,6 +773,7 @@ namespace vcpkg
                     "",
                     "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details "
                     "on how to provide credentials.");
+    DECLARE_MESSAGE(FeedbackAppreciated, (), "", "Thank you for your feedback!");
     DECLARE_MESSAGE(
         ForceSystemBinariesOnWeirdPlatforms,
         (),
@@ -995,8 +998,8 @@ namespace vcpkg
                     "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
                     "The message named {value} ends with a newline which should be added by formatting "
                     "rather than by localization.");
-    DECLARE_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
     DECLARE_MESSAGE(Missing7zHeader, (), "", "Unable to find 7z header.");
+    DECLARE_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
     DECLARE_MESSAGE(MonoInstructions,
                     (),
                     "",
@@ -1007,6 +1010,8 @@ namespace vcpkg
                     (msg::path, msg::exit_code),
                     "",
                     "msiexec failed while extracting \"{path}\" with launch or exit code {exit_code} and message:");
+    DECLARE_MESSAGE(NavigateToNPS, (msg::url), "", "Please navigate to {url} in your preferred browser.");
+    DECLARE_MESSAGE(NoCachedPackages, (), "", "No packages are cached.");
     DECLARE_MESSAGE(NoLocalizationForMessages, (), "", "No localized messages for the following: ");
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
     DECLARE_MESSAGE(PackageFailedtWhileExtracting,
@@ -1029,10 +1034,18 @@ namespace vcpkg
                     "Error messages are is printed after this.",
                     "while loading {path}:");
     DECLARE_MESSAGE(ParseControlErrorInfoWrongTypeFields, (), "", "The following fields had the wrong types:");
+    DECLARE_MESSAGE(PortDependencyConflict,
+                    (msg::package_name),
+                    "",
+                    "Port {package_name} has the following unsupported dependencies:");
     DECLARE_MESSAGE(PortNotInBaseline,
                     (msg::package_name),
                     "",
                     "the baseline does not contain an entry for port {package_name}");
+    DECLARE_MESSAGE(PortSupportsField,
+                    (msg::value),
+                    "'{value}' is the value of the 'supports' field in the port's vcpkg.json.",
+                    "(supports: \"{value}\")");
     DECLARE_MESSAGE(ProcessorArchitectureMalformed,
                     (msg::arch),
                     "",
@@ -1077,6 +1090,7 @@ namespace vcpkg
                     "The 'Source' field inside the CONTROL file, or \"name\" field inside the vcpkg.json "
                     "file has the name {package_name} and does not match the port directory \"{path}\".");
     DECLARE_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: \"{path}\"");
+    DECLARE_MESSAGE(SupportedPort, (msg::package_name), "", "Port {package_name} is supported.");
     DECLARE_MESSAGE(SystemApiErrorMessage,
                     (msg::system_api, msg::exit_code, msg::error_msg),
                     "",
@@ -1109,6 +1123,11 @@ namespace vcpkg
         (msg::value, msg::list),
         "{value} is the value provided by the user and {list} a list of unknown variables seperated by comma",
         "invalid argument: url template '{value}' contains unknown variables: {list}");
+    DECLARE_MESSAGE(UnsupportedPort, (msg::package_name), "", "Port {package_name} is not supported.");
+    DECLARE_MESSAGE(UnsupportedPortDependency,
+                    (msg::value),
+                    "'{value}' is the name of a port dependency.",
+                    "- dependency {value} is not supported.");
     DECLARE_MESSAGE(UnsupportedSystemName,
                     (msg::system_name),
                     "",
@@ -1226,24 +1245,4 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
-    DECLARE_MESSAGE(NoCachedPackages, (), "", "No packages are cached.");
-
-    DECLARE_MESSAGE(SupportedPort, (msg::package_name), "", "Port {package_name} is supported.");
-    DECLARE_MESSAGE(PortSupportsField,
-                    (msg::value),
-                    "'{value}' is the value of the 'supports' field in the port's vcpkg.json.",
-                    "(supports: \"{value}\")");
-    DECLARE_MESSAGE(UnsupportedPort, (msg::package_name), "", "Port {package_name} is not supported.");
-    DECLARE_MESSAGE(UnsupportedPortDependency,
-                    (msg::value),
-                    "'{value}' is the name of a port dependency.",
-                    "- dependency {value} is not supported.");
-    DECLARE_MESSAGE(PortDependencyConflict,
-                    (msg::package_name),
-                    "",
-                    "Port {package_name} has the following unsupported dependencies:");
-    DECLARE_MESSAGE(FeedbackAppreciated, (), "", "Thank you for your feedback!");
-    DECLARE_MESSAGE(DefaultBrowserLaunched, (msg::url), "", "Default browser launched to {url}.");
-    DECLARE_MESSAGE(NavigateToNPS, (msg::url), "", "Please navigate to {url} in your preferred browser.");
-    DECLARE_MESSAGE(EmailVcpkgTeam, (msg::url), "", "Send an email to {url} with any feedback.");
 }
