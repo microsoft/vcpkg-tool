@@ -267,6 +267,8 @@
   "_InvalidArgumentRequiresTwoOrThreeArguments.comment": "An example of {binary_source} is azblob.",
   "InvalidArgumentRequiresValidToken": "invalid argument: binary config '{binary_source}' requires a SAS token without a preceeding '?' as the second argument",
   "_InvalidArgumentRequiresValidToken.comment": "An example of {binary_source} is azblob.",
+  "InvalidFilename": "Filename cannot contain invalid chars {value}, but was {path}",
+  "_InvalidFilename.comment": "'{value}' is a list of invalid characters. I.e. \\/:*?<>| An example of {path} is /foo/bar.",
   "InvalidFormatString": "invalid format string: {actual}",
   "_InvalidFormatString.comment": "{actual} is the provided format string",
   "JsonErrorFailedToParse": "failed to parse {path}:",
