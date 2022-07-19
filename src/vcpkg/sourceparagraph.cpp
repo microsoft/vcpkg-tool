@@ -1383,7 +1383,7 @@ namespace vcpkg
                     [](const std::unique_ptr<ParseControlErrorInfo>& ppcei) { return !ppcei->extra_fields.empty(); }))
             {
                 Strings::append(message,
-                                msg::format(msgListOfValidFieldsForControlFiles).data(),
+                                msg::format(msgListOfValidFieldsForControlFiles).extract_data(),
                                 Strings::join("\n    ", get_list_of_valid_fields()),
                                 "\n\n");
 #if defined(_WIN32)
