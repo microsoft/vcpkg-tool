@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include <array>
+#include <algorithm>
 #include <iterator>
 #include <limits>
 #include <string>
@@ -89,22 +90,29 @@ VCPKG_FORMAT_AS(vcpkg::ZStringView, vcpkg::StringView);
 VCPKG_FORMAT_AS(vcpkg::StringLiteral, vcpkg::StringView);
 
 template<std::size_t N, std::size_t... Is>
-constexpr std::array<char, N - 1> to_array(const char (&a)[N], std::index_sequence<Is...>)
+constexpr std::array<char, N> to_array(const char (&a)[N], std::index_sequence<Is...>)
 {
     return {{a[Is]...}};
 }
 
 template<std::size_t N>
-constexpr std::array<char, N - 1> to_array(const char (&a)[N])
+constexpr std::array<char, N> to_array(const char (&a)[N])
 {
-    return to_array(a, std::make_index_sequence<N - 1>());
+    return to_array(a, std::make_index_sequence<N>());
 }
 
 template<::size_t N>
-struct StringArray : public std::array<char, N - 1>
+struct StringArray : public std::array<char, N>
 {
-    constexpr StringArray() noexcept : std::array<char, N - 1>() { }
-    constexpr StringArray(const char (&str)[N]) noexcept : std::array<char, N - 1>(to_array(str)) { }
+    constexpr StringArray() noexcept : std::array<char, N>() { }
+    constexpr StringArray(const char (&str)[N]) noexcept : std::array<char, N>() {
+        for (size_t i = 0; i < N; i++)
+        {
+            this->at(i) = str[i];
+        }
+    }
+
+    constexpr ::size_t length() const noexcept { return this->size() - 1; }
 
     template<::size_t L, ::size_t R>
     friend constexpr StringArray<L + R - 1> operator+(const StringArray<L> lhs, const StringArray<R> rhs) noexcept;
@@ -113,20 +121,22 @@ struct StringArray : public std::array<char, N - 1>
 template<::size_t L, ::size_t R>
 constexpr StringArray<L + R - 1> operator+(const StringArray<L> lhs, const StringArray<R> rhs) noexcept
 {
-    if constexpr (lhs.empty())
+    if constexpr (lhs.length() == 0)
         return rhs;
+    else if constexpr (rhs.length() == 0)
+        return lhs;
     else
     {
         StringArray<L + R - 1> out;
 
-        for (size_t i = 0; i < lhs.size(); i++)
+        for (size_t i = 0; i < lhs.length(); i++)
         {
-            out.at(i) = lhs[i];
+            out[i] = lhs[i];
         }
 
-        for (size_t i = L; i < L + R - 1; i++)
+        for (size_t i = L - 1; i < lhs.length() + rhs.length(); i++)
         {
-            out.at(i - 1) = rhs[i - L];
+            out[i] = rhs[i - lhs.length()];
         }
         return out;
     }
