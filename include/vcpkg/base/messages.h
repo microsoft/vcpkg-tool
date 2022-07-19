@@ -510,33 +510,6 @@ namespace vcpkg
                     "An example of env_var is \"HTTP(S)_PROXY\""
                     "'--' at the beginning must be preserved",
                     "-- Automatically setting {env_var} environment variables to \"{url}\".");
-    DECLARE_MESSAGE(BinParagraphAbi,
-                    (msg::value),
-                    "'{value}' is the value of abi in the binary paragraph.",
-                    "\nabi: '{value}'");
-    DECLARE_MESSAGE(BinParagraphDefaultFeature,
-                    (msg::value),
-                    "'{value}' is the binary paragraph's default feature.",
-                    "\ndefault_feature: ['{value}']");
-    DECLARE_MESSAGE(BinParagraphDependencies,
-                    (msg::value),
-                    "'{value}' is the binary paragraph's dependencies.",
-                    "\ndependencies: ['{value}']");
-    DECLARE_MESSAGE(BinParagraphDescription,
-                    (msg::value),
-                    "'{value}' is the binary paragraph's description.",
-                    "\ndescription: ['{value}']");
-    DECLARE_MESSAGE(BinParagraphFeature,
-                    (msg::value),
-                    "'{value}' is the value of feature in the binary paragraph.",
-                    "\nfeature: '{value}'");
-    DECLARE_MESSAGE(BinParagraphMaintainers,
-                    (msg::value),
-                    "'{value}' is the binary paragraph's maintainers.",
-                    "\nmaintainers: ['{value}']");
-    DECLARE_MESSAGE(BinParagraphPortVersion, (msg::version), "", "\nport_version: {version}");
-    DECLARE_MESSAGE(BinParagraphSpecAndVersion, (msg::spec, msg::version), "", "\nspec: '{spec}'\nversion: {version}");
-    DECLARE_MESSAGE(BinParagraphType, (msg::value), "'{value}' is the binary paragraph type", "\ntype: '{value}'");
     DECLARE_MESSAGE(BuildAlreadyInstalled,
                     (msg::spec),
                     "",
@@ -1044,10 +1017,6 @@ namespace vcpkg
     DECLARE_MESSAGE(MultiArch, (msg::option), "", "Multi-Arch must be 'same' but was {option}");
     DECLARE_MESSAGE(NoLocalizationForMessages, (), "", "No localized messages for the following: ");
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
-    DECLARE_MESSAGE(OriginalBinaryParagraphHeader,
-                    (),
-                    "The binary paragraph description is expected after this.",
-                    "\n=== Original Binary Paragraph ===");
     DECLARE_MESSAGE(PackingVendorFailed,
                     (msg::vendor),
                     "",
@@ -1100,10 +1069,6 @@ namespace vcpkg
         "{value} may be either a 'vendor' like 'Azure' or 'NuGet', or a file path like C:\\example or /usr/example",
         "Restored {count} package(s) from {value} in {elapsed}. Use --debug to see more details.");
     DECLARE_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
-    DECLARE_MESSAGE(SerializedBinaryParagraphHeader,
-                    (),
-                    "The binary paragraph description is expected after this.",
-                    "\n=== Serialized Binary Paragraph ===");
     DECLARE_MESSAGE(SettingEnvVar,
                     (msg::env_var, msg::url),
                     "An example of env_var is \"HTTP(S)_PROXY\""

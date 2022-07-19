@@ -291,37 +291,55 @@ namespace vcpkg
         if (binary_paragraph != pgh)
         {
             const auto& join_str = R"(", ")";
-            Checks::msg_exit_maybe_upgrade(
+            Checks::exit_maybe_upgrade(
                 VCPKG_LINE_INFO,
-                msg::format(msgMismatchedBinaryParagraphs, msg::url = "https://github.com/microsoft/vcpkg")
-                    .append_raw("\n")
-                    .append(msgOriginalBinaryParagraphHeader)
-                    .append(msgBinParagraphSpecAndVersion, msg::spec = pgh.spec, msg::version = pgh.version)
-                    .append(msgBinParagraphPortVersion, msg::version = pgh.port_version)
-                    .append(msgBinParagraphDescription, msg::value = Strings::join(join_str, pgh.description))
-                    .append(msgBinParagraphMaintainers, msg::value = Strings::join(join_str, pgh.maintainers))
-                    .append(msgBinParagraphFeature, msg::value = pgh.feature)
-                    .append(msgBinParagraphDefaultFeature, msg::value = Strings::join(join_str, pgh.default_features))
-                    .append(msgBinParagraphDependencies, msg::value = Strings::join(join_str, pgh.dependencies))
-                    .append(msgBinParagraphAbi, msg::value = pgh.abi)
-                    .append(msgBinParagraphType, msg::value = Type::to_string(pgh.type))
-                    .append_raw("\n")
-                    .append(msgSerializedBinaryParagraphHeader)
-                    .append(msgBinParagraphSpecAndVersion,
-                            msg::spec = binary_paragraph.spec,
-                            msg::version = binary_paragraph.version)
-                    .append(msgBinParagraphPortVersion, msg::version = pgh.port_version)
-                    .append(msgBinParagraphDescription,
-                            msg::value = Strings::join(join_str, binary_paragraph.description))
-                    .append(msgBinParagraphMaintainers,
-                            msg::value = Strings::join(join_str, binary_paragraph.maintainers))
-                    .append(msgBinParagraphFeature, msg::value = binary_paragraph.feature)
-                    .append(msgBinParagraphDefaultFeature,
-                            msg::value = Strings::join(join_str, binary_paragraph.default_features))
-                    .append(msgBinParagraphDependencies,
-                            msg::value = Strings::join(join_str, binary_paragraph.dependencies))
-                    .append(msgBinParagraphAbi, msg::value = binary_paragraph.abi)
-                    .append(msgBinParagraphType, msg::value = Type::to_string(binary_paragraph.type)));
+                R"([sanity check] The serialized binary paragraph was different from the original binary paragraph.
+Please open an issue at https://github.com/microsoft/vcpkg, with the following output:
+
+=== Original BinaryParagraph ===
+spec: "%s"
+version: "%s"
+port_version: %d
+description: ["%s"]
+maintainers: ["%s"]
+feature: "%s"
+default_features: ["%s"]
+dependencies: ["%s"]
+abi: "%s"
+type: %s
+
+=== Serialized BinaryParagraph ===
+spec: "%s"
+version: "%s"
+port_version: %d
+description: ["%s"]
+maintainers: ["%s"]
+feature: "%s"
+default_features: ["%s"]
+dependencies: ["%s"]
+abi: "%s"
+type: %s
+)",
+                pgh.spec.to_string(),
+                pgh.version,
+                pgh.port_version,
+                Strings::join(join_str, pgh.description),
+                Strings::join(join_str, pgh.maintainers),
+                pgh.feature,
+                Strings::join(join_str, pgh.default_features),
+                Strings::join(join_str, pgh.dependencies),
+                pgh.abi,
+                Type::to_string(pgh.type),
+                binary_paragraph.spec.to_string(),
+                binary_paragraph.version,
+                binary_paragraph.port_version,
+                Strings::join(join_str, binary_paragraph.description),
+                Strings::join(join_str, binary_paragraph.maintainers),
+                binary_paragraph.feature,
+                Strings::join(join_str, binary_paragraph.default_features),
+                Strings::join(join_str, binary_paragraph.dependencies),
+                binary_paragraph.abi,
+                Type::to_string(binary_paragraph.type));
         }
     }
 }

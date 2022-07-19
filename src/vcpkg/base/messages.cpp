@@ -444,15 +444,6 @@ namespace vcpkg
     REGISTER_MESSAGE(AttemptingToFetchPackagesFromVendor);
     REGISTER_MESSAGE(AuthenticationMayRequireManualAction);
     REGISTER_MESSAGE(AutoSettingEnvVar);
-    REGISTER_MESSAGE(BinParagraphAbi);
-    REGISTER_MESSAGE(BinParagraphDefaultFeature);
-    REGISTER_MESSAGE(BinParagraphDependencies);
-    REGISTER_MESSAGE(BinParagraphDescription);
-    REGISTER_MESSAGE(BinParagraphFeature);
-    REGISTER_MESSAGE(BinParagraphMaintainers);
-    REGISTER_MESSAGE(BinParagraphPortVersion);
-    REGISTER_MESSAGE(BinParagraphSpecAndVersion);
-    REGISTER_MESSAGE(BinParagraphType);
     REGISTER_MESSAGE(BuildAlreadyInstalled);
     REGISTER_MESSAGE(BuildDependenciesMissing);
     REGISTER_MESSAGE(BuildingFromHead);
@@ -595,7 +586,6 @@ namespace vcpkg
     REGISTER_MESSAGE(MultiArch);
     REGISTER_MESSAGE(NoLocalizationForMessages);
     REGISTER_MESSAGE(NoRegistryForPort);
-    REGISTER_MESSAGE(OriginalBinaryParagraphHeader);
     REGISTER_MESSAGE(PackingVendorFailed);
     REGISTER_MESSAGE(ParseControlErrorInfoInvalidFields);
     REGISTER_MESSAGE(ParseControlErrorInfoMissingFields);
@@ -612,7 +602,6 @@ namespace vcpkg
     REGISTER_MESSAGE(RestoredPackage);
     REGISTER_MESSAGE(RestoredPackagesFromVendor);
     REGISTER_MESSAGE(ResultsHeader);
-    REGISTER_MESSAGE(SerializedBinaryParagraphHeader);
     REGISTER_MESSAGE(SettingEnvVar);
     REGISTER_MESSAGE(SourceFieldPortNameMismatch);
     REGISTER_MESSAGE(StoredBinaryCache);
