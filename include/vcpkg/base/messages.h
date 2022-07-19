@@ -742,10 +742,7 @@ namespace vcpkg
                     "",
                     "Visual Studio Code was not found and the environment variable {env_var} is not set or invalid.");
     DECLARE_MESSAGE(ErrorVsCodeNotFoundPathExamined, (), "", "The following paths were examined:");
-    DECLARE_MESSAGE(ErrorWhileParsing,
-                    (msg::value),
-                    "'{value}' is the file name.",
-                    "Errors occurred while parsing '{value}'.");
+    DECLARE_MESSAGE(ErrorWhileParsing, (msg::path), "", "Errors occurred while parsing {path}.");
     DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
     DECLARE_MESSAGE(
         ExpectedCharacterHere,
@@ -757,11 +754,12 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
     DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
     DECLARE_MESSAGE(FailedToParseBinParagraph,
-                    (msg::url, msg::error_msg, msg::value),
+                    (msg::error_msg, msg::value),
                     "'{error_msg}' is the error message for failing to parse the Binary Paragraph, '{value}' is the "
                     "Binary Paragraph",
-                    "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at {url}, "
-                    "with the following output:\n{error_msg}\n=== Serialized BinaryParagraph ===\n{value}");
+                    "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at "
+                    "https://github.com/microsoft/vcpkg, "
+                    "with the following output:\n{error_msg}\nSerialized Binary Paragraph: \n{value}");
     DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
     DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                     (msg::tool_name, msg::path),

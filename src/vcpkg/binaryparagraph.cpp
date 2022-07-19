@@ -282,7 +282,6 @@ namespace vcpkg
         {
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
                                            msgFailedToParseBinParagraph,
-                                           msg::url = "https://github.com/microsoft/vcpkg",
                                            msg::error_msg = parsed_paragraph.error(),
                                            msg ::value = my_paragraph);
         }

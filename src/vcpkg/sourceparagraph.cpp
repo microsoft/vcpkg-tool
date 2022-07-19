@@ -1613,7 +1613,7 @@ namespace vcpkg
             auto maybe_configuration = reader.visit(*configuration, get_configuration_deserializer());
             if (!reader.errors().empty())
             {
-                msg::println_error(msgErrorWhileParsing, msg::value = ManifestDeserializer::VCPKG_CONFIGURATION);
+                msg::println_error(msgErrorWhileParsing, msg::path = ManifestDeserializer::VCPKG_CONFIGURATION);
                 for (auto&& msg : reader.errors())
                 {
                     msg::println_error(LocalizedString::from_raw("").append_indent().append_raw(msg));
