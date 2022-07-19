@@ -175,6 +175,24 @@ namespace vcpkg::msg
             return std::string(out.begin(), out.end() - 1);
         }
 
+        template<class Arg0>
+        constexpr auto example_piece(const Arg0& arg)
+        {
+            if constexpr (arg.real_example().length() == 0)
+                return StringArray{""};
+            else
+                return StringArray{" "} + arg.real_example();
+        }
+
+        template<class Arg0, class... Args>
+        constexpr auto example_piece(const Arg0& arg, Args... args)
+        {
+            if constexpr (arg.real_example().length() == 0)
+                return example_piece(args...);
+            else
+                return StringArray{" "} + arg.real_example() + example_piece(args...);
+        }
+
         inline constexpr auto get_examples() { return StringArray{""}; }
 
         template<class Arg0, class... Args>
@@ -187,18 +205,7 @@ namespace vcpkg::msg
             }
             else
             {
-                const StringArray out = arg.real_example() + (([&] {
-                                                                  if constexpr (args.real_example().length() == 0)
-                                                                  {
-                                                                      return StringArray{""};
-                                                                  }
-                                                                  else
-                                                                  {
-                                                                      return StringArray{" "};
-                                                                  }
-                                                              }() +
-                                                               args.real_example()) +
-                                                              ...);
+                const StringArray out = arg.real_example() + example_piece(args...);
                 return out;
             }
         }
