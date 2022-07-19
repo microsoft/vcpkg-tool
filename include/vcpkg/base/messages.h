@@ -165,6 +165,12 @@ namespace vcpkg::msg
                 return std::string(comment.begin(), comment.end() - 1);
             }
 
+            if (example[0] == ' ')
+            {
+                const auto out = comment + example;
+                return std::string(out.begin(), out.end() - 1);
+            }
+
             const auto out = comment + StringArray(" ") + example;
             return std::string(out.begin(), out.end() - 1);
         }
@@ -967,7 +973,7 @@ namespace vcpkg
     DECLARE_MESSAGE(LicenseExpressionContainsUnicode,
                     (msg::value, msg::pretty_value),
                     "example of {value:04X} is '22BB'\nexample of {pretty_value} is '⊻'",
-                    "SPDX license expression contains a unicode character (U+{value:04X}"
+                    "SPDX license expression contains a unicode character (U+{value:04X} "
                     "'{pretty_value}'), but these expressions are ASCII-only.");
     DECLARE_MESSAGE(LicenseExpressionDocumentRefUnsupported,
                     (),
