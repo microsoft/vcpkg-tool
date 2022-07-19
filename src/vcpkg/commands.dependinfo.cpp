@@ -368,16 +368,14 @@ namespace vcpkg::Commands::DependInfo
 
             if (show_depth)
             {
-                print2(Color::error, "(", first->depth, ") ");
+                msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("({})", first->depth));
             }
-            print2(Color::success, first->package);
+            msg::write_unlocalized_text_to_stdout(Color::success, first->package);
             if (!features.empty())
             {
-                print2("[");
-                print2(Color::warning, features);
-                print2("]");
+                msg::write_unlocalized_text_to_stdout(Color::warning, "[" + features + "]");
             }
-            print2("\n");
+            msg::write_unlocalized_text_to_stdout(Color::none, "\n");
             std::set<std::string> printed;
             std::string prefix_buf;
             print_dep_tree(prefix_buf, first->package, depend_info, printed);
@@ -393,16 +391,14 @@ namespace vcpkg::Commands::DependInfo
 
                     if (show_depth)
                     {
-                        print2(Color::error, "(", info.depth, ") ");
+                        msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("({} )", info.depth));
                     }
-                    print2(Color::success, info.package);
+                    msg::write_unlocalized_text_to_stdout(Color::success, info.package);
                     if (!features.empty())
                     {
-                        print2("[");
-                        print2(Color::warning, features);
-                        print2("]");
+                        msg::write_unlocalized_text_to_stdout(Color::warning, "[" + features + "]");
                     }
-                    print2(": ", dependencies, "\n");
+                    msg::write_unlocalized_text_to_stdout(Color::none, ": " + dependencies + "\n");
                 }
             }
         }
