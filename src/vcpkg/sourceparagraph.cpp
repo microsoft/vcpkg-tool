@@ -1616,7 +1616,7 @@ namespace vcpkg
                 msg::println_error(msgErrorWhileParsing, msg::path = ManifestDeserializer::VCPKG_CONFIGURATION);
                 for (auto&& msg : reader.errors())
                 {
-                    msg::println_error(LocalizedString::from_raw("").append_indent().append_raw(msg));
+                    msg::println_error(LocalizedString().append_indent().append_raw(msg));
                 }
                 msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
                 Checks::exit_fail(VCPKG_LINE_INFO);
