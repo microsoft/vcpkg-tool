@@ -40,7 +40,7 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddPortSucceded" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";AddPortSucceeded" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Succeeded in adding ports to vcpkg.json file.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
@@ -690,12 +690,12 @@
       </Item>
       <Item ItemId=";CompressFolderFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Failed to compress folder '{path}':]]></Val>
+          <Val><![CDATA[Failed to compress folder "{path}":]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[无法压缩文件夹“{path}”:]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Failed to compress folder '{path}', exit code: {exit_code}]]></Val>
+            <Val><![CDATA[Failed to compress folder '{path}':]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -723,19 +723,25 @@
       </Item>
       <Item ItemId=";DefaultPathToBinaries" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Based on your system settings, the default path to store binaries is ]A; '{path}'. This consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.]]></Val>
+          <Val><![CDATA[Based on your system settings, the default path to store binaries is "{path}". This consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[根据系统设置，存储二进制文件的默认路径为]A;“{path}”。这会在 Windows 上咨询 %LOCALAPPDATA%/%APPDATA%，并在其他平台上咨询 $XDG_CACHE_HOME 或 $HOME。]]></Val>
+            <Val><![CDATA[根据系统设置，存储二进制文件的默认路径为“{path}”。这会在 Windows 上咨询 %LOCALAPPDATA%/%APPDATA%，并在其他平台上咨询 $XDG_CACHE_HOME 或 $HOME。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Based on your system settings, the default path to store binaries is ]A; '{path}'. This consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";DetectCompilerHash" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Detecting compiler hash for triplet "{triplet}"...]]></Val>
+          <Val><![CDATA[Detecting compiler hash for triplet {triplet}...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[正在检测三联“{triplet}”的编译器哈希...]]></Val>
+            <Val><![CDATA[正在检测三元组 {triplet} 的编译器哈希...]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Detecting compiler hash for triplet "{triplet}"...]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -972,10 +978,13 @@
       </Item>
       <Item ItemId=";ErrorVsCodeNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Visual Studio Code was not found and the environment variable '{env_var}' is not set or invalid.]]></Val>
+          <Val><![CDATA[Visual Studio Code was not found and the environment variable {env_var} is not set or invalid.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[找不到 Visual Studio Code，并且未设置环境变量“{env_var}”或该变量无效。]]></Val>
+            <Val><![CDATA[找不到 Visual Studio Code，并且未设置环境变量 {env_var} 或该变量无效。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Visual Studio Code was not found and the environment variable '{env_var}' is not set or invalid.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1036,7 +1045,7 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ExtendedDocumenationAtUrl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";ExtendedDocumentationAtUrl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Extended documentation available at '{url}'.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
@@ -1074,10 +1083,13 @@
       </Item>
       <Item ItemId=";FailedToStoreBinaryCache" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Failed to store binary cache '{path}':'{error_msg}']]></Val>
+          <Val><![CDATA[Failed to store binary cache {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[无法存储二进制缓存“{path}”:“{error_msg}”]]></Val>
+            <Val><![CDATA[无法存储二进制缓存 {path}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Failed to store binary cache '{path}':'{error_msg}']]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1108,15 +1120,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[    on expression: {value}]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FuzzExpectedOneOf" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[expected one of: utf-8, json, platform-expr]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[应为 utf-8、json、platform-expr 之一]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1275,10 +1278,13 @@
       </Item>
       <Item ItemId=";InfoSetEnvVar" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[You can also set the environment variable '{env_var}' to your editor of choice.]]></Val>
+          <Val><![CDATA[You can also set the environment variable {env_var} to your editor of choice.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[还可以将环境变量“{env_var}”设置为所选编辑器。]]></Val>
+            <Val><![CDATA[还可以将环境变量 {env_var} 设置为所选编辑器。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[You can also set the environment variable '{env_var}' to your editor of choice.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2133,10 +2139,13 @@
       </Item>
       <Item ItemId=";UploadedBinaries" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Uploaded binaries to '{count}' '{vendor}'.]]></Val>
+          <Val><![CDATA[Uploaded binaries to {count} {vendor}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[已将二进制文件上传到“{count}”“{vendor}”。]]></Val>
+            <Val><![CDATA[已将二进制文件上传到 {count} 个 {vendor}。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Uploaded binaries to '{count}' '{vendor}'.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>

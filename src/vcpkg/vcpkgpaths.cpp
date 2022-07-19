@@ -871,7 +871,7 @@ namespace vcpkg
         auto obj = lockdata_to_json_object(lockfile.lockdata);
 
         get_filesystem().write_rename_contents(
-            installed().lockfile_path(), "vcpkg-lock.json.tmp", Json::stringify(obj, {}), VCPKG_LINE_INFO);
+            installed().lockfile_path(), "vcpkg-lock.json.tmp", Json::stringify(obj), VCPKG_LINE_INFO);
     }
 
     const Path VcpkgPaths::get_triplet_file_path(Triplet triplet) const

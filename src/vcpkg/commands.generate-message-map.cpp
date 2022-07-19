@@ -224,7 +224,7 @@ namespace vcpkg::Commands
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
-        auto stringified = Json::stringify(obj, {});
+        auto stringified = Json::stringify(obj);
         Path filepath = fs.current_path(VCPKG_LINE_INFO) / args.command_arguments[0];
         fs.write_contents(filepath, stringified, VCPKG_LINE_INFO);
         Checks::exit_success(VCPKG_LINE_INFO);
