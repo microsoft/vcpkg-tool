@@ -682,7 +682,7 @@ namespace vcpkg
                     "=== curl output ===\n"
                     "{actual}\n"
                     "=== end curl output ===");
-    DECLARE_MESSAGE(DefaultFlag, (msg::command_name), "", "Defaulting to '{command_name}' being on.");
+    DECLARE_MESSAGE(DefaultFlag, (msg::option), "", "Defaulting to --{option} being on.");
     DECLARE_MESSAGE(DefaultPathToBinaries,
                     (msg::path),
                     "",
@@ -704,15 +704,12 @@ namespace vcpkg
                     (msg::env_var),
                     "",
                     "Specify the downloads root directory.\n(default: {env_var})");
-    DECLARE_MESSAGE(DuplicateCommandOption,
-                    (msg::command_name),
-                    "",
-                    "The option '{command_name}' can only be passed once.");
+    DECLARE_MESSAGE(DuplicateCommandOption, (msg::option), "", "The option --{option} can only be passed once.");
     DECLARE_MESSAGE(DuplicateOptions,
                     (msg::value),
                     "'{value}' is a command line option.",
                     "'--{value}' specified multiple times.");
-    DECLARE_MESSAGE(EmptyArg, (msg::option), "", "The option '{option}' must be passed a non-empty argument.");
+    DECLARE_MESSAGE(EmptyArg, (msg::option), "", "The option --{option} must be passed a non-empty argument.");
     DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
     DECLARE_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:");
     DECLARE_MESSAGE(ErrorDetectingCompilerInfo,
@@ -1107,10 +1104,7 @@ namespace vcpkg
                     "Either specify --name and --version to produce a manifest intended for C++ libraries, or specify "
                     "--application to indicate that the manifest is not intended to be used as a port.");
     DECLARE_MESSAGE(NewVersionCannotBeEmpty, (), "", "--version cannot be empty.");
-    DECLARE_MESSAGE(NoArgumentsForOption,
-                    (msg::command_name),
-                    "",
-                    "The option '{command_name}' does not accept an argument.");
+    DECLARE_MESSAGE(NoArgumentsForOption, (msg::option), "", "The option --{option} does not accept an argument.");
     DECLARE_MESSAGE(NoLocalizationForMessages, (), "", "No localized messages for the following: ");
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
     DECLARE_MESSAGE(NugetPackageFileSucceededButCreationFailed,
@@ -1189,7 +1183,7 @@ namespace vcpkg
     DECLARE_MESSAGE(SpecifiedFeatureTurnedOff,
                     (msg::command_name, msg::option),
                     "",
-                    "'{command_name}' feature specifically turned off, but --'{option}' was specified.");
+                    "'{command_name}' feature specifically turned off, but --{option} was specified.");
     DECLARE_MESSAGE(SpecifyDirectoriesContaining,
                     (msg::env_var),
                     "",

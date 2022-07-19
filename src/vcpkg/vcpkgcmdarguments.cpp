@@ -458,7 +458,7 @@ namespace vcpkg
             if (option_it != options_copy.end())
             {
                 // This means that the switch was passed like '--a=xyz'
-                msg::println_error(msgNoArgumentsForOption, msg::command_name = switch_.name);
+                msg::println_error(msgNoArgumentsForOption, msg::option = switch_.name);
                 options_copy.erase(option_it);
                 failed = true;
             }
@@ -477,7 +477,7 @@ namespace vcpkg
 
                 if (value.size() > 1)
                 {
-                    msg::println_error(msgDuplicateCommandOption, msg::command_name = option.name);
+                    msg::println_error(msgDuplicateCommandOption, msg::option = option.name);
                     failed = true;
                 }
                 else if (value.front().empty())
@@ -834,7 +834,7 @@ namespace vcpkg
             {
                 msg::println_warning(
                     msgSpecifiedFeatureTurnedOff, msg::command_name = el.flag, msg::option = el.option);
-                msg::println_warning(msgDefaultFlag, msg::command_name = el.flag);
+                msg::println_warning(msgDefaultFlag, msg::option = el.flag);
                 LockGuardPtr<Metrics>(g_metrics)->track_property(
                     "warning", Strings::format("warning %s alongside %s", el.flag, el.option));
             }
