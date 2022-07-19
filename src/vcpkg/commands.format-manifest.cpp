@@ -31,14 +31,16 @@ namespace
         auto parsed_json_opt = Json::parse(contents, manifest_path);
         if (!parsed_json_opt)
         {
-            vcpkg::printf(Color::error, "Failed to parse %s: %s\n", path_string, parsed_json_opt.error()->to_string());
+            msg::println_error(msg::format(msgFailedToParseJson, msg::path = path_string)
+                                   .append_raw(": ")
+                                   .append_raw(parsed_json_opt.error()->to_string()));
             return nullopt;
         }
 
         const auto& parsed_json = parsed_json_opt.value_or_exit(VCPKG_LINE_INFO).first;
         if (!parsed_json.is_object())
         {
-            vcpkg::printf(Color::error, "The file %s is not an object\n", path_string);
+            msg::println_error(msgJsonErrorMustBeAnObject, msg::path = path_string);
             return nullopt;
         }
 
@@ -47,7 +49,7 @@ namespace
         auto scf = SourceControlFile::parse_project_manifest_object(path_string, parsed_json_obj, stdout_sink);
         if (!scf)
         {
-            vcpkg::printf(Color::error, "Failed to parse manifest file: %s\n", path_string);
+            msg::println_error(msgFailedToParseManifest, msg::path = path_string);
             print_error_message(scf.error());
             return nullopt;
         }
@@ -70,14 +72,16 @@ namespace
 
         if (!paragraphs)
         {
-            vcpkg::printf(Color::error, "Failed to read paragraphs from %s: %s\n", control_path, paragraphs.error());
+            msg::println_error(msg::format(msgFailedToReadParagraph, msg::path = control_path)
+                                   .append_raw(": ")
+                                   .append_raw(paragraphs.error()));
             return {};
         }
         auto scf_res =
             SourceControlFile::parse_control_file(control_path, std::move(paragraphs).value_or_exit(VCPKG_LINE_INFO));
         if (!scf_res)
         {
-            vcpkg::printf(Color::error, "Failed to parse control file: %s\n", control_path);
+            msg::println_error(msgFailedToParseControl, msg::path = control_path);
             print_error_message(scf_res.error());
             return {};
         }
@@ -152,16 +156,20 @@ Please open an issue at https://github.com/microsoft/vcpkg, with the following o
         fs.write_contents(data.file_to_write, Json::stringify(res), ec);
         if (ec)
         {
-            Checks::exit_with_message(
-                VCPKG_LINE_INFO, "Failed to write manifest file %s: %s\n", file_to_write_string, ec.message());
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                          msg::format(msgFailedToWriteManifest, msg::path = file_to_write_string)
+                                              .append_raw(": ")
+                                              .append_raw(ec.message()));
         }
         if (data.original_path != data.file_to_write)
         {
             fs.remove(data.original_path, ec);
             if (ec)
             {
-                Checks::exit_with_message(
-                    VCPKG_LINE_INFO, "Failed to remove control file %s: %s\n", original_path_string, ec.message());
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                              msg::format(msgFailedToRemoveControl, msg::path = original_path_string)
+                                                  .append_raw(": ")
+                                                  .append_raw(ec.message()));
             }
         }
     }
@@ -197,16 +205,12 @@ namespace vcpkg::Commands::FormatManifest
 
         if (!format_all && convert_control)
         {
-            print2(Color::warning, R"(format-manifest was passed '--convert-control' without '--all'.
-    This doesn't do anything:
-    we will automatically convert all control files passed explicitly.)");
+            msg::println_warning(msgMissingArgFormatManifest);
         }
 
         if (!format_all && args.command_arguments.empty())
         {
-            Checks::exit_with_message(
-                VCPKG_LINE_INFO,
-                "No files to format; please pass either --all, or the explicit files to format or convert.");
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgFailedToFormatMissingFile);
         }
 
         std::vector<ToWrite> to_write;

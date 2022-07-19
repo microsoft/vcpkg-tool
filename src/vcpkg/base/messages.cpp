@@ -561,8 +561,8 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidArgumentRequiresTwoOrThreeArguments);
     REGISTER_MESSAGE(InvalidArgumentRequiresValidToken);
     REGISTER_MESSAGE(InvalidFormatString);
-    REGISTER_MESSAGE(JsonErrorFailedToParse);
-    REGISTER_MESSAGE(JsonErrorFailedToRead);
+    REGISTER_MESSAGE(FailedToParseJson);
+    REGISTER_MESSAGE(FailedToRead);
     REGISTER_MESSAGE(JsonErrorMustBeAnObject);
     REGISTER_MESSAGE(LaunchingProgramFailed);
     REGISTER_MESSAGE(LicenseExpressionContainsExtraPlus);
@@ -671,4 +671,11 @@ namespace vcpkg
     REGISTER_MESSAGE(WaitingToTakeFilesystemLock);
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
+    REGISTER_MESSAGE(FailedToParseManifest);
+    REGISTER_MESSAGE(FailedToReadParagraph);
+    REGISTER_MESSAGE(MissingArgFormatManifest);
+    REGISTER_MESSAGE(FailedToRemoveControl);
+    REGISTER_MESSAGE(FailedToWriteManifest);
+    REGISTER_MESSAGE(FailedToParseControl);
+    REGISTER_MESSAGE(FailedToFormatMissingFile);
 }
