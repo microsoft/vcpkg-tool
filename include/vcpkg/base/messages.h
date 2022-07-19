@@ -210,12 +210,6 @@ namespace vcpkg::msg
             }
         }
 
-        template<::size_t M, ::size_t N>
-        constexpr auto make_example_str(StringArray<M> name, StringArray<N> example)
-        {
-            return StringArray("An example of {") + name + StringArray("} is ") + example + StringArray(".");
-        }
-
         ::size_t startup_register_message(StringLiteral name, StringLiteral format_string, std::string&& comment);
 
         ::size_t number_of_messages();
