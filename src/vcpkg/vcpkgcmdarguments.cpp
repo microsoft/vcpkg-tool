@@ -483,7 +483,7 @@ namespace vcpkg
                 else if (value.front().empty())
                 {
                     // Fail when not given a value, e.g.: "vcpkg install sqlite3 --additional-ports="
-                    msg::println_error(msgEmptyArg, msg::command_name = option.name);
+                    msg::println_error(msgEmptyArg, msg::option = option.name);
                     failed = true;
                 }
                 else
@@ -496,7 +496,7 @@ namespace vcpkg
             if (switch_it != switches_copy.end())
             {
                 // This means that the option was passed like '--a'
-                msg::println_error(msgEmptyArg, msg::command_name = option.name);
+                msg::println_error(msgEmptyArg, msg::option = option.name);
                 switches_copy.erase(switch_it);
                 failed = true;
             }
@@ -512,7 +512,7 @@ namespace vcpkg
                 {
                     if (v.empty())
                     {
-                        msg::println_error(msgEmptyArg, msg::command_name = option.name);
+                        msg::println_error(msgEmptyArg, msg::option = option.name);
                         failed = true;
                     }
                     else
@@ -526,7 +526,7 @@ namespace vcpkg
             if (switch_it != switches_copy.end())
             {
                 // This means that the option was passed like '--a'
-                msg::println_error(msgEmptyArg, msg::command_name = option.name);
+                msg::println_error(msgEmptyArg, msg::option = option.name);
                 switches_copy.erase(switch_it);
                 failed = true;
             }

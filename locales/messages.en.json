@@ -95,7 +95,7 @@
   "DuplicateCommandOption": "The option '{command_name}' can only be passed once.",
   "DuplicateOptions": "'--{value}' specified multiple times.",
   "ElapsedForPackage": "Elapsed time to handle {spec}: {elapsed}",
-  "EmptyArg": "The option '{command_name}' must be passed a non-empty argument.",
+  "EmptyArg": "The option '{option}' must be passed a non-empty argument.",
   "EmptyLicenseExpression": "SPDX license expression was empty.",
   "EnvStrFailedToExtract": "could not expand the environment string:",
   "ErrorDetectingCompilerInfo": "while detecting compiler information:\nThe log file content at \"{path}\" is:",

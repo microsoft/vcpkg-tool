@@ -711,10 +711,7 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is a command line option.",
                     "'--{value}' specified multiple times.");
-    DECLARE_MESSAGE(EmptyArg,
-                    (msg::command_name),
-                    "",
-                    "The option '{command_name}' must be passed a non-empty argument.");
+    DECLARE_MESSAGE(EmptyArg, (msg::option), "", "The option '{option}' must be passed a non-empty argument.");
     DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
     DECLARE_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:");
     DECLARE_MESSAGE(ErrorDetectingCompilerInfo,
