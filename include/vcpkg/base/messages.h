@@ -267,7 +267,7 @@ namespace vcpkg::msg
     {                                                                                                                  \
         constexpr static const char* name = #NAME;                                                                     \
         constexpr static const char* example = EXAMPLE;                                                                \
-        constexpr static StringArray example_str = "An example of {{" #NAME "}} is " EXAMPLE ".";                      \
+        constexpr static StringArray example_str = "An example of {" #NAME "} is " EXAMPLE ".";                      \
         template<class T>                                                                                              \
         detail::MessageArgument<NAME##_t, T> operator=(const T& t) const noexcept                                      \
         {                                                                                                              \
