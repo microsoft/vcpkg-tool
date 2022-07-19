@@ -743,6 +743,7 @@ namespace vcpkg
                     "",
                     "Visual Studio Code was not found and the environment variable {env_var} is not set or invalid.");
     DECLARE_MESSAGE(ErrorVsCodeNotFoundPathExamined, (), "", "The following paths were examined:");
+    DECLARE_MESSAGE(ExceededRecursionDepth, (), "", "Recursion depth exceeded.");
     DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
     DECLARE_MESSAGE(
         ExpectedCharacterHere,
@@ -840,6 +841,7 @@ namespace vcpkg
                     (msg::command_line),
                     "",
                     "You may be able to install this tool via your system package manager ({command_line}).");
+    DECLARE_MESSAGE(InvalidActionsInstall, (), "", "Only install actions should exist in the plan.");
     DECLARE_MESSAGE(InvalidArgument, (), "", "invalid argument");
     DECLARE_MESSAGE(
         InvalidArgumentRequiresAbsolutePath,
@@ -892,6 +894,15 @@ namespace vcpkg
                     "",
                     "invalid argument: binary config '{binary_source}' requires a SAS token without a "
                     "preceeding '?' as the second argument");
+    DECLARE_MESSAGE(InvalidCommandArgMaxDepth, (), "", "Value of --max-depth must be an integer.");
+    DECLARE_MESSAGE(InvalidCommandArgSort,
+                    (),
+                    "",
+                    "Value of --sort must be one of 'lexicographical', 'topological', 'reverse'.");
+    DECLARE_MESSAGE(InvalidFilename,
+                    (msg::value, msg::path),
+                    "'{value}' is a list of invalid characters. I.e. \\/:*?<>|",
+                    "Filename cannot contain invalid chars {value}, but was {path}");
     DECLARE_MESSAGE(InvalidFormatString,
                     (msg::actual),
                     "{actual} is the provided format string",
@@ -995,8 +1006,8 @@ namespace vcpkg
                     "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
                     "The message named {value} ends with a newline which should be added by formatting "
                     "rather than by localization.");
-    DECLARE_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
     DECLARE_MESSAGE(Missing7zHeader, (), "", "Unable to find 7z header.");
+    DECLARE_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
     DECLARE_MESSAGE(MonoInstructions,
                     (),
                     "",
@@ -1013,6 +1024,7 @@ namespace vcpkg
                     (msg::value, msg::path),
                     "'{value}' is either a tool name or a package name.",
                     "'{value}' failed while extracting {path}.");
+    DECLARE_MESSAGE(PackageNotFoundDependencyGraph, (), "", "Package not found in dependency graph.");
     DECLARE_MESSAGE(PackingVendorFailed,
                     (msg::vendor),
                     "",
@@ -1226,16 +1238,4 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
-    DECLARE_MESSAGE(ExceededRecursionDepth, (), "", "Recursion depth exceeded.");
-    DECLARE_MESSAGE(InvalidFilename,
-                    (msg::value, msg::path),
-                    "'{value}' is a list of invalid characters. I.e. \\/:*?<>|",
-                    "Filename cannot contain invalid chars {value}, but was {path}");
-    DECLARE_MESSAGE(InvalidCommandArgMaxDepth, (), "", "Value of --max-depth must be an integer.");
-    DECLARE_MESSAGE(InvalidCommandArgSort,
-                    (),
-                    "",
-                    "Value of --sort must be one of 'lexicographical', 'topological', 'reverse'.");
-    DECLARE_MESSAGE(PackageNotFoundDependencyGraph, (), "", "Package not found in dependency graph.");
-    DECLARE_MESSAGE(InvalidActionsInstall, (), "", "Only install actions should exist in the plan.");
 }

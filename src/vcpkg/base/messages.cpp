@@ -504,6 +504,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ErrorVcvarsUnsupported);
     REGISTER_MESSAGE(ErrorVsCodeNotFound);
     REGISTER_MESSAGE(ErrorVsCodeNotFoundPathExamined);
+    REGISTER_MESSAGE(ExceededRecursionDepth);
     REGISTER_MESSAGE(ExcludedPackage);
     REGISTER_MESSAGE(ExpectedCharacterHere);
     REGISTER_MESSAGE(ExpectedFailOrSkip);
@@ -539,6 +540,7 @@ namespace vcpkg
     REGISTER_MESSAGE(InstallWithSystemManager);
     REGISTER_MESSAGE(InstallWithSystemManagerMono);
     REGISTER_MESSAGE(InstallWithSystemManagerPkg);
+    REGISTER_MESSAGE(InvalidActionsInstall);
     REGISTER_MESSAGE(InvalidArgument);
     REGISTER_MESSAGE(InvalidArgumentRequiresAbsolutePath);
     REGISTER_MESSAGE(InvalidArgumentRequiresBaseUrl);
@@ -552,6 +554,9 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidArgumentRequiresSourceArgument);
     REGISTER_MESSAGE(InvalidArgumentRequiresTwoOrThreeArguments);
     REGISTER_MESSAGE(InvalidArgumentRequiresValidToken);
+    REGISTER_MESSAGE(InvalidCommandArgMaxDepth);
+    REGISTER_MESSAGE(InvalidCommandArgSort);
+    REGISTER_MESSAGE(InvalidFilename);
     REGISTER_MESSAGE(InvalidFormatString);
     REGISTER_MESSAGE(JsonErrorFailedToParse);
     REGISTER_MESSAGE(JsonErrorFailedToRead);
@@ -579,13 +584,14 @@ namespace vcpkg
     REGISTER_MESSAGE(LoadingOverlayTriplet);
     REGISTER_MESSAGE(LocalizedMessageMustNotContainIndents);
     REGISTER_MESSAGE(LocalizedMessageMustNotEndWithNewline);
-    REGISTER_MESSAGE(MissingExtension);
     REGISTER_MESSAGE(Missing7zHeader);
+    REGISTER_MESSAGE(MissingExtension);
     REGISTER_MESSAGE(MonoInstructions);
     REGISTER_MESSAGE(MsiexecFailedToExtract);
     REGISTER_MESSAGE(NoLocalizationForMessages);
     REGISTER_MESSAGE(NoRegistryForPort);
     REGISTER_MESSAGE(PackageFailedtWhileExtracting);
+    REGISTER_MESSAGE(PackageNotFoundDependencyGraph);
     REGISTER_MESSAGE(PackingVendorFailed);
     REGISTER_MESSAGE(ParseControlErrorInfoInvalidFields);
     REGISTER_MESSAGE(ParseControlErrorInfoMissingFields);
@@ -650,10 +656,4 @@ namespace vcpkg
     REGISTER_MESSAGE(WaitingToTakeFilesystemLock);
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
-    REGISTER_MESSAGE(InvalidFilename);
-    REGISTER_MESSAGE(ExceededRecursionDepth);
-    REGISTER_MESSAGE(InvalidCommandArgMaxDepth);
-    REGISTER_MESSAGE(InvalidCommandArgSort);
-    REGISTER_MESSAGE(PackageNotFoundDependencyGraph);
-    REGISTER_MESSAGE(InvalidActionsInstall);
 }
