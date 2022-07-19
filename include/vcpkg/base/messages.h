@@ -174,15 +174,25 @@ namespace vcpkg::msg
         template<class Arg0, class... Args>
         inline constexpr auto get_examples(const Arg0& arg, Args... args)
         {
-            //if constexpr (arg.example == "") return StringArray{""};
             if constexpr (sizeof...(args) == 0)
             {
-                const StringArray out = arg.example_str;
+                const StringArray out = arg.real_example();
                 return out;
             }
             else
             {
-                const StringArray out = arg.example_str/*  + StringArray(" ") */ + ((StringArray(" ") + args.example_str) + ...);
+                const StringArray out = arg.real_example() + (([&] {
+                                                                  if constexpr (args.real_example().length() == 0)
+                                                                  {
+                                                                      return StringArray{""};
+                                                                  }
+                                                                  else
+                                                                  {
+                                                                      return StringArray{" "};
+                                                                  }
+                                                              }() +
+                                                               args.real_example()) +
+                                                              ...);
                 return out;
             }
         }
@@ -190,8 +200,7 @@ namespace vcpkg::msg
         template<::size_t M, ::size_t N>
         constexpr auto make_example_str(StringArray<M> name, StringArray<N> example)
         {
-            return StringArray("An example of {") + name + StringArray("} is ") + example +
-                   StringArray(".");
+            return StringArray("An example of {") + name + StringArray("} is ") + example + StringArray(".");
         }
 
         ::size_t startup_register_message(StringLiteral name, StringLiteral format_string, std::string&& comment);
@@ -266,8 +275,15 @@ namespace vcpkg::msg
     constexpr static struct NAME##_t                                                                                   \
     {                                                                                                                  \
         constexpr static const char* name = #NAME;                                                                     \
-        constexpr static const char* example = EXAMPLE;                                                                \
-        constexpr static StringArray example_str = "An example of {" #NAME "} is " EXAMPLE ".";                      \
+        constexpr static StringArray example = EXAMPLE;                                                                \
+        constexpr static StringArray example_str = "An example of {" #NAME "} is " EXAMPLE ".";                        \
+        constexpr static auto real_example()                                                                           \
+        {                                                                                                              \
+            if constexpr (example.length() == 0)                                                                       \
+                return example;                                                                                        \
+            else                                                                                                       \
+                return example_str;                                                                                    \
+        }                                                                                                              \
         template<class T>                                                                                              \
         detail::MessageArgument<NAME##_t, T> operator=(const T& t) const noexcept                                      \
         {                                                                                                              \
@@ -951,7 +967,7 @@ namespace vcpkg
     DECLARE_MESSAGE(LicenseExpressionContainsUnicode,
                     (msg::value, msg::pretty_value),
                     "example of {value:04X} is '22BB'\nexample of {pretty_value} is '⊻'",
-                    "SPDX license expression contains a unicode character (U+{value:04X} '{value}'"
+                    "SPDX license expression contains a unicode character (U+{value:04X}"
                     "'{pretty_value}'), but these expressions are ASCII-only.");
     DECLARE_MESSAGE(LicenseExpressionDocumentRefUnsupported,
                     (),
