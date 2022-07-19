@@ -580,8 +580,7 @@ namespace vcpkg
         Commands::Integrate::append_helpstring(table);
         table.blank();
         table.format("vcpkg export <pkg>... [opt]...", msg::format(msgHelpExportCommand));
-        table.format("vcpkg edit <pkg>",
-                     msg::format(msgHelpEditCommand, msg::env_var = format_environment_variable("EDITOR")));
+        table.format("vcpkg edit <pkg>", msg::format(msgHelpEditCommand, msg::env_var = "EDITOR"));
         table.format("vcpkg create <pkg> <url> [archivename]", msg::format(msgHelpCreateCommand));
         table.format("vcpkg x-init-registry <path>", msg::format(msgHelpInitializeRegistryCommand));
         table.format("vcpkg format-manifest --all", msg::format(msgHelpFormatManifestCommand));
@@ -642,24 +641,20 @@ namespace vcpkg
             return Strings::concat("--", arg, joiner, value);
         };
 
-        table.format(
-            opt(TRIPLET_ARG, "=", "<t>"),
-            msg::format(msgSpecifyTargetArch, msg::env_var = format_environment_variable("VCPKG_DEFAULT_TRIPLET")));
-        table.format(
-            opt(HOST_TRIPLET_ARG, "=", "<t>"),
-            msg::format(msgSpecifyHostArch, msg::env_var = format_environment_variable("VCPKG_DEFAULT_HOST_TRIPLET")));
+        table.format(opt(TRIPLET_ARG, "=", "<t>"),
+                     msg::format(msgSpecifyTargetArch, msg::env_var = "VCPKG_DEFAULT_TRIPLET"));
+        table.format(opt(HOST_TRIPLET_ARG, "=", "<t>"),
+                     msg::format(msgSpecifyHostArch, msg::env_var = "VCPKG_DEFAULT_HOST_TRIPLET"));
         table.format(opt(OVERLAY_PORTS_ARG, "=", "<path>"),
-                     msg::format(msgSpecifyDirectoriesWhenSearching,
-                                 msg::env_var = format_environment_variable("VCPKG_OVERLAY_PORTS")));
+                     msg::format(msgSpecifyDirectoriesWhenSearching, msg::env_var = "VCPKG_OVERLAY_PORTS"));
         table.format(opt(OVERLAY_TRIPLETS_ARG, "=", "<path>"),
-                     msg::format(msgSpecifyDirectoriesContaining,
-                                 msg::env_var = format_environment_variable("VCPKG_OVERLAY_TRIPLETS")));
+                     msg::format(msgSpecifyDirectoriesContaining, msg::env_var = "VCPKG_OVERLAY_TRIPLETS"));
         table.format(opt(BINARY_SOURCES_ARG, "=", "<path>"), msg::format(msgBinarySourcesArg));
         table.format(opt(ASSET_SOURCES_ARG, "=", "<path>"), msg::format(msgAssetSourcesArg));
         table.format(opt(DOWNLOADS_ROOT_DIR_ARG, "=", "<path>"),
-                     msg::format(msgDownloadRootsDir, msg::env_var = format_environment_variable("VCPKG_DOWNLOADS")));
+                     msg::format(msgDownloadRootsDir, msg::env_var = "VCPKG_DOWNLOADS"));
         table.format(opt(VCPKG_ROOT_DIR_ARG, "=", "<path>"),
-                     msg::format(msgVcpkgRootsDir, msg::env_var = format_environment_variable("VCPKG_ROOT")));
+                     msg::format(msgVcpkgRootsDir, msg::env_var = "VCPKG_ROOT"));
         table.format(opt(BUILDTREES_ROOT_DIR_ARG, "=", "<path>"), msg::format(msgBuildTreesRootDir));
         table.format(opt(INSTALL_ROOT_DIR_ARG, "=", "<path>"), msg::format(msgInstallRootDir));
         table.format(opt(PACKAGES_ROOT_DIR_ARG, "=", "<path>"), msg::format(msgPackageRootDir));
@@ -902,22 +897,6 @@ namespace vcpkg
         }
         if (asset_sources_template.empty()) return nullopt;
         return Optional<std::string>(std::move(asset_sources_template));
-    }
-
-    std::string format_environment_variable(StringLiteral lit)
-    {
-        std::string result;
-#if defined(_WIN32)
-        result.reserve(lit.size() + 2);
-        result.push_back('%');
-        result.append(lit.data(), lit.size());
-        result.push_back('%');
-#else
-        result.reserve(lit.size() + 1);
-        result.push_back('$');
-        result.append(lit.data(), lit.size());
-#endif
-        return result;
     }
 
     std::string create_example_string(const std::string& command_and_arguments)

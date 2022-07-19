@@ -452,9 +452,7 @@ namespace vcpkg
                     // We simply set "ip:port" to HTTP(S)_PROXY variables because it works on most common cases.
                     else
                     {
-                        msg::println(msgAutoSettingEnvVar,
-                                     msg::env_var = format_environment_variable("HTTP(S)_PROXY"),
-                                     msg::url = server);
+                        msg::println(msgAutoSettingEnvVar, msg::env_var = "HTTP(S)_PROXY", msg::url = server);
 
                         env.emplace("HTTP_PROXY", server.c_str());
                         env.emplace("HTTPS_PROXY", server.c_str());

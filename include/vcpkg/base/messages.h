@@ -689,10 +689,11 @@ namespace vcpkg
                     "Based on your system settings, the default path to store binaries is \"{path}\". This consults "
                     "%LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.");
     DECLARE_MESSAGE(DetectCompilerHash, (msg::triplet), "", "Detecting compiler hash for triplet {triplet}...");
-    DECLARE_MESSAGE(DownloadAvailable,
-                    (msg::env_var),
-                    "",
-                    "A downloadable copy of this tool is available and can be used by unsetting {env_var}.");
+    DECLARE_MESSAGE(
+        DownloadAvailable,
+        (msg::env_var),
+        "",
+        "A downloadable copy of this tool is available and can be used by unsetting {env_var} environment variable.");
     DECLARE_MESSAGE(DownloadedSources, (msg::spec), "", "Downloaded sources for {spec}");
     DECLARE_MESSAGE(DownloadingVcpkgCeBundle, (msg::version), "", "Downloading vcpkg-ce bundle {version}...");
     DECLARE_MESSAGE(DownloadingVcpkgCeBundleLatest,
@@ -853,12 +854,13 @@ namespace vcpkg
                     "'header' refers to C/C++ .h files",
                     "{package_name} is header-only and can be used from CMake via:");
     DECLARE_MESSAGE(HelpContactCommand, (), "", "Display contact information to send feedback.");
-    DECLARE_MESSAGE(HelpCreateCommand, (), "", "Create a new package.");
-    DECLARE_MESSAGE(HelpDependInfoCommand, (), "", "Display a list of dependencies for packages.");
+    DECLARE_MESSAGE(HelpCreateCommand, (), "", "Create a new port.");
+    DECLARE_MESSAGE(HelpDependInfoCommand, (), "", "Display a list of dependencies for ports.");
     DECLARE_MESSAGE(HelpEditCommand,
                     (msg::env_var),
                     "",
-                    "Open a port for editing (use '{env_var}' to set an editor program, defaults to 'code').");
+                    "Open a port for editing (use the environment variable '{env_var}' to set an editor program, "
+                    "defaults to 'code').");
     DECLARE_MESSAGE(HelpEnvCommand, (), "", "Creates a clean shell environment for development or compiling.");
     DECLARE_MESSAGE(HelpExampleCommand,
                     (),

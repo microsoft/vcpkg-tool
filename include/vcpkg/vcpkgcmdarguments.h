@@ -89,8 +89,6 @@ namespace vcpkg
 
     std::string create_example_string(const std::string& command_and_arguments);
 
-    std::string format_environment_variable(StringLiteral lit);
-
     struct HelpTableFormatter
     {
         void format(StringView col1, StringView col2);
