@@ -90,7 +90,7 @@ namespace vcpkg
             return Triplet::from_canonical_name(std::string(*args.triplet));
         }
 #if defined(_WIN32)
-        return Triplet::from_canonical_name("x86-windows");
+        return Triplet::from_canonical_name("x64-windows");
 #else
         return system_triplet();
 #endif
