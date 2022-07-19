@@ -6,8 +6,8 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <array>
 #include <algorithm>
+#include <array>
 #include <iterator>
 #include <limits>
 #include <string>
@@ -105,7 +105,8 @@ template<::size_t N>
 struct StringArray : public std::array<char, N>
 {
     constexpr StringArray() noexcept : std::array<char, N>() { }
-    constexpr StringArray(const char (&str)[N]) noexcept : std::array<char, N>() {
+    constexpr StringArray(const char (&str)[N]) noexcept : std::array<char, N>()
+    {
         for (size_t i = 0; i < N; i++)
         {
             this->at(i) = str[i];
