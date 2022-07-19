@@ -89,18 +89,6 @@ namespace vcpkg
 VCPKG_FORMAT_AS(vcpkg::ZStringView, vcpkg::StringView);
 VCPKG_FORMAT_AS(vcpkg::StringLiteral, vcpkg::StringView);
 
-template<std::size_t N, std::size_t... Is>
-constexpr std::array<char, N> to_array(const char (&a)[N], std::index_sequence<Is...>)
-{
-    return {{a[Is]...}};
-}
-
-template<std::size_t N>
-constexpr std::array<char, N> to_array(const char (&a)[N])
-{
-    return to_array(a, std::make_index_sequence<N>());
-}
-
 template<::size_t N>
 struct StringArray : public std::array<char, N>
 {
