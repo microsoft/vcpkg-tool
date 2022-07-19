@@ -63,7 +63,7 @@ namespace vcpkg
             return *this;
         }
         template<class Message, class... Args>
-        constexpr LocalizedString& append(Message m, const Args&... args)
+        LocalizedString& append(Message m, const Args&... args)
         {
             return append(msg::format(m, args...));
         }
