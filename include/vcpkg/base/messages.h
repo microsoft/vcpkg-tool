@@ -151,18 +151,22 @@ namespace vcpkg::msg
         template<::size_t M, ::size_t N>
         inline std::string get_examples_for_args(const StringArray<M>& comment, const StringArray<N>& example)
         {
-            if (comment.empty())
+            if (comment.length() == 0 && example.length() == 0)
             {
-                return std::string(comment.begin(), comment.end());
+                return std::string{""};
+            }
+            if (comment.length() == 0)
+            {
+                return std::string(example.begin(), example.end() - 1);
             }
 
-            if (example.empty())
+            if (example.length() == 0)
             {
-                return std::string(example.begin(), example.end());
+                return std::string(comment.begin(), comment.end() - 1);
             }
 
             const auto out = comment + StringArray(" ") + example;
-            return std::string(out.begin(), out.end());
+            return std::string(out.begin(), out.end() - 1);
         }
 
         inline constexpr auto get_examples() { return StringArray{""}; }
@@ -170,6 +174,7 @@ namespace vcpkg::msg
         template<class Arg0, class... Args>
         inline constexpr auto get_examples(const Arg0& arg, Args... args)
         {
+            //if constexpr (arg.example == "") return StringArray{""};
             if constexpr (sizeof...(args) == 0)
             {
                 const StringArray out = arg.example_str;
@@ -177,9 +182,16 @@ namespace vcpkg::msg
             }
             else
             {
-                const StringArray out = arg.example_str + StringArray(" ") + ((args.example_str + StringArray(" ")) + ...);
+                const StringArray out = arg.example_str/*  + StringArray(" ") */ + ((StringArray(" ") + args.example_str) + ...);
                 return out;
             }
+        }
+
+        template<::size_t M, ::size_t N>
+        constexpr auto make_example_str(StringArray<M> name, StringArray<N> example)
+        {
+            return StringArray("An example of {") + name + StringArray("} is ") + example +
+                   StringArray(".");
         }
 
         ::size_t startup_register_message(StringLiteral name, StringLiteral format_string, std::string&& comment);
@@ -939,7 +951,7 @@ namespace vcpkg
     DECLARE_MESSAGE(LicenseExpressionContainsUnicode,
                     (msg::value, msg::pretty_value),
                     "example of {value:04X} is '22BB'\nexample of {pretty_value} is '⊻'",
-                    "SPDX license expression contains a unicode character (U+{value:04X} "
+                    "SPDX license expression contains a unicode character (U+{value:04X} '{value}'"
                     "'{pretty_value}'), but these expressions are ASCII-only.");
     DECLARE_MESSAGE(LicenseExpressionDocumentRefUnsupported,
                     (),
