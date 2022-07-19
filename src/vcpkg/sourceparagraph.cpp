@@ -1429,7 +1429,7 @@ namespace vcpkg
             }
             if (start_of_chunk != end_of_chunk)
             {
-                msg::println_error(LocalizedString::from_raw(StringView{start_of_chunk, end_of_chunk}));
+                msg::write_unlocalized_text_to_stdout(Color::error, StringView{start_of_chunk, end_of_chunk});
                 start_of_chunk = end_of_chunk;
             }
 
