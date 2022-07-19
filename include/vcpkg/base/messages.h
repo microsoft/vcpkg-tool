@@ -702,7 +702,7 @@ namespace vcpkg
     DECLARE_MESSAGE(DownloadRootsDir,
                     (msg::env_var),
                     "",
-                    "Specify the downloads root directory.\n(default: '{env_var}')");
+                    "Specify the downloads root directory.\n(default: {env_var})");
     DECLARE_MESSAGE(DuplicateCommandOption,
                     (msg::command_name),
                     "",
@@ -861,7 +861,7 @@ namespace vcpkg
     DECLARE_MESSAGE(HelpEditCommand,
                     (msg::env_var),
                     "",
-                    "Open up a port for editing (use '{env_var}' to set an editor program, defaults to 'code').");
+                    "Open a port for editing (use '{env_var}' to set an editor program, defaults to 'code').");
     DECLARE_MESSAGE(HelpEnvCommand, (), "", "Creates a clean shell environment for development or compiling.");
     DECLARE_MESSAGE(HelpExampleCommand,
                     (),
