@@ -913,7 +913,7 @@ namespace vcpkg
             return_code = cmd_execute_and_stream_data(
                 command,
                 [&](StringView sv) {
-                    msg::println(LocalizedString::from_raw(sv));
+                    msg::write_unlocalized_text_to_stdout(sv);
                     Checks::msg_check_exit(VCPKG_LINE_INFO,
                                            out_file.write(sv.data(), 1, sv.size()) == sv.size(),
                                            msgErrorWhileWriting,
