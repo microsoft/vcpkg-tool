@@ -517,7 +517,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ExpectedPortName);
     REGISTER_MESSAGE(ExpectedTripletName);
     REGISTER_MESSAGE(ExtendedDocumentationAtUrl);
-	REGISTER_MESSAGE(FailedToExtract);
+    REGISTER_MESSAGE(FailedToExtract);
     REGISTER_MESSAGE(FailedToParseBinParagraph);
     REGISTER_MESSAGE(FailedToParseCMakeConsoleOut);
     REGISTER_MESSAGE(FailedToProvisionCe);
