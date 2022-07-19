@@ -178,7 +178,7 @@ namespace vcpkg::msg
         template<class Arg0>
         constexpr auto example_piece(const Arg0& arg)
         {
-            if constexpr (arg.real_example().length() == 0)
+            if constexpr (Arg0::real_example().length() == 0)
                 return StringArray{""};
             else
                 return StringArray{" "} + arg.real_example();
@@ -187,7 +187,7 @@ namespace vcpkg::msg
         template<class Arg0, class... Args>
         constexpr auto example_piece(const Arg0& arg, Args... args)
         {
-            if constexpr (arg.real_example().length() == 0)
+            if constexpr (Arg0::real_example().length() == 0)
                 return example_piece(args...);
             else
                 return StringArray{" "} + arg.real_example() + example_piece(args...);
