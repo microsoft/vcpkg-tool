@@ -560,7 +560,7 @@ namespace vcpkg
         {
             if (paths.use_git_default_registry())
             {
-                return get_baseline_from_git_repo(paths, builtin_registry_git_url());
+                return get_baseline_from_git_repo(paths, builtin_registry_git_url);
             }
             else
             {
@@ -588,7 +588,7 @@ namespace vcpkg
     {
         if (kind == RegistryConfigDeserializer::KIND_BUILTIN)
         {
-            return builtin_registry_git_url();
+            return builtin_registry_git_url;
         }
         if (kind == RegistryConfigDeserializer::KIND_FILESYSTEM)
         {

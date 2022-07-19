@@ -323,8 +323,11 @@ namespace vcpkg::Json
     std::pair<Value, JsonStyle> parse_file(LineInfo li, const Filesystem&, const Path&);
     ExpectedS<Json::Object> parse_object(StringView text, StringView origin = {});
 
+    std::string stringify(const Value&);
     std::string stringify(const Value&, JsonStyle style);
+    std::string stringify(const Object&);
     std::string stringify(const Object&, JsonStyle style);
+    std::string stringify(const Array&);
     std::string stringify(const Array&, JsonStyle style);
 
     uint64_t get_json_parsing_stats();

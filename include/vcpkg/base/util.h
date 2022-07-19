@@ -336,6 +336,13 @@ namespace vcpkg::Util
         return (b_cur == b_end) - (a_cur == a_end);
     }
 
+    template<class... BoolIsh>
+    bool zero_or_one_set(const BoolIsh&... boolish)
+    {
+        unsigned int total = (0u + ... + static_cast<unsigned int>(static_cast<bool>(boolish)));
+        return total <= 1;
+    }
+
     namespace Enum
     {
         template<class E>
