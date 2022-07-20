@@ -140,6 +140,7 @@
   "_CommandFailed.comment": "An example of {command_line} is vcpkg install zlib.",
   "CompressFolderFailed": "Failed to compress folder \"{path}\":",
   "_CompressFolderFailed.comment": "An example of {path} is /foo/bar.",
+  "ConstraintViolation": "Found a constraint violation:",
   "CopyrightIsDir": "`{path}` being a directory is deprecated.",
   "_CopyrightIsDir.comment": "An example of {path} is /foo/bar.",
   "CouldNotDeduceNugetIdAndVersion": "Could not deduce nuget id and version from filename: {path}",

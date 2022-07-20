@@ -1020,7 +1020,10 @@ namespace vcpkg
                                                                             msg::spec = constraints.first,
                                                                             msg::expected_version = constraint,
                                                                             msg::actual_version = *v));
-                                print2("found constraint violation: ", constraint_violations.back().data(), "\n");
+                                msg::println(msg::format(msgConstraintViolation)
+                                                 .append_raw("\n")
+                                                 .append_indent()
+                                                 .append(constraint_violations.back()));
                             }
                         }
                     }

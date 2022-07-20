@@ -687,4 +687,5 @@ namespace vcpkg
     REGISTER_MESSAGE(OptionRequired);
     REGISTER_MESSAGE(ExportingPackage);
     REGISTER_MESSAGE(FailedToFindPortFeature);
+    REGISTER_MESSAGE(ConstraintViolation);
 }

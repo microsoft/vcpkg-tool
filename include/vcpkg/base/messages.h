@@ -1310,4 +1310,5 @@ namespace vcpkg
                     (msg::value, msg::spec),
                     "'{value}' is a port feature name.",
                     "Could not find feature {value} in port {spec}.");
+    DECLARE_MESSAGE(ConstraintViolation, (), "", "Found a constraint violation:");
 }
