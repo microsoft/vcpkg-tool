@@ -1311,4 +1311,11 @@ namespace vcpkg
                     "'{value}' is a port feature name.",
                     "Could not find feature {value} in port {spec}.");
     DECLARE_MESSAGE(ConstraintViolation, (), "", "Found a constraint violation:");
+    DECLARE_MESSAGE(InstalledRequestedPackages, (), "", "All requested packages are currently installed.");
+    DECLARE_MESSAGE(ExcludedPackages, (), "", "The following packages are excluded:");
+    DECLARE_MESSAGE(InstalledPackages, (), "", "The following packages are already installed:");
+    DECLARE_MESSAGE(PackagesToRemove, (), "", "The following packages will be removed:");
+    DECLARE_MESSAGE(PackagesToReBuild, (), "", "The following packages will be rebuilt:");
+    DECLARE_MESSAGE(PackagesToInstall, (), "", "The following packages will be built and installed:");
+    DECLARE_MESSAGE(PackagesToInstallDirectly, (), "", "The following packages will be directlt installed:");
 }

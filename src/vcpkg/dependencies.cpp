@@ -1117,7 +1117,7 @@ namespace vcpkg
         if (action_plan.remove_actions.empty() && action_plan.already_installed.empty() &&
             action_plan.install_actions.empty())
         {
-            print2("All requested packages are currently installed.\n");
+            msg::println(msgInstalledRequestedPackages);
             return;
         }
 
@@ -1180,41 +1180,39 @@ namespace vcpkg
 
         if (!excluded.empty())
         {
-            print2("The following packages are excluded:\n", actions_to_output_string(excluded), '\n');
+            msg::println(msg::format(msgExcludedPackages).append_raw("\n" + actions_to_output_string(excluded)));
         }
 
         if (!already_installed_plans.empty())
         {
-            print2("The following packages are already installed:\n",
-                   actions_to_output_string(already_installed_plans),
-                   '\n');
+            msg::println(
+                msg::format(msgInstalledPackages).append_raw("\n" + actions_to_output_string(already_installed_plans)));
         }
 
         if (!remove_specs.empty())
         {
-            std::string msg = "The following packages will be removed:\n";
+            auto message = msg::format(msgPackagesToRemove).append_raw("\n");
             for (auto&& spec : remove_specs)
             {
-                Strings::append(msg, to_output_string(RequestType::USER_REQUESTED, spec.to_string()), '\n');
+                message.append_raw("\n" + to_output_string(RequestType::USER_REQUESTED, spec.to_string()));
             }
-            print2(msg);
+            msg::println(message);
         }
 
         if (!rebuilt_plans.empty())
         {
-            print2("The following packages will be rebuilt:\n", actions_to_output_string(rebuilt_plans), '\n');
+            msg::println(msg::format(msgPackagesToReBuild).append_raw("\n" + actions_to_output_string(rebuilt_plans)));
         }
 
         if (!new_plans.empty())
         {
-            print2("The following packages will be built and installed:\n", actions_to_output_string(new_plans), '\n');
+            msg::println(msg::format(msgPackagesToInstall).append_raw("\n" + actions_to_output_string(new_plans)));
         }
 
         if (!only_install_plans.empty())
         {
-            print2("The following packages will be directly installed:\n",
-                   actions_to_output_string(only_install_plans),
-                   '\n');
+            msg::println(msg::format(msgPackagesToInstallDirectly)
+                             .append_raw("\n" + actions_to_output_string(only_install_plans)));
         }
 
         if (has_non_user_requested_packages)

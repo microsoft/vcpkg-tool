@@ -688,4 +688,11 @@ namespace vcpkg
     REGISTER_MESSAGE(ExportingPackage);
     REGISTER_MESSAGE(FailedToFindPortFeature);
     REGISTER_MESSAGE(ConstraintViolation);
+    REGISTER_MESSAGE(InstalledRequestedPackages);
+    REGISTER_MESSAGE(ExcludedPackages);
+    REGISTER_MESSAGE(InstalledPackages);
+    REGISTER_MESSAGE(PackagesToRemove);
+    REGISTER_MESSAGE(PackagesToReBuild);
+    REGISTER_MESSAGE(PackagesToInstall);
+    REGISTER_MESSAGE(PackagesToInstallDirectly);
 }
