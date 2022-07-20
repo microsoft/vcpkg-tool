@@ -678,4 +678,5 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedToWriteManifest);
     REGISTER_MESSAGE(FailedToParseControl);
     REGISTER_MESSAGE(FailedToFormatMissingFile);
+    REGISTER_MESSAGE(ControlAndManifestFilesPresent);
 }

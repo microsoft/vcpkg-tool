@@ -248,10 +248,10 @@ namespace vcpkg::Commands::FormatManifest
                 auto manifest_exists = fs.exists(manifest_path, IgnoreErrors{});
                 auto control_exists = fs.exists(control_path, IgnoreErrors{});
 
-                Checks::check_exit(VCPKG_LINE_INFO,
-                                   !manifest_exists || !control_exists,
-                                   "Both a manifest file and a CONTROL file exist in port directory: %s",
-                                   dir);
+                Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                       !manifest_exists || !control_exists,
+                                       msgControlAndManifestFilesPresent,
+                                       msg::path = dir);
 
                 if (manifest_exists)
                 {

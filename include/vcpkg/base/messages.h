@@ -1282,11 +1282,11 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
-    DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: \"{path}\"");
-    DECLARE_MESSAGE(FailedToReadParagraph, (msg::path), "", "Failed to read paragraphs from \"{path}\"");
-    DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse control file: \"{path}\"");
-    DECLARE_MESSAGE(FailedToWriteManifest, (msg::path), "", "Failed to write manifest file \"{path}\"");
-    DECLARE_MESSAGE(FailedToRemoveControl, (msg::path), "", "Failed to remove control file \"{path}\"");
+    DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: {path}");
+    DECLARE_MESSAGE(FailedToReadParagraph, (msg::path), "", "Failed to read paragraphs from {path}");
+    DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse control file: {path}");
+    DECLARE_MESSAGE(FailedToWriteManifest, (msg::path), "", "Failed to write manifest file {path}");
+    DECLARE_MESSAGE(FailedToRemoveControl, (msg::path), "", "Failed to remove control file {path}");
     DECLARE_MESSAGE(FailedToFormatMissingFile,
                     (),
                     "",
@@ -1296,4 +1296,8 @@ namespace vcpkg
                     "",
                     "format-manifest was passed --convert-control without '--all'.\nThis doesn't do anything: we will "
                     "automatically convert all control files passed explicitly.");
+    DECLARE_MESSAGE(ControlAndManifestFilesPresent,
+                    (msg::path),
+                    "",
+                    "Both a manifest file and a CONTROL file exist in port directory: {path}");
 }
