@@ -74,6 +74,12 @@ namespace vcpkg
             return *this;
         }
 
+        LocalizedString& append_nl()
+        {
+            m_data.append("\n");
+            return *this;
+        }
+
         friend const char* to_printf_arg(const LocalizedString& s) { return s.data().c_str(); }
 
         friend bool operator==(const LocalizedString& lhs, const LocalizedString& rhs)
@@ -1328,4 +1334,9 @@ namespace vcpkg
     DECLARE_MESSAGE(ArtifactsOptionIncompatibility, (msg::option), "", "--{option} has no effect on find artifact.");
     DECLARE_MESSAGE(AddCommandFirstArg, (), "", "The first parameter to add must be 'artifact' or 'port'.");
     DECLARE_MESSAGE(FailedToObtainLocalPortGitSha, (), "", "Failed to obtain git SHAs for local ports.");
+    DECLARE_MESSAGE(ErrorsFound, (), "", "Found the following errors:");
+    DECLARE_MESSAGE(SuggestResolution,
+                    (msg::command_name, msg::option),
+                    "",
+                    "To attempt to resolve all errors at once, run:\nvcpkg {command_name} --{option}");
 }

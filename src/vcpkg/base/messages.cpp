@@ -695,4 +695,6 @@ namespace vcpkg
     REGISTER_MESSAGE(ArtifactsOptionIncompatibility);
     REGISTER_MESSAGE(AddCommandFirstArg);
     REGISTER_MESSAGE(FailedToObtainLocalPortGitSha);
+    REGISTER_MESSAGE(ErrorsFound);
+    REGISTER_MESSAGE(SuggestResolution);
 }

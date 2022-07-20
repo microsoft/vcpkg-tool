@@ -389,19 +389,23 @@ namespace vcpkg::Commands::CIVerifyVersions
                 continue;
             }
 
-            if (verbose) vcpkg::printf("%s", maybe_ok.value_or_exit(VCPKG_LINE_INFO));
+            if (verbose)
+                msg::write_unlocalized_text_to_stdout(Color::none,
+                                                      fmt::format("%s", maybe_ok.value_or_exit(VCPKG_LINE_INFO)));
         }
 
         if (!errors.empty())
         {
-            print2(Color::error, "Found the following errors:\n");
+            auto message = msg::format(msgErrorsFound);
             for (auto&& error : errors)
             {
-                vcpkg::printf(Color::error, "%s\n", error);
+                message.append_nl().append_indent().append_raw(error);
             }
-            print2(Color::error,
-                   "\nTo attempt to resolve all errors at once, run:\n\n"
-                   "    vcpkg x-add-version --all\n\n");
+
+            message.append_nl().append(msgSuggestResolution, msg::command_name = "x-add-version", msg::option = "all");
+
+            msg::println_error(message);
+
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
         Checks::exit_success(VCPKG_LINE_INFO);
