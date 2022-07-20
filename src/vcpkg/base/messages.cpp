@@ -686,4 +686,5 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedToObtainPackageVersion);
     REGISTER_MESSAGE(OptionRequired);
     REGISTER_MESSAGE(ExportingPackage);
+    REGISTER_MESSAGE(FailedToFindPortFeature);
 }

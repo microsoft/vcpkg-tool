@@ -117,8 +117,8 @@ namespace vcpkg
                     scfl.source_control_file->find_dependencies_for_feature(feature);
                 if (!maybe_qualified_deps.has_value())
                 {
-                    Checks::exit_with_message(
-                        VCPKG_LINE_INFO, "Error: could not find feature '%s' in port '%s'", feature, m_spec.name());
+                    Checks::msg_exit_with_message(
+                        VCPKG_LINE_INFO, msgFailedToFindPortFeature, msg::value = feature, msg::spec = m_spec.name());
                 }
                 const std::vector<Dependency>* qualified_deps = &maybe_qualified_deps.value_or_exit(VCPKG_LINE_INFO);
 

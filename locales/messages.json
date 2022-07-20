@@ -209,6 +209,8 @@
   "_ExtendedDocumenationAtUrl.comment": "An example of {url} is https://github.com/microsoft/vcpkg.",
   "FailedToExtract": "Failed to extract \"{path}\":",
   "_FailedToExtract.comment": "An example of {path} is /foo/bar.",
+  "FailedToFindPortFeature": "Could not find feature {value} in port {spec}.",
+  "_FailedToFindPortFeature.comment": "'{value}' is a port feature name. An example of {spec} is zlib:x64-windows.",
   "FailedToObtainDependencyVersion": "Cannot find desired dependency version.",
   "FailedToObtainPackageVersion": "Cannot find desired package version.",
   "FailedToParseCMakeConsoleOut": "Failed to parse CMake console output to locate block start/end markers.",

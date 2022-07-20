@@ -117,6 +117,7 @@
   "ExportingPackage": "Exporting {package_name}...",
   "ExtendedDocumenationAtUrl": "Extended documentation available at '{url}'.",
   "FailedToExtract": "Failed to extract \"{path}\":",
+  "FailedToFindPortFeature": "Could not find feature {value} in port {spec}.",
   "FailedToObtainDependencyVersion": "Cannot find desired dependency version.",
   "FailedToObtainPackageVersion": "Cannot find desired package version.",
   "FailedToParseCMakeConsoleOut": "Failed to parse CMake console output to locate block start/end markers.",

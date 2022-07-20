@@ -1306,4 +1306,8 @@ namespace vcpkg
     DECLARE_MESSAGE(FailedToObtainPackageVersion, (), "", "Cannot find desired package version.");
     DECLARE_MESSAGE(OptionRequired, (msg::option), "", "--{option} option is required.");
     DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
+    DECLARE_MESSAGE(FailedToFindPortFeature,
+                    (msg::value, msg::spec),
+                    "'{value}' is a port feature name.",
+                    "Could not find feature {value} in port {spec}.");
 }
