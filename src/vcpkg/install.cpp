@@ -692,7 +692,7 @@ namespace vcpkg
         std::error_code ec;
 
         auto usage_file = installed.usage_file(bpgh.spec);
-        if (fs.exists(usage_file, IgnoreErrors{}))
+        if (fs.is_regular_file(usage_file))
         {
             ret.usage_file = true;
             auto contents = fs.read_contents(usage_file, ec);
