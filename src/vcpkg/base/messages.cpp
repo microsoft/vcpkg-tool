@@ -594,7 +594,7 @@ namespace vcpkg
     REGISTER_MESSAGE(MissingExtension);
     REGISTER_MESSAGE(MonoInstructions);
     REGISTER_MESSAGE(MsiexecFailedToExtract);
-	REGISTER_MESSAGE(NavigateToNPS);
+    REGISTER_MESSAGE(NavigateToNPS);
     REGISTER_MESSAGE(NewConfigurationAlreadyExists);
     REGISTER_MESSAGE(NewManifestAlreadyExists);
     REGISTER_MESSAGE(NewNameCannotBeEmpty);
