@@ -1318,4 +1318,15 @@ namespace vcpkg
     DECLARE_MESSAGE(PackagesToReBuild, (), "", "The following packages will be rebuilt:");
     DECLARE_MESSAGE(PackagesToInstall, (), "", "The following packages will be built and installed:");
     DECLARE_MESSAGE(PackagesToInstallDirectly, (), "", "The following packages will be directlt installed:");
+    DECLARE_MESSAGE(PackagesToModify, (), "", "Additional packages (*) will be modified to comeplete this operation.");
+    DECLARE_MESSAGE(
+        PackagesToRebuildSuggestRecurse,
+        (),
+        "",
+        "If you are sure you want to rebuild the above packages, run the command with the --recurse option.");
+    DECLARE_MESSAGE(
+        FailedToLoadControl,
+        (msg::spec, msg::error, msg::command_name),
+        "'{error}' is the error message.",
+        "while loading control file for {spec}:\n{error}\nPlease run\"{command_name} remove {spec}\" and re-attempt.");
 }

@@ -695,4 +695,7 @@ namespace vcpkg
     REGISTER_MESSAGE(PackagesToReBuild);
     REGISTER_MESSAGE(PackagesToInstall);
     REGISTER_MESSAGE(PackagesToInstallDirectly);
+    REGISTER_MESSAGE(PackagesToModify);
+    REGISTER_MESSAGE(PackagesToRebuildSuggestRecurse);
+    REGISTER_MESSAGE(FailedToLoadControl);
 }

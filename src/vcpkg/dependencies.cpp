@@ -231,13 +231,11 @@ namespace vcpkg
 #endif
                 if (!m_scfl)
                 {
-                    Checks::exit_maybe_upgrade(
-                        VCPKG_LINE_INFO,
-                        "Error: while loading control file for %s:\n%s\nPlease run \"%s remove %s\" and re-attempt.",
-                        m_spec,
-                        m_scfl.error(),
-                        vcpkg_remove_cmd,
-                        m_spec);
+                    Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                                   msgFailedToLoadControl,
+                                                   msg::spec = m_spec,
+                                                   msg::error = m_scfl.error(),
+                                                   msg::command_name = vcpkg_remove_cmd);
                 }
 
                 return *m_scfl.get();
@@ -1215,14 +1213,12 @@ namespace vcpkg
                              .append_raw("\n" + actions_to_output_string(only_install_plans)));
         }
 
-        if (has_non_user_requested_packages)
-            print2("Additional packages (*) will be modified to complete this operation.\n");
+        if (has_non_user_requested_packages) msg::println(msgPackagesToModify);
+
         bool have_removals = !remove_specs.empty() || !rebuilt_plans.empty();
         if (have_removals && !is_recursive)
         {
-            print2(Color::warning,
-                   "If you are sure you want to rebuild the above packages, run the command with the "
-                   "--recurse option\n");
+            msg::println_warning(msgPackagesToRebuildSuggestRecurse);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
     }
