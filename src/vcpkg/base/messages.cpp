@@ -694,4 +694,5 @@ namespace vcpkg
     REGISTER_MESSAGE(MissingPortSuggestPullRequest);
     REGISTER_MESSAGE(ArtifactsOptionIncompatibility);
     REGISTER_MESSAGE(AddCommandFirstArg);
+    REGISTER_MESSAGE(FailedToObtainLocalPortGitSha);
 }

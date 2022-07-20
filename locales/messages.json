@@ -211,6 +211,7 @@
   "FailedToExtract": "Failed to extract \"{path}\":",
   "_FailedToExtract.comment": "An example of {path} is /foo/bar.",
   "FailedToFormatMissingFile": "No files to format.\nPlease pass either --all, or the explicit files to format or convert.",
+  "FailedToObtainLocalPortGitSha": "Failed to obtain git SHAs for local ports.",
   "FailedToParseCMakeConsoleOut": "Failed to parse CMake console output to locate block start/end markers.",
   "FailedToParseControl": "Failed to parse control file: {path}",
   "_FailedToParseControl.comment": "An example of {path} is /foo/bar.",
