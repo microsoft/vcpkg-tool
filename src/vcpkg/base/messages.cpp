@@ -698,4 +698,5 @@ namespace vcpkg
     REGISTER_MESSAGE(PackagesToModify);
     REGISTER_MESSAGE(PackagesToRebuildSuggestRecurse);
     REGISTER_MESSAGE(FailedToLoadControl);
+    REGISTER_MESSAGE(ErrorWhileSearching);
 }

@@ -339,8 +339,9 @@ namespace vcpkg
                     }
                     else
                     {
-                        Checks::exit_with_message(
-                            VCPKG_LINE_INFO, "info: while looking for %s:\n%s", spec, maybe_scfl.error());
+                        Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                                      msg::format(msgErrorWhileSearching, msg::spec = spec)
+                                                          .append_raw("\n" + maybe_scfl.error()));
                     }
                 }
 

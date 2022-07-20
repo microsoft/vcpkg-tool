@@ -1329,4 +1329,5 @@ namespace vcpkg
         (msg::spec, msg::error, msg::command_name),
         "'{error}' is the error message.",
         "while loading control file for {spec}:\n{error}\nPlease run\"{command_name} remove {spec}\" and re-attempt.");
+    DECLARE_MESSAGE(ErrorWhileSearching, (msg::spec), "", "info: while looking for {spec}:");
 }
