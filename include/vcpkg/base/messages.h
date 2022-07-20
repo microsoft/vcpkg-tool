@@ -675,6 +675,7 @@ namespace vcpkg
                     "=== curl output ===\n"
                     "{actual}\n"
                     "=== end curl output ===");
+    DECLARE_MESSAGE(DefaultBrowserLaunched, (msg::url), "", "Default browser launched to {url}.");
     DECLARE_MESSAGE(DefaultPathToBinaries,
                     (msg::path),
                     "",
@@ -691,6 +692,7 @@ namespace vcpkg
                     (),
                     "This message is normally displayed only in development.",
                     "Downloading latest vcpkg-ce bundle...");
+    DECLARE_MESSAGE(EmailVcpkgTeam, (msg::url), "", "Send an email to {url} with any feedback.");
     DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
     DECLARE_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:");
     DECLARE_MESSAGE(ErrorDetectingCompilerInfo,
@@ -783,6 +785,7 @@ namespace vcpkg
                     "",
                     "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details "
                     "on how to provide credentials.");
+    DECLARE_MESSAGE(FeedbackAppreciated, (), "", "Thank you for your feedback!");
     DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at \"{path}\".");
     DECLARE_MESSAGE(
         ForceSystemBinariesOnWeirdPlatforms,
@@ -1014,8 +1017,8 @@ namespace vcpkg
                     "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
                     "The message named {value} ends with a newline which should be added by formatting "
                     "rather than by localization.");
-    DECLARE_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
     DECLARE_MESSAGE(Missing7zHeader, (), "", "Unable to find 7z header.");
+    DECLARE_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
     DECLARE_MESSAGE(MonoInstructions,
                     (),
                     "",
@@ -1026,6 +1029,7 @@ namespace vcpkg
                     (msg::path, msg::exit_code),
                     "",
                     "msiexec failed while extracting \"{path}\" with launch or exit code {exit_code} and message:");
+    DECLARE_MESSAGE(NavigateToNPS, (msg::url), "", "Please navigate to {url} in your preferred browser.");
     DECLARE_MESSAGE(NewConfigurationAlreadyExists,
                     (msg::path),
                     "",
@@ -1042,6 +1046,7 @@ namespace vcpkg
                     "Either specify --name and --version to produce a manifest intended for C++ libraries, or specify "
                     "--application to indicate that the manifest is not intended to be used as a port.");
     DECLARE_MESSAGE(NewVersionCannotBeEmpty, (), "", "--version cannot be empty.");
+    DECLARE_MESSAGE(NoCachedPackages, (), "", "No packages are cached.");
     DECLARE_MESSAGE(NoLocalizationForMessages, (), "", "No localized messages for the following: ");
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
     DECLARE_MESSAGE(NugetPackageFileSucceededButCreationFailed,
@@ -1068,10 +1073,18 @@ namespace vcpkg
                     "Error messages are is printed after this.",
                     "while loading {path}:");
     DECLARE_MESSAGE(ParseControlErrorInfoWrongTypeFields, (), "", "The following fields had the wrong types:");
+    DECLARE_MESSAGE(PortDependencyConflict,
+                    (msg::package_name),
+                    "",
+                    "Port {package_name} has the following unsupported dependencies:");
     DECLARE_MESSAGE(PortNotInBaseline,
                     (msg::package_name),
                     "",
                     "the baseline does not contain an entry for port {package_name}");
+    DECLARE_MESSAGE(PortSupportsField,
+                    (msg::value),
+                    "'{value}' is the value of the 'supports' field in the port's vcpkg.json.",
+                    "(supports: \"{value}\")");
     DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.");
     DECLARE_MESSAGE(ProcessorArchitectureMalformed,
                     (msg::arch),
@@ -1121,6 +1134,7 @@ namespace vcpkg
                     (),
                     "",
                     "Please make sure you have started a new bash shell for the change to take effect.");
+    DECLARE_MESSAGE(SupportedPort, (msg::package_name), "", "Port {package_name} is supported.");
     DECLARE_MESSAGE(SystemApiErrorMessage,
                     (msg::system_api, msg::exit_code, msg::error_msg),
                     "",
@@ -1158,6 +1172,11 @@ namespace vcpkg
         (msg::value, msg::list),
         "{value} is the value provided by the user and {list} a list of unknown variables seperated by comma",
         "invalid argument: url template '{value}' contains unknown variables: {list}");
+    DECLARE_MESSAGE(UnsupportedPort, (msg::package_name), "", "Port {package_name} is not supported.");
+    DECLARE_MESSAGE(UnsupportedPortDependency,
+                    (msg::value),
+                    "'{value}' is the name of a port dependency.",
+                    "- dependency {value} is not supported.");
     DECLARE_MESSAGE(UnsupportedSystemName,
                     (msg::system_name),
                     "",
