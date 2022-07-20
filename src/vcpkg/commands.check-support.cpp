@@ -186,7 +186,7 @@ namespace vcpkg::Commands
 
         if (use_json)
         {
-            print2(Json::stringify(json_to_print, {}));
+            print2(Json::stringify(json_to_print));
         }
     }
 

@@ -130,9 +130,7 @@ namespace
     {
         auto new_path = output_path + ".tmp";
         fs.create_directories(output_path.parent_path(), VCPKG_LINE_INFO);
-        fs.write_contents(new_path,
-                          Json::stringify(serialize_baseline(baseline_map), Json::JsonStyle::with_spaces(2)),
-                          VCPKG_LINE_INFO);
+        fs.write_contents(new_path, Json::stringify(serialize_baseline(baseline_map)), VCPKG_LINE_INFO);
         fs.rename(new_path, output_path, VCPKG_LINE_INFO);
     }
 
@@ -142,8 +140,7 @@ namespace
     {
         auto new_path = output_path + ".tmp";
         fs.create_directories(output_path.parent_path(), VCPKG_LINE_INFO);
-        fs.write_contents(
-            new_path, Json::stringify(serialize_versions(versions), Json::JsonStyle::with_spaces(2)), VCPKG_LINE_INFO);
+        fs.write_contents(new_path, Json::stringify(serialize_versions(versions)), VCPKG_LINE_INFO);
         fs.rename(new_path, output_path, VCPKG_LINE_INFO);
     }
 
@@ -426,7 +423,7 @@ namespace vcpkg::Commands::AddVersion
                 {
                     const auto current_file_content = fs.read_contents(path_to_manifest, VCPKG_LINE_INFO);
                     const auto json = serialize_manifest(*scf);
-                    const auto formatted_content = Json::stringify(json, {});
+                    const auto formatted_content = Json::stringify(json);
                     if (current_file_content != formatted_content)
                     {
                         auto command_line = fmt::format("vcpkg format-manifest ports/{}/vcpkg.json", port_name);
