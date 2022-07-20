@@ -682,4 +682,8 @@ namespace vcpkg
     REGISTER_MESSAGE(WaitingToTakeFilesystemLock);
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
+    REGISTER_MESSAGE(FailedToObtainDependencyVersion);
+    REGISTER_MESSAGE(FailedToObtainPackageVersion);
+    REGISTER_MESSAGE(OptionRequired);
+    REGISTER_MESSAGE(ExportingPackage);
 }
