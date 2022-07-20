@@ -37,6 +37,7 @@
   "AlreadyInstalledNotHead": "{spec} is already installed -- not building from HEAD",
   "AnotherInstallationInProgress": "Another installation is in progress on the machine, sleeping 6s before retrying.",
   "AppliedUserIntegration": "Applied user-wide integration for this vcpkg root.",
+  "ArtifactsOptionIncompatibility": "--{option} has no effect on find artifact.",
   "AttemptingToFetchPackagesFromVendor": "Attempting to fetch {count} package(s) from {vendor}",
   "AuthenticationMayRequireManualAction": "One or more {vendor} credential providers requested manual action. Add the binary source 'interactive' to allow interactivity.",
   "AutoSettingEnvVar": "-- Automatically setting {env_var} environment variables to \"{url}\".",

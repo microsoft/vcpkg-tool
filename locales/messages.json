@@ -66,6 +66,8 @@
   "_AlreadyInstalledNotHead.comment": "'HEAD' means the most recent version of source code An example of {spec} is zlib:x64-windows.",
   "AnotherInstallationInProgress": "Another installation is in progress on the machine, sleeping 6s before retrying.",
   "AppliedUserIntegration": "Applied user-wide integration for this vcpkg root.",
+  "ArtifactsOptionIncompatibility": "--{option} has no effect on find artifact.",
+  "_ArtifactsOptionIncompatibility.comment": "An example of {option} is editable.",
   "AttemptingToFetchPackagesFromVendor": "Attempting to fetch {count} package(s) from {vendor}",
   "_AttemptingToFetchPackagesFromVendor.comment": "An example of {count} is 42. An example of {vendor} is Azure.",
   "AuthenticationMayRequireManualAction": "One or more {vendor} credential providers requested manual action. Add the binary source 'interactive' to allow interactivity.",

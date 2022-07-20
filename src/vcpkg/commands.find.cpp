@@ -225,12 +225,12 @@ namespace vcpkg::Commands
         {
             if (full_description)
             {
-                print2(Color::warning, "--%s has no effect on find artifact\n", OPTION_FULLDESC);
+                msg::println_warning(msgArtifactsOptionIncompatibility, msg::option = OPTION_FULLDESC);
             }
 
             if (enable_json)
             {
-                print2(Color::warning, "--x-json has no effect on find artifact\n");
+                msg::println_warning(msgArtifactsOptionIncompatibility, msg::option = "x-json");
             }
 
             Optional<std::string> filter_hash = filter.map(Hash::get_string_sha256);

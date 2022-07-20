@@ -692,4 +692,5 @@ namespace vcpkg
     REGISTER_MESSAGE(ManifestFormatCompleted);
     REGISTER_MESSAGE(SuggestGitPull);
     REGISTER_MESSAGE(MissingPortSuggestPullRequest);
+    REGISTER_MESSAGE(ArtifactsOptionIncompatibility);
 }
