@@ -1326,4 +1326,5 @@ namespace vcpkg
                     "",
                     "If your port is not listed, please open an issue at and/or consider making a pull request.");
     DECLARE_MESSAGE(ArtifactsOptionIncompatibility, (msg::option), "", "--{option} has no effect on find artifact.");
+    DECLARE_MESSAGE(AddCommandFirstArg, (), "", "The first parameter to add must be 'artifact' or 'port'.");
 }

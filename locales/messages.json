@@ -1,6 +1,7 @@
 {
   "AddArtifactOnlyOne": "'{command_line}' can only add one artifact at a time.",
   "_AddArtifactOnlyOne.comment": "An example of {command_line} is vcpkg install zlib.",
+  "AddCommandFirstArg": "The first parameter to add must be 'artifact' or 'port'.",
   "AddFirstArgument": "The first argument to '{command_line}' must be 'artifact' or 'port'.",
   "_AddFirstArgument.comment": "An example of {command_line} is vcpkg install zlib.",
   "AddPortRequiresManifest": "'{command_line}' requires an active manifest file.",

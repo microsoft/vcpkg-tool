@@ -1,5 +1,6 @@
 {
   "AddArtifactOnlyOne": "'{command_line}' can only add one artifact at a time.",
+  "AddCommandFirstArg": "The first parameter to add must be 'artifact' or 'port'.",
   "AddFirstArgument": "The first argument to '{command_line}' must be 'artifact' or 'port'.",
   "AddPortRequiresManifest": "'{command_line}' requires an active manifest file.",
   "AddPortSucceeded": "Succeeded in adding ports to vcpkg.json file.",
