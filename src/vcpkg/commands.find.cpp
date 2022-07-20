@@ -34,8 +34,7 @@ namespace
                 desc.push_back(Json::Value::string(line));
             }
         }
-
-        print2(Json::stringify(obj));
+        msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(obj));
     }
     constexpr const int s_name_and_ver_columns = 41;
     void do_print(const SourceParagraph& source_paragraph, bool full_desc)
