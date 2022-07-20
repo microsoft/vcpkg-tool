@@ -42,10 +42,11 @@ namespace
         auto full_version = Version(source_paragraph.raw_version, source_paragraph.port_version).to_string();
         if (full_desc)
         {
-            vcpkg::printf("%-20s %-16s %s\n",
-                          source_paragraph.name,
-                          full_version,
-                          Strings::join("\n    ", source_paragraph.description));
+            msg::write_unlocalized_text_to_stdout(Color::none,
+                                                  fmt::format("%-20s %-16s %s\n",
+                                                              source_paragraph.name,
+                                                              full_version,
+                                                              Strings::join("\n    ", source_paragraph.description)));
         }
         else
         {
@@ -60,12 +61,13 @@ namespace
             used_columns += std::max<size_t>(full_version.size(), ver_size) + 1;
             size_t description_size = used_columns < (119 - 40) ? 119 - used_columns : 40;
 
-            vcpkg::printf("%-*s %-*s %s\n",
-                          name_columns,
-                          source_paragraph.name,
-                          ver_size,
-                          full_version,
-                          vcpkg::shorten_text(description, description_size));
+            msg::write_unlocalized_text_to_stdout(Color::none,
+                                                  fmt::format("%-*s %-*s %s\n",
+                                                              name_columns,
+                                                              source_paragraph.name,
+                                                              ver_size,
+                                                              full_version,
+                                                              vcpkg::shorten_text(description, description_size)));
         }
     }
 
@@ -74,7 +76,9 @@ namespace
         auto full_feature_name = Strings::concat(name, "[", feature_paragraph.name, "]");
         if (full_desc)
         {
-            vcpkg::printf("%-37s %s\n", full_feature_name, Strings::join("\n   ", feature_paragraph.description));
+            msg::write_unlocalized_text_to_stdout(
+                Color::none,
+                fmt::format("%-37s %s\n", full_feature_name, Strings::join("\n   ", feature_paragraph.description)));
         }
         else
         {
@@ -85,8 +89,11 @@ namespace
             }
             size_t desc_length =
                 119 - std::min<size_t>(60, 1 + std::max<size_t>(s_name_and_ver_columns, full_feature_name.size()));
-            vcpkg::printf(
-                "%-*s %s\n", s_name_and_ver_columns, full_feature_name, vcpkg::shorten_text(description, desc_length));
+            msg::write_unlocalized_text_to_stdout(Color::none,
+                                                  fmt::format("%-*s %s\n",
+                                                              s_name_and_ver_columns,
+                                                              full_feature_name,
+                                                              vcpkg::shorten_text(description, desc_length)));
         }
     }
 
@@ -180,9 +187,11 @@ namespace vcpkg::Commands
 
         if (!enable_json)
         {
-            print2("The result may be outdated. Run `git pull` to get the latest results.\n"
-                   "\nIf your port is not listed, please open an issue at and/or consider making a pull request:\n"
-                   "    https://github.com/Microsoft/vcpkg/issues\n");
+            msg::println(msg::format(msgSuggestGitPull)
+                             .append_raw("\n")
+                             .append(msgMissingPortSuggestPullRequest)
+                             .append_indent()
+                             .append_raw("-  https://github.com/Microsoft/vcpkg/issues"));
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

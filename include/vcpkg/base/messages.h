@@ -1301,4 +1301,9 @@ namespace vcpkg
                     "",
                     "Both a manifest file and a CONTROL file exist in port directory: {path}");
     DECLARE_MESSAGE(ManifestFormatCompleted, (), "", "Succeeded in formatting the manifest files.");
+    DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.");
+    DECLARE_MESSAGE(MissingPortSuggestPullRequest,
+                    (),
+                    "",
+                    "If your port is not listed, please open an issue at and/or consider making a pull request.");
 }

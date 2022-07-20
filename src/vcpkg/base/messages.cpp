@@ -680,4 +680,6 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedToFormatMissingFile);
     REGISTER_MESSAGE(ControlAndManifestFilesPresent);
     REGISTER_MESSAGE(ManifestFormatCompleted);
+    REGISTER_MESSAGE(SuggestGitPull);
+    REGISTER_MESSAGE(MissingPortSuggestPullRequest);
 }
