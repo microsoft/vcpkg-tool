@@ -111,7 +111,7 @@
   "ExpectedFailOrSkip": "'fail'、'skip'、または 'pass' が必要です",
   "ExpectedPortName": "ここにはポート名が必要です",
   "ExpectedTripletName": "ここにはトリプレット名が必要です",
-  "ExtendedDocumenationAtUrl": "Extended documentation available at '{url}'.",
+  "ExtendedDocumenationAtUrl": "'{url}' で利用できる拡張ドキュメント。",
   "FailedToExtract": "Failed to extract \"{path}\":",
   "FailedToParseCMakeConsoleOut": "Failed to parse CMake console output to locate block start/end markers.",
   "FailedToProvisionCe": "vcpkg-ce をプロビジョニングできませんでした。",

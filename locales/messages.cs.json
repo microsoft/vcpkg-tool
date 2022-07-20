@@ -111,7 +111,7 @@
   "ExpectedFailOrSkip": "zde se očekávala chyba, přeskočit nebo úspěch",
   "ExpectedPortName": "tady se očekával název portu",
   "ExpectedTripletName": "tady se očekával trojitý název",
-  "ExtendedDocumenationAtUrl": "Extended documentation available at '{url}'.",
+  "ExtendedDocumenationAtUrl": "Rozšířená dokumentace je k dispozici na adrese {url}.",
   "FailedToExtract": "Failed to extract \"{path}\":",
   "FailedToParseCMakeConsoleOut": "Failed to parse CMake console output to locate block start/end markers.",
   "FailedToProvisionCe": "Nepovedlo se zřídit vcpkg-ce.",

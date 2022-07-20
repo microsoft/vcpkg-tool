@@ -111,7 +111,7 @@
   "ExpectedFailOrSkip": "此处应为“失败”、“跳过”或“通过”",
   "ExpectedPortName": "此处需要填写端口名称",
   "ExpectedTripletName": "此处需要填写三联名称",
-  "ExtendedDocumenationAtUrl": "Extended documentation available at '{url}'.",
+  "ExtendedDocumenationAtUrl": "可在“{url}”上找到扩展文档。",
   "FailedToExtract": "Failed to extract \"{path}\":",
   "FailedToParseCMakeConsoleOut": "Failed to parse CMake console output to locate block start/end markers.",
   "FailedToProvisionCe": "无法预配 vcpkg-ce。",

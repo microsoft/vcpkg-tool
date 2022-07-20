@@ -111,7 +111,7 @@
   "ExpectedFailOrSkip": "previsto 'fail', 'skip' o 'pass' qui",
   "ExpectedPortName": "previsto un nome di porta qui",
   "ExpectedTripletName": "previsto un nome triplet qui",
-  "ExtendedDocumenationAtUrl": "Extended documentation available at '{url}'.",
+  "ExtendedDocumenationAtUrl": "Documentazione estesa disponibile all'indirizzo '{url}'.",
   "FailedToExtract": "Failed to extract \"{path}\":",
   "FailedToParseCMakeConsoleOut": "Failed to parse CMake console output to locate block start/end markers.",
   "FailedToProvisionCe": "Non è stato possibile eseguire il provisioning di vcpkg-ce.",

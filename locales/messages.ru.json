@@ -111,7 +111,7 @@
   "ExpectedFailOrSkip": "Ожидалось значение fail, skip или pass.",
   "ExpectedPortName": "здесь ожидается имя порта",
   "ExpectedTripletName": "здесь ожидается имя триплета",
-  "ExtendedDocumenationAtUrl": "Extended documentation available at '{url}'.",
+  "ExtendedDocumenationAtUrl": "Расширенная документация доступна по адресу '{url}'.",
   "FailedToExtract": "Failed to extract \"{path}\":",
   "FailedToParseCMakeConsoleOut": "Failed to parse CMake console output to locate block start/end markers.",
   "FailedToProvisionCe": "Не удалось подготовить vcpkg-ce.",

@@ -111,7 +111,7 @@
   "ExpectedFailOrSkip": "burada 'fail', 'skip' veya 'pass' bekleniyordu",
   "ExpectedPortName": "burada bir bağlantı noktası adı bekleniyordu",
   "ExpectedTripletName": "burada üçlü ad bekleniyordu",
-  "ExtendedDocumenationAtUrl": "Extended documentation available at '{url}'.",
+  "ExtendedDocumenationAtUrl": "Genişletilmiş belgelere şuradan ulaşılabilir: '{url}'.",
   "FailedToExtract": "Failed to extract \"{path}\":",
   "FailedToParseCMakeConsoleOut": "Failed to parse CMake console output to locate block start/end markers.",
   "FailedToProvisionCe": "vcpkg-ce sağlanamadı.",

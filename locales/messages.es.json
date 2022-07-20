@@ -111,7 +111,7 @@
   "ExpectedFailOrSkip": "se esperaba 'fail', 'skip' o 'pass'",
   "ExpectedPortName": "se esperaba un nombre de puerto aquí",
   "ExpectedTripletName": "se esperaba un nombre de trillizo aquí",
-  "ExtendedDocumenationAtUrl": "Extended documentation available at '{url}'.",
+  "ExtendedDocumenationAtUrl": "Documentación ampliada disponible en \"{url}\".",
   "FailedToExtract": "Failed to extract \"{path}\":",
   "FailedToParseCMakeConsoleOut": "Failed to parse CMake console output to locate block start/end markers.",
   "FailedToProvisionCe": "No se pudo aprovisionar vcpkg-ce.",
