@@ -194,6 +194,7 @@
   "LoadingOverlayTriplet": "-- [OVERLAY] Loading triplet configuration from: {path}",
   "LocalizedMessageMustNotContainIndents": "The message named {value} contains what appears to be indenting which must be changed to use LocalizedString::append_indent instead.",
   "LocalizedMessageMustNotEndWithNewline": "The message named {value} ends with a newline which should be added by formatting rather than by localization.",
+  "ManifestFormatCompleted": "Succeeded in formatting the manifest files.",
   "Missing7zHeader": "Unable to find 7z header.",
   "MissingArgFormatManifest": "format-manifest was passed --convert-control without '--all'.\nThis doesn't do anything: we will automatically convert all control files passed explicitly.",
   "MissingExtension": "Missing '{extension}' extension.",

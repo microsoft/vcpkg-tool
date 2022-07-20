@@ -275,7 +275,7 @@ namespace vcpkg::Commands::FormatManifest
         }
         else
         {
-            print2("Succeeded in formatting the manifest files.\n");
+            msg::println(msgManifestFormatCompleted);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
     }

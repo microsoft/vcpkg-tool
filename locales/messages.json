@@ -339,6 +339,7 @@
   "_LocalizedMessageMustNotContainIndents.comment": "{value} is is a localized message name like LocalizedMessageMustNotContainIndents. The 'LocalizedString::append_indent' part is locale-invariant.",
   "LocalizedMessageMustNotEndWithNewline": "The message named {value} ends with a newline which should be added by formatting rather than by localization.",
   "_LocalizedMessageMustNotEndWithNewline.comment": "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
+  "ManifestFormatCompleted": "Succeeded in formatting the manifest files.",
   "Missing7zHeader": "Unable to find 7z header.",
   "MissingArgFormatManifest": "format-manifest was passed --convert-control without '--all'.\nThis doesn't do anything: we will automatically convert all control files passed explicitly.",
   "MissingExtension": "Missing '{extension}' extension.",
