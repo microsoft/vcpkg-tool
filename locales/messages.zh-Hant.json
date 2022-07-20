@@ -77,6 +77,7 @@
   "CmakeTargetsExcluded": "注意: 不會顯示 {count} 個其他目標。",
   "CommandFailed": "命令: \n{command_line}\n 失敗，結果如下:",
   "CompressFolderFailed": "無法壓縮資料夾 \"{path}\":",
+  "CopyrightIsDir": "`{path}` being a directory is deprecated.",
   "CouldNotDeduceNugetIdAndVersion": "無法從檔案名推斷 nuget 識別碼和版本: {path}",
   "CreatedNuGetPackage": "Created nupkg: \"{path}\"",
   "CurlReportedUnexpectedResults": "curl 已向 vcpkg 報告未預期的結果，vcpkg 無法繼續。\n請參閱下列文字以尋找敏感性資訊，並在 Microsoft/vcpkg GitHub 上開啟問題以協助修正此問題!\ncmd: {command_line}\n=== curl 輸出 ===\n{actual}\n=== 結束 curl 輸出 ===",

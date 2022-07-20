@@ -77,6 +77,7 @@
   "CmakeTargetsExcluded": "poznámka: Nezobrazuje se tento počet dalších cílů: {count}.",
   "CommandFailed": "Příkaz:\n{command_line}\nselhal s následujícími výsledky:",
   "CompressFolderFailed": "Nepovedlo se zkomprimovat složku „{path}“:",
+  "CopyrightIsDir": "`{path}` being a directory is deprecated.",
   "CouldNotDeduceNugetIdAndVersion": "Nepovedlo se odvodit ID a verzi NuGet z názvu souboru: {path}",
   "CreatedNuGetPackage": "Created nupkg: \"{path}\"",
   "CurlReportedUnexpectedResults": "Nástroj curl oznámil neočekávané výsledky pro vcpkg a vcpkg nemůže pokračovat.\nPřečtěte si prosím následující text o citlivých informacích a otevřete problém na GitHubu Microsoftu/vcpkg, který vám pomůže tento problém vyřešit.\ncmd: {command_line}\n=== výstup curl ===\n{actual}\n=== konec výstupu curl ===",

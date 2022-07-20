@@ -77,6 +77,7 @@
   "CmakeTargetsExcluded": "注: 追加の {count} 件のターゲットは表示されません。",
   "CommandFailed": "コマンド: \n{command_line}\nに失敗しました。次の結果が返されました:",
   "CompressFolderFailed": "フォルダー \"{path}\":を圧縮できませんでした:",
+  "CopyrightIsDir": "`{path}` being a directory is deprecated.",
   "CouldNotDeduceNugetIdAndVersion": "ファイル名 {path} から nuget ID とバージョンを推測できませんでした",
   "CreatedNuGetPackage": "Created nupkg: \"{path}\"",
   "CurlReportedUnexpectedResults": "curl から vcpkg に対して予期しない結果が報告されました。vcpkg を続行できません。\n次のテキストに機密情報がないか確認して、Microsoft/vcpkg GitHub で問題を作成し解決に役立ててください。\ncmd: {command_line}\n=== curl の出力 ===\n{actual}\n=== curl の出力の終わり ===",

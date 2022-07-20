@@ -77,6 +77,7 @@
   "CmakeTargetsExcluded": "remarque : {count} cibles supplémentaires ne sont pas affichées.",
   "CommandFailed": "Commande : \n {command_line}\na échoué avec les résultats suivants :",
   "CompressFolderFailed": "Échec de la compression du dossier « {path} » :",
+  "CopyrightIsDir": "`{path}` being a directory is deprecated.",
   "CouldNotDeduceNugetIdAndVersion": "Impossible de déduire l’ID nuget et la version à partir du nom de fichier : {path}",
   "CreatedNuGetPackage": "Nupkg créé : « {path} »",
   "CurlReportedUnexpectedResults": "curl a signalé des résultats inattendus à vcpkg et vcpkg ne peut pas continuer.\nConsultez le texte suivant pour obtenir des informations sensibles et ouvrez un problème sur Microsoft/vcpkg GitHub pour vous aider à résoudre ce problème !\ncmd : {command_line}\n=== sortie de boucle ===\n{actual}\n=== end curl output ===",

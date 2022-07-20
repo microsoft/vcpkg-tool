@@ -77,6 +77,7 @@
   "CmakeTargetsExcluded": "uwaga: nie jest wyświetlana następująca liczba elementów docelowych: {count}.",
   "CommandFailed": "polecenie:\n{command_line}\nnie powiodło się z następującymi wynikami:",
   "CompressFolderFailed": "Nie można skompresować folderu „{path}”:",
+  "CopyrightIsDir": "`{path}` being a directory is deprecated.",
   "CouldNotDeduceNugetIdAndVersion": "Nie można wywnioskować identyfikatora NuGet i wersji z nazwy pliku: {path}",
   "CreatedNuGetPackage": "Created nupkg: \"{path}\"",
   "CurlReportedUnexpectedResults": "Program Curl zgłosił nieoczekiwane wyniki dla programu vcpkg i z tego powodu program vcpkg nie może kontynuować działania.\nPrzejrzyj następujący tekst pod kątem informacji poufnych i otwórz zgłoszenie problemu w witrynie GitHub Microsoft/vcpkg, aby pomóc w rozwiązaniu tego problemu!\ncmd: {command_line}\n=== curl output ===\n{actual}\n=== end curl output ===",
