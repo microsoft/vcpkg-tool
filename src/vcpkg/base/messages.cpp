@@ -406,6 +406,7 @@ namespace vcpkg
     MessageSink& stderr_sink = stderr_sink_instance;
 
     REGISTER_MESSAGE(AddArtifactOnlyOne);
+    REGISTER_MESSAGE(AddCommandFirstArg);
     REGISTER_MESSAGE(AddFirstArgument);
     REGISTER_MESSAGE(AddingCompletionEntry);
     REGISTER_MESSAGE(AddPortRequiresManifest);
@@ -443,6 +444,7 @@ namespace vcpkg
     REGISTER_MESSAGE(AlreadyInstalledNotHead);
     REGISTER_MESSAGE(AnotherInstallationInProgress);
     REGISTER_MESSAGE(AppliedUserIntegration);
+    REGISTER_MESSAGE(ArtifactsOptionIncompatibility);
     REGISTER_MESSAGE(AttemptingToFetchPackagesFromVendor);
     REGISTER_MESSAGE(AuthenticationMayRequireManualAction);
     REGISTER_MESSAGE(AutomaticLinkingForMSBuildProjects);
@@ -482,6 +484,7 @@ namespace vcpkg
     REGISTER_MESSAGE(CMakeToolChainFile);
     REGISTER_MESSAGE(CommandFailed);
     REGISTER_MESSAGE(CompressFolderFailed);
+    REGISTER_MESSAGE(ControlAndManifestFilesPresent);
     REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion);
     REGISTER_MESSAGE(CreatedNuGetPackage);
     REGISTER_MESSAGE(CurlReportedUnexpectedResults);
@@ -507,6 +510,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ErrorNoVSInstanceVersion);
     REGISTER_MESSAGE(ErrorRequireBaseline);
     REGISTER_MESSAGE(ErrorRequirePackagesList);
+    REGISTER_MESSAGE(ErrorsFound);
     REGISTER_MESSAGE(ErrorUnableToDetectCompilerInfo);
     REGISTER_MESSAGE(ErrorVcvarsUnsupported);
     REGISTER_MESSAGE(ErrorVsCodeNotFound);
@@ -518,11 +522,20 @@ namespace vcpkg
     REGISTER_MESSAGE(ExpectedTripletName);
     REGISTER_MESSAGE(ExtendedDocumenationAtUrl);
     REGISTER_MESSAGE(FailedToExtract);
+    REGISTER_MESSAGE(FailedToFormatMissingFile);
+    REGISTER_MESSAGE(FailedToObtainLocalPortGitSha);
     REGISTER_MESSAGE(FailedToParseCMakeConsoleOut);
+    REGISTER_MESSAGE(FailedToParseControl);
+    REGISTER_MESSAGE(FailedToParseJson);
+    REGISTER_MESSAGE(FailedToParseManifest);
     REGISTER_MESSAGE(FailedToProvisionCe);
+    REGISTER_MESSAGE(FailedToRead);
+    REGISTER_MESSAGE(FailedToReadParagraph);
+    REGISTER_MESSAGE(FailedToRemoveControl);
     REGISTER_MESSAGE(FailedToRunToolToDetermineVersion);
     REGISTER_MESSAGE(FailedToStoreBackToMirror);
     REGISTER_MESSAGE(FailedToStoreBinaryCache);
+    REGISTER_MESSAGE(FailedToWriteManifest);
     REGISTER_MESSAGE(FailedVendorAuthentication);
     REGISTER_MESSAGE(FeedbackAppreciated);
     REGISTER_MESSAGE(FishCompletion);
@@ -564,8 +577,6 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidArgumentRequiresTwoOrThreeArguments);
     REGISTER_MESSAGE(InvalidArgumentRequiresValidToken);
     REGISTER_MESSAGE(InvalidFormatString);
-    REGISTER_MESSAGE(FailedToParseJson);
-    REGISTER_MESSAGE(FailedToRead);
     REGISTER_MESSAGE(JsonErrorMustBeAnObject);
     REGISTER_MESSAGE(LaunchingProgramFailed);
     REGISTER_MESSAGE(LicenseExpressionContainsExtraPlus);
@@ -590,8 +601,11 @@ namespace vcpkg
     REGISTER_MESSAGE(LoadingOverlayTriplet);
     REGISTER_MESSAGE(LocalizedMessageMustNotContainIndents);
     REGISTER_MESSAGE(LocalizedMessageMustNotEndWithNewline);
+    REGISTER_MESSAGE(ManifestFormatCompleted);
     REGISTER_MESSAGE(Missing7zHeader);
+    REGISTER_MESSAGE(MissingArgFormatManifest);
     REGISTER_MESSAGE(MissingExtension);
+    REGISTER_MESSAGE(MissingPortSuggestPullRequest);
     REGISTER_MESSAGE(MonoInstructions);
     REGISTER_MESSAGE(MsiexecFailedToExtract);
     REGISTER_MESSAGE(NavigateToNPS);
@@ -628,6 +642,8 @@ namespace vcpkg
     REGISTER_MESSAGE(SettingEnvVar);
     REGISTER_MESSAGE(SourceFieldPortNameMismatch);
     REGISTER_MESSAGE(StoredBinaryCache);
+    REGISTER_MESSAGE(SuggestGitPull);
+    REGISTER_MESSAGE(SuggestResolution);
     REGISTER_MESSAGE(SuggestStartingBashShell);
     REGISTER_MESSAGE(SupportedPort);
     REGISTER_MESSAGE(SystemApiErrorMessage);
@@ -681,20 +697,4 @@ namespace vcpkg
     REGISTER_MESSAGE(WaitingToTakeFilesystemLock);
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
-    REGISTER_MESSAGE(FailedToParseManifest);
-    REGISTER_MESSAGE(FailedToReadParagraph);
-    REGISTER_MESSAGE(MissingArgFormatManifest);
-    REGISTER_MESSAGE(FailedToRemoveControl);
-    REGISTER_MESSAGE(FailedToWriteManifest);
-    REGISTER_MESSAGE(FailedToParseControl);
-    REGISTER_MESSAGE(FailedToFormatMissingFile);
-    REGISTER_MESSAGE(ControlAndManifestFilesPresent);
-    REGISTER_MESSAGE(ManifestFormatCompleted);
-    REGISTER_MESSAGE(SuggestGitPull);
-    REGISTER_MESSAGE(MissingPortSuggestPullRequest);
-    REGISTER_MESSAGE(ArtifactsOptionIncompatibility);
-    REGISTER_MESSAGE(AddCommandFirstArg);
-    REGISTER_MESSAGE(FailedToObtainLocalPortGitSha);
-    REGISTER_MESSAGE(ErrorsFound);
-    REGISTER_MESSAGE(SuggestResolution);
 }
