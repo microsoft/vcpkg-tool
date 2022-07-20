@@ -77,6 +77,7 @@
   "CmakeTargetsExcluded": "not: {count} ek hedef görüntülenmez.",
   "CommandFailed": "command:\n{command_line}\n komutu aşağıdaki sonuçlarla başarısız oldu:",
   "CompressFolderFailed": "\"{path}\" klasörü sıkıştırılamadı:",
+  "CopyrightIsDir": "`{path}` being a directory is deprecated.",
   "CouldNotDeduceNugetIdAndVersion": "{path} dosya adından NuGet kimliği ve sürümü çıkarılamadı",
   "CreatedNuGetPackage": "Created nupkg: \"{path}\"",
   "CurlReportedUnexpectedResults": "curl, vcpkg'ye beklenmeyen sonuçlar bildirdi ve vcpkg devam edemiyor.\nLütfen hassas bilgiler için aşağıdaki metni gözden geçirin ve bu sorunu gidermeye yardımcı olmak için Microsoft/vcpkg GitHub'da bir sorun açın!\ncmd: {command_line}\n=== curl output ===\n{actual}\n=== end curl output ===",

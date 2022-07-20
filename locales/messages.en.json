@@ -80,6 +80,7 @@
   "CommandFailed": "command:\n{command_line}\nfailed with the following results:",
   "CompressFolderFailed": "Failed to compress folder \"{path}\":",
   "ControlAndManifestFilesPresent": "Both a manifest file and a CONTROL file exist in port directory: {path}",
+  "CopyrightIsDir": "`{path}` being a directory is deprecated.",
   "CouldNotDeduceNugetIdAndVersion": "Could not deduce nuget id and version from filename: {path}",
   "CreatedNuGetPackage": "Created nupkg: \"{path}\"",
   "CurlReportedUnexpectedResults": "curl has reported unexpected results to vcpkg and vcpkg cannot continue.\nPlease review the following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix this problem!\ncmd: {command_line}\n=== curl output ===\n{actual}\n=== end curl output ===",

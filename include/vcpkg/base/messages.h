@@ -671,6 +671,7 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "Both a manifest file and a CONTROL file exist in port directory: {path}");
+    DECLARE_MESSAGE(CopyrightIsDir, (msg::path), "", "`{path}` being a directory is deprecated.");
     DECLARE_MESSAGE(CouldNotDeduceNugetIdAndVersion,
                     (msg::path),
                     "",

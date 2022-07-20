@@ -77,6 +77,7 @@
   "CmakeTargetsExcluded": "참고: {count}개의 추가 대상이 표시되지 않습니다.",
   "CommandFailed": "명령:\n{command_line}\n다음 결과와 함께 실패했습니다.",
   "CompressFolderFailed": "폴더 \"{path}\"을(를) 압축하지 못했습니다.",
+  "CopyrightIsDir": "`{path}` being a directory is deprecated.",
   "CouldNotDeduceNugetIdAndVersion": "파일 이름에서 nuget ID 및 버전을 추론할 수 없음: {path}",
   "CreatedNuGetPackage": "nupkg 생성됨: \" {path}\"",
   "CurlReportedUnexpectedResults": "curl에서 vcpkg에 대한 예기치 않은 결과를 보고했으며 vcpkg를 계속할 수 없습니다.\n다음 텍스트에서 민감한 정보를 검토하고 Microsoft/vcpkg GitHub에서 문제를 열어 이 문제를 해결하세요!\ncmd: {command_line}\n === 컬 출력 ===\n{actual}\n=== 컬 출력 종료 ===",

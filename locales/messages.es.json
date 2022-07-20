@@ -77,6 +77,7 @@
   "CmakeTargetsExcluded": "nota: {count} destinos adicionales no se muestran.",
   "CommandFailed": "command:\n{command_line}\nha fallado con los siguientes resultados:",
   "CompressFolderFailed": "No se pudo comprimir la carpeta \"{path}\":",
+  "CopyrightIsDir": "`{path}` being a directory is deprecated.",
   "CouldNotDeduceNugetIdAndVersion": "No se pudo deducir el id. y la versión de NuGet del nombre de archivo: {path}",
   "CreatedNuGetPackage": "Created nupkg: \"{path}\"",
   "CurlReportedUnexpectedResults": "curl ha informado de resultados inesperados para vcpkg, que no puede continuar.\nRevise el texto siguiente para obtener información confidencial y abra una incidencia en el GitHub microsoft/vcpkg para solucionarlo.\ncmd: {command_line}\n=== curl output ===\n{actual}\n=== end curl output ===",

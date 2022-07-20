@@ -145,6 +145,8 @@
   "_CompressFolderFailed.comment": "An example of {path} is /foo/bar.",
   "ControlAndManifestFilesPresent": "Both a manifest file and a CONTROL file exist in port directory: {path}",
   "_ControlAndManifestFilesPresent.comment": "An example of {path} is /foo/bar.",
+  "CopyrightIsDir": "`{path}` being a directory is deprecated.",
+  "_CopyrightIsDir.comment": "An example of {path} is /foo/bar.",
   "CouldNotDeduceNugetIdAndVersion": "Could not deduce nuget id and version from filename: {path}",
   "_CouldNotDeduceNugetIdAndVersion.comment": "An example of {path} is /foo/bar.",
   "CreatedNuGetPackage": "Created nupkg: \"{path}\"",

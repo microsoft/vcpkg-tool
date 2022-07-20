@@ -483,6 +483,7 @@ namespace vcpkg
     REGISTER_MESSAGE(CMakeTargetsUsageHeuristicMessage);
     REGISTER_MESSAGE(CMakeToolChainFile);
     REGISTER_MESSAGE(CommandFailed);
+    REGISTER_MESSAGE(CopyrightIsDir);
     REGISTER_MESSAGE(CompressFolderFailed);
     REGISTER_MESSAGE(ControlAndManifestFilesPresent);
     REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion);
