@@ -703,4 +703,6 @@ namespace vcpkg
     REGISTER_MESSAGE(PortTypeConflict);
     REGISTER_MESSAGE(FailedToLocateSpec);
     REGISTER_MESSAGE(UnsupportedPortFeature);
+    REGISTER_MESSAGE(MissingDependency);
+    REGISTER_MESSAGE(CorruptedDatabase);
 }

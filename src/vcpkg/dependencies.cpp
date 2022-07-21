@@ -1089,12 +1089,14 @@ namespace vcpkg
             for (auto&& dep : deps)
             {
                 auto p_installed = graph->get(dep).m_installed.get();
-                Checks::check_maybe_upgrade(
+
+                Checks::msg_check_maybe_upgrade(
                     VCPKG_LINE_INFO,
                     p_installed != nullptr,
-                    "Error: database corrupted. Package %s is installed but dependency %s is not.",
-                    ipv.spec(),
-                    dep);
+                    msg::format(msgCorruptedDatabase)
+                        .append_raw("\n")
+                        .append(msgMissingDependency, msg::spec = ipv.spec(), msg::package_name = dep));
+
                 p_installed->remove_edges.emplace(ipv.spec());
             }
         }

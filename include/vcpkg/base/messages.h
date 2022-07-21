@@ -1342,4 +1342,9 @@ namespace vcpkg
                     (msg::package_name, msg::value, msg::supports_expression),
                     "'{value}' is the port feature.",
                     "{package_name}[{value}] is only supported on '{supports_expression}'");
+    DECLARE_MESSAGE(MissingDependency,
+                    (msg::spec, msg::package_name),
+                    "",
+                    "Package {spec} is installed, but dependency {package_name} is not.");
+    DECLARE_MESSAGE(CorruptedDatabase, (), "", "Database corrupted.");
 }
