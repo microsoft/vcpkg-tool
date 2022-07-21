@@ -21,5 +21,5 @@ export interface Registry {
   load(force?: boolean): Promise<void>;
   save(): Promise<void>;
   update(): Promise<void>;
-  regenerate(): Promise<void>;
+  regenerate(normalize?: boolean): Promise<void>;
 }

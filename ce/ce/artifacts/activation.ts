@@ -561,7 +561,7 @@ export class Activation {
     const propertyGroup = <any>{ $Label: 'Artifacts', Artifacts: { Artifact: [] } };
 
     for (const artifact of artifacts) {
-      propertyGroup.Artifacts.Artifact.push({ $id: artifact.metadata.info.id, '#text': artifact.targetLocation.fsPath });
+      propertyGroup.Artifacts.Artifact.push({ $id: artifact.metadata.id, '#text': artifact.targetLocation.fsPath });
     }
 
     if (propertyGroup.Artifacts.Artifact.length > 0) {
