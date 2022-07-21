@@ -329,9 +329,9 @@ TEST_CASE ("format_ci_result 1", "[ci-baseline]")
     cidata.required_success = {
         PackageSpec{"pass", Test::X64_UWP},
     };
-    const char* failmsg = "REGRESSION: {0} failed with BUILD_FAILED. If expected, add {0}=fail to cifile.";
-    const char* cascademsg = "REGRESSION: {0} cascaded, but it is required to pass. (cifile).";
-    const char* passmsg = "PASSING, REMOVE FROM FAIL LIST: {0} (cifile).";
+    constexpr const char failmsg[] = "REGRESSION: {0} failed with BUILD_FAILED. If expected, add {0}=fail to cifile.";
+    constexpr const char cascademsg[] = "REGRESSION: {0} cascaded, but it is required to pass. (cifile).";
+    constexpr const char passmsg[] = "PASSING, REMOVE FROM FAIL LIST: {0} (cifile).";
 
     SECTION ("SUCCEEDED")
     {

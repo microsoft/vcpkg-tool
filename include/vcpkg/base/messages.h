@@ -52,9 +52,9 @@ namespace vcpkg
             return *this;
         }
         template<class... Args>
-        LocalizedString& append_fmt_raw(fmt::string_view s, const Args&... args)
+        LocalizedString& append_fmt_raw(fmt::format_string<Args...> s, Args&&... args)
         {
-            m_data.append(fmt::format(s, args...));
+            m_data.append(fmt::format(s, std::forward<Args>(args)...));
             return *this;
         }
         LocalizedString& append(const LocalizedString& s)
