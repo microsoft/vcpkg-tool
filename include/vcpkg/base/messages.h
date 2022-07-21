@@ -1441,4 +1441,11 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
+    DECLARE_MESSAGE(MissmatchedBinParagraphs,
+                    (),
+                    "",
+                    "The serialized binary paragraph was different from the original binary paragraph. Please open an "
+                    "issue at https://github.com/microsoft/vcpkg with the following output:");
+    DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph");
+    DECLARE_MESSAGE(SerializedBinParagraphHeader, (), "", "\nSerialized Binary Paragraph");
 }

@@ -742,4 +742,7 @@ namespace vcpkg
     REGISTER_MESSAGE(WaitingToTakeFilesystemLock);
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
+    REGISTER_MESSAGE(MissmatchedBinParagraphs);
+    REGISTER_MESSAGE(OriginalBinParagraphHeader);
+    REGISTER_MESSAGE(SerializedBinParagraphHeader);
 }
