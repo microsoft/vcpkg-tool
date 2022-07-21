@@ -1334,4 +1334,9 @@ namespace vcpkg
                     (msg::package_name, msg::value),
                     "'{value}' is a feature.",
                     "Package {package_name} does not have a {value} feature");
+    DECLARE_MESSAGE(PortTypeConflict,
+                    (msg::spec),
+                    "",
+                    "The port type of {spec} differes between the installed and available portfile.\nPlease manually "
+                    "remove {spec} and re-run this command.");
 }

@@ -355,13 +355,11 @@ namespace vcpkg
 
                 if (const auto scfl = maybe_scfl.get())
                 {
-                    Checks::check_exit(VCPKG_LINE_INFO,
-                                       scfl->source_control_file->core_paragraph->type.type ==
-                                           ipv.core->package.type.type,
-                                       "Error: the port type of '%s' differs between the installed and available "
-                                       "portfile.\nPlease manually remove '%s' and re-run this command.",
-                                       ipv.spec().name(),
-                                       ipv.spec());
+                    Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                           scfl->source_control_file->core_paragraph->type.type ==
+                                               ipv.core->package.type.type,
+                                           msgPortTypeConflict,
+                                           msg::spec = ipv.spec());
                 }
 
                 return m_graph

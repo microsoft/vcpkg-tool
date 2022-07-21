@@ -397,6 +397,8 @@
   "_PortNotInBaseline.comment": "An example of {package_name} is zlib.",
   "PortSupportsField": "(supports: \"{value}\")",
   "_PortSupportsField.comment": "'{value}' is the value of the 'supports' field in the port's vcpkg.json.",
+  "PortTypeConflict": "The port type of {spec} differes between the installed and available portfile.\nPlease manually remove {spec} and re-run this command.",
+  "_PortTypeConflict.comment": "An example of {spec} is zlib:x64-windows.",
   "PreviousIntegrationFileRemains": "Previous integration file was not removed.",
   "ProcessorArchitectureMalformed": "Failed to parse %PROCESSOR_ARCHITECTURE% ({arch}) as a valid CPU architecture.",
   "_ProcessorArchitectureMalformed.comment": "An example of {arch} is x64.",
