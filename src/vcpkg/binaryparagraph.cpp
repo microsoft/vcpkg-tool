@@ -301,9 +301,9 @@ namespace vcpkg
     std::string format_binary_paragraph(BinaryParagraph paragraph)
     {
         const auto& join_str = R"(", ")";
-        return Strings::format(
-            "\nspec: \"%s\"\nversion: \"%s\"\nport_version: %d\ndescription: [\"%s\"]\nmaintainers: [\"%s\"]\nfeature: "
-            "\"%s\"\ndefault_features: [\"%s\"]\ndependencies: [\"%s\"]\nabi: \"%s\"\ntype: %s",
+        return fmt::format(
+            "\nspec: \"{}\"\nversion: \"{}\"\nport_version: {}\ndescription: [\"{}\"]\nmaintainers: [\"{}\"]\nfeature: "
+            "\"{}\"\ndefault_features: [\"{}\"]\ndependencies: [\"{}\"]\nabi: \"{}\"\ntype: {}",
             paragraph.spec.to_string(),
             paragraph.version,
             paragraph.port_version,
