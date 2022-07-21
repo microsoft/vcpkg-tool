@@ -777,6 +777,7 @@ namespace vcpkg
                     "",
                     "Visual Studio Code was not found and the environment variable {env_var} is not set or invalid.");
     DECLARE_MESSAGE(ErrorVsCodeNotFoundPathExamined, (), "", "The following paths were examined:");
+    DECLARE_MESSAGE(ErrorWhileWriting, (msg::path), "", "Error occured while writing {path}");
     DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
     DECLARE_MESSAGE(
         ExpectedCharacterHere,
@@ -976,10 +977,16 @@ namespace vcpkg
                     "",
                     "invalid argument: binary config '{binary_source}' requires a SAS token without a "
                     "preceeding '?' as the second argument");
+    DECLARE_MESSAGE(InvalidBuildInfo, (msg::error_msg), "", "Invalid BUILD_INFO file for package: {error_msg}");
     DECLARE_MESSAGE(InvalidFormatString,
                     (msg::actual),
                     "{actual} is the provided format string",
                     "invalid format string: {actual}");
+    DECLARE_MESSAGE(
+        InvalidLinkage,
+        (msg::system_name, msg::value),
+        "'{value}' is the linkage type vcpkg would did not understand. (Correct values would be static ofr dynamic)",
+        "Invalid {system_name} linkage type: [{value}]");
     DECLARE_MESSAGE(JsonErrorFailedToParse, (msg::path), "", "failed to parse {path}:");
     DECLARE_MESSAGE(JsonErrorFailedToRead, (msg::path, msg::error_msg), "", "failed to read {path}: {error_msg}");
     DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected \"{path}\" to be an object.");
@@ -1230,6 +1237,12 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is a feature flag.",
                     "Both '{value}' and -'{value}' were specified as feature flags.");
+    DECLARE_MESSAGE(UndeterminedToolChainForTriplet,
+                    (msg::triplet, msg::system_name),
+                    "",
+                    "Unable to determine toolchain use for {triplet} with with CMAKE_SYSTEM_NAME {system_name}. Did "
+                    "you mean to use "
+                    "VCPKG_CHAINLOAD_TOOLCHAIN_FILE?");
     DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.");
     DECLARE_MESSAGE(UnexpectedExtension, (msg::extension), "", "Unexpected archive extension: '{extension}'.");
     DECLARE_MESSAGE(UnexpectedFormat,
@@ -1256,6 +1269,16 @@ namespace vcpkg
                     "'{value}' is a user-supplied command line option. For example, given vcpkg integrate frobinate, "
                     "{value} would be frobinate.",
                     "Unknown parameter '{value}' for integrate.");
+    DECLARE_MESSAGE(UnknownPolicySetting,
+                    (msg::option, msg::value),
+                    "'{value}' is the policy in question. These are unlocalized names that ports use to control post "
+                    "build checks. Some examples are VCPKG_POLICY_DLLS_WITHOUT_EXPORTS, "
+                    "VCPKG_POLICY_MISMATCHED_NUMBER_OF_BINARIES, or VCPKG_POLICY_ALLOW_OBSOLETE_MSVCRT",
+                    "Unknown setting for policy '{value}': {option}");
+    DECLARE_MESSAGE(UnknownSettingForBuildType,
+                    (msg::option),
+                    "",
+                    "Unknown setting for VCPKG_BUILD_TYPE {option}. Valid settings are '', 'debug', and 'release'.");
     DECLARE_MESSAGE(UnknownTool, (), "", "vcpkg does not have a definition of this tool for this platform.");
     DECLARE_MESSAGE(
         UnknownVariablesInTemplate,
