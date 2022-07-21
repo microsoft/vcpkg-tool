@@ -660,7 +660,9 @@ namespace vcpkg
                     "{command_line}\n"
                     "failed with the following results:");
     DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":");
+    DECLARE_MESSAGE(ConstraintViolation, (), "", "Found a constraint violation:");
     DECLARE_MESSAGE(CopyrightIsDir, (msg::path), "", "`{path}` being a directory is deprecated.");
+    DECLARE_MESSAGE(CorruptedDatabase, (), "", "Database corrupted.");
     DECLARE_MESSAGE(CouldNotDeduceNugetIdAndVersion,
                     (msg::path),
                     "",
@@ -684,6 +686,10 @@ namespace vcpkg
                     "Based on your system settings, the default path to store binaries is \"{path}\". This consults "
                     "%LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.");
     DECLARE_MESSAGE(DetectCompilerHash, (msg::triplet), "", "Detecting compiler hash for triplet {triplet}...");
+    DECLARE_MESSAGE(DocumentedFieldsSuggestUpdate,
+                    (),
+                    "",
+                    "If these are documented fields that should be recognized try updating the vcpkg tool.");
     DECLARE_MESSAGE(DownloadAvailable,
                     (msg::env_var),
                     "",
@@ -759,7 +765,9 @@ namespace vcpkg
                     "",
                     "Visual Studio Code was not found and the environment variable {env_var} is not set or invalid.");
     DECLARE_MESSAGE(ErrorVsCodeNotFoundPathExamined, (), "", "The following paths were examined:");
+    DECLARE_MESSAGE(ErrorWhileSearching, (msg::spec), "", "info: while looking for {spec}:");
     DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
+    DECLARE_MESSAGE(ExcludedPackages, (), "", "The following packages are excluded:");
     DECLARE_MESSAGE(
         ExpectedCharacterHere,
         (msg::expected),
@@ -768,8 +776,21 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' here");
     DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
+    DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
     DECLARE_MESSAGE(ExtendedDocumenationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
     DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":");
+    DECLARE_MESSAGE(FailedToFindPortFeature,
+                    (msg::value, msg::spec),
+                    "'{value}' is a port feature name.",
+                    "Could not find feature {value} in port {spec}.");
+    DECLARE_MESSAGE(
+        FailedToLoadControl,
+        (msg::spec, msg::error, msg::command_name),
+        "'{error}' is the error message.",
+        "while loading control file for {spec}:\n{error}\nPlease run\"{command_name} remove {spec}\" and re-attempt.");
+    DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}");
+    DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
+    DECLARE_MESSAGE(FailedToObtainPackageVersion, (), "", "Cannot find desired package version.");
     DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
                     (),
                     "",
@@ -838,6 +859,8 @@ namespace vcpkg
                     (msg::env_var),
                     "In this context 'editor' means IDE",
                     "You can also set the environment variable {env_var} to your editor of choice.");
+    DECLARE_MESSAGE(InstalledPackages, (), "", "The following packages are already installed:");
+    DECLARE_MESSAGE(InstalledRequestedPackages, (), "", "All requested packages are currently installed.");
     DECLARE_MESSAGE(InstallingFromLocation,
                     (msg::path),
                     "'--' at the beginning must be preserved",
@@ -920,6 +943,10 @@ namespace vcpkg
                     (msg::actual),
                     "{actual} is the provided format string",
                     "invalid format string: {actual}");
+    DECLARE_MESSAGE(InvalidPackageFeature,
+                    (msg::package_name, msg::value),
+                    "'{value}' is a port feature.",
+                    "Port {package_name} does not have a {value} feature");
     DECLARE_MESSAGE(JsonErrorFailedToParse, (msg::path), "", "failed to parse {path}:");
     DECLARE_MESSAGE(JsonErrorFailedToRead, (msg::path, msg::error_msg), "", "failed to read {path}: {error_msg}");
     DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected \"{path}\" to be an object.");
@@ -1020,6 +1047,10 @@ namespace vcpkg
                     "The message named {value} ends with a newline which should be added by formatting "
                     "rather than by localization.");
     DECLARE_MESSAGE(Missing7zHeader, (), "", "Unable to find 7z header.");
+    DECLARE_MESSAGE(MissingDependency,
+                    (msg::spec, msg::package_name),
+                    "",
+                    "Package {spec} is installed, but dependency {package_name} is not.");
     DECLARE_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
     DECLARE_MESSAGE(MonoInstructions,
                     (),
@@ -1055,10 +1086,21 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "NuGet package creation succeeded, but no .nupkg was produced. Expected: \"{path}\"");
+    DECLARE_MESSAGE(OptionRequired, (msg::option), "", "--{option} option is required.");
     DECLARE_MESSAGE(PackageFailedtWhileExtracting,
                     (msg::value, msg::path),
                     "'{value}' is either a tool name or a package name.",
                     "'{value}' failed while extracting {path}.");
+    DECLARE_MESSAGE(PackagesToInstall, (), "", "The following packages will be built and installed:");
+    DECLARE_MESSAGE(PackagesToInstallDirectly, (), "", "The following packages will be directlt installed:");
+    DECLARE_MESSAGE(PackagesToModify, (), "", "Additional packages (*) will be modified to comeplete this operation.");
+    DECLARE_MESSAGE(PackagesToReBuild, (), "", "The following packages will be rebuilt:");
+    DECLARE_MESSAGE(
+        PackagesToRebuildSuggestRecurse,
+        (),
+        "",
+        "If you are sure you want to rebuild the above packages, run the command with the --recurse option.");
+    DECLARE_MESSAGE(PackagesToRemove, (), "", "The following packages will be removed:");
     DECLARE_MESSAGE(PackingVendorFailed,
                     (msg::vendor),
                     "",
@@ -1084,6 +1126,11 @@ namespace vcpkg
                     "",
                     "the baseline does not contain an entry for port {package_name}");
     DECLARE_MESSAGE(PortSupportsField, (msg::supports_expression), "", "(supports: \"{supports_expression}\")");
+    DECLARE_MESSAGE(PortTypeConflict,
+                    (msg::spec),
+                    "",
+                    "The port type of {spec} differes between the installed and available portfile.\nPlease manually "
+                    "remove {spec} and re-run this command.");
     DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.");
     DECLARE_MESSAGE(ProcessorArchitectureMalformed,
                     (msg::arch),
@@ -1171,11 +1218,16 @@ namespace vcpkg
         (msg::value, msg::list),
         "{value} is the value provided by the user and {list} a list of unknown variables seperated by comma",
         "invalid argument: url template '{value}' contains unknown variables: {list}");
+    DECLARE_MESSAGE(UnrecognizedConfigField, (), "", "configuration contains the following unrecognized fields:");
     DECLARE_MESSAGE(UnsupportedPort, (msg::package_name), "", "Port {package_name} is not supported.");
     DECLARE_MESSAGE(UnsupportedPortDependency,
                     (msg::value),
                     "'{value}' is the name of a port dependency.",
                     "- dependency {value} is not supported.");
+    DECLARE_MESSAGE(UnsupportedPortFeature,
+                    (msg::package_name, msg::value, msg::supports_expression),
+                    "'{value}' is the port feature.",
+                    "{package_name}[{value}] is only supported on '{supports_expression}'");
     DECLARE_MESSAGE(UnsupportedSystemName,
                     (msg::system_name),
                     "",
@@ -1300,56 +1352,4 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
-    DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
-    DECLARE_MESSAGE(FailedToObtainPackageVersion, (), "", "Cannot find desired package version.");
-    DECLARE_MESSAGE(OptionRequired, (msg::option), "", "--{option} option is required.");
-    DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
-    DECLARE_MESSAGE(FailedToFindPortFeature,
-                    (msg::value, msg::spec),
-                    "'{value}' is a port feature name.",
-                    "Could not find feature {value} in port {spec}.");
-    DECLARE_MESSAGE(ConstraintViolation, (), "", "Found a constraint violation:");
-    DECLARE_MESSAGE(InstalledRequestedPackages, (), "", "All requested packages are currently installed.");
-    DECLARE_MESSAGE(ExcludedPackages, (), "", "The following packages are excluded:");
-    DECLARE_MESSAGE(InstalledPackages, (), "", "The following packages are already installed:");
-    DECLARE_MESSAGE(PackagesToRemove, (), "", "The following packages will be removed:");
-    DECLARE_MESSAGE(PackagesToReBuild, (), "", "The following packages will be rebuilt:");
-    DECLARE_MESSAGE(PackagesToInstall, (), "", "The following packages will be built and installed:");
-    DECLARE_MESSAGE(PackagesToInstallDirectly, (), "", "The following packages will be directlt installed:");
-    DECLARE_MESSAGE(PackagesToModify, (), "", "Additional packages (*) will be modified to comeplete this operation.");
-    DECLARE_MESSAGE(
-        PackagesToRebuildSuggestRecurse,
-        (),
-        "",
-        "If you are sure you want to rebuild the above packages, run the command with the --recurse option.");
-    DECLARE_MESSAGE(
-        FailedToLoadControl,
-        (msg::spec, msg::error, msg::command_name),
-        "'{error}' is the error message.",
-        "while loading control file for {spec}:\n{error}\nPlease run\"{command_name} remove {spec}\" and re-attempt.");
-    DECLARE_MESSAGE(ErrorWhileSearching, (msg::spec), "", "info: while looking for {spec}:");
-    DECLARE_MESSAGE(InvalidPackageFeature,
-                    (msg::package_name, msg::value),
-                    "'{value}' is a port feature.",
-                    "Port {package_name} does not have a {value} feature");
-    DECLARE_MESSAGE(PortTypeConflict,
-                    (msg::spec),
-                    "",
-                    "The port type of {spec} differes between the installed and available portfile.\nPlease manually "
-                    "remove {spec} and re-run this command.");
-    DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}");
-    DECLARE_MESSAGE(UnsupportedPortFeature,
-                    (msg::package_name, msg::value, msg::supports_expression),
-                    "'{value}' is the port feature.",
-                    "{package_name}[{value}] is only supported on '{supports_expression}'");
-    DECLARE_MESSAGE(MissingDependency,
-                    (msg::spec, msg::package_name),
-                    "",
-                    "Package {spec} is installed, but dependency {package_name} is not.");
-    DECLARE_MESSAGE(CorruptedDatabase, (), "", "Database corrupted.");
-    DECLARE_MESSAGE(UnrecognizedConfigField, (), "", "configuration contains the following unrecognized fields:");
-    DECLARE_MESSAGE(DocumentedFieldsSuggestUpdate,
-                    (),
-                    "",
-                    "If these are documented fields that should be recognized try updating the vcpkg tool.");
 }
