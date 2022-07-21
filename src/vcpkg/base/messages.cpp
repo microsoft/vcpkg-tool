@@ -699,4 +699,5 @@ namespace vcpkg
     REGISTER_MESSAGE(PackagesToRebuildSuggestRecurse);
     REGISTER_MESSAGE(FailedToLoadControl);
     REGISTER_MESSAGE(ErrorWhileSearching);
+    REGISTER_MESSAGE(InvalidPackageFeature);
 }

@@ -250,11 +250,11 @@ namespace vcpkg
                 else if (spec.feature() != "default")
                 {
                     auto maybe_paragraph = get_scfl_or_exit().source_control_file->find_feature(spec.feature());
-                    Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
-                                                maybe_paragraph.has_value(),
-                                                "Package %s does not have a %s feature",
-                                                spec.port(),
-                                                spec.feature());
+                    Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
+                                                    maybe_paragraph.has_value(),
+                                                    msgInvalidPackageFeature,
+                                                    msg::package_name = spec.port(),
+                                                    msg::value = spec.feature());
 
                     return maybe_paragraph.get()->supports_expression;
                 }
