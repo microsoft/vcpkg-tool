@@ -35,7 +35,7 @@ namespace
             }
         }
 
-        print2(Json::stringify(obj, Json::JsonStyle{}));
+        print2(Json::stringify(obj));
     }
     constexpr const int s_name_and_ver_columns = 41;
     void do_print(const SourceParagraph& source_paragraph, bool full_desc)

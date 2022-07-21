@@ -171,7 +171,7 @@ namespace vcpkg
                 base_data.insert("measurements", measurements);
             }
 
-            return Json::stringify(arr, vcpkg::Json::JsonStyle());
+            return Json::stringify(arr);
         }
     };
 

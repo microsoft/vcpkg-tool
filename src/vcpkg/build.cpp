@@ -913,7 +913,7 @@ namespace vcpkg
             return_code = cmd_execute_and_stream_data(
                 command,
                 [&](StringView sv) {
-                    msg::write_unlocalized_text_to_stdout(sv);
+                    msg::write_unlocalized_text_to_stdout(Color::none, sv);
                     Checks::msg_check_exit(VCPKG_LINE_INFO,
                                            out_file.write(sv.data(), 1, sv.size()) == sv.size(),
                                            msgErrorWhileWriting,
@@ -1455,14 +1455,13 @@ namespace vcpkg
             return Strings::concat(
                 "<details><summary>", path.native(), "</summary>\n\n```\n", log, "\n```\n</details>");
         };
-        const auto manifest =
-            paths.get_manifest()
-                .map([](const ManifestAndPath& manifest) {
-                    return Strings::concat("<details><summary>vcpkg.json</summary>\n\n```\n",
-                                           Json::stringify(manifest.manifest, Json::JsonStyle::with_spaces(2)),
-                                           "\n```\n</details>\n");
-                })
-                .value_or("");
+        const auto manifest = paths.get_manifest()
+                                  .map([](const ManifestAndPath& manifest) {
+                                      return Strings::concat("<details><summary>vcpkg.json</summary>\n\n```\n",
+                                                             Json::stringify(manifest.manifest),
+                                                             "\n```\n</details>\n");
+                                  })
+                                  .value_or("");
 
         const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
         const auto& compiler_info = abi_info.compiler_info.value_or_exit(VCPKG_LINE_INFO);

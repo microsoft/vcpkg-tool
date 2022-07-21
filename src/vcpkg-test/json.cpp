@@ -12,12 +12,12 @@
 // This is the worst, but we also can't really deal with it any other way.
 #if __cpp_char8_t
 template<size_t Sz>
-static auto _u8_string_to_char_string(const char8_t (&literal)[Sz]) -> const char (&)[Sz]
+static auto u8_string_to_char_string(const char8_t (&literal)[Sz]) -> const char (&)[Sz]
 {
     return reinterpret_cast<const char(&)[Sz]>(literal);
 }
 
-#define U8_STR(s) (::vcpkg::Unicode::_u8_string_to_char_string(u8"" s))
+#define U8_STR(s) (u8_string_to_char_string(u8"" s))
 #else
 #define U8_STR(s) (u8"" s)
 #endif
@@ -25,13 +25,11 @@ static auto _u8_string_to_char_string(const char8_t (&literal)[Sz]) -> const cha
 namespace Json = vcpkg::Json;
 using Json::Value;
 
-static std::string mystringify(const Value& val) { return Json::stringify(val, Json::JsonStyle{}); }
-
 TEST_CASE ("JSON stringify weird strings", "[json]")
 {
     std::string str = U8_STR("😀 😁 😂 🤣 😃 😄 😅 😆 😉");
-    REQUIRE(mystringify(Value::string(str)) == ('"' + str + "\"\n"));
-    REQUIRE(mystringify(Value::string("\xED\xA0\x80")) == "\"\\ud800\"\n"); // unpaired surrogate
+    REQUIRE(Json::stringify(Value::string(str)) == ('"' + str + "\"\n"));
+    REQUIRE(Json::stringify(Value::string("\xED\xA0\x80")) == "\"\\ud800\"\n"); // unpaired surrogate
 }
 
 TEST_CASE ("JSON parse keywords", "[json]")
