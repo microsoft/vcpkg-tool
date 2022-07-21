@@ -701,4 +701,5 @@ namespace vcpkg
     REGISTER_MESSAGE(ErrorWhileSearching);
     REGISTER_MESSAGE(InvalidPackageFeature);
     REGISTER_MESSAGE(PortTypeConflict);
+    REGISTER_MESSAGE(FailedToLocateSpec);
 }

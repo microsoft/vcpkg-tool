@@ -122,6 +122,7 @@
   "FailedToExtract": "Failed to extract \"{path}\":",
   "FailedToFindPortFeature": "Could not find feature {value} in port {spec}.",
   "FailedToLoadControl": "while loading control file for {spec}:\n{error}\nPlease run\"{command_name} remove {spec}\" and re-attempt.",
+  "FailedToLocateSpec": "Failed to locate spec in graph: {spec}",
   "FailedToObtainDependencyVersion": "Cannot find desired dependency version.",
   "FailedToObtainPackageVersion": "Cannot find desired package version.",
   "FailedToParseCMakeConsoleOut": "Failed to parse CMake console output to locate block start/end markers.",

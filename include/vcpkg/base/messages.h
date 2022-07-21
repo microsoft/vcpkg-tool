@@ -1339,4 +1339,5 @@ namespace vcpkg
                     "",
                     "The port type of {spec} differes between the installed and available portfile.\nPlease manually "
                     "remove {spec} and re-run this command.");
+    DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}");
 }

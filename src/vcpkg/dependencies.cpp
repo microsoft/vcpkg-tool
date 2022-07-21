@@ -372,7 +372,7 @@ namespace vcpkg
             const Cluster& find_or_exit(const PackageSpec& spec, LineInfo li) const
             {
                 auto it = m_graph.find(spec);
-                Checks::check_exit(li, it != m_graph.end(), "Failed to locate spec in graph: %s", spec);
+                Checks::msg_check_exit(li, it != m_graph.end(), msgFailedToLocateSpec, msg::spec = spec);
                 return it->second;
             }
 
@@ -800,11 +800,11 @@ namespace vcpkg
                     {
                         auto maybe_paragraph =
                             clust.get_scfl_or_exit().source_control_file->find_feature(spec.feature());
-                        Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
-                                                    maybe_paragraph.has_value(),
-                                                    "Package %s does not have a %s feature",
-                                                    spec.port(),
-                                                    spec.feature());
+                        Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
+                                                        maybe_paragraph.has_value(),
+                                                        msgInvalidPackageFeature,
+                                                        msg::package_name = spec.port(),
+                                                        msg::value = spec.feature());
                         paragraph_depends = &maybe_paragraph.value_or_exit(VCPKG_LINE_INFO).dependencies;
                         has_supports = !maybe_paragraph.get()->supports_expression.is_empty();
                     }
