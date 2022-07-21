@@ -281,6 +281,7 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(env_var, "VCPKG_DEFAULT_TRIPLET");
     DECLARE_MSG_ARG(extension, ".exe");
     DECLARE_MSG_ARG(supports_expression, "windows & !static");
+    DECLARE_MSG_ARG(feature, "avisynthplus");
 
 #undef DECLARE_MSG_ARG
 
@@ -779,10 +780,7 @@ namespace vcpkg
     DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
     DECLARE_MESSAGE(ExtendedDocumenationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
     DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":");
-    DECLARE_MESSAGE(FailedToFindPortFeature,
-                    (msg::value, msg::spec),
-                    "'{value}' is a port feature name.",
-                    "Could not find feature {value} in port {spec}.");
+    DECLARE_MESSAGE(FailedToFindPortFeature, (msg::feature, msg::spec), "", "Could not find {feature} in {spec}.");
     DECLARE_MESSAGE(
         FailedToLoadControl,
         (msg::spec, msg::error, msg::command_name),
@@ -943,10 +941,6 @@ namespace vcpkg
                     (msg::actual),
                     "{actual} is the provided format string",
                     "invalid format string: {actual}");
-    DECLARE_MESSAGE(InvalidPackageFeature,
-                    (msg::package_name, msg::value),
-                    "'{value}' is a port feature.",
-                    "Port {package_name} does not have a {value} feature");
     DECLARE_MESSAGE(JsonErrorFailedToParse, (msg::path), "", "failed to parse {path}:");
     DECLARE_MESSAGE(JsonErrorFailedToRead, (msg::path, msg::error_msg), "", "failed to read {path}: {error_msg}");
     DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected \"{path}\" to be an object.");

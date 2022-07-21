@@ -118,7 +118,7 @@ namespace vcpkg
                 if (!maybe_qualified_deps.has_value())
                 {
                     Checks::msg_exit_with_message(
-                        VCPKG_LINE_INFO, msgFailedToFindPortFeature, msg::value = feature, msg::spec = m_spec.name());
+                        VCPKG_LINE_INFO, msgFailedToFindPortFeature, msg::feature = feature, msg::spec = m_spec.name());
                 }
                 const std::vector<Dependency>* qualified_deps = &maybe_qualified_deps.value_or_exit(VCPKG_LINE_INFO);
 
@@ -252,9 +252,9 @@ namespace vcpkg
                     auto maybe_paragraph = get_scfl_or_exit().source_control_file->find_feature(spec.feature());
                     Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
                                                     maybe_paragraph.has_value(),
-                                                    msgInvalidPackageFeature,
-                                                    msg::package_name = spec.port(),
-                                                    msg::value = spec.feature());
+                                                    msgFailedToFindPortFeature,
+                                                    msg::feature = spec.feature(),
+                                                    msg::spec = spec.port());
 
                     return maybe_paragraph.get()->supports_expression;
                 }
@@ -802,9 +802,9 @@ namespace vcpkg
                             clust.get_scfl_or_exit().source_control_file->find_feature(spec.feature());
                         Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
                                                         maybe_paragraph.has_value(),
-                                                        msgInvalidPackageFeature,
-                                                        msg::package_name = spec.port(),
-                                                        msg::value = spec.feature());
+                                                        msgFailedToFindPortFeature,
+                                                        msg::feature = spec.feature(),
+                                                        msg::spec = spec.port());
                         paragraph_depends = &maybe_paragraph.value_or_exit(VCPKG_LINE_INFO).dependencies;
                         has_supports = !maybe_paragraph.get()->supports_expression.is_empty();
                     }
