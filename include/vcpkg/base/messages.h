@@ -1083,10 +1083,7 @@ namespace vcpkg
                     (msg::package_name),
                     "",
                     "the baseline does not contain an entry for port {package_name}");
-    DECLARE_MESSAGE(PortSupportsField,
-                    (msg::value),
-                    "'{value}' is the value of the 'supports' field in the port's vcpkg.json.",
-                    "(supports: \"{value}\")");
+    DECLARE_MESSAGE(PortSupportsField, (msg::supports_expression), "", "(supports: \"{supports_expression}\")");
     DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.");
     DECLARE_MESSAGE(ProcessorArchitectureMalformed,
                     (msg::arch),

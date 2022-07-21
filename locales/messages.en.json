@@ -235,7 +235,7 @@
   "ParseControlErrorInfoWrongTypeFields": "The following fields had the wrong types:",
   "PortDependencyConflict": "Port {package_name} has the following unsupported dependencies:",
   "PortNotInBaseline": "the baseline does not contain an entry for port {package_name}",
-  "PortSupportsField": "(supports: \"{value}\")",
+  "PortSupportsField": "(supports: \"{supports_expression}\")",
   "PortTypeConflict": "The port type of {spec} differes between the installed and available portfile.\nPlease manually remove {spec} and re-run this command.",
   "PreviousIntegrationFileRemains": "Previous integration file was not removed.",
   "ProcessorArchitectureMalformed": "Failed to parse %PROCESSOR_ARCHITECTURE% ({arch}) as a valid CPU architecture.",
