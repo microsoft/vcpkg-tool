@@ -1347,4 +1347,9 @@ namespace vcpkg
                     "",
                     "Package {spec} is installed, but dependency {package_name} is not.");
     DECLARE_MESSAGE(CorruptedDatabase, (), "", "Database corrupted.");
+    DECLARE_MESSAGE(UnrecognizedConfigField, (), "", "configuration contains the following unrecognized fields:");
+    DECLARE_MESSAGE(DocumentedFieldsSuggestUpdate,
+                    (),
+                    "",
+                    "If these are documented fields that should be recognized try updating the vcpkg tool.");
 }

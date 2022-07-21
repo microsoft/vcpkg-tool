@@ -705,4 +705,6 @@ namespace vcpkg
     REGISTER_MESSAGE(UnsupportedPortFeature);
     REGISTER_MESSAGE(MissingDependency);
     REGISTER_MESSAGE(CorruptedDatabase);
+    REGISTER_MESSAGE(UnrecognizedConfigField);
+    REGISTER_MESSAGE(DocumentedFieldsSuggestUpdate);
 }
