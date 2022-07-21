@@ -826,17 +826,19 @@ namespace vcpkg
                         if (!supports_expression.get()->evaluate(
                                 m_var_provider.get_dep_info_vars(spec.spec()).value_or_exit(VCPKG_LINE_INFO)))
                         {
-                            const auto msg = Strings::format("%s[%s] is only supported on '%s'",
-                                                             spec.port(),
-                                                             spec.feature(),
-                                                             to_string(*supports_expression.get()));
+                            auto localized_msg =
+                                msg::format(msgUnsupportedPortFeature,
+                                            msg::package_name = spec.port(),
+                                            msg::value = spec.feature(),
+                                            msg::supports_expression = to_string(*supports_expression.get()));
+
                             if (unsupported_port_action == UnsupportedPortAction::Error)
                             {
-                                Checks::exit_with_message(VCPKG_LINE_INFO, "Error: " + msg);
+                                Checks::msg_exit_with_message(VCPKG_LINE_INFO, localized_msg);
                             }
                             else
                             {
-                                m_warnings.push_back("Warning: " + msg);
+                                m_warnings.push_back("Warning: " + localized_msg.extract_data());
                             }
                         }
                     }

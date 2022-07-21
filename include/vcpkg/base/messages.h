@@ -280,6 +280,7 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(action_index, "340");
     DECLARE_MSG_ARG(env_var, "VCPKG_DEFAULT_TRIPLET");
     DECLARE_MSG_ARG(extension, ".exe");
+    DECLARE_MSG_ARG(supports_expression, "windows & !static");
 
 #undef DECLARE_MSG_ARG
 
@@ -1332,12 +1333,16 @@ namespace vcpkg
     DECLARE_MESSAGE(ErrorWhileSearching, (msg::spec), "", "info: while looking for {spec}:");
     DECLARE_MESSAGE(InvalidPackageFeature,
                     (msg::package_name, msg::value),
-                    "'{value}' is a feature.",
-                    "Package {package_name} does not have a {value} feature");
+                    "'{value}' is a port feature.",
+                    "Port {package_name} does not have a {value} feature");
     DECLARE_MESSAGE(PortTypeConflict,
                     (msg::spec),
                     "",
                     "The port type of {spec} differes between the installed and available portfile.\nPlease manually "
                     "remove {spec} and re-run this command.");
     DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}");
+    DECLARE_MESSAGE(UnsupportedPortFeature,
+                    (msg::package_name, msg::value, msg::supports_expression),
+                    "'{value}' is the port feature.",
+                    "{package_name}[{value}] is only supported on '{supports_expression}'");
 }
