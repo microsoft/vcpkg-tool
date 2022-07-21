@@ -711,8 +711,8 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is a command line option.",
                     "'--{value}' specified multiple times.");
-    DECLARE_MESSAGE(EmptyArg, (msg::option), "", "The option --{option} must be passed a non-empty argument.");
     DECLARE_MESSAGE(EmailVcpkgTeam, (msg::url), "", "Send an email to {url} with any feedback.");
+    DECLARE_MESSAGE(EmptyArg, (msg::option), "", "The option --{option} must be passed a non-empty argument.");
     DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
     DECLARE_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:");
     DECLARE_MESSAGE(ErrorDetectingCompilerInfo,
@@ -1106,6 +1106,11 @@ namespace vcpkg
                     "paragraph.\nPlease open an issue at {url}, with the following output:");
     DECLARE_MESSAGE(Missing7zHeader, (), "", "Unable to find 7z header.");
     DECLARE_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
+    DECLARE_MESSAGE(MissmatchedBinParagraphs,
+                    (),
+                    "",
+                    "The serialized binary paragraph was different from the original binary paragraph. Please open an "
+                    "issue at https://github.com/microsoft/vcpkg with the following output:");
     DECLARE_MESSAGE(MonoInstructions,
                     (),
                     "",
@@ -1116,6 +1121,7 @@ namespace vcpkg
                     (msg::path, msg::exit_code),
                     "",
                     "msiexec failed while extracting \"{path}\" with launch or exit code {exit_code} and message:");
+    DECLARE_MESSAGE(MultiArch, (msg::option), "", "Multi-Arch must be 'same' but was {option}");
     DECLARE_MESSAGE(NavigateToNPS, (msg::url), "", "Please navigate to {url} in your preferred browser.");
     DECLARE_MESSAGE(NewConfigurationAlreadyExists,
                     (msg::path),
@@ -1141,7 +1147,7 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "NuGet package creation succeeded, but no .nupkg was produced. Expected: \"{path}\"");
-    DECLARE_MESSAGE(MultiArch, (msg::option), "", "Multi-Arch must be 'same' but was {option}");
+    DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph");
     DECLARE_MESSAGE(PackageFailedtWhileExtracting,
                     (msg::value, msg::path),
                     "'{value}' is either a tool name or a package name.",
@@ -1208,6 +1214,7 @@ namespace vcpkg
         "{value} may be either a 'vendor' like 'Azure' or 'NuGet', or a file path like C:\\example or /usr/example",
         "Restored {count} package(s) from {value} in {elapsed}. Use --debug to see more details.");
     DECLARE_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
+    DECLARE_MESSAGE(SerializedBinParagraphHeader, (), "", "\nSerialized Binary Paragraph");
     DECLARE_MESSAGE(SettingEnvVar,
                     (msg::env_var, msg::url),
                     "An example of env_var is \"HTTP(S)_PROXY\""
@@ -1441,11 +1448,4 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
-    DECLARE_MESSAGE(MissmatchedBinParagraphs,
-                    (),
-                    "",
-                    "The serialized binary paragraph was different from the original binary paragraph. Please open an "
-                    "issue at https://github.com/microsoft/vcpkg with the following output:");
-    DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph");
-    DECLARE_MESSAGE(SerializedBinParagraphHeader, (), "", "\nSerialized Binary Paragraph");
 }

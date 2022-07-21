@@ -637,6 +637,7 @@ namespace vcpkg
     REGISTER_MESSAGE(MismatchedBinaryParagraphs);
     REGISTER_MESSAGE(Missing7zHeader);
     REGISTER_MESSAGE(MissingExtension);
+    REGISTER_MESSAGE(MissmatchedBinParagraphs);
     REGISTER_MESSAGE(MonoInstructions);
     REGISTER_MESSAGE(MsiexecFailedToExtract);
     REGISTER_MESSAGE(MultiArch);
@@ -652,6 +653,7 @@ namespace vcpkg
     REGISTER_MESSAGE(NoLocalizationForMessages);
     REGISTER_MESSAGE(NoRegistryForPort);
     REGISTER_MESSAGE(NugetPackageFileSucceededButCreationFailed);
+    REGISTER_MESSAGE(OriginalBinParagraphHeader);
     REGISTER_MESSAGE(PackageFailedtWhileExtracting);
     REGISTER_MESSAGE(PackageRootDir);
     REGISTER_MESSAGE(PackingVendorFailed);
@@ -673,6 +675,7 @@ namespace vcpkg
     REGISTER_MESSAGE(RestoredPackage);
     REGISTER_MESSAGE(RestoredPackagesFromVendor);
     REGISTER_MESSAGE(ResultsHeader);
+    REGISTER_MESSAGE(SerializedBinParagraphHeader);
     REGISTER_MESSAGE(SettingEnvVar);
     REGISTER_MESSAGE(SourceFieldPortNameMismatch);
     REGISTER_MESSAGE(SpecifiedFeatureTurnedOff);
@@ -742,7 +745,4 @@ namespace vcpkg
     REGISTER_MESSAGE(WaitingToTakeFilesystemLock);
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
-    REGISTER_MESSAGE(MissmatchedBinParagraphs);
-    REGISTER_MESSAGE(OriginalBinParagraphHeader);
-    REGISTER_MESSAGE(SerializedBinParagraphHeader);
 }
