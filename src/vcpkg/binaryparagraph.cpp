@@ -300,7 +300,7 @@ namespace vcpkg
 
     std::string format_binary_paragraph(BinaryParagraph paragraph)
     {
-        const auto& join_str = R"(", ")";
+        constexpr StringLiteral join_str = R"(", ")";
         return fmt::format(
             "\nspec: \"{}\"\nversion: \"{}\"\nport_version: {}\ndescription: [\"{}\"]\nmaintainers: [\"{}\"]\nfeature: "
             "\"{}\"\ndefault_features: [\"{}\"]\ndependencies: [\"{}\"]\nabi: \"{}\"\ntype: {}",
