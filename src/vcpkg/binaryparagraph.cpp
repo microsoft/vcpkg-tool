@@ -280,10 +280,10 @@ namespace vcpkg
             out_str.substr(initial_end), "vcpkg::serialize(const BinaryParagraph&, std::string&)");
         if (!parsed_paragraph)
         {
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                           msgFailedToParseBinParagraph,
-                                           msg::error_msg = parsed_paragraph.error(),
-                                           msg ::value = my_paragraph);
+            Checks::msg_exit_maybe_upgrade(
+                VCPKG_LINE_INFO,
+                msg::format(msgFailedToParseBinParagraph, msg::error_msg = parsed_paragraph.error())
+                    .append_raw("\n" + my_paragraph));
         }
 
         auto binary_paragraph = BinaryParagraph(*parsed_paragraph.get());

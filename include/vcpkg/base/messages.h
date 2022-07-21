@@ -796,12 +796,11 @@ namespace vcpkg
     DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
     DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":");
     DECLARE_MESSAGE(FailedToParseBinParagraph,
-                    (msg::error_msg, msg::value),
-                    "'{error_msg}' is the error message for failing to parse the Binary Paragraph, '{value}' is the "
-                    "Binary Paragraph",
+                    (msg::error_msg),
+                    "'{error_msg}' is the error message for failing to parse the Binary Paragraph.",
                     "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at "
                     "https://github.com/microsoft/vcpkg, "
-                    "with the following output:\n{error_msg}\nSerialized Binary Paragraph: \n{value}");
+                    "with the following output:\n{error_msg}\nSerialized Binary Paragraph:");
     DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
                     (),
                     "",

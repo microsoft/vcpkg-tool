@@ -129,7 +129,7 @@
   "ExpectedValueForOption": "expected value after '{value}'.",
   "ExtendedDocumentationAtUrl": "Extended documentation available at '{url}'.",
   "FailedToExtract": "Failed to extract \"{path}\":",
-  "FailedToParseBinParagraph": "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at https://github.com/microsoft/vcpkg, with the following output:\n{error_msg}\nSerialized Binary Paragraph: \n{value}",
+  "FailedToParseBinParagraph": "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at https://github.com/microsoft/vcpkg, with the following output:\n{error_msg}\nSerialized Binary Paragraph:",
   "FailedToParseCMakeConsoleOut": "Failed to parse CMake console output to locate block start/end markers.",
   "FailedToProvisionCe": "Failed to provision vcpkg-ce.",
   "FailedToRunToolToDetermineVersion": "Failed to run \"{path}\" to determine the {tool_name} version.",
