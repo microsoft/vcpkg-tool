@@ -286,7 +286,7 @@ namespace vcpkg::msg
         constexpr static StringArray example_str = "An example of {" #NAME "} is " EXAMPLE ".";                        \
         constexpr static auto real_example()                                                                           \
         {                                                                                                              \
-            if constexpr (example.empty())                                                                       \
+            if constexpr (example.empty())                                                                             \
                 return example;                                                                                        \
             else                                                                                                       \
                 return example_str;                                                                                    \

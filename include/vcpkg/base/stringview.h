@@ -116,7 +116,10 @@ struct StringArray
         return m_array == other.m_array;
     }
     template<::size_t U>
-    constexpr bool operator!=(const StringArray<U>& other) const noexcept { return m_array != other.m_array; }
+    constexpr bool operator!=(const StringArray<U>& other) const noexcept
+    {
+        return m_array != other.m_array;
+    }
 
     constexpr char operator[](::size_t pos) const noexcept
     {
