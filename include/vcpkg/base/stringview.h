@@ -104,8 +104,8 @@ struct StringArray
     constexpr auto begin() noexcept { return m_array.begin(); }
     constexpr auto end() noexcept { return m_array.end() - 1; }
 
-    constexpr const auto begin() const noexcept { return m_array.begin(); }
-    constexpr const auto end() const noexcept { return m_array.end() - 1; }
+    constexpr auto begin() const noexcept { return m_array.begin(); }
+    constexpr auto end() const noexcept { return m_array.end() - 1; }
 
     constexpr ::size_t size() const noexcept { return m_array.size() - 1; }
     constexpr bool empty() const noexcept { return size() == 0; }
