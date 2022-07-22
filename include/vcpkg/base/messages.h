@@ -151,34 +151,34 @@ namespace vcpkg::msg
         template<::size_t M, ::size_t N>
         inline std::string get_examples_for_args(const StringArray<M>& comment, const StringArray<N>& example)
         {
-            if (comment.length() == 0 && example.length() == 0)
+            if (comment.empty() && example.empty())
             {
                 return std::string{""};
             }
-            if (comment.length() == 0)
+            if (comment.empty())
             {
-                return std::string(example.begin(), example.end() - 1);
+                return std::string(example.begin(), example.end());
             }
 
-            if (example.length() == 0)
+            if (example.empty())
             {
-                return std::string(comment.begin(), comment.end() - 1);
+                return std::string(comment.begin(), comment.end());
             }
 
             if (example[0] == ' ')
             {
                 const auto out = comment + example;
-                return std::string(out.begin(), out.end() - 1);
+                return std::string(out.begin(), out.end());
             }
 
             const auto out = comment + StringArray(" ") + example;
-            return std::string(out.begin(), out.end() - 1);
+            return std::string(out.begin(), out.end());
         }
 
         template<class Arg0>
         constexpr auto example_piece(const Arg0& arg)
         {
-            if constexpr (Arg0::real_example().length() == 0)
+            if constexpr (Arg0::real_example().empty())
                 return StringArray{""};
             else
                 return StringArray{" "} + arg.real_example();
@@ -187,7 +187,7 @@ namespace vcpkg::msg
         template<class Arg0, class... Args>
         constexpr auto example_piece(const Arg0& arg, Args... args)
         {
-            if constexpr (Arg0::real_example().length() == 0)
+            if constexpr (Arg0::real_example().empty())
                 return example_piece(args...);
             else
                 return StringArray{" "} + arg.real_example() + example_piece(args...);
@@ -286,7 +286,7 @@ namespace vcpkg::msg
         constexpr static StringArray example_str = "An example of {" #NAME "} is " EXAMPLE ".";                        \
         constexpr static auto real_example()                                                                           \
         {                                                                                                              \
-            if constexpr (example.length() == 0)                                                                       \
+            if constexpr (example.empty())                                                                       \
                 return example;                                                                                        \
             else                                                                                                       \
                 return example_str;                                                                                    \

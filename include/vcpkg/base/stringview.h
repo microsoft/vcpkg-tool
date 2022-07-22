@@ -89,43 +89,85 @@ namespace vcpkg
 VCPKG_FORMAT_AS(vcpkg::ZStringView, vcpkg::StringView);
 VCPKG_FORMAT_AS(vcpkg::StringLiteral, vcpkg::StringView);
 
-template<::size_t N>
-struct StringArray : public std::array<char, N>
+template<::size_t N, typename std::enable_if<(N > 0), bool>::type = true>
+struct StringArray
 {
-    constexpr StringArray() noexcept : std::array<char, N>() { }
-    constexpr StringArray(const char (&str)[N]) noexcept : std::array<char, N>()
+    constexpr StringArray() noexcept : m_array{} { }
+    constexpr StringArray(const char (&str)[N]) noexcept : m_array{}
     {
         for (size_t i = 0; i < N; i++)
         {
-            this->at(i) = str[i];
+            m_array.at(i) = str[i];
         }
     }
 
-    constexpr ::size_t length() const noexcept { return this->size() - 1; }
+    constexpr auto begin() noexcept { return m_array.begin(); }
+    constexpr auto end() noexcept { return m_array.end() - 1; }
+
+    constexpr const auto begin() const noexcept { return m_array.begin(); }
+    constexpr const auto end() const noexcept { return m_array.end() - 1; }
+
+    constexpr ::size_t size() const noexcept { return m_array.size() - 1; }
+    constexpr bool empty() const noexcept { return size() == 0; }
+
+    template<::size_t N>
+    constexpr bool operator==(const StringArray<N>& other) const noexcept
+    {
+        return m_array == other.m_array;
+    }
+    constexpr bool operator!=(const StringArray<N>& other) const noexcept { return m_array != other.m_array; }
+
+    constexpr char operator[](::size_t pos) const noexcept
+    {
+        // static_assert(pos < N - 1);
+        return m_array[pos];
+    }
+    constexpr char& operator[](::size_t pos) noexcept
+    {
+        // static_assert(pos < size(), "array subscript out of range");
+        return m_array[pos];
+    }
 
     template<::size_t L, ::size_t R>
     friend constexpr StringArray<L + R - 1> operator+(const StringArray<L> lhs, const StringArray<R> rhs) noexcept;
+
+private:
+    template<class InIt, class OutIt>
+    constexpr OutIt constexpr_copy(InIt first, InIt last, OutIt dest)
+    {
+        while (first != last)
+        {
+            *dest = *first;
+            ++dest;
+            ++first;
+        }
+
+        return dest;
+    }
+
+private:
+    std::array<char, N> m_array;
 };
 
 template<::size_t L, ::size_t R>
 constexpr StringArray<L + R - 1> operator+(const StringArray<L> lhs, const StringArray<R> rhs) noexcept
 {
-    if constexpr (lhs.length() == 0)
+    if constexpr (lhs.empty())
         return rhs;
-    else if constexpr (rhs.length() == 0)
+    else if constexpr (rhs.empty())
         return lhs;
     else
     {
         StringArray<L + R - 1> out;
 
-        for (size_t i = 0; i < lhs.length(); i++)
+        for (size_t i = 0; i < lhs.size(); i++)
         {
             out[i] = lhs[i];
         }
 
-        for (size_t i = L - 1; i < lhs.length() + rhs.length(); i++)
+        for (size_t i = L - 1; i < lhs.size() + rhs.size(); i++)
         {
-            out[i] = rhs[i - lhs.length()];
+            out[i] = rhs[i - lhs.size()];
         }
         return out;
     }
