@@ -110,12 +110,13 @@ struct StringArray
     constexpr ::size_t size() const noexcept { return m_array.size() - 1; }
     constexpr bool empty() const noexcept { return size() == 0; }
 
-    template<::size_t N>
-    constexpr bool operator==(const StringArray<N>& other) const noexcept
+    template<::size_t U>
+    constexpr bool operator==(const StringArray<U>& other) const noexcept
     {
         return m_array == other.m_array;
     }
-    constexpr bool operator!=(const StringArray<N>& other) const noexcept { return m_array != other.m_array; }
+    template<::size_t U>
+    constexpr bool operator!=(const StringArray<U>& other) const noexcept { return m_array != other.m_array; }
 
     constexpr char operator[](::size_t pos) const noexcept
     {
