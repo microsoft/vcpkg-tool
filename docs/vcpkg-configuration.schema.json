@@ -1,0 +1,248 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "id": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+    "title": "Vcpkg manifest",
+    "description": "Vcpkg manifest file. See https://github.com/microsoft/vcpkg/blob/master/docs/specifications/manifests.md.",
+    "definitions": {
+        "identifier": {
+            "description": "Identifiers used for feature names.",
+            "allOf": [
+                {
+                    "description": "Identifier are lowercase with digits and dashes.",
+                    "type": "string",
+                    "pattern": "[a-z0-9]+(-[a-z0-9]+)*"
+                },
+                {
+                    "not": {
+                        "description": "Identifiers must not be a Windows filesystem or vcpkg reserved name.",
+                        "type": "string",
+                        "pattern": "^(prn|aux|nul|con|lpt[1-9]|com[1-9]|core|default)$"
+                    }
+                }
+            ]
+        },
+        "platform-expression": {
+            "description": "A specification of a set of platforms. See https://github.com/microsoft/vcpkg/blob/master/docs/specifications/manifests.md#definitions.",
+            "type": "string"
+        },
+        "packages-list": {
+            "type":"object",
+            "description": "A list of port names which a port registry is used to fetch.",
+            "properties": {
+                "packages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/identifier"
+                    }
+                }
+            },
+            "required": ["packages"]
+        },
+        "builtin-registry": {
+            "properties": {
+                "baseline": {
+                    "type": "string",
+                    "pattern": "[0-9a-f]{40}",
+                    "description": "The SHA that will be checked out to find default versions for ports from this registry."
+                },
+                "kind": {
+                    "type": "string",
+                    "pattern": "builtin"
+                }
+            },
+            "required": ["baseline", "kind"]
+        },
+        "git-registry":{
+            "description": "A port registry backed by a git repo.",
+            "properties": {
+                "kind": {
+                    "type": "string",
+                    "pattern": "git"
+                },
+                "repository": {
+                    "type": "string",
+                    "description": "The URI or SSH entry to clone from. (as if by `git clone`)"
+                },
+                "baseline": {
+                    "type": "string",
+                    "pattern": "[0-9a-f]{40}",
+                    "description": "The SHA that will be checked out to find default versions for ports from this registry."
+                },
+                "ref": {
+                    "type": "string",
+                    "description": "The ref to fetch when cloning this git registry."
+                }
+            },
+            "required": ["kind", "repository", "baseline"]
+        },
+        "filesystem-registry": {
+            "description": "A port registry backed by a git repo.",
+            "properties": {
+                "kind": {
+                    "type": "string",
+                    "pattern": "filesystem"
+                },
+                "path": {
+                    "type": "string",
+                    "description": "The location on the filesystem where the registry is rooted."
+                }
+            },
+            "required":["kind", "path"]
+        },
+        "artifact-registry": {
+            "description": "An artifact registry backed by a git repository.",
+            "properties": {
+                "kind": {
+                    "type": "string",
+                    "pattern": "artifact"
+                },
+                "name": {
+                    "$ref": "#/definitions/identifier"
+                },
+                "location": {
+                    "type": "string",
+                    "description": "A URI to the location of the artifact registry; typically a git URI."
+                }
+            },
+            "required":["kind", "name", "location"]
+        },
+        "default-registry": {
+            "allOf": [
+                {
+                    "oneOf": [
+                        {"$ref":"#/definitions/builtin-registry"},
+                        {"$ref":"#/definitions/git-registry"},
+                        {"$ref":"#/definitions/filesystem-registry"}
+                    ]
+                },
+                {
+                    "not": {
+                        "$ref": "#/definitions/packages-list"
+                    }
+                }
+            ]
+        },
+        "array-registry": {
+            "oneOf": [
+                {
+                    "allOf": [
+                        {
+                            "oneOf": [
+                                {"$ref": "#/definitions/builtin-registry"},
+                                {"$ref": "#/definitions/git-registry"},
+                                {"$ref": "#/definitions/filesystem-registry"}
+                            ]
+                        },
+                        {
+                            "$ref": "#/definitions/packages-list"
+                        }
+                    ]
+                },
+                {
+                    "$ref": "#/definitions/artifact-registry"
+                }
+            ]
+        },
+        "settings": {
+            "description": "A set of key/value pairs to sent in the environment when this node is evaluated.",
+            "type": "object"
+        },
+        "artifact-references": {
+            "description": "A key/value pair of artifact name to selected artifact version.",
+            "type":"object",
+            "minProperties":1,
+            "patternProperties": {
+                ".*": {
+                    "type": "string"
+                }
+            }
+        },
+        "demands": {
+            "description": "A set of filters to conditionally apply artifact pieces. Typically contains other 'requires' or 'see-also' or similar elements. The keys are platform expressions with identifiers assumed to refer to the host.",
+            "type":"object",
+            "patternProperties": {
+                ".*": {
+                    "type": "object",
+                    "properties": {
+                        "error": {
+                            "type": "string",
+                            "description": "An error message to print if this entry is evaluated."
+                        },
+                        "warning": {
+                            "type": "string",
+                            "description": "A warning message to print if this entry is evaluated."
+                        },
+                        "message": {
+                            "type":"string",
+                            "description": "A message to print if this entry is evaluated."
+                        },
+                        "apply": {
+                            "type": "object"
+                        },
+                        "see-also": {
+                            "description": "Suggested additional artifacts.",
+                            "$ref": "#/definitions/artifact-references"
+                        },
+                        "requires": {
+                            "description": "Artifacts that are required for this package to function.",
+                            "$ref": "#/definitions/artifact-references"
+                        },
+                        "settings": {
+                            "$ref": "#/definitions/settings"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "type": "object",
+    "allOf": [
+        {
+            "properties": {
+                "default-registry": {
+                    "$ref":"#/definitions/default-registry"
+                },
+                "registries": {
+                    "type":"array",
+                    "items": {
+                        "$ref":"#/definitions/array-registry"
+                    }
+                },
+                "error": {
+                    "type": "string",
+                    "description": "An error message to print if this entry is evaluated."
+                },
+                "warning": {
+                    "type": "string",
+                    "description": "A warning message to print if this entry is evaluated."
+                },
+                "message": {
+                    "type":"string",
+                    "description": "A message to print if this entry is evaluated."
+                },
+                "apply": {
+                    "type": "object",
+                    "description": "used when we want to insert/copy contents from the artifact into the target project when they aren't there"
+                },
+                "see-also": {
+                    "description": "Suggested additional artifacts.",
+                    "$ref": "#/definitions/artifact-references"
+                },
+                "requires": {
+                    "description": "Artifacts that are required for this package to function.",
+                    "$ref": "#/definitions/artifact-references"
+                },
+                "settings": {
+                    "$ref": "#/definitions/settings"
+                },
+                "demands": {
+                    "$ref": "#/definitions/demands"
+                }
+            },
+            "patternProperties": {
+                "^\\$": {}
+            },
+            "additionalProperties": false
+        }
+    ]
+}
