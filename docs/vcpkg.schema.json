@@ -2,447 +2,19 @@
   "$schema": "http://json-schema.org/draft-07/schema",
   "$id": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/master/docs/vcpkg.schema.json",
   "type": "object",
-  "definitions": {
-    "artifact-references": {
-      "description": "A key/value pair of artifact name to selected artifact version.",
-      "type": "object",
-      "minProperties": 1,
-      "patternProperties": {
-        ".*": {
-          "type": "string"
-        }
-      }
-    },
-    "artifact-registry": {
-      "description": "An artifact registry backed by a git repository.",
-      "properties": {
-        "kind": {
-          "type": "string",
-          "pattern": "artifact"
-        },
-        "name": {
-          "$ref": "#/definitions/identifier"
-        },
-        "location": {
-          "type": "string",
-          "description": "A URI to the location of the artifact registry; typically a git URI."
-        }
-      },
-      "required": [
-        "kind",
-        "name",
-        "location"
-      ]
-    },
-    "builtin-registry": {
-      "properties": {
-        "baseline": {
-          "type": "string",
-          "pattern": "[0-9a-f]{40}",
-          "description": "The SHA that will be checked out to find default versions for ports from this registry."
-        },
-        "kind": {
-          "type": "string",
-          "pattern": "builtin"
-        }
-      },
-      "required": [
-        "baseline",
-        "kind"
-      ]
-    },
-    "default-registry": {
-      "allOf": [
-        {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/builtin-registry"
-            },
-            {
-              "$ref": "#/definitions/git-registry"
-            },
-            {
-              "$ref": "#/definitions/filesystem-registry"
-            }
-          ]
-        },
-        {
-          "not": {
-            "$ref": "#/definitions/packages-list"
-          }
-        }
-      ]
-    },
-    "demands": {
-      "description": "A set of filters to conditionally apply artifact pieces. Typically contains other 'requires' or 'see-also' or similar elements. The keys are platform expressions with identifiers assumed to refer to the host.",
-      "type": "object",
-      "patternProperties": {
-        ".*": {
-          "type": "object",
-          "properties": {
-            "error": {
-              "type": "string",
-              "description": "An error message to print if this entry is evaluated."
-            },
-            "warning": {
-              "type": "string",
-              "description": "A warning message to print if this entry is evaluated."
-            },
-            "message": {
-              "type": "string",
-              "description": "A message to print if this entry is evaluated."
-            },
-            "apply": {
-              "type": "object"
-            },
-            "see-also": {
-              "description": "Suggested additional artifacts.",
-              "$ref": "#/definitions/artifact-references"
-            },
-            "requires": {
-              "description": "Artifacts that are required for this package to function.",
-              "$ref": "#/definitions/artifact-references"
-            },
-            "settings": {
-              "$ref": "#/definitions/settings"
-            }
-          }
-        }
-      }
-    },
-    "dependency": {
-      "description": "A dependency fetchable by Vcpkg.",
-      "oneOf": [
-        {
-          "$ref": "#/definitions/package-name"
-        },
-        {
-          "$ref": "#/definitions/dependency-object"
-        }
-      ]
-    },
-    "dependency-object": {
-      "description": "Expanded form of a dependency with explicit features and platform.",
-      "type": "object",
-      "properties": {
-        "name": {
-          "$ref": "#/definitions/package-name"
-        },
-        "features": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/identifier"
-          }
-        },
-        "host": {
-          "type": "boolean",
-          "default": false
-        },
-        "default-features": {
-          "type": "boolean",
-          "default": true
-        },
-        "platform": {
-          "$ref": "#/definitions/platform-expression"
-        },
-        "version>=": {
-          "description": "Minimum required version",
-          "type": "string",
-          "pattern": "^[^#]+(#\\d+)?$"
-        }
-      },
-      "patternProperties": {
-        "^\\$": {}
-      },
-      "required": [
-        "name"
-      ],
-      "additionalProperties": false
-    },
-    "description-field": {
-      "description": "A string or array of strings containing the description of a package or feature.",
-      "oneOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      ]
-    },
-    "feature": {
-      "description": "A package feature that can be activated by consumers.",
-      "type": "object",
-      "properties": {
-        "description": {
-          "$ref": "#/definitions/description-field"
-        },
-        "dependencies": {
-          "description": "Dependencies used by this feature.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/dependency"
-          }
-        },
-        "supports": {
-          "$ref": "#/definitions/platform-expression"
-        }
-      },
-      "patternProperties": {
-        "^\\$": {}
-      },
-      "required": [
-        "description"
-      ],
-      "additionalProperties": false
-    },
-    "filesystem-registry": {
-      "description": "A port registry backed by a git repo.",
-      "properties": {
-        "kind": {
-          "type": "string",
-          "pattern": "filesystem"
-        },
-        "path": {
-          "type": "string",
-          "description": "The location on the filesystem where the registry is rooted."
-        }
-      },
-      "required": [
-        "kind",
-        "path"
-      ]
-    },
-    "git-registry": {
-      "description": "A port registry backed by a git repo.",
-      "properties": {
-        "kind": {
-          "type": "string",
-          "pattern": "git"
-        },
-        "repository": {
-          "type": "string",
-          "description": "The URI or SSH entry to clone from. (as if by `git clone`)"
-        },
-        "baseline": {
-          "type": "string",
-          "pattern": "[0-9a-f]{40}",
-          "description": "The SHA that will be checked out to find default versions for ports from this registry."
-        },
-        "ref": {
-          "type": "string",
-          "description": "The ref to fetch when cloning this git registry."
-        }
-      },
-      "required": [
-        "kind",
-        "repository",
-        "baseline"
-      ]
-    },
-    "has-schemed-version": {
-      "type": "object",
-      "oneOf": [
-        {
-          "properties": {
-            "version-string": {
-              "description": "Text used to identify an arbitrary version",
-              "type": "string",
-              "pattern": "^[^#]+$"
-            }
-          },
-          "required": [
-            "version-string"
-          ]
-        },
-        {
-          "properties": {
-            "version": {
-              "description": "A relaxed version string (1.2.3.4...)",
-              "type": "string",
-              "pattern": "^\\d+(\\.\\d+)*(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
-            }
-          },
-          "required": [
-            "version"
-          ]
-        },
-        {
-          "properties": {
-            "version-semver": {
-              "description": "A semantic version string. See https://semver.org/",
-              "type": "string",
-              "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
-            }
-          },
-          "required": [
-            "version-semver"
-          ]
-        },
-        {
-          "properties": {
-            "version-date": {
-              "description": "A date version string (e.g. 2020-01-20)",
-              "type": "string",
-              "pattern": "^\\d{4}-\\d{2}-\\d{2}(\\.\\d+)*$"
-            }
-          },
-          "required": [
-            "version-date"
-          ]
-        }
-      ]
-    },
-    "identifier": {
-      "description": "Identifiers used for port and feature names.",
-      "allOf": [
-        {
-          "description": "Identifier are lowercase with digits and dashes.",
-          "type": "string",
-          "pattern": "[a-z0-9]+(-[a-z0-9]+)*"
-        },
-        {
-          "not": {
-            "description": "Identifiers must not be a Windows filesystem or vcpkg reserved name.",
-            "type": "string",
-            "pattern": "^(prn|aux|nul|con|lpt[1-9]|com[1-9]|core|default)$"
-          }
-        }
-      ]
-    },
-    "override": {
-      "description": "A version override.",
-      "type": "object",
-      "properties": {
-        "name": {
-          "$ref": "#/definitions/identifier"
-        },
-        "version": {
-          "$ref": "#/definitions/version-text"
-        },
-        "port-version": {
-          "$ref": "#/definitions/port-version"
-        }
-      },
-      "patternProperties": {
-        "^\\$": {}
-      },
-      "required": [
-        "name",
-        "version"
-      ]
-    },
-    "packages-list": {
-      "type": "object",
-      "description": "A list of port names which a port registry is used to fetch.",
-      "properties": {
-        "packages": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/identifier"
-          }
-        }
-      },
-      "required": [
-        "packages"
-      ]
-    },
-    "package-name": {
-      "description": "Name of a package.",
-      "allOf": [
-        {
-          "description": "Package name must be a dot-separated list of valid identifiers",
-          "type": "string",
-          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*(\\.[a-z0-9]+(-[a-z0-9]+)*)*$"
-        },
-        {
-          "not": {
-            "description": "Identifiers must not be a Windows filesystem or vcpkg reserved name.",
-            "type": "string",
-            "pattern": "(^|\\.)(prn|aux|nul|con|lpt[1-9]|com[1-9]|core|default)(\\.|$)"
-          }
-        }
-      ]
-    },
-    "platform-expression": {
-      "description": "A specification of a set of platforms. See https://github.com/microsoft/vcpkg/blob/master/docs/specifications/manifests.md#definitions.",
-      "type": "string"
-    },
-    "port-version": {
-      "description": "A non-negative integer indicating the port revision. If this field doesn't exist, it's assumed to be `0`.",
-      "type": "integer",
-      "minimum": 0,
-      "default": 0
-    },
-    "registry-array": {
-      "oneOf": [
-        {
-          "allOf": [
-            {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/builtin-registry"
-                },
-                {
-                  "$ref": "#/definitions/git-registry"
-                },
-                {
-                  "$ref": "#/definitions/filesystem-registry"
-                }
-              ]
-            },
-            {
-              "$ref": "#/definitions/packages-list"
-            }
-          ]
-        },
-        {
-          "$ref": "#/definitions/artifact-registry"
-        }
-      ]
-    },
-    "settings": {
-      "description": "A set of key/value pairs to sent in the environment when this node is evaluated.",
-      "type": "object"
-    },
-    "slash-identifier": {
-      "description": "Slash identifiers are used for artifact names.",
-      "allOf": [
-        {
-          "description": "Slash identifiers are lowercase with digits, dashes, and forward slashes.",
-          "type": "string",
-          "pattern": "[a-z0-9]+([/-][a-z0-9]+)*"
-        },
-        {
-          "not": {
-            "description": "Identifiers and parts delimited by slashes must not be a Windows filesystem or vcpkg reserved name.",
-            "type": "string",
-            "pattern": "(^|/)(prn|aux|nul|con|lpt[1-9]|com[1-9]|core|default)(/|$)"
-          }
-        }
-      ]
-    },
-    "version-text": {
-      "type": "string",
-      "pattern": "[^#]+"
-    }
-  },
   "allOf": [
     {
       "properties": {
         "name": {
           "description": "The name of the top-level package",
-          "$ref": "#/definitions/package-name"
+          "$ref": "vcpkg-schema-definitions.schema.json#/definitions/package-name"
         },
         "version-string": {},
         "version": {},
         "version-date": {},
         "version-semver": {},
         "port-version": {
-          "$ref": "#/definitions/port-version"
+          "$ref": "vcpkg-schema-definitions.schema.json#/definitions/port-version"
         },
         "maintainers": {
           "description": "An array of strings which contain the authors of a package",
@@ -481,7 +53,7 @@
           "type": "string"
         },
         "description": {
-          "$ref": "#/definitions/description-field"
+          "$ref": "vcpkg-schema-definitions.schema.json#/definitions/description-field"
         },
         "homepage": {
           "description": "A url which points to the homepage of a package.",
@@ -512,14 +84,14 @@
           "description": "Dependencies that are always required.",
           "type": "array",
           "items": {
-            "$ref": "#/definitions/dependency"
+            "$ref": "vcpkg-schema-definitions.schema.json#/definitions/dependency"
           }
         },
         "overrides": {
           "description": "Version overrides for dependencies.",
           "type": "array",
           "items": {
-            "$ref": "#/definitions/override"
+            "$ref": "vcpkg-schema-definitions.schema.json#/definitions/override"
           }
         },
         "features": {
@@ -527,7 +99,7 @@
           "type": "object",
           "patternProperties": {
             "": {
-              "$ref": "#/definitions/feature"
+              "$ref": "vcpkg-schema-definitions.schema.json#/definitions/feature"
             }
           }
         },
@@ -535,11 +107,11 @@
           "description": "Features enabled by default with the package.",
           "type": "array",
           "items": {
-            "$ref": "#/definitions/identifier"
+            "$ref": "vcpkg-schema-definitions.schema.json#/definitions/identifier"
           }
         },
         "supports": {
-          "$ref": "#/definitions/platform-expression"
+          "$ref": "vcpkg-schema-definitions.schema.json#/definitions/platform-expression"
         }
       },
       "patternProperties": {
@@ -551,7 +123,7 @@
       "additionalProperties": false
     },
     {
-      "$ref": "#/definitions/has-schemed-version"
+      "$ref": "vcpkg-schema-definitions.schema.json#/definitions/has-schemed-version"
     }
   ]
 }
