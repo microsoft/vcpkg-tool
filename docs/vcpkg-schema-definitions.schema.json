@@ -312,6 +312,38 @@
         }
       ]
     },
+    "maintainers": {
+      "description": "An array of strings which contain the authors of a package",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "object",
+          "patternProperties": {
+            ".*": {
+              "type": "object",
+              "properties": {
+                "email": {
+                  "type": "string",
+                  "description": "An email address to contact this contact."
+                },
+                "role": {
+                  "type": "string",
+                  "description": "An identifier indicating what kind of maintainer this person is."
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
     "override": {
       "description": "A version override.",
       "type": "object",

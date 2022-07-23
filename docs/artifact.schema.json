@@ -16,33 +16,7 @@
           "$ref": "vcpkg-schema-definitions.schema.json#/definitions/port-version"
         },
         "maintainers": {
-          "description": "An array of strings which contain the authors of a package",
-          "oneOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "object",
-              "patternProperties": {
-                ".*": {
-                  "type": "object",
-                  "properties": {
-                    "email": {
-                      "type": "string",
-                      "description": "An email address to contact this contact."
-                    },
-                    "role": {
-                      "type": "string",
-                      "description": "An identifier indicating what kind of maintainer this person is."
-                    }
-                  }
-                }
-              }
-            }
-          ]
+          "$ref": "vcpkg-schema-definitions.schema.json#/definitions/maintainers"
         },
         "summary": {
           "description": "A shorter description of the port or project.",
