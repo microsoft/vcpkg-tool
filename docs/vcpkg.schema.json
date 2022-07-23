@@ -522,13 +522,6 @@
             "$ref": "#/definitions/override"
           }
         },
-        "dev-dependencies": {
-          "description": "Dependencies only required for developers (testing and the like).",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/dependency"
-          }
-        },
         "features": {
           "description": "A map of features supported by the package",
           "type": "object",
