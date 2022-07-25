@@ -547,8 +547,9 @@ namespace vcpkg
     static constexpr StringLiteral OPTION_PROHIBIT_BACKCOMPAT_FEATURES = "x-prohibit-backcompat-features";
     static constexpr StringLiteral OPTION_ENFORCE_PORT_CHECKS = "enforce-port-checks";
     static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
+    static constexpr StringLiteral OPTION_NO_PRINT_USAGE = "no-print-usage";
 
-    static constexpr std::array<CommandSwitch, 17> INSTALL_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 18> INSTALL_SWITCHES = {{
         {OPTION_DRY_RUN, "Do not actually build or install"},
         {OPTION_USE_HEAD_VERSION,
          "Install the libraries on the command line using the latest upstream sources (classic mode)"},
@@ -571,6 +572,7 @@ namespace vcpkg
          "Fail install if a port has detected problems or attempts to use a deprecated feature"},
         {OPTION_PROHIBIT_BACKCOMPAT_FEATURES, ""},
         {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
+        {OPTION_NO_PRINT_USAGE, "Don't print cmake usage information after install."}
     }};
 
     static constexpr std::array<CommandSetting, 2> INSTALL_SETTINGS = {{
@@ -860,6 +862,7 @@ namespace vcpkg
         const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
+        const bool no_print_usage = Util::Sets::contains(options.switches, OPTION_NO_PRINT_USAGE);
 
         LockGuardPtr<Metrics>(g_metrics)->track_property("install_manifest_mode", paths.manifest_mode_enabled());
 
@@ -939,6 +942,7 @@ namespace vcpkg
             PurgeDecompressFailure::NO,
             Util::Enum::to_enum<Editable>(is_editable),
             prohibit_backcompat_features ? BackcompatFeatures::PROHIBIT : BackcompatFeatures::ALLOW,
+            Util::Enum::to_enum<PrintUsage>(!no_print_usage),
         };
 
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
@@ -1199,14 +1203,17 @@ namespace vcpkg
             fs.write_contents(it_xunit->second, xwriter.build_xml(default_triplet), VCPKG_LINE_INFO);
         }
 
-        std::set<std::string> printed_usages;
-        for (auto&& result : summary.results)
+        if (install_plan_options.print_usage == PrintUsage::YES)
         {
-            if (!result.is_user_requested_install()) continue;
-            auto bpgh = result.get_binary_paragraph();
-            assert(bpgh);
-            if (!bpgh) continue;
-            Install::print_usage_information(*bpgh, printed_usages, fs, paths.installed());
+            std::set<std::string> printed_usages;
+            for (auto&& result : summary.results)
+            {
+                if (!result.is_user_requested_install()) continue;
+                auto bpgh = result.get_binary_paragraph();
+                assert(bpgh);
+                if (!bpgh) continue;
+                Install::print_usage_information(*bpgh, printed_usages, fs, paths.installed());
+            }
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
