@@ -1162,7 +1162,6 @@ namespace vcpkg
                     (msg::value, msg::path),
                     "'{value}' is either a tool name or a package name.",
                     "'{value}' failed while extracting {path}.");
-    DECLARE_MESSAGE(PackageNotFoundDependencyGraph, (), "", "Package not found in dependency graph.");
     DECLARE_MESSAGE(PackageRootDir, (), "", "(Experimental) Specify the packages root directory.");
     DECLARE_MESSAGE(PackingVendorFailed,
                     (msg::vendor),

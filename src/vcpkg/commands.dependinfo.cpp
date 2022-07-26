@@ -234,7 +234,11 @@ namespace vcpkg::Commands::DependInfo
                                           std::map<std::string, PackageDependInfo>& dependencies_map)
         {
             auto iter = dependencies_map.find(package);
-            Checks::msg_check_exit(VCPKG_LINE_INFO, iter != dependencies_map.end(), msgPackageNotFoundDependencyGraph);
+            if (iter == dependencies_map.end())
+            {
+                Debug::println("Not found in dependency graph: ", package);
+                Checks::unreachable(VCPKG_LINE_INFO);
+            }
 
             PackageDependInfo& info = iter->second;
 

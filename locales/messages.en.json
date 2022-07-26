@@ -260,7 +260,6 @@
   "OptionMustBeInteger": "Value of --{option} must be an integer.",
   "OriginalBinParagraphHeader": "\nOriginal Binary Paragraph",
   "PackageFailedtWhileExtracting": "'{value}' failed while extracting {path}.",
-  "PackageNotFoundDependencyGraph": "Package not found in dependency graph.",
   "PackageRootDir": "(Experimental) Specify the packages root directory.",
   "PackingVendorFailed": "Packing {vendor} failed. Use --debug for more information.",
   "ParseControlErrorInfoInvalidFields": "The following fields were not expected:",

@@ -430,7 +430,6 @@
   "OriginalBinParagraphHeader": "\nOriginal Binary Paragraph",
   "PackageFailedtWhileExtracting": "'{value}' failed while extracting {path}.",
   "_PackageFailedtWhileExtracting.comment": "'{value}' is either a tool name or a package name. An example of {path} is /foo/bar.",
-  "PackageNotFoundDependencyGraph": "Package not found in dependency graph.",
   "PackageRootDir": "(Experimental) Specify the packages root directory.",
   "PackingVendorFailed": "Packing {vendor} failed. Use --debug for more information.",
   "_PackingVendorFailed.comment": "An example of {vendor} is Azure.",

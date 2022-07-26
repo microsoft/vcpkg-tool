@@ -659,7 +659,6 @@ namespace vcpkg
     REGISTER_MESSAGE(OptionMustBeInteger);
     REGISTER_MESSAGE(OriginalBinParagraphHeader);
     REGISTER_MESSAGE(PackageFailedtWhileExtracting);
-    REGISTER_MESSAGE(PackageNotFoundDependencyGraph);
     REGISTER_MESSAGE(PackageRootDir);
     REGISTER_MESSAGE(PackingVendorFailed);
     REGISTER_MESSAGE(ParseControlErrorInfoInvalidFields);
