@@ -341,8 +341,9 @@ namespace vcpkg::Commands::DependInfo
                     return const_cast<const SourceControlFile*>(scfl.source_control_file.get());
                 });
 
-            const std::string graph_as_string = create_graph_as_string(options.switches, depend_info);
-            msg::write_unlocalized_text_to_stdout(Color::none, graph_as_string + '\n');
+            std::string graph_as_string = create_graph_as_string(options.switches, depend_info);
+            graph_as_string.push_back('\n');
+            msg::write_unlocalized_text_to_stdout(Color::none, graph_as_string);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
