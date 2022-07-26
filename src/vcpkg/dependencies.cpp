@@ -1090,13 +1090,14 @@ namespace vcpkg
             for (auto&& dep : deps)
             {
                 auto p_installed = graph->get(dep).m_installed.get();
-
-                Checks::msg_check_maybe_upgrade(
-                    VCPKG_LINE_INFO,
-                    p_installed != nullptr,
-                    msg::format(msgCorruptedDatabase)
-                        .append_raw("\n")
-                        .append(msgMissingDependency, msg::spec = ipv.spec(), msg::package_name = dep));
+                if (p_installed == nullptr)
+                {
+                    Checks::msg_exit_maybe_upgrade(
+                        VCPKG_LINE_INFO,
+                        msg::format(msgCorruptedDatabase)
+                            .append_raw("\n")
+                            .append(msgMissingDependency, msg::spec = ipv.spec(), msg::package_name = dep));
+                }
 
                 p_installed->remove_edges.emplace(ipv.spec());
             }
