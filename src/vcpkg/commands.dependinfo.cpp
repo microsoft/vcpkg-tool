@@ -124,7 +124,7 @@ namespace vcpkg::Commands::DependInfo
                 }
                 catch (std::exception&)
                 {
-                    Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidCommandArgMaxDepth);
+                    Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgOptionMustBeInteger, msg::option = "max-depth");
                 }
             }
             // No --max-depth set, default to no limit.
