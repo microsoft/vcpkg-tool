@@ -91,7 +91,7 @@ namespace vcpkg
     {
         if (option_field && option_field != new_setting)
         {
-            msg::println_error(msgConflictingValuesForOption, msg::value = option_name);
+            msg::println_error(msgConflictingValuesForOption, msg::option = option_name);
             LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error conflicting switches");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);

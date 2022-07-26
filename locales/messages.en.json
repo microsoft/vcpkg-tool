@@ -80,7 +80,7 @@
   "CmakeTargetsExcluded": "note: {count} additional targets are not displayed.",
   "CommandFailed": "command:\n{command_line}\nfailed with the following results:",
   "CompressFolderFailed": "Failed to compress folder \"{path}\":",
-  "ConflictingValuesForOption": "conflicting values specified for '--{value}'.",
+  "ConflictingValuesForOption": "conflicting values specified for '--{option}'.",
   "CopyrightIsDir": "`{path}` being a directory is deprecated.",
   "CouldNotDeduceNugetIdAndVersion": "Could not deduce nuget id and version from filename: {path}",
   "CreatedNuGetPackage": "Created nupkg: \"{path}\"",
