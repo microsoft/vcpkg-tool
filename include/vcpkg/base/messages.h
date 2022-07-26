@@ -1099,11 +1099,6 @@ namespace vcpkg
                     "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
                     "The message named {value} ends with a newline which should be added by formatting "
                     "rather than by localization.");
-    DECLARE_MESSAGE(MismatchedBinaryParagraphs,
-                    (msg::url),
-                    "A comparison of the original binary paragraph and serialized binary paragraph is expected.",
-                    "[sanity check] The serialized binary paragraph was different from the original binary "
-                    "paragraph.\nPlease open an issue at {url}, with the following output:");
     DECLARE_MESSAGE(Missing7zHeader, (), "", "Unable to find 7z header.");
     DECLARE_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
     DECLARE_MESSAGE(MissmatchedBinParagraphs,

@@ -391,8 +391,6 @@
   "_LocalizedMessageMustNotContainIndents.comment": "{value} is is a localized message name like LocalizedMessageMustNotContainIndents. The 'LocalizedString::append_indent' part is locale-invariant.",
   "LocalizedMessageMustNotEndWithNewline": "The message named {value} ends with a newline which should be added by formatting rather than by localization.",
   "_LocalizedMessageMustNotEndWithNewline.comment": "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
-  "MismatchedBinaryParagraphs": "[sanity check] The serialized binary paragraph was different from the original binary paragraph.\nPlease open an issue at {url}, with the following output:",
-  "_MismatchedBinaryParagraphs.comment": "A comparison of the original binary paragraph and serialized binary paragraph is expected. An example of {url} is https://github.com/microsoft/vcpkg.",
   "Missing7zHeader": "Unable to find 7z header.",
   "MissingExtension": "Missing '{extension}' extension.",
   "_MissingExtension.comment": "An example of {extension} is .exe.",

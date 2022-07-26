@@ -634,7 +634,6 @@ namespace vcpkg
     REGISTER_MESSAGE(LoadingOverlayTriplet);
     REGISTER_MESSAGE(LocalizedMessageMustNotContainIndents);
     REGISTER_MESSAGE(LocalizedMessageMustNotEndWithNewline);
-    REGISTER_MESSAGE(MismatchedBinaryParagraphs);
     REGISTER_MESSAGE(Missing7zHeader);
     REGISTER_MESSAGE(MissingExtension);
     REGISTER_MESSAGE(MissmatchedBinParagraphs);
