@@ -126,7 +126,7 @@
   "ExpectedFailOrSkip": "expected 'fail', 'skip', or 'pass' here",
   "ExpectedPortName": "expected a port name here",
   "ExpectedTripletName": "expected a triplet name here",
-  "ExpectedValueForOption": "expected value after '{value}'.",
+  "ExpectedValueForOption": "expected value after --{option}.",
   "ExtendedDocumentationAtUrl": "Extended documentation available at '{url}'.",
   "FailedToExtract": "Failed to extract \"{path}\":",
   "FailedToParseCMakeConsoleOut": "Failed to parse CMake console output to locate block start/end markers.",

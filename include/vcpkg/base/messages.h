@@ -786,10 +786,7 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' here");
     DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
-    DECLARE_MESSAGE(ExpectedValueForOption,
-                    (msg::value),
-                    "'{value}' is a command option.",
-                    "expected value after '{value}'.");
+    DECLARE_MESSAGE(ExpectedValueForOption, (msg::option), "", "expected value after --{option}.");
     DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
     DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":");
     DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,

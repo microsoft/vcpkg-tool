@@ -105,7 +105,7 @@ namespace vcpkg
     {
         if (new_value.size() == 0)
         {
-            msg::println_error(msgExpectedValueForOption, msg::value = option_name);
+            msg::println_error(msgExpectedValueForOption, msg::option = option_name);
             LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option name");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -120,7 +120,7 @@ namespace vcpkg
     {
         if (new_value.size() == 0)
         {
-            msg::println_error(msgExpectedValueForOption, msg::value = option_name);
+            msg::println_error(msgExpectedValueForOption, msg::option = option_name);
             LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option name");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -187,7 +187,7 @@ namespace vcpkg
                     return TryParseArgumentResult::FoundAndConsumedLookahead;
                 }
 
-                msg::println_error(msgExpectedValueForOption, msg::value = option);
+                msg::println_error(msgExpectedValueForOption, msg::option = option);
                 LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option name");
                 print_usage();
                 Checks::exit_fail(VCPKG_LINE_INFO);
