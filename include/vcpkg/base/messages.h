@@ -1180,7 +1180,7 @@ namespace vcpkg
                     "'{value}' failed while extracting {path}.");
     DECLARE_MESSAGE(PackageRootDir, (), "", "(Experimental) Specify the packages root directory.");
     DECLARE_MESSAGE(PackagesToInstall, (), "", "The following packages will be built and installed:");
-    DECLARE_MESSAGE(PackagesToInstallDirectly, (), "", "The following packages will be directlt installed:");
+    DECLARE_MESSAGE(PackagesToInstallDirectly, (), "", "The following packages will be directly installed:");
     DECLARE_MESSAGE(PackagesToModify, (), "", "Additional packages (*) will be modified to comeplete this operation.");
     DECLARE_MESSAGE(PackagesToReBuild, (), "", "The following packages will be rebuilt:");
     DECLARE_MESSAGE(
@@ -1359,9 +1359,9 @@ namespace vcpkg
                     "'{value}' is the name of a port dependency.",
                     "- dependency {value} is not supported.");
     DECLARE_MESSAGE(UnsupportedPortFeature,
-                    (msg::package_name, msg::value, msg::supports_expression),
-                    "'{value}' is the port feature.",
-                    "{package_name}[{value}] is only supported on '{supports_expression}'");
+                    (msg::spec, msg::supports_expression),
+                    "",
+                    "{spec} is only supported on '{supports_expression}'");
     DECLARE_MESSAGE(UnsupportedShortOptions,
                     (msg::value),
                     "'{value}' is the short option given",

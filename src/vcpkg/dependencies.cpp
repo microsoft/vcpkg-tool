@@ -828,8 +828,7 @@ namespace vcpkg
                         {
                             auto localized_msg =
                                 msg::format(msgUnsupportedPortFeature,
-                                            msg::package_name = spec.port(),
-                                            msg::value = spec.feature(),
+                                            msg::spec = spec,
                                             msg::supports_expression = to_string(*supports_expression.get()));
 
                             if (unsupported_port_action == UnsupportedPortAction::Error)
@@ -838,7 +837,9 @@ namespace vcpkg
                             }
                             else
                             {
-                                m_warnings.push_back("Warning: " + localized_msg.extract_data());
+                                m_warnings.push_back(msg::format(msg::msgWarningMessage)
+                                                         .append(std::move(localized_msg))
+                                                         .extract_data());
                             }
                         }
                     }
@@ -1181,18 +1182,20 @@ namespace vcpkg
 
         if (!excluded.empty())
         {
-            msg::println(msg::format(msgExcludedPackages).append_raw("\n" + actions_to_output_string(excluded)));
+            msg::println(
+                msg::format(msgExcludedPackages).append_raw("\n").append_raw(actions_to_output_string(excluded)));
         }
 
         if (!already_installed_plans.empty())
         {
-            msg::println(
-                msg::format(msgInstalledPackages).append_raw("\n" + actions_to_output_string(already_installed_plans)));
+            msg::println(msg::format(msgInstalledPackages)
+                             .append_raw("\n")
+                             .append_raw(actions_to_output_string(already_installed_plans)));
         }
 
         if (!remove_specs.empty())
         {
-            auto message = msg::format(msgPackagesToRemove).append_raw("\n");
+            auto message = msg::format(msgPackagesToRemove);
             for (auto&& spec : remove_specs)
             {
                 message.append_raw("\n" + to_output_string(RequestType::USER_REQUESTED, spec.to_string()));
@@ -1202,21 +1205,27 @@ namespace vcpkg
 
         if (!rebuilt_plans.empty())
         {
-            msg::println(msg::format(msgPackagesToReBuild).append_raw("\n" + actions_to_output_string(rebuilt_plans)));
+            msg::println(
+                msg::format(msgPackagesToReBuild).append_raw("\n").append_raw(actions_to_output_string(rebuilt_plans)));
         }
 
         if (!new_plans.empty())
         {
-            msg::println(msg::format(msgPackagesToInstall).append_raw("\n" + actions_to_output_string(new_plans)));
+            msg::println(
+                msg::format(msgPackagesToInstall).append_raw("\n").append_raw(actions_to_output_string(new_plans)));
         }
 
         if (!only_install_plans.empty())
         {
             msg::println(msg::format(msgPackagesToInstallDirectly)
-                             .append_raw("\n" + actions_to_output_string(only_install_plans)));
+                             .append_raw("\n")
+                             .append_raw(actions_to_output_string(only_install_plans)));
         }
 
-        if (has_non_user_requested_packages) msg::println(msgPackagesToModify);
+        if (has_non_user_requested_packages)
+        {
+            msg::println(msgPackagesToModify);
+        }
 
         bool have_removals = !remove_specs.empty() || !rebuilt_plans.empty();
         if (have_removals && !is_recursive)
