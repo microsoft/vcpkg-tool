@@ -363,7 +363,7 @@ export class Session {
         const metadata = await MetadataFile.parseMetadata(folder.join('artifact.yaml'), this);
         result.push({
           folder,
-          id: metadata.info.id,
+          id: metadata.id,
           artifact: await new InstalledArtifact(this, metadata).init(this)
         });
       } catch {

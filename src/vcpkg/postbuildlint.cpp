@@ -342,10 +342,14 @@ namespace vcpkg::PostBuildLint
     {
         const auto packages_dir = paths.packages() / spec.dir();
         const auto copyright_file = packages_dir / "share" / spec.name() / "copyright";
-        if (fs.exists(copyright_file, IgnoreErrors{}))
+
+        switch (fs.status(copyright_file, IgnoreErrors{}))
         {
-            return LintStatus::SUCCESS;
+            case FileType::regular: return LintStatus::SUCCESS; break;
+            case FileType::directory: msg::println_warning(msgCopyrightIsDir, msg::path = "copyright"); break;
+            default: break;
         }
+
         const auto current_buildtrees_dir = paths.build_dir(spec);
         const auto current_buildtrees_dir_src = current_buildtrees_dir / "src";
 

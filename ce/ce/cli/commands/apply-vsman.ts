@@ -67,15 +67,16 @@ export class ApplyVsManCommand extends Command {
     }
 
     const outputAmf = await MetadataFile.parseConfiguration(inputPath, outputContent, session);
-    if (!outputAmf.isValid) {
-      const errors = outputAmf.validationErrors.join('\n');
-      session.channels.warning(i`After transformation, ${inputPath} did not result in a valid AMF; skipping:\n${outputContent}\n${errors}`);
+    const errors = Array.from(outputAmf.validate(), (error) => outputAmf.formatVMessage(error));
+    if (errors.length !== 0) {
+      const errorMsg = errors.join('\n');
+      session.channels.warning(i`After transformation, ${inputPath} did not result in a valid AMF; skipping:\n${outputContent}\n${errorMsg}`);
       return 0;
     }
 
-    const outputId = outputAmf.info.id;
+    const outputId = outputAmf.id;
     const outputIdLast = outputId.slice(outputId.lastIndexOf('/'));
-    const outputVersion = outputAmf.info.version;
+    const outputVersion = outputAmf.version;
     const outputRelativePath = `${outputId}/${outputIdLast}-${outputVersion}.yaml`;
     const outputFullPath = repoRoot.join(outputRelativePath);
     let doWrite = true;

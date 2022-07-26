@@ -122,14 +122,13 @@ namespace vcpkg::Commands
         if (!dry_run && configuration.source == ConfigurationSource::VcpkgConfigurationFile)
         {
             paths.get_filesystem().write_contents(configuration.directory / "vcpkg-configuration.json",
-                                                  Json::stringify(configuration.config.serialize(), {}),
+                                                  Json::stringify(configuration.config.serialize()),
                                                   VCPKG_LINE_INFO);
         }
 
         if (!dry_run && has_manifest)
         {
-            paths.get_filesystem().write_contents(
-                manifest.path, Json::stringify(manifest.manifest, {}), VCPKG_LINE_INFO);
+            paths.get_filesystem().write_contents(manifest.path, Json::stringify(manifest.manifest), VCPKG_LINE_INFO);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

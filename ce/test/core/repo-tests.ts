@@ -54,13 +54,10 @@ function randomWords(from: Array<string>, min = 3, max = 6) {
 }
 
 class Template {
-  info = {
-    id: randomWords(idwords).join('/'),
-    version: rndSemver(),
-    summary: sentence(),
-    description: paragraph(),
-  };
-
+  id = randomWords(idwords).join('/');
+  version = rndSemver();
+  summary = sentence();
+  description = paragraph();
   contacts = randomContacts();
   install = {
     unzip: `https://${randomHost()}/${sentence().replace(/ /g, '/')}.zip`,
@@ -86,8 +83,8 @@ describe('StandardRegistry Tests', () => {
         const p = {
           ...t,
         };
-        p.info.version = rndSemver();
-        const target = repoFolder.join(`${p.info.id}-${p.info.version}.yaml`);
+        p.version = rndSemver();
+        const target = repoFolder.join(`${p.id}-${p.version}.yaml`);
         await target.writeFile(Buffer.from(serialize(p), 'utf8'));
       }
     }
