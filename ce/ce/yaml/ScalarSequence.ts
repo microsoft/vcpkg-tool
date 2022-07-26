@@ -3,7 +3,7 @@
 
 import { isScalar, isSeq, Scalar, YAMLSeq } from 'yaml';
 import { ErrorKind } from '../interfaces/error-kind';
-import { ValidationError } from '../interfaces/validation-error';
+import { ValidationMessage } from '../interfaces/validation-message';
 import { Primitive, Yaml, YAMLScalar, YAMLSequence } from './yaml-types';
 
 /**
@@ -120,7 +120,7 @@ export /** @internal */ class ScalarSequence<TElement extends Primitive> extends
     this.dispose(true);
   }
 
-  override *validate(): Iterable<ValidationError> {
+  override *validate(): Iterable<ValidationMessage> {
     if (this.node && !isSeq(this.node) && !isScalar(this.node)) {
       yield {
         message: `'${this.fullName}' is not an sequence or primitive value`,
