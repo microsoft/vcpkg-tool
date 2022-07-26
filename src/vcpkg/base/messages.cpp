@@ -591,7 +591,6 @@ namespace vcpkg
     REGISTER_MESSAGE(InstallWithSystemManagerMono);
     REGISTER_MESSAGE(InstallWithSystemManagerPkg);
     REGISTER_MESSAGE(IntegrationFailed);
-    REGISTER_MESSAGE(InvalidActionsInstall);
     REGISTER_MESSAGE(InvalidArgument);
     REGISTER_MESSAGE(InvalidArgumentRequiresAbsolutePath);
     REGISTER_MESSAGE(InvalidArgumentRequiresBaseUrl);

@@ -1,4 +1,5 @@
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
@@ -318,7 +319,11 @@ namespace vcpkg::Commands::DependInfo
             msg::write_unlocalized_text_to_stdout(Color::warning, warning + '\n');
         }
 
-        Checks::msg_check_exit(VCPKG_LINE_INFO, action_plan.remove_actions.empty(), msgInvalidActionsInstall);
+        if (!action_plan.remove_actions.empty())
+        {
+            Debug::println("Only install actions should exist in the plan");
+            Checks::unreachable(VCPKG_LINE_INFO);
+        }
 
         std::vector<const InstallPlanAction*> install_actions =
             Util::fmap(action_plan.already_installed, [&](const auto& action) { return &action; });

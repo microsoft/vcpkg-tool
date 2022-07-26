@@ -934,7 +934,6 @@ namespace vcpkg
                     "",
                     "You may be able to install this tool via your system package manager ({command_line}).");
     DECLARE_MESSAGE(IntegrationFailed, (), "", "Integration was not applied.");
-    DECLARE_MESSAGE(InvalidActionsInstall, (), "", "Only install actions should exist in the plan.");
     DECLARE_MESSAGE(InvalidArgument, (), "", "invalid argument");
     DECLARE_MESSAGE(
         InvalidArgumentRequiresAbsolutePath,
