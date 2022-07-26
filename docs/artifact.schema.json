@@ -4,36 +4,20 @@
   "allOf": [
     {
       "properties": {
-        "name": {
+        "id": {
           "description": "The name of the top-level package",
-          "$ref": "vcpkg-schema-definitions.schema.json#/definitions/package-name"
+          "$ref": "vcpkg-schema-definitions.schema.json#/definitions/slash-identifier"
+        },
+        "info": {
+          "description": "Previous version of artifacts way of naming some properties; deprecated in new artifacts.",
+          "$ref": "vcpkg-schema-definitions.schema.json#/definitions/info-block"
         },
         "version": {},
-        "port-version": {
-          "$ref": "vcpkg-schema-definitions.schema.json#/definitions/port-version"
-        },
-        "maintainers": {
-          "$ref": "vcpkg-schema-definitions.schema.json#/definitions/maintainers"
+        "contacts": {
+          "$ref": "vcpkg-schema-definitions.schema.json#/definitions/contacts"
         },
         "summary": {
-          "description": "A shorter description of the port or project.",
-          "type": "string"
-        },
-        "description": {
-          "$ref": "vcpkg-schema-definitions.schema.json#/definitions/description-field"
-        },
-        "homepage": {
-          "description": "A url which points to the homepage of a package.",
-          "type": "string",
-          "format": "uri"
-        },
-        "documentation": {
-          "description": "A url which points to the documentation of a package.",
-          "type": "string",
-          "format": "uri"
-        },
-        "license": {
-          "description": "An SPDX license expression at version 3.9.",
+          "description": "A shorter description of the artifact.",
           "type": "string"
         },
         "registries": {

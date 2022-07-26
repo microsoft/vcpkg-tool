@@ -50,6 +50,21 @@
         "kind"
       ]
     },
+    "contact": {
+      "type": "object",
+      "properties": {
+        "name": {"type":"string"},
+        "role": {"type":"string"}
+      },
+      "required": ["name", "role"],
+      "additionalProperties": false
+    },
+    "contacts": {
+      "type":"object",
+      "patternProperties": {
+        "": { "$ref": "#/definitions/contact" }
+      }
+    },
     "default-registry": {
       "allOf": [
         {
@@ -214,6 +229,36 @@
         "kind",
         "path"
       ]
+    },
+    "info-block": {
+      "properties": {
+        "version": {
+          "description": "A semantic version string. See https://semver.org/",
+          "type": "string",
+          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+        },
+        "id": {
+          "$ref": "#/definitions/slash-identifier"
+        },
+        "summary": {
+          "description": "A shorter description of the artifact.",
+          "type":"string"
+        },
+        "priority": {
+          "type":"integer",
+          "minimum": 0,
+          "default": 0
+        },
+        "description": {
+          "type":"string"
+        },
+        "options": {
+          "$ref": "#/definitions/string-array",
+          "default": []
+        }
+      },
+      "additionalProperties": false,
+      "required": ["version", "id"]
     },
     "git-registry": {
       "description": "A port registry backed by a git repo.",
@@ -455,6 +500,12 @@
           }
         }
       ]
+    },
+    "string-array": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     },
     "version-text": {
       "type": "string",
