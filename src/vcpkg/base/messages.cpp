@@ -532,7 +532,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ExpectedValueForOption);
     REGISTER_MESSAGE(ExtendedDocumentationAtUrl);
     REGISTER_MESSAGE(FailedToExtract);
-    REGISTER_MESSAGE(FailedToParseBinParagraph);
+    REGISTER_MESSAGE(FailedToParseSerializedBinParagraph);
     REGISTER_MESSAGE(FailedToParseCMakeConsoleOut);
     REGISTER_MESSAGE(FailedToProvisionCe);
     REGISTER_MESSAGE(FailedToRunToolToDetermineVersion);
