@@ -10,6 +10,7 @@ import { Uri } from '../../util/uri';
 import { Command } from '../command';
 import { cli } from '../constants';
 import { error, log, writeException } from '../styling';
+import { Normalize } from '../switches/normalize';
 import { Project } from '../switches/project';
 import { Registry as RegSwitch } from '../switches/registry';
 import { WhatIf } from '../switches/whatIf';
@@ -19,6 +20,7 @@ export class RegenerateCommand extends Command {
   project = new Project(this);
   readonly aliases = ['regen'];
   readonly regSwitch = new RegSwitch(this, { required: true });
+  readonly normalize = new Normalize(this);
   seeAlso = [];
   argumentsHelp = [];
 
@@ -57,7 +59,7 @@ export class RegenerateCommand extends Command {
             return false;
           }
           log(i`Regenerating index for ${registry.location.formatted}`);
-          await registry.regenerate();
+          await registry.regenerate(!!this.normalize);
           if (registry.count) {
             await registry.save();
             log(i`Regeneration complete. Index contains ${registry.count} metadata files`);

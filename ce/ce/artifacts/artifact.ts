@@ -27,7 +27,7 @@ export type Selection = [Artifact, ID, VersionRange]
 
 export class ArtifactMap extends Map<UID, Selection>{
   get artifacts() {
-    return Array.from([...linq.values(this).select(([artifact, id, range]) => artifact)].sort((a, b) => (b.metadata.info.priority || 0) - (a.metadata.info.priority || 0)));
+    return Array.from([...linq.values(this).select(([artifact, id, range]) => artifact)].sort((a, b) => b.metadata.priority - a.metadata.priority));
   }
 }
 
@@ -99,7 +99,7 @@ export class Artifact extends ArtifactBase {
   }
 
   get id() {
-    return this.metadata.info.id;
+    return this.metadata.id;
   }
 
   get reference() {
@@ -107,7 +107,7 @@ export class Artifact extends ArtifactBase {
   }
 
   get version() {
-    return this.metadata.info.version;
+    return this.metadata.version;
   }
 
   get isInstalled() {
@@ -181,10 +181,6 @@ export class Artifact extends ArtifactBase {
     }
   }
 
-  get name() {
-    return `${this.metadata.info.id.replace(/[^\w]+/g, '.')}-${this.metadata.info.version}`;
-  }
-
   async writeManifest() {
     await this.targetLocation.createDirectory();
     await this.metadata.save(this.targetLocation.join('artifact.yaml'));
@@ -235,7 +231,7 @@ export class Artifact extends ArtifactBase {
     }
 
     // if espressif install
-    if (this.metadata.info.flags.has('espidf')) {
+    if (this.metadata.espidf) {
       // check for some file that espressif installs to see if it's installed.
       if (!await this.targetLocation.exists('.espressif')) {
         await installEspIdf(this.session, events, this.targetLocation);

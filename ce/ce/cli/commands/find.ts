@@ -57,9 +57,9 @@ export class FindCommand extends Command {
           artifacts = [artifacts[0]];
         }
         for (const result of artifacts) {
-          if (!result.metadata.info.dependencyOnly) {
+          if (!result.metadata.dependencyOnly) {
             const name = artifactIdentity(result.registryId, id, result.shortName);
-            table.push(name, result.metadata.info.version, result.metadata.info.summary || '');
+            table.push(name, result.metadata.version, result.metadata.summary || '');
           }
         }
       }
