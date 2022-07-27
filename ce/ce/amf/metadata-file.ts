@@ -206,7 +206,7 @@ export class MetadataFile extends BaseMap implements Profile {
   override *validate(): Iterable<ValidationMessage> {
     yield* super.validate();
     const hasInfo = this.document.has('info');
-    const allowedChildren = ['contacts', 'registries', 'global', 'demands', 'apply', 'exports', 'requires', 'install', 'seeAlso', 'unless'];
+    const allowedChildren = ['contacts', 'registries', 'global', 'demands', 'exports', 'requires', 'install', 'seeAlso'];
 
     if (hasInfo) {
       // 2022-06-17 and earlier used a separate 'info' block for these fields

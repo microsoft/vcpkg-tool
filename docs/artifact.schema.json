@@ -39,10 +39,6 @@
       "type": "string",
       "description": "A message to print if this entry is evaluated."
     },
-    "apply": {
-      "type": "object",
-      "description": "used when we want to insert/copy contents from the artifact into the target project when they aren't there"
-    },
     "see-also": {
       "description": "Suggested additional artifacts.",
       "$ref": "vcpkg-schema-definitions.schema.json#/definitions/artifact-references"
