@@ -1438,4 +1438,7 @@ namespace vcpkg
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
     DECLARE_MESSAGE(OptionRequiresJsonSwitch, (msg::option), "", "Option --{option} requires --x-json switch.");
+    DECLARE_MESSAGE(VersionTableHeader, (), "", "Version");
+    DECLARE_MESSAGE(DateTableHeader, (), "", "Date");
+    DECLARE_MESSAGE(VcpkgCommitTableHeader, (), "", "VCPKG Commit");
 }

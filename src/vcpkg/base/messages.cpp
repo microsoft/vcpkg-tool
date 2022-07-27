@@ -745,4 +745,7 @@ namespace vcpkg
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
     REGISTER_MESSAGE(OptionRequiresJsonSwitch);
+    REGISTER_MESSAGE(VersionTableHeader);
+    REGISTER_MESSAGE(DateTableHeader);
+    REGISTER_MESSAGE(VcpkgCommitTableHeader);
 }
