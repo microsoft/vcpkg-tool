@@ -127,7 +127,7 @@
   "ExpectedPortName": "здесь ожидается имя порта",
   "ExpectedTripletName": "здесь ожидается имя триплета",
   "ExpectedValueForOption": "ожидаемое значение после \"{value}\".",
-  "ExtendedDocumentationAtUrl": "Extended documentation available at '{url}'.",
+  "ExtendedDocumentationAtUrl": "Расширенная документация доступна по адресу '{url}'.",
   "FailedToExtract": "Сбой извлечения \" {path}\":",
   "FailedToParseBinParagraph": "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at https://github.com/microsoft/vcpkg, with the following output:\n{error_msg}\nSerialized Binary Paragraph:",
   "FailedToParseCMakeConsoleOut": "Сбой анализа выходных данных консоли CMake для поиска маркеров начала или конца блока.",

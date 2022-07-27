@@ -127,7 +127,7 @@
   "ExpectedPortName": "se esperaba un nombre de puerto aquí",
   "ExpectedTripletName": "se esperaba un nombre de trillizo aquí",
   "ExpectedValueForOption": "se esperaba un valor después de '{value}'.",
-  "ExtendedDocumentationAtUrl": "Extended documentation available at '{url}'.",
+  "ExtendedDocumentationAtUrl": "Documentación ampliada disponible en \"{url}\".",
   "FailedToExtract": "No se pudieron extraer \"{path}\":",
   "FailedToParseBinParagraph": "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at https://github.com/microsoft/vcpkg, with the following output:\n{error_msg}\nSerialized Binary Paragraph:",
   "FailedToParseCMakeConsoleOut": "No se pudo analizar la salida de la consola de CMake para buscar marcadores de inicio y finalización de bloques.",

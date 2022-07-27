@@ -127,7 +127,7 @@
   "ExpectedPortName": "ここにはポート名が必要です",
   "ExpectedTripletName": "ここにはトリプレット名が必要です",
   "ExpectedValueForOption": "'{value}' の後に値が必要です。",
-  "ExtendedDocumentationAtUrl": "Extended documentation available at '{url}'.",
+  "ExtendedDocumentationAtUrl": "'{url}' で利用できる拡張ドキュメント。",
   "FailedToExtract": "\"{path}\" を抽出できませんでした:",
   "FailedToParseBinParagraph": "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at https://github.com/microsoft/vcpkg, with the following output:\n{error_msg}\nSerialized Binary Paragraph:",
   "FailedToParseCMakeConsoleOut": "CMake コンソール出力を解析してブロックの開始/終了マーカーを見つけることができませんでした。",

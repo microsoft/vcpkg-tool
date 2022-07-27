@@ -127,7 +127,7 @@
   "ExpectedPortName": "burada bir bağlantı noktası adı bekleniyordu",
   "ExpectedTripletName": "burada üçlü ad bekleniyordu",
   "ExpectedValueForOption": "'{value}' değerinden sonra beklenen değer.",
-  "ExtendedDocumentationAtUrl": "Extended documentation available at '{url}'.",
+  "ExtendedDocumentationAtUrl": "Genişletilmiş belgelere şuradan ulaşılabilir: '{url}'.",
   "FailedToExtract": "\"{path}\" ayıklanamadı:",
   "FailedToParseBinParagraph": "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at https://github.com/microsoft/vcpkg, with the following output:\n{error_msg}\nSerialized Binary Paragraph:",
   "FailedToParseCMakeConsoleOut": "Blok başlangıç/bitiş işaretçilerini bulmak için CMake konsol çıktısı ayrıştırılamadı.",

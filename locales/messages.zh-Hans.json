@@ -127,7 +127,7 @@
   "ExpectedPortName": "此处需要填写端口名称",
   "ExpectedTripletName": "此处需要填写三联名称",
   "ExpectedValueForOption": "应为“{value}”之后的值。",
-  "ExtendedDocumentationAtUrl": "Extended documentation available at '{url}'.",
+  "ExtendedDocumentationAtUrl": "可在“{url}”上找到扩展文档。",
   "FailedToExtract": "无法提取“{path}”:",
   "FailedToParseBinParagraph": "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at https://github.com/microsoft/vcpkg, with the following output:\n{error_msg}\nSerialized Binary Paragraph:",
   "FailedToParseCMakeConsoleOut": "未能分析 CMake 控制台输出以定位块开始/结束标记。",
