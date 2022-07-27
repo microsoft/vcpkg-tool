@@ -1,8 +1,7 @@
 To validate schemas, you can use the ajv validator.
 
 ```
-npm install -g ajv
-npm install -g ajv-formats
+npm install -g ajv ajv-formats ajv-cli
 ```
 
 For example,

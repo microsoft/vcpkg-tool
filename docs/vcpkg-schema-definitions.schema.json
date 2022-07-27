@@ -14,6 +14,7 @@
     },
     "artifact-registry": {
       "description": "An artifact registry backed by a git repository.",
+      "type": "object",
       "properties": {
         "kind": {
           "type": "string",
@@ -24,6 +25,7 @@
         },
         "location": {
           "type": "string",
+          "format": "uri",
           "description": "A URI to the location of the artifact registry; typically a git URI."
         }
       },
@@ -34,10 +36,10 @@
       ]
     },
     "builtin-registry": {
+      "type": "object",
       "properties": {
         "baseline": {
-          "type": "string",
-          "pattern": "[0-9a-f]{40}",
+          "$ref": "#/definitions/sha1",
           "description": "The SHA that will be checked out to find default versions for ports from this registry."
         },
         "kind": {
@@ -53,19 +55,38 @@
     "contact": {
       "type": "object",
       "properties": {
-        "name": {"type":"string"},
-        "role": {"type":"string"}
+        "email": {
+          "type": "string"
+        },
+        "role": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        }
       },
-      "required": ["name", "role"],
+      "required": [
+        "role"
+      ],
       "additionalProperties": false
     },
     "contacts": {
-      "type":"object",
+      "type": "object",
       "patternProperties": {
-        "": { "$ref": "#/definitions/contact" }
+        "": {
+          "$ref": "#/definitions/contact"
+        }
       }
     },
     "default-registry": {
+      "type": "object",
       "allOf": [
         {
           "oneOf": [
@@ -106,8 +127,8 @@
               "type": "string",
               "description": "A message to print if this entry is evaluated."
             },
-            "apply": {
-              "type": "object"
+            "exports": {
+              "$ref": "#/definitions/exports"
             },
             "see-also": {
               "description": "Suggested additional artifacts.",
@@ -117,15 +138,16 @@
               "description": "Artifacts that are required for this package to function.",
               "$ref": "#/definitions/artifact-references"
             },
-            "settings": {
-              "$ref": "#/definitions/settings"
+            "install": {
+              "$ref": "#/definitions/install"
             }
-          }
+          },
+          "additionalProperties": false
         }
       }
     },
     "dependency": {
-      "description": "A dependency fetchable by Vcpkg.",
+      "description": "A port dependency fetchable by vcpkg.",
       "oneOf": [
         {
           "$ref": "#/definitions/package-name"
@@ -187,6 +209,9 @@
         }
       ]
     },
+    "exports": {
+      "type": "object"
+    },
     "feature": {
       "description": "A package feature that can be activated by consumers.",
       "type": "object",
@@ -215,6 +240,7 @@
     },
     "filesystem-registry": {
       "description": "A port registry backed by a git repo.",
+      "type": "object",
       "properties": {
         "kind": {
           "type": "string",
@@ -231,26 +257,25 @@
       ]
     },
     "info-block": {
+      "type": "object",
       "properties": {
         "version": {
-          "description": "A semantic version string. See https://semver.org/",
-          "type": "string",
-          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+          "$ref": "#/definitions/semantic-version"
         },
         "id": {
           "$ref": "#/definitions/slash-identifier"
         },
         "summary": {
           "description": "A shorter description of the artifact.",
-          "type":"string"
+          "type": "string"
         },
         "priority": {
-          "type":"integer",
+          "type": "integer",
           "minimum": 0,
           "default": 0
         },
         "description": {
-          "type":"string"
+          "type": "string"
         },
         "options": {
           "$ref": "#/definitions/string-array",
@@ -258,9 +283,153 @@
         }
       },
       "additionalProperties": false,
-      "required": ["version", "id"]
+      "required": [
+        "version",
+        "id"
+      ]
+    },
+    "install": {
+      "type": "object",
+      "oneOf": [
+        {
+          "properties": {
+            "unzip": {
+              "type": "string",
+              "format": "uri"
+            },
+            "sha256": {
+              "$ref": "#/definitions/sha256"
+            },
+            "sha512": {
+              "$ref": "#/definitions/sha512"
+            },
+            "strip": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "transform": {
+              "type": "string",
+              "description": "An SED expression to run on the file names before extracting them."
+            },
+            "lang": {
+              "type": "string",
+              "description": "The locale under which this install should be applied."
+            },
+            "nametag": {
+              "type": "string",
+              "description": "A string to add to the name of the artifact when extracted on disk."
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "unzip"
+          ]
+        },
+        {
+          "properties": {
+            "untar": {
+              "type": "string",
+              "format": "uri"
+            },
+            "sha256": {
+              "$ref": "#/definitions/sha256"
+            },
+            "sha512": {
+              "$ref": "#/definitions/sha512"
+            },
+            "strip": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "transform": {
+              "type": "string",
+              "description": "An SED expression to run on the file names before extracting them."
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "untar"
+          ]
+        },
+        {
+          "properties": {
+            "nupkg": {
+              "type": "string",
+              "format": "uri"
+            },
+            "sha256": {
+              "$ref": "#/definitions/sha256"
+            },
+            "sha512": {
+              "$ref": "#/definitions/sha512"
+            },
+            "strip": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "transform": {
+              "type": "string",
+              "description": "An SED expression to run on the file names before extracting them."
+            },
+            "lang": {
+              "type": "string",
+              "description": "The locale under which this install should be applied."
+            },
+            "nametag": {
+              "type": "string",
+              "description": "A string to add to the name of the artifact when extracted on disk."
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "nupkg"
+          ]
+        },
+        {
+          "properties": {
+            "git": {
+              "type": "string",
+              "description": "The http or ssh remote from which a git repo will be fetched."
+            },
+            "commit": {
+              "type": "string",
+              "description": "The commit SHA or ref that will be checked out."
+            },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "full",
+                  "recurse"
+                ]
+              }
+            },
+            "full": {
+              "type": "boolean",
+              "default": "false"
+            },
+            "recurse": {
+              "type": "boolean",
+              "default": "false"
+            },
+            "subdirectory": {
+              "type": "string",
+              "default": ""
+            }
+          },
+          "required": [
+            "git"
+          ],
+          "additionalProperties": false
+        }
+      ]
     },
     "git-registry": {
+      "type": "object",
       "description": "A port registry backed by a git repo.",
       "properties": {
         "kind": {
@@ -272,9 +441,8 @@
           "description": "The URI or SSH entry to clone from. (as if by `git clone`)"
         },
         "baseline": {
-          "type": "string",
-          "pattern": "[0-9a-f]{40}",
-          "description": "The SHA that will be checked out to find default versions for ports from this registry."
+          "description": "The SHA that will be checked out to find default versions for ports from this registry.",
+          "$ref": "#/definitions/sha1"
         },
         "ref": {
           "type": "string",
@@ -317,9 +485,7 @@
         {
           "properties": {
             "version-semver": {
-              "description": "A semantic version string. See https://semver.org/",
-              "type": "string",
-              "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+              "$ref": "#/definitions/semantic-version"
             }
           },
           "required": [
@@ -341,17 +507,16 @@
       ]
     },
     "identifier": {
+      "type": "string",
       "description": "Identifiers used for port and feature names.",
       "allOf": [
         {
           "description": "Identifier are lowercase with digits and dashes.",
-          "type": "string",
           "pattern": "[a-z0-9]+(-[a-z0-9]+)*"
         },
         {
           "not": {
             "description": "Identifiers must not be a Windows filesystem or vcpkg reserved name.",
-            "type": "string",
             "pattern": "^(prn|aux|nul|con|lpt[1-9]|com[1-9]|core|default)$"
           }
         }
@@ -372,7 +537,7 @@
         {
           "type": "object",
           "patternProperties": {
-            ".*": {
+            "": {
               "type": "object",
               "properties": {
                 "email": {
@@ -427,17 +592,16 @@
       ]
     },
     "package-name": {
+      "type": "string",
       "description": "Name of a package.",
       "allOf": [
         {
           "description": "Package name must be a dot-separated list of valid identifiers",
-          "type": "string",
           "pattern": "^[a-z0-9]+(-[a-z0-9]+)*(\\.[a-z0-9]+(-[a-z0-9]+)*)*$"
         },
         {
           "not": {
             "description": "Identifiers must not be a Windows filesystem or vcpkg reserved name.",
-            "type": "string",
             "pattern": "(^|\\.)(prn|aux|nul|con|lpt[1-9]|com[1-9]|core|default)(\\.|$)"
           }
         }
@@ -480,22 +644,34 @@
         }
       ]
     },
-    "settings": {
-      "description": "A set of key/value pairs to sent in the environment when this node is evaluated.",
-      "type": "object"
+    "semantic-version": {
+      "description": "A semantic version string. See https://semver.org/",
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+    },
+    "sha1": {
+      "type": "string",
+      "pattern": "[0-9a-fA-F]{40}"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "[0-9a-fA-F]{64}"
+    },
+    "sha512": {
+      "type": "string",
+      "pattern": "[0-9a-fA-F]{128}"
     },
     "slash-identifier": {
+      "type": "string",
       "description": "Slash identifiers are used for artifact names.",
       "allOf": [
         {
           "description": "Slash identifiers are lowercase with digits, dashes, and forward slashes.",
-          "type": "string",
           "pattern": "[a-z0-9]+([/-][a-z0-9]+)*"
         },
         {
           "not": {
             "description": "Identifiers and parts delimited by slashes must not be a Windows filesystem or vcpkg reserved name.",
-            "type": "string",
             "pattern": "(^|/)(prn|aux|nul|con|lpt[1-9]|com[1-9]|core|default)(/|$)"
           }
         }

@@ -37,9 +37,6 @@
       "description": "Artifacts that are required for this package to function.",
       "$ref": "vcpkg-schema-definitions.schema.json/#definitions/artifact-references"
     },
-    "settings": {
-      "$ref": "vcpkg-schema-definitions.schema.json/#definitions/settings"
-    },
     "demands": {
       "$ref": "vcpkg-schema-definitions.schema.json/#definitions/demands"
     }

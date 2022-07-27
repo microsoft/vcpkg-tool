@@ -1,73 +1,68 @@
 {
   "$id": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/master/docs/artifact.schema.json",
   "type": "object",
-  "allOf": [
-    {
-      "properties": {
-        "id": {
-          "description": "The name of the top-level package",
-          "$ref": "vcpkg-schema-definitions.schema.json#/definitions/slash-identifier"
-        },
-        "info": {
-          "description": "Previous version of artifacts way of naming some properties; deprecated in new artifacts.",
-          "$ref": "vcpkg-schema-definitions.schema.json#/definitions/info-block"
-        },
-        "version": {},
-        "contacts": {
-          "$ref": "vcpkg-schema-definitions.schema.json#/definitions/contacts"
-        },
-        "summary": {
-          "description": "A shorter description of the artifact.",
-          "type": "string"
-        },
-        "registries": {
-          "description": "A set of transitive artifact registries.",
-          "type": "array",
-          "items": {
-            "$ref": "vcpkg-schema-definitions.schema.json#/definitions/artifact-registry"
-          }
-        },
-        "error": {
-          "type": "string",
-          "description": "An error message to print if this entry is evaluated."
-        },
-        "warning": {
-          "type": "string",
-          "description": "A warning message to print if this entry is evaluated."
-        },
-        "message": {
-          "type": "string",
-          "description": "A message to print if this entry is evaluated."
-        },
-        "apply": {
-          "type": "object",
-          "description": "used when we want to insert/copy contents from the artifact into the target project when they aren't there"
-        },
-        "see-also": {
-          "description": "Suggested additional artifacts.",
-          "$ref": "vcpkg-schema-definitions.schema.json#/definitions/artifact-references"
-        },
-        "requires": {
-          "description": "Artifacts that are required for this package to function.",
-          "$ref": "vcpkg-schema-definitions.schema.json#/definitions/artifact-references"
-        },
-        "settings": {
-          "$ref": "vcpkg-schema-definitions.schema.json#/definitions/settings"
-        },
-        "demands": {
-          "$ref": "vcpkg-schema-definitions.schema.json#/definitions/demands"
-        }
-      },
-      "required": [
-        "name"
-      ],
-      "patternProperties": {
-        "^\\$": {}
-      },
-      "additionalProperties": false
+  "properties": {
+    "id": {
+      "description": "The name of the top-level package",
+      "$ref": "vcpkg-schema-definitions.schema.json#/definitions/slash-identifier"
     },
-    {
-      "$ref": "vcpkg-schema-definitions.schema.json#/definitions/has-schemed-version"
+    "info": {
+      "description": "Previous version of artifacts way of naming some properties; deprecated in new artifacts.",
+      "$ref": "vcpkg-schema-definitions.schema.json#/definitions/info-block"
+    },
+    "version": {
+      "$ref": "vcpkg-schema-definitions.schema.json#/definitions/semantic-version"
+    },
+    "contacts": {
+      "$ref": "vcpkg-schema-definitions.schema.json#/definitions/contacts"
+    },
+    "summary": {
+      "description": "A shorter description of the artifact.",
+      "type": "string"
+    },
+    "registries": {
+      "description": "A set of transitive artifact registries.",
+      "type": "array",
+      "items": {
+        "$ref": "vcpkg-schema-definitions.schema.json#/definitions/artifact-registry"
+      }
+    },
+    "error": {
+      "type": "string",
+      "description": "An error message to print if this entry is evaluated."
+    },
+    "warning": {
+      "type": "string",
+      "description": "A warning message to print if this entry is evaluated."
+    },
+    "message": {
+      "type": "string",
+      "description": "A message to print if this entry is evaluated."
+    },
+    "apply": {
+      "type": "object",
+      "description": "used when we want to insert/copy contents from the artifact into the target project when they aren't there"
+    },
+    "see-also": {
+      "description": "Suggested additional artifacts.",
+      "$ref": "vcpkg-schema-definitions.schema.json#/definitions/artifact-references"
+    },
+    "requires": {
+      "description": "Artifacts that are required for this package to function.",
+      "$ref": "vcpkg-schema-definitions.schema.json#/definitions/artifact-references"
+    },
+    "demands": {
+      "$ref": "vcpkg-schema-definitions.schema.json#/definitions/demands"
+    },
+    "install": {
+      "$ref": "vcpkg-schema-definitions.schema.json#/definitions/install"
+    },
+    "exports": {
+      "$ref": "vcpkg-schema-definitions.schema.json#/definitions/exports"
     }
-  ]
+  },
+  "patternProperties": {
+    "^\\$": {}
+  },
+  "additionalProperties": false
 }
