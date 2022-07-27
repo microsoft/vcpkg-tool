@@ -1,16 +1,14 @@
 {
   "$id": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/master/docs/vcpkg-configuration.schema.json",
-  "title": "Vcpkg manifest",
-  "description": "Vcpkg manifest file. See https://github.com/microsoft/vcpkg/blob/master/docs/specifications/manifests.md.",
   "type": "object",
   "properties": {
     "default-registry": {
-      "$ref": "vcpkg-schema-definitions.schema.json/#definitions/default-registry"
+      "$ref": "vcpkg-schema-definitions.schema.json#/definitions/default-registry"
     },
     "registries": {
       "type": "array",
       "items": {
-        "$ref": "vcpkg-schema-definitions.schema.json/#definitions/array-registry"
+        "$ref": "vcpkg-schema-definitions.schema.json#/definitions/registry-array"
       }
     },
     "error": {
@@ -27,14 +25,15 @@
     },
     "see-also": {
       "description": "Suggested additional artifacts.",
-      "$ref": "vcpkg-schema-definitions.schema.json/#definitions/artifact-references"
+      "$ref": "vcpkg-schema-definitions.schema.json#/definitions/artifact-references"
     },
     "requires": {
       "description": "Artifacts that are required for this package to function.",
-      "$ref": "vcpkg-schema-definitions.schema.json/#definitions/artifact-references"
+      "$ref": "vcpkg-schema-definitions.schema.json#/definitions/artifact-references"
     },
-    "demands": {
-      "$ref": "vcpkg-schema-definitions.schema.json/#definitions/demands"
+    "global": {
+      "description": "Global settings that control how artifacts behave.",
+      "$ref": "vcpkg-schema-definitions.schema.json#/definitions/string-map"
     }
   },
   "patternProperties": {

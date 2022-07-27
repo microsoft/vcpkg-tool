@@ -83,6 +83,10 @@
         },
         "supports": {
           "$ref": "vcpkg-schema-definitions.schema.json#/definitions/platform-expression"
+        },
+        "vcpkg-configuration": {
+          "description": "Embedded vcpkg.configuration.json file.",
+          "$ref": "vcpkg-configuration.schema.json"
         }
       },
       "patternProperties": {
