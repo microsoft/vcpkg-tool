@@ -7,7 +7,7 @@
       "type": "object",
       "minProperties": 1,
       "patternProperties": {
-        ".*": {
+        "": {
           "type": "string"
         }
       }
@@ -59,17 +59,7 @@
           "type": "string"
         },
         "role": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          ]
+          "$ref": "#/definitions/string-or-strings"
         }
       },
       "required": [
@@ -112,7 +102,7 @@
       "description": "A set of filters to conditionally apply artifact pieces. Typically contains other 'requires' or 'see-also' or similar elements. The keys are platform expressions with identifiers assumed to refer to the host.",
       "type": "object",
       "patternProperties": {
-        ".*": {
+        "": {
           "type": "object",
           "properties": {
             "error": {
@@ -197,20 +187,34 @@
     },
     "description-field": {
       "description": "A string or array of strings containing the description of a package or feature.",
-      "oneOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      ]
+      "$ref": "#/definitions/string-or-strings"
     },
     "exports": {
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "paths": {
+          "$ref": "#/definitions/strings-map"
+        },
+        "locations": {
+          "$ref": "#/definitions/string-map"
+        },
+        "properties": {
+          "$ref": "#/definitions/strings-map"
+        },
+        "environment": {
+          "$ref": "#/definitions/strings-map"
+        },
+        "tools": {
+          "$ref": "#/definitions/string-map"
+        },
+        "defines": {
+          "$ref": "#/definitions/string-map"
+        },
+        "aliases": {
+          "$ref": "#/definitions/string-map"
+        }
+      },
+      "additionalProperties": false
     },
     "feature": {
       "description": "A package feature that can be activated by consumers.",
@@ -289,13 +293,26 @@
       ]
     },
     "install": {
+      "if": {
+        "type": "object"
+      },
+      "then": {
+        "$ref": "#/definitions/install-instance"
+      },
+      "else": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/install-instance"
+        }
+      }
+    },
+    "install-instance": {
       "type": "object",
       "oneOf": [
         {
           "properties": {
             "unzip": {
-              "type": "string",
-              "format": "uri"
+              "$ref": "#/definitions/uri-or-uris"
             },
             "sha256": {
               "$ref": "#/definitions/sha256"
@@ -321,16 +338,15 @@
               "description": "A string to add to the name of the artifact when extracted on disk."
             }
           },
-          "additionalProperties": false,
           "required": [
             "unzip"
-          ]
+          ],
+          "additionalProperties": false
         },
         {
           "properties": {
             "untar": {
-              "type": "string",
-              "format": "uri"
+              "$ref": "#/definitions/uri-or-uris"
             },
             "sha256": {
               "$ref": "#/definitions/sha256"
@@ -348,10 +364,10 @@
               "description": "An SED expression to run on the file names before extracting them."
             }
           },
-          "additionalProperties": false,
           "required": [
             "untar"
-          ]
+          ],
+          "additionalProperties": false
         },
         {
           "properties": {
@@ -383,10 +399,10 @@
               "description": "A string to add to the name of the artifact when extracted on disk."
             }
           },
-          "additionalProperties": false,
           "required": [
             "nupkg"
-          ]
+          ],
+          "additionalProperties": false
         },
         {
           "properties": {
@@ -407,14 +423,6 @@
                   "recurse"
                 ]
               }
-            },
-            "full": {
-              "type": "boolean",
-              "default": "false"
-            },
-            "recurse": {
-              "type": "boolean",
-              "default": "false"
             },
             "subdirectory": {
               "type": "string",
@@ -524,35 +532,7 @@
     },
     "maintainers": {
       "description": "An array of strings which contain the authors of a package",
-      "oneOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        {
-          "type": "object",
-          "patternProperties": {
-            "": {
-              "type": "object",
-              "properties": {
-                "email": {
-                  "type": "string",
-                  "description": "An email address to contact this contact."
-                },
-                "role": {
-                  "type": "string",
-                  "description": "An identifier indicating what kind of maintainer this person is."
-                }
-              }
-            }
-          }
-        }
-      ]
+      "$ref": "#/definitions/string-or-strings"
     },
     "override": {
       "description": "A version override.",
@@ -677,10 +657,54 @@
         }
       ]
     },
+    "string-or-strings": {
+      "if": {
+        "type": "string"
+      },
+      "then": true,
+      "else": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
     "string-array": {
       "type": "array",
       "items": {
         "type": "string"
+      }
+    },
+    "string-map": {
+      "type": "object",
+      "patternProperties": {
+        "": {
+          "type": "string"
+        }
+      }
+    },
+    "strings-map": {
+      "type": "object",
+      "patternProperties": {
+        "": {
+          "$ref": "#/definitions/string-or-strings"
+        }
+      }
+    },
+    "uri-or-uris": {
+      "if": {
+        "type": "string"
+      },
+      "then": {
+        "type": "string",
+        "format": "uri"
+      },
+      "else": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "format": "uri"
+        }
       }
     },
     "version-text": {
