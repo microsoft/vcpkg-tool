@@ -419,6 +419,8 @@
   "NoteMessage": "note: ",
   "NugetPackageFileSucceededButCreationFailed": "NuGet package creation succeeded, but no .nupkg was produced. Expected: \"{path}\"",
   "_NugetPackageFileSucceededButCreationFailed.comment": "An example of {path} is /foo/bar.",
+  "OptionRequiresJsonSwitch": "Option --{option} requires --x-json switch.",
+  "_OptionRequiresJsonSwitch.comment": "An example of {option} is editable.",
   "OriginalBinParagraphHeader": "\nOriginal Binary Paragraph",
   "PackageFailedtWhileExtracting": "'{value}' failed while extracting {path}.",
   "_PackageFailedtWhileExtracting.comment": "'{value}' is either a tool name or a package name. An example of {path} is /foo/bar.",

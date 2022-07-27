@@ -253,6 +253,7 @@
   "NoRegistryForPort": "no registry configured for port {package_name}",
   "NoteMessage": "note: ",
   "NugetPackageFileSucceededButCreationFailed": "NuGet package creation succeeded, but no .nupkg was produced. Expected: \"{path}\"",
+  "OptionRequiresJsonSwitch": "Option --{option} requires --x-json switch.",
   "OriginalBinParagraphHeader": "\nOriginal Binary Paragraph",
   "PackageFailedtWhileExtracting": "'{value}' failed while extracting {path}.",
   "PackageRootDir": "(Experimental) Specify the packages root directory.",

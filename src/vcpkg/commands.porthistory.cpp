@@ -193,17 +193,17 @@ namespace vcpkg::Commands::PortHistory
             }
             else
             {
-                vcpkg::printf("%s\n", json_string);
+                msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("{}\n", json_string));
             }
         }
         else
         {
             if (maybe_output_file.has_value())
             {
-                vcpkg::printf(Color::warning, "Warning: Option `--$s` requires `--x-json` switch.", OPTION_OUTPUT_FILE);
+                msg::println_warning(msgOptionRequiresJsonSwitch, msg::option = OPTION_OUTPUT_FILE);
             }
 
-            print2("             version          date    vcpkg commit\n");
+            msg::write_unlocalized_text_to_stdout(Color::none, "             version          date    vcpkg commit\n");
             for (auto&& version : versions)
             {
                 vcpkg::printf("%20.20s    %s    %s\n", version.version_string, version.commit_date, version.commit_id);

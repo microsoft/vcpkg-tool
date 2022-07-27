@@ -744,4 +744,5 @@ namespace vcpkg
     REGISTER_MESSAGE(WaitingToTakeFilesystemLock);
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
+    REGISTER_MESSAGE(OptionRequiresJsonSwitch);
 }
