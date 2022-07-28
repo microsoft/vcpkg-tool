@@ -282,8 +282,8 @@ namespace vcpkg::msg
     constexpr static struct NAME##_t                                                                                   \
     {                                                                                                                  \
         constexpr static const char* name = #NAME;                                                                     \
-        constexpr static ::vcpkg::StringArray example = EXAMPLE;                                                                \
-        constexpr static ::vcpkg::StringArray example_str = "An example of {" #NAME "} is " EXAMPLE ".";                        \
+        constexpr static ::vcpkg::StringArray example = EXAMPLE;                                                       \
+        constexpr static ::vcpkg::StringArray example_str = "An example of {" #NAME "} is " EXAMPLE ".";               \
         constexpr static auto real_example()                                                                           \
         {                                                                                                              \
             if constexpr (example.empty())                                                                             \
@@ -346,10 +346,10 @@ namespace vcpkg::msg
     {                                                                                                                  \
         using is_message_type = void;                                                                                  \
         static constexpr ::vcpkg::StringLiteral name = #NAME;                                                          \
-        static constexpr ::vcpkg::StringArray extra_comment = COMMENT;                                                          \
+        static constexpr ::vcpkg::StringArray extra_comment = COMMENT;                                                 \
         static constexpr ::vcpkg::StringLiteral default_format_string = __VA_ARGS__;                                   \
         static const ::size_t index;                                                                                   \
-        static constexpr ::vcpkg::StringArray example_str = vcpkg::msg::detail::get_examples ARGS;                              \
+        static constexpr ::vcpkg::StringArray example_str = vcpkg::msg::detail::get_examples ARGS;                     \
     } msg##NAME VCPKG_UNUSED = {}
 
 #define REGISTER_MESSAGE(NAME)                                                                                         \
