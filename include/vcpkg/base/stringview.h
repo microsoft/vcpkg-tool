@@ -89,53 +89,8 @@ namespace vcpkg
 VCPKG_FORMAT_AS(vcpkg::ZStringView, vcpkg::StringView);
 VCPKG_FORMAT_AS(vcpkg::StringLiteral, vcpkg::StringView);
 
-template<::size_t N, typename std::enable_if<(N > 0), bool>::type = true>
-struct StringArray
+namespace vcpkg
 {
-    constexpr StringArray() noexcept : m_array{} { }
-    constexpr StringArray(const char (&str)[N]) noexcept : m_array{}
-    {
-        for (size_t i = 0; i < N; i++)
-        {
-            m_array.at(i) = str[i];
-        }
-    }
-
-    constexpr auto begin() noexcept { return m_array.begin(); }
-    constexpr auto end() noexcept { return m_array.end() - 1; }
-
-    constexpr auto begin() const noexcept { return m_array.begin(); }
-    constexpr auto end() const noexcept { return m_array.end() - 1; }
-
-    constexpr ::size_t size() const noexcept { return m_array.size() - 1; }
-    constexpr bool empty() const noexcept { return size() == 0; }
-
-    template<::size_t U>
-    constexpr bool operator==(const StringArray<U>& other) const noexcept
-    {
-        return m_array == other.m_array;
-    }
-    template<::size_t U>
-    constexpr bool operator!=(const StringArray<U>& other) const noexcept
-    {
-        return m_array != other.m_array;
-    }
-
-    constexpr char operator[](::size_t pos) const noexcept
-    {
-        // static_assert(pos < N - 1);
-        return m_array[pos];
-    }
-    constexpr char& operator[](::size_t pos) noexcept
-    {
-        // static_assert(pos < size(), "array subscript out of range");
-        return m_array[pos];
-    }
-
-    template<::size_t L, ::size_t R>
-    friend constexpr StringArray<L + R - 1> operator+(const StringArray<L> lhs, const StringArray<R> rhs) noexcept;
-
-private:
     template<class InIt, class OutIt>
     constexpr OutIt constexpr_copy(InIt first, InIt last, OutIt dest)
     {
@@ -149,30 +104,57 @@ private:
         return dest;
     }
 
-private:
-    std::array<char, N> m_array;
-};
-
-template<::size_t L, ::size_t R>
-constexpr StringArray<L + R - 1> operator+(const StringArray<L> lhs, const StringArray<R> rhs) noexcept
-{
-    if constexpr (lhs.empty())
-        return rhs;
-    else if constexpr (rhs.empty())
-        return lhs;
-    else
+    template<::size_t N, typename std::enable_if<(N > 0), bool>::type = true>
+    struct StringArray
     {
-        StringArray<L + R - 1> out;
+        static_assert(N != 0, "Space for the null terminator is necessary.");
 
-        for (size_t i = 0; i < lhs.size(); i++)
+        constexpr StringArray() noexcept : m_array{} { }
+        constexpr StringArray(const char (&str)[N]) noexcept : m_array{} { constexpr_copy(str, str + N, begin()); }
+
+        constexpr auto begin() noexcept { return m_array.begin(); }
+        constexpr auto end() noexcept { return m_array.end() - 1; }
+
+        constexpr auto begin() const noexcept { return m_array.begin(); }
+        constexpr auto end() const noexcept { return m_array.end() - 1; }
+
+        constexpr ::size_t size() const noexcept { return m_array.size() - 1; }
+        constexpr bool empty() const noexcept { return size() == 0; }
+
+        template<::size_t U>
+        constexpr bool operator==(const StringArray<U>& other) const noexcept
         {
-            out[i] = lhs[i];
+            return m_array == other.m_array;
+        }
+        template<::size_t U>
+        constexpr bool operator!=(const StringArray<U>& other) const noexcept
+        {
+            return m_array != other.m_array;
         }
 
-        for (size_t i = L - 1; i < lhs.size() + rhs.size(); i++)
+        constexpr char operator[](::size_t pos) const noexcept { return m_array[pos]; }
+        constexpr char& operator[](::size_t pos) noexcept { return m_array[pos]; }
+
+        template<::size_t L, ::size_t R>
+        friend constexpr StringArray<L + R - 1> operator+(const StringArray<L> lhs, const StringArray<R> rhs) noexcept;
+
+    private:
+        std::array<char, N> m_array;
+    };
+
+    template<::size_t L, ::size_t R>
+    constexpr StringArray<L + R - 1> operator+(const StringArray<L> lhs, const StringArray<R> rhs) noexcept
+    {
+        if constexpr (lhs.empty())
+            return rhs;
+        else if constexpr (rhs.empty())
+            return lhs;
+        else
         {
-            out[i] = rhs[i - lhs.size()];
+            StringArray<L + R - 1> out;
+            auto it = constexpr_copy(lhs.begin(), lhs.end(), out.begin());
+            constexpr_copy(rhs.begin(), rhs.end(), it);
+            return out;
         }
-        return out;
     }
 }
