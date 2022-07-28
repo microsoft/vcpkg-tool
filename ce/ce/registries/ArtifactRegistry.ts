@@ -43,7 +43,7 @@ export abstract class ArtifactRegistry implements Registry {
 
   abstract update(): Promise<void>;
 
-  async regenerate(): Promise<void> {
+  async regenerate(normalize?: boolean): Promise<void> {
     // reset the index to blank.
     this.index = new Index(ArtifactIndex);
 
@@ -65,20 +65,35 @@ export abstract class ArtifactRegistry implements Registry {
           for (const err of amf.formatErrors) {
             repo.session.channels.warning(`Parse errors in metadata file ${err}}`);
           }
-          throw new Error('invalid yaml');
+          throw new Error('invalid format');
         }
 
-        amf.validate();
+        let anyErrors = false;
+        for (const err of amf.validate()) {
+          repo.session.channels.warning(amf.formatVMessage(err));
+          anyErrors = true;
+        }
 
-        if (!amf.isValid) {
-          for (const err of amf.validationErrors) {
-            repo.session.channels.warning(err);
-          }
+        if (anyErrors) {
           throw new Error('invalid manifest');
         }
+
+        let fileUpdated = false;
+        for (const warning of amf.deprecationWarnings()) {
+          if (normalize) {
+            amf.normalize();
+            fileUpdated = true;
+          } else {
+            repo.session.channels.warning(amf.formatVMessage(warning));
+          }
+        }
+
         repo.session.channels.debug(`Inserting ${uri.formatted} into index.`);
         repo.index.insert(amf, repo.cacheFolder.relative(uri));
 
+        if (fileUpdated) {
+          await amf.save(uri);
+        }
       } catch (e: any) {
         repo.session.channels.debug(e.toString());
         repo.session.channels.warning(`skipping invalid metadata file ${uri.fsPath}`);
@@ -130,11 +145,11 @@ export abstract class ArtifactRegistry implements Registry {
 
   private async openArtifact(manifestPath: string, parent: Registries): Promise<Artifact> {
     const metadata = await MetadataFile.parseMetadata(this.cacheFolder.join(manifestPath), this.session, this);
-
+    const id = metadata.id;
     return new Artifact(this.session,
       metadata,
-      this.index.indexSchema.id.getShortNameOf(metadata.info.id) || metadata.info.id,
-      this.installationFolder.join(metadata.info.id.replace(/[^\w]+/g, '.'), metadata.info.version),
+      this.index.indexSchema.id.getShortNameOf(id) || id,
+      this.installationFolder.join(id.replace(/[^\w]+/g, '.'), metadata.version),
       parent.getRegistryName(this),
       this.location
     ).init(this.session);
@@ -147,10 +162,10 @@ export abstract class ArtifactRegistry implements Registry {
     await manifestPaths.forEachAsync(async (manifest) => metadataFiles.push(await this.openArtifact(manifest, parent))).done;
 
     // sort the contents by version before grouping. (descending version)
-    metadataFiles = metadataFiles.sort((a, b) => compare(b.metadata.info.version, a.metadata.info.version));
+    metadataFiles = metadataFiles.sort((a, b) => compare(b.metadata.version, a.metadata.version));
 
     // return a map.
-    return metadataFiles.groupByMap(m => m.metadata.info.id, artifact => artifact);
+    return metadataFiles.groupByMap(m => m.metadata.id, artifact => artifact);
   }
 
   async save(): Promise<void> {

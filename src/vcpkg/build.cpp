@@ -675,10 +675,10 @@ namespace vcpkg
                     const auto old_buf_size = buf.size();
                     Strings::append(buf, s, '\n');
                     const auto write_size = buf.size() - old_buf_size;
-                    Checks::check_exit(VCPKG_LINE_INFO,
-                                       out_file.write(buf.c_str() + old_buf_size, 1, write_size) == write_size,
-                                       "Error occurred while writing '%s'",
-                                       stdoutlog);
+                    Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                           out_file.write(buf.c_str() + old_buf_size, 1, write_size) == write_size,
+                                           msgErrorWhileWriting,
+                                           msg::path = stdoutlog);
                 },
                 default_working_directory,
                 env);
@@ -834,11 +834,10 @@ namespace vcpkg
         }
         else
         {
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                       "Unable to determine toolchain to use for triplet %s with CMAKE_SYSTEM_NAME %s; "
-                                       "maybe you meant to use VCPKG_CHAINLOAD_TOOLCHAIN_FILE?",
-                                       triplet,
-                                       cmake_system_name);
+            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                           msgUndeterminedToolChainForTriplet,
+                                           msg::triplet = triplet,
+                                           msg::system_name = cmake_system_name);
         }
     }
 
@@ -914,11 +913,11 @@ namespace vcpkg
             return_code = cmd_execute_and_stream_data(
                 command,
                 [&](StringView sv) {
-                    print2(sv);
-                    Checks::check_exit(VCPKG_LINE_INFO,
-                                       out_file.write(sv.data(), 1, sv.size()) == sv.size(),
-                                       "Error occurred while writing '%s'",
-                                       stdoutlog);
+                    msg::write_unlocalized_text_to_stdout(Color::none, sv);
+                    Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                           out_file.write(sv.data(), 1, sv.size()) == sv.size(),
+                                           msgErrorWhileWriting,
+                                           msg::path = stdoutlog);
                 },
                 default_working_directory,
                 env);
@@ -1227,8 +1226,8 @@ namespace vcpkg
                         auto status_it = status_db.find(pspec);
                         if (status_it == status_db.end())
                         {
-                            Checks::exit_maybe_upgrade(
-                                VCPKG_LINE_INFO, "Failed to find dependency abi for %s -> %s", action.spec, pspec);
+                            Debug::println("Failed to find dependency abi for %s -> %s", action.spec, pspec);
+                            Checks::unreachable(VCPKG_LINE_INFO);
                         }
 
                         dependency_abis.emplace_back(AbiEntry{pspec.name(), status_it->get()->package.abi});
@@ -1456,14 +1455,13 @@ namespace vcpkg
             return Strings::concat(
                 "<details><summary>", path.native(), "</summary>\n\n```\n", log, "\n```\n</details>");
         };
-        const auto manifest =
-            paths.get_manifest()
-                .map([](const ManifestAndPath& manifest) {
-                    return Strings::concat("<details><summary>vcpkg.json</summary>\n\n```\n",
-                                           Json::stringify(manifest.manifest, Json::JsonStyle::with_spaces(2)),
-                                           "\n```\n</details>\n");
-                })
-                .value_or("");
+        const auto manifest = paths.get_manifest()
+                                  .map([](const ManifestAndPath& manifest) {
+                                      return Strings::concat("<details><summary>vcpkg.json</summary>\n\n```\n",
+                                                             Json::stringify(manifest.manifest),
+                                                             "\n```\n</details>\n");
+                                  })
+                                  .value_or("");
 
         const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
         const auto& compiler_info = abi_info.compiler_info.value_or_exit(VCPKG_LINE_INFO);
@@ -1542,7 +1540,8 @@ namespace vcpkg
             }
             else
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO, "Invalid crt linkage type: [%s]", crt_linkage_as_string);
+                Checks::msg_exit_with_message(
+                    VCPKG_LINE_INFO, msgInvalidLinkage, msg::system_name = "crt", msg::value = crt_linkage_as_string);
             }
         }
 
@@ -1556,8 +1555,10 @@ namespace vcpkg
             }
             else
             {
-                Checks::exit_with_message(
-                    VCPKG_LINE_INFO, "Invalid library linkage type: [%s]", library_linkage_as_string);
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                              msgInvalidLinkage,
+                                              msg::system_name = "library",
+                                              msg::value = library_linkage_as_string);
             }
         }
 
@@ -1574,8 +1575,8 @@ namespace vcpkg
             else if (setting == "disabled")
                 policies.emplace(policy, false);
             else
-                Checks::exit_maybe_upgrade(
-                    VCPKG_LINE_INFO, "Unknown setting for policy '%s': %s", to_string(policy), setting);
+                Checks::msg_exit_maybe_upgrade(
+                    VCPKG_LINE_INFO, msgUnknownPolicySetting, msg::option = setting, msg::value = to_string(policy));
         }
 
         if (const auto err = parser.error_info("PostBuildInformation"))
@@ -1594,7 +1595,7 @@ namespace vcpkg
         const ExpectedS<Paragraph> pghs = Paragraphs::get_single_paragraph(fs, filepath);
         if (!pghs)
         {
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Invalid BUILD_INFO file for package: %s", pghs.error());
+            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgInvalidBuildInfo, msg::error_msg = pghs.error());
         }
 
         return inner_create_buildinfo(*pghs.get());
@@ -1701,10 +1702,8 @@ namespace vcpkg
                     else if (Strings::case_insensitive_ascii_equals(variable_value, "release"))
                         build_type = ConfigurationType::RELEASE;
                     else
-                        Checks::exit_with_message(
-                            VCPKG_LINE_INFO,
-                            "Unknown setting for VCPKG_BUILD_TYPE: %s. Valid settings are '', 'debug' and 'release'.",
-                            variable_value);
+                        Checks::msg_exit_with_message(
+                            VCPKG_LINE_INFO, msgUnknownSettingForBuildType, msg::option = variable_value);
                     break;
                 case VcpkgTripletVar::ENV_PASSTHROUGH:
                     passthrough_env_vars_tracked = Strings::split(variable_value, ';');

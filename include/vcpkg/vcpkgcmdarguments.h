@@ -22,6 +22,8 @@ namespace vcpkg
         std::set<std::string, std::less<>> switches;
         std::map<std::string, std::string, std::less<>> settings;
         std::map<std::string, std::vector<std::string>, std::less<>> multisettings;
+
+        const std::string* read_setting(StringLiteral setting) const noexcept;
     };
 
     struct CommandSwitch
@@ -86,8 +88,6 @@ namespace vcpkg
 #endif
 
     std::string create_example_string(const std::string& command_and_arguments);
-
-    std::string format_environment_variable(StringLiteral lit);
 
     struct HelpTableFormatter
     {

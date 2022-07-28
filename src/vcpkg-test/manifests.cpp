@@ -198,8 +198,7 @@ TEST_CASE ("manifest versioning", "[manifests]")
             auto m_pgh = test_parse_project_manifest(projectManifest);
             REQUIRE(m_pgh.has_value());
             auto& pgh = **m_pgh.get();
-            CHECK(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) ==
-                  Json::stringify(projectManifest, Json::JsonStyle::with_spaces(4)));
+            CHECK(Json::stringify(serialize_manifest(pgh)) == Json::stringify(projectManifest));
             CHECK(pgh.core_paragraph->version_scheme == std::get<1>(v));
             CHECK(pgh.core_paragraph->raw_version == std::get<2>(v));
             CHECK(pgh.core_paragraph->port_version == 0);
@@ -209,8 +208,7 @@ TEST_CASE ("manifest versioning", "[manifests]")
             auto m_pgh = test_parse_port_manifest(portManifest);
             REQUIRE(m_pgh.has_value());
             auto& pgh = **m_pgh.get();
-            CHECK(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) ==
-                  Json::stringify(portManifest, Json::JsonStyle::with_spaces(4)));
+            CHECK(Json::stringify(serialize_manifest(pgh)) == Json::stringify(portManifest));
             CHECK(pgh.core_paragraph->version_scheme == std::get<1>(v));
             CHECK(pgh.core_paragraph->raw_version == std::get<2>(v));
             CHECK(pgh.core_paragraph->port_version == 0);
@@ -800,8 +798,7 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
     auto config_obj = config.first.object(VCPKG_LINE_INFO);
     REQUIRE(pgh.core_paragraph->vcpkg_configuration.has_value());
     auto parsed_config_obj = *pgh.core_paragraph->vcpkg_configuration.get();
-    REQUIRE(Json::stringify(parsed_config_obj, Json::JsonStyle::with_spaces(4)) ==
-            Json::stringify(config_obj, Json::JsonStyle::with_spaces(4)));
+    REQUIRE(Json::stringify(parsed_config_obj) == Json::stringify(config_obj));
 }
 
 TEST_CASE ("manifest construct maximum", "[manifests]")

@@ -106,7 +106,7 @@ namespace vcpkg::Commands::Info
                 }
             }
             response.insert("results", std::move(results));
-            print2(Json::stringify(response, {}));
+            print2(Json::stringify(response));
         }
         else
         {
@@ -140,7 +140,7 @@ namespace vcpkg::Commands::Info
                 }
             }
             response.insert("results", std::move(results));
-            print2(Json::stringify(response, {}));
+            print2(Json::stringify(response));
         }
     }
 }
