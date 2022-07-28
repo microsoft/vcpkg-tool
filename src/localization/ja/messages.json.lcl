@@ -1090,6 +1090,9 @@
       <Item ItemId=";ErrorParsingBinaryParagraph" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[while parsing the Binary Paragraph for {spec}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} のバイナリ段落の解析中]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1162,6 +1165,9 @@
       <Item ItemId=";ErrorWhileParsing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Errors occurred while parsing {path}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} の解析中にエラーが発生しました。]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1252,6 +1258,9 @@
       <Item ItemId=";FailedToParseBinParagraph" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[[sanity check]5D; Failed to parse a serialized binary paragraph.]A;Please open an issue at https://github.com/microsoft/vcpkg, with the following output:]A;{error_msg}]A;Serialized Binary Paragraph:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[[サニティ チェック]5D; シリアル化されたバイナリ段落を解析できませんでした。]A;https://github.com/microsoft/vcpkg でイシューを開き、次の出力を含めてください。]A;{error_msg}]A;シリアル化されたバイナリ段落:]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2185,6 +2194,9 @@
       <Item ItemId=";ListOfValidFieldsForControlFiles" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[This is the list of valid fields for CONTROL files (case-sensitive):]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[これは、CONTROL ファイルの有効なフィールドの一覧です (大文字と小文字が区別されます):]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2236,6 +2248,9 @@
       <Item ItemId=";MismatchedBinaryParagraphs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[[sanity check]5D; The serialized binary paragraph was different from the original binary paragraph.]A;Please open an issue at {url}, with the following output:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[[サニティ チェック]5D; シリアル化されたバイナリ段落が、元のバイナリ段落と異なっていました。]A;{url} でイシューを開き、次の出力を含めてください。]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2260,6 +2275,9 @@
       <Item ItemId=";MissmatchedBinParagraphs" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The serialized binary paragraph was different from the original binary paragraph. Please open an issue at https://github.com/microsoft/vcpkg with the following output:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[シリアル化されたバイナリ段落が、元のバイナリ段落と異なっていました。https://github.com/microsoft/vcpkg でイシューを開き、次の出力を含めてください。]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2287,6 +2305,9 @@
       <Item ItemId=";MultiArch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Multi-Arch must be 'same' but was {option}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Multi-Arch は 'same' である必要がありますが、{option} でした]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2413,6 +2434,9 @@
       <Item ItemId=";OriginalBinParagraphHeader" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[]A;Original Binary Paragraph]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[]A;元のバイナリ段落]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2641,6 +2665,9 @@
       <Item ItemId=";SerializedBinParagraphHeader" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[]A;Serialized Binary Paragraph]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[]A;シリアル化されたバイナリ段落]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2734,6 +2761,9 @@
       <Item ItemId=";SuggestUpdateVcpkg" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[You may need to update the vcpkg binary; try running {command_line} to update.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg バイナリの更新が必要である可能性があります。{command_line} を実行して更新してみてください。]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
