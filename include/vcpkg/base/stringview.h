@@ -103,7 +103,7 @@ namespace vcpkg
         return dest;
     }
 
-    template<::size_t N, typename std::enable_if<(N > 0), bool>::type = true>
+    template<::size_t N>
     struct StringArray
     {
         static_assert(N != 0, "Space for the null terminator is necessary.");
