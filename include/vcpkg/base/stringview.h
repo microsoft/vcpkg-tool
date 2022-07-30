@@ -144,16 +144,9 @@ namespace vcpkg
     template<::size_t L, ::size_t R>
     constexpr StringArray<L + R - 1> operator+(const StringArray<L> lhs, const StringArray<R> rhs) noexcept
     {
-        if constexpr (lhs.empty())
-            return rhs;
-        else if constexpr (rhs.empty())
-            return lhs;
-        else
-        {
-            StringArray<L + R - 1> out;
-            auto it = constexpr_copy(lhs.begin(), lhs.end(), out.begin());
-            constexpr_copy(rhs.begin(), rhs.end(), it);
-            return out;
-        }
+        StringArray<L + R - 1> out;
+        auto it = constexpr_copy(lhs.begin(), lhs.end(), out.begin());
+        constexpr_copy(rhs.begin(), rhs.end(), it);
+        return out;
     }
 }
