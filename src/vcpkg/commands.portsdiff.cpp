@@ -73,7 +73,7 @@ namespace vcpkg::Commands::PortsDiff
         for (const std::string& name : ports_to_print)
         {
             const Version& version = names_and_versions.at(name);
-            vcpkg::printf("    - %-14s %-16s\n", name, version);
+            msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("    - {} {}\n", name, version));
         }
     }
 
@@ -118,11 +118,11 @@ namespace vcpkg::Commands::PortsDiff
                        .string_arg("cat-file")
                        .string_arg("-t")
                        .string_arg(git_commit_id);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           cmd_execute_and_capture_output(cmd).value_or_exit(VCPKG_LINE_INFO).output ==
-                               VALID_COMMIT_OUTPUT,
-                           "Invalid commit id %s",
-                           git_commit_id);
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               cmd_execute_and_capture_output(cmd).value_or_exit(VCPKG_LINE_INFO).output ==
+                                   VALID_COMMIT_OUTPUT,
+                               msgInvalidCommitId,
+                               msg::value = git_commit_id);
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -160,14 +160,14 @@ namespace vcpkg::Commands::PortsDiff
         const std::vector<std::string>& added_ports = setp.only_left;
         if (!added_ports.empty())
         {
-            vcpkg::printf("\nThe following %zd ports were added:\n", added_ports.size());
+            msg::println(msgPortsAdded, msg::count = added_ports.size());
             do_print_name_and_version(added_ports, current_names_and_versions);
         }
 
         const std::vector<std::string>& removed_ports = setp.only_right;
         if (!removed_ports.empty())
         {
-            vcpkg::printf("\nThe following %zd ports were removed:\n", removed_ports.size());
+            msg::println(msgPortsRemoved, msg::count = removed_ports.size());
             do_print_name_and_version(removed_ports, previous_names_and_versions);
         }
 

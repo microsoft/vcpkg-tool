@@ -748,4 +748,7 @@ namespace vcpkg
     REGISTER_MESSAGE(VersionTableHeader);
     REGISTER_MESSAGE(DateTableHeader);
     REGISTER_MESSAGE(VcpkgCommitTableHeader);
+    REGISTER_MESSAGE(InvalidCommitId);
+    REGISTER_MESSAGE(PortsAdded);
+    REGISTER_MESSAGE(PortsRemoved);
 }

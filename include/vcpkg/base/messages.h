@@ -1441,4 +1441,7 @@ namespace vcpkg
     DECLARE_MESSAGE(VersionTableHeader, (), "", "Version");
     DECLARE_MESSAGE(DateTableHeader, (), "", "Date");
     DECLARE_MESSAGE(VcpkgCommitTableHeader, (), "", "VCPKG Commit");
+    DECLARE_MESSAGE(InvalidCommitId, (msg::value), "'{value}' is a commit id.", "Invalid commit id {value}");
+    DECLARE_MESSAGE(PortsAdded, (msg::count), "", "The following {count} ports were added:");
+    DECLARE_MESSAGE(PortsRemoved, (msg::count), "", "The following {count} ports were removed:");
 }
