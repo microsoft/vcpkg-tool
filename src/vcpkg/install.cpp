@@ -1280,6 +1280,17 @@ namespace vcpkg
         std::string triplet_hash;
         std::string version_hash;
         std::string origin;
+
+        Json::Object serialize() const
+        {
+            Json::Object obj;
+            obj.insert_or_replace("action", action == Action::Install ? "install" : "remove");
+            obj.insert_or_replace("port", port_hash);
+            obj.insert_or_replace("triplet", triplet_hash);
+            obj.insert_or_replace("version", version_hash);
+            obj.insert_or_replace("origin", origin);
+            return obj;
+        }
     };
 
     void track_install_plan(ActionPlan& plan)
@@ -1317,6 +1328,12 @@ namespace vcpkg
             metrics.push_back(action_metrics);
         }
 
-        //LockGuardPtr<Metrics>(g_metrics)->track_property("installplan_1", "defined");
+        Json::Array metrics_array;
+        for (auto&& m : metrics)
+        {
+            metrics_array.push_back(m.serialize());
+        }
+        LockGuardPtr<Metrics>(g_metrics)->track_property("installplan_2", metrics_array);
+        // LockGuardPtr<Metrics>(g_metrics)->track_property("installplan_1", "defined");
     }
 }

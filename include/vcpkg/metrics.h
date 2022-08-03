@@ -24,6 +24,7 @@ namespace vcpkg
         void track_buildtime(const std::string& name, double value);
         void track_property(const std::string& name, const std::string& value);
         void track_property(const std::string& name, bool value);
+        void track_property(const std::string& name, const Json::Array& values);
         void track_feature(const std::string& feature, bool value);
         void track_option(const std::string& option, bool value);
 
