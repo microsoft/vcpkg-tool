@@ -2,13 +2,14 @@
 // Licensed under the MIT License.
 
 
+import { cyan } from 'chalk';
 import { i } from '../../i18n';
 import { session } from '../../main';
 import { Registries } from '../../registries/registries';
 import { Command } from '../command';
 import { artifactIdentity } from '../format';
 import { Table } from '../markdown-table';
-import { debug, log } from '../styling';
+import { debug, error, log } from '../styling';
 import { Project } from '../switches/project';
 import { Registry } from '../switches/registry';
 import { Version } from '../switches/version';
@@ -42,13 +43,30 @@ export class FindCommand extends Command {
     const table = new Table('Artifact', 'Version', 'Summary');
 
     for (const each of this.inputs) {
-      for (const [registry, id, artifacts] of await registries.search({ keyword: each, version: this.version.value })) {
-        const latest = artifacts[0];
-        if (!latest.metadata.info.dependencyOnly) {
-          const name = artifactIdentity(latest.registryId, id, latest.shortName);
-          table.push(name, latest.metadata.info.version, latest.metadata.info.summary || '');
+      const hasColon = each.indexOf(':') > -1;
+      // eslint-disable-next-line prefer-const
+      for (let [registry, id, artifacts] of await registries.search({
+        // use keyword search if no registry is specified
+        keyword: hasColon ? undefined : each,
+        // otherwise use the criteria as an id
+        idOrShortName: hasColon ? each : undefined,
+        version: this.version.value
+      })) {
+        if (!this.version.isRangeOfVersions) {
+          // if the user didn't specify a range, just show the latest version that was returned
+          artifacts = [artifacts[0]];
+        }
+        for (const result of artifacts) {
+          if (!result.metadata.dependencyOnly) {
+            const name = artifactIdentity(result.registryId, id, result.shortName);
+            table.push(name, result.metadata.version, result.metadata.summary || '');
+          }
         }
       }
+    }
+    if (!table.anyRows) {
+      error(i`No artifacts found matching criteria: ${cyan.bold(this.inputs.join(', '))}`);
+      return false;
     }
 
     log(table.toString());

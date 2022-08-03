@@ -3,7 +3,7 @@
 
 import { isCollection, isMap, isScalar, isSeq, Scalar, YAMLMap, YAMLSeq } from 'yaml';
 import { ErrorKind } from '../interfaces/error-kind';
-import { ValidationError } from '../interfaces/validation-error';
+import { ValidationMessage } from '../interfaces/validation-message';
 import { isNullish } from '../util/checks';
 
 export class YAMLDictionary extends YAMLMap<string, any> { }
@@ -35,7 +35,7 @@ export /** @internal */ abstract class Yaml<ThisType extends Node = Node> {
   }
 
   /**
-   * Coersion function to string
+   * Coercion function to string
    *
    * This will pass the coercion up to the parent if it exists
    * (or otherwise overridden in the subclass)
@@ -51,7 +51,7 @@ export /** @internal */ abstract class Yaml<ThisType extends Node = Node> {
   }
 
   /**
-   * Coersion function to number
+   * Coercion function to number
    *
    * This will pass the coercion up to the parent if it exists
    * (or otherwise overridden in the subclass)
@@ -70,7 +70,7 @@ export /** @internal */ abstract class Yaml<ThisType extends Node = Node> {
   }
 
   /**
-   * Coersion function to boolean
+   * Coercion function to boolean
    *
    * This will pass the coercion up to the parent if it exists
    * (or otherwise overridden in the subclass)
@@ -89,7 +89,7 @@ export /** @internal */ abstract class Yaml<ThisType extends Node = Node> {
   }
 
   /**
-   * Coersion function to any primitive
+   * Coercion function to any primitive
    *
    * This will pass the coercion up to the parent if it exists
    * (or otherwise overridden in the subclass)
@@ -269,11 +269,11 @@ export /** @internal */ abstract class Yaml<ThisType extends Node = Node> {
     throw new Error('this node does not have children.');
   }
 
-  *validate(): Iterable<ValidationError> {
+  *validate(): Iterable<ValidationMessage> {
     // shh.
   }
 
-  protected *validateChildKeys(keys: Array<string>): Iterable<ValidationError> {
+  protected *validateChildKeys(keys: Array<string>): Iterable<ValidationMessage> {
     if (isMap(this.node)) {
       for (const key of this.keys) {
         if (keys.indexOf(key) === -1) {
@@ -287,7 +287,7 @@ export /** @internal */ abstract class Yaml<ThisType extends Node = Node> {
     }
   }
 
-  protected *validateIsObject(): Iterable<ValidationError> {
+  protected *validateIsObject(): Iterable<ValidationMessage> {
     if (this.node && !isMap(this.node)) {
       yield {
         message: `'${this.fullName}' is not an object`,
@@ -296,7 +296,7 @@ export /** @internal */ abstract class Yaml<ThisType extends Node = Node> {
       };
     }
   }
-  protected *validateIsSequence(): Iterable<ValidationError> {
+  protected *validateIsSequence(): Iterable<ValidationMessage> {
     if (this.node && !isSeq(this.node)) {
       yield {
         message: `'${this.fullName}' is not an object`,
@@ -306,7 +306,7 @@ export /** @internal */ abstract class Yaml<ThisType extends Node = Node> {
     }
   }
 
-  protected *validateIsSequenceOrPrimitive(): Iterable<ValidationError> {
+  protected *validateIsSequenceOrPrimitive(): Iterable<ValidationMessage> {
     if (this.node && (!isSeq(this.node) && !isScalar(this.node))) {
       yield {
         message: `'${this.fullName}' is not a sequence or value`,
@@ -316,7 +316,7 @@ export /** @internal */ abstract class Yaml<ThisType extends Node = Node> {
     }
   }
 
-  protected *validateIsObjectOrPrimitive(): Iterable<ValidationError> {
+  protected *validateIsObjectOrPrimitive(): Iterable<ValidationMessage> {
     if (this.node && (!isMap(this.node) && !isScalar(this.node))) {
       yield {
         message: `'${this.fullName}' is not an object or value`,
@@ -326,7 +326,7 @@ export /** @internal */ abstract class Yaml<ThisType extends Node = Node> {
     }
   }
 
-  protected *validateChild(child: string, kind: 'string' | 'boolean' | 'number'): Iterable<ValidationError> {
+  protected *validateChild(child: string, kind: 'string' | 'boolean' | 'number'): Iterable<ValidationMessage> {
     if (this.node && isMap(this.node)) {
       if (this.node.has(child)) {
         const c = <Node>this.node.get(child, true);

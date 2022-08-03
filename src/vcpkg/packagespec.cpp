@@ -42,9 +42,6 @@ namespace vcpkg
         return left.name() == right.name() && left.triplet() == right.triplet();
     }
 
-    DECLARE_AND_REGISTER_MESSAGE(IllegalPlatformSpec, (), "", "Platform qualifier is not allowed in this context");
-    DECLARE_AND_REGISTER_MESSAGE(IllegalFeatures, (), "", "List of features is not allowed in this context");
-
     static InternalFeatureSet normalize_feature_list(View<std::string> fs, ImplicitDefault id)
     {
         InternalFeatureSet ret;

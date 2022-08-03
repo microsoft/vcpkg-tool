@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import { isScalar, Scalar } from 'yaml';
-import { ValidationError } from '../interfaces/validation-error';
+import { ValidationMessage } from '../interfaces/validation-message';
 import { BaseMap } from './BaseMap';
 import { EntityFactory, Yaml, YAMLDictionary } from './yaml-types';
 
@@ -53,7 +53,7 @@ export /** @internal */ class CustomScalarMap<TElement extends Yaml<Scalar>> ext
     this.node.set(key, new Scalar(value));
   }
 
-  override *validate(): Iterable<ValidationError> {
+  override *validate(): Iterable<ValidationMessage> {
     yield* this.validateIsObject();
   }
 }

@@ -14,7 +14,7 @@ namespace vcpkg::Export::Chocolatey
         Optional<std::string> maybe_version_suffix;
     };
 
-    void do_export(const std::vector<Dependencies::ExportPlanAction>& export_plan,
+    void do_export(const std::vector<ExportPlanAction>& export_plan,
                    const VcpkgPaths& paths,
                    const Options& chocolatey_options);
 }

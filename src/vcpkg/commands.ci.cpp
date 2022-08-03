@@ -36,8 +36,6 @@ using namespace vcpkg;
 
 namespace
 {
-    using namespace vcpkg::Build;
-
     const Path readme_dot_log = "readme.log";
 
     struct CiBuildLogsRecorder final : IBuildLogsRecorder
@@ -81,30 +79,14 @@ namespace
     private:
         Path base_path;
     };
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        CiBaselineRegressionHeader,
-        (),
-        "Printed before a series of CiBaselineRegression and/or CiBaselineUnexpectedPass messages.",
-        "REGRESSIONS:");
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        CiBaselineAllowUnexpectedPassingRequiresBaseline,
-        (),
-        "",
-        "--allow-unexpected-passing can only be used if a baseline is provided via --ci-baseline.");
 }
 
 namespace vcpkg::Commands::CI
 {
-    using Build::BuildResult;
-    using Dependencies::InstallPlanAction;
-    using Dependencies::InstallPlanType;
-
     struct TripletAndSummary
     {
         Triplet triplet;
-        Install::InstallSummary summary;
+        InstallSummary summary;
     };
 
     static constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
@@ -152,7 +134,7 @@ namespace vcpkg::Commands::CI
 
     struct UnknownCIPortsResults
     {
-        std::map<PackageSpec, Build::BuildResult> known;
+        std::map<PackageSpec, BuildResult> known;
         std::map<PackageSpec, std::vector<std::string>> features;
         std::map<PackageSpec, std::string> abi_map;
         // action_state_string.size() will equal install_actions.size()
@@ -171,11 +153,11 @@ namespace vcpkg::Commands::CI
         return supports_expression.evaluate(context);
     }
 
-    static Dependencies::ActionPlan compute_full_plan(const VcpkgPaths& paths,
-                                                      const PortFileProvider::PortFileProvider& provider,
-                                                      const CMakeVars::CMakeVarProvider& var_provider,
-                                                      const std::vector<FullPackageSpec>& specs,
-                                                      const Dependencies::CreateInstallPlanOptions& serialize_options)
+    static ActionPlan compute_full_plan(const VcpkgPaths& paths,
+                                        const PortFileProvider& provider,
+                                        const CMakeVars::CMakeVarProvider& var_provider,
+                                        const std::vector<FullPackageSpec>& specs,
+                                        const CreateInstallPlanOptions& serialize_options)
     {
         std::vector<PackageSpec> packages_with_qualified_deps;
         for (auto&& spec : specs)
@@ -188,15 +170,14 @@ namespace vcpkg::Commands::CI
         }
 
         var_provider.load_dep_info_vars(packages_with_qualified_deps, serialize_options.host_triplet);
-        auto action_plan =
-            Dependencies::create_feature_install_plan(provider, var_provider, specs, {}, serialize_options);
+        auto action_plan = create_feature_install_plan(provider, var_provider, specs, {}, serialize_options);
 
         var_provider.load_tag_vars(action_plan, provider, serialize_options.host_triplet);
 
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.already_installed.empty());
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.remove_actions.empty());
 
-        Build::compute_all_abis(paths, action_plan, var_provider, {});
+        compute_all_abis(paths, action_plan, var_provider, {});
         return action_plan;
     }
 
@@ -204,7 +185,7 @@ namespace vcpkg::Commands::CI
         ExclusionPredicate is_excluded,
         const CMakeVars::CMakeVarProvider& var_provider,
         const std::vector<CacheAvailability>& precheck_results,
-        const Dependencies::ActionPlan& action_plan)
+        const ActionPlan& action_plan)
     {
         auto ret = std::make_unique<UnknownCIPortsResults>();
 
@@ -256,8 +237,8 @@ namespace vcpkg::Commands::CI
     }
 
     // This algorithm reduces an action plan to only unknown actions and their dependencies
-    static void reduce_action_plan(Dependencies::ActionPlan& action_plan,
-                                   const std::map<PackageSpec, Build::BuildResult>& known,
+    static void reduce_action_plan(ActionPlan& action_plan,
+                                   const std::map<PackageSpec, BuildResult>& known,
                                    View<std::string> parent_hashes)
     {
         std::set<PackageSpec> to_keep;
@@ -279,7 +260,7 @@ namespace vcpkg::Commands::CI
                 }
                 else
                 {
-                    it->build_options = vcpkg::Build::backcompat_prohibiting_package_options;
+                    it->build_options = backcompat_prohibiting_package_options;
                     to_keep.insert(it->package_dependencies.begin(), it->package_dependencies.end());
                 }
             }
@@ -404,8 +385,7 @@ namespace vcpkg::Commands::CI
         const IBuildLogsRecorder& build_logs_recorder =
             build_logs_recorder_storage ? *(build_logs_recorder_storage.get()) : null_build_logs_recorder();
 
-        PortFileProvider::PathsPortFileProvider provider(
-            paths, PortFileProvider::make_overlay_provider(paths, args.overlay_ports));
+        PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
@@ -423,10 +403,9 @@ namespace vcpkg::Commands::CI
                                                 InternalFeatureSet{"core", "default"});
         }
 
-        Dependencies::CreateInstallPlanOptions serialize_options(host_triplet,
-                                                                 Dependencies::UnsupportedPortAction::Warn);
+        CreateInstallPlanOptions serialize_options(host_triplet, UnsupportedPortAction::Warn);
 
-        struct RandomizerInstance : Graphs::Randomizer
+        struct RandomizerInstance : GraphRandomizer
         {
             virtual int random(int i) override
             {
@@ -475,7 +454,7 @@ namespace vcpkg::Commands::CI
                     obj.insert("abi", Json::Value::string(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi));
                     arr.push_back(std::move(obj));
                 }
-                filesystem.write_contents(output_hash_json, Json::stringify(arr, Json::JsonStyle{}), VCPKG_LINE_INFO);
+                filesystem.write_contents(output_hash_json, Json::stringify(arr), VCPKG_LINE_INFO);
             }
         }
 
@@ -511,19 +490,13 @@ namespace vcpkg::Commands::CI
 
         if (is_dry_run)
         {
-            Dependencies::print_plan(action_plan, true, paths.builtin_ports_directory());
+            print_plan(action_plan, true, paths.builtin_ports_directory());
         }
         else
         {
             StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
-            auto summary = Install::perform(args,
-                                            action_plan,
-                                            Install::KeepGoing::YES,
-                                            paths,
-                                            status_db,
-                                            binary_cache,
-                                            build_logs_recorder,
-                                            var_provider);
+            auto summary = Install::perform(
+                args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder, var_provider);
 
             std::map<PackageSpec, BuildResult> full_results;
 

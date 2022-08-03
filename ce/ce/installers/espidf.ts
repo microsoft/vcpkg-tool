@@ -1,9 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { platform } from 'os';
 import { delimiter } from 'path';
-import { log } from '../cli/styling';
 import { i } from '../i18n';
 import { InstallEvents } from '../interfaces/events';
 import { Session } from '../session';
@@ -89,7 +87,7 @@ export async function activateEspIdf(session: Session, targetLocation: Uri) {
             const pathValues = splitLine[1].split(delimiter);
             for (const path of pathValues) {
               if (path.trim() !== '%PATH%' && path.trim() !== '$PATH') {
-                // we actually want to use the artifacts we installed, not the ones that are being bundled. 
+                // we actually want to use the artifacts we installed, not the ones that are being bundled.
                 // when espressif supports artifacts properly, we shouldn't need this filter.
                 if (! /\.espressif.tools/ig.exec(path)) {
                   session.activation.addPath(splitLine[0].trim(), session.fileSystem.file(path));

@@ -16,13 +16,11 @@ export async function showArtifacts(artifacts: Iterable<Artifact>, options?: { f
   const table = new Table(i`Artifact`, i`Version`, i`Status`, i`Dependency`, i`Summary`);
   for (const artifact of artifacts) {
     const name = artifactIdentity(artifact.registryId, artifact.id, artifact.shortName);
-    if (!artifact.metadata.isValid) {
+    for (const err of artifact.metadata.validate()) {
       failing = true;
-      for (const err of artifact.metadata.validationErrors) {
-        error(err);
-      }
+      error(artifact.metadata.formatVMessage(err));
     }
-    table.push(name, artifact.version, options?.force || await artifact.isInstalled ? 'installed' : 'will install', artifact.isPrimary ? ' ' : '*', artifact.metadata.info.summary || '');
+    table.push(name, artifact.version, options?.force || await artifact.isInstalled ? 'installed' : 'will install', artifact.isPrimary ? ' ' : '*', artifact.metadata.summary || '');
   }
   log(table.toString());
   log();
@@ -59,83 +57,109 @@ export async function selectArtifacts(selections: Selections, registries: Regist
   return artifacts;
 }
 
-export async function installArtifacts(session: Session, artifacts: Iterable<Artifact>, options?: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<[boolean, Map<Artifact, boolean>]> {
+enum TaggedProgressKind {
+  Unset,
+  Verifying,
+  Downloading,
+  GenericProgress,
+  Heartbeat
+}
+
+class TaggedProgressBar {
+  private bar: SingleBar | undefined;
+  private kind = TaggedProgressKind.Unset;
+  public lastCurrentValue = 0;
+  constructor(private readonly multiBar: MultiBar) {
+  }
+
+  private checkChangeKind(currentValue: number, kind: TaggedProgressKind) {
+    this.lastCurrentValue = currentValue;
+    if (this.kind !== kind) {
+      if (this.bar) {
+        this.multiBar.remove(this.bar);
+        this.bar = undefined;
+      }
+
+      this.kind = kind;
+    }
+  }
+
+  startOrUpdate(kind: TaggedProgressKind, total: number, currentValue: number, suffix: string) {
+    this.checkChangeKind(currentValue, kind);
+    const payload = { suffix: suffix };
+    if (this.bar) {
+      this.bar.update(currentValue, payload);
+    } else {
+      this.kind = kind;
+      this.bar = this.multiBar.create(total, currentValue, payload, { format: '{bar}\u25A0 {percentage}% {suffix}' });
+    }
+  }
+
+  heartbeat(suffix: string) {
+    this.checkChangeKind(0, TaggedProgressKind.Heartbeat);
+    const payload = { suffix: suffix };
+    if (this.bar) {
+      this.bar.update(0, payload);
+    } else {
+      const progressUnknown = i`(progress unknown)`;
+      const totalSpaces = 41 - progressUnknown.length;
+      const prefixSpaces = Math.floor(totalSpaces / 2);
+      const suffixSpaces = totalSpaces - prefixSpaces;
+      const prettyProgressUnknown = Array(prefixSpaces).join(' ') + progressUnknown + Array(suffixSpaces).join(' ');
+      this.bar = this.multiBar.create(0, 0, payload, { format: '\u25A0' + prettyProgressUnknown + '\u25A0 {suffix}' });
+    }
+  }
+}
+
+export async function installArtifacts(session: Session, artifacts: Array<Artifact>, options?: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<[boolean, Map<Artifact, boolean>]> {
   // resolve the full set of artifacts to install.
   const installed = new Map<Artifact, boolean>();
-
   const bar = new MultiBar({
-    clearOnComplete: true, hideCursor: true, format: '{name} {bar}\u25A0 {percentage}% {action} {current}',
+    clearOnComplete: true, hideCursor: true,
     barCompleteChar: '\u25A0',
     barIncompleteChar: ' ',
     etaBuffer: 40
   });
-  let dl: SingleBar | undefined;
-  let p: SingleBar | undefined;
-  let spinnerValue = 0;
 
-  for (const artifact of artifacts) {
+  const overallProgress = bar.create(artifacts.length, 0, { name: '' }, { format: '{bar}\u25A0 [{value}/{total}] {name}', emptyOnZero: true });
+  const individualProgress = new TaggedProgressBar(bar);
+
+  const spinnerValue = 0;
+
+  for (let idx = 0; idx < artifacts.length; ++idx) {
+    const artifact = artifacts[idx];
     const id = artifact.id;
     const registryName = artifact.registryId;
-
+    overallProgress.update(idx, { name: artifactIdentity(registryName, id) });
     try {
       const actuallyInstalled = await artifact.install({
-        verifying: (name, percent) => {
-          if (percent >= 100) {
-            p?.update(percent);
-            p = undefined;
-            return;
-          }
-          if (percent) {
-            if (!p) {
-              p = bar.create(100, 0, { action: i`verifying`, name: artifactIdentity(registryName, id), current: name });
-            }
-            p?.update(percent);
-          }
+        verifying: (current, percent) => {
+          individualProgress.startOrUpdate(TaggedProgressKind.Verifying, 100, percent, i`verifying` + ' ' + current);
         },
-        download: (name, percent) => {
-          if (percent >= 100) {
-            if (dl) {
-              dl.update(percent);
-            }
-            dl = undefined;
-            return;
-          }
-          if (percent) {
-            if (!dl) {
-              dl = bar.create(100, 0, { action: i`downloading`, name: artifactIdentity(registryName, id), current: name });
-            }
-            dl.update(percent);
-          }
+        download: (current, percent) => {
+          individualProgress.startOrUpdate(TaggedProgressKind.Downloading, 100, percent, i`downloading` + ' ' + current);
         },
         fileProgress: (entry) => {
-          p?.update({ action: i`unpacking`, name: artifactIdentity(registryName, id), current: entry.extractPath });
+          let suffix = entry.extractPath;
+          if (suffix) {
+            suffix = ' ' + suffix;
+          } else {
+            suffix = '';
+          }
+
+          individualProgress.startOrUpdate(TaggedProgressKind.GenericProgress, 100, individualProgress.lastCurrentValue, i`unpacking` + suffix);
         },
         progress: (percent: number) => {
-          if (percent >= 100) {
-            if (p) {
-              p.update(percent, { action: i`unpacked`, name: artifactIdentity(registryName, id), current: '' });
-            }
-            p = undefined;
-            return;
-          }
-          if (percent) {
-            if (!p) {
-              p = bar.create(100, 0, { action: i`unpacking`, name: artifactIdentity(registryName, id), current: '' });
-            }
-            p.update(percent);
-          }
+          individualProgress.startOrUpdate(TaggedProgressKind.GenericProgress, 100, percent, i`unpacking`);
         },
         heartbeat: (text: string) => {
-          if (!p) {
-            p = bar.create(3, 0, { action: i`working`, name: artifactIdentity(registryName, id), current: '' });
-          }
-          p?.update((spinnerValue++) % 4, { action: i`working`, name: artifactIdentity(registryName, id), current: text });
+          individualProgress.heartbeat(text);
         }
       }, options || {});
       // remember what was actually installed
       installed.set(artifact, actuallyInstalled);
       if (actuallyInstalled) {
-        trackAcquire(artifact.id, artifact.version);
+        trackAcquire(id, artifact.version);
       }
     } catch (e: any) {
       bar.stop();
@@ -144,8 +168,8 @@ export async function installArtifacts(session: Session, artifacts: Iterable<Art
       error(i`Error installing ${artifactIdentity(registryName, id)} - ${e} `);
       return [false, installed];
     }
-
-    bar.stop();
   }
+
+  bar.stop();
   return [true, installed];
 }

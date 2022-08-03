@@ -11,8 +11,8 @@ import { Uri } from '../util/uri';
 import { applyAcquireOptions, artifactFileName } from './util';
 
 
-export async function installUnTar(session: Session, name: string, targetLocation: Uri, install: UnTarInstaller, events: Partial<InstallEvents>, options: Partial<InstallOptions>): Promise<void> {
-  const file = await acquireArtifactFile(session, [...install.location].map(each => session.parseUri(each)), artifactFileName(name, install, '.tar'), events, applyAcquireOptions(options, install));
+export async function installUnTar(session: Session, name: string, version: string, targetLocation: Uri, install: UnTarInstaller, events: Partial<InstallEvents>, options: Partial<InstallOptions>): Promise<void> {
+  const file = await acquireArtifactFile(session, [...install.location].map(each => session.parseUri(each)), artifactFileName(name, version, install, '.tar'), events, applyAcquireOptions(options, install));
   const x = await file.readBlock(0, 128);
   let unpacker: Unpacker;
   if (x[0] === 0x1f && x[1] === 0x8b) {

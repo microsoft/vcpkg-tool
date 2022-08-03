@@ -43,11 +43,6 @@ namespace
 {
     using namespace vcpkg;
 
-    DECLARE_AND_REGISTER_MESSAGE(WaitingToTakeFilesystemLock,
-                                 (msg::path),
-                                 "",
-                                 "waiting to take filesystem lock on {path}...");
-
     std::atomic<uint64_t> g_us_filesystem_stats(0);
 
     struct IsSlash

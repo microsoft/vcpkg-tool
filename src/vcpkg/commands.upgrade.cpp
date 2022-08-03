@@ -19,7 +19,6 @@
 #include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
-using Install::KeepGoing;
 
 namespace vcpkg::Commands::Upgrade
 {
@@ -81,25 +80,23 @@ namespace vcpkg::Commands::Upgrade
         const KeepGoing keep_going = determine_keep_going(Util::Sets::contains(options.switches, OPTION_KEEP_GOING),
                                                           Util::Sets::contains(options.switches, OPTION_NO_KEEP_GOING));
         const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
-                                                 ? Dependencies::UnsupportedPortAction::Warn
-                                                 : Dependencies::UnsupportedPortAction::Error;
+                                                 ? UnsupportedPortAction::Warn
+                                                 : UnsupportedPortAction::Error;
 
         BinaryCache binary_cache{args, paths};
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
         // Load ports from ports dirs
-        PortFileProvider::PathsPortFileProvider provider(
-            paths, PortFileProvider::make_overlay_provider(paths, args.overlay_ports));
+        PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
         // input sanitization
         const std::vector<PackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
-            return Input::check_and_get_package_spec(
-                std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+            return check_and_get_package_spec(std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
 
-        Dependencies::ActionPlan action_plan;
+        ActionPlan action_plan;
         if (specs.empty())
         {
             // If no packages specified, upgrade all outdated packages.
@@ -111,7 +108,7 @@ namespace vcpkg::Commands::Upgrade
                 Checks::exit_success(VCPKG_LINE_INFO);
             }
 
-            action_plan = Dependencies::create_upgrade_plan(
+            action_plan = create_upgrade_plan(
                 provider,
                 var_provider,
                 Util::fmap(outdated_packages, [](const Update::OutdatedPackage& package) { return package.spec; }),
@@ -193,7 +190,7 @@ namespace vcpkg::Commands::Upgrade
 
             if (to_upgrade.empty()) Checks::exit_success(VCPKG_LINE_INFO);
 
-            action_plan = Dependencies::create_upgrade_plan(
+            action_plan = create_upgrade_plan(
                 provider, var_provider, to_upgrade, status_db, {host_triplet, unsupported_port_action});
         }
 
@@ -205,10 +202,10 @@ namespace vcpkg::Commands::Upgrade
         // Set build settings for all install actions
         for (auto&& action : action_plan.install_actions)
         {
-            action.build_options = vcpkg::Build::default_build_package_options;
+            action.build_options = default_build_package_options;
         }
 
-        Dependencies::print_plan(action_plan, true, paths.builtin_ports_directory());
+        print_plan(action_plan, true, paths.builtin_ports_directory());
 
         if (!no_dry_run)
         {
@@ -220,14 +217,8 @@ namespace vcpkg::Commands::Upgrade
 
         var_provider.load_tag_vars(action_plan, provider, host_triplet);
 
-        const Install::InstallSummary summary = Install::perform(args,
-                                                                 action_plan,
-                                                                 keep_going,
-                                                                 paths,
-                                                                 status_db,
-                                                                 binary_cache,
-                                                                 Build::null_build_logs_recorder(),
-                                                                 var_provider);
+        const InstallSummary summary = Install::perform(
+            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), var_provider);
 
         print2("\nTotal elapsed time: ", GlobalState::timer.to_string(), "\n\n");
 

@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { ValidationError } from './validation-error';
-
+import { ValidationMessage } from './validation-message';
 
 export interface Validation {
   /**
@@ -10,5 +9,5 @@ export interface Validation {
    *
    * actively validate this node.
   */
-  validate(): Iterable<ValidationError>;
+  validate(): Iterable<ValidationMessage>;
 }

@@ -17,87 +17,6 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/versiondeserializers.h>
 
-namespace
-{
-    namespace msg = vcpkg::msg;
-    DECLARE_AND_REGISTER_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
-    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionContainsUnicode,
-                                 (msg::value, msg::pretty_value),
-                                 "example of {value:04X} is '22BB'\nexample of {pretty_value} is '⊻'",
-                                 "SPDX license expression contains a unicode character (U+{value:04X} "
-                                 "'{pretty_value}'), but these expressions are ASCII-only.");
-    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionContainsInvalidCharacter,
-                                 (msg::value),
-                                 "example of {value:02X} is '7B'\nexample of {value} is '{'",
-                                 "SPDX license expression contains an invalid character (0x{value:02X} '{value}').");
-    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionContainsExtraPlus,
-                                 (),
-                                 "",
-                                 "SPDX license expression contains an extra '+'. These are only allowed directly "
-                                 "after a license identifier.");
-    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionDocumentRefUnsupported,
-                                 (),
-                                 "",
-                                 "The current implementation does not support DocumentRef- SPDX references.");
-    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectLicenseFoundEof,
-                                 (),
-                                 "",
-                                 "Expected a license name, found the end of the string.");
-    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectExceptionFoundEof,
-                                 (),
-                                 "",
-                                 "Expected an exception name, found the end of the string.");
-    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectCompoundFoundParen,
-                                 (),
-                                 "",
-                                 "Expected a compound or the end of the string, found a parenthesis.");
-    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectLicenseFoundParen,
-                                 (),
-                                 "",
-                                 "Expected a license name, found a parenthesis.");
-    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectExceptionFoundParen,
-                                 (),
-                                 "",
-                                 "Expected an exception name, found a parenthesis.");
-    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionImbalancedParens,
-                                 (),
-                                 "",
-                                 "There was a close parenthesis without an opening parenthesis.");
-    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectLicenseFoundCompound,
-                                 (msg::value),
-                                 "Example of {value} is 'AND'",
-                                 "Expected a license name, found the compound {value}.");
-    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectExceptionFoundCompound,
-                                 (msg::value),
-                                 "Example of {value} is 'AND'",
-                                 "Expected an exception name, found the compound {value}.");
-    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectCompoundFoundWith,
-                                 (),
-                                 "AND, OR, and WITH are all keywords and should not be translated.",
-                                 "Expected either AND or OR, found WITH (WITH is only allowed after license names, not "
-                                 "parenthesized expressions).");
-    DECLARE_AND_REGISTER_MESSAGE(
-        LicenseExpressionExpectCompoundOrWithFoundWord,
-        (msg::value),
-        "example of {value} is 'MIT'.\nAND, OR, and WITH are all keywords and should not be translated.",
-        "Expected either AND, OR, or WITH, found a license or exception name: '{value}'.");
-    DECLARE_AND_REGISTER_MESSAGE(
-        LicenseExpressionExpectCompoundFoundWord,
-        (msg::value),
-        "Example of {value} is 'MIT'.\nAND and OR are both keywords and should not be translated.",
-        "Expected either AND or OR, found a license or exception name: '{value}'.");
-    DECLARE_AND_REGISTER_MESSAGE(
-        LicenseExpressionUnknownLicense,
-        (msg::value),
-        "Example of {value} is 'unknownlicense'",
-        "Unknown license identifier '{value}'. Known values are listed at https://spdx.org/licenses/");
-    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionUnknownException,
-                                 (msg::value),
-                                 "Example of {value} is 'unknownexception'",
-                                 "Unknown license exception identifier '{value}'. Known values are listed at "
-                                 "https://spdx.org/licenses/exceptions-index.html");
-} // anonymous namespace
-
 namespace vcpkg
 {
     template<class Lhs, class Rhs>
@@ -1292,8 +1211,8 @@ namespace vcpkg
             {
                 Strings::append(ret, "    ", err, "\n");
             }
-            print2("See ", docs::registries_url, " for more information.\n");
-            print2("See ", docs::manifests_url, " for more information.\n");
+            msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
+            msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url);
             return std::move(ret);
         }
         else
@@ -1464,7 +1383,7 @@ namespace vcpkg
                     [](const std::unique_ptr<ParseControlErrorInfo>& ppcei) { return !ppcei->extra_fields.empty(); }))
             {
                 Strings::append(message,
-                                "This is the list of valid fields for CONTROL files (case-sensitive): \n\n    ",
+                                msg::format(msgListOfValidFieldsForControlFiles).extract_data(),
                                 Strings::join("\n    ", get_list_of_valid_fields()),
                                 "\n\n");
 #if defined(_WIN32)
@@ -1472,8 +1391,7 @@ namespace vcpkg
 #else
                 auto bootstrap = "./bootstrap-vcpkg.sh";
 #endif
-                Strings::append(
-                    message, "You may need to update the vcpkg binary; try running ", bootstrap, " to update.\n\n");
+                Strings::append(message, msg::format(msgSuggestUpdateVcpkg, msg::command_line = bootstrap).data());
             }
         }
 
@@ -1511,7 +1429,7 @@ namespace vcpkg
             }
             if (start_of_chunk != end_of_chunk)
             {
-                print2(Color::error, StringView{start_of_chunk, end_of_chunk});
+                msg::write_unlocalized_text_to_stdout(Color::error, StringView{start_of_chunk, end_of_chunk});
                 start_of_chunk = end_of_chunk;
             }
 
@@ -1521,11 +1439,10 @@ namespace vcpkg
             }
             if (start_of_chunk != end_of_chunk)
             {
-                print2(StringView{start_of_chunk, end_of_chunk});
+                msg::write_unlocalized_text_to_stdout(Color::error, StringView{start_of_chunk, end_of_chunk});
                 start_of_chunk = end_of_chunk;
             }
         }
-        print2('\n');
     }
 
     Optional<const FeatureParagraph&> SourceControlFile::find_feature(StringView featurename) const
@@ -1696,11 +1613,12 @@ namespace vcpkg
             auto maybe_configuration = reader.visit(*configuration, get_configuration_deserializer());
             if (!reader.errors().empty())
             {
-                print2(Color::error, "Errors occurred while parsing ", ManifestDeserializer::VCPKG_CONFIGURATION, "\n");
+                msg::println_error(msgErrorWhileParsing, msg::path = ManifestDeserializer::VCPKG_CONFIGURATION);
                 for (auto&& msg : reader.errors())
-                    print2("    ", msg, '\n');
-
-                print2("See ", docs::registries_url, " for more information.\n");
+                {
+                    msg::println_error(LocalizedString().append_indent().append_raw(msg));
+                }
+                msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
             obj.insert(ManifestDeserializer::VCPKG_CONFIGURATION,

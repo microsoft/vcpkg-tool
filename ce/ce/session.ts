@@ -7,7 +7,7 @@ import { MetadataFile } from './amf/metadata-file';
 import { Activation, deactivate } from './artifacts/activation';
 import { Artifact, InstalledArtifact } from './artifacts/artifact';
 import { Registry } from './artifacts/registry';
-import { defaultConfig, globalConfigurationFile, postscriptVariable, profileNames, registryIndexFile, undo, vcpkgDownloadFolder } from './constants';
+import { configurationName, defaultConfig, globalConfigurationFile, postscriptVariable, registryIndexFile, undo } from './constants';
 import { FileSystem, FileType } from './fs/filesystem';
 import { HttpsFileSystem } from './fs/http-filesystem';
 import { LocalFileSystem } from './fs/local-filesystem';
@@ -35,6 +35,7 @@ import { isYAML } from './yaml/yaml';
 type InstallerTool<T extends Installer = any> = (
   session: Session,
   name: string,
+  version: string,
   targetLocation: Uri,
   install: T,
   events: Partial<InstallEvents>,
@@ -55,6 +56,15 @@ export type Context = { [key: string]: Array<string> | undefined; } & {
   readonly arm64: boolean;
 }
 
+export type SessionSettings = {
+  readonly vcpkgCommand?: string;
+  readonly homeFolder?: string;
+  readonly vcpkgArtifactsRoot?: string;
+  readonly vcpkgDownloads?: string;
+  readonly vcpkgRegistriesCache?: string;
+  readonly telemetryEnabled: boolean;
+}
+
 /**
  * The Session class is used to hold a reference to the
  * message channels,
@@ -71,11 +81,12 @@ export class Session {
   readonly tmpFolder: Uri;
   readonly installFolder: Uri;
   readonly registryFolder: Uri;
-  readonly vcpkgCommand?: string;
   readonly activation: Activation = new Activation(this);
+  get vcpkgCommand() { return this.settings.vcpkgCommand; }
 
   readonly globalConfig: Uri;
-  readonly cache: Uri;
+  readonly downloads: Uri;
+  readonly telemetryEnabled: boolean;
   currentDirectory: Uri;
   configuration!: MetadataFile;
 
@@ -90,9 +101,11 @@ export class Session {
   readonly defaultRegistry: AggregateRegistry;
   private readonly registries = new Registries(this);
 
-  telemetryEnabled = false;
+  processVcpkgArg(argSetting: string | undefined, defaultName: string): Uri {
+    return argSetting ? this.fileSystem.file(argSetting) : this.homeFolder.join(defaultName);
+  }
 
-  constructor(currentDirectory: string, public readonly context: Context, public readonly settings: Record<string, string>, public readonly environment: NodeJS.ProcessEnv) {
+  constructor(currentDirectory: string, public readonly context: Context, public readonly settings: SessionSettings, public readonly environment: NodeJS.ProcessEnv) {
     this.fileSystem = new UnifiedFileSystem(this).
       register('file', new LocalFileSystem(this)).
       register('vsix', new VsixLocalFilesystem(this)).
@@ -101,18 +114,18 @@ export class Session {
 
     this.channels = new Channels(this);
 
+    this.telemetryEnabled = this.settings['telemetryEnabled'];
+
     this.setupLogging();
 
-    this.homeFolder = this.fileSystem.file(settings['homeFolder']!);
-    this.cache = this.environment[vcpkgDownloadFolder] ? this.parseUri(this.environment[vcpkgDownloadFolder]!) : this.homeFolder.join('downloads');
+    this.homeFolder = this.fileSystem.file(settings.homeFolder!);
+    this.downloads = this.processVcpkgArg(settings.vcpkgDownloads, 'downloads');
     this.globalConfig = this.homeFolder.join(globalConfigurationFile);
 
-    this.vcpkgCommand = settings['vcpkgCommand'];
-
     this.tmpFolder = this.homeFolder.join('tmp');
-    this.installFolder = this.homeFolder.join('artifacts');
 
-    this.registryFolder = this.homeFolder.join('registries');
+    this.registryFolder = this.processVcpkgArg(settings.vcpkgRegistriesCache, 'registries').join('artifact');
+    this.installFolder = this.processVcpkgArg(settings.vcpkgArtifactsRoot, 'artifacts');
 
     this.currentDirectory = this.fileSystem.file(currentDirectory);
 
@@ -151,9 +164,8 @@ export class Session {
     return undefined;
   }
 
-
   async loadRegistry(registryLocation: Uri | string | undefined, registryKind = 'artifact'): Promise<Registry | undefined> {
-    // normalize the location first. 
+    // normalize the location first.
 
     registryLocation = typeof registryLocation === 'string' ? await this.parseLocation(registryLocation) || this.parseUri(registryLocation) : registryLocation;
 
@@ -301,26 +313,14 @@ export class Session {
       }
     }
 
-    if (this.context['sendmetrics']) {
-      // is it forced to be on?
-      this.telemetryEnabled = true;
-    } else {
-      // otherwise, check for the file that turns it off.
-      if (await this.vcpkgInstalled) {
-        this.telemetryEnabled = ! await this.homeFolder.exists('vcpkg.disable-metrics');
-      }
-    }
-
     return this;
   }
 
   async findProjectProfile(startLocation = this.currentDirectory, search = true): Promise<Uri | undefined> {
     let location = startLocation;
-    for (const loc of profileNames) {
-      const path = location.join(loc);
-      if (await this.fileSystem.isFile(path)) {
-        return path;
-      }
+    const path = location.join(configurationName);
+    if (await this.fileSystem.isFile(path)) {
+      return path;
     }
     location = location.join('..');
     if (search) {
@@ -363,7 +363,7 @@ export class Session {
         const metadata = await MetadataFile.parseMetadata(folder.join('artifact.yaml'), this);
         result.push({
           folder,
-          id: metadata.info.id,
+          id: metadata.id,
           artifact: await new InstalledArtifact(this, metadata).init(this)
         });
       } catch {

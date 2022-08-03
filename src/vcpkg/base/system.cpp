@@ -19,26 +19,6 @@
 extern char** environ;
 #endif
 
-namespace
-{
-    namespace msg = vcpkg::msg;
-    DECLARE_AND_REGISTER_MESSAGE(ProcessorArchitectureW6432Malformed,
-                                 (msg::arch),
-                                 "",
-                                 "Failed to parse %PROCESSOR_ARCHITEW6432% ({arch}) as a valid CPU architecture. "
-                                 "Falling back to %PROCESSOR_ARCHITECTURE%.");
-
-    DECLARE_AND_REGISTER_MESSAGE(ProcessorArchitectureMissing,
-                                 (),
-                                 "",
-                                 "The required environment variable %PROCESSOR_ARCHITECTURE% is missing.");
-
-    DECLARE_AND_REGISTER_MESSAGE(ProcessorArchitectureMalformed,
-                                 (msg::arch),
-                                 "",
-                                 "Failed to parse %PROCESSOR_ARCHITECTURE% ({arch}) as a valid CPU architecture.");
-}
-
 namespace vcpkg
 {
     long get_process_id()

@@ -22,7 +22,7 @@ using Test::make_status_pgh;
 using Test::MockCMakeVarProvider;
 using Test::PackageSpecMap;
 
-struct MockBaselineProvider : PortFileProvider::IBaselineProvider
+struct MockBaselineProvider : IBaselineProvider
 {
     mutable std::map<std::string, Version, std::less<>> v;
 
@@ -34,7 +34,7 @@ struct MockBaselineProvider : PortFileProvider::IBaselineProvider
     }
 };
 
-struct MockVersionedPortfileProvider : PortFileProvider::IVersionedPortfileProvider
+struct MockVersionedPortfileProvider : IVersionedPortfileProvider
 {
     mutable std::map<std::string, std::map<Version, SourceControlFileAndLocation, VersionMapLess>> v;
 
@@ -92,7 +92,7 @@ struct MockVersionedPortfileProvider : PortFileProvider::IVersionedPortfileProvi
     }
 };
 
-static void check_name_and_features(const Dependencies::InstallPlanAction& ipa,
+static void check_name_and_features(const InstallPlanAction& ipa,
                                     StringLiteral name,
                                     std::initializer_list<StringLiteral> features)
 {
@@ -111,7 +111,7 @@ static void check_name_and_features(const Dependencies::InstallPlanAction& ipa,
     }
 }
 
-static void check_name_and_version(const Dependencies::InstallPlanAction& ipa,
+static void check_name_and_version(const InstallPlanAction& ipa,
                                    StringLiteral name,
                                    Version v,
                                    std::initializer_list<StringLiteral> features = {})
@@ -166,7 +166,7 @@ static const PackageSpec& toplevel_spec()
     return ret;
 }
 
-struct MockOverlayProvider : PortFileProvider::IOverlayProvider
+struct MockOverlayProvider : IOverlayProvider
 {
     MockOverlayProvider() = default;
     MockOverlayProvider(const MockOverlayProvider&) = delete;
@@ -216,43 +216,41 @@ private:
 
 static const MockOverlayProvider s_empty_mock_overlay;
 
-static ExpectedS<Dependencies::ActionPlan> create_versioned_install_plan(
-    const PortFileProvider::IVersionedPortfileProvider& provider,
-    const PortFileProvider::IBaselineProvider& bprovider,
-    const CMakeVars::CMakeVarProvider& var_provider,
-    const std::vector<Dependency>& deps,
-    const std::vector<DependencyOverride>& overrides,
-    const PackageSpec& toplevel)
+static ExpectedS<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& provider,
+                                                           const IBaselineProvider& bprovider,
+                                                           const CMakeVars::CMakeVarProvider& var_provider,
+                                                           const std::vector<Dependency>& deps,
+                                                           const std::vector<DependencyOverride>& overrides,
+                                                           const PackageSpec& toplevel)
 {
-    return Dependencies::create_versioned_install_plan(provider,
-                                                       bprovider,
-                                                       s_empty_mock_overlay,
-                                                       var_provider,
-                                                       deps,
-                                                       overrides,
-                                                       toplevel,
-                                                       Test::ARM_UWP,
-                                                       Dependencies::UnsupportedPortAction::Error);
+    return create_versioned_install_plan(provider,
+                                         bprovider,
+                                         s_empty_mock_overlay,
+                                         var_provider,
+                                         deps,
+                                         overrides,
+                                         toplevel,
+                                         Test::ARM_UWP,
+                                         UnsupportedPortAction::Error);
 }
 
-static ExpectedS<vcpkg::Dependencies::ActionPlan> create_versioned_install_plan(
-    const PortFileProvider::IVersionedPortfileProvider& provider,
-    const PortFileProvider::IBaselineProvider& bprovider,
-    const PortFileProvider::IOverlayProvider& oprovider,
-    const CMakeVars::CMakeVarProvider& var_provider,
-    const std::vector<Dependency>& deps,
-    const std::vector<DependencyOverride>& overrides,
-    const PackageSpec& toplevel)
+static ExpectedS<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& provider,
+                                                           const IBaselineProvider& bprovider,
+                                                           const IOverlayProvider& oprovider,
+                                                           const CMakeVars::CMakeVarProvider& var_provider,
+                                                           const std::vector<Dependency>& deps,
+                                                           const std::vector<DependencyOverride>& overrides,
+                                                           const PackageSpec& toplevel)
 {
-    return vcpkg::Dependencies::create_versioned_install_plan(provider,
-                                                              bprovider,
-                                                              oprovider,
-                                                              var_provider,
-                                                              deps,
-                                                              overrides,
-                                                              toplevel,
-                                                              Test::ARM_UWP,
-                                                              Dependencies::UnsupportedPortAction::Error);
+    return create_versioned_install_plan(provider,
+                                         bprovider,
+                                         oprovider,
+                                         var_provider,
+                                         deps,
+                                         overrides,
+                                         toplevel,
+                                         Test::ARM_UWP,
+                                         UnsupportedPortAction::Error);
 }
 
 TEST_CASE ("basic version install single", "[versionplan]")
@@ -509,7 +507,7 @@ TEST_CASE ("version install string port version 2", "[versionplan]")
 
     REQUIRE(install_plan.size() == 1);
     check_name_and_version(install_plan.install_actions[0], "a", {"2", 1});
-    CHECK(install_plan.install_actions[0].request_type == Dependencies::RequestType::USER_REQUESTED);
+    CHECK(install_plan.install_actions[0].request_type == RequestType::USER_REQUESTED);
 }
 
 TEST_CASE ("version install transitive string", "[versionplan]")
@@ -542,9 +540,9 @@ TEST_CASE ("version install transitive string", "[versionplan]")
 
     REQUIRE(install_plan.size() == 2);
     check_name_and_version(install_plan.install_actions[0], "b", {"2", 0});
-    CHECK(install_plan.install_actions[0].request_type == Dependencies::RequestType::AUTO_SELECTED);
+    CHECK(install_plan.install_actions[0].request_type == RequestType::AUTO_SELECTED);
     check_name_and_version(install_plan.install_actions[1], "a", {"2", 1});
-    CHECK(install_plan.install_actions[1].request_type == Dependencies::RequestType::USER_REQUESTED);
+    CHECK(install_plan.install_actions[1].request_type == RequestType::USER_REQUESTED);
 }
 
 TEST_CASE ("version install simple relaxed", "[versionplan]")
@@ -1410,11 +1408,11 @@ TEST_CASE ("version install transitive feature versioned", "[versionplan]")
 
     REQUIRE(install_plan.size() == 3);
     check_name_and_version(install_plan.install_actions[0], "c", {"1", 0});
-    CHECK(install_plan.install_actions[0].request_type == Dependencies::RequestType::AUTO_SELECTED);
+    CHECK(install_plan.install_actions[0].request_type == RequestType::AUTO_SELECTED);
     check_name_and_version(install_plan.install_actions[1], "b", {"2", 0}, {"y"});
-    CHECK(install_plan.install_actions[1].request_type == Dependencies::RequestType::AUTO_SELECTED);
+    CHECK(install_plan.install_actions[1].request_type == RequestType::AUTO_SELECTED);
     check_name_and_version(install_plan.install_actions[2], "a", {"1", 0}, {"x"});
-    CHECK(install_plan.install_actions[2].request_type == Dependencies::RequestType::USER_REQUESTED);
+    CHECK(install_plan.install_actions[2].request_type == RequestType::USER_REQUESTED);
 }
 
 TEST_CASE ("version install constraint-reduction", "[versionplan]")
@@ -1984,10 +1982,10 @@ TEST_CASE ("version install host tool", "[versionplan]")
         REQUIRE(install_plan.size() == 2);
         check_name_and_version(install_plan.install_actions[0], "a", {"1", 0});
         REQUIRE(install_plan.install_actions[0].spec.triplet() == Test::ARM_UWP);
-        CHECK(install_plan.install_actions[0].request_type == Dependencies::RequestType::AUTO_SELECTED);
+        CHECK(install_plan.install_actions[0].request_type == RequestType::AUTO_SELECTED);
         check_name_and_version(install_plan.install_actions[1], "b", {"1", 0});
         REQUIRE(install_plan.install_actions[1].spec.triplet() == Test::X86_WINDOWS);
-        CHECK(install_plan.install_actions[1].request_type == Dependencies::RequestType::USER_REQUESTED);
+        CHECK(install_plan.install_actions[1].request_type == RequestType::USER_REQUESTED);
     }
     SECTION ("transitive 2")
     {
@@ -1999,10 +1997,10 @@ TEST_CASE ("version install host tool", "[versionplan]")
         REQUIRE(install_plan.size() == 2);
         check_name_and_version(install_plan.install_actions[0], "a", {"1", 0});
         REQUIRE(install_plan.install_actions[0].spec.triplet() == Test::ARM_UWP);
-        CHECK(install_plan.install_actions[0].request_type == Dependencies::RequestType::AUTO_SELECTED);
+        CHECK(install_plan.install_actions[0].request_type == RequestType::AUTO_SELECTED);
         check_name_and_version(install_plan.install_actions[1], "c", {"1", 0});
         REQUIRE(install_plan.install_actions[1].spec.triplet() == Test::ARM_UWP);
-        CHECK(install_plan.install_actions[1].request_type == Dependencies::RequestType::USER_REQUESTED);
+        CHECK(install_plan.install_actions[1].request_type == RequestType::USER_REQUESTED);
     }
     SECTION ("self-reference")
     {
@@ -2011,10 +2009,10 @@ TEST_CASE ("version install host tool", "[versionplan]")
         REQUIRE(install_plan.size() == 2);
         check_name_and_version(install_plan.install_actions[0], "d", {"1", 0});
         REQUIRE(install_plan.install_actions[0].spec.triplet() == Test::ARM_UWP);
-        CHECK(install_plan.install_actions[0].request_type == Dependencies::RequestType::AUTO_SELECTED);
+        CHECK(install_plan.install_actions[0].request_type == RequestType::AUTO_SELECTED);
         check_name_and_version(install_plan.install_actions[1], "d", {"1", 0});
         REQUIRE(install_plan.install_actions[1].spec.triplet() == Test::X86_WINDOWS);
-        CHECK(install_plan.install_actions[1].request_type == Dependencies::RequestType::USER_REQUESTED);
+        CHECK(install_plan.install_actions[1].request_type == RequestType::USER_REQUESTED);
     }
 }
 TEST_CASE ("version overlay ports", "[versionplan]")

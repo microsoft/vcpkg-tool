@@ -74,7 +74,6 @@ namespace vcpkg
     {
         std::string user_id;
         std::string user_timestamp;
-        std::string timestamp;
 
         Json::Object properties;
         Json::Object measurements;
@@ -126,7 +125,7 @@ namespace vcpkg
 
             obj.insert("ver", Json::Value::integer(1));
             obj.insert("name", Json::Value::string("Microsoft.ApplicationInsights.Event"));
-            obj.insert("time", Json::Value::string(timestamp));
+            obj.insert("time", Json::Value::string(get_current_date_time_string()));
             obj.insert("sampleRate", Json::Value::number(100.0));
             obj.insert("seq", Json::Value::string("0:0"));
             obj.insert("iKey", Json::Value::string("b4e88960-4393-4dd9-ab8e-97e8fe6d7603"));
@@ -171,7 +170,7 @@ namespace vcpkg
                 base_data.insert("measurements", measurements);
             }
 
-            return Json::stringify(arr, vcpkg::Json::JsonStyle());
+            return Json::stringify(arr);
         }
     };
 

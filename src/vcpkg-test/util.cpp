@@ -198,8 +198,8 @@ namespace vcpkg::Test
         else if (l != r)
         {
             INFO(path);
-            INFO("l = " << Json::stringify(l, {}));
-            INFO("r = " << Json::stringify(r, {}));
+            INFO("l = " << Json::stringify(l));
+            INFO("r = " << Json::stringify(r));
             CHECK(false);
         }
     }

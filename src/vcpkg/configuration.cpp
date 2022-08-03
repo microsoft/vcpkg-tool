@@ -10,15 +10,6 @@ namespace
 {
     using namespace vcpkg;
 
-    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineRemoteGitError,
-                                 (msg::url),
-                                 "",
-                                 "git failed to fetch remote repository '{url}'");
-    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineLocalGitError,
-                                 (msg::path),
-                                 "",
-                                 "git failed to parse HEAD for the local vcpkg registry at '{path}'");
-
     struct RegistryConfigDeserializer : Json::IDeserializer<RegistryConfig>
     {
         constexpr static StringLiteral KIND = "kind";
@@ -569,7 +560,7 @@ namespace vcpkg
         {
             if (paths.use_git_default_registry())
             {
-                return get_baseline_from_git_repo(paths, builtin_registry_git_url());
+                return get_baseline_from_git_repo(paths, builtin_registry_git_url);
             }
             else
             {
@@ -597,7 +588,7 @@ namespace vcpkg
     {
         if (kind == RegistryConfigDeserializer::KIND_BUILTIN)
         {
-            return builtin_registry_git_url();
+            return builtin_registry_git_url;
         }
         if (kind == RegistryConfigDeserializer::KIND_FILESYSTEM)
         {

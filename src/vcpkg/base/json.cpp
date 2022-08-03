@@ -9,17 +9,6 @@
 
 #include <inttypes.h>
 
-namespace
-{
-    using namespace vcpkg;
-    DECLARE_AND_REGISTER_MESSAGE(JsonErrorFailedToRead,
-                                 (msg::path, msg::error_msg),
-                                 "",
-                                 "failed to read {path}: {error_msg}");
-    DECLARE_AND_REGISTER_MESSAGE(JsonErrorFailedToParse, (msg::path), "", "failed to parse {path}:");
-    DECLARE_AND_REGISTER_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected {path} to be an object.");
-}
-
 namespace vcpkg::Json
 {
     static std::atomic<uint64_t> g_json_parsing_stats(0);
@@ -1325,6 +1314,7 @@ namespace vcpkg::Json
         };
     }
 
+    std::string stringify(const Value& value) { return stringify(value, JsonStyle{}); }
     std::string stringify(const Value& value, JsonStyle style)
     {
         std::string res;
@@ -1332,6 +1322,7 @@ namespace vcpkg::Json
         res.push_back('\n');
         return res;
     }
+    std::string stringify(const Object& obj) { return stringify(obj, JsonStyle{}); }
     std::string stringify(const Object& obj, JsonStyle style)
     {
         std::string res;
@@ -1339,6 +1330,7 @@ namespace vcpkg::Json
         res.push_back('\n');
         return res;
     }
+    std::string stringify(const Array& arr) { return stringify(arr, JsonStyle{}); }
     std::string stringify(const Array& arr, JsonStyle style)
     {
         std::string res;

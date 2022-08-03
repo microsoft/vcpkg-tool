@@ -62,7 +62,7 @@
     "yaml": "2.0.0-10",
     "semver": "7.3.5",
     "tar-stream": "~2.3.0",
-    "got": "11.8.3",
+    "got": "11.8.5",
     "sorted-btree": "1.6.0",
     "sed-lite": "0.8.4",
     "unbzip2-stream": "1.4.3",

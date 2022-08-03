@@ -10,10 +10,6 @@
 #include <vcpkg/postbuildlint.h>
 #include <vcpkg/vcpkgpaths.h>
 
-using vcpkg::Build::BuildInfo;
-using vcpkg::Build::BuildPolicy;
-using vcpkg::Build::PreBuildInfo;
-
 namespace vcpkg::PostBuildLint
 {
     constexpr static const StringLiteral windows_system_names[] = {
@@ -73,7 +69,7 @@ namespace vcpkg::PostBuildLint
     }
 
     static LintStatus check_for_files_in_include_directory(const Filesystem& fs,
-                                                           const Build::BuildPolicies& policies,
+                                                           const BuildPolicies& policies,
                                                            const Path& package_dir)
     {
         if (policies.is_enabled(BuildPolicy::EMPTY_INCLUDE_FOLDER))
@@ -110,7 +106,7 @@ namespace vcpkg::PostBuildLint
     }
 
     static LintStatus check_for_restricted_include_files(const Filesystem& fs,
-                                                         const Build::BuildPolicies& policies,
+                                                         const BuildPolicies& policies,
                                                          const Path& package_dir)
     {
         if (policies.is_enabled(BuildPolicy::ALLOW_RESTRICTED_HEADERS))
@@ -192,7 +188,7 @@ namespace vcpkg::PostBuildLint
                    "other packages from compiling correctly:\n");
             print_paths(violations);
             print2("In exceptional circumstances, this policy can be disabled via ",
-                   Build::to_cmake_variable(BuildPolicy::ALLOW_RESTRICTED_HEADERS),
+                   to_cmake_variable(BuildPolicy::ALLOW_RESTRICTED_HEADERS),
                    "\n");
             return LintStatus::PROBLEM_DETECTED;
         }
@@ -235,7 +231,7 @@ namespace vcpkg::PostBuildLint
     }
 
     static LintStatus check_for_vcpkg_port_config(const Filesystem& fs,
-                                                  const Build::BuildPolicies& policies,
+                                                  const BuildPolicies& policies,
                                                   const Path& package_dir,
                                                   const PackageSpec& spec)
     {
@@ -346,10 +342,14 @@ namespace vcpkg::PostBuildLint
     {
         const auto packages_dir = paths.packages() / spec.dir();
         const auto copyright_file = packages_dir / "share" / spec.name() / "copyright";
-        if (fs.exists(copyright_file, IgnoreErrors{}))
+
+        switch (fs.status(copyright_file, IgnoreErrors{}))
         {
-            return LintStatus::SUCCESS;
+            case FileType::regular: return LintStatus::SUCCESS; break;
+            case FileType::directory: msg::println_warning(msgCopyrightIsDir, msg::path = "copyright"); break;
+            default: break;
         }
+
         const auto current_buildtrees_dir = paths.build_dir(spec);
         const auto current_buildtrees_dir_src = current_buildtrees_dir / "src";
 
@@ -411,7 +411,7 @@ namespace vcpkg::PostBuildLint
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_exports_of_dlls(const Build::BuildPolicies& policies,
+    static LintStatus check_exports_of_dlls(const BuildPolicies& policies,
                                             const std::vector<Path>& dlls,
                                             const Path& dumpbin_exe)
     {
@@ -625,7 +625,7 @@ namespace vcpkg::PostBuildLint
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_no_dlls_present(const Build::BuildPolicies& policies, const std::vector<Path>& dlls)
+    static LintStatus check_no_dlls_present(const BuildPolicies& policies, const std::vector<Path>& dlls)
     {
         if (dlls.empty() || policies.is_enabled(BuildPolicy::DLLS_IN_STATIC_LIBRARY))
         {
@@ -671,7 +671,7 @@ namespace vcpkg::PostBuildLint
         return LintStatus::PROBLEM_DETECTED;
     }
 
-    static LintStatus check_lib_files_are_available_if_dlls_are_available(const Build::BuildPolicies& policies,
+    static LintStatus check_lib_files_are_available_if_dlls_are_available(const BuildPolicies& policies,
                                                                           const size_t lib_count,
                                                                           const size_t dll_count,
                                                                           const Path& lib_dir)
@@ -691,7 +691,7 @@ namespace vcpkg::PostBuildLint
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_bin_folders_are_not_present_in_static_build(const Build::BuildPolicies& policies,
+    static LintStatus check_bin_folders_are_not_present_in_static_build(const BuildPolicies& policies,
                                                                         const Filesystem& fs,
                                                                         const Path& package_dir)
     {
@@ -899,10 +899,10 @@ namespace vcpkg::PostBuildLint
                                                 const Path& dumpbin_exe)
     {
         auto bad_build_types = std::vector<BuildType>({
-            {Build::ConfigurationType::DEBUG, Build::LinkageType::STATIC},
-            {Build::ConfigurationType::DEBUG, Build::LinkageType::DYNAMIC},
-            {Build::ConfigurationType::RELEASE, Build::LinkageType::STATIC},
-            {Build::ConfigurationType::RELEASE, Build::LinkageType::DYNAMIC},
+            {ConfigurationType::DEBUG, LinkageType::STATIC},
+            {ConfigurationType::DEBUG, LinkageType::DYNAMIC},
+            {ConfigurationType::RELEASE, LinkageType::STATIC},
+            {ConfigurationType::RELEASE, LinkageType::DYNAMIC},
         });
         Util::erase_remove(bad_build_types, expected_build_type);
 
@@ -1098,7 +1098,7 @@ namespace vcpkg::PostBuildLint
 
         switch (build_info.library_linkage)
         {
-            case Build::LinkageType::DYNAMIC:
+            case LinkageType::DYNAMIC:
             {
                 if (!pre_build_info.build_type &&
                     !build_info.policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
@@ -1126,7 +1126,7 @@ namespace vcpkg::PostBuildLint
 #endif
                 break;
             }
-            case Build::LinkageType::STATIC:
+            case LinkageType::STATIC:
             {
                 auto dlls = release_dlls;
                 dlls.insert(dlls.end(), debug_dlls.begin(), debug_dlls.end());
@@ -1139,14 +1139,10 @@ namespace vcpkg::PostBuildLint
                     if (!build_info.policies.is_enabled(BuildPolicy::ONLY_RELEASE_CRT))
                     {
                         error_count += check_crt_linkage_of_libs(
-                            BuildType(Build::ConfigurationType::DEBUG, build_info.crt_linkage),
-                            debug_libs,
-                            toolset.dumpbin);
+                            BuildType(ConfigurationType::DEBUG, build_info.crt_linkage), debug_libs, toolset.dumpbin);
                     }
-                    error_count +=
-                        check_crt_linkage_of_libs(BuildType(Build::ConfigurationType::RELEASE, build_info.crt_linkage),
-                                                  release_libs,
-                                                  toolset.dumpbin);
+                    error_count += check_crt_linkage_of_libs(
+                        BuildType(ConfigurationType::RELEASE, build_info.crt_linkage), release_libs, toolset.dumpbin);
                 }
                 break;
             }

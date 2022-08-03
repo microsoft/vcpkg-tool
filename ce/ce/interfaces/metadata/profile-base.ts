@@ -4,7 +4,6 @@
 import { Dictionary } from '../collections';
 import { Contact } from './contact';
 import { Demands } from './demands';
-import { Info } from './info';
 import { RegistryDeclaration } from './metadata-format';
 
 
@@ -21,9 +20,6 @@ type Primitive = string | number | boolean;
  */
 
 export interface ProfileBase extends Demands {
-  /** this profile/package information/metadata */
-  info: Info;
-
   /** any contact information related to this profile/package */
   contacts: Dictionary<Contact>; // optional
 
@@ -38,10 +34,4 @@ export interface ProfileBase extends Demands {
 
   /** parsing errors in this document */
   readonly formatErrors: Array<string>;
-
-  /** does the document pass validation checks? */
-  readonly isValid: boolean;
-
-  /** what are the valiation check errors? */
-  readonly validationErrors: Array<string>;
 }
