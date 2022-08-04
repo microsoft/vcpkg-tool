@@ -125,7 +125,13 @@ namespace vcpkg
             VersionedPortfileProviderImpl(const VersionedPortfileProviderImpl&) = delete;
             VersionedPortfileProviderImpl& operator=(const VersionedPortfileProviderImpl&) = delete;
 
-            const ExpectedS<std::unique_ptr<RegistryEntry>>& entry(StringView name) const
+            struct EntryAndOrigin
+            {
+                std::string origin;
+                std::unique_ptr<RegistryEntry> entry;
+            };
+
+            const ExpectedS<EntryAndOrigin>& entry(StringView name) const
             {
                 auto entry_it = m_entry_cache.find(name);
                 if (entry_it == m_entry_cache.end())
@@ -134,7 +140,10 @@ namespace vcpkg
                     {
                         if (auto entry = reg->get_port_entry(name))
                         {
-                            entry_it = m_entry_cache.emplace(name.to_string(), std::move(entry)).first;
+                            entry_it = m_entry_cache
+                                           .emplace(name.to_string(),
+                                                    EntryAndOrigin{reg->kind().to_string(), std::move(entry)})
+                                           .first;
                         }
                         else
                         {
@@ -158,7 +167,7 @@ namespace vcpkg
 
             virtual View<Version> get_port_versions(StringView port_name) const override
             {
-                return entry(port_name).value_or_exit(VCPKG_LINE_INFO)->get_port_versions();
+                return entry(port_name).value_or_exit(VCPKG_LINE_INFO).entry->get_port_versions();
             }
 
             ExpectedS<std::unique_ptr<SourceControlFileAndLocation>> load_control_file(
@@ -167,7 +176,7 @@ namespace vcpkg
                 const auto& maybe_ent = entry(version_spec.port_name);
                 if (auto ent = maybe_ent.get())
                 {
-                    auto maybe_path = ent->get()->get_version(version_spec.version);
+                    auto maybe_path = ent->entry->get_version(version_spec.version);
                     if (auto path = maybe_path.get())
                     {
                         auto maybe_control_file = Paragraphs::try_load_port(m_fs, path->path);
@@ -177,7 +186,7 @@ namespace vcpkg
                             if (scf_vspec == version_spec)
                             {
                                 return std::make_unique<SourceControlFileAndLocation>(
-                                    "default", std::move(*scf), path->path, path->location);
+                                    ent->origin, std::move(*scf), path->path, path->location);
                             }
                             else
                             {
@@ -241,7 +250,7 @@ namespace vcpkg
             mutable std::
                 unordered_map<VersionSpec, ExpectedS<std::unique_ptr<SourceControlFileAndLocation>>, VersionSpecHasher>
                     m_control_cache;
-            mutable std::map<std::string, ExpectedS<std::unique_ptr<RegistryEntry>>, std::less<>> m_entry_cache;
+            mutable std::map<std::string, ExpectedS<EntryAndOrigin>, std::less<>> m_entry_cache;
         };
 
         struct OverlayProviderImpl : IOverlayProvider

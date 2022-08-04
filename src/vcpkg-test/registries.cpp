@@ -13,6 +13,8 @@ namespace
     {
         StringLiteral kind() const override { return "test"; }
 
+        StringView origin() const override { return ""; }
+
         std::unique_ptr<RegistryEntry> get_port_entry(StringView) const override { return nullptr; }
 
         void get_all_port_names(std::vector<std::string>&) const override { }

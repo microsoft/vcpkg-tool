@@ -73,6 +73,8 @@ namespace vcpkg
     {
         virtual StringLiteral kind() const = 0;
 
+        virtual StringView origin() const = 0;
+
         // returns nullptr if the port doesn't exist
         virtual std::unique_ptr<RegistryEntry> get_port_entry(StringView port_name) const = 0;
 

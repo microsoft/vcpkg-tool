@@ -61,6 +61,8 @@ namespace
 
         StringLiteral kind() const override { return "git"; }
 
+        StringView origin() const override { return Strings::concat(m_repo, ":", m_reference); }
+
         std::unique_ptr<RegistryEntry> get_port_entry(StringView) const override;
 
         void get_all_port_names(std::vector<std::string>&) const override;
@@ -223,6 +225,8 @@ namespace
 
         StringLiteral kind() const override { return s_kind; }
 
+        StringView origin() const override { return m_builtin_ports_directory; }
+
         std::unique_ptr<RegistryEntry> get_port_entry(StringView port_name) const override;
 
         void get_all_port_names(std::vector<std::string>&) const override;
@@ -260,6 +264,8 @@ namespace
 
         StringLiteral kind() const override { return s_kind; }
 
+        StringView origin() const override { return ""; }
+
         std::unique_ptr<RegistryEntry> get_port_entry(StringView port_name) const override;
 
         void get_all_port_names(std::vector<std::string>&) const override;
@@ -285,6 +291,8 @@ namespace
         static constexpr StringLiteral s_kind = "builtin-error";
 
         StringLiteral kind() const override { return s_kind; }
+
+        StringView origin() const override { return ""; }
 
         std::unique_ptr<RegistryEntry> get_port_entry(StringView) const override
         {
@@ -313,6 +321,8 @@ namespace
         }
 
         StringLiteral kind() const override { return "filesystem"; }
+
+        StringView origin() const override { return m_path; }
 
         std::unique_ptr<RegistryEntry> get_port_entry(StringView) const override;
 
@@ -1186,7 +1196,7 @@ namespace vcpkg
         if (auto pversions = maybe_versions.get())
         {
             return Util::fmap(
-                *pversions, [](auto&& entry) -> auto{
+                *pversions, [](auto&& entry) -> auto {
                     return std::make_pair(SchemedVersion{entry.scheme, entry.version}, entry.git_tree);
                 });
         }
