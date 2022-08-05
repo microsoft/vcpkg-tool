@@ -357,5 +357,6 @@
   "WaitingToTakeFilesystemLock": "waiting to take filesystem lock on {path}...",
   "WarningMessage": "warning: ",
   "WarningMessageMustUsePrintWarning": "The message named {value} starts with warning:, it must be changed to prepend WarningMessage in code instead.",
-  "WarningsTreatedAsErrors": "previous warnings being interpreted as errors"
+  "WarningsTreatedAsErrors": "previous warnings being interpreted as errors",
+  "WrotePkgConfInfo": "Wrote package config information to {path}."
 }

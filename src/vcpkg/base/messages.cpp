@@ -753,4 +753,6 @@ namespace vcpkg
     REGISTER_MESSAGE(PortsRemoved);
     REGISTER_MESSAGE(PortsUpdated);
     REGISTER_MESSAGE(PortsNoDiff);
+    REGISTER_MESSAGE(WrotePkgConfInfo);
+    REGISTER_MESSAGE(TotalTime);
 }

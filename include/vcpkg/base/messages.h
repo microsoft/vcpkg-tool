@@ -1446,4 +1446,6 @@ namespace vcpkg
     DECLARE_MESSAGE(PortsRemoved, (msg::count), "", "The following {count} ports were removed:");
     DECLARE_MESSAGE(PortsUpdated, (msg::count), "", "\nThe following {count} ports were updated:");
     DECLARE_MESSAGE(PortsNoDiff, (), "", "There were no changes in the ports between the two commits.");
+    DECLARE_MESSAGE(WrotePkgConfInfo, (msg::path), "", "Wrote package config information to {path}.");
+    DECLARE_MESSAGE(TotalTime, (msg::count), "", " Total elapsed time: {count}.");
 }
