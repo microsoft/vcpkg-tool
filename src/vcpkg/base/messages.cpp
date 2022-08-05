@@ -751,4 +751,6 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidCommitId);
     REGISTER_MESSAGE(PortsAdded);
     REGISTER_MESSAGE(PortsRemoved);
+    REGISTER_MESSAGE(PortsUpdated);
+    REGISTER_MESSAGE(PortsNoDiff);
 }

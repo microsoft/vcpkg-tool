@@ -73,7 +73,7 @@ namespace vcpkg::Commands::PortsDiff
         for (const std::string& name : ports_to_print)
         {
             const Version& version = names_and_versions.at(name);
-            msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("    - {} {}\n", name, version));
+            msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\t- {:<15}{:<}\n", name, version));
         }
     }
 
@@ -177,16 +177,17 @@ namespace vcpkg::Commands::PortsDiff
 
         if (!updated_ports.empty())
         {
-            vcpkg::printf("\nThe following %zd ports were updated:\n", updated_ports.size());
+            msg::println(msgPortsUpdated, msg::count = updated_ports.size());
             for (const UpdatedPort& p : updated_ports)
             {
-                vcpkg::printf("    - %-14s %-16s\n", p.port, p.version_diff.to_string());
+                msg::write_unlocalized_text_to_stdout(
+                    Color::none, fmt::format("\t- {:<15}{:<}\n", p.port, p.version_diff.to_string()));
             }
         }
 
         if (added_ports.empty() && removed_ports.empty() && updated_ports.empty())
         {
-            print2("There were no changes in the ports between the two commits.\n");
+            msg::println(msgPortsNoDiff);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
