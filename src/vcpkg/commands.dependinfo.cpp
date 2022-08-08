@@ -401,7 +401,7 @@ namespace vcpkg::Commands::DependInfo
 
                     if (show_depth)
                     {
-                        msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("({} )", info.depth));
+                        msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("({})", info.depth));
                     }
                     msg::write_unlocalized_text_to_stdout(Color::success, info.package);
                     if (!features.empty())
