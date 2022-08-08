@@ -188,7 +188,7 @@ namespace vcpkg::Commands
         if (!enable_json)
         {
             msg::println(msg::format(msgSuggestGitPull)
-                             .append_nl()
+                             .append_raw("\n")
                              .append(msgMissingPortSuggestPullRequest)
                              .append_indent()
                              .append_raw("-  https://github.com/Microsoft/vcpkg/issues"));

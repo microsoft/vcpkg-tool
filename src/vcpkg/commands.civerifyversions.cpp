@@ -399,10 +399,11 @@ namespace vcpkg::Commands::CIVerifyVersions
             auto message = msg::format(msgErrorsFound);
             for (auto&& error : errors)
             {
-                message.append_nl().append_indent().append_raw(error);
+                message.append_raw("\n").append_indent().append_raw(error);
             }
 
-            message.append_nl().append(msgSuggestResolution, msg::command_name = "x-add-version", msg::option = "all");
+            message.append_raw("\n").append(
+                msgSuggestResolution, msg::command_name = "x-add-version", msg::option = "all");
 
             msg::println_error(message);
 

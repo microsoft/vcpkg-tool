@@ -74,12 +74,6 @@ namespace vcpkg
             return *this;
         }
 
-        LocalizedString& append_nl()
-        {
-            m_data.append("\n");
-            return *this;
-        }
-
         friend const char* to_printf_arg(const LocalizedString& s) { return s.data().c_str(); }
 
         friend bool operator==(const LocalizedString& lhs, const LocalizedString& rhs)
