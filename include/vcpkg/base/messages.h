@@ -1455,4 +1455,10 @@ namespace vcpkg
                     "Skipping clearing contents of {path} because it was not a directory.");
     DECLARE_MESSAGE(StartingCIClean, (), "", "Starting vcpkg CI clean.");
     DECLARE_MESSAGE(CompletedCIClean, (), "", "Completed vcpkg CI clean.");
+    DECLARE_MESSAGE(InitRegistryFailedNoRepo,
+                    (msg::path, msg::command_line),
+                    "",
+                    "Could not create a registry at {path} because this is not a git repository root.\nUse `git init "
+                    "{command_line} to create a git repository in this folder.");
+    DECLARE_MESSAGE(RegistryCreated, (msg::path), "", "Successfully created registry at {path}");
 }

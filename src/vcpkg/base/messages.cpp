@@ -749,4 +749,6 @@ namespace vcpkg
     REGISTER_MESSAGE(SkipClearingInvalidDir);
     REGISTER_MESSAGE(StartingCIClean);
     REGISTER_MESSAGE(CompletedCIClean);
+    REGISTER_MESSAGE(InitRegistryFailedNoRepo);
+    REGISTER_MESSAGE(RegistryCreated);
 }
