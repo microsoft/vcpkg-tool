@@ -788,6 +788,7 @@ namespace vcpkg
     DECLARE_MESSAGE(ErrorWhileParsing, (msg::path), "", "Errors occurred while parsing {path}.");
     DECLARE_MESSAGE(ErrorWhileSearching, (msg::spec), "", "info: while looking for {spec}:");
     DECLARE_MESSAGE(ErrorWhileWriting, (msg::path), "", "Error occured while writing {path}");
+    DECLARE_MESSAGE(ExceededRecursionDepth, (), "", "Recursion depth exceeded.");
     DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
     DECLARE_MESSAGE(ExcludedPackages, (), "", "The following packages are excluded:");
     DECLARE_MESSAGE(
@@ -1007,6 +1008,14 @@ namespace vcpkg
                     "invalid argument: binary config '{binary_source}' requires a SAS token without a "
                     "preceeding '?' as the second argument");
     DECLARE_MESSAGE(InvalidBuildInfo, (msg::error_msg), "", "Invalid BUILD_INFO file for package: {error_msg}");
+    DECLARE_MESSAGE(InvalidCommandArgSort,
+                    (),
+                    "",
+                    "Value of --sort must be one of 'lexicographical', 'topological', 'reverse'.");
+    DECLARE_MESSAGE(InvalidFilename,
+                    (msg::value, msg::path),
+                    "'{value}' is a list of invalid characters. I.e. \\/:*?<>|",
+                    "Filename cannot contain invalid chars {value}, but was {path}");
     DECLARE_MESSAGE(InvalidFormatString,
                     (msg::actual),
                     "{actual} is the provided format string",
@@ -1172,6 +1181,7 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "NuGet package creation succeeded, but no .nupkg was produced. Expected: \"{path}\"");
+    DECLARE_MESSAGE(OptionMustBeInteger, (msg::option), "", "Value of --{option} must be an integer.");
     DECLARE_MESSAGE(OptionRequired, (msg::option), "", "--{option} option is required.");
     DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph");
     DECLARE_MESSAGE(PackageFailedtWhileExtracting,
@@ -1181,7 +1191,7 @@ namespace vcpkg
     DECLARE_MESSAGE(PackageRootDir, (), "", "(Experimental) Specify the packages root directory.");
     DECLARE_MESSAGE(PackagesToInstall, (), "", "The following packages will be built and installed:");
     DECLARE_MESSAGE(PackagesToInstallDirectly, (), "", "The following packages will be directly installed:");
-    DECLARE_MESSAGE(PackagesToModify, (), "", "Additional packages (*) will be modified to comeplete this operation.");
+    DECLARE_MESSAGE(PackagesToModify, (), "", "Additional packages (*) will be modified to complete this operation.");
     DECLARE_MESSAGE(PackagesToReBuild, (), "", "The following packages will be rebuilt:");
     DECLARE_MESSAGE(
         PackagesToRebuildSuggestRecurse,
