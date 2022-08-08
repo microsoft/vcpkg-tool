@@ -490,6 +490,7 @@ namespace vcpkg
     REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion);
     REGISTER_MESSAGE(CreatedNuGetPackage);
     REGISTER_MESSAGE(CurlReportedUnexpectedResults);
+    REGISTER_MESSAGE(DateTableHeader);
     REGISTER_MESSAGE(DefaultBrowserLaunched);
     REGISTER_MESSAGE(DefaultFlag);
     REGISTER_MESSAGE(DefaultPathToBinaries);
@@ -532,8 +533,8 @@ namespace vcpkg
     REGISTER_MESSAGE(ExpectedValueForOption);
     REGISTER_MESSAGE(ExtendedDocumentationAtUrl);
     REGISTER_MESSAGE(FailedToExtract);
-    REGISTER_MESSAGE(FailedToParseSerializedBinParagraph);
     REGISTER_MESSAGE(FailedToParseCMakeConsoleOut);
+    REGISTER_MESSAGE(FailedToParseSerializedBinParagraph);
     REGISTER_MESSAGE(FailedToProvisionCe);
     REGISTER_MESSAGE(FailedToRunToolToDetermineVersion);
     REGISTER_MESSAGE(FailedToStoreBackToMirror);
@@ -604,6 +605,7 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidArgumentRequiresTwoOrThreeArguments);
     REGISTER_MESSAGE(InvalidArgumentRequiresValidToken);
     REGISTER_MESSAGE(InvalidBuildInfo);
+    REGISTER_MESSAGE(InvalidCommitId);
     REGISTER_MESSAGE(InvalidFormatString);
     REGISTER_MESSAGE(InvalidLinkage);
     REGISTER_MESSAGE(JsonErrorFailedToParse);
@@ -652,6 +654,7 @@ namespace vcpkg
     REGISTER_MESSAGE(NoLocalizationForMessages);
     REGISTER_MESSAGE(NoRegistryForPort);
     REGISTER_MESSAGE(NugetPackageFileSucceededButCreationFailed);
+    REGISTER_MESSAGE(OptionRequiresJsonSwitch);
     REGISTER_MESSAGE(OriginalBinParagraphHeader);
     REGISTER_MESSAGE(PackageFailedtWhileExtracting);
     REGISTER_MESSAGE(PackageRootDir);
@@ -663,6 +666,10 @@ namespace vcpkg
     REGISTER_MESSAGE(ParseControlErrorInfoWrongTypeFields);
     REGISTER_MESSAGE(PortDependencyConflict);
     REGISTER_MESSAGE(PortNotInBaseline);
+    REGISTER_MESSAGE(PortsAdded);
+    REGISTER_MESSAGE(PortsNoDiff);
+    REGISTER_MESSAGE(PortsRemoved);
+    REGISTER_MESSAGE(PortsUpdated);
     REGISTER_MESSAGE(PortSupportsField);
     REGISTER_MESSAGE(PreviousIntegrationFileRemains);
     REGISTER_MESSAGE(ProcessorArchitectureMalformed);
@@ -689,6 +696,7 @@ namespace vcpkg
     REGISTER_MESSAGE(SystemApiErrorMessage);
     REGISTER_MESSAGE(ToolFetchFailed);
     REGISTER_MESSAGE(ToolInWin10);
+    REGISTER_MESSAGE(TotalTime);
     REGISTER_MESSAGE(TwoFeatureFlagsSpecified);
     REGISTER_MESSAGE(UndeterminedToolChainForTriplet);
     REGISTER_MESSAGE(UnexpectedErrorDuringBulkDownload);
@@ -725,6 +733,7 @@ namespace vcpkg
     REGISTER_MESSAGE(UsingCommunityTriplet);
     REGISTER_MESSAGE(UsingManifestAt);
     REGISTER_MESSAGE(VcpkgCeIsExperimental);
+    REGISTER_MESSAGE(VcpkgCommitTableHeader);
     REGISTER_MESSAGE(VcpkgCompletion);
     REGISTER_MESSAGE(VcpkgDisallowedClassicMode);
     REGISTER_MESSAGE(VcpkgHasCrashed);
@@ -737,6 +746,7 @@ namespace vcpkg
     REGISTER_MESSAGE(VersionInvalidRelaxed);
     REGISTER_MESSAGE(VersionInvalidSemver);
     REGISTER_MESSAGE(VersionSpecMismatch);
+    REGISTER_MESSAGE(VersionTableHeader);
     REGISTER_MESSAGE(VSExaminedInstances);
     REGISTER_MESSAGE(VSExaminedPaths);
     REGISTER_MESSAGE(VSNoInstances);
@@ -744,15 +754,5 @@ namespace vcpkg
     REGISTER_MESSAGE(WaitingToTakeFilesystemLock);
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
-    REGISTER_MESSAGE(OptionRequiresJsonSwitch);
-    REGISTER_MESSAGE(VersionTableHeader);
-    REGISTER_MESSAGE(DateTableHeader);
-    REGISTER_MESSAGE(VcpkgCommitTableHeader);
-    REGISTER_MESSAGE(InvalidCommitId);
-    REGISTER_MESSAGE(PortsAdded);
-    REGISTER_MESSAGE(PortsRemoved);
-    REGISTER_MESSAGE(PortsUpdated);
-    REGISTER_MESSAGE(PortsNoDiff);
     REGISTER_MESSAGE(WrotePkgConfInfo);
-    REGISTER_MESSAGE(TotalTime);
 }
