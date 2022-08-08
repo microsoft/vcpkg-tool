@@ -477,15 +477,15 @@ namespace vcpkg::Commands::CI
 
         reduce_action_plan(action_plan, split_specs->known, parent_hashes);
 
-        vcpkg::printf("Time to determine pass/fail: %s\n", timer.elapsed());
+        msg::println(msgElapsedTimeForChecks, msg::elapsed = timer.elapsed());
 
         if (auto skipped_cascade_count_ptr = skipped_cascade_count.get())
         {
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               *skipped_cascade_count_ptr == split_specs->cascade_count,
-                               "Expected %d cascaded failures, but there were %d cascaded failures.",
-                               *skipped_cascade_count_ptr,
-                               split_specs->cascade_count);
+            Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                   *skipped_cascade_count_ptr == split_specs->cascade_count,
+                                   msgExpectedCascadeFailure,
+                                   msg::expected = *skipped_cascade_count_ptr,
+                                   msg::actual = split_specs->cascade_count);
         }
 
         if (is_dry_run)

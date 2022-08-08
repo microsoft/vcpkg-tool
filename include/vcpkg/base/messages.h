@@ -1468,4 +1468,10 @@ namespace vcpkg
                     "",
                     "vcpkg ci is an internal command which will change incompatibly or be removed at any time.");
     DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
+    DECLARE_MESSAGE(ElapsedTimeForChecks, (msg::elapsed), "", "Time to determine pass/fail: {elapsed}");
+    DECLARE_MESSAGE(
+        ExpectedCascadeFailure,
+        (msg::expected, msg::actual),
+        "{expected} is the expected number of cascade failures and {actual} is the actual number of cascade failures.",
+        "Expected {expected} cascade failure, but there were {actual} cascade failures.");
 }

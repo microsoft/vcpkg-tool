@@ -755,4 +755,6 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidArgMustBePositive);
     REGISTER_MESSAGE(InternalCICommand);
     REGISTER_MESSAGE(CreateFailureLogsDir);
+    REGISTER_MESSAGE(ElapsedTimeForChecks);
+    REGISTER_MESSAGE(ExpectedCascadeFailure);
 }
