@@ -1461,4 +1461,11 @@ namespace vcpkg
                     "Could not create a registry at {path} because this is not a git repository root.\nUse `git init "
                     "{command_line} to create a git repository in this folder.");
     DECLARE_MESSAGE(RegistryCreated, (msg::path), "", "Successfully created registry at {path}");
+    DECLARE_MESSAGE(InvalidArgMustBeAnInt, (msg::option), "", "--{option} must be an integer.");
+    DECLARE_MESSAGE(InvalidArgMustBePositive, (msg::option), "", "--{option} must be non-negative.");
+    DECLARE_MESSAGE(InternalCICommand,
+                    (),
+                    "",
+                    "vcpkg ci is an internal command which will change incompatibly or be removed at any time.");
+    DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
 }

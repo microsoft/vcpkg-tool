@@ -751,4 +751,8 @@ namespace vcpkg
     REGISTER_MESSAGE(CompletedCIClean);
     REGISTER_MESSAGE(InitRegistryFailedNoRepo);
     REGISTER_MESSAGE(RegistryCreated);
+    REGISTER_MESSAGE(InvalidArgMustBeAnInt);
+    REGISTER_MESSAGE(InvalidArgMustBePositive);
+    REGISTER_MESSAGE(InternalCICommand);
+    REGISTER_MESSAGE(CreateFailureLogsDir);
 }

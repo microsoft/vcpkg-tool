@@ -292,11 +292,12 @@ namespace vcpkg::Commands::CI
         }
 
         auto result = Strings::strto<int>(opt->second);
-        Checks::check_exit(VCPKG_LINE_INFO, result.has_value(), "%s must be an integer", OPTION_SKIPPED_CASCADE_COUNT);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           result.value_or_exit(VCPKG_LINE_INFO) >= 0,
-                           "%s must be non-negative",
-                           OPTION_SKIPPED_CASCADE_COUNT);
+        Checks::msg_check_exit(
+            VCPKG_LINE_INFO, result.has_value(), msgInvalidArgMustBeAnInt, msg::option = OPTION_SKIPPED_CASCADE_COUNT);
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               result.value_or_exit(VCPKG_LINE_INFO) >= 0,
+                               msgInvalidArgMustBePositive,
+                               msg::option = OPTION_SKIPPED_CASCADE_COUNT);
         return result;
     }
 
@@ -331,8 +332,7 @@ namespace vcpkg::Commands::CI
                           Triplet target_triplet,
                           Triplet host_triplet)
     {
-        vcpkg::print2(Color::warning,
-                      "'vcpkg ci' is an internal command which will change incompatibly or be removed at any time.\n");
+        msg::println_warning(msgInternalCICommand);
 
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         const auto& settings = options.settings;
@@ -375,7 +375,7 @@ namespace vcpkg::Commands::CI
             auto it_failure_logs = settings.find(OPTION_FAILURE_LOGS);
             if (it_failure_logs != settings.end())
             {
-                vcpkg::printf("Creating failure logs output directory %s\n", it_failure_logs->second);
+                msg::println(msgCreateFailureLogsDir, msg::path = it_failure_logs->second);
                 Path raw_path = it_failure_logs->second;
                 filesystem.create_directories(raw_path, VCPKG_LINE_INFO);
                 build_logs_recorder_storage = filesystem.almost_canonical(raw_path, VCPKG_LINE_INFO);
