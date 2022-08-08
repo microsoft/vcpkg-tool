@@ -1475,4 +1475,9 @@ namespace vcpkg
         "{expected} is the expected number of cascade failures and {actual} is the actual number of cascade failures.",
         "Expected {expected} cascade failure, but there were {actual} cascade failures.");
     DECLARE_MESSAGE(TotalElapsedTime, (msg::elapsed), "", "Total elapsed time: {elapsed}");
+    DECLARE_MESSAGE(MissingOption, (msg::option), "", "This command currently requires --{option}");
+    DECLARE_MESSAGE(OptionRequiresOption,
+                    (msg::value, msg::option),
+                    "{value} is a command line option.",
+                    "--{value} requires --{option}");
 }

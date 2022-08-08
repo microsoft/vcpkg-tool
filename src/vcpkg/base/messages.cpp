@@ -758,4 +758,6 @@ namespace vcpkg
     REGISTER_MESSAGE(ElapsedTimeForChecks);
     REGISTER_MESSAGE(ExpectedCascadeFailure);
     REGISTER_MESSAGE(TotalElapsedTime);
+    REGISTER_MESSAGE(MissingOption);
+    REGISTER_MESSAGE(OptionRequiresOption);
 }
