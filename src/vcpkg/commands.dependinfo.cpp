@@ -1,4 +1,5 @@
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
@@ -34,7 +35,7 @@ namespace vcpkg::Commands::DependInfo
         {
             if (prefix_buf.size() > 400)
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO, "Recursion depth exceeded.");
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgExceededRecursionDepth);
             }
             auto currPos = std::find_if(
                 allDepends.begin(), allDepends.end(), [&currDepend](const auto& p) { return p.package == currDepend; });
@@ -50,7 +51,7 @@ namespace vcpkg::Commands::DependInfo
             {
                 // If we've already printed the set of dependencies, print an elipsis instead
                 Strings::append(prefix_buf, "+- ...\n");
-                print2(prefix_buf);
+                msg::write_unlocalized_text_to_stdout(Color::none, prefix_buf);
                 prefix_buf.resize(original_size);
             }
             else
@@ -61,7 +62,7 @@ namespace vcpkg::Commands::DependInfo
                 {
                     // Print the current level
                     Strings::append(prefix_buf, "+-- ", *i, "\n");
-                    print2(prefix_buf);
+                    msg::write_unlocalized_text_to_stdout(Color::none, prefix_buf);
                     prefix_buf.resize(original_size);
 
                     // Recurse
@@ -72,7 +73,7 @@ namespace vcpkg::Commands::DependInfo
 
                 // Print the last of the current level
                 Strings::append(prefix_buf, "+-- ", currPos->dependencies.back(), "\n");
-                print2(prefix_buf);
+                msg::write_unlocalized_text_to_stdout(Color::none, prefix_buf);
                 prefix_buf.resize(original_size);
 
                 // Recurse
@@ -123,7 +124,7 @@ namespace vcpkg::Commands::DependInfo
                 }
                 catch (std::exception&)
                 {
-                    Checks::exit_with_message(VCPKG_LINE_INFO, "Value of --max-depth must be an integer");
+                    Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgOptionMustBeInteger, msg::option = "max-depth");
                 }
             }
             // No --max-depth set, default to no limit.
@@ -153,11 +154,7 @@ namespace vcpkg::Commands::DependInfo
                 {
                     return it->second;
                 }
-                Checks::exit_with_message(VCPKG_LINE_INFO,
-                                          "Value of --sort must be one of `%s`, `%s`, or `%s`",
-                                          OPTION_SORT_LEXICOGRAPHICAL,
-                                          OPTION_SORT_TOPOLOGICAL,
-                                          OPTION_SORT_REVERSE);
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidCommandArgSort);
             }
             return Default;
         }
@@ -237,8 +234,11 @@ namespace vcpkg::Commands::DependInfo
                                           std::map<std::string, PackageDependInfo>& dependencies_map)
         {
             auto iter = dependencies_map.find(package);
-            Checks::check_exit(
-                VCPKG_LINE_INFO, iter != dependencies_map.end(), "Package not found in dependency graph");
+            if (iter == dependencies_map.end())
+            {
+                Debug::println("Not found in dependency graph: ", package);
+                Checks::unreachable(VCPKG_LINE_INFO);
+            }
 
             PackageDependInfo& info = iter->second;
 
@@ -320,10 +320,15 @@ namespace vcpkg::Commands::DependInfo
             provider, var_provider, specs, status_db, {host_triplet, UnsupportedPortAction::Warn});
         for (const auto& warning : action_plan.warnings)
         {
-            print2(Color::warning, warning, '\n');
+            msg::write_unlocalized_text_to_stdout(Color::warning, warning + '\n');
         }
-        Checks::check_exit(
-            VCPKG_LINE_INFO, action_plan.remove_actions.empty(), "Only install actions should exist in the plan");
+
+        if (!action_plan.remove_actions.empty())
+        {
+            Debug::println("Only install actions should exist in the plan");
+            Checks::unreachable(VCPKG_LINE_INFO);
+        }
+
         std::vector<const InstallPlanAction*> install_actions =
             Util::fmap(action_plan.already_installed, [&](const auto& action) { return &action; });
         for (auto&& action : action_plan.install_actions)
@@ -340,8 +345,9 @@ namespace vcpkg::Commands::DependInfo
                     return const_cast<const SourceControlFile*>(scfl.source_control_file.get());
                 });
 
-            const std::string graph_as_string = create_graph_as_string(options.switches, depend_info);
-            print2(graph_as_string, '\n');
+            std::string graph_as_string = create_graph_as_string(options.switches, depend_info);
+            graph_as_string.push_back('\n');
+            msg::write_unlocalized_text_to_stdout(Color::none, graph_as_string);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
@@ -372,16 +378,14 @@ namespace vcpkg::Commands::DependInfo
 
             if (show_depth)
             {
-                print2(Color::error, "(", first->depth, ") ");
+                msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("({})", first->depth));
             }
-            print2(Color::success, first->package);
+            msg::write_unlocalized_text_to_stdout(Color::success, first->package);
             if (!features.empty())
             {
-                print2("[");
-                print2(Color::warning, features);
-                print2("]");
+                msg::write_unlocalized_text_to_stdout(Color::warning, "[" + features + "]");
             }
-            print2("\n");
+            msg::write_unlocalized_text_to_stdout(Color::none, "\n");
             std::set<std::string> printed;
             std::string prefix_buf;
             print_dep_tree(prefix_buf, first->package, depend_info, printed);
@@ -397,16 +401,14 @@ namespace vcpkg::Commands::DependInfo
 
                     if (show_depth)
                     {
-                        print2(Color::error, "(", info.depth, ") ");
+                        msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("({})", info.depth));
                     }
-                    print2(Color::success, info.package);
+                    msg::write_unlocalized_text_to_stdout(Color::success, info.package);
                     if (!features.empty())
                     {
-                        print2("[");
-                        print2(Color::warning, features);
-                        print2("]");
+                        msg::write_unlocalized_text_to_stdout(Color::warning, "[" + features + "]");
                     }
-                    print2(": ", dependencies, "\n");
+                    msg::write_unlocalized_text_to_stdout(Color::none, ": " + dependencies + "\n");
                 }
             }
         }
