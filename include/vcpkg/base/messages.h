@@ -1480,4 +1480,5 @@ namespace vcpkg
                     (msg::value, msg::option),
                     "{value} is a command line option.",
                     "--{value} requires --{option}");
+    DECLARE_MESSAGE(NoInstalledPackages, (), "", "No packages are installed. Did you mean `search`?");
 }

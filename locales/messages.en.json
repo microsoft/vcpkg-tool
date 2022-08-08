@@ -260,6 +260,7 @@
   "NewVersionCannotBeEmpty": "--version cannot be empty.",
   "NoArgumentsForOption": "The option --{option} does not accept an argument.",
   "NoCachedPackages": "No packages are cached.",
+  "NoInstalledPackages": "No packages are installed. Did you mean `search`?",
   "NoLocalizationForMessages": "No localized messages for the following: ",
   "NoRegistryForPort": "no registry configured for port {package_name}",
   "NoteMessage": "note: ",

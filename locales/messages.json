@@ -433,6 +433,7 @@
   "NoArgumentsForOption": "The option --{option} does not accept an argument.",
   "_NoArgumentsForOption.comment": "An example of {option} is editable.",
   "NoCachedPackages": "No packages are cached.",
+  "NoInstalledPackages": "No packages are installed. Did you mean `search`?",
   "NoLocalizationForMessages": "No localized messages for the following: ",
   "NoRegistryForPort": "no registry configured for port {package_name}",
   "_NoRegistryForPort.comment": "An example of {package_name} is zlib.",

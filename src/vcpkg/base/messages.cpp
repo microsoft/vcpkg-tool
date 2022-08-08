@@ -760,4 +760,5 @@ namespace vcpkg
     REGISTER_MESSAGE(TotalElapsedTime);
     REGISTER_MESSAGE(MissingOption);
     REGISTER_MESSAGE(OptionRequiresOption);
+    REGISTER_MESSAGE(NoInstalledPackages);
 }
