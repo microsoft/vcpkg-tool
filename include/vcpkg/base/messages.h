@@ -1474,4 +1474,5 @@ namespace vcpkg
         (msg::expected, msg::actual),
         "{expected} is the expected number of cascade failures and {actual} is the actual number of cascade failures.",
         "Expected {expected} cascade failure, but there were {actual} cascade failures.");
+    DECLARE_MESSAGE(TotalElapsedTime, (msg::elapsed), "", "Total elapsed time: {elapsed}");
 }

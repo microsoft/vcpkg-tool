@@ -757,4 +757,5 @@ namespace vcpkg
     REGISTER_MESSAGE(CreateFailureLogsDir);
     REGISTER_MESSAGE(ElapsedTimeForChecks);
     REGISTER_MESSAGE(ExpectedCascadeFailure);
+    REGISTER_MESSAGE(TotalElapsedTime);
 }

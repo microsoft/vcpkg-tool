@@ -530,8 +530,8 @@ namespace vcpkg::Commands::CI
 
             TripletAndSummary result{target_triplet, std::move(summary)};
 
-            print2("\nTriplet: ", result.triplet, "\n");
-            print2("Total elapsed time: ", GlobalState::timer.to_string(), "\n");
+            msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\nTriplet: {}\n", result.triplet));
+            msg::println(msgTotalElapsedTime, msg::elapsed = GlobalState::timer.to_string());
             result.summary.print();
 
             if (baseline_iter != settings.end())
