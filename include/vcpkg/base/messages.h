@@ -1448,4 +1448,11 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
+    DECLARE_MESSAGE(ClearingContents, (msg::path), "", "Clearing contents of {path}");
+    DECLARE_MESSAGE(SkipClearingInvalidDir,
+                    (msg::path),
+                    "",
+                    "Skipping clearing contents of {path} because it was not a directory.");
+    DECLARE_MESSAGE(StartingCIClean, (), "", "Starting vcpkg CI clean.");
+    DECLARE_MESSAGE(CompletedCIClean, (), "", "Completed vcpkg CI clean.");
 }

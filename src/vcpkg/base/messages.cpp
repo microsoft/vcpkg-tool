@@ -745,4 +745,8 @@ namespace vcpkg
     REGISTER_MESSAGE(WaitingToTakeFilesystemLock);
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
+    REGISTER_MESSAGE(ClearingContents);
+    REGISTER_MESSAGE(SkipClearingInvalidDir);
+    REGISTER_MESSAGE(StartingCIClean);
+    REGISTER_MESSAGE(CompletedCIClean);
 }
