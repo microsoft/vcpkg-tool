@@ -680,6 +680,7 @@ namespace vcpkg
                     "=== curl output ===\n"
                     "{actual}\n"
                     "=== end curl output ===");
+    DECLARE_MESSAGE(DateTableHeader, (), "", "Date");
     DECLARE_MESSAGE(DefaultBrowserLaunched, (msg::url), "", "Default browser launched to {url}.");
     DECLARE_MESSAGE(DefaultFlag, (msg::option), "", "Defaulting to --{option} being on.");
     DECLARE_MESSAGE(DefaultPathToBinaries,
@@ -789,16 +790,16 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedValueForOption, (msg::option), "", "expected value after --{option}.");
     DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
     DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":");
+    DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
+                    (),
+                    "",
+                    "Failed to parse CMake console output to locate block start/end markers.");
     DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                     (msg::error_msg),
                     "'{error_msg}' is the error message for failing to parse the Binary Paragraph.",
                     "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at "
                     "https://github.com/microsoft/vcpkg, "
                     "with the following output:\n{error_msg}\nSerialized Binary Paragraph:");
-    DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
-                    (),
-                    "",
-                    "Failed to parse CMake console output to locate block start/end markers.");
     DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
     DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                     (msg::tool_name, msg::path),
@@ -980,6 +981,7 @@ namespace vcpkg
                     "invalid argument: binary config '{binary_source}' requires a SAS token without a "
                     "preceeding '?' as the second argument");
     DECLARE_MESSAGE(InvalidBuildInfo, (msg::error_msg), "", "Invalid BUILD_INFO file for package: {error_msg}");
+    DECLARE_MESSAGE(InvalidCommitId, (msg::value), "'{value}' is a commit id.", "Invalid commit id {value}");
     DECLARE_MESSAGE(InvalidFormatString,
                     (msg::actual),
                     "{actual} is the provided format string",
@@ -1136,6 +1138,7 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "NuGet package creation succeeded, but no .nupkg was produced. Expected: \"{path}\"");
+    DECLARE_MESSAGE(OptionRequiresJsonSwitch, (msg::option), "", "Option --{option} requires --x-json switch.");
     DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph");
     DECLARE_MESSAGE(PackageFailedtWhileExtracting,
                     (msg::value, msg::path),
@@ -1166,6 +1169,10 @@ namespace vcpkg
                     (msg::package_name),
                     "",
                     "the baseline does not contain an entry for port {package_name}");
+    DECLARE_MESSAGE(PortsAdded, (msg::count), "", "The following {count} ports were added:");
+    DECLARE_MESSAGE(PortsNoDiff, (), "", "There were no changes in the ports between the two commits.");
+    DECLARE_MESSAGE(PortsRemoved, (msg::count), "", "The following {count} ports were removed:");
+    DECLARE_MESSAGE(PortsUpdated, (msg::count), "", "\nThe following {count} ports were updated:");
     DECLARE_MESSAGE(PortSupportsField,
                     (msg::value),
                     "'{value}' is the value of the 'supports' field in the port's vcpkg.json.",
@@ -1251,6 +1258,7 @@ namespace vcpkg
                     "calling {system_api} failed with {exit_code} ({error_msg})");
     DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
     DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
+    DECLARE_MESSAGE(TotalTime, (msg::count), "", " Total elapsed time: {count}.");
     DECLARE_MESSAGE(TwoFeatureFlagsSpecified,
                     (msg::value),
                     "'{value}' is a feature flag.",
@@ -1379,6 +1387,7 @@ namespace vcpkg
                     (),
                     "",
                     "vcpkg-ce ('configure environment') is experimental and may change at any time.");
+    DECLARE_MESSAGE(VcpkgCommitTableHeader, (), "", "VCPKG Commit");
     DECLARE_MESSAGE(
         VcpkgCompletion,
         (msg::value, msg::path),
@@ -1426,6 +1435,7 @@ namespace vcpkg
                     "",
                     "Failed to load port because versions are inconsistent. The file \"{path}\" contains the version "
                     "{actual_version}, but the version database indicates that it should be {expected_version}.");
+    DECLARE_MESSAGE(VersionTableHeader, (), "", "Version");
     DECLARE_MESSAGE(VSExaminedInstances, (), "", "The following Visual Studio instances were considered:");
     DECLARE_MESSAGE(VSExaminedPaths, (), "", "The following paths were examined for Visual Studio instances:");
     DECLARE_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance");
@@ -1437,15 +1447,5 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
-    DECLARE_MESSAGE(OptionRequiresJsonSwitch, (msg::option), "", "Option --{option} requires --x-json switch.");
-    DECLARE_MESSAGE(VersionTableHeader, (), "", "Version");
-    DECLARE_MESSAGE(DateTableHeader, (), "", "Date");
-    DECLARE_MESSAGE(VcpkgCommitTableHeader, (), "", "VCPKG Commit");
-    DECLARE_MESSAGE(InvalidCommitId, (msg::value), "'{value}' is a commit id.", "Invalid commit id {value}");
-    DECLARE_MESSAGE(PortsAdded, (msg::count), "", "The following {count} ports were added:");
-    DECLARE_MESSAGE(PortsRemoved, (msg::count), "", "The following {count} ports were removed:");
-    DECLARE_MESSAGE(PortsUpdated, (msg::count), "", "\nThe following {count} ports were updated:");
-    DECLARE_MESSAGE(PortsNoDiff, (), "", "There were no changes in the ports between the two commits.");
     DECLARE_MESSAGE(WrotePkgConfInfo, (msg::path), "", "Wrote package config information to {path}.");
-    DECLARE_MESSAGE(TotalTime, (msg::count), "", " Total elapsed time: {count}.");
 }
