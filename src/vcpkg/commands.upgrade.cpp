@@ -163,26 +163,28 @@ namespace vcpkg::Commands::Upgrade
             if (!up_to_date.empty())
             {
                 msg::println(Color::success, msgFollowingPackagesUpgraded);
-                print2(Strings::join(
-                           "", up_to_date, [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
-                       '\n');
+                for (const PackageSpec& spec : up_to_date)
+                {
+                    msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("    {}\n", spec.to_string()));
+                }
             }
 
             if (!not_installed.empty())
             {
-                msg::println(Color::error, msgFollowingPackagesNotInstalled);
-                print2(Strings::join(
-                           "", not_installed, [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
-                       '\n');
+                msg::println_error(msgFollowingPackagesNotInstalled);
+                for (const PackageSpec& spec : not_installed)
+                {
+                    msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("    {}\n", spec.to_string()));
+                }
             }
 
             if (!no_control_file.empty())
             {
-                msg::println(Color::error, msgFollowingPackagesMissingControl);
-                print2(Strings::join("",
-                                     no_control_file,
-                                     [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
-                       '\n');
+                msg::println_error(msgFollowingPackagesMissingControl);
+                for (const PackageSpec& spec : no_control_file)
+                {
+                    msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("    {}\n", spec.to_string()));
+                }
             }
 
             Checks::check_exit(VCPKG_LINE_INFO, not_installed.empty() && no_control_file.empty());
