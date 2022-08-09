@@ -9,6 +9,7 @@ import { MetadataFile } from '../amf/metadata-file';
 import { latestVersion } from '../constants';
 import { FileType } from '../fs/filesystem';
 import { i } from '../i18n';
+import { activateEspIdf, installEspIdf } from '../installers/espidf';
 import { InstallEvents } from '../interfaces/events';
 import { Registries } from '../registries/registries';
 import { Session } from '../session';
@@ -26,7 +27,7 @@ export type Selection = [Artifact, ID, VersionRange]
 
 export class ArtifactMap extends Map<UID, Selection>{
   get artifacts() {
-    return [...linq.values(this).select(([artifact, id, range]) => artifact)].sort((a, b) => (b.metadata.info.priority || 0) - (a.metadata.info.priority || 0));
+    return Array.from([...linq.values(this).select(([artifact, id, range]) => artifact)].sort((a, b) => b.metadata.priority - a.metadata.priority));
   }
 }
 
@@ -37,19 +38,20 @@ class ArtifactBase {
   constructor(protected session: Session, public readonly metadata: MetadataFile) {
     this.applicableDemands = new SetOfDemands(this.metadata, this.session);
     this.registries = new Registries(session);
-
-    // load the registries from the project file
-    for (const [name, registry] of this.metadata.registries) {
-      const reg = session.loadRegistry(registry.location.get(0), registry.registryKind || 'artifact');
-      if (reg) {
-        this.registries.add(reg, name);
-      }
-    }
   }
 
   /** Async Initializer */
   async init(session: Session) {
     await this.applicableDemands.init(session);
+
+    // load the registries from the project file
+    for (const [name, registry] of this.metadata.registries) {
+      const reg = await session.loadRegistry(registry.location.get(0), registry.registryKind || 'artifact');
+      if (reg) {
+        this.registries.add(reg, name);
+      }
+    }
+
     return this;
   }
 
@@ -97,7 +99,7 @@ export class Artifact extends ArtifactBase {
   }
 
   get id() {
-    return this.metadata.info.id;
+    return this.metadata.id;
   }
 
   get reference() {
@@ -105,7 +107,7 @@ export class Artifact extends ArtifactBase {
   }
 
   get version() {
-    return this.metadata.info.version;
+    return this.metadata.version;
   }
 
   get isInstalled() {
@@ -157,7 +159,7 @@ export class Artifact extends ArtifactBase {
         if (!installer) {
           fail(i`Unknown installer type ${installInfo!.installerKind}`);
         }
-        await installer(this.session, this.id, this.targetLocation, installInfo, events, options);
+        await installer(this.session, this.id, this.version, this.targetLocation, installInfo, events, options);
       }
 
       // after we unpack it, write out the installed manifest
@@ -177,10 +179,6 @@ export class Artifact extends ArtifactBase {
       }
       throw err;
     }
-  }
-
-  get name() {
-    return `${this.metadata.info.id.replace(/[^\w]+/g, '.')}-${this.metadata.info.version}`;
   }
 
   async writeManifest() {
@@ -230,6 +228,17 @@ export class Artifact extends ArtifactBase {
     this.allPaths = (await this.targetLocation.readDirectory(undefined, { recursive: true })).select(([name, stat]) => stat === FileType.Directory ? name.fsPath + '/' : name.fsPath);
     for (const exportsBlock of this.applicableDemands.exports) {
       this.session.activation.addExports(exportsBlock, this.targetLocation);
+    }
+
+    // if espressif install
+    if (this.metadata.espidf) {
+      // check for some file that espressif installs to see if it's installed.
+      if (!await this.targetLocation.exists('.espressif')) {
+        await installEspIdf(this.session, events, this.targetLocation);
+      }
+
+      // activate
+      await activateEspIdf(this.session, this.targetLocation);
     }
 
     return true;

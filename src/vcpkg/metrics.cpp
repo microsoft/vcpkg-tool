@@ -3,6 +3,7 @@
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/system.mac.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/uuid.h>
 
@@ -19,67 +20,6 @@
 namespace vcpkg
 {
     LockGuarded<Metrics> g_metrics;
-
-    Optional<StringView> find_first_nonzero_mac(StringView sv)
-    {
-        static constexpr StringLiteral ZERO_MAC = "00-00-00-00-00-00";
-
-        auto first = sv.begin();
-        const auto last = sv.end();
-
-        while (first != last)
-        {
-            // XX-XX-XX-XX-XX-XX
-            // 1  2  3  4  5  6
-            // size = 6 * 2 + 5 = 17
-            first = std::find_if(first, last, ParserBase::is_hex_digit);
-            if (last - first < 17)
-            {
-                break;
-            }
-
-            bool is_first = true;
-            bool is_valid = true;
-            auto end_of_mac = first;
-            for (int i = 0; is_valid && i < 6; ++i)
-            {
-                if (!is_first)
-                {
-                    if (*end_of_mac != '-')
-                    {
-                        is_valid = false;
-                        break;
-                    }
-                    ++end_of_mac;
-                }
-                is_first = false;
-
-                if (!ParserBase::is_hex_digit(*end_of_mac))
-                {
-                    is_valid = false;
-                    break;
-                }
-                ++end_of_mac;
-
-                if (!ParserBase::is_hex_digit(*end_of_mac))
-                {
-                    is_valid = false;
-                    break;
-                }
-                ++end_of_mac;
-            }
-            if (is_valid && StringView{first, end_of_mac} != ZERO_MAC)
-            {
-                return StringView{first, end_of_mac};
-            }
-            else
-            {
-                first = end_of_mac;
-            }
-        }
-
-        return nullopt;
-    }
 
     static std::string get_current_date_time_string()
     {
@@ -134,7 +74,6 @@ namespace vcpkg
     {
         std::string user_id;
         std::string user_timestamp;
-        std::string timestamp;
 
         Json::Object properties;
         Json::Object measurements;
@@ -186,7 +125,7 @@ namespace vcpkg
 
             obj.insert("ver", Json::Value::integer(1));
             obj.insert("name", Json::Value::string("Microsoft.ApplicationInsights.Event"));
-            obj.insert("time", Json::Value::string(timestamp));
+            obj.insert("time", Json::Value::string(get_current_date_time_string()));
             obj.insert("sampleRate", Json::Value::number(100.0));
             obj.insert("seq", Json::Value::string("0:0"));
             obj.insert("iKey", Json::Value::string("b4e88960-4393-4dd9-ab8e-97e8fe6d7603"));
@@ -231,7 +170,7 @@ namespace vcpkg
                 base_data.insert("measurements", measurements);
             }
 
-            return Json::stringify(arr, vcpkg::Json::JsonStyle());
+            return Json::stringify(arr);
         }
     };
 
@@ -245,31 +184,6 @@ namespace vcpkg
         ;
     static bool g_should_print_metrics = false;
     static std::atomic<bool> g_metrics_disabled = true;
-
-#if defined(_WIN32)
-    static std::string get_MAC_user()
-    {
-        if (!LockGuardPtr<Metrics>(g_metrics)->metrics_enabled())
-        {
-            return "{}";
-        }
-
-        auto maybe_getmac = cmd_execute_and_capture_output(Command("getmac"));
-        if (auto getmac = maybe_getmac.get())
-        {
-            if (getmac->exit_code == 0)
-            {
-                auto found_mac = find_first_nonzero_mac(getmac->output);
-                if (auto p = found_mac.get())
-                {
-                    return Hash::get_string_hash(*p, Hash::Algorithm::Sha256);
-                }
-            }
-        }
-
-        return "0";
-    }
-#endif
 
     void Metrics::set_send_metrics(bool should_send_metrics) { g_should_send_metrics = should_send_metrics; }
 
@@ -299,13 +213,13 @@ namespace vcpkg
             write_config = true;
         }
 
-#if defined(_WIN32)
-        if (config.user_mac.empty())
+        // For a while we had a bug where we always set "{}" without attempting to get a MAC address.
+        // We will attempt to get a MAC address and store a "0" if we fail.
+        if (config.user_mac.empty() || config.user_mac == "{}")
         {
-            config.user_mac = get_MAC_user();
+            config.user_mac = get_user_mac_hash();
             write_config = true;
         }
-#endif
 
         if (write_config)
         {
@@ -317,9 +231,7 @@ namespace vcpkg
             g_metricmessage.user_id = config.user_id;
             g_metricmessage.user_timestamp = config.user_time;
 
-#if defined(_WIN32)
             metrics->track_property("user_mac", config.user_mac);
-#endif
 
             g_metrics_disabled = false;
         }

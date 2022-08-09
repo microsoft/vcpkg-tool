@@ -36,93 +36,6 @@ namespace
         Updated,
         NotUpdated
     };
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        AddVersionSuggestNewVersionScheme,
-        (msg::new_scheme, msg::old_scheme, msg::package_name, msg::option),
-        "The -- before {option} must be preserved as they're part of the help message for the user.",
-        "Use the version scheme \"{new_scheme}\" instead of \"{old_scheme}\" in port "
-        "\"{package_name}\".\nUse --{option} to disable this check.");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionVersionAlreadyInFile,
-                                 (msg::version, msg::path),
-                                 "",
-                                 "version {version} is already in {path}");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionAddedVersionToFile,
-                                 (msg::version, msg::path),
-                                 "",
-                                 "added version {version} to {path}");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionNewFile, (), "", "(new file)");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionUncommittedChanges,
-                                 (msg::package_name),
-                                 "",
-                                 "there are uncommitted changes for {package_name}");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionPortFilesShaUnchanged,
-                                 (msg::package_name, msg::version),
-                                 "",
-                                 "checked-in files for {package_name} are unchanged from version {version}");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionCommitChangesReminder, (), "", "Did you remember to commit your changes?");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionNoFilesUpdated, (), "", "No files were updated");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionNoFilesUpdatedForPort,
-                                 (msg::package_name),
-                                 "",
-                                 "No files were updated for {package_name}");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionPortFilesShaChanged,
-                                 (msg::package_name),
-                                 "",
-                                 "checked-in files for {package_name} have changed but the version was not updated");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionVersionIs, (msg::version), "", "version: {version}");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionOldShaIs,
-                                 (msg::value),
-                                 "{value} is a 40-digit hexadecimal SHA",
-                                 "old SHA: {value}");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionNewShaIs,
-                                 (msg::value),
-                                 "{value} is a 40-digit hexadecimal SHA",
-                                 "new SHA: {value}");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionUpdateVersionReminder,
-                                 (),
-                                 "",
-                                 "Did you remember to update the version or port version?");
-    DECLARE_AND_REGISTER_MESSAGE(
-        AddVersionOverwriteOptionSuggestion,
-        (msg::option),
-        "The -- before {option} must be preserved as they're part of the help message for the user.",
-        "Use --{option} to bypass this check");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionUnableToParseVersionsFile,
-                                 (msg::path),
-                                 "",
-                                 "unable to parse versions file {path}");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionFileNotFound, (msg::path), "", "couldn't find required file {path}");
-    DECLARE_AND_REGISTER_MESSAGE(
-        AddVersionIgnoringOptionAll,
-        (msg::option),
-        "The -- before {option} must be preserved as they're part of the help message for the user.",
-        "ignoring --{option} since a port name argument was provided");
-    DECLARE_AND_REGISTER_MESSAGE(
-        AddVersionUseOptionAll,
-        (msg::command_name, msg::option),
-        "The -- before {option} must be preserved as they're part of the help message for the user.",
-        "{command_name} with no arguments requires passing --{option} to update all port versions at once");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionLoadPortFailed, (msg::package_name), "", "can't load port {package_name}");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionPortHasImproperFormat,
-                                 (msg::package_name),
-                                 "",
-                                 "{package_name} is not properly formatted");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionFormatPortSuggestion,
-                                 (msg::command_line),
-                                 "",
-                                 "Run `{command_line}` to format the file");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionCommitResultReminder, (), "", "Don't forget to commit the result!");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionNoGitSha,
-                                 (msg::package_name),
-                                 "",
-                                 "can't obtain SHA for port {package_name}");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionPortDoesNotExist, (msg::package_name), "", "{package_name} does not exist");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionDetectLocalChangesError,
-                                 (),
-                                 "",
-                                 "skipping detection of local changes due to unexpected format in git status output");
-
     using VersionGitTree = std::pair<SchemedVersion, std::string>;
 
     void insert_version_to_json_object(Json::Object& obj, const Version& version, StringLiteral version_field)
@@ -217,9 +130,7 @@ namespace
     {
         auto new_path = output_path + ".tmp";
         fs.create_directories(output_path.parent_path(), VCPKG_LINE_INFO);
-        fs.write_contents(new_path,
-                          Json::stringify(serialize_baseline(baseline_map), Json::JsonStyle::with_spaces(2)),
-                          VCPKG_LINE_INFO);
+        fs.write_contents(new_path, Json::stringify(serialize_baseline(baseline_map)), VCPKG_LINE_INFO);
         fs.rename(new_path, output_path, VCPKG_LINE_INFO);
     }
 
@@ -229,8 +140,7 @@ namespace
     {
         auto new_path = output_path + ".tmp";
         fs.create_directories(output_path.parent_path(), VCPKG_LINE_INFO);
-        fs.write_contents(
-            new_path, Json::stringify(serialize_versions(versions), Json::JsonStyle::with_spaces(2)), VCPKG_LINE_INFO);
+        fs.write_contents(new_path, Json::stringify(serialize_versions(versions)), VCPKG_LINE_INFO);
         fs.rename(new_path, output_path, VCPKG_LINE_INFO);
     }
 
@@ -513,7 +423,7 @@ namespace vcpkg::Commands::AddVersion
                 {
                     const auto current_file_content = fs.read_contents(path_to_manifest, VCPKG_LINE_INFO);
                     const auto json = serialize_manifest(*scf);
-                    const auto formatted_content = Json::stringify(json, {});
+                    const auto formatted_content = Json::stringify(json);
                     if (current_file_content != formatted_content)
                     {
                         auto command_line = fmt::format("vcpkg format-manifest ports/{}/vcpkg.json", port_name);

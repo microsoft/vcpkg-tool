@@ -103,18 +103,18 @@ namespace vcpkg::Json
         bool is_object() const noexcept;
 
         // a.x() asserts when !a.is_x()
-        bool boolean() const noexcept;
-        int64_t integer() const noexcept;
-        double number() const noexcept;
-        StringView string() const noexcept;
+        bool boolean(LineInfo li) const noexcept;
+        int64_t integer(LineInfo li) const noexcept;
+        double number(LineInfo li) const noexcept;
+        StringView string(LineInfo li) const noexcept;
 
-        const Array& array() const& noexcept;
-        Array& array() & noexcept;
-        Array&& array() && noexcept;
+        const Array& array(LineInfo li) const& noexcept;
+        Array& array(LineInfo li) & noexcept;
+        Array&& array(LineInfo li) && noexcept;
 
-        const Object& object() const& noexcept;
-        Object& object() & noexcept;
-        Object&& object() && noexcept;
+        const Object& object(LineInfo li) const& noexcept;
+        Object& object(LineInfo li) & noexcept;
+        Object&& object(LineInfo li) && noexcept;
 
         static Value null(std::nullptr_t) noexcept;
         static Value boolean(bool) noexcept;
@@ -318,13 +318,16 @@ namespace vcpkg::Json
 
     ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse_file(const Filesystem&,
                                                                                    const Path&,
-                                                                                   std::error_code& ec) noexcept;
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse(StringView text,
-                                                                              StringView origin = {}) noexcept;
-    std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo li, const Filesystem&, const Path&) noexcept;
+                                                                                   std::error_code& ec);
+    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse(StringView text, StringView origin = {});
+    std::pair<Value, JsonStyle> parse_file(LineInfo li, const Filesystem&, const Path&);
+    ExpectedS<Json::Object> parse_object(StringView text, StringView origin = {});
 
+    std::string stringify(const Value&);
     std::string stringify(const Value&, JsonStyle style);
+    std::string stringify(const Object&);
     std::string stringify(const Object&, JsonStyle style);
+    std::string stringify(const Array&);
     std::string stringify(const Array&, JsonStyle style);
 
     uint64_t get_json_parsing_stats();

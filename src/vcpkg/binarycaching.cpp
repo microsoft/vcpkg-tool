@@ -27,89 +27,6 @@ using namespace vcpkg;
 
 namespace
 {
-    DECLARE_AND_REGISTER_MESSAGE(AttemptingToFetchPackagesFromVendor,
-                                 (msg::count, msg::vendor),
-                                 "",
-                                 "Attempting to fetch {count} package(s) from {vendor}");
-    DECLARE_AND_REGISTER_MESSAGE(RestoredPackagesFromVendor,
-                                 (msg::count, msg::elapsed, msg::vendor),
-                                 "",
-                                 "Restored {count} package(s) from {vendor} in {elapsed}");
-    DECLARE_AND_REGISTER_MESSAGE(UploadedPackagesToVendor,
-                                 (msg::count, msg::elapsed, msg::vendor),
-                                 "",
-                                 "Uploaded {count} package(s) to {vendor} in {elapsed}");
-    DECLARE_AND_REGISTER_MESSAGE(UnknownBinaryProviderType,
-                                 (),
-                                 "",
-                                 "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', "
-                                 "'nugetconfig', 'interactive', and 'files'");
-    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresPrefix,
-                                 (msg::binary_source),
-                                 "",
-                                 "invalid argument: binary config '{binary_source}' requires at least a prefix");
-    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresSource,
-                                 (msg::binary_source),
-                                 "",
-                                 "invalid argument: binary config '{binary_source}' requires non-empty source");
-    DECLARE_AND_REGISTER_MESSAGE(InvalidArgument, (), "", "invalid argument");
-    DECLARE_AND_REGISTER_MESSAGE(
-        InvalidArgumentRequiresSourceArgument,
-        (msg::binary_source),
-        "",
-        "invalid argument: binary config '{binary_source}' requires at least a source argument");
-    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresPathArgument,
-                                 (msg::binary_source),
-                                 "",
-                                 "invalid argument: binary config '{binary_source}' requires at least a path argument");
-    DECLARE_AND_REGISTER_MESSAGE(
-        InvalidArgumentRequiresAbsolutePath,
-        (msg::binary_source),
-        "",
-        "invalid argument: binary config '{binary_source}' path arguments for binary config strings must be absolute");
-    DECLARE_AND_REGISTER_MESSAGE(
-        InvalidArgumentRequiresBaseUrl,
-        (msg::base_url, msg::binary_source),
-        "",
-        "invalid argument: binary config '{binary_source}' requires a {base_url} base url as the first argument");
-    DECLARE_AND_REGISTER_MESSAGE(
-        InvalidArgumentRequiresBaseUrlAndToken,
-        (msg::binary_source),
-        "",
-        "invalid argument: binary config '{binary_source}' requires at least a base-url and a SAS token");
-    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresValidToken,
-                                 (msg::binary_source),
-                                 "",
-                                 "invalid argument: binary config '{binary_source}' requires a SAS token without a "
-                                 "preceeding '?' as the second argument");
-    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresNoneArguments,
-                                 (msg::binary_source),
-                                 "",
-                                 "invalid argument: binary config '{binary_source}' does not take arguments");
-    DECLARE_AND_REGISTER_MESSAGE(
-        InvalidArgumentRequiresSingleArgument,
-        (msg::binary_source),
-        "",
-        "invalid argument: binary config '{binary_source}' does not take more than 1 argument");
-    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresSingleStringArgument,
-                                 (msg::binary_source),
-                                 "",
-                                 "invalid argument: binary config '{binary_source}' expects a single string argument");
-    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresOneOrTwoArguments,
-                                 (msg::binary_source),
-                                 "",
-                                 "invalid argument: binary config '{binary_source}' requires 1 or 2 arguments");
-    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresTwoOrThreeArguments,
-                                 (msg::binary_source),
-                                 "",
-                                 "invalid argument: binary config '{binary_source}' requires 2 or 3 arguments");
-    DECLARE_AND_REGISTER_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder '{path}':");
-    DECLARE_AND_REGISTER_MESSAGE(
-        UnknownVariablesInTemplate,
-        (msg::value, msg::list),
-        "{value} is the value provided by the user and {list} a list of unknown variables seperated by comma",
-        "invalid argument: url template '{value}' contains unknown variables: {list}");
-
     struct ConfigSegmentsParser : ParserBase
     {
         using ParserBase::ParserBase;
@@ -275,10 +192,10 @@ namespace
 
         static Path make_archive_subpath(const std::string& abi) { return Path(abi.substr(0, 2)) / (abi + ".zip"); }
 
-        void prefetch(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
+        void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             std::vector<size_t> to_try_restore_idxs;
-            std::vector<const Dependencies::InstallPlanAction*> to_try_restore;
+            std::vector<const InstallPlanAction*> to_try_restore;
 
             for (const auto& archives_root_dir : m_read_dirs)
             {
@@ -305,18 +222,14 @@ namespace
                         ++num_restored;
                     }
                 }
-
-                print2("Restored ",
-                       num_restored,
-                       " packages from ",
-                       archives_root_dir.native(),
-                       " in ",
-                       timer.elapsed(),
-                       ". Use --debug to see more details.\n");
+                msg::println(msgRestoredPackagesFromVendor,
+                             msg::count = num_restored,
+                             msg::elapsed = timer.elapsed(),
+                             msg::value = archives_root_dir.native());
             }
         }
 
-        std::vector<RestoreResult> try_restore_n(View<const Dependencies::InstallPlanAction*> actions,
+        std::vector<RestoreResult> try_restore_n(View<const InstallPlanAction*> actions,
                                                  const Path& archives_root_dir) const
         {
             auto& fs = paths.get_filesystem();
@@ -355,7 +268,7 @@ namespace
                 }
                 else
                 {
-                    if (actions[i]->build_options.purge_decompress_failure == Build::PurgeDecompressFailure::YES)
+                    if (actions[i]->build_options.purge_decompress_failure == PurgeDecompressFailure::YES)
                     {
                         Debug::print(
                             "Failed to decompress archive package; purging: ", archive_paths[j].native(), '\n');
@@ -370,7 +283,7 @@ namespace
             return results;
         }
 
-        RestoreResult try_restore(const Dependencies::InstallPlanAction& action) const override
+        RestoreResult try_restore(const InstallPlanAction& action) const override
         {
             // Note: this method is almost never called -- it will only be called if another provider promised to
             // restore a package but then failed at runtime
@@ -379,14 +292,14 @@ namespace
             {
                 if (try_restore_n({&p_action, 1}, archives_root_dir)[0] == RestoreResult::restored)
                 {
-                    print2("Restored from ", archives_root_dir.native(), "\n");
+                    msg::println(msgRestoredPackage, msg::path = archives_root_dir.native());
                     return RestoreResult::restored;
                 }
             }
             return RestoreResult::unavailable;
         }
 
-        void push_success(const Dependencies::InstallPlanAction& action) const override
+        void push_success(const InstallPlanAction& action) const override
         {
             if (m_write_dirs.empty() && m_put_url_templates.empty())
             {
@@ -402,19 +315,17 @@ namespace
                 fs, paths.get_tool_cache(), stdout_sink, paths.package_dir(spec), tmp_archive_path);
             if (!compress_result)
             {
-                vcpkg::print2(Color::warning,
-                              "Failed to compress folder '",
-                              paths.package_dir(spec),
-                              "': ",
-                              compress_result.error());
+                msg::println(Color::warning,
+                             msg::format_warning(msgCompressFolderFailed, msg::path = paths.package_dir(spec))
+                                 .append_raw(' ')
+                                 .append_raw(compress_result.error()));
                 return;
             }
-
             size_t http_remotes_pushed = 0;
             for (auto&& put_url_template : m_put_url_templates)
             {
                 auto url = put_url_template.instantiate_variables(action);
-                auto maybe_success = put_file(fs, url, put_url_template.headers, tmp_archive_path);
+                auto maybe_success = put_file(fs, url, put_url_template.headers_for_put, tmp_archive_path);
                 if (maybe_success)
                 {
                     http_remotes_pushed++;
@@ -422,12 +333,12 @@ namespace
                 }
 
                 auto errors = replace_secrets(std::move(maybe_success).error(), m_secrets);
-                print2(Color::warning, errors);
+                msg::println(Color::warning, msgReplaceSecretsError, msg::error_msg = errors);
             }
 
             if (!m_put_url_templates.empty())
             {
-                print2("Uploaded binaries to ", http_remotes_pushed, " HTTP remotes.\n");
+                msg::println(msgUploadedBinaries, msg::count = http_remotes_pushed, msg::vendor = "HTTP remotes");
             }
 
             for (const auto& archives_root_dir : m_write_dirs)
@@ -446,11 +357,14 @@ namespace
 
                 if (ec)
                 {
-                    vcpkg::printf(Color::warning, "Failed to store binary cache %s: %s\n", archive_path, ec.message());
+                    msg::println(Color::warning,
+                                 msg::format(msgFailedToStoreBinaryCache, msg::path = archive_path)
+                                     .append_raw('\n')
+                                     .append_raw(ec.message()));
                 }
                 else
                 {
-                    vcpkg::printf("Stored binary cache: %s\n", archive_path);
+                    msg::println(msgStoredBinaryCache, msg::path = archive_path);
                 }
             }
             // In the case of 1 write dir, the file will be moved instead of copied
@@ -460,7 +374,7 @@ namespace
             }
         }
 
-        void precheck(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
+        void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             auto& fs = paths.get_filesystem();
             for (size_t idx = 0; idx < actions.size(); ++idx)
@@ -510,19 +424,16 @@ namespace
         {
         }
 
-        RestoreResult try_restore(const Dependencies::InstallPlanAction&) const override
-        {
-            return RestoreResult::unavailable;
-        }
+        RestoreResult try_restore(const InstallPlanAction&) const override { return RestoreResult::unavailable; }
 
-        void push_success(const Dependencies::InstallPlanAction&) const override { }
+        void push_success(const InstallPlanAction&) const override { }
 
-        void prefetch(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
+        void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             const auto timer = ElapsedTimer::create_started();
             auto& fs = paths.get_filesystem();
             size_t this_restore_count = 0;
-            std::vector<std::tuple<std::string, View<std::string>, Path>> url_paths;
+            std::vector<std::pair<std::string, Path>> url_paths;
             std::vector<size_t> url_indices;
             for (auto&& url_template : m_url_templates)
             {
@@ -539,16 +450,17 @@ namespace
                     auto&& action = actions[idx];
                     clean_prepare_dir(fs, paths.package_dir(action.spec));
                     auto uri = url_template.instantiate_variables(action);
-                    url_paths.emplace_back(
-                        std::move(uri), url_template.headers, make_temp_archive_path(paths.buildtrees(), action.spec));
+                    url_paths.emplace_back(std::move(uri), make_temp_archive_path(paths.buildtrees(), action.spec));
                     url_indices.push_back(idx);
                 }
 
                 if (url_paths.empty()) break;
 
-                print2("Attempting to fetch ", url_paths.size(), " packages from HTTP servers.\n");
+                msg::println(msgAttemptingToFetchPackagesFromVendor,
+                             msg::count = url_paths.size(),
+                             msg::vendor = "HTTP servers");
 
-                auto codes = download_files(fs, url_paths);
+                auto codes = download_files(fs, url_paths, url_template.headers_for_get);
                 std::vector<size_t> action_idxs;
                 std::vector<Command> jobs;
                 for (size_t i = 0; i < codes.size(); ++i)
@@ -559,7 +471,7 @@ namespace
                         jobs.push_back(decompress_zip_archive_cmd(paths.get_tool_cache(),
                                                                   stdout_sink,
                                                                   paths.package_dir(actions[url_indices[i]].spec),
-                                                                  std::get<2>(url_paths[i])));
+                                                                  url_paths[i].second));
                     }
                 }
                 auto job_results = decompress_in_parallel(jobs);
@@ -569,24 +481,23 @@ namespace
                     if (job_results[j])
                     {
                         ++this_restore_count;
-                        fs.remove(std::get<2>(url_paths[i]), VCPKG_LINE_INFO);
+                        fs.remove(url_paths[i].second, VCPKG_LINE_INFO);
                         cache_status[url_indices[i]]->mark_restored();
                     }
                     else
                     {
-                        Debug::print("Failed to decompress ", std::get<2>(url_paths[i]), '\n');
+                        Debug::print("Failed to decompress ", url_paths[i].second, '\n');
                     }
                 }
             }
 
-            print2("Restored ",
-                   this_restore_count,
-                   " packages from HTTP servers in ",
-                   timer.elapsed(),
-                   ". Use --debug for more information.\n");
+            msg::println(msgRestoredPackagesFromVendor,
+                         msg::count = this_restore_count,
+                         msg::elapsed = timer.elapsed(),
+                         msg::value = "HTTP servers");
         }
 
-        void precheck(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
+        void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             std::vector<CacheAvailability> actions_present{actions.size()};
             std::vector<std::string> urls;
@@ -680,14 +591,12 @@ namespace
                 .then([&](ExitCodeAndOutput&& res) -> ExpectedS<Unit> {
                     if (Debug::g_debugging)
                     {
-                        print2(res.output);
+                        msg::write_unlocalized_text_to_stdout(Color::error, res.output);
                     }
 
                     if (res.output.find("Authentication may require manual action.") != std::string::npos)
                     {
-                        print2(Color::warning,
-                               "One or more NuGet credential providers requested manual action. Add the binary "
-                               "source 'interactive' to allow interactivity.\n");
+                        msg::println(Color::warning, msgAuthenticationMayRequireManualAction, msg::vendor = "Nuget");
                     }
 
                     if (res.exit_code == 0)
@@ -698,10 +607,10 @@ namespace
                     if (res.output.find("Response status code does not indicate success: 401 (Unauthorized)") !=
                         std::string::npos)
                     {
-                        print2(Color::warning,
-                               "One or more NuGet credential providers failed to authenticate. See ",
-                               docs::binarycaching_url,
-                               " for more details on how to provide credentials.\n");
+                        msg::println(Color::warning,
+                                     msgFailedVendorAuthentication,
+                                     msg::vendor = "NuGet",
+                                     msg::url = docs::binarycaching_url);
                     }
                     else if (res.output.find("for example \"-ApiKey AzureDevOps\"") != std::string::npos)
                     {
@@ -712,7 +621,7 @@ namespace
                             .then([](ExitCodeAndOutput&& res) -> ExpectedS<Unit> {
                                 if (Debug::g_debugging)
                                 {
-                                    print2(res.output);
+                                    msg::write_unlocalized_text_to_stdout(Color::error, res.output);
                                 }
 
                                 if (res.exit_code == 0)
@@ -756,7 +665,7 @@ namespace
             fs.write_contents(packages_config, xml.buf, VCPKG_LINE_INFO);
         }
 
-        void prefetch(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
+        void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             if (m_read_sources.empty() && m_read_configs.empty())
             {
@@ -786,7 +695,7 @@ namespace
                 return;
             }
 
-            print2("Attempting to fetch ", attempts.size(), " packages from nuget.\n");
+            msg::println(msgAttemptingToFetchPackagesFromVendor, msg::count = attempts.size(), msg::vendor = "nuget");
 
             auto packages_config = paths.buildtrees() / "packages.config";
             const auto& nuget_exe = paths.get_tool_exe("nuget", stdout_sink);
@@ -894,20 +803,15 @@ namespace
                     return false;
                 });
             }
-
-            print2("Restored ",
-                   total_restore_attempts - attempts.size(),
-                   " packages from NuGet in ",
-                   timer.elapsed(),
-                   ". Use --debug for more information.\n");
+            msg::println(msgRestoredPackagesFromVendor,
+                         msg::count = total_restore_attempts - attempts.size(),
+                         msg::elapsed = timer.elapsed(),
+                         msg::value = "NuGet");
         }
 
-        RestoreResult try_restore(const Dependencies::InstallPlanAction&) const override
-        {
-            return RestoreResult::unavailable;
-        }
+        RestoreResult try_restore(const InstallPlanAction&) const override { return RestoreResult::unavailable; }
 
-        void push_success(const Dependencies::InstallPlanAction& action) const override
+        void push_success(const InstallPlanAction& action) const override
         {
             if (m_write_sources.empty() && m_write_configs.empty())
             {
@@ -942,7 +846,7 @@ namespace
 
             if (!run_nuget_commandline(cmdline))
             {
-                print2(Color::error, "Packing NuGet failed. Use --debug for more information.\n");
+                msg::println(Color::error, msgPackingVendorFailed, msg::vendor = "NuGet");
                 return;
             }
 
@@ -966,12 +870,11 @@ namespace
                 {
                     cmd.string_arg("-NonInteractive");
                 }
-
-                print2("Uploading binaries for ", spec, " to NuGet source ", write_src, ".\n");
+                msg::println(
+                    msgUploadingBinariesToVendor, msg::spec = spec, msg::vendor = "NuGet", msg::path = write_src);
                 if (!run_nuget_commandline(cmd))
                 {
-                    print2(
-                        Color::error, "Pushing NuGet to ", write_src, " failed. Use --debug for more information.\n");
+                    msg::println(Color::error, msgPushingVendorFailed, msg::vendor = "NuGet", msg::path = write_src);
                 }
             }
             for (auto&& write_cfg : m_write_configs)
@@ -992,20 +895,21 @@ namespace
                 {
                     cmd.string_arg("-NonInteractive");
                 }
-
-                print2("Uploading binaries for ", spec, " using NuGet config ", write_cfg, ".\n");
-
+                msg::println(Color::error,
+                             msgUploadingBinariesUsingVendor,
+                             msg::spec = spec,
+                             msg::vendor = "NuGet config",
+                             msg::path = write_cfg);
                 if (!run_nuget_commandline(cmd))
                 {
-                    print2(
-                        Color::error, "Pushing NuGet with ", write_cfg, " failed. Use --debug for more information.\n");
+                    msg::println(Color::error, msgPushingVendorFailed, msg::vendor = "NuGet", msg::path = write_cfg);
                 }
             }
 
             fs.remove(nupkg_path, IgnoreErrors{});
         }
 
-        void precheck(View<Dependencies::InstallPlanAction>, View<CacheStatus*>) const override { }
+        void precheck(View<InstallPlanAction>, View<CacheStatus*>) const override { }
 
     private:
         const VcpkgPaths& paths;
@@ -1035,7 +939,7 @@ namespace
             return Strings::concat(prefix, abi, ".zip");
         }
 
-        void prefetch(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
+        void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             auto& fs = paths.get_filesystem();
 
@@ -1102,15 +1006,12 @@ namespace
             msg::println(msgRestoredPackagesFromVendor,
                          msg::count = restored_count,
                          msg::elapsed = timer.elapsed(),
-                         msg::vendor = vendor());
+                         msg::value = vendor());
         }
 
-        RestoreResult try_restore(const Dependencies::InstallPlanAction&) const override
-        {
-            return RestoreResult::unavailable;
-        }
+        RestoreResult try_restore(const InstallPlanAction&) const override { return RestoreResult::unavailable; }
 
-        void push_success(const Dependencies::InstallPlanAction& action) const override
+        void push_success(const InstallPlanAction& action) const override
         {
             if (m_write_prefixes.empty()) return;
             const auto timer = ElapsedTimer::create_started();
@@ -1143,7 +1044,7 @@ namespace
                          msg::vendor = vendor());
         }
 
-        void precheck(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
+        void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             std::vector<CacheAvailability> actions_availability{actions.size()};
             for (const auto& prefix : m_read_prefixes)
@@ -1376,7 +1277,7 @@ namespace vcpkg
         return {};
     }
 
-    std::string UrlTemplate::instantiate_variables(const Dependencies::InstallPlanAction& action) const
+    std::string UrlTemplate::instantiate_variables(const InstallPlanAction& action) const
     {
         return api_stable_format(url_template,
                                  [&](std::string& out, StringView key) {
@@ -1399,7 +1300,7 @@ namespace vcpkg
                                      }
                                      else
                                      {
-                                         print2("unknown key: ", key, '\n');
+                                         Debug::println("Unknown key: ", key);
                                          // We do a input validation while parsing the config
                                          Checks::unreachable(VCPKG_LINE_INFO);
                                      };
@@ -1437,7 +1338,7 @@ namespace vcpkg
         }
     }
 
-    RestoreResult BinaryCache::try_restore(const Dependencies::InstallPlanAction& action)
+    RestoreResult BinaryCache::try_restore(const InstallPlanAction& action)
     {
         const auto abi = action.package_abi().get();
         if (!abi)
@@ -1490,7 +1391,7 @@ namespace vcpkg
         return RestoreResult::unavailable;
     }
 
-    void BinaryCache::push_success(const Dependencies::InstallPlanAction& action)
+    void BinaryCache::push_success(const InstallPlanAction& action)
     {
         const auto abi = action.package_abi().get();
         if (abi)
@@ -1504,7 +1405,7 @@ namespace vcpkg
         }
     }
 
-    void BinaryCache::prefetch(View<Dependencies::InstallPlanAction> actions)
+    void BinaryCache::prefetch(View<InstallPlanAction> actions)
     {
         std::vector<CacheStatus*> cache_status{actions.size()};
         for (size_t idx = 0; idx < actions.size(); ++idx)
@@ -1529,7 +1430,7 @@ namespace vcpkg
         }
     }
 
-    std::vector<CacheAvailability> BinaryCache::precheck(View<Dependencies::InstallPlanAction> actions)
+    std::vector<CacheAvailability> BinaryCache::precheck(View<InstallPlanAction> actions)
     {
         std::vector<CacheStatus*> cache_status{actions.size()};
         for (size_t idx = 0; idx < actions.size(); ++idx)
@@ -1647,7 +1548,8 @@ namespace vcpkg
 
     void BinaryConfigParserState::clear()
     {
-        m_cleared = true;
+        binary_cache_providers.clear();
+        binary_cache_providers.insert("clear");
         interactive = false;
         nugettimeout = "100";
         archives_to_read.clear();
@@ -1764,6 +1666,7 @@ namespace
                         msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "files"),
                         segments[3].first);
                 }
+                state->binary_cache_providers.insert("files");
             }
             else if (segments[0].second == "interactive")
             {
@@ -1800,6 +1703,7 @@ namespace
                         msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "nugetconfig"),
                         segments[3].first);
                 }
+                state->binary_cache_providers.insert("nuget");
             }
             else if (segments[0].second == "nuget")
             {
@@ -1813,7 +1717,8 @@ namespace
                 auto&& p = segments[1].second;
                 if (p.empty())
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresSource, msg::binary_source = "nuget"));
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresSourceArgument, msg::binary_source = "nuget"));
                 }
 
                 handle_readwrite(state->sources_to_read, state->sources_to_write, std::move(p), segments, 2);
@@ -1823,6 +1728,7 @@ namespace
                         msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "nuget"),
                         segments[3].first);
                 }
+                state->binary_cache_providers.insert("nuget");
             }
             else if (segments[0].second == "nugettimeout")
             {
@@ -1848,7 +1754,9 @@ namespace
                 {
                     return add_error("invalid value: binary config 'nugettimeout' requires integers greater than 0");
                 }
+
                 state->nugettimeout = std::to_string(timeout);
+                state->binary_cache_providers.insert("nuget");
             }
             else if (segments[0].second == "default")
             {
@@ -1867,6 +1775,7 @@ namespace
 
                 handle_readwrite(
                     state->archives_to_read, state->archives_to_write, Path(*maybe_home.get()), segments, 1);
+                state->binary_cache_providers.insert("default");
             }
             else if (segments[0].second == "x-azblob")
             {
@@ -1915,9 +1824,11 @@ namespace
                 state->secrets.push_back(segments[2].second);
                 UrlTemplate url_template = {p};
                 auto headers = azure_blob_headers();
-                url_template.headers.assign(headers.begin(), headers.end());
+                url_template.headers_for_put.assign(headers.begin(), headers.end());
                 handle_readwrite(
                     state->url_templates_to_get, state->url_templates_to_put, std::move(url_template), segments, 3);
+
+                state->binary_cache_providers.insert("azblob");
             }
             else if (segments[0].second == "x-gcs")
             {
@@ -1950,6 +1861,8 @@ namespace
                 }
 
                 handle_readwrite(state->gcs_read_prefixes, state->gcs_write_prefixes, std::move(p), segments, 2);
+
+                state->binary_cache_providers.insert("gcs");
             }
             else if (segments[0].second == "x-aws")
             {
@@ -1982,6 +1895,8 @@ namespace
                 }
 
                 handle_readwrite(state->aws_read_prefixes, state->aws_write_prefixes, std::move(p), segments, 2);
+
+                state->binary_cache_providers.insert("aws");
             }
             else if (segments[0].second == "x-aws-config")
             {
@@ -2002,6 +1917,7 @@ namespace
                 }
 
                 state->aws_no_sign_request = no_sign_request;
+                state->binary_cache_providers.insert("aws");
             }
             else if (segments[0].second == "x-cos")
             {
@@ -2034,6 +1950,7 @@ namespace
                 }
 
                 handle_readwrite(state->cos_read_prefixes, state->cos_write_prefixes, std::move(p), segments, 2);
+                state->binary_cache_providers.insert("cos");
             }
             else if (segments[0].second == "http")
             {
@@ -2067,14 +1984,22 @@ namespace
                 }
                 if (segments.size() == 4)
                 {
-                    url_template.headers.push_back(segments[3].second);
+                    url_template.headers_for_get.push_back(segments[3].second);
+                    url_template.headers_for_put.push_back(segments[3].second);
                 }
+
                 handle_readwrite(
                     state->url_templates_to_get, state->url_templates_to_put, std::move(url_template), segments, 2);
+                state->binary_cache_providers.insert("http");
             }
             else
             {
                 return add_error(msg::format(msgUnknownBinaryProviderType), segments[0].first);
+            }
+
+            for (const auto& cache_provider : state->binary_cache_providers)
+            {
+                LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching_" + cache_provider, "defined");
             }
         }
     };
@@ -2297,11 +2222,6 @@ ExpectedS<BinaryConfigParserState> vcpkg::create_binary_providers_from_configs_p
         }
     }
 
-    if (s.m_cleared)
-    {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-clear", "defined");
-    }
-
     return s;
 }
 
@@ -2359,7 +2279,6 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
 
     if (!s.url_templates_to_get.empty())
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-url-get", "defined");
         providers.push_back(
             std::make_unique<HttpGetBinaryProvider>(paths, std::move(s.url_templates_to_get), s.secrets));
     }
@@ -2367,7 +2286,6 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
     if (!s.sources_to_read.empty() || !s.sources_to_write.empty() || !s.configs_to_read.empty() ||
         !s.configs_to_write.empty())
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-nuget", "defined");
         providers.push_back(std::make_unique<NugetBinaryProvider>(paths,
                                                                   std::move(s.sources_to_read),
                                                                   std::move(s.sources_to_write),
@@ -2436,7 +2354,7 @@ details::NuGetRepoInfo details::get_nuget_repo_info_from_env()
 }
 
 std::string vcpkg::generate_nuspec(const Path& package_dir,
-                                   const Dependencies::InstallPlanAction& action,
+                                   const InstallPlanAction& action,
                                    const vcpkg::NugetReference& ref,
                                    details::NuGetRepoInfo rinfo)
 {
@@ -2547,8 +2465,7 @@ void vcpkg::help_topic_asset_caching(const VcpkgPaths&)
              "specified as `read`, `write`, or `readwrite` and defaults to `read`.");
     tbl.blank();
     print2(tbl.m_str);
-
-    print2("\nExtended documentation is available at ", docs::assetcaching_url, "\n");
+    msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::assetcaching_url);
 }
 
 void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
@@ -2627,20 +2544,16 @@ void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
     const auto& maybe_cachepath = default_cache_path();
     if (auto p = maybe_cachepath.get())
     {
-        print2(
-            "\nBased on your system settings, the default path to store binaries is\n    ",
-            *p,
-            "\nThis consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.\n");
+        msg::println(msgDefaultPathToBinaries, msg::path = *p);
     }
 
-    print2("\nExtended documentation is available at ", docs::binarycaching_url, "\n");
+    msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::binarycaching_url);
 }
 
-std::string vcpkg::generate_nuget_packages_config(const Dependencies::ActionPlan& action)
+std::string vcpkg::generate_nuget_packages_config(const ActionPlan& action)
 {
-    auto refs = Util::fmap(action.install_actions, [&](const Dependencies::InstallPlanAction& ipa) {
-        return make_nugetref(ipa, get_nuget_prefix());
-    });
+    auto refs = Util::fmap(action.install_actions,
+                           [&](const InstallPlanAction& ipa) { return make_nugetref(ipa, get_nuget_prefix()); });
     XmlSerializer xml;
     xml.emit_declaration().line_break();
     xml.open_tag("packages").line_break();

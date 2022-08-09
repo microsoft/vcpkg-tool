@@ -32,7 +32,7 @@ namespace fmt
         template<class FormatContext>
         auto format(const vcpkg::LineInfo& li, FormatContext& ctx) const -> decltype(ctx.out())
         {
-            return format_to(ctx.out(), "{}({})", li.file_name, li.line_number);
+            return fmt::format_to(ctx.out(), "{}({})", li.file_name, li.line_number);
         }
     };
 

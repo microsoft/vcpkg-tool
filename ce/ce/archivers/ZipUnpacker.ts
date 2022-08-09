@@ -49,6 +49,19 @@ export class ZipUnpacker extends Unpacker {
 
       const openedFile = await archiveUri.openFile();
       const zipFile = await ZipFile.read(openedFile);
+      if (options.strip === -1) {
+        // when strip == -1, strip off all common folders off the front of the file names
+        options.strip = 0;
+        const folders = [...zipFile.folders.keys()].sort((a, b) => a.length - b.length);
+        const files = [...zipFile.files.keys()];
+        for (const folder of folders) {
+          if (files.all((filename) => filename.startsWith(folder))) {
+            options.strip = folder.split('/').length - 1;
+            continue;
+          }
+          break;
+        }
+      }
 
       const archiveProgress = new PercentageScaler(0, zipFile.files.size);
       this.progress(0);

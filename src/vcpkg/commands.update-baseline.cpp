@@ -6,36 +6,6 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace
-{
-    using namespace vcpkg;
-
-    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineNoConfiguration,
-                                 (),
-                                 "",
-                                 "neither `vcpkg.json` nor `vcpkg-configuration.json` exist to update.");
-
-    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineNoExistingBuiltinBaseline,
-                                 (msg::option),
-                                 "",
-                                 "the manifest file currently does not contain a `builtin-baseline` field; in order to "
-                                 "add one, pass the --{option} switch.");
-    DECLARE_AND_REGISTER_MESSAGE(
-        UpdateBaselineAddBaselineNoManifest,
-        (msg::option),
-        "",
-        "the --{option} switch was passed, but there is no manifest file to add a `builtin-baseline` field to.");
-
-    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineUpdatedBaseline,
-                                 (msg::url, msg::old_value, msg::new_value),
-                                 "example of {old_value}, {new_value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
-                                 "updated registry '{url}': baseline '{old_value}' -> '{new_value}'");
-    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineNoUpdate,
-                                 (msg::url, msg::value),
-                                 "example of {value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
-                                 "registry '{url}' not updated: '{value}'");
-}
-
 namespace vcpkg::Commands
 {
     static constexpr StringLiteral OPTION_ADD_INITIAL_BASELINE = "add-initial-baseline";
@@ -123,7 +93,7 @@ namespace vcpkg::Commands
             synthesized_registry.kind = "builtin";
             if (auto p = manifest.manifest.get("builtin-baseline"))
             {
-                synthesized_registry.baseline = p->string().to_string();
+                synthesized_registry.baseline = p->string(VCPKG_LINE_INFO).to_string();
             }
 
             update_baseline_in_config(paths, synthesized_registry);
@@ -152,14 +122,13 @@ namespace vcpkg::Commands
         if (!dry_run && configuration.source == ConfigurationSource::VcpkgConfigurationFile)
         {
             paths.get_filesystem().write_contents(configuration.directory / "vcpkg-configuration.json",
-                                                  Json::stringify(configuration.config.serialize(), {}),
+                                                  Json::stringify(configuration.config.serialize()),
                                                   VCPKG_LINE_INFO);
         }
 
         if (!dry_run && has_manifest)
         {
-            paths.get_filesystem().write_contents(
-                manifest.path, Json::stringify(manifest.manifest, {}), VCPKG_LINE_INFO);
+            paths.get_filesystem().write_contents(manifest.path, Json::stringify(manifest.manifest), VCPKG_LINE_INFO);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

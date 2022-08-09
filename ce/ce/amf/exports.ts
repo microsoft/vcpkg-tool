@@ -3,7 +3,7 @@
 
 
 import { Exports as IExports } from '../interfaces/metadata/exports';
-import { ValidationError } from '../interfaces/validation-error';
+import { ValidationMessage } from '../interfaces/validation-message';
 import { BaseMap } from '../yaml/BaseMap';
 import { ScalarMap } from '../yaml/ScalarMap';
 import { StringsMap } from '../yaml/strings';
@@ -20,7 +20,7 @@ export class Exports extends BaseMap implements IExports {
   contents: StringsMap = new StringsMap(undefined, this, 'contents');
 
   /** @internal */
-  override *validate(): Iterable<ValidationError> {
+  override *validate(): Iterable<ValidationMessage> {
     yield* super.validate();
     yield* this.validateChildKeys(['paths', 'locations', 'properties', 'environment', 'tools', 'defines', 'aliases', 'contents']);
     // todo: what validations do we need?

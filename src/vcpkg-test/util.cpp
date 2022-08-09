@@ -188,17 +188,17 @@ namespace vcpkg::Test
     {
         if (l.is_object() && r.is_object())
         {
-            check_json_eq(l.object(), r.object(), path, ordered);
+            check_json_eq(l.object(VCPKG_LINE_INFO), r.object(VCPKG_LINE_INFO), path, ordered);
         }
         else if (l.is_array() && r.is_array())
         {
-            check_json_eq(l.array(), r.array(), path, ordered);
+            check_json_eq(l.array(VCPKG_LINE_INFO), r.array(VCPKG_LINE_INFO), path, ordered);
         }
         else if (l != r)
         {
             INFO(path);
-            INFO("l = " << Json::stringify(l, {}));
-            INFO("r = " << Json::stringify(r, {}));
+            INFO("l = " << Json::stringify(l));
+            INFO("r = " << Json::stringify(r));
             CHECK(false);
         }
     }

@@ -97,7 +97,8 @@ namespace vcpkg::Commands::CIVerifyVersions
                     if (!maybe_file) continue;
 
                     const auto& file = maybe_file.value_or_exit(VCPKG_LINE_INFO);
-                    auto maybe_scf = Paragraphs::try_load_port_text(file, treeish, control_file == "vcpkg.json");
+                    auto maybe_scf =
+                        Paragraphs::try_load_port_text(file, treeish, control_file == "vcpkg.json", stdout_sink);
                     if (!maybe_scf)
                     {
                         return {

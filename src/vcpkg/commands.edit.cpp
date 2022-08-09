@@ -11,37 +11,18 @@
 
 #include <limits.h>
 
-namespace
-{
-    using namespace vcpkg;
-
-    DECLARE_AND_REGISTER_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:");
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        ErrorVsCodeNotFound,
-        (msg::env_var),
-        "",
-        "Visual Studio Code was not found and the environment variable '{env_var}' is not set or invalid.");
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorVsCodeNotFoundPathExamined, (), "", "The following paths were examined:");
-
-    DECLARE_AND_REGISTER_MESSAGE(InfoSetEnvVar,
-                                 (msg::env_var),
-                                 "In this context 'editor' means IDE",
-                                 "You can also set the environment variable '{env_var}' to your editor of choice.");
-}
-
 #if defined(_WIN32)
 namespace
 {
-    std::vector<vcpkg::Path> find_from_registry()
+    using namespace vcpkg;
+    std::vector<Path> find_from_registry()
     {
-        std::vector<vcpkg::Path> output;
+        std::vector<Path> output;
 
         struct RegKey
         {
             HKEY root;
-            vcpkg::StringLiteral subkey;
+            StringLiteral subkey;
         } REGKEYS[] = {
             {HKEY_LOCAL_MACHINE,
              R"(SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{C26E74D1-022E-4238-8B9D-1E7564A36CC9}_is1)"},
@@ -57,11 +38,11 @@ namespace
 
         for (auto&& keypath : REGKEYS)
         {
-            const vcpkg::Optional<std::string> code_installpath =
-                vcpkg::get_registry_string(keypath.root, keypath.subkey, "InstallLocation");
+            const Optional<std::string> code_installpath =
+                get_registry_string(keypath.root, keypath.subkey, "InstallLocation");
             if (const auto c = code_installpath.get())
             {
-                const vcpkg::Path install_path = *c;
+                const Path install_path = *c;
                 output.push_back(install_path / "Code - Insiders.exe");
                 output.push_back(install_path / "Code.exe");
             }
@@ -71,7 +52,7 @@ namespace
 
     std::string expand_environment_strings(const std::string& input)
     {
-        const auto widened = vcpkg::Strings::to_utf16(input);
+        const auto widened = Strings::to_utf16(input);
         std::wstring result;
         result.resize(result.capacity());
         bool done;
@@ -79,7 +60,7 @@ namespace
         {
             if (result.size() == ULONG_MAX)
             {
-                vcpkg::Checks::exit_fail(VCPKG_LINE_INFO); // integer overflow
+                Checks::exit_fail(VCPKG_LINE_INFO); // integer overflow
             }
 
             const auto required_size =
@@ -88,13 +69,13 @@ namespace
             {
                 msg::println_error(
                     msg::format(msgEnvStrFailedToExtract).append_raw('\n').append(LocalizedString::from_raw(input)));
-                vcpkg::Checks::exit_fail(VCPKG_LINE_INFO);
+                Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
             done = required_size <= result.size() + 1;
             result.resize(required_size - 1);
         } while (!done);
-        return vcpkg::Strings::to_utf8(result);
+        return Strings::to_utf8(result);
     }
 }
 #endif

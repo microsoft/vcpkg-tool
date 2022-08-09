@@ -402,6 +402,35 @@ describe('TarBzUnpacker', () => {
   });
 });
 
+describe('TarStripAuto', () => {
+  const local = new SuiteLocal();
+  const fs = local.fs;
+  after(local.after.bind(local));
+  const unpacker = new TarGzUnpacker(local.session);
+  const archiveUri = local.resourcesFolderUri.join('test.directories.tar.gz');
+
+  it('Strips off unnecessary folders off the front', async () => {
+    const targetUri = local.tempFolderUri.join('test-directories-gz');
+    const expected = [
+      'test-directories-gz/three/test.txt',
+      'test-directories-gz/four/test.txt'
+    ];
+    const actual = new Array<string>();
+    await unpacker.unpack(archiveUri, targetUri, {
+      unpacked(entry) {
+        if (entry.destination) {
+          actual.push(entry.destination.path);
+        }
+      },
+    }, { strip: -1 });
+    strict.equal(actual.length, 2, 'Should have two entries only');
+    for (const e of expected) {
+      // make sure the output has each of the expected outputs
+      strict.ok(actual.find((each) => each.endsWith(e)), `Should have element ending in expected value ${e}`);
+    }
+  });
+});
+
 describe('TarGzUnpacker', () => {
   const local = new SuiteLocal();
   const fs = local.fs;

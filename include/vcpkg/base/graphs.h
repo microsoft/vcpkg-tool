@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace vcpkg::Graphs
+namespace vcpkg
 {
     DECLARE_MESSAGE(GraphCycleDetected,
                     (msg::package_name),
@@ -35,18 +35,18 @@ namespace vcpkg::Graphs
         virtual U load_vertex_data(const V& vertex) const = 0;
     };
 
-    struct Randomizer
+    struct GraphRandomizer
     {
         virtual int random(int max_exclusive) = 0;
 
     protected:
-        ~Randomizer() { }
+        ~GraphRandomizer() { }
     };
 
     namespace details
     {
         template<class Container>
-        void shuffle(Container& c, Randomizer* r)
+        void shuffle(Container& c, GraphRandomizer* r)
         {
             if (!r) return;
             for (auto i = c.size(); i > 1; --i)
@@ -64,7 +64,7 @@ namespace vcpkg::Graphs
                                        const AdjacencyProvider<V, U>& f,
                                        std::unordered_map<V, ExplorationStatus>& exploration_status,
                                        std::vector<U>& sorted,
-                                       Randomizer* randomizer)
+                                       GraphRandomizer* randomizer)
         {
             ExplorationStatus& status = exploration_status[vertex];
             switch (status)
@@ -101,7 +101,9 @@ namespace vcpkg::Graphs
     }
 
     template<class Range, class V, class U>
-    std::vector<U> topological_sort(Range starting_vertices, const AdjacencyProvider<V, U>& f, Randomizer* randomizer)
+    std::vector<U> topological_sort(Range starting_vertices,
+                                    const AdjacencyProvider<V, U>& f,
+                                    GraphRandomizer* randomizer)
     {
         std::vector<U> sorted;
         std::unordered_map<V, ExplorationStatus> exploration_status;
