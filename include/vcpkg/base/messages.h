@@ -1459,4 +1459,23 @@ namespace vcpkg
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command is not supported on non-windows platforms.");
+    DECLARE_MESSAGE(VcpkgRootRequired, (), "", "Setting VCPKG_ROOT is required for standalone bootstrap.");
+    DECLARE_MESSAGE(DownloadingVcpkgStandloneBundle, (msg::version), "", "Downloading standalone bundle {version}.");
+    DECLARE_MESSAGE(DownloadingLatestVcpkgBundle, (), "", "Downloading latest standalone bundle.");
+    DECLARE_MESSAGE(SHAPassedAsArgAndOption,
+                    (),
+                    "",
+                    "SHA512 passed as both an argument and as an option. Only pass one of these.");
+    DECLARE_MESSAGE(SHAPassedWithConflict,
+                    (),
+                    "",
+                    "SHA512 passed, but --skip-sha512 was also passed; only do one or the other.");
+    DECLARE_MESSAGE(MissingSHA, (), "", "Required argument --sha512 was not passed.");
+    DECLARE_MESSAGE(ImproperSHALength,
+                    (msg::value),
+                    "{value} is a sha.",
+                    "SHA512's must be 128 hex characters: {value}");
+    DECLARE_MESSAGE(StoreOptionMissingSHA, (), "", "--store option is invalid without a sha512");
+    DECLARE_MESSAGE(IrregularFile, (msg::path), "", "path was not a regular file: {path}");
+    DECLARE_MESSAGE(MismatchedFiles, (), "", "file to store does not match hash");
 }

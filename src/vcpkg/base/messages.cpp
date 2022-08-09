@@ -750,4 +750,14 @@ namespace vcpkg
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
     REGISTER_MESSAGE(WindowsOnlyCommand);
+    REGISTER_MESSAGE(VcpkgRootRequired);
+    REGISTER_MESSAGE(DownloadingVcpkgStandloneBundle);
+    REGISTER_MESSAGE(DownloadingLatestVcpkgBundle);
+    REGISTER_MESSAGE(SHAPassedAsArgAndOption);
+    REGISTER_MESSAGE(SHAPassedWithConflict);
+    REGISTER_MESSAGE(MissingSHA);
+    REGISTER_MESSAGE(ImproperSHALength);
+    REGISTER_MESSAGE(StoreOptionMissingSHA);
+    REGISTER_MESSAGE(IrregularFile);
+    REGISTER_MESSAGE(MismatchedFiles);
 }

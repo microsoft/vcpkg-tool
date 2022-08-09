@@ -26,21 +26,21 @@ namespace vcpkg::Commands
         const auto& vcpkg_root_arg = args.vcpkg_root_dir;
         if (!vcpkg_root_arg)
         {
-            Checks::exit_with_message(VCPKG_LINE_INFO, "Setting VCPKG_ROOT is required for standalone bootstrap.\n");
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgVcpkgRootRequired);
         }
 
         const auto& vcpkg_root = fs.almost_canonical(*vcpkg_root_arg, VCPKG_LINE_INFO);
         fs.create_directories(vcpkg_root, VCPKG_LINE_INFO);
         const auto bundle_tarball = vcpkg_root / "vcpkg-standalone-bundle.tar.gz";
 #if defined(VCPKG_STANDALONE_BUNDLE_SHA)
-        print2("Downloading vcpkg standlone bundle " VCPKG_BASE_VERSION_AS_STRING "\n");
+        msg::println(msgDownloadingVcpkgStandaloneBundle, msg::version = VCPKG_BASE_VERSION_AS_STRING);
         const auto bundle_uri =
             "https://github.com/microsoft/vcpkg-tool/releases/download/" VCPKG_BASE_VERSION_AS_STRING
             "/vcpkg-standalone-bundle.tar.gz";
         download_manager.download_file(
             fs, bundle_uri, bundle_tarball, std::string(MACRO_TO_STRING(VCPKG_STANDALONE_BUNDLE_SHA)));
 #else  // ^^^ VCPKG_STANDALONE_BUNDLE_SHA / !VCPKG_STANDALONE_BUNDLE_SHA vvv
-        print2(Color::warning, "Downloading latest standalone bundle\n");
+        msg::println_warning(msgDownloadingLatestVcpkgBundle);
         const auto bundle_uri =
             "https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-standalone-bundle.tar.gz";
         download_manager.download_file(fs, bundle_uri, bundle_tarball, nullopt);
