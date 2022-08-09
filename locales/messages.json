@@ -591,5 +591,6 @@
   "WarningMessage": "warning: ",
   "WarningMessageMustUsePrintWarning": "The message named {value} starts with warning:, it must be changed to prepend WarningMessage in code instead.",
   "_WarningMessageMustUsePrintWarning.comment": "{value} is is a localized message name like WarningMessageMustUsePrintWarning",
-  "WarningsTreatedAsErrors": "previous warnings being interpreted as errors"
+  "WarningsTreatedAsErrors": "previous warnings being interpreted as errors",
+  "WindowsOnlyCommand": "This command is not supported on non-windows platforms."
 }
