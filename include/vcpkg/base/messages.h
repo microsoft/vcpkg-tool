@@ -1478,4 +1478,22 @@ namespace vcpkg
     DECLARE_MESSAGE(StoreOptionMissingSHA, (), "", "--store option is invalid without a sha512");
     DECLARE_MESSAGE(IrregularFile, (msg::path), "", "path was not a regular file: {path}");
     DECLARE_MESSAGE(MismatchedFiles, (), "", "file to store does not match hash");
+    DECLARE_MESSAGE(UpgradeInManifest,
+                    (),
+                    "",
+                    "The upgrade command does not currently support manifest mode. Instead, modify your vcpkg.json and "
+                    "run install.");
+    DECLARE_MESSAGE(AllPackagesAreUpdated, (), "", "All installed packages are up-to-date with the local portfile.");
+    DECLARE_MESSAGE(FollowingPackagesUpgraded, (), "", "The following packages are up-to-date:");
+    DECLARE_MESSAGE(TotalTime, (msg::elapsed), "", "Total elapsed time: {elapsed}");
+    DECLARE_MESSAGE(
+        UpgradeRunWithNoDryRun,
+        (),
+        "",
+        "If you are sure you want to rebuild the above packages, run this command with the --no-dry-run option.");
+    DECLARE_MESSAGE(FollowingPackagesNotInstalled, (), "", "The following packages are not installed:");
+    DECLARE_MESSAGE(FollowingPackagesMissingControl,
+                    (),
+                    "",
+                    "The following packages do not have a valid CONTROL or vcpkg.json:");
 }

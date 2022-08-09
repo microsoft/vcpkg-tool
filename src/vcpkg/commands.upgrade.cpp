@@ -69,9 +69,8 @@ namespace vcpkg::Commands::Upgrade
     {
         if (paths.manifest_mode_enabled())
         {
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                       "Error: the upgrade command does not currently support manifest mode. Instead, "
-                                       "modify your vcpkg.json and run install.");
+            msg::println_error(msgUpgradeInManifest);
+            Checks::unreachable(VCPKG_LINE_INFO);
         }
 
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
@@ -104,7 +103,7 @@ namespace vcpkg::Commands::Upgrade
 
             if (outdated_packages.empty())
             {
-                print2("All installed packages are up-to-date with the local portfiles.\n");
+                msg::println(msgAllPackagesAreUpdated);
                 Checks::exit_success(VCPKG_LINE_INFO);
             }
 
@@ -163,7 +162,7 @@ namespace vcpkg::Commands::Upgrade
 
             if (!up_to_date.empty())
             {
-                print2(Color::success, "The following packages are up-to-date:\n");
+                msg::println(Color::success, msgFollowingPackagesUpgraded);
                 print2(Strings::join(
                            "", up_to_date, [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
                        '\n');
@@ -171,7 +170,7 @@ namespace vcpkg::Commands::Upgrade
 
             if (!not_installed.empty())
             {
-                print2(Color::error, "The following packages are not installed:\n");
+                msg::println(Color::error, msgFollowingPackagesNotInstalled);
                 print2(Strings::join(
                            "", not_installed, [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
                        '\n');
@@ -179,7 +178,7 @@ namespace vcpkg::Commands::Upgrade
 
             if (!no_control_file.empty())
             {
-                print2(Color::error, "The following packages do not have a valid CONTROL or vcpkg.json:\n");
+                msg::println(Color::error, msgFollowingPackagesMissingControl);
                 print2(Strings::join("",
                                      no_control_file,
                                      [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
@@ -197,7 +196,7 @@ namespace vcpkg::Commands::Upgrade
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty());
         for (const auto& warning : action_plan.warnings)
         {
-            print2(Color::warning, warning, '\n');
+            msg::write_unlocalized_text_to_stdout(Color::warning, fmt::format("{}\n", warning));
         }
         // Set build settings for all install actions
         for (auto&& action : action_plan.install_actions)
@@ -209,9 +208,7 @@ namespace vcpkg::Commands::Upgrade
 
         if (!no_dry_run)
         {
-            print2(Color::warning,
-                   "If you are sure you want to rebuild the above packages, run this command with the "
-                   "--no-dry-run option.\n");
+            msg::println(Color::warning, msgUpgradeRunWithNoDryRun);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
@@ -220,7 +217,7 @@ namespace vcpkg::Commands::Upgrade
         const InstallSummary summary = Install::perform(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), var_provider);
 
-        print2("\nTotal elapsed time: ", GlobalState::timer.to_string(), "\n\n");
+        msg::println(msgTotalTime, msg::elapsed = GlobalState::timer.to_string());
 
         if (keep_going == KeepGoing::YES)
         {

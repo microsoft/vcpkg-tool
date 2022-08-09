@@ -760,4 +760,11 @@ namespace vcpkg
     REGISTER_MESSAGE(StoreOptionMissingSHA);
     REGISTER_MESSAGE(IrregularFile);
     REGISTER_MESSAGE(MismatchedFiles);
+    REGISTER_MESSAGE(UpgradeInManifest);
+    REGISTER_MESSAGE(AllPackagesAreUpdated);
+    REGISTER_MESSAGE(FollowingPackagesUpgraded);
+    REGISTER_MESSAGE(TotalTime);
+    REGISTER_MESSAGE(UpgradeRunWithNoDryRun);
+    REGISTER_MESSAGE(FollowingPackagesNotInstalled);
+    REGISTER_MESSAGE(FollowingPackagesMissingControl);
 }
