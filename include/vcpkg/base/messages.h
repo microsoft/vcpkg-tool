@@ -153,26 +153,26 @@ namespace vcpkg::msg
         {
             if (comment.empty() && example.empty())
             {
-                return std::string{""};
+                return std::string{};
             }
             if (comment.empty())
             {
-                return std::string(example.begin(), example.end());
+                return std::string(example.data(), example.size());
             }
 
             if (example.empty())
             {
-                return std::string(comment.begin(), comment.end());
+                return std::string(comment.data(), comment.size());
             }
 
             if (example[0] == ' ')
             {
                 const auto out = comment + example;
-                return std::string(out.begin(), out.end());
+                return std::string(out.data(), out.size());
             }
 
             const auto out = comment + StringArray(" ") + example;
-            return std::string(out.begin(), out.end());
+            return std::string(out.data(), out.size());
         }
 
         template<class Arg0>

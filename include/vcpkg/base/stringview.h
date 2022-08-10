@@ -117,8 +117,9 @@ namespace vcpkg
         constexpr auto begin() const noexcept { return m_array.begin(); }
         constexpr auto end() const noexcept { return m_array.end() - 1; }
 
+        constexpr const char* data() const noexcept { return m_array.data(); }
         constexpr ::size_t size() const noexcept { return m_array.size() - 1; }
-        constexpr bool empty() const noexcept { return size() == 0; }
+        constexpr bool empty() const noexcept { return m_array.empty(); }
 
         template<::size_t U>
         constexpr bool operator==(const StringArray<U>& other) const noexcept
