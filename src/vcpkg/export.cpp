@@ -106,11 +106,10 @@ namespace vcpkg::Export
             switch (plan_type)
             {
                 case ExportPlanType::ALREADY_BUILT:
-                    msg::println(msgExportingPackages);
-                    msg::write_unlocalized_text_to_stdout(Color::none, "\n" + as_string + "\n");
+                    msg::println(msg::format(msgExportingPackages).append_raw("\n" + as_string + "\n"));
                     continue;
                 case ExportPlanType::NOT_BUILT:
-                    print2("The following packages need to be built:\n", as_string, '\n');
+                    msg::println(msg::format(msgBuildingPackages).append_raw("\n" + as_string + "\n"));
                     continue;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }

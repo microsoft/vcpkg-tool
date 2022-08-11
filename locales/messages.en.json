@@ -66,6 +66,7 @@
   "BuildingPackage": "Building {spec}...",
   "BuildingPackageFailed": "building {spec} failed with: {build_result}",
   "BuildingPackageFailedDueToMissingDeps": "due to the following missing dependencies:",
+  "BuildingPackages": "The following packages need to be built:",
   "CMakeTargetsUsage": "{package_name} provides CMake targets:",
   "CMakeTargetsUsageHeuristicMessage": "# this is heuristically generated, and may not be correct",
   "CMakeToolChainFile": "CMake projects should use: \"-DCMAKE_TOOLCHAIN_FILE={path}\"",

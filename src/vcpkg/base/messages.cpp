@@ -750,4 +750,5 @@ namespace vcpkg
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
     REGISTER_MESSAGE(ExportingPackages);
+    REGISTER_MESSAGE(BuildingPackages);
 }

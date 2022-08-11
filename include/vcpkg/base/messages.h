@@ -1518,4 +1518,5 @@ namespace vcpkg
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
     DECLARE_MESSAGE(ExportingPackages, (), "", "The following packages are already built and will be exported:");
+    DECLARE_MESSAGE(BuildingPackages, (), "", "The following packages need to be built:");
 }

@@ -119,6 +119,7 @@
   "_BuildingPackageFailed.comment": "An example of {spec} is zlib:x64-windows. An example of {build_result} is One of the BuildResultXxx messages (such as BuildResultSucceeded/SUCCEEDED).",
   "BuildingPackageFailedDueToMissingDeps": "due to the following missing dependencies:",
   "_BuildingPackageFailedDueToMissingDeps.comment": "Printed after BuildingPackageFailed, and followed by a list of dependencies that were missing.",
+  "BuildingPackages": "The following packages need to be built:",
   "CMakeTargetsUsage": "{package_name} provides CMake targets:",
   "_CMakeTargetsUsage.comment": "'targets' are a CMake and Makefile concept An example of {package_name} is zlib.",
   "CMakeTargetsUsageHeuristicMessage": "# this is heuristically generated, and may not be correct",
