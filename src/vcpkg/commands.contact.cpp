@@ -40,15 +40,16 @@ namespace vcpkg::Commands::Contact
 
 #if defined(_WIN32)
             cmd_execute(Command("start").string_arg("https://aka.ms/NPS_vcpkg"));
-            print2("Default browser launched to https://aka.ms/NPS_vcpkg; thank you for your feedback!\n");
+            msg::println(msgDefaultBrowserLaunched, msg::url = "https://aka.ms/NPS_vcpkg");
+            msg::println(msgFeedbackAppreciated);
 #else
-            print2("Please navigate to https://aka.ms/NPS_vcpkg in your preferred browser. Thank you for your "
-                   "feedback!\n");
+            msg::println(msgNavigateToNPS, msg::url = "https://aka.ms/NPS_vcpkg");
+            msg::println(msgFeedbackAppreciated);
 #endif
         }
         else
         {
-            print2("Send an email to vcpkg@microsoft.com with any feedback.\n");
+            msg::println(msgEmailVcpkgTeam, msg::url = "vcpkg@microsoft.com");
         }
         Checks::exit_success(VCPKG_LINE_INFO);
     }

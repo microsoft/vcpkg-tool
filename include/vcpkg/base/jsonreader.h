@@ -217,12 +217,13 @@ namespace vcpkg::Json
         switch (value.kind())
         {
             case ValueKind::Null: return visit_null(r);
-            case ValueKind::Boolean: return visit_boolean(r, value.boolean());
-            case ValueKind::Integer: return visit_integer(r, value.integer());
-            case ValueKind::Number: return visit_number(r, value.number());
-            case ValueKind::String: return visit_string(r, value.string());
-            case ValueKind::Array: return visit_array(r, value.array());
-            case ValueKind::Object: return visit(r, value.object()); // Call `visit` to get unexpected fields checking
+            case ValueKind::Boolean: return visit_boolean(r, value.boolean(VCPKG_LINE_INFO));
+            case ValueKind::Integer: return visit_integer(r, value.integer(VCPKG_LINE_INFO));
+            case ValueKind::Number: return visit_number(r, value.number(VCPKG_LINE_INFO));
+            case ValueKind::String: return visit_string(r, value.string(VCPKG_LINE_INFO));
+            case ValueKind::Array: return visit_array(r, value.array(VCPKG_LINE_INFO));
+            case ValueKind::Object:
+                return visit(r, value.object(VCPKG_LINE_INFO)); // Call `visit` to get unexpected fields checking
             default: vcpkg::Checks::unreachable(VCPKG_LINE_INFO);
         }
     }

@@ -17,7 +17,7 @@ import { Unpacker } from './unpacker';
 
 export const pipeline = promisify(origPipeline);
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const bz2 = require('unbzip2-stream');
+const bz2 = <() => Transform>require('unbzip2-stream');
 
 abstract class BasicTarUnpacker extends Unpacker {
   constructor(protected readonly session: Session) {
@@ -98,21 +98,67 @@ abstract class BasicTarUnpacker extends Unpacker {
     }
   }
 
-  protected async unpackTar(archiveUri: Uri, outputUri: Uri, events: Partial<InstallEvents>, options: UnpackOptions, decompressor?: Transform): Promise<void> {
+  private async getAutoStrip(archiveUri: Uri, decompressorFactory?: () => Transform): Promise<number> {
+    const archiveFileStream = await archiveUri.readStream(0, await archiveUri.size());
+    let result = 0;
+    const folders = new Array<string>();
+    const files = new Array<string>();
+
+    const extractor = tarExtract().on('entry', (header, stream, next) => {
+      switch (header.type) {
+        case 'directory':
+          folders.push(header.name);
+          break;
+
+        case 'symlink':
+        case 'link':
+          files.push(header.linkname!);
+          break;
+
+        default:
+          files.push(header.name);
+          break;
+      }
+      next();
+    });
+
+
+    if (decompressorFactory) {
+      await pipeline(archiveFileStream, decompressorFactory(), extractor);
+    } else {
+      await pipeline(archiveFileStream, extractor);
+    }
+
+    for (const folder of folders.sort((a, b) => a.length - b.length)) {
+      if (files.all((filename) => filename.startsWith(folder))) {
+        result = folder.split('/').length - 1;
+        continue;
+      }
+      break;
+    }
+
+    return result;
+  }
+
+  protected async unpackTar(archiveUri: Uri, outputUri: Uri, events: Partial<InstallEvents>, options: UnpackOptions, decompressorFactory?: () => Transform): Promise<void> {
+    if (options.strip === -1) {
+      options.strip = await this.getAutoStrip(archiveUri, decompressorFactory);
+    }
+
     this.subscribe(events);
     const archiveSize = await archiveUri.size();
     const archiveFileStream = await archiveUri.readStream(0, archiveSize);
     const archiveProgress = new ProgressTrackingStream(0, archiveSize);
     const tarExtractor = tarExtract();
 
-    tarExtractor.on('entry', (header, stream, next) =>
-      this.maybeUnpackEntry(archiveUri, outputUri, events, options, header, stream).then(() => {
+    tarExtractor.on('entry', (header, stream, next) => {
+      return this.maybeUnpackEntry(archiveUri, outputUri, events, options, header, stream).then(() => {
         this.progress(archiveProgress.currentPercentage);
         next();
-      }).catch(err => (<any>next)(err)));
-
-    if (decompressor) {
-      await pipeline(archiveFileStream, archiveProgress, decompressor, tarExtractor);
+      }).catch(err => (<any>next)(err));
+    });
+    if (decompressorFactory) {
+      await pipeline(archiveFileStream, archiveProgress, decompressorFactory(), tarExtractor);
     } else {
       await pipeline(archiveFileStream, archiveProgress, tarExtractor);
     }
@@ -129,13 +175,13 @@ export class TarUnpacker extends BasicTarUnpacker {
 export class TarGzUnpacker extends BasicTarUnpacker {
   unpack(archiveUri: Uri, outputUri: Uri, events: Partial<InstallEvents>, options: UnpackOptions): Promise<void> {
     this.session.channels.debug(`unpacking TAR.GZ ${archiveUri} => ${outputUri}`);
-    return this.unpackTar(archiveUri, outputUri, events, options, createGunzip());
+    return this.unpackTar(archiveUri, outputUri, events, options, createGunzip);
   }
 }
 
 export class TarBzUnpacker extends BasicTarUnpacker {
   unpack(archiveUri: Uri, outputUri: Uri, events: Partial<InstallEvents>, options: UnpackOptions): Promise<void> {
     this.session.channels.debug(`unpacking TAR.BZ2 ${archiveUri} => ${outputUri}`);
-    return this.unpackTar(archiveUri, outputUri, events, options, bz2());
+    return this.unpackTar(archiveUri, outputUri, events, options, bz2);
   }
 }

@@ -4,7 +4,7 @@
 import { isMap, isScalar } from 'yaml';
 import { i } from '../i18n';
 import { ErrorKind } from '../interfaces/error-kind';
-import { ValidationError } from '../interfaces/validation-error';
+import { ValidationMessage } from '../interfaces/validation-message';
 import { parseQuery } from '../mediaquery/media-query';
 import { Session } from '../session';
 import { Entity } from '../yaml/Entity';
@@ -30,7 +30,7 @@ export class Demands extends EntityMap<YAMLDictionary, DemandBlock> {
   }
 
   /** @internal */
-  override *validate(): Iterable<ValidationError> {
+  override *validate(): Iterable<ValidationMessage> {
     yield* super.validate();
 
     for (const [mediaQuery, demandBlock] of this) {
@@ -89,7 +89,7 @@ export class DemandBlock extends Entity {
   }
 
   /** @internal */
-  override *validate(): Iterable<ValidationError> {
+  override *validate(): Iterable<ValidationMessage> {
     yield* this.validateChildKeys(['error', 'warning', 'message', 'seeAlso', 'requires', 'exports', 'install', 'unless']);
 
     yield* super.validate();

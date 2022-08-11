@@ -20,7 +20,7 @@ static Json::Object parse_json_object(StringView sv)
     // we're not testing json parsing here, so just fail on errors
     if (auto r = json.get())
     {
-        return std::move(r->first.object());
+        return std::move(r->first.object(VCPKG_LINE_INFO));
     }
     else
     {
@@ -37,28 +37,50 @@ enum class PrintErrors : bool
     Yes,
 };
 
-static ParseExpected<SourceControlFile> test_parse_manifest(const Json::Object& obj,
-                                                            PrintErrors print = PrintErrors::Yes)
+static ParseExpected<SourceControlFile> test_parse_project_manifest(const Json::Object& obj,
+                                                                    PrintErrors print = PrintErrors::Yes)
 {
-    auto res = SourceControlFile::parse_manifest_object("<test manifest>", obj, null_sink);
+    auto res = SourceControlFile::parse_project_manifest_object("<test manifest>", obj, null_sink);
     if (!res.has_value() && print == PrintErrors::Yes)
     {
         print_error_message(res.error());
     }
     return res;
 }
-static ParseExpected<SourceControlFile> test_parse_manifest(StringView obj, PrintErrors print = PrintErrors::Yes)
+
+static ParseExpected<SourceControlFile> test_parse_port_manifest(const Json::Object& obj,
+                                                                 PrintErrors print = PrintErrors::Yes)
 {
-    return test_parse_manifest(parse_json_object(obj), print);
+    auto res = SourceControlFile::parse_port_manifest_object("<test manifest>", obj, null_sink);
+    if (!res.has_value() && print == PrintErrors::Yes)
+    {
+        print_error_message(res.error());
+    }
+    return res;
 }
 
-static bool manifest_is_parseable(const Json::Object& obj)
+static ParseExpected<SourceControlFile> test_parse_project_manifest(StringView obj,
+                                                                    PrintErrors print = PrintErrors::Yes)
 {
-    return test_parse_manifest(obj, PrintErrors::No).has_value();
+    return test_parse_project_manifest(parse_json_object(obj), print);
 }
-static bool manifest_is_parseable(StringView obj)
+static ParseExpected<SourceControlFile> test_parse_port_manifest(StringView obj, PrintErrors print = PrintErrors::Yes)
 {
-    return test_parse_manifest(parse_json_object(obj), PrintErrors::No).has_value();
+    return test_parse_port_manifest(parse_json_object(obj), print);
+}
+
+static bool project_manifest_is_parsable(StringView obj)
+{
+    return test_parse_project_manifest(parse_json_object(obj), PrintErrors::No).has_value();
+}
+
+static bool port_manifest_is_parsable(const Json::Object& obj)
+{
+    return test_parse_port_manifest(obj, PrintErrors::No).has_value();
+}
+static bool port_manifest_is_parsable(StringView obj)
+{
+    return test_parse_port_manifest(parse_json_object(obj), PrintErrors::No).has_value();
 }
 
 static const FeatureFlagSettings feature_flags_with_versioning{false, false, false, true};
@@ -66,7 +88,7 @@ static const FeatureFlagSettings feature_flags_without_versioning{false, false, 
 
 TEST_CASE ("manifest construct minimum", "[manifests]")
 {
-    auto m_pgh = test_parse_manifest(R"json({
+    auto m_pgh = test_parse_port_manifest(R"json({
         "name": "zlib",
         "version-string": "1.2.8"
     })json");
@@ -76,6 +98,7 @@ TEST_CASE ("manifest construct minimum", "[manifests]")
 
     REQUIRE(pgh.core_paragraph->name == "zlib");
     REQUIRE(pgh.core_paragraph->raw_version == "1.2.8");
+    REQUIRE(pgh.core_paragraph->version_scheme == VersionScheme::String);
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->contacts.is_empty());
     REQUIRE(pgh.core_paragraph->summary.empty());
@@ -85,6 +108,53 @@ TEST_CASE ("manifest construct minimum", "[manifests]")
     REQUIRE(!pgh.core_paragraph->vcpkg_configuration.has_value());
 
     REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+
+    // name must be present:
+    REQUIRE_FALSE(port_manifest_is_parsable(R"json({
+        "name": "",
+        "version-string": "abcd"
+    })json"));
+
+    // name can't be empty:
+    REQUIRE_FALSE(port_manifest_is_parsable(R"json({
+        "name": "",
+        "version-string": "abcd"
+    })json"));
+}
+
+TEST_CASE ("project manifest construct minimum", "[manifests]")
+{
+    auto m_pgh = test_parse_project_manifest(R"json({})json");
+
+    REQUIRE(m_pgh.has_value());
+    auto& pgh = **m_pgh.get();
+
+    REQUIRE(pgh.core_paragraph->name.empty());
+    REQUIRE(pgh.core_paragraph->raw_version == "");
+    REQUIRE(pgh.core_paragraph->version_scheme == VersionScheme::Missing);
+    REQUIRE(pgh.core_paragraph->maintainers.empty());
+    REQUIRE(pgh.core_paragraph->contacts.is_empty());
+    REQUIRE(pgh.core_paragraph->summary.empty());
+    REQUIRE(pgh.core_paragraph->description.empty());
+    REQUIRE(pgh.core_paragraph->dependencies.empty());
+    REQUIRE(!pgh.core_paragraph->builtin_baseline.has_value());
+    REQUIRE(!pgh.core_paragraph->vcpkg_configuration.has_value());
+
+    // name might not be present:
+    REQUIRE(project_manifest_is_parsable(R"json({
+        "version-string": "abcd"
+    })json"));
+
+    // name can't be empty if supplied:
+    REQUIRE_FALSE(project_manifest_is_parsable(R"json({
+        "name": "",
+        "version-string": "abcd"
+    })json"));
+
+    REQUIRE(project_manifest_is_parsable(R"json({
+        "name": "some-name",
+        "version-string": "abcd"
+    })json"));
 }
 
 TEST_CASE ("manifest versioning", "[manifests]")
@@ -121,49 +191,79 @@ TEST_CASE ("manifest versioning", "[manifests]")
     };
     for (auto&& v : data)
     {
-        auto m_pgh = test_parse_manifest(std::get<0>(v));
-        REQUIRE(m_pgh.has_value());
-        auto& pgh = **m_pgh.get();
-        CHECK(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) == std::get<0>(v));
-        CHECK(pgh.core_paragraph->version_scheme == std::get<1>(v));
-        CHECK(pgh.core_paragraph->raw_version == std::get<2>(v));
-        CHECK(pgh.core_paragraph->port_version == 0);
+        auto portManifest = Json::parse_object(std::get<0>(v)).value_or_exit(VCPKG_LINE_INFO);
+        { // project manifest
+            auto projectManifest = portManifest;
+            projectManifest.remove("name");
+            auto m_pgh = test_parse_project_manifest(projectManifest);
+            REQUIRE(m_pgh.has_value());
+            auto& pgh = **m_pgh.get();
+            CHECK(Json::stringify(serialize_manifest(pgh)) == Json::stringify(projectManifest));
+            CHECK(pgh.core_paragraph->version_scheme == std::get<1>(v));
+            CHECK(pgh.core_paragraph->raw_version == std::get<2>(v));
+            CHECK(pgh.core_paragraph->port_version == 0);
+        }
+
+        { // port manifest
+            auto m_pgh = test_parse_port_manifest(portManifest);
+            REQUIRE(m_pgh.has_value());
+            auto& pgh = **m_pgh.get();
+            CHECK(Json::stringify(serialize_manifest(pgh)) == Json::stringify(portManifest));
+            CHECK(pgh.core_paragraph->version_scheme == std::get<1>(v));
+            CHECK(pgh.core_paragraph->raw_version == std::get<2>(v));
+            CHECK(pgh.core_paragraph->port_version == 0);
+        }
     }
 
-    REQUIRE_FALSE(manifest_is_parseable(R"json({
+    REQUIRE_FALSE(project_manifest_is_parsable(R"json({
+        "version-string": "abcd",
+        "version-semver": "1.2.3-rc3"
+    })json"));
+
+    REQUIRE_FALSE(project_manifest_is_parsable(R"json({
         "name": "zlib",
         "version-string": "abcd",
         "version-semver": "1.2.3-rc3"
     })json"));
 
-    REQUIRE_FALSE(manifest_is_parseable(R"json({
+    REQUIRE_FALSE(port_manifest_is_parsable(R"json({
+        "name": "zlib",
+        "version-string": "abcd",
+        "version-semver": "1.2.3-rc3"
+    })json"));
+
+    REQUIRE_FALSE(port_manifest_is_parsable(R"json({
         "name": "zlib",
         "version-string": "abcd#1"
     })json"));
-    REQUIRE_FALSE(manifest_is_parseable(R"json({
+    REQUIRE_FALSE(port_manifest_is_parsable(R"json({
         "name": "zlib",
         "version": "abcd#1"
     })json"));
-    REQUIRE_FALSE(manifest_is_parseable(R"json({
+    REQUIRE_FALSE(port_manifest_is_parsable(R"json({
         "name": "zlib",
         "version-date": "abcd#1"
     })json"));
-    REQUIRE_FALSE(manifest_is_parseable(R"json({
+    REQUIRE_FALSE(port_manifest_is_parsable(R"json({
         "name": "zlib",
         "version-semver": "abcd#1"
     })json"));
 
     SECTION ("version syntax")
     {
-        REQUIRE_FALSE(manifest_is_parseable(R"json({
+        REQUIRE_FALSE(project_manifest_is_parsable(R"json({
         "name": "zlib",
         "version-semver": "2020-01-01"
     })json"));
-        REQUIRE_FALSE(manifest_is_parseable(R"json({
+        REQUIRE_FALSE(port_manifest_is_parsable(R"json({
+        "name": "zlib",
+        "version-semver": "2020-01-01"
+    })json"));
+        REQUIRE_FALSE(port_manifest_is_parsable(R"json({
         "name": "zlib",
         "version-date": "1.1.1"
     })json"));
-        REQUIRE(manifest_is_parseable(R"json({
+        REQUIRE(port_manifest_is_parsable(R"json({
         "name": "zlib",
         "version": "1.2.3-rc3"
     })json"));
@@ -172,7 +272,7 @@ TEST_CASE ("manifest versioning", "[manifests]")
 
 TEST_CASE ("manifest constraints hash", "[manifests]")
 {
-    auto m_pgh = test_parse_manifest(R"json({
+    auto m_pgh = test_parse_port_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "dependencies": [
@@ -187,7 +287,7 @@ TEST_CASE ("manifest constraints hash", "[manifests]")
     REQUIRE(p->core_paragraph->dependencies.at(0).constraint.value == "2018-09-01");
     REQUIRE(p->core_paragraph->dependencies.at(0).constraint.port_version == 1);
 
-    REQUIRE_FALSE(manifest_is_parseable(R"json({
+    REQUIRE_FALSE(port_manifest_is_parsable(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "dependencies": [
@@ -198,7 +298,7 @@ TEST_CASE ("manifest constraints hash", "[manifests]")
     ]
 })json"));
 
-    REQUIRE_FALSE(manifest_is_parseable(R"json({
+    REQUIRE_FALSE(port_manifest_is_parsable(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "dependencies": [
@@ -209,7 +309,7 @@ TEST_CASE ("manifest constraints hash", "[manifests]")
     ]
 })json"));
 
-    REQUIRE_FALSE(manifest_is_parseable(R"json({
+    REQUIRE_FALSE(port_manifest_is_parsable(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "dependencies": [
@@ -224,7 +324,7 @@ TEST_CASE ("manifest constraints hash", "[manifests]")
 
 TEST_CASE ("manifest overrides embedded port version", "[manifests]")
 {
-    REQUIRE_FALSE(manifest_is_parseable(R"json({
+    REQUIRE_FALSE(port_manifest_is_parsable(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -235,7 +335,7 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
         }
     ]
 })json"));
-    REQUIRE_FALSE(manifest_is_parseable(R"json({
+    REQUIRE_FALSE(port_manifest_is_parsable(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -246,7 +346,7 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
         }
     ]
 })json"));
-    REQUIRE_FALSE(manifest_is_parseable(R"json({
+    REQUIRE_FALSE(port_manifest_is_parsable(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -257,7 +357,7 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
         }
     ]
 })json"));
-    REQUIRE_FALSE(manifest_is_parseable(R"json({
+    REQUIRE_FALSE(port_manifest_is_parsable(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -269,7 +369,7 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
     ]
 })json"));
 
-    auto parsed = test_parse_manifest(R"json({
+    auto parsed = test_parse_port_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -282,7 +382,7 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
     REQUIRE(parsed.has_value());
     CHECK((*parsed.get())->core_paragraph->overrides.at(0).port_version == 1);
 
-    parsed = test_parse_manifest(R"json({
+    parsed = test_parse_port_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -295,7 +395,7 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
     REQUIRE(parsed.has_value());
     CHECK((*parsed.get())->core_paragraph->overrides.at(0).port_version == 1);
 
-    parsed = test_parse_manifest(R"json({
+    parsed = test_parse_port_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -308,7 +408,7 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
     REQUIRE(parsed.has_value());
     CHECK((*parsed.get())->core_paragraph->overrides.at(0).port_version == 1);
 
-    parsed = test_parse_manifest(R"json({
+    parsed = test_parse_port_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -341,7 +441,7 @@ TEST_CASE ("manifest constraints", "[manifests]")
     ]
 }
 )json";
-    auto m_pgh = test_parse_manifest(raw);
+    auto m_pgh = test_parse_port_manifest(raw);
 
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
@@ -358,7 +458,7 @@ TEST_CASE ("manifest constraints", "[manifests]")
             DependencyConstraint{VersionConstraintKind::Minimum, "2018-09-01", 0});
     REQUIRE(pgh.core_paragraph->builtin_baseline == "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
 
-    REQUIRE_FALSE(manifest_is_parseable(R"json({
+    REQUIRE_FALSE(port_manifest_is_parsable(R"json({
         "name": "zlib",
         "version-string": "abcd",
         "dependencies": [
@@ -380,7 +480,7 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
     "builtin-baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4"
 }
 )json";
-        auto m_pgh = test_parse_manifest(raw);
+        auto m_pgh = test_parse_port_manifest(raw);
 
         REQUIRE(m_pgh.has_value());
         auto& pgh = **m_pgh.get();
@@ -399,7 +499,7 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
 }
 )json";
 
-        auto m_pgh = test_parse_manifest(raw);
+        auto m_pgh = test_parse_port_manifest(raw);
 
         REQUIRE(m_pgh.has_value());
         auto& pgh = **m_pgh.get();
@@ -429,7 +529,7 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
 }
 )json";
 
-        auto m_pgh = test_parse_manifest(raw);
+        auto m_pgh = test_parse_port_manifest(raw);
         REQUIRE(m_pgh.has_value());
         auto& pgh = **m_pgh.get();
         REQUIRE(pgh.core_paragraph->dependencies.size() == 1);
@@ -466,7 +566,7 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
 }
 )json";
 
-        auto m_pgh = test_parse_manifest(raw);
+        auto m_pgh = test_parse_port_manifest(raw);
         REQUIRE(m_pgh.has_value());
         auto& pgh = **m_pgh.get();
         REQUIRE(pgh.core_paragraph->dependencies.size() == 1);
@@ -545,7 +645,7 @@ TEST_CASE ("manifest overrides", "[manifests]")
     };
     for (auto&& v : data)
     {
-        auto m_pgh = test_parse_manifest(std::get<0>(v));
+        auto m_pgh = test_parse_port_manifest(std::get<0>(v));
 
         REQUIRE(m_pgh.has_value());
         auto& pgh = **m_pgh.get();
@@ -557,7 +657,7 @@ TEST_CASE ("manifest overrides", "[manifests]")
         REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
     }
 
-    REQUIRE_FALSE(manifest_is_parseable(R"json({
+    REQUIRE_FALSE(port_manifest_is_parsable(R"json({
         "name": "zlib",
         "version-string": "abcd",
         "builtin-baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4",
@@ -569,7 +669,7 @@ TEST_CASE ("manifest overrides", "[manifests]")
         }
     ]})json"));
 
-    REQUIRE_FALSE(manifest_is_parseable(R"json({
+    REQUIRE_FALSE(port_manifest_is_parsable(R"json({
         "name": "zlib",
         "version-string": "abcd",
         "builtin-baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4",
@@ -598,7 +698,7 @@ TEST_CASE ("manifest overrides", "[manifests]")
     ]
 }
 )json";
-    auto m_pgh = test_parse_manifest(raw);
+    auto m_pgh = test_parse_port_manifest(raw);
 
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
@@ -669,7 +769,7 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
         }
     ]
 })json");
-    auto m_pgh = test_parse_manifest(raw);
+    auto m_pgh = test_parse_port_manifest(raw);
 
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
@@ -695,11 +795,10 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
     REQUIRE(maybe_config.has_value());
     auto config = *maybe_config.get();
     REQUIRE(config.first.is_object());
-    auto config_obj = config.first.object();
+    auto config_obj = config.first.object(VCPKG_LINE_INFO);
     REQUIRE(pgh.core_paragraph->vcpkg_configuration.has_value());
     auto parsed_config_obj = *pgh.core_paragraph->vcpkg_configuration.get();
-    REQUIRE(Json::stringify(parsed_config_obj, Json::JsonStyle::with_spaces(4)) ==
-            Json::stringify(config_obj, Json::JsonStyle::with_spaces(4)));
+    REQUIRE(Json::stringify(parsed_config_obj) == Json::stringify(config_obj));
 }
 
 TEST_CASE ("manifest construct maximum", "[manifests]")
@@ -741,7 +840,7 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         }
 })json";
     auto object = parse_json_object(raw);
-    auto res = SourceControlFile::parse_manifest_object("<test manifest>", object, null_sink);
+    auto res = SourceControlFile::parse_port_manifest_object("<test manifest>", object, null_sink);
     if (!res.has_value())
     {
         print_error_message(res.error());
@@ -758,10 +857,10 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     auto contact_a = pgh.core_paragraph->contacts.get("a");
     REQUIRE(contact_a);
     REQUIRE(contact_a->is_object());
-    auto contact_a_aa = contact_a->object().get("aa");
+    auto contact_a_aa = contact_a->object(VCPKG_LINE_INFO).get("aa");
     REQUIRE(contact_a_aa);
     REQUIRE(contact_a_aa->is_string());
-    REQUIRE(contact_a_aa->string() == "aa");
+    REQUIRE(contact_a_aa->string(VCPKG_LINE_INFO) == "aa");
     REQUIRE(pgh.core_paragraph->summary.size() == 1);
     REQUIRE(pgh.core_paragraph->summary[0] == "d");
     REQUIRE(pgh.core_paragraph->description.size() == 1);
@@ -808,7 +907,7 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
 
 TEST_CASE ("SourceParagraph manifest two dependencies", "[manifests]")
 {
-    auto m_pgh = test_parse_manifest(R"json({
+    auto m_pgh = test_parse_port_manifest(R"json({
         "name": "zlib",
         "version-string": "1.2.8",
         "dependencies": ["z", "openssl"]
@@ -823,7 +922,7 @@ TEST_CASE ("SourceParagraph manifest two dependencies", "[manifests]")
 
 TEST_CASE ("SourceParagraph manifest three dependencies", "[manifests]")
 {
-    auto m_pgh = test_parse_manifest(R"json({
+    auto m_pgh = test_parse_port_manifest(R"json({
         "name": "zlib",
         "version-string": "1.2.8",
         "dependencies": ["z", "openssl", "xyz"]
@@ -840,7 +939,7 @@ TEST_CASE ("SourceParagraph manifest three dependencies", "[manifests]")
 
 TEST_CASE ("SourceParagraph manifest construct qualified dependencies", "[manifests]")
 {
-    auto m_pgh = test_parse_manifest(R"json({
+    auto m_pgh = test_parse_port_manifest(R"json({
         "name": "zlib",
         "version-string": "1.2.8",
         "dependencies": [
@@ -882,7 +981,7 @@ TEST_CASE ("SourceParagraph manifest construct host dependencies", "[manifests]"
     ]
 }
 )json";
-    auto m_pgh = test_parse_manifest(raw);
+    auto m_pgh = test_parse_port_manifest(raw);
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
 
@@ -901,7 +1000,7 @@ TEST_CASE ("SourceParagraph manifest construct host dependencies", "[manifests]"
 
 TEST_CASE ("SourceParagraph manifest default features", "[manifests]")
 {
-    auto m_pgh = test_parse_manifest(R"json({
+    auto m_pgh = test_parse_port_manifest(R"json({
         "name": "a",
         "version-string": "1.0",
         "default-features": ["a1"]
@@ -915,7 +1014,7 @@ TEST_CASE ("SourceParagraph manifest default features", "[manifests]")
 
 TEST_CASE ("SourceParagraph manifest description paragraph", "[manifests]")
 {
-    auto m_pgh = test_parse_manifest(R"json({
+    auto m_pgh = test_parse_port_manifest(R"json({
         "name": "a",
         "version-string": "1.0",
         "description": ["line 1", "line 2", "line 3"]
@@ -931,7 +1030,7 @@ TEST_CASE ("SourceParagraph manifest description paragraph", "[manifests]")
 
 TEST_CASE ("SourceParagraph manifest supports", "[manifests]")
 {
-    auto m_pgh = test_parse_manifest(R"json({
+    auto m_pgh = test_parse_port_manifest(R"json({
         "name": "a",
         "version-string": "1.0",
         "supports": "!(windows | osx)"
@@ -946,7 +1045,7 @@ TEST_CASE ("SourceParagraph manifest supports", "[manifests]")
 
 TEST_CASE ("SourceParagraph manifest empty supports", "[manifests]")
 {
-    REQUIRE_FALSE(manifest_is_parseable(R"json({
+    REQUIRE_FALSE(port_manifest_is_parsable(R"json({
         "name": "a",
         "version-string": "1.0",
         "supports": ""
@@ -955,7 +1054,7 @@ TEST_CASE ("SourceParagraph manifest empty supports", "[manifests]")
 
 TEST_CASE ("SourceParagraph manifest non-string supports", "[manifests]")
 {
-    REQUIRE_FALSE(manifest_is_parseable(R"json({
+    REQUIRE_FALSE(port_manifest_is_parsable(R"json({
         "name": "a",
         "version-string": "1.0",
         "supports": true
@@ -976,13 +1075,13 @@ static Json::Object manifest_with_license(StringView license)
 }
 static std::string test_serialized_license(StringView license)
 {
-    auto m_pgh = test_parse_manifest(manifest_with_license(license));
+    auto m_pgh = test_parse_port_manifest(manifest_with_license(license));
     REQUIRE(m_pgh.has_value());
 
-    return serialize_manifest(**m_pgh.get())["license"].string().to_string();
+    return serialize_manifest(**m_pgh.get())["license"].string(VCPKG_LINE_INFO).to_string();
 }
 
-static bool license_is_parseable(StringView license)
+static bool license_is_parsable(StringView license)
 {
     ParseMessages messages;
     parse_spdx_license_expression(license, messages);
@@ -1002,9 +1101,9 @@ static std::string test_format_parse_warning(const ParseMessage& msg)
 
 TEST_CASE ("simple license in manifest", "[manifests][license]")
 {
-    CHECK(manifest_is_parseable(manifest_with_license(Json::Value::null(nullptr))));
-    CHECK_FALSE(manifest_is_parseable(manifest_with_license("")));
-    CHECK(manifest_is_parseable(manifest_with_license("MIT")));
+    CHECK(port_manifest_is_parsable(manifest_with_license(Json::Value::null(nullptr))));
+    CHECK_FALSE(port_manifest_is_parsable(manifest_with_license("")));
+    CHECK(port_manifest_is_parsable(manifest_with_license("MIT")));
 }
 
 TEST_CASE ("valid and invalid licenses", "[manifests][license]")
@@ -1012,28 +1111,28 @@ TEST_CASE ("valid and invalid licenses", "[manifests][license]")
     CHECK(license_is_strict("mIt"));
     CHECK(license_is_strict("Apache-2.0"));
     CHECK(license_is_strict("GPL-2.0+"));
-    CHECK_FALSE(license_is_parseable("GPL-2.0++"));
+    CHECK_FALSE(license_is_parsable("GPL-2.0++"));
     CHECK(license_is_strict("LicenseRef-blah"));
     CHECK_FALSE(license_is_strict("unknownlicense"));
-    CHECK(license_is_parseable("unknownlicense"));
+    CHECK(license_is_parsable("unknownlicense"));
 }
 
 TEST_CASE ("licenses with compounds", "[manifests][license]")
 {
     CHECK(license_is_strict("GPL-3.0+ WITH GCC-exception-3.1"));
     CHECK(license_is_strict("Apache-2.0 WITH LLVM-exception"));
-    CHECK_FALSE(license_is_parseable("(Apache-2.0) WITH LLVM-exception"));
+    CHECK_FALSE(license_is_parsable("(Apache-2.0) WITH LLVM-exception"));
     CHECK(license_is_strict("(Apache-2.0 OR MIT) AND GPL-3.0+ WITH GCC-exception-3.1"));
-    CHECK_FALSE(license_is_parseable("Apache-2.0 WITH"));
-    CHECK_FALSE(license_is_parseable("GPL-3.0+ AND"));
-    CHECK_FALSE(license_is_parseable("MIT and Apache-2.0"));
-    CHECK_FALSE(license_is_parseable("GPL-3.0 WITH GCC-exception+"));
-    CHECK_FALSE(license_is_parseable("(GPL-3.0 WITH GCC-exception)+"));
+    CHECK_FALSE(license_is_parsable("Apache-2.0 WITH"));
+    CHECK_FALSE(license_is_parsable("GPL-3.0+ AND"));
+    CHECK_FALSE(license_is_parsable("MIT and Apache-2.0"));
+    CHECK_FALSE(license_is_parsable("GPL-3.0 WITH GCC-exception+"));
+    CHECK_FALSE(license_is_parsable("(GPL-3.0 WITH GCC-exception)+"));
 }
 
 TEST_CASE ("license serialization", "[manifests][license]")
 {
-    auto m_pgh = test_parse_manifest(manifest_with_license(Json::Value::null(nullptr)));
+    auto m_pgh = test_parse_port_manifest(manifest_with_license(Json::Value::null(nullptr)));
     REQUIRE(m_pgh);
     auto manifest = serialize_manifest(**m_pgh.get());
     REQUIRE(manifest.contains("license"));

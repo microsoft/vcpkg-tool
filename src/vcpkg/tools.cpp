@@ -20,18 +20,6 @@
 
 namespace vcpkg
 {
-    DECLARE_AND_REGISTER_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
-    DECLARE_AND_REGISTER_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
-    DECLARE_AND_REGISTER_MESSAGE(
-        DownloadAvailable,
-        (msg::env_var),
-        "",
-        "A downloadable copy of this tool is available and can be used by unsetting {env_var}.");
-    DECLARE_AND_REGISTER_MESSAGE(UnknownTool,
-                                 (),
-                                 "",
-                                 "vcpkg does not have a definition of this tool for this platform.");
-
     // /\d+\.\d+(\.\d+)?/
     Optional<std::array<int, 3>> parse_tool_version_string(StringView string_version)
     {
@@ -153,23 +141,6 @@ namespace vcpkg
         std::string version;
     };
 
-    DECLARE_AND_REGISTER_MESSAGE(InstallWithSystemManager,
-                                 (),
-                                 "",
-                                 "You may be able to install this tool via your system package manager.");
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        InstallWithSystemManagerPkg,
-        (msg::command_line),
-        "",
-        "You may be able to install this tool via your system package manager ({command_line}).");
-
-    DECLARE_AND_REGISTER_MESSAGE(FailedToRunToolToDetermineVersion,
-                                 (msg::tool_name, msg::path),
-                                 "Additional information, such as the command line output, if any, will be appended on "
-                                 "the line after this message",
-                                 "Failed to run {path} to determine the {tool_name} version.");
-
     static ExpectedS<std::string> run_to_extract_version(StringLiteral tool_name, const Path& exe_path, Command&& cmd)
     {
         return flatten_out(cmd_execute_and_capture_output(cmd), exe_path).map_error([&](LocalizedString&& output) {
@@ -180,12 +151,6 @@ namespace vcpkg
                 .extract_data();
         });
     }
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        UnexpectedToolOutput,
-        (msg::tool_name, msg::path),
-        "The actual command line output will be appended after this message.",
-        "{tool_name} ({path}) produced unexpected output when attempting to determine the version:");
 
     ExpectedS<std::string> extract_prefixed_nonwhitespace(StringLiteral prefix,
                                                           StringLiteral tool_name,
@@ -318,14 +283,6 @@ namespace vcpkg
         }
     };
 
-    DECLARE_AND_REGISTER_MESSAGE(
-        MonoInstructions,
-        (),
-        "",
-        "This may be caused by an incomplete mono installation. Full mono is "
-        "available on some systems via `sudo apt install mono-complete`. Ubuntu 18.04 users may "
-        "need a newer version of mono, available at https://www.mono-project.com/download/stable/");
-
     struct NuGetProvider : ToolProvider
     {
         virtual bool is_abi_sensitive() const override { return false; }
@@ -437,11 +394,6 @@ namespace vcpkg
                 });
         }
     };
-
-    DECLARE_AND_REGISTER_MESSAGE(InstallWithSystemManagerMono,
-                                 (msg::url),
-                                 "",
-                                 "Ubuntu 18.04 users may need a newer version of mono, available at {url}.");
 
     struct MonoProvider : ToolProvider
     {

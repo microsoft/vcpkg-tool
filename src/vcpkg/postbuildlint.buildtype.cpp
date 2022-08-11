@@ -14,7 +14,7 @@ namespace vcpkg::PostBuildLint
         constexpr static const StringLiteral static_crt = "/DEFAULTLIB:LIBCMT";
         constexpr static const StringLiteral dynamic_crt = "/DEFAULTLIB:MSVCRT";
 
-        StringView option = linkage == Build::LinkageType::STATIC ? static_crt : dynamic_crt;
+        StringView option = linkage == LinkageType::STATIC ? static_crt : dynamic_crt;
 
         auto found = Strings::case_insensitive_ascii_search(sv, option);
         if (found == sv.end())
@@ -23,7 +23,7 @@ namespace vcpkg::PostBuildLint
         }
 
         auto option_end = found + option.size();
-        if (config == Build::ConfigurationType::DEBUG)
+        if (config == ConfigurationType::DEBUG)
         {
             if (option_end == sv.end() || !Strings::icase_eq(*option_end, 'd'))
             {
@@ -37,9 +37,9 @@ namespace vcpkg::PostBuildLint
 
     StringLiteral BuildType::to_string() const
     {
-        if (config == Build::ConfigurationType::DEBUG)
+        if (config == ConfigurationType::DEBUG)
         {
-            if (linkage == Build::LinkageType::STATIC)
+            if (linkage == LinkageType::STATIC)
             {
                 return "Debug,Static";
             }
@@ -50,7 +50,7 @@ namespace vcpkg::PostBuildLint
         }
         else
         {
-            if (linkage == Build::LinkageType::STATIC)
+            if (linkage == LinkageType::STATIC)
             {
                 return "Release,Static";
             }

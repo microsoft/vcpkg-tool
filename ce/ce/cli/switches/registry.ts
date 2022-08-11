@@ -21,7 +21,7 @@ export class Registry extends Switch {
         const uri = session.parseUri(registry);
         if (await session.isLocalRegistry(uri) || await session.isRemoteRegistry(uri)) {
 
-          const r = session.loadRegistry(uri, 'artifact');
+          const r = await session.loadRegistry(uri, 'artifact');
           if (r) {
             try {
               await r.load();

@@ -100,10 +100,13 @@ namespace vcpkg
     struct SourceControlFile
     {
         SourceControlFile clone() const;
+        static ParseExpected<SourceControlFile> parse_project_manifest_object(StringView origin,
+                                                                              const Json::Object& object,
+                                                                              MessageSink& warnings_sink);
 
-        static ParseExpected<SourceControlFile> parse_manifest_object(StringView origin,
-                                                                      const Json::Object& object,
-                                                                      MessageSink& warnings_sink);
+        static ParseExpected<SourceControlFile> parse_port_manifest_object(StringView origin,
+                                                                           const Json::Object& object,
+                                                                           MessageSink& warnings_sink);
 
         static ParseExpected<SourceControlFile> parse_control_file(StringView origin,
                                                                    std::vector<Paragraph>&& control_paragraphs);

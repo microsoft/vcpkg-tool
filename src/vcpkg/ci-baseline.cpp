@@ -8,33 +8,6 @@
 
 using namespace vcpkg;
 
-namespace
-{
-    DECLARE_AND_REGISTER_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
-    DECLARE_AND_REGISTER_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
-    DECLARE_AND_REGISTER_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' here");
-    DECLARE_AND_REGISTER_MESSAGE(UnknownBaselineFileContent,
-                                 (),
-                                 "",
-                                 "unrecognizable baseline entry; expected 'port:triplet=(fail|skip|pass)'");
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        CiBaselineRegression,
-        (msg::spec, msg::build_result, msg::path),
-        "",
-        "REGRESSION: {spec} failed with {build_result}. If expected, add {spec}=fail to {path}.");
-
-    DECLARE_AND_REGISTER_MESSAGE(CiBaselineUnexpectedPass,
-                                 (msg::spec, msg::path),
-                                 "",
-                                 "PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).");
-
-    DECLARE_AND_REGISTER_MESSAGE(CiBaselineDisallowedCascade,
-                                 (msg::spec, msg::path),
-                                 "",
-                                 "REGRESSION: {spec} cascaded, but it is required to pass. ({path}).");
-}
-
 namespace vcpkg
 {
     TripletExclusions::TripletExclusions(const Triplet& triplet) : triplet(triplet), exclusions() { }
@@ -228,31 +201,31 @@ namespace vcpkg
     }
 
     LocalizedString format_ci_result(const PackageSpec& spec,
-                                     Build::BuildResult result,
+                                     BuildResult result,
                                      const CiBaselineData& cidata,
                                      StringView cifile,
                                      bool allow_unexpected_passing)
     {
         switch (result)
         {
-            case Build::BuildResult::BUILD_FAILED:
-            case Build::BuildResult::POST_BUILD_CHECKS_FAILED:
-            case Build::BuildResult::FILE_CONFLICTS:
+            case BuildResult::BUILD_FAILED:
+            case BuildResult::POST_BUILD_CHECKS_FAILED:
+            case BuildResult::FILE_CONFLICTS:
                 if (!cidata.expected_failures.contains(spec))
                 {
                     return msg::format(msgCiBaselineRegression,
                                        msg::spec = spec,
-                                       msg::build_result = Build::to_string_locale_invariant(result),
+                                       msg::build_result = to_string_locale_invariant(result),
                                        msg::path = cifile);
                 }
                 break;
-            case Build::BuildResult::SUCCEEDED:
+            case BuildResult::SUCCEEDED:
                 if (!allow_unexpected_passing && cidata.expected_failures.contains(spec))
                 {
                     return msg::format(msgCiBaselineUnexpectedPass, msg::spec = spec, msg::path = cifile);
                 }
                 break;
-            case Build::BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
+            case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
                 if (cidata.required_success.contains(spec))
                 {
                     return msg::format(msgCiBaselineDisallowedCascade, msg::spec = spec, msg::path = cifile);

@@ -9,12 +9,10 @@ import { SemVer } from 'semver';
 import { SuiteLocal } from './SuiteLocal';
 
 interface TestData {
-  info: {
-    id: string,
-    version: SemVer;
-    summary?: string
-    description?: string;
-  },
+  id: string,
+  version: SemVer;
+  summary?: string;
+  description?: string;
   contacts?: Record<string, {
     email?: string;
     role?: Array<string>;
@@ -24,10 +22,9 @@ interface TestData {
 
 /** An Index implementation for TestData */
 class MyIndex extends IndexSchema<TestData, MyIndex> {
-
-  id = new StringKey(this, (i) => i.info.id);
-  version = new SemverKey(this, (i) => new SemVer(i.info.version));
-  description = new StringKey(this, (i) => i.info.description);
+  id = new StringKey(this, (i) => i.id);
+  version = new SemverKey(this, (i) => new SemVer(i.version));
+  description = new StringKey(this, (i) => i.description);
 
   contacts = new StringKey(this, (i) => keys(i.contacts)).with({
     email: new StringKey(this, (i, index: string) => i.contacts?.[index]?.email)
@@ -41,25 +38,19 @@ describe('Index Tests', () => {
     const index = new Index<TestData, MyIndex>(MyIndex);
 
     index.insert({
-      info: {
-        id: 'bob',
-        version: new SemVer('1.2.3')
-      }
+      id: 'bob',
+      version: new SemVer('1.2.3')
     }, 'foo/bob');
 
     index.insert({
-      info: {
-        id: 'wham/blam/sam',
-        version: new SemVer('0.0.4'),
-        description: 'this is a test'
-      }
+      id: 'wham/blam/sam',
+      version: new SemVer('0.0.4'),
+      description: 'this is a test'
     }, 'other/sam');
 
     index.insert({
-      info: {
-        id: 'tom',
-        version: new SemVer('2.3.4')
-      },
+      id: 'tom',
+      version: new SemVer('2.3.4'),
       contacts: {
         'bob Smith': {
           email: 'garrett@contoso.org'
@@ -71,30 +62,18 @@ describe('Index Tests', () => {
     }, 'foo/tom');
 
     index.insert({
-      info: {
-        id: 'sam/blam/bam',
-        version: new SemVer('0.3.1'),
-        description: 'this is a test'
-      }
+      id: 'sam/blam/bam',
+      version: new SemVer('0.3.1'),
+      description: 'this is a test'
     }, 'sam/blam/bam');
-
-    const results = index.where.
-
-      version.greaterThan(new SemVer('0.3.0')).
-      items;
-
-    // results);
-    // serialize(index.serialize()));
 
     const data = index.serialize();
     const index2 = new Index<TestData, MyIndex>(MyIndex);
     index2.deserialize(data);
     const results2 = index.where.
-
       version.greaterThan(new SemVer('0.3.0')).
       items;
 
     SuiteLocal.log(results2);
   });
-
 });

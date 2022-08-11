@@ -23,7 +23,7 @@ namespace vcpkg
         XunitWriter();
         ~XunitWriter();
         void add_test_results(const PackageSpec& spec,
-                              Build::BuildResult build_result,
+                              BuildResult build_result,
                               const ElapsedTime& elapsed_time,
                               const std::chrono::system_clock::time_point& start_time,
                               const std::string& abi_tag,

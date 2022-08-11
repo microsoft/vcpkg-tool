@@ -6,7 +6,7 @@ import { Dictionary } from '../interfaces/collections';
 import { ErrorKind } from '../interfaces/error-kind';
 import { RegistryDeclaration } from '../interfaces/metadata/metadata-format';
 import { Registry as IRegistry } from '../interfaces/metadata/registries/artifact-registry';
-import { ValidationError } from '../interfaces/validation-error';
+import { ValidationMessage } from '../interfaces/validation-message';
 import { isFilePath, Uri } from '../util/uri';
 import { Entity } from '../yaml/Entity';
 import { Strings } from '../yaml/strings';
@@ -159,7 +159,7 @@ export class Registries extends Yaml<YAMLDictionary | YAMLSequence> implements D
     return undefined;
   }
   /** @internal */
-  override *validate(): Iterable<ValidationError> {
+  override *validate(): Iterable<ValidationMessage> {
     yield* super.validate();
     if (this.exists()) {
       for (const [key, registry] of this) {
@@ -175,7 +175,7 @@ export class Registry extends Entity implements IRegistry {
   set registryKind(value: string | undefined) { this.setMember('kind', value); }
 
   /** @internal */
-  override *validate(): Iterable<ValidationError> {
+  override *validate(): Iterable<ValidationMessage> {
     yield* super.validate();
     //
     if (this.registryKind === undefined) {
@@ -191,7 +191,7 @@ export class Registry extends Entity implements IRegistry {
 class LocalRegistry extends Registry {
   readonly location = new Strings(undefined, this, 'location');
   /** @internal */
-  override *validate(): Iterable<ValidationError> {
+  override *validate(): Iterable<ValidationMessage> {
     yield* super.validate();
 
     //
@@ -207,7 +207,7 @@ class LocalRegistry extends Registry {
 
 class RemoteRegistry extends Registry {
   readonly location = new Strings(undefined, this, 'location');
-  override *validate(): Iterable<ValidationError> {
+  override *validate(): Iterable<ValidationMessage> {
     yield* super.validate();
 
     //
