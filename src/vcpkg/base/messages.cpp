@@ -751,4 +751,8 @@ namespace vcpkg
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
     REGISTER_MESSAGE(ExportingPackages);
     REGISTER_MESSAGE(BuildingPackages);
+    REGISTER_MESSAGE(UnexpectedByteSize);
+    REGISTER_MESSAGE(CreationFailed);
+    REGISTER_MESSAGE(ProvideExportType);
+    REGISTER_MESSAGE(IncompatibleOptionSetting);
 }

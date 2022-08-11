@@ -124,10 +124,7 @@ namespace vcpkg::Export
         // 15 characters + 1 null terminating character will be written for a total of 16 chars
         char mbstr[16];
         const size_t bytes_written = std::strftime(mbstr, sizeof(mbstr), "%Y%m%d-%H%M%S", &date_time);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           bytes_written == 15,
-                           "Expected 15 bytes to be written, but %u were written",
-                           bytes_written);
+        Checks::msg_check_exit(VCPKG_LINE_INFO, bytes_written == 15, msgUnexpectedByteSize, msg::count = bytes_written);
         const std::string date_time_as_string(mbstr);
         return ("vcpkg-export-" + date_time_as_string);
     }
@@ -231,7 +228,7 @@ namespace vcpkg::Export
 
         const int exit_code =
             cmd_execute_clean(cmd, WorkingDirectory{raw_exported_dir.parent_path()}).value_or_exit(VCPKG_LINE_INFO);
-        Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: %s creation failed", exported_archive_path);
+        Checks::msg_check_exit(VCPKG_LINE_INFO, exit_code == 0, msgCreationFailed, msg::path = exported_archive_path);
         return exported_archive_path;
     }
 
@@ -320,7 +317,7 @@ namespace vcpkg::Export
     static constexpr StringLiteral OPTION_PREFAB_ENABLE_DEBUG = "prefab-debug";
 
     static constexpr std::array<CommandSwitch, 11> EXPORT_SWITCHES = {{
-        {OPTION_DRY_RUN, "Do not actually export"},
+        {OPTION_DRY_RUN, "Do not actually export."},
         {OPTION_RAW, "Export to an uncompressed directory"},
         {OPTION_NUGET, "Export a NuGet package"},
         {OPTION_IFW, "Export to an IFW-based installer"},
@@ -414,9 +411,8 @@ namespace vcpkg::Export
         if (!ret.raw && !ret.nuget && !ret.ifw && !ret.zip && !ret.seven_zip && !ret.dry_run && !ret.chocolatey &&
             !ret.prefab)
         {
-            print2(Color::error,
-                   "Must provide at least one export type: --raw --nuget --ifw --zip --7zip --chocolatey --prefab\n");
-            print2(COMMAND_STRUCTURE.example_text);
+            msg::println_error(msgProvideExportType);
+            msg::write_unlocalized_text_to_stdout(Color::none, COMMAND_STRUCTURE.example_text);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
@@ -436,11 +432,11 @@ namespace vcpkg::Export
             else
             {
                 for (auto&& opt : implying_opts)
-                    Checks::check_exit(VCPKG_LINE_INFO,
-                                       !maybe_lookup(options.settings, opt.name),
-                                       "%s is only valid with %s",
-                                       opt.name,
-                                       main_opt_name);
+                    Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                           !maybe_lookup(options.settings, opt.name),
+                                           msgIncompatibleOptionSetting,
+                                           msg::value = opt.name,
+                                           msg::option = main_opt_name);
             }
         };
 

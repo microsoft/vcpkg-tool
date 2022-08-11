@@ -1519,4 +1519,14 @@ namespace vcpkg
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
     DECLARE_MESSAGE(ExportingPackages, (), "", "The following packages are already built and will be exported:");
     DECLARE_MESSAGE(BuildingPackages, (), "", "The following packages need to be built:");
+    DECLARE_MESSAGE(UnexpectedByteSize, (msg::count), "", "Expected 15 bytes to be written, but {count} were written.");
+    DECLARE_MESSAGE(CreationFailed, (msg::path), "", "{path} creation failed.");
+    DECLARE_MESSAGE(ProvideExportType,
+                    (),
+                    "",
+                    "Must provide at least one export type: --raw --nuget --ifw --zip --7zip --chocolatey --prefab.");
+    DECLARE_MESSAGE(IncompatibleOptionSetting,
+                    (msg::value, msg::option),
+                    "{value} is the 'main' option.",
+                    "--{value} is only valid with --{option}.");
 }
