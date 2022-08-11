@@ -227,6 +227,7 @@
   "ExpectedTripletName": "expected a triplet name here",
   "ExpectedValueForOption": "expected value after '{value}'.",
   "_ExpectedValueForOption.comment": "'{value}' is a command option.",
+  "ExportingPackages": "The following packages are already built and will be exported:",
   "ExtendedDocumentationAtUrl": "Extended documentation available at '{url}'.",
   "_ExtendedDocumentationAtUrl.comment": "An example of {url} is https://github.com/microsoft/vcpkg.",
   "FailedToExtract": "Failed to extract \"{path}\":",
