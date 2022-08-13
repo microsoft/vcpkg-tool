@@ -792,7 +792,7 @@ namespace vcpkg
             }
             else
             {
-                auto msg = msg::format(msgCMakeTargetsUsage, msg::package_name = bpgh.spec.name()).append_raw('\n');
+                auto msg = msg::format(msgCMakeTargetsUsage, msg::package_name = bpgh.spec.name()).append_raw("\n\n");
                 msg.append_indent().append(msgCMakeTargetsUsageHeuristicMessage).append_raw('\n');
 
                 for (auto&& library_target_pair : library_targets)
