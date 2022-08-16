@@ -492,7 +492,7 @@
           "description": "The SHA that will be checked out to find default versions for ports from this registry.",
           "$ref": "#/definitions/sha1"
         },
-        "ref": {
+        "reference": {
           "type": "string",
           "description": "The ref to fetch when cloning this git registry."
         }
