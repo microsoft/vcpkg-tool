@@ -148,16 +148,66 @@ namespace vcpkg::msg
 
         std::string format_examples_for_args(StringView extra_comment, const FormatArgAbi* args, std::size_t arg_count);
 
-        inline std::string get_examples_for_args(StringView extra_comment, const MessageCheckFormatArgs<>&)
+        template<::size_t M, ::size_t N>
+        inline std::string get_examples_for_args(const StringArray<M>& comment, const StringArray<N>& example)
         {
-            return extra_comment.to_string();
+            if (comment.empty() && example.empty())
+            {
+                return std::string{};
+            }
+            if (comment.empty())
+            {
+                return std::string(example.data(), example.size());
+            }
+
+            if (example.empty())
+            {
+                return std::string(comment.data(), comment.size());
+            }
+
+            if (example[0] == ' ')
+            {
+                const auto out = comment + example;
+                return std::string(out.data(), out.size());
+            }
+
+            const auto out = comment + StringArray(" ") + example;
+            return std::string(out.data(), out.size());
+        }
+
+        template<class Arg0>
+        constexpr auto example_piece(const Arg0& arg)
+        {
+            if constexpr (Arg0::real_example().empty())
+                return StringArray{""};
+            else
+                return StringArray{" "} + arg.real_example();
         }
 
         template<class Arg0, class... Args>
-        std::string get_examples_for_args(StringView extra_comment, const MessageCheckFormatArgs<Arg0, Args...>&)
+        constexpr auto example_piece(const Arg0& arg, Args... args)
         {
-            FormatArgAbi abi[] = {FormatArgAbi{Arg0::name, Arg0::example}, FormatArgAbi{Args::name, Args::example}...};
-            return format_examples_for_args(extra_comment, abi, 1 + sizeof...(Args));
+            if constexpr (Arg0::real_example().empty())
+                return example_piece(args...);
+            else
+                return StringArray{" "} + arg.real_example() + example_piece(args...);
+        }
+
+        inline constexpr auto get_examples() { return StringArray{""}; }
+
+        template<class Arg0, class... Args>
+        inline constexpr auto get_examples(const Arg0& arg, Args... args)
+        {
+            if constexpr (sizeof...(args) == 0)
+            {
+                const StringArray out = arg.real_example();
+                return out;
+            }
+            else
+            {
+                const StringArray out = arg.real_example() + example_piece(args...);
+                return out;
+            }
         }
 
         ::size_t startup_register_message(StringLiteral name, StringLiteral format_string, std::string&& comment);
@@ -232,7 +282,15 @@ namespace vcpkg::msg
     constexpr static struct NAME##_t                                                                                   \
     {                                                                                                                  \
         constexpr static const char* name = #NAME;                                                                     \
-        constexpr static const char* example = EXAMPLE;                                                                \
+        constexpr static ::vcpkg::StringArray example = EXAMPLE;                                                       \
+        constexpr static ::vcpkg::StringArray example_str = "An example of {" #NAME "} is " EXAMPLE ".";               \
+        constexpr static auto real_example()                                                                           \
+        {                                                                                                              \
+            if constexpr (example.empty())                                                                             \
+                return example;                                                                                        \
+            else                                                                                                       \
+                return example_str;                                                                                    \
+        }                                                                                                              \
         template<class T>                                                                                              \
         detail::MessageArgument<NAME##_t, T> operator=(const T& t) const noexcept                                      \
         {                                                                                                              \
@@ -288,16 +346,17 @@ namespace vcpkg::msg
     {                                                                                                                  \
         using is_message_type = void;                                                                                  \
         static constexpr ::vcpkg::StringLiteral name = #NAME;                                                          \
-        static constexpr ::vcpkg::StringLiteral extra_comment = COMMENT;                                               \
+        static constexpr ::vcpkg::StringArray extra_comment = COMMENT;                                                 \
         static constexpr ::vcpkg::StringLiteral default_format_string = __VA_ARGS__;                                   \
         static const ::size_t index;                                                                                   \
+        static constexpr ::vcpkg::StringArray example_str = vcpkg::msg::detail::get_examples ARGS;                     \
     } msg##NAME VCPKG_UNUSED = {}
 
 #define REGISTER_MESSAGE(NAME)                                                                                         \
     const ::size_t NAME##_msg_t::index = ::vcpkg::msg::detail::startup_register_message(                               \
         NAME##_msg_t::name,                                                                                            \
         NAME##_msg_t::default_format_string,                                                                           \
-        ::vcpkg::msg::detail::get_examples_for_args(NAME##_msg_t::extra_comment, NAME##_msg_t{}))
+        ::vcpkg::msg::detail::get_examples_for_args(NAME##_msg_t::extra_comment, NAME##_msg_t::example_str))
 
 #define DECLARE_AND_REGISTER_MESSAGE(NAME, ARGS, COMMENT, ...)                                                         \
     DECLARE_MESSAGE(NAME, ARGS, COMMENT, __VA_ARGS__);                                                                 \
@@ -780,6 +839,7 @@ namespace vcpkg
     DECLARE_MESSAGE(ErrorVsCodeNotFoundPathExamined, (), "", "The following paths were examined:");
     DECLARE_MESSAGE(ErrorWhileParsing, (msg::path), "", "Errors occurred while parsing {path}.");
     DECLARE_MESSAGE(ErrorWhileWriting, (msg::path), "", "Error occured while writing {path}");
+    DECLARE_MESSAGE(ExceededRecursionDepth, (), "", "Recursion depth exceeded.");
     DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
     DECLARE_MESSAGE(
         ExpectedCharacterHere,
@@ -986,6 +1046,14 @@ namespace vcpkg
                     "invalid argument: binary config '{binary_source}' requires a SAS token without a "
                     "preceeding '?' as the second argument");
     DECLARE_MESSAGE(InvalidBuildInfo, (msg::error_msg), "", "Invalid BUILD_INFO file for package: {error_msg}");
+    DECLARE_MESSAGE(InvalidCommandArgSort,
+                    (),
+                    "",
+                    "Value of --sort must be one of 'lexicographical', 'topological', 'reverse'.");
+    DECLARE_MESSAGE(InvalidFilename,
+                    (msg::value, msg::path),
+                    "'{value}' is a list of invalid characters. I.e. \\/:*?<>|",
+                    "Filename cannot contain invalid chars {value}, but was {path}");
     DECLARE_MESSAGE(InvalidFormatString,
                     (msg::actual),
                     "{actual} is the provided format string",
@@ -1147,6 +1215,7 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "NuGet package creation succeeded, but no .nupkg was produced. Expected: \"{path}\"");
+    DECLARE_MESSAGE(OptionMustBeInteger, (msg::option), "", "Value of --{option} must be an integer.");
     DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph");
     DECLARE_MESSAGE(PackageFailedtWhileExtracting,
                     (msg::value, msg::path),

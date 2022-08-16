@@ -196,12 +196,12 @@ namespace vcpkg::msg
             {
                 for (size_t j = i + 1; j < m.names.size(); ++j)
                 {
-                    if (m.names[i] == m.names[j])
+                    if (msg::detail::get_message_name(i) == msg::detail::get_message_name(j))
                     {
                         write_unlocalized_text_to_stdout(
                             Color::error,
                             fmt::format("INTERNAL ERROR: localization message '{}' has been declared multiple times\n",
-                                        m.names[i]));
+                                        msg::detail::get_message_name(i)));
                         write_unlocalized_text_to_stdout(Color::error, fmt::format("INTERNAL ERROR: first message:\n"));
                         write_unlocalized_text_to_stdout(Color::none, m.default_strings[i]);
                         write_unlocalized_text_to_stdout(Color::error,
@@ -222,8 +222,8 @@ namespace vcpkg::msg
 
         for (::size_t index = 0; index < m.names.size(); ++index)
         {
-            const auto& name = m.names[index];
-            if (auto p = message_map.get(m.names[index]))
+            const StringView name = msg::detail::get_message_name(index);
+            if (auto p = message_map.get(msg::detail::get_message_name(index)))
             {
                 m.localized_strings[index] = p->string(VCPKG_LINE_INFO).to_string();
             }
@@ -299,7 +299,7 @@ namespace vcpkg::msg
         const auto res = m.names.size();
         m.names.push_back(name);
         m.default_strings.push_back(format_string);
-        m.localization_comments.push_back(std::move(comment));
+        m.localization_comments.emplace_back(std::move(comment));
         return res;
     }
 
@@ -339,14 +339,14 @@ namespace vcpkg::msg
 
     LocalizedString detail::internal_vformat(::size_t index, fmt::format_args args)
     {
-        auto fmt_string = get_format_string(index);
+        const auto fmt_string = get_format_string(index);
         try
         {
             return LocalizedString::from_raw(fmt::vformat({fmt_string.data(), fmt_string.size()}, args));
         }
         catch (...)
         {
-            auto default_format_string = get_default_format_string(index);
+            const auto default_format_string = get_default_format_string(index);
             try
             {
                 return LocalizedString::from_raw(
@@ -524,6 +524,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ErrorVsCodeNotFoundPathExamined);
     REGISTER_MESSAGE(ErrorWhileParsing);
     REGISTER_MESSAGE(ErrorWhileWriting);
+    REGISTER_MESSAGE(ExceededRecursionDepth);
     REGISTER_MESSAGE(ExcludedPackage);
     REGISTER_MESSAGE(ExpectedCharacterHere);
     REGISTER_MESSAGE(ExpectedFailOrSkip);
@@ -604,6 +605,8 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidArgumentRequiresTwoOrThreeArguments);
     REGISTER_MESSAGE(InvalidArgumentRequiresValidToken);
     REGISTER_MESSAGE(InvalidBuildInfo);
+    REGISTER_MESSAGE(InvalidCommandArgSort);
+    REGISTER_MESSAGE(InvalidFilename);
     REGISTER_MESSAGE(InvalidFormatString);
     REGISTER_MESSAGE(InvalidLinkage);
     REGISTER_MESSAGE(JsonErrorFailedToParse);
@@ -653,6 +656,7 @@ namespace vcpkg
     REGISTER_MESSAGE(NoLocalizationForMessages);
     REGISTER_MESSAGE(NoRegistryForPort);
     REGISTER_MESSAGE(NugetPackageFileSucceededButCreationFailed);
+    REGISTER_MESSAGE(OptionMustBeInteger);
     REGISTER_MESSAGE(OriginalBinParagraphHeader);
     REGISTER_MESSAGE(PackageFailedtWhileExtracting);
     REGISTER_MESSAGE(PackageRootDir);
