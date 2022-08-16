@@ -5,7 +5,6 @@
     "artifact-references": {
       "description": "A key/value pair of artifact name to selected artifact version.",
       "type": "object",
-      "minProperties": 1,
       "patternProperties": {
         "": {
           "type": "string"
