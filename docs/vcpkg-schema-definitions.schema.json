@@ -564,7 +564,7 @@
       "allOf": [
         {
           "description": "Identifier are lowercase with digits and dashes.",
-          "pattern": "[a-z0-9]+(-[a-z0-9]+)*"
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
         },
         {
           "not": {
@@ -676,15 +676,15 @@
     },
     "sha1": {
       "type": "string",
-      "pattern": "[0-9a-fA-F]{40}"
+      "pattern": "^[0-9a-fA-F]{40}$"
     },
     "sha256": {
       "type": "string",
-      "pattern": "[0-9a-fA-F]{64}"
+      "pattern": "^[0-9a-fA-F]{64}$"
     },
     "sha512": {
       "type": "string",
-      "pattern": "[0-9a-fA-F]{128}"
+      "pattern": "^[0-9a-fA-F]{128}$"
     },
     "slash-identifier": {
       "type": "string",
@@ -692,7 +692,7 @@
       "allOf": [
         {
           "description": "Slash identifiers are lowercase with digits, dashes, and forward slashes.",
-          "pattern": "[a-z0-9]+([/-][a-z0-9]+)*"
+          "pattern": "^[a-z0-9]+([/-][a-z0-9]+)*$"
         },
         {
           "not": {
@@ -754,7 +754,7 @@
     },
     "version-text": {
       "type": "string",
-      "pattern": "[^#]+"
+      "pattern": "^[^#]+$"
     }
   }
 }
