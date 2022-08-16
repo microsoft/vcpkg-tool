@@ -234,7 +234,7 @@
       "additionalProperties": false
     },
     "feature": {
-      "description": "A package feature that can be activated by consumers.",
+      "description": "A package feature that can be selected by consumers.",
       "type": "object",
       "properties": {
         "description": {
@@ -260,7 +260,7 @@
       "additionalProperties": false
     },
     "filesystem-registry": {
-      "description": "A port registry backed by a git repo.",
+      "description": "A port registry backed by a filesystem layout.",
       "type": "object",
       "properties": {
         "kind": {
@@ -575,7 +575,7 @@
       ]
     },
     "maintainers": {
-      "description": "An array of strings which contain the authors of a package",
+      "description": "An array of strings which contain the maintainers of a package",
       "$ref": "#/definitions/string-or-strings"
     },
     "override": {
