@@ -18,7 +18,7 @@
       "properties": {
         "kind": {
           "type": "string",
-          "pattern": "artifact"
+          "enum": ["artifact"]
         },
         "name": {
           "$ref": "#/definitions/identifier"
@@ -44,7 +44,7 @@
         },
         "kind": {
           "type": "string",
-          "pattern": "builtin"
+          "enum": ["builtin"]
         }
       },
       "required": [
@@ -248,7 +248,7 @@
       "properties": {
         "kind": {
           "type": "string",
-          "pattern": "filesystem"
+          "enum": ["filesystem"]
         },
         "path": {
           "type": "string",
@@ -442,7 +442,7 @@
       "properties": {
         "kind": {
           "type": "string",
-          "pattern": "git"
+          "enum": ["git"]
         },
         "repository": {
           "type": "string",
