@@ -14,60 +14,131 @@
     "artifact-registry": {
       "description": "An artifact registry backed by a git repository.",
       "type": "object",
-      "properties": {
-        "kind": {
-          "type": "string",
-          "enum": [
-            "artifact"
-          ]
+      "if": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "artifact"
+            ]
+          }
         },
-        "name": {
-          "$ref": "#/definitions/identifier"
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "artifact"
+            ]
+          },
+          "name": {
+            "$ref": "#/definitions/identifier"
+          },
+          "location": {
+            "type": "string",
+            "format": "uri",
+            "description": "A URI to the location of the artifact registry; typically a git URI."
+          }
         },
-        "location": {
-          "type": "string",
-          "format": "uri",
-          "description": "A URI to the location of the artifact registry; typically a git URI."
-        }
+        "required": [
+          "kind",
+          "name",
+          "location"
+        ],
+        "patternProperties": {
+          "^\\$": {}
+        },
+        "additionalProperties": false
       },
-      "required": [
-        "kind",
-        "name",
-        "location"
-      ],
-      "patternProperties": {
-        "^\\$": {}
+      "else": false
+    },
+    "builtin-default-registry": {
+      "type": "object",
+      "if": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "builtin"
+            ]
+          }
+        },
+        "required": [
+          "kind"
+        ]
       },
-      "additionalProperties": false
+      "then": {
+        "properties": {
+          "baseline": {
+            "$ref": "#/definitions/sha1",
+            "description": "The SHA that will be checked out to find default versions for ports from this registry."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "builtin"
+            ]
+          }
+        },
+        "required": [
+          "baseline",
+          "kind"
+        ],
+        "patternProperties": {
+          "^\\$": {}
+        },
+        "additionalProperties": false
+      },
+      "else": false
     },
     "builtin-registry": {
       "type": "object",
-      "properties": {
-        "baseline": {
-          "$ref": "#/definitions/sha1",
-          "description": "The SHA that will be checked out to find default versions for ports from this registry."
-        },
-        "kind": {
-          "type": "string",
-          "enum": [
-            "builtin"
-          ]
-        },
-        "packages": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/port-name"
+      "if": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "builtin"
+            ]
           }
-        }
+        },
+        "required": [
+          "kind"
+        ]
       },
-      "required": [
-        "baseline",
-        "kind"
-      ],
-      "patternProperties": {
-        "^\\$": {}
+      "then": {
+        "properties": {
+          "baseline": {
+            "$ref": "#/definitions/sha1",
+            "description": "The SHA that will be checked out to find default versions for ports from this registry."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "builtin"
+            ]
+          },
+          "packages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/port-name"
+            }
+          }
+        },
+        "required": [
+          "baseline",
+          "kind"
+        ],
+        "patternProperties": {
+          "^\\$": {}
+        },
+        "additionalProperties": false
       },
-      "additionalProperties": false
+      "else": false
     },
     "contact": {
       "type": "object",
@@ -99,25 +170,29 @@
       "type": "object",
       "allOf": [
         {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/builtin-registry"
-            },
-            {
-              "$ref": "#/definitions/git-registry"
-            },
-            {
-              "$ref": "#/definitions/filesystem-registry"
-            }
-          ]
-        },
-        {
-          "not": {
-            "type": "object",
-            "properties": {
-              "packages": {}
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "builtin",
+                "git",
+                "filesystem"
+              ]
             }
           }
+        },
+        {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/builtin-default-registry"
+            },
+            {
+              "$ref": "#/definitions/git-default-registry"
+            },
+            {
+              "$ref": "#/definitions/filesystem-default-registry"
+            }
+          ]
         }
       ]
     },
@@ -268,35 +343,97 @@
       },
       "additionalProperties": false
     },
+    "filesystem-default-registry": {
+      "description": "A port registry backed by a filesystem layout.",
+      "type": "object",
+      "if": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "filesystem"
+            ]
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "filesystem"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "description": "The location on the filesystem where the registry is rooted."
+          },
+          "packages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/port-name"
+            }
+          }
+        },
+        "required": [
+          "kind",
+          "path"
+        ],
+        "patternProperties": {
+          "^\\$": {}
+        },
+        "additionalProperties": false
+      },
+      "else": false
+    },
     "filesystem-registry": {
       "description": "A port registry backed by a filesystem layout.",
       "type": "object",
-      "properties": {
-        "kind": {
-          "type": "string",
-          "enum": [
-            "filesystem"
-          ]
-        },
-        "path": {
-          "type": "string",
-          "description": "The location on the filesystem where the registry is rooted."
-        },
-        "packages": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/port-name"
+      "if": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "filesystem"
+            ]
           }
-        }
+        },
+        "required": [
+          "kind"
+        ]
       },
-      "required": [
-        "kind",
-        "path"
-      ],
-      "patternProperties": {
-        "^\\$": {}
+      "then": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "filesystem"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "description": "The location on the filesystem where the registry is rooted."
+          },
+          "packages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/port-name"
+            }
+          }
+        },
+        "required": [
+          "kind",
+          "path"
+        ],
+        "patternProperties": {
+          "^\\$": {}
+        },
+        "additionalProperties": false
       },
-      "additionalProperties": false
+      "else": false
     },
     "info-block": {
       "type": "object",
@@ -517,44 +654,109 @@
         }
       }
     },
+    "git-default-registry": {
+      "type": "object",
+      "description": "A port registry backed by a git repo.",
+      "if": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "git"
+            ]
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "git"
+            ]
+          },
+          "repository": {
+            "type": "string",
+            "description": "The URI or SSH entry to clone from. (as if by `git clone`)"
+          },
+          "baseline": {
+            "description": "The SHA that will be checked out to find default versions for ports from this registry.",
+            "$ref": "#/definitions/sha1"
+          },
+          "reference": {
+            "type": "string",
+            "description": "The ref to fetch when cloning this git registry."
+          }
+        },
+        "required": [
+          "kind",
+          "repository",
+          "baseline"
+        ],
+        "patternProperties": {
+          "^\\$": {}
+        },
+        "additionalProperties": false
+      },
+      "else": false
+    },
     "git-registry": {
       "type": "object",
       "description": "A port registry backed by a git repo.",
-      "properties": {
-        "kind": {
-          "type": "string",
-          "enum": [
-            "git"
-          ]
-        },
-        "repository": {
-          "type": "string",
-          "description": "The URI or SSH entry to clone from. (as if by `git clone`)"
-        },
-        "baseline": {
-          "description": "The SHA that will be checked out to find default versions for ports from this registry.",
-          "$ref": "#/definitions/sha1"
-        },
-        "reference": {
-          "type": "string",
-          "description": "The ref to fetch when cloning this git registry."
-        },
-        "packages": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/port-name"
+      "if": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "git"
+            ]
           }
-        }
+        },
+        "required": [
+          "kind"
+        ]
       },
-      "required": [
-        "kind",
-        "repository",
-        "baseline"
-      ],
-      "patternProperties": {
-        "^\\$": {}
+      "then": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "git"
+            ]
+          },
+          "repository": {
+            "type": "string",
+            "description": "The URI or SSH entry to clone from. (as if by `git clone`)"
+          },
+          "baseline": {
+            "description": "The SHA that will be checked out to find default versions for ports from this registry.",
+            "$ref": "#/definitions/sha1"
+          },
+          "reference": {
+            "type": "string",
+            "description": "The ref to fetch when cloning this git registry."
+          },
+          "packages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/port-name"
+            }
+          }
+        },
+        "required": [
+          "kind",
+          "repository",
+          "baseline"
+        ],
+        "patternProperties": {
+          "^\\$": {}
+        },
+        "additionalProperties": false
       },
-      "additionalProperties": false
+      "else": false
     },
     "has-schemed-version": {
       "type": "object",
@@ -680,21 +882,42 @@
     "registry-array": {
       "type": "array",
       "items": {
-        "oneOf": [
-          {
-            "$ref": "#/definitions/builtin-registry"
-          },
-          {
-            "$ref": "#/definitions/git-registry"
-          },
-          {
-            "$ref": "#/definitions/filesystem-registry"
-          },
-          {
-            "$ref": "#/definitions/artifact-registry"
-          }
-        ]
+        "$ref": "#/definitions/registry-item"
       }
+    },
+    "registry-item": {
+      "type": "object",
+      "allOf": [
+        {
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "builtin",
+                "git",
+                "filesystem",
+                "artifact"
+              ]
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/builtin-registry"
+            },
+            {
+              "$ref": "#/definitions/git-registry"
+            },
+            {
+              "$ref": "#/definitions/filesystem-registry"
+            },
+            {
+              "$ref": "#/definitions/artifact-registry"
+            }
+          ]
+        }
+      ]
     },
     "semantic-version": {
       "description": "A semantic version string. See https://semver.org/",
