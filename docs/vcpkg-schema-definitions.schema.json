@@ -370,12 +370,6 @@
           "path": {
             "type": "string",
             "description": "The location on the filesystem where the registry is rooted."
-          },
-          "packages": {
-            "type": "array",
-            "items": {
-              "$ref": "#/definitions/port-name"
-            }
           }
         },
         "required": [
