@@ -2250,6 +2250,15 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
 
     auto& s = sRawHolder.value_or_exit(VCPKG_LINE_INFO);
     std::vector<std::unique_ptr<IBinaryProvider>> providers;
+    if (!s.archives_to_read.empty() || !s.archives_to_write.empty() || !s.url_templates_to_put.empty())
+    {
+        providers.push_back(std::make_unique<ArchivesBinaryProvider>(paths,
+                                                                     std::move(s.archives_to_read),
+                                                                     std::move(s.archives_to_write),
+                                                                     std::move(s.url_templates_to_put),
+                                                                     s.secrets));
+    }
+
     if (!s.gcs_read_prefixes.empty() || !s.gcs_write_prefixes.empty())
     {
         providers.push_back(std::make_unique<GcsBinaryProvider>(
@@ -2266,15 +2275,6 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
     {
         providers.push_back(std::make_unique<CosBinaryProvider>(
             paths, std::move(s.cos_read_prefixes), std::move(s.cos_write_prefixes)));
-    }
-
-    if (!s.archives_to_read.empty() || !s.archives_to_write.empty() || !s.url_templates_to_put.empty())
-    {
-        providers.push_back(std::make_unique<ArchivesBinaryProvider>(paths,
-                                                                     std::move(s.archives_to_read),
-                                                                     std::move(s.archives_to_write),
-                                                                     std::move(s.url_templates_to_put),
-                                                                     s.secrets));
     }
 
     if (!s.url_templates_to_get.empty())
