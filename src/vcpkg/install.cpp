@@ -549,31 +549,30 @@ namespace vcpkg
     static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
     static constexpr StringLiteral OPTION_NO_PRINT_USAGE = "no-print-usage";
 
-    static constexpr std::array<CommandSwitch, 18> INSTALL_SWITCHES = {{
-        {OPTION_DRY_RUN, "Do not actually build or install"},
-        {OPTION_USE_HEAD_VERSION,
-         "Install the libraries on the command line using the latest upstream sources (classic mode)"},
-        {OPTION_NO_DOWNLOADS, "Do not download new sources"},
-        {OPTION_ONLY_DOWNLOADS, "Download sources but don't build packages"},
-        {OPTION_ONLY_BINARYCACHING, "Fail if cached binaries are not available"},
-        {OPTION_RECURSE, "Allow removal of packages as part of installation"},
-        {OPTION_KEEP_GOING, "Continue installing packages on failure"},
-        {OPTION_EDITABLE,
-         "Disable source re-extraction and binary caching for libraries on the command line (classic mode)"},
+    static constexpr std::array<CommandSwitch, 18> INSTALL_SWITCHES = {
+        {{OPTION_DRY_RUN, "Do not actually build or install"},
+         {OPTION_USE_HEAD_VERSION,
+          "Install the libraries on the command line using the latest upstream sources (classic mode)"},
+         {OPTION_NO_DOWNLOADS, "Do not download new sources"},
+         {OPTION_ONLY_DOWNLOADS, "Download sources but don't build packages"},
+         {OPTION_ONLY_BINARYCACHING, "Fail if cached binaries are not available"},
+         {OPTION_RECURSE, "Allow removal of packages as part of installation"},
+         {OPTION_KEEP_GOING, "Continue installing packages on failure"},
+         {OPTION_EDITABLE,
+          "Disable source re-extraction and binary caching for libraries on the command line (classic mode)"},
 
-        {OPTION_USE_ARIA2, "Use aria2 to perform download tasks"},
-        {OPTION_CLEAN_AFTER_BUILD, "Clean buildtrees, packages and downloads after building each package"},
-        {OPTION_CLEAN_BUILDTREES_AFTER_BUILD, "Clean buildtrees after building each package"},
-        {OPTION_CLEAN_PACKAGES_AFTER_BUILD, "Clean packages after building each package"},
-        {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, "Clean downloads after building each package"},
-        {OPTION_MANIFEST_NO_DEFAULT_FEATURES,
-         "Don't install the default features from the top-level manifest (manifest mode)."},
-        {OPTION_ENFORCE_PORT_CHECKS,
-         "Fail install if a port has detected problems or attempts to use a deprecated feature"},
-        {OPTION_PROHIBIT_BACKCOMPAT_FEATURES, ""},
-        {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
-        {OPTION_NO_PRINT_USAGE, "Don't print cmake usage information after install."}
-    }};
+         {OPTION_USE_ARIA2, "Use aria2 to perform download tasks"},
+         {OPTION_CLEAN_AFTER_BUILD, "Clean buildtrees, packages and downloads after building each package"},
+         {OPTION_CLEAN_BUILDTREES_AFTER_BUILD, "Clean buildtrees after building each package"},
+         {OPTION_CLEAN_PACKAGES_AFTER_BUILD, "Clean packages after building each package"},
+         {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, "Clean downloads after building each package"},
+         {OPTION_MANIFEST_NO_DEFAULT_FEATURES,
+          "Don't install the default features from the top-level manifest (manifest mode)."},
+         {OPTION_ENFORCE_PORT_CHECKS,
+          "Fail install if a port has detected problems or attempts to use a deprecated feature"},
+         {OPTION_PROHIBIT_BACKCOMPAT_FEATURES, ""},
+         {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
+         {OPTION_NO_PRINT_USAGE, "Don't print cmake usage information after install."}}};
 
     static constexpr std::array<CommandSetting, 2> INSTALL_SETTINGS = {{
         {OPTION_XUNIT, ""}, // internal use
