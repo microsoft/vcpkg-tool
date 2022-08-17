@@ -349,12 +349,48 @@
     },
     "install-instance": {
       "type": "object",
+      "properties": {
+        "unzip": {
+          "$ref": "#/definitions/uri-or-uris"
+        },
+        "untar": {
+          "$ref": "#/definitions/uri-or-uris"
+        },
+        "nupkg": {
+          "type": "string",
+          "format": "uri"
+        },
+        "git": {
+          "type": "string",
+          "description": "The http or ssh remote from which a git repo will be fetched."
+        }
+      },
       "oneOf": [
         {
+          "required": [
+            "unzip"
+          ]
+        },
+        {
+          "required": [
+            "untar"
+          ]
+        },
+        {
+          "required": [
+            "nupkg"
+          ]
+        },
+        {
+          "required": [
+            "git"
+          ]
+        }
+      ],
+      "dependencies": {
+        "unzip": {
           "properties": {
-            "unzip": {
-              "$ref": "#/definitions/uri-or-uris"
-            },
+            "unzip": {},
             "sha256": {
               "$ref": "#/definitions/sha256"
             },
@@ -387,11 +423,9 @@
           },
           "additionalProperties": false
         },
-        {
+        "untar": {
           "properties": {
-            "untar": {
-              "$ref": "#/definitions/uri-or-uris"
-            },
+            "untar": {},
             "sha256": {
               "$ref": "#/definitions/sha256"
             },
@@ -416,12 +450,9 @@
           },
           "additionalProperties": false
         },
-        {
+        "nupkg": {
           "properties": {
-            "nupkg": {
-              "type": "string",
-              "format": "uri"
-            },
+            "nupkg": {},
             "sha256": {
               "$ref": "#/definitions/sha256"
             },
@@ -454,12 +485,9 @@
           },
           "additionalProperties": false
         },
-        {
+        "git": {
           "properties": {
-            "git": {
-              "type": "string",
-              "description": "The http or ssh remote from which a git repo will be fetched."
-            },
+            "git": {},
             "commit": {
               "type": "string",
               "description": "The commit SHA or ref that will be checked out."
@@ -487,7 +515,7 @@
           },
           "additionalProperties": false
         }
-      ]
+      }
     },
     "git-registry": {
       "type": "object",
