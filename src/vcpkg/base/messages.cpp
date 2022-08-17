@@ -196,12 +196,12 @@ namespace vcpkg::msg
             {
                 for (size_t j = i + 1; j < m.names.size(); ++j)
                 {
-                    if (m.names[i] == m.names[j])
+                    if (msg::detail::get_message_name(i) == msg::detail::get_message_name(j))
                     {
                         write_unlocalized_text_to_stdout(
                             Color::error,
                             fmt::format("INTERNAL ERROR: localization message '{}' has been declared multiple times\n",
-                                        m.names[i]));
+                                        msg::detail::get_message_name(i)));
                         write_unlocalized_text_to_stdout(Color::error, fmt::format("INTERNAL ERROR: first message:\n"));
                         write_unlocalized_text_to_stdout(Color::none, m.default_strings[i]);
                         write_unlocalized_text_to_stdout(Color::error,
@@ -222,8 +222,8 @@ namespace vcpkg::msg
 
         for (::size_t index = 0; index < m.names.size(); ++index)
         {
-            const auto& name = m.names[index];
-            if (auto p = message_map.get(m.names[index]))
+            const StringView name = msg::detail::get_message_name(index);
+            if (auto p = message_map.get(msg::detail::get_message_name(index)))
             {
                 m.localized_strings[index] = p->string(VCPKG_LINE_INFO).to_string();
             }
@@ -299,7 +299,7 @@ namespace vcpkg::msg
         const auto res = m.names.size();
         m.names.push_back(name);
         m.default_strings.push_back(format_string);
-        m.localization_comments.push_back(std::move(comment));
+        m.localization_comments.emplace_back(std::move(comment));
         return res;
     }
 
@@ -339,14 +339,14 @@ namespace vcpkg::msg
 
     LocalizedString detail::internal_vformat(::size_t index, fmt::format_args args)
     {
-        auto fmt_string = get_format_string(index);
+        const auto fmt_string = get_format_string(index);
         try
         {
             return LocalizedString::from_raw(fmt::vformat({fmt_string.data(), fmt_string.size()}, args));
         }
         catch (...)
         {
-            auto default_format_string = get_default_format_string(index);
+            const auto default_format_string = get_default_format_string(index);
             try
             {
                 return LocalizedString::from_raw(
@@ -515,21 +515,25 @@ namespace vcpkg
     REGISTER_MESSAGE(ErrorNoVSInstanceAt);
     REGISTER_MESSAGE(ErrorNoVSInstanceFullVersion);
     REGISTER_MESSAGE(ErrorNoVSInstanceVersion);
+    REGISTER_MESSAGE(ErrorParsingBinaryParagraph);
     REGISTER_MESSAGE(ErrorRequireBaseline);
     REGISTER_MESSAGE(ErrorRequirePackagesList);
     REGISTER_MESSAGE(ErrorUnableToDetectCompilerInfo);
     REGISTER_MESSAGE(ErrorVcvarsUnsupported);
     REGISTER_MESSAGE(ErrorVsCodeNotFound);
     REGISTER_MESSAGE(ErrorVsCodeNotFoundPathExamined);
+    REGISTER_MESSAGE(ErrorWhileParsing);
     REGISTER_MESSAGE(ErrorWhileWriting);
+    REGISTER_MESSAGE(ExceededRecursionDepth);
     REGISTER_MESSAGE(ExcludedPackage);
     REGISTER_MESSAGE(ExpectedCharacterHere);
     REGISTER_MESSAGE(ExpectedFailOrSkip);
     REGISTER_MESSAGE(ExpectedPortName);
     REGISTER_MESSAGE(ExpectedTripletName);
     REGISTER_MESSAGE(ExpectedValueForOption);
-    REGISTER_MESSAGE(ExtendedDocumenationAtUrl);
+    REGISTER_MESSAGE(ExtendedDocumentationAtUrl);
     REGISTER_MESSAGE(FailedToExtract);
+    REGISTER_MESSAGE(FailedToParseBinParagraph);
     REGISTER_MESSAGE(FailedToParseCMakeConsoleOut);
     REGISTER_MESSAGE(FailedToProvisionCe);
     REGISTER_MESSAGE(FailedToRunToolToDetermineVersion);
@@ -601,6 +605,8 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidArgumentRequiresTwoOrThreeArguments);
     REGISTER_MESSAGE(InvalidArgumentRequiresValidToken);
     REGISTER_MESSAGE(InvalidBuildInfo);
+    REGISTER_MESSAGE(InvalidCommandArgSort);
+    REGISTER_MESSAGE(InvalidFilename);
     REGISTER_MESSAGE(InvalidFormatString);
     REGISTER_MESSAGE(InvalidLinkage);
     REGISTER_MESSAGE(JsonErrorFailedToParse);
@@ -625,15 +631,19 @@ namespace vcpkg
     REGISTER_MESSAGE(LicenseExpressionImbalancedParens);
     REGISTER_MESSAGE(LicenseExpressionUnknownException);
     REGISTER_MESSAGE(LicenseExpressionUnknownLicense);
+    REGISTER_MESSAGE(ListOfValidFieldsForControlFiles);
     REGISTER_MESSAGE(LoadingCommunityTriplet);
     REGISTER_MESSAGE(LoadingDependencyInformation);
     REGISTER_MESSAGE(LoadingOverlayTriplet);
     REGISTER_MESSAGE(LocalizedMessageMustNotContainIndents);
     REGISTER_MESSAGE(LocalizedMessageMustNotEndWithNewline);
+    REGISTER_MESSAGE(MismatchedBinaryParagraphs);
     REGISTER_MESSAGE(Missing7zHeader);
     REGISTER_MESSAGE(MissingExtension);
+    REGISTER_MESSAGE(MissmatchedBinParagraphs);
     REGISTER_MESSAGE(MonoInstructions);
     REGISTER_MESSAGE(MsiexecFailedToExtract);
+    REGISTER_MESSAGE(MultiArch);
     REGISTER_MESSAGE(NavigateToNPS);
     REGISTER_MESSAGE(NewConfigurationAlreadyExists);
     REGISTER_MESSAGE(NewManifestAlreadyExists);
@@ -646,6 +656,8 @@ namespace vcpkg
     REGISTER_MESSAGE(NoLocalizationForMessages);
     REGISTER_MESSAGE(NoRegistryForPort);
     REGISTER_MESSAGE(NugetPackageFileSucceededButCreationFailed);
+    REGISTER_MESSAGE(OptionMustBeInteger);
+    REGISTER_MESSAGE(OriginalBinParagraphHeader);
     REGISTER_MESSAGE(PackageFailedtWhileExtracting);
     REGISTER_MESSAGE(PackageRootDir);
     REGISTER_MESSAGE(PackingVendorFailed);
@@ -667,6 +679,7 @@ namespace vcpkg
     REGISTER_MESSAGE(RestoredPackage);
     REGISTER_MESSAGE(RestoredPackagesFromVendor);
     REGISTER_MESSAGE(ResultsHeader);
+    REGISTER_MESSAGE(SerializedBinParagraphHeader);
     REGISTER_MESSAGE(SettingEnvVar);
     REGISTER_MESSAGE(SourceFieldPortNameMismatch);
     REGISTER_MESSAGE(SpecifiedFeatureTurnedOff);
@@ -676,6 +689,7 @@ namespace vcpkg
     REGISTER_MESSAGE(SpecifyTargetArch);
     REGISTER_MESSAGE(StoredBinaryCache);
     REGISTER_MESSAGE(SuggestStartingBashShell);
+    REGISTER_MESSAGE(SuggestUpdateVcpkg);
     REGISTER_MESSAGE(SupportedPort);
     REGISTER_MESSAGE(SystemApiErrorMessage);
     REGISTER_MESSAGE(ToolFetchFailed);

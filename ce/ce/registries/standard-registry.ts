@@ -17,11 +17,10 @@ export async function isIndexFile(uri: Uri): Promise<boolean> {
 export async function isMetadataFile(uri: Uri, session: Session): Promise<boolean> {
   if (await uri.isFile()) {
     try {
-      return (await MetadataFile.parseMetadata(uri, session))?.info?.exists();
+      return (await MetadataFile.parseMetadata(uri, session))?.node?.has('id') || false;
     } catch {
       // nope. no worries.
     }
   }
   return false;
 }
-
