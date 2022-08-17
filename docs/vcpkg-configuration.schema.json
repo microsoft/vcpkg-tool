@@ -6,10 +6,7 @@
       "$ref": "vcpkg-schema-definitions.schema.json#/definitions/default-registry"
     },
     "registries": {
-      "type": "array",
-      "items": {
-        "$ref": "vcpkg-schema-definitions.schema.json#/definitions/registry-array"
-      }
+      "$ref": "vcpkg-schema-definitions.schema.json#/definitions/registry-array"
     },
     "error": {
       "type": "string",

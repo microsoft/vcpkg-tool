@@ -52,6 +52,12 @@
           "enum": [
             "builtin"
           ]
+        },
+        "packages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/port-name"
+          }
         }
       },
       "required": [
@@ -107,7 +113,10 @@
         },
         {
           "not": {
-            "$ref": "#/definitions/packages-list"
+            "type": "object",
+            "properties": {
+              "packages": {}
+            }
           }
         }
       ]
@@ -157,7 +166,7 @@
       "description": "A port dependency fetchable by vcpkg.",
       "oneOf": [
         {
-          "$ref": "#/definitions/package-name"
+          "$ref": "#/definitions/port-name"
         },
         {
           "$ref": "#/definitions/dependency-object"
@@ -169,7 +178,7 @@
       "type": "object",
       "properties": {
         "name": {
-          "$ref": "#/definitions/package-name"
+          "$ref": "#/definitions/port-name"
         },
         "features": {
           "type": "array",
@@ -272,6 +281,12 @@
         "path": {
           "type": "string",
           "description": "The location on the filesystem where the registry is rooted."
+        },
+        "packages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/port-name"
+          }
         }
       },
       "required": [
@@ -495,6 +510,12 @@
         "reference": {
           "type": "string",
           "description": "The ref to fetch when cloning this git registry."
+        },
+        "packages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/port-name"
+          }
         }
       },
       "required": [
@@ -602,22 +623,7 @@
       },
       "additionalProperties": false
     },
-    "packages-list": {
-      "type": "object",
-      "description": "A list of port names which a port registry is used to fetch.",
-      "properties": {
-        "packages": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/identifier"
-          }
-        }
-      },
-      "required": [
-        "packages"
-      ]
-    },
-    "package-name": {
+    "port-name": {
       "type": "string",
       "description": "Name of a package.",
       "allOf": [
@@ -644,31 +650,23 @@
       "default": 0
     },
     "registry-array": {
-      "oneOf": [
-        {
-          "allOf": [
-            {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/builtin-registry"
-                },
-                {
-                  "$ref": "#/definitions/git-registry"
-                },
-                {
-                  "$ref": "#/definitions/filesystem-registry"
-                }
-              ]
-            },
-            {
-              "$ref": "#/definitions/packages-list"
-            }
-          ]
-        },
-        {
-          "$ref": "#/definitions/artifact-registry"
-        }
-      ]
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/definitions/builtin-registry"
+          },
+          {
+            "$ref": "#/definitions/git-registry"
+          },
+          {
+            "$ref": "#/definitions/filesystem-registry"
+          },
+          {
+            "$ref": "#/definitions/artifact-registry"
+          }
+        ]
+      }
     },
     "semantic-version": {
       "description": "A semantic version string. See https://semver.org/",
