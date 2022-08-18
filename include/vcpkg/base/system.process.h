@@ -47,7 +47,15 @@ namespace vcpkg
 
         Command& forwarded_args(View<std::string> args) &
         {
-            buf.reserve(buf.size() + args.size());
+            // get combined length of all args
+            ::size_t total_length = 0;
+            for (auto&& arg : args)
+            {
+                total_length += arg.size();
+            }
+
+            // -1 because there is no separator at the end
+            buf.reserve(buf.size() + total_length + args.size() - 1);
 
             for (auto&& arg : args)
             {
@@ -57,15 +65,20 @@ namespace vcpkg
             return *this;
         }
 
-        template<typename... Args>
-        Command& string_args(Args... args)
+        Command& string_args(std::initializer_list<StringView> args) &
         {
-            // get total size
-            ::size_t length = (static_cast<StringView>(args).size() + ...);
-            buf.reserve(buf.size() + length);
+            // get combined length of all args
+            ::size_t total_length = 0;
+            for (auto&& arg : args)
+            {
+                total_length += arg.size();
+            }
+
+            // -1 because there is no separator at the end
+            buf.reserve(buf.size() + total_length + args.size() - 1);
 
             // append all strings
-            for (StringView arg : std::initializer_list<StringView>{args...})
+            for (auto&& arg : args)
             {
                 string_arg(arg);
             }
