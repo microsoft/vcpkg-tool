@@ -156,20 +156,20 @@ Please open an issue at https://github.com/microsoft/vcpkg, with the following o
         fs.write_contents(data.file_to_write, Json::stringify(res), ec);
         if (ec)
         {
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                          msg::format(msgFailedToWriteManifest, msg::path = file_to_write_string)
-                                              .append_raw(": ")
-                                              .append_raw(ec.message()));
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                        msg::format(msgFailedToWriteManifest, msg::path = file_to_write_string)
+                                            .append_raw(": ")
+                                            .append_raw(ec.message()));
         }
         if (data.original_path != data.file_to_write)
         {
             fs.remove(data.original_path, ec);
             if (ec)
             {
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                              msg::format(msgFailedToRemoveControl, msg::path = original_path_string)
-                                                  .append_raw(": ")
-                                                  .append_raw(ec.message()));
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                            msg::format(msgFailedToRemoveControl, msg::path = original_path_string)
+                                                .append_raw(": ")
+                                                .append_raw(ec.message()));
             }
         }
     }
@@ -210,7 +210,7 @@ namespace vcpkg::Commands::FormatManifest
 
         if (!format_all && args.command_arguments.empty())
         {
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgFailedToFormatMissingFile);
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgFailedToFormatMissingFile);
         }
 
         std::vector<ToWrite> to_write;
@@ -248,10 +248,10 @@ namespace vcpkg::Commands::FormatManifest
                 auto manifest_exists = fs.exists(manifest_path, IgnoreErrors{});
                 auto control_exists = fs.exists(control_path, IgnoreErrors{});
 
-                Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                       !manifest_exists || !control_exists,
-                                       msgControlAndManifestFilesPresent,
-                                       msg::path = dir);
+                if (manifest_exists && control_exists)
+                {
+                    Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgControlAndManifestFilesPresent, msg::path = dir);
+                }
 
                 if (manifest_exists)
                 {

@@ -622,8 +622,6 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidFilename);
     REGISTER_MESSAGE(InvalidFormatString);
     REGISTER_MESSAGE(InvalidLinkage);
-    REGISTER_MESSAGE(JsonErrorFailedToParse);
-    REGISTER_MESSAGE(JsonErrorFailedToRead);
     REGISTER_MESSAGE(JsonErrorMustBeAnObject);
     REGISTER_MESSAGE(JsonSwitch);
     REGISTER_MESSAGE(LaunchingProgramFailed);

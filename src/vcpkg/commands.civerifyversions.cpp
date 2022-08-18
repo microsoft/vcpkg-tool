@@ -297,7 +297,7 @@ namespace vcpkg::Commands::CIVerifyVersions
         auto maybe_port_git_tree_map = paths.git_get_local_port_treeish_map();
         if (!maybe_port_git_tree_map)
         {
-            Checks::msg_exit_with_message(
+            Checks::msg_exit_with_error(
                 VCPKG_LINE_INFO,
                 msg::format(msgFailedToObtainLocalPortGitSha).append_raw("\n" + maybe_port_git_tree_map.error()));
         }

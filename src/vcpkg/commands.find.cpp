@@ -262,6 +262,6 @@ namespace vcpkg::Commands
             perform_find_port_and_exit(paths, full_description, enable_json, filter, args.overlay_ports);
         }
 
-        Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgAddCommandFirstArg);
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgAddCommandFirstArg);
     }
 }
