@@ -883,12 +883,12 @@ namespace vcpkg
                     "https://github.com/microsoft/vcpkg, "
                     "with the following output:\n{error_msg}\nSerialized Binary Paragraph:");
     DECLARE_MESSAGE(FailedToFindPortFeature, (msg::feature, msg::spec), "", "Could not find {feature} in {spec}.");
-    DECLARE_MESSAGE(
-        FailedToLoadControl,
-        (msg::spec, msg::error, msg::command_name),
-        "'{error}' is the error message.",
-        "while loading control file for {spec}:\n{error}\nPlease run\"{command_name} remove {spec}\" and re-attempt.");
     DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}");
+    DECLARE_MESSAGE(FailedToLoadInstalledManifest,
+                    (msg::spec),
+                    "",
+                    "The control or mnaifest file for {spec} could not be loaded due to the following error. Please "
+                    "remove {spec} and re-attempt.");
     DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
     DECLARE_MESSAGE(FailedToObtainPackageVersion, (), "", "Cannot find desired package version.");
     DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,

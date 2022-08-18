@@ -544,7 +544,7 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedToExtract);
     REGISTER_MESSAGE(FailedToFindPortFeature);
     REGISTER_MESSAGE(FailedToFormatMissingFile);
-    REGISTER_MESSAGE(FailedToLoadControl);
+    REGISTER_MESSAGE(FailedToLoadInstalledManifest);
     REGISTER_MESSAGE(FailedToLocateSpec);
     REGISTER_MESSAGE(FailedToObtainDependencyVersion);
     REGISTER_MESSAGE(FailedToObtainLocalPortGitSha);

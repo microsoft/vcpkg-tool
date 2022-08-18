@@ -126,7 +126,6 @@
   "ErrorVsCodeNotFound": "Visual Studio Code was not found and the environment variable {env_var} is not set or invalid.",
   "ErrorVsCodeNotFoundPathExamined": "The following paths were examined:",
   "ErrorWhileParsing": "Errors occurred while parsing {path}.",
-  "ErrorWhileSearching": "info: while looking for {spec}:",
   "ErrorWhileWriting": "Error occured while writing {path}",
   "ErrorsFound": "Found the following errors:",
   "ExceededRecursionDepth": "Recursion depth exceeded.",
@@ -142,7 +141,7 @@
   "FailedToExtract": "Failed to extract \"{path}\":",
   "FailedToFindPortFeature": "Could not find {feature} in {spec}.",
   "FailedToFormatMissingFile": "No files to format.\nPlease pass either --all, or the explicit files to format or convert.",
-  "FailedToLoadControl": "while loading control file for {spec}:\n{error}\nPlease run\"{command_name} remove {spec}\" and re-attempt.",
+  "FailedToLoadInstalledManifest": "The control or mnaifest file for {spec} could not be loaded due to the following error. Please remove {spec} and re-attempt.",
   "FailedToLocateSpec": "Failed to locate spec in graph: {spec}",
   "FailedToObtainDependencyVersion": "Cannot find desired dependency version.",
   "FailedToObtainLocalPortGitSha": "Failed to obtain git SHAs for local ports.",
@@ -393,5 +392,6 @@
   "WaitingToTakeFilesystemLock": "waiting to take filesystem lock on {path}...",
   "WarningMessage": "warning: ",
   "WarningMessageMustUsePrintWarning": "The message named {value} starts with warning:, it must be changed to prepend WarningMessage in code instead.",
-  "WarningsTreatedAsErrors": "previous warnings being interpreted as errors"
+  "WarningsTreatedAsErrors": "previous warnings being interpreted as errors",
+  "WhileLookingForSpec": "while looking for {spec}:"
 }

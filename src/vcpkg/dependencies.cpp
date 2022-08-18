@@ -224,21 +224,16 @@ namespace vcpkg
 
             const SourceControlFileAndLocation& get_scfl_or_exit() const
             {
-#if defined(_WIN32)
-                static auto vcpkg_remove_cmd = ".\\vcpkg";
-#else
-                static auto vcpkg_remove_cmd = "./vcpkg";
-#endif
-                if (!m_scfl)
+                if (auto scfl = m_scfl.get())
                 {
-                    Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                                   msgFailedToLoadControl,
-                                                   msg::spec = m_spec,
-                                                   msg::error = m_scfl.error(),
-                                                   msg::command_name = vcpkg_remove_cmd);
+                    return *scfl;
                 }
 
-                return *m_scfl.get();
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                              msg::format(msg::msgErrorMessage)
+                                                  .append(msgFailedToLoadInstalledManifest, msg::spec = m_spec)
+                                                  .append_raw('\n')
+                                                  .append_raw(m_scfl.error()));
             }
 
             Optional<const PlatformExpression::Expr&> get_applicable_supports_expression(const FeatureSpec& spec)

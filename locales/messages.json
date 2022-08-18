@@ -223,8 +223,6 @@
   "ErrorVsCodeNotFoundPathExamined": "The following paths were examined:",
   "ErrorWhileParsing": "Errors occurred while parsing {path}.",
   "_ErrorWhileParsing.comment": "An example of {path} is /foo/bar.",
-  "ErrorWhileSearching": "info: while looking for {spec}:",
-  "_ErrorWhileSearching.comment": "An example of {spec} is zlib:x64-windows.",
   "ErrorWhileWriting": "Error occured while writing {path}",
   "_ErrorWhileWriting.comment": "An example of {path} is /foo/bar.",
   "ErrorsFound": "Found the following errors:",
@@ -248,8 +246,8 @@
   "FailedToFindPortFeature": "Could not find {feature} in {spec}.",
   "_FailedToFindPortFeature.comment": "An example of {feature} is avisynthplus. An example of {spec} is zlib:x64-windows.",
   "FailedToFormatMissingFile": "No files to format.\nPlease pass either --all, or the explicit files to format or convert.",
-  "FailedToLoadControl": "while loading control file for {spec}:\n{error}\nPlease run\"{command_name} remove {spec}\" and re-attempt.",
-  "_FailedToLoadControl.comment": "'{error}' is the error message. An example of {spec} is zlib:x64-windows. An example of {command_name} is install.",
+  "FailedToLoadInstalledManifest": "The control or mnaifest file for {spec} could not be loaded due to the following error. Please remove {spec} and re-attempt.",
+  "_FailedToLoadInstalledManifest.comment": "An example of {spec} is zlib:x64-windows.",
   "FailedToLocateSpec": "Failed to locate spec in graph: {spec}",
   "_FailedToLocateSpec.comment": "An example of {spec} is zlib:x64-windows.",
   "FailedToObtainDependencyVersion": "Cannot find desired dependency version.",
@@ -648,5 +646,7 @@
   "WarningMessage": "warning: ",
   "WarningMessageMustUsePrintWarning": "The message named {value} starts with warning:, it must be changed to prepend WarningMessage in code instead.",
   "_WarningMessageMustUsePrintWarning.comment": "{value} is is a localized message name like WarningMessageMustUsePrintWarning",
-  "WarningsTreatedAsErrors": "previous warnings being interpreted as errors"
+  "WarningsTreatedAsErrors": "previous warnings being interpreted as errors",
+  "WhileLookingForSpec": "while looking for {spec}:",
+  "_WhileLookingForSpec.comment": "An example of {spec} is zlib:x64-windows."
 }
