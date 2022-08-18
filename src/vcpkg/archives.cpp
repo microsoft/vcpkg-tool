@@ -295,9 +295,7 @@ namespace vcpkg
         (void)tools;
         (void)status_sink;
         return flatten(cmd_execute_and_capture_output(Command{"zip"}
-                                                          .string_arg("--quiet")
-                                                          .string_arg("-y")
-                                                          .string_arg("-r")
+                                                          .string_args({"--quiet", "-y","-r"})
                                                           .string_arg(destination)
                                                           .string_arg("*")
                                                           .string_arg("--exclude")

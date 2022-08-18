@@ -49,7 +49,7 @@ namespace vcpkg
         {
             // get combined length of all args
             ::size_t total_length = 0;
-            for (auto&& arg : args)
+            for (const auto& arg : args)
             {
                 total_length += arg.size();
             }
@@ -65,7 +65,7 @@ namespace vcpkg
             return *this;
         }
 
-        Command& string_args(std::initializer_list<StringView> args) &
+        Command& string_args(std::initializer_list<StringView> args)
         {
             // get combined length of all args
             ::size_t total_length = 0;
