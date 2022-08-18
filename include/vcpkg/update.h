@@ -23,7 +23,7 @@ namespace vcpkg::Update
         VersionDiff version_diff;
     };
 
-    std::vector<OutdatedPackage> find_outdated_packages(const PortFileProvider::PortFileProvider& provider,
+    std::vector<OutdatedPackage> find_outdated_packages(const PortFileProvider& provider,
                                                         const StatusParagraphs& status_db);
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);

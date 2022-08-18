@@ -35,7 +35,7 @@ namespace
     };
 }
 
-namespace vcpkg::PortFileProvider
+namespace vcpkg
 {
     MapPortFileProvider::MapPortFileProvider(const std::unordered_map<std::string, SourceControlFileAndLocation>& map)
         : ports(map)

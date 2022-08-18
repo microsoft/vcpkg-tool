@@ -112,7 +112,7 @@ namespace vcpkg::Commands::PortHistory
             if (auto output = maybe_output.get())
             {
                 auto commits = Util::fmap(
-                    Strings::split(*output, '\n'), [](const std::string& line) -> auto {
+                    Strings::split(*output, '\n'), [](const std::string& line) -> auto{
                         auto parts = Strings::split(line, ' ');
                         return std::make_pair(parts[0], parts[1]);
                     });
@@ -184,8 +184,7 @@ namespace vcpkg::Commands::PortHistory
             Json::Object root;
             root.insert("versions", versions_json);
 
-            auto json_string = Json::stringify(root, vcpkg::Json::JsonStyle::with_spaces(2));
-
+            auto json_string = Json::stringify(root);
             if (maybe_output_file.has_value())
             {
                 auto output_file_path = maybe_output_file.value_or_exit(VCPKG_LINE_INFO);

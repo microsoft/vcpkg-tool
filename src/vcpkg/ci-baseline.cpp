@@ -201,31 +201,31 @@ namespace vcpkg
     }
 
     LocalizedString format_ci_result(const PackageSpec& spec,
-                                     Build::BuildResult result,
+                                     BuildResult result,
                                      const CiBaselineData& cidata,
                                      StringView cifile,
                                      bool allow_unexpected_passing)
     {
         switch (result)
         {
-            case Build::BuildResult::BUILD_FAILED:
-            case Build::BuildResult::POST_BUILD_CHECKS_FAILED:
-            case Build::BuildResult::FILE_CONFLICTS:
+            case BuildResult::BUILD_FAILED:
+            case BuildResult::POST_BUILD_CHECKS_FAILED:
+            case BuildResult::FILE_CONFLICTS:
                 if (!cidata.expected_failures.contains(spec))
                 {
                     return msg::format(msgCiBaselineRegression,
                                        msg::spec = spec,
-                                       msg::build_result = Build::to_string_locale_invariant(result),
+                                       msg::build_result = to_string_locale_invariant(result),
                                        msg::path = cifile);
                 }
                 break;
-            case Build::BuildResult::SUCCEEDED:
+            case BuildResult::SUCCEEDED:
                 if (!allow_unexpected_passing && cidata.expected_failures.contains(spec))
                 {
                     return msg::format(msgCiBaselineUnexpectedPass, msg::spec = spec, msg::path = cifile);
                 }
                 break;
-            case Build::BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
+            case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
                 if (cidata.required_success.contains(spec))
                 {
                     return msg::format(msgCiBaselineDisallowedCascade, msg::spec = spec, msg::path = cifile);

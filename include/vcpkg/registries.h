@@ -20,7 +20,7 @@
 
 namespace vcpkg
 {
-    constexpr StringLiteral builtin_registry_git_url() { return "https://github.com/microsoft/vcpkg"; }
+    constexpr StringLiteral builtin_registry_git_url = "https://github.com/microsoft/vcpkg";
 
     struct LockFile
     {

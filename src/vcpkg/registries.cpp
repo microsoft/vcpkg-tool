@@ -1186,7 +1186,7 @@ namespace vcpkg
         if (auto pversions = maybe_versions.get())
         {
             return Util::fmap(
-                *pversions, [](auto&& entry) -> auto {
+                *pversions, [](auto&& entry) -> auto{
                     return std::make_pair(SchemedVersion{entry.scheme, entry.version}, entry.git_tree);
                 });
         }
@@ -1233,7 +1233,7 @@ namespace vcpkg
         if (paths.use_git_default_registry())
         {
             return std::make_unique<GitRegistry>(
-                paths, builtin_registry_git_url().to_string(), "HEAD", std::move(baseline));
+                paths, builtin_registry_git_url.to_string(), "HEAD", std::move(baseline));
         }
         else
         {

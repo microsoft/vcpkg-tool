@@ -36,12 +36,9 @@
 #include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
-using vcpkg::Build::BuildResult;
-using vcpkg::PortFileProvider::PathsPortFileProvider;
 
 namespace
 {
-    using vcpkg::Build::IBuildLogsRecorder;
     struct NullBuildLogsRecorder final : IBuildLogsRecorder
     {
         void record_build_result(const VcpkgPaths& paths, const PackageSpec& spec, BuildResult result) const override
@@ -62,16 +59,13 @@ namespace vcpkg
 
 namespace vcpkg::Build
 {
-    using Dependencies::InstallPlanAction;
-    using Dependencies::InstallPlanType;
-
-    void Command::perform_and_exit_ex(const VcpkgCmdArguments& args,
-                                      const FullPackageSpec& full_spec,
-                                      Triplet host_triplet,
-                                      const PathsPortFileProvider& provider,
-                                      BinaryCache& binary_cache,
-                                      const IBuildLogsRecorder& build_logs_recorder,
-                                      const VcpkgPaths& paths)
+    void perform_and_exit_ex(const VcpkgCmdArguments& args,
+                             const FullPackageSpec& full_spec,
+                             Triplet host_triplet,
+                             const PathsPortFileProvider& provider,
+                             BinaryCache& binary_cache,
+                             const IBuildLogsRecorder& build_logs_recorder,
+                             const VcpkgPaths& paths)
     {
         Checks::exit_with_code(
             VCPKG_LINE_INFO,
@@ -86,21 +80,21 @@ namespace vcpkg::Build
         nullptr,
     };
 
-    void Command::perform_and_exit(const VcpkgCmdArguments& args,
-                                   const VcpkgPaths& paths,
-                                   Triplet default_triplet,
-                                   Triplet host_triplet)
+    void perform_and_exit(const VcpkgCmdArguments& args,
+                          const VcpkgPaths& paths,
+                          Triplet default_triplet,
+                          Triplet host_triplet)
     {
         Checks::exit_with_code(VCPKG_LINE_INFO, perform(args, paths, default_triplet, host_triplet));
     }
 
-    int Command::perform_ex(const VcpkgCmdArguments& args,
-                            const FullPackageSpec& full_spec,
-                            Triplet host_triplet,
-                            const PathsPortFileProvider& provider,
-                            BinaryCache& binary_cache,
-                            const IBuildLogsRecorder& build_logs_recorder,
-                            const VcpkgPaths& paths)
+    int perform_ex(const VcpkgCmdArguments& args,
+                   const FullPackageSpec& full_spec,
+                   Triplet host_triplet,
+                   const PathsPortFileProvider& provider,
+                   BinaryCache& binary_cache,
+                   const IBuildLogsRecorder& build_logs_recorder,
+                   const VcpkgPaths& paths)
     {
         const PackageSpec& spec = full_spec.package_spec;
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
@@ -108,8 +102,8 @@ namespace vcpkg::Build
         var_provider.load_dep_info_vars({{spec}}, host_triplet);
 
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
-        auto action_plan = Dependencies::create_feature_install_plan(
-            provider, var_provider, {&full_spec, 1}, status_db, {host_triplet});
+        auto action_plan =
+            create_feature_install_plan(provider, var_provider, {&full_spec, 1}, status_db, {host_triplet});
 
         var_provider.load_tag_vars(action_plan, provider, host_triplet);
 
@@ -151,7 +145,7 @@ namespace vcpkg::Build
         action->build_options.clean_packages = CleanPackages::NO;
 
         const auto build_timer = ElapsedTimer::create_started();
-        const auto result = Build::build_package(args, paths, *action, binary_cache, build_logs_recorder, status_db);
+        const auto result = build_package(args, paths, *action, binary_cache, build_logs_recorder, status_db);
         msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
         if (result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
         {
@@ -177,43 +171,39 @@ namespace vcpkg::Build
             {
                 msg::print(Color::warning, warnings);
             }
-            msg::println_error(Build::create_error_message(result, spec));
-            msg::print(Build::create_user_troubleshooting_message(*action, paths));
+            msg::println_error(create_error_message(result, spec));
+            msg::print(create_user_troubleshooting_message(*action, paths));
             return 1;
         }
 
         return 0;
     }
 
-    int Command::perform(const VcpkgCmdArguments& args,
-                         const VcpkgPaths& paths,
-                         Triplet default_triplet,
-                         Triplet host_triplet)
+    int perform(const VcpkgCmdArguments& args, const VcpkgPaths& paths, Triplet default_triplet, Triplet host_triplet)
     {
         // Build only takes a single package and all dependencies must already be installed
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         std::string first_arg = args.command_arguments[0];
 
         BinaryCache binary_cache{args, paths};
-        const FullPackageSpec spec = Input::check_and_get_full_package_spec(
+        const FullPackageSpec spec = check_and_get_full_package_spec(
             std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
 
-        PortFileProvider::PathsPortFileProvider provider(
-            paths, PortFileProvider::make_overlay_provider(paths, args.overlay_ports));
-        return perform_ex(args, spec, host_triplet, provider, binary_cache, Build::null_build_logs_recorder(), paths);
+        PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
+        return perform_ex(args, spec, host_triplet, provider, binary_cache, null_build_logs_recorder(), paths);
     }
+} // namespace vcpkg::Build
 
+namespace vcpkg
+{
     void BuildCommand::perform_and_exit(const VcpkgCmdArguments& args,
                                         const VcpkgPaths& paths,
                                         Triplet default_triplet,
                                         Triplet host_triplet) const
     {
-        Build::Command::perform_and_exit(args, paths, default_triplet, host_triplet);
+        Build::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
-}
 
-namespace vcpkg::Build
-{
     static const std::string NAME_EMPTY_PACKAGE = "PolicyEmptyPackage";
     static const std::string NAME_DLLS_WITHOUT_LIBS = "PolicyDLLsWithoutLIBs";
     static const std::string NAME_DLLS_WITHOUT_EXPORTS = "PolicyDLLsWithoutExports";
@@ -685,10 +675,10 @@ namespace vcpkg::Build
                     const auto old_buf_size = buf.size();
                     Strings::append(buf, s, '\n');
                     const auto write_size = buf.size() - old_buf_size;
-                    Checks::check_exit(VCPKG_LINE_INFO,
-                                       out_file.write(buf.c_str() + old_buf_size, 1, write_size) == write_size,
-                                       "Error occurred while writing '%s'",
-                                       stdoutlog);
+                    Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                           out_file.write(buf.c_str() + old_buf_size, 1, write_size) == write_size,
+                                           msgErrorWhileWriting,
+                                           msg::path = stdoutlog);
                 },
                 default_working_directory,
                 env);
@@ -713,7 +703,7 @@ namespace vcpkg::Build
 
     static std::vector<CMakeVariable> get_cmake_build_args(const VcpkgCmdArguments& args,
                                                            const VcpkgPaths& paths,
-                                                           const Dependencies::InstallPlanAction& action)
+                                                           const InstallPlanAction& action)
     {
         auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
         auto& scf = *scfl.source_control_file;
@@ -844,11 +834,10 @@ namespace vcpkg::Build
         }
         else
         {
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                       "Unable to determine toolchain to use for triplet %s with CMAKE_SYSTEM_NAME %s; "
-                                       "maybe you meant to use VCPKG_CHAINLOAD_TOOLCHAIN_FILE?",
-                                       triplet,
-                                       cmake_system_name);
+            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                           msgUndeterminedToolChainForTriplet,
+                                           msg::triplet = triplet,
+                                           msg::system_name = cmake_system_name);
         }
     }
 
@@ -882,7 +871,7 @@ namespace vcpkg::Build
 
     static ExtendedBuildResult do_build_package(const VcpkgCmdArguments& args,
                                                 const VcpkgPaths& paths,
-                                                const Dependencies::InstallPlanAction& action)
+                                                const InstallPlanAction& action)
     {
         const auto& pre_build_info = action.pre_build_info(VCPKG_LINE_INFO);
 
@@ -924,18 +913,18 @@ namespace vcpkg::Build
             return_code = cmd_execute_and_stream_data(
                 command,
                 [&](StringView sv) {
-                    print2(sv);
-                    Checks::check_exit(VCPKG_LINE_INFO,
-                                       out_file.write(sv.data(), 1, sv.size()) == sv.size(),
-                                       "Error occurred while writing '%s'",
-                                       stdoutlog);
+                    msg::write_unlocalized_text_to_stdout(Color::none, sv);
+                    Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                           out_file.write(sv.data(), 1, sv.size()) == sv.size(),
+                                           msgErrorWhileWriting,
+                                           msg::path = stdoutlog);
                 },
                 default_working_directory,
                 env);
         } // close out_file
 
         // With the exception of empty packages, builds in "Download Mode" always result in failure.
-        if (action.build_options.only_downloads == Build::OnlyDownloads::YES)
+        if (action.build_options.only_downloads == OnlyDownloads::YES)
         {
             // TODO: Capture executed command output and evaluate whether the failure was intended.
             // If an unintended error occurs then return a BuildResult::DOWNLOAD_FAILURE status.
@@ -1008,7 +997,7 @@ namespace vcpkg::Build
 
     static ExtendedBuildResult do_build_package_and_clean_buildtrees(const VcpkgCmdArguments& args,
                                                                      const VcpkgPaths& paths,
-                                                                     const Dependencies::InstallPlanAction& action)
+                                                                     const InstallPlanAction& action)
     {
         auto result = do_build_package(args, paths, action);
 
@@ -1059,7 +1048,7 @@ namespace vcpkg::Build
     };
 
     static Optional<AbiTagAndFiles> compute_abi_tag(const VcpkgPaths& paths,
-                                                    const Dependencies::InstallPlanAction& action,
+                                                    const InstallPlanAction& action,
                                                     Span<const AbiEntry> dependency_abis)
     {
         auto& fs = paths.get_filesystem();
@@ -1213,11 +1202,10 @@ namespace vcpkg::Build
     }
 
     void compute_all_abis(const VcpkgPaths& paths,
-                          Dependencies::ActionPlan& action_plan,
+                          ActionPlan& action_plan,
                           const CMakeVars::CMakeVarProvider& var_provider,
                           const StatusParagraphs& status_db)
     {
-        using Dependencies::InstallPlanAction;
         for (auto it = action_plan.install_actions.begin(); it != action_plan.install_actions.end(); ++it)
         {
             auto& action = *it;
@@ -1238,8 +1226,8 @@ namespace vcpkg::Build
                         auto status_it = status_db.find(pspec);
                         if (status_it == status_db.end())
                         {
-                            Checks::exit_maybe_upgrade(
-                                VCPKG_LINE_INFO, "Failed to find dependency abi for %s -> %s", action.spec, pspec);
+                            Debug::println("Failed to find dependency abi for %s -> %s", action.spec, pspec);
+                            Checks::unreachable(VCPKG_LINE_INFO);
                         }
 
                         dependency_abis.emplace_back(AbiEntry{pspec.name(), status_it->get()->package.abi});
@@ -1274,7 +1262,7 @@ namespace vcpkg::Build
 
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,
-                                      const Dependencies::InstallPlanAction& action,
+                                      const InstallPlanAction& action,
                                       BinaryCache& binary_cache,
                                       const IBuildLogsRecorder& build_logs_recorder,
                                       const StatusParagraphs& status_db)
@@ -1467,14 +1455,13 @@ namespace vcpkg::Build
             return Strings::concat(
                 "<details><summary>", path.native(), "</summary>\n\n```\n", log, "\n```\n</details>");
         };
-        const auto manifest =
-            paths.get_manifest()
-                .map([](const ManifestAndPath& manifest) {
-                    return Strings::concat("<details><summary>vcpkg.json</summary>\n\n```\n",
-                                           Json::stringify(manifest.manifest, Json::JsonStyle::with_spaces(2)),
-                                           "\n```\n</details>\n");
-                })
-                .value_or("");
+        const auto manifest = paths.get_manifest()
+                                  .map([](const ManifestAndPath& manifest) {
+                                      return Strings::concat("<details><summary>vcpkg.json</summary>\n\n```\n",
+                                                             Json::stringify(manifest.manifest),
+                                                             "\n```\n</details>\n");
+                                  })
+                                  .value_or("");
 
         const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
         const auto& compiler_info = abi_info.compiler_info.value_or_exit(VCPKG_LINE_INFO);
@@ -1553,7 +1540,8 @@ namespace vcpkg::Build
             }
             else
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO, "Invalid crt linkage type: [%s]", crt_linkage_as_string);
+                Checks::msg_exit_with_message(
+                    VCPKG_LINE_INFO, msgInvalidLinkage, msg::system_name = "crt", msg::value = crt_linkage_as_string);
             }
         }
 
@@ -1567,8 +1555,10 @@ namespace vcpkg::Build
             }
             else
             {
-                Checks::exit_with_message(
-                    VCPKG_LINE_INFO, "Invalid library linkage type: [%s]", library_linkage_as_string);
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                              msgInvalidLinkage,
+                                              msg::system_name = "library",
+                                              msg::value = library_linkage_as_string);
             }
         }
 
@@ -1585,8 +1575,8 @@ namespace vcpkg::Build
             else if (setting == "disabled")
                 policies.emplace(policy, false);
             else
-                Checks::exit_maybe_upgrade(
-                    VCPKG_LINE_INFO, "Unknown setting for policy '%s': %s", to_string(policy), setting);
+                Checks::msg_exit_maybe_upgrade(
+                    VCPKG_LINE_INFO, msgUnknownPolicySetting, msg::option = setting, msg::value = to_string(policy));
         }
 
         if (const auto err = parser.error_info("PostBuildInformation"))
@@ -1605,7 +1595,7 @@ namespace vcpkg::Build
         const ExpectedS<Paragraph> pghs = Paragraphs::get_single_paragraph(fs, filepath);
         if (!pghs)
         {
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Invalid BUILD_INFO file for package: %s", pghs.error());
+            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgInvalidBuildInfo, msg::error_msg = pghs.error());
         }
 
         return inner_create_buildinfo(*pghs.get());
@@ -1712,10 +1702,8 @@ namespace vcpkg::Build
                     else if (Strings::case_insensitive_ascii_equals(variable_value, "release"))
                         build_type = ConfigurationType::RELEASE;
                     else
-                        Checks::exit_with_message(
-                            VCPKG_LINE_INFO,
-                            "Unknown setting for VCPKG_BUILD_TYPE: %s. Valid settings are '', 'debug' and 'release'.",
-                            variable_value);
+                        Checks::msg_exit_with_message(
+                            VCPKG_LINE_INFO, msgUnknownSettingForBuildType, msg::option = variable_value);
                     break;
                 case VcpkgTripletVar::ENV_PASSTHROUGH:
                     passthrough_env_vars_tracked = Strings::split(variable_value, ';');

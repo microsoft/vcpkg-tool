@@ -28,10 +28,7 @@ namespace vcpkg
     struct Environment;
 
     DECLARE_MESSAGE(ElapsedForPackage, (msg::spec, msg::elapsed), "", "Elapsed time to handle {spec}: {elapsed}");
-}
 
-namespace vcpkg::Build
-{
     enum class BuildResult
     {
         SUCCEEDED,
@@ -54,19 +51,19 @@ namespace vcpkg::Build
 
     const IBuildLogsRecorder& null_build_logs_recorder() noexcept;
 
-    namespace Command
+    namespace Build
     {
         int perform_ex(const VcpkgCmdArguments& args,
                        const FullPackageSpec& full_spec,
                        Triplet host_triplet,
-                       const PortFileProvider::PathsPortFileProvider& provider,
+                       const PathsPortFileProvider& provider,
                        BinaryCache& binary_cache,
                        const IBuildLogsRecorder& build_logs_recorder,
                        const VcpkgPaths& paths);
         void perform_and_exit_ex(const VcpkgCmdArguments& args,
                                  const FullPackageSpec& full_spec,
                                  Triplet host_triplet,
-                                 const PortFileProvider::PathsPortFileProvider& provider,
+                                 const PathsPortFileProvider& provider,
                                  BinaryCache& binary_cache,
                                  const IBuildLogsRecorder& build_logs_recorder,
                                  const VcpkgPaths& paths);
@@ -79,7 +76,7 @@ namespace vcpkg::Build
                               const VcpkgPaths& paths,
                               Triplet default_triplet,
                               Triplet host_triplet);
-    }
+    } // namespace vcpkg::Build
 
     enum class UseHeadVersion
     {
@@ -153,6 +150,12 @@ namespace vcpkg::Build
         YES
     };
 
+    enum class PrintUsage
+    {
+        YES = 0,
+        NO
+    };
+
     struct BuildPackageOptions
     {
         BuildMissing build_missing;
@@ -166,34 +169,37 @@ namespace vcpkg::Build
         PurgeDecompressFailure purge_decompress_failure;
         Editable editable;
         BackcompatFeatures backcompat_features;
+        PrintUsage print_usage;
     };
 
     static constexpr BuildPackageOptions default_build_package_options{
-        Build::BuildMissing::YES,
-        Build::UseHeadVersion::NO,
-        Build::AllowDownloads::YES,
-        Build::OnlyDownloads::NO,
-        Build::CleanBuildtrees::YES,
-        Build::CleanPackages::YES,
-        Build::CleanDownloads::NO,
-        Build::DownloadTool::BUILT_IN,
-        Build::PurgeDecompressFailure::YES,
-        Build::Editable::NO,
-        Build::BackcompatFeatures::ALLOW,
+        BuildMissing::YES,
+        UseHeadVersion::NO,
+        AllowDownloads::YES,
+        OnlyDownloads::NO,
+        CleanBuildtrees::YES,
+        CleanPackages::YES,
+        CleanDownloads::NO,
+        DownloadTool::BUILT_IN,
+        PurgeDecompressFailure::YES,
+        Editable::NO,
+        BackcompatFeatures::ALLOW,
+        PrintUsage::YES,
     };
 
     static constexpr BuildPackageOptions backcompat_prohibiting_package_options{
-        Build::BuildMissing::YES,
-        Build::UseHeadVersion::NO,
-        Build::AllowDownloads::YES,
-        Build::OnlyDownloads::NO,
-        Build::CleanBuildtrees::YES,
-        Build::CleanPackages::YES,
-        Build::CleanDownloads::NO,
-        Build::DownloadTool::BUILT_IN,
-        Build::PurgeDecompressFailure::YES,
-        Build::Editable::NO,
-        Build::BackcompatFeatures::PROHIBIT,
+        BuildMissing::YES,
+        UseHeadVersion::NO,
+        AllowDownloads::YES,
+        OnlyDownloads::NO,
+        CleanBuildtrees::YES,
+        CleanPackages::YES,
+        CleanDownloads::NO,
+        DownloadTool::BUILT_IN,
+        PurgeDecompressFailure::YES,
+        Editable::NO,
+        BackcompatFeatures::PROHIBIT,
+        PrintUsage::YES,
     };
 
     struct BuildResultCounts
@@ -214,7 +220,7 @@ namespace vcpkg::Build
 
     StringLiteral to_string_locale_invariant(const BuildResult build_result);
     LocalizedString to_string(const BuildResult build_result);
-    LocalizedString create_user_troubleshooting_message(const Dependencies::InstallPlanAction& action,
+    LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action,
                                                         const VcpkgPaths& paths,
                                                         Optional<Path>&& issue_body = nullopt);
 
@@ -273,11 +279,11 @@ namespace vcpkg::Build
     std::string create_github_issue(const VcpkgCmdArguments& args,
                                     const ExtendedBuildResult& build_result,
                                     const VcpkgPaths& paths,
-                                    const Dependencies::InstallPlanAction& action);
+                                    const InstallPlanAction& action);
 
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,
-                                      const Dependencies::InstallPlanAction& config,
+                                      const InstallPlanAction& config,
                                       BinaryCache& binary_cache,
                                       const IBuildLogsRecorder& build_logs_recorder,
                                       const StatusParagraphs& status_db);
@@ -377,7 +383,7 @@ namespace vcpkg::Build
     };
 
     void compute_all_abis(const VcpkgPaths& paths,
-                          Dependencies::ActionPlan& action_plan,
+                          ActionPlan& action_plan,
                           const CMakeVars::CMakeVarProvider& var_provider,
                           const StatusParagraphs& status_db);
 
@@ -422,4 +428,4 @@ namespace vcpkg::Build
                                       Triplet default_triplet,
                                       Triplet host_triplet) const override;
     };
-}
+} // namespace vcpkg

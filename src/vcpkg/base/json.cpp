@@ -1096,12 +1096,12 @@ namespace vcpkg::Json
         auto ret = parse_file(fs, json_file, ec);
         if (ec)
         {
-            msg::println_error(msgJsonErrorFailedToRead, msg::path = json_file, msg::error_msg = ec);
+            msg::println_error(msgFailedToRead, msg::path = json_file, msg::error_msg = ec);
             Checks::exit_fail(li);
         }
         else if (!ret)
         {
-            msg::println_error(msgJsonErrorFailedToParse, msg::path = json_file);
+            msg::println_error(msgFailedToParseJson, msg::path = json_file);
             msg::write_unlocalized_text_to_stdout(Color::error, ret.error()->to_string());
             msg::println();
             Checks::exit_fail(li);
@@ -1128,7 +1128,7 @@ namespace vcpkg::Json
             return msg::format(msgJsonErrorMustBeAnObject, msg::path = origin).extract_data();
         }
 
-        return msg::format(msgJsonErrorFailedToParse, msg::path = origin)
+        return msg::format(msgFailedToParseJson, msg::path = origin)
             .append_raw("\n")
             .append_raw(maybeValueIsh.error()->to_string())
             .extract_data();
@@ -1314,6 +1314,7 @@ namespace vcpkg::Json
         };
     }
 
+    std::string stringify(const Value& value) { return stringify(value, JsonStyle{}); }
     std::string stringify(const Value& value, JsonStyle style)
     {
         std::string res;
@@ -1321,6 +1322,7 @@ namespace vcpkg::Json
         res.push_back('\n');
         return res;
     }
+    std::string stringify(const Object& obj) { return stringify(obj, JsonStyle{}); }
     std::string stringify(const Object& obj, JsonStyle style)
     {
         std::string res;
@@ -1328,6 +1330,7 @@ namespace vcpkg::Json
         res.push_back('\n');
         return res;
     }
+    std::string stringify(const Array& arr) { return stringify(arr, JsonStyle{}); }
     std::string stringify(const Array& arr, JsonStyle style)
     {
         std::string res;

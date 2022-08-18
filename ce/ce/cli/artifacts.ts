@@ -16,13 +16,11 @@ export async function showArtifacts(artifacts: Iterable<Artifact>, options?: { f
   const table = new Table(i`Artifact`, i`Version`, i`Status`, i`Dependency`, i`Summary`);
   for (const artifact of artifacts) {
     const name = artifactIdentity(artifact.registryId, artifact.id, artifact.shortName);
-    if (!artifact.metadata.isValid) {
+    for (const err of artifact.metadata.validate()) {
       failing = true;
-      for (const err of artifact.metadata.validationErrors) {
-        error(err);
-      }
+      error(artifact.metadata.formatVMessage(err));
     }
-    table.push(name, artifact.version, options?.force || await artifact.isInstalled ? 'installed' : 'will install', artifact.isPrimary ? ' ' : '*', artifact.metadata.info.summary || '');
+    table.push(name, artifact.version, options?.force || await artifact.isInstalled ? 'installed' : 'will install', artifact.isPrimary ? ' ' : '*', artifact.metadata.summary || '');
   }
   log(table.toString());
   log();
@@ -161,7 +159,7 @@ export async function installArtifacts(session: Session, artifacts: Array<Artifa
       // remember what was actually installed
       installed.set(artifact, actuallyInstalled);
       if (actuallyInstalled) {
-        trackAcquire(artifact.id, artifact.version);
+        trackAcquire(id, artifact.version);
       }
     } catch (e: any) {
       bar.stop();

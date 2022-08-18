@@ -23,10 +23,10 @@ describe('Amf', () => {
     const doc = await MetadataFile.parseConfiguration('./sample1.yaml', content, local.session);
 
     strict.ok(doc.isFormatValid, 'Ensure it is valid yaml');
-    strict.ok(doc.isValid, 'Is it valid?');
+    strict.sequenceEqual(doc.validate(), []);
 
-    strict.equal(doc.info.id, 'sample1', 'identity incorrect');
-    strict.equal(doc.info.version, '1.2.3', 'version incorrect');
+    strict.equal(doc.id, 'sample1', 'name incorrect');
+    strict.equal(doc.version, '1.2.3', 'version incorrect');
   });
 
   it('reads file with nupkg', async () => {
@@ -34,33 +34,28 @@ describe('Amf', () => {
     const doc = await MetadataFile.parseConfiguration('./windows.yaml', content, local.session);
 
     strict.ok(doc.isFormatValid, 'Ensure it is valid yaml');
-    strict.ok(doc.isValid, 'Is it valid?');
+    strict.sequenceEqual(doc.validate(), []);
 
     SuiteLocal.log(doc.content);
   });
 
-  it('load/persist environment.yaml', async () => {
-    const content = await (await readFile(join(rootFolder(), 'resources', 'environment.yaml'))).toString('utf-8');
-    const doc = await MetadataFile.parseConfiguration('./cenvironment.yaml', content, local.session);
+  it('load/persist an artifact', async () => {
+    const content = await (await readFile(join(rootFolder(), 'resources', 'example-artifact.json'))).toString('utf-8');
+    const doc = await MetadataFile.parseConfiguration('./example-artifact.json', content, local.session);
 
     SuiteLocal.log(doc.content);
-    for (const each of doc.validationErrors) {
-      SuiteLocal.log(each);
+    strict.ok(doc.isFormatValid, 'Ensure it\'s valid');
+    for (const each of doc.validate()) {
+      SuiteLocal.log(doc.formatVMessage(each));
     }
-
-    strict.ok(doc.isFormatValid, 'Ensure it\'s valid yaml');
-    strict.ok(doc.isValid, 'better be valid!');
-
-    SuiteLocal.log(doc.content);
   });
 
   it('profile checks', async () => {
     const content = await (await readFile(join(rootFolder(), 'resources', 'sample1.yaml'))).toString('utf-8');
     const doc = await MetadataFile.parseConfiguration('./sample1.yaml', content, local.session);
 
-    strict.ok(doc.isFormatValid, 'Ensure it\'s valid yaml');
-    SuiteLocal.log(doc.validationErrors);
-    strict.ok(doc.isValid, 'better be valid!');
+    strict.ok(doc.isFormatValid, 'Ensure that it is valid yaml');
+    strict.sequenceEqual(doc.validate(), []);
 
     // fixme: validate inputs again.
     // strict.throws(() => doc.info.version = '4.1', 'Setting invalid version should throw');
@@ -145,8 +140,8 @@ describe('Amf', () => {
     strict.equal(doc.isFormatValid, false, 'this document should have errors');
     strict.equal(doc.formatErrors.length, 2, 'This document should have two error');
 
-    strict.equal(doc.info.id, 'bob', 'identity incorrect');
-    strict.equal(doc.info.version, '1.0.2', 'version incorrect');
+    strict.equal(doc.id, 'bob', 'name incorrect');
+    strict.equal(doc.version, '1.0.2', 'version incorrect');
   });
 
   it('read empty yaml file', async () => {
@@ -155,8 +150,8 @@ describe('Amf', () => {
 
     strict.ok(doc.isFormatValid, 'Ensure it is valid yaml');
 
-    strict.equal(doc.isValid, false, 'Should have some validation errors');
-    strict.equal(doc.validationErrors[0], './empty.yaml:1:1 SectionMessing, Missing section \'info\'', 'Should have an error about info');
+    const [firstError] = doc.validate();
+    strict.equal(doc.formatVMessage(firstError), './empty.yaml:1:1 FieldMissing, Missing identity \'id\'', 'Should have an error about id');
   });
 
   it('validation errors', async () => {
@@ -165,7 +160,7 @@ describe('Amf', () => {
 
     strict.ok(doc.isFormatValid, 'Ensure it is valid yaml');
 
-    SuiteLocal.log(doc.validationErrors);
-    strict.equal(doc.validationErrors.length, 7, `Expecting two errors, found: ${JSON.stringify(doc.validationErrors, null, 2)}`);
+    const validationErrors = Array.from(doc.validate(), (error) => doc.formatVMessage(error));
+    strict.equal(validationErrors.length, 7, `Expecting 7 errors, found: ${JSON.stringify(validationErrors, null, 2)}`);
   });
 });

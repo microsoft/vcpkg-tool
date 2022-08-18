@@ -7,6 +7,7 @@
 #include <vcpkg/archives.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/configure-environment.h>
+#include <vcpkg/metrics.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -109,13 +110,26 @@ namespace vcpkg
 #endif // ^^^ !VCPKG_CE_SHA
 
         Command cmd_run(node_path);
-        cmd_run.string_arg("--harmony");
         cmd_run.string_arg(ce_path);
         cmd_run.forwarded_args(args);
         if (Debug::g_debugging)
         {
             cmd_run.string_arg("--debug");
         }
+
+        if (LockGuardPtr<Metrics>(g_metrics)->metrics_enabled())
+        {
+            cmd_run.string_arg("--z-enable-metrics");
+        }
+
+        cmd_run.string_arg("--vcpkg-root").string_arg(paths.root);
+        cmd_run.string_arg("--z-vcpkg-command").string_arg(get_exe_path_of_current_process());
+
+        cmd_run.string_arg("--z-vcpkg-artifacts-root").string_arg(paths.artifacts());
+        cmd_run.string_arg("--z-vcpkg-downloads").string_arg(paths.downloads);
+        cmd_run.string_arg("--z-vcpkg-registries-cache").string_arg(paths.registries_cache());
+
+        Debug::println("Running configure-environment with ", cmd_run.command_line());
 
         return cmd_execute(cmd_run, WorkingDirectory{paths.original_cwd}).value_or_exit(VCPKG_LINE_INFO);
     }
