@@ -338,6 +338,8 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(action_index, "340");
     DECLARE_MSG_ARG(env_var, "VCPKG_DEFAULT_TRIPLET");
     DECLARE_MSG_ARG(extension, ".exe");
+    DECLARE_MSG_ARG(supports_expression, "windows & !static");
+    DECLARE_MSG_ARG(feature, "avisynthplus");
 
 #undef DECLARE_MSG_ARG
 
@@ -727,11 +729,13 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is a command option.",
                     "conflicting values specified for '--{value}'.");
+    DECLARE_MESSAGE(ConstraintViolation, (), "", "Found a constraint violation:");
     DECLARE_MESSAGE(ControlAndManifestFilesPresent,
                     (msg::path),
                     "",
                     "Both a manifest file and a CONTROL file exist in port directory: {path}");
     DECLARE_MESSAGE(CopyrightIsDir, (msg::path), "", "`{path}` being a directory is deprecated.");
+    DECLARE_MESSAGE(CorruptedDatabase, (), "", "Database corrupted.");
     DECLARE_MESSAGE(CouldNotDeduceNugetIdAndVersion,
                     (msg::path),
                     "",
@@ -756,11 +760,14 @@ namespace vcpkg
                     "Based on your system settings, the default path to store binaries is \"{path}\". This consults "
                     "%LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.");
     DECLARE_MESSAGE(DetectCompilerHash, (msg::triplet), "", "Detecting compiler hash for triplet {triplet}...");
-    DECLARE_MESSAGE(
-        DownloadAvailable,
-        (msg::env_var),
-        "",
-        "A downloadable copy of this tool is available and can be used by unsetting {env_var} environment variable.");
+    DECLARE_MESSAGE(DocumentedFieldsSuggestUpdate,
+                    (),
+                    "",
+                    "If these are documented fields that should be recognized try updating the vcpkg tool.");
+    DECLARE_MESSAGE(DownloadAvailable,
+                    (msg::env_var),
+                    "",
+                    "A downloadable copy of this tool is available and can be used by unsetting {env_var}.");
     DECLARE_MESSAGE(DownloadedSources, (msg::spec), "", "Downloaded sources for {spec}");
     DECLARE_MESSAGE(DownloadingVcpkgCeBundle, (msg::version), "", "Downloading vcpkg-ce bundle {version}...");
     DECLARE_MESSAGE(DownloadingVcpkgCeBundleLatest,
@@ -848,6 +855,7 @@ namespace vcpkg
     DECLARE_MESSAGE(ErrorWhileWriting, (msg::path), "", "Error occured while writing {path}");
     DECLARE_MESSAGE(ExceededRecursionDepth, (), "", "Recursion depth exceeded.");
     DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
+    DECLARE_MESSAGE(ExcludedPackages, (), "", "The following packages are excluded:");
     DECLARE_MESSAGE(
         ExpectedCharacterHere,
         (msg::expected),
@@ -860,6 +868,7 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is a command option.",
                     "expected value after '{value}'.");
+    DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
     DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
     DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":");
     DECLARE_MESSAGE(FailedToFormatMissingFile,
@@ -873,6 +882,15 @@ namespace vcpkg
                     "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at "
                     "https://github.com/microsoft/vcpkg, "
                     "with the following output:\n{error_msg}\nSerialized Binary Paragraph:");
+    DECLARE_MESSAGE(FailedToFindPortFeature, (msg::feature, msg::spec), "", "Could not find {feature} in {spec}.");
+    DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}");
+    DECLARE_MESSAGE(FailedToLoadInstalledManifest,
+                    (msg::spec),
+                    "",
+                    "The control or mnaifest file for {spec} could not be loaded due to the following error. Please "
+                    "remove {spec} and re-attempt.");
+    DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
+    DECLARE_MESSAGE(FailedToObtainPackageVersion, (), "", "Cannot find desired package version.");
     DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
                     (),
                     "",
@@ -985,6 +1003,8 @@ namespace vcpkg
                     (msg::env_var),
                     "In this context 'editor' means IDE",
                     "You can also set the environment variable '{env_var}' to your editor of choice.");
+    DECLARE_MESSAGE(InstalledPackages, (), "", "The following packages are already installed:");
+    DECLARE_MESSAGE(InstalledRequestedPackages, (), "", "All requested packages are currently installed.");
     DECLARE_MESSAGE(InstallingFromLocation,
                     (msg::path),
                     "'--' at the beginning must be preserved",
@@ -1196,6 +1216,10 @@ namespace vcpkg
                     "",
                     "format-manifest was passed --convert-control without '--all'.\nThis doesn't do anything: control "
                     "files passed explicitly are converted automatically.");
+    DECLARE_MESSAGE(MissingDependency,
+                    (msg::spec, msg::package_name),
+                    "",
+                    "Package {spec} is installed, but dependency {package_name} is not.");
     DECLARE_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
     DECLARE_MESSAGE(MissingPortSuggestPullRequest,
                     (),
@@ -1243,12 +1267,23 @@ namespace vcpkg
                     "",
                     "NuGet package creation succeeded, but no .nupkg was produced. Expected: \"{path}\"");
     DECLARE_MESSAGE(OptionMustBeInteger, (msg::option), "", "Value of --{option} must be an integer.");
+    DECLARE_MESSAGE(OptionRequired, (msg::option), "", "--{option} option is required.");
     DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph");
     DECLARE_MESSAGE(PackageFailedtWhileExtracting,
                     (msg::value, msg::path),
                     "'{value}' is either a tool name or a package name.",
                     "'{value}' failed while extracting {path}.");
     DECLARE_MESSAGE(PackageRootDir, (), "", "(Experimental) Specify the packages root directory.");
+    DECLARE_MESSAGE(PackagesToInstall, (), "", "The following packages will be built and installed:");
+    DECLARE_MESSAGE(PackagesToInstallDirectly, (), "", "The following packages will be directly installed:");
+    DECLARE_MESSAGE(PackagesToModify, (), "", "Additional packages (*) will be modified to complete this operation.");
+    DECLARE_MESSAGE(PackagesToRebuild, (), "", "The following packages will be rebuilt:");
+    DECLARE_MESSAGE(
+        PackagesToRebuildSuggestRecurse,
+        (),
+        "",
+        "If you are sure you want to rebuild the above packages, run the command with the --recurse option.");
+    DECLARE_MESSAGE(PackagesToRemove, (), "", "The following packages will be removed:");
     DECLARE_MESSAGE(PackingVendorFailed,
                     (msg::vendor),
                     "",
@@ -1273,10 +1308,12 @@ namespace vcpkg
                     (msg::package_name),
                     "",
                     "the baseline does not contain an entry for port {package_name}");
-    DECLARE_MESSAGE(PortSupportsField,
-                    (msg::value),
-                    "'{value}' is the value of the 'supports' field in the port's vcpkg.json.",
-                    "(supports: \"{value}\")");
+    DECLARE_MESSAGE(PortSupportsField, (msg::supports_expression), "", "(supports: \"{supports_expression}\")");
+    DECLARE_MESSAGE(PortTypeConflict,
+                    (msg::spec),
+                    "",
+                    "The port type of {spec} differs between the installed and available portfile.\nPlease manually "
+                    "remove {spec} and re-run this command.");
     DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.");
     DECLARE_MESSAGE(ProcessorArchitectureMalformed,
                     (msg::arch),
@@ -1415,11 +1452,16 @@ namespace vcpkg
         (msg::value, msg::list),
         "{value} is the value provided by the user and {list} a list of unknown variables seperated by comma",
         "invalid argument: url template '{value}' contains unknown variables: {list}");
+    DECLARE_MESSAGE(UnrecognizedConfigField, (), "", "configuration contains the following unrecognized fields:");
     DECLARE_MESSAGE(UnsupportedPort, (msg::package_name), "", "Port {package_name} is not supported.");
     DECLARE_MESSAGE(UnsupportedPortDependency,
                     (msg::value),
                     "'{value}' is the name of a port dependency.",
                     "- dependency {value} is not supported.");
+    DECLARE_MESSAGE(UnsupportedPortFeature,
+                    (msg::spec, msg::supports_expression),
+                    "",
+                    "{spec} is only supported on '{supports_expression}'");
     DECLARE_MESSAGE(UnsupportedShortOptions,
                     (msg::value),
                     "'{value}' is the short option given",
@@ -1549,4 +1591,5 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
+    DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
 }
