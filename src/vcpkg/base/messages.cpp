@@ -196,12 +196,12 @@ namespace vcpkg::msg
             {
                 for (size_t j = i + 1; j < m.names.size(); ++j)
                 {
-                    if (m.names[i] == m.names[j])
+                    if (msg::detail::get_message_name(i) == msg::detail::get_message_name(j))
                     {
                         write_unlocalized_text_to_stdout(
                             Color::error,
                             fmt::format("INTERNAL ERROR: localization message '{}' has been declared multiple times\n",
-                                        m.names[i]));
+                                        msg::detail::get_message_name(i)));
                         write_unlocalized_text_to_stdout(Color::error, fmt::format("INTERNAL ERROR: first message:\n"));
                         write_unlocalized_text_to_stdout(Color::none, m.default_strings[i]);
                         write_unlocalized_text_to_stdout(Color::error,
@@ -222,8 +222,8 @@ namespace vcpkg::msg
 
         for (::size_t index = 0; index < m.names.size(); ++index)
         {
-            const auto& name = m.names[index];
-            if (auto p = message_map.get(m.names[index]))
+            const StringView name = msg::detail::get_message_name(index);
+            if (auto p = message_map.get(msg::detail::get_message_name(index)))
             {
                 m.localized_strings[index] = p->string(VCPKG_LINE_INFO).to_string();
             }
@@ -299,7 +299,7 @@ namespace vcpkg::msg
         const auto res = m.names.size();
         m.names.push_back(name);
         m.default_strings.push_back(format_string);
-        m.localization_comments.push_back(std::move(comment));
+        m.localization_comments.emplace_back(std::move(comment));
         return res;
     }
 
@@ -339,14 +339,14 @@ namespace vcpkg::msg
 
     LocalizedString detail::internal_vformat(::size_t index, fmt::format_args args)
     {
-        auto fmt_string = get_format_string(index);
+        const auto fmt_string = get_format_string(index);
         try
         {
             return LocalizedString::from_raw(fmt::vformat({fmt_string.data(), fmt_string.size()}, args));
         }
         catch (...)
         {
-            auto default_format_string = get_default_format_string(index);
+            const auto default_format_string = get_default_format_string(index);
             try
             {
                 return LocalizedString::from_raw(
@@ -406,6 +406,7 @@ namespace vcpkg
     MessageSink& stderr_sink = stderr_sink_instance;
 
     REGISTER_MESSAGE(AddArtifactOnlyOne);
+    REGISTER_MESSAGE(AddCommandFirstArg);
     REGISTER_MESSAGE(AddFirstArgument);
     REGISTER_MESSAGE(AddingCompletionEntry);
     REGISTER_MESSAGE(AddPortRequiresManifest);
@@ -443,6 +444,7 @@ namespace vcpkg
     REGISTER_MESSAGE(AlreadyInstalledNotHead);
     REGISTER_MESSAGE(AnotherInstallationInProgress);
     REGISTER_MESSAGE(AppliedUserIntegration);
+    REGISTER_MESSAGE(ArtifactsOptionIncompatibility);
     REGISTER_MESSAGE(AssetSourcesArg);
     REGISTER_MESSAGE(AttemptingToFetchPackagesFromVendor);
     REGISTER_MESSAGE(AuthenticationMayRequireManualAction);
@@ -487,6 +489,7 @@ namespace vcpkg
     REGISTER_MESSAGE(CompressFolderFailed);
     REGISTER_MESSAGE(ConstraintViolation);
     REGISTER_MESSAGE(ConflictingValuesForOption);
+    REGISTER_MESSAGE(ControlAndManifestFilesPresent);
     REGISTER_MESSAGE(CopyrightIsDir);
     REGISTER_MESSAGE(CorruptedDatabase);
     REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion);
@@ -521,6 +524,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ErrorParsingBinaryParagraph);
     REGISTER_MESSAGE(ErrorRequireBaseline);
     REGISTER_MESSAGE(ErrorRequirePackagesList);
+    REGISTER_MESSAGE(ErrorsFound);
     REGISTER_MESSAGE(ErrorUnableToDetectCompilerInfo);
     REGISTER_MESSAGE(ErrorVcvarsUnsupported);
     REGISTER_MESSAGE(ErrorVsCodeNotFound);
@@ -540,16 +544,25 @@ namespace vcpkg
     REGISTER_MESSAGE(ExtendedDocumentationAtUrl);
     REGISTER_MESSAGE(FailedToExtract);
     REGISTER_MESSAGE(FailedToFindPortFeature);
+    REGISTER_MESSAGE(FailedToFormatMissingFile);
     REGISTER_MESSAGE(FailedToLoadControl);
     REGISTER_MESSAGE(FailedToLocateSpec);
     REGISTER_MESSAGE(FailedToObtainDependencyVersion);
+    REGISTER_MESSAGE(FailedToObtainLocalPortGitSha);
     REGISTER_MESSAGE(FailedToObtainPackageVersion);
     REGISTER_MESSAGE(FailedToParseBinParagraph);
     REGISTER_MESSAGE(FailedToParseCMakeConsoleOut);
+    REGISTER_MESSAGE(FailedToParseControl);
+    REGISTER_MESSAGE(FailedToParseJson);
+    REGISTER_MESSAGE(FailedToParseManifest);
     REGISTER_MESSAGE(FailedToProvisionCe);
+    REGISTER_MESSAGE(FailedToRead);
+    REGISTER_MESSAGE(FailedToReadParagraph);
+    REGISTER_MESSAGE(FailedToRemoveControl);
     REGISTER_MESSAGE(FailedToRunToolToDetermineVersion);
     REGISTER_MESSAGE(FailedToStoreBackToMirror);
     REGISTER_MESSAGE(FailedToStoreBinaryCache);
+    REGISTER_MESSAGE(FailedToWriteManifest);
     REGISTER_MESSAGE(FailedVendorAuthentication);
     REGISTER_MESSAGE(FeedbackAppreciated);
     REGISTER_MESSAGE(FishCompletion);
@@ -622,8 +635,6 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidFilename);
     REGISTER_MESSAGE(InvalidFormatString);
     REGISTER_MESSAGE(InvalidLinkage);
-    REGISTER_MESSAGE(JsonErrorFailedToParse);
-    REGISTER_MESSAGE(JsonErrorFailedToRead);
     REGISTER_MESSAGE(JsonErrorMustBeAnObject);
     REGISTER_MESSAGE(JsonSwitch);
     REGISTER_MESSAGE(LaunchingProgramFailed);
@@ -650,11 +661,14 @@ namespace vcpkg
     REGISTER_MESSAGE(LoadingOverlayTriplet);
     REGISTER_MESSAGE(LocalizedMessageMustNotContainIndents);
     REGISTER_MESSAGE(LocalizedMessageMustNotEndWithNewline);
+    REGISTER_MESSAGE(ManifestFormatCompleted);
     REGISTER_MESSAGE(MismatchedBinaryParagraphs);
     REGISTER_MESSAGE(Missing7zHeader);
+    REGISTER_MESSAGE(MissingArgFormatManifest);
     REGISTER_MESSAGE(MissingDependency);
     REGISTER_MESSAGE(MissingExtension);
     REGISTER_MESSAGE(MissmatchedBinParagraphs);
+    REGISTER_MESSAGE(MissingPortSuggestPullRequest);
     REGISTER_MESSAGE(MonoInstructions);
     REGISTER_MESSAGE(MsiexecFailedToExtract);
     REGISTER_MESSAGE(MultiArch);
@@ -710,6 +724,8 @@ namespace vcpkg
     REGISTER_MESSAGE(SpecifyHostArch);
     REGISTER_MESSAGE(SpecifyTargetArch);
     REGISTER_MESSAGE(StoredBinaryCache);
+    REGISTER_MESSAGE(SuggestGitPull);
+    REGISTER_MESSAGE(SuggestResolution);
     REGISTER_MESSAGE(SuggestStartingBashShell);
     REGISTER_MESSAGE(SuggestUpdateVcpkg);
     REGISTER_MESSAGE(SupportedPort);

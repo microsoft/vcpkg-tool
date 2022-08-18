@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include <string.h>
 
+#include <array>
 #include <iterator>
 #include <limits>
 #include <string>
@@ -86,3 +87,67 @@ namespace vcpkg
 
 VCPKG_FORMAT_AS(vcpkg::ZStringView, vcpkg::StringView);
 VCPKG_FORMAT_AS(vcpkg::StringLiteral, vcpkg::StringView);
+
+namespace vcpkg
+{
+    template<class InIt, class OutIt>
+    constexpr OutIt constexpr_copy(InIt first, InIt last, OutIt dest)
+    {
+        while (first != last)
+        {
+            *dest = *first;
+            ++dest;
+            ++first;
+        }
+
+        return dest;
+    }
+
+    template<::size_t N>
+    struct StringArray
+    {
+        static_assert(N != 0, "Space for the null terminator is necessary.");
+
+        constexpr StringArray() noexcept : m_array{} { }
+        constexpr StringArray(const char (&str)[N]) noexcept : m_array{} { constexpr_copy(str, str + N, begin()); }
+
+        constexpr auto begin() noexcept { return m_array.begin(); }
+        constexpr auto end() noexcept { return m_array.end() - 1; }
+
+        constexpr auto begin() const noexcept { return m_array.begin(); }
+        constexpr auto end() const noexcept { return m_array.end() - 1; }
+
+        constexpr const char* data() const noexcept { return m_array.data(); }
+        constexpr ::size_t size() const noexcept { return m_array.size() - 1; }
+        constexpr bool empty() const noexcept { return size() == 0; }
+
+        template<::size_t U>
+        constexpr bool operator==(const StringArray<U>& other) const noexcept
+        {
+            return m_array == other.m_array;
+        }
+        template<::size_t U>
+        constexpr bool operator!=(const StringArray<U>& other) const noexcept
+        {
+            return m_array != other.m_array;
+        }
+
+        constexpr char operator[](::size_t pos) const noexcept { return m_array[pos]; }
+        constexpr char& operator[](::size_t pos) noexcept { return m_array[pos]; }
+
+        template<::size_t L, ::size_t R>
+        friend constexpr StringArray<L + R - 1> operator+(const StringArray<L> lhs, const StringArray<R> rhs) noexcept;
+
+    private:
+        std::array<char, N> m_array;
+    };
+
+    template<::size_t L, ::size_t R>
+    constexpr StringArray<L + R - 1> operator+(const StringArray<L> lhs, const StringArray<R> rhs) noexcept
+    {
+        StringArray<L + R - 1> out;
+        auto it = constexpr_copy(lhs.begin(), lhs.end(), out.begin());
+        constexpr_copy(rhs.begin(), rhs.end(), it);
+        return out;
+    }
+}

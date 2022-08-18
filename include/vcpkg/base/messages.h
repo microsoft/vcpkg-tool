@@ -148,16 +148,66 @@ namespace vcpkg::msg
 
         std::string format_examples_for_args(StringView extra_comment, const FormatArgAbi* args, std::size_t arg_count);
 
-        inline std::string get_examples_for_args(StringView extra_comment, const MessageCheckFormatArgs<>&)
+        template<::size_t M, ::size_t N>
+        inline std::string get_examples_for_args(const StringArray<M>& comment, const StringArray<N>& example)
         {
-            return extra_comment.to_string();
+            if (comment.empty() && example.empty())
+            {
+                return std::string{};
+            }
+            if (comment.empty())
+            {
+                return std::string(example.data(), example.size());
+            }
+
+            if (example.empty())
+            {
+                return std::string(comment.data(), comment.size());
+            }
+
+            if (example[0] == ' ')
+            {
+                const auto out = comment + example;
+                return std::string(out.data(), out.size());
+            }
+
+            const auto out = comment + StringArray(" ") + example;
+            return std::string(out.data(), out.size());
+        }
+
+        template<class Arg0>
+        constexpr auto example_piece(const Arg0& arg)
+        {
+            if constexpr (Arg0::real_example().empty())
+                return StringArray{""};
+            else
+                return StringArray{" "} + arg.real_example();
         }
 
         template<class Arg0, class... Args>
-        std::string get_examples_for_args(StringView extra_comment, const MessageCheckFormatArgs<Arg0, Args...>&)
+        constexpr auto example_piece(const Arg0& arg, Args... args)
         {
-            FormatArgAbi abi[] = {FormatArgAbi{Arg0::name, Arg0::example}, FormatArgAbi{Args::name, Args::example}...};
-            return format_examples_for_args(extra_comment, abi, 1 + sizeof...(Args));
+            if constexpr (Arg0::real_example().empty())
+                return example_piece(args...);
+            else
+                return StringArray{" "} + arg.real_example() + example_piece(args...);
+        }
+
+        inline constexpr auto get_examples() { return StringArray{""}; }
+
+        template<class Arg0, class... Args>
+        inline constexpr auto get_examples(const Arg0& arg, Args... args)
+        {
+            if constexpr (sizeof...(args) == 0)
+            {
+                const StringArray out = arg.real_example();
+                return out;
+            }
+            else
+            {
+                const StringArray out = arg.real_example() + example_piece(args...);
+                return out;
+            }
         }
 
         ::size_t startup_register_message(StringLiteral name, StringLiteral format_string, std::string&& comment);
@@ -232,7 +282,15 @@ namespace vcpkg::msg
     constexpr static struct NAME##_t                                                                                   \
     {                                                                                                                  \
         constexpr static const char* name = #NAME;                                                                     \
-        constexpr static const char* example = EXAMPLE;                                                                \
+        constexpr static ::vcpkg::StringArray example = EXAMPLE;                                                       \
+        constexpr static ::vcpkg::StringArray example_str = "An example of {" #NAME "} is " EXAMPLE ".";               \
+        constexpr static auto real_example()                                                                           \
+        {                                                                                                              \
+            if constexpr (example.empty())                                                                             \
+                return example;                                                                                        \
+            else                                                                                                       \
+                return example_str;                                                                                    \
+        }                                                                                                              \
         template<class T>                                                                                              \
         detail::MessageArgument<NAME##_t, T> operator=(const T& t) const noexcept                                      \
         {                                                                                                              \
@@ -290,16 +348,17 @@ namespace vcpkg::msg
     {                                                                                                                  \
         using is_message_type = void;                                                                                  \
         static constexpr ::vcpkg::StringLiteral name = #NAME;                                                          \
-        static constexpr ::vcpkg::StringLiteral extra_comment = COMMENT;                                               \
+        static constexpr ::vcpkg::StringArray extra_comment = COMMENT;                                                 \
         static constexpr ::vcpkg::StringLiteral default_format_string = __VA_ARGS__;                                   \
         static const ::size_t index;                                                                                   \
+        static constexpr ::vcpkg::StringArray example_str = vcpkg::msg::detail::get_examples ARGS;                     \
     } msg##NAME VCPKG_UNUSED = {}
 
 #define REGISTER_MESSAGE(NAME)                                                                                         \
     const ::size_t NAME##_msg_t::index = ::vcpkg::msg::detail::startup_register_message(                               \
         NAME##_msg_t::name,                                                                                            \
         NAME##_msg_t::default_format_string,                                                                           \
-        ::vcpkg::msg::detail::get_examples_for_args(NAME##_msg_t::extra_comment, NAME##_msg_t{}))
+        ::vcpkg::msg::detail::get_examples_for_args(NAME##_msg_t::extra_comment, NAME##_msg_t::example_str))
 
 #define DECLARE_AND_REGISTER_MESSAGE(NAME, ARGS, COMMENT, ...)                                                         \
     DECLARE_MESSAGE(NAME, ARGS, COMMENT, __VA_ARGS__);                                                                 \
@@ -409,6 +468,7 @@ namespace vcpkg
                     (msg::command_line),
                     "",
                     "'{command_line}' can only add one artifact at a time.");
+    DECLARE_MESSAGE(AddCommandFirstArg, (), "", "The first parameter to add must be 'artifact' or 'port'.");
     DECLARE_MESSAGE(AddFirstArgument,
                     (msg::command_line),
                     "",
@@ -502,6 +562,7 @@ namespace vcpkg
                     "",
                     "Another installation is in progress on the machine, sleeping 6s before retrying.");
     DECLARE_MESSAGE(AppliedUserIntegration, (), "", "Applied user-wide integration for this vcpkg root.");
+    DECLARE_MESSAGE(ArtifactsOptionIncompatibility, (msg::option), "", "--{option} has no effect on find artifact.");
     DECLARE_MESSAGE(AssetSourcesArg, (), "", "Add sources for asset caching. See 'vcpkg help assetcaching'.");
     DECLARE_MESSAGE(AttemptingToFetchPackagesFromVendor,
                     (msg::count, msg::vendor),
@@ -669,6 +730,10 @@ namespace vcpkg
                     "'{value}' is a command option.",
                     "conflicting values specified for '--{value}'.");
     DECLARE_MESSAGE(ConstraintViolation, (), "", "Found a constraint violation:");
+    DECLARE_MESSAGE(ControlAndManifestFilesPresent,
+                    (msg::path),
+                    "",
+                    "Both a manifest file and a CONTROL file exist in port directory: {path}");
     DECLARE_MESSAGE(CopyrightIsDir, (msg::path), "", "`{path}` being a directory is deprecated.");
     DECLARE_MESSAGE(CorruptedDatabase, (), "", "Database corrupted.");
     DECLARE_MESSAGE(CouldNotDeduceNugetIdAndVersion,
@@ -769,6 +834,7 @@ namespace vcpkg
                     (),
                     "",
                     "`vcpkg install` requires a list of packages to install in classic mode.");
+    DECLARE_MESSAGE(ErrorsFound, (), "", "Found the following errors:");
     DECLARE_MESSAGE(
         ErrorUnableToDetectCompilerInfo,
         (),
@@ -806,6 +872,11 @@ namespace vcpkg
     DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
     DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
     DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":");
+    DECLARE_MESSAGE(FailedToFormatMissingFile,
+                    (),
+                    "",
+                    "No files to format.\nPlease pass either --all, or the explicit files to format or convert.");
+    DECLARE_MESSAGE(FailedToObtainLocalPortGitSha, (), "", "Failed to obtain git SHAs for local ports.");
     DECLARE_MESSAGE(FailedToParseBinParagraph,
                     (msg::error_msg),
                     "'{error_msg}' is the error message for failing to parse the Binary Paragraph.",
@@ -825,7 +896,13 @@ namespace vcpkg
                     (),
                     "",
                     "Failed to parse CMake console output to locate block start/end markers.");
+    DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse control file: {path}");
+    DECLARE_MESSAGE(FailedToParseJson, (msg::path), "", "Failed to parse JSON file: {path}");
+    DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: {path}");
     DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
+    DECLARE_MESSAGE(FailedToRead, (msg::path, msg::error_msg), "", "Failed to read {path}: {error_msg}");
+    DECLARE_MESSAGE(FailedToReadParagraph, (msg::path), "", "Failed to read paragraphs from {path}");
+    DECLARE_MESSAGE(FailedToRemoveControl, (msg::path), "", "Failed to remove control file {path}");
     DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                     (msg::tool_name, msg::path),
                     "Additional information, such as the command line output, if any, will be appended on "
@@ -833,6 +910,7 @@ namespace vcpkg
                     "Failed to run \"{path}\" to determine the {tool_name} version.");
     DECLARE_MESSAGE(FailedToStoreBackToMirror, (), "", "failed to store back to mirror:");
     DECLARE_MESSAGE(FailedToStoreBinaryCache, (msg::path), "", "Failed to store binary cache {path}");
+    DECLARE_MESSAGE(FailedToWriteManifest, (msg::path), "", "Failed to write manifest file {path}");
     DECLARE_MESSAGE(FailedVendorAuthentication,
                     (msg::vendor, msg::url),
                     "",
@@ -1025,8 +1103,6 @@ namespace vcpkg
         (msg::system_name, msg::value),
         "'{value}' is the linkage type vcpkg would did not understand. (Correct values would be static ofr dynamic)",
         "Invalid {system_name} linkage type: [{value}]");
-    DECLARE_MESSAGE(JsonErrorFailedToParse, (msg::path), "", "failed to parse {path}:");
-    DECLARE_MESSAGE(JsonErrorFailedToRead, (msg::path, msg::error_msg), "", "failed to read {path}: {error_msg}");
     DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected \"{path}\" to be an object.");
     DECLARE_MESSAGE(JsonSwitch, (), "", "(Experimental) Request JSON output.");
     DECLARE_MESSAGE(LaunchingProgramFailed,
@@ -1129,17 +1205,27 @@ namespace vcpkg
                     "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
                     "The message named {value} ends with a newline which should be added by formatting "
                     "rather than by localization.");
+    DECLARE_MESSAGE(ManifestFormatCompleted, (), "", "Succeeded in formatting the manifest files.");
     DECLARE_MESSAGE(MismatchedBinaryParagraphs,
                     (msg::url),
                     "A comparison of the original binary paragraph and serialized binary paragraph is expected.",
                     "[sanity check] The serialized binary paragraph was different from the original binary "
                     "paragraph.\nPlease open an issue at {url}, with the following output:");
     DECLARE_MESSAGE(Missing7zHeader, (), "", "Unable to find 7z header.");
+    DECLARE_MESSAGE(MissingArgFormatManifest,
+                    (),
+                    "",
+                    "format-manifest was passed --convert-control without '--all'.\nThis doesn't do anything: control "
+                    "files passed explicitly are converted automatically.");
     DECLARE_MESSAGE(MissingDependency,
                     (msg::spec, msg::package_name),
                     "",
                     "Package {spec} is installed, but dependency {package_name} is not.");
     DECLARE_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
+    DECLARE_MESSAGE(MissingPortSuggestPullRequest,
+                    (),
+                    "",
+                    "If your port is not listed, please open an issue at and/or consider making a pull request.");
     DECLARE_MESSAGE(MissmatchedBinParagraphs,
                     (),
                     "",
@@ -1295,6 +1381,11 @@ namespace vcpkg
                     "",
                     "Specify the target architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')");
     DECLARE_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: \"{path}\"");
+    DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.");
+    DECLARE_MESSAGE(SuggestResolution,
+                    (msg::command_name, msg::option),
+                    "",
+                    "To attempt to resolve all errors at once, run:\nvcpkg {command_name} --{option}");
     DECLARE_MESSAGE(SuggestStartingBashShell,
                     (),
                     "",
