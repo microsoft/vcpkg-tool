@@ -1277,7 +1277,7 @@ namespace vcpkg
     DECLARE_MESSAGE(PackagesToInstall, (), "", "The following packages will be built and installed:");
     DECLARE_MESSAGE(PackagesToInstallDirectly, (), "", "The following packages will be directly installed:");
     DECLARE_MESSAGE(PackagesToModify, (), "", "Additional packages (*) will be modified to complete this operation.");
-    DECLARE_MESSAGE(PackagesToReBuild, (), "", "The following packages will be rebuilt:");
+    DECLARE_MESSAGE(PackagesToRebuild, (), "", "The following packages will be rebuilt:");
     DECLARE_MESSAGE(
         PackagesToRebuildSuggestRecurse,
         (),
@@ -1312,7 +1312,7 @@ namespace vcpkg
     DECLARE_MESSAGE(PortTypeConflict,
                     (msg::spec),
                     "",
-                    "The port type of {spec} differes between the installed and available portfile.\nPlease manually "
+                    "The port type of {spec} differs between the installed and available portfile.\nPlease manually "
                     "remove {spec} and re-run this command.");
     DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.");
     DECLARE_MESSAGE(ProcessorArchitectureMalformed,

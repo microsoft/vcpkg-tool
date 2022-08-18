@@ -229,11 +229,10 @@ namespace vcpkg
                     return *scfl;
                 }
 
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                              msg::format(msg::msgErrorMessage)
-                                                  .append(msgFailedToLoadInstalledManifest, msg::spec = m_spec)
-                                                  .append_raw('\n')
-                                                  .append_raw(m_scfl.error()));
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                            msg::format(msgFailedToLoadInstalledManifest, msg::spec = m_spec)
+                                                .append_raw('\n')
+                                                .append_raw(m_scfl.error()));
             }
 
             Optional<const PlatformExpression::Expr&> get_applicable_supports_expression(const FeatureSpec& spec)
@@ -1087,7 +1086,7 @@ namespace vcpkg
                 auto p_installed = graph->get(dep).m_installed.get();
                 if (p_installed == nullptr)
                 {
-                    Checks::msg_exit_maybe_upgrade(
+                    Checks::msg_exit_with_error(
                         VCPKG_LINE_INFO,
                         msg::format(msgCorruptedDatabase)
                             .append_raw("\n")
@@ -1202,7 +1201,7 @@ namespace vcpkg
         if (!rebuilt_plans.empty())
         {
             msg::println(
-                msg::format(msgPackagesToReBuild).append_raw("\n").append_raw(actions_to_output_string(rebuilt_plans)));
+                msg::format(msgPackagesToRebuild).append_raw("\n").append_raw(actions_to_output_string(rebuilt_plans)));
         }
 
         if (!new_plans.empty())

@@ -691,7 +691,7 @@ namespace vcpkg
     REGISTER_MESSAGE(PackagesToInstall);
     REGISTER_MESSAGE(PackagesToInstallDirectly);
     REGISTER_MESSAGE(PackagesToModify);
-    REGISTER_MESSAGE(PackagesToReBuild);
+    REGISTER_MESSAGE(PackagesToRebuild);
     REGISTER_MESSAGE(PackagesToRebuildSuggestRecurse);
     REGISTER_MESSAGE(PackagesToRemove);
     REGISTER_MESSAGE(PackingVendorFailed);
