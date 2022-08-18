@@ -1110,16 +1110,17 @@ namespace vcpkg::PostBuildLint
             }
         }
 
-        if (!result.empty())
+        if (result.empty())
         {
-            msg::print(Color::warning,
-                       msg::format(msgFilesContainAbsolutePath,
-                                   msg::absolute_paths = Strings::join("', '", absolute_paths),
-                                   msg::paths = result)
-                           .append_raw("\n\n"));
-            return LintStatus::PROBLEM_DETECTED;
+            return LintStatus::SUCCESS;
         }
-        return LintStatus::SUCCESS;
+
+        msg::print(Color::warning,
+                   msg::format(msgFilesContainAbsolutePath,
+                               msg::absolute_paths = Strings::join("', '", absolute_paths),
+                               msg::paths = result)
+                       .append_raw("\n\n"));
+        return LintStatus::PROBLEM_DETECTED;
     }
 
     static void operator+=(size_t& left, const LintStatus& right) { left += static_cast<size_t>(right); }
