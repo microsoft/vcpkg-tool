@@ -531,7 +531,6 @@ namespace vcpkg
     REGISTER_MESSAGE(ErrorVsCodeNotFoundPathExamined);
     REGISTER_MESSAGE(ErrorWhileParsing);
     REGISTER_MESSAGE(ErrorWhileWriting);
-    REGISTER_MESSAGE(ErrorWhileSearching);
     REGISTER_MESSAGE(ExceededRecursionDepth);
     REGISTER_MESSAGE(ExcludedPackage);
     REGISTER_MESSAGE(ExcludedPackages);
@@ -789,4 +788,5 @@ namespace vcpkg
     REGISTER_MESSAGE(WaitingToTakeFilesystemLock);
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
+    REGISTER_MESSAGE(WhileLookingForSpec);
 }
