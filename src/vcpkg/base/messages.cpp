@@ -406,6 +406,7 @@ namespace vcpkg
     MessageSink& stderr_sink = stderr_sink_instance;
 
     REGISTER_MESSAGE(AddArtifactOnlyOne);
+    REGISTER_MESSAGE(AddCommandFirstArg);
     REGISTER_MESSAGE(AddFirstArgument);
     REGISTER_MESSAGE(AddingCompletionEntry);
     REGISTER_MESSAGE(AddPortRequiresManifest);
@@ -443,6 +444,7 @@ namespace vcpkg
     REGISTER_MESSAGE(AlreadyInstalledNotHead);
     REGISTER_MESSAGE(AnotherInstallationInProgress);
     REGISTER_MESSAGE(AppliedUserIntegration);
+    REGISTER_MESSAGE(ArtifactsOptionIncompatibility);
     REGISTER_MESSAGE(AssetSourcesArg);
     REGISTER_MESSAGE(AttemptingToFetchPackagesFromVendor);
     REGISTER_MESSAGE(AuthenticationMayRequireManualAction);
@@ -486,6 +488,7 @@ namespace vcpkg
     REGISTER_MESSAGE(CommandFailed);
     REGISTER_MESSAGE(CompressFolderFailed);
     REGISTER_MESSAGE(ConflictingValuesForOption);
+    REGISTER_MESSAGE(ControlAndManifestFilesPresent);
     REGISTER_MESSAGE(CopyrightIsDir);
     REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion);
     REGISTER_MESSAGE(CreatedNuGetPackage);
@@ -518,6 +521,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ErrorParsingBinaryParagraph);
     REGISTER_MESSAGE(ErrorRequireBaseline);
     REGISTER_MESSAGE(ErrorRequirePackagesList);
+    REGISTER_MESSAGE(ErrorsFound);
     REGISTER_MESSAGE(ErrorUnableToDetectCompilerInfo);
     REGISTER_MESSAGE(ErrorVcvarsUnsupported);
     REGISTER_MESSAGE(ErrorVsCodeNotFound);
@@ -533,12 +537,21 @@ namespace vcpkg
     REGISTER_MESSAGE(ExpectedValueForOption);
     REGISTER_MESSAGE(ExtendedDocumentationAtUrl);
     REGISTER_MESSAGE(FailedToExtract);
+    REGISTER_MESSAGE(FailedToFormatMissingFile);
+    REGISTER_MESSAGE(FailedToObtainLocalPortGitSha);
     REGISTER_MESSAGE(FailedToParseBinParagraph);
     REGISTER_MESSAGE(FailedToParseCMakeConsoleOut);
+    REGISTER_MESSAGE(FailedToParseControl);
+    REGISTER_MESSAGE(FailedToParseJson);
+    REGISTER_MESSAGE(FailedToParseManifest);
     REGISTER_MESSAGE(FailedToProvisionCe);
+    REGISTER_MESSAGE(FailedToRead);
+    REGISTER_MESSAGE(FailedToReadParagraph);
+    REGISTER_MESSAGE(FailedToRemoveControl);
     REGISTER_MESSAGE(FailedToRunToolToDetermineVersion);
     REGISTER_MESSAGE(FailedToStoreBackToMirror);
     REGISTER_MESSAGE(FailedToStoreBinaryCache);
+    REGISTER_MESSAGE(FailedToWriteManifest);
     REGISTER_MESSAGE(FailedVendorAuthentication);
     REGISTER_MESSAGE(FeedbackAppreciated);
     REGISTER_MESSAGE(FishCompletion);
@@ -609,8 +622,6 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidFilename);
     REGISTER_MESSAGE(InvalidFormatString);
     REGISTER_MESSAGE(InvalidLinkage);
-    REGISTER_MESSAGE(JsonErrorFailedToParse);
-    REGISTER_MESSAGE(JsonErrorFailedToRead);
     REGISTER_MESSAGE(JsonErrorMustBeAnObject);
     REGISTER_MESSAGE(JsonSwitch);
     REGISTER_MESSAGE(LaunchingProgramFailed);
@@ -637,10 +648,13 @@ namespace vcpkg
     REGISTER_MESSAGE(LoadingOverlayTriplet);
     REGISTER_MESSAGE(LocalizedMessageMustNotContainIndents);
     REGISTER_MESSAGE(LocalizedMessageMustNotEndWithNewline);
+    REGISTER_MESSAGE(ManifestFormatCompleted);
     REGISTER_MESSAGE(MismatchedBinaryParagraphs);
     REGISTER_MESSAGE(Missing7zHeader);
+    REGISTER_MESSAGE(MissingArgFormatManifest);
     REGISTER_MESSAGE(MissingExtension);
     REGISTER_MESSAGE(MissmatchedBinParagraphs);
+    REGISTER_MESSAGE(MissingPortSuggestPullRequest);
     REGISTER_MESSAGE(MonoInstructions);
     REGISTER_MESSAGE(MsiexecFailedToExtract);
     REGISTER_MESSAGE(MultiArch);
@@ -688,6 +702,8 @@ namespace vcpkg
     REGISTER_MESSAGE(SpecifyHostArch);
     REGISTER_MESSAGE(SpecifyTargetArch);
     REGISTER_MESSAGE(StoredBinaryCache);
+    REGISTER_MESSAGE(SuggestGitPull);
+    REGISTER_MESSAGE(SuggestResolution);
     REGISTER_MESSAGE(SuggestStartingBashShell);
     REGISTER_MESSAGE(SuggestUpdateVcpkg);
     REGISTER_MESSAGE(SupportedPort);
