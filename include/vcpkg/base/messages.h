@@ -170,7 +170,7 @@ namespace vcpkg::msg
 
         /// This function is only used for the first argument that has an example string
         /// to avoid inserting a space in the beginning. All preceding arguments are handled
-        // by `example_piece`.
+        /// by `example_piece`.
         template<class Arg0, class... Args>
         constexpr auto get_examples(const Arg0& arg, Args... args)
         {
