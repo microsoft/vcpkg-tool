@@ -178,35 +178,43 @@ namespace vcpkg::msg
         template<class Arg0>
         constexpr auto example_piece(const Arg0& arg)
         {
-            if constexpr (Arg0::real_example().empty())
+            if constexpr (Arg0::get_example_str().empty())
                 return StringArray{""};
             else
-                return StringArray{" "} + arg.real_example();
+                return StringArray{" "} + arg.get_example_str();
         }
 
         template<class Arg0, class... Args>
         constexpr auto example_piece(const Arg0& arg, Args... args)
         {
-            if constexpr (Arg0::real_example().empty())
+            if constexpr (Arg0::get_example_str().empty())
                 return example_piece(args...);
             else
-                return StringArray{" "} + arg.real_example() + example_piece(args...);
+                return StringArray{" "} + arg.get_example_str() + example_piece(args...);
         }
 
-        inline constexpr auto get_examples() { return StringArray{""}; }
+        constexpr auto get_examples() { return StringArray{""}; }
 
+        /// This function is only used for the first argument that has an example string
+        /// to avoid inserting a space in the beginning. All preceding arguments are handled
+        // by `example_piece`.
         template<class Arg0, class... Args>
-        inline constexpr auto get_examples(const Arg0& arg, Args... args)
+        constexpr auto get_examples(const Arg0& arg, Args... args)
         {
-            if constexpr (sizeof...(args) == 0)
+            // if first argument has no example string...
+            if constexpr (Arg0::get_example_str().empty())
             {
-                const StringArray out = arg.real_example();
-                return out;
+                // try again with the other arguments
+                return get_examples(args...);
+            }
+            // is there a next argument?
+            else if constexpr (sizeof...(args) == 0)
+            {
+                return arg.get_example_str();
             }
             else
             {
-                const StringArray out = arg.real_example() + example_piece(args...);
-                return out;
+                return arg.get_example_str() + example_piece(args...);
             }
         }
 
@@ -283,13 +291,12 @@ namespace vcpkg::msg
     {                                                                                                                  \
         constexpr static const char* name = #NAME;                                                                     \
         constexpr static ::vcpkg::StringArray example = EXAMPLE;                                                       \
-        constexpr static ::vcpkg::StringArray example_str = "An example of {" #NAME "} is " EXAMPLE ".";               \
-        constexpr static auto real_example()                                                                           \
+        constexpr static auto get_example_str()                                                                           \
         {                                                                                                              \
             if constexpr (example.empty())                                                                             \
                 return example;                                                                                        \
             else                                                                                                       \
-                return example_str;                                                                                    \
+                return ::vcpkg::StringArray{"An example of {" #NAME "} is " EXAMPLE "."};                              \
         }                                                                                                              \
         template<class T>                                                                                              \
         detail::MessageArgument<NAME##_t, T> operator=(const T& t) const noexcept                                      \
