@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/json.h>
@@ -147,33 +147,6 @@ namespace vcpkg::msg
         };
 
         std::string format_examples_for_args(StringView extra_comment, const FormatArgAbi* args, std::size_t arg_count);
-
-        template<::size_t M, ::size_t N>
-        inline std::string get_examples_for_args(const StringArray<M>& comment, const StringArray<N>& example)
-        {
-            if (comment.empty() && example.empty())
-            {
-                return std::string{};
-            }
-            if (comment.empty())
-            {
-                return std::string(example.data(), example.size());
-            }
-
-            if (example.empty())
-            {
-                return std::string(comment.data(), comment.size());
-            }
-
-            if (example[0] == ' ')
-            {
-                const auto out = comment + example;
-                return std::string(out.data(), out.size());
-            }
-
-            const auto out = comment + StringArray(" ") + example;
-            return std::string(out.data(), out.size());
-        }
 
         template<class Arg0>
         constexpr auto example_piece(const Arg0& arg)
