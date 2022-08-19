@@ -168,9 +168,8 @@ namespace vcpkg::msg
 
         constexpr auto get_examples() { return StringArray{""}; }
 
-        /// This function is only used for the first argument that has an example string
-        /// to avoid inserting a space in the beginning. All preceding arguments are handled
-        /// by `example_piece`.
+        /// Only used for the first argument that has an example string to avoid inserting
+        /// a space in the beginning. All preceding arguments are handled by `example_piece`.
         template<class Arg0, class... Args>
         constexpr auto get_examples(const Arg0& arg, Args... args)
         {
@@ -194,7 +193,7 @@ namespace vcpkg::msg
         template<::size_t M, ::size_t N>
         constexpr auto join_comment_and_examples(const StringArray<M>& comment, const StringArray<N>& example)
         {
-            // For an empty StringArray<N>, N == 1
+            // For an empty StringArray<N> is N == 1
             if constexpr (N == 1)
                 return comment;
             else if constexpr (M == 1)
