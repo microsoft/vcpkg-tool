@@ -218,6 +218,18 @@ namespace vcpkg::msg
             }
         }
 
+        template<::size_t M, ::size_t N>
+        constexpr auto join_comment_and_examples(const StringArray<M>& comment, const StringArray<N>& example)
+        {
+            // For an empty StringArray<N>, N == 1
+            if constexpr (N == 1)
+                return comment;
+            else if constexpr (M == 1)
+                return example;
+            else
+                return comment + StringArray{" "} + example;
+        }
+
         ::size_t startup_register_message(StringLiteral name, StringLiteral format_string, std::string&& comment);
 
         ::size_t number_of_messages();
@@ -291,7 +303,7 @@ namespace vcpkg::msg
     {                                                                                                                  \
         constexpr static const char* name = #NAME;                                                                     \
         constexpr static ::vcpkg::StringArray example = EXAMPLE;                                                       \
-        constexpr static auto get_example_str()                                                                           \
+        constexpr static auto get_example_str()                                                                        \
         {                                                                                                              \
             if constexpr (example.empty())                                                                             \
                 return example;                                                                                        \
@@ -353,17 +365,17 @@ namespace vcpkg::msg
     {                                                                                                                  \
         using is_message_type = void;                                                                                  \
         static constexpr ::vcpkg::StringLiteral name = #NAME;                                                          \
-        static constexpr ::vcpkg::StringArray extra_comment = COMMENT;                                                 \
         static constexpr ::vcpkg::StringLiteral default_format_string = __VA_ARGS__;                                   \
         static const ::size_t index;                                                                                   \
-        static constexpr ::vcpkg::StringArray example_str = vcpkg::msg::detail::get_examples ARGS;                     \
+        static constexpr ::vcpkg::StringArray comment_and_example = vcpkg::msg::detail::join_comment_and_examples(     \
+            ::vcpkg::StringArray{COMMENT}, vcpkg::msg::detail::get_examples ARGS);                                     \
     } msg##NAME VCPKG_UNUSED = {}
 
 #define REGISTER_MESSAGE(NAME)                                                                                         \
-    const ::size_t NAME##_msg_t::index = ::vcpkg::msg::detail::startup_register_message(                               \
-        NAME##_msg_t::name,                                                                                            \
-        NAME##_msg_t::default_format_string,                                                                           \
-        ::vcpkg::msg::detail::get_examples_for_args(NAME##_msg_t::extra_comment, NAME##_msg_t::example_str))
+    const ::size_t NAME##_msg_t::index =                                                                               \
+        ::vcpkg::msg::detail::startup_register_message(NAME##_msg_t::name,                                             \
+                                                       NAME##_msg_t::default_format_string,                            \
+                                                       ::vcpkg::to_string(NAME##_msg_t::comment_and_example))
 
 #define DECLARE_AND_REGISTER_MESSAGE(NAME, ARGS, COMMENT, ...)                                                         \
     DECLARE_MESSAGE(NAME, ARGS, COMMENT, __VA_ARGS__);                                                                 \
