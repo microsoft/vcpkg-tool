@@ -202,10 +202,9 @@ namespace vcpkg::msg
                             Color::error,
                             fmt::format("INTERNAL ERROR: localization message '{}' has been declared multiple times\n",
                                         msg::detail::get_message_name(i)));
-                        write_unlocalized_text_to_stdout(Color::error, fmt::format("INTERNAL ERROR: first message:\n"));
+                        write_unlocalized_text_to_stdout(Color::error, "INTERNAL ERROR: first message:\n");
                         write_unlocalized_text_to_stdout(Color::none, m.default_strings[i]);
-                        write_unlocalized_text_to_stdout(Color::error,
-                                                         fmt::format("\nINTERNAL ERROR: second message:\n"));
+                        write_unlocalized_text_to_stdout(Color::error, "\nINTERNAL ERROR: second message:\n");
                         write_unlocalized_text_to_stdout(Color::none, m.default_strings[j]);
                         write_unlocalized_text_to_stdout(Color::none, "\n");
                         ::abort();
