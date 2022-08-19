@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/json.h>
@@ -275,9 +275,9 @@ namespace vcpkg::msg
     constexpr static struct NAME##_t                                                                                   \
     {                                                                                                                  \
         constexpr static const char* name = #NAME;                                                                     \
-        constexpr static ::vcpkg::StringArray example = EXAMPLE;                                                       \
         constexpr static auto get_example_str()                                                                        \
         {                                                                                                              \
+            ::vcpkg::StringArray example = StringArray{EXAMPLE};                                                       \
             if constexpr (example.empty())                                                                             \
                 return example;                                                                                        \
             else                                                                                                       \
@@ -398,7 +398,6 @@ namespace vcpkg::msg
     {
         return format(msgErrorMessage).append(m, args...);
     }
-
 }
 
 namespace vcpkg
