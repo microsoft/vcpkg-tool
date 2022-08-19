@@ -202,10 +202,9 @@ namespace vcpkg::msg
                             Color::error,
                             fmt::format("INTERNAL ERROR: localization message '{}' has been declared multiple times\n",
                                         msg::detail::get_message_name(i)));
-                        write_unlocalized_text_to_stdout(Color::error, fmt::format("INTERNAL ERROR: first message:\n"));
+                        write_unlocalized_text_to_stdout(Color::error, "INTERNAL ERROR: first message:\n");
                         write_unlocalized_text_to_stdout(Color::none, m.default_strings[i]);
-                        write_unlocalized_text_to_stdout(Color::error,
-                                                         fmt::format("\nINTERNAL ERROR: second message:\n"));
+                        write_unlocalized_text_to_stdout(Color::error, "\nINTERNAL ERROR: second message:\n");
                         write_unlocalized_text_to_stdout(Color::none, m.default_strings[j]);
                         write_unlocalized_text_to_stdout(Color::none, "\n");
                         ::abort();
@@ -487,9 +486,11 @@ namespace vcpkg
     REGISTER_MESSAGE(CMakeToolChainFile);
     REGISTER_MESSAGE(CommandFailed);
     REGISTER_MESSAGE(CompressFolderFailed);
+    REGISTER_MESSAGE(ConstraintViolation);
     REGISTER_MESSAGE(ConflictingValuesForOption);
     REGISTER_MESSAGE(ControlAndManifestFilesPresent);
     REGISTER_MESSAGE(CopyrightIsDir);
+    REGISTER_MESSAGE(CorruptedDatabase);
     REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion);
     REGISTER_MESSAGE(CreatedNuGetPackage);
     REGISTER_MESSAGE(CurlReportedUnexpectedResults);
@@ -497,6 +498,7 @@ namespace vcpkg
     REGISTER_MESSAGE(DefaultFlag);
     REGISTER_MESSAGE(DefaultPathToBinaries);
     REGISTER_MESSAGE(DetectCompilerHash);
+    REGISTER_MESSAGE(DocumentedFieldsSuggestUpdate);
     REGISTER_MESSAGE(DownloadAvailable);
     REGISTER_MESSAGE(DownloadedSources);
     REGISTER_MESSAGE(DownloadingVcpkgCeBundle);
@@ -530,15 +532,22 @@ namespace vcpkg
     REGISTER_MESSAGE(ErrorWhileWriting);
     REGISTER_MESSAGE(ExceededRecursionDepth);
     REGISTER_MESSAGE(ExcludedPackage);
+    REGISTER_MESSAGE(ExcludedPackages);
     REGISTER_MESSAGE(ExpectedCharacterHere);
     REGISTER_MESSAGE(ExpectedFailOrSkip);
     REGISTER_MESSAGE(ExpectedPortName);
     REGISTER_MESSAGE(ExpectedTripletName);
     REGISTER_MESSAGE(ExpectedValueForOption);
+    REGISTER_MESSAGE(ExportingPackage);
     REGISTER_MESSAGE(ExtendedDocumentationAtUrl);
     REGISTER_MESSAGE(FailedToExtract);
+    REGISTER_MESSAGE(FailedToFindPortFeature);
     REGISTER_MESSAGE(FailedToFormatMissingFile);
+    REGISTER_MESSAGE(FailedToLoadInstalledManifest);
+    REGISTER_MESSAGE(FailedToLocateSpec);
+    REGISTER_MESSAGE(FailedToObtainDependencyVersion);
     REGISTER_MESSAGE(FailedToObtainLocalPortGitSha);
+    REGISTER_MESSAGE(FailedToObtainPackageVersion);
     REGISTER_MESSAGE(FailedToParseBinParagraph);
     REGISTER_MESSAGE(FailedToParseCMakeConsoleOut);
     REGISTER_MESSAGE(FailedToParseControl);
@@ -596,6 +605,8 @@ namespace vcpkg
     REGISTER_MESSAGE(IllegalPlatformSpec);
     REGISTER_MESSAGE(IncorrectNumberOfArgs);
     REGISTER_MESSAGE(InfoSetEnvVar);
+    REGISTER_MESSAGE(InstalledPackages);
+    REGISTER_MESSAGE(InstalledRequestedPackages);
     REGISTER_MESSAGE(InstallingFromLocation);
     REGISTER_MESSAGE(InstallingPackage);
     REGISTER_MESSAGE(InstallPackageInstruction);
@@ -652,6 +663,7 @@ namespace vcpkg
     REGISTER_MESSAGE(MismatchedBinaryParagraphs);
     REGISTER_MESSAGE(Missing7zHeader);
     REGISTER_MESSAGE(MissingArgFormatManifest);
+    REGISTER_MESSAGE(MissingDependency);
     REGISTER_MESSAGE(MissingExtension);
     REGISTER_MESSAGE(MissmatchedBinParagraphs);
     REGISTER_MESSAGE(MissingPortSuggestPullRequest);
@@ -671,9 +683,16 @@ namespace vcpkg
     REGISTER_MESSAGE(NoRegistryForPort);
     REGISTER_MESSAGE(NugetPackageFileSucceededButCreationFailed);
     REGISTER_MESSAGE(OptionMustBeInteger);
+    REGISTER_MESSAGE(OptionRequired);
     REGISTER_MESSAGE(OriginalBinParagraphHeader);
     REGISTER_MESSAGE(PackageFailedtWhileExtracting);
     REGISTER_MESSAGE(PackageRootDir);
+    REGISTER_MESSAGE(PackagesToInstall);
+    REGISTER_MESSAGE(PackagesToInstallDirectly);
+    REGISTER_MESSAGE(PackagesToModify);
+    REGISTER_MESSAGE(PackagesToRebuild);
+    REGISTER_MESSAGE(PackagesToRebuildSuggestRecurse);
+    REGISTER_MESSAGE(PackagesToRemove);
     REGISTER_MESSAGE(PackingVendorFailed);
     REGISTER_MESSAGE(ParseControlErrorInfoInvalidFields);
     REGISTER_MESSAGE(ParseControlErrorInfoMissingFields);
@@ -683,6 +702,7 @@ namespace vcpkg
     REGISTER_MESSAGE(PortDependencyConflict);
     REGISTER_MESSAGE(PortNotInBaseline);
     REGISTER_MESSAGE(PortSupportsField);
+    REGISTER_MESSAGE(PortTypeConflict);
     REGISTER_MESSAGE(PreviousIntegrationFileRemains);
     REGISTER_MESSAGE(ProcessorArchitectureMalformed);
     REGISTER_MESSAGE(ProcessorArchitectureMissing);
@@ -724,8 +744,10 @@ namespace vcpkg
     REGISTER_MESSAGE(UnknownSettingForBuildType);
     REGISTER_MESSAGE(UnknownTool);
     REGISTER_MESSAGE(UnknownVariablesInTemplate);
+    REGISTER_MESSAGE(UnrecognizedConfigField);
     REGISTER_MESSAGE(UnsupportedPort);
     REGISTER_MESSAGE(UnsupportedPortDependency);
+    REGISTER_MESSAGE(UnsupportedPortFeature);
     REGISTER_MESSAGE(UnsupportedShortOptions);
     REGISTER_MESSAGE(UnsupportedSystemName);
     REGISTER_MESSAGE(UnsupportedToolchain);
@@ -765,4 +787,5 @@ namespace vcpkg
     REGISTER_MESSAGE(WaitingToTakeFilesystemLock);
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
+    REGISTER_MESSAGE(WhileLookingForSpec);
 }
