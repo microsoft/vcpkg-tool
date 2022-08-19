@@ -389,8 +389,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                 continue;
             }
 
-            if (verbose)
-                msg::write_unlocalized_text_to_stdout(Color::none, maybe_ok.value_or_exit(VCPKG_LINE_INFO));
+            if (verbose) msg::write_unlocalized_text_to_stdout(Color::none, maybe_ok.value_or_exit(VCPKG_LINE_INFO));
         }
 
         if (!errors.empty())
