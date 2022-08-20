@@ -95,7 +95,7 @@
   "DefaultPathToBinaries": "Na základě nastavení systému je výchozí cesta k ukládání binárních souborů „{path}“. Nahlíží do %LOCALAPPDATA%/%APPDATA% v systémech Windows a $XDG_CACHE_HOME nebo $HOME na jiných platformách.",
   "DetectCompilerHash": "Rozpoznává se hodnota hash kompilátoru pro triplet {triplet}...",
   "DocumentedFieldsSuggestUpdate": "If these are documented fields that should be recognized try updating the vcpkg tool.",
-  "DownloadAvailable": "A downloadable copy of this tool is available and can be used by unsetting {env_var}.",
+  "DownloadAvailable": "Kopie nástroje je k dispozici ke stažení a dá se využít při změně nastavení hodnoty {env_var}.",
   "DownloadRootsDir": "Zadejte kořenový adresář pro stahování.\n(výchozí: {env_var})",
   "DownloadedSources": "Stažené zdroje pro {spec}",
   "DownloadingVcpkgCeBundle": "Stahuje se sada vcpkg-ce {version}...",

@@ -95,7 +95,7 @@
   "DefaultPathToBinaries": "Com base nas configurações do seu sistema, o caminho padrão para armazenar os binários é \"{path}\". Isso consulta %LOCALAPPDATA%/%APPDATA% no Windows e $XDG_CACHE_HOME ou $HOME em outras plataformas.",
   "DetectCompilerHash": "Detectando hash do compilador para tripleto {triplet}...",
   "DocumentedFieldsSuggestUpdate": "If these are documented fields that should be recognized try updating the vcpkg tool.",
-  "DownloadAvailable": "A downloadable copy of this tool is available and can be used by unsetting {env_var}.",
+  "DownloadAvailable": "Uma cópia para download desta ferramenta está disponível e pode ser usada desativando {env_var}.",
   "DownloadRootsDir": "Especifique o diretório raiz de downloads.\n(padrão: {env_var})",
   "DownloadedSources": "Fontes baixadas para {spec}",
   "DownloadingVcpkgCeBundle": "Baixando o pacote vcpkg-ce {version}...",
