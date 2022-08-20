@@ -284,7 +284,7 @@ namespace vcpkg
                          const CMakeVars::CMakeVarProvider& var_provider,
                          const StatusParagraphs& status_db,
                          Triplet host_triplet);
-            ~PackageGraph();
+            ~PackageGraph() = default;
 
             void install(Span<const FeatureSpec> specs, UnsupportedPortAction unsupported_port_action);
             void upgrade(Span<const PackageSpec> specs, UnsupportedPortAction unsupported_port_action);
@@ -1106,8 +1106,6 @@ namespace vcpkg
         : m_var_provider(var_provider), m_graph(create_feature_install_graph(port_provider, status_db, host_triplet))
     {
     }
-
-    PackageGraph::~PackageGraph() = default;
 
     void print_plan(const ActionPlan& action_plan, const bool is_recursive, const Path& builtin_ports_dir)
     {
