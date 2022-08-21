@@ -146,8 +146,6 @@ namespace vcpkg::msg
             const char* example;
         };
 
-        std::string format_examples_for_args(StringView extra_comment, const FormatArgAbi* args, std::size_t arg_count);
-
         template<class Arg0>
         constexpr auto example_piece(const Arg0& arg)
         {

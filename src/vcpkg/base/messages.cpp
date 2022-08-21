@@ -270,28 +270,6 @@ namespace vcpkg::msg
 
     ::size_t detail::number_of_messages() { return messages().names.size(); }
 
-    std::string detail::format_examples_for_args(StringView extra_comment,
-                                                 const detail::FormatArgAbi* args,
-                                                 std::size_t arg_count)
-    {
-        std::vector<std::string> blocks;
-        if (!extra_comment.empty())
-        {
-            blocks.emplace_back(extra_comment.data(), extra_comment.size());
-        }
-
-        for (std::size_t idx = 0; idx < arg_count; ++idx)
-        {
-            auto& arg = args[idx];
-            if (arg.example[0] != '\0')
-            {
-                blocks.emplace_back(fmt::format("An example of {{{}}} is {}.", arg.name, arg.example));
-            }
-        }
-
-        return Strings::join(" ", blocks);
-    }
-
     ::size_t detail::startup_register_message(StringLiteral name, StringLiteral format_string, ZStringView comment)
     {
         Messages& m = messages();

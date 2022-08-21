@@ -155,10 +155,4 @@ namespace vcpkg
         constexpr_copy(rhs.begin(), rhs.end(), it);
         return out;
     }
-
-    template<::size_t N>
-    std::string to_string(StringArray<N> str)
-    {
-        return std::string(str.data(), str.size());
-    }
 }
