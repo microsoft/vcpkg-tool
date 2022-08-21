@@ -137,6 +137,11 @@ namespace vcpkg
 
         template<::size_t L, ::size_t R>
         friend constexpr StringArray<L + R - 1> operator+(const StringArray<L> lhs, const StringArray<R> rhs) noexcept;
+        constexpr operator ZStringView() const noexcept
+        {
+            ZStringView sl(data(), size());
+            return sl;
+        }
 
     private:
         std::array<char, N> m_array;
