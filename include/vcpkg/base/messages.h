@@ -202,7 +202,7 @@ namespace vcpkg::msg
                 return comment + StringArray{" "} + example;
         }
 
-        ::size_t startup_register_message(StringLiteral name, StringLiteral format_string, ZStringView comment);
+        ::size_t startup_register_message(StringLiteral name, StringLiteral format_string, std::string&& comment);
 
         ::size_t number_of_messages();
 
@@ -349,7 +349,7 @@ namespace vcpkg::msg
     const ::size_t NAME##_msg_t::index =                                                                               \
         ::vcpkg::msg::detail::startup_register_message(NAME##_msg_t::name,                                             \
                                                        NAME##_msg_t::default_format_string,                            \
-                                                       static_cast<ZStringView>(NAME##_msg_t::comment_and_example))
+                                                       ::vcpkg::to_string(NAME##_msg_t::comment_and_example))
 
 #define DECLARE_AND_REGISTER_MESSAGE(NAME, ARGS, COMMENT, ...)                                                         \
     DECLARE_MESSAGE(NAME, ARGS, COMMENT, __VA_ARGS__);                                                                 \
