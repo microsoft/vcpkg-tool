@@ -1010,7 +1010,7 @@ namespace vcpkg
                     (msg::path, msg::command_line),
                     "",
                     "Could not create a registry at {path} because this is not a git repository root.\nUse `git init "
-                    "{command_line} to create a git repository in this folder.");
+                    "{command_line}` to create a git repository in this folder.");
     DECLARE_MESSAGE(InstalledPackages, (), "", "The following packages are already installed:");
     DECLARE_MESSAGE(InstalledRequestedPackages, (), "", "All requested packages are currently installed.");
     DECLARE_MESSAGE(InstallingFromLocation,
