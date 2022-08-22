@@ -480,6 +480,7 @@ namespace vcpkg
     REGISTER_MESSAGE(CiBaselineRegression);
     REGISTER_MESSAGE(CiBaselineRegressionHeader);
     REGISTER_MESSAGE(CiBaselineUnexpectedPass);
+    REGISTER_MESSAGE(ClearingContents);
     REGISTER_MESSAGE(CmakeTargetsExcluded);
     REGISTER_MESSAGE(CMakeTargetsUsage);
     REGISTER_MESSAGE(CMakeTargetsUsageHeuristicMessage);
@@ -493,6 +494,7 @@ namespace vcpkg
     REGISTER_MESSAGE(CorruptedDatabase);
     REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion);
     REGISTER_MESSAGE(CreatedNuGetPackage);
+    REGISTER_MESSAGE(CreateFailureLogsDir);
     REGISTER_MESSAGE(CurlReportedUnexpectedResults);
     REGISTER_MESSAGE(DateTableHeader);
     REGISTER_MESSAGE(DefaultBrowserLaunched);
@@ -507,6 +509,7 @@ namespace vcpkg
     REGISTER_MESSAGE(DownloadRootsDir);
     REGISTER_MESSAGE(DuplicateCommandOption);
     REGISTER_MESSAGE(DuplicateOptions);
+    REGISTER_MESSAGE(ElapsedTimeForChecks);
     REGISTER_MESSAGE(EmailVcpkgTeam);
     REGISTER_MESSAGE(EmptyArg);
     REGISTER_MESSAGE(EmptyLicenseExpression);
@@ -534,6 +537,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ExceededRecursionDepth);
     REGISTER_MESSAGE(ExcludedPackage);
     REGISTER_MESSAGE(ExcludedPackages);
+    REGISTER_MESSAGE(ExpectedCascadeFailure);
     REGISTER_MESSAGE(ExpectedCharacterHere);
     REGISTER_MESSAGE(ExpectedFailOrSkip);
     REGISTER_MESSAGE(ExpectedPortName);
@@ -606,6 +610,7 @@ namespace vcpkg
     REGISTER_MESSAGE(IllegalPlatformSpec);
     REGISTER_MESSAGE(IncorrectNumberOfArgs);
     REGISTER_MESSAGE(InfoSetEnvVar);
+    REGISTER_MESSAGE(InitRegistryFailedNoRepo);
     REGISTER_MESSAGE(InstalledPackages);
     REGISTER_MESSAGE(InstalledRequestedPackages);
     REGISTER_MESSAGE(InstallingFromLocation);
@@ -616,6 +621,9 @@ namespace vcpkg
     REGISTER_MESSAGE(InstallWithSystemManagerMono);
     REGISTER_MESSAGE(InstallWithSystemManagerPkg);
     REGISTER_MESSAGE(IntegrationFailed);
+    REGISTER_MESSAGE(InternalCICommand);
+    REGISTER_MESSAGE(InvalidArgMustBeAnInt);
+    REGISTER_MESSAGE(InvalidArgMustBePositive);
     REGISTER_MESSAGE(InvalidArgument);
     REGISTER_MESSAGE(InvalidArgumentRequiresAbsolutePath);
     REGISTER_MESSAGE(InvalidArgumentRequiresBaseUrl);
@@ -666,6 +674,7 @@ namespace vcpkg
     REGISTER_MESSAGE(MissingArgFormatManifest);
     REGISTER_MESSAGE(MissingDependency);
     REGISTER_MESSAGE(MissingExtension);
+    REGISTER_MESSAGE(MissingOption);
     REGISTER_MESSAGE(MissmatchedBinParagraphs);
     REGISTER_MESSAGE(MissingPortSuggestPullRequest);
     REGISTER_MESSAGE(MonoInstructions);
@@ -680,12 +689,13 @@ namespace vcpkg
     REGISTER_MESSAGE(NewVersionCannotBeEmpty);
     REGISTER_MESSAGE(NoArgumentsForOption);
     REGISTER_MESSAGE(NoCachedPackages);
+    REGISTER_MESSAGE(NoInstalledPackages);
     REGISTER_MESSAGE(NoLocalizationForMessages);
     REGISTER_MESSAGE(NoRegistryForPort);
     REGISTER_MESSAGE(NugetPackageFileSucceededButCreationFailed);
     REGISTER_MESSAGE(OptionMustBeInteger);
     REGISTER_MESSAGE(OptionRequired);
-    REGISTER_MESSAGE(OptionRequiresJsonSwitch);
+    REGISTER_MESSAGE(OptionRequiresOption);
     REGISTER_MESSAGE(OriginalBinParagraphHeader);
     REGISTER_MESSAGE(PackageFailedtWhileExtracting);
     REGISTER_MESSAGE(PackageRootDir);
@@ -715,12 +725,14 @@ namespace vcpkg
     REGISTER_MESSAGE(ProcessorArchitectureW6432Malformed);
     REGISTER_MESSAGE(ProgramReturnedNonzeroExitCode);
     REGISTER_MESSAGE(PushingVendorFailed);
+    REGISTER_MESSAGE(RegistryCreated);
     REGISTER_MESSAGE(ReplaceSecretsError);
     REGISTER_MESSAGE(RestoredPackage);
     REGISTER_MESSAGE(RestoredPackagesFromVendor);
     REGISTER_MESSAGE(ResultsHeader);
     REGISTER_MESSAGE(SerializedBinParagraphHeader);
     REGISTER_MESSAGE(SettingEnvVar);
+    REGISTER_MESSAGE(SkipClearingInvalidDir);
     REGISTER_MESSAGE(SourceFieldPortNameMismatch);
     REGISTER_MESSAGE(SpecifiedFeatureTurnedOff);
     REGISTER_MESSAGE(SpecifyDirectoriesContaining);
@@ -736,6 +748,7 @@ namespace vcpkg
     REGISTER_MESSAGE(SystemApiErrorMessage);
     REGISTER_MESSAGE(ToolFetchFailed);
     REGISTER_MESSAGE(ToolInWin10);
+    REGISTER_MESSAGE(TotalElapsedTime);
     REGISTER_MESSAGE(TotalTime);
     REGISTER_MESSAGE(TwoFeatureFlagsSpecified);
     REGISTER_MESSAGE(UndeterminedToolChainForTriplet);

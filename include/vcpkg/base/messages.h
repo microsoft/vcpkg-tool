@@ -704,6 +704,7 @@ namespace vcpkg
                     (msg::spec, msg::path),
                     "",
                     "PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).");
+    DECLARE_MESSAGE(ClearingContents, (msg::path), "", "Clearing contents of {path}");
     DECLARE_MESSAGE(CmakeTargetsExcluded, (msg::count), "", "note: {count} additional targets are not displayed.");
     DECLARE_MESSAGE(CMakeTargetsUsage,
                     (msg::package_name),
@@ -737,6 +738,7 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "Could not deduce nuget id and version from filename: {path}");
+    DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
     DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: \"{path}\"");
     DECLARE_MESSAGE(CurlReportedUnexpectedResults,
                     (msg::command_line, msg::actual),
@@ -781,6 +783,7 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is a command line option.",
                     "'--{value}' specified multiple times.");
+    DECLARE_MESSAGE(ElapsedTimeForChecks, (msg::elapsed), "", "Time to determine pass/fail: {elapsed}");
     DECLARE_MESSAGE(EmailVcpkgTeam, (msg::url), "", "Send an email to {url} with any feedback.");
     DECLARE_MESSAGE(EmptyArg, (msg::option), "", "The option --{option} must be passed a non-empty argument.");
     DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
@@ -854,6 +857,11 @@ namespace vcpkg
     DECLARE_MESSAGE(ExceededRecursionDepth, (), "", "Recursion depth exceeded.");
     DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
     DECLARE_MESSAGE(ExcludedPackages, (), "", "The following packages are excluded:");
+    DECLARE_MESSAGE(
+        ExpectedCascadeFailure,
+        (msg::expected, msg::actual),
+        "{expected} is the expected number of cascade failures and {actual} is the actual number of cascade failures.",
+        "Expected {expected} cascade failure, but there were {actual} cascade failures.");
     DECLARE_MESSAGE(
         ExpectedCharacterHere,
         (msg::expected),
@@ -998,6 +1006,11 @@ namespace vcpkg
                     (msg::env_var),
                     "In this context 'editor' means IDE",
                     "You can also set the environment variable '{env_var}' to your editor of choice.");
+    DECLARE_MESSAGE(InitRegistryFailedNoRepo,
+                    (msg::path, msg::command_line),
+                    "",
+                    "Could not create a registry at {path} because this is not a git repository root.\nUse `git init "
+                    "{command_line}` to create a git repository in this folder.");
     DECLARE_MESSAGE(InstalledPackages, (), "", "The following packages are already installed:");
     DECLARE_MESSAGE(InstalledRequestedPackages, (), "", "All requested packages are currently installed.");
     DECLARE_MESSAGE(InstallingFromLocation,
@@ -1027,6 +1040,12 @@ namespace vcpkg
                     "",
                     "You may be able to install this tool via your system package manager ({command_line}).");
     DECLARE_MESSAGE(IntegrationFailed, (), "", "Integration was not applied.");
+    DECLARE_MESSAGE(InternalCICommand,
+                    (),
+                    "",
+                    "vcpkg ci is an internal command which will change incompatibly or be removed at any time.");
+    DECLARE_MESSAGE(InvalidArgMustBeAnInt, (msg::option), "", "--{option} must be an integer.");
+    DECLARE_MESSAGE(InvalidArgMustBePositive, (msg::option), "", "--{option} must be non-negative.");
     DECLARE_MESSAGE(InvalidArgument, (), "", "invalid argument");
     DECLARE_MESSAGE(
         InvalidArgumentRequiresAbsolutePath,
@@ -1212,6 +1231,7 @@ namespace vcpkg
                     "",
                     "Package {spec} is installed, but dependency {package_name} is not.");
     DECLARE_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
+    DECLARE_MESSAGE(MissingOption, (msg::option), "", "This command currently requires --{option}");
     DECLARE_MESSAGE(MissingPortSuggestPullRequest,
                     (),
                     "",
@@ -1251,6 +1271,10 @@ namespace vcpkg
     DECLARE_MESSAGE(NewVersionCannotBeEmpty, (), "", "--version cannot be empty.");
     DECLARE_MESSAGE(NoArgumentsForOption, (msg::option), "", "The option --{option} does not accept an argument.");
     DECLARE_MESSAGE(NoCachedPackages, (), "", "No packages are cached.");
+    DECLARE_MESSAGE(NoInstalledPackages,
+                    (),
+                    "The name 'search' is the name of a command that is not localized.",
+                    "No packages are installed. Did you mean `search`?");
     DECLARE_MESSAGE(NoLocalizationForMessages, (), "", "No localized messages for the following: ");
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
     DECLARE_MESSAGE(NugetPackageFileSucceededButCreationFailed,
@@ -1259,7 +1283,10 @@ namespace vcpkg
                     "NuGet package creation succeeded, but no .nupkg was produced. Expected: \"{path}\"");
     DECLARE_MESSAGE(OptionMustBeInteger, (msg::option), "", "Value of --{option} must be an integer.");
     DECLARE_MESSAGE(OptionRequired, (msg::option), "", "--{option} option is required.");
-    DECLARE_MESSAGE(OptionRequiresJsonSwitch, (msg::option), "", "Option --{option} requires --x-json switch.");
+    DECLARE_MESSAGE(OptionRequiresOption,
+                    (msg::value, msg::option),
+                    "{value} is a command line option.",
+                    "--{value} requires --{option}");
     DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph");
     DECLARE_MESSAGE(PackageFailedtWhileExtracting,
                     (msg::value, msg::path),
@@ -1332,6 +1359,7 @@ namespace vcpkg
                     (msg::vendor, msg::path),
                     "",
                     "Pushing {vendor} to \"{path}\" failed. Use --debug for more information.");
+    DECLARE_MESSAGE(RegistryCreated, (msg::path), "", "Successfully created registry at {path}");
     DECLARE_MESSAGE(ReplaceSecretsError,
                     (msg::error_msg),
                     "",
@@ -1349,6 +1377,10 @@ namespace vcpkg
                     "An example of env_var is \"HTTP(S)_PROXY\""
                     "'--' at the beginning must be preserved",
                     "-- Setting \"{env_var}\" environment variables to \"{url}\".");
+    DECLARE_MESSAGE(SkipClearingInvalidDir,
+                    (msg::path),
+                    "",
+                    "Skipping clearing contents of {path} because it was not a directory.");
     DECLARE_MESSAGE(SourceFieldPortNameMismatch,
                     (msg::package_name, msg::path),
                     "{package_name} and \"{path}\" are both names of installable ports/packages. 'Source', "
@@ -1396,6 +1428,7 @@ namespace vcpkg
                     "calling {system_api} failed with {exit_code} ({error_msg})");
     DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
     DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
+    DECLARE_MESSAGE(TotalElapsedTime, (msg::elapsed), "", "Total elapsed time: {elapsed}");
     DECLARE_MESSAGE(TotalTime, (msg::count), "", " Total elapsed time: {count}.");
     DECLARE_MESSAGE(TwoFeatureFlagsSpecified,
                     (msg::value),
