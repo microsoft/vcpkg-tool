@@ -165,7 +165,7 @@ namespace vcpkg::Commands::Upgrade
                 msg::println(Color::success, msgFollowingPackagesUpgraded);
                 for (const PackageSpec& spec : up_to_date)
                 {
-                    msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("    {}\n", spec.to_string()));
+                    msg::println(Color::none, LocalizedString().append_indent().append_raw(spec.to_string()));
                 }
             }
 
@@ -174,7 +174,7 @@ namespace vcpkg::Commands::Upgrade
                 msg::println_error(msgFollowingPackagesNotInstalled);
                 for (const PackageSpec& spec : not_installed)
                 {
-                    msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("    {}\n", spec.to_string()));
+                    msg::println(Color::none, LocalizedString().append_indent().append_raw(spec.to_string()));
                 }
             }
 
@@ -183,7 +183,7 @@ namespace vcpkg::Commands::Upgrade
                 msg::println_error(msgFollowingPackagesMissingControl);
                 for (const PackageSpec& spec : no_control_file)
                 {
-                    msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("    {}\n", spec.to_string()));
+                    msg::println(Color::none, LocalizedString().append_indent().append_raw(spec.to_string()));
                 }
             }
 
