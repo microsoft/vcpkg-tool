@@ -757,13 +757,13 @@ namespace vcpkg
         "",
         "A downloadable copy of this tool is available and can be used by unsetting {env_var} environment variable.");
     DECLARE_MESSAGE(DownloadedSources, (msg::spec), "", "Downloaded sources for {spec}");
-    DECLARE_MESSAGE(DownloadingLatestVcpkgBundle, (), "", "Downloading latest standalone bundle.");
     DECLARE_MESSAGE(DownloadingVcpkgCeBundle, (msg::version), "", "Downloading vcpkg-ce bundle {version}...");
     DECLARE_MESSAGE(DownloadingVcpkgCeBundleLatest,
                     (),
                     "This message is normally displayed only in development.",
                     "Downloading latest vcpkg-ce bundle...");
-    DECLARE_MESSAGE(DownloadingVcpkgStandloneBundle, (msg::version), "", "Downloading standalone bundle {version}.");
+    DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundle, (msg::version), "", "Downloading standalone bundle {version}.");
+    DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundleLatest, (), "", "Downloading latest standalone bundle.");
     DECLARE_MESSAGE(DownloadRootsDir,
                     (msg::env_var),
                     "",

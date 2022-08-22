@@ -497,10 +497,10 @@ namespace vcpkg
     REGISTER_MESSAGE(DetectCompilerHash);
     REGISTER_MESSAGE(DownloadAvailable);
     REGISTER_MESSAGE(DownloadedSources);
-    REGISTER_MESSAGE(DownloadingLatestVcpkgBundle);
     REGISTER_MESSAGE(DownloadingVcpkgCeBundle);
     REGISTER_MESSAGE(DownloadingVcpkgCeBundleLatest);
-    REGISTER_MESSAGE(DownloadingVcpkgStandloneBundle);
+    REGISTER_MESSAGE(DownloadingVcpkgStandaloneBundle);
+    REGISTER_MESSAGE(DownloadingVcpkgStandaloneBundleLatest);
     REGISTER_MESSAGE(DownloadRootsDir);
     REGISTER_MESSAGE(DuplicateCommandOption);
     REGISTER_MESSAGE(DuplicateOptions);
