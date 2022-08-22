@@ -371,5 +371,5 @@
   "WarningMessage": "warning: ",
   "WarningMessageMustUsePrintWarning": "The message named {value} starts with warning:, it must be changed to prepend WarningMessage in code instead.",
   "WarningsTreatedAsErrors": "previous warnings being interpreted as errors",
-  "WindowsOnlyCommand": "This command is not supported on non-Windows platforms."
+  "WindowsOnlyCommand": "This command only supports Windows."
 }
