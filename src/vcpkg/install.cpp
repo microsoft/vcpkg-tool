@@ -431,6 +431,18 @@ namespace vcpkg
         }
     }
 
+    bool InstallSummary::failed() const
+    {
+        for (const auto& result : this->results)
+        {
+            if (result.build_result.value_or_exit(VCPKG_LINE_INFO).code != BuildResult::SUCCEEDED)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     struct TrackedPackageInstallGuard
     {
         SpecSummary* current_summary = nullptr;
@@ -1209,13 +1221,19 @@ namespace vcpkg
             {
                 if (!result.is_user_requested_install()) continue;
                 auto bpgh = result.get_binary_paragraph();
-                assert(bpgh);
                 if (!bpgh) continue;
                 Install::print_usage_information(*bpgh, printed_usages, fs, paths.installed());
             }
         }
 
-        Checks::exit_success(VCPKG_LINE_INFO);
+        if (summary.failed())
+        {
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+        else
+        {
+            Checks::exit_success(VCPKG_LINE_INFO);
+        }
     }
 
     void InstallCommand::perform_and_exit(const VcpkgCmdArguments& args,
