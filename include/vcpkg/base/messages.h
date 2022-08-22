@@ -1007,7 +1007,7 @@ namespace vcpkg
     DECLARE_MESSAGE(HelpVersionCommand, (), "", "Display version information.");
     DECLARE_MESSAGE(IllegalFeatures, (), "", "List of features is not allowed in this context");
     DECLARE_MESSAGE(IllegalPlatformSpec, (), "", "Platform qualifier is not allowed in this context");
-    DECLARE_MESSAGE(ImproperSHALength,
+    DECLARE_MESSAGE(ImproperShaLength,
                     (msg::value),
                     "{value} is a sha.",
                     "SHA512's must be 128 hex characters: {value}");
@@ -1246,8 +1246,7 @@ namespace vcpkg
                     "",
                     "Package {spec} is installed, but dependency {package_name} is not.");
     DECLARE_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
-    DECLARE_MESSAGE(MissingOption, (msg::option), "", "This command currently requires --{option}");
-    DECLARE_MESSAGE(MissingSHA, (), "", "Required argument --sha512 was not passed.");
+    DECLARE_MESSAGE(MissingOption, (msg::option), "", "This command requires --{option}");
     DECLARE_MESSAGE(MissingPortSuggestPullRequest,
                     (),
                     "",
@@ -1393,11 +1392,11 @@ namespace vcpkg
                     "An example of env_var is \"HTTP(S)_PROXY\""
                     "'--' at the beginning must be preserved",
                     "-- Setting \"{env_var}\" environment variables to \"{url}\".");
-    DECLARE_MESSAGE(SHAPassedAsArgAndOption,
+    DECLARE_MESSAGE(ShaPassedAsArgAndOption,
                     (),
                     "",
                     "SHA512 passed as both an argument and as an option. Only pass one of these.");
-    DECLARE_MESSAGE(SHAPassedWithConflict,
+    DECLARE_MESSAGE(ShaPassedWithConflict,
                     (),
                     "",
                     "SHA512 passed, but --skip-sha512 was also passed; only do one or the other.");
@@ -1432,7 +1431,7 @@ namespace vcpkg
                     "",
                     "Specify the target architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')");
     DECLARE_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: \"{path}\"");
-    DECLARE_MESSAGE(StoreOptionMissingSHA, (), "", "--store option is invalid without a sha512");
+    DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512");
     DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.");
     DECLARE_MESSAGE(SuggestResolution,
                     (msg::command_name, msg::option),

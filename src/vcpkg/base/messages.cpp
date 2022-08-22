@@ -614,7 +614,7 @@ namespace vcpkg
     REGISTER_MESSAGE(HelpVersionCommand);
     REGISTER_MESSAGE(IllegalFeatures);
     REGISTER_MESSAGE(IllegalPlatformSpec);
-    REGISTER_MESSAGE(ImproperSHALength);
+    REGISTER_MESSAGE(ImproperShaLength);
     REGISTER_MESSAGE(IncorrectNumberOfArgs);
     REGISTER_MESSAGE(InfoSetEnvVar);
     REGISTER_MESSAGE(InitRegistryFailedNoRepo);
@@ -684,7 +684,6 @@ namespace vcpkg
     REGISTER_MESSAGE(MissingDependency);
     REGISTER_MESSAGE(MissingExtension);
     REGISTER_MESSAGE(MissingOption);
-    REGISTER_MESSAGE(MissingSHA);
     REGISTER_MESSAGE(MissmatchedBinParagraphs);
     REGISTER_MESSAGE(MissingPortSuggestPullRequest);
     REGISTER_MESSAGE(MonoInstructions);
@@ -742,8 +741,8 @@ namespace vcpkg
     REGISTER_MESSAGE(ResultsHeader);
     REGISTER_MESSAGE(SerializedBinParagraphHeader);
     REGISTER_MESSAGE(SettingEnvVar);
-    REGISTER_MESSAGE(SHAPassedAsArgAndOption);
-    REGISTER_MESSAGE(SHAPassedWithConflict);
+    REGISTER_MESSAGE(ShaPassedAsArgAndOption);
+    REGISTER_MESSAGE(ShaPassedWithConflict);
     REGISTER_MESSAGE(SkipClearingInvalidDir);
     REGISTER_MESSAGE(SourceFieldPortNameMismatch);
     REGISTER_MESSAGE(SpecifiedFeatureTurnedOff);
@@ -752,7 +751,7 @@ namespace vcpkg
     REGISTER_MESSAGE(SpecifyHostArch);
     REGISTER_MESSAGE(SpecifyTargetArch);
     REGISTER_MESSAGE(StoredBinaryCache);
-    REGISTER_MESSAGE(StoreOptionMissingSHA);
+    REGISTER_MESSAGE(StoreOptionMissingSha);
     REGISTER_MESSAGE(SuggestGitPull);
     REGISTER_MESSAGE(SuggestResolution);
     REGISTER_MESSAGE(SuggestStartingBashShell);

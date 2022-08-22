@@ -50,8 +50,7 @@ namespace vcpkg::Commands::X_Download
         {
             if (sha_it != parsed.settings.end())
             {
-                msg::println_error(msgSHAPassedAsArgAndOption);
-                Checks::exit_fail(VCPKG_LINE_INFO);
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgShaPassedAsArgAndOption);
             }
             sha = args.command_arguments[1];
         }
@@ -64,19 +63,19 @@ namespace vcpkg::Commands::X_Download
         {
             if (sha.has_value())
             {
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgSHAPassedWithConflict);
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgShaPassedWithConflict);
             }
         }
         else if (!sha.has_value())
         {
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgMissingSHA);
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgMissingOption, msg::option = "sha512");
         }
 
         if (auto p = sha.get())
         {
             if (!is_sha512(*p))
             {
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgImproperSHALength, msg::value = *p);
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgImproperShaLength, msg::value = *p);
             }
             Strings::ascii_to_lowercase(p->data(), p->data() + p->size());
         }
@@ -99,7 +98,7 @@ namespace vcpkg::Commands::X_Download
             auto hash = sha.get();
             if (!hash)
             {
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgStoreOptionMissingSHA);
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgStoreOptionMissingSha);
             }
 
             auto s = fs.status(file, VCPKG_LINE_INFO);
