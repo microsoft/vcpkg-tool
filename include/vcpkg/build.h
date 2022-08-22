@@ -150,6 +150,12 @@ namespace vcpkg
         YES
     };
 
+    enum class PrintUsage
+    {
+        YES = 0,
+        NO
+    };
+
     struct BuildPackageOptions
     {
         BuildMissing build_missing;
@@ -163,6 +169,7 @@ namespace vcpkg
         PurgeDecompressFailure purge_decompress_failure;
         Editable editable;
         BackcompatFeatures backcompat_features;
+        PrintUsage print_usage;
     };
 
     static constexpr BuildPackageOptions default_build_package_options{
@@ -177,6 +184,7 @@ namespace vcpkg
         PurgeDecompressFailure::YES,
         Editable::NO,
         BackcompatFeatures::ALLOW,
+        PrintUsage::YES,
     };
 
     static constexpr BuildPackageOptions backcompat_prohibiting_package_options{
@@ -191,6 +199,7 @@ namespace vcpkg
         PurgeDecompressFailure::YES,
         Editable::NO,
         BackcompatFeatures::PROHIBIT,
+        PrintUsage::YES,
     };
 
     struct BuildResultCounts
