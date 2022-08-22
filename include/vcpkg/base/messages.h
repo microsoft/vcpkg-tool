@@ -552,6 +552,7 @@ namespace vcpkg
                     (msg::value),
                     "example of {value} is 'foo bar {'",
                     "unbalanced brace in format string \"{value}\"");
+    DECLARE_MESSAGE(AllPackagesAreUpdated, (), "", "All installed packages are up-to-date with the local portfile.");
     DECLARE_MESSAGE(AlreadyInstalled, (msg::spec), "", "{spec} is already installed");
     DECLARE_MESSAGE(AlreadyInstalledNotHead,
                     (msg::spec),
@@ -774,6 +775,8 @@ namespace vcpkg
                     (),
                     "This message is normally displayed only in development.",
                     "Downloading latest vcpkg-ce bundle...");
+    DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundle, (msg::version), "", "Downloading standalone bundle {version}.");
+    DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundleLatest, (), "", "Downloading latest standalone bundle.");
     DECLARE_MESSAGE(DownloadRootsDir,
                     (msg::env_var),
                     "",
@@ -920,6 +923,12 @@ namespace vcpkg
                     "on how to provide credentials.");
     DECLARE_MESSAGE(FeedbackAppreciated, (), "", "Thank you for your feedback!");
     DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at \"{path}\".");
+    DECLARE_MESSAGE(FollowingPackagesMissingControl,
+                    (),
+                    "",
+                    "The following packages do not have a valid CONTROL or vcpkg.json:");
+    DECLARE_MESSAGE(FollowingPackagesNotInstalled, (), "", "The following packages are not installed:");
+    DECLARE_MESSAGE(FollowingPackagesUpgraded, (), "", "The following packages are up-to-date:");
     DECLARE_MESSAGE(
         ForceSystemBinariesOnWeirdPlatforms,
         (),
@@ -998,6 +1007,10 @@ namespace vcpkg
     DECLARE_MESSAGE(HelpVersionCommand, (), "", "Display version information.");
     DECLARE_MESSAGE(IllegalFeatures, (), "", "List of features is not allowed in this context");
     DECLARE_MESSAGE(IllegalPlatformSpec, (), "", "Platform qualifier is not allowed in this context");
+    DECLARE_MESSAGE(ImproperShaLength,
+                    (msg::value),
+                    "{value} is a sha.",
+                    "SHA512's must be 128 hex characters: {value}");
     DECLARE_MESSAGE(IncorrectNumberOfArgs,
                     (msg::command_name, msg::expected, msg::actual),
                     "'{expected}' is the required number of arguments. '{actual}' is the number of arguments provided.",
@@ -1117,6 +1130,7 @@ namespace vcpkg
         (msg::system_name, msg::value),
         "'{value}' is the linkage type vcpkg would did not understand. (Correct values would be static ofr dynamic)",
         "Invalid {system_name} linkage type: [{value}]");
+    DECLARE_MESSAGE(IrregularFile, (msg::path), "", "path was not a regular file: {path}");
     DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected \"{path}\" to be an object.");
     DECLARE_MESSAGE(JsonSwitch, (), "", "(Experimental) Request JSON output.");
     DECLARE_MESSAGE(LaunchingProgramFailed,
@@ -1220,6 +1234,7 @@ namespace vcpkg
                     "The message named {value} ends with a newline which should be added by formatting "
                     "rather than by localization.");
     DECLARE_MESSAGE(ManifestFormatCompleted, (), "", "Succeeded in formatting the manifest files.");
+    DECLARE_MESSAGE(MismatchedFiles, (), "", "file to store does not match hash");
     DECLARE_MESSAGE(Missing7zHeader, (), "", "Unable to find 7z header.");
     DECLARE_MESSAGE(MissingArgFormatManifest,
                     (),
@@ -1231,7 +1246,7 @@ namespace vcpkg
                     "",
                     "Package {spec} is installed, but dependency {package_name} is not.");
     DECLARE_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
-    DECLARE_MESSAGE(MissingOption, (msg::option), "", "This command currently requires --{option}");
+    DECLARE_MESSAGE(MissingOption, (msg::option), "", "This command requires --{option}");
     DECLARE_MESSAGE(MissingPortSuggestPullRequest,
                     (),
                     "",
@@ -1377,6 +1392,14 @@ namespace vcpkg
                     "An example of env_var is \"HTTP(S)_PROXY\""
                     "'--' at the beginning must be preserved",
                     "-- Setting \"{env_var}\" environment variables to \"{url}\".");
+    DECLARE_MESSAGE(ShaPassedAsArgAndOption,
+                    (),
+                    "",
+                    "SHA512 passed as both an argument and as an option. Only pass one of these.");
+    DECLARE_MESSAGE(ShaPassedWithConflict,
+                    (),
+                    "",
+                    "SHA512 passed, but --skip-sha512 was also passed; only do one or the other.");
     DECLARE_MESSAGE(SkipClearingInvalidDir,
                     (msg::path),
                     "",
@@ -1408,6 +1431,7 @@ namespace vcpkg
                     "",
                     "Specify the target architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')");
     DECLARE_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: \"{path}\"");
+    DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512");
     DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.");
     DECLARE_MESSAGE(SuggestResolution,
                     (msg::command_name, msg::option),
@@ -1428,8 +1452,7 @@ namespace vcpkg
                     "calling {system_api} failed with {exit_code} ({error_msg})");
     DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
     DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
-    DECLARE_MESSAGE(TotalElapsedTime, (msg::elapsed), "", "Total elapsed time: {elapsed}");
-    DECLARE_MESSAGE(TotalTime, (msg::count), "", " Total elapsed time: {count}.");
+    DECLARE_MESSAGE(TotalTime, (msg::elapsed), "", "Total elapsed time: {elapsed}");
     DECLARE_MESSAGE(TwoFeatureFlagsSpecified,
                     (msg::value),
                     "'{value}' is a feature flag.",
@@ -1534,6 +1557,16 @@ namespace vcpkg
                     (msg::url, msg::old_value, msg::new_value),
                     "example of {old_value}, {new_value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
                     "updated registry '{url}': baseline '{old_value}' -> '{new_value}'");
+    DECLARE_MESSAGE(UpgradeInManifest,
+                    (),
+                    "",
+                    "The upgrade command does not currently support manifest mode. Instead, modify your vcpkg.json and "
+                    "run install.");
+    DECLARE_MESSAGE(
+        UpgradeRunWithNoDryRun,
+        (),
+        "",
+        "If you are sure you want to rebuild the above packages, run this command with the --no-dry-run option.");
     DECLARE_MESSAGE(UploadedBinaries, (msg::count, msg::vendor), "", "Uploaded binaries to {count} {vendor}.");
     DECLARE_MESSAGE(UploadedPackagesToVendor,
                     (msg::count, msg::elapsed, msg::vendor),
@@ -1581,6 +1614,7 @@ namespace vcpkg
         "vcpkg has crashed. Please create an issue at https://github.com/microsoft/vcpkg containing a brief summary of "
         "what you were trying to do and the following information.");
     DECLARE_MESSAGE(VcpkgInvalidCommand, (msg::command_name), "", "invalid command: {command_name}");
+    DECLARE_MESSAGE(VcpkgRootRequired, (), "", "Setting VCPKG_ROOT is required for standalone bootstrap.");
     DECLARE_MESSAGE(VcpkgRootsDir, (msg::env_var), "", "Specify the vcpkg root directory.\n(default: '{env_var}')");
     DECLARE_MESSAGE(VcpkgSendMetricsButDisabled, (), "", "passed --sendmetrics, but metrics are disabled.");
     DECLARE_MESSAGE(VersionCommandHeader,
@@ -1624,5 +1658,6 @@ namespace vcpkg
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
+    DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}.");
 }
