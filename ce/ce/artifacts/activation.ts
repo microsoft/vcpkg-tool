@@ -14,8 +14,17 @@ import { isIterable } from '../util/checks';
 import { linq, Record } from '../util/linq';
 import { Queue } from '../util/promise';
 import { Uri } from '../util/uri';
-import { toXml } from '../util/xml';
 import { Artifact } from './artifact';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const XMLWriterImpl = require('xml-writer');
+
+export interface XmlWriter {
+  startDocument(version: string | undefined, encoding: string | undefined): XmlWriter;
+  writeElement(name: string, content: string): XmlWriter;
+  writeAttribute(name: string, value: string): XmlWriter;
+  startElement(name: string): XmlWriter;
+  endElement(): XmlWriter;
+}
 
 function findCaseInsensitiveOnWindows<V>(map: Map<string, V>, key: string): V | undefined {
   return process.platform === 'win32' ? linq.find(map, key) : map.get(key);
@@ -28,6 +37,7 @@ export class Activation {
   #aliases = new Map<string, string>();
   #environment = new Map<string, Set<string>>();
   #properties = new Map<string, Set<string>>();
+  #msbuild_properties = new Array<Tuple<string, string>>();
 
   // Relative to the artifact install
   #locations = new Map<string, string>();
@@ -103,6 +113,11 @@ export class Activation {
       }
       this.addAlias(name, alias);
     }
+
+    // **** msbuild-properties ****
+    for (const [name, propertyValue] of exports.msbuild_properties) {
+      this.addMSBuildProperty(name, propertyValue, targetFolder);
+    }
   }
 
 
@@ -119,10 +134,6 @@ export class Activation {
 
   get defines() {
     return linq.entries(this.#defines).selectAsync(async ([key, value]) => <Tuple<string, string>>[key, await this.resolveAndVerify(value)]);
-  }
-
-  get definesCount() {
-    return this.#defines.size;
   }
 
   async getDefine(name: string): Promise<string | undefined> {
@@ -150,10 +161,6 @@ export class Activation {
       return await this.validatePath(path) ? path : undefined;
     }
     return undefined;
-  }
-
-  get toolCount() {
-    return this.#tools.size;
   }
 
   /** Aliases are tools that get exposed to the user as shell aliases */
@@ -203,9 +210,6 @@ export class Activation {
     const l = this.#locations.get(name);
     return l ? this.resolveAndVerify(l) : undefined;
   }
-  get locationCount() {
-    return this.#locations.size;
-  }
 
   /** a collection of environment variables from artifacts that are intended to be combinined into variables that have PATH delimiters */
   addPath(name: string, location: string | Iterable<string> | Uri | Iterable<Uri>) {
@@ -231,10 +235,6 @@ export class Activation {
 
   get paths() {
     return linq.entries(this.#paths).selectAsync(async ([key, value]) => <Tuple<string, Set<string>>>[key, await this.resolveAndVerify(value)]);
-  }
-
-  get pathCount() {
-    return this.#paths.size;
   }
 
   async getPath(name: string) {
@@ -270,11 +270,7 @@ export class Activation {
     return linq.entries(this.#environment).selectAsync(async ([key, value]) => <Tuple<string, Set<string>>>[key, await this.resolveAndVerify(value)]);
   }
 
-  get environmentVariableCount() {
-    return this.#environment.size;
-  }
-
-  /** a collection of arbitrary properties from artifacts. useful for msbuild */
+  /** a collection of arbitrary properties from artifacts */
   addProperty(name: string, value: string | Iterable<string>) {
     if (!name) {
       return;
@@ -303,9 +299,17 @@ export class Activation {
     return v ? await this.resolveAndVerify(v) : undefined;
   }
 
-  get propertyCount() {
-    return this.#properties.size;
+  msBuildProcessPropertyValue(value: string, targetFolder: Uri) {
+    const initialLocal = targetFolder.fsPath;
+    const endsWithSlash = initialLocal.endsWith('\\') || initialLocal.endsWith('/');
+    const root = endsWithSlash ? initialLocal : initialLocal + '\\';
+    return value.replaceAll('$(ROOT)', root);
   }
+
+  addMSBuildProperty(name: string, value: string, targetFolder: Uri) {
+    this.#msbuild_properties.push([name, this.msBuildProcessPropertyValue(value, targetFolder)]);
+  }
+
   async resolveAndVerify(value: string, locals?: Array<string>, refcheck?: Set<string>): Promise<string>
   async resolveAndVerify(value: Set<string>, locals?: Array<string>, refcheck?: Set<string>): Promise<Set<string>>
   async resolveAndVerify(value: string | Set<string>, locals: Array<string> = [], refcheck = new Set<string>()): Promise<string | Set<string>> {
@@ -335,7 +339,7 @@ export class Activation {
       text = <any>text.value; // spews a --debug warning if a scalar makes its way thru for some reason
     }
 
-    // short-ciruiting
+    // short-circuiting
     if (!text || text.indexOf('$') === -1) {
       return text;
     }
@@ -474,101 +478,53 @@ export class Activation {
     return parts[n].split(delimiter).filter(each => each).map(each => `${front}${each}${back}`);
   }
 
-  async generateMSBuild(artifacts: Iterable<Artifact>): Promise<string> {
-    const msbuildFile = {
-      Project: {
-        $xmlns: 'http://schemas.microsoft.com/developer/msbuild/2003',
-        PropertyGroup: <Array<Record<string, any>>>[]
+  writeMSBuildMap(result: XmlWriter, name: string, target: Map<string, string>) {
+    if (target.size) {
+      result.startElement('PropertyGroup');
+      result.writeAttribute('Label', name);
+      for (const [key, value] of target) {
+        result.writeElement(key, value);
       }
-    };
 
-    if (this.locationCount) {
-      const locations = <Record<string, any>>{
-        $Label: 'Locations'
-      };
-      for await (const [name, location] of this.locations) {
-        locations[name] = location;
+      result.endElement(); // PropertyGroup
+    }
+  }
+
+  writeMSBuildMapSet(result: XmlWriter, name: string, target: Map<string, Set<string>>) {
+    if (target.size) {
+      result.startElement('PropertyGroup');
+      result.writeAttribute('Label', name);
+      for (const [key, value] of target) {
+        result.writeElement(key, Array.from(value).join(';'));
       }
-      msbuildFile.Project.PropertyGroup.push(locations);
+
+      result.endElement();
     }
+  }
 
-    if (this.propertyCount) {
-      const properties = <Record<string, any>>{
-        $Label: 'Properties'
-      };
-
-      for await (const [name, propertyValues] of this.properties) {
-        properties[name] = linq.join(propertyValues, ';');
+  generateMSBuild(): string {
+    const result = new XMLWriterImpl('  ');
+    result.startDocument('1.0', 'utf-8');
+    result.startElement('Project');
+    result.writeAttribute('xmlns', 'http://schemas.microsoft.com/developer/msbuild/2003');
+    this.writeMSBuildMap(result, 'Locations', this.#locations);
+    this.writeMSBuildMapSet(result, 'Properties', this.#properties);
+    this.writeMSBuildMap(result, 'Tools', this.#tools);
+    this.writeMSBuildMapSet(result, 'Environment', this.#environment);
+    this.writeMSBuildMapSet(result, 'Paths', this.#paths);
+    this.writeMSBuildMap(result, 'Defines', this.#defines);
+    if (this.#msbuild_properties.length) {
+      result.startElement('PropertyGroup');
+      result.writeAttribute('Label', 'MSBuildProperties');
+      for (const [key, value] of this.#msbuild_properties) {
+        result.writeElement(key, value);
       }
-      msbuildFile.Project.PropertyGroup.push(properties);
+
+      result.endElement(); // PropertyGroup
     }
 
-    if (this.toolCount) {
-      const tools = <Record<string, any>>{
-        $Label: 'Tools'
-      };
-
-      for await (const [name, tool] of this.tools) {
-        tools[name] = tool;
-      }
-      msbuildFile.Project.PropertyGroup.push(tools);
-    }
-
-    if (this.environmentVariableCount) {
-      const environment = <Record<string, any>>{
-        $Label: 'Environment'
-      };
-
-      for await (const [name, envValues] of this.environmentVariables) {
-        environment[name] = linq.join(envValues, ';');
-      }
-      msbuildFile.Project.PropertyGroup.push(environment);
-    }
-
-    if (this.pathCount) {
-      const paths = <Record<string, any>>{
-        $Label: 'Paths'
-      };
-
-      for await (const [name, pathValues] of this.paths) {
-        paths[name] = linq.join(pathValues, ';');
-      }
-      msbuildFile.Project.PropertyGroup.push(paths);
-    }
-
-    if (this.definesCount) {
-      const defines = <Record<string, any>>{
-        $Label: 'Defines'
-      };
-
-      for await (const [name, define] of this.defines) {
-        defines[name] = linq.join(define, ';');
-      }
-      msbuildFile.Project.PropertyGroup.push(defines);
-    }
-
-    if (this.aliasCount) {
-      const aliases = <Record<string, any>>{
-        $Label: 'Aliases'
-      };
-
-      for await (const [name, alias] of this.aliases) {
-        aliases[name] = alias;
-      }
-      msbuildFile.Project.PropertyGroup.push(aliases);
-    }
-
-    const propertyGroup = <any>{ $Label: 'Artifacts', Artifacts: { Artifact: [] } };
-
-    for (const artifact of artifacts) {
-      propertyGroup.Artifacts.Artifact.push({ $id: artifact.metadata.id, '#text': artifact.targetLocation.fsPath });
-    }
-
-    if (propertyGroup.Artifacts.Artifact.length > 0) {
-      msbuildFile.Project.PropertyGroup.push(propertyGroup);
-    }
-
-    return toXml(msbuildFile);
+    result.endElement(); // Project
+    return result.toString();
   }
 
   protected async generateEnvironmentVariables(originalEnvironment: Record<string, string | undefined>): Promise<[Record<string, string>, Record<string, string>]> {
@@ -607,15 +563,13 @@ export class Activation {
     }
 
     // .defines get compiled into a single environment variable.
-    if (this.definesCount) {
-      let defines = '';
-      for await (const [name, value] of this.defines) {
-        defines += value ? `-D${name}=${value} ` : `-D${name} `;
-      }
-      if (defines) {
-        env['DEFINES'] = defines;
-        undo['DEFINES'] = originalEnvironment['DEFINES'] || '';
-      }
+    let defines = '';
+    for await (const [name, value] of this.defines) {
+      defines += value ? `-D${name}=${value} ` : `-D${name} `;
+    }
+    if (defines) {
+      env['DEFINES'] = defines;
+      undo['DEFINES'] = originalEnvironment['DEFINES'] || '';
     }
 
     return [env, undo];
@@ -630,23 +584,23 @@ export class Activation {
     if (previous && undoEnvironmentFile) {
       const deactivationDataFile = this.#session.parseUri(previous);
       if (deactivationDataFile.scheme === 'file' && await deactivationDataFile.exists()) {
-        const deactivatationData = JSON.parse(await deactivationDataFile.readUTF8());
-        currentEnvironment = undoActivation(currentEnvironment, deactivatationData.environment || {});
+        const deactivationData = JSON.parse(await deactivationDataFile.readUTF8());
+        currentEnvironment = undoActivation(currentEnvironment, deactivationData.environment || {});
         delete currentEnvironment[undoVariableName];
-        undoDeactivation = generateScriptContent(scriptKind, deactivatationData.environment || {}, deactivatationData.aliases || {});
+        undoDeactivation = generateScriptContent(scriptKind, deactivationData.environment || {}, deactivationData.aliases || {});
       }
     }
 
     const [variables, undo] = await this.generateEnvironmentVariables(currentEnvironment);
 
     async function transformtoRecord<T, U = T> (
-      orig: AsyncGenerator<Promise<Tuple<string, T>>, any, unknown>, 
+      orig: AsyncGenerator<Promise<Tuple<string, T>>, any, unknown>,
       // this type cast to U isn't *technically* correct but since it's locally scoped for this next block of code it shouldn't cause problems
-      func: (value: T) => U = (x => x as unknown as U)) {  
+      func: (value: T) => U = (x => x as unknown as U)) {
 
-      return linq.values((await toArrayAsync(orig))).toObject(tuple => [tuple[0], func(tuple[1])]); 
+      return linq.values((await toArrayAsync(orig))).toObject(tuple => [tuple[0], func(tuple[1])]);
     }
-    
+
     const defines = await transformtoRecord(this.defines);
     const aliases = await transformtoRecord(this.aliases);
     const locations = await transformtoRecord(this.locations);
@@ -680,15 +634,15 @@ export class Activation {
 
     // generate msbuild props file if requested
     if (msbuildFile) {
-      const contents = await this.generateMSBuild(artifacts);
+      const contents = await this.generateMSBuild();
       this.#session.channels.verbose(`--------[START MSBUILD FILE]--------\n${contents}\n--------[END MSBUILD FILE]---------`);
-      await msbuildFile.writeUTF8(await this.generateMSBuild(artifacts));
+      await msbuildFile.writeUTF8(contents);
     }
 
-    if(json) {
+    if (json) {
       const contents = generateJson(variables, defines, aliases, properties, locations, paths, tools);
       this.#session.channels.verbose(`--------[START ENV VAR FILE]--------\n${contents}\n--------[END ENV VAR FILE]---------`);
-      await json.writeUTF8(contents); 
+      await json.writeUTF8(contents);
     }
   }
 
@@ -759,20 +713,20 @@ function generateScriptContent(kind: string, variables: Record<string, string>, 
   return '';
 }
 
-function generateJson(variables: Record<string, string>, defines: Record<string, string>, aliases: Record<string, string>, 
-  properties:Record<string, string[]>, locations: Record<string, string>, paths: Record<string, string[]>, tools: Record<string, string>): string {
-    
-  var contents = {
-    "version": 1, 
+function generateJson(variables: Record<string, string>, defines: Record<string, string>, aliases: Record<string, string>,
+  properties:Record<string, Array<string>>, locations: Record<string, string>, paths: Record<string, Array<string>>, tools: Record<string, string>): string {
+
+  let contents = {
+    'version': 1,
     variables,
-    defines, 
-    aliases, 
-    properties, 
-    locations, 
-    paths, 
+    defines,
+    aliases,
+    properties,
+    locations,
+    paths,
     tools
   };
-  
+
   return JSON.stringify(contents);
 }
 
