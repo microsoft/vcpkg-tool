@@ -193,22 +193,33 @@ namespace vcpkg::Commands::PortHistory
             }
             else
             {
-                vcpkg::printf("%s\n", json_string);
+                msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("{}\n", json_string));
             }
         }
         else
         {
             if (maybe_output_file.has_value())
             {
-                vcpkg::printf(Color::warning, "Warning: Option `--$s` requires `--x-json` switch.", OPTION_OUTPUT_FILE);
+                msg::println_warning(msgOptionRequiresOption, msg::value = OPTION_OUTPUT_FILE, msg::option = "x-json");
             }
+            auto message = LocalizedString::from_raw(fmt::format("{0:>20}", msg::format(msgVersionTableHeader)))
+                               .append_indent()
+                               .append_raw(fmt::format("{:>10}", msg::format(msgDateTableHeader)))
+                               .append_indent()
+                               .append_raw(fmt::format("{}\n", msg::format(msgVcpkgCommitTableHeader)));
 
-            print2("             version          date    vcpkg commit\n");
             for (auto&& version : versions)
             {
-                vcpkg::printf("%20.20s    %s    %s\n", version.version_string, version.commit_date, version.commit_id);
+                message.append_raw(fmt::format("{0:>20}", version.version_string))
+                    .append_indent()
+                    .append_raw(fmt::format("{}", version.commit_date))
+                    .append_indent()
+                    .append_raw(fmt::format("{}\n", version.commit_id));
             }
+
+            msg::println(message);
         }
+
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
