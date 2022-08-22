@@ -200,7 +200,7 @@ namespace vcpkg::Commands::PortHistory
         {
             if (maybe_output_file.has_value())
             {
-                msg::println_warning(msgOptionRequiresJsonSwitch, msg::option = OPTION_OUTPUT_FILE);
+                msg::println_warning(msgOptionRequiresOption, msg::value = OPTION_OUTPUT_FILE, msg::option = "x-json");
             }
             auto message = LocalizedString::from_raw(fmt::format("{0:>20}", msg::format(msgVersionTableHeader)))
                                .append_indent()

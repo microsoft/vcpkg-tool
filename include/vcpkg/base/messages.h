@@ -1259,7 +1259,6 @@ namespace vcpkg
                     "NuGet package creation succeeded, but no .nupkg was produced. Expected: \"{path}\"");
     DECLARE_MESSAGE(OptionMustBeInteger, (msg::option), "", "Value of --{option} must be an integer.");
     DECLARE_MESSAGE(OptionRequired, (msg::option), "", "--{option} option is required.");
-    DECLARE_MESSAGE(OptionRequiresJsonSwitch, (msg::option), "", "Option --{option} requires --x-json switch.");
     DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph");
     DECLARE_MESSAGE(PackageFailedtWhileExtracting,
                     (msg::value, msg::path),

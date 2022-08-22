@@ -695,7 +695,6 @@ namespace vcpkg
     REGISTER_MESSAGE(NugetPackageFileSucceededButCreationFailed);
     REGISTER_MESSAGE(OptionMustBeInteger);
     REGISTER_MESSAGE(OptionRequired);
-    REGISTER_MESSAGE(OptionRequiresJsonSwitch);
     REGISTER_MESSAGE(OptionRequiresOption);
     REGISTER_MESSAGE(OriginalBinParagraphHeader);
     REGISTER_MESSAGE(PackageFailedtWhileExtracting);

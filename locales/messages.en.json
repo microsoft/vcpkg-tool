@@ -297,7 +297,6 @@
   "NugetPackageFileSucceededButCreationFailed": "NuGet package creation succeeded, but no .nupkg was produced. Expected: \"{path}\"",
   "OptionMustBeInteger": "Value of --{option} must be an integer.",
   "OptionRequired": "--{option} option is required.",
-  "OptionRequiresJsonSwitch": "Option --{option} requires --x-json switch.",
   "OptionRequiresOption": "--{value} requires --{option}",
   "OriginalBinParagraphHeader": "\nOriginal Binary Paragraph",
   "PackageFailedtWhileExtracting": "'{value}' failed while extracting {path}.",
