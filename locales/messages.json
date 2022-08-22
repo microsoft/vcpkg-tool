@@ -663,6 +663,6 @@
   "WarningsTreatedAsErrors": "previous warnings being interpreted as errors",
   "WhileLookingForSpec": "while looking for {spec}:",
   "_WhileLookingForSpec.comment": "An example of {spec} is zlib:x64-windows.",
-  "WrotePkgConfInfo": "Wrote package config information to {path}.",
-  "_WrotePkgConfInfo.comment": "An example of {path} is /foo/bar."
+  "WroteNuGetPkgConfInfo": "Wrote NuGet package config information to {path}.",
+  "_WroteNuGetPkgConfInfo.comment": "An example of {path} is /foo/bar."
 }

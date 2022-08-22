@@ -403,5 +403,5 @@
   "WarningMessageMustUsePrintWarning": "The message named {value} starts with warning:, it must be changed to prepend WarningMessage in code instead.",
   "WarningsTreatedAsErrors": "previous warnings being interpreted as errors",
   "WhileLookingForSpec": "while looking for {spec}:",
-  "WrotePkgConfInfo": "Wrote package config information to {path}."
+  "WroteNuGetPkgConfInfo": "Wrote NuGet package config information to {path}."
 }
