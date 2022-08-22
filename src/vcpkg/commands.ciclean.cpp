@@ -31,11 +31,9 @@ namespace vcpkg::Commands::CIClean
     {
         using vcpkg::print2;
         auto& fs = paths.get_filesystem();
-        msg::println(msgStartingCIClean);
         clear_directory(fs, paths.buildtrees());
         clear_directory(fs, paths.installed().root());
         clear_directory(fs, paths.packages());
-        msg::println(msgCompletedCIClean);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 

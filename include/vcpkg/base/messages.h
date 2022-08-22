@@ -1463,8 +1463,6 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "Skipping clearing contents of {path} because it was not a directory.");
-    DECLARE_MESSAGE(StartingCIClean, (), "", "Starting vcpkg CI clean.");
-    DECLARE_MESSAGE(CompletedCIClean, (), "", "Completed vcpkg CI clean.");
     DECLARE_MESSAGE(InitRegistryFailedNoRepo,
                     (msg::path, msg::command_line),
                     "",

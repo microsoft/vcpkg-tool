@@ -485,7 +485,6 @@ namespace vcpkg
     REGISTER_MESSAGE(CMakeTargetsUsageHeuristicMessage);
     REGISTER_MESSAGE(CMakeToolChainFile);
     REGISTER_MESSAGE(CommandFailed);
-    REGISTER_MESSAGE(CompletedCIClean);
     REGISTER_MESSAGE(CompressFolderFailed);
     REGISTER_MESSAGE(ConflictingValuesForOption);
     REGISTER_MESSAGE(CopyrightIsDir);
@@ -701,7 +700,6 @@ namespace vcpkg
     REGISTER_MESSAGE(SpecifyDirectoriesWhenSearching);
     REGISTER_MESSAGE(SpecifyHostArch);
     REGISTER_MESSAGE(SpecifyTargetArch);
-    REGISTER_MESSAGE(StartingCIClean);
     REGISTER_MESSAGE(StoredBinaryCache);
     REGISTER_MESSAGE(SuggestStartingBashShell);
     REGISTER_MESSAGE(SuggestUpdateVcpkg);
