@@ -989,7 +989,6 @@ namespace vcpkg
         constexpr static StringLiteral DOCUMENTATION = "documentation";
         constexpr static StringLiteral LICENSE = "license";
         constexpr static StringLiteral DEPENDENCIES = "dependencies";
-        constexpr static StringLiteral DEV_DEPENDENCIES = "dev-dependencies";
         constexpr static StringLiteral FEATURES = "features";
         constexpr static StringLiteral DEFAULT_FEATURES = "default-features";
         constexpr static StringLiteral SUPPORTS = "supports";
@@ -1009,7 +1008,6 @@ namespace vcpkg
                 DOCUMENTATION,
                 LICENSE,
                 DEPENDENCIES,
-                DEV_DEPENDENCIES,
                 FEATURES,
                 DEFAULT_FEATURES,
                 SUPPORTS,
@@ -1055,10 +1053,6 @@ namespace vcpkg
                 "an array of overrides"};
             r.optional_object_field(obj, OVERRIDES, spgh.overrides, overrides_deserializer);
 
-            if (obj.contains(DEV_DEPENDENCIES))
-            {
-                r.add_generic_error(type_name(), DEV_DEPENDENCIES, " are not yet supported");
-            }
             std::string baseline;
             if (r.optional_object_field(obj, BUILTIN_BASELINE, baseline, BaselineCommitDeserializer::instance))
             {
@@ -1103,7 +1097,6 @@ namespace vcpkg
     constexpr StringLiteral ManifestDeserializer::DOCUMENTATION;
     constexpr StringLiteral ManifestDeserializer::LICENSE;
     constexpr StringLiteral ManifestDeserializer::DEPENDENCIES;
-    constexpr StringLiteral ManifestDeserializer::DEV_DEPENDENCIES;
     constexpr StringLiteral ManifestDeserializer::FEATURES;
     constexpr StringLiteral ManifestDeserializer::DEFAULT_FEATURES;
     constexpr StringLiteral ManifestDeserializer::SUPPORTS;

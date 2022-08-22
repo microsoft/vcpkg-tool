@@ -19,6 +19,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AddCommandFirstArg" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The first parameter to add must be 'artifact' or 'port'.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Eklenecek ilk parametre 'artifact' veya 'port' olmalıdır.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AddFirstArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The first argument to '{command_line}' must be 'artifact' or 'port'.]]></Val>
@@ -354,6 +363,15 @@
           <Val><![CDATA[Applied user-wide integration for this vcpkg root.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Bu vcpkg kökü için kullanıcı genelinde tümleştirme uygulandı.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsOptionIncompatibility" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[--{option} has no effect on find artifact.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[--{option}, yapıtı bulma üzerinde hiçbir etkiye sahip değildir.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -772,11 +790,38 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ConstraintViolation" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Found a constraint violation:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bir kısıtlama ihlali bulundu:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ControlAndManifestFilesPresent" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Both a manifest file and a CONTROL file exist in port directory: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bağlantı noktası dizininde hem bildirim dosyası hem de KONTROL dosyası bulunur: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CopyrightIsDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[`{path}` being a directory is deprecated.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA['{path}' bir dizin olarak kullanım dışı bırakıldı.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CorruptedDatabase" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Database corrupted.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Veritabanı bozuk.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -853,14 +898,23 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DocumentedFieldsSuggestUpdate" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[If these are documented fields that should be recognized try updating the vcpkg tool.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bunlar, tanınması gereken belgelenmiş alanlarsa, vcpkg aracını güncellemeyi deneyin.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DownloadAvailable" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[A downloadable copy of this tool is available and can be used by unsetting {env_var} environment variable.]]></Val>
+          <Val><![CDATA[A downloadable copy of this tool is available and can be used by unsetting {env_var}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Bu aracın indirilebilir bir kopyası var ve {env_var} ortam değişkeni ayarı kaldırılarak kullanılabilir.]]></Val>
+            <Val><![CDATA[Bu aracın indirilebilir bir kopyası var ve {env_var} ayarı kaldırılarak kullanılabilir.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[A downloadable copy of this tool is available and can be used by unsetting {env_var}.]]></Val>
+            <Val><![CDATA[A downloadable copy of this tool is available and can be used by unsetting {env_var} environment variable.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -1180,6 +1234,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ErrorsFound" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Found the following errors:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Aşağıdaki hataları bulundu:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExceededRecursionDepth" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Recursion depth exceeded.]]></Val>
@@ -1194,6 +1257,15 @@
           <Val><![CDATA[Excluded {spec}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Dışlanan {spec}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExcludedPackages" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following packages are excluded:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Aşağıdaki paketler hariç tutuldu:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1246,6 +1318,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExportingPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Exporting {package_name}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} dışa aktarılıyor...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExtendedDocumentationAtUrl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Extended documentation available at '{url}'.]]></Val>
@@ -1260,6 +1341,69 @@
           <Val><![CDATA[Failed to extract "{path}":]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA["{path}" ayıklanamadı:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToFindPortFeature" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Could not find {feature} in {spec}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} içinde {feature} bulunamadı.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToFormatMissingFile" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[No files to format.]A;Please pass either --all, or the explicit files to format or convert.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Biçimlendirilecek dosya yok. ]A;Lütfen biçimlendirmek veya dönüştürmek için --all veya açık dosyaları iletin.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToLoadInstalledManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The control or mnaifest file for {spec} could not be loaded due to the following error. Please remove {spec} and re-attempt.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Aşağıdaki hata nedeniyle {spec} için kontrol veya manifest dosyası yüklenemedi. Lütfen {spec} öğesini kaldırın ve yeniden deneyin.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToLocateSpec" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to locate spec in graph: {spec}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Grafikte spec bulunamadı: {spec}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToObtainDependencyVersion" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Cannot find desired dependency version.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[İstenen bağımlılık sürümü bulunamıyor.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToObtainLocalPortGitSha" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to obtain git SHAs for local ports.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Yerel bağlantı noktaları için git SHA'ları alınamadı.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToObtainPackageVersion" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Cannot find desired package version.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[İstenen paket sürümü bulunamıyor.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1282,11 +1426,65 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FailedToParseControl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to parse control file: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Denetim dosyası ayrıştırılamadı: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToParseJson" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to parse JSON file: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[JSON dosyası ayrıştırılamadı: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToParseManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to parse manifest file: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bildirim dosyası ayrıştırılamadı: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FailedToProvisionCe" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to provision vcpkg-ce.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[vcpkg-ce sağlanamadı.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToRead" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to read {path}: {error_msg}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} okunamadı: {error_msg}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToReadParagraph" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to read paragraphs from {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} yolundan paragraflar okunamadı]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToRemoveControl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to remove control file {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} denetim dosyası kaldırılamadı]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1321,6 +1519,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Failed to store binary cache '{path}':'{error_msg}']]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToWriteManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to write manifest file {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} manifest dosyası yazılamadı]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1798,6 +2005,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InstalledPackages" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following packages are already installed:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Aşağıdaki paketler zaten yüklü:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InstalledRequestedPackages" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[All requested packages are currently installed.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[İstenen tüm paketler şu anda yüklü.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InstallingFromLocation" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[-- Installing port from location: {path}]]></Val>
@@ -2013,24 +2238,6 @@
           <Val><![CDATA[Invalid {system_name} linkage type: [{value}]5D;]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Geçersiz {system_name} bağlantı türü: [{value}]5D;]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";JsonErrorFailedToParse" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[failed to parse {path}:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} ayrıştırılamadı:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";JsonErrorFailedToRead" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[failed to read {path}: {error_msg}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} okunamadı: {error_msg}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2272,6 +2479,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ManifestFormatCompleted" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Succeeded in formatting the manifest files.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bildirim dosyalarını biçimlendirmeyi başardı.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";MismatchedBinaryParagraphs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[[sanity check]5D; The serialized binary paragraph was different from the original binary paragraph.]A;Please open an issue at {url}, with the following output:]]></Val>
@@ -2290,11 +2506,38 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";MissingArgFormatManifest" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[format-manifest was passed --convert-control without '--all'.]A;This doesn't do anything: control files passed explicitly are converted automatically.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[format-manifest '--all' olmadan --convert-control’den geçirildi.]A;Bu işlem hiçbir şey yapmaz: Açıkça geçirilen kontrol dosyaları otomatik olarak dönüştürülür.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";MissingDependency" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Package {spec} is installed, but dependency {package_name} is not.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Paket {spec} yüklü, ancak bağımlılık {package_name} değil.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";MissingExtension" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Missing '{extension}' extension.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA['{extension}' uzantısı eksik.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";MissingPortSuggestPullRequest" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[If your port is not listed, please open an issue at and/or consider making a pull request.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bağlantı noktanız listede yoksa, lütfen bir sorun bildirimi açın ve/veya bir çekme isteğinde bulunmayı düşünün.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2467,6 +2710,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";OptionRequired" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[--{option} option is required.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[--{option} seçeneği gereklidir.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";OriginalBinParagraphHeader" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[]A;Original Binary Paragraph]]></Val>
@@ -2490,6 +2742,60 @@
           <Val><![CDATA[(Experimental) Specify the packages root directory.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[(Deneysel) Paketler kök dizinini belirtin.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackagesToInstall" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following packages will be built and installed:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Aşağıdaki paketler oluşturulacak ve kurulacaktır:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackagesToInstallDirectly" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following packages will be directly installed:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Aşağıdaki paketler doğrudan yüklenecektir:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackagesToModify" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Additional packages (*) will be modified to complete this operation.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bu işlemi tamamlamak için ek paketler (*) değiştirilecektir.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackagesToRebuild" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following packages will be rebuilt:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Aşağıdaki paketler yeniden oluşturulacak:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackagesToRebuildSuggestRecurse" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[If you are sure you want to rebuild the above packages, run the command with the --recurse option.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Yukarıdaki paketleri yeniden derlemek istediğinizden eminseniz, komutu --recurse seçeneğiyle çalıştırın.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackagesToRemove" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following packages will be removed:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Aşağıdaki paketler kaldırılacaktır:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2571,9 +2877,21 @@
       </Item>
       <Item ItemId=";PortSupportsField" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[(supports: "{value}")]]></Val>
+          <Val><![CDATA[(supports: "{supports_expression}")]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[(destekler: "{value}")]]></Val>
+            <Val><![CDATA[(destekler: "{supports_expression}")]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[(supports: "{value}")]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortTypeConflict" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The port type of {spec} differs between the installed and available portfile.]A;Please manually remove {spec} and re-run this command.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} bağlantı noktası türü, kurulu ve kullanılabilir bağlantı noktası dosyası arasında farklılık gösterir.]A;Lütfen {spec} öğesini manuel olarak kaldırın ve bu komutu yeniden çalıştırın.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2785,6 +3103,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";SuggestGitPull" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The result may be outdated. Run `git pull` to get the latest results.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Sonuç eski olabilir. En son sonuçları almak için `git pull` komutunu çalıştırın.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";SuggestResolution" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[To attempt to resolve all errors at once, run:]A;vcpkg {command_name} --{option}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Tüm hataları bir kerede çözmeyi denemek için şunu çalıştırın:]A;vcpkg {command_name} --{option}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";SuggestStartingBashShell" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Please make sure you have started a new bash shell for the change to take effect.]]></Val>
@@ -2971,6 +3307,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UnrecognizedConfigField" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[configuration contains the following unrecognized fields:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[yapılandırma aşağıdaki tanınmayan alanları içeriyor:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UnsupportedPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Port {package_name} is not supported.]]></Val>
@@ -2985,6 +3330,15 @@
           <Val><![CDATA[- dependency {value} is not supported.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[- bağımlılık {value} desteklenmiyor.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnsupportedPortFeature" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{spec} is only supported on '{supports_expression}']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} yalnızca '{supports_expression}' üzerinde desteklenir]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3384,6 +3738,15 @@
           <Val><![CDATA[previous warnings being interpreted as errors]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[önceki uyarılar hata olarak yorumlanıyor]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WhileLookingForSpec" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while looking for {spec}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} aranırken:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
