@@ -490,6 +490,24 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
                 "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
     }
 
+    SECTION ("valid CAPITAL baseline")
+    {
+        std::string raw = R"json({
+    "name": "zlib",
+    "version-string": "abcd",
+    "builtin-baseline": "089FA4DE7DCA22C67DCAB631F618D5CD0697C8D4"
+}
+)json";
+        auto m_pgh = test_parse_port_manifest(raw);
+
+        REQUIRE(m_pgh.has_value());
+        auto& pgh = **m_pgh.get();
+        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+        REQUIRE(pgh.core_paragraph->builtin_baseline.value_or("does not have a value") ==
+                "089FA4DE7DCA22C67DCAB631F618D5CD0697C8D4");
+    }
+
     SECTION ("empty baseline")
     {
         std::string raw = R"json({
