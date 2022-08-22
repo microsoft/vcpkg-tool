@@ -1488,5 +1488,5 @@ namespace vcpkg
                     (msg::value, msg::option),
                     "{value} is a command line option.",
                     "--{value} requires --{option}");
-    DECLARE_MESSAGE(NoInstalledPackages, (), "", "No packages are installed. Did you mean `search`?");
+    DECLARE_MESSAGE(NoInstalledPackages, (), "The name 'search' is the name of a command that is not localized.", "No packages are installed. Did you mean `search`?");
 }
