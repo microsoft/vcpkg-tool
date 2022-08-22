@@ -107,7 +107,7 @@ namespace vcpkg::Commands::SetInstalled
             auto pkgsconfig_path = paths.original_cwd / *p_pkgsconfig;
             auto pkgsconfig_contents = generate_nuget_packages_config(action_plan);
             fs.write_contents(pkgsconfig_path, pkgsconfig_contents, VCPKG_LINE_INFO);
-            msg::println(msgWrotePkgConfInfo, msg::path = pkgsconfig_path);
+            msg::println(msgWroteNuGetPkgConfInfo, msg::path = pkgsconfig_path);
         }
 
         if (dry_run == DryRun::Yes)

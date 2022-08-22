@@ -1591,5 +1591,5 @@ namespace vcpkg
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
-    DECLARE_MESSAGE(WrotePkgConfInfo, (msg::path), "", "Wrote package config information to {path}.");
+    DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}.");
 }

@@ -797,5 +797,5 @@ namespace vcpkg
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
     REGISTER_MESSAGE(WhileLookingForSpec);
-    REGISTER_MESSAGE(WrotePkgConfInfo);
+    REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
 }
