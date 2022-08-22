@@ -50,7 +50,7 @@ namespace vcpkg::Commands::Z_PrintConfig
             obj.insert("manifest_mode_enabled", Json::Value::boolean(paths.manifest_mode_enabled()));
         }
         obj.sort_keys();
-        msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("{}\n", Json::stringify(obj)));
+        msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(obj) + "\n");
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 }

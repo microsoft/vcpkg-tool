@@ -24,7 +24,7 @@ namespace vcpkg::Commands::X_VSInstances
         const auto instances = vcpkg::VisualStudio::get_visual_studio_instances(paths.get_filesystem());
         for (const std::string& instance : instances)
         {
-            msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("{}\n", instance));
+            msg::write_unlocalized_text_to_stdout(Color::none, instance + "\n");
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
