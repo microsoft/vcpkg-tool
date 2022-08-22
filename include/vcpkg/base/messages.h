@@ -725,10 +725,7 @@ namespace vcpkg
                     "{command_line}\n"
                     "failed with the following results:");
     DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":");
-    DECLARE_MESSAGE(ConflictingValuesForOption,
-                    (msg::value),
-                    "'{value}' is a command option.",
-                    "conflicting values specified for '--{value}'.");
+    DECLARE_MESSAGE(ConflictingValuesForOption, (msg::option), "", "conflicting values specified for '--{option}'.");
     DECLARE_MESSAGE(ConstraintViolation, (), "", "Found a constraint violation:");
     DECLARE_MESSAGE(ControlAndManifestFilesPresent,
                     (msg::path),
@@ -752,6 +749,7 @@ namespace vcpkg
                     "=== curl output ===\n"
                     "{actual}\n"
                     "=== end curl output ===");
+    DECLARE_MESSAGE(DateTableHeader, (), "", "Date");
     DECLARE_MESSAGE(DefaultBrowserLaunched, (msg::url), "", "Default browser launched to {url}.");
     DECLARE_MESSAGE(DefaultFlag, (msg::option), "", "Defaulting to --{option} being on.");
     DECLARE_MESSAGE(DefaultPathToBinaries,
@@ -864,10 +862,7 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' here");
     DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
-    DECLARE_MESSAGE(ExpectedValueForOption,
-                    (msg::value),
-                    "'{value}' is a command option.",
-                    "expected value after '{value}'.");
+    DECLARE_MESSAGE(ExpectedValueForOption, (msg::option), "", "expected value after --{option}.");
     DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
     DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
     DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":");
@@ -876,7 +871,11 @@ namespace vcpkg
                     "",
                     "No files to format.\nPlease pass either --all, or the explicit files to format or convert.");
     DECLARE_MESSAGE(FailedToObtainLocalPortGitSha, (), "", "Failed to obtain git SHAs for local ports.");
-    DECLARE_MESSAGE(FailedToParseBinParagraph,
+    DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
+                    (),
+                    "",
+                    "Failed to parse CMake console output to locate block start/end markers.");
+    DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                     (msg::error_msg),
                     "'{error_msg}' is the error message for failing to parse the Binary Paragraph.",
                     "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at "
@@ -891,10 +890,6 @@ namespace vcpkg
                     "remove {spec} and re-attempt.");
     DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
     DECLARE_MESSAGE(FailedToObtainPackageVersion, (), "", "Cannot find desired package version.");
-    DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
-                    (),
-                    "",
-                    "Failed to parse CMake console output to locate block start/end markers.");
     DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse control file: {path}");
     DECLARE_MESSAGE(FailedToParseJson, (msg::path), "", "Failed to parse JSON file: {path}");
     DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: {path}");
@@ -1089,6 +1084,7 @@ namespace vcpkg
                     (),
                     "",
                     "Value of --sort must be one of 'lexicographical', 'topological', 'reverse'.");
+    DECLARE_MESSAGE(InvalidCommitId, (msg::value), "'{value}' is a commit id.", "Invalid commit id {value}");
     DECLARE_MESSAGE(InvalidFilename,
                     (msg::value, msg::path),
                     "'{value}' is a list of invalid characters. I.e. \\/:*?<>|",
@@ -1205,11 +1201,6 @@ namespace vcpkg
                     "The message named {value} ends with a newline which should be added by formatting "
                     "rather than by localization.");
     DECLARE_MESSAGE(ManifestFormatCompleted, (), "", "Succeeded in formatting the manifest files.");
-    DECLARE_MESSAGE(MismatchedBinaryParagraphs,
-                    (msg::url),
-                    "A comparison of the original binary paragraph and serialized binary paragraph is expected.",
-                    "[sanity check] The serialized binary paragraph was different from the original binary "
-                    "paragraph.\nPlease open an issue at {url}, with the following output:");
     DECLARE_MESSAGE(Missing7zHeader, (), "", "Unable to find 7z header.");
     DECLARE_MESSAGE(MissingArgFormatManifest,
                     (),
@@ -1268,6 +1259,7 @@ namespace vcpkg
                     "NuGet package creation succeeded, but no .nupkg was produced. Expected: \"{path}\"");
     DECLARE_MESSAGE(OptionMustBeInteger, (msg::option), "", "Value of --{option} must be an integer.");
     DECLARE_MESSAGE(OptionRequired, (msg::option), "", "--{option} option is required.");
+    DECLARE_MESSAGE(OptionRequiresJsonSwitch, (msg::option), "", "Option --{option} requires --x-json switch.");
     DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph");
     DECLARE_MESSAGE(PackageFailedtWhileExtracting,
                     (msg::value, msg::path),
@@ -1308,6 +1300,10 @@ namespace vcpkg
                     (msg::package_name),
                     "",
                     "the baseline does not contain an entry for port {package_name}");
+    DECLARE_MESSAGE(PortsAdded, (msg::count), "", "The following {count} ports were added:");
+    DECLARE_MESSAGE(PortsNoDiff, (), "", "There were no changes in the ports between the two commits.");
+    DECLARE_MESSAGE(PortsRemoved, (msg::count), "", "The following {count} ports were removed:");
+    DECLARE_MESSAGE(PortsUpdated, (msg::count), "", "\nThe following {count} ports were updated:");
     DECLARE_MESSAGE(PortSupportsField, (msg::supports_expression), "", "(supports: \"{supports_expression}\")");
     DECLARE_MESSAGE(PortTypeConflict,
                     (msg::spec),
@@ -1400,6 +1396,7 @@ namespace vcpkg
                     "calling {system_api} failed with {exit_code} ({error_msg})");
     DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
     DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
+    DECLARE_MESSAGE(TotalTime, (msg::count), "", " Total elapsed time: {count}.");
     DECLARE_MESSAGE(TwoFeatureFlagsSpecified,
                     (msg::value),
                     "'{value}' is a feature flag.",
@@ -1533,6 +1530,7 @@ namespace vcpkg
                     (),
                     "",
                     "vcpkg-ce ('configure environment') is experimental and may change at any time.");
+    DECLARE_MESSAGE(VcpkgCommitTableHeader, (), "", "VCPKG Commit");
     DECLARE_MESSAGE(
         VcpkgCompletion,
         (msg::value, msg::path),
@@ -1580,6 +1578,7 @@ namespace vcpkg
                     "",
                     "Failed to load port because versions are inconsistent. The file \"{path}\" contains the version "
                     "{actual_version}, but the version database indicates that it should be {expected_version}.");
+    DECLARE_MESSAGE(VersionTableHeader, (), "", "Version");
     DECLARE_MESSAGE(VSExaminedInstances, (), "", "The following Visual Studio instances were considered:");
     DECLARE_MESSAGE(VSExaminedPaths, (), "", "The following paths were examined for Visual Studio instances:");
     DECLARE_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance");
@@ -1592,4 +1591,5 @@ namespace vcpkg
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
+    DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}.");
 }
