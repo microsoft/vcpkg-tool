@@ -297,9 +297,9 @@ namespace vcpkg::Commands::CIVerifyVersions
         auto maybe_port_git_tree_map = paths.git_get_local_port_treeish_map();
         if (!maybe_port_git_tree_map)
         {
-            Checks::exit_with_message(VCPKG_LINE_INFO,
-                                      "Fatal error: Failed to obtain git SHAs for local ports.\n%s",
-                                      maybe_port_git_tree_map.error());
+            Checks::msg_exit_with_error(
+                VCPKG_LINE_INFO,
+                msg::format(msgFailedToObtainLocalPortGitSha).append_raw("\n" + maybe_port_git_tree_map.error()));
         }
 
         auto port_git_tree_map = maybe_port_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
@@ -313,13 +313,13 @@ namespace vcpkg::Commands::CIVerifyVersions
             auto port_name = port_path.stem();
             if (Util::Sets::contains(exclusion_set, port_name.to_string()))
             {
-                if (verbose) vcpkg::printf("SKIP: %s\n", port_name);
+                if (verbose) msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("SKIP: {}\n", port_name));
                 continue;
             }
             auto git_tree_it = port_git_tree_map.find(port_name);
             if (git_tree_it == port_git_tree_map.end())
             {
-                vcpkg::printf(Color::error, "FAIL: %s\n", port_name);
+                msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("FAIL: {}\n", port_name));
                 errors.emplace(Strings::format("Error: While validating port %s.\n"
                                                "       Missing Git SHA.\n"
                                                "       Run:\n\n"
@@ -344,7 +344,7 @@ namespace vcpkg::Commands::CIVerifyVersions
 
             if (manifest_exists && control_exists)
             {
-                vcpkg::printf(Color::error, "FAIL: %s\n", port_name);
+                msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("FAIL: {}\n", port_name));
                 errors.emplace(
                     Strings::format("Error: While validating port %s.\n"
                                     "       Both a manifest file and a CONTROL file exist in port directory: %s",
@@ -355,7 +355,7 @@ namespace vcpkg::Commands::CIVerifyVersions
 
             if (!manifest_exists && !control_exists)
             {
-                vcpkg::printf(Color::error, "FAIL: %s\n", port_name);
+                msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("FAIL: {}\n", port_name));
                 errors.emplace(Strings::format("Error: While validating port %s.\n"
                                                "       No manifest file or CONTROL file exist in port directory: %s",
                                                port_name,
@@ -367,7 +367,7 @@ namespace vcpkg::Commands::CIVerifyVersions
             auto versions_file_path = paths.builtin_registry_versions / prefix / Strings::concat(port_name, ".json");
             if (!fs.exists(versions_file_path, IgnoreErrors{}))
             {
-                vcpkg::printf(Color::error, "FAIL: %s\n", port_name);
+                msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("FAIL: {}\n", port_name));
                 errors.emplace(Strings::format("Error: While validating port %s.\n"
                                                "       Missing expected versions file at: %s\n"
                                                "       Run:\n\n"
@@ -384,24 +384,27 @@ namespace vcpkg::Commands::CIVerifyVersions
 
             if (!maybe_ok)
             {
-                vcpkg::printf(Color::error, "FAIL: %s\n", port_name);
+                msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("FAIL: {}\n", port_name));
                 errors.emplace(maybe_ok.error());
                 continue;
             }
 
-            if (verbose) vcpkg::printf("%s", maybe_ok.value_or_exit(VCPKG_LINE_INFO));
+            if (verbose) msg::write_unlocalized_text_to_stdout(Color::none, maybe_ok.value_or_exit(VCPKG_LINE_INFO));
         }
 
         if (!errors.empty())
         {
-            print2(Color::error, "Found the following errors:\n");
+            auto message = msg::format(msgErrorsFound);
             for (auto&& error : errors)
             {
-                vcpkg::printf(Color::error, "%s\n", error);
+                message.append_raw("\n").append_indent().append_raw(error);
             }
-            print2(Color::error,
-                   "\nTo attempt to resolve all errors at once, run:\n\n"
-                   "    vcpkg x-add-version --all\n\n");
+
+            message.append_raw("\n").append(
+                msgSuggestResolution, msg::command_name = "x-add-version", msg::option = "all");
+
+            msg::println_error(message);
+
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
         Checks::exit_success(VCPKG_LINE_INFO);
