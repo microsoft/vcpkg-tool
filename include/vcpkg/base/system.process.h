@@ -90,10 +90,15 @@ namespace vcpkg
     struct Environment
     {
 #if defined(_WIN32)
-        std::wstring m_env_data;
-#else  // ^^^ _WIN32 // !_WIN32 vvv
-        std::string m_env_data;
-#endif // ^^^ !_WIN32
+        using string_t = std::wstring;
+#else
+        using string_t = std::string;
+#endif
+        void add_entry(StringView key, StringView value);
+        const string_t& get() const;
+
+    private:
+        string_t m_env_data;
     };
 
     const Environment& get_clean_environment();

@@ -22,6 +22,8 @@ namespace vcpkg
         std::set<std::string, std::less<>> switches;
         std::map<std::string, std::string, std::less<>> settings;
         std::map<std::string, std::vector<std::string>, std::less<>> multisettings;
+
+        const std::string* read_setting(StringLiteral setting) const noexcept;
     };
 
     struct CommandSwitch
@@ -87,8 +89,6 @@ namespace vcpkg
 
     std::string create_example_string(const std::string& command_and_arguments);
 
-    std::string format_environment_variable(StringLiteral lit);
-
     struct HelpTableFormatter
     {
         void format(StringView col1, StringView col2);
@@ -139,6 +139,9 @@ namespace vcpkg
         std::unique_ptr<std::string> builtin_ports_root_dir;
         constexpr static StringLiteral BUILTIN_REGISTRY_VERSIONS_DIR_ARG = "x-builtin-registry-versions-dir";
         std::unique_ptr<std::string> builtin_registry_versions_dir;
+        constexpr static StringLiteral REGISTRIES_CACHE_DIR_ENV = "X_VCPKG_REGISTRIES_CACHE";
+        constexpr static StringLiteral REGISTRIES_CACHE_DIR_ARG = "x-registries-cache";
+        std::unique_ptr<std::string> registries_cache_dir;
 
         constexpr static StringLiteral DEFAULT_VISUAL_STUDIO_PATH_ENV = "VCPKG_VISUAL_STUDIO_PATH";
         std::unique_ptr<std::string> default_visual_studio_path;

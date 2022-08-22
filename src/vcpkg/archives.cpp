@@ -12,16 +12,6 @@ namespace
 {
     using namespace vcpkg;
 
-    DECLARE_AND_REGISTER_MESSAGE(
-        MsiexecFailedToExtract,
-        (msg::path, msg::exit_code),
-        "",
-        "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:");
-    DECLARE_AND_REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion,
-                                 (msg::path),
-                                 "",
-                                 "Could not deduce nuget id and version from filename: {path}");
-
 #if defined(_WIN32)
     void win32_extract_nupkg(const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
     {
@@ -61,8 +51,9 @@ namespace
         const auto result = flatten(cmd_execute_and_capture_output(nuget_command), Tools::NUGET);
         if (!result)
         {
-            Checks::exit_with_message(
-                VCPKG_LINE_INFO, "Failed to extract '%s' with message:\n%s", archive, result.error());
+            Checks::msg_exit_with_message(
+                VCPKG_LINE_INFO,
+                msg::format(msgFailedToExtract, msg::path = archive).append_raw("\n").append(result.error()));
         }
     }
 
@@ -100,7 +91,7 @@ namespace
                 if (i < 19 && code_and_output->exit_code == 1618)
                 {
                     // ERROR_INSTALL_ALREADY_RUNNING
-                    print2("Another installation is in progress on the machine, sleeping 6s before retrying.\n");
+                    msg::println(msgAnotherInstallationInProgress);
                     std::this_thread::sleep_for(std::chrono::seconds(6));
                     continue;
                 }
@@ -125,8 +116,11 @@ namespace
 
         if (!maybe_output)
         {
-            Checks::exit_with_message(
-                VCPKG_LINE_INFO, "7zip failed while extracting '%s' with message:\n%s", archive, maybe_output.error());
+            Checks::msg_exit_with_message(
+                VCPKG_LINE_INFO,
+                msg::format(msgPackageFailedtWhileExtracting, msg::value = "7zip", msg::path = archive)
+                    .append_raw("\n")
+                    .append(maybe_output.error()));
         }
 
         recursion_limiter_sevenzip = false;
@@ -166,7 +160,11 @@ namespace
             const auto code =
                 cmd_execute(Command{"unzip"}.string_arg("-qqo").string_arg(archive), WorkingDirectory{to_path})
                     .value_or_exit(VCPKG_LINE_INFO);
-            Checks::check_exit(VCPKG_LINE_INFO, code == 0, "unzip failed while extracting %s", archive);
+            Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                   code == 0,
+                                   msgPackageFailedtWhileExtracting,
+                                   msg::value = "unzip",
+                                   msg::path = archive);
         }
 #endif
         else if (ext == ".gz" || ext == ".bz2" || ext == ".tgz")
@@ -175,7 +173,7 @@ namespace
         }
         else
         {
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Unexpected archive extension: %s", ext);
+            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgUnexpectedExtension, msg::extension = ext);
         }
     }
 
@@ -203,17 +201,18 @@ namespace vcpkg
 
         const Path stem = archive.stem();
         const auto subext = stem.extension();
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           Strings::case_insensitive_ascii_equals(subext, ".7z"),
-                           "Unable to extract 7z archive from Installer %s. Missing '.7z.exe' extension.",
-                           archive);
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               Strings::case_insensitive_ascii_equals(subext, ".7z"),
+                               msg::format(msgPackageFailedtWhileExtracting, msg::value = "7zip", msg::path = archive)
+                                   .append(msgMissingExtension, msg::extension = ".7.exe"));
 
         auto contents = fs.read_contents(archive, VCPKG_LINE_INFO);
         const auto pos = contents.find(header_7z);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           pos != std::string::npos,
-                           "Unable to extract 7z archive from Installer %s. Unable to find 7z header.",
-                           archive);
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               pos != std::string::npos,
+                               msg::format(msgPackageFailedtWhileExtracting, msg::value = "7zip", msg::path = archive)
+                                   .append(msgMissing7zHeader));
+
         contents = contents.substr(pos);
         fs.write_contents(to_path, std::move(contents), VCPKG_LINE_INFO);
     }
@@ -252,7 +251,11 @@ namespace vcpkg
     {
         const auto code =
             cmd_execute(Command{tar_tool}.string_arg("xzf").string_arg(archive), WorkingDirectory{to_path});
-        Checks::check_exit(VCPKG_LINE_INFO, succeeded(code), "tar failed while extracting %s", archive);
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               succeeded(code),
+                               msgPackageFailedtWhileExtracting,
+                               msg::value = "tar",
+                               msg::path = archive);
     }
 
     void extract_tar_cmake(const Path& cmake_tool, const Path& archive, const Path& to_path)
@@ -261,7 +264,11 @@ namespace vcpkg
         const auto code =
             cmd_execute(Command{cmake_tool}.string_arg("-E").string_arg("tar").string_arg("xzf").string_arg(archive),
                         WorkingDirectory{to_path});
-        Checks::check_exit(VCPKG_LINE_INFO, succeeded(code), "CMake failed while extracting %s", archive);
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               succeeded(code),
+                               msgPackageFailedtWhileExtracting,
+                               msg::value = "CMake",
+                               msg::path = archive);
     }
 
     void extract_archive(

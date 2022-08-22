@@ -10,16 +10,6 @@ namespace
 {
     using namespace vcpkg;
 
-    DECLARE_AND_REGISTER_MESSAGE(GitCommandFailed, (msg::command_line), "", "failed to execute: {command_line}");
-    DECLARE_AND_REGISTER_MESSAGE(GitUnexpectedCommandOutput, (), "", "unexpected git output");
-    DECLARE_AND_REGISTER_MESSAGE(GitStatusUnknownFileStatus,
-                                 (msg::value),
-                                 "{value} is a single character indicating file status, for example: A, U, M, D",
-                                 "unknown file status: {value}");
-    DECLARE_AND_REGISTER_MESSAGE(GitStatusOutputExpectedNewLine, (), "", "expected new line");
-    DECLARE_AND_REGISTER_MESSAGE(GitStatusOutputExpectedFileName, (), "", "expected a file name");
-    DECLARE_AND_REGISTER_MESSAGE(GitStatusOutputExpectedRenameOrNewline, (), "", "expected renamed file or new lines");
-
     Command git_cmd_builder(const GitConfig& config)
     {
         auto cmd = Command(config.git_exe);

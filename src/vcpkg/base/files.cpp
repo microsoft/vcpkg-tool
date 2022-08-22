@@ -43,11 +43,6 @@ namespace
 {
     using namespace vcpkg;
 
-    DECLARE_AND_REGISTER_MESSAGE(WaitingToTakeFilesystemLock,
-                                 (msg::path),
-                                 "",
-                                 "waiting to take filesystem lock on {path}...");
-
     std::atomic<uint64_t> g_us_filesystem_stats(0);
 
     struct IsSlash
@@ -1518,7 +1513,7 @@ namespace vcpkg
     {
         this->rename(old_path, new_path, ec);
         using namespace std::chrono_literals;
-        for (const auto& delay : {10ms, 100ms, 1000ms})
+        for (const auto& delay : {10ms, 100ms, 1000ms, 10000ms})
         {
             if (!ec)
             {

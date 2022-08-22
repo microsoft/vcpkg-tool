@@ -42,12 +42,9 @@ namespace vcpkg
         std::vector<ToolsetArchOption> supported_architectures;
     };
 
-    namespace Build
-    {
-        struct PreBuildInfo;
-        struct AbiInfo;
-        struct CompilerInfo;
-    }
+    struct PreBuildInfo;
+    struct AbiInfo;
+    struct CompilerInfo;
 
     namespace details
     {
@@ -84,7 +81,6 @@ namespace vcpkg
         Path build_dir(const PackageSpec& spec) const;
         Path build_dir(StringView package_name) const;
         Path build_info_file_path(const PackageSpec& spec) const;
-        Path spdx_resource_dir(const PackageSpec& spec) const;
 
         bool is_valid_triplet(Triplet t) const;
         const std::vector<std::string> get_available_triplets_names() const;
@@ -161,13 +157,13 @@ namespace vcpkg
         const RegistrySet& get_registry_set() const;
 
         // Retrieve a toolset matching the requirements in prebuildinfo
-        const Toolset& get_toolset(const Build::PreBuildInfo& prebuildinfo) const;
+        const Toolset& get_toolset(const PreBuildInfo& prebuildinfo) const;
 
         Filesystem& get_filesystem() const;
 
-        const Environment& get_action_env(const Build::AbiInfo& abi_info) const;
-        const std::string& get_triplet_info(const Build::AbiInfo& abi_info) const;
-        const Build::CompilerInfo& get_compiler_info(const Build::AbiInfo& abi_info) const;
+        const Environment& get_action_env(const AbiInfo& abi_info) const;
+        const std::string& get_triplet_info(const AbiInfo& abi_info) const;
+        const CompilerInfo& get_compiler_info(const AbiInfo& abi_info) const;
         bool manifest_mode_enabled() const { return get_manifest().has_value(); }
 
         const FeatureFlagSettings& get_feature_flags() const;
@@ -178,5 +174,8 @@ namespace vcpkg
         const Path& builtin_ports_directory() const;
 
         bool use_git_default_registry() const;
+
+        const Path& artifacts() const;
+        const Path& registries_cache() const;
     };
 }

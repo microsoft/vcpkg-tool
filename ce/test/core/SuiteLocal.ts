@@ -41,7 +41,12 @@ export class SuiteLocal {
   constructor() {
     this.tempFolder = uniqueTempFolder();
     this.session = new Session(this.tempFolder, <any>{}, {
+      vcpkgCommand: undefined,
       homeFolder: join(this.tempFolder, 'vcpkg_root'),
+      vcpkgArtifactsRoot: join(this.tempFolder, 'artifacts'),
+      vcpkgDownloads: join(this.tempFolder, 'downloads'),
+      vcpkgRegistriesCache: join(this.tempFolder, 'registries'),
+      telemetryEnabled: false
     }, {});
 
     this.fs = new LocalFileSystem(this.session);

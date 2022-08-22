@@ -39,19 +39,19 @@ namespace vcpkg::Commands::SetInstalled
 
     void perform_and_exit_ex(const VcpkgCmdArguments& args,
                              const VcpkgPaths& paths,
-                             const PortFileProvider::PathsPortFileProvider& provider,
+                             const PathsPortFileProvider& provider,
                              BinaryCache& binary_cache,
                              const CMakeVars::CMakeVarProvider& cmake_vars,
-                             Dependencies::ActionPlan action_plan,
+                             ActionPlan action_plan,
                              DryRun dry_run,
                              const Optional<Path>& maybe_pkgsconfig,
                              Triplet host_triplet,
-                             const Install::KeepGoing keep_going)
+                             const KeepGoing keep_going)
     {
         auto& fs = paths.get_filesystem();
 
         cmake_vars.load_tag_vars(action_plan, provider, host_triplet);
-        Build::compute_all_abis(paths, action_plan, cmake_vars, {});
+        compute_all_abis(paths, action_plan, cmake_vars, {});
 
         std::set<std::string> all_abis;
 
@@ -59,7 +59,7 @@ namespace vcpkg::Commands::SetInstalled
         for (const auto& action : action_plan.install_actions)
         {
             all_abis.insert(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
-            if (action.request_type == Dependencies::RequestType::USER_REQUESTED)
+            if (action.request_type == RequestType::USER_REQUESTED)
             {
                 // save for reporting usage later
                 user_requested_specs.push_back(action.spec);
@@ -86,7 +86,7 @@ namespace vcpkg::Commands::SetInstalled
             }
         }
 
-        action_plan.remove_actions = Dependencies::create_remove_plan(specs_to_remove, status_db);
+        action_plan.remove_actions = create_remove_plan(specs_to_remove, status_db);
 
         for (const auto& action : action_plan.remove_actions)
         {
@@ -95,15 +95,15 @@ namespace vcpkg::Commands::SetInstalled
             specs_installed.erase(action.spec);
         }
 
-        Util::erase_remove_if(action_plan.install_actions, [&](const Dependencies::InstallPlanAction& ipa) {
+        Util::erase_remove_if(action_plan.install_actions, [&](const InstallPlanAction& ipa) {
             return Util::Sets::contains(specs_installed, ipa.spec);
         });
 
-        Dependencies::print_plan(action_plan, true, paths.builtin_ports_directory());
+        print_plan(action_plan, true, paths.builtin_ports_directory());
 
         if (auto p_pkgsconfig = maybe_pkgsconfig.get())
         {
-            Build::compute_all_abis(paths, action_plan, cmake_vars, status_db);
+            compute_all_abis(paths, action_plan, cmake_vars, status_db);
             auto pkgsconfig_path = paths.original_cwd / *p_pkgsconfig;
             auto pkgsconfig_contents = generate_nuget_packages_config(action_plan);
             fs.write_contents(pkgsconfig_path, pkgsconfig_contents, VCPKG_LINE_INFO);
@@ -117,16 +117,10 @@ namespace vcpkg::Commands::SetInstalled
 
         paths.flush_lockfile();
 
-        Install::track_install_plan(action_plan);
+        track_install_plan(action_plan);
 
-        const auto summary = Install::perform(args,
-                                              action_plan,
-                                              keep_going,
-                                              paths,
-                                              status_db,
-                                              binary_cache,
-                                              Build::null_build_logs_recorder(),
-                                              cmake_vars);
+        const auto summary = Install::perform(
+            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), cmake_vars);
 
         print2("\nTotal elapsed time: ", GlobalState::timer.to_string(), "\n\n");
 
@@ -152,7 +146,7 @@ namespace vcpkg::Commands::SetInstalled
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
-            return Input::check_and_get_full_package_spec(
+            return check_and_get_full_package_spec(
                 std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
 
@@ -160,12 +154,11 @@ namespace vcpkg::Commands::SetInstalled
 
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
         const bool only_downloads = Util::Sets::contains(options.switches, OPTION_ONLY_DOWNLOADS);
-        const Install::KeepGoing keep_going =
-            Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads ? Install::KeepGoing::YES
-                                                                                        : Install::KeepGoing::NO;
+        const KeepGoing keep_going = Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads
+                                         ? KeepGoing::YES
+                                         : KeepGoing::NO;
 
-        PortFileProvider::PathsPortFileProvider provider(
-            paths, PortFileProvider::make_overlay_provider(paths, args.overlay_ports));
+        PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
 
         Optional<Path> pkgsconfig;
@@ -179,11 +172,11 @@ namespace vcpkg::Commands::SetInstalled
         // We have a set of user-requested specs.
         // We need to know all the specs which are required to fulfill dependencies for those specs.
         // Therefore, we see what we would install into an empty installed tree, so we can use the existing code.
-        auto action_plan = Dependencies::create_feature_install_plan(provider, *cmake_vars, specs, {}, {host_triplet});
+        auto action_plan = create_feature_install_plan(provider, *cmake_vars, specs, {}, {host_triplet});
 
         for (auto&& action : action_plan.install_actions)
         {
-            action.build_options = Build::default_build_package_options;
+            action.build_options = default_build_package_options;
         }
 
         perform_and_exit_ex(args,

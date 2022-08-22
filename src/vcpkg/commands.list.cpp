@@ -23,7 +23,7 @@ namespace vcpkg::Commands::List
                 if (status_paragraph->package.is_feature())
                 {
                     Json::Value* value_obj = obj.get(current_spec.to_string());
-                    auto& feature_list = value_obj->object()["features"].array();
+                    auto& feature_list = value_obj->object(VCPKG_LINE_INFO)["features"].array(VCPKG_LINE_INFO);
                     feature_list.push_back(Json::Value::string(status_paragraph->package.feature));
                 }
             }
@@ -47,7 +47,7 @@ namespace vcpkg::Commands::List
             }
         }
 
-        print2(Json::stringify(obj, Json::JsonStyle{}));
+        print2(Json::stringify(obj));
     }
 
     static void do_print(const StatusParagraph& pgh, const bool full_desc)
@@ -98,7 +98,7 @@ namespace vcpkg::Commands::List
         if (installed_ipv.empty())
         {
             if (args.output_json())
-                print2(Json::stringify(Json::Object(), {}));
+                print2(Json::stringify(Json::Object()));
             else
                 print2("No packages are installed. Did you mean `search`?\n");
             Checks::exit_success(VCPKG_LINE_INFO);

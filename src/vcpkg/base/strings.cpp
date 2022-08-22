@@ -18,15 +18,6 @@
 
 using namespace vcpkg;
 
-namespace
-{
-
-    DECLARE_AND_REGISTER_MESSAGE(InvalidFormatString,
-                                 (msg::actual),
-                                 "{actual} is the provided format string",
-                                 "invalid format string: {actual}");
-}
-
 vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView sv,
                                                                      void (*cb)(void*, std::string&, StringView),
                                                                      void* user)

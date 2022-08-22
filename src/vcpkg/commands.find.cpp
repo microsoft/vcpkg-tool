@@ -35,7 +35,7 @@ namespace
             }
         }
 
-        print2(Json::stringify(obj, Json::JsonStyle{}));
+        print2(Json::stringify(obj));
     }
     constexpr const int s_name_and_ver_columns = 41;
     void do_print(const SourceParagraph& source_paragraph, bool full_desc)
@@ -115,8 +115,7 @@ namespace vcpkg::Commands
                                     Optional<StringView> filter,
                                     View<std::string> overlay_ports)
     {
-        PortFileProvider::PathsPortFileProvider provider(paths,
-                                                         PortFileProvider::make_overlay_provider(paths, overlay_ports));
+        PathsPortFileProvider provider(paths, make_overlay_provider(paths, overlay_ports));
         auto source_paragraphs =
             Util::fmap(provider.load_all_control_files(),
                        [](auto&& port) -> const SourceControlFile* { return port->source_control_file.get(); });

@@ -11,10 +11,6 @@
 
 namespace vcpkg::Export::Chocolatey
 {
-    using Dependencies::ExportPlanAction;
-    using Dependencies::ExportPlanType;
-    using Install::InstallDir;
-
     static std::string create_nuspec_dependencies(const BinaryParagraph& binary_paragraph,
                                                   const std::map<PackageSpec, std::string>& packages_version)
     {
@@ -200,7 +196,7 @@ if (Test-Path $installedDir)
             const InstallDir dirs =
                 InstallDir::from_destination_root(installed, action.spec.triplet(), binary_paragraph);
 
-            Install::install_package_and_write_listfile(fs, paths.package_dir(action.spec), dirs);
+            install_package_and_write_listfile(fs, paths.package_dir(action.spec), dirs);
 
             const std::string nuspec_file_content = create_nuspec_file_contents(
                 per_package_dir_path, binary_paragraph, packages_version, chocolatey_options);

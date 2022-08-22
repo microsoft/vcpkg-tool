@@ -28,19 +28,6 @@
 namespace
 {
     using namespace vcpkg;
-    DECLARE_AND_REGISTER_MESSAGE(WaitingForChildrenToExit, (), "", "Waiting for child processes to exit...");
-    DECLARE_AND_REGISTER_MESSAGE(LaunchingProgramFailed,
-                                 (msg::tool_name),
-                                 "A platform API call failure message is appended after this",
-                                 "Launching {tool_name}:");
-    DECLARE_AND_REGISTER_MESSAGE(ProgramReturnedNonzeroExitCode,
-                                 (msg::tool_name, msg::exit_code),
-                                 "The program's console output is appended after this.",
-                                 "{tool_name} failed with exit code: ({exit_code}).");
-    DECLARE_AND_REGISTER_MESSAGE(SystemApiErrorMessage,
-                                 (msg::system_api, msg::exit_code, msg::error_msg),
-                                 "",
-                                 "calling {system_api} failed with {exit_code} ({error_msg})");
 
 #if defined(_WIN32)
     using error_value_type = unsigned long;
@@ -443,18 +430,35 @@ namespace vcpkg
     Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>&,
                                                StringView prepend_to_path)
     {
-        std::string result;
+        Environment env;
         if (!prepend_to_path.empty())
         {
-            result = "PATH=";
-            append_shell_escaped(
-                result,
+            env.add_entry(
+                "PATH",
                 Strings::concat(prepend_to_path, ':', get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO)));
         }
 
-        return {result};
+        return env;
     }
 #endif
+
+    void Environment::add_entry(StringView key, StringView value)
+    {
+#if defined(_WIN32)
+        m_env_data.append(Strings::to_utf16(key));
+        m_env_data.push_back(L'=');
+        m_env_data.append(Strings::to_utf16(value));
+        m_env_data.push_back(L'\0');
+#else
+        Strings::append(m_env_data, key);
+        m_env_data.push_back('=');
+        append_shell_escaped(m_env_data, value);
+        m_env_data.push_back(' ');
+#endif
+    }
+
+    const Environment::string_t& Environment::get() const { return m_env_data; }
+
     const Environment& get_clean_environment()
     {
         static const Environment clean_env = get_modified_clean_environment({});
@@ -584,7 +588,8 @@ namespace vcpkg
                 Strings::to_utf16(get_real_filesystem().absolute(wd.working_directory, VCPKG_LINE_INFO));
         }
 
-        auto environment_block = env.m_env_data;
+        auto environment_block = env.get();
+        environment_block.push_back('\0');
         // Leaking process information handle 'process_info.proc_info.hProcess'
         // /analyze can't tell that we transferred ownership here
         auto timer = ElapsedTimer::create_started();
@@ -595,7 +600,7 @@ namespace vcpkg
                            nullptr,
                            TRUE,
                            IDLE_PRIORITY_CLASS | CREATE_UNICODE_ENVIRONMENT | dwCreationFlags,
-                           environment_block.empty() ? nullptr : &environment_block[0],
+                           env.get().empty() ? nullptr : &environment_block[0],
                            working_directory.empty() ? nullptr : working_directory.data(),
                            &startup_info,
                            &process_info.proc_info))
@@ -771,7 +776,7 @@ namespace vcpkg
         it = std::find_if_not(it + magic_string.size(), last, ::isspace);
         Checks::check_exit(VCPKG_LINE_INFO, it != last);
 
-        std::wstring out_env;
+        Environment new_env;
 
         for (;;)
         {
@@ -782,14 +787,13 @@ namespace vcpkg
             if (newline_it == last) break;
             StringView value(equal_it + 1, newline_it);
 
-            out_env.append(Strings::to_utf16(Strings::concat(variable_name, '=', value)));
-            out_env.push_back(L'\0');
+            new_env.add_entry(variable_name, value);
 
             it = newline_it + 1;
             if (it != last && *it == '\n') ++it;
         }
 
-        return {std::move(out_env)};
+        return new_env;
     }
 #endif
 
@@ -816,9 +820,9 @@ namespace vcpkg
             real_command_line_builder.raw_arg("&&");
         }
 
-        if (!env.m_env_data.empty())
+        if (!env.get().empty())
         {
-            real_command_line_builder.raw_arg(env.m_env_data);
+            real_command_line_builder.raw_arg(env.get());
         }
 
         real_command_line_builder.raw_arg(cmd_line.command_line());
@@ -883,17 +887,18 @@ namespace vcpkg
 #else  // ^^^ _WIN32 // !_WIN32 vvv
         Checks::check_exit(VCPKG_LINE_INFO, encoding == Encoding::Utf8);
         const auto proc_id = std::to_string(::getpid());
-        (void)env;
+
         std::string actual_cmd_line;
         if (wd.working_directory.empty())
         {
-            actual_cmd_line = Strings::format(R"(%s 2>&1)", cmd_line.command_line());
+            actual_cmd_line = Strings::format(R"(%s %s 2>&1)", env.get(), cmd_line.command_line());
         }
         else
         {
             actual_cmd_line = Command("cd")
                                   .string_arg(wd.working_directory)
                                   .raw_arg("&&")
+                                  .raw_arg(env.get())
                                   .raw_arg(cmd_line.command_line())
                                   .raw_arg("2>&1")
                                   .extract();
@@ -1048,4 +1053,5 @@ namespace vcpkg
                     .append_raw(maybe_exit.error().to_string()),
                 expected_right_tag};
     }
+
 }

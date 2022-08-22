@@ -82,7 +82,7 @@ namespace vcpkg::Commands::Info
 
                 auto& qpkg = *maybe_qpkg.get();
                 auto t = Triplet::from_canonical_name(std::string(*qpkg.triplet.get()));
-                Input::check_triplet(t, paths);
+                check_triplet(t, paths);
                 specs_to_write.emplace_back(qpkg.name, t);
             }
             Json::Object response;
@@ -106,14 +106,13 @@ namespace vcpkg::Commands::Info
                 }
             }
             response.insert("results", std::move(results));
-            print2(Json::stringify(response, {}));
+            print2(Json::stringify(response));
         }
         else
         {
             Json::Object response;
             Json::Object results;
-            PortFileProvider::PathsPortFileProvider provider(
-                paths, PortFileProvider::make_overlay_provider(paths, args.overlay_ports));
+            PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
 
             for (auto&& arg : args.command_arguments)
             {
@@ -141,7 +140,7 @@ namespace vcpkg::Commands::Info
                 }
             }
             response.insert("results", std::move(results));
-            print2(Json::stringify(response, {}));
+            print2(Json::stringify(response));
         }
     }
 }

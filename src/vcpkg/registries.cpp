@@ -24,11 +24,6 @@ namespace
 
     static constexpr StringLiteral registry_versions_dir_name = "versions";
 
-    DECLARE_AND_REGISTER_MESSAGE(PortNotInBaseline,
-                                 (msg::package_name),
-                                 "",
-                                 "the baseline does not contain an entry for port {package_name}");
-
     struct GitRegistry;
 
     struct GitRegistryEntry final : RegistryEntry
@@ -214,13 +209,6 @@ namespace
         std::vector<Version> port_versions;
         std::vector<Path> version_paths;
     };
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorRequireBaseline,
-                                 (),
-                                 "",
-                                 "this vcpkg instance requires a manifest with a specified baseline in order to "
-                                 "interact with ports. Please add 'builtin-baseline' to the manifest or add a "
-                                 "'vcpkg-configuration.json' that redefines the default registry.");
 
     // This registry implementation is the builtin registry without a baseline
     // that will only consult files in ports
@@ -925,7 +913,7 @@ namespace
             return Strings::format("Error: versions file for `%s` does not have a top level object.", port_name);
         }
 
-        const auto& versions_object = maybe_versions_json.get()->first.object();
+        const auto& versions_object = maybe_versions_json.get()->first.object(VCPKG_LINE_INFO);
         auto maybe_versions_array = versions_object.get("versions");
         if (!maybe_versions_array || !maybe_versions_array->is_array())
         {
@@ -966,7 +954,7 @@ namespace
 
         auto real_baseline = baseline.size() == 0 ? "default" : baseline;
 
-        const auto& obj = value.first.object();
+        const auto& obj = value.first.object(VCPKG_LINE_INFO);
         auto baseline_value = obj.get(real_baseline);
         if (!baseline_value)
         {
@@ -1177,11 +1165,6 @@ namespace vcpkg
         return default_registry();
     }
 
-    DECLARE_AND_REGISTER_MESSAGE(NoRegistryForPort,
-                                 (msg::package_name),
-                                 "",
-                                 "no registry configured for port {package_name}");
-
     ExpectedL<Version> RegistrySet::baseline_for_port(StringView port_name) const
     {
         auto impl = registry_for_port(port_name);
@@ -1203,7 +1186,7 @@ namespace vcpkg
         if (auto pversions = maybe_versions.get())
         {
             return Util::fmap(
-                *pversions, [](auto&& entry) -> auto {
+                *pversions, [](auto&& entry) -> auto{
                     return std::make_pair(SchemedVersion{entry.scheme, entry.version}, entry.git_tree);
                 });
         }
@@ -1250,7 +1233,7 @@ namespace vcpkg
         if (paths.use_git_default_registry())
         {
             return std::make_unique<GitRegistry>(
-                paths, builtin_registry_git_url().to_string(), "HEAD", std::move(baseline));
+                paths, builtin_registry_git_url.to_string(), "HEAD", std::move(baseline));
         }
         else
         {
