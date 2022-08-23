@@ -158,7 +158,7 @@
   "FailedToParseControl": "Échec de l’analyse du fichier de contrôle : {path}",
   "FailedToParseJson": "Échec de l’analyse du fichier JSON : {path}",
   "FailedToParseManifest": "Échec de l’analyse du fichier manifeste : {path}",
-  "FailedToParseSerializedBinParagraph": "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at https://github.com/microsoft/vcpkg, with the following output:\n{error_msg}\nSerialized Binary Paragraph:",
+  "FailedToParseSerializedBinParagraph": "[vérification de l’intégrité] Échec de l’analyse d’un paragraphe binaire sérialisé.\nOuvrez un problème à https://github.com/microsoft/vcpkg, avec la sortie suivante :\n{error_msg}\nparagraphe binaire sérialisé :",
   "FailedToProvisionCe": "Échec de l’approvisionnement de vcpkg-ce",
   "FailedToRead": "Échec de la lecture de {path} : {error_msg}",
   "FailedToReadParagraph": "Échec de la lecture des paragraphes à partir de {path}",
