@@ -17,12 +17,11 @@ export class Exports extends BaseMap implements IExports {
   defines: ScalarMap<string> = new ScalarMap<string>(undefined, this, 'defines');
 
   aliases: ScalarMap<string> = new ScalarMap<string>(undefined, this, 'aliases');
-  contents: StringsMap = new StringsMap(undefined, this, 'contents');
 
   /** @internal */
   override *validate(): Iterable<ValidationMessage> {
     yield* super.validate();
-    yield* this.validateChildKeys(['paths', 'locations', 'properties', 'environment', 'tools', 'defines', 'aliases', 'contents']);
+    yield* this.validateChildKeys(['paths', 'locations', 'properties', 'environment', 'tools', 'defines', 'aliases']);
     // todo: what validations do we need?
   }
 }

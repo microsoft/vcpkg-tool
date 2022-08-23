@@ -22,7 +22,8 @@ namespace vcpkg::Commands::Owns
             {
                 if (file.find(file_substr) != std::string::npos)
                 {
-                    print2(pgh.package.displayname(), ": ", file, '\n');
+                    msg::write_unlocalized_text_to_stdout(Color::none,
+                                                          fmt::format("{}: {}\n", pgh.package.displayname(), file));
                 }
             }
         }
