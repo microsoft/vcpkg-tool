@@ -48,6 +48,7 @@ namespace vcpkg
 
         void print() const;
         std::string xunit_results() const;
+        bool failed() const;
     };
 
     struct InstallDir
