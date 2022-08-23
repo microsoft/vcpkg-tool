@@ -188,7 +188,7 @@ export class Activation {
     return this.#aliases.size;
   }
 
-  /** a collection of 'published locations' from artifacts. useful for msbuild */
+  /** a collection of 'published locations' from artifacts */
   addLocation(name: string, location: string | Uri) {
     if (!name || !location) {
       return;
@@ -480,44 +480,13 @@ export class Activation {
     return parts[n].split(delimiter).filter(each => each).map(each => `${front}${each}${back}`);
   }
 
-  writeMSBuildMap(result: XmlWriter, name: string, target: Map<string, string>) {
-    if (target.size) {
-      result.startElement('PropertyGroup');
-      result.writeAttribute('Label', name);
-      for (const [key, value] of target) {
-        result.writeElement(key, value);
-      }
-
-      result.endElement(); // PropertyGroup
-    }
-  }
-
-  writeMSBuildMapSet(result: XmlWriter, name: string, target: Map<string, Set<string>>) {
-    if (target.size) {
-      result.startElement('PropertyGroup');
-      result.writeAttribute('Label', name);
-      for (const [key, value] of target) {
-        result.writeElement(key, Array.from(value).join(';'));
-      }
-
-      result.endElement();
-    }
-  }
-
   generateMSBuild(): string {
-    const result = new XMLWriterImpl('  ');
+    const result : XmlWriter = new XMLWriterImpl('  ');
     result.startDocument('1.0', 'utf-8');
     result.startElement('Project');
     result.writeAttribute('xmlns', 'http://schemas.microsoft.com/developer/msbuild/2003');
-    this.writeMSBuildMap(result, 'Locations', this.#locations);
-    this.writeMSBuildMapSet(result, 'Properties', this.#properties);
-    this.writeMSBuildMap(result, 'Tools', this.#tools);
-    this.writeMSBuildMapSet(result, 'Environment', this.#environment);
-    this.writeMSBuildMapSet(result, 'Paths', this.#paths);
-    this.writeMSBuildMap(result, 'Defines', this.#defines);
     if (this.#msbuild_properties.length) {
       result.startElement('PropertyGroup');
-      result.writeAttribute('Label', 'MSBuildProperties');
       for (const [key, value] of this.#msbuild_properties) {
         result.writeElement(key, value);
       }

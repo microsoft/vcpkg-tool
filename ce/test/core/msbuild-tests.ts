@@ -22,6 +22,8 @@ describe('MSBuild Generator', () => {
   it('Generates locations in order', () => {
     const activation = new Activation(local.session);
 
+    // Note that only "addMSBuildProperty" has an effect on the output for now but that we'll probably
+    // need to respond to the others in the future.
     (<Array<[string, string | Array<string>]>>[
       ['z', 'zse&tting'],
       ['a', 'ase<tting'],
@@ -32,6 +34,7 @@ describe('MSBuild Generator', () => {
 
     activation.addLocation('somepath', local.fs.file('c:/tmp'));
     activation.addPath('include', [local.fs.file('c:/tmp'), local.fs.file('c:/tmp2')]);
+    activation.addDefine('POSIX_ME_HARDER', '1');
 
     const fileWithNoSlash = local.fs.file('c:/tmp');
     const fileWithSlash = local.fs.file('c:/tmp/');
@@ -46,20 +49,7 @@ describe('MSBuild Generator', () => {
 
     const expectedPosix = `<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup Label="Locations">
-    <somepath>c:/tmp</somepath>
-  </PropertyGroup>
-  <PropertyGroup Label="Properties">
-    <z>zse&amp;tting</z>
-    <a>ase&lt;tting</a>
-    <c>csetting</c>
-    <b>bsetting</b>
-    <prop>first;seco&gt;nd;third</prop>
-  </PropertyGroup>
-  <PropertyGroup Label="Paths">
-    <include>c:/tmp;c:/tmp2</include>
-  </PropertyGroup>
-  <PropertyGroup Label="MSBuildProperties">
+  <PropertyGroup>
     <a>$(a);firc:/tmpst</a>
     <a>$(a);second</a>
     <a>$(a);c:/tmphello</a>
