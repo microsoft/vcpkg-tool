@@ -1221,19 +1221,14 @@ namespace vcpkg
             {
                 if (!result.is_user_requested_install()) continue;
                 auto bpgh = result.get_binary_paragraph();
+                // If a package failed to build, don't attempt to print usage.
+                // e.g. --keep-going
                 if (!bpgh) continue;
                 Install::print_usage_information(*bpgh, printed_usages, fs, paths.installed());
             }
         }
 
-        if (summary.failed())
-        {
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-        else
-        {
-            Checks::exit_success(VCPKG_LINE_INFO);
-        }
+        Checks::exit_with_code(VCPKG_LINE_INFO, summary.failed());
     }
 
     void InstallCommand::perform_and_exit(const VcpkgCmdArguments& args,
