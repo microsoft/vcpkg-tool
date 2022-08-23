@@ -306,7 +306,7 @@
           "$ref": "#/definitions/string-map"
         },
         "msbuild-properties": {
-          "description": "Properties written verbatim when generating msbuild props for an activation, with $(ROOT) replaced with the ultimate extraction root for this artifact. $(ROOT) contains a trailing backslash.",
+          "description": "Properties written verbatim when generating msbuild props for an activation, with $root$ replaced with the ultimate extraction root for this artifact. $root$ never contains a trailing backslash.",
           "type": "object",
           "patternProperties": {
             "": {

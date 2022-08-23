@@ -13,10 +13,10 @@ describe('MSBuild Generator', () => {
 
   it('Generates roots with a trailing slash', () => {
     const activation = new Activation(local.session);
-    const expectedPosix = 'c:/tmp/';
+    const expectedPosix = 'c:/tmp';
     const expected = (platform() === 'win32') ? expectedPosix.replaceAll('/', '\\') : expectedPosix;
-    strict.equal(activation.msBuildProcessPropertyValue('$(ROOT)', local.fs.file('c:/tmp')), expected);
-    strict.equal(activation.msBuildProcessPropertyValue('$(ROOT)', local.fs.file('c:/tmp/')), expected);
+    strict.equal(activation.msBuildProcessPropertyValue('$root$', local.fs.file('c:/tmp')), expected);
+    strict.equal(activation.msBuildProcessPropertyValue('$root$', local.fs.file('c:/tmp/')), expected);
   });
 
   it('Generates locations in order', () => {
@@ -35,14 +35,14 @@ describe('MSBuild Generator', () => {
 
     const fileWithNoSlash = local.fs.file('c:/tmp');
     const fileWithSlash = local.fs.file('c:/tmp/');
-    activation.addMSBuildProperty('a', '$(a);fir$(ROOT)st', fileWithNoSlash);
+    activation.addMSBuildProperty('a', '$(a);fir$root$st', fileWithNoSlash);
     activation.addMSBuildProperty('a', '$(a);second', fileWithNoSlash);
-    activation.addMSBuildProperty('a', '$(a);$(ROOT)hello', fileWithNoSlash);
+    activation.addMSBuildProperty('a', '$(a);$root$hello', fileWithNoSlash);
     activation.addMSBuildProperty('b', '$(x);first', fileWithSlash);
-    activation.addMSBuildProperty('b', '$(b);se$(ROOT)cond', fileWithSlash);
+    activation.addMSBuildProperty('b', '$(b);se$root$cond', fileWithSlash);
     activation.addMSBuildProperty('a', '$(a);third', fileWithNoSlash);
     activation.addMSBuildProperty('b', 'third', fileWithSlash);
-    activation.addMSBuildProperty('b', '$(b);$(ROOT)world', fileWithSlash);
+    activation.addMSBuildProperty('b', '$(b);$root$world', fileWithSlash);
 
     const expectedPosix = `<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -60,19 +60,19 @@ describe('MSBuild Generator', () => {
     <include>c:/tmp;c:/tmp2</include>
   </PropertyGroup>
   <PropertyGroup Label="MSBuildProperties">
-    <a>$(a);firc:/tmp/st</a>
+    <a>$(a);firc:/tmpst</a>
     <a>$(a);second</a>
-    <a>$(a);c:/tmp/hello</a>
+    <a>$(a);c:/tmphello</a>
     <b>$(x);first</b>
-    <b>$(b);sec:/tmp/cond</b>
+    <b>$(b);sec:/tmpcond</b>
     <a>$(a);third</a>
     <b>third</b>
-    <b>$(b);c:/tmp/world</b>
+    <b>$(b);c:/tmpworld</b>
   </PropertyGroup>
 </Project>`;
 
     const expected = (platform() === 'win32')
-      ? expectedPosix.replaceAll('c:/tmp/', 'c:\\tmp\\').replaceAll('c:/tmp', 'c:\\tmp').replaceAll('c:/', 'c:\\')
+      ? expectedPosix.replaceAll('c:/tmp', 'c:\\tmp').replaceAll('c:/', 'c:\\')
       : expectedPosix;
     strict.equal(activation.generateMSBuild(), expected);
   });

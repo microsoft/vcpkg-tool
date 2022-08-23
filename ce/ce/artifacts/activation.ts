@@ -300,10 +300,12 @@ export class Activation {
   }
 
   msBuildProcessPropertyValue(value: string, targetFolder: Uri) {
+    // note that this is intended to be consistent with NuGet's handling:
+    // https://docs.microsoft.com/en-us/nuget/reference/nuspec#replacement-tokens
     const initialLocal = targetFolder.fsPath;
     const endsWithSlash = initialLocal.endsWith('\\') || initialLocal.endsWith('/');
-    const root = endsWithSlash ? initialLocal : initialLocal + '\\';
-    return value.replaceAll('$(ROOT)', root);
+    const root = endsWithSlash ? initialLocal.substring(0, initialLocal.length - 1) : initialLocal;
+    return value.replaceAll('$root$', root);
   }
 
   addMSBuildProperty(name: string, value: string, targetFolder: Uri) {
