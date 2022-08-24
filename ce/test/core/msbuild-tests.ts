@@ -34,7 +34,7 @@ describe('MSBuild Generator', () => {
 
     activation.addLocation('somepath', local.fs.file('c:/tmp'));
     activation.addPath('include', [local.fs.file('c:/tmp'), local.fs.file('c:/tmp2')]);
-    activation.addDefine('POSIX_ME_HARDER', '1');
+    activation.addDefine('VERY_POSIX', '1');
 
     const fileWithNoSlash = local.fs.file('c:/tmp');
     const fileWithSlash = local.fs.file('c:/tmp/');
