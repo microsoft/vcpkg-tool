@@ -1312,6 +1312,10 @@ namespace vcpkg
             action_metrics.port_hash = Hash::get_string_hash(remove_action.spec.name(), Hash::Algorithm::Sha256);
             action_metrics.triplet_hash = hash_triplet(remove_action.spec.triplet());
             metrics.push_back(action_metrics);
+
+            // keep installplan_1 telemetry around
+            if (!specs_string.empty()) specs_string.push_back(',');
+            specs_string += Strings::concat("R$", action_metrics.port_hash, ":", action_metrics.triplet_hash);
         }
 
         for (auto&& install_action : plan.install_actions)
@@ -1326,6 +1330,11 @@ namespace vcpkg
             action_metrics.version_hash = Hash::get_string_hash(scfl.to_version().to_string(), Hash::Algorithm::Sha256);
             action_metrics.origin = scfl.origin;
             metrics.push_back(action_metrics);
+
+            // installplan_1
+            if (!specs_string.empty()) specs_string.push_back(',');
+            specs_string += Strings::concat(
+                action_metrics.port_hash, ":", action_metrics.triplet_hash, ":", action_metrics.version_hash);
         }
 
         Json::Array metrics_array;
@@ -1333,7 +1342,7 @@ namespace vcpkg
         {
             metrics_array.push_back(m.serialize());
         }
+        LockGuardPtr<Metrics>(g_metrics)->track_property("installplan_1", specs_string);
         LockGuardPtr<Metrics>(g_metrics)->track_property("installplan_2", metrics_array);
-        // LockGuardPtr<Metrics>(g_metrics)->track_property("installplan_1", "defined");
     }
 }
