@@ -8,6 +8,10 @@ import { Yaml, YAMLSequence } from './yaml-types';
 
 export /** @internal */ class Options extends Yaml<YAMLSequence> {
 
+  static override create(): YAMLSequence {
+    return new YAMLSequence();
+  }
+
   has(option: string) {
     if (this.node) {
       return this.node.items.some(each => each.value === option);
