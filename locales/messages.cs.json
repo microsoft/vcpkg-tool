@@ -364,7 +364,7 @@
   "SystemApiErrorMessage": "volání {system_api} selhalo s ukončovacím kódem {exit_code} ({error_msg}).",
   "ToolFetchFailed": "Nepovedlo se načíst {tool_name}.",
   "ToolInWin10": "Tento nástroj je součástí sady Windows 10 nebo novější.",
-  "TotalTime": "Total elapsed time: {elapsed}",
+  "TotalTime": "Celkový uplynulý čas: {elapsed}",
   "TwoFeatureFlagsSpecified": "Jako příznaky funkce se zadala hodnota {value} i -{value}.",
   "UndeterminedToolChainForTriplet": "Nepovedlo se určit použití sady nástrojů pro {triplet} s CMAKE_SYSTEM_NAME {system_name}. Chtěli jste použít VCPKG_CHAINLOAD_TOOLCHAIN_FILE?",
   "UnexpectedErrorDuringBulkDownload": "při hromadném stahování došlo k neočekávané chybě.",

@@ -364,7 +364,7 @@
   "SystemApiErrorMessage": "{system_api} çağrısı {exit_code} ile başarısız oldu ({error_msg})",
   "ToolFetchFailed": "{tool_name} getirilemedi.",
   "ToolInWin10": "Bu yardımcı program Windows 10 veya üstü ile birlikte gelir.",
-  "TotalTime": "Total elapsed time: {elapsed}",
+  "TotalTime": "Geçen toplam süre: {elapsed}",
   "TwoFeatureFlagsSpecified": "Hem '{value}' hem de -'{value}' özellik bayrakları olarak belirtildi.",
   "UndeterminedToolChainForTriplet": "CMAKE_SYSTEM_NAME {system_name} ile {triplet} için araç zinciri kullanımı belirlenemiyor. Aslında VCPKG_CHAINLOAD_TOOLCHAIN_FILE kullanmak mı istediniz?",
   "UnexpectedErrorDuringBulkDownload": "toplu indirme sırasında beklenmeyen bir hata oluştu.",
