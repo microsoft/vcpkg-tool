@@ -47,6 +47,8 @@ describe('MSBuild Generator', () => {
     activation.addMSBuildProperty('b', 'third', fileWithSlash);
     activation.addMSBuildProperty('b', '$(b);$root$world', fileWithSlash);
 
+    activation.addMSBuildProperty('xml chars', '\'"<>& and $ look funny when escaped', fileWithSlash);
+
     const expectedPosix = `<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
@@ -58,6 +60,7 @@ describe('MSBuild Generator', () => {
     <a>$(a);third</a>
     <b>third</b>
     <b>$(b);c:/tmpworld</b>
+    <xml chars>'"&lt;&gt;&amp; and $ look funny when escaped</xml chars>
   </PropertyGroup>
 </Project>`;
 
