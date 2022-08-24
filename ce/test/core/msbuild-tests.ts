@@ -11,7 +11,7 @@ describe('MSBuild Generator', () => {
 
   after(local.after.bind(local));
 
-  it('Generates roots with a trailing slash', () => {
+  it('Generates roots without a trailing slash', () => {
     const activation = new Activation(local.session);
     const expectedPosix = 'c:/tmp';
     const expected = (platform() === 'win32') ? expectedPosix.replaceAll('/', '\\') : expectedPosix;
