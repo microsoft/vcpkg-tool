@@ -8,7 +8,7 @@ export function replaceCurlyBraces(subject: string, properties: Map<string, stri
   // {variable}
   // {
   // }
-  // (anything that has no {s)
+  // (anything that has no {}s)
   const tokenRegex = /{{|}}|{([^}]+)}|{|}|[^{}]+/y;
   const resultElements : Array<string> = [];
   for (;;) {

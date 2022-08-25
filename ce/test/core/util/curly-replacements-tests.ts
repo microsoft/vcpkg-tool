@@ -7,6 +7,7 @@ import { strict } from 'assert';
 describe('replaceCurlyBraces', () => {
   const replacements = new Map<string, string>();
   replacements.set('exists', 'exists-replacement');
+  replacements.set('another', 'some other replacement text');
 
   it('DoesNotTouchLiterals', () => {
     strict.equal(replaceCurlyBraces('some literal text', replacements), 'some literal text');
@@ -16,12 +17,20 @@ describe('replaceCurlyBraces', () => {
     strict.equal(replaceCurlyBraces('some {exists} text', replacements), 'some exists-replacement text');
   });
 
+  it('DoesMultipleVariableReplacements', () => {
+    strict.equal(replaceCurlyBraces('some {exists} {another} text', replacements), 'some exists-replacement some other replacement text text');
+  });
+
   it('HandlesLeadingEscapes', () => {
     strict.equal(replaceCurlyBraces('some {{exists} text', replacements), 'some {exists} text');
   });
 
   it('ConsidersTerminalCurlyAsPartOfVariable', () => {
     strict.equal(replaceCurlyBraces('some {exists}} text', replacements), 'some exists-replacement} text');
+  });
+
+  it('AllowsDoubleEscapes', () => {
+    strict.equal(replaceCurlyBraces('some {{exists}} text', replacements), 'some {exists} text');
   });
 
   it('PassesThroughUnmatchedCurlies', () => {
