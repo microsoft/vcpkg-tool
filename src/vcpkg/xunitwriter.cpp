@@ -89,8 +89,8 @@ namespace
 
 }
 
-XunitWriter::XunitWriter() { }
-XunitWriter::~XunitWriter() { }
+XunitWriter::XunitWriter() = default;
+XunitWriter::~XunitWriter() = default;
 
 void XunitWriter::add_test_results(const PackageSpec& spec,
                                    BuildResult build_result,
