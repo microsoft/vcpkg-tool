@@ -15,8 +15,8 @@ describe('MSBuild Generator', () => {
     const activation = new Activation(local.session);
     const expectedPosix = 'c:/tmp';
     const expected = (platform() === 'win32') ? expectedPosix.replaceAll('/', '\\') : expectedPosix;
-    strict.equal(activation.msBuildProcessPropertyValue('$root$', local.fs.file('c:/tmp')), expected);
-    strict.equal(activation.msBuildProcessPropertyValue('$root$', local.fs.file('c:/tmp/')), expected);
+    strict.equal(activation.msBuildProcessPropertyValue('{root}', local.fs.file('c:/tmp')), expected);
+    strict.equal(activation.msBuildProcessPropertyValue('{root}', local.fs.file('c:/tmp/')), expected);
   });
 
   it('Generates locations in order', () => {
@@ -38,14 +38,14 @@ describe('MSBuild Generator', () => {
 
     const fileWithNoSlash = local.fs.file('c:/tmp');
     const fileWithSlash = local.fs.file('c:/tmp/');
-    activation.addMSBuildProperty('a', '$(a);fir$root$st', fileWithNoSlash);
+    activation.addMSBuildProperty('a', '$(a);fir{root}st', fileWithNoSlash);
     activation.addMSBuildProperty('a', '$(a);second', fileWithNoSlash);
-    activation.addMSBuildProperty('a', '$(a);$root$hello', fileWithNoSlash);
+    activation.addMSBuildProperty('a', '$(a);{root}hello', fileWithNoSlash);
     activation.addMSBuildProperty('b', '$(x);first', fileWithSlash);
-    activation.addMSBuildProperty('b', '$(b);se$root$cond', fileWithSlash);
+    activation.addMSBuildProperty('b', '$(b);se{root}cond', fileWithSlash);
     activation.addMSBuildProperty('a', '$(a);third', fileWithNoSlash);
     activation.addMSBuildProperty('b', 'third', fileWithSlash);
-    activation.addMSBuildProperty('b', '$(b);$root$world', fileWithSlash);
+    activation.addMSBuildProperty('b', '$(b);{root}world', fileWithSlash);
 
     activation.addMSBuildProperty('xml chars', '\'"<>& and $ look funny when escaped', fileWithSlash);
 

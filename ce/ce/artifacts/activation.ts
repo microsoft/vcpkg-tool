@@ -11,6 +11,7 @@ import { i } from '../i18n';
 import { Exports } from '../interfaces/metadata/exports';
 import { Session } from '../session';
 import { isIterable } from '../util/checks';
+import { replaceCurlyBraces } from '../util/curly-replacements';
 import { linq, Record } from '../util/linq';
 import { Queue } from '../util/promise';
 import { Uri } from '../util/uri';
@@ -305,7 +306,8 @@ export class Activation {
     const initialLocal = targetFolder.fsPath;
     const endsWithSlash = initialLocal.endsWith('\\') || initialLocal.endsWith('/');
     const root = endsWithSlash ? initialLocal.substring(0, initialLocal.length - 1) : initialLocal;
-    return value.replaceAll('$root$', root);
+    const replacements = new Map<string, string>([['root', root]]);
+    return replaceCurlyBraces(value, replacements);
   }
 
   addMSBuildProperty(name: string, value: string, targetFolder: Uri) {
