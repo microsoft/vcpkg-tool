@@ -10,7 +10,6 @@ import { CommandLine } from './cli/command-line';
 import { AcquireCommand } from './cli/commands/acquire';
 import { ActivateCommand } from './cli/commands/activate';
 import { AddCommand } from './cli/commands/add';
-import { ApplyVsManCommand } from './cli/commands/apply-vsman';
 import { CacheCommand } from './cli/commands/cache';
 import { CleanCommand } from './cli/commands/clean';
 import { DeactivateCommand } from './cli/commands/deactivate';
@@ -76,7 +75,6 @@ async function main() {
   debug(`Anonymous Telemetry Enabled: ${telemetryEnabled}`);
   // find a project profile.
 
-  const zApplyVsMan = new ApplyVsManCommand(commandline);
   const help = new HelpCommand(commandline);
 
   const find = new FindCommand(commandline);
