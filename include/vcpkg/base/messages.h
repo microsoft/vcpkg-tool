@@ -680,7 +680,7 @@ namespace vcpkg
                     (msg::path),
                     "Fourth optional part of build troubleshooting message, printed after the version"
                     "information about vcpkg itself.",
-                    "You can also use the prefilled template from {path}.");
+                    "Please use the prefilled template from {path} when reporting your issue.");
     DECLARE_MESSAGE(ChecksFailedCheck, (), "", "vcpkg has crashed; no additional details are available.");
     DECLARE_MESSAGE(ChecksUnreachableCode, (), "", "unreachable code was reached");
     DECLARE_MESSAGE(ChecksUpdateVcpkg, (), "", "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.");
