@@ -9,9 +9,9 @@
 namespace
 {
     using namespace vcpkg;
-    constexpr StringLiteral version_init = VCPKG_BASE_VERSION_AS_STRING "-" VCPKG_VERSION_AS_STRING
+    static constexpr StringLiteral version_init = VCPKG_BASE_VERSION_AS_STRING "-" VCPKG_VERSION_AS_STRING
 #ifndef NDEBUG
-                                                                        "-debug"
+                                                                               "-debug"
 #endif
         ;
 }
