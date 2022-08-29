@@ -832,4 +832,17 @@ namespace vcpkg
     REGISTER_MESSAGE(CreationFailed);
     REGISTER_MESSAGE(ProvideExportType);
     REGISTER_MESSAGE(IncompatibleOptionSetting);
+    REGISTER_MESSAGE(NextStep);
+    REGISTER_MESSAGE(FilesExported);
+    REGISTER_MESSAGE(PackingNuget);
+    REGISTER_MESSAGE(NugetPackageExported);
+    REGISTER_MESSAGE(CreatingZipArchive);
+    REGISTER_MESSAGE(ExportedZipArchive);
+    REGISTER_MESSAGE(Creating7ZipArchive);
+    REGISTER_MESSAGE(Exported7zipArchive);
+    REGISTER_MESSAGE(ExportUnsupportedInManifest);
+    REGISTER_MESSAGE(EmptyExportPlan);
+    REGISTER_MESSAGE(AdditionalPackagesToExport);
+    REGISTER_MESSAGE(PrebuiltPackages);
+    REGISTER_MESSAGE(InstructionToBuild);
 }

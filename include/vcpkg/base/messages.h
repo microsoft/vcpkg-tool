@@ -1672,4 +1672,24 @@ namespace vcpkg
                     (msg::value, msg::option),
                     "{value} is the 'main' option.",
                     "--{value} is only valid with --{option}.");
+    DECLARE_MESSAGE(NextStep, (), "", "\nTo use exported libraries in CMake projects use:"); // rename
+    DECLARE_MESSAGE(FilesExported, (msg::path), "", "Files exported at: {path}");
+    DECLARE_MESSAGE(PackingNuget, (), "", "Packing NuGet package...");
+    DECLARE_MESSAGE(NugetPackageExported, (msg::path), "", "NuGet package exported at: {path}");
+    DECLARE_MESSAGE(CreatingZipArchive, (), "", "Creating zip archive...");
+    DECLARE_MESSAGE(ExportedZipArchive, (msg::path), "", "Zip archive exported at: {path}");
+    DECLARE_MESSAGE(Creating7ZipArchive, (), "", "Creating 7zip archive...");
+    DECLARE_MESSAGE(Exported7zipArchive, (msg::path), "", "7zip archive exported at: {path}");
+    DECLARE_MESSAGE(ExportUnsupportedInManifest,
+                    (),
+                    "",
+                    "vcpkg export does not support manifest mode, in order to allow for future design considerations. "
+                    "You may use export in classic mode by running vcpkg outside of a manifest-based project.");
+    DECLARE_MESSAGE(EmptyExportPlan, (), "", "Export plan cannot be empty");
+    DECLARE_MESSAGE(AdditionalPackagesToExport,
+                    (),
+                    "",
+                    "Additional packages (*) need to be exported to complete this operation.");
+    DECLARE_MESSAGE(PrebuiltPackages, (), "", "There are packages that have not been built.");
+    DECLARE_MESSAGE(InstructionToBuild, (), "", "To build them, run:");
 }

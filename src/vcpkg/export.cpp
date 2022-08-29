@@ -482,12 +482,7 @@ namespace vcpkg::Export
     {
         const auto cmake_toolchain = prefix / "scripts/buildsystems/vcpkg.cmake";
         const CMakeVariable cmake_variable = CMakeVariable("CMAKE_TOOLCHAIN_FILE", cmake_toolchain.generic_u8string());
-        print2("\n"
-               "To use the exported libraries in CMake projects use:"
-               "\n"
-               "    ",
-               cmake_variable.s,
-               "\n\n");
+        msg::println(msg::format(msgNextStep).append_indent().append_raw(cmake_variable.s).append_raw("\n\n"));
     }
 
     static void handle_raw_based_export(Span<const ExportPlanAction> export_plan,
@@ -513,7 +508,7 @@ namespace vcpkg::Export
                 }
 
                 const std::string display_name = action.spec.to_string();
-                print2("Exporting package ", display_name, "...\n");
+                msg::println(msgExportingPackage, msg::package_name = display_name);
 
                 const BinaryParagraph& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
 
@@ -539,48 +534,38 @@ namespace vcpkg::Export
 
         if (opts.raw)
         {
-            vcpkg::printf(Color::success,
-                          R"(Files exported at: "%s")"
-                          "\n",
-                          raw_exported_dir_path);
+            msg::println(Color::success, msgFilesExported, msg::path = raw_exported_dir_path);
             print_next_step_info(raw_exported_dir_path);
         }
 
         if (opts.nuget)
         {
-            print2("Packing nuget package...\n");
+            msg::println(msgPackingNuget);
 
             const auto nuget_id = opts.maybe_nuget_id.value_or(raw_exported_dir_path.filename().to_string());
             const auto nuget_version = opts.maybe_nuget_version.value_or("1.0.0");
             const auto nuget_description = opts.maybe_nuget_description.value_or("Vcpkg NuGet export");
             const auto output_path = do_nuget_export(
                 paths, nuget_id, nuget_version, nuget_description, raw_exported_dir_path, opts.output_dir);
-            print2(Color::success, "NuGet package exported at: ", output_path, "\n");
-
-            vcpkg::printf(R"(
-With a project open, go to Tools->NuGet Package Manager->Package Manager Console and paste:
-    Install-Package %s -Source "%s"
-)"
-                          "\n\n",
-                          nuget_id,
-                          output_path.parent_path());
+            msg::println(Color::success, msgNugetPackageExported, msg::path = output_path);
+            msg::println(msgInstallPackageInstruction, msg::value = nuget_id, msg::path = output_path.parent_path());
         }
 
         if (opts.zip)
         {
-            print2("Creating zip archive...\n");
+            msg::println(msgCreatingZipArchive);
             const auto output_path =
                 do_archive_export(paths, raw_exported_dir_path, opts.output_dir, ArchiveFormatC::ZIP);
-            print2(Color::success, "Zip archive exported at: ", output_path, "\n");
+            msg::println(Color::success, msgExportedZipArchive, msg::path = output_path);
             print_next_step_info("[...]");
         }
 
         if (opts.seven_zip)
         {
-            print2("Creating 7zip archive...\n");
+            msg::println(msgCreating7ZipArchive);
             const auto output_path =
                 do_archive_export(paths, raw_exported_dir_path, opts.output_dir, ArchiveFormatC::SEVEN_ZIP);
-            print2(Color::success, "7zip archive exported at: ", output_path, "\n");
+            msg::println(Color::success, msgExported7zipArchive, msg::path = output_path);
             print_next_step_info("[...]");
         }
 
@@ -594,10 +579,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
     {
         if (paths.manifest_mode_enabled())
         {
-            Checks::exit_maybe_upgrade(
-                VCPKG_LINE_INFO,
-                "vcpkg export does not support manifest mode, in order to allow for future design considerations. You "
-                "may use export in classic mode by running vcpkg outside of a manifest-based project.");
+            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgExportUnsupportedInManifest);
         }
         const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
         const auto opts = handle_export_command_arguments(paths, args, default_triplet, status_db);
@@ -607,7 +589,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
 
         // create the plan
         std::vector<ExportPlanAction> export_plan = create_export_plan(opts.specs, status_db);
-        Checks::check_exit(VCPKG_LINE_INFO, !export_plan.empty(), "Export plan cannot be empty");
+        Checks::msg_check_exit(VCPKG_LINE_INFO, !export_plan.empty(), msgEmptyExportPlan);
 
         std::map<ExportPlanType, std::vector<const ExportPlanAction*>> group_by_plan_type;
         Util::group_by(export_plan, &group_by_plan_type, [](const ExportPlanAction& p) { return p.plan_type; });
@@ -620,13 +602,13 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
 
         if (has_non_user_requested_packages)
         {
-            print2(Color::warning, "Additional packages (*) need to be exported to complete this operation.\n");
+            msg::println(Color::warning, msgAdditionalPackagesToExport);
         }
 
         const auto it = group_by_plan_type.find(ExportPlanType::NOT_BUILT);
         if (it != group_by_plan_type.cend() && !it->second.empty())
         {
-            print2(Color::error, "There are packages that have not been built.\n");
+            msg::println_error(msgPrebuiltPackages);
 
             // No need to show all of them, just the user-requested ones. Dependency resolution will handle the rest.
             std::vector<const ExportPlanAction*> unbuilt = it->second;
@@ -634,10 +616,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
                 unbuilt, [](const ExportPlanAction* a) { return a->request_type != RequestType::USER_REQUESTED; });
 
             const auto s = Strings::join(" ", unbuilt, [](const ExportPlanAction* a) { return a->spec.to_string(); });
-            print2("To build them, run:\n"
-                   "    vcpkg install ",
-                   s,
-                   "\n");
+            msg::println(msg::format(msgInstructionToBuild).append_indent().append_raw("vcpkg install ").append_raw(s));
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
