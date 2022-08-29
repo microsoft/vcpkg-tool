@@ -1286,55 +1286,82 @@ namespace vcpkg
         return m_install_action && m_install_action->request_type == RequestType::USER_REQUESTED;
     }
 
-    struct InstallPlanActionMetrics
+    struct InstallPlanMetrics
     {
-        enum Action
+        void push_install_action(const std::string& port,
+                                 const std::string& triplet,
+                                 const std::string& version,
+                                 const std::string& origin)
         {
-            Install,
-            Remove
+            m_actions.push_back("i");
+            m_ports.push_back(port);
+            m_triplets.push_back(triplet);
+            m_versions.push_back(version);
+            m_origins.push_back(origin);
+        }
+
+        void push_remove_action(const std::string& port, const std::string& triplet)
+        {
+            m_actions.push_back("r");
+            m_ports.push_back(port);
+            m_triplets.push_back(triplet);
+            // insert empty so parallel arrays don't become misaligned
+            m_versions.push_back("");
+            m_origins.push_back("");
         };
 
-        Action action;
-        std::string port_hash;
-        std::string triplet_hash;
-        std::string version_hash;
-        std::string origin;
-
-        Json::Object serialize() const
+        // produces installplan_1, once usage of this gets low enough we can remove it and
+        // keep only serialize()
+        std::string serialize_old_style() const
         {
-            Json::Object obj;
-            obj.insert_or_replace("action", action == Action::Install ? "install" : "remove");
-            obj.insert_or_replace("port", port_hash);
-            obj.insert_or_replace("triplet", triplet_hash);
-            obj.insert_or_replace("version", version_hash);
-            obj.insert_or_replace("origin", origin);
-            return obj;
+            auto extract = [](const Json::Value& v) { return v.string(VCPKG_LINE_INFO); };
+
+            std::string ret;
+            for (size_t i = 0; i < m_actions.size(); ++i)
+            {
+                if (m_actions[i].string(VCPKG_LINE_INFO) == "remove")
+                {
+                    ret += Strings::concat("R$", extract(m_ports[i]), ":", extract(m_triplets[i]));
+                }
+                else
+                {
+                    ret +=
+                        Strings::concat(extract(m_ports[i]), ":", extract(m_triplets[i]), ":", extract(m_versions[i]));
+                }
+            }
+            return ret;
         }
+
+        const Json::Array& actions() const { return m_actions; }
+        const Json::Array& ports() const { return m_ports; }
+        const Json::Array& triplets() const { return m_triplets; }
+        const Json::Array& versions() const { return m_versions; }
+        const Json::Array& origins() const { return m_origins; }
+
+    private:
+        Json::Array m_actions;
+        Json::Array m_ports;
+        Json::Array m_triplets;
+        Json::Array m_versions;
+        Json::Array m_origins;
     };
 
     void track_install_plan(ActionPlan& plan)
     {
-        std::vector<InstallPlanActionMetrics> metrics;
-
         Cache<Triplet, std::string> triplet_hashes;
+
+        auto hash_string = [](StringView s) { return Hash::get_string_hash(s, Hash::Algorithm::Sha256); };
 
         auto hash_triplet = [&triplet_hashes](Triplet t) -> const std::string& {
             return triplet_hashes.get_lazy(
                 t, [t]() { return Hash::get_string_hash(t.canonical_name(), Hash::Algorithm::Sha256); });
         };
 
-        std::string specs_string;
+        InstallPlanMetrics metrics;
         for (auto&& remove_action : plan.remove_actions)
         {
-            InstallPlanActionMetrics action_metrics;
-            action_metrics.action = InstallPlanActionMetrics::Action::Remove;
-            action_metrics.port_hash = Hash::get_string_hash(remove_action.spec.name(), Hash::Algorithm::Sha256);
-            action_metrics.triplet_hash = hash_triplet(remove_action.spec.triplet());
-            metrics.push_back(action_metrics);
-
-            // keep installplan_1 telemetry around
-            if (!specs_string.empty()) specs_string.push_back(',');
-            specs_string += Strings::concat("R$", action_metrics.port_hash, ":", action_metrics.triplet_hash);
+            metrics.push_remove_action(hash_string(remove_action.spec.name()),
+                                       hash_triplet(remove_action.spec.triplet()));
         }
 
         for (auto&& install_action : plan.install_actions)
@@ -1342,26 +1369,20 @@ namespace vcpkg
             const auto& spec = install_action.spec;
             const auto& scfl = install_action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
 
-            InstallPlanActionMetrics action_metrics;
-            action_metrics.action = InstallPlanActionMetrics::Action::Install;
-            action_metrics.port_hash = Hash::get_string_hash(spec.name(), Hash::Algorithm::Sha256);
-            action_metrics.triplet_hash = hash_triplet(spec.triplet());
-            action_metrics.version_hash = Hash::get_string_hash(scfl.to_version().to_string(), Hash::Algorithm::Sha256);
-            action_metrics.origin = scfl.origin;
-            metrics.push_back(action_metrics);
-
-            // installplan_1
-            if (!specs_string.empty()) specs_string.push_back(',');
-            specs_string += Strings::concat(
-                action_metrics.port_hash, ":", action_metrics.triplet_hash, ":", action_metrics.version_hash);
+            metrics.push_install_action(hash_string(spec.name()),
+                                        hash_triplet(spec.triplet()),
+                                        hash_string(scfl.to_version().to_string()),
+                                        scfl.origin);
         }
 
-        Json::Array metrics_array;
-        for (auto&& m : metrics)
         {
-            metrics_array.push_back(m.serialize());
+            auto telemetry = LockGuardPtr<Metrics>(g_metrics);
+            telemetry->track_property("installplan_1", metrics.serialize_old_style());
+            telemetry->track_property("installplan_2_actions", metrics.actions());
+            telemetry->track_property("installplan_2_ports", metrics.ports());
+            telemetry->track_property("installplan_2_triplets", metrics.triplets());
+            telemetry->track_property("installplan_2_versions", metrics.versions());
+            telemetry->track_property("installplan_2_origins", metrics.origins());
         }
-        LockGuardPtr<Metrics>(g_metrics)->track_property("installplan_1", specs_string);
-        LockGuardPtr<Metrics>(g_metrics)->track_property("installplan_2", metrics_array);
     }
 }
