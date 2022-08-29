@@ -474,6 +474,10 @@ namespace vcpkg
                     "",
                     "The first argument to '{command_line}' must be 'artifact' or 'port'.");
     DECLARE_MESSAGE(AddingCompletionEntry, (msg::path), "", "Adding vcpkg completion entry to {path}.");
+    DECLARE_MESSAGE(AdditionalPackagesToExport,
+                    (),
+                    "",
+                    "Additional packages (*) need to be exported to complete this operation.");
     DECLARE_MESSAGE(AddPortRequiresManifest,
                     (msg::command_line),
                     "",
@@ -607,6 +611,7 @@ namespace vcpkg
                     (),
                     "Printed after BuildingPackageFailed, and followed by a list of dependencies that were missing.",
                     "due to the following missing dependencies:");
+    DECLARE_MESSAGE(BuildingPackages, (), "", "The following packages need to be built:");
     DECLARE_MESSAGE(BuildResultBuildFailed,
                     (),
                     "Printed after the name of an installed entity to indicate that it failed to build.",
@@ -739,8 +744,11 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "Could not deduce nuget id and version from filename: {path}");
-    DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
     DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: \"{path}\"");
+    DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
+    DECLARE_MESSAGE(Creating7ZipArchive, (), "", "Creating 7zip archive...");
+    DECLARE_MESSAGE(CreatingZipArchive, (), "", "Creating zip archive...");
+    DECLARE_MESSAGE(CreationFailed, (msg::path), "", "{path} creation failed.");
     DECLARE_MESSAGE(CurlReportedUnexpectedResults,
                     (msg::command_line, msg::actual),
                     "{command_line} is the command line to call curl.exe, {actual} is the console output "
@@ -789,6 +797,7 @@ namespace vcpkg
     DECLARE_MESSAGE(ElapsedTimeForChecks, (msg::elapsed), "", "Time to determine pass/fail: {elapsed}");
     DECLARE_MESSAGE(EmailVcpkgTeam, (msg::url), "", "Send an email to {url} with any feedback.");
     DECLARE_MESSAGE(EmptyArg, (msg::option), "", "The option --{option} must be passed a non-empty argument.");
+    DECLARE_MESSAGE(EmptyExportPlan, (), "", "Export plan cannot be empty");
     DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
     DECLARE_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:");
     DECLARE_MESSAGE(ErrorDetectingCompilerInfo,
@@ -874,36 +883,44 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
     DECLARE_MESSAGE(ExpectedValueForOption, (msg::option), "", "expected value after --{option}.");
+    DECLARE_MESSAGE(Exported7zipArchive, (msg::path), "", "7zip archive exported at: {path}");
+    DECLARE_MESSAGE(ExportedZipArchive, (msg::path), "", "Zip archive exported at: {path}");
     DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
+    DECLARE_MESSAGE(ExportingPackages, (), "", "The following packages are already built and will be exported:");
+    DECLARE_MESSAGE(ExportUnsupportedInManifest,
+                    (),
+                    "",
+                    "vcpkg export does not support manifest mode, in order to allow for future design considerations. "
+                    "You may use export in classic mode by running vcpkg outside of a manifest-based project.");
     DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
     DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":");
+    DECLARE_MESSAGE(FailedToFindPortFeature, (msg::feature, msg::spec), "", "Could not find {feature} in {spec}.");
     DECLARE_MESSAGE(FailedToFormatMissingFile,
                     (),
                     "",
                     "No files to format.\nPlease pass either --all, or the explicit files to format or convert.");
+    DECLARE_MESSAGE(FailedToLoadInstalledManifest,
+                    (msg::spec),
+                    "",
+                    "The control or mnaifest file for {spec} could not be loaded due to the following error. Please "
+                    "remove {spec} and re-attempt.");
+    DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}");
+    DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
     DECLARE_MESSAGE(FailedToObtainLocalPortGitSha, (), "", "Failed to obtain git SHAs for local ports.");
+    DECLARE_MESSAGE(FailedToObtainPackageVersion, (), "", "Cannot find desired package version.");
     DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
                     (),
                     "",
                     "Failed to parse CMake console output to locate block start/end markers.");
+    DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse control file: {path}");
+    DECLARE_MESSAGE(FailedToParseJson, (msg::path), "", "Failed to parse JSON file: {path}");
+    DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: {path}");
     DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                     (msg::error_msg),
                     "'{error_msg}' is the error message for failing to parse the Binary Paragraph.",
                     "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at "
                     "https://github.com/microsoft/vcpkg, "
                     "with the following output:\n{error_msg}\nSerialized Binary Paragraph:");
-    DECLARE_MESSAGE(FailedToFindPortFeature, (msg::feature, msg::spec), "", "Could not find {feature} in {spec}.");
-    DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}");
-    DECLARE_MESSAGE(FailedToLoadInstalledManifest,
-                    (msg::spec),
-                    "",
-                    "The control or mnaifest file for {spec} could not be loaded due to the following error. Please "
-                    "remove {spec} and re-attempt.");
-    DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
-    DECLARE_MESSAGE(FailedToObtainPackageVersion, (), "", "Cannot find desired package version.");
-    DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse control file: {path}");
-    DECLARE_MESSAGE(FailedToParseJson, (msg::path), "", "Failed to parse JSON file: {path}");
-    DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: {path}");
     DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
     DECLARE_MESSAGE(FailedToRead, (msg::path, msg::error_msg), "", "Failed to read {path}: {error_msg}");
     DECLARE_MESSAGE(FailedToReadParagraph, (msg::path), "", "Failed to read paragraphs from {path}");
@@ -922,6 +939,7 @@ namespace vcpkg
                     "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details "
                     "on how to provide credentials.");
     DECLARE_MESSAGE(FeedbackAppreciated, (), "", "Thank you for your feedback!");
+    DECLARE_MESSAGE(FilesExported, (msg::path), "", "Files exported at: {path}");
     DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at \"{path}\".");
     DECLARE_MESSAGE(FollowingPackagesMissingControl,
                     (),
@@ -1011,6 +1029,10 @@ namespace vcpkg
                     (msg::value),
                     "{value} is a sha.",
                     "SHA512's must be 128 hex characters: {value}");
+    DECLARE_MESSAGE(IncompatibleOptionSetting,
+                    (msg::value, msg::option),
+                    "{value} is the 'main' option.",
+                    "--{value} is only valid with --{option}.");
     DECLARE_MESSAGE(IncorrectNumberOfArgs,
                     (msg::command_name, msg::expected, msg::actual),
                     "'{expected}' is the required number of arguments. '{actual}' is the number of arguments provided.",
@@ -1052,6 +1074,7 @@ namespace vcpkg
                     (msg::command_line),
                     "",
                     "You may be able to install this tool via your system package manager ({command_line}).");
+    DECLARE_MESSAGE(InstructionToBuild, (), "", "To build them, run:");
     DECLARE_MESSAGE(IntegrationFailed, (), "", "Integration was not applied.");
     DECLARE_MESSAGE(InternalCICommand,
                     (),
@@ -1292,6 +1315,7 @@ namespace vcpkg
                     "No packages are installed. Did you mean `search`?");
     DECLARE_MESSAGE(NoLocalizationForMessages, (), "", "No localized messages for the following: ");
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
+    DECLARE_MESSAGE(NugetPackageExported, (msg::path), "", "NuGet package exported at: {path}");
     DECLARE_MESSAGE(NugetPackageFileSucceededButCreationFailed,
                     (msg::path),
                     "",
@@ -1318,6 +1342,7 @@ namespace vcpkg
         "",
         "If you are sure you want to rebuild the above packages, run the command with the --recurse option.");
     DECLARE_MESSAGE(PackagesToRemove, (), "", "The following packages will be removed:");
+    DECLARE_MESSAGE(PackingNuget, (), "", "Packing NuGet package...");
     DECLARE_MESSAGE(PackingVendorFailed,
                     (msg::vendor),
                     "",
@@ -1352,6 +1377,7 @@ namespace vcpkg
                     "",
                     "The port type of {spec} differs between the installed and available portfile.\nPlease manually "
                     "remove {spec} and re-run this command.");
+    DECLARE_MESSAGE(PrebuiltPackages, (), "", "There are packages that have not been built.");
     DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.");
     DECLARE_MESSAGE(ProcessorArchitectureMalformed,
                     (msg::arch),
@@ -1370,6 +1396,10 @@ namespace vcpkg
                     (msg::tool_name, msg::exit_code),
                     "The program's console output is appended after this.",
                     "{tool_name} failed with exit code: ({exit_code}).");
+    DECLARE_MESSAGE(ProvideExportType,
+                    (),
+                    "",
+                    "Must provide at least one export type: --raw --nuget --ifw --zip --7zip --chocolatey --prefab.");
     DECLARE_MESSAGE(PushingVendorFailed,
                     (msg::vendor, msg::path),
                     "",
@@ -1463,6 +1493,7 @@ namespace vcpkg
                     "Unable to determine toolchain use for {triplet} with with CMAKE_SYSTEM_NAME {system_name}. Did "
                     "you mean to use "
                     "VCPKG_CHAINLOAD_TOOLCHAIN_FILE?");
+    DECLARE_MESSAGE(UnexpectedByteSize, (msg::count), "", "Expected 15 bytes to be written, but {count} were written.");
     DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.");
     DECLARE_MESSAGE(UnexpectedExtension, (msg::extension), "", "Unexpected archive extension: '{extension}'.");
     DECLARE_MESSAGE(UnexpectedFormat,
@@ -1591,6 +1622,7 @@ namespace vcpkg
                     (msg::triplet),
                     "'--' at the beginning must be preserved",
                     "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.");
+    DECLARE_MESSAGE(UsingExportedLibs, (), "", "\nTo use exported libraries in CMake projects use:");
     DECLARE_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
     DECLARE_MESSAGE(VcpkgCeIsExperimental,
                     (),
@@ -1660,36 +1692,4 @@ namespace vcpkg
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}.");
-    DECLARE_MESSAGE(ExportingPackages, (), "", "The following packages are already built and will be exported:");
-    DECLARE_MESSAGE(BuildingPackages, (), "", "The following packages need to be built:");
-    DECLARE_MESSAGE(UnexpectedByteSize, (msg::count), "", "Expected 15 bytes to be written, but {count} were written.");
-    DECLARE_MESSAGE(CreationFailed, (msg::path), "", "{path} creation failed.");
-    DECLARE_MESSAGE(ProvideExportType,
-                    (),
-                    "",
-                    "Must provide at least one export type: --raw --nuget --ifw --zip --7zip --chocolatey --prefab.");
-    DECLARE_MESSAGE(IncompatibleOptionSetting,
-                    (msg::value, msg::option),
-                    "{value} is the 'main' option.",
-                    "--{value} is only valid with --{option}.");
-    DECLARE_MESSAGE(NextStep, (), "", "\nTo use exported libraries in CMake projects use:"); // rename
-    DECLARE_MESSAGE(FilesExported, (msg::path), "", "Files exported at: {path}");
-    DECLARE_MESSAGE(PackingNuget, (), "", "Packing NuGet package...");
-    DECLARE_MESSAGE(NugetPackageExported, (msg::path), "", "NuGet package exported at: {path}");
-    DECLARE_MESSAGE(CreatingZipArchive, (), "", "Creating zip archive...");
-    DECLARE_MESSAGE(ExportedZipArchive, (msg::path), "", "Zip archive exported at: {path}");
-    DECLARE_MESSAGE(Creating7ZipArchive, (), "", "Creating 7zip archive...");
-    DECLARE_MESSAGE(Exported7zipArchive, (msg::path), "", "7zip archive exported at: {path}");
-    DECLARE_MESSAGE(ExportUnsupportedInManifest,
-                    (),
-                    "",
-                    "vcpkg export does not support manifest mode, in order to allow for future design considerations. "
-                    "You may use export in classic mode by running vcpkg outside of a manifest-based project.");
-    DECLARE_MESSAGE(EmptyExportPlan, (), "", "Export plan cannot be empty");
-    DECLARE_MESSAGE(AdditionalPackagesToExport,
-                    (),
-                    "",
-                    "Additional packages (*) need to be exported to complete this operation.");
-    DECLARE_MESSAGE(PrebuiltPackages, (), "", "There are packages that have not been built.");
-    DECLARE_MESSAGE(InstructionToBuild, (), "", "To build them, run:");
 }

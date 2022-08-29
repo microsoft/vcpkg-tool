@@ -408,6 +408,7 @@ namespace vcpkg
     REGISTER_MESSAGE(AddCommandFirstArg);
     REGISTER_MESSAGE(AddFirstArgument);
     REGISTER_MESSAGE(AddingCompletionEntry);
+    REGISTER_MESSAGE(AdditionalPackagesToExport);
     REGISTER_MESSAGE(AddPortRequiresManifest);
     REGISTER_MESSAGE(AddPortSucceeded);
     REGISTER_MESSAGE(AddTripletExpressionNotAllowed);
@@ -457,6 +458,7 @@ namespace vcpkg
     REGISTER_MESSAGE(BuildingPackage);
     REGISTER_MESSAGE(BuildingPackageFailed);
     REGISTER_MESSAGE(BuildingPackageFailedDueToMissingDeps);
+    REGISTER_MESSAGE(BuildingPackages);
     REGISTER_MESSAGE(BuildResultBuildFailed);
     REGISTER_MESSAGE(BuildResultCacheMissing);
     REGISTER_MESSAGE(BuildResultCascadeDueToMissingDependencies);
@@ -488,14 +490,17 @@ namespace vcpkg
     REGISTER_MESSAGE(CMakeToolChainFile);
     REGISTER_MESSAGE(CommandFailed);
     REGISTER_MESSAGE(CompressFolderFailed);
-    REGISTER_MESSAGE(ConstraintViolation);
     REGISTER_MESSAGE(ConflictingValuesForOption);
+    REGISTER_MESSAGE(ConstraintViolation);
     REGISTER_MESSAGE(ControlAndManifestFilesPresent);
     REGISTER_MESSAGE(CopyrightIsDir);
     REGISTER_MESSAGE(CorruptedDatabase);
     REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion);
     REGISTER_MESSAGE(CreatedNuGetPackage);
     REGISTER_MESSAGE(CreateFailureLogsDir);
+    REGISTER_MESSAGE(Creating7ZipArchive);
+    REGISTER_MESSAGE(CreatingZipArchive);
+    REGISTER_MESSAGE(CreationFailed);
     REGISTER_MESSAGE(CurlReportedUnexpectedResults);
     REGISTER_MESSAGE(DateTableHeader);
     REGISTER_MESSAGE(DefaultBrowserLaunched);
@@ -515,6 +520,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ElapsedTimeForChecks);
     REGISTER_MESSAGE(EmailVcpkgTeam);
     REGISTER_MESSAGE(EmptyArg);
+    REGISTER_MESSAGE(EmptyExportPlan);
     REGISTER_MESSAGE(EmptyLicenseExpression);
     REGISTER_MESSAGE(EnvStrFailedToExtract);
     REGISTER_MESSAGE(ErrorDetectingCompilerInfo);
@@ -546,7 +552,11 @@ namespace vcpkg
     REGISTER_MESSAGE(ExpectedPortName);
     REGISTER_MESSAGE(ExpectedTripletName);
     REGISTER_MESSAGE(ExpectedValueForOption);
+    REGISTER_MESSAGE(Exported7zipArchive);
+    REGISTER_MESSAGE(ExportedZipArchive);
     REGISTER_MESSAGE(ExportingPackage);
+    REGISTER_MESSAGE(ExportingPackages);
+    REGISTER_MESSAGE(ExportUnsupportedInManifest);
     REGISTER_MESSAGE(ExtendedDocumentationAtUrl);
     REGISTER_MESSAGE(FailedToExtract);
     REGISTER_MESSAGE(FailedToFindPortFeature);
@@ -571,6 +581,7 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedToWriteManifest);
     REGISTER_MESSAGE(FailedVendorAuthentication);
     REGISTER_MESSAGE(FeedbackAppreciated);
+    REGISTER_MESSAGE(FilesExported);
     REGISTER_MESSAGE(FishCompletion);
     REGISTER_MESSAGE(FollowingPackagesMissingControl);
     REGISTER_MESSAGE(FollowingPackagesNotInstalled);
@@ -615,6 +626,7 @@ namespace vcpkg
     REGISTER_MESSAGE(IllegalFeatures);
     REGISTER_MESSAGE(IllegalPlatformSpec);
     REGISTER_MESSAGE(ImproperShaLength);
+    REGISTER_MESSAGE(IncompatibleOptionSetting);
     REGISTER_MESSAGE(IncorrectNumberOfArgs);
     REGISTER_MESSAGE(InfoSetEnvVar);
     REGISTER_MESSAGE(InitRegistryFailedNoRepo);
@@ -627,6 +639,7 @@ namespace vcpkg
     REGISTER_MESSAGE(InstallWithSystemManager);
     REGISTER_MESSAGE(InstallWithSystemManagerMono);
     REGISTER_MESSAGE(InstallWithSystemManagerPkg);
+    REGISTER_MESSAGE(InstructionToBuild);
     REGISTER_MESSAGE(IntegrationFailed);
     REGISTER_MESSAGE(InternalCICommand);
     REGISTER_MESSAGE(InvalidArgMustBeAnInt);
@@ -684,8 +697,8 @@ namespace vcpkg
     REGISTER_MESSAGE(MissingDependency);
     REGISTER_MESSAGE(MissingExtension);
     REGISTER_MESSAGE(MissingOption);
-    REGISTER_MESSAGE(MissmatchedBinParagraphs);
     REGISTER_MESSAGE(MissingPortSuggestPullRequest);
+    REGISTER_MESSAGE(MissmatchedBinParagraphs);
     REGISTER_MESSAGE(MonoInstructions);
     REGISTER_MESSAGE(MsiexecFailedToExtract);
     REGISTER_MESSAGE(MultiArch);
@@ -701,6 +714,7 @@ namespace vcpkg
     REGISTER_MESSAGE(NoInstalledPackages);
     REGISTER_MESSAGE(NoLocalizationForMessages);
     REGISTER_MESSAGE(NoRegistryForPort);
+    REGISTER_MESSAGE(NugetPackageExported);
     REGISTER_MESSAGE(NugetPackageFileSucceededButCreationFailed);
     REGISTER_MESSAGE(OptionMustBeInteger);
     REGISTER_MESSAGE(OptionRequired);
@@ -714,6 +728,7 @@ namespace vcpkg
     REGISTER_MESSAGE(PackagesToRebuild);
     REGISTER_MESSAGE(PackagesToRebuildSuggestRecurse);
     REGISTER_MESSAGE(PackagesToRemove);
+    REGISTER_MESSAGE(PackingNuget);
     REGISTER_MESSAGE(PackingVendorFailed);
     REGISTER_MESSAGE(ParseControlErrorInfoInvalidFields);
     REGISTER_MESSAGE(ParseControlErrorInfoMissingFields);
@@ -728,11 +743,13 @@ namespace vcpkg
     REGISTER_MESSAGE(PortsUpdated);
     REGISTER_MESSAGE(PortSupportsField);
     REGISTER_MESSAGE(PortTypeConflict);
+    REGISTER_MESSAGE(PrebuiltPackages);
     REGISTER_MESSAGE(PreviousIntegrationFileRemains);
     REGISTER_MESSAGE(ProcessorArchitectureMalformed);
     REGISTER_MESSAGE(ProcessorArchitectureMissing);
     REGISTER_MESSAGE(ProcessorArchitectureW6432Malformed);
     REGISTER_MESSAGE(ProgramReturnedNonzeroExitCode);
+    REGISTER_MESSAGE(ProvideExportType);
     REGISTER_MESSAGE(PushingVendorFailed);
     REGISTER_MESSAGE(RegistryCreated);
     REGISTER_MESSAGE(ReplaceSecretsError);
@@ -763,6 +780,7 @@ namespace vcpkg
     REGISTER_MESSAGE(TotalTime);
     REGISTER_MESSAGE(TwoFeatureFlagsSpecified);
     REGISTER_MESSAGE(UndeterminedToolChainForTriplet);
+    REGISTER_MESSAGE(UnexpectedByteSize);
     REGISTER_MESSAGE(UnexpectedErrorDuringBulkDownload);
     REGISTER_MESSAGE(UnexpectedExtension);
     REGISTER_MESSAGE(UnexpectedFormat);
@@ -799,6 +817,7 @@ namespace vcpkg
     REGISTER_MESSAGE(UserWideIntegrationDeleted);
     REGISTER_MESSAGE(UserWideIntegrationRemoved);
     REGISTER_MESSAGE(UsingCommunityTriplet);
+    REGISTER_MESSAGE(UsingExportedLibs);
     REGISTER_MESSAGE(UsingManifestAt);
     REGISTER_MESSAGE(VcpkgCeIsExperimental);
     REGISTER_MESSAGE(VcpkgCommitTableHeader);
@@ -826,23 +845,4 @@ namespace vcpkg
     REGISTER_MESSAGE(WhileLookingForSpec);
     REGISTER_MESSAGE(WindowsOnlyCommand);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
-    REGISTER_MESSAGE(ExportingPackages);
-    REGISTER_MESSAGE(BuildingPackages);
-    REGISTER_MESSAGE(UnexpectedByteSize);
-    REGISTER_MESSAGE(CreationFailed);
-    REGISTER_MESSAGE(ProvideExportType);
-    REGISTER_MESSAGE(IncompatibleOptionSetting);
-    REGISTER_MESSAGE(NextStep);
-    REGISTER_MESSAGE(FilesExported);
-    REGISTER_MESSAGE(PackingNuget);
-    REGISTER_MESSAGE(NugetPackageExported);
-    REGISTER_MESSAGE(CreatingZipArchive);
-    REGISTER_MESSAGE(ExportedZipArchive);
-    REGISTER_MESSAGE(Creating7ZipArchive);
-    REGISTER_MESSAGE(Exported7zipArchive);
-    REGISTER_MESSAGE(ExportUnsupportedInManifest);
-    REGISTER_MESSAGE(EmptyExportPlan);
-    REGISTER_MESSAGE(AdditionalPackagesToExport);
-    REGISTER_MESSAGE(PrebuiltPackages);
-    REGISTER_MESSAGE(InstructionToBuild);
 }

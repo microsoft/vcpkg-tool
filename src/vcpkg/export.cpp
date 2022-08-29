@@ -482,7 +482,7 @@ namespace vcpkg::Export
     {
         const auto cmake_toolchain = prefix / "scripts/buildsystems/vcpkg.cmake";
         const CMakeVariable cmake_variable = CMakeVariable("CMAKE_TOOLCHAIN_FILE", cmake_toolchain.generic_u8string());
-        msg::println(msg::format(msgNextStep).append_indent().append_raw(cmake_variable.s).append_raw("\n\n"));
+        msg::println(msg::format(msgUsingExportedLibs).append_indent().append_raw(cmake_variable.s).append_raw("\n\n"));
     }
 
     static void handle_raw_based_export(Span<const ExportPlanAction> export_plan,
