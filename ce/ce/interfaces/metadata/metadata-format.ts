@@ -2,9 +2,6 @@
 // Licensed under the MIT License.
 
 import { ProfileBase } from './profile-base';
-import { GitRegistry } from './registries/git-registry';
-import { LocalRegistry } from './registries/local-registry';
-import { NugetRegistry } from './registries/nuget-registry';
 
 
 /**
@@ -15,8 +12,6 @@ import { NugetRegistry } from './registries/nuget-registry';
  * 'requires'/'see-also'/'exports'/'install'/'use' objects
  */
 export type Profile = ProfileBase;
-
-export type RegistryDeclaration = NugetRegistry | LocalRegistry | GitRegistry;
 
 /** values that can be either a single string, or an array of strings */
 export type StringOrStrings = string | Array<string>;

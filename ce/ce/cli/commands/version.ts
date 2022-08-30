@@ -37,7 +37,7 @@ export class VersionCommand extends Command {
   check = new Check(this);
   update = new Update(this);
 
-  versionUrl = session.parseUri('https://aka.ms/vcpkg-ce.version');
+  versionUrl = session.fileSystem.parse('https://aka.ms/vcpkg-ce.version');
 
   get summary() {
     return i`manage the version of ${cli}`;

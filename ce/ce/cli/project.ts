@@ -5,6 +5,7 @@ import { ArtifactMap, ProjectManifest } from '../artifacts/artifact';
 import { i } from '../i18n';
 import { trackActivation } from '../insights';
 import { session } from '../main';
+import { Registries } from '../registries/registries';
 import { Uri } from '../util/uri';
 import { installArtifacts, showArtifacts } from './artifacts';
 import { blank } from './constants';
@@ -24,9 +25,9 @@ export async function openProject(location: Uri): Promise<ProjectManifest> {
   return new ProjectManifest(session, await session.openManifest(location));
 }
 
-export async function activate(artifacts: ArtifactMap, createUndoFile: boolean, options?: ActivationOptions) {
+export async function activate(artifacts: ArtifactMap, registries: Registries, createUndoFile: boolean, options?: ActivationOptions) {
   // install the items in the project
-  const [success, artifactStatus] = await installArtifacts(session, artifacts.artifacts, options);
+  const [success, artifactStatus] = await installArtifacts(session, artifacts.artifacts, registries, options);
 
   if (success) {
     const backupFile = createUndoFile ? session.tmpFolder.join(`previous-environment-${Date.now().toFixed()}.json`) : undefined;
@@ -39,14 +40,15 @@ export async function activate(artifacts: ArtifactMap, createUndoFile: boolean, 
 export async function activateProject(project: ProjectManifest, options?: ActivationOptions) {
   // track what got installed
   const artifacts = await project.resolveDependencies();
+  const registries = project.registries;
 
   // print the status of what is going to be activated.
-  if (!await showArtifacts(artifacts.artifacts, options)) {
+  if (!await showArtifacts(artifacts.artifacts, registries, options)) {
     error(i`Unable to activate project`);
     return false;
   }
 
-  if (await activate(artifacts, true, options)) {
+  if (await activate(artifacts, registries, true, options)) {
     trackActivation();
     log(blank);
     log(i`Project ${projectFile(project.metadata.context.folder)} activated`);

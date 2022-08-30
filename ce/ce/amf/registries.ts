@@ -4,16 +4,15 @@
 import { isMap, isSeq, YAMLMap } from 'yaml';
 import { Dictionary } from '../interfaces/collections';
 import { ErrorKind } from '../interfaces/error-kind';
-import { RegistryDeclaration } from '../interfaces/metadata/metadata-format';
-import { Registry as IRegistry } from '../interfaces/metadata/registries/artifact-registry';
+import { ArtifactRegistry, Registry as IRegistry } from '../interfaces/metadata/registries/artifact-registry';
 import { ValidationMessage } from '../interfaces/validation-message';
 import { isFilePath, Uri } from '../util/uri';
 import { Entity } from '../yaml/Entity';
 import { Strings } from '../yaml/strings';
 import { Node, Yaml, YAMLDictionary, YAMLSequence } from '../yaml/yaml-types';
 
-export class Registries extends Yaml<YAMLDictionary | YAMLSequence> implements Dictionary<RegistryDeclaration>, Iterable<[string, RegistryDeclaration]>  {
-  *[Symbol.iterator](): Iterator<[string, RegistryDeclaration]> {
+export class Registries extends Yaml<YAMLDictionary | YAMLSequence> implements Dictionary<ArtifactRegistry>, Iterable<[string, ArtifactRegistry]>  {
+  *[Symbol.iterator](): Iterator<[string, ArtifactRegistry]> {
     if (isMap(this.node)) {
       for (const { key, value } of this.node.items) {
         const v = this.createRegistry(value);
@@ -45,7 +44,7 @@ export class Registries extends Yaml<YAMLDictionary | YAMLSequence> implements D
     return new YAMLSequence();
   }
 
-  add(name: string, location?: Uri, kind?: string): RegistryDeclaration {
+  add(name: string, location?: Uri, kind?: string): ArtifactRegistry {
     if (this.get(name)) {
       throw new Error(`Registry ${name} already exists.`);
     }
@@ -84,7 +83,7 @@ export class Registries extends Yaml<YAMLDictionary | YAMLSequence> implements D
     }
     return false;
   }
-  get(key: string): RegistryDeclaration | undefined {
+  get(key: string): ArtifactRegistry | undefined {
     const n = this.node;
     if (isMap(n)) {
       return this.createRegistry(<Node>n.get(key, true));

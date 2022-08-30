@@ -5,13 +5,11 @@
 import { cyan } from 'chalk';
 import { i } from '../../i18n';
 import { session } from '../../main';
-import { Registries } from '../../registries/registries';
 import { Command } from '../command';
 import { artifactIdentity } from '../format';
 import { Table } from '../markdown-table';
 import { debug, error, log } from '../styling';
 import { Project } from '../switches/project';
-import { Registry } from '../switches/registry';
 import { Version } from '../switches/version';
 
 export class FindCommand extends Command {
@@ -19,9 +17,7 @@ export class FindCommand extends Command {
   readonly aliases = ['search'];
   seeAlso = [];
   argumentsHelp = [];
-
   version = new Version(this);
-  registrySwitch = new Registry(this);
   project = new Project(this);
 
   get summary() {
@@ -36,9 +32,7 @@ export class FindCommand extends Command {
 
   override async run() {
     // load registries (from the current project too if available)
-    let registries: Registries = await this.registrySwitch.loadRegistries(session);
-    registries = (await this.project.manifest)?.registries ?? registries;
-
+    const registries = session.loadDefaultRegistryContext(await this.project.manifest);
     debug(`using registries: ${[...registries].map(([registry, registryNames]) => registryNames[0]).join(', ')}`);
     const table = new Table('Artifact', 'Version', 'Summary');
 
@@ -58,7 +52,7 @@ export class FindCommand extends Command {
         }
         for (const result of artifacts) {
           if (!result.metadata.dependencyOnly) {
-            const name = artifactIdentity(result.registryId, id, result.shortName);
+            const name = artifactIdentity(registries.getRegistryDisplayName(result.registryUri), id, result.shortName);
             table.push(name, result.metadata.version, result.metadata.summary || '');
           }
         }

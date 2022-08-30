@@ -4,7 +4,7 @@
 import { Dictionary } from '../collections';
 import { Contact } from './contact';
 import { Demands } from './demands';
-import { RegistryDeclaration } from './metadata-format';
+import { ArtifactRegistry } from './registries/artifact-registry';
 
 
 type Primitive = string | number | boolean;
@@ -24,7 +24,7 @@ export interface ProfileBase extends Demands {
   contacts: Dictionary<Contact>; // optional
 
   /** artifact registries list the references necessary to install artifacts in this file */
-  registries?: Dictionary<RegistryDeclaration>;
+  registries?: Dictionary<ArtifactRegistry>;
 
   /** global settings */
   globalSettings: Dictionary<Primitive | Record<string, unknown>>;

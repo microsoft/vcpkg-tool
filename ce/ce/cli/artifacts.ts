@@ -11,11 +11,11 @@ import { artifactIdentity, artifactReference } from './format';
 import { Table } from './markdown-table';
 import { debug, error, log } from './styling';
 
-export async function showArtifacts(artifacts: Iterable<Artifact>, options?: { force?: boolean }) {
+export async function showArtifacts(artifacts: Iterable<Artifact>, registries : Registries, options?: { force?: boolean }) {
   let failing = false;
   const table = new Table(i`Artifact`, i`Version`, i`Status`, i`Dependency`, i`Summary`);
   for (const artifact of artifacts) {
-    const name = artifactIdentity(artifact.registryId, artifact.id, artifact.shortName);
+    const name = artifactIdentity(registries.getRegistryDisplayName(artifact.registryUri), artifact.id, artifact.shortName);
     for (const err of artifact.metadata.validate()) {
       failing = true;
       error(artifact.metadata.formatVMessage(err));
@@ -43,7 +43,7 @@ export async function selectArtifacts(selections: Selections, registries: Regist
       if (results.length) {
         log('\nPossible matches:');
         for (const [reg, key, arts] of results) {
-          log(`  ${artifactReference(registries.getRegistryName(reg), key, '')}`);
+          log(`  ${artifactReference(registries.getRegistryDisplayName(reg.location), key, '')}`);
         }
       }
 
@@ -111,7 +111,7 @@ class TaggedProgressBar {
   }
 }
 
-export async function installArtifacts(session: Session, artifacts: Array<Artifact>, options?: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<[boolean, Map<Artifact, boolean>]> {
+export async function installArtifacts(session: Session, artifacts: Array<Artifact>, registries: Registries, options?: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<[boolean, Map<Artifact, boolean>]> {
   // resolve the full set of artifacts to install.
   const installed = new Map<Artifact, boolean>();
   const bar = new MultiBar({
@@ -129,7 +129,7 @@ export async function installArtifacts(session: Session, artifacts: Array<Artifa
   for (let idx = 0; idx < artifacts.length; ++idx) {
     const artifact = artifacts[idx];
     const id = artifact.id;
-    const registryName = artifact.registryId;
+    const registryName = registries.getRegistryDisplayName(artifact.registryUri);
     overallProgress.update(idx, { name: artifactIdentity(registryName, id) });
     try {
       const actuallyInstalled = await artifact.install({

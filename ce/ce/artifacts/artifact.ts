@@ -46,9 +46,9 @@ class ArtifactBase {
 
     // load the registries from the project file
     for (const [name, registry] of this.metadata.registries) {
-      const reg = await session.loadRegistry(registry.location.get(0), registry.registryKind || 'artifact');
-      if (reg) {
-        this.registries.add(reg, name);
+      const loc = registry.location.get(0);
+      if (loc) {
+        this.registries.add(await session.loadRegistry(loc), name);
       }
     }
 
@@ -57,7 +57,6 @@ class ArtifactBase {
 
   async resolveDependencies(artifacts = new ArtifactMap(), recurse = true) {
     // find the dependencies and add them to the set
-
     let dependency: [Registry, string, Artifact] | undefined;
     for (const [id, version] of linq.entries(this.applicableDemands.requires)) {
       dependency = undefined;
@@ -94,16 +93,12 @@ export class Artifact extends ArtifactBase {
   isPrimary = false;
   allPaths: Array<string> = [];
 
-  constructor(session: Session, metadata: MetadataFile, public shortName: string = '', public targetLocation: Uri, public readonly registryId: string, public readonly registryUri: Uri) {
+  constructor(session: Session, metadata: MetadataFile, public shortName: string = '', public targetLocation: Uri, public readonly registryUri: Uri) {
     super(session, metadata);
   }
 
   get id() {
     return this.metadata.id;
-  }
-
-  get reference() {
-    return `${this.registryId}:${this.id}`;
   }
 
   get version() {
@@ -263,7 +258,7 @@ export class Artifact extends ArtifactBase {
 
 export function sanitizePath(path: string) {
   return path.
-    replace(/[\\/]+/g, '/').     // forward slahses please
+    replace(/[\\/]+/g, '/').     // forward slashes please
     replace(/[?<>:|"]/g, ''). // remove illegal characters.
     // eslint-disable-next-line no-control-regex
     replace(/[\x00-\x1f\x80-\x9f]/g, ''). // remove unicode control codes
@@ -276,7 +271,7 @@ export function sanitizePath(path: string) {
 
 export function sanitizeUri(u: string) {
   return u.
-    replace(/[\\/]+/g, '/').     // forward slahses please
+    replace(/[\\/]+/g, '/').     // forward slashes please
     replace(/[?<>|"]/g, ''). // remove illegal characters.
     // eslint-disable-next-line no-control-regex
     replace(/[\x00-\x1f\x80-\x9f]/g, ''). // remove unicode control codes
@@ -293,6 +288,19 @@ export class ProjectManifest extends ArtifactBase {
 
 export class InstalledArtifact extends Artifact {
   constructor(session: Session, metadata: MetadataFile) {
-    super(session, metadata, '', Uri.invalid, 'OnDisk?', Uri.invalid);
+    super(session, metadata, '', Uri.invalid, Uri.invalid);
   }
+}
+
+export function parseArtifactName(id: string): [string | undefined, string] {
+  const parts = id.split(':');
+  if (parts.length === 2) {
+    return [parts[0], parts[1]];
+  }
+
+  if (parts.length === 1) {
+    return [undefined, parts[0]];
+  }
+
+  throw new Error(i`Invalid artifact id '${id}'`);
 }

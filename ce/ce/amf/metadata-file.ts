@@ -37,7 +37,7 @@ export class MetadataFile extends BaseMap implements Profile {
 
   async init(session: Session): Promise<MetadataFile> {
     this.context.session = session;
-    this.context.file = session.parseUri(this.context.filename);
+    this.context.file = session.fileSystem.file(this.context.filename);
     this.context.folder = this.context.file.parent;
     await this.demandBlock.init(session);
     return this;

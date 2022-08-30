@@ -5,26 +5,23 @@ import { Registry } from '../../artifacts/registry';
 import { registryIndexFile } from '../../constants';
 import { i } from '../../i18n';
 import { session } from '../../main';
-import { Registries } from '../../registries/registries';
 import { Uri } from '../../util/uri';
 import { Command } from '../command';
 import { cli } from '../constants';
 import { error, log, writeException } from '../styling';
 import { Normalize } from '../switches/normalize';
 import { Project } from '../switches/project';
-import { Registry as RegSwitch } from '../switches/registry';
 import { WhatIf } from '../switches/whatIf';
 
 export class RegenerateCommand extends Command {
   readonly command = 'regenerate';
-  project = new Project(this);
   readonly aliases = ['regen'];
-  readonly regSwitch = new RegSwitch(this, { required: true });
   readonly normalize = new Normalize(this);
   seeAlso = [];
   argumentsHelp = [];
-
+  project = new Project(this);
   whatIf = new WhatIf(this);
+
   get summary() {
     return i`regenerate the index for a registry`;
   }
@@ -36,9 +33,7 @@ export class RegenerateCommand extends Command {
   }
 
   override async run() {
-    let registries: Registries = await this.regSwitch.loadRegistries(session);
-    registries = (await this.project.manifest)?.registries ?? registries;
-
+    const registries = session.loadDefaultRegistryContext(await this.project.manifest);
     for (const registryNameOrLocation of this.inputs) {
       let registry: Registry | undefined;
       try {
@@ -50,7 +45,7 @@ export class RegenerateCommand extends Command {
           // see if the name is a location
           const location = await session.parseLocation(registryNameOrLocation);
           registry = location ?
-            await session.loadRegistry(location, 'artifact') :  // a folder
+            await session.loadRegistry(location) :  // a folder
             registries.getRegistry(registryNameOrLocation); // a registry name or other location.
         }
         if (registry) {

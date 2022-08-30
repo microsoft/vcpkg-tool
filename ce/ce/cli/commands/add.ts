@@ -9,7 +9,6 @@ import { cmdSwitch } from '../format';
 import { activateProject } from '../project';
 import { error } from '../styling';
 import { Project } from '../switches/project';
-import { Registry } from '../switches/registry';
 import { Version } from '../switches/version';
 import { WhatIf } from '../switches/whatIf';
 
@@ -22,8 +21,6 @@ export class AddCommand extends Command {
   version = new Version(this);
   project: Project = new Project(this);
   whatIf = new WhatIf(this);
-  registrySwitch = new Registry(this);
-
 
   get summary() {
     return i`Adds an artifact to the project`;
@@ -43,9 +40,6 @@ export class AddCommand extends Command {
       return false;
     }
 
-    // pull in any registries that are on the command line
-    await this.registrySwitch.loadRegistries(session);
-
     if (this.inputs.length === 0) {
       error(i`No artifacts specified`);
       return false;
@@ -58,25 +52,41 @@ export class AddCommand extends Command {
     }
 
     const selections = new Map(this.inputs.map((v, i) => [v, versions[i] || '*']));
-    const selectedArtifacts = await selectArtifacts(selections, projectManifest.registries);
+    const projectRegistries = projectManifest.registries;
+    const selectedArtifacts = await selectArtifacts(selections, projectRegistries);
 
     if (!selectedArtifacts) {
       return false;
     }
 
     for (const [artifact, id, requested] of selectedArtifacts.values()) {
-      // make sure the registry is in the project
-      const registry = projectManifest.registries.getRegistry(artifact.registryUri);
-      if (!registry) {
-        const r = projectManifest.metadata.registries.add(artifact.registryId, artifact.registryUri, 'artifact');
+      // map the registry of the found artifact to the registries already in the project file
+      const registryUri = artifact.registryUri;
+      let registry = projectRegistries.getRegistry(registryUri);
+      let registryId : string;
+      if (registry) {
+        // the registry is already declared in the project, so get the name to use there
+        registryId = projectRegistries.getRegistryDisplayName(registryUri);
+      } else {
+        // the registry isn't known yet to the project, try to declare it
+        registry = session.registries.getRegistry(artifact.registryUri);
+        registryId = session.registries.getRegistryDisplayName(artifact.registryUri);
+        if (!registry || !registryId) {
+          throw new Error(i`Tried to add an artifact [${registryUri.toString()}]:${artifact.id} but could not determine the registry to use.`);
+        }
 
+        const conflictingRegistry = projectRegistries.getRegistry(registryId);
+        if (conflictingRegistry) {
+          throw new Error(i`Tried to add registry ${registryId} as ${registryUri.toString()}, but it was already ${conflictingRegistry.location.toString()}. Please add ${registryUri.toString()} to this project manually and reattempt.`);
+        }
+
+        projectManifest.metadata.registries.add(registryId, artifact.registryUri, 'artifact');
       }
-
 
       // add the artifact to the project
       const fulfilled = artifact.version.toString();
       const v = requested !== fulfilled ? `${requested} ${fulfilled}` : fulfilled;
-      projectManifest.metadata.requires.set(artifact.reference, <any>v);
+      projectManifest.metadata.requires.set(`${registryId}:${artifact.id}`, <any>v);
     }
 
     // write the file out.

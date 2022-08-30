@@ -29,8 +29,8 @@ function reformatText(text = '', session?: Session): string {
   if (text) {
     text = `${text}`.replace(/\\\./g, '\\\\.');
 
-    // rewrite file:// urls to be locl filesystem urls.
-    return (!!text && !!session) ? text.replace(/(file:\/\/\S*)/g, (s, a) => yellow.dim(session.parseUri(a).fsPath)) : text;
+    // rewrite file:// urls to be local filesystem urls.
+    return (!!text && !!session) ? text.replace(/(file:\/\/\S*)/g, (s, a) => yellow.dim(session.fileSystem.parse(a).fsPath)) : text;
   }
   return '';
 }
@@ -66,7 +66,7 @@ export function initStyling(commandline: CommandLine, session: Session) {
 
   session.channels.on('message', (text: string, context: any, msec: number) => {
     if (context && context instanceof Artifact) {
-      log(`${green.bold('NOTE: ')}[${artifactIdentity(context.registryId, context.id)}] - ${text}`);
+      log(`${green.bold('NOTE: ')}[${artifactIdentity('[' + context.registryUri.toString() + ']', context.id)}] - ${text}`);
     } else {
       log(text);
     }
@@ -74,7 +74,7 @@ export function initStyling(commandline: CommandLine, session: Session) {
 
   session.channels.on('error', (text: string, context: any, msec: number) => {
     if (context && context instanceof Artifact) {
-      error(`[${artifactIdentity(context.registryId, context.id)}] - ${text}`);
+      error(`[${artifactIdentity('[' + context.registryUri.toString() + ']', context.id)}] - ${text}`);
     } else {
       error(text);
     }
@@ -82,7 +82,7 @@ export function initStyling(commandline: CommandLine, session: Session) {
 
   session.channels.on('debug', (text: string, context: any, msec: number) => {
     if (context && context instanceof Artifact) {
-      debug(`[${artifactIdentity(context.registryId, context.id)}] - ${text}`);
+      debug(`[${artifactIdentity('[' + context.registryUri.toString() + ']', context.id)}] - ${text}`);
     } else {
       debug(`${cyan.bold(`[${formatTime(msec)}]`)} ${reformatText(text, session)}`);
     }
@@ -96,7 +96,7 @@ export function initStyling(commandline: CommandLine, session: Session) {
 
   session.channels.on('warning', (text: string, context: any, msec: number) => {
     if (context && context instanceof Artifact) {
-      warning(`[${artifactIdentity(context.registryId, context.id)}] - ${text}`);
+      warning(`[${artifactIdentity('[' + context.registryUri.toString() + ']', context.id)}] - ${text}`);
     } else {
       warning(text);
     }

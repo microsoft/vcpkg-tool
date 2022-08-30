@@ -150,7 +150,6 @@ export abstract class ArtifactRegistry implements Registry {
       metadata,
       this.index.indexSchema.id.getShortNameOf(id) || id,
       this.installationFolder.join(id.replace(/[^\w]+/g, '.'), metadata.version),
-      parent.getRegistryName(this),
       this.location
     ).init(this.session);
   }

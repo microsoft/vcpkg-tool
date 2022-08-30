@@ -9,7 +9,7 @@ import { Command } from '../command';
 import { blank } from '../constants';
 import { cmdSwitch } from '../format';
 import { debug, error, log, warning } from '../styling';
-import { Registry } from '../switches/registry';
+import { Project } from '../switches/project';
 import { Version } from '../switches/version';
 import { WhatIf } from '../switches/whatIf';
 
@@ -19,8 +19,8 @@ export class AcquireCommand extends Command {
   seeAlso = [];
   argumentsHelp = [];
   version = new Version(this);
+  project: Project = new Project(this);
   whatIf = new WhatIf(this);
-  registrySwitch = new Registry(this);
 
   get summary() {
     return i`Acquire artifacts in the registry`;
@@ -38,14 +38,13 @@ export class AcquireCommand extends Command {
       return false;
     }
 
-    const registries = await this.registrySwitch.loadRegistries(session);
-
     const versions = this.version.values;
     if (versions.length && this.inputs.length !== versions.length) {
       error(i`Multiple packages specified, but not an equal number of ${cmdSwitch('version')} switches.`);
       return false;
     }
 
+    const registries = session.loadDefaultRegistryContext(await this.project.manifest);
     const artifacts = await selectArtifacts(new Map(this.inputs.map((v, i) => [v, versions[i] || '*'])), registries);
 
     if (!artifacts) {
@@ -53,7 +52,7 @@ export class AcquireCommand extends Command {
       return false;
     }
 
-    if (!await showArtifacts(artifacts.artifacts, this.commandLine)) {
+    if (!await showArtifacts(artifacts.artifacts, registries, this.commandLine)) {
       warning(i`No artifacts are acquired`);
       return false;
     }
@@ -68,11 +67,11 @@ export class AcquireCommand extends Command {
 
     debug(`Installing ${numberOfArtifacts} artifacts`);
 
-    const [success] = await installArtifacts(session, artifacts.artifacts, { force: this.commandLine.force, language: this.commandLine.language, allLanguages: this.commandLine.allLanguages });
+    const [success] = await installArtifacts(session, artifacts.artifacts, registries, { force: this.commandLine.force, language: this.commandLine.language, allLanguages: this.commandLine.allLanguages });
 
     if (success) {
       log(blank);
-      log(i`${numberOfArtifacts} artifacts installed successfuly`);
+      log(i`${numberOfArtifacts} artifacts installed successfully`);
       return true;
     }
 
