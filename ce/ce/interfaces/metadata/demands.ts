@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 
-import { Session } from '../../session';
 import { Dictionary, Sequence } from '../collections';
 import { Validation } from '../validation';
 import { Exports } from './exports';
@@ -45,8 +44,4 @@ export interface Demands extends Validation {
    *       package.
    */
   install: Sequence<Installer>;
-
-
-  init(session: Session): Promise<Demands>;
 }
-

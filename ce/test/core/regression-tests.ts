@@ -2,14 +2,11 @@
 // Licensed under the MIT License.
 
 import { Session } from '@microsoft/vcpkg-ce/dist/session';
-import { strict } from 'assert';
 import { SuiteLocal } from './SuiteLocal';
 
 async function testRegistry(session: Session, sha: string) {
   const uri = `https://github.com/microsoft/vcpkg-ce-catalog/archive/${sha}.zip`;
-  const loaded = await session.loadRegistry(uri);
-  strict.ok(loaded);
-  await loaded.load();
+  await session.registryDatabase.loadRegistry(session, uri);
 }
 
 describe('Regressions', () => {

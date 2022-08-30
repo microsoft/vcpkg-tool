@@ -5,13 +5,10 @@
 import { cyan } from 'chalk';
 import { i } from '../../i18n';
 import { session } from '../../main';
-import { Registries } from '../../registries/registries';
 import { Command } from '../command';
-import { artifactIdentity } from '../format';
 import { Table } from '../markdown-table';
-import { debug, error, log } from '../styling';
+import { error, log } from '../styling';
 import { Project } from '../switches/project';
-import { Registry } from '../switches/registry';
 import { Version } from '../switches/version';
 
 export class FindCommand extends Command {
@@ -19,9 +16,7 @@ export class FindCommand extends Command {
   readonly aliases = ['search'];
   seeAlso = [];
   argumentsHelp = [];
-
   version = new Version(this);
-  registrySwitch = new Registry(this);
   project = new Project(this);
 
   get summary() {
@@ -36,16 +31,13 @@ export class FindCommand extends Command {
 
   override async run() {
     // load registries (from the current project too if available)
-    let registries: Registries = await this.registrySwitch.loadRegistries(session);
-    registries = (await this.project.manifest)?.registries ?? registries;
-
-    debug(`using registries: ${[...registries].map(([registry, registryNames]) => registryNames[0]).join(', ')}`);
+    const registries = await session.loadDefaultRegistryResolver(await this.project.manifest);
     const table = new Table('Artifact', 'Version', 'Summary');
 
     for (const each of this.inputs) {
       const hasColon = each.indexOf(':') > -1;
       // eslint-disable-next-line prefer-const
-      for (let [registry, id, artifacts] of await registries.search({
+      for (let [display, artifactVersions] of await registries.search({
         // use keyword search if no registry is specified
         keyword: hasColon ? undefined : each,
         // otherwise use the criteria as an id
@@ -54,16 +46,16 @@ export class FindCommand extends Command {
       })) {
         if (!this.version.isRangeOfVersions) {
           // if the user didn't specify a range, just show the latest version that was returned
-          artifacts = [artifacts[0]];
+          artifactVersions = [artifactVersions[0]];
         }
-        for (const result of artifacts) {
+        for (const result of artifactVersions) {
           if (!result.metadata.dependencyOnly) {
-            const name = artifactIdentity(result.registryId, id, result.shortName);
-            table.push(name, result.metadata.version, result.metadata.summary || '');
+            table.push(display, result.metadata.version, result.metadata.summary || '');
           }
         }
       }
     }
+
     if (!table.anyRows) {
       error(i`No artifacts found matching criteria: ${cyan.bold(this.inputs.join(', '))}`);
       return false;

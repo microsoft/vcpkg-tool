@@ -6,95 +6,62 @@ import { fail } from 'assert';
 import { match } from 'micromatch';
 import { delimiter, resolve } from 'path';
 import { MetadataFile } from '../amf/metadata-file';
-import { latestVersion } from '../constants';
+import { RegistriesDeclaration } from '../amf/registries';
+import { artifactIdentity, prettyRegistryName } from '../cli/format';
 import { FileType } from '../fs/filesystem';
 import { i } from '../i18n';
 import { activateEspIdf, installEspIdf } from '../installers/espidf';
 import { InstallEvents } from '../interfaces/events';
-import { Registries } from '../registries/registries';
+import { getArtifact, Registry, RegistryResolver } from '../registries/registries';
 import { Session } from '../session';
 import { linq } from '../util/linq';
 import { Uri } from '../util/uri';
-import { Registry } from './registry';
 import { SetOfDemands } from './SetOfDemands';
 
+export type Selections = Map<string, string>; // idOrShortName, version
 
-export type Selections = Map<string, string>;
-export type UID = string;
-export type ID = string;
-export type VersionRange = string;
-export type Selection = [Artifact, ID, VersionRange]
-
-export class ArtifactMap extends Map<UID, Selection>{
-  get artifacts() {
-    return Array.from([...linq.values(this).select(([artifact, id, range]) => artifact)].sort((a, b) => b.metadata.priority - a.metadata.priority));
+export function parseArtifactDependency(id: string): [string | undefined, string] {
+  const parts = id.split(':');
+  if (parts.length === 2) {
+    return [parts[0], parts[1]];
   }
+
+  if (parts.length === 1) {
+    return [undefined, parts[0]];
+  }
+
+  throw new Error(i`Invalid artifact id '${id}'`);
 }
 
-class ArtifactBase {
-  public registries: Registries;
+export async function buildRegistryResolver(session: Session, registries: RegistriesDeclaration) {
+  // load the registries from the project file
+  const result = new RegistryResolver(session.registryDatabase);
+  for (const [name, registry] of registries) {
+    const loc = registry.location.get(0);
+    if (loc) {
+      result.add(await session.registryDatabase.loadRegistry(session, loc), name);
+    }
+  }
+
+  return result;
+}
+
+export abstract class ArtifactBase {
   readonly applicableDemands: SetOfDemands;
 
   constructor(protected session: Session, public readonly metadata: MetadataFile) {
     this.applicableDemands = new SetOfDemands(this.metadata, this.session);
-    this.registries = new Registries(session);
   }
 
-  /** Async Initializer */
-  async init(session: Session) {
-    await this.applicableDemands.init(session);
-
-    // load the registries from the project file
-    for (const [name, registry] of this.metadata.registries) {
-      const reg = await session.loadRegistry(registry.location.get(0), registry.registryKind || 'artifact');
-      if (reg) {
-        this.registries.add(reg, name);
-      }
-    }
-
-    return this;
-  }
-
-  async resolveDependencies(artifacts = new ArtifactMap(), recurse = true) {
-    // find the dependencies and add them to the set
-
-    let dependency: [Registry, string, Artifact] | undefined;
-    for (const [id, version] of linq.entries(this.applicableDemands.requires)) {
-      dependency = undefined;
-      if (id.indexOf(':') === -1) {
-        if (this.metadata.registry) {
-          // let's assume the dependency is in the same registry as the artifact
-          const [registry, b, artifacts] = (await this.metadata.registry.search(this.registries, { idOrShortName: id, version: version.raw }))[0];
-          dependency = [registry, b, artifacts[0]];
-          if (!dependency) {
-            throw new Error(i`Dependency '${id}' version '${version.raw}' does not specify the registry.`);
-          }
-        }
-      }
-      dependency = dependency || await this.registries.getArtifact(id, version.raw);
-      if (!dependency) {
-        throw new Error(i`Unable to resolve dependency ${id}: ${version.raw}`);
-      }
-      const artifact = dependency[2];
-      if (!artifacts.has(artifact.uniqueId)) {
-        artifacts.set(artifact.uniqueId, [artifact, id, version.raw || latestVersion]);
-
-        if (recurse) {
-          // process it's dependencies too.
-          await artifact.resolveDependencies(artifacts);
-        }
-      }
-    }
-
-    return artifacts;
+  buildRegistryResolver() : Promise<RegistryResolver> {
+    return buildRegistryResolver(this.session, this.metadata.registries);
   }
 }
 
 export class Artifact extends ArtifactBase {
-  isPrimary = false;
   allPaths: Array<string> = [];
 
-  constructor(session: Session, metadata: MetadataFile, public shortName: string = '', public targetLocation: Uri, public readonly registryId: string, public readonly registryUri: Uri) {
+  constructor(session: Session, metadata: MetadataFile, public shortName: string, public targetLocation: Uri) {
     super(session, metadata);
   }
 
@@ -102,16 +69,16 @@ export class Artifact extends ArtifactBase {
     return this.metadata.id;
   }
 
-  get reference() {
-    return `${this.registryId}:${this.id}`;
-  }
-
   get version() {
     return this.metadata.version;
   }
 
+  get registryUri() {
+    return this.metadata.registryUri!;
+  }
+
   get isInstalled() {
-    return this.targetLocation.exists('artifact.yaml');
+    return this.targetLocation.exists('artifact.json');
   }
 
   get uniqueId() {
@@ -183,7 +150,7 @@ export class Artifact extends ArtifactBase {
 
   async writeManifest() {
     await this.targetLocation.createDirectory();
-    await this.metadata.save(this.targetLocation.join('artifact.yaml'));
+    await this.metadata.save(this.targetLocation.join('artifact.json'));
   }
 
   async uninstall() {
@@ -263,7 +230,7 @@ export class Artifact extends ArtifactBase {
 
 export function sanitizePath(path: string) {
   return path.
-    replace(/[\\/]+/g, '/').     // forward slahses please
+    replace(/[\\/]+/g, '/').     // forward slashes please
     replace(/[?<>:|"]/g, ''). // remove illegal characters.
     // eslint-disable-next-line no-control-regex
     replace(/[\x00-\x1f\x80-\x9f]/g, ''). // remove unicode control codes
@@ -276,7 +243,7 @@ export function sanitizePath(path: string) {
 
 export function sanitizeUri(u: string) {
   return u.
-    replace(/[\\/]+/g, '/').     // forward slahses please
+    replace(/[\\/]+/g, '/').     // forward slashes please
     replace(/[?<>|"]/g, ''). // remove illegal characters.
     // eslint-disable-next-line no-control-regex
     replace(/[\x00-\x1f\x80-\x9f]/g, ''). // remove unicode control codes
@@ -288,11 +255,142 @@ export function sanitizeUri(u: string) {
 }
 
 export class ProjectManifest extends ArtifactBase {
-
 }
 
 export class InstalledArtifact extends Artifact {
   constructor(session: Session, metadata: MetadataFile) {
-    super(session, metadata, '', Uri.invalid, 'OnDisk?', Uri.invalid);
+    super(session, metadata, '', Uri.invalid);
   }
+}
+
+export interface ResolvedArtifact {
+  artifact: ArtifactBase,
+  uniqueId: string,
+  initialSelection: boolean,
+  depth: number,
+  priority: number
+}
+
+export async function resolveRegistries(registryResolver: RegistryResolver, initialParents: Array<ArtifactBase>): Promise<Array<Registry | undefined>> {
+  const result: Array<Registry | undefined> = [];
+  for (const parent of initialParents) {
+    let registry: Registry | undefined;
+    const maybeRegistryUri = parent.metadata.registryUri;
+    if (maybeRegistryUri) {
+      registry = registryResolver.getRegistryByUri(maybeRegistryUri);
+    }
+
+    result.push(registry);
+  }
+
+  return result;
+}
+
+export async function resolveDependencies(session: Session, registryResolver: RegistryResolver, initialParents: Array<ArtifactBase>, dependencyDepth: number): Promise<Array<ResolvedArtifact>> {
+  let depth = 0;
+  let nextDepthParents: Array<Registry | undefined> = await resolveRegistries(registryResolver, initialParents);
+  let currentParents: Array<Registry | undefined> = [];
+  let nextDepth: Array<ArtifactBase> = initialParents;
+  let initialSelections = new Set<string>();
+  let current: Array<ArtifactBase> = [];
+  let resultSet = new Map<string, ArtifactBase>(); // uniqueId, artifact
+  let orderer = new Map<string, [number, number]>(); // uniqueId, [depth, priority]
+
+  while (nextDepth.length !== 0) {
+    ++depth;
+    currentParents = nextDepthParents;
+    nextDepthParents = [];
+    current = nextDepth;
+    nextDepth = [];
+
+    if (depth == dependencyDepth) {
+      initialSelections = new Set<string>(resultSet.keys());
+    }
+
+    for (let idx = 0; idx < current.length; ++idx) {
+      const subjectParentRegistry = currentParents[idx];
+      const subject = current[idx];
+      let subjectId: string;
+      let subjectUniqueId: string;
+      if (subject instanceof Artifact) {
+        subjectId = subject.id;
+        subjectUniqueId = subject.uniqueId;
+      } else {
+        subjectId = subject.metadata.file.toString();
+        subjectUniqueId = subjectId;
+      }
+
+      session.channels.debug(`Resolving ${subjectUniqueId}'s dependencies...`);
+      // Note that we must update depth even if visiting the same artifact again
+      orderer.set(subjectUniqueId, [depth, subject.metadata.priority]);
+      if (resultSet.has(subjectUniqueId)) {
+        session.channels.debug(`${subjectUniqueId} is a terminal dependency with a depth of ${depth}.`);
+        // already visited
+        continue;
+      }
+
+      resultSet.set(subjectUniqueId, subject);
+      for (const [idOrShortName, version] of linq.entries(subject.applicableDemands.requires)) {
+        const [dependencyRegistryDeclaredName, dependencyId] = parseArtifactDependency(idOrShortName);
+        let dependencyRegistry: Registry;
+        if (dependencyRegistryDeclaredName) {
+          const maybeRegistry = (await subject.buildRegistryResolver()).getRegistryByName(dependencyRegistryDeclaredName);
+          if (!maybeRegistry) {
+            throw new Error(i`While resolving dependencies of ${subjectId}, ${dependencyRegistryDeclaredName} in ${idOrShortName} could not be resolved to a registry.`);
+          }
+
+          dependencyRegistry = maybeRegistry;
+        } else {
+          if (!subjectParentRegistry) {
+            throw new Error(i`While resolving dependencies of the project file ${subjectId}, ${idOrShortName} did not specify a registry.`);
+          }
+
+          dependencyRegistry = subjectParentRegistry;
+        }
+
+        const dependencyRegistryDisplayName = registryResolver.getRegistryDisplayName(dependencyRegistry.location);
+        session.channels.debug(`Interpreting '${idOrShortName}' as ${dependencyRegistry.location.toString()}:${dependencyId}`);
+        const dependency = await getArtifact(dependencyRegistry, dependencyId, version.raw);
+        if (!dependency) {
+          throw new Error(i`Unable to resolve dependency ${dependencyId} in ${prettyRegistryName(dependencyRegistryDisplayName)}.`);
+        }
+
+        session.channels.debug(`Resolved dependency ${artifactIdentity(dependencyRegistryDisplayName, dependency[0])}`);
+        nextDepthParents.push(dependencyRegistry);
+        nextDepth.push(dependency[1]);
+      }
+    }
+  }
+
+  if (initialSelections.size === 0) {
+    initialSelections = new Set<string>(resultSet.keys());
+  }
+
+  session.channels.debug(`The following are initial selections: ${Array.from(initialSelections).join(', ')}`);
+
+  const results = new Array<ResolvedArtifact>();
+  for (const [uniqueId, artifact] of resultSet) {
+    const order = orderer.get(uniqueId);
+    if (order) {
+      results.push({
+        'artifact': artifact,
+        'uniqueId': uniqueId,
+        'initialSelection': initialSelections.has(uniqueId),
+        'depth': order[0],
+        'priority': order[1]
+      });
+    } else {
+      throw new Error('Result artifact with no order (bug in resolveDependencies)');
+    }
+  }
+
+  results.sort((a, b) => {
+    if (a.depth != b.depth) {
+      return b.depth - a.depth;
+    }
+
+    return a.priority - b.priority;
+  });
+
+  return results;
 }

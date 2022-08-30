@@ -24,14 +24,6 @@ export class SetOfDemands {
     }
   }
 
-
-  /** Async Initializer */
-  async init(session: Session) {
-    for (const [query, demands] of this._demands) {
-      await demands.init(session);
-    }
-  }
-
   get installer() {
     const install = linq.entries(this._demands).where(([query, demand]) => demand.install.length > 0).toArray();
 

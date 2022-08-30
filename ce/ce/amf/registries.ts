@@ -4,15 +4,33 @@
 import { isMap, isSeq, YAMLMap } from 'yaml';
 import { Dictionary } from '../interfaces/collections';
 import { ErrorKind } from '../interfaces/error-kind';
-import { RegistryDeclaration } from '../interfaces/metadata/metadata-format';
-import { Registry as IRegistry } from '../interfaces/metadata/registries/artifact-registry';
 import { ValidationMessage } from '../interfaces/validation-message';
-import { isFilePath, Uri } from '../util/uri';
+import { Uri } from '../util/uri';
 import { Entity } from '../yaml/Entity';
 import { Strings } from '../yaml/strings';
 import { Node, Yaml, YAMLDictionary, YAMLSequence } from '../yaml/yaml-types';
 
-export class Registries extends Yaml<YAMLDictionary | YAMLSequence> implements Dictionary<RegistryDeclaration>, Iterable<[string, RegistryDeclaration]>  {
+export class RegistryDeclaration extends Entity{
+  readonly location = new Strings(undefined, this, 'location');
+
+  get registryKind(): string | undefined { return this.asString(this.getMember('kind')); }
+  set registryKind(value: string | undefined) { this.setMember('kind', value); }
+
+  /** @internal */
+  override *validate(): Iterable<ValidationMessage> {
+    yield* super.validate();
+    //
+    if (this.registryKind === undefined) {
+      yield {
+        message: 'Registry missing \'kind\'',
+        range: this,
+        category: ErrorKind.FieldMissing,
+      };
+    }
+  }
+}
+
+export class RegistriesDeclaration extends Yaml<YAMLDictionary | YAMLSequence> implements Dictionary<RegistryDeclaration>, Iterable<[string, RegistryDeclaration]>  {
   *[Symbol.iterator](): Iterator<[string, RegistryDeclaration]> {
     if (isMap(this.node)) {
       for (const { key, value } of this.node.items) {
@@ -146,13 +164,7 @@ export class Registries extends Yaml<YAMLDictionary | YAMLSequence> implements D
 
       // simplistic check to see if we're pointing to a file or a https:// url
       if (k === 'artifact' && l) {
-        const ll = l?.toLowerCase();
-        if (ll.startsWith('https://')) {
-          return new RemoteRegistry(node, this);
-        }
-        if (isFilePath(l)) {
-          return new LocalRegistry(node, this);
-        }
+        return new RegistryDeclaration(node, this);
       }
 
     }
@@ -165,58 +177,6 @@ export class Registries extends Yaml<YAMLDictionary | YAMLSequence> implements D
       for (const [key, registry] of this) {
         yield* registry.validate();
       }
-    }
-  }
-}
-
-export class Registry extends Entity implements IRegistry {
-
-  get registryKind(): string | undefined { return this.asString(this.getMember('kind')); }
-  set registryKind(value: string | undefined) { this.setMember('kind', value); }
-
-  /** @internal */
-  override *validate(): Iterable<ValidationMessage> {
-    yield* super.validate();
-    //
-    if (this.registryKind === undefined) {
-      yield {
-        message: 'Registry missing \'kind\'',
-        range: this,
-        category: ErrorKind.FieldMissing,
-      };
-    }
-  }
-}
-
-class LocalRegistry extends Registry {
-  readonly location = new Strings(undefined, this, 'location');
-  /** @internal */
-  override *validate(): Iterable<ValidationMessage> {
-    yield* super.validate();
-
-    //
-    if (this.registryKind !== 'artifact') {
-      yield {
-        message: 'Registry \'kind\' is not correct for LocalRegistry ',
-        range: this,
-        category: ErrorKind.IncorrectType,
-      };
-    }
-  }
-}
-
-class RemoteRegistry extends Registry {
-  readonly location = new Strings(undefined, this, 'location');
-  override *validate(): Iterable<ValidationMessage> {
-    yield* super.validate();
-
-    //
-    if (this.registryKind !== 'artifact') {
-      yield {
-        message: 'Registry \'kind\' is not correct for LocalRegistry ',
-        range: this,
-        category: ErrorKind.IncorrectType,
-      };
     }
   }
 }

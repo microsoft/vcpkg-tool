@@ -15,7 +15,7 @@ import { replaceCurlyBraces } from '../util/curly-replacements';
 import { linq, Record } from '../util/linq';
 import { Queue } from '../util/promise';
 import { Uri } from '../util/uri';
-import { Artifact } from './artifact';
+import { ResolvedArtifact } from './artifact';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const XMLWriterImpl = require('xml-writer');
 
@@ -548,14 +548,14 @@ export class Activation {
     return [env, undo];
   }
 
-  async activate(artifacts: Iterable<Artifact>, currentEnvironment: Record<string, string | undefined>, shellScriptFile: Uri | undefined, undoEnvironmentFile: Uri | undefined, msbuildFile: Uri | undefined, json: Uri | undefined) {
+  async activate(artifacts: Iterable<ResolvedArtifact>, currentEnvironment: Record<string, string | undefined>, shellScriptFile: Uri | undefined, undoEnvironmentFile: Uri | undefined, msbuildFile: Uri | undefined, json: Uri | undefined) {
     let undoDeactivation = '';
     const scriptKind = extname(shellScriptFile?.fsPath || '');
 
     // load previous activation undo data
     const previous = currentEnvironment[undoVariableName];
     if (previous && undoEnvironmentFile) {
-      const deactivationDataFile = this.#session.parseUri(previous);
+      const deactivationDataFile = this.#session.fileSystem.file(previous);
       if (deactivationDataFile.scheme === 'file' && await deactivationDataFile.exists()) {
         const deactivationData = JSON.parse(await deactivationDataFile.readUTF8());
         currentEnvironment = undoActivation(currentEnvironment, deactivationData.environment || {});
@@ -569,6 +569,7 @@ export class Activation {
     async function transformtoRecord<T, U = T> (
       orig: AsyncGenerator<Promise<Tuple<string, T>>, any, unknown>,
       // this type cast to U isn't *technically* correct but since it's locally scoped for this next block of code it shouldn't cause problems
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       func: (value: T) => U = (x => x as unknown as U)) {
 
       return linq.values((await toArrayAsync(orig))).toObject(tuple => [tuple[0], func(tuple[1])]);

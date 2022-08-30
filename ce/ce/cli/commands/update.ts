@@ -1,16 +1,15 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-
-import { Registry } from '../../artifacts/registry';
 import { i } from '../../i18n';
 import { session } from '../../main';
+import { Registry } from '../../registries/registries';
 import { RemoteFileUnavailable } from '../../util/exceptions';
 import { Command } from '../command';
 import { CommandLine } from '../command-line';
 import { count } from '../format';
 import { error, log, writeException } from '../styling';
-import { Registry as RegSwitch } from '../switches/registry';
+import { Project } from '../switches/project';
 import { WhatIf } from '../switches/whatIf';
 
 export class UpdateCommand extends Command {
@@ -18,8 +17,8 @@ export class UpdateCommand extends Command {
   readonly aliases = [];
   seeAlso = [];
   argumentsHelp = [];
+  project: Project = new Project(this);
   whatIf = new WhatIf(this);
-  registrySwitch = new RegSwitch(this);
 
   get summary() {
     return i`update the registry from the remote`;
@@ -32,14 +31,13 @@ export class UpdateCommand extends Command {
   }
 
   override async run() {
-    const registries = await this.registrySwitch.loadRegistries(session);
-
+    const registries = await session.loadDefaultRegistryResolver(await this.project.manifest);
     // process named registries
     for (let registryName of this.inputs) {
       if (registryName.indexOf(':') !== -1) {
-        registryName = session.parseUri(registryName).toString();
+        registryName = session.fileSystem.parse(registryName).toString();
       }
-      const registry = registries.getRegistryWithNameOrLocation(registryName);
+      const registry = registries.getRegistryByNameOrUri(registryName);
       if (registry) {
         try {
           log(i`Downloading registry data`);

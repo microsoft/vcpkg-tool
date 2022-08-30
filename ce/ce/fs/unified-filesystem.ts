@@ -15,7 +15,7 @@ import { FileStat, FileSystem, FileType, ReadHandle, WriteStreamOptions } from '
  */
 export function schemeOf(uri: string) {
   strict.ok(uri, i`Uri may not be empty`);
-  return /^(\w*):/.exec(uri)?.[1];
+  return /^(\w*):\/\//.exec(uri)?.[1];
 }
 
 export class UnifiedFileSystem extends FileSystem {

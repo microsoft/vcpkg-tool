@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { Artifact } from '../../artifacts/artifact';
 import { i } from '../../i18n';
 import { session } from '../../main';
 import { countWhere } from '../../util/linq';
@@ -9,7 +10,7 @@ import { Command } from '../command';
 import { blank } from '../constants';
 import { cmdSwitch } from '../format';
 import { debug, error, log, warning } from '../styling';
-import { Registry } from '../switches/registry';
+import { Project } from '../switches/project';
 import { Version } from '../switches/version';
 import { WhatIf } from '../switches/whatIf';
 
@@ -19,8 +20,8 @@ export class AcquireCommand extends Command {
   seeAlso = [];
   argumentsHelp = [];
   version = new Version(this);
+  project: Project = new Project(this);
   whatIf = new WhatIf(this);
-  registrySwitch = new Registry(this);
 
   get summary() {
     return i`Acquire artifacts in the registry`;
@@ -38,27 +39,29 @@ export class AcquireCommand extends Command {
       return false;
     }
 
-    const registries = await this.registrySwitch.loadRegistries(session);
-
     const versions = this.version.values;
     if (versions.length && this.inputs.length !== versions.length) {
       error(i`Multiple packages specified, but not an equal number of ${cmdSwitch('version')} switches.`);
       return false;
     }
 
-    const artifacts = await selectArtifacts(new Map(this.inputs.map((v, i) => [v, versions[i] || '*'])), registries);
+    const registries = await session.loadDefaultRegistryResolver(await this.project.manifest);
+    const resolved = await selectArtifacts(session, new Map(this.inputs.map((v, i) => [v, versions[i] || '*'])), registries, 1);
 
-    if (!artifacts) {
+    if (!resolved) {
       debug('No artifacts selected - stopping');
       return false;
     }
 
-    if (!await showArtifacts(artifacts.artifacts, this.commandLine)) {
+    if (!await showArtifacts(resolved, registries, this.commandLine)) {
       warning(i`No artifacts are acquired`);
       return false;
     }
 
-    const numberOfArtifacts = await countWhere(artifacts.artifacts, async (artifact) => !(!this.commandLine.force && await artifact.isInstalled));
+    const numberOfArtifacts = await countWhere(resolved, async (resolution) => {
+      const artifact = resolution.artifact;
+      return !(!this.commandLine.force && artifact instanceof Artifact && await artifact.isInstalled);
+    });
 
     if (!numberOfArtifacts) {
       log(blank);
@@ -68,11 +71,11 @@ export class AcquireCommand extends Command {
 
     debug(`Installing ${numberOfArtifacts} artifacts`);
 
-    const [success] = await installArtifacts(session, artifacts.artifacts, { force: this.commandLine.force, language: this.commandLine.language, allLanguages: this.commandLine.allLanguages });
+    const [success] = await installArtifacts(resolved, registries, { force: this.commandLine.force, language: this.commandLine.language, allLanguages: this.commandLine.allLanguages });
 
     if (success) {
       log(blank);
-      log(i`${numberOfArtifacts} artifacts installed successfuly`);
+      log(i`${numberOfArtifacts} artifacts installed successfully`);
       return true;
     }
 

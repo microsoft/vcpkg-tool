@@ -1,14 +1,12 @@
-/* eslint-disable prefer-const */
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 import { strict } from 'assert';
 import { MetadataFile } from './amf/metadata-file';
 import { Activation, deactivate } from './artifacts/activation';
-import { Artifact, InstalledArtifact } from './artifacts/artifact';
-import { Registry } from './artifacts/registry';
-import { configurationName, defaultConfig, globalConfigurationFile, postscriptVariable, registryIndexFile, undo } from './constants';
-import { FileSystem, FileType } from './fs/filesystem';
+import { Artifact, InstalledArtifact, ProjectManifest } from './artifacts/artifact';
+import { configurationName, defaultConfig, globalConfigurationFile, postscriptVariable, undo } from './constants';
+import { FileSystem } from './fs/filesystem';
 import { HttpsFileSystem } from './fs/http-filesystem';
 import { LocalFileSystem } from './fs/local-filesystem';
 import { schemeOf, UnifiedFileSystem } from './fs/unified-filesystem';
@@ -20,15 +18,9 @@ import { installUnTar } from './installers/untar';
 import { installUnZip } from './installers/unzip';
 import { InstallEvents, InstallOptions } from './interfaces/events';
 import { Installer } from './interfaces/metadata/installers/Installer';
-import { AggregateRegistry } from './registries/aggregate-registry';
-import { LocalRegistry } from './registries/LocalRegistry';
-import { Registries } from './registries/registries';
-import { RemoteRegistry } from './registries/RemoteRegistry';
-import { isIndexFile, isMetadataFile } from './registries/standard-registry';
+import { RegistryDatabase, RegistryResolver } from './registries/registries';
 import { Channels, Stopwatch } from './util/channels';
-import { Queue } from './util/promise';
-import { isFilePath, Uri } from './util/uri';
-import { isYAML } from './yaml/yaml';
+import { Uri } from './util/uri';
 
 
 /** The definition for an installer tool function */
@@ -98,8 +90,8 @@ export class Session {
     ['git', installGit]
   ]);
 
-  readonly defaultRegistry: AggregateRegistry;
-  private readonly registries = new Registries(this);
+  readonly registryDatabase = new RegistryDatabase();
+  readonly globalRegistryResolver = new RegistryResolver(this.registryDatabase);
 
   processVcpkgArg(argSetting: string | undefined, defaultName: string): Uri {
     return argSetting ? this.fileSystem.file(argSetting) : this.homeFolder.join(defaultName);
@@ -116,8 +108,6 @@ export class Session {
 
     this.telemetryEnabled = this.settings['telemetryEnabled'];
 
-    this.setupLogging();
-
     this.homeFolder = this.fileSystem.file(settings.homeFolder!);
     this.downloads = this.processVcpkgArg(settings.vcpkgDownloads, 'downloads');
     this.globalConfig = this.homeFolder.join(globalConfigurationFile);
@@ -128,139 +118,26 @@ export class Session {
     this.installFolder = this.processVcpkgArg(settings.vcpkgArtifactsRoot, 'artifacts');
 
     this.currentDirectory = this.fileSystem.file(currentDirectory);
-
-    // add built in registries
-    this.defaultRegistry = new AggregateRegistry(this);
   }
 
-  parseUri(uriOrPath: string | Uri): Uri {
-    return (typeof uriOrPath === 'string') ? isFilePath(uriOrPath) ? this.fileSystem.file(uriOrPath) : this.fileSystem.parse(uriOrPath) : uriOrPath;
-  }
-
-  async parseLocation(location?: string): Promise<Uri | undefined> {
-    if (location) {
-      const scheme = schemeOf(location);
-      // file uri or drive letter
-      if (scheme) {
-        if (scheme.toLowerCase() !== 'file' && scheme.length !== 1) {
-          // anything else with a colon isn't a legal path in any way.
-          return undefined;
-        }
-        // must be a file path of some kind.
-        const uri = this.parseUri(location);
-        return await uri.exists() ? uri : undefined;
-      }
-
-      // is it an absolute path?
-      if (location.startsWith('/') || location.startsWith('\\')) {
-        const uri = this.fileSystem.file(location);
-        return await uri.exists() ? uri : undefined;
-      }
-
-      // is it a path relative to the current directory?
-      const uri = this.currentDirectory.join(location);
-      return await uri.exists() ? uri : undefined;
-    }
-    return undefined;
-  }
-
-  async loadRegistry(registryLocation: Uri | string | undefined, registryKind = 'artifact'): Promise<Registry | undefined> {
-    // normalize the location first.
-
-    registryLocation = typeof registryLocation === 'string' ? await this.parseLocation(registryLocation) || this.parseUri(registryLocation) : registryLocation;
-
-    if (!registryLocation) {
-      return undefined;
+  parseLocation(location: string): Uri {
+    const scheme = schemeOf(location);
+    // file uri or drive letter
+    if (scheme) {
+      return this.fileSystem.parse(location);
     }
 
-    // if the registry from that location is already loaded, return it.
-    const r = this.registries.getRegistry(registryLocation.toString());
-    if (r) {
-      return r;
-    }
-
-    // not already loaded
-    registryLocation = this.parseUri(registryLocation);
-
-    switch (registryKind) {
-
-      case 'artifact':
-        switch (registryLocation.scheme) {
-          case 'https':
-            return this.registries.add(new RemoteRegistry(this, registryLocation));
-
-          case 'file':
-            return this.registries.add(new LocalRegistry(this, registryLocation));
-
-          default:
-            throw new Error(i`Unsupported registry scheme '${registryLocation.scheme}'`);
-        }
-    }
-    throw new Error(i`Unsupported registry kind '${registryKind}'`);
+    return this.fileSystem.file(location);
   }
 
-  async isLocalRegistry(location: Uri | string): Promise<boolean> {
-    location = this.parseUri(location);
-
-    if (location.scheme === 'file') {
-      if (await isIndexFile(location)) {
-        return true;
-      }
-
-      if (await location.isDirectory()) {
-        const index = location.join(registryIndexFile);
-        if (await isIndexFile(index)) {
-          return true;
-        }
-        const s = this;
-        let result = false;
-        const q = new Queue();
-
-        // still could be a folder of artifact files
-        // eslint-disable-next-line no-inner-declarations
-        async function process(folder: Uri) {
-          for (const [entry, type] of await folder.readDirectory()) {
-            if (result) {
-              return;
-            }
-
-            if (type & FileType.Directory) {
-              await process(entry);
-              continue;
-            }
-
-            if (type & FileType.File && isYAML(entry.path)) {
-              void q.enqueue(async () => { result = result || await isMetadataFile(entry, s); });
-            }
-          }
-        }
-        await process(location);
-        await q.done;
-        return result; // whatever we guess, we'll use
-      }
-      return false;
+  async loadDefaultRegistryResolver(manifest: ProjectManifest | undefined) : Promise<RegistryResolver> {
+    const manifestResolver = await manifest?.buildRegistryResolver();
+    if (manifestResolver) {
+      this.channels.debug('Combining project manifests with global ones.');
+      return manifestResolver.combineWith(this.globalRegistryResolver);
     }
 
-    return false;
-  }
-
-  async isRemoteRegistry(location: Uri | string): Promise<boolean> {
-    return this.parseUri(location).scheme === 'https';
-  }
-
-  parseName(id: string): [string, string] {
-    const parts = id.split(':');
-    switch (parts.length) {
-      case 0:
-        throw new Error(i`Invalid artifact id '${id}'`);
-      case 1:
-        return ['default', id];
-    }
-    return <[string, string]>parts;
-  }
-
-  get vcpkgInstalled(): Promise<boolean> {
-    return this.homeFolder.exists('.vcpkg-root');
+    return this.globalRegistryResolver;
   }
 
   async saveConfig() {
@@ -304,11 +181,11 @@ export class Session {
     for (const [name, regDef] of this.configuration.registries) {
       const loc = regDef.location.get(0);
       if (loc) {
-        const uri = this.parseUri(loc);
-        const reg = await this.loadRegistry(uri, regDef.registryKind);
+        const uri = this.parseLocation(loc);
+        const reg = await this.registryDatabase.loadRegistry(this, uri);
+        this.globalRegistryResolver.add(reg, name);
         if (reg) {
           this.channels.debug(`Loaded global manifest ${name} => ${uri.formatted}`);
-          this.defaultRegistry.add(reg, name);
         }
       }
     }
@@ -332,25 +209,15 @@ export class Session {
   async deactivate() {
     const previous = this.environment[undo];
     if (previous && this.postscriptFile) {
-      const deactivationDataFile = this.parseUri(previous);
+      const deactivationDataFile = this.fileSystem.parse(previous);
       if (deactivationDataFile.scheme === 'file' && await deactivationDataFile.exists()) {
 
-        const deactivatationData = JSON.parse(await deactivationDataFile.readUTF8());
-        delete deactivatationData.environment[undo];
-        await deactivate(this.postscriptFile, deactivatationData.environment || {}, deactivatationData.aliases || {});
+        const deactivationData = JSON.parse(await deactivationDataFile.readUTF8());
+        delete deactivationData.environment[undo];
+        await deactivate(this.postscriptFile, deactivationData.environment || {}, deactivationData.aliases || {});
         await deactivationDataFile.delete();
       }
     }
-  }
-
-
-  setupLogging() {
-    // at this point, we can subscribe to the events in the export * from './lib/version';FileSystem and Channels
-    // and do what we need to do (record, store, etc.)
-    //
-    // (We'll defer actually this until we get to #23: Create Bug Report)
-    //
-    // this.FileSystem.on('deleted', (uri) => { console.debug(uri) })
   }
 
   async getInstalledArtifacts() {
@@ -360,11 +227,11 @@ export class Session {
     }
     for (const [folder, stat] of await this.installFolder.readDirectory(undefined, { recursive: true })) {
       try {
-        const metadata = await MetadataFile.parseMetadata(folder.join('artifact.yaml'), this);
+        const metadata = await MetadataFile.parseMetadata(folder.join('artifact.json'), this);
         result.push({
           folder,
           id: metadata.id,
-          artifact: await new InstalledArtifact(this, metadata).init(this)
+          artifact: await new InstalledArtifact(this, metadata)
         });
       } catch {
         // not a valid install.
@@ -401,5 +268,4 @@ export class Session {
     }
     return value;
   }
-
 }

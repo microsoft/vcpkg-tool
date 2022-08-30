@@ -1,15 +1,14 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { Artifact } from '../../artifacts/artifact';
 import { i } from '../../i18n';
 import { session } from '../../main';
-import { selectArtifacts } from '../artifacts';
+import { selectArtifacts, showArtifacts } from '../artifacts';
 import { Command } from '../command';
 import { cmdSwitch } from '../format';
-import { activateProject } from '../project';
 import { error } from '../styling';
 import { Project } from '../switches/project';
-import { Registry } from '../switches/registry';
 import { Version } from '../switches/version';
 import { WhatIf } from '../switches/whatIf';
 
@@ -22,8 +21,6 @@ export class AddCommand extends Command {
   version = new Version(this);
   project: Project = new Project(this);
   whatIf = new WhatIf(this);
-  registrySwitch = new Registry(this);
-
 
   get summary() {
     return i`Adds an artifact to the project`;
@@ -43,9 +40,6 @@ export class AddCommand extends Command {
       return false;
     }
 
-    // pull in any registries that are on the command line
-    await this.registrySwitch.loadRegistries(session);
-
     if (this.inputs.length === 0) {
       error(i`No artifacts specified`);
       return false;
@@ -58,30 +52,47 @@ export class AddCommand extends Command {
     }
 
     const selections = new Map(this.inputs.map((v, i) => [v, versions[i] || '*']));
-    const selectedArtifacts = await selectArtifacts(selections, projectManifest.registries);
+    const combinedResolver = await session.loadDefaultRegistryResolver(projectManifest);
+    const projectRegistries = await projectManifest.buildRegistryResolver();
+    const selectedArtifacts = await selectArtifacts(session, selections, combinedResolver, 1);
 
     if (!selectedArtifacts) {
       return false;
     }
 
-    for (const [artifact, id, requested] of selectedArtifacts.values()) {
-      // make sure the registry is in the project
-      const registry = projectManifest.registries.getRegistry(artifact.registryUri);
-      if (!registry) {
-        const r = projectManifest.metadata.registries.add(artifact.registryId, artifact.registryUri, 'artifact');
+    await showArtifacts(selectedArtifacts, combinedResolver);
 
+    for (const resolution of selectedArtifacts) {
+      // map the registry of the found artifact to the registries already in the project file
+      const artifact = resolution.artifact;
+      if (resolution.initialSelection && artifact instanceof Artifact) {
+        const registryUri = artifact.metadata.registryUri!;
+        let registryName = projectRegistries.getRegistryName(registryUri);
+        if (!registryName) {
+          // the registry isn't known yet to the project, try to declare it
+          registryName = session.globalRegistryResolver.getRegistryName(registryUri);
+          if (!registryName) {
+            throw new Error(i`Tried to add an artifact [${registryUri.toString()}]:${artifact.id} but could not determine the registry to use.`);
+          }
+
+          const conflictingRegistry = projectRegistries.getRegistryByName(registryName);
+          if (conflictingRegistry) {
+            throw new Error(i`Tried to add registry ${registryName} as ${registryUri.toString()}, but it was already ${conflictingRegistry.location.toString()}. Please add ${registryUri.toString()} to this project manually and reattempt.`);
+          }
+
+          projectManifest.metadata.registries.add(registryName, artifact.registryUri, 'artifact');
+        }
+
+        // add the artifact to the project
+        const fulfilled = artifact.version.toString();
+        const requested = '*'; // FIXME
+        const v = requested !== fulfilled ? `${requested} ${fulfilled}` : fulfilled;
+        projectManifest.metadata.requires.set(`${registryName}:${artifact.id}`, <any>v);
       }
-
-
-      // add the artifact to the project
-      const fulfilled = artifact.version.toString();
-      const v = requested !== fulfilled ? `${requested} ${fulfilled}` : fulfilled;
-      projectManifest.metadata.requires.set(artifact.reference, <any>v);
     }
 
     // write the file out.
     await projectManifest.metadata.save();
-
-    return await activateProject(projectManifest, this.commandLine);
+    return true;
   }
 }

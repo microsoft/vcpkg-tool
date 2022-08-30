@@ -6,7 +6,6 @@ import { i } from '../i18n';
 import { ErrorKind } from '../interfaces/error-kind';
 import { ValidationMessage } from '../interfaces/validation-message';
 import { parseQuery } from '../mediaquery/media-query';
-import { Session } from '../session';
 import { Entity } from '../yaml/Entity';
 import { EntityMap } from '../yaml/EntityMap';
 import { Primitive, Yaml, YAMLDictionary } from '../yaml/yaml-types';
@@ -76,16 +75,6 @@ export class DemandBlock extends Entity {
 
   constructor(node?: YAMLDictionary, parent?: Yaml, key?: string) {
     super(node, parent, key);
-  }
-
-  /**
-   * Async Initializer.
-   *
-   * checks the alternative demand resolution.
-   * when this runs, if the alternative is met, the rest of the demand is redirected to the alternative.
-   */
-  async init(session: Session): Promise<DemandBlock> {
-    return this;
   }
 
   /** @internal */
