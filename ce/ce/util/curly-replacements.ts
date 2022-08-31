@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { i } from "../i18n";
+
 export function replaceCurlyBraces(subject: string, properties: Map<string, string>) {
   // One of these tokens:
   // {{
@@ -18,21 +20,25 @@ export function replaceCurlyBraces(subject: string, properties: Map<string, stri
     }
 
     const wholeMatch = thisMatch[0];
-    if (wholeMatch === '{{' || wholeMatch === '{') {
+    if (wholeMatch === '{{') {
       resultElements.push('{');
       continue;
     }
 
-    if (wholeMatch === '}}' || wholeMatch === '}') {
+    if (wholeMatch === '}}') {
       resultElements.push('}');
       continue;
+    }
+
+    if (wholeMatch === '{' || wholeMatch === '}') {
+      throw new Error(i`Found a mismatched ${wholeMatch} in '${subject}'. For a literal ${wholeMatch}, use ${wholeMatch}${wholeMatch} instead.`);
     }
 
     const variableName = thisMatch[1];
     if (variableName) {
       const variableValue = properties.get(variableName);
       if (typeof variableValue !== 'string') {
-        throw new Error('Could not find a value for {' + variableName + '} in \'' + subject + '\'. To write the literal value, use \'{{' + variableName + '}}\' instead.');
+        throw new Error(i`Could not find a value for {${variableName}} in '${subject}'. To write the literal value, use '{{${variableName}}}' instead.`);
       }
 
       resultElements.push(variableValue);

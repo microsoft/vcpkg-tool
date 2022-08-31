@@ -21,25 +21,47 @@ describe('replaceCurlyBraces', () => {
     strict.equal(replaceCurlyBraces('some {exists} {another} text', replacements), 'some exists-replacement some other replacement text text');
   });
 
-  it('HandlesLeadingEscapes', () => {
-    strict.equal(replaceCurlyBraces('some {{exists} text', replacements), 'some {exists} text');
+  it('ThrowsForLeadingOnlyEscapes', () => {
+    strict.throws(() => {
+      replaceCurlyBraces('some {{exists} text', replacements);
+    }, new Error('Found a mismatched } in \'some {{exists} text\'. For a literal }, use }} instead.'));
   });
 
   it('ConsidersTerminalCurlyAsPartOfVariable', () => {
-    strict.equal(replaceCurlyBraces('some {exists}} text', replacements), 'some exists-replacement} text');
+    strict.throws(() => {
+      replaceCurlyBraces('some {exists}} text', replacements);
+    }, new Error('Found a mismatched } in \'some {exists}} text\'. For a literal }, use }} instead.'));
   });
 
   it('AllowsDoubleEscapes', () => {
+    strict.equal(replaceCurlyBraces('some {{{exists} text', replacements), 'some {exists-replacement text');
+    strict.equal(replaceCurlyBraces('some {exists}}} text', replacements), 'some exists-replacement} text');
     strict.equal(replaceCurlyBraces('some {{exists}} text', replacements), 'some {exists} text');
+    strict.equal(replaceCurlyBraces('some {{{exists}}} text', replacements), 'some {exists-replacement} text');
+    strict.equal(replaceCurlyBraces('some {{{{{exists}}} text', replacements), 'some {{exists-replacement} text');
   });
 
-  it('PassesThroughUnmatchedCurlies', () => {
-    strict.equal(replaceCurlyBraces('these are }{ not matched', replacements), 'these are }{ not matched');
+  it('ThrowsForUnmatchedCurlies', () => {
+    strict.throws(() => {
+      replaceCurlyBraces('these are }{ not matched', replacements);
+    }, new Error('Found a mismatched } in \'these are }{ not matched\'. For a literal }, use }} instead.'));
   });
 
   it('ThrowsForBadValues', () => {
     strict.throws(() => {
       replaceCurlyBraces('some {nonexistent} text', replacements);
     }, new Error('Could not find a value for {nonexistent} in \'some {nonexistent} text\'. To write the literal value, use \'{{nonexistent}}\' instead.'));
+  });
+
+  it('ThrowsForMismatchedBeginCurlies', () => {
+    strict.throws(() => {
+      replaceCurlyBraces('some {nonexistent', replacements);
+    }, new Error('Found a mismatched { in \'some {nonexistent\'. For a literal {, use {{ instead.'));
+  });
+
+  it('ThrowsForMismatchedEndCurlies', () => {
+    strict.throws(() => {
+      replaceCurlyBraces('some }nonexistent', replacements);
+    }, new Error('Found a mismatched } in \'some }nonexistent\'. For a literal }, use }} instead.'));
   });
 });
