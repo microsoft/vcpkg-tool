@@ -66,6 +66,7 @@ namespace
 
     static std::map<Metrics::BoolMetric, std::string> BOOL_METRIC_NAMES = {
         {Metrics::BoolMetric::InstallManifestMode, "install_manifest_mode"},
+        {Metrics::BoolMetric::OptionOverlayPorts, "option_overlay_ports"},
     };
 }
 
@@ -156,11 +157,6 @@ namespace vcpkg
         void track_feature(StringView name, bool value)
         {
             properties.insert(Strings::concat("feature-flag-", name), Json::Value::boolean(value));
-        }
-
-        void track_option(StringView name, bool value)
-        {
-            properties.insert(Strings::concat("option_", name), Json::Value::boolean(value));
         }
 
         std::string format_event_data_template() const
@@ -314,8 +310,6 @@ namespace vcpkg
     }
 
     void Metrics::track_feature(const std::string& name, bool value) { g_metricmessage.track_feature(name, value); }
-
-    void Metrics::track_option(const std::string& name, bool value) { g_metricmessage.track_option(name, value); }
 
     void Metrics::upload(const std::string& payload)
     {
