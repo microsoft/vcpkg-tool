@@ -165,7 +165,7 @@ namespace vcpkg::Commands::SetInstalled
         auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
         if (it_pkgsconfig != options.settings.end())
         {
-            LockGuardPtr<Metrics>(g_metrics)->track_property("x-write-nuget-packages-config", "defined");
+            LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::SetMetric::X_WriteNugetPackagesConfig);
             pkgsconfig = it_pkgsconfig->second;
         }
 

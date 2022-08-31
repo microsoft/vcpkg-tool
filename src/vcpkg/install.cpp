@@ -861,7 +861,8 @@ namespace vcpkg
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
 
-        LockGuardPtr<Metrics>(g_metrics)->track_property("install_manifest_mode", paths.manifest_mode_enabled());
+        LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::BoolMetric::InstallManifestMode,
+                                                         paths.manifest_mode_enabled());
 
         if (auto p = paths.get_manifest().get())
         {
@@ -950,7 +951,7 @@ namespace vcpkg
             auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
             if (it_pkgsconfig != options.settings.end())
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("x-write-nuget-packages-config", "defined");
+                LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::SetMetric::X_WriteNugetPackagesConfig);
                 pkgsconfig = Path(it_pkgsconfig->second);
             }
             auto maybe_manifest_scf =
@@ -1018,12 +1019,12 @@ namespace vcpkg
                     return dep.constraint.type != VersionConstraintKind::None;
                 }))
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_version_constraint", "defined");
+                LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::SetMetric::ManifestVersionConstraint);
             }
 
             if (!manifest_core.overrides.empty())
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_overrides", "defined");
+                LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::SetMetric::ManifestOverrides);
             }
 
             auto verprovider = make_versioned_portfile_provider(paths);
@@ -1153,7 +1154,7 @@ namespace vcpkg
         auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
         if (it_pkgsconfig != options.settings.end())
         {
-            LockGuardPtr<Metrics>(g_metrics)->track_property("x-write-nuget-packages-config", "defined");
+            LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::SetMetric::X_WriteNugetPackagesConfig);
             compute_all_abis(paths, action_plan, var_provider, status_db);
 
             auto pkgsconfig_path = paths.original_cwd / it_pkgsconfig->second;
@@ -1298,6 +1299,6 @@ namespace vcpkg
                                             Hash::get_string_hash(version_as_string, Hash::Algorithm::Sha256));
         }
 
-        LockGuardPtr<Metrics>(g_metrics)->track_property("installplan_1", specs_string);
+        LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::StringMetric::InstallPlan_1, specs_string);
     }
 }

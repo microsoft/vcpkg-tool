@@ -17,6 +17,58 @@
 #pragma comment(lib, "winhttp")
 #endif
 
+namespace
+{
+    using namespace vcpkg;
+
+    static std::map<Metrics::SetMetric, std::string> SET_METRIC_NAMES{
+        {Metrics::SetMetric::AssetSource, "asset-source"},
+        {Metrics::SetMetric::BinaryCachingAws, "binarycaching_aws"},
+        {Metrics::SetMetric::BinaryCachingAzBlob, "binarycaching_azblob"},
+        {Metrics::SetMetric::BinaryCachingCos, "binarycaching_cos"},
+        {Metrics::SetMetric::BinaryCachingDefault, "binarycaching_default"},
+        {Metrics::SetMetric::BinaryCachingFiles, "binarycaching_files"},
+        {Metrics::SetMetric::BinaryCachingGcs, "binarycaching_gcs"},
+        {Metrics::SetMetric::BinaryCachingHttp, "binarycaching_http"},
+        {Metrics::SetMetric::BinaryCachingNuget, "binarycaching_nuget"},
+        {Metrics::SetMetric::BinaryCachingSource, "binarycaching-source"},
+        {Metrics::SetMetric::ErrorVersioningDisabled, "error-versioning-disabled"},
+        {Metrics::SetMetric::ErrorVersioningNoBaseline, "error-versioning-no-baseline"},
+        {Metrics::SetMetric::GitHubRepository, "GITHUB_REPOSITORY"},
+        {Metrics::SetMetric::ManifestBaseline, "manifest_baseline"},
+        {Metrics::SetMetric::ManifestOverrides, "manifest_overrides"},
+        {Metrics::SetMetric::ManifestVersionConstraint, "manifest_version_constraint"},
+        {Metrics::SetMetric::RegistriesErrorCouldNotFindBaseline, "registries-error-could-not-find-baseline"},
+        {Metrics::SetMetric::RegistriesErrorNoVersionsAtCommit, "registries-error-no-versions-at-commit"},
+        {Metrics::SetMetric::VcpkgBinarySources, "VCPKG_BINARY_SOURCES"},
+        {Metrics::SetMetric::VcpkgDefaultBinaryCache, "VCPKG_DEFAULT_BINARY_CACHE"},
+        {Metrics::SetMetric::VcpkgNugetRepository, "VCPKG_NUGET_REPOSITORY"},
+        {Metrics::SetMetric::VersioningErrorBaseline, "versioning-error-baseline"},
+        {Metrics::SetMetric::VersioningErrorVersion, "versioning-error-version"},
+        {Metrics::SetMetric::X_VcpkgRegistriesCache, "X_VCPKG_REGISTRIES_CACHE"},
+        {Metrics::SetMetric::X_WriteNugetPackagesConfig, "x-write-nuget-packages-config"},
+    };
+
+    static std::map<Metrics::StringMetric, std::string> STRING_METRIC_NAMES{
+        {Metrics::StringMetric::BuildError, "build_error"},
+        {Metrics::StringMetric::CommandArgs, "command_args"},
+        {Metrics::StringMetric::CommandContext, "command_context"},
+        {Metrics::StringMetric::CommandName, "command_name"},
+        {Metrics::StringMetric::Error, "error"},
+        {Metrics::StringMetric::InstallPlan_1, "installplan_1"},
+        {Metrics::StringMetric::ListFile, "listfile"},
+        {Metrics::StringMetric::RegistriesDefaultRegistryKind, "registries-default-registry-kind"},
+        {Metrics::StringMetric::RegistriesKindsUsed, "registries-kinds-used"},
+        {Metrics::StringMetric::Title, "title"},
+        {Metrics::StringMetric::UserMac, "user_mac"},
+        {Metrics::StringMetric::Warning, "warning"},
+    };
+
+    static std::map<Metrics::BoolMetric, std::string> BOOL_METRIC_NAMES = {
+        {Metrics::BoolMetric::InstallManifestMode, "install_manifest_mode"},
+    };
+}
+
 namespace vcpkg
 {
     LockGuarded<Metrics> g_metrics;
@@ -231,7 +283,7 @@ namespace vcpkg
             g_metricmessage.user_id = config.user_id;
             g_metricmessage.user_timestamp = config.user_time;
 
-            metrics->track_property("user_mac", config.user_mac);
+            metrics->track_property(Metrics::StringMetric::UserMac, config.user_mac);
 
             g_metrics_disabled = false;
         }
@@ -246,12 +298,20 @@ namespace vcpkg
         g_metricmessage.track_buildtime(name, value);
     }
 
-    void Metrics::track_property(const std::string& name, const std::string& value)
+    void Metrics::track_property(SetMetric metric)
     {
-        g_metricmessage.track_property(name, value);
+        g_metricmessage.track_property(SET_METRIC_NAMES[metric], "defined");
     }
 
-    void Metrics::track_property(const std::string& name, bool value) { g_metricmessage.track_property(name, value); }
+    void Metrics::track_property(StringMetric metric, const std::string& value)
+    {
+        g_metricmessage.track_property(STRING_METRIC_NAMES[metric], value);
+    }
+
+    void Metrics::track_property(BoolMetric metric, bool value)
+    {
+        g_metricmessage.track_property(BOOL_METRIC_NAMES[metric], value);
+    }
 
     void Metrics::track_feature(const std::string& name, bool value) { g_metricmessage.track_feature(name, value); }
 

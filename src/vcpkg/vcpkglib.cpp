@@ -111,7 +111,7 @@ namespace vcpkg
         if (!was_tracked)
         {
             was_tracked = true;
-            LockGuardPtr<Metrics>(g_metrics)->track_property("listfile", "update to new format");
+            LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::StringMetric::ListFile, "update to new format");
         }
 
         // The files are sorted such that directories are placed just before the files they contain

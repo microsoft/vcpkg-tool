@@ -39,7 +39,7 @@ namespace vcpkg
                 if (place.has_value())
                 {
                     msg::println_error(msgTwoFeatureFlagsSpecified, msg::value = flag);
-                    LockGuardPtr<Metrics>(g_metrics)->track_property("error",
+                    LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::StringMetric::Error,
                                                                      "error feature flag +-" + flag.to_string());
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
@@ -79,7 +79,8 @@ namespace vcpkg
         if (nullptr != option_field)
         {
             msg::println_error(msgDuplicateOptions, msg::value = option_name);
-            LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option specified multiple times");
+            LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::StringMetric::Error,
+                                                             "error option specified multiple times");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -92,7 +93,8 @@ namespace vcpkg
         if (option_field && option_field != new_setting)
         {
             msg::println_error(msgConflictingValuesForOption, msg::value = option_name);
-            LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error conflicting switches");
+            LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::StringMetric::Error,
+                                                             "error conflicting switches");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -106,7 +108,7 @@ namespace vcpkg
         if (new_value.size() == 0)
         {
             msg::println_error(msgExpectedValueForOption, msg::value = option_name);
-            LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option name");
+            LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::StringMetric::Error, "error option name");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -121,7 +123,7 @@ namespace vcpkg
         if (new_value.size() == 0)
         {
             msg::println_error(msgExpectedValueForOption, msg::value = option_name);
-            LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option name");
+            LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::StringMetric::Error, "error option name");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -188,7 +190,7 @@ namespace vcpkg
                 }
 
                 msg::println_error(msgExpectedValueForOption, msg::value = option);
-                LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option name");
+                LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::StringMetric::Error, "error option name");
                 print_usage();
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
@@ -261,7 +263,8 @@ namespace vcpkg
 
             if (basic_arg.size() >= 2 && basic_arg[0] == '-' && basic_arg[1] != '-')
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error short options are not supported");
+                LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::StringMetric::Error,
+                                                                 "error short options are not supported");
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgUnsupportedShortOptions, msg::value = basic_arg);
             }
 
@@ -836,7 +839,7 @@ namespace vcpkg
                     msgSpecifiedFeatureTurnedOff, msg::command_name = el.flag, msg::option = el.option);
                 msg::println_warning(msgDefaultFlag, msg::option = el.flag);
                 LockGuardPtr<Metrics>(g_metrics)->track_property(
-                    "warning", Strings::format("warning %s alongside %s", el.flag, el.option));
+                    Metrics::StringMetric::Warning, Strings::format("warning %s alongside %s", el.flag, el.option));
             }
         }
     }

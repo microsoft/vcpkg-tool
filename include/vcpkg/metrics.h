@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/json.h>
 #include <vcpkg/base/lockguarded.h>
 #include <vcpkg/base/util.h>
 
@@ -10,6 +11,57 @@ namespace vcpkg
 {
     struct Metrics
     {
+        enum class SetMetric
+        {
+            AssetSource,
+            BinaryCachingAws,
+            BinaryCachingAzBlob,
+            BinaryCachingCos,
+            BinaryCachingDefault,
+            BinaryCachingFiles,
+            BinaryCachingGcs,
+            BinaryCachingHttp,
+            BinaryCachingNuget,
+            BinaryCachingSource,
+            ErrorVersioningDisabled,
+            ErrorVersioningNoBaseline,
+            GitHubRepository,
+            ManifestBaseline,
+            ManifestOverrides,
+            ManifestVersionConstraint,
+            RegistriesErrorCouldNotFindBaseline,
+            RegistriesErrorNoVersionsAtCommit,
+            VcpkgBinarySources,
+            VcpkgDefaultBinaryCache,
+            VcpkgNugetRepository,
+            VersioningErrorBaseline,
+            VersioningErrorVersion,
+            X_VcpkgRegistriesCache,
+            X_WriteNugetPackagesConfig
+        };
+
+        enum class StringMetric
+        {
+            BuildError,
+            CommandArgs,
+            CommandContext,
+            CommandName,
+            Error,
+            InstallPlan_1,
+            ListFile,
+            RegistriesDefaultRegistryKind,
+            RegistriesKindsUsed,
+            Title,
+            UserMac,
+            VcpkgVersion,
+            Warning
+        };
+
+        enum class BoolMetric
+        {
+            InstallManifestMode
+        };
+
         Metrics() = default;
         Metrics(const Metrics&) = delete;
         Metrics& operator=(const Metrics&) = delete;
@@ -22,8 +74,11 @@ namespace vcpkg
 
         void track_metric(const std::string& name, double value);
         void track_buildtime(const std::string& name, double value);
-        void track_property(const std::string& name, const std::string& value);
-        void track_property(const std::string& name, bool value);
+
+        void track_property(SetMetric metric);
+        void track_property(StringMetric metric, const std::string& value);
+        void track_property(BoolMetric metric, bool value);
+
         void track_feature(const std::string& feature, bool value);
         void track_option(const std::string& option, bool value);
 
