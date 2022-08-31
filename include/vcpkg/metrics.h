@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vcpkg/base/files.h>
-#include <vcpkg/base/json.h>
 #include <vcpkg/base/lockguarded.h>
 #include <vcpkg/base/util.h>
 
@@ -11,7 +10,7 @@ namespace vcpkg
 {
     struct Metrics
     {
-        enum class SetMetric
+        enum class DefineMetric
         {
             AssetSource,
             BinaryCachingAws,
@@ -76,7 +75,7 @@ namespace vcpkg
         void track_metric(const std::string& name, double value);
         void track_buildtime(const std::string& name, double value);
 
-        void track_property(SetMetric metric);
+        void track_property(DefineMetric metric);
         void track_property(StringMetric metric, const std::string& value);
         void track_property(BoolMetric metric, bool value);
 

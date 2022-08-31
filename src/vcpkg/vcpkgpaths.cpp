@@ -187,10 +187,10 @@ namespace vcpkg
         {
             if (auto p_baseline = manifest->builtin_baseline.get())
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::SetMetric::ManifestBaseline);
+                LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::DefineMetric::ManifestBaseline);
                 if (!is_git_commit_sha(*p_baseline))
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::SetMetric::VersioningErrorBaseline);
+                    LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::DefineMetric::VersioningErrorBaseline);
                     Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
                                                "Error: the top-level builtin-baseline%s was not a valid commit sha: "
                                                "expected 40 hexadecimal characters.\n%s\n",
@@ -325,7 +325,7 @@ namespace vcpkg
             Path ret;
             if (args.registries_cache_dir)
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::SetMetric::X_VcpkgRegistriesCache);
+                LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::DefineMetric::X_VcpkgRegistriesCache);
                 ret = *args.registries_cache_dir;
                 const auto status = get_real_filesystem().status(ret, VCPKG_LINE_INFO);
                 if (!vcpkg::exists(status))

@@ -204,7 +204,7 @@ namespace vcpkg
                     }
                     else
                     {
-                        LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::SetMetric::VersioningErrorVersion);
+                        LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::DefineMetric::VersioningErrorVersion);
                         return maybe_path.error();
                     }
                 }
