@@ -117,8 +117,8 @@ namespace vcpkg
                     scfl.source_control_file->find_dependencies_for_feature(feature);
                 if (!maybe_qualified_deps.has_value())
                 {
-                    Checks::exit_with_message(
-                        VCPKG_LINE_INFO, "Error: could not find feature '%s' in port '%s'", feature, m_spec.name());
+                    Checks::msg_exit_with_message(
+                        VCPKG_LINE_INFO, msgFailedToFindPortFeature, msg::feature = feature, msg::spec = m_spec.name());
                 }
                 const std::vector<Dependency>* qualified_deps = &maybe_qualified_deps.value_or_exit(VCPKG_LINE_INFO);
 
@@ -224,23 +224,15 @@ namespace vcpkg
 
             const SourceControlFileAndLocation& get_scfl_or_exit() const
             {
-#if defined(_WIN32)
-                static auto vcpkg_remove_cmd = ".\\vcpkg";
-#else
-                static auto vcpkg_remove_cmd = "./vcpkg";
-#endif
-                if (!m_scfl)
+                if (auto scfl = m_scfl.get())
                 {
-                    Checks::exit_maybe_upgrade(
-                        VCPKG_LINE_INFO,
-                        "Error: while loading control file for %s:\n%s\nPlease run \"%s remove %s\" and re-attempt.",
-                        m_spec,
-                        m_scfl.error(),
-                        vcpkg_remove_cmd,
-                        m_spec);
+                    return *scfl;
                 }
 
-                return *m_scfl.get();
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                            msg::format(msgFailedToLoadInstalledManifest, msg::spec = m_spec)
+                                                .append_raw('\n')
+                                                .append_raw(m_scfl.error()));
             }
 
             Optional<const PlatformExpression::Expr&> get_applicable_supports_expression(const FeatureSpec& spec)
@@ -252,11 +244,11 @@ namespace vcpkg
                 else if (spec.feature() != "default")
                 {
                     auto maybe_paragraph = get_scfl_or_exit().source_control_file->find_feature(spec.feature());
-                    Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
-                                                maybe_paragraph.has_value(),
-                                                "Package %s does not have a %s feature",
-                                                spec.port(),
-                                                spec.feature());
+                    Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
+                                                    maybe_paragraph.has_value(),
+                                                    msgFailedToFindPortFeature,
+                                                    msg::feature = spec.feature(),
+                                                    msg::spec = spec.port());
 
                     return maybe_paragraph.get()->supports_expression;
                 }
@@ -292,7 +284,7 @@ namespace vcpkg
                          const CMakeVars::CMakeVarProvider& var_provider,
                          const StatusParagraphs& status_db,
                          Triplet host_triplet);
-            ~PackageGraph();
+            ~PackageGraph() = default;
 
             void install(Span<const FeatureSpec> specs, UnsupportedPortAction unsupported_port_action);
             void upgrade(Span<const PackageSpec> specs, UnsupportedPortAction unsupported_port_action);
@@ -341,8 +333,9 @@ namespace vcpkg
                     }
                     else
                     {
-                        Checks::exit_with_message(
-                            VCPKG_LINE_INFO, "info: while looking for %s:\n%s", spec, maybe_scfl.error());
+                        Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                                    msg::format(msgWhileLookingForSpec, msg::spec = spec)
+                                                        .append_raw("\n" + maybe_scfl.error()));
                     }
                 }
 
@@ -356,13 +349,11 @@ namespace vcpkg
 
                 if (const auto scfl = maybe_scfl.get())
                 {
-                    Checks::check_exit(VCPKG_LINE_INFO,
-                                       scfl->source_control_file->core_paragraph->type.type ==
-                                           ipv.core->package.type.type,
-                                       "Error: the port type of '%s' differs between the installed and available "
-                                       "portfile.\nPlease manually remove '%s' and re-run this command.",
-                                       ipv.spec().name(),
-                                       ipv.spec());
+                    Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                           scfl->source_control_file->core_paragraph->type.type ==
+                                               ipv.core->package.type.type,
+                                           msgPortTypeConflict,
+                                           msg::spec = ipv.spec());
                 }
 
                 return m_graph
@@ -375,7 +366,7 @@ namespace vcpkg
             const Cluster& find_or_exit(const PackageSpec& spec, LineInfo li) const
             {
                 auto it = m_graph.find(spec);
-                Checks::check_exit(li, it != m_graph.end(), "Failed to locate spec in graph: %s", spec);
+                Checks::msg_check_exit(li, it != m_graph.end(), msgFailedToLocateSpec, msg::spec = spec);
                 return it->second;
             }
 
@@ -803,11 +794,11 @@ namespace vcpkg
                     {
                         auto maybe_paragraph =
                             clust.get_scfl_or_exit().source_control_file->find_feature(spec.feature());
-                        Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
-                                                    maybe_paragraph.has_value(),
-                                                    "Package %s does not have a %s feature",
-                                                    spec.port(),
-                                                    spec.feature());
+                        Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
+                                                        maybe_paragraph.has_value(),
+                                                        msgFailedToFindPortFeature,
+                                                        msg::feature = spec.feature(),
+                                                        msg::spec = spec.port());
                         paragraph_depends = &maybe_paragraph.value_or_exit(VCPKG_LINE_INFO).dependencies;
                         has_supports = !maybe_paragraph.get()->supports_expression.is_empty();
                     }
@@ -829,17 +820,20 @@ namespace vcpkg
                         if (!supports_expression.get()->evaluate(
                                 m_var_provider.get_dep_info_vars(spec.spec()).value_or_exit(VCPKG_LINE_INFO)))
                         {
-                            const auto msg = Strings::format("%s[%s] is only supported on '%s'",
-                                                             spec.port(),
-                                                             spec.feature(),
-                                                             to_string(*supports_expression.get()));
+                            auto localized_msg =
+                                msg::format(msgUnsupportedPortFeature,
+                                            msg::spec = spec,
+                                            msg::supports_expression = to_string(*supports_expression.get()));
+
                             if (unsupported_port_action == UnsupportedPortAction::Error)
                             {
-                                Checks::exit_with_message(VCPKG_LINE_INFO, "Error: " + msg);
+                                Checks::msg_exit_with_message(VCPKG_LINE_INFO, localized_msg);
                             }
                             else
                             {
-                                m_warnings.push_back("Warning: " + msg);
+                                m_warnings.push_back(msg::format(msg::msgWarningMessage)
+                                                         .append(std::move(localized_msg))
+                                                         .extract_data());
                             }
                         }
                     }
@@ -1020,7 +1014,10 @@ namespace vcpkg
                                                                             msg::spec = constraints.first,
                                                                             msg::expected_version = constraint,
                                                                             msg::actual_version = *v));
-                                print2("found constraint violation: ", constraint_violations.back().data(), "\n");
+                                msg::println(msg::format(msgConstraintViolation)
+                                                 .append_raw("\n")
+                                                 .append_indent()
+                                                 .append(constraint_violations.back()));
                             }
                         }
                     }
@@ -1087,12 +1084,15 @@ namespace vcpkg
             for (auto&& dep : deps)
             {
                 auto p_installed = graph->get(dep).m_installed.get();
-                Checks::check_maybe_upgrade(
-                    VCPKG_LINE_INFO,
-                    p_installed != nullptr,
-                    "Error: database corrupted. Package %s is installed but dependency %s is not.",
-                    ipv.spec(),
-                    dep);
+                if (p_installed == nullptr)
+                {
+                    Checks::msg_exit_with_error(
+                        VCPKG_LINE_INFO,
+                        msg::format(msgCorruptedDatabase)
+                            .append_raw("\n")
+                            .append(msgMissingDependency, msg::spec = ipv.spec(), msg::package_name = dep));
+                }
+
                 p_installed->remove_edges.emplace(ipv.spec());
             }
         }
@@ -1107,14 +1107,12 @@ namespace vcpkg
     {
     }
 
-    PackageGraph::~PackageGraph() = default;
-
     void print_plan(const ActionPlan& action_plan, const bool is_recursive, const Path& builtin_ports_dir)
     {
         if (action_plan.remove_actions.empty() && action_plan.already_installed.empty() &&
             action_plan.install_actions.empty())
         {
-            print2("All requested packages are currently installed.\n");
+            msg::println(msgInstalledRequestedPackages);
             return;
         }
 
@@ -1177,51 +1175,55 @@ namespace vcpkg
 
         if (!excluded.empty())
         {
-            print2("The following packages are excluded:\n", actions_to_output_string(excluded), '\n');
+            msg::println(
+                msg::format(msgExcludedPackages).append_raw("\n").append_raw(actions_to_output_string(excluded)));
         }
 
         if (!already_installed_plans.empty())
         {
-            print2("The following packages are already installed:\n",
-                   actions_to_output_string(already_installed_plans),
-                   '\n');
+            msg::println(msg::format(msgInstalledPackages)
+                             .append_raw("\n")
+                             .append_raw(actions_to_output_string(already_installed_plans)));
         }
 
         if (!remove_specs.empty())
         {
-            std::string msg = "The following packages will be removed:\n";
+            auto message = msg::format(msgPackagesToRemove);
             for (auto&& spec : remove_specs)
             {
-                Strings::append(msg, to_output_string(RequestType::USER_REQUESTED, spec.to_string()), '\n');
+                message.append_raw("\n" + to_output_string(RequestType::USER_REQUESTED, spec.to_string()));
             }
-            print2(msg);
+            msg::println(message);
         }
 
         if (!rebuilt_plans.empty())
         {
-            print2("The following packages will be rebuilt:\n", actions_to_output_string(rebuilt_plans), '\n');
+            msg::println(
+                msg::format(msgPackagesToRebuild).append_raw("\n").append_raw(actions_to_output_string(rebuilt_plans)));
         }
 
         if (!new_plans.empty())
         {
-            print2("The following packages will be built and installed:\n", actions_to_output_string(new_plans), '\n');
+            msg::println(
+                msg::format(msgPackagesToInstall).append_raw("\n").append_raw(actions_to_output_string(new_plans)));
         }
 
         if (!only_install_plans.empty())
         {
-            print2("The following packages will be directly installed:\n",
-                   actions_to_output_string(only_install_plans),
-                   '\n');
+            msg::println(msg::format(msgPackagesToInstallDirectly)
+                             .append_raw("\n")
+                             .append_raw(actions_to_output_string(only_install_plans)));
         }
 
         if (has_non_user_requested_packages)
-            print2("Additional packages (*) will be modified to complete this operation.\n");
+        {
+            msg::println(msgPackagesToModify);
+        }
+
         bool have_removals = !remove_specs.empty() || !rebuilt_plans.empty();
         if (have_removals && !is_recursive)
         {
-            print2(Color::warning,
-                   "If you are sure you want to rebuild the above packages, run the command with the "
-                   "--recurse option\n");
+            msg::println_warning(msgPackagesToRebuildSuggestRecurse);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
     }

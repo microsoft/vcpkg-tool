@@ -107,7 +107,7 @@ namespace vcpkg::Commands::SetInstalled
             auto pkgsconfig_path = paths.original_cwd / *p_pkgsconfig;
             auto pkgsconfig_contents = generate_nuget_packages_config(action_plan);
             fs.write_contents(pkgsconfig_path, pkgsconfig_contents, VCPKG_LINE_INFO);
-            print2("Wrote NuGet packages config information to ", pkgsconfig_path, "\n");
+            msg::println(msgWroteNuGetPkgConfInfo, msg::path = pkgsconfig_path);
         }
 
         if (dry_run == DryRun::Yes)
@@ -121,8 +121,7 @@ namespace vcpkg::Commands::SetInstalled
 
         const auto summary = Install::perform(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), cmake_vars);
-
-        print2("\nTotal elapsed time: ", GlobalState::timer.to_string(), "\n\n");
+        msg::println(msgTotalTime, msg::elapsed = GlobalState::timer.to_string());
 
         std::set<std::string> printed_usages;
         for (auto&& ur_spec : user_requested_specs)

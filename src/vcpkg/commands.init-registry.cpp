@@ -22,11 +22,7 @@ namespace vcpkg::Commands::InitRegistry
         const auto path = fs.current_path(VCPKG_LINE_INFO) / string_argument;
         if (!fs.exists(path / ".git", IgnoreErrors{}))
         {
-            vcpkg::printf(Color::error,
-                          "Could not create registry at %s because this is not a git repository root.\n"
-                          "Use `git init %s` to create a git repository in this folder.\n",
-                          path,
-                          string_argument);
+            msg::println_error(msgInitRegistryFailedNoRepo, msg::path = path, msg::command_line = string_argument);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
         const auto ports = path / "ports";
@@ -42,7 +38,7 @@ namespace vcpkg::Commands::InitRegistry
 })";
             fs.write_contents_and_dirs(baseline, content, VCPKG_LINE_INFO);
         }
-        print2("Successfully created registry at ", path, "\n");
+        msg::println(msgRegistryCreated, msg::path = path);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 

@@ -642,7 +642,7 @@ namespace
                 Checks::exit_maybe_upgrade(
                     VCPKG_LINE_INFO,
                     "Error: the git registry entry for \"%s\" must have a \"baseline\" field that is a valid git "
-                    "commit SHA (40 lowercase hexadecimal characters).\n"
+                    "commit SHA (40 hexadecimal characters).\n"
                     "The current HEAD of that repo is \"%s\".\n",
                     m_repo,
                     e.commit_id());
