@@ -250,25 +250,34 @@
     "exports": {
       "type": "object",
       "properties": {
-        "paths": {
-          "$ref": "#/definitions/strings-map"
-        },
-        "locations": {
-          "$ref": "#/definitions/string-map"
-        },
-        "properties": {
-          "$ref": "#/definitions/strings-map"
-        },
-        "environment": {
-          "$ref": "#/definitions/strings-map"
-        },
-        "tools": {
+        "aliases": {
           "$ref": "#/definitions/string-map"
         },
         "defines": {
           "$ref": "#/definitions/string-map"
         },
-        "aliases": {
+        "environment": {
+          "$ref": "#/definitions/strings-map"
+        },
+        "locations": {
+          "$ref": "#/definitions/string-map"
+        },
+        "msbuild-properties": {
+          "description": "Properties written verbatim when generating msbuild props for an activation, with $root$ replaced with the ultimate extraction root for this artifact. $root$ never contains a trailing backslash.",
+          "type": "object",
+          "patternProperties": {
+            "": {
+              "type": "string"
+            }
+          }
+        },
+        "paths": {
+          "$ref": "#/definitions/strings-map"
+        },
+        "properties": {
+          "$ref": "#/definitions/strings-map"
+        },
+        "tools": {
           "$ref": "#/definitions/string-map"
         }
       },

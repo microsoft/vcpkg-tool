@@ -23,7 +23,6 @@ specifiers:
   eslint: 8.8.0
   eslint-plugin-notice: 0.9.10
   fast-glob: 3.2.11
-  fast-xml-parser: 4.0.3
   fs-constants: ^1.0.0
   got: 11.8.5
   inherits: ^2.0.3
@@ -68,7 +67,6 @@ dependencies:
   eslint: 8.8.0
   eslint-plugin-notice: 0.9.10_eslint@8.8.0
   fast-glob: 3.2.11
-  fast-xml-parser: 4.0.3
   fs-constants: 1.0.0
   got: 11.8.5
   inherits: 2.0.4
@@ -2616,6 +2614,11 @@ packages:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
     dev: false
 
+  /xml-writer/1.7.0:
+    resolution: {integrity: sha512-elFVMRiV5jb59fbc87zzVa0C01QLBEWP909mRuWqFqrYC5wNTH5QW4AaKMNv7d6zAsuOulkD7wnztZNLQW0Nfg==}
+    engines: {node: '>=0.4.0'}
+    dev: false
+
   /xml2js/0.4.23:
     resolution: {integrity: sha512-ySPiMjM0+pLDftHgXY4By0uswI3SPKLDw/i3UXbnO8M/p28zqexCUoPmQFrYD+/1BzhGJSs2i1ERWKJAtiLrug==}
     engines: {node: '>=4.0.0'}
@@ -2711,7 +2714,7 @@ packages:
     dev: false
 
   file:projects/vcpkg-ce.tgz:
-    resolution: {integrity: sha512-2WsNzA0z2eXnP56x7qMzgEXObbbvc+CYUf703snEU1nPwCXjl0VrZSEXByXwOlA5Ov4Jh1BpRmeyX91+gSLE7g==, tarball: file:projects/vcpkg-ce.tgz}
+    resolution: {integrity: sha512-PKXMytuWY5e8evBEHth9x1Hxoo8GTiCvn5rLB7xZtV4abNPSPYkptk1v3B4VndefCKN2ofH965BA8asWxwcrMQ==, tarball: file:projects/vcpkg-ce.tgz}
     name: '@rush-temp/vcpkg-ce'
     version: 0.0.0
     dependencies:
@@ -2747,6 +2750,7 @@ packages:
       typescript: 4.5.5
       unbzip2-stream: 1.4.3
       vscode-uri: 3.0.3
+      xml-writer: 1.7.0
       yaml: 2.0.0-10
     transitivePeerDependencies:
       - applicationinsights-native-metrics
