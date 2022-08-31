@@ -190,7 +190,6 @@ namespace vcpkg
                 LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::SetMetric::ManifestBaseline);
                 if (!is_git_commit_sha(*p_baseline))
                 {
-                    // TODO:
                     LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::SetMetric::VersioningErrorBaseline);
                     Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
                                                "Error: the top-level builtin-baseline%s was not a valid commit sha: "
