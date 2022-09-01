@@ -12,6 +12,9 @@
 #include <vcpkg/versiondeserializers.h>
 #include <vcpkg/versions.h>
 
+#include <algorithm>
+#include <execution>
+
 namespace vcpkg::Commands::PortHistory
 {
     namespace
@@ -97,6 +100,11 @@ namespace vcpkg::Commands::PortHistory
             return nullopt;
         }
 
+        bool compare_history(const HistoryVersion& lhs, const HistoryVersion& rhs)
+        {
+            return lhs.commit_date > rhs.commit_date;
+        }
+
         std::vector<HistoryVersion> read_versions_from_log(const VcpkgPaths& paths, const std::string& port_name)
         {
             // log --format="%H %cd" --date=short --left-only -- ports/{port_name}/.
@@ -111,30 +119,34 @@ namespace vcpkg::Commands::PortHistory
             const auto maybe_output = run_git_command(paths, builder);
             if (auto output = maybe_output.get())
             {
-                auto commits = Util::fmap(
-                    Strings::split(*output, '\n'), [](const std::string& line) -> auto{
-                        auto parts = Strings::split(line, ' ');
-                        return std::make_pair(parts[0], parts[1]);
-                    });
+                std::vector<std::string> lines = Strings::split(*output, '\n');
+                std::mutex mtx;
+                std::vector<HistoryVersion> commits;
 
-                std::string last_version;
-                for (auto&& commit_date_pair : commits)
-                {
-                    auto maybe_version =
-                        get_version_from_commit(paths, commit_date_pair.first, commit_date_pair.second, port_name);
+                std::for_each(std::execution::par, lines.begin(), lines.end(), [&](StringView str) {
+                    auto line_parts = Strings::split(str, ' ');
+                    auto maybe_version = get_version_from_commit(paths, line_parts[0], line_parts[1], port_name);
+                    
                     if (maybe_version.has_value())
                     {
-                        const auto version = maybe_version.value_or_exit(VCPKG_LINE_INFO);
+                        std::lock_guard<std::mutex> guard(mtx);
+                        commits.emplace_back(std::move(maybe_version.value_or_exit(VCPKG_LINE_INFO)));
+                    }
+                });
 
-                        // Keep latest port with the current version string
-                        if (last_version != version.version_string)
-                        {
-                            last_version = version.version_string;
-                            ret.emplace_back(version);
-                        }
+                std::string last_version;
+                for (auto&& version : commits)
+                {
+                    // Keep latest port with the current version string
+                    if (last_version != version.version_string)
+                    {
+                        last_version = version.version_string;
+                        ret.emplace_back(std::move(version));
                     }
                 }
             }
+
+            std::sort(ret.begin(), ret.end(), compare_history);
 
             return ret;
         }
