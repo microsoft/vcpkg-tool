@@ -44,70 +44,64 @@ namespace vcpkg
 {
     LockGuarded<Metrics> g_metrics;
 
-    constexpr View<MetricEntry<Metrics::DefineMetric>> Metrics::get_define_metrics()
+    View<MetricEntry<DefineMetric>> Metrics::get_define_metrics()
     {
-        constexpr std::array<MetricEntry<Metrics::DefineMetric>, static_cast<size_t>(Metrics::DefineMetric_COUNT)>
-            ENTRIES{
-                MetricEntry<Metrics::DefineMetric>{Metrics::AssetSource, "asset-source"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::BinaryCachingAws, "binarycaching_aws"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::BinaryCachingAzBlob, "binarycaching_azblob"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::BinaryCachingCos, "binarycaching_cos"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::BinaryCachingDefault, "binarycaching_default"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::BinaryCachingFiles, "binarycaching_files"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::BinaryCachingGcs, "binarycaching_gcs"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::BinaryCachingHttp, "binarycaching_http"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::BinaryCachingNuget, "binarycaching_nuget"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::BinaryCachingSource, "binarycaching-source"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::ErrorVersioningDisabled, "error-versioning-disabled"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::ErrorVersioningNoBaseline, "error-versioning-no-baseline"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::GitHubRepository, "GITHUB_REPOSITORY"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::ManifestBaseline, "manifest_baseline"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::ManifestOverrides, "manifest_overrides"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::ManifestVersionConstraint, "manifest_version_constraint"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::RegistriesErrorCouldNotFindBaseline,
-                                                   "registries-error-could-not-find-baseline"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::RegistriesErrorNoVersionsAtCommit,
-                                                   "registries-error-no-versions-at-commit"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::VcpkgBinarySources, "VCPKG_BINARY_SOURCES"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::VcpkgDefaultBinaryCache, "VCPKG_DEFAULT_BINARY_CACHE"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::VcpkgNugetRepository, "VCPKG_NUGET_REPOSITORY"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::VersioningErrorBaseline, "versioning-error-baseline"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::VersioningErrorVersion, "versioning-error-version"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::X_VcpkgRegistriesCache, "X_VCPKG_REGISTRIES_CACHE"},
-                MetricEntry<Metrics::DefineMetric>{Metrics::X_WriteNugetPackagesConfig,
-                                                   "x-write-nuget-packages-config"},
-            };
+        static constexpr std::array<MetricEntry<DefineMetric>, static_cast<size_t>(DefineMetric::_COUNT)> ENTRIES{{
+            {DefineMetric::AssetSource, "asset-source"},
+            {DefineMetric::BinaryCachingAws, "binarycaching_aws"},
+            {DefineMetric::BinaryCachingAzBlob, "binarycaching_azblob"},
+            {DefineMetric::BinaryCachingCos, "binarycaching_cos"},
+            {DefineMetric::BinaryCachingDefault, "binarycaching_default"},
+            {DefineMetric::BinaryCachingFiles, "binarycaching_files"},
+            {DefineMetric::BinaryCachingGcs, "binarycaching_gcs"},
+            {DefineMetric::BinaryCachingHttp, "binarycaching_http"},
+            {DefineMetric::BinaryCachingNuget, "binarycaching_nuget"},
+            {DefineMetric::BinaryCachingSource, "binarycaching-source"},
+            {DefineMetric::ErrorVersioningDisabled, "error-versioning-disabled"},
+            {DefineMetric::ErrorVersioningNoBaseline, "error-versioning-no-baseline"},
+            {DefineMetric::GitHubRepository, "GITHUB_REPOSITORY"},
+            {DefineMetric::ManifestBaseline, "manifest_baseline"},
+            {DefineMetric::ManifestOverrides, "manifest_overrides"},
+            {DefineMetric::ManifestVersionConstraint, "manifest_version_constraint"},
+            {DefineMetric::RegistriesErrorCouldNotFindBaseline, "registries-error-could-not-find-baseline"},
+            {DefineMetric::RegistriesErrorNoVersionsAtCommit, "registries-error-no-versions-at-commit"},
+            {DefineMetric::VcpkgBinarySources, "VCPKG_BINARY_SOURCES"},
+            {DefineMetric::VcpkgDefaultBinaryCache, "VCPKG_DEFAULT_BINARY_CACHE"},
+            {DefineMetric::VcpkgNugetRepository, "VCPKG_NUGET_REPOSITORY"},
+            {DefineMetric::VersioningErrorBaseline, "versioning-error-baseline"},
+            {DefineMetric::VersioningErrorVersion, "versioning-error-version"},
+            {DefineMetric::X_VcpkgRegistriesCache, "X_VCPKG_REGISTRIES_CACHE"},
+            {DefineMetric::X_WriteNugetPackagesConfig, "x-write-nuget-packages-config"},
+        }};
         return {ENTRIES.data(), ENTRIES.size()};
     }
 
-    constexpr View<MetricEntry<Metrics::StringMetric>> Metrics::get_string_metrics()
+    View<MetricEntry<StringMetric>> Metrics::get_string_metrics()
     {
-        constexpr std::array<MetricEntry<Metrics::StringMetric>, static_cast<size_t>(Metrics::StringMetric_COUNT)>
-            ENTRIES{
-                MetricEntry<Metrics::StringMetric>{Metrics::BuildError, "build_error"},
-                MetricEntry<Metrics::StringMetric>{Metrics::CommandArgs, "command_args"},
-                MetricEntry<Metrics::StringMetric>{Metrics::CommandContext, "command_context"},
-                MetricEntry<Metrics::StringMetric>{Metrics::CommandName, "command_name"},
-                MetricEntry<Metrics::StringMetric>{Metrics::Error, "error"},
-                MetricEntry<Metrics::StringMetric>{Metrics::InstallPlan_1, "installplan_1"},
-                MetricEntry<Metrics::StringMetric>{Metrics::ListFile, "listfile"},
-                MetricEntry<Metrics::StringMetric>{Metrics::RegistriesDefaultRegistryKind,
-                                                   "registries-default-registry-kind"},
-                MetricEntry<Metrics::StringMetric>{Metrics::RegistriesKindsUsed, "registries-kinds-used"},
-                MetricEntry<Metrics::StringMetric>{Metrics::Title, "title"},
-                MetricEntry<Metrics::StringMetric>{Metrics::UserMac, "user_mac"},
-                MetricEntry<Metrics::StringMetric>{Metrics::VcpkgVersion, "vcpkg_version"},
-                MetricEntry<Metrics::StringMetric>{Metrics::Warning, "warning"},
-            };
+        static constexpr std::array<MetricEntry<StringMetric>, static_cast<size_t>(StringMetric::_COUNT)> ENTRIES{{
+            {StringMetric::BuildError, "build_error"},
+            {StringMetric::CommandArgs, "command_args"},
+            {StringMetric::CommandContext, "command_context"},
+            {StringMetric::CommandName, "command_name"},
+            {StringMetric::Error, "error"},
+            {StringMetric::InstallPlan_1, "installplan_1"},
+            {StringMetric::ListFile, "listfile"},
+            {StringMetric::RegistriesDefaultRegistryKind, "registries-default-registry-kind"},
+            {StringMetric::RegistriesKindsUsed, "registries-kinds-used"},
+            {StringMetric::Title, "title"},
+            {StringMetric::UserMac, "user_mac"},
+            {StringMetric::VcpkgVersion, "vcpkg_version"},
+            {StringMetric::Warning, "warning"},
+        }};
         return {ENTRIES.data(), ENTRIES.size()};
     }
 
-    constexpr View<MetricEntry<Metrics::BoolMetric>> Metrics::get_bool_metrics()
+    View<MetricEntry<BoolMetric>> Metrics::get_bool_metrics()
     {
-        constexpr std::array<MetricEntry<Metrics::BoolMetric>, static_cast<size_t>(Metrics::BoolMetric_COUNT)> ENTRIES{
-            MetricEntry<Metrics::BoolMetric>{Metrics::InstallManifestMode, "install_manifest_mode"},
-            MetricEntry<Metrics::BoolMetric>{Metrics::OptionOverlayPorts, "option_overlay_ports"},
-        };
+        static constexpr std::array<MetricEntry<BoolMetric>, static_cast<size_t>(BoolMetric::_COUNT)> ENTRIES{{
+            {BoolMetric::InstallManifestMode, "install_manifest_mode"},
+            {BoolMetric::OptionOverlayPorts, "option_overlay_ports"},
+        }};
         return {ENTRIES.data(), ENTRIES.size()};
     }
 
@@ -316,7 +310,7 @@ namespace vcpkg
             g_metricmessage.user_id = config.user_id;
             g_metricmessage.user_timestamp = config.user_time;
 
-            metrics->track_property(Metrics::StringMetric::UserMac, config.user_mac);
+            metrics->track_property(StringMetric::UserMac, config.user_mac);
 
             g_metrics_disabled = false;
         }

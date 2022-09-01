@@ -35,8 +35,7 @@ namespace vcpkg
         if (!paths.is_valid_triplet(t))
         {
             print2(Color::error, "Error: invalid triplet: ", t, '\n');
-            LockGuardPtr<Metrics>(g_metrics)->track_property(Metrics::StringMetric::Error,
-                                                             "invalid triplet: " + t.to_string());
+            LockGuardPtr<Metrics>(g_metrics)->track_property(StringMetric::Error, "invalid triplet: " + t.to_string());
             Help::help_topic_valid_triplet(paths);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }

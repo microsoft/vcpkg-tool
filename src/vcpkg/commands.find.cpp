@@ -237,10 +237,10 @@ namespace vcpkg::Commands
             auto args_hash = Hash::get_string_hash(filter.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256);
             {
                 auto metrics = LockGuardPtr<Metrics>(g_metrics);
-                metrics->track_property(Metrics::StringMetric::CommandContext, "artifact");
+                metrics->track_property(StringMetric::CommandContext, "artifact");
                 if (auto p_filter_hash = filter_hash.get())
                 {
-                    metrics->track_property(Metrics::StringMetric::CommandArgs, *p_filter_hash);
+                    metrics->track_property(StringMetric::CommandArgs, *p_filter_hash);
                 }
             } // unlock metrics
 
@@ -252,10 +252,10 @@ namespace vcpkg::Commands
             Optional<std::string> filter_hash = filter.map(Hash::get_string_sha256);
             {
                 auto metrics = LockGuardPtr<Metrics>(g_metrics);
-                metrics->track_property(Metrics::StringMetric::CommandContext, "port");
+                metrics->track_property(StringMetric::CommandContext, "port");
                 if (auto p_filter_hash = filter_hash.get())
                 {
-                    metrics->track_property(Metrics::StringMetric::CommandArgs, *p_filter_hash);
+                    metrics->track_property(StringMetric::CommandArgs, *p_filter_hash);
                 }
             } // unlock metrics
 

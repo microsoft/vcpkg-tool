@@ -15,67 +15,63 @@ namespace vcpkg
         StringLiteral name;
     };
 
+    enum class DefineMetric
+    {
+        AssetSource,
+        BinaryCachingAws,
+        BinaryCachingAzBlob,
+        BinaryCachingCos,
+        BinaryCachingDefault,
+        BinaryCachingFiles,
+        BinaryCachingGcs,
+        BinaryCachingHttp,
+        BinaryCachingNuget,
+        BinaryCachingSource,
+        ErrorVersioningDisabled,
+        ErrorVersioningNoBaseline,
+        GitHubRepository,
+        ManifestBaseline,
+        ManifestOverrides,
+        ManifestVersionConstraint,
+        RegistriesErrorCouldNotFindBaseline,
+        RegistriesErrorNoVersionsAtCommit,
+        VcpkgBinarySources,
+        VcpkgDefaultBinaryCache,
+        VcpkgNugetRepository,
+        VersioningErrorBaseline,
+        VersioningErrorVersion,
+        X_VcpkgRegistriesCache,
+        X_WriteNugetPackagesConfig,
+        _COUNT // always keep COUNT last
+    };
+
+    enum class StringMetric
+    {
+        BuildError,
+        CommandArgs,
+        CommandContext,
+        CommandName,
+        Error,
+        InstallPlan_1,
+        ListFile,
+        RegistriesDefaultRegistryKind,
+        RegistriesKindsUsed,
+        Title,
+        UserMac,
+        VcpkgVersion,
+        Warning,
+        _COUNT // always keep COUNT last
+    };
+
+    enum class BoolMetric
+    {
+        InstallManifestMode,
+        OptionOverlayPorts,
+        _COUNT // always keep COUNT last
+    };
+
     struct Metrics
     {
-        enum class DefineMetric
-        {
-            AssetSource,
-            BinaryCachingAws,
-            BinaryCachingAzBlob,
-            BinaryCachingCos,
-            BinaryCachingDefault,
-            BinaryCachingFiles,
-            BinaryCachingGcs,
-            BinaryCachingHttp,
-            BinaryCachingNuget,
-            BinaryCachingSource,
-            ErrorVersioningDisabled,
-            ErrorVersioningNoBaseline,
-            GitHubRepository,
-            ManifestBaseline,
-            ManifestOverrides,
-            ManifestVersionConstraint,
-            RegistriesErrorCouldNotFindBaseline,
-            RegistriesErrorNoVersionsAtCommit,
-            VcpkgBinarySources,
-            VcpkgDefaultBinaryCache,
-            VcpkgNugetRepository,
-            VersioningErrorBaseline,
-            VersioningErrorVersion,
-            X_VcpkgRegistriesCache,
-            X_WriteNugetPackagesConfig,
-            DefineMetric_COUNT // always keep COUNT last
-        };
-
-        enum class StringMetric
-        {
-            BuildError,
-            CommandArgs,
-            CommandContext,
-            CommandName,
-            Error,
-            InstallPlan_1,
-            ListFile,
-            RegistriesDefaultRegistryKind,
-            RegistriesKindsUsed,
-            Title,
-            UserMac,
-            VcpkgVersion,
-            Warning,
-            StringMetric_COUNT // always keep COUNT last
-        };
-
-        enum class BoolMetric
-        {
-            InstallManifestMode,
-            OptionOverlayPorts,
-            BoolMetric_COUNT // always keep COUNT last
-        };
-
-        using enum Metrics::BoolMetric;
-        using enum Metrics::DefineMetric;
-        using enum Metrics::StringMetric;
-
         Metrics() = default;
         Metrics(const Metrics&) = delete;
         Metrics& operator=(const Metrics&) = delete;
@@ -101,9 +97,9 @@ namespace vcpkg
         void flush(Filesystem& fs);
 
         // exposed for testing
-        static constexpr View<MetricEntry<Metrics::DefineMetric>> get_define_metrics();
-        static constexpr View<MetricEntry<Metrics::StringMetric>> get_string_metrics();
-        static constexpr View<MetricEntry<Metrics::BoolMetric>> get_bool_metrics();
+        static View<MetricEntry<DefineMetric>> get_define_metrics();
+        static View<MetricEntry<StringMetric>> get_string_metrics();
+        static View<MetricEntry<BoolMetric>> get_bool_metrics();
     };
 
     extern LockGuarded<Metrics> g_metrics;

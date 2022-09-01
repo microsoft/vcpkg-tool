@@ -46,8 +46,8 @@ namespace vcpkg::Commands
             auto artifact_hash = Hash::get_string_hash(artifact_name, Hash::Algorithm::Sha256);
             {
                 auto metrics = LockGuardPtr<Metrics>(g_metrics);
-                metrics->track_property(Metrics::StringMetric::CommandContext, "artifact");
-                metrics->track_property(Metrics::StringMetric::CommandArgs, artifact_hash);
+                metrics->track_property(StringMetric::CommandContext, "artifact");
+                metrics->track_property(StringMetric::CommandArgs, artifact_hash);
             } // unlock g_metrics
 
             std::string ce_args[] = {"add", artifact_name};
@@ -122,8 +122,8 @@ namespace vcpkg::Commands
                                                    }));
             {
                 auto metrics = LockGuardPtr<Metrics>(g_metrics);
-                metrics->track_property(Metrics::StringMetric::CommandContext, "port");
-                metrics->track_property(Metrics::StringMetric::CommandArgs, command_args_hash);
+                metrics->track_property(StringMetric::CommandContext, "port");
+                metrics->track_property(StringMetric::CommandArgs, command_args_hash);
             } // unlock metrics
 
             Checks::exit_success(VCPKG_LINE_INFO);
