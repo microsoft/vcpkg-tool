@@ -8,6 +8,13 @@
 
 namespace vcpkg
 {
+    template<typename T>
+    struct MetricEntry
+    {
+        T metric;
+        StringLiteral name;
+    };
+
     struct Metrics
     {
         enum class DefineMetric
@@ -36,7 +43,8 @@ namespace vcpkg
             VersioningErrorBaseline,
             VersioningErrorVersion,
             X_VcpkgRegistriesCache,
-            X_WriteNugetPackagesConfig
+            X_WriteNugetPackagesConfig,
+            DefineMetric_COUNT // always keep COUNT last
         };
 
         enum class StringMetric
@@ -53,14 +61,20 @@ namespace vcpkg
             Title,
             UserMac,
             VcpkgVersion,
-            Warning
+            Warning,
+            StringMetric_COUNT // always keep COUNT last
         };
 
         enum class BoolMetric
         {
             InstallManifestMode,
-            OptionOverlayPorts
+            OptionOverlayPorts,
+            BoolMetric_COUNT // always keep COUNT last
         };
+
+        using enum Metrics::BoolMetric;
+        using enum Metrics::DefineMetric;
+        using enum Metrics::StringMetric;
 
         Metrics() = default;
         Metrics(const Metrics&) = delete;
@@ -85,6 +99,11 @@ namespace vcpkg
 
         void upload(const std::string& payload);
         void flush(Filesystem& fs);
+
+        // exposed for testing
+        static constexpr View<MetricEntry<Metrics::DefineMetric>> get_define_metrics();
+        static constexpr View<MetricEntry<Metrics::StringMetric>> get_string_metrics();
+        static constexpr View<MetricEntry<Metrics::BoolMetric>> get_bool_metrics();
     };
 
     extern LockGuarded<Metrics> g_metrics;
