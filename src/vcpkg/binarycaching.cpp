@@ -1997,23 +1997,23 @@ namespace
                 return add_error(msg::format(msgUnknownBinaryProviderType), segments[0].first);
             }
 
+            static const std::map<StringLiteral, Metrics::DefineMetric> metric_names{
+                {"aws", Metrics::DefineMetric::BinaryCachingAws},
+                {"azblob", Metrics::DefineMetric::BinaryCachingAzBlob},
+                {"cos", Metrics::DefineMetric::BinaryCachingCos},
+                {"default", Metrics::DefineMetric::BinaryCachingDefault},
+                {"files", Metrics::DefineMetric::BinaryCachingFiles},
+                {"gcs", Metrics::DefineMetric::BinaryCachingGcs},
+                {"http", Metrics::DefineMetric::BinaryCachingHttp},
+                {"nuget", Metrics::DefineMetric::BinaryCachingNuget},
+            };
+            auto metrics = LockGuardPtr<Metrics>(g_metrics);
             for (const auto& cache_provider : state->binary_cache_providers)
             {
-                static const std::map<StringLiteral, Metrics::DefineMetric> metric_names{
-                    {"aws", Metrics::DefineMetric::BinaryCachingAws},
-                    {"azblob", Metrics::DefineMetric::BinaryCachingAzBlob},
-                    {"cos", Metrics::DefineMetric::BinaryCachingCos},
-                    {"default", Metrics::DefineMetric::BinaryCachingDefault},
-                    {"files", Metrics::DefineMetric::BinaryCachingFiles},
-                    {"gcs", Metrics::DefineMetric::BinaryCachingGcs},
-                    {"http", Metrics::DefineMetric::BinaryCachingHttp},
-                    {"nuget", Metrics::DefineMetric::BinaryCachingNuget},
-                };
-
                 auto it = metric_names.find(cache_provider);
                 if (it != metric_names.end())
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_property(it->second);
+                    metrics->track_property(it->second);
                 }
             }
         }

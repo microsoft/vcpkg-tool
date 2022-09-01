@@ -3,6 +3,7 @@
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.mac.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/uuid.h>
@@ -21,7 +22,7 @@ namespace
 {
     using namespace vcpkg;
 
-    static const std::map<Metrics::DefineMetric, std::string> SET_METRIC_NAMES{
+    static const std::map<Metrics::DefineMetric, std::string> DEFINE_METRIC_NAMES{
         {Metrics::DefineMetric::AssetSource, "asset-source"},
         {Metrics::DefineMetric::BinaryCachingAws, "binarycaching_aws"},
         {Metrics::DefineMetric::BinaryCachingAzBlob, "binarycaching_azblob"},
@@ -61,6 +62,7 @@ namespace
         {Metrics::StringMetric::RegistriesKindsUsed, "registries-kinds-used"},
         {Metrics::StringMetric::Title, "title"},
         {Metrics::StringMetric::UserMac, "user_mac"},
+        {Metrics::StringMetric::VcpkgVersion, "vcpkg_version"},
         {Metrics::StringMetric::Warning, "warning"},
     };
 
@@ -68,6 +70,19 @@ namespace
         {Metrics::BoolMetric::InstallManifestMode, "install_manifest_mode"},
         {Metrics::BoolMetric::OptionOverlayPorts, "option_overlay_ports"},
     };
+
+    template<typename T>
+    const std::string& get_metric_name(T metric, const std::map<T, std::string>& names)
+    {
+        auto it = names.find(metric);
+        if (it != names.end())
+        {
+            return it->second;
+        }
+        // All metric enums should have corresponding names
+        Debug::println("Error: Metric is missing a name");
+        Checks::exit_fail(VCPKG_LINE_INFO);
+    }
 }
 
 namespace vcpkg
@@ -296,17 +311,17 @@ namespace vcpkg
 
     void Metrics::track_property(DefineMetric metric)
     {
-        g_metricmessage.track_property(SET_METRIC_NAMES.at(metric), "defined");
+        g_metricmessage.track_property(get_metric_name(metric, DEFINE_METRIC_NAMES), "defined");
     }
 
     void Metrics::track_property(StringMetric metric, const std::string& value)
     {
-        g_metricmessage.track_property(STRING_METRIC_NAMES.at(metric), value);
+        g_metricmessage.track_property(get_metric_name(metric, STRING_METRIC_NAMES), value);
     }
 
     void Metrics::track_property(BoolMetric metric, bool value)
     {
-        g_metricmessage.track_property(BOOL_METRIC_NAMES.at(metric), value);
+        g_metricmessage.track_property(get_metric_name(metric, BOOL_METRIC_NAMES), value);
     }
 
     void Metrics::track_feature(const std::string& name, bool value) { g_metricmessage.track_feature(name, value); }
