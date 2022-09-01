@@ -146,71 +146,61 @@ namespace vcpkg::msg
             const char* example;
         };
 
-        std::string format_examples_for_args(StringView extra_comment, const FormatArgAbi* args, std::size_t arg_count);
-
-        template<::size_t M, ::size_t N>
-        inline std::string get_examples_for_args(const StringArray<M>& comment, const StringArray<N>& example)
-        {
-            if (comment.empty() && example.empty())
-            {
-                return std::string{};
-            }
-            if (comment.empty())
-            {
-                return std::string(example.data(), example.size());
-            }
-
-            if (example.empty())
-            {
-                return std::string(comment.data(), comment.size());
-            }
-
-            if (example[0] == ' ')
-            {
-                const auto out = comment + example;
-                return std::string(out.data(), out.size());
-            }
-
-            const auto out = comment + StringArray(" ") + example;
-            return std::string(out.data(), out.size());
-        }
-
         template<class Arg0>
         constexpr auto example_piece(const Arg0& arg)
         {
-            if constexpr (Arg0::real_example().empty())
+            if constexpr (Arg0::get_example_str().empty())
                 return StringArray{""};
             else
-                return StringArray{" "} + arg.real_example();
+                return StringArray{" "} + arg.get_example_str();
         }
 
         template<class Arg0, class... Args>
         constexpr auto example_piece(const Arg0& arg, Args... args)
         {
-            if constexpr (Arg0::real_example().empty())
+            if constexpr (Arg0::get_example_str().empty())
                 return example_piece(args...);
             else
-                return StringArray{" "} + arg.real_example() + example_piece(args...);
+                return StringArray{" "} + arg.get_example_str() + example_piece(args...);
         }
 
-        inline constexpr auto get_examples() { return StringArray{""}; }
+        constexpr auto get_examples() { return StringArray{""}; }
 
+        /// Only used for the first argument that has an example string to avoid inserting
+        /// a space in the beginning. All preceding arguments are handled by `example_piece`.
         template<class Arg0, class... Args>
-        inline constexpr auto get_examples(const Arg0& arg, Args... args)
+        constexpr auto get_examples(const Arg0& arg, Args... args)
         {
-            if constexpr (sizeof...(args) == 0)
+            // if first argument has no example string...
+            if constexpr (Arg0::get_example_str().empty())
             {
-                const StringArray out = arg.real_example();
-                return out;
+                // try again with the other arguments
+                return get_examples(args...);
+            }
+            // is there a next argument?
+            else if constexpr (sizeof...(args) == 0)
+            {
+                return arg.get_example_str();
             }
             else
             {
-                const StringArray out = arg.real_example() + example_piece(args...);
-                return out;
+                return arg.get_example_str() + example_piece(args...);
             }
         }
 
-        ::size_t startup_register_message(StringLiteral name, StringLiteral format_string, std::string&& comment);
+        template<::size_t M, ::size_t N>
+        constexpr auto join_comment_and_examples(const StringArray<M>& comment, const StringArray<N>& example)
+        {
+            // For an empty StringArray<N> is N == 1
+            if constexpr (N == 1)
+                return comment;
+            else if constexpr (M == 1)
+                return example;
+            else
+                return comment + StringArray{" "} + example;
+        }
+
+        ::size_t startup_register_message(StringLiteral name, StringLiteral format_string, ZStringView comment);
 
         ::size_t number_of_messages();
 
@@ -282,14 +272,13 @@ namespace vcpkg::msg
     constexpr static struct NAME##_t                                                                                   \
     {                                                                                                                  \
         constexpr static const char* name = #NAME;                                                                     \
-        constexpr static ::vcpkg::StringArray example = EXAMPLE;                                                       \
-        constexpr static ::vcpkg::StringArray example_str = "An example of {" #NAME "} is " EXAMPLE ".";               \
-        constexpr static auto real_example()                                                                           \
+        constexpr static auto get_example_str()                                                                        \
         {                                                                                                              \
+            ::vcpkg::StringArray example = StringArray{EXAMPLE};                                                       \
             if constexpr (example.empty())                                                                             \
                 return example;                                                                                        \
             else                                                                                                       \
-                return example_str;                                                                                    \
+                return ::vcpkg::StringArray{"An example of {" #NAME "} is " EXAMPLE "."};                              \
         }                                                                                                              \
         template<class T>                                                                                              \
         detail::MessageArgument<NAME##_t, T> operator=(const T& t) const noexcept                                      \
@@ -348,17 +337,17 @@ namespace vcpkg::msg
     {                                                                                                                  \
         using is_message_type = void;                                                                                  \
         static constexpr ::vcpkg::StringLiteral name = #NAME;                                                          \
-        static constexpr ::vcpkg::StringArray extra_comment = COMMENT;                                                 \
         static constexpr ::vcpkg::StringLiteral default_format_string = __VA_ARGS__;                                   \
         static const ::size_t index;                                                                                   \
-        static constexpr ::vcpkg::StringArray example_str = vcpkg::msg::detail::get_examples ARGS;                     \
+        static constexpr ::vcpkg::StringArray comment_and_example = vcpkg::msg::detail::join_comment_and_examples(     \
+            ::vcpkg::StringArray{COMMENT}, vcpkg::msg::detail::get_examples ARGS);                                     \
     } msg##NAME VCPKG_UNUSED = {}
 
 #define REGISTER_MESSAGE(NAME)                                                                                         \
-    const ::size_t NAME##_msg_t::index = ::vcpkg::msg::detail::startup_register_message(                               \
-        NAME##_msg_t::name,                                                                                            \
-        NAME##_msg_t::default_format_string,                                                                           \
-        ::vcpkg::msg::detail::get_examples_for_args(NAME##_msg_t::extra_comment, NAME##_msg_t::example_str))
+    const ::size_t NAME##_msg_t::index =                                                                               \
+        ::vcpkg::msg::detail::startup_register_message(NAME##_msg_t::name,                                             \
+                                                       NAME##_msg_t::default_format_string,                            \
+                                                       static_cast<ZStringView>(NAME##_msg_t::comment_and_example))
 
 #define DECLARE_AND_REGISTER_MESSAGE(NAME, ARGS, COMMENT, ...)                                                         \
     DECLARE_MESSAGE(NAME, ARGS, COMMENT, __VA_ARGS__);                                                                 \
@@ -406,7 +395,6 @@ namespace vcpkg::msg
     {
         return format(msgErrorMessage).append(m, args...);
     }
-
 }
 
 namespace vcpkg
@@ -552,6 +540,7 @@ namespace vcpkg
                     (msg::value),
                     "example of {value} is 'foo bar {'",
                     "unbalanced brace in format string \"{value}\"");
+    DECLARE_MESSAGE(AllPackagesAreUpdated, (), "", "All installed packages are up-to-date with the local portfile.");
     DECLARE_MESSAGE(AlreadyInstalled, (msg::spec), "", "{spec} is already installed");
     DECLARE_MESSAGE(AlreadyInstalledNotHead,
                     (msg::spec),
@@ -704,6 +693,7 @@ namespace vcpkg
                     (msg::spec, msg::path),
                     "",
                     "PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).");
+    DECLARE_MESSAGE(ClearingContents, (msg::path), "", "Clearing contents of {path}");
     DECLARE_MESSAGE(CmakeTargetsExcluded, (msg::count), "", "note: {count} additional targets are not displayed.");
     DECLARE_MESSAGE(CMakeTargetsUsage,
                     (msg::package_name),
@@ -725,10 +715,7 @@ namespace vcpkg
                     "{command_line}\n"
                     "failed with the following results:");
     DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":");
-    DECLARE_MESSAGE(ConflictingValuesForOption,
-                    (msg::value),
-                    "'{value}' is a command option.",
-                    "conflicting values specified for '--{value}'.");
+    DECLARE_MESSAGE(ConflictingValuesForOption, (msg::option), "", "conflicting values specified for '--{option}'.");
     DECLARE_MESSAGE(ConstraintViolation, (), "", "Found a constraint violation:");
     DECLARE_MESSAGE(ControlAndManifestFilesPresent,
                     (msg::path),
@@ -740,6 +727,7 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "Could not deduce nuget id and version from filename: {path}");
+    DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
     DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: \"{path}\"");
     DECLARE_MESSAGE(CurlReportedUnexpectedResults,
                     (msg::command_line, msg::actual),
@@ -752,6 +740,7 @@ namespace vcpkg
                     "=== curl output ===\n"
                     "{actual}\n"
                     "=== end curl output ===");
+    DECLARE_MESSAGE(DateTableHeader, (), "", "Date");
     DECLARE_MESSAGE(DefaultBrowserLaunched, (msg::url), "", "Default browser launched to {url}.");
     DECLARE_MESSAGE(DefaultFlag, (msg::option), "", "Defaulting to --{option} being on.");
     DECLARE_MESSAGE(DefaultPathToBinaries,
@@ -774,6 +763,8 @@ namespace vcpkg
                     (),
                     "This message is normally displayed only in development.",
                     "Downloading latest vcpkg-ce bundle...");
+    DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundle, (msg::version), "", "Downloading standalone bundle {version}.");
+    DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundleLatest, (), "", "Downloading latest standalone bundle.");
     DECLARE_MESSAGE(DownloadRootsDir,
                     (msg::env_var),
                     "",
@@ -783,6 +774,7 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is a command line option.",
                     "'--{value}' specified multiple times.");
+    DECLARE_MESSAGE(ElapsedTimeForChecks, (msg::elapsed), "", "Time to determine pass/fail: {elapsed}");
     DECLARE_MESSAGE(EmailVcpkgTeam, (msg::url), "", "Send an email to {url} with any feedback.");
     DECLARE_MESSAGE(EmptyArg, (msg::option), "", "The option --{option} must be passed a non-empty argument.");
     DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
@@ -857,6 +849,11 @@ namespace vcpkg
     DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
     DECLARE_MESSAGE(ExcludedPackages, (), "", "The following packages are excluded:");
     DECLARE_MESSAGE(
+        ExpectedCascadeFailure,
+        (msg::expected, msg::actual),
+        "{expected} is the expected number of cascade failures and {actual} is the actual number of cascade failures.",
+        "Expected {expected} cascade failure, but there were {actual} cascade failures.");
+    DECLARE_MESSAGE(
         ExpectedCharacterHere,
         (msg::expected),
         "{expected} is a locale-invariant delimiter; for example, the ':' or '=' in 'zlib:x64-windows=skip'",
@@ -864,10 +861,7 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' here");
     DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
-    DECLARE_MESSAGE(ExpectedValueForOption,
-                    (msg::value),
-                    "'{value}' is a command option.",
-                    "expected value after '{value}'.");
+    DECLARE_MESSAGE(ExpectedValueForOption, (msg::option), "", "expected value after --{option}.");
     DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
     DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
     DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":");
@@ -876,7 +870,11 @@ namespace vcpkg
                     "",
                     "No files to format.\nPlease pass either --all, or the explicit files to format or convert.");
     DECLARE_MESSAGE(FailedToObtainLocalPortGitSha, (), "", "Failed to obtain git SHAs for local ports.");
-    DECLARE_MESSAGE(FailedToParseBinParagraph,
+    DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
+                    (),
+                    "",
+                    "Failed to parse CMake console output to locate block start/end markers.");
+    DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                     (msg::error_msg),
                     "'{error_msg}' is the error message for failing to parse the Binary Paragraph.",
                     "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at "
@@ -891,10 +889,6 @@ namespace vcpkg
                     "remove {spec} and re-attempt.");
     DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
     DECLARE_MESSAGE(FailedToObtainPackageVersion, (), "", "Cannot find desired package version.");
-    DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
-                    (),
-                    "",
-                    "Failed to parse CMake console output to locate block start/end markers.");
     DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse control file: {path}");
     DECLARE_MESSAGE(FailedToParseJson, (msg::path), "", "Failed to parse JSON file: {path}");
     DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: {path}");
@@ -917,6 +911,12 @@ namespace vcpkg
                     "on how to provide credentials.");
     DECLARE_MESSAGE(FeedbackAppreciated, (), "", "Thank you for your feedback!");
     DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at \"{path}\".");
+    DECLARE_MESSAGE(FollowingPackagesMissingControl,
+                    (),
+                    "",
+                    "The following packages do not have a valid CONTROL or vcpkg.json:");
+    DECLARE_MESSAGE(FollowingPackagesNotInstalled, (), "", "The following packages are not installed:");
+    DECLARE_MESSAGE(FollowingPackagesUpgraded, (), "", "The following packages are up-to-date:");
     DECLARE_MESSAGE(
         ForceSystemBinariesOnWeirdPlatforms,
         (),
@@ -994,6 +994,10 @@ namespace vcpkg
     DECLARE_MESSAGE(HelpVersionCommand, (), "", "Display version information.");
     DECLARE_MESSAGE(IllegalFeatures, (), "", "List of features is not allowed in this context");
     DECLARE_MESSAGE(IllegalPlatformSpec, (), "", "Platform qualifier is not allowed in this context");
+    DECLARE_MESSAGE(ImproperShaLength,
+                    (msg::value),
+                    "{value} is a sha.",
+                    "SHA512's must be 128 hex characters: {value}");
     DECLARE_MESSAGE(IncorrectNumberOfArgs,
                     (msg::command_name, msg::expected, msg::actual),
                     "'{expected}' is the required number of arguments. '{actual}' is the number of arguments provided.",
@@ -1002,6 +1006,11 @@ namespace vcpkg
                     (msg::env_var),
                     "In this context 'editor' means IDE",
                     "You can also set the environment variable '{env_var}' to your editor of choice.");
+    DECLARE_MESSAGE(InitRegistryFailedNoRepo,
+                    (msg::path, msg::command_line),
+                    "",
+                    "Could not create a registry at {path} because this is not a git repository root.\nUse `git init "
+                    "{command_line}` to create a git repository in this folder.");
     DECLARE_MESSAGE(InstalledPackages, (), "", "The following packages are already installed:");
     DECLARE_MESSAGE(InstalledRequestedPackages, (), "", "All requested packages are currently installed.");
     DECLARE_MESSAGE(InstallingFromLocation,
@@ -1031,6 +1040,12 @@ namespace vcpkg
                     "",
                     "You may be able to install this tool via your system package manager ({command_line}).");
     DECLARE_MESSAGE(IntegrationFailed, (), "", "Integration was not applied.");
+    DECLARE_MESSAGE(InternalCICommand,
+                    (),
+                    "",
+                    "vcpkg ci is an internal command which will change incompatibly or be removed at any time.");
+    DECLARE_MESSAGE(InvalidArgMustBeAnInt, (msg::option), "", "--{option} must be an integer.");
+    DECLARE_MESSAGE(InvalidArgMustBePositive, (msg::option), "", "--{option} must be non-negative.");
     DECLARE_MESSAGE(InvalidArgument, (), "", "invalid argument");
     DECLARE_MESSAGE(
         InvalidArgumentRequiresAbsolutePath,
@@ -1088,6 +1103,7 @@ namespace vcpkg
                     (),
                     "",
                     "Value of --sort must be one of 'lexicographical', 'topological', 'reverse'.");
+    DECLARE_MESSAGE(InvalidCommitId, (msg::value), "'{value}' is a commit id.", "Invalid commit id {value}");
     DECLARE_MESSAGE(InvalidFilename,
                     (msg::value, msg::path),
                     "'{value}' is a list of invalid characters. I.e. \\/:*?<>|",
@@ -1101,6 +1117,7 @@ namespace vcpkg
         (msg::system_name, msg::value),
         "'{value}' is the linkage type vcpkg would did not understand. (Correct values would be static ofr dynamic)",
         "Invalid {system_name} linkage type: [{value}]");
+    DECLARE_MESSAGE(IrregularFile, (msg::path), "", "path was not a regular file: {path}");
     DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected \"{path}\" to be an object.");
     DECLARE_MESSAGE(JsonSwitch, (), "", "(Experimental) Request JSON output.");
     DECLARE_MESSAGE(LaunchingProgramFailed,
@@ -1204,11 +1221,7 @@ namespace vcpkg
                     "The message named {value} ends with a newline which should be added by formatting "
                     "rather than by localization.");
     DECLARE_MESSAGE(ManifestFormatCompleted, (), "", "Succeeded in formatting the manifest files.");
-    DECLARE_MESSAGE(MismatchedBinaryParagraphs,
-                    (msg::url),
-                    "A comparison of the original binary paragraph and serialized binary paragraph is expected.",
-                    "[sanity check] The serialized binary paragraph was different from the original binary "
-                    "paragraph.\nPlease open an issue at {url}, with the following output:");
+    DECLARE_MESSAGE(MismatchedFiles, (), "", "file to store does not match hash");
     DECLARE_MESSAGE(Missing7zHeader, (), "", "Unable to find 7z header.");
     DECLARE_MESSAGE(MissingArgFormatManifest,
                     (),
@@ -1220,6 +1233,7 @@ namespace vcpkg
                     "",
                     "Package {spec} is installed, but dependency {package_name} is not.");
     DECLARE_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
+    DECLARE_MESSAGE(MissingOption, (msg::option), "", "This command requires --{option}");
     DECLARE_MESSAGE(MissingPortSuggestPullRequest,
                     (),
                     "",
@@ -1259,6 +1273,10 @@ namespace vcpkg
     DECLARE_MESSAGE(NewVersionCannotBeEmpty, (), "", "--version cannot be empty.");
     DECLARE_MESSAGE(NoArgumentsForOption, (msg::option), "", "The option --{option} does not accept an argument.");
     DECLARE_MESSAGE(NoCachedPackages, (), "", "No packages are cached.");
+    DECLARE_MESSAGE(NoInstalledPackages,
+                    (),
+                    "The name 'search' is the name of a command that is not localized.",
+                    "No packages are installed. Did you mean `search`?");
     DECLARE_MESSAGE(NoLocalizationForMessages, (), "", "No localized messages for the following: ");
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
     DECLARE_MESSAGE(NugetPackageFileSucceededButCreationFailed,
@@ -1267,6 +1285,10 @@ namespace vcpkg
                     "NuGet package creation succeeded, but no .nupkg was produced. Expected: \"{path}\"");
     DECLARE_MESSAGE(OptionMustBeInteger, (msg::option), "", "Value of --{option} must be an integer.");
     DECLARE_MESSAGE(OptionRequired, (msg::option), "", "--{option} option is required.");
+    DECLARE_MESSAGE(OptionRequiresOption,
+                    (msg::value, msg::option),
+                    "{value} is a command line option.",
+                    "--{value} requires --{option}");
     DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph");
     DECLARE_MESSAGE(PackageFailedtWhileExtracting,
                     (msg::value, msg::path),
@@ -1307,6 +1329,10 @@ namespace vcpkg
                     (msg::package_name),
                     "",
                     "the baseline does not contain an entry for port {package_name}");
+    DECLARE_MESSAGE(PortsAdded, (msg::count), "", "The following {count} ports were added:");
+    DECLARE_MESSAGE(PortsNoDiff, (), "", "There were no changes in the ports between the two commits.");
+    DECLARE_MESSAGE(PortsRemoved, (msg::count), "", "The following {count} ports were removed:");
+    DECLARE_MESSAGE(PortsUpdated, (msg::count), "", "\nThe following {count} ports were updated:");
     DECLARE_MESSAGE(PortSupportsField, (msg::supports_expression), "", "(supports: \"{supports_expression}\")");
     DECLARE_MESSAGE(PortTypeConflict,
                     (msg::spec),
@@ -1335,6 +1361,7 @@ namespace vcpkg
                     (msg::vendor, msg::path),
                     "",
                     "Pushing {vendor} to \"{path}\" failed. Use --debug for more information.");
+    DECLARE_MESSAGE(RegistryCreated, (msg::path), "", "Successfully created registry at {path}");
     DECLARE_MESSAGE(ReplaceSecretsError,
                     (msg::error_msg),
                     "",
@@ -1352,6 +1379,18 @@ namespace vcpkg
                     "An example of env_var is \"HTTP(S)_PROXY\""
                     "'--' at the beginning must be preserved",
                     "-- Setting \"{env_var}\" environment variables to \"{url}\".");
+    DECLARE_MESSAGE(ShaPassedAsArgAndOption,
+                    (),
+                    "",
+                    "SHA512 passed as both an argument and as an option. Only pass one of these.");
+    DECLARE_MESSAGE(ShaPassedWithConflict,
+                    (),
+                    "",
+                    "SHA512 passed, but --skip-sha512 was also passed; only do one or the other.");
+    DECLARE_MESSAGE(SkipClearingInvalidDir,
+                    (msg::path),
+                    "",
+                    "Skipping clearing contents of {path} because it was not a directory.");
     DECLARE_MESSAGE(SourceFieldPortNameMismatch,
                     (msg::package_name, msg::path),
                     "{package_name} and \"{path}\" are both names of installable ports/packages. 'Source', "
@@ -1379,6 +1418,7 @@ namespace vcpkg
                     "",
                     "Specify the target architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')");
     DECLARE_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: \"{path}\"");
+    DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512");
     DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.");
     DECLARE_MESSAGE(SuggestResolution,
                     (msg::command_name, msg::option),
@@ -1399,6 +1439,7 @@ namespace vcpkg
                     "calling {system_api} failed with {exit_code} ({error_msg})");
     DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
     DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
+    DECLARE_MESSAGE(TotalTime, (msg::elapsed), "", "Total elapsed time: {elapsed}");
     DECLARE_MESSAGE(TwoFeatureFlagsSpecified,
                     (msg::value),
                     "'{value}' is a feature flag.",
@@ -1503,6 +1544,16 @@ namespace vcpkg
                     (msg::url, msg::old_value, msg::new_value),
                     "example of {old_value}, {new_value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
                     "updated registry '{url}': baseline '{old_value}' -> '{new_value}'");
+    DECLARE_MESSAGE(UpgradeInManifest,
+                    (),
+                    "",
+                    "The upgrade command does not currently support manifest mode. Instead, modify your vcpkg.json and "
+                    "run install.");
+    DECLARE_MESSAGE(
+        UpgradeRunWithNoDryRun,
+        (),
+        "",
+        "If you are sure you want to rebuild the above packages, run this command with the --no-dry-run option.");
     DECLARE_MESSAGE(UploadedBinaries, (msg::count, msg::vendor), "", "Uploaded binaries to {count} {vendor}.");
     DECLARE_MESSAGE(UploadedPackagesToVendor,
                     (msg::count, msg::elapsed, msg::vendor),
@@ -1532,6 +1583,7 @@ namespace vcpkg
                     (),
                     "",
                     "vcpkg-ce ('configure environment') is experimental and may change at any time.");
+    DECLARE_MESSAGE(VcpkgCommitTableHeader, (), "", "VCPKG Commit");
     DECLARE_MESSAGE(
         VcpkgCompletion,
         (msg::value, msg::path),
@@ -1549,6 +1601,7 @@ namespace vcpkg
         "vcpkg has crashed. Please create an issue at https://github.com/microsoft/vcpkg containing a brief summary of "
         "what you were trying to do and the following information.");
     DECLARE_MESSAGE(VcpkgInvalidCommand, (msg::command_name), "", "invalid command: {command_name}");
+    DECLARE_MESSAGE(VcpkgRootRequired, (), "", "Setting VCPKG_ROOT is required for standalone bootstrap.");
     DECLARE_MESSAGE(VcpkgRootsDir, (msg::env_var), "", "Specify the vcpkg root directory.\n(default: '{env_var}')");
     DECLARE_MESSAGE(VcpkgSendMetricsButDisabled, (), "", "passed --sendmetrics, but metrics are disabled.");
     DECLARE_MESSAGE(VersionCommandHeader,
@@ -1579,6 +1632,7 @@ namespace vcpkg
                     "",
                     "Failed to load port because versions are inconsistent. The file \"{path}\" contains the version "
                     "{actual_version}, but the version database indicates that it should be {expected_version}.");
+    DECLARE_MESSAGE(VersionTableHeader, (), "", "Version");
     DECLARE_MESSAGE(VSExaminedInstances, (), "", "The following Visual Studio instances were considered:");
     DECLARE_MESSAGE(VSExaminedPaths, (), "", "The following paths were examined for Visual Studio instances:");
     DECLARE_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance");
@@ -1591,4 +1645,6 @@ namespace vcpkg
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
+    DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
+    DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}.");
 }

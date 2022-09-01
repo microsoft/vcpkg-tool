@@ -37,9 +37,6 @@ export interface Exports extends Validation {
    */
   defines: Dictionary<string>;
 
-  /** allows contents of the artifact to be exported in categories. */
-  contents: Dictionary<Strings>;
-
   /** shell aliases (aka functions/etc) for exposing specific commands  */
   aliases: Dictionary<string>;
 }

@@ -282,7 +282,7 @@ namespace vcpkg
         {
             Checks::msg_exit_maybe_upgrade(
                 VCPKG_LINE_INFO,
-                msg::format(msgFailedToParseBinParagraph, msg::error_msg = parsed_paragraph.error())
+                msg::format(msgFailedToParseSerializedBinParagraph, msg::error_msg = parsed_paragraph.error())
                     .append_raw("\n" + my_paragraph));
         }
 

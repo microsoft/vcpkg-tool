@@ -38,8 +38,8 @@ namespace vcpkg::Commands::Info
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         if (!args.output_json())
         {
-            Checks::exit_maybe_upgrade(
-                VCPKG_LINE_INFO, "This command currently requires --%s", VcpkgCmdArguments::JSON_SWITCH);
+            Checks::msg_exit_maybe_upgrade(
+                VCPKG_LINE_INFO, msgMissingOption, msg::option = VcpkgCmdArguments::JSON_SWITCH);
         }
 
         const bool installed = Util::Sets::contains(options.switches, OPTION_INSTALLED);
@@ -47,7 +47,10 @@ namespace vcpkg::Commands::Info
 
         if (transitive && !installed)
         {
-            Checks::exit_with_message(VCPKG_LINE_INFO, "--%s requires --%s", OPTION_TRANSITIVE, OPTION_INSTALLED);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                          msgOptionRequiresOption,
+                                          msg::value = OPTION_TRANSITIVE,
+                                          msg::option = OPTION_INSTALLED);
         }
 
         if (installed)
@@ -106,7 +109,7 @@ namespace vcpkg::Commands::Info
                 }
             }
             response.insert("results", std::move(results));
-            print2(Json::stringify(response));
+            msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(response));
         }
         else
         {
@@ -140,7 +143,7 @@ namespace vcpkg::Commands::Info
                 }
             }
             response.insert("results", std::move(results));
-            print2(Json::stringify(response));
+            msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(response));
         }
     }
 }
