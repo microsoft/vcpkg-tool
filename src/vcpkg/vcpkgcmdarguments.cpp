@@ -571,7 +571,6 @@ namespace vcpkg
         table.format("vcpkg update", msg::format(msgHelpUpdateCommand));
         table.format("vcpkg remove --outdated", msg::format(msgHelpRemoveOutdatedCommand));
         table.format("vcpkg upgrade", msg::format(msgHelpUpgradeCommand));
-        table.format("vcpkg x-history <pkg>", msg::format(msgHelpHistoryCommand));
         table.format("vcpkg hash <file> [alg]", msg::format(msgHelpHashCommand));
         table.format("vcpkg help topics", msg::format(msgHelpTopicsCommand));
         table.format("vcpkg help <topic>", msg::format(msgHelpTopicCommand));

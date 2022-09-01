@@ -979,7 +979,6 @@ namespace vcpkg
                     "",
                     "Formats all vcpkg.json files. Run this before committing to vcpkg.");
     DECLARE_MESSAGE(HelpHashCommand, (), "", "Hash a file by specific algorithm, default SHA512.");
-    DECLARE_MESSAGE(HelpHistoryCommand, (), "", "(Experimental) Show the history of versions of a package.");
     DECLARE_MESSAGE(HelpInitializeRegistryCommand, (), "", "Initializes a registry in the directory <path>.");
     DECLARE_MESSAGE(HelpInstallCommand, (), "", "Install a package.");
     DECLARE_MESSAGE(HelpListCommand, (), "", "List installed packages.");
