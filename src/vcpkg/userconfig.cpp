@@ -25,12 +25,12 @@ namespace vcpkg
         try
         {
             auto maybe_pghs = Paragraphs::get_paragraphs(fs, get_config_path());
-            if (const auto p_pghs = maybe_pghs.get())
+            if (auto *const p_pghs = maybe_pghs.get())
             {
                 const auto& pghs = *p_pghs;
 
                 Paragraph keys;
-                if (pghs.size() > 0) keys = pghs[0];
+                if (!pghs.empty()) keys = pghs[0];
 
                 for (size_t x = 1; x < pghs.size(); ++x)
                 {

@@ -96,7 +96,7 @@ namespace vcpkg
         if (const auto field = maybe_field.get())
             out = std::move(*field);
         else
-            missing_fields.push_back(fieldname.data());
+            missing_fields.emplace_back(fieldname.data());
     }
     void ParagraphParser::optional_field(StringView fieldname, std::pair<std::string&, TextRowCol&> out)
     {

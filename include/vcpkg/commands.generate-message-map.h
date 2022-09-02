@@ -17,6 +17,6 @@ namespace vcpkg::Commands
 
     struct GenerateDefaultMessageMapCommand : BasicCommand
     {
-        void perform_and_exit(const VcpkgCmdArguments&, Filesystem&) const override;
+        virtual void perform_and_exit(const VcpkgCmdArguments&, Filesystem&) const override;
     };
 }

@@ -26,8 +26,8 @@ using Test::PackageSpecMap;
 /// Assert that the given action an install of given features from given package.
 /// </summary>
 static void features_check(InstallPlanAction& plan,
-                           std::string pkg_name,
-                           std::vector<std::string> expected_features,
+                           const std::string& pkg_name,
+                           const std::vector<std::string>& expected_features,
                            Triplet triplet = Test::X86_WINDOWS)
 {
     const auto& feature_list = plan.feature_list;
@@ -52,7 +52,7 @@ static void features_check(InstallPlanAction& plan,
 /// <summary>
 /// Assert that the given action is a remove of given package.
 /// </summary>
-static void remove_plan_check(RemovePlanAction& plan, std::string pkg_name, Triplet triplet = Test::X86_WINDOWS)
+static void remove_plan_check(RemovePlanAction& plan, const std::string& pkg_name, Triplet triplet = Test::X86_WINDOWS)
 {
     REQUIRE(plan.spec.triplet().to_string() == triplet.to_string());
     REQUIRE(pkg_name == plan.spec.name());
@@ -143,7 +143,7 @@ TEST_CASE ("existing package scheme", "[plan]")
         map_port, var_provider, Test::parse_test_fspecs("a"), StatusParagraphs(std::move(status_paragraphs)));
 
     REQUIRE(install_plan.size() == 1);
-    const auto p = &install_plan.already_installed.at(0);
+    auto *const p = &install_plan.already_installed.at(0);
     REQUIRE(p->spec.name() == "a");
     REQUIRE(p->plan_type == InstallPlanType::ALREADY_INSTALLED);
     REQUIRE(p->request_type == RequestType::USER_REQUESTED);
@@ -164,12 +164,12 @@ TEST_CASE ("user requested package scheme", "[plan]")
         map_port, var_provider, Test::parse_test_fspecs("a"), StatusParagraphs(std::move(status_paragraphs)));
 
     REQUIRE(install_plan.size() == 2);
-    const auto p = &install_plan.install_actions.at(0);
+    const auto *const p = &install_plan.install_actions.at(0);
     REQUIRE(p->spec.name() == "b");
     REQUIRE(p->plan_type == InstallPlanType::BUILD_AND_INSTALL);
     REQUIRE(p->request_type == RequestType::AUTO_SELECTED);
 
-    const auto p2 = &install_plan.install_actions.at(1);
+    const auto *const p2 = &install_plan.install_actions.at(1);
     REQUIRE(p2->spec.name() == "a");
     REQUIRE(p2->plan_type == InstallPlanType::BUILD_AND_INSTALL);
     REQUIRE(p2->request_type == RequestType::USER_REQUESTED);

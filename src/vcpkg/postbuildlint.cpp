@@ -58,7 +58,7 @@ namespace vcpkg::PostBuildLint
             return ret;
         }();
 
-        const auto tsv = toolset_version.get();
+        const auto *const tsv = toolset_version.get();
         if (tsv && (*tsv) == "v120")
         {
             return V_NO_120;
@@ -88,10 +88,8 @@ namespace vcpkg::PostBuildLint
                        "files should be installed\n");
                 return LintStatus::PROBLEM_DETECTED;
             }
-            else
-            {
-                return LintStatus::SUCCESS;
-            }
+
+            return LintStatus::SUCCESS;
         }
 
         if (!fs.exists(include_dir, IgnoreErrors{}) || fs.is_empty(include_dir, IgnoreErrors{}))
@@ -455,7 +453,7 @@ namespace vcpkg::PostBuildLint
 
     static LintStatus check_uwp_bit_of_dlls(const std::string& expected_system_name,
                                             const std::vector<Path>& dlls,
-                                            const Path dumpbin_exe)
+                                            const Path& dumpbin_exe)
     {
         if (expected_system_name != "WindowsStore")
         {
@@ -467,7 +465,7 @@ namespace vcpkg::PostBuildLint
         {
             auto cmd_line = Command(dumpbin_exe).string_arg("/headers").string_arg(dll);
             const auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd_line), "dumpbin");
-            if (const auto output = maybe_output.get())
+            if (const auto *const output = maybe_output.get())
             {
                 if (output->find("App Container") == std::string::npos)
                 {

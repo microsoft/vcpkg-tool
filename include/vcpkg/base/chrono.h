@@ -59,7 +59,7 @@ namespace vcpkg
 
     struct StatsTimer
     {
-        StatsTimer(std::atomic<uint64_t>& stat) : m_stat(&stat), m_timer(ElapsedTimer::create_started()) { }
+        explicit StatsTimer(std::atomic<uint64_t>& stat) : m_stat(&stat), m_timer(ElapsedTimer::create_started()) { }
         ~StatsTimer() { m_stat->fetch_add(m_timer.us_64()); }
 
     private:

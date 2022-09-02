@@ -101,5 +101,5 @@ TEST_CASE ("find outdated packages none", "[update]")
     auto pkgs = SortedVector<OutdatedPackage, decltype(&OutdatedPackage::compare_by_name)>(
         Update::find_outdated_packages(provider, status_db), &OutdatedPackage::compare_by_name);
 
-    REQUIRE(pkgs.size() == 0);
+    REQUIRE(pkgs.empty());
 }

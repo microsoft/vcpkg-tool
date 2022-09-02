@@ -17,7 +17,6 @@ namespace vcpkg
         static_assert(std::is_object<T>::value, "Span<non-object-type> is illegal");
 
         using value_type = std::decay_t<T>;
-        using element_type = T;
         using pointer = std::add_pointer_t<T>;
         using reference = std::add_lvalue_reference_t<T>;
         using iterator = pointer;

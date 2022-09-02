@@ -21,13 +21,13 @@ namespace vcpkg::Commands::Z_PrintConfig
 
     static void opt_add(Json::Object& obj, StringLiteral key, const Optional<Path>& opt)
     {
-        if (auto p = opt.get())
+        if (const auto *p = opt.get())
         {
             obj.insert(key, p->native());
         }
     }
 
-    void PrintConfigCommand::perform_and_exit(const VcpkgCmdArguments&,
+    void PrintConfigCommand::perform_and_exit(const VcpkgCmdArguments& cmdArguments [[maybe_unused]],
                                               const VcpkgPaths& paths,
                                               Triplet default_triplet,
                                               Triplet host_triplet) const
@@ -38,7 +38,7 @@ namespace vcpkg::Commands::Z_PrintConfig
         obj.insert("host_triplet", host_triplet.canonical_name());
         obj.insert("vcpkg_root", paths.root.native());
         obj.insert("tools", paths.tools.native());
-        if (auto i = paths.maybe_installed().get())
+        if (const auto *i = paths.maybe_installed().get())
         {
             obj.insert("installed", i->root().native());
         }

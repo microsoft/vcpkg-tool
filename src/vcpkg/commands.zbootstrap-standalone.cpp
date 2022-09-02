@@ -8,8 +8,6 @@
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
-#include <string>
-
 namespace vcpkg::Commands
 {
     static const CommandStructure COMMAND_STRUCTURE = {
@@ -41,7 +39,7 @@ namespace vcpkg::Commands
             fs, bundle_uri, bundle_tarball, std::string(MACRO_TO_STRING(VCPKG_STANDALONE_BUNDLE_SHA)));
 #else  // ^^^ VCPKG_STANDALONE_BUNDLE_SHA / !VCPKG_STANDALONE_BUNDLE_SHA vvv
         msg::println(Color::warning, msgDownloadingVcpkgStandaloneBundleLatest);
-        const auto bundle_uri =
+        const auto *const bundle_uri =
             "https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-standalone-bundle.tar.gz";
         download_manager.download_file(fs, bundle_uri, bundle_tarball, nullopt);
 #endif // ^^^ !VCPKG_STANDALONE_BUNDLE_SHA

@@ -12,7 +12,7 @@ namespace vcpkg::Commands::List
 {
     static constexpr StringLiteral OPTION_FULLDESC = "x-full-desc"; // TODO: This should find a better home, eventually
 
-    static void do_print_json(std::vector<const vcpkg::StatusParagraph*> installed_packages)
+    static void do_print_json(const std::vector<const vcpkg::StatusParagraph*>& installed_packages)
     {
         Json::Object obj;
         for (const StatusParagraph* status_paragraph : installed_packages)
@@ -121,7 +121,7 @@ namespace vcpkg::Commands::List
 
         if (!args.command_arguments.empty())
         {
-            auto& query = args.command_arguments[0];
+            const auto& query = args.command_arguments[0];
             auto pghs = Util::filter(installed_packages, [query](const StatusParagraph* status_paragraph) {
                 return Strings::case_insensitive_ascii_contains(status_paragraph->package.displayname(), query);
             });

@@ -13,7 +13,7 @@ namespace vcpkg
 {
     struct NullOpt
     {
-        explicit constexpr NullOpt(int) { }
+        explicit constexpr NullOpt(int n VCPKG_UNUSED) { }
     };
 
     const static constexpr NullOpt nullopt{0};
@@ -278,10 +278,10 @@ namespace vcpkg
         details::OptionalStorage<T> m_base;
 
     public:
-        constexpr Optional() noexcept { }
+        constexpr Optional() noexcept = default;
 
         // Constructors are intentionally implicit
-        constexpr Optional(NullOpt) { }
+        constexpr Optional(NullOpt n VCPKG_UNUSED) { }
 
         template<class U, class = std::enable_if_t<!std::is_same<std::decay_t<U>, Optional>::value>>
         constexpr Optional(U&& t) : m_base(std::forward<U>(t))
@@ -434,12 +434,12 @@ namespace vcpkg
     template<class T, class U>
     auto operator==(const Optional<T>& lhs, const U& rhs) -> decltype(*lhs.get() == rhs)
     {
-        return lhs.has_value() ? *lhs.get() == rhs : false;
+        return lhs.has_value() && *lhs.get() == rhs;
     }
     template<class T, class U>
     auto operator==(const T& lhs, const Optional<U>& rhs) -> decltype(lhs == *rhs.get())
     {
-        return rhs.has_value() ? lhs == *rhs.get() : false;
+        return rhs.has_value() && lhs == *rhs.get();
     }
 
     template<class T, class U>
@@ -454,11 +454,11 @@ namespace vcpkg
     template<class T, class U>
     auto operator!=(const Optional<T>& lhs, const U& rhs) -> decltype(*lhs.get() != rhs)
     {
-        return lhs.has_value() ? *lhs.get() != rhs : true;
+        return !lhs.has_value() || *lhs.get() != rhs;
     }
     template<class T, class U>
     auto operator!=(const T& lhs, const Optional<U>& rhs) -> decltype(lhs != *rhs.get())
     {
-        return rhs.has_value() ? lhs != *rhs.get() : true;
+        return !rhs.has_value() || lhs != *rhs.get();
     }
 }

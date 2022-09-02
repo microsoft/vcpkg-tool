@@ -47,8 +47,8 @@ namespace vcpkg
     {
         Unicode::Utf8Decoder it;
         Unicode::Utf8Decoder start_of_line;
-        int row;
-        int column;
+        int row{};
+        int column{};
     };
 
     struct ParseMessage
@@ -126,7 +126,7 @@ namespace vcpkg
         char32_t cur() const { return m_it == m_it.end() ? Unicode::end_of_file : *m_it; }
         SourceLoc cur_loc() const { return {m_it, m_start_of_line, m_row, m_column}; }
         TextRowCol cur_rowcol() const { return {m_row, m_column}; }
-        char32_t next();
+        virtual char32_t next();
         bool at_eof() const { return m_it == m_it.end(); }
 
         void add_error(std::string message) { add_error(std::move(message), cur_loc()); }

@@ -27,7 +27,7 @@ namespace
 
 namespace vcpkg::Commands::CIClean
 {
-    void perform_and_exit(const VcpkgCmdArguments&, const VcpkgPaths& paths)
+    void perform_and_exit(const VcpkgCmdArguments& args [[maybe_unused]], const VcpkgPaths& paths)
     {
         using vcpkg::print2;
         auto& fs = paths.get_filesystem();

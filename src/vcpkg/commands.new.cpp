@@ -13,15 +13,15 @@ namespace
 {
     using namespace vcpkg;
 
-    static constexpr StringLiteral OPTION_APPLICATION = "application";
-    static constexpr StringLiteral OPTION_SINGLE_FILE = "single-file";
+    constexpr StringLiteral OPTION_APPLICATION = "application";
+    constexpr StringLiteral OPTION_SINGLE_FILE = "single-file";
 
-    static constexpr StringLiteral SETTING_NAME = "name";
-    static constexpr StringLiteral SETTING_VERSION = "version";
+    constexpr StringLiteral SETTING_NAME = "name";
+    constexpr StringLiteral SETTING_VERSION = "version";
 
-    static constexpr StringLiteral OPTION_VERSION_RELAXED = "version-relaxed";
-    static constexpr StringLiteral OPTION_VERSION_DATE = "version-date";
-    static constexpr StringLiteral OPTION_VERSION_STRING = "version-string";
+    constexpr StringLiteral OPTION_VERSION_RELAXED = "version-relaxed";
+    constexpr StringLiteral OPTION_VERSION_DATE = "version-date";
+    constexpr StringLiteral OPTION_VERSION_STRING = "version-string";
 
     const CommandSwitch SWITCHES[] = {
         {OPTION_APPLICATION, "Create an application manifest (don't require name or version)."},
@@ -180,7 +180,7 @@ namespace vcpkg::Commands
         {
             // fill out the default baseline if we don't have one yet
             auto maybe_current_builtin_sha = paths.get_current_git_sha();
-            if (auto current_builtin_sha = maybe_current_builtin_sha.get())
+            if (auto *current_builtin_sha = maybe_current_builtin_sha.get())
             {
                 RegistryConfig default_registry;
                 default_registry.kind.emplace("git");

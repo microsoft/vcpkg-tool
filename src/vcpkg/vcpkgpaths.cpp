@@ -95,7 +95,7 @@ namespace vcpkg
     static Optional<ManifestConfiguration> config_from_manifest(const Path& manifest_path,
                                                                 const Optional<ManifestAndPath>& manifest_doc)
     {
-        if (auto manifest = manifest_doc.get())
+        if (const auto* manifest = manifest_doc.get())
         {
             return parse_manifest_configuration(manifest_path, manifest->manifest).value_or_exit(VCPKG_LINE_INFO);
         }
@@ -142,9 +142,9 @@ namespace vcpkg
     {
         ConfigurationAndSource ret;
 
-        if (auto manifest = manifest_data.get())
+        if (auto* manifest = manifest_data.get())
         {
-            if (auto config = manifest->config.get())
+            if (auto* config = manifest->config.get())
             {
                 print2(Color::warning,
                        "Embedding `vcpkg-configuration` in a manifest file is an EXPERIMENTAL feature.\n");
@@ -176,16 +176,16 @@ namespace vcpkg
             }
         }
 
-        if (auto config = config_data.get())
+        if (auto* config = config_data.get())
         {
             config->validate_as_active();
 
             ret = ConfigurationAndSource{std::move(*config), config_dir, ConfigurationSource::VcpkgConfigurationFile};
         }
 
-        if (auto manifest = manifest_data.get())
+        if (auto* manifest = manifest_data.get())
         {
-            if (auto p_baseline = manifest->builtin_baseline.get())
+            if (auto* p_baseline = manifest->builtin_baseline.get())
             {
                 LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_baseline", "defined");
                 if (!is_git_commit_sha(*p_baseline))
@@ -235,20 +235,20 @@ namespace vcpkg
             if (!ec)
             {
                 auto maybe_bundle_doc = Json::parse(bundle_file, bundle_file);
-                if (auto bundle_doc = maybe_bundle_doc.get())
+                if (auto* bundle_doc = maybe_bundle_doc.get())
                 {
                     const auto& first_object = bundle_doc->first.object(VCPKG_LINE_INFO);
-                    if (auto v = first_object.get("readonly"))
+                    if (const auto* v = first_object.get("readonly"))
                     {
                         ret.m_readonly = v->boolean(VCPKG_LINE_INFO);
                     }
 
-                    if (auto v = first_object.get("usegitregistry"))
+                    if (const auto* v = first_object.get("usegitregistry"))
                     {
                         ret.m_usegitregistry = v->boolean(VCPKG_LINE_INFO);
                     }
 
-                    if (auto v = first_object.get("embeddedsha"))
+                    if (const auto* v = first_object.get("embeddedsha"))
                     {
                         ret.m_embedded_git_sha = v->string(VCPKG_LINE_INFO).to_string();
                     }
@@ -486,7 +486,7 @@ namespace vcpkg
                                  [&fs](const std::string& p) { return fs.almost_canonical(p, VCPKG_LINE_INFO); }))
                 , m_artifacts_dir(downloads / "artifacts")
             {
-                if (auto i = m_installed.get())
+                if (const auto* i = m_installed.get())
                 {
                     Debug::print("Using installed-root: ", i->root(), '\n');
                 }
@@ -550,7 +550,7 @@ namespace vcpkg
 
     const InstalledPaths& VcpkgPaths::installed() const
     {
-        if (auto i = m_pimpl->m_installed.get())
+        if (const auto* i = m_pimpl->m_installed.get())
         {
             return *i;
         }
@@ -560,7 +560,7 @@ namespace vcpkg
 
     const Path& VcpkgPaths::buildtrees() const
     {
-        if (auto i = m_pimpl->buildtrees.get())
+        if (const auto* i = m_pimpl->buildtrees.get())
         {
             return *i;
         }
@@ -570,7 +570,7 @@ namespace vcpkg
 
     const Path& VcpkgPaths::packages() const
     {
-        if (auto i = m_pimpl->packages.get())
+        if (const auto* i = m_pimpl->packages.get())
         {
             return *i;
         }
@@ -661,7 +661,7 @@ namespace vcpkg
 
         // metrics from configuration
         {
-            auto default_registry = m_pimpl->m_registry_set->default_registry();
+            const auto* default_registry = m_pimpl->m_registry_set->default_registry();
             auto other_registries = m_pimpl->m_registry_set->registries();
             LockGuardPtr<Metrics> metrics(g_metrics);
             if (default_registry)
@@ -673,7 +673,7 @@ namespace vcpkg
                 metrics->track_property("registries-default-registry-kind", "disabled");
             }
 
-            if (other_registries.size() != 0)
+            if (!other_registries.empty())
             {
                 std::vector<StringLiteral> registry_kinds;
                 for (const auto& reg : other_registries)
