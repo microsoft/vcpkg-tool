@@ -23,14 +23,14 @@ namespace vcpkg
 
     namespace details
     {
-        template<class T, bool B = std::is_copy_constructible<T>::value>
+        template<class T, bool B = std::is_copy_constructible_v<T>>
         struct OptionalStorage
         {
-            constexpr OptionalStorage() noexcept : m_is_present(false), m_inactive() { }
+            constexpr OptionalStorage() noexcept : m_is_present(false) { }
             constexpr OptionalStorage(const T& t) : m_is_present(true), m_t(t) { }
             constexpr OptionalStorage(T&& t) : m_is_present(true), m_t(std::move(t)) { }
-            template<class U, class = std::enable_if_t<!std::is_reference<U>::value>>
-            explicit OptionalStorage(Optional<U>&& t) : m_is_present(false), m_inactive()
+            template<class U, class = std::enable_if_t<!std::is_reference_v<U>>>
+            explicit OptionalStorage(Optional<U>&& t) : m_is_present(false)
             {
                 if (auto p = t.get())
                 {
@@ -39,7 +39,7 @@ namespace vcpkg
                 }
             }
             template<class U>
-            explicit OptionalStorage(const Optional<U>& t) : m_is_present(false), m_inactive()
+            explicit OptionalStorage(const Optional<U>& t) : m_is_present(false)
             {
                 if (auto p = t.get())
                 {
@@ -53,12 +53,12 @@ namespace vcpkg
                 if (m_is_present) m_t.~T();
             }
 
-            OptionalStorage(const OptionalStorage& o) : m_is_present(o.m_is_present), m_inactive()
+            OptionalStorage(const OptionalStorage& o) : m_is_present(o.m_is_present)
             {
                 if (m_is_present) new (&m_t) T(o.m_t);
             }
 
-            OptionalStorage(OptionalStorage&& o) noexcept : m_is_present(o.m_is_present), m_inactive()
+            OptionalStorage(OptionalStorage&& o) noexcept : m_is_present(o.m_is_present)
             {
                 if (m_is_present)
                 {
@@ -138,7 +138,7 @@ namespace vcpkg
             bool m_is_present;
             union
             {
-                char m_inactive;
+                char m_inactive{};
                 T m_t;
             };
         };
@@ -146,7 +146,7 @@ namespace vcpkg
         template<class T>
         struct OptionalStorage<T, false>
         {
-            constexpr OptionalStorage() noexcept : m_is_present(false), m_inactive() { }
+            constexpr OptionalStorage() noexcept : m_is_present(false) { }
             constexpr OptionalStorage(T&& t) : m_is_present(true), m_t(std::move(t)) { }
 
             ~OptionalStorage() noexcept
@@ -154,7 +154,7 @@ namespace vcpkg
                 if (m_is_present) m_t.~T();
             }
 
-            OptionalStorage(OptionalStorage&& o) noexcept : m_is_present(o.m_is_present), m_inactive()
+            OptionalStorage(OptionalStorage&& o) noexcept : m_is_present(o.m_is_present)
             {
                 if (m_is_present)
                 {
@@ -216,7 +216,7 @@ namespace vcpkg
             bool m_is_present;
             union
             {
-                char m_inactive;
+                char m_inactive{};
                 T m_t;
             };
         };
@@ -278,12 +278,12 @@ namespace vcpkg
         details::OptionalStorage<T> m_base;
 
     public:
-        constexpr Optional() noexcept { }
+        constexpr Optional() noexcept = default;
 
         // Constructors are intentionally implicit
         constexpr Optional(NullOpt) { }
 
-        template<class U, class = std::enable_if_t<!std::is_same<std::decay_t<U>, Optional>::value>>
+        template<class U, class = std::enable_if_t<!std::is_same_v<std::decay_t<U>, Optional>>>
         constexpr Optional(U&& t) : m_base(std::forward<U>(t))
         {
         }
@@ -434,12 +434,12 @@ namespace vcpkg
     template<class T, class U>
     auto operator==(const Optional<T>& lhs, const U& rhs) -> decltype(*lhs.get() == rhs)
     {
-        return lhs.has_value() ? *lhs.get() == rhs : false;
+        return lhs.has_value() && *lhs.get() == rhs;
     }
     template<class T, class U>
     auto operator==(const T& lhs, const Optional<U>& rhs) -> decltype(lhs == *rhs.get())
     {
-        return rhs.has_value() ? lhs == *rhs.get() : false;
+        return rhs.has_value() && lhs == *rhs.get();
     }
 
     template<class T, class U>
@@ -454,11 +454,11 @@ namespace vcpkg
     template<class T, class U>
     auto operator!=(const Optional<T>& lhs, const U& rhs) -> decltype(*lhs.get() != rhs)
     {
-        return lhs.has_value() ? *lhs.get() != rhs : true;
+        return !lhs.has_value() || *lhs.get() != rhs;
     }
     template<class T, class U>
     auto operator!=(const T& lhs, const Optional<U>& rhs) -> decltype(lhs != *rhs.get())
     {
-        return rhs.has_value() ? lhs != *rhs.get() : true;
+        return !rhs.has_value() || lhs != *rhs.get();
     }
 }

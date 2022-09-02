@@ -17,9 +17,9 @@ namespace vcpkg
 
         SortedVector() : m_data(), m_comp() { }
         SortedVector(const SortedVector&) = default;
-        SortedVector(SortedVector&&) = default;
+        SortedVector(SortedVector&&) noexcept = default;
         SortedVector& operator=(const SortedVector&) = default;
-        SortedVector& operator=(SortedVector&&) = default;
+        SortedVector& operator=(SortedVector&&) noexcept = default;
 
         explicit SortedVector(const std::vector<Ty>& data) : m_data(data), m_comp() { sort_uniqueify(); }
         explicit SortedVector(const std::vector<Ty>& data, Compare comp) : m_data(data), m_comp(comp)

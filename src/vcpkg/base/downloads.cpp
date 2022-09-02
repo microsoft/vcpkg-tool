@@ -50,7 +50,7 @@ namespace vcpkg
             return ret;
         }
 
-        ExpectedS<int> query_status()
+        ExpectedS<int> query_status() const
         {
             DWORD dwStatusCode = 0;
             DWORD dwSize = sizeof(dwStatusCode);
@@ -174,13 +174,13 @@ namespace vcpkg
 
     ExpectedS<details::SplitURIView> details::split_uri_view(StringView uri)
     {
-        auto sep = std::find(uri.begin(), uri.end(), ':');
+        const auto* sep = std::find(uri.begin(), uri.end(), ':');
         if (sep == uri.end()) return Strings::concat("Error: unable to parse uri: '", uri, "'");
 
         StringView scheme(uri.begin(), sep);
         if (Strings::starts_with({sep + 1, uri.end()}, "//"))
         {
-            auto path_start = std::find(sep + 3, uri.end(), '/');
+            const auto* path_start = std::find(sep + 3, uri.end(), '/');
             return details::SplitURIView{scheme, StringView{sep + 1, path_start}, {path_start, uri.end()}};
         }
         // no authority
@@ -235,7 +235,7 @@ namespace vcpkg
                                      StringView sha512)
     {
         auto maybe_error = try_verify_downloaded_file_hash(fs, url, downloaded_path, sha512);
-        if (auto err = maybe_error.get())
+        if (auto* err = maybe_error.get())
         {
             Checks::exit_with_message(VCPKG_LINE_INFO, *err);
         }
@@ -247,10 +247,10 @@ namespace vcpkg
                                            const Path& download_part_path,
                                            std::string& errors)
     {
-        if (auto p = hash.get())
+        if (const auto* p = hash.get())
         {
             auto maybe_error = try_verify_downloaded_file_hash(fs, sanitized_url, download_part_path, *p);
-            if (auto err = maybe_error.get())
+            if (auto* err = maybe_error.get())
             {
                 Strings::append(errors, *err, '\n');
                 return false;
@@ -415,7 +415,7 @@ namespace vcpkg
             cmd.string_arg(url);
             cmd.string_arg("-T").string_arg(file);
             auto maybe_res = cmd_execute_and_capture_output(cmd);
-            if (auto res = maybe_res.get())
+            if (auto* res = maybe_res.get())
             {
                 if (res->exit_code == 0)
                 {
@@ -446,7 +446,7 @@ namespace vcpkg
                            code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
                        }
                    }).map_error([](LocalizedString&& ls) { return ls.extract_data(); });
-        if (auto pres = res.get())
+        if (auto* pres = res.get())
         {
             if (*pres != 0 || (code >= 100 && code < 200) || code >= 300)
             {
@@ -570,7 +570,7 @@ namespace vcpkg
         download_path_part_path += ".part";
 
 #if defined(_WIN32)
-        if (headers.size() == 0)
+        if (headers.empty())
         {
             auto split_uri = details::split_uri_view(url).value_or_exit(VCPKG_LINE_INFO);
             auto authority = split_uri.authority.value_or_exit(VCPKG_LINE_INFO).substr(2);
@@ -606,7 +606,7 @@ namespace vcpkg
         }
         const auto maybe_out = cmd_execute_and_capture_output(cmd);
         const auto sanitized_url = replace_secrets(url, secrets);
-        if (const auto out = maybe_out.get())
+        if (const auto* const out = maybe_out.get())
         {
             if (out->exit_code != 0)
             {
@@ -665,9 +665,9 @@ namespace vcpkg
                                                const Optional<std::string>& sha512) const
     {
         std::string errors;
-        if (urls.size() == 0)
+        if (urls.empty())
         {
-            if (auto hash = sha512.get())
+            if (const auto* hash = sha512.get())
             {
                 Strings::append(errors, "Error: No urls specified to download SHA: ", *hash);
             }
@@ -676,9 +676,9 @@ namespace vcpkg
                 Strings::append(errors, "Error: No urls specified and no hash specified.");
             }
         }
-        if (auto hash = sha512.get())
+        if (const auto* hash = sha512.get())
         {
-            if (auto read_template = m_config.m_read_url_template.get())
+            if (const auto* read_template = m_config.m_read_url_template.get())
             {
                 auto read_url = Strings::replace_all(*read_template, "<SHA>", *hash);
                 if (try_download_file(
@@ -687,9 +687,9 @@ namespace vcpkg
                     return read_url;
                 }
             }
-            else if (auto script = m_config.m_script.get())
+            else if (const auto* script = m_config.m_script.get())
             {
-                if (urls.size() != 0)
+                if (!urls.empty())
                 {
                     const auto download_path_part_path =
                         download_path + Strings::concat(".", get_process_id(), ".part");
@@ -724,7 +724,7 @@ namespace vcpkg
                     {
                         auto maybe_error =
                             try_verify_downloaded_file_hash(fs, "<mirror-script>", download_path_part_path, *hash);
-                        if (auto err = maybe_error.get())
+                        if (auto* err = maybe_error.get())
                         {
                             Strings::append(errors, *err);
                         }
@@ -744,13 +744,13 @@ namespace vcpkg
 
         if (!m_config.m_block_origin)
         {
-            if (urls.size() != 0)
+            if (!urls.empty())
             {
                 auto maybe_url =
                     try_download_files(fs, urls, headers, download_path, sha512, m_config.m_secrets, errors);
-                if (auto url = maybe_url.get())
+                if (const auto* url = maybe_url.get())
                 {
-                    if (auto hash = sha512.get())
+                    if (const auto* hash = sha512.get())
                     {
                         auto maybe_push = put_file_to_mirror(fs, download_path, *hash);
                         if (!maybe_push)

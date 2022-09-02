@@ -104,8 +104,6 @@ namespace vcpkg
         return valid_fields;
     }
 
-    void print_error_message(Span<const std::unique_ptr<ParseControlErrorInfo>> error_info_list);
-
     std::string Type::to_string(const Type& t)
     {
         switch (t.type)
@@ -136,7 +134,7 @@ namespace vcpkg
 
     namespace
     {
-        constexpr static struct Canonicalize
+        constexpr struct Canonicalize
         {
             struct FeatureLess
             {
@@ -368,7 +366,7 @@ namespace vcpkg
     ParseExpected<SourceControlFile> SourceControlFile::parse_control_file(StringView origin,
                                                                            std::vector<Paragraph>&& control_paragraphs)
     {
-        if (control_paragraphs.size() == 0)
+        if (control_paragraphs.empty())
         {
             auto ret = std::make_unique<ParseControlErrorInfo>();
             ret->name = origin.to_string();
@@ -404,9 +402,9 @@ namespace vcpkg
 
     struct PlatformExprDeserializer : Json::IDeserializer<PlatformExpression::Expr>
     {
-        virtual StringView type_name() const override { return "a platform expression"; }
+        StringView type_name() const override { return "a platform expression"; }
 
-        virtual Optional<PlatformExpression::Expr> visit_string(Json::Reader& r, StringView sv) override
+        Optional<PlatformExpression::Expr> visit_string(Json::Reader& r, StringView sv) override
         {
             auto opt =
                 PlatformExpression::parse_platform_expression(sv, PlatformExpression::MultipleBinaryOperators::Deny);
@@ -427,7 +425,7 @@ namespace vcpkg
 
     struct DependencyDeserializer : Json::IDeserializer<Dependency>
     {
-        virtual StringView type_name() const override { return "a dependency"; }
+        StringView type_name() const override { return "a dependency"; }
 
         constexpr static StringLiteral NAME = "name";
         constexpr static StringLiteral HOST = "host";
@@ -436,7 +434,7 @@ namespace vcpkg
         constexpr static StringLiteral PLATFORM = "platform";
         constexpr static StringLiteral VERSION_GE = "version>=";
 
-        virtual Span<const StringView> valid_fields() const override
+        Span<const StringView> valid_fields() const override
         {
             static const StringView t[] = {
                 NAME,
@@ -450,7 +448,7 @@ namespace vcpkg
             return t;
         }
 
-        virtual Optional<Dependency> visit_string(Json::Reader& r, StringView sv) override
+        Optional<Dependency> visit_string(Json::Reader& r, StringView sv) override
         {
             if (!Json::PackageNameDeserializer::is_package_name(sv))
             {
@@ -463,15 +461,15 @@ namespace vcpkg
             return dep;
         }
 
-        virtual Optional<Dependency> visit_object(Json::Reader& r, const Json::Object& obj) override
+        Optional<Dependency> visit_object(Json::Reader& r, const Json::Object& obj) override
         {
             Dependency dep;
 
-            for (const auto& el : obj)
+            for (const auto& [fst, snd] : obj)
             {
-                if (Strings::starts_with(el.first, "$"))
+                if (Strings::starts_with(fst, "$"))
                 {
-                    dep.extra_info.insert_or_replace(el.first.to_string(), el.second);
+                    dep.extra_info.insert_or_replace(fst.to_string(), snd);
                 }
             }
 
@@ -484,7 +482,7 @@ namespace vcpkg
             r.optional_object_field(obj, DEFAULT_FEATURES, default_features, Json::BooleanDeserializer::instance);
             if (!default_features)
             {
-                dep.features.push_back("core");
+                dep.features.emplace_back("core");
             }
             r.optional_object_field(obj, HOST, dep.host, Json::BooleanDeserializer::instance);
 
@@ -529,9 +527,9 @@ namespace vcpkg
 
     struct DependencyArrayDeserializer final : Json::IDeserializer<std::vector<Dependency>>
     {
-        virtual StringView type_name() const override { return "an array of dependencies"; }
+        StringView type_name() const override { return "an array of dependencies"; }
 
-        virtual Optional<std::vector<Dependency>> visit_array(Json::Reader& r, const Json::Array& arr) override
+        Optional<std::vector<Dependency>> visit_array(Json::Reader& r, const Json::Array& arr) override
         {
             return r.array_elements(arr, DependencyDeserializer::instance);
         }
@@ -549,11 +547,11 @@ namespace vcpkg
 
     struct DependencyOverrideDeserializer : Json::IDeserializer<DependencyOverride>
     {
-        virtual StringView type_name() const override { return "an override"; }
+        StringView type_name() const override { return "an override"; }
 
         constexpr static StringLiteral NAME = "name";
 
-        virtual Span<const StringView> valid_fields() const override
+        Span<const StringView> valid_fields() const override
         {
             static const StringView u[] = {NAME};
             static const auto t = Util::Vectors::concat<StringView>(schemed_deserializer_fields(), u);
@@ -576,15 +574,15 @@ namespace vcpkg
             port_version = schemed_version.version.port_version();
         }
 
-        virtual Optional<DependencyOverride> visit_object(Json::Reader& r, const Json::Object& obj) override
+        Optional<DependencyOverride> visit_object(Json::Reader& r, const Json::Object& obj) override
         {
             DependencyOverride dep;
 
-            for (const auto& el : obj)
+            for (const auto& [fst, snd] : obj)
             {
-                if (Strings::starts_with(el.first, "$"))
+                if (Strings::starts_with(fst, "$"))
                 {
-                    dep.extra_info.insert_or_replace(el.first.to_string(), el.second);
+                    dep.extra_info.insert_or_replace(fst.to_string(), snd);
                 }
             }
 
@@ -606,21 +604,20 @@ namespace vcpkg
     // `ArrayFeatureDeserializer` is used for the former, `FeatureDeserializer` is used for the latter.
     struct FeatureDeserializer : Json::IDeserializer<std::unique_ptr<FeatureParagraph>>
     {
-        virtual StringView type_name() const override { return "a feature"; }
+        StringView type_name() const override { return "a feature"; }
 
         constexpr static StringLiteral NAME = "name";
         constexpr static StringLiteral DESCRIPTION = "description";
         constexpr static StringLiteral DEPENDENCIES = "dependencies";
         constexpr static StringLiteral SUPPORTS = "supports";
 
-        virtual Span<const StringView> valid_fields() const override
+        Span<const StringView> valid_fields() const override
         {
             static const StringView t[] = {DESCRIPTION, DEPENDENCIES, SUPPORTS};
             return t;
         }
 
-        virtual Optional<std::unique_ptr<FeatureParagraph>> visit_object(Json::Reader& r,
-                                                                         const Json::Object& obj) override
+        Optional<std::unique_ptr<FeatureParagraph>> visit_object(Json::Reader& r, const Json::Object& obj) override
         {
             auto feature = std::make_unique<FeatureParagraph>();
             for (const auto& el : obj)
@@ -654,11 +651,11 @@ namespace vcpkg
 
     struct FeaturesFieldDeserializer : Json::IDeserializer<FeaturesObject>
     {
-        virtual StringView type_name() const override { return "a set of features"; }
+        StringView type_name() const override { return "a set of features"; }
 
-        virtual Span<const StringView> valid_fields() const override { return {}; }
+        Span<const StringView> valid_fields() const override { return {}; }
 
-        virtual Optional<FeaturesObject> visit_object(Json::Reader& r, const Json::Object& obj) override
+        Optional<FeaturesObject> visit_object(Json::Reader& r, const Json::Object& obj) override
         {
             FeaturesObject res;
             std::vector<std::string> extra_fields;
@@ -696,9 +693,9 @@ namespace vcpkg
 
     struct ContactsDeserializer final : Json::IDeserializer<Json::Object>
     {
-        virtual StringView type_name() const override { return "a dictionary of contacts"; }
+        StringView type_name() const override { return "a dictionary of contacts"; }
 
-        virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) override
+        Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) override
         {
             (void)r;
             return obj;
@@ -838,7 +835,7 @@ namespace vcpkg
             if (cur() == Unicode::end_of_file)
             {
                 add_error(msg::format(msgEmptyLicenseExpression));
-                return "";
+                return {};
             }
 
             Expecting expecting = Expecting::License;
@@ -933,13 +930,13 @@ namespace vcpkg
 
     struct LicenseExpressionDeserializer : Json::IDeserializer<std::string>
     {
-        virtual StringView type_name() const override { return "an SPDX license expression"; }
+        StringView type_name() const override { return "an SPDX license expression"; }
 
-        virtual Optional<std::string> visit_null(Json::Reader&) override { return {std::string()}; }
+        Optional<std::string> visit_null(Json::Reader&) override { return {std::string()}; }
 
         // if `sv` is a valid SPDX license expression, returns sv,
         // but with whitespace normalized
-        virtual Optional<std::string> visit_string(Json::Reader& r, StringView sv) override
+        Optional<std::string> visit_string(Json::Reader& r, StringView sv) override
         {
             auto parser = SpdxLicenseExpressionParser(sv, "");
             auto res = parser.parse();
@@ -963,9 +960,9 @@ namespace vcpkg
 
     struct BaselineCommitDeserializer final : Json::IDeserializer<std::string>
     {
-        virtual StringView type_name() const override { return "a vcpkg repository commit"; }
+        StringView type_name() const override { return "a vcpkg repository commit"; }
 
-        virtual Optional<std::string> visit_string(Json::Reader&, StringView s) override
+        Optional<std::string> visit_string(Json::Reader&, StringView s) override
         {
             // We allow non-sha strings here to allow the core vcpkg code to provide better error
             // messages including the current git commit
@@ -978,7 +975,7 @@ namespace vcpkg
 
     struct ManifestDeserializer : Json::IDeserializer<std::unique_ptr<SourceControlFile>>
     {
-        virtual StringView type_name() const override { return "a manifest"; }
+        StringView type_name() const override { return "a manifest"; }
 
         constexpr static StringLiteral NAME = "name";
         constexpr static StringLiteral MAINTAINERS = "maintainers";
@@ -996,7 +993,7 @@ namespace vcpkg
         constexpr static StringLiteral BUILTIN_BASELINE = "builtin-baseline";
         constexpr static StringLiteral VCPKG_CONFIGURATION = "vcpkg-configuration";
 
-        virtual Span<const StringView> valid_fields() const override
+        Span<const StringView> valid_fields() const override
         {
             static const StringView u[] = {
                 NAME,
@@ -1024,7 +1021,7 @@ namespace vcpkg
             const vcpkg::Json::Object& obj,
             vcpkg::SourceParagraph& spgh,
             vcpkg::Json::Reader& r,
-            std::unique_ptr<vcpkg::SourceControlFile>& control_file)
+            std::unique_ptr<vcpkg::SourceControlFile>& control_file) const
         {
             for (const auto& el : obj)
             {
@@ -1106,8 +1103,7 @@ namespace vcpkg
 
     struct ProjectManifestDeserializer final : ManifestDeserializer
     {
-        virtual Optional<std::unique_ptr<SourceControlFile>> visit_object(Json::Reader& r,
-                                                                          const Json::Object& obj) override
+        Optional<std::unique_ptr<SourceControlFile>> visit_object(Json::Reader& r, const Json::Object& obj) override
         {
             auto control_file = std::make_unique<SourceControlFile>();
             control_file->core_paragraph = std::make_unique<SourceParagraph>();
@@ -1137,8 +1133,7 @@ namespace vcpkg
 
     struct PortManifestDeserializer final : ManifestDeserializer
     {
-        virtual Optional<std::unique_ptr<SourceControlFile>> visit_object(Json::Reader& r,
-                                                                          const Json::Object& obj) override
+        Optional<std::unique_ptr<SourceControlFile>> visit_object(Json::Reader& r, const Json::Object& obj) override
         {
             auto control_file = std::make_unique<SourceControlFile>();
             control_file->core_paragraph = std::make_unique<SourceParagraph>();
@@ -1162,9 +1157,9 @@ namespace vcpkg
     // Extracts just the configuration information from a manifest object
     struct ManifestConfigurationDeserializer final : Json::IDeserializer<ManifestConfiguration>
     {
-        virtual StringView type_name() const override { return "a manifest"; }
+        StringView type_name() const override { return "a manifest"; }
 
-        virtual Optional<ManifestConfiguration> visit_object(Json::Reader& r, const Json::Object& obj) override
+        Optional<ManifestConfiguration> visit_object(Json::Reader& r, const Json::Object& obj) override
         {
             Optional<ManifestConfiguration> x;
             ManifestConfiguration& ret = x.emplace();
@@ -1309,7 +1304,7 @@ namespace vcpkg
                 if (auto r = check_deps(fpgh->dependencies)) return r;
             }
 
-            if (core_paragraph->overrides.size() != 0)
+            if (!core_paragraph->overrides.empty())
             {
                 LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ErrorVersioningDisabled);
                 return Strings::concat(
@@ -1551,9 +1546,9 @@ namespace vcpkg
             else
             {
                 auto& dep_obj = arr.push_back(Json::Object());
-                for (const auto& el : dep.extra_info)
+                for (const auto& [fst, snd] : dep.extra_info)
                 {
-                    dep_obj.insert(el.first.to_string(), el.second);
+                    dep_obj.insert(fst.to_string(), snd);
                 }
 
                 dep_obj.insert(DependencyDeserializer::NAME, dep.name);
@@ -1583,9 +1578,9 @@ namespace vcpkg
 
         auto serialize_override = [&](Json::Array& arr, const DependencyOverride& dep) {
             auto& dep_obj = arr.push_back(Json::Object());
-            for (const auto& el : dep.extra_info)
+            for (const auto& [fst, snd] : dep.extra_info)
             {
-                dep_obj.insert(el.first.to_string(), el.second);
+                dep_obj.insert(fst.to_string(), snd);
             }
 
             dep_obj.insert(DependencyOverrideDeserializer::NAME, Json::Value::string(dep.name));
@@ -1595,9 +1590,9 @@ namespace vcpkg
 
         Json::Object obj;
 
-        for (const auto& el : scf.core_paragraph->extra_info)
+        for (const auto& [fst, snd] : scf.core_paragraph->extra_info)
         {
-            obj.insert(el.first.to_string(), el.second);
+            obj.insert(fst.to_string(), snd);
         }
 
         if (auto configuration = scf.core_paragraph->vcpkg_configuration.get())

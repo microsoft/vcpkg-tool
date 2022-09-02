@@ -64,7 +64,7 @@ namespace
 
     struct GenericVersionDeserializer : Json::IDeserializer<Version>
     {
-        GenericVersionDeserializer(StringLiteral version_field) : m_version_field(version_field) { }
+        explicit GenericVersionDeserializer(StringLiteral version_field) : m_version_field(version_field) { }
         StringView type_name() const override { return "a version object"; }
 
         Optional<Version> visit_object(Json::Reader& r, const Json::Object& obj) override
@@ -102,7 +102,8 @@ namespace vcpkg
         bool has_relax = r.optional_object_field(obj, VERSION_RELAXED, version, version_relaxed_deserializer);
         bool has_semver = r.optional_object_field(obj, VERSION_SEMVER, version, version_semver_deserializer);
         bool has_date = r.optional_object_field(obj, VERSION_DATE, version, version_date_deserializer);
-        int num_versions = (int)has_exact + (int)has_relax + (int)has_semver + (int)has_date;
+        int num_versions = static_cast<int>(has_exact) + static_cast<int>(has_relax) + static_cast<int>(has_semver) +
+                           static_cast<int>(has_date);
         int port_version = version.second.value_or(0);
         bool has_port_version =
             r.optional_object_field(obj, PORT_VERSION, port_version, Json::NaturalNumberDeserializer::instance);

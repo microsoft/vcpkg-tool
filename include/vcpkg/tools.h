@@ -53,9 +53,9 @@ namespace vcpkg
     ExpectedL<Path> find_system_tar(const Filesystem& fs);
 
     std::unique_ptr<ToolCache> get_tool_cache(Filesystem& fs,
-                                              std::shared_ptr<const DownloadManager> downloader,
-                                              Path downloads,
-                                              Path xml_config,
-                                              Path tools,
+                                              const std::shared_ptr<const DownloadManager>& downloader,
+                                              const Path& downloads,
+                                              const Path& xml_config,
+                                              const Path& tools,
                                               RequireExactVersions abiToolVersionHandling);
 }

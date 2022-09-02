@@ -260,8 +260,8 @@ namespace vcpkg
         std::vector<std::string> passthrough_env_vars;
         std::vector<std::string> passthrough_env_vars_tracked;
 
-        Path toolchain_file() const;
-        bool using_vcvars() const;
+        [[nodiscard]] Path toolchain_file() const;
+        [[nodiscard]] bool using_vcvars() const;
 
     private:
         const VcpkgPaths& m_paths;
@@ -272,7 +272,9 @@ namespace vcpkg
     struct ExtendedBuildResult
     {
         explicit ExtendedBuildResult(BuildResult code);
-        explicit ExtendedBuildResult(BuildResult code, vcpkg::Path stdoutlog, std::vector<std::string>&& error_logs);
+        explicit ExtendedBuildResult(BuildResult code,
+                                     const vcpkg::Path& stdoutlog,
+                                     std::vector<std::string>&& error_logs);
         ExtendedBuildResult(BuildResult code, std::vector<FeatureSpec>&& unmet_deps);
         ExtendedBuildResult(BuildResult code, std::unique_ptr<BinaryControlFile>&& bcf);
 
@@ -316,7 +318,7 @@ namespace vcpkg
     };
 
     // could be constexpr, but we want to generate this and that's not constexpr in C++14
-    extern const std::array<BuildPolicy, size_t(BuildPolicy::COUNT)> ALL_POLICIES;
+    extern const std::array<BuildPolicy, static_cast<size_t>(BuildPolicy::COUNT)> ALL_POLICIES;
 
     const std::string& to_string(BuildPolicy policy);
     ZStringView to_cmake_variable(BuildPolicy policy);
@@ -324,9 +326,9 @@ namespace vcpkg
     struct BuildPolicies
     {
         BuildPolicies() = default;
-        BuildPolicies(std::unordered_map<BuildPolicy, bool>&& map) : m_policies(std::move(map)) { }
+        explicit BuildPolicies(std::unordered_map<BuildPolicy, bool>&& map) : m_policies(std::move(map)) { }
 
-        bool is_enabled(BuildPolicy policy) const
+        [[nodiscard]] bool is_enabled(BuildPolicy policy) const
         {
             const auto it = m_policies.find(policy);
             if (it != m_policies.cend()) return it->second;
@@ -415,7 +417,7 @@ namespace vcpkg
         Cache<Path, TripletMapEntry> m_triplet_cache;
         Cache<Path, std::string> m_toolchain_cache;
 
-        const TripletMapEntry& get_triplet_cache(const Filesystem& fs, const Path& p);
+        const TripletMapEntry& get_triplet_cache(const Filesystem& fs, const Path& p) const;
 
 #if defined(_WIN32)
         struct EnvMapEntry
@@ -432,9 +434,9 @@ namespace vcpkg
 
     struct BuildCommand : Commands::TripletCommand
     {
-        virtual void perform_and_exit(const VcpkgCmdArguments& args,
-                                      const VcpkgPaths& paths,
-                                      Triplet default_triplet,
-                                      Triplet host_triplet) const override;
+        void perform_and_exit(const VcpkgCmdArguments& args,
+                              const VcpkgPaths& paths,
+                              Triplet default_triplet,
+                              Triplet host_triplet) const override;
     };
 } // namespace vcpkg

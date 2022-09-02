@@ -16,6 +16,7 @@
 #include <memory>
 #include <string>
 #include <system_error>
+#include <utility>
 #include <vector>
 
 namespace vcpkg
@@ -34,7 +35,7 @@ namespace vcpkg
         using LockDataType = std::multimap<std::string, EntryData, std::less<>>;
         struct Entry
         {
-            LockFile* lockfile;
+            LockFile* lockfile{};
             LockDataType::iterator data;
 
             const std::string& reference() const { return data->second.reference; }
@@ -180,7 +181,7 @@ namespace vcpkg
         StringView type_name() const override;
         View<StringView> valid_fields() const override;
         Optional<VersionDbEntry> visit_object(Json::Reader& r, const Json::Object& obj) override;
-        VersionDbEntryDeserializer(VersionDbType type, const Path& root) : type(type), registry_root(root) { }
+        VersionDbEntryDeserializer(VersionDbType type, Path root) : type(type), registry_root(std::move(root)) { }
 
     private:
         VersionDbType type;
@@ -189,8 +190,8 @@ namespace vcpkg
 
     struct VersionDbEntryArrayDeserializer final : Json::IDeserializer<std::vector<VersionDbEntry>>
     {
-        virtual StringView type_name() const override;
-        virtual Optional<std::vector<VersionDbEntry>> visit_array(Json::Reader& r, const Json::Array& arr) override;
+        StringView type_name() const override;
+        Optional<std::vector<VersionDbEntry>> visit_array(Json::Reader& r, const Json::Array& arr) override;
         VersionDbEntryArrayDeserializer(VersionDbType type, const Path& root) : underlying{type, root} { }
 
     private:

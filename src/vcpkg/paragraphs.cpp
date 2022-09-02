@@ -96,9 +96,9 @@ namespace vcpkg
         if (const auto field = maybe_field.get())
             out = std::move(*field);
         else
-            missing_fields.push_back(fieldname.data());
+            missing_fields.emplace_back(fieldname.data());
     }
-    void ParagraphParser::optional_field(StringView fieldname, std::pair<std::string&, TextRowCol&> out)
+    void ParagraphParser::optional_field(StringView fieldname, std::pair<std::string&, TextRowCol&> out) const
     {
         auto maybe_field = remove_field(&fields, fieldname);
         if (auto field = maybe_field.get()) out = std::move(*field);
@@ -108,7 +108,7 @@ namespace vcpkg
         TextRowCol ignore;
         required_field(fieldname, {out, ignore});
     }
-    std::string ParagraphParser::optional_field(StringView fieldname)
+    std::string ParagraphParser::optional_field(StringView fieldname) const
     {
         std::string out;
         TextRowCol ignore;

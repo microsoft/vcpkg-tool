@@ -100,7 +100,7 @@ namespace vcpkg::Export::IFW
                                bytes_written == 10,
                                "Expected 10 bytes to be written, but %u were written",
                                bytes_written);
-            const std::string date_time_as_string(mbstr);
+            std::string date_time_as_string(mbstr);
             return date_time_as_string;
         }
 
@@ -173,7 +173,7 @@ namespace vcpkg::Export::IFW
         }
 
         void export_unique_packages(const Path& raw_exported_dir_path,
-                                    std::map<std::string, const ExportPlanAction*> unique_packages,
+                                    const std::map<std::string, const ExportPlanAction*>& unique_packages,
                                     Filesystem& fs)
         {
             auto package_xml_dir_path = raw_exported_dir_path / "packages/meta";
@@ -218,7 +218,7 @@ namespace vcpkg::Export::IFW
         }
 
         void export_unique_triplets(const Path& raw_exported_dir_path,
-                                    std::set<std::string> unique_triplets,
+                                    const std::set<std::string>& unique_triplets,
                                     Filesystem& fs)
         {
             // triplets

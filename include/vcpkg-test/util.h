@@ -18,7 +18,7 @@
     {                                                                                                                  \
         if (ec)                                                                                                        \
         {                                                                                                              \
-            FAIL(ec.message());                                                                                        \
+            FAIL((ec).message());                                                                                      \
         }                                                                                                              \
     } while (0)
 
@@ -130,7 +130,7 @@ namespace vcpkg::Test
     {
         std::unordered_map<std::string, SourceControlFileAndLocation> map;
         Triplet triplet;
-        PackageSpecMap(Triplet t = X86_WINDOWS) noexcept : triplet(t) { }
+        explicit PackageSpecMap(Triplet t = X86_WINDOWS) noexcept : triplet(t) { }
 
         PackageSpec emplace(const char* name,
                             const char* depends = "",

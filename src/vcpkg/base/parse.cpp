@@ -72,7 +72,7 @@ namespace vcpkg
         }
         caret_string.push_back('^');
 
-        res.append_indent().append_raw(std::move(caret_string));
+        res.append_indent().append_raw(caret_string);
 
         return res;
     }
@@ -196,7 +196,7 @@ namespace vcpkg
         {
             // find end of line
             auto line_end = loc.it;
-            while (line_end != line_end.end() && *line_end != '\n' && *line_end != '\r')
+            while (line_end != m_it.end() && *line_end != '\n' && *line_end != '\r')
             {
                 ++line_end;
             }

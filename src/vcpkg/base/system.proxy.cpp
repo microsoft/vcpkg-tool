@@ -18,8 +18,8 @@ vcpkg::Optional<vcpkg::IEProxySetting> vcpkg::get_windows_ie_proxy_server()
 
         return ieProxySetting;
     }
-    return vcpkg::Optional<vcpkg::IEProxySetting>();
+    return {};
 #else
-    return vcpkg::Optional<vcpkg::IEProxySetting>();
+    return {};
 #endif
 }

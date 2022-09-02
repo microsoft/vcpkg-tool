@@ -20,6 +20,7 @@
 #include <vcpkg/vcpkgpaths.h>
 
 #include <iterator>
+#include <utility>
 
 #include "vcpkg/base/api_stable_format.h"
 
@@ -43,7 +44,7 @@ namespace
         {
             if (segment_idx >= segments.size())
             {
-                read.push_back(std::move(t));
+                read.push_back(std::forward<T>(t));
                 return;
             }
 
@@ -51,16 +52,16 @@ namespace
 
             if (mode == "read")
             {
-                read.push_back(std::move(t));
+                read.push_back(std::forward<T>(t));
             }
             else if (mode == "write")
             {
-                write.push_back(std::move(t));
+                write.push_back(std::forward<T>(t));
             }
             else if (mode == "readwrite")
             {
                 read.push_back(t);
-                write.push_back(std::move(t));
+                write.push_back(std::forward<T>(t));
             }
             else
             {
@@ -105,7 +106,7 @@ namespace
                     Checks::unreachable(VCPKG_LINE_INFO);
                 }
             }
-            segments.emplace_back(std::move(loc), std::move(segment));
+            segments.emplace_back(loc, std::move(segment));
 
             auto ch = cur();
             if (ch == Unicode::end_of_file || ch == ';')
@@ -150,7 +151,7 @@ namespace
         return ret;
     }
 
-    static const std::string& get_nuget_prefix()
+    const std::string& get_nuget_prefix()
     {
         static std::string nuget_prefix = []() {
             auto x = get_environment_variable("X_VCPKG_NUGET_ID_PREFIX").value_or("");
@@ -163,14 +164,14 @@ namespace
         return nuget_prefix;
     }
 
-    static void clean_prepare_dir(Filesystem& fs, const Path& dir)
+    void clean_prepare_dir(Filesystem& fs, const Path& dir)
     {
         fs.remove_all(dir, VCPKG_LINE_INFO);
         bool created_last = fs.create_directories(dir, VCPKG_LINE_INFO);
         Checks::check_exit(VCPKG_LINE_INFO, created_last, "unable to clear path: %s", dir);
     }
 
-    static Path make_temp_archive_path(const Path& buildtrees, const PackageSpec& spec)
+    Path make_temp_archive_path(const Path& buildtrees, const PackageSpec& spec)
     {
         return buildtrees / spec.name() / (spec.triplet().to_string() + ".zip");
     }
@@ -181,7 +182,7 @@ namespace
                                std::vector<Path>&& read_dirs,
                                std::vector<Path>&& write_dirs,
                                std::vector<UrlTemplate>&& put_url_templates,
-                               const std::vector<std::string>& secrets)
+                               std::vector<std::string> secrets)
             : paths(paths)
             , m_read_dirs(std::move(read_dirs))
             , m_write_dirs(std::move(write_dirs))
@@ -419,8 +420,8 @@ namespace
     {
         HttpGetBinaryProvider(const VcpkgPaths& paths,
                               std::vector<UrlTemplate>&& url_templates,
-                              const std::vector<std::string>& secrets)
-            : paths(paths), m_url_templates(std::move(url_templates)), m_secrets(secrets)
+                              std::vector<std::string> secrets)
+            : paths(paths), m_url_templates(std::move(url_templates)), m_secrets(std::move(secrets))
         {
         }
 
@@ -1254,7 +1255,7 @@ namespace
 
 namespace vcpkg
 {
-    LocalizedString UrlTemplate::valid()
+    LocalizedString UrlTemplate::valid() const
     {
         std::vector<std::string> invalid_keys;
         auto result = api_stable_format(url_template, [&](std::string&, StringView key) {
@@ -2205,7 +2206,7 @@ ExpectedS<BinaryConfigParserState> vcpkg::create_binary_providers_from_configs_p
             metrics->track_define_property(DefineMetric::VcpkgBinarySources);
         }
 
-        if (args.size() != 0)
+        if (!args.empty())
         {
             metrics->track_define_property(DefineMetric::BinaryCachingSource);
         }
@@ -2371,7 +2372,7 @@ details::NuGetRepoInfo details::get_nuget_repo_info_from_env()
 std::string vcpkg::generate_nuspec(const Path& package_dir,
                                    const InstallPlanAction& action,
                                    const vcpkg::NugetReference& ref,
-                                   details::NuGetRepoInfo rinfo)
+                                   const details::NuGetRepoInfo& rinfo)
 {
     auto& spec = action.spec;
     auto& scf = *action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;

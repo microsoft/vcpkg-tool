@@ -15,10 +15,9 @@ namespace
             res.push_back(hex[(bits >> 0) & 0x0F]);
         }
     };
-    constexpr char append_hexits::hex[17];
 
     // note: this ignores the bits of these numbers that would be where format and variant go
-    static std::string uuid_of_integers(uint64_t top, uint64_t bottom)
+    std::string uuid_of_integers(uint64_t top, uint64_t bottom)
     {
         // uuid_field_size in bytes, not hex characters
         constexpr size_t uuid_top_field_size[] = {4, 2, 2};

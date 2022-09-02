@@ -192,7 +192,7 @@ namespace vcpkg::Export
         {
         }
 
-        constexpr operator BackingEnum() const { return backing_enum; }
+        constexpr explicit operator BackingEnum() const { return backing_enum; }
         constexpr StringLiteral extension() const { return this->m_extension; }
         constexpr StringLiteral cmake_option() const { return this->m_cmake_option; }
 
@@ -217,7 +217,7 @@ namespace vcpkg::Export
 
         const auto exported_dir_filename = raw_exported_dir.filename();
         const auto exported_archive_filename = Strings::format("%s.%s", exported_dir_filename, format.extension());
-        const auto exported_archive_path = output_dir / exported_archive_filename;
+        auto exported_archive_path = output_dir / exported_archive_filename;
 
         Command cmd;
         cmd.string_arg(cmake_exe)

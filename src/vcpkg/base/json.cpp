@@ -9,6 +9,8 @@
 
 #include <inttypes.h>
 
+#include <memory>
+
 namespace vcpkg::Json
 {
     static std::atomic<uint64_t> g_json_parsing_stats(0);
@@ -27,7 +29,7 @@ namespace vcpkg::Json
             VK tag;
             union
             {
-                std::nullptr_t null;
+                std::nullptr_t null{};
                 bool boolean;
                 int64_t integer;
                 double number;
@@ -58,6 +60,7 @@ namespace vcpkg::Json
                     case VK::String: return internal_assign(VK::String, &ValueImpl::string, other);
                     case VK::Array: return internal_assign(VK::Array, &ValueImpl::array, other);
                     case VK::Object: return internal_assign(VK::Object, &ValueImpl::object, other);
+                    default: Checks::unreachable(VCPKG_LINE_INFO);
                 }
             }
 
@@ -186,22 +189,22 @@ namespace vcpkg::Json
         {
             case ValueKind::Null: return; // default construct underlying_
             case ValueKind::Boolean:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Boolean>(), other.underlying_->boolean));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Boolean>(), other.underlying_->boolean);
                 break;
             case ValueKind::Integer:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Integer>(), other.underlying_->integer));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Integer>(), other.underlying_->integer);
                 break;
             case ValueKind::Number:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Number>(), other.underlying_->number));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Number>(), other.underlying_->number);
                 break;
             case ValueKind::String:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::String>(), other.underlying_->string));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::String>(), other.underlying_->string);
                 break;
             case ValueKind::Array:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Array>(), other.underlying_->array));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Array>(), other.underlying_->array);
                 break;
             case ValueKind::Object:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Object>(), other.underlying_->object));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Object>(), other.underlying_->object);
                 break;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
@@ -213,22 +216,22 @@ namespace vcpkg::Json
         {
             case ValueKind::Null: underlying_.reset(); break;
             case ValueKind::Boolean:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Boolean>(), other.underlying_->boolean));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Boolean>(), other.underlying_->boolean);
                 break;
             case ValueKind::Integer:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Integer>(), other.underlying_->integer));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Integer>(), other.underlying_->integer);
                 break;
             case ValueKind::Number:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Number>(), other.underlying_->number));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Number>(), other.underlying_->number);
                 break;
             case ValueKind::String:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::String>(), other.underlying_->string));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::String>(), other.underlying_->string);
                 break;
             case ValueKind::Array:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Array>(), other.underlying_->array));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Array>(), other.underlying_->array);
                 break;
             case ValueKind::Object:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Object>(), other.underlying_->object));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Object>(), other.underlying_->object);
                 break;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
@@ -238,7 +241,7 @@ namespace vcpkg::Json
 
     Value::~Value() = default;
 
-    Value Value::null(std::nullptr_t) noexcept { return Value(); }
+    Value Value::null(std::nullptr_t) noexcept { return {}; }
     Value Value::boolean(bool b) noexcept
     {
         Value val;
@@ -395,7 +398,7 @@ namespace vcpkg::Json
         }
         else
         {
-            underlying_.emplace_back(key, std::move(value));
+            underlying_.emplace_back(key, value);
             return underlying_.back().second;
         }
     }
@@ -647,7 +650,7 @@ namespace vcpkg::Json
                     if (current == Unicode::end_of_file)
                     {
                         add_error("Unexpected EOF after minus sign");
-                        return Value();
+                        return {};
                     }
                 }
 
@@ -663,7 +666,7 @@ namespace vcpkg::Json
                     else if (is_ascii_digit(current))
                     {
                         add_error("Unexpected digits after a leading zero");
-                        return Value();
+                        return {};
                     }
                     else
                     {
@@ -691,7 +694,7 @@ namespace vcpkg::Json
                     if (!is_ascii_digit(current))
                     {
                         add_error("Expected digits after the decimal point");
-                        return Value();
+                        return {};
                     }
                     while (is_ascii_digit(current))
                     {
@@ -732,7 +735,7 @@ namespace vcpkg::Json
                     }
                 }
 
-                return Value();
+                return {};
             }
 
 #define VCPKG_JSON_NO_COMMENTS_MSG                                                                                     \
@@ -768,7 +771,7 @@ namespace vcpkg::Json
                     if (current == Unicode::end_of_file)
                     {
                         add_error("Unexpected EOF in middle of keyword");
-                        return Value();
+                        return {};
                     }
                     if (current != *rest_it)
                     {
@@ -795,7 +798,7 @@ namespace vcpkg::Json
                     if (current == Unicode::end_of_file)
                     {
                         add_error("Unexpected EOF in middle of array");
-                        return Value();
+                        return {};
                     }
                     if (current == ']')
                     {
@@ -816,7 +819,7 @@ namespace vcpkg::Json
                         if (current == Unicode::end_of_file)
                         {
                             add_error("Unexpected EOF in middle of array");
-                            return Value();
+                            return {};
                         }
                         if (current == ']')
                         {
@@ -831,7 +834,7 @@ namespace vcpkg::Json
                     else
                     {
                         add_error("Unexpected character in middle of array");
-                        return Value();
+                        return {};
                     }
 
                     arr.push_back(parse_value());
@@ -901,7 +904,7 @@ namespace vcpkg::Json
                     if (current == Unicode::end_of_file)
                     {
                         add_error("Unexpected EOF; expected property or close brace");
-                        return Value();
+                        return {};
                     }
                     else if (current == '}')
                     {
@@ -922,12 +925,12 @@ namespace vcpkg::Json
                         if (current == Unicode::end_of_file)
                         {
                             add_error("Unexpected EOF; expected property");
-                            return Value();
+                            return {};
                         }
                         else if (current == '}')
                         {
                             add_error("Trailing comma in an object", comma_loc);
-                            return Value();
+                            return {};
                         }
                     }
                     else if (current == '/')
@@ -944,9 +947,9 @@ namespace vcpkg::Json
                     if (obj.contains(val.first))
                     {
                         add_error(Strings::format("Duplicated key \"%s\" in an object", val.first), keyPairLoc);
-                        return Value();
+                        return {};
                     }
-                    obj.insert(std::move(val.first), std::move(val.second));
+                    obj.insert(val.first, std::move(val.second));
                 }
             }
 
@@ -957,7 +960,7 @@ namespace vcpkg::Json
                 if (current == Unicode::end_of_file)
                 {
                     add_error("Unexpected EOF; expected value");
-                    return Value();
+                    return {};
                 }
 
                 switch (current)
@@ -971,7 +974,7 @@ namespace vcpkg::Json
                     case '/':
                     {
                         add_error("Unexpected character; expected value" VCPKG_JSON_NO_COMMENTS_MSG);
-                        return Value();
+                        return {};
                     }
                     default:
                         if (is_number_start(current))
@@ -981,7 +984,7 @@ namespace vcpkg::Json
                         else
                         {
                             add_error("Unexpected character; expected value");
-                            return Value();
+                            return {};
                         }
                 }
             }
@@ -1087,7 +1090,7 @@ namespace vcpkg::Json
             return std::unique_ptr<ParseError>();
         }
 
-        return parse(std::move(res), json_file);
+        return parse(res, json_file);
     }
 
     std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo li, const Filesystem& fs, const Path& json_file)
@@ -1142,7 +1145,7 @@ namespace vcpkg::Json
             JsonStyle style;
             std::string& buffer;
 
-            void append_indent(int indent)
+            void append_indent(int indent) const
             {
                 if (style.use_tabs())
                 {
@@ -1152,9 +1155,9 @@ namespace vcpkg::Json
                 {
                     buffer.append(indent * style.spaces(), ' ');
                 }
-            };
+            }
 
-            void append_unicode_escape(char16_t code_unit)
+            void append_unicode_escape(char16_t code_unit) const
             {
                 buffer.append("\\u");
 
@@ -1229,7 +1232,7 @@ namespace vcpkg::Json
                 {
                     bool first = true;
 
-                    for (const auto& el : obj)
+                    for (const auto& [fst, snd] : obj)
                     {
                         if (!first)
                         {
@@ -1240,9 +1243,9 @@ namespace vcpkg::Json
                         buffer.append(style.newline());
                         append_indent(current_indent + 1);
 
-                        append_quoted_json_string(el.first);
+                        append_quoted_json_string(fst);
                         buffer.append(": ");
-                        stringify(el.second, current_indent + 1);
+                        stringify(snd, current_indent + 1);
                     }
                     buffer.append(style.newline());
                     append_indent(current_indent);
@@ -1345,7 +1348,7 @@ namespace vcpkg::Json
     {
         const auto field_is_unknown = [known_fields](StringView sv) {
             // allow directives
-            if (sv.size() != 0 && *sv.begin() == '$')
+            if (!sv.empty() && *sv.begin() == '$')
             {
                 return false;
             }
@@ -1380,7 +1383,7 @@ namespace vcpkg::Json
     }
     void Reader::add_extra_field_error(StringView type, StringView field, StringView suggestion)
     {
-        if (suggestion.size() > 0)
+        if (!suggestion.empty())
         {
             add_generic_error(type, "unexpected field '", field, "\', did you mean \'", suggestion, "\'?");
         }
@@ -1392,7 +1395,7 @@ namespace vcpkg::Json
 
     void Reader::check_for_unexpected_fields(const Object& obj, View<StringView> valid_fields, StringView type_name)
     {
-        if (valid_fields.size() == 0)
+        if (valid_fields.empty())
         {
             return;
         }
@@ -1465,7 +1468,7 @@ namespace vcpkg::Json
 
     bool PackageNameDeserializer::is_package_name(StringView sv)
     {
-        if (sv.size() == 0)
+        if (sv.empty())
         {
             return false;
         }

@@ -21,8 +21,6 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
-#include <locale.h>
-
 #include <cassert>
 #include <clocale>
 #include <memory>
@@ -35,7 +33,7 @@
 
 using namespace vcpkg;
 
-static void invalid_command(const std::string& cmd)
+[[noreturn]] static void invalid_command(const std::string& cmd)
 {
     msg::println(Color::error, msgVcpkgInvalidCommand, msg::command_name = cmd);
     print_usage();
@@ -120,7 +118,7 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 
     LockGuardPtr<Metrics>(g_metrics)->track_bool_property(BoolMetric::OptionOverlayPorts, !args.overlay_ports.empty());
 
-    if (const auto command_function = find_command(Commands::get_available_basic_commands()))
+    if (const auto* const command_function = find_command(Commands::get_available_basic_commands()))
     {
         LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::CommandName, command_function->name);
         return command_function->function->perform_and_exit(args, fs);
@@ -131,7 +129,7 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 
     fs.current_path(paths.root, VCPKG_LINE_INFO);
 
-    if (const auto command_function = find_command(Commands::get_available_paths_commands()))
+    if (const auto* const command_function = find_command(Commands::get_available_paths_commands()))
     {
         LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::CommandName, command_function->name);
         return command_function->function->perform_and_exit(args, paths);
@@ -142,7 +140,7 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
     Triplet host_triplet = vcpkg::default_host_triplet(args);
     check_triplet(host_triplet, paths);
 
-    if (const auto command_function = find_command(Commands::get_available_triplet_commands()))
+    if (const auto* const command_function = find_command(Commands::get_available_triplet_commands()))
     {
         LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::CommandName, command_function->name);
         return command_function->function->perform_and_exit(args, paths, default_triplet, host_triplet);
@@ -315,7 +313,7 @@ int main(const int argc, const char* const* const argv)
         to_enable_metrics = false;
     }
 
-    if (auto p = args.disable_metrics.get())
+    if (auto* p = args.disable_metrics.get())
     {
         to_enable_metrics = !*p;
     }

@@ -28,7 +28,7 @@ namespace vcpkg
         size_t hash_code() const;
         Optional<CPUArchitecture> guess_architecture() const noexcept;
 
-        operator StringView() const { return canonical_name(); }
+        explicit operator StringView() const { return canonical_name(); }
 
         bool operator==(Triplet other) const { return this->m_instance == other.m_instance; }
         bool operator<(Triplet other) const { return canonical_name() < other.canonical_name(); }

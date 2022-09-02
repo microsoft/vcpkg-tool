@@ -35,7 +35,7 @@ namespace vcpkg::Hash
     }
 
     template<class UIntTy>
-    auto top_bits(UIntTy x) -> std::enable_if_t<std::is_unsigned<UIntTy>::value, uchar>
+    auto top_bits(UIntTy x) -> std::enable_if_t<std::is_unsigned_v<UIntTy>, uchar>
     {
         return static_cast<uchar>(x >> ((sizeof(x) - 1) * 8));
     }
@@ -108,10 +108,10 @@ namespace vcpkg::Hash
                     default: Checks::unreachable(VCPKG_LINE_INFO);
                 }
 
-                clear();
+                BCryptHasher::clear();
             }
 
-            virtual void add_bytes(const void* start_, const void* end_) noexcept override
+            void add_bytes(const void* start_, const void* end_) noexcept override
             {
                 // BCryptHashData takes its input as non-const, but does not modify it
                 uchar* start = const_cast<uchar*>(static_cast<const uchar*>(start_));
@@ -131,14 +131,14 @@ namespace vcpkg::Hash
                 Checks::check_exit(VCPKG_LINE_INFO, NT_SUCCESS(error_code), "Failed to process a chunk");
             }
 
-            virtual void clear() noexcept override
+            void clear() noexcept override
             {
                 if (hash_handle) BCryptDestroyHash(hash_handle);
                 const NTSTATUS error_code = BCryptCreateHash(alg_handle, &hash_handle, nullptr, 0, nullptr, 0, 0);
                 Checks::check_exit(VCPKG_LINE_INFO, NT_SUCCESS(error_code), "Failed to initialize the hasher");
             }
 
-            virtual std::string get_hash() override
+            std::string get_hash() override
             {
                 const auto hash_size = get_hash_buffer_size();
                 const auto buffer = std::make_unique<uchar[]>(hash_size);
@@ -149,7 +149,7 @@ namespace vcpkg::Hash
                 return to_hex(hash, hash + hash_size);
             }
 
-            ~BCryptHasher() { BCryptDestroyHash(hash_handle); }
+            ~BCryptHasher() override { BCryptDestroyHash(hash_handle); }
 
         private:
             unsigned long get_hash_buffer_size() const
@@ -179,24 +179,18 @@ namespace vcpkg::Hash
             return value << by;
         }
 
-        static std::uint32_t shr32(std::uint32_t value, int by) noexcept { return value >> by; }
-        static std::uint32_t ror32(std::uint32_t value, int by) noexcept
-        {
-            return (value >> by) | (value << (32 - by));
-        }
+        std::uint32_t shr32(std::uint32_t value, int by) noexcept { return value >> by; }
+        std::uint32_t ror32(std::uint32_t value, int by) noexcept { return (value >> by) | (value << (32 - by)); }
 
-        static std::uint64_t shr64(std::uint64_t value, int by) noexcept { return value >> by; }
-        static std::uint64_t ror64(std::uint64_t value, int by) noexcept
-        {
-            return (value >> by) | (value << (64 - by));
-        }
+        std::uint64_t shr64(std::uint64_t value, int by) noexcept { return value >> by; }
+        std::uint64_t ror64(std::uint64_t value, int by) noexcept { return (value >> by) | (value << (64 - by)); }
 
         template<class ShaAlgorithm>
         struct ShaHasher final : Hasher
         {
             ShaHasher() = default;
 
-            virtual void add_bytes(const void* start, const void* end) noexcept override
+            void add_bytes(const void* start, const void* end) noexcept override
             {
                 for (;;)
                 {
@@ -211,7 +205,7 @@ namespace vcpkg::Hash
                 }
             }
 
-            virtual void clear() noexcept override
+            void clear() noexcept override
             {
                 m_impl.clear();
 
@@ -220,7 +214,7 @@ namespace vcpkg::Hash
                 m_message_length = 0;
             }
 
-            virtual std::string get_hash() override
+            std::string get_hash() override
             {
                 process_last_chunk();
                 return to_hex(m_impl.begin(), m_impl.end());
@@ -232,8 +226,8 @@ namespace vcpkg::Hash
             // else, returns nullptr
             const void* add_to_unprocessed(const void* start_, const void* end_) noexcept
             {
-                const uchar* start = static_cast<const uchar*>(start_);
-                const uchar* end = static_cast<const uchar*>(end_);
+                const auto* start = static_cast<const uchar*>(start_);
+                const auto* end = static_cast<const uchar*>(end_);
 
                 const auto remaining = chunk_size - m_current_chunk_size;
 
@@ -398,7 +392,7 @@ namespace vcpkg::Hash
             std::uint32_t* begin() noexcept { return &m_digest[0]; }
             std::uint32_t* end() noexcept { return &m_digest[8]; }
 
-            std::uint32_t m_digest[8];
+            std::uint32_t m_digest[8]{};
         };
 
         struct Sha512Algorithm
@@ -492,12 +486,11 @@ namespace vcpkg::Hash
             std::uint64_t* begin() noexcept { return &m_digest[0]; }
             std::uint64_t* end() noexcept { return &m_digest[8]; }
 
-            std::uint64_t m_digest[8];
+            std::uint64_t m_digest[8]{};
         };
 
         // This is required on older compilers, since it was required in C++14
-        constexpr std::array<std::uint32_t, Sha256Algorithm::number_of_rounds> Sha256Algorithm::round_constants;
-        constexpr std::array<std::uint64_t, Sha512Algorithm::number_of_rounds> Sha512Algorithm::round_constants;
+
 #endif
     }
 

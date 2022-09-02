@@ -49,7 +49,7 @@ namespace
         }
     };
 
-    static const NullBuildLogsRecorder null_build_logs_recorder_instance;
+    const NullBuildLogsRecorder null_build_logs_recorder_instance;
 }
 
 namespace vcpkg
@@ -486,7 +486,7 @@ namespace vcpkg
         });
     }
 
-    const EnvCache::TripletMapEntry& EnvCache::get_triplet_cache(const Filesystem& fs, const Path& p)
+    const EnvCache::TripletMapEntry& EnvCache::get_triplet_cache(const Filesystem& fs, const Path& p) const
     {
         return m_triplet_cache.get_lazy(p, [&]() -> TripletMapEntry {
             return TripletMapEntry{Hash::get_file_hash(fs, p, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO)};
@@ -535,7 +535,7 @@ namespace vcpkg
         if (m_compiler_tracking && !abi_info.pre_build_info->disable_compiler_tracking)
         {
             return triplet_entry.triplet_infos.get_lazy(toolchain_hash, [&]() -> std::string {
-                auto& compiler_info = get_compiler_info(paths, abi_info);
+                const auto& compiler_info = get_compiler_info(paths, abi_info);
                 return Strings::concat(triplet_entry.hash, '-', toolchain_hash, '-', compiler_info.hash);
             });
         }
@@ -586,7 +586,7 @@ namespace vcpkg
     {
         auto bcf = std::make_unique<BinaryControlFile>();
         BinaryParagraph bpgh(source_paragraph, triplet, abi_tag, core_dependencies);
-        if (const auto p_ver = build_info.version.get())
+        if (const auto* const p_ver = build_info.version.get())
         {
             bpgh.version = *p_ver;
         }
@@ -624,7 +624,7 @@ namespace vcpkg
                               });
         // Make sure GIT could be found
         const Path& git_exe_path = paths.get_tool_exe(Tools::GIT, stdout_sink);
-        out_vars.push_back({"GIT", git_exe_path});
+        out_vars.emplace_back("GIT", git_exe_path);
     }
 
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info)
@@ -705,7 +705,7 @@ namespace vcpkg
                                                            const VcpkgPaths& paths,
                                                            const InstallPlanAction& action)
     {
-        auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
+        const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
         auto& scf = *scfl.source_control_file;
 
         std::string all_features;
@@ -730,12 +730,12 @@ namespace vcpkg
 
         if (action.build_options.download_tool == DownloadTool::ARIA2)
         {
-            variables.push_back({"ARIA2", paths.get_tool_exe(Tools::ARIA2, stdout_sink)});
+            variables.emplace_back("ARIA2", paths.get_tool_exe(Tools::ARIA2, stdout_sink));
         }
 
         for (const auto& cmake_arg : args.cmake_args)
         {
-            variables.push_back(CMakeVariable{cmake_arg});
+            variables.emplace_back(cmake_arg);
         }
 
         if (action.build_options.backcompat_features == BackcompatFeatures::PROHIBIT)
@@ -751,7 +751,7 @@ namespace vcpkg
 
         if (Util::Enum::to_bool(action.build_options.only_downloads))
         {
-            variables.push_back({"VCPKG_DOWNLOAD_MODE", "true"});
+            variables.emplace_back("VCPKG_DOWNLOAD_MODE", "true");
         }
 
         const Filesystem& fs = paths.get_filesystem();
@@ -783,7 +783,7 @@ namespace vcpkg
 
     Path PreBuildInfo::toolchain_file() const
     {
-        if (auto p = external_toolchain_file.get())
+        if (const auto* p = external_toolchain_file.get())
         {
             return *p;
         }
@@ -1132,7 +1132,7 @@ namespace vcpkg
         abi_tag_entries.emplace_back("powershell", paths.get_tool_version("powershell-core", stdout_sink));
 #endif
 
-        auto& helpers = paths.get_cmake_script_hashes();
+        const auto& helpers = paths.get_cmake_script_hashes();
         for (auto&& helper : helpers)
         {
             if (Strings::case_insensitive_ascii_contains(portfile_cmake_contents, helper.first))
@@ -1247,7 +1247,7 @@ namespace vcpkg
             abi_info.toolset = paths.get_toolset(*abi_info.pre_build_info);
 
             auto maybe_abi_tag_and_file = compute_abi_tag(paths, action, dependency_abis);
-            if (auto p = maybe_abi_tag_and_file.get())
+            if (auto* p = maybe_abi_tag_and_file.get())
             {
                 abi_info.compiler_info = paths.get_compiler_info(abi_info);
                 abi_info.triplet_abi = *p->triplet_abi;
@@ -1268,7 +1268,7 @@ namespace vcpkg
                                       const StatusParagraphs& status_db)
     {
         auto& filesystem = paths.get_filesystem();
-        auto& spec = action.spec;
+        const auto& spec = action.spec;
         const std::string& name = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
                                       .source_control_file->core_paragraph->name;
 
@@ -1302,13 +1302,13 @@ namespace vcpkg
             }
         }
 
-        auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
+        const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
         if (!abi_info.abi_tag_file)
         {
             return do_build_package_and_clean_buildtrees(args, paths, action);
         }
 
-        auto& abi_file = *abi_info.abi_tag_file.get();
+        const auto& abi_file = *abi_info.abi_tag_file.get();
 
         const auto abi_package_dir = paths.package_dir(spec) / "share" / spec.name();
         const auto abi_file_in_package = abi_package_dir / "vcpkg_abi_info.txt";
@@ -1439,8 +1439,7 @@ namespace vcpkg
             if (log.size() > MAX_LOG_LENGTH)
             {
                 auto first_block_end = log.find_first_of('\n', START_BLOCK_LENGTH);
-                if (first_block_end == std::string::npos || first_block_end > START_BLOCK_MAX_LENGTH)
-                    first_block_end = START_BLOCK_LENGTH;
+                if (first_block_end > START_BLOCK_MAX_LENGTH) first_block_end = START_BLOCK_LENGTH;
 
                 auto last_block_end = log.find_last_of('\n', log.size() - END_BLOCK_LENGTH);
                 if (last_block_end == std::string::npos || last_block_end < log.size() - END_BLOCK_MAX_LENGTH)
@@ -1495,7 +1494,7 @@ namespace vcpkg
     LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action, const VcpkgPaths& paths)
     {
         std::string package = action.displayname();
-        if (auto scfl = action.source_control_file_and_location.get())
+        if (const auto* scfl = action.source_control_file_and_location.get())
         {
             Strings::append(package, " -> ", scfl->to_version());
         }
@@ -1528,7 +1527,7 @@ namespace vcpkg
             parser.required_field(BuildInfoRequiredField::CRT_LINKAGE, crt_linkage_as_string);
 
             auto crtlinkage = to_linkage_type(crt_linkage_as_string);
-            if (const auto p = crtlinkage.get())
+            if (auto* const p = crtlinkage.get())
             {
                 build_info.crt_linkage = *p;
             }
@@ -1543,7 +1542,7 @@ namespace vcpkg
             std::string library_linkage_as_string;
             parser.required_field(BuildInfoRequiredField::LIBRARY_LINKAGE, library_linkage_as_string);
             auto liblinkage = to_linkage_type(library_linkage_as_string);
-            if (const auto p = liblinkage.get())
+            if (auto* const p = liblinkage.get())
             {
                 build_info.library_linkage = *p;
             }
@@ -1736,7 +1735,7 @@ namespace vcpkg
 
     ExtendedBuildResult::ExtendedBuildResult(BuildResult code) : code(code) { }
     ExtendedBuildResult::ExtendedBuildResult(BuildResult code,
-                                             vcpkg::Path stdoutlog,
+                                             const vcpkg::Path& stdoutlog,
                                              std::vector<std::string>&& error_logs)
         : code(code), stdoutlog(stdoutlog), error_logs(error_logs)
     {

@@ -34,7 +34,7 @@ namespace vcpkg
         Triplet triplet;
         SortedVector<std::string> exclusions;
 
-        TripletExclusions(const Triplet& triplet);
+        explicit TripletExclusions(const Triplet& triplet);
         TripletExclusions(const Triplet& triplet, SortedVector<std::string>&& exclusions);
     };
 

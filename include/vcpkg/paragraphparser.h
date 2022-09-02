@@ -56,8 +56,8 @@ namespace vcpkg
         void required_field(StringView fieldname, std::string& out);
         void required_field(StringView fieldname, std::pair<std::string&, TextRowCol&> out);
 
-        std::string optional_field(StringView fieldname);
-        void optional_field(StringView fieldname, std::pair<std::string&, TextRowCol&> out);
+        std::string optional_field(StringView fieldname) const;
+        void optional_field(StringView fieldname, std::pair<std::string&, TextRowCol&> out) const;
 
         void add_type_error(const std::string& fieldname, const char* type) { expected_types[fieldname] = type; }
 

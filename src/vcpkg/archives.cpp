@@ -260,7 +260,7 @@ namespace vcpkg
 
     void extract_tar_cmake(const Path& cmake_tool, const Path& archive, const Path& to_path)
     {
-        // Note that CMake's built in tar can extract more archive types than many system tars; e.g. 7z
+        // Note that CMake's built-in tar can extract more archive types than many system tars; e.g. 7z
         const auto code =
             cmd_execute(Command{cmake_tool}.string_arg("-E").string_arg("tar").string_arg("xzf").string_arg(archive),
                         WorkingDirectory{to_path});
@@ -333,10 +333,10 @@ namespace vcpkg
         auto results =
             cmd_execute_and_capture_output_parallel(jobs, default_working_directory, get_clean_environment());
 #ifdef __APPLE__
-        int i = 0;
+        std::size_t i = 0;
         for (auto& maybe_result : results)
         {
-            if (const auto result = maybe_result.get())
+            if (auto* const result = maybe_result.get())
             {
                 if (result->exit_code == 127 && result->output.empty())
                 {

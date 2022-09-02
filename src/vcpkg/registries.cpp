@@ -22,7 +22,7 @@ namespace
 
     using Baseline = std::map<std::string, Version, std::less<>>;
 
-    static constexpr StringLiteral registry_versions_dir_name = "versions";
+    constexpr StringLiteral registry_versions_dir_name = "versions";
 
     struct GitRegistry;
 
@@ -153,7 +153,7 @@ namespace
     struct BuiltinPortTreeRegistryEntry final : RegistryEntry
     {
         BuiltinPortTreeRegistryEntry(StringView name_, Path root_, Version version_)
-            : name(name_.to_string()), root(root_), version(version_)
+            : name(name_.to_string()), root(std::move(root_)), version(std::move(version_))
         {
         }
 
@@ -180,7 +180,7 @@ namespace
 
     struct BuiltinGitRegistryEntry final : RegistryEntry
     {
-        BuiltinGitRegistryEntry(const VcpkgPaths& paths) : m_paths(paths) { }
+        explicit BuiltinGitRegistryEntry(const VcpkgPaths& paths) : m_paths(paths) { }
 
         View<Version> get_port_versions() const override { return port_versions; }
         ExpectedS<PathAndLocation> get_version(const Version& version) const override;
@@ -216,7 +216,7 @@ namespace
     {
         static constexpr StringLiteral s_kind = "builtin-files";
 
-        BuiltinFilesRegistry(const VcpkgPaths& paths)
+        explicit BuiltinFilesRegistry(const VcpkgPaths& paths)
             : m_fs(paths.get_filesystem()), m_builtin_ports_directory(paths.builtin_ports_directory())
         {
         }
@@ -229,7 +229,7 @@ namespace
 
         ExpectedL<Version> get_baseline_version(StringView port_name) const override;
 
-        ~BuiltinFilesRegistry() = default;
+        ~BuiltinFilesRegistry() override = default;
 
         DelayedInit<Baseline> m_baseline;
 
@@ -243,7 +243,6 @@ namespace
         const Path m_builtin_ports_directory;
         Cache<Path, ParseExpected<SourceControlFile>> m_scfs;
     };
-    constexpr StringLiteral BuiltinFilesRegistry::s_kind;
 
     // This registry implementation is a builtin registry with a provided
     // baseline that will perform git operations on the root git repo
@@ -266,7 +265,7 @@ namespace
 
         ExpectedL<Version> get_baseline_version(StringView port_name) const override;
 
-        ~BuiltinGitRegistry() = default;
+        ~BuiltinGitRegistry() override = default;
 
         std::string m_baseline_identifier;
         DelayedInit<Baseline> m_baseline;
@@ -276,7 +275,6 @@ namespace
 
         const VcpkgPaths& m_paths;
     };
-    constexpr StringLiteral BuiltinGitRegistry::s_kind;
 
     // This registry entry is a stub that fails on all APIs; this is used in
     // read-only vcpkg if the user has not provided a baseline.
@@ -301,9 +299,8 @@ namespace
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorRequireBaseline);
         }
 
-        ~BuiltinErrorRegistry() = default;
+        ~BuiltinErrorRegistry() override = default;
     };
-    constexpr StringLiteral BuiltinErrorRegistry::s_kind;
 
     struct FilesystemRegistry final : RegistryImplementation
     {
@@ -331,7 +328,7 @@ namespace
     Path relative_path_to_versions(StringView port_name);
     ExpectedS<std::vector<VersionDbEntry>> load_versions_file(const Filesystem& fs,
                                                               VersionDbType vdb,
-                                                              const Path& port_versions,
+                                                              const Path& registry_versions,
                                                               StringView port_name,
                                                               const Path& registry_root = {});
 
@@ -340,7 +337,7 @@ namespace
     ExpectedS<Optional<Baseline>> parse_baseline_versions(StringView contents, StringView baseline, StringView origin);
     ExpectedS<Optional<Baseline>> load_baseline_versions(const Filesystem& fs,
                                                          const Path& baseline_path,
-                                                         StringView identifier = {});
+                                                         StringView baseline = {});
 
     void load_all_port_names_from_registry_versions(std::vector<std::string>& out,
                                                     const Filesystem& fs,
@@ -371,7 +368,7 @@ namespace
         }
     }
 
-    static ExpectedS<Path> git_checkout_baseline(const VcpkgPaths& paths, StringView commit_sha)
+    ExpectedS<Path> git_checkout_baseline(const VcpkgPaths& paths, StringView commit_sha)
     {
         Filesystem& fs = paths.get_filesystem();
         const auto destination_parent = paths.baselines_output() / commit_sha;
@@ -382,7 +379,7 @@ namespace
             const auto destination_tmp = destination_parent / "baseline.json.tmp";
             auto treeish = Strings::concat(commit_sha, ":versions/baseline.json");
             auto maybe_contents = paths.git_show(treeish, paths.root / ".git");
-            if (auto contents = maybe_contents.get())
+            if (auto* contents = maybe_contents.get())
             {
                 std::error_code ec;
                 fs.create_directories(destination_parent, ec);
@@ -462,7 +459,7 @@ namespace
         // if a baseline is not specified, use the ports directory version
         auto port_path = m_builtin_ports_directory / port_name;
         const auto& maybe_scf = get_scf(port_path);
-        if (auto pscf = maybe_scf.get())
+        if (const auto* pscf = maybe_scf.get())
         {
             return (*pscf)->to_version();
         }
@@ -562,14 +559,14 @@ namespace
         const auto& baseline = m_baseline.get([this]() -> Baseline {
             auto path_to_baseline = m_path / registry_versions_dir_name / "baseline.json";
             auto res_baseline = load_baseline_versions(m_fs, path_to_baseline, m_baseline_identifier);
-            if (auto opt_baseline = res_baseline.get())
+            if (auto* opt_baseline = res_baseline.get())
             {
-                if (auto p = opt_baseline->get())
+                if (auto* p = opt_baseline->get())
                 {
                     return std::move(*p);
                 }
 
-                if (m_baseline_identifier.size() == 0)
+                if (m_baseline_identifier.empty())
                 {
                     return {};
                 }
@@ -687,11 +684,11 @@ namespace
                                           maybe_contents.error());
             }
 
-            auto contents = maybe_contents.get();
+            auto* contents = maybe_contents.get();
             auto res_baseline = parse_baseline_versions(*contents, "default", path_to_baseline);
-            if (auto opt_baseline = res_baseline.get())
+            if (auto* opt_baseline = res_baseline.get())
             {
-                if (auto p = opt_baseline->get())
+                if (auto* p = opt_baseline->get())
                 {
                     return std::move(*p);
                 }
@@ -701,7 +698,7 @@ namespace
                         DefineMetric::RegistriesErrorCouldNotFindBaseline);
                     Checks::exit_maybe_upgrade(
                         VCPKG_LINE_INFO,
-                        "The baseline.json from commit `\"%s\"` in the repo %s did not contain a \"default\" field.",
+                        R"(The baseline.json from commit `"%s"` in the repo %s did not contain a "default" field.)",
                         m_baseline_identifier,
                         m_repo);
                 }
@@ -902,7 +899,7 @@ namespace
                 "Error: Failed to load the versions database file %s: %s", versions_file_path, ec.message());
         }
 
-        auto maybe_versions_json = Json::parse(std::move(contents));
+        auto maybe_versions_json = Json::parse(contents);
         if (!maybe_versions_json)
         {
             return Strings::format("Error: failed to parse versions file for `%s`: %s",
@@ -953,10 +950,10 @@ namespace
             return Strings::concat("Error: baseline file ", origin, " does not have a top-level object");
         }
 
-        auto real_baseline = baseline.size() == 0 ? "default" : baseline;
+        auto real_baseline = baseline.empty() ? "default" : baseline;
 
         const auto& obj = value.first.object(VCPKG_LINE_INFO);
-        auto baseline_value = obj.get(real_baseline);
+        const auto* baseline_value = obj.get(real_baseline);
         if (!baseline_value)
         {
             return {nullopt, expected_left_tag};
@@ -992,14 +989,13 @@ namespace
             return Strings::format("Error: failed to read baseline file \"%s\": %s", baseline_path, ec.message());
         }
 
-        return parse_baseline_versions(std::move(contents), baseline, baseline_path);
+        return parse_baseline_versions(contents, baseline, baseline_path);
     }
 }
 
 namespace vcpkg
 {
-    constexpr StringLiteral VersionDbEntryDeserializer::GIT_TREE;
-    constexpr StringLiteral VersionDbEntryDeserializer::PATH;
+
     StringView VersionDbEntryDeserializer::type_name() const { return "a version database entry"; }
     View<StringView> VersionDbEntryDeserializer::valid_fields() const
     {
@@ -1184,7 +1180,7 @@ namespace vcpkg
     {
         auto maybe_versions =
             load_versions_file(paths.get_filesystem(), VersionDbType::Git, paths.builtin_registry_versions, port_name);
-        if (auto pversions = maybe_versions.get())
+        if (auto* pversions = maybe_versions.get())
         {
             return Util::fmap(
                 *pversions, [](auto&& entry) -> auto{
@@ -1199,7 +1195,7 @@ namespace vcpkg
     {
         return load_baseline_versions(paths.get_filesystem(), paths.builtin_registry_versions / "baseline.json")
             .then([&](Optional<Baseline>&& b) -> ExpectedS<Baseline> {
-                if (auto p = b.get())
+                if (auto* p = b.get())
                 {
                     return std::move(*p);
                 }
@@ -1212,7 +1208,7 @@ namespace vcpkg
     {
         static constexpr struct
         {
-            bool operator()(char ch) { return ('0' <= ch && ch <= '9') || ('a' <= ch && ch <= 'f'); }
+            bool operator()(char ch) const { return ('0' <= ch && ch <= '9') || ('a' <= ch && ch <= 'f'); }
         } is_lcase_ascii_hex;
 
         return sv.size() == 40 && std::all_of(sv.begin(), sv.end(), is_lcase_ascii_hex);

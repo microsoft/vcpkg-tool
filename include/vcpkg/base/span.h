@@ -14,16 +14,15 @@ namespace vcpkg
     struct Span
     {
     public:
-        static_assert(std::is_object<T>::value, "Span<non-object-type> is illegal");
+        static_assert(std::is_object_v<T>, "Span<non-object-type> is illegal");
 
         using value_type = std::decay_t<T>;
-        using element_type = T;
         using pointer = std::add_pointer_t<T>;
         using reference = std::add_lvalue_reference_t<T>;
         using iterator = pointer;
 
-        constexpr Span() noexcept : m_ptr(nullptr), m_count(0) { }
-        constexpr Span(std::nullptr_t) noexcept : m_ptr(nullptr), m_count(0) { }
+        constexpr Span() noexcept : m_ptr(nullptr) { }
+        constexpr Span(std::nullptr_t) noexcept : m_ptr(nullptr) { }
         constexpr Span(pointer ptr, size_t count) noexcept : m_ptr(ptr), m_count(count) { }
         constexpr Span(pointer ptr_begin, pointer ptr_end) noexcept : m_ptr(ptr_begin), m_count(ptr_end - ptr_begin) { }
 
@@ -34,10 +33,10 @@ namespace vcpkg
 
         template<class Range,
                  class = decltype(std::declval<Range>().data()),
-                 class = std::enable_if_t<!std::is_same<std::decay_t<Range>, Span>::value>>
+                 class = std::enable_if_t<!std::is_same_v<std::decay_t<Range>, Span>>>
         constexpr Span(Range&& v) noexcept : Span(v.data(), v.size())
         {
-            static_assert(std::is_same<typename std::decay_t<Range>::value_type, value_type>::value,
+            static_assert(std::is_same_v<typename std::decay_t<Range>::value_type, value_type>,
                           "Cannot convert incompatible ranges");
         }
 
@@ -51,6 +50,6 @@ namespace vcpkg
 
     private:
         pointer m_ptr;
-        size_t m_count;
+        size_t m_count{};
     };
 }

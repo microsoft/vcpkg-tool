@@ -123,7 +123,7 @@ namespace vcpkg
                 const std::vector<Dependency>* qualified_deps = &maybe_qualified_deps.value_or_exit(VCPKG_LINE_INFO);
 
                 std::vector<FeatureSpec> dep_list;
-                if (auto vars = maybe_vars.get())
+                if (const auto* vars = maybe_vars.get())
                 {
                     // Qualified dependency resolution is available
                     for (auto&& dep : *qualified_deps)
@@ -205,7 +205,7 @@ namespace vcpkg
                     std::set<std::string> defaults_set{new_defaults.begin(), new_defaults.end()};
 
                     // Install only features that were not previously available
-                    if (auto p_inst = m_installed.get())
+                    if (auto* p_inst = m_installed.get())
                     {
                         for (auto&& prev_default : p_inst->ipv.core->package.default_features)
                         {
@@ -224,7 +224,7 @@ namespace vcpkg
 
             const SourceControlFileAndLocation& get_scfl_or_exit() const
             {
-                if (auto scfl = m_scfl.get())
+                if (const auto* scfl = m_scfl.get())
                 {
                     return *scfl;
                 }
@@ -235,7 +235,7 @@ namespace vcpkg
                                                 .append_raw(m_scfl.error()));
             }
 
-            Optional<const PlatformExpression::Expr&> get_applicable_supports_expression(const FeatureSpec& spec)
+            Optional<const PlatformExpression::Expr&> get_applicable_supports_expression(const FeatureSpec& spec) const
             {
                 if (spec.feature() == "core")
                 {
@@ -257,7 +257,7 @@ namespace vcpkg
 
             Optional<Version> get_version() const
             {
-                if (auto p_installed = m_installed.get())
+                if (const auto* p_installed = m_installed.get())
                 {
                     return p_installed->ipv.core->package.get_version();
                 }
@@ -288,11 +288,12 @@ namespace vcpkg
 
             void install(Span<const FeatureSpec> specs, UnsupportedPortAction unsupported_port_action);
             void upgrade(Span<const PackageSpec> specs, UnsupportedPortAction unsupported_port_action);
-            void mark_user_requested(const PackageSpec& spec);
+            void mark_user_requested(const PackageSpec& spec) const;
 
             ActionPlan serialize(GraphRandomizer* randomizer) const;
 
-            void mark_for_reinstall(const PackageSpec& spec, std::vector<FeatureSpec>& out_reinstall_requirements);
+            void mark_for_reinstall(const PackageSpec& spec,
+                                    std::vector<FeatureSpec>& out_reinstall_requirements) const;
             const CMakeVars::CMakeVarProvider& m_var_provider;
 
             std::unique_ptr<ClusterGraph> m_graph;
@@ -323,7 +324,7 @@ namespace vcpkg
                 if (it == m_graph.end())
                 {
                     auto maybe_scfl = m_port_provider.get_control_file(spec.name());
-                    if (auto scfl = maybe_scfl.get())
+                    if (const auto* scfl = maybe_scfl.get())
                     {
                         it = m_graph
                                  .emplace(std::piecewise_construct,
@@ -348,7 +349,7 @@ namespace vcpkg
                 ExpectedS<const SourceControlFileAndLocation&> maybe_scfl =
                     m_port_provider.get_control_file(ipv.spec().name());
 
-                if (const auto scfl = maybe_scfl.get())
+                if (const auto* const scfl = maybe_scfl.get())
                 {
                     Checks::msg_check_exit(VCPKG_LINE_INFO,
                                            scfl->source_control_file->core_paragraph->type.type ==
@@ -501,7 +502,7 @@ namespace vcpkg
             case InstallPlanType::BUILD_AND_INSTALL:
             {
                 auto&& i = abi_info.value_or_exit(VCPKG_LINE_INFO);
-                if (auto o = i.pre_build_info->public_abi_override.get())
+                if (auto* o = i.pre_build_info->public_abi_override.get())
                     return *o;
                 else
                     return i.package_abi;
@@ -511,18 +512,18 @@ namespace vcpkg
     }
     bool InstallPlanAction::has_package_abi() const
     {
-        const auto p = abi_info.get();
+        const auto* const p = abi_info.get();
         return p && !p->package_abi.empty();
     }
     Optional<const std::string&> InstallPlanAction::package_abi() const
     {
-        const auto p = abi_info.get();
+        const auto* const p = abi_info.get();
         if (!p || p->package_abi.empty()) return nullopt;
         return p->package_abi;
     }
     const PreBuildInfo& InstallPlanAction::pre_build_info(LineInfo li) const
     {
-        return *abi_info.value_or_exit(li).pre_build_info.get();
+        return *abi_info.value_or_exit(li).pre_build_info;
     }
 
     bool InstallPlanAction::compare_by_name(const InstallPlanAction* left, const InstallPlanAction* right)
@@ -569,7 +570,7 @@ namespace vcpkg
 
     Optional<const BinaryParagraph&> ExportPlanAction::core_paragraph() const
     {
-        if (auto p_ip = m_installed_package.get())
+        if (const auto* p_ip = m_installed_package.get())
         {
             return p_ip->core->package;
         }
@@ -578,7 +579,7 @@ namespace vcpkg
 
     std::vector<PackageSpec> ExportPlanAction::dependencies() const
     {
-        if (auto p_ip = m_installed_package.get())
+        if (const auto* p_ip = m_installed_package.get())
             return p_ip->dependencies();
         else
             return {};
@@ -631,7 +632,7 @@ namespace vcpkg
                 const RequestType request_type = specs_as_set.find(spec) != specs_as_set.end()
                                                      ? RequestType::USER_REQUESTED
                                                      : RequestType::AUTO_SELECTED;
-                const StatusParagraphs::const_iterator it = status_db.find_installed(spec);
+                const auto it = status_db.find_installed(spec);
                 if (it == status_db.end())
                 {
                     return RemovePlanAction{spec, RemovePlanType::NOT_INSTALLED, request_type};
@@ -644,8 +645,7 @@ namespace vcpkg
 
         auto installed_ports = get_installed_ports(status_db);
         const std::unordered_set<PackageSpec> specs_as_set(specs.cbegin(), specs.cend());
-        return topological_sort(
-            std::move(specs), RemoveAdjacencyProvider{status_db, installed_ports, specs_as_set}, {});
+        return topological_sort(specs, RemoveAdjacencyProvider{status_db, installed_ports, specs_as_set}, {});
     }
 
     std::vector<ExportPlanAction> create_export_plan(const std::vector<PackageSpec>& specs,
@@ -674,7 +674,7 @@ namespace vcpkg
 
                 auto maybe_ipv = status_db.get_installed_package_view(spec);
 
-                if (auto p_ipv = maybe_ipv.get())
+                if (auto* p_ipv = maybe_ipv.get())
                 {
                     return ExportPlanAction{spec, std::move(*p_ipv), request_type};
                 }
@@ -691,7 +691,7 @@ namespace vcpkg
         return toposort;
     }
 
-    void PackageGraph::mark_user_requested(const PackageSpec& spec)
+    void PackageGraph::mark_user_requested(const PackageSpec& spec) const
     {
         m_graph->get(spec).request_type = RequestType::USER_REQUESTED;
     }
@@ -720,7 +720,7 @@ namespace vcpkg
     }
 
     void PackageGraph::mark_for_reinstall(const PackageSpec& first_remove_spec,
-                                          std::vector<FeatureSpec>& out_reinstall_requirements)
+                                          std::vector<FeatureSpec>& out_reinstall_requirements) const
     {
         std::set<PackageSpec> removed;
         std::vector<PackageSpec> to_remove{first_remove_spec};
@@ -832,9 +832,8 @@ namespace vcpkg
                             }
                             else
                             {
-                                m_warnings.push_back(msg::format(msg::msgWarningMessage)
-                                                         .append(std::move(localized_msg))
-                                                         .extract_data());
+                                m_warnings.push_back(
+                                    msg::format(msg::msgWarningMessage).append(localized_msg).extract_data());
                             }
                         }
                     }
@@ -927,7 +926,7 @@ namespace vcpkg
     {
         struct BaseEdgeProvider : AdjacencyProvider<PackageSpec, const Cluster*>
         {
-            BaseEdgeProvider(const ClusterGraph& parent) : m_parent(parent) { }
+            explicit BaseEdgeProvider(const ClusterGraph& parent) : m_parent(parent) { }
 
             std::string to_string(const PackageSpec& spec) const override { return spec.to_string(); }
             const Cluster* load_vertex_data(const PackageSpec& spec) const override
@@ -957,7 +956,7 @@ namespace vcpkg
             {
                 if (!vertex->m_install_info.has_value()) return {};
 
-                auto& info = vertex->m_install_info.value_or_exit(VCPKG_LINE_INFO);
+                const auto& info = vertex->m_install_info.value_or_exit(VCPKG_LINE_INFO);
                 std::vector<PackageSpec> deps;
                 for (auto&& kv : info.build_edges)
                     for (auto&& e : kv.second)
@@ -997,7 +996,7 @@ namespace vcpkg
         {
             // Every cluster that has an install_info needs to be built
             // If a cluster only has an installed object and is marked as user requested we should still report it.
-            if (auto info_ptr = p_cluster->m_install_info.get())
+            if (const auto* info_ptr = p_cluster->m_install_info.get())
             {
                 std::vector<LocalizedString> constraint_violations;
                 for (auto&& constraints : info_ptr->version_constraints)
@@ -1006,7 +1005,7 @@ namespace vcpkg
                     {
                         auto&& dep_clust = m_graph->get(constraints.first);
                         auto maybe_v = dep_clust.get_version();
-                        if (auto v = maybe_v.get())
+                        if (auto* v = maybe_v.get())
                         {
                             if (compare_any(*v, constraint) == VerComp::lt)
                             {
@@ -1039,7 +1038,7 @@ namespace vcpkg
                             if (dep_clust.m_install_info.has_value())
                                 return dep_clust.get_scfl_or_exit()
                                     .source_control_file->core_paragraph->default_features;
-                            if (auto p = dep_clust.m_installed.get()) return p->ipv.core->package.default_features;
+                            if (auto* p = dep_clust.m_installed.get()) return p->ipv.core->package.default_features;
                             Checks::unreachable(VCPKG_LINE_INFO);
                         }();
                         for (auto&& default_feature : default_features)
@@ -1084,7 +1083,7 @@ namespace vcpkg
 
             for (auto&& dep : deps)
             {
-                auto p_installed = graph->get(dep).m_installed.get();
+                auto* p_installed = graph->get(dep).m_installed.get();
                 if (p_installed == nullptr)
                 {
                     Checks::msg_exit_with_error(
@@ -1324,11 +1323,11 @@ namespace vcpkg
                 template<class F>
                 void foreach_vsi(F f)
                 {
-                    if (auto r = this->relaxed_semver.get())
+                    if (auto* r = this->relaxed_semver.get())
                     {
                         f(**r);
                     }
-                    if (auto d = this->date.get())
+                    if (auto* d = this->date.get())
                     {
                         f(**d);
                     }
@@ -1388,7 +1387,7 @@ namespace vcpkg
             }
             else if (scheme == VersionScheme::Relaxed || scheme == VersionScheme::Semver)
             {
-                if (auto p = relaxed_semver.get())
+                if (auto* p = relaxed_semver.get())
                 {
                     vsi = p->get();
                 }
@@ -1400,7 +1399,7 @@ namespace vcpkg
             }
             else if (scheme == VersionScheme::Date)
             {
-                if (auto p = date.get())
+                if (auto* p = date.get())
                 {
                     vsi = p->get();
                 }
@@ -1500,7 +1499,7 @@ namespace vcpkg
                                                        const std::string& origin)
         {
             const auto maybe_overlay = m_o_provider.get_control_file(ref.first.name());
-            if (auto p_overlay = maybe_overlay.get())
+            if (const auto* p_overlay = maybe_overlay.get())
             {
                 const auto overlay_version = p_overlay->source_control_file->to_version();
                 require_port_version(ref, overlay_version, origin);
@@ -1514,12 +1513,12 @@ namespace vcpkg
                 const auto base_ver = m_base_provider.get_baseline_version(dep.name);
                 const auto dep_ver = dep.constraint.try_get_minimum_version();
 
-                if (auto dv = dep_ver.get())
+                if (const auto* dv = dep_ver.get())
                 {
                     require_port_version(ref, *dv, origin);
                 }
 
-                if (auto bv = base_ver.get())
+                if (const auto* bv = base_ver.get())
                 {
                     require_port_version(ref, *bv, origin);
                 }
@@ -1659,7 +1658,7 @@ namespace vcpkg
                                                                  const DependencyConstraint& dc)
         {
             auto maybe_overlay = m_o_provider.get_control_file(name);
-            if (auto p_overlay = maybe_overlay.get())
+            if (const auto* p_overlay = maybe_overlay.get())
             {
                 return p_overlay->source_control_file->to_version();
             }
@@ -1671,7 +1670,7 @@ namespace vcpkg
             }
 
             auto maybe_cons = dc.try_get_minimum_version();
-            if (auto p = maybe_cons.get())
+            if (auto* p = maybe_cons.get())
             {
                 return std::move(*p);
             }
@@ -1684,7 +1683,7 @@ namespace vcpkg
             m_overrides.emplace(name, v);
         }
 
-        static std::string format_missing_baseline_message(const std::string& onto, const PackageSpec& from)
+        std::string format_missing_baseline_message(const std::string& onto, const PackageSpec& from)
         {
             return Strings::concat(
                 "Error: Cannot resolve a minimum constraint for dependency ",
@@ -1730,7 +1729,7 @@ namespace vcpkg
                 }
             }
 
-            for (auto pdep : active_deps)
+            for (const auto* pdep : active_deps)
             {
                 const auto& dep = *pdep;
                 auto spec = dep_to_spec(dep);
@@ -1740,7 +1739,7 @@ namespace vcpkg
 
                 auto maybe_overlay = m_o_provider.get_control_file(dep.name);
                 auto over_it = m_overrides.find(dep.name);
-                if (auto p_overlay = maybe_overlay.get())
+                if (const auto* p_overlay = maybe_overlay.get())
                 {
                     const auto ver = p_overlay->source_control_file->to_version();
                     m_roots.push_back(DepSpec{spec, ver, dep.features});
@@ -1755,10 +1754,10 @@ namespace vcpkg
                 {
                     const auto dep_ver = dep.constraint.try_get_minimum_version();
                     const auto base_ver = m_base_provider.get_baseline_version(dep.name);
-                    if (auto p_dep_ver = dep_ver.get())
+                    if (const auto* p_dep_ver = dep_ver.get())
                     {
                         m_roots.push_back(DepSpec{spec, *p_dep_ver, dep.features});
-                        if (auto p_base_ver = base_ver.get())
+                        if (const auto* p_base_ver = base_ver.get())
                         {
                             // Compare version constraint with baseline to only evaluate the "tighter" constraint
                             auto dep_scfl = m_ver_provider.get_control_file({dep.name, *p_dep_ver});
@@ -1792,7 +1791,7 @@ namespace vcpkg
                             require_port_version(node, *p_dep_ver, toplevel.name());
                         }
                     }
-                    else if (auto p_base_ver = base_ver.get())
+                    else if (const auto* p_base_ver = base_ver.get())
                     {
                         m_roots.push_back(DepSpec{spec, *p_base_ver, dep.features});
                         require_port_version(node, *p_base_ver, toplevel.name());
@@ -1875,7 +1874,7 @@ namespace vcpkg
                 auto over_it = m_overrides.find(spec.name());
 
                 VersionedPackageGraph::VersionSchemeInfo* p_vnode;
-                if (auto p_overlay = overlay.get())
+                if (const auto* p_overlay = overlay.get())
                     p_vnode = node.get_node(p_overlay->source_control_file->to_version());
                 else if (over_it != m_overrides.end())
                     p_vnode = node.get_node(over_it->second);
@@ -1951,7 +1950,7 @@ namespace vcpkg
                         // Not overridden -- Compare against baseline
                         if (auto baseline = m_base_provider.get_baseline_version(spec.name()))
                         {
-                            if (auto base_node = node.get_node(*baseline.get()))
+                            if (auto* base_node = node.get_node(*baseline.get()))
                             {
                                 if (base_node != p_vnode)
                                 {
@@ -1974,7 +1973,7 @@ namespace vcpkg
                     std::vector<DepSpec> deps;
                     for (auto&& f : ipa.feature_list)
                     {
-                        if (auto maybe_deps =
+                        if (const auto* maybe_deps =
                                 p_vnode->scfl->source_control_file->find_dependencies_for_feature(f).get())
                         {
                             for (auto&& dep : *maybe_deps)
@@ -1989,7 +1988,7 @@ namespace vcpkg
                                 }
                                 auto maybe_cons = dep_to_version(dep.name, dep.constraint);
 
-                                if (auto cons = maybe_cons.get())
+                                if (auto* cons = maybe_cons.get())
                                 {
                                     deps.emplace_back(DepSpec{std::move(dep_spec), std::move(*cons), dep.features});
                                 }
@@ -2031,7 +2030,7 @@ namespace vcpkg
                     return std::move(*err.get());
                 }
 
-                while (stack.size() > 0)
+                while (!stack.empty())
                 {
                     auto& back = stack.back();
                     if (back.deps.empty())

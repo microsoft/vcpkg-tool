@@ -7,7 +7,7 @@ namespace vcpkg
 {
     struct TripletInstance
     {
-        TripletInstance(std::string&& s) : value(std::move(s)), hash(std::hash<std::string>()(value)) { }
+        explicit TripletInstance(std::string&& s) : value(std::move(s)), hash(std::hash<std::string>()(value)) { }
 
         const std::string value;
         const size_t hash = 0;
@@ -31,7 +31,7 @@ namespace vcpkg
     Triplet Triplet::from_canonical_name(std::string triplet_as_string)
     {
         static std::unordered_set<TripletInstance> g_triplet_instances;
-        Strings::ascii_to_lowercase(&triplet_as_string[0], &triplet_as_string[0] + triplet_as_string.size());
+        Strings::ascii_to_lowercase(triplet_as_string.data(), triplet_as_string.data() + triplet_as_string.size());
         const auto p = g_triplet_instances.emplace(std::move(triplet_as_string));
         return &*p.first;
     }

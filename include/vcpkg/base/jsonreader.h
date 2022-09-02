@@ -40,8 +40,8 @@ namespace vcpkg::Json
         IDeserializer() = default;
         IDeserializer(const IDeserializer&) = default;
         IDeserializer& operator=(const IDeserializer&) = default;
-        IDeserializer(IDeserializer&&) = default;
-        IDeserializer& operator=(IDeserializer&&) = default;
+        IDeserializer(IDeserializer&&) noexcept = default;
+        IDeserializer& operator=(IDeserializer&&) noexcept = default;
     };
 
     struct Reader
@@ -75,8 +75,8 @@ namespace vcpkg::Json
         struct JsonPathElement
         {
             constexpr JsonPathElement() = default;
-            constexpr JsonPathElement(int64_t i) : index(i) { }
-            constexpr JsonPathElement(StringView f) : field(f) { }
+            constexpr explicit JsonPathElement(int64_t i) : index(i) { }
+            constexpr explicit JsonPathElement(StringView f) : field(f) { }
 
             int64_t index = -1;
             StringView field;
@@ -84,7 +84,7 @@ namespace vcpkg::Json
 
         struct PathGuard
         {
-            PathGuard(std::vector<JsonPathElement>& path) : m_path{path} { m_path.emplace_back(); }
+            explicit PathGuard(std::vector<JsonPathElement>& path) : m_path{path} { m_path.emplace_back(); }
             PathGuard(std::vector<JsonPathElement>& path, int64_t i) : m_path{path} { m_path.emplace_back(i); }
             PathGuard(std::vector<JsonPathElement>& path, StringView f) : m_path{path} { m_path.emplace_back(f); }
             PathGuard(const PathGuard&) = delete;
@@ -159,10 +159,8 @@ namespace vcpkg::Json
                 visit_in_key(*value, key, place, visitor);
                 return true;
             }
-            else
-            {
-                return false;
-            }
+
+            return false;
         }
 
         template<class Type>
@@ -279,8 +277,8 @@ namespace vcpkg::Json
 
     struct StringDeserializer final : IDeserializer<std::string>
     {
-        virtual StringView type_name() const override { return type_name_; }
-        virtual Optional<std::string> visit_string(Reader&, StringView sv) override { return sv.to_string(); }
+        StringView type_name() const override { return type_name_; }
+        Optional<std::string> visit_string(Reader&, StringView sv) override { return sv.to_string(); }
 
         constexpr explicit StringDeserializer(StringLiteral type_name_) : type_name_(type_name_) { }
 
@@ -290,17 +288,17 @@ namespace vcpkg::Json
 
     struct PathDeserializer final : IDeserializer<Path>
     {
-        virtual StringView type_name() const override { return "a path"; }
-        virtual Optional<Path> visit_string(Reader&, StringView sv) override { return sv; }
+        StringView type_name() const override { return "a path"; }
+        Optional<Path> visit_string(Reader&, StringView sv) override { return sv; }
 
         static PathDeserializer instance;
     };
 
     struct NaturalNumberDeserializer final : IDeserializer<int>
     {
-        virtual StringView type_name() const override { return "a nonnegative integer"; }
+        StringView type_name() const override { return "a nonnegative integer"; }
 
-        virtual Optional<int> visit_integer(Reader&, int64_t value) override
+        Optional<int> visit_integer(Reader&, int64_t value) override
         {
             if (value > std::numeric_limits<int>::max() || value < 0)
             {
@@ -314,9 +312,9 @@ namespace vcpkg::Json
 
     struct BooleanDeserializer final : IDeserializer<bool>
     {
-        virtual StringView type_name() const override { return "a boolean"; }
+        StringView type_name() const override { return "a boolean"; }
 
-        virtual Optional<bool> visit_boolean(Reader&, bool b) override { return b; }
+        Optional<bool> visit_boolean(Reader&, bool b) override { return b; }
 
         static BooleanDeserializer instance;
     };
@@ -326,14 +324,14 @@ namespace vcpkg::Json
     {
         using type = std::vector<typename Underlying::type>;
 
-        virtual StringView type_name() const override { return m_type_name; }
+        StringView type_name() const override { return m_type_name; }
 
-        constexpr ArrayDeserializer(StringLiteral type_name_, Underlying&& t = {})
+        constexpr explicit ArrayDeserializer(StringLiteral type_name_, Underlying&& t = {})
             : m_type_name(type_name_), m_underlying_visitor(static_cast<Underlying&&>(t))
         {
         }
 
-        virtual Optional<type> visit_array(Reader& r, const Array& arr) override
+        Optional<type> visit_array(Reader& r, const Array& arr) override
         {
             return r.array_elements(arr, m_underlying_visitor);
         }
@@ -345,42 +343,42 @@ namespace vcpkg::Json
 
     struct ParagraphDeserializer final : IDeserializer<std::vector<std::string>>
     {
-        virtual StringView type_name() const override { return "a string or array of strings"; }
+        StringView type_name() const override { return "a string or array of strings"; }
 
-        virtual Optional<std::vector<std::string>> visit_string(Reader&, StringView sv) override;
-        virtual Optional<std::vector<std::string>> visit_array(Reader& r, const Array& arr) override;
+        Optional<std::vector<std::string>> visit_string(Reader&, StringView sv) override;
+        Optional<std::vector<std::string>> visit_array(Reader& r, const Array& arr) override;
 
         static ParagraphDeserializer instance;
     };
 
     struct IdentifierDeserializer final : Json::IDeserializer<std::string>
     {
-        virtual StringView type_name() const override { return "an identifier"; }
+        StringView type_name() const override { return "an identifier"; }
 
         // [a-z0-9]+(-[a-z0-9]+)*, plus not any of {prn, aux, nul, con, lpt[1-9], com[1-9], core, default}
         static bool is_ident(StringView sv);
 
-        virtual Optional<std::string> visit_string(Json::Reader&, StringView sv) override;
+        Optional<std::string> visit_string(Json::Reader&, StringView sv) override;
 
         static IdentifierDeserializer instance;
     };
 
     struct IdentifierArrayDeserializer final : Json::IDeserializer<std::vector<std::string>>
     {
-        virtual StringView type_name() const override { return "an array of identifiers"; }
+        StringView type_name() const override { return "an array of identifiers"; }
 
-        virtual Optional<std::vector<std::string>> visit_array(Reader& r, const Array& arr) override;
+        Optional<std::vector<std::string>> visit_array(Reader& r, const Array& arr) override;
 
         static IdentifierArrayDeserializer instance;
     };
 
     struct PackageNameDeserializer final : Json::IDeserializer<std::string>
     {
-        virtual StringView type_name() const override { return "a package name"; }
+        StringView type_name() const override { return "a package name"; }
 
         static bool is_package_name(StringView sv);
 
-        virtual Optional<std::string> visit_string(Json::Reader&, StringView sv) override;
+        Optional<std::string> visit_string(Json::Reader&, StringView sv) override;
 
         static PackageNameDeserializer instance;
     };

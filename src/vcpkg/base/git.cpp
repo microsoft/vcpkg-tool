@@ -40,7 +40,7 @@ namespace vcpkg
             auto slash = std::find(no_prefix.begin(), no_prefix.end(), '/');
             if (slash != no_prefix.end())
             {
-                return std::string(no_prefix.begin(), slash);
+                return {no_prefix.begin(), slash};
             }
         }
         return {};
@@ -187,7 +187,7 @@ namespace vcpkg
             }
             return ret;
         }
-        return std::move(maybe_results.error());
+        return maybe_results.error();
     }
 
     ExpectedL<bool> is_shallow_clone(const GitConfig& config)

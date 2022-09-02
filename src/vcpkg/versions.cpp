@@ -7,7 +7,7 @@
 
 namespace vcpkg
 {
-    Version::Version() noexcept : m_text("0.0.0"), m_port_version(0) { }
+    Version::Version() noexcept : m_text("0.0.0") { }
     Version::Version(std::string&& value, int port_version) : m_text(std::move(value)), m_port_version(port_version) { }
     Version::Version(const std::string& value, int port_version) : m_text(value), m_port_version(port_version) { }
 
@@ -39,7 +39,7 @@ namespace vcpkg
         return left.m_port_version < right.m_port_version;
     }
 
-    VersionDiff::VersionDiff() noexcept : left(), right() { }
+    VersionDiff::VersionDiff() noexcept { }
     VersionDiff::VersionDiff(const Version& left, const Version& right) : left(left), right(right) { }
 
     std::string VersionDiff::to_string() const
@@ -54,13 +54,11 @@ namespace vcpkg
         Optional<uint64_t> as_numeric(StringView str)
         {
             uint64_t res = 0;
-            size_t digits = 0;
             for (auto&& ch : str)
             {
                 uint64_t digit_value = static_cast<unsigned char>(ch) - static_cast<unsigned char>('0');
                 if (digit_value > 9) return nullopt;
                 if (res > std::numeric_limits<uint64_t>::max() / 10 - digit_value) return nullopt;
-                ++digits;
                 res = res * 10 + digit_value;
             }
             return res;
@@ -118,7 +116,7 @@ namespace vcpkg
     // 0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*
     static const char* skip_prerelease_identifier(const char* const s)
     {
-        auto cur = s;
+        const auto* cur = s;
         while (ParserBase::is_ascii_digit(*cur))
         {
             ++cur;
@@ -178,7 +176,7 @@ namespace vcpkg
             const char* const start_of_prerelease = cur;
             for (;;)
             {
-                const auto start_identifier = cur;
+                const auto* const start_identifier = cur;
                 cur = skip_prerelease_identifier(cur);
                 if (!cur)
                 {
@@ -194,26 +192,20 @@ namespace vcpkg
 
         // build
         if (*cur != '+') return LocalizedString{};
-        ++cur;
-        for (;;)
+        // Require non-empty identifier element
+        while (ParserBase::is_alphanumdash(*(++cur)))
         {
-            // Require non-empty identifier element
-            if (!ParserBase::is_alphanumdash(*cur)) return LocalizedString{};
-            ++cur;
-            while (ParserBase::is_alphanumdash(*cur))
+            do
             {
                 ++cur;
-            }
+            } while (ParserBase::is_alphanumdash(*cur));
             if (*cur == 0) return ret;
-            if (*cur == '.')
+            if (*cur != '.')
             {
-                ++cur;
-            }
-            else
-            {
-                return LocalizedString{};
+                break;
             }
         }
+        return LocalizedString{};
     }
 
     bool operator==(const DotVersion& lhs, const DotVersion& rhs) { return compare(lhs, rhs) == VerComp::eq; }
@@ -239,7 +231,7 @@ namespace vcpkg
     ExpectedL<DotVersion> DotVersion::try_parse_semver(StringView str)
     {
         auto x = try_parse_dot_version(str);
-        if (auto p = x.get())
+        if (auto* p = x.get())
         {
             if (p->version.size() == 3)
             {
@@ -256,9 +248,9 @@ namespace vcpkg
     {
         auto maybe_a_num = as_numeric(a);
         auto maybe_b_num = as_numeric(b);
-        if (auto a_num = maybe_a_num.get())
+        if (auto* a_num = maybe_a_num.get())
         {
-            if (auto b_num = maybe_b_num.get())
+            if (auto* b_num = maybe_b_num.get())
             {
                 return uint64_comp(*a_num, *b_num);
             }
@@ -428,20 +420,20 @@ namespace vcpkg
             return integer_vercomp(a.port_version(), b.port_version());
         }
         auto date_a = DateVersion::try_parse(a.text());
-        if (auto p_date_a = date_a.get())
+        if (auto* p_date_a = date_a.get())
         {
             auto date_b = DateVersion::try_parse(b.text());
-            if (auto p_date_b = date_b.get())
+            if (auto* p_date_b = date_b.get())
             {
                 return portversion_vercomp(compare(*p_date_a, *p_date_b), a.port_version(), b.port_version());
             }
         }
 
         auto dot_a = DotVersion::try_parse_relaxed(a.text());
-        if (auto p_dot_a = dot_a.get())
+        if (auto* p_dot_a = dot_a.get())
         {
             auto dot_b = DotVersion::try_parse_relaxed(b.text());
-            if (auto p_dot_b = dot_b.get())
+            if (auto* p_dot_b = dot_b.get())
             {
                 return portversion_vercomp(compare(*p_dot_a, *p_dot_b), a.port_version(), b.port_version());
             }
@@ -453,7 +445,7 @@ namespace vcpkg
     {
         if (sv.empty()) return "0";
 
-        auto it = std::find_if_not(sv.begin(), sv.end(), [](char ch) { return ch == '0'; });
+        const auto* it = std::find_if_not(sv.begin(), sv.end(), [](char ch) { return ch == '0'; });
         if (it == sv.end())
         {
             // all zeroes - just return "0"
@@ -479,7 +471,7 @@ namespace vcpkg
         // a b c d - e f - g h <end>
         // 0 1 2 3 4 5 6 7 8 9 10
         if (version.size() < 10) return false;
-        auto first = version.begin();
+        const auto* first = version.begin();
         if (!P::is_ascii_digit(*first++)) return false;
         if (!P::is_ascii_digit(*first++)) return false;
         if (!P::is_ascii_digit(*first++)) return false;
@@ -503,14 +495,14 @@ namespace vcpkg
     bool try_extract_external_dot_version(ParsedExternalVersion& out, StringView version)
     {
         using P = ParserBase;
-        auto first = version.begin();
-        auto last = version.end();
+        const auto* first = version.begin();
+        const auto* last = version.end();
 
         out.major = out.minor = out.patch = StringView{};
 
         if (first == last) return false;
 
-        auto major_last = std::find_if_not(first, last, P::is_ascii_digit);
+        const auto* major_last = std::find_if_not(first, last, P::is_ascii_digit);
         out.major = StringView{first, major_last};
         if (major_last == last)
         {
@@ -521,14 +513,14 @@ namespace vcpkg
             return false;
         }
 
-        auto minor_last = std::find_if_not(major_last + 1, last, P::is_ascii_digit);
+        const auto* minor_last = std::find_if_not(major_last + 1, last, P::is_ascii_digit);
         out.minor = StringView{major_last + 1, minor_last};
         if (minor_last == last || minor_last == major_last + 1 || *minor_last != '.')
         {
             return true;
         }
 
-        auto patch_last = std::find_if_not(minor_last + 1, last, P::is_ascii_digit);
+        const auto* patch_last = std::find_if_not(minor_last + 1, last, P::is_ascii_digit);
         out.patch = StringView{minor_last + 1, patch_last};
 
         return true;

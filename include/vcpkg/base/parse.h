@@ -47,8 +47,8 @@ namespace vcpkg
     {
         Unicode::Utf8Decoder it;
         Unicode::Utf8Decoder start_of_line;
-        int row;
-        int column;
+        int row{};
+        int column{};
     };
 
     struct ParseMessage

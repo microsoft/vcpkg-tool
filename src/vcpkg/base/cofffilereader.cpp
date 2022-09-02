@@ -44,7 +44,7 @@ namespace vcpkg
     MachineType read_dll_machine_type(const ReadFilePointer& fs)
     {
         read_and_verify_pe_signature(fs);
-        CoffFileHeader header;
+        CoffFileHeader header{};
         Checks::check_exit(VCPKG_LINE_INFO, fs.read(&header, sizeof(header), 1) == 1);
         return to_machine_type(header.machine);
     }
@@ -73,7 +73,7 @@ namespace vcpkg
             memcpy(size_plus_null, size, 10);
             size_plus_null[10] = '\0';
             uint64_t value = strtoull(size_plus_null, nullptr, 10);
-            if (value & 1u)
+            if (value & 1U)
             {
                 ++value; // align to short
             }
@@ -92,7 +92,7 @@ namespace vcpkg
             uint16_t sig2;
             uint16_t version;
             uint16_t machine;
-        } tmp;
+        } tmp{};
 
         Checks::check_exit(VCPKG_LINE_INFO, fs.read(&tmp, sizeof(tmp), 1) == 1);
         if (tmp.sig2 == 0xFFFF)
@@ -118,7 +118,7 @@ namespace vcpkg
 
     static void read_and_skip_first_linker_member(const vcpkg::ReadFilePointer& fs)
     {
-        ArchiveMemberHeader first_linker_member_header;
+        ArchiveMemberHeader first_linker_member_header{};
         Checks::check_exit(VCPKG_LINE_INFO,
                            fs.read(&first_linker_member_header, sizeof(first_linker_member_header), 1) == 1);
         Checks::check_exit(VCPKG_LINE_INFO,
@@ -129,7 +129,7 @@ namespace vcpkg
 
     static std::vector<uint32_t> read_second_linker_member_offsets(const vcpkg::ReadFilePointer& fs)
     {
-        ArchiveMemberHeader second_linker_member_header;
+        ArchiveMemberHeader second_linker_member_header{};
         Checks::check_exit(VCPKG_LINE_INFO,
                            fs.read(&second_linker_member_header, sizeof(second_linker_member_header), 1) == 1);
         Checks::check_exit(VCPKG_LINE_INFO,
@@ -149,10 +149,10 @@ namespace vcpkg
                            "Second linker member was too small to contain the expected number of archive members");
         std::vector<uint32_t> offsets(archive_member_count);
         Checks::check_exit(VCPKG_LINE_INFO,
-                           fs.read(&offsets[0], sizeof(uint32_t), archive_member_count) == archive_member_count);
+                           fs.read(offsets.data(), sizeof(uint32_t), archive_member_count) == archive_member_count);
 
         // Ignore offsets that point to offset 0. See vcpkg github #223 #288 #292
-        offsets.erase(std::remove(offsets.begin(), offsets.end(), 0u), offsets.end());
+        offsets.erase(std::remove(offsets.begin(), offsets.end(), 0U), offsets.end());
         // Sort the offsets, because it is possible for them to be unsorted. See vcpkg github #292
         std::sort(offsets.begin(), offsets.end());
         uint64_t leftover = second_size - sizeof(uint32_t) - (archive_member_count * sizeof(uint32_t));
@@ -165,9 +165,8 @@ namespace vcpkg
     {
         std::vector<MachineType> machine_types; // used as a set because n is tiny
         // Next we have the obj and pseudo-object files
-        for (size_t idx = 0; idx < member_offsets.size(); ++idx)
+        for (unsigned int offset : member_offsets)
         {
-            const auto offset = member_offsets[idx];
             // Skip the header, no need to read it
             Checks::check_exit(VCPKG_LINE_INFO, fs.seek(offset + sizeof(ArchiveMemberHeader), SEEK_SET) == 0);
             uint16_t machine_type_raw;
@@ -201,7 +200,7 @@ namespace vcpkg
 
     MachineType to_machine_type(const uint16_t value)
     {
-        const MachineType t = static_cast<MachineType>(value);
+        const auto t = static_cast<MachineType>(value);
         switch (t)
         {
             case MachineType::UNKNOWN:

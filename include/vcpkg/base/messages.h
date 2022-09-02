@@ -35,8 +35,7 @@ namespace vcpkg
 
         static LocalizedString from_raw(std::string&& s) { return LocalizedString(std::move(s)); }
 
-        template<class StringLike,
-                 std::enable_if_t<std::is_constructible<StringView, const StringLike&>::value, int> = 0>
+        template<class StringLike, std::enable_if_t<std::is_constructible_v<StringView, const StringLike&>, int> = 0>
         static LocalizedString from_raw(const StringLike& s)
         {
             return LocalizedString(StringView(s));
@@ -106,7 +105,7 @@ namespace vcpkg
             return lhs.data() >= rhs.data();
         }
 
-        bool empty() { return m_data.empty(); }
+        bool empty() const { return m_data.empty(); }
         void clear() { m_data.clear(); }
 
     private:
@@ -224,7 +223,7 @@ namespace vcpkg::msg
     {
         // avoid generating code, but still typecheck
         // (and avoid unused typedef warnings)
-        static_assert((Message::check_format_args((Tags{})...), true), "");
+        static_assert((Message::check_format_args((Tags{})...), true));
         return detail::internal_vformat(Message::index,
                                         fmt::make_format_args(fmt::arg(Tags::name, *args.parameter)...));
     }

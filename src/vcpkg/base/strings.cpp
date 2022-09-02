@@ -27,8 +27,8 @@ vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView 
     static const char s_brackets[] = "{}";
 
     std::string out;
-    auto prev = sv.begin();
-    const auto last = sv.end();
+    const auto* prev = sv.begin();
+    const auto* const last = sv.end();
     for (const char* p = std::find_first_of(prev, last, s_brackets, s_brackets + 2); p != last;
          p = std::find_first_of(p, last, s_brackets, s_brackets + 2))
     {
@@ -123,7 +123,7 @@ using namespace vcpkg;
 std::wstring Strings::to_utf16(StringView s)
 {
     std::wstring output;
-    if (s.size() == 0) return output;
+    if (s.empty()) return output;
     Checks::check_exit(VCPKG_LINE_INFO, s.size() < size_t(INT_MAX));
     int size = MultiByteToWideChar(CP_UTF8, 0, s.data(), static_cast<int>(s.size()), nullptr, 0);
     output.resize(static_cast<size_t>(size));
@@ -277,9 +277,9 @@ std::string Strings::trim(std::string&& s)
 
 StringView Strings::trim(StringView sv)
 {
-    auto last = std::find_if_not(sv.rbegin(), sv.rend(), details::is_space).base();
-    auto first = std::find_if_not(sv.begin(), sv.end(), details::is_space);
-    return StringView(first, last);
+    const auto* last = std::find_if_not(sv.rbegin(), sv.rend(), details::is_space).base();
+    const auto* first = std::find_if_not(sv.begin(), sv.end(), details::is_space);
+    return {first, last};
 }
 
 void Strings::trim_all_and_remove_whitespace_strings(std::vector<std::string>* strings)
@@ -295,8 +295,8 @@ void Strings::trim_all_and_remove_whitespace_strings(std::vector<std::string>* s
 std::vector<std::string> Strings::split(StringView s, const char delimiter)
 {
     std::vector<std::string> output;
-    auto first = s.begin();
-    const auto last = s.end();
+    const auto* first = s.begin();
+    const auto* const last = s.end();
     for (;;)
     {
         first = std::find_if(first, last, [=](const char c) { return c != delimiter; });
@@ -305,7 +305,7 @@ std::vector<std::string> Strings::split(StringView s, const char delimiter)
             return output;
         }
 
-        auto next = std::find(first, last, delimiter);
+        const auto* next = std::find(first, last, delimiter);
         output.emplace_back(first, next);
         first = next;
     }
@@ -327,8 +327,8 @@ const char* Strings::find_first_of(StringView input, StringView chars)
 
 std::vector<StringView> Strings::find_all_enclosed(StringView input, StringView left_delim, StringView right_delim)
 {
-    auto it_left = input.begin();
-    auto it_right = input.begin();
+    const char* it_left;
+    const char* it_right = input.begin();
 
     std::vector<StringView> output;
 
@@ -414,10 +414,13 @@ size_t Strings::byte_edit_distance(StringView a, StringView b)
         else
             return std::max(a.size(), b.size());
     }
-    if (a.size() == 0 || b.size() == 0) return std::max(a.size(), b.size());
 
-    auto pa = a.data();
-    auto pb = b.data();
+    if (a.empty()) return b.size();
+
+    if (b.empty()) return a.size();
+
+    const auto* pa = a.data();
+    const auto* pb = b.data();
     size_t sa = a.size();
     size_t sb = b.size();
 
@@ -456,7 +459,7 @@ template<>
 Optional<int> Strings::strto<int>(StringView sv)
 {
     auto opt = strto<long>(sv);
-    if (auto p = opt.get())
+    if (auto* p = opt.get())
     {
         if (INT_MIN <= *p && *p <= INT_MAX)
         {
@@ -551,9 +554,9 @@ namespace vcpkg::Strings
                                         "QRSTUVWXYZ234567";
 
         // log2(32)
-        constexpr static int shift = 5;
+        constexpr static auto shift = 5U;
         // 32 - 1
-        constexpr static auto mask = 31;
+        constexpr static auto mask = 31U;
 
         // ceiling(bitsize(Integral) / log2(32))
         constexpr static auto result_size = (sizeof(value) * CHAR_BIT + shift - 1) / shift;

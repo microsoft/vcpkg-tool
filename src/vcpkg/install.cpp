@@ -148,9 +148,7 @@ namespace vcpkg
     }
 
     static std::vector<file_pack> extract_files_in_triplet(
-        const std::vector<StatusParagraphAndAssociatedFiles>& pgh_and_files,
-        Triplet triplet,
-        const size_t remove_chars = 0)
+        const std::vector<StatusParagraphAndAssociatedFiles>& pgh_and_files, Triplet triplet, const size_t remove_chars)
     {
         std::vector<file_pack> output;
         for (const StatusParagraphAndAssociatedFiles& t : pgh_and_files)
@@ -216,8 +214,8 @@ namespace vcpkg
             bool operator()(const std::string& lhs, const std::string& rhs) { return lhs < rhs; }
             bool operator()(const file_pack& lhs, const file_pack& rhs) { return lhs.first < rhs.first; }
 #endif
-            bool operator()(const std::string& lhs, const file_pack& rhs) { return lhs < rhs.first; }
-            bool operator()(const file_pack& lhs, const std::string& rhs) { return lhs.first < rhs; }
+            bool operator()(const std::string& lhs, const file_pack& rhs) const { return lhs < rhs.first; }
+            bool operator()(const file_pack& lhs, const std::string& rhs) const { return lhs.first < rhs; }
         };
 
         std::vector<file_pack> intersection;
@@ -488,6 +486,7 @@ namespace vcpkg
         {
             results.emplace_back(action);
             current_summary = &results.back();
+
             msg::println(Remove::msgRemovingPackage,
                          msg::action_index = action_index,
                          msg::count = action_count,
@@ -624,7 +623,7 @@ namespace vcpkg
             const auto packages = registry.packages();
             ret.insert(ret.end(), packages.begin(), packages.end());
         }
-        if (auto registry = registries.default_registry())
+        if (const auto* registry = registries.default_registry())
         {
             registry->get_all_port_names(ret);
         }
@@ -692,9 +691,9 @@ namespace vcpkg
             return ch != ')' && ch != '$' && !ParserBase::is_whitespace(ch);
         };
 
-        const auto real_first = cmake_file.begin();
-        auto first = real_first;
-        const auto last = cmake_file.end();
+        const auto* const real_first = cmake_file.begin();
+        const auto* first = real_first;
+        const auto* const last = cmake_file.end();
 
         std::vector<std::string> res;
         for (;;)
@@ -704,8 +703,8 @@ namespace vcpkg
             {
                 return res;
             }
-            auto start_of_library_name = std::find_if_not(first, last, ParserBase::is_whitespace);
-            auto end_of_library_name = std::find_if_not(start_of_library_name, last, is_library_name_char);
+            const auto* start_of_library_name = std::find_if_not(first, last, ParserBase::is_whitespace);
+            const auto* end_of_library_name = std::find_if_not(start_of_library_name, last, is_library_name_char);
             if (end_of_library_name == start_of_library_name)
             {
                 first = end_of_library_name;
@@ -896,7 +895,7 @@ namespace vcpkg
         LockGuardPtr<Metrics>(g_metrics)->track_bool_property(BoolMetric::InstallManifestMode,
                                                               paths.manifest_mode_enabled());
 
-        if (auto p = paths.get_manifest().get())
+        if (const auto* p = paths.get_manifest().get())
         {
             bool failure = false;
             if (!args.command_arguments.empty())
@@ -977,7 +976,7 @@ namespace vcpkg
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
-        if (auto manifest = paths.get_manifest().get())
+        if (const auto* manifest = paths.get_manifest().get())
         {
             Optional<Path> pkgsconfig;
             auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
@@ -1011,7 +1010,7 @@ namespace vcpkg
             }
             if (Util::Sets::contains(options.switches, OPTION_MANIFEST_NO_DEFAULT_FEATURES))
             {
-                features.push_back("core");
+                features.emplace_back("core");
             }
 
             auto core_it = std::remove(features.begin(), features.end(), "core");
@@ -1233,7 +1232,7 @@ namespace vcpkg
             for (auto&& result : summary.results)
             {
                 if (!result.is_user_requested_install()) continue;
-                auto bpgh = result.get_binary_paragraph();
+                const auto* bpgh = result.get_binary_paragraph();
                 // If a package failed to build, don't attempt to print usage.
                 // e.g. --keep-going
                 if (!bpgh) continue;
@@ -1253,20 +1252,12 @@ namespace vcpkg
     }
 
     SpecSummary::SpecSummary(const InstallPlanAction& action)
-        : build_result()
-        , timing()
-        , start_time(std::chrono::system_clock::now())
-        , m_install_action(&action)
-        , m_spec(action.spec)
+        : start_time(std::chrono::system_clock::now()), m_install_action(&action), m_spec(action.spec)
     {
     }
 
     SpecSummary::SpecSummary(const RemovePlanAction& action)
-        : build_result()
-        , timing()
-        , start_time(std::chrono::system_clock::now())
-        , m_install_action(nullptr)
-        , m_spec(action.spec)
+        : start_time(std::chrono::system_clock::now()), m_install_action(nullptr), m_spec(action.spec)
     {
     }
 
@@ -1285,7 +1276,7 @@ namespace vcpkg
         // was built before.
         if (m_install_action)
         {
-            if (auto p_status = m_install_action->installed_package.get())
+            if (const auto p_status = m_install_action->installed_package.get())
             {
                 return &p_status->core->package;
             }

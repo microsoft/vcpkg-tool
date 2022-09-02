@@ -98,7 +98,7 @@ namespace
 
         // returns {arg, ""} when there isn't an `=`
         // skips preceding `-`s
-        std::pair<StringView, StringView> split_arg(StringView arg)
+        static std::pair<StringView, StringView> split_arg(StringView arg)
         {
             auto first = std::find_if(arg.begin(), arg.end(), [](char c) { return c != '-'; });
             auto division = std::find(first, arg.end(), '=');
@@ -112,7 +112,7 @@ namespace
             }
         }
 
-        [[noreturn]] void print_help_and_exit(bool invalid = false)
+        [[noreturn]] static void print_help_and_exit(bool invalid = false)
         {
             auto color = invalid ? Color::error : Color::none;
 

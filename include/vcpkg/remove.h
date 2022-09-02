@@ -12,7 +12,7 @@ namespace vcpkg::Remove
 {
     enum class Purge : bool
     {
-        NO = 0,
+        NO = false,
         YES
     };
 
@@ -23,7 +23,7 @@ namespace vcpkg::Remove
 
     void perform_remove_plan_action(const VcpkgPaths& paths,
                                     const RemovePlanAction& action,
-                                    const Purge purge,
+                                    Purge purge,
                                     StatusParagraphs* status_db);
 
     extern const CommandStructure COMMAND_STRUCTURE;

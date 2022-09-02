@@ -47,7 +47,7 @@ namespace vcpkg
         friend std::string operator+(std::string&& l, const StringView& r);
 
     private:
-        const char* m_ptr = 0;
+        const char* m_ptr = nullptr;
         size_t m_size = 0;
     };
 
@@ -109,7 +109,10 @@ namespace vcpkg
         static_assert(N != 0, "Space for the null terminator is necessary.");
 
         constexpr StringArray() noexcept : m_array{} { }
-        constexpr StringArray(const char (&str)[N]) noexcept : m_array{} { constexpr_copy(str, str + N, begin()); }
+        constexpr explicit StringArray(const char (&str)[N]) noexcept : m_array{}
+        {
+            constexpr_copy(str, str + N, begin());
+        }
 
         constexpr auto begin() noexcept { return m_array.begin(); }
         constexpr auto end() noexcept { return m_array.end() - 1; }
@@ -137,7 +140,7 @@ namespace vcpkg
 
         template<::size_t L, ::size_t R>
         friend constexpr StringArray<L + R - 1> operator+(const StringArray<L> lhs, const StringArray<R> rhs) noexcept;
-        constexpr operator ZStringView() const noexcept
+        constexpr explicit operator ZStringView() const noexcept
         {
             ZStringView sl(data(), size());
             return sl;

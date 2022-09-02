@@ -36,13 +36,13 @@ namespace vcpkg::Export::Prefab
         return paths;
     }
 
-    std::string NdkVersion::to_string()
+    std::string NdkVersion::to_string() const
     {
         std::string ret;
         this->to_string(ret);
         return ret;
     }
-    void NdkVersion::to_string(std::string& out)
+    void NdkVersion::to_string(std::string& out) const
     {
         out.append("NdkVersion{major=")
             .append(std::to_string(major()))
@@ -56,6 +56,7 @@ namespace vcpkg::Export::Prefab
     static std::string jsonify(const std::vector<std::string>& dependencies)
     {
         std::vector<std::string> deps;
+        deps.reserve(dependencies.size());
         for (const auto& dep : dependencies)
         {
             deps.push_back("\"" + dep + "\"");
@@ -66,7 +67,7 @@ namespace vcpkg::Export::Prefab
     static std::string null_if_empty(const std::string& str)
     {
         std::string copy = str;
-        if (copy.size() == 0)
+        if (copy.empty())
         {
             copy = "null";
         }
@@ -80,7 +81,7 @@ namespace vcpkg::Export::Prefab
     static std::string null_if_empty_array(const std::string& str)
     {
         std::string copy = str;
-        if (copy.size() == 0)
+        if (copy.empty())
         {
             copy = "null";
         }
@@ -91,7 +92,7 @@ namespace vcpkg::Export::Prefab
         return copy;
     }
 
-    std::string ABIMetadata::to_string()
+    std::string ABIMetadata::to_string() const
     {
         std::string TEMPLATE = R"({
     "abi":"@ABI@",
@@ -106,7 +107,7 @@ namespace vcpkg::Export::Prefab
         return json;
     }
 
-    std::string PlatformModuleMetadata::to_json()
+    std::string PlatformModuleMetadata::to_json() const
     {
         std::string TEMPLATE = R"({
     "export_libraries": @LIBRARIES@,
@@ -118,7 +119,7 @@ namespace vcpkg::Export::Prefab
         return json;
     }
 
-    std::string ModuleMetadata::to_json()
+    std::string ModuleMetadata::to_json() const
     {
         std::string TEMPLATE = R"({
     "export_libraries": [@LIBRARIES@],
@@ -132,7 +133,7 @@ namespace vcpkg::Export::Prefab
         return json;
     }
 
-    std::string PackageMetadata::to_json()
+    std::string PackageMetadata::to_json() const
     {
         std::string deps = jsonify(dependencies);
 
@@ -271,7 +272,7 @@ namespace vcpkg::Export::Prefab
 
         for (auto& triplet_file : available_triplets)
         {
-            if (triplet_file.name.size() > 0)
+            if (!triplet_file.name.empty())
             {
                 Triplet triplet = Triplet::from_canonical_name(std::move(triplet_file.name));
                 auto triplet_build_info = build_info_from_triplet(paths, provider, triplet);
@@ -457,9 +458,9 @@ namespace vcpkg::Export::Prefab
 
             std::vector<std::string> pom_dependencies;
 
-            if (dependencies_minus_empty_packages.size() > 0)
+            if (!dependencies_minus_empty_packages.empty())
             {
-                pom_dependencies.push_back("\n<dependencies>");
+                pom_dependencies.emplace_back("\n<dependencies>");
             }
 
             for (const auto& it : dependencies_minus_empty_packages)
@@ -478,9 +479,9 @@ namespace vcpkg::Export::Prefab
                 pm.dependencies.push_back(it.name());
             }
 
-            if (dependencies_minus_empty_packages.size() > 0)
+            if (!dependencies_minus_empty_packages.empty())
             {
-                pom_dependencies.push_back("</dependencies>\n");
+                pom_dependencies.emplace_back("</dependencies>\n");
             }
 
             if (prefab_options.enable_debug)
@@ -496,6 +497,7 @@ namespace vcpkg::Export::Prefab
             if (prefab_options.enable_debug)
             {
                 std::vector<std::string> triplet_names;
+                triplet_names.reserve(triplets.size());
                 for (auto&& triplet : triplets)
                 {
                     triplet_names.push_back(triplet.canonical_name());
@@ -523,6 +525,7 @@ namespace vcpkg::Export::Prefab
 
                 std::vector<Path> modules_shared = find_modules(paths, libs, ".so");
 
+                modules.reserve(modules_shared.size());
                 for (const auto& module : modules_shared)
                 {
                     modules.push_back(module);

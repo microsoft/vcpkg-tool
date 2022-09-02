@@ -112,8 +112,8 @@ namespace vcpkg
     struct VcpkgCmdArguments
     {
         static VcpkgCmdArguments create_from_command_line(const Filesystem& fs,
-                                                          const int argc,
-                                                          const CommandLineCharType* const* const argv);
+                                                          int argc,
+                                                          const CommandLineCharType* const* argv);
         static VcpkgCmdArguments create_from_arg_sequence(const std::string* arg_begin, const std::string* arg_end);
 
         static void append_common_options(HelpTableFormatter& target);
@@ -225,7 +225,7 @@ namespace vcpkg
         bool manifests_enabled() const { return manifest_mode.value_or(true); }
         FeatureFlagSettings feature_flag_settings() const
         {
-            FeatureFlagSettings f;
+            FeatureFlagSettings f{};
             f.binary_caching = binary_caching_enabled();
             f.compiler_tracking = compiler_tracking_enabled();
             f.registries = registries_enabled();
@@ -260,7 +260,7 @@ namespace vcpkg
         const std::vector<std::string>& get_forwardable_arguments() const noexcept;
 
     private:
-        void imbue_from_environment_impl(std::function<Optional<std::string>(ZStringView)> get_env);
+        void imbue_from_environment_impl(const std::function<Optional<std::string>(ZStringView)>& get_env);
 
         Optional<std::string> asset_sources_template_env; // for ASSET_SOURCES_ENV
         Optional<std::string> asset_sources_template_arg; // for ASSET_SOURCES_ARG

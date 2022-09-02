@@ -410,8 +410,8 @@ namespace vcpkg::PlatformExpression
     using namespace detail;
 
     Expr::Expr() = default;
-    Expr::Expr(Expr&& other) = default;
-    Expr& Expr::operator=(Expr&& other) = default;
+    Expr::Expr(Expr&& other) noexcept = default;
+    Expr& Expr::operator=(Expr&& other) noexcept = default;
 
     Expr::Expr(const Expr& other)
     {

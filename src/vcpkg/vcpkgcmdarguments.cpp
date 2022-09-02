@@ -152,7 +152,7 @@ namespace vcpkg
                                           StringView option_name,
                                           std::vector<std::string>& option_field)
     {
-        if (new_value.size() == 0)
+        if (new_value.empty())
         {
             msg::println_error(msgExpectedValueForOption, msg::option = option_name);
             LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::Error, "error option name");
@@ -167,7 +167,7 @@ namespace vcpkg
                                                StringView option_name,
                                                std::vector<std::string>& option_field)
     {
-        if (new_value.size() == 0)
+        if (new_value.empty())
         {
             msg::println_error(msgExpectedValueForOption, msg::option = option_name);
             LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::Error, "error option name");
@@ -195,7 +195,7 @@ namespace vcpkg
             arg = argv[i];
 #endif
             // Response file?
-            if (arg.size() > 0 && arg[0] == '@')
+            if (!arg.empty() && arg[0] == '@')
             {
                 arg.erase(arg.begin());
                 auto lines = fs.read_lines(arg, VCPKG_LINE_INFO);
@@ -230,7 +230,7 @@ namespace vcpkg
         {
             if (arg.size() == option.size())
             {
-                if (auto next = lookahead.get())
+                if (auto* next = lookahead.get())
                 {
                     parser(*next, option, place);
                     return TryParseArgumentResult::FoundAndConsumedLookahead;
@@ -299,7 +299,7 @@ namespace vcpkg
             }
         }
 
-        for (auto it = arg_first; it != arg_last; ++it)
+        for (const auto* it = arg_first; it != arg_last; ++it)
         {
             std::string basic_arg = *it;
 
@@ -329,7 +329,7 @@ namespace vcpkg
             }
 
             // make argument case insensitive before the first =
-            auto first_eq = Util::find(Span<char>(basic_arg), '=');
+            auto* first_eq = Util::find(Span<char>(basic_arg), '=');
             Strings::ascii_to_lowercase(basic_arg.data(), first_eq);
             // basic_arg[0] == '-' && basic_arg[1] == '-'
             StringView arg = StringView(basic_arg).substr(2);
@@ -422,7 +422,7 @@ namespace vcpkg
             }
             if (found) continue;
 
-            const auto eq_pos = std::find(arg.begin(), arg.end(), '=');
+            const auto* const eq_pos = std::find(arg.begin(), arg.end(), '=');
             if (eq_pos != arg.end())
             {
                 const auto& key = StringView(arg.begin(), eq_pos);
@@ -439,7 +439,7 @@ namespace vcpkg
         parse_feature_flags(feature_flags, args);
 
         // --debug-env implies --debug
-        if (const auto p = args.debug_env.get()) args.debug_env = *p;
+        if (auto* const p = args.debug_env.get()) args.debug_env = *p;
 
         return args;
     }
@@ -659,21 +659,21 @@ namespace vcpkg
         table.header("Options");
         for (auto&& option : command_structure.options.switches)
         {
-            if (option.short_help_text.size() != 0)
+            if (!option.short_help_text.empty())
             {
                 table.format(Strings::format("--%s", option.name), option.short_help_text);
             }
         }
         for (auto&& option : command_structure.options.settings)
         {
-            if (option.short_help_text.size() != 0)
+            if (!option.short_help_text.empty())
             {
                 table.format(Strings::format("--%s=...", option.name), option.short_help_text);
             }
         }
         for (auto&& option : command_structure.options.multisettings)
         {
-            if (option.short_help_text.size() != 0)
+            if (!option.short_help_text.empty())
             {
                 table.format(Strings::format("--%s=...", option.name), option.short_help_text);
             }
@@ -733,7 +733,8 @@ namespace vcpkg
             }
         });
     }
-    void VcpkgCmdArguments::imbue_from_environment_impl(std::function<Optional<std::string>(ZStringView)> get_env)
+    void VcpkgCmdArguments::imbue_from_environment_impl(
+        const std::function<Optional<std::string>(ZStringView)>& get_env)
     {
         if (!disable_metrics)
         {
@@ -772,7 +773,7 @@ namespace vcpkg
 
         {
             const auto vcpkg_overlay_ports_env = get_env(OVERLAY_PORTS_ENV);
-            if (const auto unpacked = vcpkg_overlay_ports_env.get())
+            if (const auto* const unpacked = vcpkg_overlay_ports_env.get())
             {
                 auto overlays = Strings::split_paths(*unpacked);
                 overlay_ports.insert(std::end(overlay_ports), std::begin(overlays), std::end(overlays));
@@ -780,7 +781,7 @@ namespace vcpkg
         }
         {
             const auto vcpkg_overlay_triplets_env = get_env(OVERLAY_TRIPLETS_ENV);
-            if (const auto unpacked = vcpkg_overlay_triplets_env.get())
+            if (const auto* const unpacked = vcpkg_overlay_triplets_env.get())
             {
                 auto triplets = Strings::split_paths(*unpacked);
                 overlay_triplets.insert(std::end(overlay_triplets), std::begin(triplets), std::end(triplets));
@@ -788,7 +789,7 @@ namespace vcpkg
         }
         {
             const auto vcpkg_feature_flags_env = get_env(FEATURE_FLAGS_ENV);
-            if (const auto v = vcpkg_feature_flags_env.get())
+            if (const auto* const v = vcpkg_feature_flags_env.get())
             {
                 auto flags = Strings::split(*v, ',');
                 parse_feature_flags(flags, *this);
@@ -807,7 +808,7 @@ namespace vcpkg
         s_reentrancy_guard = true;
 
         auto maybe_vcpkg_recursive_data = get_environment_variable(RECURSIVE_DATA_ENV);
-        if (auto vcpkg_recursive_data = maybe_vcpkg_recursive_data.get())
+        if (auto* vcpkg_recursive_data = maybe_vcpkg_recursive_data.get())
         {
             auto rec_doc = Json::parse(*vcpkg_recursive_data).value_or_exit(VCPKG_LINE_INFO).first;
             const auto& obj = rec_doc.object(VCPKG_LINE_INFO);
@@ -824,13 +825,13 @@ namespace vcpkg
                 args.vcpkg_root_dir_env.emplace(as_sv.data(), as_sv.size());
             }
 
-            if (auto entry = obj.get(DOWNLOADS_ROOT_DIR_ENV))
+            if (const auto* entry = obj.get(DOWNLOADS_ROOT_DIR_ENV))
             {
                 auto as_sv = entry->string(VCPKG_LINE_INFO);
                 args.downloads_root_dir.emplace(as_sv.data(), as_sv.size());
             }
 
-            if (auto entry = obj.get(ASSET_SOURCES_ENV))
+            if (const auto* entry = obj.get(ASSET_SOURCES_ENV))
             {
                 auto as_sv = entry->string(VCPKG_LINE_INFO);
                 args.asset_sources_template_env.emplace(as_sv.data(), as_sv.size());
@@ -884,7 +885,7 @@ namespace vcpkg
         {
             StringView flag;
             StringView option;
-            bool is_inconsistent;
+            bool is_inconsistent{};
         } possible_inconsistencies[] = {
             {BINARY_CACHING_FEATURE, BINARY_SOURCES_ARG, !binary_sources.empty() && !binary_caching.value_or(true)},
             {MANIFEST_MODE_FEATURE, MANIFEST_ROOT_DIR_ARG, manifest_root_dir && !manifest_mode.value_or(true)},
@@ -918,7 +919,7 @@ namespace vcpkg
 
         for (const auto& flag : flags)
         {
-            if (auto r = flag.flag.get())
+            if (const auto* r = flag.flag.get())
             {
                 Debug::println("Feature flag '", flag.name, "' = ", *r ? "on" : "off");
             }
@@ -934,7 +935,7 @@ namespace vcpkg
         struct
         {
             StringView flag;
-            bool enabled;
+            bool enabled{};
         } flags[] = {
             {BINARY_CACHING_FEATURE, binary_caching_enabled()},
             {COMPILER_TRACKING_FEATURE, compiler_tracking_enabled()},
@@ -1044,62 +1045,4 @@ namespace vcpkg
         }
         m_str.append(line_start, best_break);
     }
-
-    // out-of-line definitions since C++14 doesn't allow inline constexpr static variables
-    constexpr StringLiteral VcpkgCmdArguments::VCPKG_ROOT_DIR_ENV;
-    constexpr StringLiteral VcpkgCmdArguments::VCPKG_ROOT_DIR_ARG;
-    constexpr StringLiteral VcpkgCmdArguments::MANIFEST_ROOT_DIR_ARG;
-
-    constexpr StringLiteral VcpkgCmdArguments::BUILDTREES_ROOT_DIR_ARG;
-    constexpr StringLiteral VcpkgCmdArguments::DOWNLOADS_ROOT_DIR_ENV;
-    constexpr StringLiteral VcpkgCmdArguments::DOWNLOADS_ROOT_DIR_ARG;
-    constexpr StringLiteral VcpkgCmdArguments::INSTALL_ROOT_DIR_ARG;
-    constexpr StringLiteral VcpkgCmdArguments::PACKAGES_ROOT_DIR_ARG;
-    constexpr StringLiteral VcpkgCmdArguments::SCRIPTS_ROOT_DIR_ARG;
-    constexpr StringLiteral VcpkgCmdArguments::BUILTIN_PORTS_ROOT_DIR_ARG;
-    constexpr StringLiteral VcpkgCmdArguments::BUILTIN_REGISTRY_VERSIONS_DIR_ARG;
-
-    constexpr StringLiteral VcpkgCmdArguments::DEFAULT_VISUAL_STUDIO_PATH_ENV;
-
-    constexpr StringLiteral VcpkgCmdArguments::TRIPLET_ENV;
-    constexpr StringLiteral VcpkgCmdArguments::TRIPLET_ARG;
-    constexpr StringLiteral VcpkgCmdArguments::HOST_TRIPLET_ENV;
-    constexpr StringLiteral VcpkgCmdArguments::HOST_TRIPLET_ARG;
-    constexpr StringLiteral VcpkgCmdArguments::OVERLAY_PORTS_ENV;
-    constexpr StringLiteral VcpkgCmdArguments::OVERLAY_PORTS_ARG;
-    constexpr StringLiteral VcpkgCmdArguments::OVERLAY_TRIPLETS_ENV;
-    constexpr StringLiteral VcpkgCmdArguments::OVERLAY_TRIPLETS_ARG;
-
-    constexpr StringLiteral VcpkgCmdArguments::BINARY_SOURCES_ARG;
-
-    constexpr StringLiteral VcpkgCmdArguments::DEBUG_SWITCH;
-    constexpr StringLiteral VcpkgCmdArguments::DEBUG_ENV_SWITCH;
-    constexpr StringLiteral VcpkgCmdArguments::SEND_METRICS_SWITCH;
-    constexpr StringLiteral VcpkgCmdArguments::DISABLE_METRICS_ENV;
-    constexpr StringLiteral VcpkgCmdArguments::DISABLE_METRICS_SWITCH;
-    constexpr StringLiteral VcpkgCmdArguments::PRINT_METRICS_SWITCH;
-
-    constexpr StringLiteral VcpkgCmdArguments::WAIT_FOR_LOCK_SWITCH;
-    constexpr StringLiteral VcpkgCmdArguments::IGNORE_LOCK_FAILURES_SWITCH;
-    constexpr StringLiteral VcpkgCmdArguments::IGNORE_LOCK_FAILURES_ENV;
-
-    constexpr StringLiteral VcpkgCmdArguments::JSON_SWITCH;
-
-    constexpr StringLiteral VcpkgCmdArguments::ASSET_SOURCES_ENV;
-    constexpr StringLiteral VcpkgCmdArguments::ASSET_SOURCES_ARG;
-
-    constexpr StringLiteral VcpkgCmdArguments::FEATURE_FLAGS_ENV;
-    constexpr StringLiteral VcpkgCmdArguments::FEATURE_FLAGS_ARG;
-
-    constexpr StringLiteral VcpkgCmdArguments::FEATURE_PACKAGES_SWITCH;
-    constexpr StringLiteral VcpkgCmdArguments::BINARY_CACHING_FEATURE;
-    constexpr StringLiteral VcpkgCmdArguments::BINARY_CACHING_SWITCH;
-    constexpr StringLiteral VcpkgCmdArguments::COMPILER_TRACKING_FEATURE;
-    constexpr StringLiteral VcpkgCmdArguments::MANIFEST_MODE_FEATURE;
-    constexpr StringLiteral VcpkgCmdArguments::REGISTRIES_FEATURE;
-    constexpr StringLiteral VcpkgCmdArguments::RECURSIVE_DATA_ENV;
-    constexpr StringLiteral VcpkgCmdArguments::VERSIONS_FEATURE;
-
-    constexpr StringLiteral VcpkgCmdArguments::CMAKE_SCRIPT_ARG;
-    constexpr StringLiteral VcpkgCmdArguments::EXACT_ABI_TOOLS_VERSIONS_SWITCH;
 }

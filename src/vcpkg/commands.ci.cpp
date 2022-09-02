@@ -40,11 +40,9 @@ namespace
 
     struct CiBuildLogsRecorder final : IBuildLogsRecorder
     {
-        CiBuildLogsRecorder(const Path& base_path_) : base_path(base_path_) { }
+        CiBuildLogsRecorder(Path base_path_) : base_path(std::move(base_path_)) { }
 
-        virtual void record_build_result(const VcpkgPaths& paths,
-                                         const PackageSpec& spec,
-                                         BuildResult result) const override
+        void record_build_result(const VcpkgPaths& paths, const PackageSpec& spec, BuildResult result) const override
         {
             if (result == BuildResult::SUCCEEDED)
             {
@@ -196,13 +194,13 @@ namespace vcpkg::Commands::CI
         {
             auto&& action = action_plan.install_actions[action_idx];
 
-            auto p = &action;
+            const auto* p = &action;
             ret->abi_map.emplace(action.spec, action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
             ret->features.emplace(action.spec, action.feature_list);
 
             if (is_excluded(p->spec))
             {
-                ret->action_state_string.push_back("skip");
+                ret->action_state_string.emplace_back("skip");
                 ret->known.emplace(p->spec, BuildResult::EXCLUDED);
                 will_fail.emplace(p->spec);
             }
@@ -211,26 +209,26 @@ namespace vcpkg::Commands::CI
                 // This treats unsupported ports as if they are excluded
                 // which means the ports dependent on it will be cascaded due to missing dependencies
                 // Should this be changed so instead it is a failure to depend on a unsupported port?
-                ret->action_state_string.push_back("n/a");
+                ret->action_state_string.emplace_back("n/a");
                 ret->known.emplace(p->spec, BuildResult::EXCLUDED);
                 will_fail.emplace(p->spec);
             }
             else if (Util::any_of(p->package_dependencies,
                                   [&](const PackageSpec& spec) { return Util::Sets::contains(will_fail, spec); }))
             {
-                ret->action_state_string.push_back("cascade");
+                ret->action_state_string.emplace_back("cascade");
                 ret->cascade_count++;
                 ret->known.emplace(p->spec, BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES);
                 will_fail.emplace(p->spec);
             }
             else if (precheck_results[action_idx] == CacheAvailability::available)
             {
-                ret->action_state_string.push_back("pass");
+                ret->action_state_string.emplace_back("pass");
                 ret->known.emplace(p->spec, BuildResult::SUCCEEDED);
             }
             else
             {
-                ret->action_state_string.push_back("*");
+                ret->action_state_string.emplace_back("*");
             }
         }
         return ret;
@@ -246,7 +244,7 @@ namespace vcpkg::Commands::CI
         {
             auto it_known = known.find(it->spec);
             const auto& abi = it->abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi;
-            auto it_parent = std::find(parent_hashes.begin(), parent_hashes.end(), abi);
+            const auto* it_parent = std::find(parent_hashes.begin(), parent_hashes.end(), abi);
             if (it_known == known.end() && it_parent == parent_hashes.end())
             {
                 to_keep.insert(it->spec);
@@ -407,7 +405,7 @@ namespace vcpkg::Commands::CI
 
         struct RandomizerInstance : GraphRandomizer
         {
-            virtual int random(int i) override
+            int random(int i) override
             {
                 if (i <= 1) return 0;
                 std::uniform_int_distribution<int> d(0, i - 1);
@@ -466,7 +464,7 @@ namespace vcpkg::Commands::CI
             const Path parent_hashes_path = paths.original_cwd / it_parent_hashes->second;
             auto parsed_json = Json::parse_file(VCPKG_LINE_INFO, filesystem, parent_hashes_path);
             parent_hashes = Util::fmap(parsed_json.first.array(VCPKG_LINE_INFO), [](const auto& json_object) {
-                auto abi = json_object.object(VCPKG_LINE_INFO).get("abi");
+                const auto* abi = json_object.object(VCPKG_LINE_INFO).get("abi");
                 Checks::check_exit(VCPKG_LINE_INFO, abi);
 #ifdef _MSC_VER
                 _Analysis_assume_(abi);
@@ -479,7 +477,7 @@ namespace vcpkg::Commands::CI
 
         msg::println(msgElapsedTimeForChecks, msg::elapsed = timer.elapsed());
 
-        if (auto skipped_cascade_count_ptr = skipped_cascade_count.get())
+        if (auto* skipped_cascade_count_ptr = skipped_cascade_count.get())
         {
             Checks::msg_check_exit(VCPKG_LINE_INFO,
                                    *skipped_cascade_count_ptr == split_specs->cascade_count,

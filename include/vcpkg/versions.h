@@ -91,7 +91,7 @@ namespace vcpkg
 
     struct DotVersion
     {
-        DotVersion() { } // intentionally disable making this type an aggregate
+        DotVersion() = default; // intentionally disable making this type an aggregate
 
         std::string original_string;
         std::string version_string;
@@ -116,7 +116,7 @@ namespace vcpkg
 
     struct DateVersion
     {
-        DateVersion() { } // intentionally disable making this type an aggregate
+        DateVersion() = default; // intentionally disable making this type an aggregate
 
         std::string original_string;
         std::string version_string;

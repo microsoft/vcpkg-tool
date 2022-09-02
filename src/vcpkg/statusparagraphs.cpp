@@ -144,7 +144,7 @@ namespace vcpkg
 
     void serialize(const StatusParagraphs& pghs, std::string& out_str)
     {
-        for (auto& pgh : pghs.paragraphs)
+        for (const auto& pgh : pghs.paragraphs)
         {
             serialize(*pgh, out_str);
             out_str.push_back('\n');

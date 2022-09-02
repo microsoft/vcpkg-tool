@@ -215,7 +215,7 @@ namespace vcpkg
         char buf[buff_size] = {};
         int result = _NSGetExecutablePath(buf, &size);
         Checks::check_exit(VCPKG_LINE_INFO, result != -1, "Could not determine current executable path.");
-        std::unique_ptr<char> canonicalPath(realpath(buf, NULL));
+        std::unique_ptr<char> canonicalPath(realpath(buf, nullptr));
         Checks::check_exit(VCPKG_LINE_INFO, result != -1, "Could not determine current executable path.");
         return canonicalPath.get();
 #elif defined(__FreeBSD__)
@@ -464,7 +464,7 @@ namespace vcpkg
                                                                                       const Environment& env)
     {
         std::vector<ExpectedL<ExitCodeAndOutput>> res(cmd_lines.size(), LocalizedString());
-        if (cmd_lines.size() == 0)
+        if (cmd_lines.empty())
         {
             return res;
         }
@@ -544,7 +544,7 @@ namespace vcpkg
 
         friend void swap(ProcessInfo& lhs, ProcessInfo& rhs) noexcept { lhs.swap(rhs); }
 
-        unsigned int wait()
+        unsigned int wait() const
         {
             const DWORD result = WaitForSingleObject(proc_info.hProcess, INFINITE);
             Checks::check_exit(VCPKG_LINE_INFO, result != WAIT_FAILED, "WaitForSingleObject failed");
@@ -844,7 +844,7 @@ namespace vcpkg
     }
 
     ExpectedL<int> cmd_execute_and_stream_lines(const Command& cmd_line,
-                                                std::function<void(StringView)> per_line_cb,
+                                                const std::function<void(StringView)>& per_line_cb,
                                                 const WorkingDirectory& wd,
                                                 const Environment& env,
                                                 Encoding encoding)
@@ -858,7 +858,7 @@ namespace vcpkg
     }
 
     ExpectedL<int> cmd_execute_and_stream_data(const Command& cmd_line,
-                                               std::function<void(StringView)> data_cb,
+                                               const std::function<void(StringView)>& data_cb,
                                                const WorkingDirectory& wd,
                                                const Environment& env,
                                                Encoding encoding)
@@ -898,7 +898,7 @@ namespace vcpkg
         // Flush stdout before launching external process
         fflush(stdout);
 
-        const auto pipe = popen(actual_cmd_line.c_str(), "r");
+        auto* const pipe = popen(actual_cmd_line.c_str(), "r");
         if (pipe == nullptr)
         {
             return format_system_error_message("popen", errno);
@@ -935,7 +935,7 @@ namespace vcpkg
 
         const auto elapsed = timer.us_64();
         g_subprocess_stats += elapsed;
-        if (const auto pec = exit_code.get())
+        if (auto* const pec = exit_code.get())
         {
             Debug::print(proc_id,
                          ": cmd_execute_and_stream_data() returned ",
@@ -994,7 +994,7 @@ namespace vcpkg
 
     bool succeeded(const ExpectedL<int>& maybe_exit) noexcept
     {
-        if (const auto exit = maybe_exit.get())
+        if (const auto* const exit = maybe_exit.get())
         {
             return *exit == 0;
         }
@@ -1004,7 +1004,7 @@ namespace vcpkg
 
     ExpectedL<Unit> flatten(const ExpectedL<ExitCodeAndOutput>& maybe_exit, StringView tool_name)
     {
-        if (auto exit = maybe_exit.get())
+        if (const auto* exit = maybe_exit.get())
         {
             if (exit->exit_code == 0)
             {

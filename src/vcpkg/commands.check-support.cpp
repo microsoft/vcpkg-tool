@@ -61,7 +61,7 @@ namespace vcpkg::Commands
                     "%s[%s]:%s", port.port_name, Strings::join(",", port.features), port.triplet.to_string());
             };
 
-            if (reasons.size() == 0)
+            if (reasons.empty())
             {
                 if (is_top_level_supported)
                 {
@@ -195,6 +195,6 @@ namespace vcpkg::Commands
                                                              Triplet default_triplet,
                                                              Triplet host_triplet) const
     {
-        return CheckSupport::perform_and_exit(args, paths, default_triplet, host_triplet);
+        CheckSupport::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 }

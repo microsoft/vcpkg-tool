@@ -25,5 +25,5 @@ namespace vcpkg
                                                                        const InstalledPaths& installed,
                                                                        const StatusParagraphs& status_db);
 
-    std::string shorten_text(StringView desc, const size_t length);
+    std::string shorten_text(StringView desc, size_t length);
 } // namespace vcpkg

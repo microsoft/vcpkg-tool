@@ -76,11 +76,11 @@ namespace vcpkg
                 *mac++ = ':';
             }
             unsigned char c = bytes[i];
-            *mac++ = hexits[(c & 0xf0) >> 4];
+            *mac++ = hexits[(c >> 4) & 0x0f];
             *mac++ = hexits[(c & 0x0f)];
             non_zero_mac |= c;
         }
-        return std::string(mac_address, non_zero_mac ? MAC_STRING_LENGTH : 0);
+        return {mac_address, non_zero_mac ? MAC_STRING_LENGTH : 0};
     }
 
     bool extract_mac_from_getmac_output_line(StringView line, std::string& out)

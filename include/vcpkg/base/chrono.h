@@ -40,12 +40,9 @@ namespace vcpkg
     {
         static ElapsedTimer create_started();
 
-        constexpr ElapsedTimer() noexcept : m_start_tick() { }
+        constexpr ElapsedTimer() = default;
 
-        ElapsedTime elapsed() const
-        {
-            return ElapsedTime(std::chrono::high_resolution_clock::now() - this->m_start_tick);
-        }
+        ElapsedTime elapsed() const { return {std::chrono::high_resolution_clock::now() - this->m_start_tick}; }
 
         double microseconds() const { return elapsed().as<std::chrono::duration<double, std::micro>>().count(); }
         uint64_t us_64() const { return elapsed().as<std::chrono::duration<uint64_t, std::micro>>().count(); }

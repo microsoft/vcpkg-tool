@@ -9,22 +9,22 @@ namespace vcpkg
 {
     StringView::StringView(const std::string& s) noexcept : m_ptr(s.data()), m_size(s.size()) { }
 
-    std::string StringView::to_string() const { return std::string(m_ptr, m_size); }
+    std::string StringView::to_string() const { return {m_ptr, m_size}; }
     void StringView::to_string(std::string& s) const { s.append(m_ptr, m_size); }
 
     StringView StringView::substr(size_t pos, size_t count) const noexcept
     {
         if (pos > m_size)
         {
-            return StringView();
+            return {};
         }
 
         if (count > m_size - pos)
         {
-            return StringView(m_ptr + pos, m_size - pos);
+            return {m_ptr + pos, m_size - pos};
         }
 
-        return StringView(m_ptr + pos, count);
+        return {m_ptr + pos, count};
     }
 
     bool operator==(StringView lhs, StringView rhs) noexcept

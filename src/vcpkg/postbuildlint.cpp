@@ -88,10 +88,8 @@ namespace vcpkg::PostBuildLint
                        "files should be installed\n");
                 return LintStatus::PROBLEM_DETECTED;
             }
-            else
-            {
-                return LintStatus::SUCCESS;
-            }
+
+            return LintStatus::SUCCESS;
         }
 
         if (!fs.exists(include_dir, IgnoreErrors{}) || fs.is_empty(include_dir, IgnoreErrors{}))
@@ -345,7 +343,7 @@ namespace vcpkg::PostBuildLint
 
         switch (fs.status(copyright_file, IgnoreErrors{}))
         {
-            case FileType::regular: return LintStatus::SUCCESS; break;
+            case FileType::regular: return LintStatus::SUCCESS;
             case FileType::directory: msg::println_warning(msgCopyrightIsDir, msg::path = "copyright"); break;
             default: break;
         }
@@ -455,7 +453,7 @@ namespace vcpkg::PostBuildLint
 
     static LintStatus check_uwp_bit_of_dlls(const std::string& expected_system_name,
                                             const std::vector<Path>& dlls,
-                                            const Path dumpbin_exe)
+                                            const Path& dumpbin_exe)
     {
         if (expected_system_name != "WindowsStore")
         {
@@ -467,7 +465,7 @@ namespace vcpkg::PostBuildLint
         {
             auto cmd_line = Command(dumpbin_exe).string_arg("/headers").string_arg(dll);
             const auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd_line), "dumpbin");
-            if (const auto output = maybe_output.get())
+            if (const auto* const output = maybe_output.get())
             {
                 if (output->find("App Container") == std::string::npos)
                 {
@@ -516,7 +514,7 @@ namespace vcpkg::PostBuildLint
     }
 
     static void print_invalid_architecture_files(const std::string& expected_architecture,
-                                                 std::vector<FileAndArch> binaries_with_invalid_architecture)
+                                                 const std::vector<FileAndArch>& binaries_with_invalid_architecture)
     {
         print2(Color::warning, "The following files were built for an incorrect architecture:\n\n");
         for (const FileAndArch& b : binaries_with_invalid_architecture)

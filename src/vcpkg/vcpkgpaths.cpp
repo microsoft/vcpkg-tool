@@ -690,7 +690,7 @@ namespace vcpkg
                 metrics->track_string_property(StringMetric::RegistriesDefaultRegistryKind, "disabled");
             }
 
-            if (other_registries.size() != 0)
+            if (!other_registries.empty())
             {
                 std::vector<StringLiteral> registry_kinds;
                 for (const auto& reg : other_registries)
@@ -728,7 +728,7 @@ namespace vcpkg
         return it != this->get_available_triplets().cend();
     }
 
-    const std::vector<std::string> VcpkgPaths::get_available_triplets_names() const
+    std::vector<std::string> VcpkgPaths::get_available_triplets_names() const
     {
         return vcpkg::Util::fmap(this->get_available_triplets(),
                                  [](auto&& triplet_file) -> std::string { return triplet_file.name; });
@@ -891,7 +891,7 @@ namespace vcpkg
             installed().lockfile_path(), "vcpkg-lock.json.tmp", Json::stringify(obj), VCPKG_LINE_INFO);
     }
 
-    const Path VcpkgPaths::get_triplet_file_path(Triplet triplet) const
+    Path VcpkgPaths::get_triplet_file_path(Triplet triplet) const
     {
         return m_pimpl->m_triplets_cache.get_lazy(
             triplet, [&]() -> auto{
@@ -1031,7 +1031,7 @@ namespace vcpkg
         if (const auto output = maybe_output.get())
         {
             std::map<std::string, std::string, std::less<>> ret;
-            const auto lines = Strings::split(std::move(*output), '\n');
+            const auto lines = Strings::split(*output, '\n');
             // The first line of the output is always the parent directory itself.
             for (auto&& line : lines)
             {
@@ -1331,7 +1331,7 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, m_pimpl->m_registry_set != nullptr);
         return *m_pimpl->m_registry_set;
     }
-    const DownloadManager& VcpkgPaths::get_download_manager() const { return *m_pimpl->m_download_manager.get(); }
+    const DownloadManager& VcpkgPaths::get_download_manager() const { return *m_pimpl->m_download_manager; }
 
 #if defined(_WIN32)
     static const ToolsetsInformation& get_all_toolsets(details::VcpkgPathsImpl& impl, const Filesystem& fs)
@@ -1440,7 +1440,7 @@ namespace vcpkg
         struct
         {
             StringView flag;
-            bool enabled;
+            bool enabled{};
         } flags[] = {{VcpkgCmdArguments::MANIFEST_MODE_FEATURE, manifest_mode_enabled()}};
 
         LockGuardPtr<Metrics> metrics(g_metrics);

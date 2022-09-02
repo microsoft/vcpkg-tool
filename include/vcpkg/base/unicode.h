@@ -161,7 +161,7 @@ namespace vcpkg::Unicode
         }
 
         Utf8Decoder& operator++() noexcept;
-        Utf8Decoder operator++(int) noexcept
+        const Utf8Decoder operator++(int) noexcept
         {
             auto res = *this;
             ++*this;
@@ -170,7 +170,7 @@ namespace vcpkg::Unicode
 
         constexpr Utf8Decoder begin() const { return *this; }
 
-        constexpr sentinel end() const { return sentinel(); }
+        constexpr sentinel end() const { return {}; }
 
         friend bool operator==(const Utf8Decoder& lhs, const Utf8Decoder& rhs) noexcept;
 

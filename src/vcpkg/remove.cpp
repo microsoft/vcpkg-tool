@@ -15,8 +15,6 @@
 
 namespace vcpkg::Remove
 {
-    using Update::OutdatedPackage;
-
     REGISTER_MESSAGE(RemovingPackage);
     static void remove_package(Filesystem& fs,
                                const InstalledPaths& installed,
@@ -198,7 +196,7 @@ namespace vcpkg::Remove
         std::vector<PackageSpec> specs;
         if (Util::Sets::contains(options.switches, OPTION_OUTDATED))
         {
-            if (args.command_arguments.size() != 0)
+            if (!args.command_arguments.empty())
             {
                 msg::println_error(msgInvalidOptionForRemove);
                 Checks::exit_fail(VCPKG_LINE_INFO);
@@ -218,7 +216,7 @@ namespace vcpkg::Remove
         }
         else
         {
-            if (args.command_arguments.size() < 1)
+            if (args.command_arguments.empty())
             {
                 msg::println_error(msgInvalidOptionForRemove);
                 Checks::exit_fail(VCPKG_LINE_INFO);

@@ -53,7 +53,7 @@ namespace vcpkg::Commands::CIVerifyVersions
     };
 
     static ExpectedS<std::string> verify_version_in_db(const VcpkgPaths& paths,
-                                                       const std::map<std::string, Version, std::less<>> baseline,
+                                                       const std::map<std::string, Version, std::less<>>& baseline,
                                                        StringView port_name,
                                                        const Path& port_path,
                                                        const Path& versions_file_path,
@@ -116,7 +116,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                     }
 
                     const auto& scf = maybe_scf.value_or_exit(VCPKG_LINE_INFO);
-                    auto&& git_tree_version = scf.get()->to_schemed_version();
+                    auto&& git_tree_version = scf->to_schemed_version();
                     if (version_entry.first.version != git_tree_version.version)
                     {
                         return {

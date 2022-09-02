@@ -10,7 +10,7 @@ using namespace vcpkg;
 
 namespace vcpkg
 {
-    TripletExclusions::TripletExclusions(const Triplet& triplet) : triplet(triplet), exclusions() { }
+    TripletExclusions::TripletExclusions(const Triplet& triplet) : triplet(triplet) { }
 
     TripletExclusions::TripletExclusions(const Triplet& triplet, SortedVector<std::string>&& exclusions)
         : triplet(triplet), exclusions(std::move(exclusions))
@@ -165,7 +165,7 @@ namespace vcpkg
                 std::piecewise_construct, std::forward_as_tuple(triplet_entry.triplet), std::tuple<>{});
         }
 
-        for (auto& line : lines)
+        for (const auto& line : lines)
         {
             auto triplet_match = added_exclusions.find(line.triplet);
             if (triplet_match != added_exclusions.end())
@@ -230,6 +230,7 @@ namespace vcpkg
                 {
                     return msg::format(msgCiBaselineDisallowedCascade, msg::spec = spec, msg::path = cifile);
                 }
+                break;
             default: break;
         }
         return {};

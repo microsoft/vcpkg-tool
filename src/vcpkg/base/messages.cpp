@@ -334,7 +334,7 @@ namespace vcpkg::msg
                 ::fprintf(stderr,
                           "INTERNAL ERROR: failed to format default format string for index %zu\nformat string: %.*s\n",
                           index,
-                          (int)default_format_string.size(),
+                          static_cast<int>(default_format_string.size()),
                           default_format_string.data());
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
@@ -356,21 +356,21 @@ namespace
 {
     struct NullMessageSink : MessageSink
     {
-        virtual void print(Color, StringView) override { }
+        void print(Color c [[maybe_unused]], StringView sv [[maybe_unused]]) override { }
     };
 
     NullMessageSink null_sink_instance;
 
     struct StdOutMessageSink : MessageSink
     {
-        virtual void print(Color c, StringView sv) override { msg::write_unlocalized_text_to_stdout(c, sv); }
+        void print(Color c, StringView sv) override { msg::write_unlocalized_text_to_stdout(c, sv); }
     };
 
     StdOutMessageSink stdout_sink_instance;
 
     struct StdErrMessageSink : MessageSink
     {
-        virtual void print(Color c, StringView sv) override { msg::write_unlocalized_text_to_stderr(c, sv); }
+        void print(Color c, StringView sv) override { msg::write_unlocalized_text_to_stderr(c, sv); }
     };
 
     StdErrMessageSink stderr_sink_instance;
