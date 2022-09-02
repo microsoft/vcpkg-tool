@@ -163,7 +163,7 @@ namespace vcpkg
                 parser.skip_tabs_spaces();
                 if (parser.cur() == '*')
                 {
-                    features.push_back("*");
+                    features.emplace_back("*");
                     parser.next();
                 }
                 else
@@ -187,7 +187,7 @@ namespace vcpkg
                 }
                 else
                 {
-                    if (skipped_space.size() > 0 || ParserBase::is_lineend(parser.cur()))
+                    if (!skipped_space.empty() || ParserBase::is_lineend(parser.cur()))
                         parser.add_error("expected ',' or ']' in feature list");
                     else
                         parser.add_error("invalid character in feature name (must be lowercase, digits, '-', or '*')");

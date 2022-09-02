@@ -14,8 +14,8 @@ namespace vcpkg
         Metrics(const Metrics&) = delete;
         Metrics& operator=(const Metrics&) = delete;
 
-        void set_send_metrics(bool should_send_metrics);
-        void set_print_metrics(bool should_print_metrics);
+        static void set_send_metrics(bool should_send_metrics);
+        static void set_print_metrics(bool should_print_metrics);
 
         // This function is static and must be called outside the g_metrics lock.
         static void enable();

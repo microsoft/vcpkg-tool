@@ -27,7 +27,7 @@ TEST_CASE ("details::split_uri_view", "[downloads]")
         REQUIRE(x.has_value());
         REQUIRE(x.get()->scheme == "file");
         REQUIRE(!x.get()->authority.has_value());
-        REQUIRE(x.get()->path_query_fragment == "");
+        REQUIRE(x.get()->path_query_fragment.empty());
     }
     {
         auto x = details::split_uri_view("file:path");
@@ -48,7 +48,7 @@ TEST_CASE ("details::split_uri_view", "[downloads]")
         REQUIRE(x.has_value());
         REQUIRE(x.get()->scheme == "file");
         REQUIRE(x.get()->authority.value_or({}) == "//user:pw@host");
-        REQUIRE(x.get()->path_query_fragment == "");
+        REQUIRE(x.get()->path_query_fragment.empty());
     }
     {
         auto x = details::split_uri_view("ftp://host:port/");

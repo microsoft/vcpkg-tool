@@ -20,8 +20,8 @@ namespace vcpkg::Commands::Integrate
         constexpr static StringLiteral VERSION_START = "<!-- version ";
         constexpr static StringLiteral VERSION_END = " -->";
 
-        auto first = contents.begin();
-        const auto last = contents.end();
+        const auto *first = contents.begin();
+        const auto *const last = contents.end();
         for (;;)
         {
             first = Util::search_and_skip(first, last, VERSION_START);
@@ -29,7 +29,7 @@ namespace vcpkg::Commands::Integrate
             {
                 break;
             }
-            auto version_end = Util::search(first, last, VERSION_END);
+            const auto *version_end = Util::search(first, last, VERSION_END);
             if (version_end == last)
             {
                 break;
@@ -46,11 +46,11 @@ namespace vcpkg::Commands::Integrate
     std::vector<std::string> get_bash_source_completion_lines(StringView contents)
     {
         std::vector<std::string> matches;
-        auto first = contents.begin();
-        const auto last = contents.end();
+        const auto *first = contents.begin();
+        const auto *const last = contents.end();
         while (first != last)
         {
-            const auto end_of_line = std::find(first, last, '\n');
+            const auto *const end_of_line = std::find(first, last, '\n');
             const auto line = Strings::trim(StringView{first, end_of_line});
             if (Strings::starts_with(line, "source") && Strings::ends_with(line, "scripts/vcpkg_completion.bash"))
             {
@@ -66,13 +66,13 @@ namespace vcpkg::Commands::Integrate
         constexpr static StringLiteral BASHCOMPINIT = "bashcompinit";
         ZshAutocomplete res{};
 
-        auto first = contents.begin();
-        const auto last = contents.end();
+        const auto *first = contents.begin();
+        const auto *const last = contents.end();
         while (first != last)
         {
-            const auto end_of_line = std::find(first, last, '\n');
+            const auto *const end_of_line = std::find(first, last, '\n');
             const auto line = Strings::trim(StringView{first, end_of_line});
-            const auto bashcompinit = Strings::search(line, BASHCOMPINIT);
+            const auto *const bashcompinit = Strings::search(line, BASHCOMPINIT);
 
             if (Strings::starts_with(line, "source") && Strings::ends_with(line, "scripts/vcpkg_completion.zsh"))
             {
@@ -620,7 +620,7 @@ namespace vcpkg::Commands::Integrate
         static const std::string FISH = "x-fish";
     }
 
-    static std::vector<std::string> valid_arguments(const VcpkgPaths&)
+    static std::vector<std::string> valid_arguments(const VcpkgPaths& paths [[maybe_unused]])
     {
         return
         {

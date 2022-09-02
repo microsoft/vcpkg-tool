@@ -13,11 +13,11 @@ namespace
     {
         StringLiteral kind() const override { return "test"; }
 
-        std::unique_ptr<RegistryEntry> get_port_entry(StringView) const override { return nullptr; }
+        std::unique_ptr<RegistryEntry> get_port_entry(StringView port_name [[maybe_unused]]) const override { return nullptr; }
 
-        void get_all_port_names(std::vector<std::string>&) const override { }
+        void get_all_port_names(std::vector<std::string>& port_names [[maybe_unused]]) const override { }
 
-        ExpectedL<Version> get_baseline_version(StringView) const override
+        ExpectedL<Version> get_baseline_version(StringView port_name [[maybe_unused]]) const override
         {
             return LocalizedString::from_raw("error");
         }
@@ -34,7 +34,7 @@ namespace
 
     int get_tri_num(const RegistryImplementation& r)
     {
-        if (auto tri = dynamic_cast<const TestRegistryImplementation*>(&r))
+        if (const auto *tri = dynamic_cast<const TestRegistryImplementation*>(&r))
         {
             return tri->number;
         }
@@ -56,7 +56,7 @@ TEST_CASE ("registry_set_selects_registry", "[registries]")
         rs.push_back(make_registry(2, {"p2", "q2", "r2"}));
         RegistrySet set(std::make_unique<TestRegistryImplementation>(0), std::move(rs));
 
-        auto reg = set.registry_for_port("p1");
+        const auto *reg = set.registry_for_port("p1");
         REQUIRE(reg);
         CHECK(get_tri_num(*reg) == 1);
         reg = set.registry_for_port("r2");
@@ -72,7 +72,7 @@ TEST_CASE ("registry_set_selects_registry", "[registries]")
         rs.push_back(make_registry(2, {"p2", "q2", "r2"}));
         RegistrySet set(nullptr, std::move(rs));
 
-        auto reg = set.registry_for_port("q1");
+        const auto *reg = set.registry_for_port("q1");
         REQUIRE(reg);
         CHECK(get_tri_num(*reg) == 1);
         reg = set.registry_for_port("p2");

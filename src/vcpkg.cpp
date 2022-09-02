@@ -20,8 +20,6 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
-#include <locale.h>
-
 #include <cassert>
 #include <clocale>
 #include <memory>
@@ -69,7 +67,7 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 
     LockGuardPtr<Metrics>(g_metrics)->track_option("overlay_ports", !args.overlay_ports.empty());
 
-    if (const auto command_function = find_command(Commands::get_available_basic_commands()))
+    if (const auto *const command_function = find_command(Commands::get_available_basic_commands()))
     {
         LockGuardPtr<Metrics>(g_metrics)->track_property("command_name", command_function->name);
         return command_function->function->perform_and_exit(args, fs);
@@ -80,7 +78,7 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 
     fs.current_path(paths.root, VCPKG_LINE_INFO);
 
-    if (const auto command_function = find_command(Commands::get_available_paths_commands()))
+    if (const auto *const command_function = find_command(Commands::get_available_paths_commands()))
     {
         LockGuardPtr<Metrics>(g_metrics)->track_property("command_name", command_function->name);
         return command_function->function->perform_and_exit(args, paths);
@@ -91,7 +89,7 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
     Triplet host_triplet = vcpkg::default_host_triplet(args);
     check_triplet(host_triplet, paths);
 
-    if (const auto command_function = find_command(Commands::get_available_triplet_commands()))
+    if (const auto *const command_function = find_command(Commands::get_available_triplet_commands()))
     {
         LockGuardPtr<Metrics>(g_metrics)->track_property("command_name", command_function->name);
         return command_function->function->perform_and_exit(args, paths, default_triplet, host_triplet);
@@ -239,10 +237,10 @@ int main(const int argc, const char* const* const argv)
 #endif
 
     VcpkgCmdArguments args = VcpkgCmdArguments::create_from_command_line(fs, argc, argv);
-    if (const auto p = args.debug.get()) Debug::g_debugging = *p;
+    if (auto *const p = args.debug.get()) Debug::g_debugging = *p;
     args.imbue_from_environment();
     VcpkgCmdArguments::imbue_or_apply_process_recursion(args);
-    if (const auto p = args.debug_env.get(); p && *p)
+    if (auto *const p = args.debug_env.get(); p && *p)
     {
         msg::write_unlocalized_text_to_stdout(Color::none,
                                               "[DEBUG] The following environment variables are currently set:\n" +
@@ -264,7 +262,7 @@ int main(const int argc, const char* const* const argv)
         to_enable_metrics = false;
     }
 
-    if (auto p = args.disable_metrics.get())
+    if (auto *p = args.disable_metrics.get())
     {
         to_enable_metrics = !*p;
     }
@@ -276,12 +274,12 @@ int main(const int argc, const char* const* const argv)
 
     {
         LockGuardPtr<Metrics> metrics(g_metrics);
-        if (const auto p = args.print_metrics.get())
+        if (auto *const p = args.print_metrics.get())
         {
             metrics->set_print_metrics(*p);
         }
 
-        if (const auto p = args.send_metrics.get())
+        if (auto *const p = args.send_metrics.get())
         {
             metrics->set_send_metrics(*p);
         }
