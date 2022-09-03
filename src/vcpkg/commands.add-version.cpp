@@ -398,92 +398,91 @@ namespace vcpkg::Commands::AddVersion
         }
 
         vcpkg_par_unseq_for_each port_names.begin(), port_names.end(), [&](const std::string& port_name) {
-                auto port_dir = paths.builtin_ports_directory() / port_name;
+            auto port_dir = paths.builtin_ports_directory() / port_name;
 
-                if (!fs.exists(port_dir, IgnoreErrors{}))
+            if (!fs.exists(port_dir, IgnoreErrors{}))
+            {
+                msg::println_error(msgAddVersionPortDoesNotExist, msg::package_name = port_name);
+                Checks::check_exit(VCPKG_LINE_INFO, !add_all);
+                return;
+            }
+
+            auto maybe_scf = Paragraphs::try_load_port(fs, paths.builtin_ports_directory() / port_name);
+            if (!maybe_scf)
+            {
+                msg::println_error(msgAddVersionLoadPortFailed, msg::package_name = port_name);
+                print_error_message(maybe_scf.error());
+                Checks::check_exit(VCPKG_LINE_INFO, !add_all);
+                return;
+            }
+
+            const auto& scf = maybe_scf.value_or_exit(VCPKG_LINE_INFO);
+
+            if (!skip_formatting_check)
+            {
+                // check if manifest file is property formatted
+                const auto path_to_manifest = paths.builtin_ports_directory() / port_name / "vcpkg.json";
+                if (fs.exists(path_to_manifest, IgnoreErrors{}))
                 {
-                    msg::println_error(msgAddVersionPortDoesNotExist, msg::package_name = port_name);
-                    Checks::check_exit(VCPKG_LINE_INFO, !add_all);
-                    return;
-                }
-
-                auto maybe_scf = Paragraphs::try_load_port(fs, paths.builtin_ports_directory() / port_name);
-                if (!maybe_scf)
-                {
-                    msg::println_error(msgAddVersionLoadPortFailed, msg::package_name = port_name);
-                    print_error_message(maybe_scf.error());
-                    Checks::check_exit(VCPKG_LINE_INFO, !add_all);
-                    return;
-                }
-
-                const auto& scf = maybe_scf.value_or_exit(VCPKG_LINE_INFO);
-
-                if (!skip_formatting_check)
-                {
-                    // check if manifest file is property formatted
-                    const auto path_to_manifest = paths.builtin_ports_directory() / port_name / "vcpkg.json";
-                    if (fs.exists(path_to_manifest, IgnoreErrors{}))
+                    const auto current_file_content = fs.read_contents(path_to_manifest, VCPKG_LINE_INFO);
+                    const auto json = serialize_manifest(*scf);
+                    const auto formatted_content = Json::stringify(json);
+                    if (current_file_content != formatted_content)
                     {
-                        const auto current_file_content = fs.read_contents(path_to_manifest, VCPKG_LINE_INFO);
-                        const auto json = serialize_manifest(*scf);
-                        const auto formatted_content = Json::stringify(json);
-                        if (current_file_content != formatted_content)
-                        {
-                            auto command_line = fmt::format("vcpkg format-manifest ports/{}/vcpkg.json", port_name);
-                            msg::println_error(
-                                msg::format(msgAddVersionPortHasImproperFormat, msg::package_name = port_name)
-                                    .append_raw('\n')
-                                    .append(msgAddVersionFormatPortSuggestion, msg::command_line = command_line)
-                                    .append_raw('\n')
-                                    .append(msgAddVersionCommitResultReminder)
-                                    .append_raw('\n'));
-                            Checks::check_exit(VCPKG_LINE_INFO, !add_all);
-                            return;
-                        }
+                        auto command_line = fmt::format("vcpkg format-manifest ports/{}/vcpkg.json", port_name);
+                        msg::println_error(
+                            msg::format(msgAddVersionPortHasImproperFormat, msg::package_name = port_name)
+                                .append_raw('\n')
+                                .append(msgAddVersionFormatPortSuggestion, msg::command_line = command_line)
+                                .append_raw('\n')
+                                .append(msgAddVersionCommitResultReminder)
+                                .append_raw('\n'));
+                        Checks::check_exit(VCPKG_LINE_INFO, !add_all);
+                        return;
                     }
                 }
+            }
 
-                // find local uncommitted changes on port
-                if (Util::Sets::contains(changed_ports, port_name))
-                {
-                    msg::println_warning(msgAddVersionUncommittedChanges, msg::package_name = port_name);
-                }
+            // find local uncommitted changes on port
+            if (Util::Sets::contains(changed_ports, port_name))
+            {
+                msg::println_warning(msgAddVersionUncommittedChanges, msg::package_name = port_name);
+            }
 
-                const auto& schemed_version = scf->to_schemed_version();
+            const auto& schemed_version = scf->to_schemed_version();
 
-                auto git_tree_it = git_tree_map.find(port_name);
-                if (git_tree_it == git_tree_map.end())
-                {
-                    msg::println_warning(msg::format(msgAddVersionNoGitSha, msg::package_name = port_name)
-                                             .append_raw("\n-- ")
-                                             .append(msgAddVersionCommitChangesReminder)
-                                             .append_raw("\n***")
-                                             .append(msgAddVersionNoFilesUpdated)
-                                             .append_raw("***"));
-                    if (add_all) return;
-                    Checks::exit_fail(VCPKG_LINE_INFO);
-                }
-                const auto& git_tree = git_tree_it->second;
+            auto git_tree_it = git_tree_map.find(port_name);
+            if (git_tree_it == git_tree_map.end())
+            {
+                msg::println_warning(msg::format(msgAddVersionNoGitSha, msg::package_name = port_name)
+                                         .append_raw("\n-- ")
+                                         .append(msgAddVersionCommitChangesReminder)
+                                         .append_raw("\n***")
+                                         .append(msgAddVersionNoFilesUpdated)
+                                         .append_raw("***"));
+                if (add_all) return;
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+            const auto& git_tree = git_tree_it->second;
 
-                char prefix[] = {port_name[0], '-', '\0'};
-                auto port_versions_path =
-                    paths.builtin_registry_versions / prefix / Strings::concat(port_name, ".json");
-                auto updated_versions_file = update_version_db_file(paths,
-                                                                    port_name,
-                                                                    schemed_version,
-                                                                    git_tree,
-                                                                    port_versions_path,
-                                                                    overwrite_version,
-                                                                    verbose,
-                                                                    add_all,
-                                                                    skip_version_format_check);
-                auto updated_baseline_file = update_baseline_version(
-                    paths, port_name, schemed_version.version, baseline_path, baseline_map, verbose);
-                if (verbose && updated_versions_file == UpdateResult::NotUpdated &&
-                    updated_baseline_file == UpdateResult::NotUpdated)
-                {
-                    msg::println(msgAddVersionNoFilesUpdatedForPort, msg::package_name = port_name);
-                }
+            char prefix[] = {port_name[0], '-', '\0'};
+            auto port_versions_path = paths.builtin_registry_versions / prefix / Strings::concat(port_name, ".json");
+            auto updated_versions_file = update_version_db_file(paths,
+                                                                port_name,
+                                                                schemed_version,
+                                                                git_tree,
+                                                                port_versions_path,
+                                                                overwrite_version,
+                                                                verbose,
+                                                                add_all,
+                                                                skip_version_format_check);
+            auto updated_baseline_file = update_baseline_version(
+                paths, port_name, schemed_version.version, baseline_path, baseline_map, verbose);
+            if (verbose && updated_versions_file == UpdateResult::NotUpdated &&
+                updated_baseline_file == UpdateResult::NotUpdated)
+            {
+                msg::println(msgAddVersionNoFilesUpdatedForPort, msg::package_name = port_name);
+            }
             });
         Checks::exit_success(VCPKG_LINE_INFO);
     }

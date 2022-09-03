@@ -9,7 +9,6 @@
 #include <algorithm>
 #endif
 
-
 #if defined(USE_PARALLEL_ALG) && !defined(GNU_USE_PARALLEL_ALG)
 #define vcpkg_parallel_for_each std::for_each(std::execution::par,
 #elif defined(GNU_USE_PARALLEL_ALG)

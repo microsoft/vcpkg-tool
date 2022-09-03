@@ -504,32 +504,21 @@ namespace vcpkg::Paragraphs
                 // this is a port for which no registry is set
                 // this can happen when there's no default registry,
                 // and a registry has a port definition which it doesn't own the name of.
-                //mtx.unlock();
                 return;
             }
-#if defined(USE_PARALLEL_ALG)
-            //mtx.lock();
-#endif
+
             const auto baseline_version = impl->get_baseline_version(port_name);
-#if defined(USE_PARALLEL_ALG)
-            //mtx.unlock();
-#endif
-            if (!baseline_version)
-            {
-                return; // port is attributed to this registry, but it is not in the baseline
-            }
+            if (!baseline_version) return; // port is attributed to this registry, but it is not in the baseline
             const auto port_entry = impl->get_port_entry(port_name);
             if (!port_entry) return; // port is attributed to this registry, but there is no version db
             auto port_location = port_entry->get_version(*baseline_version.get());
             if (!port_location) return; // baseline version was not in version db (registry consistency issue)
-
             auto maybe_spgh = try_load_port(fs, port_location.get()->path);
             if (const auto spgh = maybe_spgh.get())
             {
 #if defined(USE_PARALLEL_ALG)
                 std::lock_guard<std::mutex> guard(mtx);
 #endif
-
                 ret.paragraphs.push_back({
                     std::move(*spgh),
                     std::move(port_location.get()->path),
