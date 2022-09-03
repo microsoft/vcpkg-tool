@@ -338,6 +338,12 @@ if(MINGW)
     target_link_libraries(vcpkglib PUBLIC winhttp bcrypt version ole32 uuid)
 endif()
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # GCC needs tbb for parallel algorithms
+    find_package(TBB REQUIRED)
+    target_link_libraries(vcpkglib PRIVATE TBB::tbb)
+endif()
+
 # === Target: vcpkg ===
 add_custom_command(
     OUTPUT

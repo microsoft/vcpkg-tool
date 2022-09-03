@@ -1,5 +1,6 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/parallel-algorithms.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
@@ -11,8 +12,9 @@
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/registries.h>
 
-#include <execution>
-#include <algorithm>
+#if !defined(__clang__)
+#include <mutex>
+#endif
 
 static std::atomic<uint64_t> g_load_ports_stats(0);
 
@@ -491,9 +493,11 @@ namespace vcpkg::Paragraphs
         }
 
         Util::sort_unique_erase(ports);
+#if !defined(__clang__)
         std::mutex mtx;
+#endif
 
-        std::for_each(std::execution::par, ports.begin(), ports.end(), [&](const std::string& port_name) {
+        parallel_for_each(ports.begin(), ports.end(), [&](const std::string& port_name) {
             auto impl = registries.registry_for_port(port_name);
             if (!impl)
             {
@@ -509,11 +513,13 @@ namespace vcpkg::Paragraphs
             if (!port_entry) return; // port is attributed to this registry, but there is no version db
             auto port_location = port_entry->get_version(*baseline_version.get());
             if (!port_location) return; // baseline version was not in version db (registry consistency issue)
-            std::lock_guard<std::mutex> guard(mtx);
             auto maybe_spgh = try_load_port(fs, port_location.get()->path);
             if (const auto spgh = maybe_spgh.get())
             {
-                
+#if !defined(__clang__)
+                std::lock_guard<std::mutex> guard(mtx);
+#endif
+
                 ret.paragraphs.push_back({
                     std::move(*spgh),
                     std::move(port_location.get()->path),
@@ -522,6 +528,9 @@ namespace vcpkg::Paragraphs
             }
             else
             {
+#if !defined(__clang__)
+                std::lock_guard<std::mutex> guard(mtx);
+#endif
                 ret.errors.emplace_back(std::move(maybe_spgh).error());
             }
         });
