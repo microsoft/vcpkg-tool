@@ -9,17 +9,19 @@
 #include <algorithm>
 #endif
 
-namespace vcpkg
-{
-    template<typename Iter, typename F>
-    void parallel_for_each(Iter begin, Iter end, F cb)
-    {
+
 #if defined(USE_PARALLEL_ALG) && !defined(GNU_USE_PARALLEL_ALG)
-        std::for_each(std::execution::par, begin, end, cb);
+#define vcpkg_par_unseq_for_each std::for_each(std::execution::par_unseq,
 #elif defined(GNU_USE_PARALLEL_ALG)
-        __gnu_parallel::for_each(begin, end, cb);
+#define vcpkg_par_unseq_for_each __gnu_parallel::for_each(
 #else
-        std::for_each(begin, end, cb);
+#define vcpkg_par_unseq_for_each std::for_each(
 #endif
-    }
-}
+
+#if defined(USE_PARALLEL_ALG) && !defined(GNU_USE_PARALLEL_ALG)
+#define vcpkg_parallel_for_each std::for_each(std::execution::par,
+#elif defined(GNU_USE_PARALLEL_ALG)
+#define vcpkg_parallel_for_each __gnu_parallel::for_each(
+#else
+#define vcpkg_parallel_for_each std::for_each(
+#endif

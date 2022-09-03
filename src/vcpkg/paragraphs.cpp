@@ -497,7 +497,7 @@ namespace vcpkg::Paragraphs
         std::mutex mtx;
 #endif
 
-        parallel_for_each(ports.begin(), ports.end(), [&](const std::string& port_name) {
+        vcpkg_parallel_for_each ports.begin(), ports.end(), [&](const std::string& port_name) {
             auto impl = registries.registry_for_port(port_name);
             if (!impl)
             {
@@ -508,11 +508,11 @@ namespace vcpkg::Paragraphs
                 return;
             }
 #if defined(USE_PARALLEL_ALG)
-            mtx.lock();
+            //mtx.lock();
 #endif
             const auto baseline_version = impl->get_baseline_version(port_name);
 #if defined(USE_PARALLEL_ALG)
-            mtx.unlock();
+            //mtx.unlock();
 #endif
             if (!baseline_version)
             {
