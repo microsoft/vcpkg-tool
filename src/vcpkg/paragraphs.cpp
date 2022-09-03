@@ -498,21 +498,29 @@ namespace vcpkg::Paragraphs
 #endif
 
         parallel_for_each(ports.begin(), ports.end(), [&](const std::string& port_name) {
+            mtx.lock();
             auto impl = registries.registry_for_port(port_name);
             if (!impl)
             {
                 // this is a port for which no registry is set
                 // this can happen when there's no default registry,
                 // and a registry has a port definition which it doesn't own the name of.
+                mtx.unlock();
                 return;
             }
 
             const auto baseline_version = impl->get_baseline_version(port_name);
-            if (!baseline_version) return; // port is attributed to this registry, but it is not in the baseline
+            if (!baseline_version)
+            {
+                mtx.unlock();
+                return; // port is attributed to this registry, but it is not in the baseline
+            }
             const auto port_entry = impl->get_port_entry(port_name);
+            mtx.unlock();
             if (!port_entry) return; // port is attributed to this registry, but there is no version db
             auto port_location = port_entry->get_version(*baseline_version.get());
             if (!port_location) return; // baseline version was not in version db (registry consistency issue)
+
             auto maybe_spgh = try_load_port(fs, port_location.get()->path);
             if (const auto spgh = maybe_spgh.get())
             {
