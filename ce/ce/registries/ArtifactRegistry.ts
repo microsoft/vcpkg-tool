@@ -9,7 +9,7 @@ import { FileType } from '../fs/filesystem';
 import { Session } from '../session';
 import { Queue } from '../util/promise';
 import { Uri } from '../util/uri';
-import { isYAML, serialize } from '../yaml/yaml';
+import { serialize } from '../yaml/yaml';
 import { ArtifactIndex } from './artifact-index';
 import { Index } from './indexer';
 import { Registries } from './registries';
@@ -107,7 +107,7 @@ export abstract class ArtifactRegistry implements Registry {
           continue;
         }
 
-        if (type & FileType.File && isYAML(entry.path)) {
+        if (type & FileType.File && entry.path.endsWith('.json')) {
           void q.enqueue(() => processFile(entry));
         }
       }

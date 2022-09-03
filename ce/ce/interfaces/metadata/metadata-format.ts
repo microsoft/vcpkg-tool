@@ -17,6 +17,3 @@ import { NugetRegistry } from './registries/nuget-registry';
 export type Profile = ProfileBase;
 
 export type RegistryDeclaration = NugetRegistry | LocalRegistry | GitRegistry;
-
-/** values that can be either a single string, or an array of strings */
-export type StringOrStrings = string | Array<string>;

@@ -111,7 +111,7 @@ export class Artifact extends ArtifactBase {
   }
 
   get isInstalled() {
-    return this.targetLocation.exists('artifact.yaml');
+    return this.targetLocation.exists('artifact.json');
   }
 
   get uniqueId() {
@@ -183,7 +183,7 @@ export class Artifact extends ArtifactBase {
 
   async writeManifest() {
     await this.targetLocation.createDirectory();
-    await this.metadata.save(this.targetLocation.join('artifact.yaml'));
+    await this.metadata.save(this.targetLocation.join('artifact.json'));
   }
 
   async uninstall() {
