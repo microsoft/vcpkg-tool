@@ -5,8 +5,7 @@ import { Range, SemVer } from 'semver';
 import BTree from 'sorted-btree';
 import { i } from '../i18n';
 import { isIterable } from '../util/checks';
-import { intersect } from '../util/intersect';
-import { entries, keys, ManyMap, Record } from '../util/linq';
+import { entries, ManyMap } from '../util/linq';
 
 /* eslint-disable @typescript-eslint/ban-types */
 
@@ -106,14 +105,6 @@ abstract class Key<TGraph extends Object, TKey extends HasToString, TIndexSchema
   protected indexSchema: TIndexSchema;
   readonly identity: string;
   readonly alternativeIdentities: Array<string>;
-
-  /** attaches a nested key in the index. */
-  with<TNestedKey extends Record<string, Key<TGraph, any, TIndexSchema>>>(nestedKey: TNestedKey): Key<TGraph, TKey, TIndexSchema> & TNestedKey {
-    for (const child of keys(nestedKey)) {
-      this.nestedKeys.push(nestedKey[child]);
-    }
-    return intersect(this, nestedKey);
-  }
 
   /** persists the key to an object graph */
   serialize() {
