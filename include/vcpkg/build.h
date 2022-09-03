@@ -228,7 +228,6 @@ namespace vcpkg
         msg::println_error(create_user_troubleshooting_message(action, paths));
         if (issue_body)
         {
-            // Intentionally not using `println_warning` here to avoid `warning: ` prefix
             msg::println(
                 Color::warning, msgBuildTroubleshootingMessage4, msg::path = issue_body.value_or_exit(VCPKG_LINE_INFO));
         }
