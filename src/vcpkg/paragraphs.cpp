@@ -513,13 +513,14 @@ namespace vcpkg::Paragraphs
             if (!port_entry) return; // port is attributed to this registry, but there is no version db
             auto port_location = port_entry->get_version(*baseline_version.get());
             if (!port_location) return; // baseline version was not in version db (registry consistency issue)
+
+#if defined(USE_PARALLEL_ALG)
+            std::lock_guard<std::mutex> guard(mtx);
+#endif
+
             auto maybe_spgh = try_load_port(fs, port_location.get()->path);
             if (const auto spgh = maybe_spgh.get())
             {
-#if defined(USE_PARALLEL_ALG)
-                std::lock_guard<std::mutex> guard(mtx);
-#endif
-
                 ret.paragraphs.push_back({
                     std::move(*spgh),
                     std::move(port_location.get()->path),
@@ -528,9 +529,6 @@ namespace vcpkg::Paragraphs
             }
             else
             {
-#if defined(USE_PARALLEL_ALG)
-                std::lock_guard<std::mutex> guard(mtx);
-#endif
                 ret.errors.emplace_back(std::move(maybe_spgh).error());
             }
         });
