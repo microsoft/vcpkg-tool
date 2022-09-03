@@ -339,10 +339,9 @@ if(MINGW)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    # GCC needs tbb for parallel algorithms
     find_package(OpenMP REQUIRED)
     target_link_libraries(vcpkglib PRIVATE OpenMP::OpenMP_CXX)
-    target_compile_definitions(vcpkglib PRIVATE GNU_USE_PARALLEL_ALG)
+    target_compile_definitions(vcpkglib PRIVATE USE_PARALLEL_ALG GNU_USE_PARALLEL_ALG)
 endif()
 
 if(MSVC)

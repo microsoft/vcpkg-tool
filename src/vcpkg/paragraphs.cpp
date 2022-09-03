@@ -12,7 +12,7 @@
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/registries.h>
 
-#if defined(USE_PARALLEL_ALG) || defined(GNU_USE_PARALLEL_ALG)
+#if defined(USE_PARALLEL_ALG)
 #include <mutex>
 #endif
 
@@ -493,7 +493,7 @@ namespace vcpkg::Paragraphs
         }
 
         Util::sort_unique_erase(ports);
-#if defined(USE_PARALLEL_ALG) || defined(GNU_USE_PARALLEL_ALG)
+#if defined(USE_PARALLEL_ALG)
         std::mutex mtx;
 #endif
 
@@ -516,7 +516,7 @@ namespace vcpkg::Paragraphs
             auto maybe_spgh = try_load_port(fs, port_location.get()->path);
             if (const auto spgh = maybe_spgh.get())
             {
-#if defined(USE_PARALLEL_ALG) || defined(GNU_USE_PARALLEL_ALG)
+#if defined(USE_PARALLEL_ALG)
                 std::lock_guard<std::mutex> guard(mtx);
 #endif
 
@@ -528,7 +528,7 @@ namespace vcpkg::Paragraphs
             }
             else
             {
-#if defined(USE_PARALLEL_ALG) || defined(GNU_USE_PARALLEL_ALG)
+#if defined(USE_PARALLEL_ALG)
                 std::lock_guard<std::mutex> guard(mtx);
 #endif
                 ret.errors.emplace_back(std::move(maybe_spgh).error());
