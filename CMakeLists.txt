@@ -340,8 +340,18 @@ endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     # GCC needs tbb for parallel algorithms
-    find_package(TBB REQUIRED)
-    target_link_libraries(vcpkglib PRIVATE TBB::tbb)
+    find_package(TBB)
+    if(TBB_FOUND)
+        target_link_libraries(vcpkglib PRIVATE TBB::tbb)
+        target_compile_definitions(vcpkglib PRIVATE USE_PARALLEL_ALG)
+    else()
+        message("TBB not found; parallel algorithms will be disabled")
+        message("You can install TBB using `apt install libtbb-dev`")
+    endif()
+endif()
+
+if(MSVC)
+    target_compile_definitions(vcpkglib PRIVATE USE_PARALLEL_ALG)
 endif()
 
 # === Target: vcpkg ===
