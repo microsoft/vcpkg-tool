@@ -1580,6 +1580,7 @@ namespace vcpkg
                     "'--' at the beginning must be preserved",
                     "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.");
     DECLARE_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
+    DECLARE_MESSAGE(Utf8DecoderDereferencedAtEof, (), "", "dereferenced Utf8Decoder at the end of a string.");
     DECLARE_MESSAGE(VcpkgCeIsExperimental,
                     (),
                     "",
