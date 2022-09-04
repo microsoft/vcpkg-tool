@@ -519,11 +519,11 @@ namespace vcpkg::Paragraphs
 #if defined(USE_PARALLEL_ALG)
                 std::lock_guard<std::mutex> guard(mtx);
 #endif
-                ret.paragraphs.emplace_back(
+                ret.paragraphs.push_back({
                     std::move(*spgh),
                     std::move(port_location.get()->path),
-                    std::move(port_location.get()->location)
-                );
+                    std::move(port_location.get()->location),
+                });
             }
             else
             {
