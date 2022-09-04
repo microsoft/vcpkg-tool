@@ -28,6 +28,34 @@ namespace vcpkg::Unicode
         }
     }
 
+    Utf8CodeUnitKind utf8_code_unit_kind(unsigned char code_unit) noexcept
+    {
+        if (code_unit < 0b1000'0000)
+        {
+            return Utf8CodeUnitKind::StartOne;
+        }
+        else if (code_unit < 0b1100'0000)
+        {
+            return Utf8CodeUnitKind::Continue;
+        }
+        else if (code_unit < 0b1110'0000)
+        {
+            return Utf8CodeUnitKind::StartTwo;
+        }
+        else if (code_unit < 0b1111'0000)
+        {
+            return Utf8CodeUnitKind::StartThree;
+        }
+        else if (code_unit < 0b1111'1000)
+        {
+            return Utf8CodeUnitKind::StartFour;
+        }
+        else
+        {
+            return Utf8CodeUnitKind::Invalid;
+        }
+    }
+
     int utf8_encode_code_point(char (&array)[4], char32_t code_point) noexcept
     {
         // count \in {2, 3, 4}
@@ -154,7 +182,7 @@ namespace vcpkg::Unicode
 
     struct Utf8Category : std::error_category
     {
-        inline const char* name() const noexcept { return "utf8"; }
+        inline const char* name() const noexcept override { return "utf8"; }
         std::string message(int condition) const override;
     };
 

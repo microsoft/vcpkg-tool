@@ -31,33 +31,7 @@ namespace vcpkg::Unicode
 
     const std::error_category& utf8_category() noexcept;
 
-    constexpr Utf8CodeUnitKind utf8_code_unit_kind(unsigned char code_unit) noexcept
-    {
-        if (code_unit < 0b1000'0000)
-        {
-            return Utf8CodeUnitKind::StartOne;
-        }
-        else if (code_unit < 0b1100'0000)
-        {
-            return Utf8CodeUnitKind::Continue;
-        }
-        else if (code_unit < 0b1110'0000)
-        {
-            return Utf8CodeUnitKind::StartTwo;
-        }
-        else if (code_unit < 0b1111'0000)
-        {
-            return Utf8CodeUnitKind::StartThree;
-        }
-        else if (code_unit < 0b1111'1000)
-        {
-            return Utf8CodeUnitKind::StartFour;
-        }
-        else
-        {
-            return Utf8CodeUnitKind::Invalid;
-        }
-    }
+    Utf8CodeUnitKind utf8_code_unit_kind(unsigned char code_unit) noexcept;
 
     constexpr int utf8_code_unit_count(Utf8CodeUnitKind kind) noexcept { return static_cast<int>(kind); }
     constexpr int utf8_code_unit_count(char code_unit) noexcept
