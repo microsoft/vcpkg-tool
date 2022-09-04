@@ -31,6 +31,8 @@ namespace vcpkg::Unicode
         }
     }
 
+    int utf8_code_unit_count(char code_unit) noexcept { return utf8_code_unit_count(utf8_code_unit_kind(code_unit)); }
+
     static constexpr int utf8_encode_code_unit_count(char32_t code_point) noexcept
     {
         if (code_point < 0x80)

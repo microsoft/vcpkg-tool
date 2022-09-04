@@ -34,10 +34,7 @@ namespace vcpkg::Unicode
     Utf8CodeUnitKind utf8_code_unit_kind(unsigned char code_unit) noexcept;
 
     constexpr int utf8_code_unit_count(Utf8CodeUnitKind kind) noexcept { return static_cast<int>(kind); }
-    constexpr int utf8_code_unit_count(char code_unit) noexcept
-    {
-        return utf8_code_unit_count(utf8_code_unit_kind(code_unit));
-    }
+    int utf8_code_unit_count(char code_unit) noexcept;
 
     int utf8_encode_code_point(char (&array)[4], char32_t code_point) noexcept;
 
