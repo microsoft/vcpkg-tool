@@ -463,8 +463,8 @@ namespace vcpkg
                                                                                       const WorkingDirectory& wd,
                                                                                       const Environment& env)
     {
-        std::vector<ExpectedL<ExitCodeAndOutput>> res(cmd_lines.size(), LocalizedString());
-        if (cmd_lines.size() == 0)
+        std::vector<ExpectedL<ExitCodeAndOutput>> res(cmd_lines.size(), LocalizedString{});
+        if (cmd_lines.empty())
         {
             return res;
         }
@@ -476,18 +476,24 @@ namespace vcpkg
         }
 
         std::atomic<size_t> work_item{0};
+        std::mutex mtx;
         const auto num_threads =
             static_cast<size_t>(std::max(1, std::min(get_concurrency(), static_cast<int>(cmd_lines.size()))));
+
+        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, num_threads > 1, "num_threads is %d", num_threads);
 
         auto work = [&]() {
             std::size_t item;
             while (item = work_item.fetch_add(1), item < cmd_lines.size())
             {
-                res[item] = cmd_execute_and_capture_output(cmd_lines[item], wd, env);
+                auto cmd_output = cmd_execute_and_capture_output(cmd_lines[item], wd, env);
+                std::lock_guard<std::mutex> guard(mtx);
+                res[item] = std::move(cmd_output);
             }
         };
 
         std::vector<std::future<void>> workers;
+        workers.reserve(num_threads - 1);
         for (size_t x = 0; x < num_threads - 1; ++x)
         {
             workers.emplace_back(std::async(std::launch::async | std::launch::deferred, work));

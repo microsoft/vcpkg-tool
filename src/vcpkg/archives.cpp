@@ -333,7 +333,7 @@ namespace vcpkg
         auto results =
             cmd_execute_and_capture_output_parallel(jobs, default_working_directory, get_clean_environment());
 #ifdef __APPLE__
-        int i = 0;
+        size_t i = 0;
         for (auto& maybe_result : results)
         {
             if (const auto result = maybe_result.get())
