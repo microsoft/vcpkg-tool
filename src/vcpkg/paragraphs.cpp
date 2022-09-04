@@ -485,7 +485,7 @@ namespace vcpkg::Paragraphs
         for (const auto& registry : registries.registries())
         {
             const auto packages = registry.packages();
-            ports.insert(end(ports), begin(packages), end(packages));
+            ports.insert(std::end(ports), std::begin(packages), std::end(packages));
         }
         if (auto registry = registries.default_registry())
         {
@@ -519,11 +519,11 @@ namespace vcpkg::Paragraphs
 #if defined(USE_PARALLEL_ALG)
                 std::lock_guard<std::mutex> guard(mtx);
 #endif
-                ret.paragraphs.push_back({
+                ret.paragraphs.emplace_back(
                     std::move(*spgh),
                     std::move(port_location.get()->path),
-                    std::move(port_location.get()->location),
-                });
+                    std::move(port_location.get()->location)
+                );
             }
             else
             {
