@@ -3,31 +3,6 @@
 
 namespace vcpkg::Unicode
 {
-    static constexpr int utf8_encode_code_unit_count(char32_t code_point) noexcept
-    {
-        if (code_point < 0x80)
-        {
-            return 1;
-        }
-        else if (code_point < 0x800)
-        {
-            return 2;
-        }
-        else if (code_point < 0x10000)
-        {
-            return 3;
-        }
-        else if (code_point < 0x110000)
-        {
-            return 4;
-        }
-        else
-        {
-            vcpkg::Checks::exit_with_message(
-                VCPKG_LINE_INFO, "Invalid code point passed to utf8_encoded_code_point_count (%x)", code_point);
-        }
-    }
-
     Utf8CodeUnitKind utf8_code_unit_kind(unsigned char code_unit) noexcept
     {
         if (code_unit < 0b1000'0000)
@@ -53,6 +28,31 @@ namespace vcpkg::Unicode
         else
         {
             return Utf8CodeUnitKind::Invalid;
+        }
+    }
+
+    static constexpr int utf8_encode_code_unit_count(char32_t code_point) noexcept
+    {
+        if (code_point < 0x80)
+        {
+            return 1;
+        }
+        else if (code_point < 0x800)
+        {
+            return 2;
+        }
+        else if (code_point < 0x10000)
+        {
+            return 3;
+        }
+        else if (code_point < 0x110000)
+        {
+            return 4;
+        }
+        else
+        {
+            vcpkg::Checks::exit_with_message(
+                VCPKG_LINE_INFO, "Invalid code point passed to utf8_encoded_code_point_count (%x)", code_point);
         }
     }
 
