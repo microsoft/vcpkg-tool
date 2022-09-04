@@ -120,7 +120,7 @@ namespace vcpkg::Commands::DependInfo
                 std::string value = iter->second;
                 try
                 {
-                    return std::stoi(value);
+                    return std::max(std::stoi(value), NO_RECURSE_LIMIT_VALUE);
                 }
                 catch (std::exception&)
                 {
