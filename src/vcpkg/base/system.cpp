@@ -417,17 +417,19 @@ namespace vcpkg
         return ProgramW6432;
     }
 
-    int get_concurrency()
+    unsigned int get_concurrency()
     {
-        static int concurrency = [] {
+        static unsigned int concurrency = [] {
             auto user_defined_concurrency = get_environment_variable("VCPKG_MAX_CONCURRENCY");
             if (user_defined_concurrency)
             {
-                return std::stoi(user_defined_concurrency.value_or_exit(VCPKG_LINE_INFO));
+                int res = std::stoi(user_defined_concurrency.value_or_exit(VCPKG_LINE_INFO));
+                vcpkg::Checks::check_exit(VCPKG_LINE_INFO, res > 0, "VCPKG_MAX_CONCURRENCY is %d, must be > 0", res);
+                return static_cast<unsigned int>(res);
             }
             else
             {
-                return static_cast<int>(std::thread::hardware_concurrency()) + 1;
+                return std::thread::hardware_concurrency() + 1;
             }
         }();
 

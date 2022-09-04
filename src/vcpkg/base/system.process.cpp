@@ -477,10 +477,7 @@ namespace vcpkg
 
         std::atomic<size_t> work_item{0};
         std::mutex mtx;
-        const auto num_threads =
-            static_cast<size_t>(std::max(1, std::min(get_concurrency(), static_cast<int>(cmd_lines.size()))));
-
-        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, num_threads > 1, "num_threads is %d", num_threads);
+        const auto num_threads = std::max(static_cast<size_t>(1), std::min(static_cast<size_t>(get_concurrency()), cmd_lines.size()));
 
         auto work = [&]() {
             std::size_t item;
