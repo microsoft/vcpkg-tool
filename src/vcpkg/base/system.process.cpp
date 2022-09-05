@@ -476,7 +476,6 @@ namespace vcpkg
         }
 
         std::atomic<size_t> work_item{0};
-        std::mutex mtx;
         const auto num_threads =
             std::max(static_cast<size_t>(1), std::min(static_cast<size_t>(get_concurrency()), cmd_lines.size()));
 
@@ -484,9 +483,7 @@ namespace vcpkg
             std::size_t item;
             while (item = work_item.fetch_add(1), item < cmd_lines.size())
             {
-                auto cmd_output = cmd_execute_and_capture_output(cmd_lines[item], wd, env);
-                std::lock_guard<std::mutex> guard(mtx);
-                res[item] = std::move(cmd_output);
+                res[item] = cmd_execute_and_capture_output(cmd_lines[item], wd, env);
             }
         };
 
