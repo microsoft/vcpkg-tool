@@ -497,7 +497,7 @@ namespace vcpkg::Paragraphs
         std::mutex mtx;
 #endif
 
-        vcpkg_parallel_for_each ports.begin(), ports.end(), [&](const std::string& port_name) {
+        auto work = [&](const std::string& port_name) {
             auto impl = registries.registry_for_port(port_name);
             if (!impl)
             {
@@ -532,7 +532,9 @@ namespace vcpkg::Paragraphs
 #endif
                 ret.errors.emplace_back(std::move(maybe_spgh).error());
             }
-        });
+        };
+
+        vcpkg_parallel_for_each(ports.begin(), ports.end(), work);
 
         return ret;
     }

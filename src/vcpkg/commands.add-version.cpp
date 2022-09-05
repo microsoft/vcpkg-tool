@@ -397,7 +397,7 @@ namespace vcpkg::Commands::AddVersion
             msg::println_warning(msgAddVersionDetectLocalChangesError);
         }
 
-        vcpkg_par_unseq_for_each port_names.begin(), port_names.end(), [&](const std::string& port_name) {
+        auto work = [&](const std::string& port_name) {
             auto port_dir = paths.builtin_ports_directory() / port_name;
 
             if (!fs.exists(port_dir, IgnoreErrors{}))
@@ -483,7 +483,9 @@ namespace vcpkg::Commands::AddVersion
             {
                 msg::println(msgAddVersionNoFilesUpdatedForPort, msg::package_name = port_name);
             }
-            });
+        };
+
+        vcpkg_par_unseq_for_each(port_names.begin(), port_names.end(), work);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
