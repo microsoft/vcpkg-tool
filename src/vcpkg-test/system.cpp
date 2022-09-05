@@ -142,3 +142,21 @@ TEST_CASE ("cmdlinebuilder", "[system]")
     REQUIRE(cmd.command_line() == "\"trailing\\\\slash\\\\\" \"inner\\\"quotes\"");
 #endif
 }
+
+TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
+{
+    std::vector<vcpkg::Command> vec;
+    for (size_t i = 0; i < 50; i++)
+    {
+        vcpkg::Command cmd("sleep");
+        cmd.string_arg("3").raw_arg("&&").string_arg("echo").string_arg(std::to_string(i));
+        vec.emplace_back(std::move(cmd));
+    }
+
+    auto res = vcpkg::cmd_execute_and_capture_output_parallel(vcpkg::View<vcpkg::Command>(vec));
+
+    for (size_t i = 0; i < res.size(); ++i)
+    {
+        REQUIRE(res[i].get()->output == (std::to_string(i) + '\n'));
+    }
+}
