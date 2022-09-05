@@ -16,9 +16,6 @@
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/versions.h>
 
-//#include <algorithm>
-//#include <execution>
-
 using namespace vcpkg;
 
 namespace
