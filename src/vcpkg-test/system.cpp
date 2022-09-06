@@ -148,14 +148,7 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
     std::vector<vcpkg::Command> vec;
     for (size_t i = 0; i < 50; i++)
     {
-#if defined(_WIN32)
-        vcpkg::Command cmd("timeout");
-        cmd.string_arg("1").string_arg(">").string_arg("NUL");
-#elif !defined(__APPLE__)
-        vcpkg::Command cmd("sleep");
-        cmd.string_arg("1");
-#endif
-        cmd.raw_arg("&&").string_arg("echo");
+        vcpkg::Command cmd("echo");
 #if defined(__APPLE__)
         cmd.string_arg("\"" + std::to_string(i) + "\"");
 #else
@@ -168,6 +161,8 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
 
     for (size_t i = 0; i < res.size(); ++i)
     {
-        REQUIRE(res[i].get()->output == (std::to_string(i) + '\n'));
+        auto out = res[i].get();
+        REQUIRE(out != nullptr);
+        REQUIRE(out->output == (std::to_string(i) + '\n'));
     }
 }
