@@ -148,8 +148,14 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
     std::vector<vcpkg::Command> vec;
     for (size_t i = 0; i < 50; i++)
     {
+#if defined(_WIN32)
+        vcpkg::Command cmd("timeout");
+        cmd.string_arg("3").string_arg(">");
+#else
         vcpkg::Command cmd("sleep");
-        cmd.string_arg("3").raw_arg("&&").string_arg("echo").string_arg(std::to_string(i));
+        cmd.string_arg("3");
+#endif
+        cmd.raw_arg("&&").string_arg("echo").string_arg(std::to_string(i));
         vec.emplace_back(std::move(cmd));
     }
 
