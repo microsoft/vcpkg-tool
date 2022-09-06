@@ -155,8 +155,8 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
         cmd.string_arg("/c");
         cmd.string_arg("echo " + std::to_string(i));
 #elif defined(__APPLE__)
-        vcpkg::Command cmd;
-        cmd.string_arg("echo " + std::to_string(i));
+        vcpkg::Command cmd("echo");
+        cmd.string_arg("\"" + std::to_string(i) + "\"");
 #else
         vcpkg::Command cmd("echo");
         cmd.string_arg(std::to_string(i));
