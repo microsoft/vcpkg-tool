@@ -5,6 +5,7 @@
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 
@@ -145,16 +146,20 @@ TEST_CASE ("cmdlinebuilder", "[system]")
 
 TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
 {
+    vcpkg::Debug::g_debugging = true;
     std::vector<vcpkg::Command> vec;
     for (size_t i = 0; i < 50; i++)
     {
-        #if defined(_WIN32)
+#if defined(_WIN32)
         vcpkg::Command cmd("cmd.exe");
         cmd.string_arg("/c");
         cmd.string_arg("echo " + std::to_string(i));
+#elif defined(__APPLE__)
+        vcpkg::Command cmd;
+        cmd.string_arg("echo " + std::to_string(i));
 #else
         vcpkg::Command cmd("echo");
-        cmd.string_arg("\"" + std::to_string(i) + "\"");
+        cmd.string_arg(std::to_string(i));
 #endif
         vec.emplace_back(std::move(cmd));
     }
@@ -167,8 +172,10 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
         REQUIRE(out != nullptr);
 #if defined(_WIN32)
         REQUIRE(out->output == (std::to_string(i) + "\r\n"));
-#else
+#elif defined(__APPLE__)
         REQUIRE(out->output == ("\"" + std::to_string(i) + "\"\n"));
+#else
+        REQUIRE(out->output == (std::to_string(i) + "\n"));
 #endif
     }
 }
