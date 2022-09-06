@@ -150,7 +150,7 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
     {
 #if defined(_WIN32)
         vcpkg::Command cmd("timeout");
-        cmd.string_arg("3").string_arg(">");
+        cmd.string_arg("3").string_arg(">").string_arg("NUL");
 #else
         vcpkg::Command cmd("sleep");
         cmd.string_arg("3");
