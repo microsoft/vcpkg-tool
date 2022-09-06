@@ -10,7 +10,7 @@
 
 #include <ctime>
 #include <future>
-
+#include <iostream>
 #if defined(__APPLE__)
 #include <mach-o/dyld.h>
 #endif
@@ -910,8 +910,9 @@ namespace vcpkg
         // Use fgets because fread will block until the entire buffer is filled.
         while (fgets(buf, 1024, pipe))
         {
-            data_cb(StringView{buf, strlen(buf)});
-            printf(buf);
+            auto sv = StringView{buf, strlen(buf)};
+            data_cb(sv);
+            std::cout << sv.to_string() << '\n';
         }
 
         if (!feof(pipe))
