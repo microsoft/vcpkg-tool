@@ -154,12 +154,9 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
         vcpkg::Command cmd("cmd.exe");
         cmd.string_arg("/c");
         cmd.string_arg("echo " + std::to_string(i));
-#elif defined(__APPLE__)
-        vcpkg::Command cmd("echo");
-        cmd.string_arg("a");
 #else
         vcpkg::Command cmd("echo");
-        cmd.string_arg(std::to_string(i));
+        cmd.string_arg(std::string(i, 'a'));
 #endif
         vec.emplace_back(std::move(cmd));
     }
@@ -172,10 +169,8 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
         REQUIRE(out != nullptr);
 #if defined(_WIN32)
         REQUIRE(out->output == (std::to_string(i) + "\r\n"));
-#elif defined(__APPLE__)
-        REQUIRE(out->output == ("a"));
 #else
-        REQUIRE(out->output == (std::to_string(i) + "\n"));
+        REQUIRE(out->output == (std::string(i, 'a') + "\n"));
 #endif
     }
 }
