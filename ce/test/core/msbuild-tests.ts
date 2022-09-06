@@ -8,14 +8,22 @@ import { SuiteLocal } from './SuiteLocal';
 
 describe('MSBuild Generator', () => {
   const local = new SuiteLocal();
-  const fs = local.fs;
 
   after(local.after.bind(local));
 
-  it('Generates locations in order', async () => {
+  it('Generates roots without a trailing slash', () => {
+    const activation = new Activation(local.session);
+    const expectedPosix = 'c:/tmp';
+    const expected = (platform() === 'win32') ? expectedPosix.replaceAll('/', '\\') : expectedPosix;
+    strict.equal(activation.msBuildProcessPropertyValue('{root}', local.fs.file('c:/tmp')), expected);
+    strict.equal(activation.msBuildProcessPropertyValue('{root}', local.fs.file('c:/tmp/')), expected);
+  });
 
+  it('Generates locations in order', () => {
     const activation = new Activation(local.session);
 
+    // Note that only "addMSBuildProperty" has an effect on the output for now but that we'll probably
+    // need to respond to the others in the future.
     (<Array<[string, string | Array<string>]>>[
       ['z', 'zse&tting'],
       ['a', 'ase<tting'],
@@ -26,39 +34,39 @@ describe('MSBuild Generator', () => {
 
     activation.addLocation('somepath', local.fs.file('c:/tmp'));
     activation.addPath('include', [local.fs.file('c:/tmp'), local.fs.file('c:/tmp2')]);
+    activation.addDefine('VERY_POSIX', '1');
 
-    const expected = (platform() === 'win32') ? `<?xml version="1.0" encoding="utf-8"?>
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup Label="Locations">
-    <somepath>c:\\tmp</somepath>
-  </PropertyGroup>
-  <PropertyGroup Label="Properties">
-    <z>zse&amp;tting</z>
-    <a>ase&lt;tting</a>
-    <c>csetting</c>
-    <b>bsetting</b>
-    <prop>first;seco&gt;nd;third</prop>
-  </PropertyGroup>
-  <PropertyGroup Label="Paths">
-    <include>c:\\tmp;c:\\tmp2</include>
-  </PropertyGroup>
-</Project>` : `<?xml version="1.0" encoding="utf-8"?>
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup Label="Locations">
-    <somepath>c:/tmp</somepath>
-  </PropertyGroup>
-  <PropertyGroup Label="Properties">
-    <z>zse&amp;tting</z>
-    <a>ase&lt;tting</a>
-    <c>csetting</c>
-    <b>bsetting</b>
-    <prop>first;seco&gt;nd;third</prop>
-  </PropertyGroup>
-  <PropertyGroup Label="Paths">
-    <include>c:/tmp;c:/tmp2</include>
-  </PropertyGroup>
-</Project>` ;
+    const fileWithNoSlash = local.fs.file('c:/tmp');
+    const fileWithSlash = local.fs.file('c:/tmp/');
+    activation.addMSBuildProperty('a', '$(a);fir{root}st', fileWithNoSlash);
+    activation.addMSBuildProperty('a', '$(a);second', fileWithNoSlash);
+    activation.addMSBuildProperty('a', '$(a);{root}hello', fileWithNoSlash);
+    activation.addMSBuildProperty('b', '$(x);first', fileWithSlash);
+    activation.addMSBuildProperty('b', '$(b);se{root}cond', fileWithSlash);
+    activation.addMSBuildProperty('a', '$(a);third', fileWithNoSlash);
+    activation.addMSBuildProperty('b', 'third', fileWithSlash);
+    activation.addMSBuildProperty('b', '$(b);{root}world', fileWithSlash);
 
-    strict.equal(await activation.generateMSBuild([]), expected);
+    activation.addMSBuildProperty('xml chars', '\'"<>& and $ look funny when escaped', fileWithSlash);
+
+    const expectedPosix = `<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <a>$(a);firc:/tmpst</a>
+    <a>$(a);second</a>
+    <a>$(a);c:/tmphello</a>
+    <b>$(x);first</b>
+    <b>$(b);sec:/tmpcond</b>
+    <a>$(a);third</a>
+    <b>third</b>
+    <b>$(b);c:/tmpworld</b>
+    <xml chars>'"&lt;&gt;&amp; and $ look funny when escaped</xml chars>
+  </PropertyGroup>
+</Project>`;
+
+    const expected = (platform() === 'win32')
+      ? expectedPosix.replaceAll('c:/tmp', 'c:\\tmp').replaceAll('c:/', 'c:\\')
+      : expectedPosix;
+    strict.equal(activation.generateMSBuild(), expected);
   });
 });
