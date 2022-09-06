@@ -9,8 +9,8 @@
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 
-#include <string>
 #include <iostream>
+#include <string>
 
 using vcpkg::CPUArchitecture;
 using vcpkg::get_environment_variable;
@@ -163,6 +163,18 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
     }
 
     auto res = vcpkg::cmd_execute_and_capture_output_parallel(vcpkg::View<vcpkg::Command>(vec));
+
+    for (size_t i = 0; i < res.size(); ++i)
+    {
+        auto out = res[i].get();
+        auto str = out->output;
+        if (str.length() - 1 > 50)
+        {
+            std::cout << "> 50 chars: " << str << '\n';
+        }
+
+        std::cout << "Index: " << i << ", length: " << str.length() - 1 << '\n';
+    }
 
     for (size_t i = 0; i < res.size(); ++i)
     {

@@ -10,7 +10,7 @@
 
 #include <ctime>
 #include <future>
-#include <iostream>
+
 #if defined(__APPLE__)
 #include <mach-o/dyld.h>
 #endif
@@ -902,7 +902,6 @@ namespace vcpkg
         const auto pipe = popen(actual_cmd_line.c_str(), "r");
         if (pipe == nullptr)
         {
-            printf("pipe is nullptr\n");
             return format_system_error_message("popen", errno);
         }
 
@@ -910,14 +909,11 @@ namespace vcpkg
         // Use fgets because fread will block until the entire buffer is filled.
         while (fgets(buf, 1024, pipe))
         {
-            auto sv = StringView{buf, strlen(buf)};
-            data_cb(sv);
-            std::cout << sv.to_string() << '\n';
+            data_cb(StringView{buf, strlen(buf)});
         }
 
         if (!feof(pipe))
         {
-             printf("pipe error msg\n");
             return format_system_error_message("feof", errno);
         }
 
@@ -950,7 +946,6 @@ namespace vcpkg
                          " us\n");
         }
 
-        //printf("exit code is %i\n", *(exit_code.get()));
         return exit_code;
     }
 
