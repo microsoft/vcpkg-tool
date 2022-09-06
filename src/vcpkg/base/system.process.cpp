@@ -948,7 +948,7 @@ namespace vcpkg
                          " us\n");
         }
 
-        printf("exit code is %i\n", *(exit_code.get()));
+        //printf("exit code is %i\n", *(exit_code.get()));
         return exit_code;
     }
 
