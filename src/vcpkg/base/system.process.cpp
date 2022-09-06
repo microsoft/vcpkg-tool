@@ -911,6 +911,7 @@ namespace vcpkg
         while (fgets(buf, 1024, pipe))
         {
             data_cb(StringView{buf, strlen(buf)});
+            printf(buf);
         }
 
         if (!feof(pipe))
