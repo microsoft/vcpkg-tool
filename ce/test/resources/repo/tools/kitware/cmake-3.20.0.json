@@ -2,7 +2,7 @@
   "info": {
     "id": "tools/kitware/cmake",
     "version": "3.20.0",
-    "description": "sample yaml file that might work",
+    "description": "sample artifact file that might work",
     "summary": "Kitware's cmake tool"
   },
   "contacts": {

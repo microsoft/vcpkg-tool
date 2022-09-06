@@ -2,7 +2,7 @@
   "info": {
     "id": "compilers/gnu/gcc/arm-none-eabi",
     "version": "2020.10.0",
-    "description": "sample yaml file that might work for gcc",
+    "description": "sample artifact file that might work for gcc",
     "summary": "GCC compiler for ARM CPUs."
   },
   "contacts": {

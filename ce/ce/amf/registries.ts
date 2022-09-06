@@ -10,7 +10,7 @@ import { Entity } from '../yaml/Entity';
 import { Strings } from '../yaml/strings';
 import { Node, Yaml, YAMLDictionary, YAMLSequence } from '../yaml/yaml-types';
 
-export class RegistryDeclaration extends Entity{
+export class RegistryDeclaration extends Entity {
   readonly location = new Strings(undefined, this, 'location');
 
   get registryKind(): string | undefined { return this.asString(this.getMember('kind')); }

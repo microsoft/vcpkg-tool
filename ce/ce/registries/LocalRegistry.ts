@@ -8,9 +8,9 @@ import { registryIndexFile } from '../constants';
 import { Session } from '../session';
 import { Uri } from '../util/uri';
 import { ArtifactRegistry } from './ArtifactRegistry';
-import { Registry } from './registries';
 
-export class LocalRegistry extends ArtifactRegistry implements Registry {
+
+export class LocalRegistry extends ArtifactRegistry {
   protected indexYaml: Uri;
   readonly installationFolder;
   readonly cacheFolder: Uri;

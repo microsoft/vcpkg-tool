@@ -14,10 +14,8 @@ import { Uri } from '../util/uri';
 import { ArtifactIndex } from './artifact-index';
 import { ArtifactRegistry } from './ArtifactRegistry';
 import { Index } from './indexer';
-import { Registry } from './registries';
 
-export class RemoteRegistry extends ArtifactRegistry implements Registry {
-
+export class RemoteRegistry extends ArtifactRegistry {
   protected indexYaml: Uri;
   readonly installationFolder;
   readonly cacheFolder: Uri;
