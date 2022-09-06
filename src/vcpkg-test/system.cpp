@@ -150,12 +150,17 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
     {
 #if defined(_WIN32)
         vcpkg::Command cmd("timeout");
-        cmd.string_arg("3").string_arg(">").string_arg("NUL");
-#else
+        cmd.string_arg("1").string_arg(">").string_arg("NUL");
+#elif !defined(__APPLE__)
         vcpkg::Command cmd("sleep");
-        cmd.string_arg("3");
+        cmd.string_arg("1");
 #endif
-        cmd.raw_arg("&&").string_arg("echo").string_arg(std::to_string(i));
+        cmd.raw_arg("&&").string_arg("echo");
+#if defined(__APPLE__)
+        cmd.string_arg("\"" + std::to_string(i) + "\"");
+#else
+        cmd.string_arg(std::to_string(i));
+#endif
         vec.emplace_back(std::move(cmd));
     }
 
