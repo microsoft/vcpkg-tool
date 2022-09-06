@@ -171,5 +171,4 @@ export abstract class ArtifactRegistry implements Registry {
   async save(): Promise<void> {
     await this.indexYaml.writeFile(Buffer.from(`${THIS_IS_NOT_A_MANIFEST_ITS_AN_INDEX_STRING}\n${serialize(this.index.serialize()).replace(/\s*(\d*,)\n/g, '$1')}`));
   }
-
 }

@@ -263,7 +263,7 @@ export class Artifact extends ArtifactBase {
 
 export function sanitizePath(path: string) {
   return path.
-    replace(/[\\/]+/g, '/').     // forward slahses please
+    replace(/[\\/]+/g, '/').     // forward slashes please
     replace(/[?<>:|"]/g, ''). // remove illegal characters.
     // eslint-disable-next-line no-control-regex
     replace(/[\x00-\x1f\x80-\x9f]/g, ''). // remove unicode control codes
@@ -276,7 +276,7 @@ export function sanitizePath(path: string) {
 
 export function sanitizeUri(u: string) {
   return u.
-    replace(/[\\/]+/g, '/').     // forward slahses please
+    replace(/[\\/]+/g, '/').     // forward slashes please
     replace(/[?<>|"]/g, ''). // remove illegal characters.
     // eslint-disable-next-line no-control-regex
     replace(/[\x00-\x1f\x80-\x9f]/g, ''). // remove unicode control codes
@@ -288,7 +288,6 @@ export function sanitizeUri(u: string) {
 }
 
 export class ProjectManifest extends ArtifactBase {
-
 }
 
 export class InstalledArtifact extends Artifact {

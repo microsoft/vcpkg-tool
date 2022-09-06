@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { i } from "../i18n";
+import { i } from '../i18n';
 
 export function replaceCurlyBraces(subject: string, properties: Map<string, string>) {
   // One of these tokens:

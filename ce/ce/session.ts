@@ -1,4 +1,3 @@
-/* eslint-disable prefer-const */
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
@@ -399,5 +398,4 @@ export class Session {
     }
     return value;
   }
-
 }
