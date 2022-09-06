@@ -148,8 +148,14 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
     std::vector<vcpkg::Command> vec;
     for (size_t i = 0; i < 50; i++)
     {
+        #if defined(_WIN32)
+        vcpkg::Command cmd("cmd.exe");
+        cmd.string_arg("/c");
+        cmd.string_arg("echo " + std::to_string(i));
+#else
         vcpkg::Command cmd("echo");
-        cmd.string_arg(std::to_string(i));
+        cmd.string_arg("\"" + std::to_string(i) + "\"");
+#endif
         vec.emplace_back(std::move(cmd));
     }
 
@@ -162,7 +168,7 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
 #if defined(_WIN32)
         REQUIRE(out->output == (std::to_string(i) + "\r\n"));
 #else
-        REQUIRE(out->output == (std::to_string(i) + '\n'));
+        REQUIRE(out->output == ("\"" + std::to_string(i) + "\"\n"));
 #endif
     }
 }
