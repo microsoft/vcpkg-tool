@@ -320,7 +320,7 @@ namespace vcpkg::PostBuildLint
 
         return LintStatus::SUCCESS;
     }
-    static LintStatus check_share_folder_names(const Filesystem& fs, const Path& package_dir, const PackageSpec& spec)
+    static LintStatus check_share_folder_names(const Filesystem& fs, const Path& package_dir)
     {
         const auto cmake_folder_name = package_dir / "share";
         std::error_code ec;
@@ -336,8 +336,9 @@ namespace vcpkg::PostBuildLint
                 vcpkg::printf(Color::warning,
                               "Folders in /share must use lowercase ascii characters. Please rename it.\n"
                               "    file(RENAME \"${CURRENT_PACKAGES_DIR}/share/%s\" "
-                              "\"${CURRENT_PACKAGES_DIR}/share/${PORT}\")\n",
-                              orig_folder_name);
+                              "\"${CURRENT_PACKAGES_DIR}/share/%s\")\n",
+                              orig_folder_name,
+                              folder_name);
                 return LintStatus::PROBLEM_DETECTED;
             }
         }
@@ -1076,7 +1077,7 @@ namespace vcpkg::PostBuildLint
         error_count += check_folder_lib_cmake(fs, package_dir, spec);
         error_count += check_for_misplaced_cmake_files(fs, package_dir, spec);
         error_count += check_folder_debug_lib_cmake(fs, package_dir, spec);
-        error_count += check_share_folder_names(fs, package_dir, spec);
+        error_count += check_share_folder_names(fs, package_dir);
         error_count += check_for_dlls_in_lib_dir(fs, package_dir);
         error_count += check_for_dlls_in_lib_dir(fs, package_dir / "debug");
         error_count += check_for_copyright_file(fs, spec, paths);
