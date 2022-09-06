@@ -10,6 +10,7 @@
 #include <vcpkg/base/system.process.h>
 
 #include <string>
+#include <iostream>
 
 using vcpkg::CPUArchitecture;
 using vcpkg::get_environment_variable;
@@ -170,6 +171,8 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
 #if defined(_WIN32)
         REQUIRE(out->output == (std::to_string(i) + "\r\n"));
 #else
+        auto str = out->output;
+        std::cout << "Index: " << i << ", length: " << str.length() - 1 << '\n';
         REQUIRE(out->output == (std::string(i, 'a') + "\n"));
 #endif
     }
