@@ -320,8 +320,7 @@ namespace vcpkg::PostBuildLint
 
         return LintStatus::SUCCESS;
     }
-#ifndef _WIN32
-    static LintStatus check_share_folder_name(const Filesystem& fs, const Path& package_dir, const PackageSpec& spec)
+    static LintStatus check_share_folder_names(const Filesystem& fs, const Path& package_dir, const PackageSpec& spec)
     {
         const auto cmake_folder_name = package_dir / "share";
         std::error_code ec;
@@ -329,21 +328,22 @@ namespace vcpkg::PostBuildLint
         for (auto&& share_folder : share_folders)
         {
             auto folder_name = share_folder.filename().to_string();
+            const auto orig_folder_name = folder_name;
             Strings::ascii_to_lowercase(folder_name.data(), folder_name.data() + folder_name.size());
 
-            if (folder_name == spec.name() && share_folder.filename() != spec.name())
+            if (orig_folder_name != folder_name)
             {
                 vcpkg::printf(Color::warning,
-                              "The folder %s should be renamed %s\n",
-                              cmake_folder_name / share_folder,
-                              cmake_folder_name / spec.name());
+                              "Folders in /share must use lowercase ascii characters. Please rename it.\n"
+                              "    file(RENAME \"${CURRENT_PACKAGES_DIR}/share/%s\" "
+                              "\"${CURRENT_PACKAGES_DIR}/share/${PORT}\")\n",
+                              orig_folder_name);
                 return LintStatus::PROBLEM_DETECTED;
             }
         }
 
         return LintStatus::SUCCESS;
     }
-#endif
     static LintStatus check_for_dlls_in_lib_dir(const Filesystem& fs, const Path& package_dir)
     {
         std::vector<Path> dlls = fs.get_regular_files_recursive(package_dir / "lib", IgnoreErrors{});
@@ -1076,9 +1076,7 @@ namespace vcpkg::PostBuildLint
         error_count += check_folder_lib_cmake(fs, package_dir, spec);
         error_count += check_for_misplaced_cmake_files(fs, package_dir, spec);
         error_count += check_folder_debug_lib_cmake(fs, package_dir, spec);
-#ifndef _WIN32
-        error_count += check_share_folder_name(fs, package_dir, spec);
-#endif
+        error_count += check_share_folder_names(fs, package_dir, spec);
         error_count += check_for_dlls_in_lib_dir(fs, package_dir);
         error_count += check_for_dlls_in_lib_dir(fs, package_dir / "debug");
         error_count += check_for_copyright_file(fs, spec, paths);
