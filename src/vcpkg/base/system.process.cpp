@@ -902,6 +902,7 @@ namespace vcpkg
         const auto pipe = popen(actual_cmd_line.c_str(), "r");
         if (pipe == nullptr)
         {
+            printf("pipe is nullptr\n");
             return format_system_error_message("popen", errno);
         }
 
@@ -914,6 +915,7 @@ namespace vcpkg
 
         if (!feof(pipe))
         {
+             printf("pipe error msg\n");
             return format_system_error_message("feof", errno);
         }
 
@@ -946,6 +948,7 @@ namespace vcpkg
                          " us\n");
         }
 
+        printf("exit code is %i\n", *(exit_code.get()));
         return exit_code;
     }
 
