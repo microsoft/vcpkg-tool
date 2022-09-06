@@ -168,11 +168,6 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
     {
         auto out = res[i].get();
         auto str = out->output;
-        if (str.length() - 1 > 50)
-        {
-            std::cout << "> 50 chars: " << str << '\n';
-        }
-
         std::cout << "Index: " << i << ", length: " << str.length() - 1 << '\n';
     }
 
