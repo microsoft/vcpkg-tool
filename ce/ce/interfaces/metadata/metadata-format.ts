@@ -35,6 +35,3 @@ export interface Profile extends Demands {
   readonly formatErrors: Array<string>;
 }
 
-
-/** values that can be either a single string, or an array of strings */
-export type StringOrStrings = string | Array<string>;

@@ -13,7 +13,7 @@ describe('Acquire', () => {
 
   it('try some downloads', async () => {
 
-    const remoteFile = local.session.parseUri('https://raw.githubusercontent.com/microsoft/vscode/main/README.md');
+    const remoteFile = fs.parse('https://raw.githubusercontent.com/microsoft/vscode/main/README.md');
 
     let acq = acquireArtifactFile(local.session, [remoteFile], 'readme.md', {});
 
@@ -42,7 +42,7 @@ describe('Acquire', () => {
 
 
   it('larger file', async () => {
-    const remoteFile = local.session.parseUri('https://user-images.githubusercontent.com/1487073/58344409-70473b80-7e0a-11e9-8570-b2efc6f8fa44.png');
+    const remoteFile = fs.parse('https://user-images.githubusercontent.com/1487073/58344409-70473b80-7e0a-11e9-8570-b2efc6f8fa44.png');
 
     let acq = acquireArtifactFile(local.session, [remoteFile], 'xyz.png', {});
 

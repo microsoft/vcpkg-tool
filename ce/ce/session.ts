@@ -27,8 +27,6 @@ import { isIndexFile, isMetadataFile } from './registries/standard-registry';
 import { Channels, Stopwatch } from './util/channels';
 import { Queue } from './util/promise';
 import { isFilePath, Uri } from './util/uri';
-import { isYAML } from './yaml/yaml';
-
 
 /** The definition for an installer tool function */
 type InstallerTool<T extends Installer = any> = (
@@ -228,7 +226,7 @@ export class Session {
               continue;
             }
 
-            if (type & FileType.File && isYAML(entry.path)) {
+            if (type & FileType.File && entry.path.endsWith('.json')) {
               void q.enqueue(async () => { result = result || await isMetadataFile(entry, s); });
             }
           }
@@ -359,7 +357,7 @@ export class Session {
     }
     for (const [folder, stat] of await this.installFolder.readDirectory(undefined, { recursive: true })) {
       try {
-        const metadata = await MetadataFile.parseMetadata(folder.join('artifact.yaml'), this);
+        const metadata = await MetadataFile.parseMetadata(folder.join('artifact.json'), this);
         result.push({
           folder,
           id: metadata.id,

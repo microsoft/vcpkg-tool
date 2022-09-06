@@ -84,7 +84,7 @@ describe('StandardRegistry Tests', () => {
           ...t,
         };
         p.version = rndSemver();
-        const target = repoFolder.join(`${p.id}-${p.version}.yaml`);
+        const target = repoFolder.join(`${p.id}-${p.version}.json`);
         await target.writeFile(Buffer.from(serialize(p), 'utf8'));
       }
     }
