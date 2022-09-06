@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 import { strict } from 'assert';
+import { createHash } from 'crypto';
 import { parse } from 'yaml';
 import { ZipUnpacker } from '../archivers/ZipUnpacker';
 import { Registry } from '../artifacts/registry';
@@ -9,15 +10,13 @@ import { registryIndexFile } from '../constants';
 import { acquireArtifactFile } from '../fs/acquire';
 import { i } from '../i18n';
 import { Session } from '../session';
+import { isGithubRepo } from '../util/checks';
 import { Uri } from '../util/uri';
 import { ArtifactIndex } from './artifact-index';
 import { ArtifactRegistry } from './ArtifactRegistry';
 import { Index } from './indexer';
-import { createHash } from 'crypto';
-import { isGithubRepo } from '../util/checks';
 
 export class RemoteRegistry extends ArtifactRegistry implements Registry {
-
   protected indexYaml: Uri;
   readonly installationFolder;
   readonly cacheFolder: Uri;
@@ -62,7 +61,6 @@ export class RemoteRegistry extends ArtifactRegistry implements Registry {
   }
 
   override async load(force?: boolean): Promise<void> {
-
     if (force || !this.loaded) {
       if (!await this.indexYaml.exists()) {
         await this.update();
