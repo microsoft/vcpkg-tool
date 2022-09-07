@@ -467,7 +467,7 @@ namespace vcpkg
         Debug::println("cmd_execute_and_capture_output_parallel");
         for (auto&& i : cmd_lines)
         {
-            Debug::println(i);
+            Debug::println(i.command_line());
         }
 
         if (cmd_lines.empty())
@@ -889,7 +889,7 @@ namespace vcpkg
         if (wd.working_directory.empty())
         {
             actual_cmd_line = Strings::format(R"(%s %s 2>&1)", env.get(), cmd_line.command_line());
-            //Debug::print("Format result: ", actual_cmd_line, "\n");
+            Debug::print("Format result: ", actual_cmd_line, "\n");
         }
         else
         {
