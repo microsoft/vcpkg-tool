@@ -897,11 +897,8 @@ namespace vcpkg
 
         Debug::print(proc_id, ": popen(", actual_cmd_line, ")\n");
         // Flush stdout before launching external process
-        if (fflush(stdout) != 0)
-        {
-            Debug::print("Flush begin failed\n");
-        }
-
+        fflush(stdout);
+        fflush(stdin);
         const auto pipe = popen(actual_cmd_line.c_str(), "r");
         if (pipe == nullptr)
         {
@@ -948,7 +945,7 @@ namespace vcpkg
                          Strings::format("%8llu", static_cast<unsigned long long>(elapsed)),
                          " us\n"); */
 #if !defined(_WIN32)
-            /* if (fflush(stdin) != 0)
+            /* if (fflush(stdout) != 0)
             {
                 Debug::print("Flush end failed\n");
             } */
