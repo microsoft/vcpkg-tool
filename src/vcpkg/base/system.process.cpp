@@ -905,7 +905,7 @@ namespace vcpkg
             return format_system_error_message("popen", errno);
         }
 
-        char buf[1024];
+        char buf[1024] = {0};
         // Use fgets because fread will block until the entire buffer is filled.
         while (fgets(buf, 1024, pipe))
         {
