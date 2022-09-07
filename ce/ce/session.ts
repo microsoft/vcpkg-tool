@@ -9,7 +9,7 @@ import { configurationName, defaultConfig, globalConfigurationFile, postscriptVa
 import { FileSystem } from './fs/filesystem';
 import { HttpsFileSystem } from './fs/http-filesystem';
 import { LocalFileSystem } from './fs/local-filesystem';
-import { schemeOf, UnifiedFileSystem } from './fs/unified-filesystem';
+import { UnifiedFileSystem } from './fs/unified-filesystem';
 import { VsixLocalFilesystem } from './fs/vsix-local-filesystem';
 import { i } from './i18n';
 import { installGit } from './installers/git';
@@ -121,13 +121,18 @@ export class Session {
   }
 
   parseLocation(location: string): Uri {
-    const scheme = schemeOf(location);
-    // file uri or drive letter
-    if (scheme) {
+    // Drive letter, absolute Unix path, or drive-relative windows path, treat as a file
+    if (/^[A-Za-z]:/.exec(location) || location.startsWith('/') || location.startsWith('\\')) {
+      return this.fileSystem.file(location);
+    }
+
+    // Has a scheme, it's a URI
+    if (/^(\w+):/.exec(location)) {
       return this.fileSystem.parse(location);
     }
 
-    return this.fileSystem.file(location);
+    // Relative path
+    return this.currentDirectory.join(location);
   }
 
   async loadDefaultRegistryResolver(manifest: ProjectManifest | undefined) : Promise<RegistryResolver> {

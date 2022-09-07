@@ -9,7 +9,6 @@ import { Command } from '../command';
 import { cli } from '../constants';
 import { error, log } from '../styling';
 import { Normalize } from '../switches/normalize';
-import { Project } from '../switches/project';
 import { WhatIf } from '../switches/whatIf';
 
 export class RegenerateCommand extends Command {
@@ -18,7 +17,6 @@ export class RegenerateCommand extends Command {
   readonly normalize = new Normalize(this);
   seeAlso = [];
   argumentsHelp = [];
-  project = new Project(this);
   whatIf = new WhatIf(this);
 
   get summary() {
@@ -38,7 +36,7 @@ export class RegenerateCommand extends Command {
       try {
         await localReg.load();
         log(i`Regenerating index for ${input}`);
-        await localReg.regenerate(!!this.normalize);
+        await localReg.regenerate(this.normalize.active);
         const count = localReg.count;
         if (count) {
           await localReg.save();

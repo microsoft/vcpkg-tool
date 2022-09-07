@@ -11,7 +11,6 @@ import { FileStat, FileSystem, FileType, ReadHandle, WriteStreamOptions } from '
 import { AcquireEvents } from '../interfaces/events';
 import { Algorithm, Hash, hash } from './hash';
 import { decode, encode } from './text';
-import Path = require('node:path');
 
 /**
  * This class is intended to be a drop-in replacement for the vscode uri
@@ -120,7 +119,7 @@ bad.fragment === '/project1';
  * @param path A file system path (see `URI#fsPath`)
  */
   static file(fileSystem: FileSystem, path: string): Uri {
-    return new Uri(fileSystem, URI.file(Path.resolve(path)));
+    return new Uri(fileSystem, URI.file(path));
   }
 
   /** construct an Uri from the various parts */
