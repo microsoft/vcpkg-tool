@@ -197,7 +197,6 @@
   "HelpExportCommand": "Eksportuje pakiet.",
   "HelpFormatManifestCommand": "Formatuje wszystkie pliki vcpkg.json. Uruchom to przed zatwierdzeniem do programu vcpkg.",
   "HelpHashCommand": "Utwórz skrót pliku według określonego algorytmu, domyślny algorytm SHA512.",
-  "HelpHistoryCommand": "(Eksperymentalne) Pokaż historię wersji pakietu.",
   "HelpInitializeRegistryCommand": "Inicjuje rejestr w katalogu <path>.",
   "HelpInstallCommand": "Zainstaluj pakiet.",
   "HelpListCommand": "Wyświetl listę zainstalowanych pakietów.",

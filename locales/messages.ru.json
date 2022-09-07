@@ -197,7 +197,6 @@
   "HelpExportCommand": "Экспортирует пакет.",
   "HelpFormatManifestCommand": "Форматирует все файлы vcpkg.json. Запустите это перед фиксацией в vcpkg.",
   "HelpHashCommand": "Хешировать файл по определенному алгоритму, по умолчанию SHA512.",
-  "HelpHistoryCommand": "(Экспериментально) Показать журнал версий пакета.",
   "HelpInitializeRegistryCommand": "Инициализирует реестр в каталоге <path>.",
   "HelpInstallCommand": "Установка пакета",
   "HelpListCommand": "Список установленных пакетов.",
