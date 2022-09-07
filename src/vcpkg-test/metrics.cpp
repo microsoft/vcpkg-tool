@@ -11,7 +11,7 @@ void validate_enum_values_and_names(View<MetricEntry<T>> entries)
 {
     size_t enum_value = 0;
     std::set<StringView> used_names;
-    for (auto m : entries)
+    for (auto&& m : entries)
     {
         // fails when a metric is not in the right order in the entries array
         // - check that there are no duplicate metric entries
