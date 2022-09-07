@@ -38,8 +38,8 @@ export async function activate(session: Session, artifacts: Array<ResolvedArtifa
 
 export async function activateProject(session: Session, project: ProjectManifest, options?: ActivationOptions) {
   // track what got installed
-  const resolved = await resolveDependencies(session, await project.buildRegistryResolver(), [project], 3);
   const projectRegistries = await project.buildRegistryResolver();
+  const resolved = await resolveDependencies(session, projectRegistries, [project], 3);
 
   // print the status of what is going to be activated.
   if (!await showArtifacts(resolved, projectRegistries, options)) {
