@@ -655,7 +655,7 @@ namespace vcpkg
             const auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
             rc = cmd_execute_and_stream_lines(
                 command,
-                [&](const std::string& s) {
+                [&](StringView s) {
                     static const StringLiteral s_hash_marker = "#COMPILER_HASH#";
                     if (Strings::starts_with(s, s_hash_marker))
                     {
@@ -912,7 +912,7 @@ namespace vcpkg
             auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
             return_code = cmd_execute_and_stream_data(
                 command,
-                [&](const std::string& sv) {
+                [&](StringView sv) {
                     msg::write_unlocalized_text_to_stdout(Color::none, sv);
                     Checks::msg_check_exit(VCPKG_LINE_INFO,
                                            out_file.write(sv.data(), 1, sv.size()) == sv.size(),

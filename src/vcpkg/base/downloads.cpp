@@ -285,7 +285,7 @@ namespace vcpkg
 
         std::vector<std::string> lines;
 
-        auto res = cmd_execute_and_stream_lines(cmd, [out, &lines](const std::string& line) {
+        auto res = cmd_execute_and_stream_lines(cmd, [out, &lines](StringView line) {
                        lines.push_back(line.to_string());
                        if (Strings::starts_with(line, guid_marker))
                        {
@@ -355,7 +355,7 @@ namespace vcpkg
             {
                 cmd.string_arg(url.first).string_arg("-o").string_arg(url.second);
             }
-            auto res = cmd_execute_and_stream_lines(cmd, [out](const std::string& line) {
+            auto res = cmd_execute_and_stream_lines(cmd, [out](StringView line) {
                            if (Strings::starts_with(line, guid_marker))
                            {
                                out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
@@ -440,7 +440,7 @@ namespace vcpkg
         cmd.string_arg(url);
         cmd.string_arg("-T").string_arg(file);
         int code = 0;
-        auto res = cmd_execute_and_stream_lines(cmd, [&code](const std::string& line) {
+        auto res = cmd_execute_and_stream_lines(cmd, [&code](StringView line) {
                        if (Strings::starts_with(line, guid_marker))
                        {
                            code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
