@@ -908,7 +908,7 @@ namespace vcpkg
         // Flush stdout before launching external process
         fflush(stdout);
 
-        const auto pipe = popen(cmd_str, "r");
+        const auto pipe = popen(actual_cmd_line.c_str(), "r");
         if (pipe == nullptr)
         {
             return format_system_error_message("popen", errno);
@@ -966,7 +966,7 @@ namespace vcpkg
                                                                 Encoding encoding,
                                                                 EchoInDebug echo_in_debug)
     {
-        std::string output;
+        std::string output{};
         return cmd_execute_and_stream_data(
                    cmd_line,
                    [&](StringView sv) {
