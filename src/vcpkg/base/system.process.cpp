@@ -424,9 +424,9 @@ namespace vcpkg
         Environment env;
         if (!prepend_to_path.empty())
         {
-            env.add_entry(
-                "PATH",
-                Strings::concat(prepend_to_path, ':', get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO)));
+            auto env_var_str = get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO);
+            env_var_str = Strings::concat(prepend_to_path, ':', env_var_str);
+            env.add_entry("PATH", env_var_str);
         }
 
         return env;
