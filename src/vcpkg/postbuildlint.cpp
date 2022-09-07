@@ -1,5 +1,6 @@
 #include <vcpkg/base/cofffilereader.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
@@ -29,6 +30,13 @@ namespace vcpkg::PostBuildLint
     {
         std::string name;
     };
+
+    DECLARE_MESSAGE(FolderNameMismatchedCasing,
+                    (msg::old_value, msg::new_value),
+                    "",
+                    "Folders in /share must use lowercase ascii characters. Please rename it.\n"
+                    "    file(RENAME \"${CURRENT_PACKAGES_DIR}/share/{old_value}\" "
+                    "\"${CURRENT_PACKAGES_DIR}/share/{new_value}\")\n");
 
     static Span<const OutdatedDynamicCrt> get_outdated_dynamic_crts(const Optional<std::string>& toolset_version)
     {
@@ -320,6 +328,7 @@ namespace vcpkg::PostBuildLint
 
         return LintStatus::SUCCESS;
     }
+
     static LintStatus check_share_folder_names(const Filesystem& fs, const Path& package_dir)
     {
         const auto cmake_folder_name = package_dir / "share";
@@ -333,12 +342,10 @@ namespace vcpkg::PostBuildLint
 
             if (orig_folder_name != folder_name)
             {
-                vcpkg::printf(Color::warning,
-                              "Folders in /share must use lowercase ascii characters. Please rename it.\n"
-                              "    file(RENAME \"${CURRENT_PACKAGES_DIR}/share/%s\" "
-                              "\"${CURRENT_PACKAGES_DIR}/share/%s\")\n",
-                              orig_folder_name,
-                              folder_name);
+                msg::println(Color::warning,
+                             msgFolderNameMismatchedCasing,
+                             msg::old_value = orig_folder_name,
+                             msg::new_value = folder_name);
                 return LintStatus::PROBLEM_DETECTED;
             }
         }
