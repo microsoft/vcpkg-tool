@@ -42,7 +42,7 @@ namespace vcpkg
         VersioningErrorVersion,
         X_VcpkgRegistriesCache,
         X_WriteNugetPackagesConfig,
-        _COUNT // always keep COUNT last
+        COUNT // always keep COUNT last
     };
 
     enum class StringMetric
@@ -60,14 +60,14 @@ namespace vcpkg
         UserMac,
         VcpkgVersion,
         Warning,
-        _COUNT // always keep COUNT last
+        COUNT // always keep COUNT last
     };
 
     enum class BoolMetric
     {
         InstallManifestMode,
         OptionOverlayPorts,
-        _COUNT // always keep COUNT last
+        COUNT // always keep COUNT last
     };
 
     struct Metrics
@@ -86,7 +86,7 @@ namespace vcpkg
         void track_buildtime(const std::string& name, double value);
 
         void track_property(DefineMetric metric);
-        void track_property(StringMetric metric, const std::string& value);
+        void track_property(StringMetric metric, StringView value);
         void track_property(BoolMetric metric, bool value);
 
         void track_feature(const std::string& feature, bool value);

@@ -26,17 +26,13 @@ namespace
     template<typename T>
     StringLiteral get_metric_name(const T metric, View<MetricEntry<T>> entries)
     {
-        for (auto&& entry : entries)
+        auto metric_index = static_cast<size_t>(metric);
+        if (metric_index < entries.size())
         {
-            if (entry.metric == metric)
-            {
-                return entry.name;
-            }
+            return entries[metric_index].name;
         }
-
-        // All metric enums should have corresponding names
-        Debug::println("Error: Metric is missing a name");
-        Checks::exit_fail(VCPKG_LINE_INFO);
+        // abort() is used because Checks:: will call back into metrics machinery.
+        abort();
     }
 }
 
@@ -46,7 +42,7 @@ namespace vcpkg
 
     View<MetricEntry<DefineMetric>> Metrics::get_define_metrics()
     {
-        static constexpr std::array<MetricEntry<DefineMetric>, static_cast<size_t>(DefineMetric::_COUNT)> ENTRIES{{
+        static constexpr std::array<MetricEntry<DefineMetric>, static_cast<size_t>(DefineMetric::COUNT)> ENTRIES{{
             {DefineMetric::AssetSource, "asset-source"},
             {DefineMetric::BinaryCachingAws, "binarycaching_aws"},
             {DefineMetric::BinaryCachingAzBlob, "binarycaching_azblob"},
@@ -78,7 +74,7 @@ namespace vcpkg
 
     View<MetricEntry<StringMetric>> Metrics::get_string_metrics()
     {
-        static constexpr std::array<MetricEntry<StringMetric>, static_cast<size_t>(StringMetric::_COUNT)> ENTRIES{{
+        static constexpr std::array<MetricEntry<StringMetric>, static_cast<size_t>(StringMetric::COUNT)> ENTRIES{{
             {StringMetric::BuildError, "build_error"},
             {StringMetric::CommandArgs, "command_args"},
             {StringMetric::CommandContext, "command_context"},
@@ -98,7 +94,7 @@ namespace vcpkg
 
     View<MetricEntry<BoolMetric>> Metrics::get_bool_metrics()
     {
-        static constexpr std::array<MetricEntry<BoolMetric>, static_cast<size_t>(BoolMetric::_COUNT)> ENTRIES{{
+        static constexpr std::array<MetricEntry<BoolMetric>, static_cast<size_t>(BoolMetric::COUNT)> ENTRIES{{
             {BoolMetric::InstallManifestMode, "install_manifest_mode"},
             {BoolMetric::OptionOverlayPorts, "option_overlay_ports"},
         }};
@@ -165,12 +161,12 @@ namespace vcpkg
         Json::Array buildtime_names;
         Json::Array buildtime_times;
 
-        void track_property(StringView name, const std::string& value)
+        void track_string(StringView name, StringView value)
         {
             properties.insert_or_replace(name, Json::Value::string(value));
         }
 
-        void track_property(StringView name, bool value)
+        void track_bool(StringView name, bool value)
         {
             properties.insert_or_replace(name, Json::Value::boolean(value));
         }
@@ -327,17 +323,17 @@ namespace vcpkg
 
     void Metrics::track_property(DefineMetric metric)
     {
-        g_metricmessage.track_property(get_metric_name(metric, get_define_metrics()), "defined");
+        g_metricmessage.track_string(get_metric_name(metric, get_define_metrics()), "defined");
     }
 
-    void Metrics::track_property(StringMetric metric, const std::string& value)
+    void Metrics::track_property(StringMetric metric, StringView value)
     {
-        g_metricmessage.track_property(get_metric_name(metric, get_string_metrics()), value);
+        g_metricmessage.track_string(get_metric_name(metric, get_string_metrics()), value);
     }
 
     void Metrics::track_property(BoolMetric metric, bool value)
     {
-        g_metricmessage.track_property(get_metric_name(metric, get_bool_metrics()), value);
+        g_metricmessage.track_bool(get_metric_name(metric, get_bool_metrics()), value);
     }
 
     void Metrics::track_feature(const std::string& name, bool value) { g_metricmessage.track_feature(name, value); }
