@@ -908,7 +908,7 @@ namespace vcpkg
         // Flush stdout before launching external process
         fflush(stdout);
 
-        const auto pipe = popen(actual_cmd_line.c_str(), "r");
+        const auto pipe = popen(cmd_str, "r");
         if (pipe == nullptr)
         {
             return format_system_error_message("popen", errno);
