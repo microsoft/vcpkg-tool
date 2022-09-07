@@ -889,7 +889,7 @@ namespace vcpkg
         if (wd.working_directory.empty())
         {
             actual_cmd_line = Strings::format(R"(%s %s 2>&1)", env.get(), cmd_line.command_line());
-            Debug::println("Format result: ", actual_cmd_line);
+            Debug::print("Format result: ", actual_cmd_line, "\n");
         }
         else
         {
