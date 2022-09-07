@@ -898,7 +898,6 @@ namespace vcpkg
         //Debug::print(proc_id, ": popen(", actual_cmd_line, ")\n");
         // Flush stdout before launching external process
         fflush(stdout);
-        fflush(stdin);
         const auto pipe = popen(actual_cmd_line.c_str(), "r");
         if (pipe == nullptr)
         {
@@ -907,7 +906,7 @@ namespace vcpkg
 
         char buf[1024] = {0};
         // Use fgets because fread will block until the entire buffer is filled.
-        while (fgets(buf, 1024, pipe))
+        while (fgets(buf, 1023, pipe))
         {
             data_cb(StringView{buf, strlen(buf)});
         }
