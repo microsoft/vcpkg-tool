@@ -8,7 +8,6 @@ import { RegistryDisplayContext } from '../registries/registries';
 import { Session } from '../session';
 import { Uri } from '../util/uri';
 import { installArtifacts, showArtifacts } from './artifacts';
-import { blank } from './constants';
 import { projectFile } from './format';
 import { error, log } from './styling';
 
@@ -50,12 +49,10 @@ export async function activateProject(session: Session, project: ProjectManifest
 
   if (await activate(session, resolved, projectRegistries, true, options)) {
     trackActivation();
-    log(blank);
     log(i`Project ${projectFile(project.metadata.file.parent)} activated`);
     return true;
   }
 
-  log(blank);
   log(i`Failed to activate project ${projectFile(project.metadata.file.parent)}`);
 
   return false;

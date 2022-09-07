@@ -98,7 +98,7 @@ export class VersionCommand extends Command {
     }
 
     // dump version information
-    log(i`${product} version information\n`);
+    log(i`${product} version information`);
     log(i`  version: ${Version} `);
 
 

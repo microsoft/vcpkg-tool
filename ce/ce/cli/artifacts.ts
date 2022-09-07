@@ -27,6 +27,7 @@ export async function showArtifacts(artifacts: Iterable<ResolvedArtifact>, regis
   }
 
   log(table.toString());
+  log();
   return !failing;
 }
 
@@ -40,7 +41,7 @@ export async function selectArtifacts(session: Session, selections: Selections, 
 
       const results = await registries.search({ keyword: idOrShortName, version: version });
       if (results.length) {
-        log('\nPossible matches:');
+        log('Possible matches:');
         for (const [artifactDisplay, artifactVersions] of results) {
           for (const artifactVersion of artifactVersions) {
             log(`  ${addVersionToArtifactIdentity(artifactDisplay, artifactVersion.version)}`);

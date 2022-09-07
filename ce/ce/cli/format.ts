@@ -26,13 +26,13 @@ export function addVersionToArtifactIdentity(identity: string, version: string) 
 export function heading(text: string, level = 1) {
   switch (level) {
     case 1:
-      return `${underline.bold(text)}\n`;
+      return `${underline.bold(text)}`;
     case 2:
-      return `${greenBright(text)}\n`;
+      return `${greenBright(text)}`;
     case 3:
-      return `${green(text)}\n`;
+      return `${green(text)}`;
   }
-  return `${bold(text)}\n`;
+  return `${bold(text)}`;
 }
 
 export function optional(text: string) {

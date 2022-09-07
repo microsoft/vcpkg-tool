@@ -24,8 +24,8 @@ export function indent(text: string | Array<string>): string | Array<string> {
 }
 
 export const log: (message?: any) => void = console.log;
-export const error: (message?: any) => void = (text) => console.log(`${red.bold('\nERROR: ')}${text}`);
-export const warning: (message?: any) => void = (text) => console.log(`${yellow.bold('\nWARNING: ')}${text}`);
+export const error: (message?: any) => void = (text) => console.log(`${red.bold('ERROR: ')}${text}`);
+export const warning: (message?: any) => void = (text) => console.log(`${yellow.bold('WARNING: ')}${text}`);
 export const debug: (message?: any) => void = (text) => {
   if (argv.any(arg => arg === '--debug')) {
     console.log(`${cyan.bold('debug: ')}${text}`);

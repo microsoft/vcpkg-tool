@@ -57,10 +57,6 @@ describe('Amf', () => {
     strict.ok(doc.isFormatValid, 'Ensure that it is valid json');
     strict.sequenceEqual(doc.validate(), []);
 
-    // fixme: validate inputs again.
-    // strict.throws(() => doc.info.version = '4.1', 'Setting invalid version should throw');
-    // strict.equal(doc.info.version = '4.1.0', '4.1.0', 'Version should set correctly');
-
     SuiteLocal.log(doc.contacts.get('Bob Smith'));
 
     strict.sequenceEqual(doc.contacts.get('Bob Smith')!.roles, ['fallguy', 'otherguy'], 'Should return the two roles');

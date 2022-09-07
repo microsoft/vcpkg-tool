@@ -7,7 +7,6 @@ import { session } from '../../main';
 import { countWhere } from '../../util/linq';
 import { installArtifacts, selectArtifacts, showArtifacts } from '../artifacts';
 import { Command } from '../command';
-import { blank } from '../constants';
 import { cmdSwitch } from '../format';
 import { debug, error, log, warning } from '../styling';
 import { Project } from '../switches/project';
@@ -64,7 +63,6 @@ export class AcquireCommand extends Command {
     });
 
     if (!numberOfArtifacts) {
-      log(blank);
       log(i`All artifacts are already installed`);
       return true;
     }
@@ -74,14 +72,11 @@ export class AcquireCommand extends Command {
     const [success] = await installArtifacts(resolved, registries, { force: this.commandLine.force, language: this.commandLine.language, allLanguages: this.commandLine.allLanguages });
 
     if (success) {
-      log(blank);
       log(i`${numberOfArtifacts} artifacts installed successfully`);
       return true;
     }
 
-    log(blank);
     log(i`Installation failed -- stopping`);
-
     return false;
   }
 }

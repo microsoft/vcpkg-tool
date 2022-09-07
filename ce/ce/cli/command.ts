@@ -4,7 +4,7 @@
 import { i } from '../i18n';
 import { Argument } from './argument';
 import { CommandLine, Help } from './command-line';
-import { blank, cli } from './constants';
+import { cli } from './constants';
 import { cmdSwitch, command, heading, optional } from './format';
 import { Switch } from './switch';
 import { Debug } from './switches/debug';
@@ -31,7 +31,7 @@ export abstract class Command implements Help {
   get synopsis(): Array<string> {
     return [
       heading(i`Synopsis`, 2),
-      ` ${command(`${cli} ${this.command} ${this.arguments.map(each => `<${each.argument}>`).join(' ')}`)}${this.switches.flatMap(each => optional(`[--${each.switch}]`)).join(' ')}`,
+      ` ${command(`${cli} ${this.command} ${this.arguments.map(each => `<${each.argument}>`).join(' ')}`)}${this.switches.flatMap(each => optional(`[--${each.switch}]`)).join(' ')}`
     ];
   }
 
@@ -50,25 +50,19 @@ export abstract class Command implements Help {
   get help() {
     return [
       heading(this.title),
-      blank,
       this.summary,
-      blank,
       ...this.synopsis,
-      blank,
       heading(i`Description`, 2),
-      blank,
       ...this.description,
       ...this.argumentsHelp,
       ...(this.switches.length ? [
-        blank,
         heading(i`Switches`, 2),
-        blank,
         ...this.switches.flatMap(each => ` ${cmdSwitch(each.switch)}: ${each.help.join(' ')}`)
       ] : []),
       ...(this.seeAlso.length ? [
         heading(i`See Also`, 2),
         ...this.seeAlso.flatMap(each => each.title)
-      ] : []),
+      ] : [])
     ];
   }
 
@@ -76,5 +70,4 @@ export abstract class Command implements Help {
     // do something
     return true;
   }
-
 }

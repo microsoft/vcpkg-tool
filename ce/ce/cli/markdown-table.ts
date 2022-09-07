@@ -48,6 +48,6 @@ export class Table {
     this.anyRows = true;
   }
   toString() {
-    return marked.marked(this.rows.join('\n'));
+    return marked.marked(this.rows.join('\n')).trimEnd();
   }
 }
