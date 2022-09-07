@@ -895,16 +895,17 @@ namespace vcpkg
                                   .extract();
         }
 
-        //Debug::print(proc_id, ": popen(", actual_cmd_line, ")\n");
+        Debug::print(proc_id, ": popen(", actual_cmd_line, ")\n");
         // Flush stdout before launching external process
         fflush(stdout);
+
         const auto pipe = popen(actual_cmd_line.c_str(), "r");
         if (pipe == nullptr)
         {
             return format_system_error_message("popen", errno);
         }
 
-        char buf[1024] = {0};
+        char buf[1024];
         // Use fgets because fread will block until the entire buffer is filled.
         while (fgets(buf, 1023, pipe))
         {
@@ -937,18 +938,12 @@ namespace vcpkg
         g_subprocess_stats += elapsed;
         if (const auto pec = exit_code.get())
         {
-            /* Debug::print(proc_id,
+            Debug::print(proc_id,
                          ": cmd_execute_and_stream_data() returned ",
                          *pec,
                          " after ",
                          Strings::format("%8llu", static_cast<unsigned long long>(elapsed)),
-                         " us\n"); */
-#if !defined(_WIN32)
-            /* if (fflush(stdout) != 0)
-            {
-                Debug::print("Flush end failed\n");
-            } */
-#endif
+                         " us\n");
         }
 
         return exit_code;
