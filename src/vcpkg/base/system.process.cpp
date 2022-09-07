@@ -465,7 +465,7 @@ namespace vcpkg
     {
         std::vector<ExpectedL<ExitCodeAndOutput>> res(cmd_lines.size(), LocalizedString{});
         Debug::println("cmd_execute_and_capture_output_parallel");
-        for (auto &&i : cmd_lines)
+        for (auto&& i : cmd_lines)
         {
             Debug::println(i);
         }
@@ -889,7 +889,7 @@ namespace vcpkg
         if (wd.working_directory.empty())
         {
             actual_cmd_line = Strings::format(R"(%s %s 2>&1)", env.get(), cmd_line.command_line());
-            Debug::print("Format result: ", actual_cmd_line, "\n");
+            //Debug::print("Format result: ", actual_cmd_line, "\n");
         }
         else
         {
