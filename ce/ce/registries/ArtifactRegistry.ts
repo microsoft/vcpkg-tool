@@ -136,7 +136,8 @@ export abstract class ArtifactRegistry implements Registry {
 
 
   private async openArtifact(manifestPath: string): Promise<Artifact> {
-    const metadata = await MetadataFile.parseMetadata(this.cacheFolder.join(manifestPath), this.session, this.location);
+    const metadataPath = this.cacheFolder.join(manifestPath);
+    const metadata = await MetadataFile.parseMetadata(metadataPath.fsPath, metadataPath, this.session, this.location);
     const id = metadata.id;
     return new Artifact(this.session,
       metadata,

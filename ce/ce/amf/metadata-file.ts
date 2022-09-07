@@ -22,8 +22,8 @@ export class MetadataFile extends BaseMap {
 
   }
 
-  static async parseMetadata(uri: Uri, session: Session, registryUri?: Uri): Promise<MetadataFile> {
-    return MetadataFile.parseConfiguration(uri.path, await uri.readUTF8(), session, registryUri);
+  static async parseMetadata(filename: string, uri: Uri, session: Session, registryUri?: Uri): Promise<MetadataFile> {
+    return MetadataFile.parseConfiguration(filename, await uri.readUTF8(), session, registryUri);
   }
 
   static async parseConfiguration(filename: string, content: string, session: Session, registryUri?: Uri): Promise<MetadataFile> {

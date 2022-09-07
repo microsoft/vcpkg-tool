@@ -179,7 +179,7 @@ export class Session {
     }
 
     // got past the checks, let's load the configuration.
-    this.configuration = await MetadataFile.parseMetadata(this.globalConfig, this);
+    this.configuration = await MetadataFile.parseMetadata(this.globalConfig.fsPath, this.globalConfig, this);
     this.channels.debug(`Loaded global configuration file '${this.globalConfig.fsPath}'`);
 
     // load the registries
@@ -232,7 +232,8 @@ export class Session {
     }
     for (const [folder, stat] of await this.installFolder.readDirectory(undefined, { recursive: true })) {
       try {
-        const metadata = await MetadataFile.parseMetadata(folder.join('artifact.json'), this);
+        const artifactJsonPath = folder.join('artifact.json');
+        const metadata = await MetadataFile.parseMetadata(artifactJsonPath.fsPath, artifactJsonPath, this);
         result.push({
           folder,
           id: metadata.id,

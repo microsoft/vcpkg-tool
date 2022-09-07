@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import { MultiBar, SingleBar } from 'cli-progress';
-import { Artifact, ArtifactBase, ResolvedArtifact, resolveDependencies, Selections } from '../artifacts/artifact';
+import { Artifact, ArtifactBase, InstallStatus, ResolvedArtifact, resolveDependencies, Selections } from '../artifacts/artifact';
 import { i } from '../i18n';
 import { trackAcquire } from '../insights';
 import { getArtifact, RegistryDisplayContext, RegistryResolver } from '../registries/registries';
@@ -25,9 +25,8 @@ export async function showArtifacts(artifacts: Iterable<ResolvedArtifact>, regis
       table.push(name, artifact.version, options?.force || await artifact.isInstalled ? 'installed' : 'will install', resolved.initialSelection ? ' ' : '*', artifact.metadata.summary || '');
     }
   }
-  log(table.toString());
-  log();
 
+  log(table.toString());
   return !failing;
 }
 
@@ -130,42 +129,52 @@ export async function installArtifacts(resolved: Array<ResolvedArtifact>, regist
     if (artifact instanceof Artifact) {
       const id = artifact.id;
       const registryName = registries.getRegistryDisplayName(artifact.registryUri);
-      overallProgress.update(idx, { name: artifactIdentity(registryName, id) });
+      const artifactDisplayName = artifactIdentity(registryName, id);
+      overallProgress.update(idx, { name: artifactDisplayName });
       try {
-        const actuallyInstalled = await artifact.install({
-          verifying: (current, percent) => {
-            individualProgress.startOrUpdate(TaggedProgressKind.Verifying, 100, percent, i`verifying` + ' ' + current);
-          },
-          download: (current, percent) => {
-            individualProgress.startOrUpdate(TaggedProgressKind.Downloading, 100, percent, i`downloading` + ' ' + current);
-          },
-          fileProgress: (entry) => {
-            let suffix = entry.extractPath;
-            if (suffix) {
-              suffix = ' ' + suffix;
-            } else {
-              suffix = '';
-            }
+        const installStatus = await artifact.install(artifactDisplayName,
+          {
+            verifying: (current, percent) => {
+              individualProgress.startOrUpdate(TaggedProgressKind.Verifying, 100, percent, i`verifying` + ' ' + current);
+            },
+            download: (current, percent) => {
+              individualProgress.startOrUpdate(TaggedProgressKind.Downloading, 100, percent, i`downloading` + ' ' + current);
+            },
+            fileProgress: (entry) => {
+              let suffix = entry.extractPath;
+              if (suffix) {
+                suffix = ' ' + suffix;
+              } else {
+                suffix = '';
+              }
 
-            individualProgress.startOrUpdate(TaggedProgressKind.GenericProgress, 100, individualProgress.lastCurrentValue, i`unpacking` + suffix);
-          },
-          progress: (percent: number) => {
-            individualProgress.startOrUpdate(TaggedProgressKind.GenericProgress, 100, percent, i`unpacking`);
-          },
-          heartbeat: (text: string) => {
-            individualProgress.heartbeat(text);
-          }
-        }, options || {});
-        // remember what was actually installed
-        installed.set(artifact, actuallyInstalled);
-        if (actuallyInstalled) {
-          trackAcquire(id, artifact.version);
+              individualProgress.startOrUpdate(TaggedProgressKind.GenericProgress, 100, individualProgress.lastCurrentValue, i`unpacking` + suffix);
+            },
+            progress: (percent: number) => {
+              individualProgress.startOrUpdate(TaggedProgressKind.GenericProgress, 100, percent, i`unpacking`);
+            },
+            heartbeat: (text: string) => {
+              individualProgress.heartbeat(text);
+            }
+          }, options || {});
+
+        switch (installStatus) {
+          case InstallStatus.Installed:
+            installed.set(artifact, true);
+            trackAcquire(id, artifact.version);
+            break;
+          case InstallStatus.AlreadyInstalled:
+            installed.set(artifact, false);
+            break;
+          case InstallStatus.Failed:
+            bar.stop();
+            return [false, installed];
         }
       } catch (e: any) {
         bar.stop();
         debug(e);
         debug(e.stack);
-        error(i`Error installing ${artifactIdentity(registryName, id)} - ${e} `);
+        error(i`Error installing ${artifactDisplayName} - ${e}`);
         return [false, installed];
       }
     }

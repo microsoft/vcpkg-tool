@@ -3,8 +3,7 @@
 // Licensed under the MIT License.
 
 import { fail } from 'assert';
-import { match } from 'micromatch';
-import { delimiter, resolve } from 'path';
+import { resolve } from 'path';
 import { MetadataFile } from '../amf/metadata-file';
 import { RegistriesDeclaration } from '../amf/registries';
 import { artifactIdentity, prettyRegistryName } from '../cli/format';
@@ -46,6 +45,15 @@ export async function buildRegistryResolver(session: Session, registries: Regist
   return result;
 }
 
+function addDisplayPrefix(prefix: string, targets: Array<string>): Array<string> {
+  const result = new Array<string>();
+  for (const element of targets) {
+    result.push(i`${prefix} - ${element}`);
+  }
+
+  return result;
+}
+
 export abstract class ArtifactBase {
   readonly applicableDemands: SetOfDemands;
 
@@ -56,6 +64,12 @@ export abstract class ArtifactBase {
   buildRegistryResolver() : Promise<RegistryResolver> {
     return buildRegistryResolver(this.session, this.metadata.registries);
   }
+}
+
+export enum InstallStatus {
+  Installed,
+  AlreadyInstalled,
+  Failed
 }
 
 export class Artifact extends ArtifactBase {
@@ -85,29 +99,27 @@ export class Artifact extends ArtifactBase {
     return `${this.registryUri.toString()}::${this.id}::${this.version}`;
   }
 
-  async install(events: Partial<InstallEvents>, options: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<boolean> {
-    let installing = false;
+  async install(thisDisplayName: string, events: Partial<InstallEvents>, options: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<InstallStatus> {
+    // is it installed?
+    const applicableDemands = this.applicableDemands;
+    const errors = addDisplayPrefix(thisDisplayName, applicableDemands.errors);
+    this.session.channels.error(errors);
+    if (errors.length) {
+      return InstallStatus.Failed;
+    }
+
+    this.session.channels.warning(addDisplayPrefix(thisDisplayName, applicableDemands.warnings));
+    this.session.channels.message(addDisplayPrefix(thisDisplayName, applicableDemands.messages));
+
+    if (await this.isInstalled && !options.force) {
+      if (!await this.loadActivationSettings(events)) {
+        throw new Error(i`Failed during artifact activation`);
+      }
+
+      return InstallStatus.AlreadyInstalled;
+    }
+
     try {
-      // is it installed?
-      const applicableDemands = this.applicableDemands;
-
-      this.session.channels.error(applicableDemands.errors, this);
-
-      if (applicableDemands.errors.length) {
-        throw Error('Error message from Artifact');
-      }
-
-      this.session.channels.warning(applicableDemands.warnings, this);
-      this.session.channels.message(applicableDemands.messages, this);
-
-      if (await this.isInstalled && !options.force) {
-        if (!await this.loadActivationSettings(events)) {
-          throw new Error(i`Failed during artifact activation`);
-        }
-        return false;
-      }
-      installing = true;
-
       if (options.force) {
         try {
           await this.uninstall();
@@ -134,16 +146,14 @@ export class Artifact extends ArtifactBase {
       if (!await this.loadActivationSettings(events)) {
         throw new Error(i`Failed during artifact activation`);
       }
-      return true;
+      return InstallStatus.Installed;
     } catch (err) {
-      if (installing) {
-        // if we started installing, and then had an error, we need to remove the artifact.
-        try {
-          await this.uninstall();
-        } catch {
-          // if a file is locked, it may not get removed. We'll deal with this later.
-        }
+      try {
+        await this.uninstall();
+      } catch {
+        // if a file is locked, it may not get removed. We'll deal with this later.
       }
+
       throw err;
     }
   }
@@ -155,34 +165,6 @@ export class Artifact extends ArtifactBase {
 
   async uninstall() {
     await this.targetLocation.delete({ recursive: true, useTrash: false });
-  }
-
-  matchFilesInArtifact(glob: string) {
-    const results = match(this.allPaths, glob.trim(), { dot: true, cwd: this.targetLocation.fsPath, unescape: true });
-    if (results.length === 0) {
-      this.session.channels.warning(i`Unable to resolve '${glob}' to files in the artifact folder`, this);
-      return [];
-    }
-    return results;
-  }
-
-  resolveBraces(text: string, mustBeSingle = false) {
-    return text.replace(/\{(.*?)\}/g, (m, e) => {
-      const results = this.matchFilesInArtifact(e);
-      if (mustBeSingle && results.length > 1) {
-        this.session.channels.warning(i`Glob ${m} resolved to multiple locations. Using first location.`, this);
-        return results[0];
-      }
-      return results.join(delimiter);
-    });
-  }
-
-  resolveBracesAndSplit(text: string): Array<string> {
-    return this.resolveBraces(text).split(delimiter);
-  }
-
-  isGlob(path: string) {
-    return path.indexOf('*') !== -1 || path.indexOf('?') !== -1;
   }
 
   async loadActivationSettings(events: Partial<InstallEvents>) {
