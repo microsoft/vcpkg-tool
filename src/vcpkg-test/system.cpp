@@ -6,10 +6,8 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.h>
-#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.process.h>
 
-#include <iostream>
 #include <string>
 
 using vcpkg::CPUArchitecture;
@@ -147,7 +145,6 @@ TEST_CASE ("cmdlinebuilder", "[system]")
 
 TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
 {
-    vcpkg::Debug::g_debugging = true;
     std::vector<vcpkg::Command> vec;
     for (size_t i = 0; i < 50; i++)
     {
@@ -169,19 +166,18 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
     for (size_t i = 0; i < res.size(); ++i)
     {
         auto out = res[i].get();
-        auto str = out->output;
-        std::cout << "Index: " << i << ", length: " << str.length() - 1 << '\n';
-    }
-
-    for (size_t i = 0; i < res.size(); ++i)
-    {
-        auto out = res[i].get();
         REQUIRE(out != nullptr);
+        REQUIRE(out->exit_code == 0);
+
 #if defined(_WIN32)
         REQUIRE(out->output == (std::to_string(i) + "\r\n"));
 #else
         auto str = out->output;
-        std::cout << "Index: " << i << ", length: " << str.length() - 1 << '\n';
+        if (i != 0)
+        {
+            REQUIRE(out->output[0] == 'a')
+            REQUIRE(out->output[i - 1] == 'a');
+        }
         REQUIRE(out->output == (std::string(i, 'a') + "\n"));
 #endif
     }
