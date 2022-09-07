@@ -154,10 +154,12 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
 #if defined(_WIN32)
         vcpkg::Command cmd("cmd.exe");
         cmd.string_arg("/c");
-        cmd.string_arg("echo " + std::to_string(i));
+        const auto cmd_str = "echo " + std::to_string(i);
+        cmd.string_arg(cmd_str);
 #else
         vcpkg::Command cmd("echo");
-        cmd.string_arg(std::string(i, 'a'));
+        const auto cmd_str = std::string(i, 'a');
+        cmd.string_arg(cmd_str);
 #endif
         vec.emplace_back(std::move(cmd));
     }
