@@ -39,8 +39,7 @@ export class UseCommand extends Command {
       return false;
     }
 
-    const registries = await session.loadDefaultRegistryResolver(await this.project.manifest);
-
+    const resolver = await session.loadDefaultRegistryResolver(await this.project.manifest);
     const versions = this.version.values;
     if (versions.length && this.inputs.length !== versions.length) {
       error(i`Multiple packages specified, but not an equal number of ${cmdSwitch('version')} switches`);
@@ -48,18 +47,17 @@ export class UseCommand extends Command {
     }
 
     const selections = new Map(this.inputs.map((v, i) => [v, versions[i] || '*']));
-    const artifacts = await selectArtifacts(session, selections, registries, 1);
-
+    const artifacts = await selectArtifacts(session, selections, resolver, 1);
     if (!artifacts) {
       return false;
     }
 
-    if (!await showArtifacts(artifacts, registries, this.commandLine)) {
+    if (!await showArtifacts(artifacts, resolver, this.commandLine)) {
       warning(i`No artifacts are being acquired`);
       return false;
     }
 
-    const success = await activate(session, artifacts, registries, false, { force: this.commandLine.force, language: this.commandLine.language, allLanguages: this.commandLine.allLanguages });
+    const success = await activate(session, artifacts, resolver, false, { force: this.commandLine.force, language: this.commandLine.language, allLanguages: this.commandLine.allLanguages });
     if (success) {
       log(i`Activating individual artifacts`);
     } else {

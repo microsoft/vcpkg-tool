@@ -44,15 +44,14 @@ export class AcquireCommand extends Command {
       return false;
     }
 
-    const registries = await session.loadDefaultRegistryResolver(await this.project.manifest);
-    const resolved = await selectArtifacts(session, new Map(this.inputs.map((v, i) => [v, versions[i] || '*'])), registries, 1);
-
+    const resolver = await session.loadDefaultRegistryResolver(await this.project.manifest);
+    const resolved = await selectArtifacts(session, new Map(this.inputs.map((v, i) => [v, versions[i] || '*'])), resolver, 1);
     if (!resolved) {
       debug('No artifacts selected - stopping');
       return false;
     }
 
-    if (!await showArtifacts(resolved, registries, this.commandLine)) {
+    if (!await showArtifacts(resolved, resolver, this.commandLine)) {
       warning(i`No artifacts are acquired`);
       return false;
     }
@@ -68,9 +67,7 @@ export class AcquireCommand extends Command {
     }
 
     debug(`Installing ${numberOfArtifacts} artifacts`);
-
-    const [success] = await installArtifacts(resolved, registries, { force: this.commandLine.force, language: this.commandLine.language, allLanguages: this.commandLine.allLanguages });
-
+    const [success] = await installArtifacts(resolved, resolver, { force: this.commandLine.force, language: this.commandLine.language, allLanguages: this.commandLine.allLanguages });
     if (success) {
       log(i`${numberOfArtifacts} artifacts installed successfully`);
       return true;

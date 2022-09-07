@@ -31,13 +31,12 @@ export class UpdateCommand extends Command {
   }
 
   override async run() {
-    const registries = await session.loadDefaultRegistryResolver(await this.project.manifest);
-    // process named registries
+    const resolver = await session.loadDefaultRegistryResolver(await this.project.manifest);
     for (let registryName of this.inputs) {
       if (registryName.indexOf(':') !== -1) {
         registryName = session.fileSystem.parse(registryName).toString();
       }
-      const registry = registries.getRegistryByNameOrUri(registryName);
+      const registry = resolver.getRegistryByNameOrUri(registryName);
       if (registry) {
         try {
           log(i`Downloading registry data`);

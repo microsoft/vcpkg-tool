@@ -31,13 +31,13 @@ export class FindCommand extends Command {
 
   override async run() {
     // load registries (from the current project too if available)
-    const registries = await session.loadDefaultRegistryResolver(await this.project.manifest);
+    const resolver = await session.loadDefaultRegistryResolver(await this.project.manifest);
     const table = new Table('Artifact', 'Version', 'Summary');
 
     for (const each of this.inputs) {
       const hasColon = each.indexOf(':') > -1;
       // eslint-disable-next-line prefer-const
-      for (let [display, artifactVersions] of await registries.search({
+      for (let [display, artifactVersions] of await resolver.search({
         // use keyword search if no registry is specified
         keyword: hasColon ? undefined : each,
         // otherwise use the criteria as an id

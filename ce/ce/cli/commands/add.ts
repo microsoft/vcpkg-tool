@@ -55,13 +55,11 @@ export class AddCommand extends Command {
     const combinedResolver = await session.loadDefaultRegistryResolver(projectManifest);
     const projectRegistries = await projectManifest.buildRegistryResolver();
     const selectedArtifacts = await selectArtifacts(session, selections, combinedResolver, 1);
-
     if (!selectedArtifacts) {
       return false;
     }
 
     await showArtifacts(selectedArtifacts, combinedResolver);
-
     for (const resolution of selectedArtifacts) {
       // map the registry of the found artifact to the registries already in the project file
       const artifact = resolution.artifact;
