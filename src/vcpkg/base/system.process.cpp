@@ -845,7 +845,7 @@ namespace vcpkg
     }
 
     ExpectedL<int> cmd_execute_and_stream_lines(const Command& cmd_line,
-                                                std::function<void(stringView)> per_line_cb,
+                                                std::function<void(StringView)> per_line_cb,
                                                 const WorkingDirectory& wd,
                                                 const Environment& env,
                                                 Encoding encoding)
@@ -909,8 +909,7 @@ namespace vcpkg
         // Use fgets because fread will block until the entire buffer is filled.
         while (fgets(buf, 1024, pipe))
         {
-            const auto str = std::string{buf, strlen(buf)};
-            data_cb(str);
+            data_cb(StringView{buf, strlen(buf)});
         }
 
         if (!feof(pipe))
