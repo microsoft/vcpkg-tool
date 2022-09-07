@@ -84,7 +84,7 @@ namespace vcpkg
     struct ExitCodeAndOutput
     {
         int exit_code;
-        std::string output{};
+        std::string output;
     };
 
     struct Environment

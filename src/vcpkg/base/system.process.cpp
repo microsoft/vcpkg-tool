@@ -908,13 +908,13 @@ namespace vcpkg
         // Flush stdout before launching external process
         fflush(stdout);
 
-        const auto pipe = popen(actual_cmd_line.c_str(), "r");
+        const auto pipe = popen(cmd_str, "r");
         if (pipe == nullptr)
         {
             return format_system_error_message("popen", errno);
         }
 
-        char buf[1024] = {0};
+        char buf[1024];
         // Use fgets because fread will block until the entire buffer is filled.
         // 1 less than buffer size because OSX writes \0 1 byte after the given char count
         while (fgets(buf, 1023, pipe))
