@@ -175,7 +175,7 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
         auto str = out->output;
         if (i != 0)
         {
-            REQUIRE(out->output[0] == 'a')
+            REQUIRE(out->output[0] == 'a');
             REQUIRE(out->output[i - 1] == 'a');
         }
         REQUIRE(out->output == (std::string(i, 'a') + "\n"));
