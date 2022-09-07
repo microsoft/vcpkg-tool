@@ -464,12 +464,6 @@ namespace vcpkg
                                                                                       const Environment& env)
     {
         std::vector<ExpectedL<ExitCodeAndOutput>> res(cmd_lines.size(), LocalizedString{});
-        Debug::println("cmd_execute_and_capture_output_parallel");
-        for (auto&& i : cmd_lines)
-        {
-            Debug::println(i.command_line());
-        }
-
         if (cmd_lines.empty())
         {
             return res;
@@ -889,7 +883,6 @@ namespace vcpkg
         if (wd.working_directory.empty())
         {
             actual_cmd_line = Strings::format(R"(%s %s 2>&1)", env.get(), cmd_line.command_line());
-            Debug::print("Format result: ", actual_cmd_line, "\n");
         }
         else
         {
@@ -914,7 +907,7 @@ namespace vcpkg
             return format_system_error_message("popen", errno);
         }
 
-        char buf[1024];
+        char buf[1024] = {0};
         // Use fgets because fread will block until the entire buffer is filled.
         // 1 less than buffer size because OSX writes \0 1 byte after the given char count
         while (fgets(buf, 1023, pipe))
@@ -942,7 +935,6 @@ namespace vcpkg
         }
 
         ExpectedL<int> exit_code = ec;
-        Debug::println("command line: ", cmd_str);
 #endif /// ^^^ !_WIN32
 
         const auto elapsed = timer.us_64();
