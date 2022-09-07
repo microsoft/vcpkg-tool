@@ -966,11 +966,14 @@ namespace vcpkg
                                                                 Encoding encoding,
                                                                 EchoInDebug echo_in_debug)
     {
-        std::string output{};
+        std::string output;
         return cmd_execute_and_stream_data(
                    cmd_line,
                    [&](StringView sv) {
                        Strings::append(output, sv);
+                       Debug::print("sv: ", std::to_string(sv.size()));
+                       Debug::print("output: ", std::to_string(output.size()));
+
                        if (echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
                        {
                            msg::write_unlocalized_text_to_stdout(Color::none, sv);
