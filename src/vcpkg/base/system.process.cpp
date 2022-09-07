@@ -895,7 +895,7 @@ namespace vcpkg
                                   .extract();
         }
 
-        Debug::print(proc_id, ": popen(", actual_cmd_line, ")\n");
+        //Debug::print(proc_id, ": popen(", actual_cmd_line, ")\n");
         // Flush stdout before launching external process
         fflush(stdout);
         fflush(stdin);
