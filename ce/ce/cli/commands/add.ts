@@ -83,7 +83,7 @@ export class AddCommand extends Command {
 
         // add the artifact to the project
         const fulfilled = artifact.version.toString();
-        const requested = '*'; // FIXME
+        const requested = resolution.requestedVersion;
         const v = requested !== fulfilled ? `${requested} ${fulfilled}` : fulfilled;
         projectManifest.metadata.requires.set(`${registryName}:${artifact.id}`, <any>v);
       }

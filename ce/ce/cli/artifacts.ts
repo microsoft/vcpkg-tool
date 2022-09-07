@@ -31,8 +31,13 @@ export async function showArtifacts(artifacts: Iterable<ResolvedArtifact>, regis
   return !failing;
 }
 
-export async function selectArtifacts(session: Session, selections: Selections, registries: RegistryResolver, dependencyDepth: number): Promise<false | Array<ResolvedArtifact>> {
+export interface SelectedArtifact extends ResolvedArtifact {
+  requestedVersion: string | undefined;
+}
+
+export async function selectArtifacts(session: Session, selections: Selections, registries: RegistryResolver, dependencyDepth: number): Promise<false | Array<SelectedArtifact>> {
   const userSelectedArtifacts = new Map<string, ArtifactBase>();
+  const userSelectedVersions = new Map<string, string>();
   for (const [idOrShortName, version] of selections) {
     const [, artifact] = await getArtifact(registries, idOrShortName, version) || [];
 
@@ -53,9 +58,16 @@ export async function selectArtifacts(session: Session, selections: Selections, 
     }
 
     userSelectedArtifacts.set(artifact.uniqueId, artifact);
+    userSelectedVersions.set(artifact.uniqueId, version);
   }
 
-  return resolveDependencies(session, registries, Array.from(userSelectedArtifacts.values()), dependencyDepth);
+  const allResolved = await resolveDependencies(session, registries, Array.from(userSelectedArtifacts.values()), dependencyDepth);
+  const results = new Array<SelectedArtifact>();
+  for (const resolved of allResolved) {
+    results.push({...resolved, 'requestedVersion': userSelectedVersions.get(resolved.uniqueId)});
+  }
+
+  return results;
 }
 
 enum TaggedProgressKind {
