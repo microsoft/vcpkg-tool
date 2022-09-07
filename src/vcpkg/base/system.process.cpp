@@ -896,10 +896,12 @@ namespace vcpkg
         }
 
         Debug::print(proc_id, ": popen(", actual_cmd_line, ")\n");
+
+        const char* cmd_str = actual_cmd_line.c_str();
         // Flush stdout before launching external process
         fflush(stdout);
 
-        const auto pipe = popen(actual_cmd_line.c_str(), "r");
+        const auto pipe = popen(cmd_str, "r");
         if (pipe == nullptr)
         {
             return format_system_error_message("popen", errno);
@@ -933,6 +935,7 @@ namespace vcpkg
         }
 
         ExpectedL<int> exit_code = ec;
+        Debug::println("command line: ", cmd_str);
 #endif /// ^^^ !_WIN32
 
         const auto elapsed = timer.us_64();
