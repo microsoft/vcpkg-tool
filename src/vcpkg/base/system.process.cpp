@@ -897,7 +897,10 @@ namespace vcpkg
 
         Debug::print(proc_id, ": popen(", actual_cmd_line, ")\n");
         // Flush stdout before launching external process
-        fflush(stdout);
+        if (fflush(stdout) != 0)
+        {
+            Debug::print("Flush begin failed\n");
+        }
 
         const auto pipe = popen(actual_cmd_line.c_str(), "r");
         if (pipe == nullptr)
@@ -938,12 +941,18 @@ namespace vcpkg
         g_subprocess_stats += elapsed;
         if (const auto pec = exit_code.get())
         {
-            Debug::print(proc_id,
+            /* Debug::print(proc_id,
                          ": cmd_execute_and_stream_data() returned ",
                          *pec,
                          " after ",
                          Strings::format("%8llu", static_cast<unsigned long long>(elapsed)),
-                         " us\n");
+                         " us\n"); */
+#if !defined(_WIN32)
+            /* if (fflush(stdin) != 0)
+            {
+                Debug::print("Flush end failed\n");
+            } */
+#endif
         }
 
         return exit_code;
