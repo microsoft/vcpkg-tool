@@ -277,7 +277,7 @@ endfunction()
         std::vector<std::string> lines;
         auto const exit_code = cmd_execute_and_stream_lines(
                                    cmd_launch_cmake,
-                                   [&](StringView sv) { lines.emplace_back(sv.begin(), sv.end()); },
+                                   [&](const std::string& sv) { lines.emplace_back(sv.begin(), sv.end()); },
                                    default_working_directory)
                                    .value_or_exit(VCPKG_LINE_INFO);
 
