@@ -31,7 +31,7 @@ namespace vcpkg::PostBuildLint
         std::string name;
     };
 
-    DECLARE_MESSAGE(FolderNameMismatchedCasing,
+    DECLARE_AND_REGISTER_MESSAGE(FolderNameMismatchedCasing,
                     (msg::old_value, msg::new_value),
                     "",
                     "Folders in /share must use lowercase ascii characters. Please rename it.\n"
