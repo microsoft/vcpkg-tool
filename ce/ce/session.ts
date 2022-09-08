@@ -214,7 +214,7 @@ export class Session {
   async deactivate() {
     const previous = this.environment[undo];
     if (previous && this.postscriptFile) {
-      const deactivationDataFile = this.fileSystem.parse(previous);
+      const deactivationDataFile = this.fileSystem.file(previous);
       if (deactivationDataFile.scheme === 'file' && await deactivationDataFile.exists()) {
 
         const deactivationData = JSON.parse(await deactivationDataFile.readUTF8());
