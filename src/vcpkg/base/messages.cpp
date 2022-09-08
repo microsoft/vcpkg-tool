@@ -845,4 +845,15 @@ namespace vcpkg
     REGISTER_MESSAGE(WhileLookingForSpec);
     REGISTER_MESSAGE(WindowsOnlyCommand);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
+    REGISTER_MESSAGE(ExportingMaintenanceTool);
+    REGISTER_MESSAGE(ExportedMaintenanceTool);
+    REGISTER_MESSAGE(GeneratingRepo);
+    REGISTER_MESSAGE(GeneratedRepo);
+    REGISTER_MESSAGE(GeneratingInstaller);
+    REGISTER_MESSAGE(GeneratedInstaller);
+    REGISTER_MESSAGE(RemovingPackageDirFailed);
+    REGISTER_MESSAGE(CreatingPackageDirFailed);
+    REGISTER_MESSAGE(ExportingPackagesComplete);
+    REGISTER_MESSAGE(GeneratingConfiguration);
+    REGISTER_MESSAGE(GeneratedConfiguration);
 }

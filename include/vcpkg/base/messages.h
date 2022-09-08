@@ -1692,4 +1692,18 @@ namespace vcpkg
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}.");
+    DECLARE_MESSAGE(ExportingMaintenanceTool, (), "", "Exporting maintenance tool...");
+    DECLARE_MESSAGE(ExportedMaintenanceTool, (), "", "Maintenance tool exported.");
+    DECLARE_MESSAGE(GeneratingRepo, (msg::path), "", "Generating repository {path}...");
+    DECLARE_MESSAGE(GeneratedRepo, (msg::path), "", "{path} repository generated.");
+    DECLARE_MESSAGE(GeneratingInstaller, (msg::path), "", "Generating installer {path}...");
+    DECLARE_MESSAGE(GeneratedInstaller, (msg::path), "", "{path} installer generated.");
+    DECLARE_MESSAGE(RemovingPackageDirFailed,
+                    (msg::path),
+                    "",
+                    "Could not remove outdated packages directory {path} due to file: ");
+    DECLARE_MESSAGE(CreatingPackageDirFailed, (msg::path), "", "Could not create package directory {path}.");
+    DECLARE_MESSAGE(ExportingPackagesComplete, (msg::path), "", "Exporting packages {path} complete.");
+    DECLARE_MESSAGE(GeneratingConfiguration, (msg::path), "", "Generating configuration {path}...");
+    DECLARE_MESSAGE(GeneratedConfiguration, (msg::path), "", "Generated configuration {path}.");
 }
