@@ -747,6 +747,7 @@ namespace vcpkg
     DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: \"{path}\"");
     DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
     DECLARE_MESSAGE(Creating7ZipArchive, (), "", "Creating 7zip archive...");
+    DECLARE_MESSAGE(CreatingPackageDirFailed, (msg::path), "", "Could not create package directory {path}.");
     DECLARE_MESSAGE(CreatingZipArchive, (), "", "Creating zip archive...");
     DECLARE_MESSAGE(CreationFailed, (msg::path), "", "{path} creation failed.");
     DECLARE_MESSAGE(CurlReportedUnexpectedResults,
@@ -884,9 +885,12 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
     DECLARE_MESSAGE(ExpectedValueForOption, (msg::option), "", "expected value after --{option}.");
     DECLARE_MESSAGE(Exported7zipArchive, (msg::path), "", "7zip archive exported at: {path}");
+    DECLARE_MESSAGE(ExportedMaintenanceTool, (), "", "Maintenance tool exported.");
     DECLARE_MESSAGE(ExportedZipArchive, (msg::path), "", "Zip archive exported at: {path}");
+    DECLARE_MESSAGE(ExportingMaintenanceTool, (), "", "Exporting maintenance tool...");
     DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
     DECLARE_MESSAGE(ExportingPackages, (), "", "The following packages are already built and will be exported:");
+    DECLARE_MESSAGE(ExportingPackagesComplete, (msg::path), "", "Exporting packages {path} complete.");
     DECLARE_MESSAGE(ExportUnsupportedInManifest,
                     (),
                     "",
@@ -956,6 +960,9 @@ namespace vcpkg
                     (msg::value),
                     "Example of {value} is 'x64 & windows'",
                     "on expression: {value}");
+    DECLARE_MESSAGE(GeneratedConfiguration, (msg::path), "", "Generated configuration {path}.");
+    DECLARE_MESSAGE(GeneratedInstaller, (msg::path), "", "{path} installer generated.");
+    DECLARE_MESSAGE(GeneratedRepo, (msg::path), "", "{path} repository generated.");
     DECLARE_MESSAGE(GenerateMsgErrorParsingFormatArgs,
                     (msg::value),
                     "example of {value} 'GenerateMsgNoComment'",
@@ -972,6 +979,9 @@ namespace vcpkg
                     (msg::value),
                     "example of {value} is 'arch'",
                     R"({{{value}}} was used in the message, but not commented.)");
+    DECLARE_MESSAGE(GeneratingConfiguration, (msg::path), "", "Generating configuration {path}...");
+    DECLARE_MESSAGE(GeneratingInstaller, (msg::path), "", "Generating installer {path}...");
+    DECLARE_MESSAGE(GeneratingRepo, (msg::path), "", "Generating repository {path}...");
     DECLARE_MESSAGE(GitCommandFailed, (msg::command_line), "", "failed to execute: {command_line}");
     DECLARE_MESSAGE(GitStatusOutputExpectedFileName, (), "", "expected a file name");
     DECLARE_MESSAGE(GitStatusOutputExpectedNewLine, (), "", "expected new line");
@@ -1405,6 +1415,10 @@ namespace vcpkg
                     "",
                     "Pushing {vendor} to \"{path}\" failed. Use --debug for more information.");
     DECLARE_MESSAGE(RegistryCreated, (msg::path), "", "Successfully created registry at {path}");
+    DECLARE_MESSAGE(RemovingPackageDirFailed,
+                    (msg::path),
+                    "",
+                    "Could not remove outdated packages directory {path} due to file: ");
     DECLARE_MESSAGE(ReplaceSecretsError,
                     (msg::error_msg),
                     "",
@@ -1692,18 +1706,4 @@ namespace vcpkg
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}.");
-    DECLARE_MESSAGE(ExportingMaintenanceTool, (), "", "Exporting maintenance tool...");
-    DECLARE_MESSAGE(ExportedMaintenanceTool, (), "", "Maintenance tool exported.");
-    DECLARE_MESSAGE(GeneratingRepo, (msg::path), "", "Generating repository {path}...");
-    DECLARE_MESSAGE(GeneratedRepo, (msg::path), "", "{path} repository generated.");
-    DECLARE_MESSAGE(GeneratingInstaller, (msg::path), "", "Generating installer {path}...");
-    DECLARE_MESSAGE(GeneratedInstaller, (msg::path), "", "{path} installer generated.");
-    DECLARE_MESSAGE(RemovingPackageDirFailed,
-                    (msg::path),
-                    "",
-                    "Could not remove outdated packages directory {path} due to file: ");
-    DECLARE_MESSAGE(CreatingPackageDirFailed, (msg::path), "", "Could not create package directory {path}.");
-    DECLARE_MESSAGE(ExportingPackagesComplete, (msg::path), "", "Exporting packages {path} complete.");
-    DECLARE_MESSAGE(GeneratingConfiguration, (msg::path), "", "Generating configuration {path}...");
-    DECLARE_MESSAGE(GeneratedConfiguration, (msg::path), "", "Generated configuration {path}.");
 }

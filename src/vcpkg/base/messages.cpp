@@ -400,9 +400,10 @@ namespace
 
 namespace vcpkg
 {
+
     MessageSink& null_sink = null_sink_instance;
-    MessageSink& stdout_sink = stdout_sink_instance;
     MessageSink& stderr_sink = stderr_sink_instance;
+    MessageSink& stdout_sink = stdout_sink_instance;
 
     REGISTER_MESSAGE(AddArtifactOnlyOne);
     REGISTER_MESSAGE(AddCommandFirstArg);
@@ -499,6 +500,7 @@ namespace vcpkg
     REGISTER_MESSAGE(CreatedNuGetPackage);
     REGISTER_MESSAGE(CreateFailureLogsDir);
     REGISTER_MESSAGE(Creating7ZipArchive);
+    REGISTER_MESSAGE(CreatingPackageDirFailed);
     REGISTER_MESSAGE(CreatingZipArchive);
     REGISTER_MESSAGE(CreationFailed);
     REGISTER_MESSAGE(CurlReportedUnexpectedResults);
@@ -553,9 +555,12 @@ namespace vcpkg
     REGISTER_MESSAGE(ExpectedTripletName);
     REGISTER_MESSAGE(ExpectedValueForOption);
     REGISTER_MESSAGE(Exported7zipArchive);
+    REGISTER_MESSAGE(ExportedMaintenanceTool);
     REGISTER_MESSAGE(ExportedZipArchive);
+    REGISTER_MESSAGE(ExportingMaintenanceTool);
     REGISTER_MESSAGE(ExportingPackage);
     REGISTER_MESSAGE(ExportingPackages);
+    REGISTER_MESSAGE(ExportingPackagesComplete);
     REGISTER_MESSAGE(ExportUnsupportedInManifest);
     REGISTER_MESSAGE(ExtendedDocumentationAtUrl);
     REGISTER_MESSAGE(FailedToExtract);
@@ -588,10 +593,16 @@ namespace vcpkg
     REGISTER_MESSAGE(FollowingPackagesUpgraded);
     REGISTER_MESSAGE(ForceSystemBinariesOnWeirdPlatforms);
     REGISTER_MESSAGE(FormattedParseMessageExpression);
+    REGISTER_MESSAGE(GeneratedConfiguration);
+    REGISTER_MESSAGE(GeneratedInstaller);
+    REGISTER_MESSAGE(GeneratedRepo);
     REGISTER_MESSAGE(GenerateMsgErrorParsingFormatArgs);
     REGISTER_MESSAGE(GenerateMsgIncorrectComment);
     REGISTER_MESSAGE(GenerateMsgNoArgumentValue);
     REGISTER_MESSAGE(GenerateMsgNoCommentValue);
+    REGISTER_MESSAGE(GeneratingConfiguration);
+    REGISTER_MESSAGE(GeneratingInstaller);
+    REGISTER_MESSAGE(GeneratingRepo);
     REGISTER_MESSAGE(GitCommandFailed);
     REGISTER_MESSAGE(GitStatusOutputExpectedFileName);
     REGISTER_MESSAGE(GitStatusOutputExpectedNewLine);
@@ -752,6 +763,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ProvideExportType);
     REGISTER_MESSAGE(PushingVendorFailed);
     REGISTER_MESSAGE(RegistryCreated);
+    REGISTER_MESSAGE(RemovingPackageDirFailed);
     REGISTER_MESSAGE(ReplaceSecretsError);
     REGISTER_MESSAGE(RestoredPackage);
     REGISTER_MESSAGE(RestoredPackagesFromVendor);
@@ -845,15 +857,4 @@ namespace vcpkg
     REGISTER_MESSAGE(WhileLookingForSpec);
     REGISTER_MESSAGE(WindowsOnlyCommand);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
-    REGISTER_MESSAGE(ExportingMaintenanceTool);
-    REGISTER_MESSAGE(ExportedMaintenanceTool);
-    REGISTER_MESSAGE(GeneratingRepo);
-    REGISTER_MESSAGE(GeneratedRepo);
-    REGISTER_MESSAGE(GeneratingInstaller);
-    REGISTER_MESSAGE(GeneratedInstaller);
-    REGISTER_MESSAGE(RemovingPackageDirFailed);
-    REGISTER_MESSAGE(CreatingPackageDirFailed);
-    REGISTER_MESSAGE(ExportingPackagesComplete);
-    REGISTER_MESSAGE(GeneratingConfiguration);
-    REGISTER_MESSAGE(GeneratedConfiguration);
 }
