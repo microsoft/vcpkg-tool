@@ -69,15 +69,16 @@ export class RegistryDatabase {
 
   has(registryUri: string) { return this.#uriToRegistry.has(registryUri); }
 
-  async loadRegistry(session: Session, registryLocation: Uri | string): Promise<Registry> {
-    // normalize the location first.
-    let locationUri: Uri;
-    if (typeof registryLocation === 'string') {
-      locationUri = await session.parseLocation(registryLocation);
-    } else {
-      locationUri = <Uri>registryLocation;
+  add(uri: Uri, registry: Registry) {
+    const stringized = uri.toString();
+    if (this.#uriToRegistry.has(stringized)) {
+      throw new Error(`Duplicate registry add ${stringized}`);
     }
 
+    this.#uriToRegistry.set(stringized, registry);
+  }
+
+  async loadRegistry(session: Session, locationUri: Uri): Promise<Registry> {
     const locationUriStr = locationUri.toString();
     const existingRegistry = this.#uriToRegistry.get(locationUriStr);
     if (existingRegistry) {
@@ -121,16 +122,6 @@ export class RegistryResolver implements RegistryDisplayContext {
     this.#nameToUri.set(name, uri);
   }
 
-  private getLocation(registry: Registry): string {
-    const location = registry.location;
-    const stringized = location.toString();
-    if (!this.#database.has(stringized)) {
-      throw new Error('Attempted to add unloaded registry to a RegistryContext');
-    }
-
-    return stringized;
-  }
-
   constructor(parent: RegistryDatabase | RegistryResolver) {
     if (parent instanceof RegistryResolver) {
       this.#database = parent.#database;
@@ -161,7 +152,12 @@ export class RegistryResolver implements RegistryDisplayContext {
   }
 
   getRegistryByUri(registryUri: Uri): Registry | undefined {
-    return this.#database.getRegistryByUri(registryUri.toString());
+    const stringized = registryUri.toString();
+    if (this.#knownUris.has(stringized)) {
+      return this.#database.getRegistryByUri(stringized);
+    }
+
+    return undefined;
   }
 
   getRegistryByName(name: string) : Registry | undefined {
@@ -173,25 +169,20 @@ export class RegistryResolver implements RegistryDisplayContext {
     return undefined;
   }
 
-  getRegistryByNameOrUri(nameOrUri: string) : Registry | undefined {
-    const asUri = this.#uriToName.get(nameOrUri);
-    if (asUri) {
-      return this.#database.getRegistryByUri(asUri);
-    }
-
-    return this.#database.getRegistryByUri(nameOrUri);
-  }
-
   // Adds `registry` to this context with name `name`. If `name` is already set to a different URI, throws.
-  add(registry: Registry, name: string) {
-    const location = this.getLocation(registry);
-    this.#knownUris.add(location);
-    const oldLocation = this.#nameToUri.get(name);
-    if (oldLocation && oldLocation !== location) {
-      throw new Error(i`Tried to add ${location} as ${name}, but ${name} is already ${oldLocation}.`);
+  add(registryUri: Uri, name: string) {
+    const stringized = registryUri.toString();
+    if (!this.#database.has(stringized)) {
+      throw new Error('Attempted to add unloaded registry to a RegistryContext');
     }
 
-    this.addMapping(name, location);
+    const oldLocation = this.#nameToUri.get(name);
+    if (oldLocation && oldLocation !== stringized) {
+      throw new Error(i`Tried to add ${stringized} as ${name}, but ${name} is already ${oldLocation}.`);
+    }
+
+    this.#knownUris.add(stringized);
+    this.addMapping(name, stringized);
   }
 
   async search(criteria?: SearchCriteria): Promise<Array<[string, Array<Artifact>]>> {

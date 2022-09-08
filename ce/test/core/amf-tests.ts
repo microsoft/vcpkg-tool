@@ -14,7 +14,6 @@ s;
 // sample test using decorators.
 describe('Amf', () => {
   const local = new SuiteLocal();
-  const fs = local.fs;
 
   after(local.after.bind(local));
 

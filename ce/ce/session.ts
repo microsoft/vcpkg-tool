@@ -188,7 +188,7 @@ export class Session {
       if (loc) {
         const uri = this.parseLocation(loc);
         const reg = await this.registryDatabase.loadRegistry(this, uri);
-        this.globalRegistryResolver.add(reg, name);
+        this.globalRegistryResolver.add(uri, name);
         if (reg) {
           this.channels.debug(`Loaded global manifest ${name} => ${uri.formatted}`);
         }

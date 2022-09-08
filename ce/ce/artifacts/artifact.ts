@@ -38,7 +38,9 @@ export async function buildRegistryResolver(session: Session, registries: Regist
   for (const [name, registry] of registries) {
     const loc = registry.location.get(0);
     if (loc) {
-      result.add(await session.registryDatabase.loadRegistry(session, loc), name);
+      const locUri = session.parseLocation(loc);
+      await session.registryDatabase.loadRegistry(session, locUri);
+      result.add(locUri, name);
     }
   }
 

@@ -32,11 +32,8 @@ export class UpdateCommand extends Command {
 
   override async run() {
     const resolver = await session.loadDefaultRegistryResolver(await this.project.manifest);
-    for (let registryName of this.inputs) {
-      if (registryName.indexOf(':') !== -1) {
-        registryName = session.fileSystem.parse(registryName).toString();
-      }
-      const registry = resolver.getRegistryByNameOrUri(registryName);
+    for (const registryName of this.inputs) {
+      const registry = resolver.getRegistryByName(registryName);
       if (registry) {
         try {
           log(i`Downloading registry data`);

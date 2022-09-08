@@ -6,7 +6,7 @@ import { SuiteLocal } from './SuiteLocal';
 
 async function testRegistry(session: Session, sha: string) {
   const uri = `https://github.com/microsoft/vcpkg-ce-catalog/archive/${sha}.zip`;
-  await session.registryDatabase.loadRegistry(session, uri);
+  await session.registryDatabase.loadRegistry(session, session.fileSystem.parse(uri));
 }
 
 describe('Regressions', () => {
