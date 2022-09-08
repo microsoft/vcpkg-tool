@@ -35,8 +35,8 @@ namespace vcpkg::PostBuildLint
                     (msg::old_value, msg::new_value),
                     "",
                     "Folders in /share must use lowercase ascii characters. Please rename it.\n"
-                    "    file(RENAME \"$\{CURRENT_PACKAGES_DIR\}/share/{old_value}\" "
-                    "\"$\{CURRENT_PACKAGES_DIR\}/share/{new_value}\")\n");
+                    "    file(RENAME \"${{CURRENT_PACKAGES_DIR}}/share/{old_value}\" "
+                    "\"${{CURRENT_PACKAGES_DIR}}/share/{new_value}\")\n");
 
     static Span<const OutdatedDynamicCrt> get_outdated_dynamic_crts(const Optional<std::string>& toolset_version)
     {
