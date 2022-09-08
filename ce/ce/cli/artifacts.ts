@@ -142,7 +142,7 @@ export async function installArtifacts(resolved: Array<ResolvedArtifact>, regist
     if (artifact instanceof Artifact) {
       const id = artifact.id;
       const registryName = registries.getRegistryDisplayName(artifact.registryUri);
-      const artifactDisplayName = artifactIdentity(registryName, id);
+      const artifactDisplayName = artifactIdentity(registryName, id, artifact.shortName);
       overallProgress.update(idx, { name: artifactDisplayName });
       try {
         const installStatus = await artifact.install(artifactDisplayName,

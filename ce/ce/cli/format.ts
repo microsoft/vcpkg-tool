@@ -12,9 +12,9 @@ export function prettyRegistryName(registryName: string) {
   return `${whiteBright(registryName)}`;
 }
 
-export function artifactIdentity(registryName: string, identity: string, alias?: string) : string {
-  if (alias) {
-    return `${whiteBright(registryName)}:${yellow.dim(identity.substr(0, identity.length - alias.length))}${yellowBright(alias)}`;
+export function artifactIdentity(registryName: string, identity: string, shortName: string) : string {
+  if (shortName) {
+    return `${whiteBright(registryName)}:${yellow.dim(identity.substr(0, identity.length - shortName.length))}${yellowBright(shortName)}`;
   }
   return registryName ? `${whiteBright(registryName)}:${yellowBright(identity)}` : yellowBright(identity);
 }

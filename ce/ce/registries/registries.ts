@@ -199,7 +199,7 @@ export class RegistryResolver implements RegistryDisplayContext {
 
         const displayName = this.getRegistryDisplayName(registry.location);
         for (const [artifactId, artifacts] of await registry.search(criteria)) {
-          results.push([artifactIdentity(displayName, artifactId), artifacts]);
+          results.push([artifactIdentity(displayName, artifactId, artifacts[0].shortName), artifacts]);
         }
       }
 
@@ -208,7 +208,7 @@ export class RegistryResolver implements RegistryDisplayContext {
       const registry = this.getRegistryByName(source);
       if (registry) {
         return (await registry.search({ ...criteria, idOrShortName: name }))
-          .map((artifactRecord) => [artifactIdentity(source, artifactRecord[0]), artifactRecord[1]]);
+          .map((artifactRecord) => [artifactIdentity(source, artifactRecord[0], artifactRecord[1][0].shortName), artifactRecord[1]]);
       }
 
       throw new Error(i`Unknown registry ${source} (in ${idOrShortName}). The following are known: ${Array.from(this.#nameToUri.keys()).join(', ')}`);

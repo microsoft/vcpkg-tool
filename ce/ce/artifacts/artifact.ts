@@ -339,7 +339,7 @@ export async function resolveDependencies(session: Session, registryResolver: Re
           throw new Error(i`Unable to resolve dependency ${dependencyId} in ${prettyRegistryName(dependencyRegistryDisplayName)}.`);
         }
 
-        session.channels.debug(`Resolved dependency ${artifactIdentity(dependencyRegistryDisplayName, dependency[0])}`);
+        session.channels.debug(`Resolved dependency ${artifactIdentity(dependencyRegistryDisplayName, dependency[0], dependency[1].shortName)}`);
         nextDepthParents.push(dependencyRegistry);
         nextDepth.push(dependency[1]);
       }
