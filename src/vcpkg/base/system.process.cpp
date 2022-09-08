@@ -907,7 +907,7 @@ namespace vcpkg
             return format_system_error_message("popen", errno);
         }
 
-        char buf[1024] = {0};
+        char buf[1024];
         // Use fgets because fread will block until the entire buffer is filled.
         // 1 less than buffer size because OSX writes \0 1 byte after the given char count
         while (fgets(buf, 1023, pipe))
