@@ -550,6 +550,7 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedVendorAuthentication);
     REGISTER_MESSAGE(FeedbackAppreciated);
     REGISTER_MESSAGE(FishCompletion);
+    REGISTER_MESSAGE(FolderNameMismatchedCasing);
     REGISTER_MESSAGE(FollowingPackagesMissingControl);
     REGISTER_MESSAGE(FollowingPackagesNotInstalled);
     REGISTER_MESSAGE(FollowingPackagesUpgraded);

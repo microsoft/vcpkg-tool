@@ -170,6 +170,7 @@
   "FailedVendorAuthentication": "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details on how to provide credentials.",
   "FeedbackAppreciated": "Thank you for your feedback!",
   "FishCompletion": "vcpkg fish completion is already added at \"{path}\".",
+  "FolderNameMismatchedCasing": "Folders in /share must use lowercase ascii characters. Please rename it.\nfile(RENAME \"${{CURRENT_PACKAGES_DIR}}/share/{old_value}\" \"${{CURRENT_PACKAGES_DIR}}/share/{new_value}\")",
   "FollowingPackagesMissingControl": "The following packages do not have a valid CONTROL or vcpkg.json:",
   "FollowingPackagesNotInstalled": "The following packages are not installed:",
   "FollowingPackagesUpgraded": "The following packages are up-to-date:",

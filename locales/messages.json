@@ -294,6 +294,8 @@
   "FeedbackAppreciated": "Thank you for your feedback!",
   "FishCompletion": "vcpkg fish completion is already added at \"{path}\".",
   "_FishCompletion.comment": "An example of {path} is /foo/bar.",
+  "FolderNameMismatchedCasing": "Folders in /share must use lowercase ascii characters. Please rename it.\nfile(RENAME \"${{CURRENT_PACKAGES_DIR}}/share/{old_value}\" \"${{CURRENT_PACKAGES_DIR}}/share/{new_value}\")",
+  "_FolderNameMismatchedCasing.comment": "{old_value} is origin directory name, {new_value} is the fixed directory name",
   "FollowingPackagesMissingControl": "The following packages do not have a valid CONTROL or vcpkg.json:",
   "FollowingPackagesNotInstalled": "The following packages are not installed:",
   "FollowingPackagesUpgraded": "The following packages are up-to-date:",
