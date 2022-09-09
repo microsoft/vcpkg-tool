@@ -92,6 +92,7 @@ export class AddCommand extends Command {
 
     // write the file out.
     await projectManifest.metadata.save();
+    session.channels.message(i`Run \`vcpkg activate\` to apply to the current terminal`);
     return true;
   }
 }
