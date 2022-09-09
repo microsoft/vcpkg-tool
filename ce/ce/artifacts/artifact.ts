@@ -42,13 +42,15 @@ function loadRegistry(session: Session, decl: RegistryDeclaration) : Promise<Reg
     return Promise.resolve(undefined);
 }
 
-export async function buildRegistryResolver(session: Session, registries: RegistriesDeclaration) {
+export async function buildRegistryResolver(session: Session, registries: RegistriesDeclaration | undefined) {
   // load the registries from the project file
   const result = new RegistryResolver(session.registryDatabase);
-  for (const [name, registry] of registries) {
-    const loaded = await loadRegistry(session, registry);
-    if (loaded) {
-      result.add(loaded.location, name);
+  if (registries) {
+    for (const [name, registry] of registries) {
+      const loaded = await loadRegistry(session, registry);
+      if (loaded) {
+        result.add(loaded.location, name);
+      }
     }
   }
 
@@ -69,10 +71,6 @@ export abstract class ArtifactBase {
 
   constructor(protected session: Session, public readonly metadata: MetadataFile) {
     this.applicableDemands = new SetOfDemands(this.metadata, this.session);
-  }
-
-  buildRegistryResolver() : Promise<RegistryResolver> {
-    return buildRegistryResolver(this.session, this.metadata.registries);
   }
 
   buildRegistryByName(name: string) : Promise<Registry | undefined> {

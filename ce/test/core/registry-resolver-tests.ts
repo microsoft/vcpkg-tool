@@ -55,7 +55,7 @@ describe('Registry resolver', () => {
   projectContext.add(appleUri, 'apple');
   projectContext.add(cherryUri, 'cherry');
 
-  const combined = projectContext.combineWith(globalContext);
+  const combined = globalContext.with(projectContext);
 
   it('Knows names in the project', () => {
     strict.equal(combined.getRegistryByName('apple'), appleRegistry);

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { ProjectManifest, ResolvedArtifact, resolveDependencies } from '../artifacts/artifact';
+import { buildRegistryResolver, ProjectManifest, ResolvedArtifact, resolveDependencies } from '../artifacts/artifact';
 import { i } from '../i18n';
 import { trackActivation } from '../insights';
 import { RegistryDisplayContext } from '../registries/registries';
@@ -38,16 +38,16 @@ export async function activate(session: Session, artifacts: Array<ResolvedArtifa
 
 export async function activateProject(session: Session, project: ProjectManifest, options?: ActivationOptions) {
   // track what got installed
-  const projectRegistries = await project.buildRegistryResolver();
-  const resolved = await resolveDependencies(session, projectRegistries, [project], 3);
+  const projectResolver = await buildRegistryResolver(session, project.metadata.registries);
+  const resolved = await resolveDependencies(session, projectResolver, [project], 3);
 
   // print the status of what is going to be activated.
-  if (!await showArtifacts(resolved, projectRegistries, options)) {
+  if (!await showArtifacts(resolved, projectResolver, options)) {
     error(i`Unable to activate project`);
     return false;
   }
 
-  if (await activate(session, resolved, projectRegistries, true, options)) {
+  if (await activate(session, resolved, projectResolver, true, options)) {
     trackActivation();
     log(i`Project ${projectFile(project.metadata.file.parent)} activated`);
     return true;

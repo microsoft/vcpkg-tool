@@ -4,7 +4,7 @@
 import { strict } from 'assert';
 import { MetadataFile } from './amf/metadata-file';
 import { Activation, deactivate } from './artifacts/activation';
-import { Artifact, InstalledArtifact, ProjectManifest } from './artifacts/artifact';
+import { Artifact, InstalledArtifact } from './artifacts/artifact';
 import { configurationName, defaultConfig, globalConfigurationFile, postscriptVariable, undo } from './constants';
 import { FileSystem } from './fs/filesystem';
 import { HttpsFileSystem } from './fs/http-filesystem';
@@ -133,16 +133,6 @@ export class Session {
 
     // Relative path
     return this.currentDirectory.join(location);
-  }
-
-  async loadDefaultRegistryResolver(manifest: ProjectManifest | undefined) : Promise<RegistryResolver> {
-    const manifestResolver = await manifest?.buildRegistryResolver();
-    if (manifestResolver) {
-      this.channels.debug('Combining project manifests with global ones.');
-      return manifestResolver.combineWith(this.globalRegistryResolver);
-    }
-
-    return this.globalRegistryResolver;
   }
 
   async saveConfig() {

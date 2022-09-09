@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { buildRegistryResolver } from '../../artifacts/artifact';
 import { i } from '../../i18n';
 import { session } from '../../main';
 import { selectArtifacts, showArtifacts } from '../artifacts';
@@ -39,7 +40,8 @@ export class UseCommand extends Command {
       return false;
     }
 
-    const resolver = await session.loadDefaultRegistryResolver(await this.project.manifest);
+    const resolver = session.globalRegistryResolver.with(
+      await buildRegistryResolver(session, (await this.project.manifest)?.metadata.registries));
     const versions = this.version.values;
     if (versions.length && this.inputs.length !== versions.length) {
       error(i`Multiple packages specified, but not an equal number of ${cmdSwitch('version')} switches`);

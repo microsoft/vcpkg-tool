@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { Artifact } from '../../artifacts/artifact';
+import { Artifact, buildRegistryResolver } from '../../artifacts/artifact';
 import { i } from '../../i18n';
 import { session } from '../../main';
 import { selectArtifacts, showArtifacts } from '../artifacts';
@@ -52,8 +52,8 @@ export class AddCommand extends Command {
     }
 
     const selections = new Map(this.inputs.map((v, i) => [v, versions[i] || '*']));
-    const combinedResolver = await session.loadDefaultRegistryResolver(projectManifest);
-    const projectRegistries = await projectManifest.buildRegistryResolver();
+    const projectResolver = await buildRegistryResolver(session, projectManifest.metadata.registries);
+    const combinedResolver = session.globalRegistryResolver.with(projectResolver);
     const selectedArtifacts = await selectArtifacts(session, selections, combinedResolver, 1);
     if (!selectedArtifacts) {
       return false;
@@ -65,7 +65,7 @@ export class AddCommand extends Command {
       const artifact = resolution.artifact;
       if (resolution.initialSelection && artifact instanceof Artifact) {
         const registryUri = artifact.metadata.registryUri!;
-        let registryName = projectRegistries.getRegistryName(registryUri);
+        let registryName = projectResolver.getRegistryName(registryUri);
         if (!registryName) {
           // the registry isn't known yet to the project, try to declare it
           registryName = session.globalRegistryResolver.getRegistryName(registryUri);
@@ -73,7 +73,7 @@ export class AddCommand extends Command {
             throw new Error(i`Tried to add an artifact [${registryUri.toString()}]:${artifact.id} but could not determine the registry to use.`);
           }
 
-          const conflictingRegistry = projectRegistries.getRegistryByName(registryName);
+          const conflictingRegistry = projectResolver.getRegistryByName(registryName);
           if (conflictingRegistry) {
             throw new Error(i`Tried to add registry ${registryName} as ${registryUri.toString()}, but it was already ${conflictingRegistry.location.toString()}. Please add ${registryUri.toString()} to this project manually and reattempt.`);
           }

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { Artifact } from '../../artifacts/artifact';
+import { Artifact, buildRegistryResolver } from '../../artifacts/artifact';
 import { i } from '../../i18n';
 import { session } from '../../main';
 import { countWhere } from '../../util/linq';
@@ -44,7 +44,8 @@ export class AcquireCommand extends Command {
       return false;
     }
 
-    const resolver = await session.loadDefaultRegistryResolver(await this.project.manifest);
+    const resolver = session.globalRegistryResolver.with(
+      await buildRegistryResolver(session, (await this.project.manifest)?.metadata.registries));
     const resolved = await selectArtifacts(session, new Map(this.inputs.map((v, i) => [v, versions[i] || '*'])), resolver, 1);
     if (!resolved) {
       debug('No artifacts selected - stopping');

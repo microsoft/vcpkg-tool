@@ -215,20 +215,20 @@ export class RegistryResolver implements RegistryDisplayContext {
     }
   }
 
-  // Combines resolvers together. Any registries that match exactly will take their names from `this`. Any registries
-  // whose names match but which resolve to different URIs will have the name from `this`, and the other registry
-  // will become known but nameless.
-  combineWith(otherResolver: RegistryResolver) : RegistryResolver {
+  // Combines resolvers together. Any registries that match exactly will take their names from `otherResolver`. Any
+  // registries whose names match but which resolve to different URIs will have the name from `otherResolver`, and the
+  // other registry will become known but nameless.
+  with(otherResolver: RegistryResolver) : RegistryResolver {
     if (this.#database !== otherResolver.#database) {
       throw new Error('Tried to combine registry resolvers with different databases.');
     }
 
-    const result = new RegistryResolver(this);
-    for (const uri of otherResolver.#knownUris) {
+    const result = new RegistryResolver(otherResolver);
+    for (const uri of this.#knownUris) {
       result.#knownUris.add(uri);
     }
 
-    for (const [name, location] of otherResolver.#nameToUri) {
+    for (const [name, location] of this.#nameToUri) {
       if (!result.#nameToUri.has(name) && !result.#uriToName.has(location)) {
         result.addMapping(name, location);
       }

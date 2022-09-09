@@ -3,6 +3,7 @@
 
 
 import { cyan } from 'chalk';
+import { buildRegistryResolver } from '../../artifacts/artifact';
 import { i } from '../../i18n';
 import { session } from '../../main';
 import { Command } from '../command';
@@ -31,7 +32,8 @@ export class FindCommand extends Command {
 
   override async run() {
     // load registries (from the current project too if available)
-    const resolver = await session.loadDefaultRegistryResolver(await this.project.manifest);
+    const resolver = session.globalRegistryResolver.with(
+      await buildRegistryResolver(session, (await this.project.manifest)?.metadata.registries));
     const table = new Table('Artifact', 'Version', 'Summary');
 
     for (const each of this.inputs) {

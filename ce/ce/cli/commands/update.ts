@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { buildRegistryResolver } from '../../artifacts/artifact';
 import { i } from '../../i18n';
 import { session } from '../../main';
 import { Registry } from '../../registries/registries';
@@ -31,7 +32,8 @@ export class UpdateCommand extends Command {
   }
 
   override async run() {
-    const resolver = await session.loadDefaultRegistryResolver(await this.project.manifest);
+    const resolver = session.globalRegistryResolver.with(
+      await buildRegistryResolver(session, (await this.project.manifest)?.metadata.registries));
     for (const registryName of this.inputs) {
       const registry = resolver.getRegistryByName(registryName);
       if (registry) {
