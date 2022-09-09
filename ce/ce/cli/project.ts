@@ -30,7 +30,7 @@ export async function activate(session: Session, artifacts: Array<ResolvedArtifa
 
   if (success) {
     const backupFile = createUndoFile ? session.tmpFolder.join(`previous-environment-${Date.now().toFixed()}.json`) : undefined;
-    await session.activation.activate(artifacts, session.environment, session.postscriptFile, backupFile, options?.msbuildProps, options?.json);
+    await session.activation.activate(session.environment, session.postscriptFile, backupFile, options?.msbuildProps, options?.json);
   }
 
   return success;

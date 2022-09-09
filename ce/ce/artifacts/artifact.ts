@@ -102,7 +102,6 @@ export class Artifact extends ArtifactBase {
   }
 
   async install(thisDisplayName: string, events: Partial<InstallEvents>, options: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<InstallStatus> {
-    // is it installed?
     const applicableDemands = this.applicableDemands;
     const errors = addDisplayPrefix(thisDisplayName, applicableDemands.errors);
     this.session.channels.error(errors);
