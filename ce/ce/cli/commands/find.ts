@@ -48,7 +48,7 @@ export class FindCommand extends Command {
       })) {
         if (!this.version.isRangeOfVersions) {
           // if the user didn't specify a range, just show the latest version that was returned
-          artifactVersions = [artifactVersions[0]];
+          artifactVersions = artifactVersions.splice(1);
         }
         for (const result of artifactVersions) {
           if (!result.metadata.dependencyOnly) {
