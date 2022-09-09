@@ -28,15 +28,15 @@ describe('Registry resolver', () => {
 
   after(local.after.bind(local));
 
-  const appleUri = local.fs.parse('https://example.com/apple.zip');
+  const appleUri = local.fs.parseUri('https://example.com/apple.zip');
   const appleRegistry = new FakeRegistry(appleUri);
-  const bananaUri = local.fs.parse('https://example.com/banana.zip');
+  const bananaUri = local.fs.parseUri('https://example.com/banana.zip');
   const bananaRegistry = new FakeRegistry(appleUri);
-  const cherryUri = local.fs.parse('https://example.com/cherry.zip');
+  const cherryUri = local.fs.parseUri('https://example.com/cherry.zip');
   const cherryRegistry = new FakeRegistry(appleUri);
-  const alphaUri = local.fs.parse('https://example.com/alpha.zip');
+  const alphaUri = local.fs.parseUri('https://example.com/alpha.zip');
   const alphaRegistry = new FakeRegistry(alphaUri);
-  const andromedaUri = local.fs.parse('https://example.com/andromeda.zip');
+  const andromedaUri = local.fs.parseUri('https://example.com/andromeda.zip');
   const andromedaRegistry = new FakeRegistry(alphaUri);
 
   const db = new RegistryDatabase();

@@ -237,7 +237,7 @@ export async function resolveNugetUrl(session: Session, pkg: string) {
 
   // let's resolve the redirect first, since nuget servers don't like us getting HEAD data on the targets via a redirect.
   // even if this wasn't the case, this is lower cost now rather than later.
-  const url = await resolveRedirect(session.fileSystem.parse(`https://www.nuget.org/api/v2/package/${name}/${version}`));
+  const url = await resolveRedirect(session.fileSystem.parseUri(`https://www.nuget.org/api/v2/package/${name}/${version}`));
 
   session.channels.debug(`Resolving nuget package for '${pkg}' to '${url}'`);
   return url;

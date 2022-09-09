@@ -128,7 +128,7 @@ export class Session {
 
     // Has a scheme, it's a URI
     if (/^(\w+):/.exec(location)) {
-      return this.fileSystem.parse(location);
+      return this.fileSystem.parseUri(location);
     }
 
     // Relative path
