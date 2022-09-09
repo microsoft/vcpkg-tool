@@ -160,6 +160,6 @@ export abstract class ArtifactRegistry implements Registry {
   }
 
   async save(): Promise<void> {
-    await this.indexYaml.writeFile(Buffer.from(serialize(this.index.serialize()).replace(/\s*(\d*,)\n/g, '$1')));
+    await this.indexYaml.writeFile(Buffer.from(serialize(this.index.serialize())));
   }
 }
