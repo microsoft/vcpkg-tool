@@ -254,25 +254,11 @@ export interface ResolvedArtifact {
   priority: number
 }
 
-export async function resolveRegistries(registryResolver: RegistryResolver, initialParents: Array<ArtifactBase>): Promise<Array<Registry | undefined>> {
-  const result: Array<Registry | undefined> = [];
-  for (const parent of initialParents) {
-    let registry: Registry | undefined;
-    const maybeRegistryUri = parent.metadata.registryUri;
-    if (maybeRegistryUri) {
-      registry = registryResolver.getRegistryByUri(maybeRegistryUri);
-    }
-
-    result.push(registry);
-  }
-
-  return result;
-}
-
 export async function resolveDependencies(session: Session, registryResolver: RegistryResolver, initialParents: Array<ArtifactBase>, dependencyDepth: number): Promise<Array<ResolvedArtifact>> {
   let depth = 0;
-  let nextDepthParents: Array<Registry | undefined> = await resolveRegistries(registryResolver, initialParents);
-  let currentParents: Array<Registry | undefined> = [];
+  let nextDepthRegistries: Array<Registry | undefined> = initialParents.map((parent) =>
+    parent.metadata.registryUri ? registryResolver.getRegistryByUri(parent.metadata.registryUri) : undefined);
+  let currentRegistries: Array<Registry | undefined> = [];
   let nextDepth: Array<ArtifactBase> = initialParents;
   let initialSelections = new Set<string>();
   let current: Array<ArtifactBase> = [];
@@ -281,8 +267,8 @@ export async function resolveDependencies(session: Session, registryResolver: Re
 
   while (nextDepth.length !== 0) {
     ++depth;
-    currentParents = nextDepthParents;
-    nextDepthParents = [];
+    currentRegistries = nextDepthRegistries;
+    nextDepthRegistries = [];
     current = nextDepth;
     nextDepth = [];
 
@@ -291,7 +277,7 @@ export async function resolveDependencies(session: Session, registryResolver: Re
     }
 
     for (let idx = 0; idx < current.length; ++idx) {
-      const subjectParentRegistry = currentParents[idx];
+      const subjectParentRegistry = currentRegistries[idx];
       const subject = current[idx];
       let subjectId: string;
       let subjectUniqueId: string;
@@ -339,7 +325,7 @@ export async function resolveDependencies(session: Session, registryResolver: Re
         }
 
         session.channels.debug(`Resolved dependency ${artifactIdentity(dependencyRegistryDisplayName, dependency[0], dependency[1].shortName)}`);
-        nextDepthParents.push(dependencyRegistry);
+        nextDepthRegistries.push(dependencyRegistry);
         nextDepth.push(dependency[1]);
       }
     }
@@ -360,7 +346,7 @@ export async function resolveDependencies(session: Session, registryResolver: Re
         'uniqueId': uniqueId,
         'initialSelection': initialSelections.has(uniqueId),
         'depth': order[0],
-        'priority': order[1]
+        'priority': artifact.metadata.priority
       });
     } else {
       throw new Error('Result artifact with no order (bug in resolveDependencies)');
