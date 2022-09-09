@@ -8,7 +8,7 @@ import { resolvePath } from '../command-line';
 import { Switch } from '../switch';
 
 export class Json extends Switch {
-  
+
   switch = 'json';
   override multipleAllowed = false;
   get help() {

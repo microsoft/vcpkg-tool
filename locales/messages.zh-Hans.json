@@ -197,7 +197,6 @@
   "HelpExportCommand": "导出包。",
   "HelpFormatManifestCommand": "设置所有 vcpkg.json 文件的格式。在提交到 vcpkg 之前运行此命令。",
   "HelpHashCommand": "按特定算法哈希文件，默认为 SHA512。",
-  "HelpHistoryCommand": "(实验性)显示包版本的历史记录。",
   "HelpInitializeRegistryCommand": "初始化目录 <path> 中的注册表。",
   "HelpInstallCommand": "安装包。",
   "HelpListCommand": "列出已安装的包。",

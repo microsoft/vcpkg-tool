@@ -197,7 +197,6 @@
   "HelpExportCommand": "Exportiert ein Paket.",
   "HelpFormatManifestCommand": "Formatiert alle vcpkg.json-Dateien. Führen Sie dies aus, bevor Sie einen Commit für vcpkg ausführen.",
   "HelpHashCommand": "Hash einer Datei nach einem bestimmten Algorithmus, Standardmäßig SHA512.",
-  "HelpHistoryCommand": "(Experimentell) Zeigt den Versionsverlauf eines Pakets an.",
   "HelpInitializeRegistryCommand": "Initialisiert eine Registrierung im Verzeichnis <path>.",
   "HelpInstallCommand": "Installieren Sie ein Paket.",
   "HelpListCommand": "Listen Sie installierte Pakete auf.",

@@ -49,12 +49,12 @@ export async function activateProject(project: ProjectManifest, options?: Activa
   if (await activate(artifacts, true, options)) {
     trackActivation();
     log(blank);
-    log(i`Project ${projectFile(project.metadata.context.folder)} activated`);
+    log(i`Project ${projectFile(project.metadata.file.parent)} activated`);
     return true;
   }
 
   log(blank);
-  log(i`Failed to activate project ${projectFile(project.metadata.context.folder)}`);
+  log(i`Failed to activate project ${projectFile(project.metadata.file.parent)}`);
 
   return false;
 }

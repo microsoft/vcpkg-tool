@@ -669,7 +669,7 @@ namespace vcpkg
                     (msg::path),
                     "Fourth optional part of build troubleshooting message, printed after the version"
                     "information about vcpkg itself.",
-                    "You can also use the prefilled template from {path}.");
+                    "Please use the prefilled template from {path} when reporting your issue.");
     DECLARE_MESSAGE(ChecksFailedCheck, (), "", "vcpkg has crashed; no additional details are available.");
     DECLARE_MESSAGE(ChecksUnreachableCode, (), "", "unreachable code was reached");
     DECLARE_MESSAGE(ChecksUpdateVcpkg, (), "", "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.");
@@ -979,7 +979,6 @@ namespace vcpkg
                     "",
                     "Formats all vcpkg.json files. Run this before committing to vcpkg.");
     DECLARE_MESSAGE(HelpHashCommand, (), "", "Hash a file by specific algorithm, default SHA512.");
-    DECLARE_MESSAGE(HelpHistoryCommand, (), "", "(Experimental) Show the history of versions of a package.");
     DECLARE_MESSAGE(HelpInitializeRegistryCommand, (), "", "Initializes a registry in the directory <path>.");
     DECLARE_MESSAGE(HelpInstallCommand, (), "", "Install a package.");
     DECLARE_MESSAGE(HelpListCommand, (), "", "List installed packages.");

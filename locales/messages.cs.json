@@ -197,7 +197,6 @@
   "HelpExportCommand": "Exportuje balíček.",
   "HelpFormatManifestCommand": "Formátuje všechny soubory vcpkg.json. Před potvrzením do vcpkg spusťte tento příkaz.",
   "HelpHashCommand": "Zatřiďte soubor podle konkrétního algoritmu, výchozí SHA512.",
-  "HelpHistoryCommand": "(Experimentální) Umožňuje zobrazit historii verzí balíčku.",
   "HelpInitializeRegistryCommand": "Inicializuje registr v adresáři <path>.",
   "HelpInstallCommand": "Nainstalujte balíček.",
   "HelpListCommand": "Vypíše nainstalované balíčky.",

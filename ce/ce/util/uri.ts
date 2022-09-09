@@ -340,4 +340,3 @@ export function isFilePath(uriOrPath?: Uri | string): boolean {
   }
   return false;
 }
-
