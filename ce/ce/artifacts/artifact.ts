@@ -5,7 +5,7 @@
 import { fail } from 'assert';
 import { resolve } from 'path';
 import { MetadataFile } from '../amf/metadata-file';
-import { RegistriesDeclaration } from '../amf/registries';
+import { RegistriesDeclaration, RegistryDeclaration } from '../amf/registries';
 import { artifactIdentity, prettyRegistryName } from '../cli/format';
 import { FileType } from '../fs/filesystem';
 import { i } from '../i18n';
@@ -32,15 +32,23 @@ export function parseArtifactDependency(id: string): [string | undefined, string
   throw new Error(i`Invalid artifact id '${id}'`);
 }
 
+function loadRegistry(session: Session, decl: RegistryDeclaration) : Promise<Registry | undefined> {
+    const loc = decl.location.get(0);
+    if (loc) {
+      const locUri = session.parseLocation(loc);
+      return session.registryDatabase.loadRegistry(session, locUri);
+    }
+
+    return Promise.resolve(undefined);
+}
+
 export async function buildRegistryResolver(session: Session, registries: RegistriesDeclaration) {
   // load the registries from the project file
   const result = new RegistryResolver(session.registryDatabase);
   for (const [name, registry] of registries) {
-    const loc = registry.location.get(0);
-    if (loc) {
-      const locUri = session.parseLocation(loc);
-      await session.registryDatabase.loadRegistry(session, locUri);
-      result.add(locUri, name);
+    const loaded = await loadRegistry(session, registry);
+    if (loaded) {
+      result.add(loaded.location, name);
     }
   }
 
@@ -65,6 +73,15 @@ export abstract class ArtifactBase {
 
   buildRegistryResolver() : Promise<RegistryResolver> {
     return buildRegistryResolver(this.session, this.metadata.registries);
+  }
+
+  buildRegistryByName(name: string) : Promise<Registry | undefined> {
+    const decl = this.metadata.registries.get(name);
+    if (decl) {
+      return loadRegistry(this.session, decl);
+    }
+
+    return Promise.resolve(undefined);
   }
 }
 
@@ -303,7 +320,7 @@ export async function resolveDependencies(session: Session, registryResolver: Re
         const [dependencyRegistryDeclaredName, dependencyId] = parseArtifactDependency(idOrShortName);
         let dependencyRegistry: Registry;
         if (dependencyRegistryDeclaredName) {
-          const maybeRegistry = (await subject.buildRegistryResolver()).getRegistryByName(dependencyRegistryDeclaredName);
+          const maybeRegistry = await subject.buildRegistryByName(dependencyRegistryDeclaredName);
           if (!maybeRegistry) {
             throw new Error(i`While resolving dependencies of ${subjectId}, ${dependencyRegistryDeclaredName} in ${idOrShortName} could not be resolved to a registry.`);
           }
