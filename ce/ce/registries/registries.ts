@@ -12,7 +12,7 @@ import { RemoteRegistry } from './RemoteRegistry';
 
 export interface SearchCriteria {
   idOrShortName?: string;
-  version?: string
+  version?: string;
   keyword?: string;
 }
 
