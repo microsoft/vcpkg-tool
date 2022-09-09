@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { resolve } from 'path';
 import { registryIndexFile } from '../../constants';
 import { i } from '../../i18n';
 import { session } from '../../main';
@@ -31,7 +32,7 @@ export class RegenerateCommand extends Command {
 
   override async run() {
     for (const input of this.inputs) {
-      const inputUri = session.fileSystem.file(input);
+      const inputUri = session.fileSystem.file(resolve(input));
       const localReg = new LocalRegistry(session, inputUri);
       try {
         await localReg.load();

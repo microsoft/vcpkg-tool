@@ -65,10 +65,9 @@ export class RegistryDatabase {
     return this.#uriToRegistry.get(registryUri);
   }
 
-  entries() { return this.#uriToRegistry.values(); }
-
   has(registryUri: string) { return this.#uriToRegistry.has(registryUri); }
 
+  // Exposed for testing
   add(uri: Uri, registry: Registry) {
     const stringized = uri.toString();
     if (this.#uriToRegistry.has(stringized)) {

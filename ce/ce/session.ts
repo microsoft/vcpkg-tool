@@ -126,13 +126,8 @@ export class Session {
       return this.fileSystem.file(location);
     }
 
-    // Has a scheme, it's a URI
-    if (/^(\w+):/.exec(location)) {
-      return this.fileSystem.parseUri(location);
-    }
-
-    // Relative path
-    return this.currentDirectory.join(location);
+    // Otherwise, it's a URI
+    return this.fileSystem.parseUri(location);
   }
 
   async saveConfig() {

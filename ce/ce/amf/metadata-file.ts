@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { resolve } from 'path';
 import { Document, isMap, LineCounter, parseDocument, YAMLMap } from 'yaml';
 import { i } from '../i18n';
 import { ErrorKind } from '../interfaces/error-kind';
@@ -32,7 +33,7 @@ export class MetadataFile extends BaseMap {
       content = '{\n}';
     }
     const doc = parseDocument(content, { prettyErrors: false, lineCounter: lc, strict: true });
-    return new MetadataFile(doc, filename, session.fileSystem.file(filename), lc, registryUri);
+    return new MetadataFile(doc, filename, session.fileSystem.file(resolve(filename)), lc, registryUri);
   }
 
   #info = new Info(undefined, this, 'info');

@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { resolve } from 'path';
 import { ProjectManifest } from '../../artifacts/artifact';
 import { FileType } from '../../fs/filesystem';
 import { i } from '../../i18n';
 import { session } from '../../main';
 import { Uri } from '../../util/uri';
-import { resolvePath } from '../command-line';
 import { projectFile } from '../format';
 import { debug, error } from '../styling';
 import { Switch } from '../switch';
@@ -20,9 +20,9 @@ export class Project extends Switch {
   }
 
   async getProjectFolder() {
-    const v = resolvePath(super.value);
+    const v = super.value;
     if (v) {
-      const uri = session.fileSystem.file(v);
+      const uri = session.fileSystem.file(resolve(v));
       const stat = await uri.stat();
 
       if (stat.type & FileType.File) {
