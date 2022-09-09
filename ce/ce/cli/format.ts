@@ -13,10 +13,7 @@ export function prettyRegistryName(registryName: string) {
 }
 
 export function artifactIdentity(registryName: string, identity: string, shortName: string) : string {
-  if (shortName) {
-    return `${whiteBright(registryName)}:${yellow.dim(identity.substr(0, identity.length - shortName.length))}${yellowBright(shortName)}`;
-  }
-  return registryName ? `${whiteBright(registryName)}:${yellowBright(identity)}` : yellowBright(identity);
+  return `${whiteBright(registryName)}:${yellow.dim(identity.substr(0, identity.length - shortName.length))}${yellowBright(shortName)}`;
 }
 
 export function addVersionToArtifactIdentity(identity: string, version: string) {
