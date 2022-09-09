@@ -79,6 +79,7 @@ export class AddCommand extends Command {
           }
 
           projectManifest.metadata.registries.add(registryName, artifact.registryUri, 'artifact');
+          projectResolver.add(registryUri, registryName);
         }
 
         // add the artifact to the project
