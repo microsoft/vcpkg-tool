@@ -19,11 +19,6 @@ class ActivationOptions {
   json?: Uri;
 }
 
-export async function openProject(session: Session, location: Uri): Promise<ProjectManifest> {
-  // load the project
-  return new ProjectManifest(session, await session.openManifest(location));
-}
-
 export async function activate(session: Session, artifacts: Array<ResolvedArtifact>, registries: RegistryDisplayContext, createUndoFile: boolean, options?: ActivationOptions) {
   // install the items in the project
   const [success, artifactStatus] = await installArtifacts(artifacts, registries, options);

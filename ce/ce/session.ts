@@ -183,17 +183,15 @@ export class Session {
     return this;
   }
 
-  async findProjectProfile(startLocation = this.currentDirectory, search = true): Promise<Uri | undefined> {
+  async findProjectProfile(startLocation = this.currentDirectory): Promise<Uri | undefined> {
     let location = startLocation;
     const path = location.join(configurationName);
     if (await this.fileSystem.isFile(path)) {
       return path;
     }
+
     location = location.join('..');
-    if (search) {
-      return (location.toString() === startLocation.toString()) ? undefined : this.findProjectProfile(location);
-    }
-    return undefined;
+    return (location.toString() === startLocation.toString()) ? undefined : this.findProjectProfile(location);
   }
 
   async deactivate() {
@@ -236,8 +234,8 @@ export class Session {
     return this.installers.get(installInfo.installerKind);
   }
 
-  async openManifest(manifestFile: Uri): Promise<MetadataFile> {
-    return await MetadataFile.parseConfiguration(manifestFile.fsPath, await manifestFile.readUTF8(), this);
+  async openManifest(filename: string, uri: Uri): Promise<MetadataFile> {
+    return await MetadataFile.parseConfiguration(filename, await uri.readUTF8(), this);
   }
 
   serializer(key: any, value: any) {
