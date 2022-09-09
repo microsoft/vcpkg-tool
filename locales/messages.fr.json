@@ -64,7 +64,7 @@
   "BuildTroubleshootingMessage1": "Vérifiez que vous utilisez les derniers fichiers de port avec 'git pull' et 'vcpkg update'.\nRechercher ensuite les problèmes connus sur :",
   "BuildTroubleshootingMessage2": "Vous pouvez soumettre un nouveau problème à l’adresse :",
   "BuildTroubleshootingMessage3": "Incluez « [{package_name}] Erreur de build » dans le titre de votre rapport de bogues, les informations de version suivantes dans votre description de bogue et joignez les journaux des échecs pertinents ci-dessus.",
-  "BuildTroubleshootingMessage4": "Vous pouvez également utiliser le modèle prérempli à partir de {path}.",
+  "BuildTroubleshootingMessage4": "Please use the prefilled template from {path} when reporting your issue.",
   "BuildingFromHead": "Génération de {spec} à partir de HEAD...",
   "BuildingPackage": "Génération de {spec}...",
   "BuildingPackageFailed": "échec de la génération de {spec} avec : {build_result}",

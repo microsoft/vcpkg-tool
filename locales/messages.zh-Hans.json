@@ -64,7 +64,7 @@
   "BuildTroubleshootingMessage1": "请确保使用具有“git pull” 和 “vcpkg update”的最新端口文件。\n然后，在以下位置查看已知问题:",
   "BuildTroubleshootingMessage2": "可在以下位置提交新问题:",
   "BuildTroubleshootingMessage3": "在 Bug 报告标题中包含“[{package_name}] 内部版本错误”，bug 描述中的以下版本信息，并从上面附加任何相关的失败日志。",
-  "BuildTroubleshootingMessage4": "你还可以使用来自 {path} 的预填充模板。",
+  "BuildTroubleshootingMessage4": "Please use the prefilled template from {path} when reporting your issue.",
   "BuildingFromHead": "正在从 HEAD 生成 {spec}...",
   "BuildingPackage": "正在生成 {spec}...",
   "BuildingPackageFailed": "生成 {spec} 失败，结果为: {build_result}",

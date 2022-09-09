@@ -64,7 +64,7 @@
   "BuildTroubleshootingMessage1": "Assicurarsi di usare i file di porta più recenti con 'git pull' e 'vcpkg update'.\nQuindi verificare la presenza di problemi noti in:",
   "BuildTroubleshootingMessage2": "È possibile inviare un nuovo problema all'indirizzo:",
   "BuildTroubleshootingMessage3": "Includere 'Errore di compilazione [{package_name}]' nel titolo del report sui bug, le seguenti informazioni sulla versione nella descrizione del bug, e allegare tutti i log di errore rilevanti di cui sopra.",
-  "BuildTroubleshootingMessage4": "È anche possibile usare il modello precompilato da {path}.",
+  "BuildTroubleshootingMessage4": "Please use the prefilled template from {path} when reporting your issue.",
   "BuildingFromHead": "Creazione di {spec} da HEAD...",
   "BuildingPackage": "Creazione di {spec}...",
   "BuildingPackageFailed": "compilazione {spec} non riuscita con: {build_result}",

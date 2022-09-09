@@ -64,7 +64,7 @@
   "BuildTroubleshootingMessage1": "'git pull' と 'vcpkg update' で最新のポート ファイルを使用していることを確認してください。\nその後、次の場所で既知の問題を確認します:",
   "BuildTroubleshootingMessage2": "次の場所で新しい問題を送信できます:",
   "BuildTroubleshootingMessage3": "バグ報告のタイトルに「[{package_name}] ビルド エラー」を含め、バグの説明に次のバージョン情報を含め、関連する失敗ログを上記から添付します。",
-  "BuildTroubleshootingMessage4": "{path} から事前入力されたテンプレートを使用することもできます。",
+  "BuildTroubleshootingMessage4": "Please use the prefilled template from {path} when reporting your issue.",
   "BuildingFromHead": "HEAD から {spec} をビルドしています...",
   "BuildingPackage": "{spec} をビルドしています...",
   "BuildingPackageFailed": "{spec} のビルドに失敗しました: {build_result}",
