@@ -121,7 +121,13 @@ namespace vcpkg::Commands::SetInstalled
 
         const auto summary = Install::perform(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), cmake_vars);
+
         msg::println(msgTotalTime, msg::elapsed = GlobalState::timer.to_string());
+
+        if (keep_going == KeepGoing::YES)
+        {
+            summary.print_failed();
+        }
 
         std::set<std::string> printed_usages;
         for (auto&& ur_spec : user_requested_specs)

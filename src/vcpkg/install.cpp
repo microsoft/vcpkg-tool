@@ -431,6 +431,24 @@ namespace vcpkg
         }
     }
 
+    void InstallSummary::print_failed() const
+    {
+        msg::println(msgResultsHeader);
+
+        for (const SpecSummary& result : this->results)
+        {
+            if (result.build_result.value_or_exit(VCPKG_LINE_INFO).code != BuildResult::SUCCEEDED)
+            {
+                msg::println(LocalizedString().append_indent().append_fmt_raw(
+                    "{}: {}: {}",
+                    result.get_spec(),
+                    to_string(result.build_result.value_or_exit(VCPKG_LINE_INFO).code),
+                    result.timing));
+            }
+        }
+        msg::println();
+    }
+
     bool InstallSummary::failed() const
     {
         for (const auto& result : this->results)
@@ -1189,7 +1207,7 @@ namespace vcpkg
         const InstallSummary summary = Install::perform(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), var_provider);
 
-        print2("\nTotal elapsed time: ", GlobalState::timer.to_string(), "\n\n");
+        print2("\nTotal elapsed time: ", GlobalState::timer.to_string(), "\n");
 
         if (keep_going == KeepGoing::YES)
         {
