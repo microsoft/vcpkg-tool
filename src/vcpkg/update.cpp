@@ -1,3 +1,4 @@
+#include <vcpkg/base/parallel-algorithms.h>
 #include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.h>
@@ -19,11 +20,11 @@ namespace vcpkg::Update
     std::vector<OutdatedPackage> find_outdated_packages(const PortFileProvider& provider,
                                                         const StatusParagraphs& status_db)
     {
-        auto installed_packages = get_installed_ports(status_db);
+        const auto installed_packages = get_installed_ports(status_db);
 
         std::vector<OutdatedPackage> output;
-        for (auto&& ipv : installed_packages)
-        {
+        std::mutex mtx;
+        auto work = [&](OutdatedPackage&& ipv) {
             const auto& pgh = ipv.core;
             auto maybe_scfl = provider.get_control_file(pgh->package.spec.name());
             if (auto p_scfl = maybe_scfl.get())
@@ -33,15 +34,18 @@ namespace vcpkg::Update
                 auto installed_version = Version(pgh->package.version, pgh->package.port_version);
                 if (latest_version != installed_version)
                 {
-                    output.push_back(
-                        {pgh->package.spec, VersionDiff(std::move(installed_version), std::move(latest_version))});
+                    std::lock_guard<std::mutex> guard(mtx);
+                    output.emplace_back(pgh->package.spec,
+                                        VersionDiff(std::move(installed_version), std::move(latest_version)));
                 }
             }
             else
             {
                 // No portfile available
             }
-        }
+        };
+
+        vcpkg_parallel_for_each(installed_packages.begin(), installed_packages.end(), work);
 
         return output;
     }
