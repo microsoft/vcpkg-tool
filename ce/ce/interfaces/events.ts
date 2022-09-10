@@ -3,24 +3,15 @@
 
 import { Uri } from '../util/uri';
 
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-export interface Progress {
-  progress(percent: number, bytes: number, msec: number): void;
+export interface HashVerifyEvents {
+  hashVerifyStart(file: string): void;
+  hashVerifyProgress(file: string, percent: number): void;
+  hashVerifyComplete(file: string): void;
 }
 
-export interface AcquireEvents extends Progress {
-  download(file: string, percent: number): void;
-  verifying(file: string, percent: number): void;
-  complete(): void;
-}
-
-/** The event definitions for for unpackers */
-export interface UnpackEvents {
-  progress(archivePercentage: number): void;
-  fileProgress(entry: Readonly<FileEntry>, filePercentage: number): void;
-  unpacked(entry: Readonly<FileEntry>): void;
-  error(entry: Readonly<FileEntry>, message: string): void;
+export interface DownloadEvents extends HashVerifyEvents {
+  downloadStart(uris: Array<Uri>, destination: string): void;
+  downloadProgress(uri: Uri, destination: string, percent: number): void;
 }
 
 export interface FileEntry {
@@ -30,11 +21,17 @@ export interface FileEntry {
   extractPath: string | undefined;
 }
 
-export interface InstallEvents {
-  // download/verifying
-  download(file: string, percent: number): void;
-  verifying(file: string, percent: number): void;
+export interface UnpackEvents {
+  progress(archivePercentage: number): void;
+  fileProgress(entry: Readonly<FileEntry>, filePercentage: number): void;
+  unpacked(entry: Readonly<FileEntry>): void;
+  error(entry: Readonly<FileEntry>, message: string): void;
+}
 
+export interface AcquireEvents extends DownloadEvents {
+}
+
+export interface InstallEvents extends DownloadEvents {
   // unpacking individual files
   fileProgress(entry: Readonly<FileEntry>, filePercentage: number): void;
   unpacked(entry: Readonly<FileEntry>): void;

@@ -128,11 +128,14 @@ export async function installArtifacts(resolved: Array<ResolvedArtifact>, regist
   // resolve the full set of artifacts to install.
   const installed = new Map<Artifact, boolean>();
   const bar = new MultiBar({
-    clearOnComplete: true, hideCursor: true,
+    clearOnComplete: true,
+    hideCursor: true,
     barCompleteChar: '*',
     barIncompleteChar: ' ',
     etaBuffer: 40
   });
+
+  const isTty = process.stdout.isTTY === true;
 
   const overallProgress = bar.create(resolved.length, 0, { name: '' }, { format: '{bar}* [{value}/{total}] {name}', emptyOnZero: true });
   const individualProgress = new TaggedProgressBar(bar);
@@ -147,11 +150,11 @@ export async function installArtifacts(resolved: Array<ResolvedArtifact>, regist
       try {
         const installStatus = await artifact.install(artifactDisplayName,
           {
-            verifying: (current, percent) => {
+            hashVerifyProgress: (current, percent) => {
               individualProgress.startOrUpdate(TaggedProgressKind.Verifying, 100, percent, i`verifying` + ' ' + current);
             },
-            download: (current, percent) => {
-              individualProgress.startOrUpdate(TaggedProgressKind.Downloading, 100, percent, i`downloading` + ' ' + current);
+            downloadProgress: (uri, destination, percent) => {
+              individualProgress.startOrUpdate(TaggedProgressKind.Downloading, 100, percent, i`downloading ${uri.toString()} -> ${destination}`);
             },
             fileProgress: (entry) => {
               let suffix = entry.extractPath;
