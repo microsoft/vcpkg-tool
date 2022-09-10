@@ -23,7 +23,7 @@ namespace vcpkg::Update
         auto installed_packages = get_installed_ports(status_db);
 
         std::vector<OutdatedPackage> output;
-        std::mutex mtx;
+        VCPKG_MUTEX;
         auto work = [&](const InstalledPackageView& ipv) {
             const auto& pgh = ipv.core;
             const auto maybe_scfl = provider.get_control_file(pgh->package.spec.name());
@@ -34,7 +34,7 @@ namespace vcpkg::Update
                 auto installed_version = Version(pgh->package.version, pgh->package.port_version);
                 if (latest_version != installed_version)
                 {
-                    std::lock_guard<std::mutex> guard(mtx);
+                    VCPKG_LOCK_GUARD;
                     output.push_back(
                         {pgh->package.spec, VersionDiff(std::move(installed_version), std::move(latest_version))});
                 }
