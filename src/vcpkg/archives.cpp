@@ -333,7 +333,6 @@ namespace vcpkg
         auto results =
             cmd_execute_and_capture_output_parallel(jobs, default_working_directory, get_clean_environment());
 
-
         std::vector<ExpectedL<Unit>> filtered_results;
         filtered_results.reserve(jobs.size());
         for (std::size_t idx = 0; idx < jobs.size(); ++idx)
