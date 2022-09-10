@@ -29,7 +29,7 @@ function reformatText(text = '', session?: Session): string {
   if (text) {
     text = `${text}`.replace(/\\\./g, '\\\\.');
 
-    // rewrite file:// urls to be locl filesystem urls.
+    // rewrite file:// urls to be local filesystem urls.
     return (!!text && !!session) ? text.replace(/(file:\/\/\S*)/g, (s, a) => yellow.dim(session.parseUri(a).fsPath)) : text;
   }
   return '';

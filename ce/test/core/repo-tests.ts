@@ -84,64 +84,11 @@ describe('StandardRegistry Tests', () => {
           ...t,
         };
         p.version = rndSemver();
-        const target = repoFolder.join(`${p.id}-${p.version}.yaml`);
+        const target = repoFolder.join(`${p.id}-${p.version}.json`);
         await target.writeFile(Buffer.from(serialize(p), 'utf8'));
       }
     }
     // now copy the files from the test folder
     await local.fs.copy(local.rootFolderUri.join('resources', 'repo'), repoFolder);
   });
-
-  /* fixme!
-  it('can save and load the index', async () => {
-    const registry = local.session.defaultRegistry;
-    await registry.regenerate();
-    await registry.save();
-
-    const anotherregistry = new LocalRegistry(local.session, local.session.homeFolder.join('repo', 'default'));
-    await anotherregistry.load();
-    strict.equal(registry.count, anotherregistry.count, 'repo should be the same size as the last one');
-  });
-
-  it('Loads a bunch items', async () => {
-    const registry = local.session.defaultRegistry;
-    await registry.regenerate();
-
-    const all = await registry.openArtifacts(registry.values);
-    const items = [...all.values()].flat();
-    strict.equal(items.length, registry.count, 'Should have loaded everything');
-
-  });
-
-
-  it('Create index from some data', async () => {
-    const start = process.uptime() * 1000;
-
-    const registry = local.session.defaultRegistry;
-    local.session.channels.on('debug', (d, x, m) => SuiteSuiteLocal.log(`${m}msec : ${d}`));
-    await registry.regenerate();
-    await registry.save();
-
-    const arm = registry.where.id.equals('compilers/gnu/gcc/arm-none-eabi').items;
-    strict.equal(arm.length, 3, 'should be 3 results');
-
-    local.session.channels.on('debug', (t) => SuiteSuiteLocal.log(t));
-
-    const map = await registry.openArtifacts(arm);
-    strict.equal(map.size, 1, 'Should have one pkg id');
-
-    const versions = map.get('compilers/gnu/gcc/arm-none-eabi');
-    strict.ok(versions, 'should have some versions');
-    strict.equal(versions.length, 3, 'should have three versions of the package');
-
-    const anotherregistry = new LocalRegistry(local.session, local.session.homeFolder.join('repo', 'default'));
-    await anotherregistry.load();
-    const anotherArm = registry.where.id.equals('compilers/gnu/gcc/arm-none-eabi').items;
-    strict.equal(anotherArm.length, 3, 'should be 3 results');
-
-
-    const cmakes = registry.where.id.equals('tools/kitware/cmake').items;
-    strict.equal(cmakes.length, 5, 'should be 5 results');
-  });
-  */
 });

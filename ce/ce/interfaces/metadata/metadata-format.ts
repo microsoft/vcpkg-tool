@@ -1,11 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { ProfileBase } from './profile-base';
-import { GitRegistry } from './registries/git-registry';
-import { LocalRegistry } from './registries/local-registry';
-import { NugetRegistry } from './registries/nuget-registry';
+import { Dictionary } from '../collections';
+import { Contact } from './contact';
+import { Demands } from './demands';
+import { ArtifactRegistry } from './registries/artifact-registry';
 
+type Primitive = string | number | boolean;
 
 /**
  * a profile defines the requirements and/or artifact that should be installed
@@ -13,10 +14,24 @@ import { NugetRegistry } from './registries/nuget-registry';
  * Any other keys are considered HostQueries and a matching set of Demands
  * A HostQuery is a query string that can be used to qualify
  * 'requires'/'see-also'/'exports'/'install'/'use' objects
+ *
+ * @see the section below in this document entitled 'Host/Environment Queries"
  */
-export type Profile = ProfileBase;
 
-export type RegistryDeclaration = NugetRegistry | LocalRegistry | GitRegistry;
+export interface Profile extends Demands {
+  /** any contact information related to this profile/package */
+  contacts: Dictionary<Contact>; // optional
 
-/** values that can be either a single string, or an array of strings */
-export type StringOrStrings = string | Array<string>;
+  /** artifact registries list the references necessary to install artifacts in this file */
+  registries?: Dictionary<ArtifactRegistry>;
+
+  /** global settings */
+  globalSettings: Dictionary<Primitive | Record<string, unknown>>;
+
+  /** is this document valid */
+  readonly isFormatValid: boolean;
+
+  /** parsing errors in this document */
+  readonly formatErrors: Array<string>;
+}
+

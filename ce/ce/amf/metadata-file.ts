@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 
-import { extname } from 'path';
 import { Document, isMap, LineCounter, parseDocument, YAMLMap } from 'yaml';
 import { Registry } from '../artifacts/registry';
 import { i } from '../i18n';
@@ -13,32 +12,21 @@ import { Session } from '../session';
 import { Uri } from '../util/uri';
 import { BaseMap } from '../yaml/BaseMap';
 import { Options } from '../yaml/Options';
-import { toYAML } from '../yaml/yaml';
 import { Yaml, YAMLDictionary } from '../yaml/yaml-types';
 import { Contacts } from './contact';
 import { DemandBlock, Demands } from './demands';
-import { DocumentContext } from './document-context';
 import { GlobalSettings } from './global-settings';
 import { Info } from './info';
 import { Registries } from './registries';
 
-
 export class MetadataFile extends BaseMap implements Profile {
-  readonly context: DocumentContext;
   session!: Session;
 
-  private constructor(protected document: Document.Parsed, public readonly filename: string, public lineCounter: LineCounter, public readonly registry: Registry | undefined) {
+  private constructor(protected document: Document.Parsed, public readonly filename: string, public lineCounter: LineCounter, public readonly file: Uri, public readonly registry: Registry | undefined) {
     super(<YAMLMap<string, any>><any>document.contents);
-    this.context = <DocumentContext>{
-      filename,
-      lineCounter,
-    };
   }
 
   async init(session: Session): Promise<MetadataFile> {
-    this.context.session = session;
-    this.context.file = session.parseUri(this.context.filename);
-    this.context.folder = this.context.file.parent;
     await this.demandBlock.init(session);
     return this;
   }
@@ -53,7 +41,7 @@ export class MetadataFile extends BaseMap implements Profile {
       content = '{\n}';
     }
     const doc = parseDocument(content, { prettyErrors: false, lineCounter: lc, strict: true });
-    return new MetadataFile(doc, filename, lc, registry).init(session);
+    return new MetadataFile(doc, filename, lc, session.parseUri(filename), registry).init(session);
   }
 
   #info = new Info(undefined, this, 'info');
@@ -118,32 +106,19 @@ export class MetadataFile extends BaseMap implements Profile {
     return this.document.errors.length === 0;
   }
 
-  get content() {
-    return toYAML(this.document.toString());
-  }
-
-  async save(uri: Uri = this.context.file): Promise<void> {
-    // check the filename, and select the format.
-    let content = '';
-
-    switch (extname(uri.path).toLowerCase()) {
-      case '.yaml':
-      case '.yml':
-        // format as yaml
-        content = this.content;
-        break;
-
-      case '.json':
-        content = JSON.stringify(this.document.toJSON(), null, 2);
-        break;
-      default:
-        throw new Error(`Unsupported file type ${extname(uri.path)}`);
-    }
+  toJsonString() {
+    let content = JSON.stringify(this.document.toJSON(), null, 2);
     if (!content || content === 'null') {
       content = '{}\n';
     }
-    await uri.writeUTF8(content);
+
+    return content;
   }
+
+  async save(uri: Uri = this.file): Promise<void> {
+    await uri.writeUTF8(this.toJsonString());
+  }
+
   #errors!: Array<string>;
   get formatErrors(): Array<string> {
     const t = this;
@@ -288,7 +263,7 @@ export class MetadataFile extends BaseMap implements Profile {
 
   /** @internal */override assert(recreateIfDisposed = false, node = this.node): asserts this is Yaml<YAMLDictionary> & { node: YAMLDictionary } {
     if (!isMap(this.node)) {
-      this.document = parseDocument('{}\n', { prettyErrors: false, lineCounter: this.context.lineCounter, strict: true });
+      this.document = parseDocument('{}\n', { prettyErrors: false, lineCounter: this.lineCounter, strict: true });
       this.node = <YAMLMap<string, any>><any>this.document.contents;
     }
   }
