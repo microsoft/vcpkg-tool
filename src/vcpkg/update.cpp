@@ -20,7 +20,7 @@ namespace vcpkg::Update
     std::vector<OutdatedPackage> find_outdated_packages(const PortFileProvider& provider,
                                                         const StatusParagraphs& status_db)
     {
-        const auto installed_packages = get_installed_ports(status_db);
+        auto installed_packages = get_installed_ports(status_db);
 
         std::vector<OutdatedPackage> output;
         std::mutex mtx;

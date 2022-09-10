@@ -394,6 +394,8 @@ namespace vcpkg::Commands::AddVersion
             msg::println_warning(msgAddVersionDetectLocalChangesError);
         }
 
+        std::mutex mtx;
+
         auto work = [&](const std::string& port_name) {
             auto port_dir = paths.builtin_ports_directory() / port_name;
 
@@ -464,6 +466,7 @@ namespace vcpkg::Commands::AddVersion
 
             char prefix[] = {port_name[0], '-', '\0'};
             auto port_versions_path = paths.builtin_registry_versions / prefix / Strings::concat(port_name, ".json");
+            std::lock_guard<std::mutex> guard(mtx);
             auto updated_versions_file = update_version_db_file(paths,
                                                                 port_name,
                                                                 schemed_version,
@@ -482,7 +485,7 @@ namespace vcpkg::Commands::AddVersion
             }
         };
 
-        vcpkg_par_unseq_for_each(port_names.begin(), port_names.end(), work);
+        vcpkg_parallel_for_each(port_names.begin(), port_names.end(), work);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
