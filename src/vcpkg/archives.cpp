@@ -332,22 +332,7 @@ namespace vcpkg
     {
         auto results =
             cmd_execute_and_capture_output_parallel(jobs, default_working_directory, get_clean_environment());
-#ifdef __APPLE__
-        size_t i = 0;
-        for (auto& maybe_result : results)
-        {
-            if (const auto result = maybe_result.get())
-            {
-                if (result->exit_code == 127 && result->output.empty())
-                {
-                    Debug::print(jobs[i].command_line(), ": pclose returned 127, try again \n");
-                    maybe_result =
-                        cmd_execute_and_capture_output(jobs[i], default_working_directory, get_clean_environment());
-                }
-            }
-            ++i;
-        }
-#endif
+
 
         std::vector<ExpectedL<Unit>> filtered_results;
         filtered_results.reserve(jobs.size());

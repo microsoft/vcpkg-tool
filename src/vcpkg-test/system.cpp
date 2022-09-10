@@ -177,19 +177,7 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
     {
         auto out = res[i].get();
         REQUIRE(out != nullptr);
-#if defined(__APPLE__)
-        if (out->exit_code != 0)
-        {
-            REQUIRE(out->exit_code == 127);
-            REQUIRE(out->output.empty());
-        }
-        else
-        {
-            REQUIRE(out->exit_code == 0);
-        }
-#else
         REQUIRE(out->exit_code == 0);
-#endif
 
 #if defined(_WIN32)
         REQUIRE(out->output == (std::to_string(i) + "\r\n"));
