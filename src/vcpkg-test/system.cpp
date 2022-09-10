@@ -177,6 +177,10 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
     {
         auto out = res[i].get();
         REQUIRE(out != nullptr);
+        if (out->exit_code == 127)
+        {
+            REQUIRE(out->output.empty());
+        }
         REQUIRE(out->exit_code == 0);
 
 #if defined(_WIN32)

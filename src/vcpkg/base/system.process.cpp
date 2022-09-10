@@ -503,7 +503,7 @@ namespace vcpkg
             w.get();
         }
 
-#if defined(__APPLE__)
+#if 0 // defined(__APPLE__)
         std::size_t i = 0;
         for (auto& maybe_result : res)
         {
