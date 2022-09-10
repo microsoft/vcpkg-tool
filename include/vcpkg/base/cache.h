@@ -61,6 +61,7 @@ namespace vcpkg
                                   int> = 0>
         const Value& get_lazy(const KeyIsh& k, F&& f) const
         {
+            std::lock_guard lock(m_mtx);
             auto it = m_cache.lower_bound(k);
             // lower_bound returns the first iterator such that it->first is greater than or equal to than k, so k must
             // be less than or equal to it->first. If k is not less than it->first, then it must be equal so we have a
@@ -69,8 +70,7 @@ namespace vcpkg
             {
                 return it->second;
             }
-
-            std::lock_guard lock(m_mtx);
+            
             return m_cache.emplace_hint(it, k, static_cast<F&&>(f)())->second;
         }
 
