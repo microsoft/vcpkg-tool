@@ -502,23 +502,6 @@ namespace vcpkg
         {
             w.get();
         }
-
-#if defined(__APPLE__)
-        std::size_t i = 0;
-        for (auto& maybe_result : res)
-        {
-            if (const auto result = maybe_result.get())
-            {
-                if (result->exit_code == 127 && result->output.empty())
-                {
-                    //Debug::println(cmd_lines[i].command_line(), ": pclose returned 127, try again");
-                    maybe_result = cmd_execute_and_capture_output(cmd_lines[i], wd, env);
-                }
-            }
-            ++i;
-        }
-#endif
-
         return res;
     }
 

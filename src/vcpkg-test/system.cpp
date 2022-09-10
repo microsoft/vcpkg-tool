@@ -173,6 +173,23 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
         std::cout << "Index: " << i << ", length: " << str.length() - 1 << ", content: " << str << '\n';
     }
 
+    
+#if defined(__APPLE__)
+        std::size_t i = 0;
+        for (auto& maybe_result : res)
+        {
+            if (const auto result = maybe_result.get())
+            {
+                if (result->exit_code == 127 && result->output.empty())
+                {
+                    //Debug::println(cmd_lines[i].command_line(), ": pclose returned 127, try again");
+                    maybe_result = cmd_execute_and_capture_output(vec[i], vcpkg::default_working_directory, vcpkg::default_environment);
+                }
+            }
+            ++i;
+        }
+#endif
+
     for (size_t i = 0; i < res.size(); ++i)
     {
         auto out = res[i].get();
