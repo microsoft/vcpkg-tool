@@ -5,7 +5,6 @@ import { cyan, green, red, yellow } from 'chalk';
 import { argv } from 'process';
 import { Session } from '../session';
 import { CommandLine } from './command-line';
-import chalk = require('chalk');
 
 function formatTime(t: number) {
   return (
@@ -42,9 +41,6 @@ export function writeException(e: any) {
 }
 
 export function initStyling(commandline: CommandLine, session: Session) {
-  if (commandline.switches['no-color']) {
-    chalk.level = 0;
-  }
 
   session.channels.on('message', (text: string, msec: number) => {
     log(text);
