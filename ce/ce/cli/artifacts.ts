@@ -104,7 +104,7 @@ class TaggedProgressBar {
       this.bar.update(currentValue, payload);
     } else {
       this.kind = kind;
-      this.bar = this.multiBar.create(total, currentValue, payload, { format: '{bar}\u25A0 {percentage}% {suffix}' });
+      this.bar = this.multiBar.create(total, currentValue, payload, { format: '{bar}* {percentage}% {suffix}' });
     }
   }
 
@@ -119,7 +119,7 @@ class TaggedProgressBar {
       const prefixSpaces = Math.floor(totalSpaces / 2);
       const suffixSpaces = totalSpaces - prefixSpaces;
       const prettyProgressUnknown = Array(prefixSpaces).join(' ') + progressUnknown + Array(suffixSpaces).join(' ');
-      this.bar = this.multiBar.create(0, 0, payload, { format: '\u25A0' + prettyProgressUnknown + '\u25A0 {suffix}' });
+      this.bar = this.multiBar.create(0, 0, payload, { format: '*' + prettyProgressUnknown + '* {suffix}' });
     }
   }
 }
@@ -129,12 +129,12 @@ export async function installArtifacts(resolved: Array<ResolvedArtifact>, regist
   const installed = new Map<Artifact, boolean>();
   const bar = new MultiBar({
     clearOnComplete: true, hideCursor: true,
-    barCompleteChar: '\u25A0',
+    barCompleteChar: '*',
     barIncompleteChar: ' ',
     etaBuffer: 40
   });
 
-  const overallProgress = bar.create(resolved.length, 0, { name: '' }, { format: '{bar}\u25A0 [{value}/{total}] {name}', emptyOnZero: true });
+  const overallProgress = bar.create(resolved.length, 0, { name: '' }, { format: '{bar}* [{value}/{total}] {name}', emptyOnZero: true });
   const individualProgress = new TaggedProgressBar(bar);
 
   for (let idx = 0; idx < resolved.length; ++idx) {
