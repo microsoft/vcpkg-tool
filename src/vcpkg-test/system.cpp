@@ -5,11 +5,9 @@
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 
-#include <iostream>
 #include <string>
 
 using vcpkg::CPUArchitecture;
@@ -147,7 +145,6 @@ TEST_CASE ("cmdlinebuilder", "[system]")
 
 TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
 {
-    vcpkg::Debug::g_debugging = true;
     std::vector<vcpkg::Command> vec;
     for (size_t i = 0; i < 50; i++)
     {
@@ -169,35 +166,7 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
     for (size_t i = 0; i < res.size(); ++i)
     {
         auto out = res[i].get();
-        auto str = out->output;
-        std::cout << "Index: " << i << ", length: " << str.length() - 1 << ", content: " << str << '\n';
-    }
-
-    
-#if defined(__APPLE__)
-        std::size_t i = 0;
-        for (auto& maybe_result : res)
-        {
-            if (const auto result = maybe_result.get())
-            {
-                if (result->exit_code == 127 && result->output.empty())
-                {
-                    //Debug::println(cmd_lines[i].command_line(), ": pclose returned 127, try again");
-                    maybe_result = cmd_execute_and_capture_output(vec[i], vcpkg::default_working_directory, vcpkg::default_environment);
-                }
-            }
-            ++i;
-        }
-#endif
-
-    for (size_t i = 0; i < res.size(); ++i)
-    {
-        auto out = res[i].get();
         REQUIRE(out != nullptr);
-        if (out->exit_code == 127)
-        {
-            REQUIRE(out->output.empty());
-        }
         REQUIRE(out->exit_code == 0);
 
 #if defined(_WIN32)
