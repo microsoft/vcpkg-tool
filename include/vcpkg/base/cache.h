@@ -70,7 +70,7 @@ namespace vcpkg
             {
                 return it->second;
             }
-            
+
             return m_cache.emplace_hint(it, k, static_cast<F&&>(f)())->second;
         }
 
