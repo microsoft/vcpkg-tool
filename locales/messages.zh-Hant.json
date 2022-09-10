@@ -197,7 +197,6 @@
   "HelpExportCommand": "匯出套件。",
   "HelpFormatManifestCommand": "格式化所有 vcpkg.json 檔案。在認可 vcpkg 之前，請先執行此動作。",
   "HelpHashCommand": "依特定演算法雜湊檔案，預設 SHA512。",
-  "HelpHistoryCommand": "(實驗性) 顯示套件版本的歷程記錄。",
   "HelpInitializeRegistryCommand": "初始化目錄 <path> 中的登錄。",
   "HelpInstallCommand": "安裝套件。",
   "HelpListCommand": "列出已安裝的套件。",

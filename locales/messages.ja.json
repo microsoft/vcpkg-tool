@@ -197,7 +197,6 @@
   "HelpExportCommand": "パッケージをエクスポートします。",
   "HelpFormatManifestCommand": "すべての vcpkg.json ファイルをフォーマットします。vcpkg にコミットする前にこれを実行します。",
   "HelpHashCommand": "特定のアルゴリズム (既定の SHA512) でファイルをハッシュします。",
-  "HelpHistoryCommand": "(試験段階) パッケージのバージョンの履歴を表示します。",
   "HelpInitializeRegistryCommand": "ディレクトリ <path> 内のレジストリを初期化します。",
   "HelpInstallCommand": "パッケージをインストールします。",
   "HelpListCommand": "インストールされているパッケージを一覧表示します。",

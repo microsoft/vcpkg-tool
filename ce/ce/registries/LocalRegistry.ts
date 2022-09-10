@@ -10,7 +10,6 @@ import { Session } from '../session';
 import { Uri } from '../util/uri';
 import { ArtifactRegistry } from './ArtifactRegistry';
 
-
 export class LocalRegistry extends ArtifactRegistry implements Registry {
   protected indexYaml: Uri;
   readonly installationFolder;

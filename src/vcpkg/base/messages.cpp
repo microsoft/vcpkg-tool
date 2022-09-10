@@ -576,7 +576,6 @@ namespace vcpkg
     REGISTER_MESSAGE(HelpExportCommand);
     REGISTER_MESSAGE(HelpFormatManifestCommand);
     REGISTER_MESSAGE(HelpHashCommand);
-    REGISTER_MESSAGE(HelpHistoryCommand);
     REGISTER_MESSAGE(HelpInitializeRegistryCommand);
     REGISTER_MESSAGE(HelpInstallCommand);
     REGISTER_MESSAGE(HelpListCommand);

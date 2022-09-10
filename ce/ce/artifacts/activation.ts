@@ -569,6 +569,7 @@ export class Activation {
     async function transformtoRecord<T, U = T> (
       orig: AsyncGenerator<Promise<Tuple<string, T>>, any, unknown>,
       // this type cast to U isn't *technically* correct but since it's locally scoped for this next block of code it shouldn't cause problems
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       func: (value: T) => U = (x => x as unknown as U)) {
 
       return linq.values((await toArrayAsync(orig))).toObject(tuple => [tuple[0], func(tuple[1])]);

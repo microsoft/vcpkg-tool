@@ -197,7 +197,6 @@
   "HelpExportCommand": "Paketi dışarı aktarır.",
   "HelpFormatManifestCommand": "Tüm vcpkg.json dosyalarını biçimlendirir. vcpkg yürütmesinden önce bunu çalıştırın.",
   "HelpHashCommand": "Bir dosyayı belirli bir algoritmaya göre karma, varsayılan SHA512.",
-  "HelpHistoryCommand": "(Deneysel) Bir paketin sürümlerinin geçmişini görüntüleyin.",
   "HelpInitializeRegistryCommand": "<path> dizininde bir kayıt defteri başlatır.",
   "HelpInstallCommand": "Paket yükleyin.",
   "HelpListCommand": "Yüklü paketleri listele.",
