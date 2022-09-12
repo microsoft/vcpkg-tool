@@ -464,6 +464,7 @@ namespace vcpkg
     extern MessageSink& stdout_sink;
     extern MessageSink& stderr_sink;
 
+    DECLARE_MESSAGE(AARpath, (msg::path), "", "AAR path {path}");
     DECLARE_MESSAGE(AddArtifactOnlyOne,
                     (msg::command_line),
                     "",
@@ -562,6 +563,15 @@ namespace vcpkg
                     (msg::spec),
                     "'HEAD' means the most recent version of source code",
                     "{spec} is already installed -- not building from HEAD");
+    DECLARE_MESSAGE(AndroidHomeDirMissingProps,
+                    (msg::path),
+                    "",
+                    "source.properties missing in ANDROID_NDK_HOME directory: {path}");
+    DECLARE_MESSAGE(AndroidStudioConfigProp,
+                    (),
+                    "",
+                    "[DEBUG] Configuration properties in Android Studio\nIn app/build.gradle");
+    DECLARE_MESSAGE(AndroidTripletSupported, (), "", "Currently supported on android triplet.");
     DECLARE_MESSAGE(AnotherInstallationInProgress,
                     (),
                     "",
@@ -738,6 +748,8 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "Both a manifest file and a CONTROL file exist in port directory: {path}");
+    DECLARE_MESSAGE(CopyingHeaders, (msg::path), "", "Copying headers...\nFrom {path}\nTo ");
+    DECLARE_MESSAGE(CopyingLibs, (msg::path), "", "Copying libs...\nFrom {path}\nTo ");
     DECLARE_MESSAGE(CopyrightIsDir, (msg::path), "", "`{path}` being a directory is deprecated.");
     DECLARE_MESSAGE(CorruptedDatabase, (), "", "Database corrupted.");
     DECLARE_MESSAGE(CouldNotDeduceNugetIdAndVersion,
@@ -884,9 +896,14 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
     DECLARE_MESSAGE(ExpectedValueForOption, (msg::option), "", "expected value after --{option}.");
+    DECLARE_MESSAGE(ExportArchitectureReq,
+                    (),
+                    "",
+                    "Export requires the following architectures arm64-v8a, armeabi-v7a, x86_64, x86 to be present.");
     DECLARE_MESSAGE(Exported7zipArchive, (msg::path), "", "7zip archive exported at: {path}");
     DECLARE_MESSAGE(ExportedMaintenanceTool, (), "", "Maintenance tool exported.");
     DECLARE_MESSAGE(ExportedZipArchive, (msg::path), "", "Zip archive exported at: {path}");
+    DECLARE_MESSAGE(ExportingAARandPOM, (), "", "[DEBUG] Exporting AAR and POM");
     DECLARE_MESSAGE(ExportingMaintenanceTool, (), "", "Exporting maintenance tool...");
     DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
     DECLARE_MESSAGE(ExportingPackages, (), "", "The following packages are already built and will be exported:");
@@ -897,6 +914,7 @@ namespace vcpkg
                     "vcpkg export does not support manifest mode, in order to allow for future design considerations. "
                     "You may use export in classic mode by running vcpkg outside of a manifest-based project.");
     DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
+    DECLARE_MESSAGE(FailedToCompress, (), "", "Failed to compress folder ");
     DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":");
     DECLARE_MESSAGE(FailedToFindPortFeature, (msg::feature, msg::spec), "", "Could not find {feature} in {spec}.");
     DECLARE_MESSAGE(FailedToFormatMissingFile,
@@ -944,6 +962,10 @@ namespace vcpkg
                     "on how to provide credentials.");
     DECLARE_MESSAGE(FeedbackAppreciated, (), "", "Thank you for your feedback!");
     DECLARE_MESSAGE(FilesExported, (msg::path), "", "Files exported at: {path}");
+    DECLARE_MESSAGE(FindModulesFailedToEnum,
+                    (msg::path),
+                    "",
+                    "Could not enumerate directory to find modules in {path}: ");
     DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at \"{path}\".");
     DECLARE_MESSAGE(FollowingPackagesMissingControl,
                     (),
@@ -960,6 +982,8 @@ namespace vcpkg
                     (msg::value),
                     "Example of {value} is 'x64 & windows'",
                     "on expression: {value}");
+    DECLARE_MESSAGE(FoundModule, (msg::package_name), "", "[DEBUG] Found module {package_name}:");
+    DECLARE_MESSAGE(FoundTriplets, (msg::count), "", "[DEBUG] Found {count} triplets");
     DECLARE_MESSAGE(GeneratedConfiguration, (msg::path), "", "Generated configuration {path}.");
     DECLARE_MESSAGE(GeneratedInstaller, (msg::path), "", "{path} installer generated.");
     DECLARE_MESSAGE(GeneratedRepo, (msg::path), "", "{path} repository generated.");
@@ -1062,10 +1086,12 @@ namespace vcpkg
                     (msg::path),
                     "'--' at the beginning must be preserved",
                     "-- Installing port from location: {path}");
+    DECLARE_MESSAGE(InstallingMavenFile, (msg::path), "", "{path} installing maven file");
     DECLARE_MESSAGE(InstallingPackage,
                     (msg::action_index, msg::count, msg::spec),
                     "",
                     "Installing {action_index}/{count} {spec}...");
+    DECLARE_MESSAGE(InstallingPOM, (), "", "[DEBUG] Installing POM and AAR file to ~/.m2");
     DECLARE_MESSAGE(InstallPackageInstruction,
                     (msg::value, msg::path),
                     "'{value}' is the nuget id.",
@@ -1269,6 +1295,8 @@ namespace vcpkg
     DECLARE_MESSAGE(ManifestFormatCompleted, (), "", "Succeeded in formatting the manifest files.");
     DECLARE_MESSAGE(MismatchedFiles, (), "", "file to store does not match hash");
     DECLARE_MESSAGE(Missing7zHeader, (), "", "Unable to find 7z header.");
+    DECLARE_MESSAGE(MissingAndroidEnv, (), "", "ANDROID_NDK_HOME environment missing");
+    DECLARE_MESSAGE(MissingAndroidHomeDir, (msg::path), "", "ANDROID_NDK_HOME directory does not exist: {path}");
     DECLARE_MESSAGE(MissingArgFormatManifest,
                     (),
                     "",
@@ -1279,6 +1307,7 @@ namespace vcpkg
                     "",
                     "Package {spec} is installed, but dependency {package_name} is not.");
     DECLARE_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
+    DECLARE_MESSAGE(MissingNDKVersion, (msg::path), "", "NDK version missing: {path}");
     DECLARE_MESSAGE(MissingOption, (msg::option), "", "This command requires --{option}");
     DECLARE_MESSAGE(MissingPortSuggestPullRequest,
                     (),
@@ -1342,6 +1371,10 @@ namespace vcpkg
                     "'{value}' is either a tool name or a package name.",
                     "'{value}' failed while extracting {path}.");
     DECLARE_MESSAGE(PackageRootDir, (), "", "(Experimental) Specify the packages root directory.");
+    DECLARE_MESSAGE(PackagesNotInstalled,
+                    (msg::package_name, msg::triplet, msg::path),
+                    "",
+                    "Packages not installed {package_name}:{triplet} {path}");
     DECLARE_MESSAGE(PackagesToInstall, (), "", "The following packages will be built and installed:");
     DECLARE_MESSAGE(PackagesToInstallDirectly, (), "", "The following packages will be directly installed:");
     DECLARE_MESSAGE(PackagesToModify, (), "", "Additional packages (*) will be modified to complete this operation.");
@@ -1369,6 +1402,7 @@ namespace vcpkg
                     "Error messages are is printed after this.",
                     "while loading {path}:");
     DECLARE_MESSAGE(ParseControlErrorInfoWrongTypeFields, (), "", "The following fields had the wrong types:");
+    DECLARE_MESSAGE(POMpath, (msg::path), "", "POM path {path}");
     DECLARE_MESSAGE(PortDependencyConflict,
                     (msg::package_name),
                     "",
@@ -1476,6 +1510,10 @@ namespace vcpkg
                     "Specify the target architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')");
     DECLARE_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: \"{path}\"");
     DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512");
+    DECLARE_MESSAGE(SuccessfulyExported,
+                    (msg::package_name, msg::path),
+                    "",
+                    "Successfully exported {package_name}. Checkout {path}");
     DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.");
     DECLARE_MESSAGE(SuggestResolution,
                     (msg::command_name, msg::option),
@@ -1705,48 +1743,10 @@ namespace vcpkg
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
-    DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}.");
-    DECLARE_MESSAGE(InstallingPOM, (), "", "[DEBUG] Installing POM and AAR file to ~/.m2");
-    DECLARE_MESSAGE(InstallingMavenFile, (msg::path), "", "{path} installing maven file");
-    DECLARE_MESSAGE(FindModulesFailedToEnum,
-                    (msg::path),
-                    "",
-                    "Could not enumerate directory to find modules in {path}: ");
-    DECLARE_MESSAGE(AndroidTripletSupported, (), "", "Currently supported on android triplet.");
-    DECLARE_MESSAGE(MissingAndroidEnv, (), "", "ANDROID_NDK_HOME environment missing");
-    DECLARE_MESSAGE(MissingAndroidHomeDir, (msg::path), "", "ANDROID_NDK_HOME directory does not exist: {path}");
-    DECLARE_MESSAGE(AndroidHomeDirMissingProps,
-                    (msg::path),
-                    "",
-                    "source.properties missing in ANDROID_NDK_HOME directory: {path}");
-    DECLARE_MESSAGE(ExportArchitectureReq,
-                    (),
-                    "",
-                    "Export requires the following architectures arm64-v8a, armeabi-v7a, x86_64, x86 to be present.");
-    DECLARE_MESSAGE(MissingNDKVersion, (msg::path), "", "NDK version missing: {path}");
-    DECLARE_MESSAGE(WritingManifest, (), "", " [DEBUG]\nWriting manifest to");
-    DECLARE_MESSAGE(WritingPrefabMeta, (), "", "Writing prefab meta data to");
-    DECLARE_MESSAGE(FoundTriplets, (msg::count), "", "[DEBUG] Found {count} triplets");
-    DECLARE_MESSAGE(FoundModule, (msg::package_name), "", "[DEBUG] Found module {package_name}:");
-    DECLARE_MESSAGE(PackagesNotInstalled,
-                    (msg::package_name, msg::triplet, msg::path),
-                    "",
-                    "Packages not installed {package_name}:{triplet} {path}");
     DECLARE_MESSAGE(WritingABI, (msg::path), "", "Writing abi metadata to\n{path}");
-    DECLARE_MESSAGE(CopyingLibs, (msg::path), "", "Copying libs...\nFrom {path}\nTo ");
-    DECLARE_MESSAGE(CopyingHeaders, (msg::path), "", "Copying headers...\nFrom {path}\nTo ");
+    DECLARE_MESSAGE(WritingManifest, (), "", " [DEBUG]\nWriting manifest to");
     DECLARE_MESSAGE(WritingModuleMetaData, (msg::path), "", "Writing module metadata to\n{path}");
-    DECLARE_MESSAGE(ExportingAARandPOM, (), "", "[DEBUG] Exporting AAR and POM");
-    DECLARE_MESSAGE(AARpath, (msg::path), "", "AAR path {path}");
-    DECLARE_MESSAGE(POMpath, (msg::path), "", "POM path {path}");
-    DECLARE_MESSAGE(FailedToCompress, (), "", "Failed to compress folder ");
-    DECLARE_MESSAGE(SuccessfulyExported,
-                    (msg::package_name, msg::path),
-                    "",
-                    "Successfully exported {package_name}. Checkout {path}");
-    DECLARE_MESSAGE(AndroidStudioConfigProp,
-                    (),
-                    "",
-                    "[DEBUG] Configuration properties in Android Studio\nIn app/build.gradle");
+    DECLARE_MESSAGE(WritingPrefabMeta, (), "", "Writing prefab meta data to");
+    DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}.");
 
 }
