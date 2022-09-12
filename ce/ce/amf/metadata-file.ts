@@ -87,7 +87,6 @@ export class MetadataFile extends BaseMap {
   get message(): string | undefined { return this.demandBlock.message; }
   set message(value: string | undefined) { this.demandBlock.message = value; }
 
-  get seeAlso() { return this.demandBlock.seeAlso; }
   get requires() { return this.demandBlock.requires; }
   get exports() { return this.demandBlock.exports; }
   get install() { return this.demandBlock.install; }
@@ -173,7 +172,7 @@ export class MetadataFile extends BaseMap {
   override *validate(): Iterable<ValidationMessage> {
     yield* super.validate();
     const hasInfo = this.document.has('info');
-    const allowedChildren = ['contacts', 'registries', 'global', 'demands', 'exports', 'requires', 'install', 'seeAlso'];
+    const allowedChildren = ['contacts', 'registries', 'global', 'demands', 'exports', 'requires', 'install'];
 
     if (hasInfo) {
       // 2022-06-17 and earlier used a separate 'info' block for these fields
@@ -231,7 +230,6 @@ export class MetadataFile extends BaseMap {
     yield* this.exports.validate();
     yield* this.globalSettings.validate();
     yield* this.requires.validate();
-    yield* this.seeAlso.validate();
   }
 
   normalize() {

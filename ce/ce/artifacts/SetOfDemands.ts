@@ -47,9 +47,6 @@ export class SetOfDemands {
   get exports() {
     return linq.values(this._demands).selectNonNullable(d => d.exports).toArray();
   }
-  get seeAlso() {
-    return linq.values(this._demands).selectNonNullable(d => d.seeAlso).toArray();
-  }
 
   get requires() {
     const d = this._demands;

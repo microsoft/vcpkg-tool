@@ -522,15 +522,13 @@ namespace vcpkg
                 perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder);
             if (result.code != BuildResult::SUCCEEDED && keep_going == KeepGoing::NO)
             {
-                Checks::msg_exit_with_message(
-                    VCPKG_LINE_INFO,
-                    create_user_troubleshooting_message(
-                        action, paths, result.stdoutlog.then([&](auto&) -> Optional<Path> {
-                            const auto issue_body_path = paths.installed().root() / "vcpkg" / "issue_body.md";
-                            paths.get_filesystem().write_contents(
-                                issue_body_path, create_github_issue(args, result, paths, action), VCPKG_LINE_INFO);
-                            return issue_body_path;
-                        })));
+                print_user_troubleshooting_message(action, paths, result.stdoutlog.then([&](auto&) -> Optional<Path> {
+                    auto issue_body_path = paths.installed().root() / "vcpkg" / "issue_body.md";
+                    paths.get_filesystem().write_contents(
+                        issue_body_path, create_github_issue(args, result, paths, action), VCPKG_LINE_INFO);
+                    return issue_body_path;
+                }));
+                Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
             this_install.current_summary->build_result.emplace(std::move(result));

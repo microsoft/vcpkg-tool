@@ -612,10 +612,13 @@
       </Item>
       <Item ItemId=";BuildTroubleshootingMessage4" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[You can also use the prefilled template from {path}.]]></Val>
+          <Val><![CDATA[Please use the prefilled template from {path} when reporting your issue.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Você também pode usar o modelo preenchido de {path}.]]></Val>
+            <Val><![CDATA[Use o modelo pré-preenchido de {path} ao relatar seu problema.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[You can also use the prefilled template from {path}.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1890,15 +1893,6 @@
           <Val><![CDATA[Hash a file by specific algorithm, default SHA512.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Hash de um arquivo por algoritmo específico, o padrão é SHA512.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";HelpHistoryCommand" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[(Experimental) Show the history of versions of a package.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[(Experimental) Mostrar o histórico de versões de um pacote.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
