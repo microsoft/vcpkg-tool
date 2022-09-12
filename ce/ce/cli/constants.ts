@@ -4,4 +4,3 @@
 export const cli = 'vcpkg';
 export const product = 'vcpkg-artifacts';
 export const project = 'vcpkg-configuration.json';
-export const blank = '\n';

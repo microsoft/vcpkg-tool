@@ -5,7 +5,6 @@ import { strict } from 'assert';
 import { createHash } from 'crypto';
 import { parse } from 'yaml';
 import { ZipUnpacker } from '../archivers/ZipUnpacker';
-import { Registry } from '../artifacts/registry';
 import { registryIndexFile } from '../constants';
 import { acquireArtifactFile } from '../fs/acquire';
 import { i } from '../i18n';
@@ -16,7 +15,7 @@ import { ArtifactIndex } from './artifact-index';
 import { ArtifactRegistry } from './ArtifactRegistry';
 import { Index } from './indexer';
 
-export class RemoteRegistry extends ArtifactRegistry implements Registry {
+export class RemoteRegistry extends ArtifactRegistry {
   protected indexYaml: Uri;
   readonly installationFolder;
   readonly cacheFolder: Uri;

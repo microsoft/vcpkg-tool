@@ -10,7 +10,7 @@ import { Uri } from '../util/uri';
 import { applyAcquireOptions, artifactFileName } from './util';
 
 export async function installUnZip(session: Session, name: string, version: string, targetLocation: Uri, install: UnZipInstaller, events: Partial<InstallEvents>, options: Partial<InstallOptions>): Promise<void> {
-  const file = await acquireArtifactFile(session, [...install.location].map(each => session.parseUri(each)), artifactFileName(name, version, install, '.zip'), events, applyAcquireOptions(options, install));
+  const file = await acquireArtifactFile(session, [...install.location].map(each => session.parseLocation(each)), artifactFileName(name, version, install, '.zip'), events, applyAcquireOptions(options, install));
   await new ZipUnpacker(session).unpack(
     file,
     targetLocation,
