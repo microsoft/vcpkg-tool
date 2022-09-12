@@ -64,7 +64,7 @@
   "BuildTroubleshootingMessage1": "Используйте последние файлы портов с \"git pull\" и \"vcpkg update\".\nЗатем проверьте наличие известных проблем в:",
   "BuildTroubleshootingMessage2": "Вы можете отправить новую проблему в:",
   "BuildTroubleshootingMessage3": "Добавьте \"Ошибка сборки [{package_name}]\" в название отчета об ошибке, следующие сведения о версии в описании ошибки и вложите любые релевантные журналы ошибок из раздела выше.",
-  "BuildTroubleshootingMessage4": "Please use the prefilled template from {path} when reporting your issue.",
+  "BuildTroubleshootingMessage4": "Используйте предварительно заполненный шаблон из {path} при отправке сообщения о проблеме.",
   "BuildingFromHead": "Сборка {spec} из HEAD...",
   "BuildingPackage": "Сборка {spec}...",
   "BuildingPackageFailed": "сбой {spec} при построении: {build_result}",

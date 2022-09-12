@@ -64,7 +64,7 @@
   "BuildTroubleshootingMessage1": "Upewnij się, że używasz najnowszych plików portów z elementami „git pull” i „vcpkg update”.\nNastępnie sprawdź, czy występują znane problemy pod adresem:",
   "BuildTroubleshootingMessage2": "Możesz przesłać nowy problem pod adresem:",
   "BuildTroubleshootingMessage3": "W tytule raportu o usterce wpisz „[{package_name}] Błąd kompilacji”, w opisie usterki podaj następujące informacje o wersji oraz dołącz wszelkie odpowiednie dzienniki błędów z powyższych.",
-  "BuildTroubleshootingMessage4": "Please use the prefilled template from {path} when reporting your issue.",
+  "BuildTroubleshootingMessage4": "Podczas zgłaszania problemu użyj wstępnie wypełnionego szablonu ze ścieżki {path}.",
   "BuildingFromHead": "Trwa kompilowanie {spec} z nagłówka...",
   "BuildingPackage": "Trwa kompilowanie {spec}...",
   "BuildingPackageFailed": "kompilowanie {spec} nie powiodło się. {build_result}",

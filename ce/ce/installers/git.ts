@@ -18,7 +18,7 @@ export async function installGit(session: Session, name: string, version: string
     throw new Error(i`Git is not installed`);
   }
 
-  const repo = session.parseUri(install.location);
+  const repo = session.parseLocation(install.location);
   const targetDirectory = targetLocation.join(options.subdirectory ?? '');
 
   const gitTool = new Git(session, gitPath, await session.activation.getEnvironmentBlock(), targetDirectory);
