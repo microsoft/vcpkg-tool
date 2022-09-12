@@ -857,4 +857,28 @@ namespace vcpkg
     REGISTER_MESSAGE(WhileLookingForSpec);
     REGISTER_MESSAGE(WindowsOnlyCommand);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
+    REGISTER_MESSAGE(FindModulesFailedToEnum);
+    REGISTER_MESSAGE(InstallingPOM);
+    REGISTER_MESSAGE(InstallingMavenFile);
+    REGISTER_MESSAGE(AndroidTripletSupported);
+    REGISTER_MESSAGE(MissingAndroidEnv);
+    REGISTER_MESSAGE(ExportArchitectureReq);
+    REGISTER_MESSAGE(MissingAndroidHomeDir);
+    REGISTER_MESSAGE(AndroidHomeDirMissingProps);
+    REGISTER_MESSAGE(MissingNDKVersion);
+    REGISTER_MESSAGE(WritingManifest);
+    REGISTER_MESSAGE(WritingPrefabMeta);
+    REGISTER_MESSAGE(FoundTriplets);
+    REGISTER_MESSAGE(PackagesNotInstalled);
+    REGISTER_MESSAGE(FoundModule);
+    REGISTER_MESSAGE(WritingABI);
+    REGISTER_MESSAGE(CopyingLibs);
+    REGISTER_MESSAGE(CopyingHeaders);
+    REGISTER_MESSAGE(WritingModuleMetaData);
+    REGISTER_MESSAGE(ExportingAARandPOM);
+    REGISTER_MESSAGE(AARpath);
+    REGISTER_MESSAGE(POMpath);
+    REGISTER_MESSAGE(FailedToCompress);
+    REGISTER_MESSAGE(AndroidStudioConfigProp);
+    REGISTER_MESSAGE(SuccessfulyExported);
 }

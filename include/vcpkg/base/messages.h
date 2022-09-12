@@ -1706,4 +1706,47 @@ namespace vcpkg
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}.");
+    DECLARE_MESSAGE(InstallingPOM, (), "", "[DEBUG] Installing POM and AAR file to ~/.m2");
+    DECLARE_MESSAGE(InstallingMavenFile, (msg::path), "", "{path} installing maven file");
+    DECLARE_MESSAGE(FindModulesFailedToEnum,
+                    (msg::path),
+                    "",
+                    "Could not enumerate directory to find modules in {path}: ");
+    DECLARE_MESSAGE(AndroidTripletSupported, (), "", "Currently supported on android triplet.");
+    DECLARE_MESSAGE(MissingAndroidEnv, (), "", "ANDROID_NDK_HOME environment missing");
+    DECLARE_MESSAGE(MissingAndroidHomeDir, (msg::path), "", "ANDROID_NDK_HOME directory does not exist: {path}");
+    DECLARE_MESSAGE(AndroidHomeDirMissingProps,
+                    (msg::path),
+                    "",
+                    "source.properties missing in ANDROID_NDK_HOME directory: {path}");
+    DECLARE_MESSAGE(ExportArchitectureReq,
+                    (),
+                    "",
+                    "Export requires the following architectures arm64-v8a, armeabi-v7a, x86_64, x86 to be present.");
+    DECLARE_MESSAGE(MissingNDKVersion, (msg::path), "", "NDK version missing: {path}");
+    DECLARE_MESSAGE(WritingManifest, (), "", " [DEBUG]\nWriting manifest to");
+    DECLARE_MESSAGE(WritingPrefabMeta, (), "", "Writing prefab meta data to");
+    DECLARE_MESSAGE(FoundTriplets, (msg::count), "", "[DEBUG] Found {count} triplets");
+    DECLARE_MESSAGE(FoundModule, (msg::package_name), "", "[DEBUG] Found module {package_name}:");
+    DECLARE_MESSAGE(PackagesNotInstalled,
+                    (msg::package_name, msg::triplet, msg::path),
+                    "",
+                    "Packages not installed {package_name}:{triplet} {path}");
+    DECLARE_MESSAGE(WritingABI, (msg::path), "", "Writing abi metadata to\n{path}");
+    DECLARE_MESSAGE(CopyingLibs, (msg::path), "", "Copying libs...\nFrom {path}\nTo ");
+    DECLARE_MESSAGE(CopyingHeaders, (msg::path), "", "Copying headers...\nFrom {path}\nTo ");
+    DECLARE_MESSAGE(WritingModuleMetaData, (msg::path), "", "Writing module metadata to\n{path}");
+    DECLARE_MESSAGE(ExportingAARandPOM, (), "", "[DEBUG] Exporting AAR and POM");
+    DECLARE_MESSAGE(AARpath, (msg::path), "", "AAR path {path}");
+    DECLARE_MESSAGE(POMpath, (msg::path), "", "POM path {path}");
+    DECLARE_MESSAGE(FailedToCompress, (), "", "Failed to compress folder ");
+    DECLARE_MESSAGE(SuccessfulyExported,
+                    (msg::package_name, msg::path),
+                    "",
+                    "Successfully exported {package_name}. Checkout {path}");
+    DECLARE_MESSAGE(AndroidStudioConfigProp,
+                    (),
+                    "",
+                    "[DEBUG] Configuration properties in Android Studio\nIn app/build.gradle");
+
 }
