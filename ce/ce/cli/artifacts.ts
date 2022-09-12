@@ -5,8 +5,11 @@ import { MultiBar, SingleBar } from 'cli-progress';
 import { Artifact, ArtifactBase, InstallStatus, ResolvedArtifact, resolveDependencies, Selections } from '../artifacts/artifact';
 import { i } from '../i18n';
 import { trackAcquire } from '../insights';
+import { FileEntry, InstallEvents } from '../interfaces/events';
 import { getArtifact, RegistryDisplayContext, RegistryResolver } from '../registries/registries';
 import { Session } from '../session';
+import { Channels } from '../util/channels';
+import { Uri } from '../util/uri';
 import { addVersionToArtifactIdentity, artifactIdentity } from './format';
 import { Table } from './markdown-table';
 import { debug, error, log } from './styling';
@@ -70,6 +73,11 @@ export async function selectArtifacts(session: Session, selections: Selections, 
   return results;
 }
 
+interface ProgressRenderer extends InstallEvents {
+  setArtifactIndex(index: number): void;
+  stop(): void;
+}
+
 enum TaggedProgressKind {
   Unset,
   Verifying,
@@ -122,58 +130,119 @@ class TaggedProgressBar {
       this.bar = this.multiBar.create(0, 0, payload, { format: '*' + prettyProgressUnknown + '* {suffix}' });
     }
   }
+
+  stop() {
+    if (this.bar) {
+      this.multiBar.remove(this.bar);
+      this.bar = undefined;
+    }
+  }
 }
 
-export async function installArtifacts(resolved: Array<ResolvedArtifact>, registries: RegistryDisplayContext, options?: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<[boolean, Map<Artifact, boolean>]> {
-  // resolve the full set of artifacts to install.
-  const installed = new Map<Artifact, boolean>();
-  const bar = new MultiBar({
+class TtyProgressRenderer implements Partial<ProgressRenderer> {
+  readonly #bar = new MultiBar({
     clearOnComplete: true,
     hideCursor: true,
     barCompleteChar: '*',
     barIncompleteChar: ' ',
     etaBuffer: 40
   });
+  readonly #overallProgress : SingleBar;
+  readonly #individualProgress : TaggedProgressBar;
+  #currentIndex = 0;
 
+  constructor(totalArtifactCount: number) {
+    this.#overallProgress = this.#bar.create(totalArtifactCount, 0, { name: '' }, { format: '{bar}* [{value}/{total}] {name}', emptyOnZero: true });
+    this.#individualProgress = new TaggedProgressBar(this.#bar);
+  }
+
+  setArtifactIndex(index: number): void {
+    this.#currentIndex = index;
+  }
+
+  startInstallArtifact(displayName: string) {
+    this.#overallProgress.update(this.#currentIndex, { name: displayName });
+  }
+
+  hashVerifyProgress(file: string, percent: number) {
+    this.#individualProgress.startOrUpdate(TaggedProgressKind.Verifying, 100, percent, i`verifying` + ' ' + file);
+  }
+
+  downloadProgress(uri: Uri, destination: string, percent: number) {
+    this.#individualProgress.startOrUpdate(TaggedProgressKind.Downloading, 100, percent, i`downloading ${uri.toString()} -> ${destination}`);
+  }
+
+  unpackFileProgress(entry: Readonly<FileEntry>) {
+    let suffix = entry.extractPath;
+    if (suffix) {
+      suffix = ' ' + suffix;
+    } else {
+      suffix = '';
+    }
+
+    this.#individualProgress.startOrUpdate(TaggedProgressKind.GenericProgress, 100, this.#individualProgress.lastCurrentValue, i`unpacking` + suffix);
+  }
+
+  unpackArchiveProgress(archiveUri: Uri, percent: number) {
+    this.#individualProgress.startOrUpdate(TaggedProgressKind.GenericProgress, 100, percent, i`unpacking ${archiveUri.fsPath}`);
+  }
+
+  unpackArchiveHeartbeat(text: string) {
+    this.#individualProgress.heartbeat(text);
+  }
+
+  stop() {
+    this.#individualProgress.stop();
+    this.#overallProgress.stop();
+  }
+}
+
+class NoTtyProgressRenderer implements Partial<ProgressRenderer> {
+  #currentIndex = 0;
+  constructor(private readonly channels: Channels, private readonly totalArtifactCount: number) {}
+
+  setArtifactIndex(index: number): void {
+    this.#currentIndex = index;
+  }
+
+  startInstallArtifact(displayName: string) {
+    this.channels.message(`[${this.#currentIndex + 1}/${this.totalArtifactCount - 1}] ` + i`Installing ${displayName}...`);
+  }
+
+  alreadyInstalledArtifact(displayName: string) {
+    this.channels.message(`[${this.#currentIndex + 1}/${this.totalArtifactCount - 1}] ` + i`${displayName} already installed.`);
+  }
+
+  downloadStart(uris: Array<Uri>, destination: string) {
+    let displayUri: string;
+    if (uris.length === 1) {
+      displayUri = uris[0].toString();
+    } else {
+      displayUri = JSON.stringify(uris.map(uri => uri.toString()));
+    }
+
+    this.channels.message(i`Downloading ${displayUri}...`);
+  }
+
+  unpackArchiveStart(archiveUri: Uri, outputUri: Uri) {
+    this.channels.message(i`Unpacking ${archiveUri.fsPath}...`);
+  }
+}
+
+export async function installArtifacts(session: Session, resolved: Array<ResolvedArtifact>, registries: RegistryDisplayContext, options?: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<[boolean, Map<Artifact, boolean>]> {
+  // resolve the full set of artifacts to install.
+  const installed = new Map<Artifact, boolean>();
   const isTty = process.stdout.isTTY === true;
-
-  const overallProgress = bar.create(resolved.length, 0, { name: '' }, { format: '{bar}* [{value}/{total}] {name}', emptyOnZero: true });
-  const individualProgress = new TaggedProgressBar(bar);
-
+  const progressRenderer : Partial<ProgressRenderer> = isTty ? new TtyProgressRenderer(resolved.length) : new NoTtyProgressRenderer(session.channels, resolved.length);
   for (let idx = 0; idx < resolved.length; ++idx) {
+    progressRenderer.setArtifactIndex?.(idx);
     const artifact = resolved[idx].artifact;
     if (artifact instanceof Artifact) {
       const id = artifact.id;
       const registryName = registries.getRegistryDisplayName(artifact.registryUri);
       const artifactDisplayName = artifactIdentity(registryName, id, artifact.shortName);
-      overallProgress.update(idx, { name: artifactDisplayName });
       try {
-        const installStatus = await artifact.install(artifactDisplayName,
-          {
-            hashVerifyProgress: (current, percent) => {
-              individualProgress.startOrUpdate(TaggedProgressKind.Verifying, 100, percent, i`verifying` + ' ' + current);
-            },
-            downloadProgress: (uri, destination, percent) => {
-              individualProgress.startOrUpdate(TaggedProgressKind.Downloading, 100, percent, i`downloading ${uri.toString()} -> ${destination}`);
-            },
-            fileProgress: (entry) => {
-              let suffix = entry.extractPath;
-              if (suffix) {
-                suffix = ' ' + suffix;
-              } else {
-                suffix = '';
-              }
-
-              individualProgress.startOrUpdate(TaggedProgressKind.GenericProgress, 100, individualProgress.lastCurrentValue, i`unpacking` + suffix);
-            },
-            progress: (percent: number) => {
-              individualProgress.startOrUpdate(TaggedProgressKind.GenericProgress, 100, percent, i`unpacking`);
-            },
-            heartbeat: (text: string) => {
-              individualProgress.heartbeat(text);
-            }
-          }, options || {});
-
+        const installStatus = await artifact.install(artifactDisplayName, progressRenderer, options || {});
         switch (installStatus) {
           case InstallStatus.Installed:
             installed.set(artifact, true);
@@ -183,11 +252,11 @@ export async function installArtifacts(resolved: Array<ResolvedArtifact>, regist
             installed.set(artifact, false);
             break;
           case InstallStatus.Failed:
-            bar.stop();
+            progressRenderer.stop?.();
             return [false, installed];
         }
       } catch (e: any) {
-        bar.stop();
+        progressRenderer.stop?.();
         debug(e);
         debug(e.stack);
         error(i`Error installing ${artifactDisplayName} - ${e}`);
@@ -196,6 +265,6 @@ export async function installArtifacts(resolved: Array<ResolvedArtifact>, regist
     }
   }
 
-  bar.stop();
+  progressRenderer.stop?.();
   return [true, installed];
 }

@@ -9,7 +9,7 @@ import { createGunzip } from 'zlib';
 import { ProgressTrackingStream } from '../fs/streams';
 import { UnifiedFileSystem } from '../fs/unified-filesystem';
 import { i } from '../i18n';
-import { InstallEvents } from '../interfaces/events';
+import { UnpackEvents } from '../interfaces/events';
 import { Session } from '../session';
 import { Uri } from '../util/uri';
 import { UnpackOptions } from './options';
@@ -19,7 +19,7 @@ export const pipeline = promisify(origPipeline);
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const bz2 = <() => Transform>require('unbzip2-stream');
 
-async function maybeUnpackEntry(session: Session, archiveUri: Uri, outputUri: Uri, events: Partial<InstallEvents>, options: UnpackOptions, header: Headers, stream: Readable): Promise<void> {
+async function maybeUnpackEntry(session: Session, archiveUri: Uri, outputUri: Uri, events: Partial<UnpackEvents>, options: UnpackOptions, header: Headers, stream: Readable): Promise<void> {
   const streamPromise = new Promise((accept, reject) => {
     stream.on('end', accept);
     stream.on('error', reject);
@@ -71,19 +71,19 @@ async function maybeUnpackEntry(session: Session, archiveUri: Uri, outputUri: Ur
       };
 
       session.channels.debug(`unpacking TAR ${archiveUri}/${header.name} => ${destination}`);
-      events.fileProgress?.(fileEntry, 0);
+      events.unpackFileProgress?.(fileEntry, 0);
 
       if (header.size) {
         const parentDirectory = destination.parent;
         await parentDirectory.createDirectory();
         const fileProgress = new ProgressTrackingStream(0, header.size);
-        fileProgress.on('progress', (filePercentage) => events.fileProgress?.(fileEntry, filePercentage));
+        fileProgress.on('progress', (filePercentage) => events.unpackFileProgress?.(fileEntry, filePercentage));
         const writeStream = await destination.writeStream({ mtime: header.mtime, mode: header.mode });
         await pipeline(stream, fileProgress, writeStream);
       }
 
-      events.fileProgress?.(fileEntry, 100);
-      events.unpacked?.(fileEntry);
+      events.unpackFileProgress?.(fileEntry, 100);
+      events.unpackFileComplete?.(fileEntry);
     }
 
   } finally {
@@ -134,7 +134,8 @@ async function getAutoStrip(archiveUri: Uri, decompressorFactory?: () => Transfo
   return result;
 }
 
-async function unpackTarImpl(session: Session, archiveUri: Uri, outputUri: Uri, events: Partial<InstallEvents>, options: UnpackOptions, decompressorFactory?: () => Transform): Promise<void> {
+async function unpackTarImpl(session: Session, archiveUri: Uri, outputUri: Uri, events: Partial<UnpackEvents>, options: UnpackOptions, decompressorFactory?: () => Transform): Promise<void> {
+  events.unpackArchiveStart?.(archiveUri, outputUri);
   if (options.strip === -1) {
     options.strip = await getAutoStrip(archiveUri, decompressorFactory);
   }
@@ -146,7 +147,7 @@ async function unpackTarImpl(session: Session, archiveUri: Uri, outputUri: Uri, 
 
   tarExtractor.on('entry', (header, stream, next) => {
     return maybeUnpackEntry(session, archiveUri, outputUri, events, options, header, stream).then(() => {
-      events.progress?.(archiveProgress.currentPercentage);
+      events.unpackArchiveProgress?.(archiveUri, archiveProgress.currentPercentage);
       next();
     }).catch(err => (<any>next)(err));
   });
@@ -157,18 +158,18 @@ async function unpackTarImpl(session: Session, archiveUri: Uri, outputUri: Uri, 
   }
 }
 
-export function unpackTar(session: Session, archiveUri: Uri, outputUri: Uri, events: Partial<InstallEvents>, options: UnpackOptions): Promise<void> {
+export function unpackTar(session: Session, archiveUri: Uri, outputUri: Uri, events: Partial<UnpackEvents>, options: UnpackOptions): Promise<void> {
   session.channels.debug(`unpacking TAR ${archiveUri} => ${outputUri}`);
   return unpackTarImpl(session, archiveUri, outputUri, events, options);
 }
 
 
-export function unpackTarGz(session: Session, archiveUri: Uri, outputUri: Uri, events: Partial<InstallEvents>, options: UnpackOptions): Promise<void> {
+export function unpackTarGz(session: Session, archiveUri: Uri, outputUri: Uri, events: Partial<UnpackEvents>, options: UnpackOptions): Promise<void> {
   session.channels.debug(`unpacking TAR.GZ ${archiveUri} => ${outputUri}`);
   return unpackTarImpl(session, archiveUri, outputUri, events, options, createGunzip);
 }
 
-export function unpackTarBz(session: Session, archiveUri: Uri, outputUri: Uri, events: Partial<InstallEvents>, options: UnpackOptions): Promise<void> {
+export function unpackTarBz(session: Session, archiveUri: Uri, outputUri: Uri, events: Partial<UnpackEvents>, options: UnpackOptions): Promise<void> {
   session.channels.debug(`unpacking TAR.BZ2 ${archiveUri} => ${outputUri}`);
   return unpackTarImpl(session, archiveUri, outputUri, events, options, bz2);
 }

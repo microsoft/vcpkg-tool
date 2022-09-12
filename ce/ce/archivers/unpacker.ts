@@ -4,7 +4,7 @@
 import { sed } from 'sed-lite';
 import { pipeline as origPipeline } from 'stream';
 import { promisify } from 'util';
-import { InstallEvents } from '../interfaces/events';
+import { UnpackEvents } from '../interfaces/events';
 import { Session } from '../session';
 import { Uri } from '../util/uri';
 import { UnpackOptions } from './options';
@@ -77,4 +77,4 @@ export function implementUnpackOptions(path: string, options: UnpackOptions): st
   return path;
 }
 
-export type Unpacker = (session: Session, archiveUri: Uri, outputUri: Uri, events: Partial<InstallEvents>, options: UnpackOptions) => Promise<void>;
+export type Unpacker = (session: Session, archiveUri: Uri, outputUri: Uri, events: Partial<UnpackEvents>, options: UnpackOptions) => Promise<void>;

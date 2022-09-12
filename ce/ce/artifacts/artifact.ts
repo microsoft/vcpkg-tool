@@ -133,6 +133,7 @@ export class Artifact extends ArtifactBase {
         throw new Error(i`Failed during artifact activation`);
       }
 
+      events.alreadyInstalledArtifact?.(thisDisplayName);
       return InstallStatus.AlreadyInstalled;
     }
 
@@ -146,6 +147,7 @@ export class Artifact extends ArtifactBase {
       }
 
       // ok, let's install this.
+      events.startInstallArtifact?.(thisDisplayName);
       for (const installInfo of applicableDemands.installer) {
         if (installInfo.lang && !options.allLanguages && options.language && options.language.toLowerCase() !== installInfo.lang.toLowerCase()) {
           continue;

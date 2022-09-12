@@ -67,7 +67,7 @@ class ProgressCheckerEntry {
 
   constructor(public entryPath: string, public entryIdentity: any) { }
 
-  progress(entry: any, filePercentage: number) {
+  unpackFileProgress(entry: any, filePercentage: number) {
     strict.equal(this.entryIdentity, entry);
     if (filePercentage === 0) {
       this.seenZero = true;
@@ -76,7 +76,7 @@ class ProgressCheckerEntry {
     this.filePercentage.recordPercent(filePercentage);
   }
 
-  unpacked(entry: any) {
+  unpackFileComplete(entry: any) {
     strict.equal(this.entryIdentity, entry);
     this.seenUnpacked = true;
   }
@@ -92,24 +92,24 @@ class ProgressChecker {
   seenEntries = new Map<string, ProgressCheckerEntry>();
   archivePercentage = new PercentageChecker();
 
-  fileProgress(entry: any, filePercentage: number) {
+  unpackFileProgress(entry: any, filePercentage: number) {
     let checkerEntry = this.seenEntries.get(entry.path);
     if (!checkerEntry) {
       checkerEntry = new ProgressCheckerEntry(entry.path, entry);
       this.seenEntries.set(entry.path, checkerEntry);
     }
 
-    checkerEntry.progress(entry, filePercentage);
+    checkerEntry.unpackFileProgress(entry, filePercentage);
   }
 
-  progress(archivePercentage: number) {
+  unpackArchiveProgress(archiveUri: Uri, archivePercentage: number) {
     this.archivePercentage.recordPercent(archivePercentage);
   }
 
-  unpacked(entry: FileEntry) {
+  unpackFileComplete(entry: FileEntry) {
     const checkerEntry = this.seenEntries.get(entry.path);
     strict.ok(checkerEntry, `Did not find unpack progress entries for ${entry.path}`);
-    checkerEntry.unpacked(entry);
+    checkerEntry.unpackFileComplete(entry);
   }
 
   reset() {
@@ -397,7 +397,7 @@ describe('TarStripAuto', () => {
     ];
     const actual = new Array<string>();
     await unpackTarGz(local.session, archiveUri, targetUri, {
-      unpacked(entry) {
+      unpackFileComplete(entry) {
         if (entry.destination) {
           actual.push(entry.destination.path);
         }

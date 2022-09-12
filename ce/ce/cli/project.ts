@@ -21,7 +21,7 @@ class ActivationOptions {
 
 export async function activate(session: Session, artifacts: Array<ResolvedArtifact>, registries: RegistryDisplayContext, createUndoFile: boolean, options?: ActivationOptions) {
   // install the items in the project
-  const [success, artifactStatus] = await installArtifacts(artifacts, registries, options);
+  const [success, artifactStatus] = await installArtifacts(session, artifacts, registries, options);
 
   if (success) {
     const backupFile = createUndoFile ? session.tmpFolder.join(`previous-environment-${Date.now().toFixed()}.json`) : undefined;

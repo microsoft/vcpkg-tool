@@ -16,34 +16,23 @@ export interface DownloadEvents extends HashVerifyEvents {
 
 export interface FileEntry {
   archiveUri: Uri;
-  destination: Uri | undefined;
+  destination: Uri;
   path: string;
   extractPath: string | undefined;
 }
 
 export interface UnpackEvents {
-  progress(archivePercentage: number): void;
-  fileProgress(entry: Readonly<FileEntry>, filePercentage: number): void;
-  unpacked(entry: Readonly<FileEntry>): void;
-  error(entry: Readonly<FileEntry>, message: string): void;
-}
-
-export interface AcquireEvents extends DownloadEvents {
-}
-
-export interface InstallEvents extends DownloadEvents {
-  // unpacking individual files
-  fileProgress(entry: Readonly<FileEntry>, filePercentage: number): void;
-  unpacked(entry: Readonly<FileEntry>): void;
-  error(entry: Readonly<FileEntry>, message: string): void;
-
+  unpackArchiveStart(archiveUri: Uri, outputUri: Uri): void;
+  unpackArchiveProgress(archiveUri: Uri, archivePercentage: number): void;
   // message when we have no ability to give a linear progress
-  heartbeat(text: string): void;
+  unpackArchiveHeartbeat(text: string): void;
+  unpackFileProgress(entry: Readonly<FileEntry>, filePercentage: number): void;
+  unpackFileComplete(entry: Readonly<FileEntry>): void;
+}
 
-  // overall progress events
-  start(): void;
-  progress(archivePercentage: number): void;
-  complete(): void;
+export interface InstallEvents extends DownloadEvents, UnpackEvents {
+  startInstallArtifact(artifactDisplayName: string): void;
+  alreadyInstalledArtifact(artifactDisplayName: string): void;
 }
 
 export interface InstallOptions {
