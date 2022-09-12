@@ -12,6 +12,7 @@ export interface HashVerifyEvents {
 export interface DownloadEvents extends HashVerifyEvents {
   downloadStart(uris: Array<Uri>, destination: string): void;
   downloadProgress(uri: Uri, destination: string, percent: number): void;
+  downloadComplete(): void;
 }
 
 export interface FileEntry {

@@ -211,6 +211,7 @@ async function https(session: Session, uris: Array<Uri>, outputFilename: string,
     await pipeline(inputStream, outputStream);
   }
 
+  events.downloadComplete?.();
   // we've downloaded the file, let's see if it matches the hash we have.
   if (options?.algorithm) {
     session.channels.debug(`Acquire '${outputFilename}': checking downloaded file hash`);

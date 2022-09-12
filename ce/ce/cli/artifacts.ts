@@ -197,8 +197,12 @@ class TtyProgressRenderer implements Partial<ProgressRenderer> {
   }
 }
 
+const downloadUpdateRateMs = 10 * 1000;
+
 class NoTtyProgressRenderer implements Partial<ProgressRenderer> {
   #currentIndex = 0;
+  #downloadPrecent = 0;
+  #downloadTimeoutId: NodeJS.Timeout | undefined;
   constructor(private readonly channels: Channels, private readonly totalArtifactCount: number) {}
 
   setArtifactIndex(index: number): void {
@@ -222,6 +226,22 @@ class NoTtyProgressRenderer implements Partial<ProgressRenderer> {
     }
 
     this.channels.message(i`Downloading ${displayUri}...`);
+    this.#downloadTimeoutId = setTimeout(this.downloadProgressDisplay.bind(this), downloadUpdateRateMs);
+  }
+
+  downloadProgress(uri: Uri, destination: string, percent: number): void {
+    this.#downloadPrecent = percent;
+  }
+
+  downloadProgressDisplay() {
+    this.channels.message(`${this.#downloadPrecent}%`);
+    this.#downloadTimeoutId = setTimeout(this.downloadProgressDisplay.bind(this), downloadUpdateRateMs);
+  }
+
+  downloadComplete(): void {
+    if (this.#downloadTimeoutId) {
+      clearTimeout(this.#downloadTimeoutId);
+    }
   }
 
   unpackArchiveStart(archiveUri: Uri, outputUri: Uri) {
