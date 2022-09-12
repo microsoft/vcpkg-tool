@@ -472,8 +472,8 @@ namespace vcpkg::Commands::Integrate
                                    .append_raw("\n" + script_path.generic_u8string()));
             {
                 auto locked_metrics = LockGuardPtr<Metrics>(g_metrics);
-                locked_metrics->track_property("error", "powershell script failed");
-                locked_metrics->track_property("title", TITLE.to_string());
+                locked_metrics->track_string_property(StringMetric::Error, "powershell script failed");
+                locked_metrics->track_string_property(StringMetric::Title, TITLE.to_string());
             }
         }
 
