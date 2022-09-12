@@ -187,10 +187,10 @@ namespace vcpkg
         {
             if (auto p_baseline = manifest->builtin_baseline.get())
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property(DefineMetric::ManifestBaseline);
+                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ManifestBaseline);
                 if (!is_git_commit_sha(*p_baseline))
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_property(DefineMetric::VersioningErrorBaseline);
+                    LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::VersioningErrorBaseline);
                     Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
                                                "Error: the top-level builtin-baseline%s was not a valid commit sha: "
                                                "expected 40 hexadecimal characters.\n%s\n",
@@ -325,7 +325,7 @@ namespace vcpkg
             Path ret;
             if (args.registries_cache_dir)
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property(DefineMetric::X_VcpkgRegistriesCache);
+                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::X_VcpkgRegistriesCache);
                 ret = *args.registries_cache_dir;
                 const auto status = get_real_filesystem().status(ret, VCPKG_LINE_INFO);
                 if (!vcpkg::exists(status))
@@ -666,12 +666,12 @@ namespace vcpkg
             LockGuardPtr<Metrics> metrics(g_metrics);
             if (default_registry)
             {
-                metrics->track_property(StringMetric::RegistriesDefaultRegistryKind,
-                                        default_registry->kind().to_string());
+                metrics->track_string_property(StringMetric::RegistriesDefaultRegistryKind,
+                                               default_registry->kind().to_string());
             }
             else
             {
-                metrics->track_property(StringMetric::RegistriesDefaultRegistryKind, "disabled");
+                metrics->track_string_property(StringMetric::RegistriesDefaultRegistryKind, "disabled");
             }
 
             if (other_registries.size() != 0)
@@ -682,7 +682,7 @@ namespace vcpkg
                     registry_kinds.push_back(reg.implementation().kind());
                 }
                 Util::sort_unique_erase(registry_kinds);
-                metrics->track_property(StringMetric::RegistriesKindsUsed, Strings::join(",", registry_kinds));
+                metrics->track_string_property(StringMetric::RegistriesKindsUsed, Strings::join(",", registry_kinds));
             }
         }
     }

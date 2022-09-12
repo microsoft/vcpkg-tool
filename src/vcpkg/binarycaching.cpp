@@ -1579,7 +1579,7 @@ namespace
             auto maybe_cachepath = get_environment_variable("VCPKG_DEFAULT_BINARY_CACHE");
             if (auto p_str = maybe_cachepath.get())
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property(DefineMetric::VcpkgDefaultBinaryCache);
+                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::VcpkgDefaultBinaryCache);
                 Path path = *p_str;
                 path.make_preferred();
                 if (!get_real_filesystem().is_directory(path))
@@ -2013,7 +2013,7 @@ namespace
                 auto it = metric_names.find(cache_provider);
                 if (it != metric_names.end())
                 {
-                    metrics->track_property(it->second);
+                    metrics->track_define_property(it->second);
                 }
             }
         }
@@ -2147,7 +2147,7 @@ ExpectedS<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
 {
     if (!arg || arg.get()->empty()) return DownloadManagerConfig{};
 
-    LockGuardPtr<Metrics>(g_metrics)->track_property(DefineMetric::AssetSource);
+    LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::AssetSource);
 
     AssetSourcesState s;
     AssetSourcesParser parser(*arg.get(), Strings::concat("$", VcpkgCmdArguments::ASSET_SOURCES_ENV), &s);
@@ -2202,12 +2202,12 @@ ExpectedS<BinaryConfigParserState> vcpkg::create_binary_providers_from_configs_p
         LockGuardPtr<Metrics> metrics(g_metrics);
         if (!env_string.empty())
         {
-            metrics->track_property(DefineMetric::VcpkgBinarySources);
+            metrics->track_define_property(DefineMetric::VcpkgBinarySources);
         }
 
         if (args.size() != 0)
         {
-            metrics->track_property(DefineMetric::BinaryCachingSource);
+            metrics->track_define_property(DefineMetric::BinaryCachingSource);
         }
     }
 
@@ -2346,7 +2346,7 @@ details::NuGetRepoInfo details::get_nuget_repo_info_from_env()
     auto vcpkg_nuget_repository = get_environment_variable("VCPKG_NUGET_REPOSITORY");
     if (auto p = vcpkg_nuget_repository.get())
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property(DefineMetric::VcpkgNugetRepository);
+        LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::VcpkgNugetRepository);
         return {std::move(*p)};
     }
 
@@ -2362,7 +2362,7 @@ details::NuGetRepoInfo details::get_nuget_repo_info_from_env()
         return {};
     }
 
-    LockGuardPtr<Metrics>(g_metrics)->track_property(DefineMetric::GitHubRepository);
+    LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::GitHubRepository);
     return {Strings::concat(gh_server, '/', gh_repo, ".git"),
             get_environment_variable("GITHUB_REF").value_or(""),
             get_environment_variable("GITHUB_SHA").value_or("")};

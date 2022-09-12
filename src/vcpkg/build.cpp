@@ -947,8 +947,8 @@ namespace vcpkg
                                      buildtimeus);
             if (!succeeded(return_code))
             {
-                metrics->track_property(StringMetric::Error, "build failed");
-                metrics->track_property(StringMetric::BuildError, spec_string);
+                metrics->track_string_property(StringMetric::Error, "build failed");
+                metrics->track_string_property(StringMetric::BuildError, spec_string);
                 const auto logs = buildpath / Strings::concat("error-logs-", action.spec.triplet(), ".txt");
                 std::vector<std::string> error_logs;
                 if (fs.exists(logs, VCPKG_LINE_INFO))

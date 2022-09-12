@@ -85,7 +85,8 @@ namespace
                     e.commit_id(), registry_versions_dir_name.to_string());
                 if (!maybe_tree)
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_property(DefineMetric::RegistriesErrorNoVersionsAtCommit);
+                    LockGuardPtr<Metrics>(g_metrics)->track_define_property(
+                        DefineMetric::RegistriesErrorNoVersionsAtCommit);
                     Checks::exit_with_message(
                         VCPKG_LINE_INFO,
                         "Error: could not find the git tree for `versions` in repo `%s` at commit `%s`: %s",
@@ -660,7 +661,8 @@ namespace
                 auto maybe_err = m_paths.git_fetch(m_repo, m_baseline_identifier);
                 if (!maybe_err)
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_property(DefineMetric::RegistriesErrorCouldNotFindBaseline);
+                    LockGuardPtr<Metrics>(g_metrics)->track_define_property(
+                        DefineMetric::RegistriesErrorCouldNotFindBaseline);
                     Checks::exit_with_message(
                         VCPKG_LINE_INFO,
                         "Error: Couldn't find baseline `\"%s\"` for repo %s:\n%s\nError: Failed to fetch %s:\n%s",
@@ -676,7 +678,8 @@ namespace
 
             if (!maybe_contents)
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property(DefineMetric::RegistriesErrorCouldNotFindBaseline);
+                LockGuardPtr<Metrics>(g_metrics)->track_define_property(
+                    DefineMetric::RegistriesErrorCouldNotFindBaseline);
                 Checks::exit_with_message(VCPKG_LINE_INFO,
                                           "Error: Couldn't find baseline in commit `\"%s\"` from repo %s:\n%s\n",
                                           m_baseline_identifier,
@@ -694,7 +697,8 @@ namespace
                 }
                 else
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_property(DefineMetric::RegistriesErrorCouldNotFindBaseline);
+                    LockGuardPtr<Metrics>(g_metrics)->track_define_property(
+                        DefineMetric::RegistriesErrorCouldNotFindBaseline);
                     Checks::exit_maybe_upgrade(
                         VCPKG_LINE_INFO,
                         "The baseline.json from commit `\"%s\"` in the repo %s did not contain a \"default\" field.",

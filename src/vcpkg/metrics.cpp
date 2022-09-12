@@ -306,7 +306,7 @@ namespace vcpkg
             g_metricmessage.user_id = config.user_id;
             g_metricmessage.user_timestamp = config.user_time;
 
-            metrics->track_property(StringMetric::UserMac, config.user_mac);
+            metrics->track_string_property(StringMetric::UserMac, config.user_mac);
 
             g_metrics_disabled = false;
         }
@@ -321,17 +321,17 @@ namespace vcpkg
         g_metricmessage.track_buildtime(name, value);
     }
 
-    void Metrics::track_property(DefineMetric metric)
+    void Metrics::track_define_property(DefineMetric metric)
     {
         g_metricmessage.track_string(get_metric_name(metric, get_define_metrics()), "defined");
     }
 
-    void Metrics::track_property(StringMetric metric, StringView value)
+    void Metrics::track_string_property(StringMetric metric, StringView value)
     {
         g_metricmessage.track_string(get_metric_name(metric, get_string_metrics()), value);
     }
 
-    void Metrics::track_property(BoolMetric metric, bool value)
+    void Metrics::track_bool_property(BoolMetric metric, bool value)
     {
         g_metricmessage.track_bool(get_metric_name(metric, get_bool_metrics()), value);
     }

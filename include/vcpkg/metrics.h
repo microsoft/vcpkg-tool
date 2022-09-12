@@ -85,9 +85,9 @@ namespace vcpkg
         void track_metric(const std::string& name, double value);
         void track_buildtime(const std::string& name, double value);
 
-        void track_property(DefineMetric metric);
-        void track_property(StringMetric metric, StringView value);
-        void track_property(BoolMetric metric, bool value);
+        void track_define_property(DefineMetric metric);
+        void track_string_property(StringMetric metric, StringView value);
+        void track_bool_property(BoolMetric metric, bool value);
 
         void track_feature(const std::string& feature, bool value);
 

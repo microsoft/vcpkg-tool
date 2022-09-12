@@ -875,8 +875,8 @@ namespace vcpkg
                                                  : UnsupportedPortAction::Error;
         const bool no_print_usage = Util::Sets::contains(options.switches, OPTION_NO_PRINT_USAGE);
 
-        LockGuardPtr<Metrics>(g_metrics)->track_property(BoolMetric::InstallManifestMode,
-                                                         paths.manifest_mode_enabled());
+        LockGuardPtr<Metrics>(g_metrics)->track_bool_property(BoolMetric::InstallManifestMode,
+                                                              paths.manifest_mode_enabled());
 
         if (auto p = paths.get_manifest().get())
         {
@@ -966,7 +966,7 @@ namespace vcpkg
             auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
             if (it_pkgsconfig != options.settings.end())
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property(DefineMetric::X_WriteNugetPackagesConfig);
+                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::X_WriteNugetPackagesConfig);
                 pkgsconfig = Path(it_pkgsconfig->second);
             }
             auto maybe_manifest_scf =
@@ -1034,12 +1034,12 @@ namespace vcpkg
                     return dep.constraint.type != VersionConstraintKind::None;
                 }))
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property(DefineMetric::ManifestVersionConstraint);
+                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ManifestVersionConstraint);
             }
 
             if (!manifest_core.overrides.empty())
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property(DefineMetric::ManifestOverrides);
+                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ManifestOverrides);
             }
 
             auto verprovider = make_versioned_portfile_provider(paths);
@@ -1169,7 +1169,7 @@ namespace vcpkg
         auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
         if (it_pkgsconfig != options.settings.end())
         {
-            LockGuardPtr<Metrics>(g_metrics)->track_property(DefineMetric::X_WriteNugetPackagesConfig);
+            LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::X_WriteNugetPackagesConfig);
             compute_all_abis(paths, action_plan, var_provider, status_db);
 
             auto pkgsconfig_path = paths.original_cwd / it_pkgsconfig->second;
@@ -1318,6 +1318,6 @@ namespace vcpkg
                                             Hash::get_string_hash(version_as_string, Hash::Algorithm::Sha256));
         }
 
-        LockGuardPtr<Metrics>(g_metrics)->track_property(StringMetric::InstallPlan_1, specs_string);
+        LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::InstallPlan_1, specs_string);
     }
 }

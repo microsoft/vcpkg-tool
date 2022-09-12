@@ -44,8 +44,8 @@ static void invalid_command(const std::string& cmd)
 static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 {
     // track version on each invocation
-    LockGuardPtr<Metrics>(g_metrics)->track_property(StringMetric::VcpkgVersion,
-                                                     Commands::Version::version.to_string());
+    LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::VcpkgVersion,
+                                                            Commands::Version::version.to_string());
 
     if (args.command.empty())
     {
@@ -68,11 +68,11 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
         }
     };
 
-    LockGuardPtr<Metrics>(g_metrics)->track_property(BoolMetric::OptionOverlayPorts, !args.overlay_ports.empty());
+    LockGuardPtr<Metrics>(g_metrics)->track_bool_property(BoolMetric::OptionOverlayPorts, !args.overlay_ports.empty());
 
     if (const auto command_function = find_command(Commands::get_available_basic_commands()))
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property(StringMetric::CommandName, command_function->name);
+        LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::CommandName, command_function->name);
         return command_function->function->perform_and_exit(args, fs);
     }
 
@@ -83,7 +83,7 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 
     if (const auto command_function = find_command(Commands::get_available_paths_commands()))
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property(StringMetric::CommandName, command_function->name);
+        LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::CommandName, command_function->name);
         return command_function->function->perform_and_exit(args, paths);
     }
 
@@ -94,7 +94,7 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 
     if (const auto command_function = find_command(Commands::get_available_triplet_commands()))
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property(StringMetric::CommandName, command_function->name);
+        LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::CommandName, command_function->name);
         return command_function->function->perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 
@@ -317,7 +317,7 @@ int main(const int argc, const char* const* const argv)
         exc_msg = "unknown error(...)";
     }
 
-    LockGuardPtr<Metrics>(g_metrics)->track_property(StringMetric::Error, exc_msg);
+    LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::Error, exc_msg);
 
     fflush(stdout);
     msg::println(msgVcpkgHasCrashed);
