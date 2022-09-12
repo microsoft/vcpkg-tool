@@ -33,13 +33,14 @@ export function parseArtifactDependency(id: string): [string | undefined, string
 }
 
 function loadRegistry(session: Session, decl: RegistryDeclaration) : Promise<Registry | undefined> {
-    const loc = decl.location.get(0);
-    if (loc) {
-      const locUri = session.parseLocation(loc);
-      return session.registryDatabase.loadRegistry(session, locUri);
-    }
+  const loc = decl.location.get(0);
+  if (loc) {
+    const locUri = session.parseLocation(loc);
+    session.channels.debug(`Loading registry ${loc} (interpreted as ${locUri.toString()})`);
+    return session.registryDatabase.loadRegistry(session, locUri);
+  }
 
-    return Promise.resolve(undefined);
+  return Promise.resolve(undefined);
 }
 
 export async function buildRegistryResolver(session: Session, registries: RegistriesDeclaration | undefined) {
