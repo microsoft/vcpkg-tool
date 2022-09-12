@@ -64,7 +64,7 @@
   "BuildTroubleshootingMessage1": "Stellen Sie sicher, dass Sie die neuesten Portdateien mit „git pull“ und „vcpkg update“ verwenden.\nÜberprüfen Sie dann auf bekannte Probleme unter:",
   "BuildTroubleshootingMessage2": "Sie können ein neues Problem einreichen unter:",
   "BuildTroubleshootingMessage3": "Schließen Sie „[{package_name}] Buildfehler“ in Ihren Titel des Fehlerberichts, die folgenden Versionsinformationen in Ihre Fehlerbeschreibung ein, und fügen Sie alle relevanten Fehlerprotokolle von oben an.",
-  "BuildTroubleshootingMessage4": "Please use the prefilled template from {path} when reporting your issue.",
+  "BuildTroubleshootingMessage4": "Bitte verwenden Sie die vorausgefüllte Vorlage von {path}, wenn Sie Ihr Problem melden.",
   "BuildingFromHead": "{spec} wird aus HEAD erstellt...",
   "BuildingPackage": "{spec} wird erstellt...",
   "BuildingPackageFailed": "Fehler beim Erstellen von \"{spec}\": {build_result}",
