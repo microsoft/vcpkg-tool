@@ -74,7 +74,7 @@ export async function selectArtifacts(session: Session, selections: Selections, 
 }
 
 interface ProgressRenderer extends InstallEvents {
-  setArtifactIndex(index: number): void;
+  setArtifactIndex(index: number, displayName: string): void;
   stop(): void;
 }
 
@@ -112,7 +112,7 @@ class TaggedProgressBar {
       this.bar.update(currentValue, payload);
     } else {
       this.kind = kind;
-      this.bar = this.multiBar.create(total, currentValue, payload, { format: '{bar}* {percentage}% {suffix}' });
+      this.bar = this.multiBar.create(total, currentValue, payload, { format: '{bar} {percentage}% {suffix}' });
     }
   }
 
@@ -130,13 +130,6 @@ class TaggedProgressBar {
       this.bar = this.multiBar.create(0, 0, payload, { format: '*' + prettyProgressUnknown + '* {suffix}' });
     }
   }
-
-  stop() {
-    if (this.bar) {
-      this.multiBar.remove(this.bar);
-      this.bar = undefined;
-    }
-  }
 }
 
 class TtyProgressRenderer implements Partial<ProgressRenderer> {
@@ -149,19 +142,14 @@ class TtyProgressRenderer implements Partial<ProgressRenderer> {
   });
   readonly #overallProgress : SingleBar;
   readonly #individualProgress : TaggedProgressBar;
-  #currentIndex = 0;
 
   constructor(totalArtifactCount: number) {
-    this.#overallProgress = this.#bar.create(totalArtifactCount, 0, { name: '' }, { format: '{bar}* [{value}/{total}] {name}', emptyOnZero: true });
+    this.#overallProgress = this.#bar.create(totalArtifactCount, 0, { name: '' }, { format: `{bar} [{value}/${totalArtifactCount - 1}] {name}`, emptyOnZero: true });
     this.#individualProgress = new TaggedProgressBar(this.#bar);
   }
 
-  setArtifactIndex(index: number): void {
-    this.#currentIndex = index;
-  }
-
-  startInstallArtifact(displayName: string) {
-    this.#overallProgress.update(this.#currentIndex, { name: displayName });
+  setArtifactIndex(index: number, displayName: string): void {
+    this.#overallProgress.update(index, { name: displayName });
   }
 
   hashVerifyProgress(file: string, percent: number) {
@@ -192,8 +180,7 @@ class TtyProgressRenderer implements Partial<ProgressRenderer> {
   }
 
   stop() {
-    this.#individualProgress.stop();
-    this.#overallProgress.stop();
+    this.#bar.stop();
   }
 }
 
@@ -255,12 +242,12 @@ export async function installArtifacts(session: Session, resolved: Array<Resolve
   const isTty = process.stdout.isTTY === true;
   const progressRenderer : Partial<ProgressRenderer> = isTty ? new TtyProgressRenderer(resolved.length) : new NoTtyProgressRenderer(session.channels, resolved.length);
   for (let idx = 0; idx < resolved.length; ++idx) {
-    progressRenderer.setArtifactIndex?.(idx);
     const artifact = resolved[idx].artifact;
     if (artifact instanceof Artifact) {
       const id = artifact.id;
       const registryName = registries.getRegistryDisplayName(artifact.registryUri);
       const artifactDisplayName = artifactIdentity(registryName, id, artifact.shortName);
+      progressRenderer.setArtifactIndex?.(idx, artifactDisplayName);
       try {
         const installStatus = await artifact.install(artifactDisplayName, progressRenderer, options || {});
         switch (installStatus) {
