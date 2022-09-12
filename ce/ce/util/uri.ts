@@ -248,10 +248,11 @@ bad.fragment === '/project1';
 
   async tryReadUTF8(uri?: Uri | string): Promise<string | undefined> {
     try {
-      return this.readUTF8(uri);
-    } catch {
-      return undefined;
-    }
+      return await this.readUTF8(uri);
+    // eslint-disable-next-line no-empty
+    } catch { }
+
+    return undefined;
   }
 
   openFile(uri?: Uri | string): Promise<ReadHandle> {
