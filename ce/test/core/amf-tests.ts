@@ -14,15 +14,14 @@ s;
 // sample test using decorators.
 describe('Amf', () => {
   const local = new SuiteLocal();
-  const fs = local.fs;
 
   after(local.after.bind(local));
 
   it('readProfile', async () => {
-    const content = await (await readFile(join(rootFolder(), 'resources', 'sample1.yaml'))).toString('utf-8');
-    const doc = await MetadataFile.parseConfiguration('./sample1.yaml', content, local.session);
+    const content = await (await readFile(join(rootFolder(), 'resources', 'sample1.json'))).toString('utf-8');
+    const doc = await MetadataFile.parseConfiguration('./sample1.json', content, local.session);
 
-    strict.ok(doc.isFormatValid, 'Ensure it is valid yaml');
+    strict.ok(doc.isFormatValid, 'Ensure it is valid json');
     strict.sequenceEqual(doc.validate(), []);
 
     strict.equal(doc.id, 'sample1', 'name incorrect');
@@ -30,20 +29,20 @@ describe('Amf', () => {
   });
 
   it('reads file with nupkg', async () => {
-    const content = await (await readFile(join(rootFolder(), 'resources', 'repo', 'sdks', 'microsoft', 'windows.yaml'))).toString('utf-8');
-    const doc = await MetadataFile.parseConfiguration('./windows.yaml', content, local.session);
+    const content = await (await readFile(join(rootFolder(), 'resources', 'repo', 'sdks', 'microsoft', 'windows.json'))).toString('utf-8');
+    const doc = await MetadataFile.parseConfiguration('./windows.json', content, local.session);
 
-    strict.ok(doc.isFormatValid, 'Ensure it is valid yaml');
+    strict.ok(doc.isFormatValid, 'Ensure it is valid json');
     strict.sequenceEqual(doc.validate(), []);
 
-    SuiteLocal.log(doc.content);
+    SuiteLocal.log(doc.toJsonString());
   });
 
   it('load/persist an artifact', async () => {
     const content = await (await readFile(join(rootFolder(), 'resources', 'example-artifact.json'))).toString('utf-8');
     const doc = await MetadataFile.parseConfiguration('./example-artifact.json', content, local.session);
 
-    SuiteLocal.log(doc.content);
+    SuiteLocal.log(doc.toJsonString());
     strict.ok(doc.isFormatValid, 'Ensure it\'s valid');
     for (const each of doc.validate()) {
       SuiteLocal.log(doc.formatVMessage(each));
@@ -51,15 +50,11 @@ describe('Amf', () => {
   });
 
   it('profile checks', async () => {
-    const content = await (await readFile(join(rootFolder(), 'resources', 'sample1.yaml'))).toString('utf-8');
-    const doc = await MetadataFile.parseConfiguration('./sample1.yaml', content, local.session);
+    const content = await (await readFile(join(rootFolder(), 'resources', 'sample1.json'))).toString('utf-8');
+    const doc = await MetadataFile.parseConfiguration('./sample1.json', content, local.session);
 
-    strict.ok(doc.isFormatValid, 'Ensure that it is valid yaml');
+    strict.ok(doc.isFormatValid, 'Ensure that it is valid json');
     strict.sequenceEqual(doc.validate(), []);
-
-    // fixme: validate inputs again.
-    // strict.throws(() => doc.info.version = '4.1', 'Setting invalid version should throw');
-    // strict.equal(doc.info.version = '4.1.0', '4.1.0', 'Version should set correctly');
 
     SuiteLocal.log(doc.contacts.get('Bob Smith'));
 
@@ -133,9 +128,9 @@ describe('Amf', () => {
     SuiteLocal.log(doc.toString());
   });
 
-  it('read invalid yaml file', async () => {
-    const content = await (await readFile(join(rootFolder(), 'resources', 'errors.yaml'))).toString('utf-8');
-    const doc = await MetadataFile.parseConfiguration('./errors.yaml', content, local.session);
+  it('read invalid json file', async () => {
+    const content = await (await readFile(join(rootFolder(), 'resources', 'errors.json'))).toString('utf-8');
+    const doc = await MetadataFile.parseConfiguration('./errors.json', content, local.session);
 
     strict.equal(doc.isFormatValid, false, 'this document should have errors');
     strict.equal(doc.formatErrors.length, 2, 'This document should have two error');
@@ -144,21 +139,21 @@ describe('Amf', () => {
     strict.equal(doc.version, '1.0.2', 'version incorrect');
   });
 
-  it('read empty yaml file', async () => {
-    const content = await (await readFile(join(rootFolder(), 'resources', 'empty.yaml'))).toString('utf-8');
-    const doc = await MetadataFile.parseConfiguration('./empty.yaml', content, local.session);
+  it('read empty json file', async () => {
+    const content = await (await readFile(join(rootFolder(), 'resources', 'empty.json'))).toString('utf-8');
+    const doc = await MetadataFile.parseConfiguration('./empty.json', content, local.session);
 
-    strict.ok(doc.isFormatValid, 'Ensure it is valid yaml');
+    strict.ok(doc.isFormatValid, 'Ensure it is valid json');
 
     const [firstError] = doc.validate();
-    strict.equal(doc.formatVMessage(firstError), './empty.yaml:1:1 FieldMissing, Missing identity \'id\'', 'Should have an error about id');
+    strict.equal(doc.formatVMessage(firstError), './empty.json:1:1 FieldMissing, Missing identity \'id\'', 'Should have an error about id');
   });
 
   it('validation errors', async () => {
-    const content = await (await readFile(join(rootFolder(), 'resources', 'validation-errors.yaml'))).toString('utf-8');
-    const doc = await MetadataFile.parseConfiguration('./validation-errors.yaml', content, local.session);
+    const content = await (await readFile(join(rootFolder(), 'resources', 'validation-errors.json'))).toString('utf-8');
+    const doc = await MetadataFile.parseConfiguration('./validation-errors.json', content, local.session);
 
-    strict.ok(doc.isFormatValid, 'Ensure it is valid yaml');
+    strict.ok(doc.isFormatValid, 'Ensure it is valid json');
 
     const validationErrors = Array.from(doc.validate(), (error) => doc.formatVMessage(error));
     strict.equal(validationErrors.length, 7, `Expecting 7 errors, found: ${JSON.stringify(validationErrors, null, 2)}`);

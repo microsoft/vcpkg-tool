@@ -3,7 +3,7 @@
 
 
 import { Index, IndexSchema, SemverKey, StringKey } from '@microsoft/vcpkg-ce/dist/registries/indexer';
-import { keys, Record } from '@microsoft/vcpkg-ce/dist/util/linq';
+import { Record } from '@microsoft/vcpkg-ce/dist/util/linq';
 import { describe, it } from 'mocha';
 import { SemVer } from 'semver';
 import { SuiteLocal } from './SuiteLocal';
@@ -22,15 +22,10 @@ interface TestData {
 
 /** An Index implementation for TestData */
 class MyIndex extends IndexSchema<TestData, MyIndex> {
-  id = new StringKey(this, (i) => i.id);
-  version = new SemverKey(this, (i) => new SemVer(i.version));
-  description = new StringKey(this, (i) => i.description);
-
-  contacts = new StringKey(this, (i) => keys(i.contacts)).with({
-    email: new StringKey(this, (i, index: string) => i.contacts?.[index]?.email)
-  });
+  id = new StringKey(this, (i) => i.id, 'StringKey/info.id');
+  version = new SemverKey(this, (i) => new SemVer(i.version), 'SemverKey/info.version');
+  description = new StringKey(this, (i) => i.description, 'StringKey/info.description');
 }
-
 
 // sample test using decorators.
 describe('Index Tests', () => {

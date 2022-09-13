@@ -10,7 +10,6 @@ import { CommandLine } from './cli/command-line';
 import { AcquireCommand } from './cli/commands/acquire';
 import { ActivateCommand } from './cli/commands/activate';
 import { AddCommand } from './cli/commands/add';
-import { ApplyVsManCommand } from './cli/commands/apply-vsman';
 import { CacheCommand } from './cli/commands/cache';
 import { CleanCommand } from './cli/commands/clean';
 import { DeactivateCommand } from './cli/commands/deactivate';
@@ -23,7 +22,7 @@ import { RemoveCommand } from './cli/commands/remove';
 import { UpdateCommand } from './cli/commands/update';
 import { UseCommand } from './cli/commands/use';
 import { VersionCommand } from './cli/commands/version';
-import { blank, cli, product } from './cli/constants';
+import { cli, product } from './cli/constants';
 import { command as formatCommand, hint } from './cli/format';
 import { debug, error, initStyling, log } from './cli/styling';
 import { i, setLocale } from './i18n';
@@ -76,7 +75,6 @@ async function main() {
   debug(`Anonymous Telemetry Enabled: ${telemetryEnabled}`);
   // find a project profile.
 
-  const zApplyVsMan = new ApplyVsManCommand(commandline);
   const help = new HelpCommand(commandline);
 
   const find = new FindCommand(commandline);
@@ -117,12 +115,10 @@ async function main() {
     if (commandline.inputs.length > 0) {
       // unrecognized command
       error(i`Unrecognized command '${commandline.inputs[0]}'`);
-      log(blank);
       log(hint(i`Use ${formatCommand(`${cli} ${help.command}`)} to get help`));
       return process.exitCode = 1;
     }
 
-    log(blank);
     log(hint(i`Use ${formatCommand(`${cli} ${help.command}`)} to get help`));
 
     return process.exitCode = 0;
@@ -130,7 +126,6 @@ async function main() {
   let result = true;
   try {
     result = await command.run();
-    log(blank);
   } catch (e) {
     // in --debug mode we want to see the stack trace(s).
     if (commandline.debug && e instanceof Error) {

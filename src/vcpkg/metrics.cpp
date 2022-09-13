@@ -3,9 +3,11 @@
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.mac.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/uuid.h>
+#include <vcpkg/base/view.h>
 
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.version.h>
@@ -17,9 +19,99 @@
 #pragma comment(lib, "winhttp")
 #endif
 
+namespace
+{
+    using namespace vcpkg;
+
+    template<typename T>
+    StringLiteral get_metric_name(const T metric, View<MetricEntry<T>> entries)
+    {
+        auto metric_index = static_cast<size_t>(metric);
+        if (metric_index < entries.size())
+        {
+            return entries[metric_index].name;
+        }
+        // abort() is used because Checks:: will call back into metrics machinery.
+        abort();
+    }
+}
+
 namespace vcpkg
 {
     LockGuarded<Metrics> g_metrics;
+
+    View<MetricEntry<DefineMetric>> Metrics::get_define_metrics()
+    {
+        static constexpr std::array<MetricEntry<DefineMetric>, static_cast<size_t>(DefineMetric::COUNT)> ENTRIES{{
+            {DefineMetric::AssetSource, "asset-source"},
+            {DefineMetric::BinaryCachingAws, "binarycaching_aws"},
+            {DefineMetric::BinaryCachingAzBlob, "binarycaching_azblob"},
+            {DefineMetric::BinaryCachingCos, "binarycaching_cos"},
+            {DefineMetric::BinaryCachingDefault, "binarycaching_default"},
+            {DefineMetric::BinaryCachingFiles, "binarycaching_files"},
+            {DefineMetric::BinaryCachingGcs, "binarycaching_gcs"},
+            {DefineMetric::BinaryCachingHttp, "binarycaching_http"},
+            {DefineMetric::BinaryCachingNuget, "binarycaching_nuget"},
+            {DefineMetric::BinaryCachingSource, "binarycaching-source"},
+            {DefineMetric::ErrorVersioningDisabled, "error-versioning-disabled"},
+            {DefineMetric::ErrorVersioningNoBaseline, "error-versioning-no-baseline"},
+            {DefineMetric::GitHubRepository, "GITHUB_REPOSITORY"},
+            {DefineMetric::ManifestBaseline, "manifest_baseline"},
+            {DefineMetric::ManifestOverrides, "manifest_overrides"},
+            {DefineMetric::ManifestVersionConstraint, "manifest_version_constraint"},
+            {DefineMetric::RegistriesErrorCouldNotFindBaseline, "registries-error-could-not-find-baseline"},
+            {DefineMetric::RegistriesErrorNoVersionsAtCommit, "registries-error-no-versions-at-commit"},
+            {DefineMetric::VcpkgBinarySources, "VCPKG_BINARY_SOURCES"},
+            {DefineMetric::VcpkgDefaultBinaryCache, "VCPKG_DEFAULT_BINARY_CACHE"},
+            {DefineMetric::VcpkgNugetRepository, "VCPKG_NUGET_REPOSITORY"},
+            {DefineMetric::VersioningErrorBaseline, "versioning-error-baseline"},
+            {DefineMetric::VersioningErrorVersion, "versioning-error-version"},
+            {DefineMetric::X_VcpkgRegistriesCache, "X_VCPKG_REGISTRIES_CACHE"},
+            {DefineMetric::X_WriteNugetPackagesConfig, "x-write-nuget-packages-config"},
+        }};
+        return {ENTRIES.data(), ENTRIES.size()};
+    }
+
+    View<MetricEntry<StringMetric>> Metrics::get_string_metrics()
+    {
+        static constexpr std::array<MetricEntry<StringMetric>, static_cast<size_t>(StringMetric::COUNT)> ENTRIES{{
+            {StringMetric::BuildError, "build_error"},
+            {StringMetric::CommandArgs, "command_args"},
+            {StringMetric::CommandContext, "command_context"},
+            {StringMetric::CommandName, "command_name"},
+            {StringMetric::Error, "error"},
+            {StringMetric::InstallPlan_1, "installplan_1"},
+            {StringMetric::ListFile, "listfile"},
+            {StringMetric::RegistriesDefaultRegistryKind, "registries-default-registry-kind"},
+            {StringMetric::RegistriesKindsUsed, "registries-kinds-used"},
+            {StringMetric::Title, "title"},
+            {StringMetric::UserMac, "user_mac"},
+            {StringMetric::VcpkgVersion, "vcpkg_version"},
+            {StringMetric::Warning, "warning"},
+        }};
+        return {ENTRIES.data(), ENTRIES.size()};
+    }
+
+    View<MetricEntry<BoolMetric>> Metrics::get_bool_metrics()
+    {
+        static constexpr std::array<MetricEntry<BoolMetric>, static_cast<size_t>(BoolMetric::COUNT)> ENTRIES{{
+            {BoolMetric::InstallManifestMode, "install_manifest_mode"},
+            {BoolMetric::OptionOverlayPorts, "option_overlay_ports"},
+        }};
+        return {ENTRIES.data(), ENTRIES.size()};
+    }
+
+    View<MetricEntry<ArrayMetric>> Metrics::get_array_metrics()
+    {
+        static constexpr std::array<MetricEntry<ArrayMetric>, static_cast<size_t>(ArrayMetric::COUNT)> ENTRIES{{
+            {ArrayMetric::InstallPlan_2_Actions, "installplan_2_actions"},
+            {ArrayMetric::InstallPlan_2_Origins, "installplan_2_origins"},
+            {ArrayMetric::InstallPlan_2_Ports, "installplan_2_ports"},
+            {ArrayMetric::InstallPlan_2_Triplets, "installplan_2_triplets"},
+            {ArrayMetric::InstallPlan_2_Versions, "installplan_2_versions"},
+        }};
+        return {ENTRIES.data(), ENTRIES.size()};
+    }
 
     static std::string get_current_date_time_string()
     {
@@ -81,17 +173,17 @@ namespace vcpkg
         Json::Array buildtime_names;
         Json::Array buildtime_times;
 
-        void track_property(StringView name, const std::string& value)
+        void track_string(StringView name, StringView value)
         {
             properties.insert_or_replace(name, Json::Value::string(value));
         }
 
-        void track_property(StringView name, bool value)
+        void track_bool(StringView name, bool value)
         {
             properties.insert_or_replace(name, Json::Value::boolean(value));
         }
 
-        void track_property(StringView name, const Json::Array& values) { properties.insert_or_replace(name, values); }
+        void track_array(StringView name, const Json::Array& values) { properties.insert_or_replace(name, values); }
 
         void track_metric(StringView name, double value)
         {
@@ -106,11 +198,6 @@ namespace vcpkg
         void track_feature(StringView name, bool value)
         {
             properties.insert(Strings::concat("feature-flag-", name), Json::Value::boolean(value));
-        }
-
-        void track_option(StringView name, bool value)
-        {
-            properties.insert(Strings::concat("option_", name), Json::Value::boolean(value));
         }
 
         std::string format_event_data_template() const
@@ -233,7 +320,7 @@ namespace vcpkg
             g_metricmessage.user_id = config.user_id;
             g_metricmessage.user_timestamp = config.user_time;
 
-            metrics->track_property("user_mac", config.user_mac);
+            metrics->track_string_property(StringMetric::UserMac, config.user_mac);
 
             g_metrics_disabled = false;
         }
@@ -248,21 +335,27 @@ namespace vcpkg
         g_metricmessage.track_buildtime(name, value);
     }
 
-    void Metrics::track_property(const std::string& name, const std::string& value)
+    void Metrics::track_define_property(DefineMetric metric)
     {
-        g_metricmessage.track_property(name, value);
+        g_metricmessage.track_string(get_metric_name(metric, get_define_metrics()), "defined");
     }
 
-    void Metrics::track_property(const std::string& name, bool value) { g_metricmessage.track_property(name, value); }
-
-    void Metrics::track_property(const std::string& name, const Json::Array& values)
+    void Metrics::track_string_property(StringMetric metric, StringView value)
     {
-        g_metricmessage.track_property(name, values);
+        g_metricmessage.track_string(get_metric_name(metric, get_string_metrics()), value);
+    }
+
+    void Metrics::track_bool_property(BoolMetric metric, bool value)
+    {
+        g_metricmessage.track_bool(get_metric_name(metric, get_bool_metrics()), value);
+    }
+
+    void Metrics::track_array_property(ArrayMetric metric, const Json::Array& value)
+    {
+        g_metricmessage.track_array(get_metric_name(metric, get_array_metrics()), value);
     }
 
     void Metrics::track_feature(const std::string& name, bool value) { g_metricmessage.track_feature(name, value); }
-
-    void Metrics::track_option(const std::string& name, bool value) { g_metricmessage.track_option(name, value); }
 
     void Metrics::upload(const std::string& payload)
     {

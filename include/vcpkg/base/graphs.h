@@ -40,7 +40,7 @@ namespace vcpkg
         virtual int random(int max_exclusive) = 0;
 
     protected:
-        ~GraphRandomizer() { }
+        ~GraphRandomizer() = default;
     };
 
     namespace details

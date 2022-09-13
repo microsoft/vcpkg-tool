@@ -6,8 +6,6 @@
 
 #include <stdio.h>
 
-using namespace std;
-
 // See https://docs.microsoft.com/en-us/windows/win32/debug/pe-format
 
 namespace vcpkg

@@ -1,0 +1,9 @@
+{
+    "id":"alpha",
+    "version": "1.0.0",
+    "requires": {
+        "bravo": "1.0",
+        "delta": "1.0",
+        "echo": "1.0"
+    }
+}

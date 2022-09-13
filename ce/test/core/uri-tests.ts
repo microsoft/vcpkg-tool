@@ -13,9 +13,9 @@ describe('Uri', () => {
   const tempUrlForward = tempUrl.join().toString();
 
   it('Converts slashes on join', () => {
-    const unixPath = fs.parse('/some/unixy/path').join();
+    const unixPath = fs.parseUri('/some/unixy/path').join();
     strictEqual(unixPath.toString(), 'file:///some/unixy/path');
-    const windowsPath = fs.parse('C:\\Windows\\System32').join();
+    const windowsPath = fs.parseUri('C:\\Windows\\System32').join();
     strictEqual(windowsPath.toString(), 'C:/Windows/System32');
   });
 
