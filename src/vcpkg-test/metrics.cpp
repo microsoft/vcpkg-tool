@@ -46,3 +46,21 @@ TEST_CASE ("Check metric enum types", "[metrics]")
         validate_enum_values_and_names(Metrics::get_bool_metrics(), static_cast<size_t>(BoolMetric::COUNT));
     }
 }
+
+TEST_CASE ("Check string metrics initialization values", "[metrics]")
+{
+    auto known_metrics = Metrics::get_string_metrics();
+    auto init_values = Metrics::get_string_metrics_preregister_values();
+
+    // check that all init values are complete and in order
+    size_t enum_value = 0;
+    REQUIRE(init_values.size() == known_metrics.size());
+    for (auto&& init_value : init_values)
+    {
+        REQUIRE(enum_value == static_cast<size_t>(init_value.metric));
+        ++enum_value;
+
+        // initialization value should not be empty
+        REQUIRE(!init_value.name.empty());
+    }
+}
