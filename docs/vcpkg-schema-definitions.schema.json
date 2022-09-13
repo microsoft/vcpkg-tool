@@ -154,7 +154,7 @@
       ]
     },
     "demands": {
-      "description": "A set of filters to conditionally apply artifact pieces. Typically contains other 'requires' or 'see-also' or similar elements. The keys are platform expressions with identifiers assumed to refer to the host.",
+      "description": "A set of filters to conditionally apply artifact pieces. Typically contains other 'requires' or similar elements. The keys are platform expressions with identifiers assumed to refer to the host.",
       "type": "object",
       "patternProperties": {
         "": {
@@ -174,10 +174,6 @@
             },
             "exports": {
               "$ref": "#/definitions/exports"
-            },
-            "see-also": {
-              "description": "Suggested additional artifacts.",
-              "$ref": "#/definitions/artifact-references"
             },
             "requires": {
               "description": "Artifacts that are required for this package to function.",

@@ -4,14 +4,13 @@
 import { strict } from 'assert';
 import { createHash } from 'crypto';
 import { parse } from 'yaml';
-import { Registry } from '../artifacts/registry';
 import { registryIndexFile } from '../constants';
 import { Session } from '../session';
 import { Uri } from '../util/uri';
 import { ArtifactRegistry } from './ArtifactRegistry';
 
 
-export class LocalRegistry extends ArtifactRegistry implements Registry {
+export class LocalRegistry extends ArtifactRegistry {
   protected indexYaml: Uri;
   readonly installationFolder;
   readonly cacheFolder: Uri;

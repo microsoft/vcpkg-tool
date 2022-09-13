@@ -246,6 +246,14 @@ bad.fragment === '/project1';
     return decode(await this.readFile(uri));
   }
 
+  async tryReadUTF8(uri?: Uri | string): Promise<string | undefined> {
+    try {
+      return this.readUTF8(uri);
+    } catch {
+      return undefined;
+    }
+  }
+
   openFile(uri?: Uri | string): Promise<ReadHandle> {
     uri = this.resolve(uri);
     return uri.fileSystem.openFile(uri);
@@ -340,4 +348,3 @@ export function isFilePath(uriOrPath?: Uri | string): boolean {
   }
   return false;
 }
-

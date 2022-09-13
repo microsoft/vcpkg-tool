@@ -229,7 +229,7 @@ export abstract class FileSystem extends EventEmitter<FileSystemEvents> {
  *
  * @param value A string which represents an URI (see `URI#toString`).
  */
-  parse(value: string, _strict?: boolean): Uri {
+  parseUri(value: string, _strict?: boolean): Uri {
     return Uri.parse(this, value, _strict);
   }
 

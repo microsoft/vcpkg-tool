@@ -17,7 +17,7 @@ describe('StreamTests', () => {
 
     const session = local.session;
     const m = new Channels(session);
-    m.on('message', (message, context, msec) => {
+    m.on('message', (message, msec) => {
       // check that each message comes in order
       strictEqual(message, expected[i], 'messages should be in order');
       i++;

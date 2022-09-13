@@ -69,10 +69,6 @@ class Ctx {
   }
 }
 
-export function resolvePath(v: string | undefined) {
-  return v?.startsWith('.') ? resolve(v) : v;
-}
-
 export class CommandLine {
   readonly commands = new Array<Command>();
   readonly inputs = new Array<string>();
@@ -89,7 +85,7 @@ export class CommandLine {
 
     // note, this does not create the folder, that would happen when the session is initialized.
 
-    return this.#home || (this.#home = resolvePath(
+    return this.#home || (this.#home = resolve(
       this.switches['vcpkg-root']?.[0] ||
       process.env['VCPKG_ROOT'] ||
       join(process.env['HOME'] || process.env['USERPROFILE'] || tmpdir(), '.vcpkg')));
