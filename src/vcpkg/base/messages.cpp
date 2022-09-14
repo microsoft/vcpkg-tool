@@ -466,8 +466,10 @@ namespace vcpkg
     REGISTER_MESSAGE(CMakeToolChainFile);
     REGISTER_MESSAGE(CommandFailed);
     REGISTER_MESSAGE(CompressFolderFailed);
-    REGISTER_MESSAGE(ConstraintViolation);
+    REGISTER_MESSAGE(ComputingInstallPlan);
+    REGISTER_MESSAGE(ConflictingFiles);
     REGISTER_MESSAGE(ConflictingValuesForOption);
+    REGISTER_MESSAGE(ConstraintViolation);
     REGISTER_MESSAGE(ControlAndManifestFilesPresent);
     REGISTER_MESSAGE(CopyrightIsDir);
     REGISTER_MESSAGE(CorruptedDatabase);
@@ -490,9 +492,11 @@ namespace vcpkg
     REGISTER_MESSAGE(DownloadRootsDir);
     REGISTER_MESSAGE(DuplicateCommandOption);
     REGISTER_MESSAGE(DuplicateOptions);
+    REGISTER_MESSAGE(ElapsedInstallTime);
     REGISTER_MESSAGE(ElapsedTimeForChecks);
     REGISTER_MESSAGE(EmailVcpkgTeam);
     REGISTER_MESSAGE(EmptyArg);
+    REGISTER_MESSAGE(EmptyInstallPlan);
     REGISTER_MESSAGE(EmptyLicenseExpression);
     REGISTER_MESSAGE(EnvStrFailedToExtract);
     REGISTER_MESSAGE(ErrorDetectingCompilerInfo);
@@ -559,6 +563,7 @@ namespace vcpkg
     REGISTER_MESSAGE(GenerateMsgIncorrectComment);
     REGISTER_MESSAGE(GenerateMsgNoArgumentValue);
     REGISTER_MESSAGE(GenerateMsgNoCommentValue);
+    REGISTER_MESSAGE(GetParseFailureInfo);
     REGISTER_MESSAGE(GitCommandFailed);
     REGISTER_MESSAGE(GitStatusOutputExpectedFileName);
     REGISTER_MESSAGE(GitStatusOutputExpectedNewLine);
@@ -595,8 +600,10 @@ namespace vcpkg
     REGISTER_MESSAGE(IncorrectNumberOfArgs);
     REGISTER_MESSAGE(InfoSetEnvVar);
     REGISTER_MESSAGE(InitRegistryFailedNoRepo);
+    REGISTER_MESSAGE(InstalledBy);
     REGISTER_MESSAGE(InstalledPackages);
     REGISTER_MESSAGE(InstalledRequestedPackages);
+    REGISTER_MESSAGE(InstallFailed);
     REGISTER_MESSAGE(InstallingFromLocation);
     REGISTER_MESSAGE(InstallingPackage);
     REGISTER_MESSAGE(InstallPackageInstruction);
@@ -625,8 +632,10 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidCommandArgSort);
     REGISTER_MESSAGE(InvalidCommitId);
     REGISTER_MESSAGE(InvalidFilename);
+    REGISTER_MESSAGE(InvalidFileType);
     REGISTER_MESSAGE(InvalidFormatString);
     REGISTER_MESSAGE(InvalidLinkage);
+    REGISTER_MESSAGE(InvalidTriplet);
     REGISTER_MESSAGE(IrregularFile);
     REGISTER_MESSAGE(JsonErrorMustBeAnObject);
     REGISTER_MESSAGE(JsonSwitch);
@@ -654,6 +663,7 @@ namespace vcpkg
     REGISTER_MESSAGE(LoadingOverlayTriplet);
     REGISTER_MESSAGE(LocalizedMessageMustNotContainIndents);
     REGISTER_MESSAGE(LocalizedMessageMustNotEndWithNewline);
+    REGISTER_MESSAGE(ManifestConflict);
     REGISTER_MESSAGE(ManifestFormatCompleted);
     REGISTER_MESSAGE(MismatchedFiles);
     REGISTER_MESSAGE(Missing7zHeader);
@@ -661,8 +671,8 @@ namespace vcpkg
     REGISTER_MESSAGE(MissingDependency);
     REGISTER_MESSAGE(MissingExtension);
     REGISTER_MESSAGE(MissingOption);
-    REGISTER_MESSAGE(MissmatchedBinParagraphs);
     REGISTER_MESSAGE(MissingPortSuggestPullRequest);
+    REGISTER_MESSAGE(MissmatchedBinParagraphs);
     REGISTER_MESSAGE(MonoInstructions);
     REGISTER_MESSAGE(MsiexecFailedToExtract);
     REGISTER_MESSAGE(MultiArch);
@@ -683,6 +693,7 @@ namespace vcpkg
     REGISTER_MESSAGE(OptionRequired);
     REGISTER_MESSAGE(OptionRequiresOption);
     REGISTER_MESSAGE(OriginalBinParagraphHeader);
+    REGISTER_MESSAGE(OverwritingFile);
     REGISTER_MESSAGE(PackageFailedtWhileExtracting);
     REGISTER_MESSAGE(PackageRootDir);
     REGISTER_MESSAGE(PackagesToInstall);
@@ -735,6 +746,7 @@ namespace vcpkg
     REGISTER_MESSAGE(SuggestUpdateVcpkg);
     REGISTER_MESSAGE(SupportedPort);
     REGISTER_MESSAGE(SystemApiErrorMessage);
+    REGISTER_MESSAGE(Test);
     REGISTER_MESSAGE(ToolFetchFailed);
     REGISTER_MESSAGE(ToolInWin10);
     REGISTER_MESSAGE(TotalTime);
@@ -753,6 +765,8 @@ namespace vcpkg
     REGISTER_MESSAGE(UnknownTool);
     REGISTER_MESSAGE(UnknownVariablesInTemplate);
     REGISTER_MESSAGE(UnrecognizedConfigField);
+    REGISTER_MESSAGE(UnrecognizedIdentifier);
+    REGISTER_MESSAGE(UnsupportedFeature);
     REGISTER_MESSAGE(UnsupportedPort);
     REGISTER_MESSAGE(UnsupportedPortDependency);
     REGISTER_MESSAGE(UnsupportedPortFeature);
@@ -783,6 +797,7 @@ namespace vcpkg
     REGISTER_MESSAGE(VcpkgDisallowedClassicMode);
     REGISTER_MESSAGE(VcpkgHasCrashed);
     REGISTER_MESSAGE(VcpkgInvalidCommand);
+    REGISTER_MESSAGE(VcpkgInVsPrompt);
     REGISTER_MESSAGE(VcpkgRootRequired);
     REGISTER_MESSAGE(VcpkgRootsDir);
     REGISTER_MESSAGE(VcpkgSendMetricsButDisabled);
@@ -803,19 +818,4 @@ namespace vcpkg
     REGISTER_MESSAGE(WhileLookingForSpec);
     REGISTER_MESSAGE(WindowsOnlyCommand);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
-    REGISTER_MESSAGE(InvalidTriplet);
-    REGISTER_MESSAGE(ManifestConflict);
-    REGISTER_MESSAGE(GetParseFailureInfo);
-    REGISTER_MESSAGE(UnrecognizedIdentifier);
-    REGISTER_MESSAGE(InstallFailed);
-    REGISTER_MESSAGE(OverwritingFile);
-    REGISTER_MESSAGE(InvalidFileType);
-    REGISTER_MESSAGE(ConflictingFiles);
-    REGISTER_MESSAGE(InstalledBy);
-    REGISTER_MESSAGE(UnsupportedFeature);
-    REGISTER_MESSAGE(ComputingInstallPlan);
-    REGISTER_MESSAGE(EmptyInstallPlan);
-    REGISTER_MESSAGE(VcpkgInVsPrompt);
-    REGISTER_MESSAGE(ElapsedInstallTime);
-    REGISTER_MESSAGE(Test);
 }
