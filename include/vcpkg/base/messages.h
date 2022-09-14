@@ -1648,4 +1648,9 @@ namespace vcpkg
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}.");
     DECLARE_MESSAGE(InvalidTriplet, (msg::triplet), "", "Invalid triplet: {triplet}");
+    DECLARE_MESSAGE(GetParseFailureInfo, (), "", "Use '--debug' to get more information about the parse failures.");
+    DECLARE_MESSAGE(ManifestConflict,
+                    (msg::path),
+                    "",
+                    "Found both a manifest and CONTROL files in port {path}; please rename one or the other");
 }

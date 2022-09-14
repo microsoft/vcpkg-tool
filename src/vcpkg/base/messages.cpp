@@ -804,4 +804,6 @@ namespace vcpkg
     REGISTER_MESSAGE(WindowsOnlyCommand);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
     REGISTER_MESSAGE(InvalidTriplet);
+    REGISTER_MESSAGE(ManifestConflict);
+    REGISTER_MESSAGE(GetParseFailureInfo);
 }
