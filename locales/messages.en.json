@@ -382,6 +382,7 @@
   "UnknownTool": "vcpkg does not have a definition of this tool for this platform.",
   "UnknownVariablesInTemplate": "invalid argument: url template '{value}' contains unknown variables: {list}",
   "UnrecognizedConfigField": "configuration contains the following unrecognized fields:",
+  "UnrecognizedIdentifier": "Unrecognized identifer name {value}. Add to override list in triplet file.",
   "UnsupportedPort": "Port {package_name} is not supported.",
   "UnsupportedPortDependency": "- dependency {value} is not supported.",
   "UnsupportedPortFeature": "{spec} is only supported on '{supports_expression}'",

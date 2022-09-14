@@ -1653,4 +1653,8 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "Found both a manifest and CONTROL files in port {path}; please rename one or the other");
+    DECLARE_MESSAGE(UnrecognizedIdentifier,
+                    (msg::value),
+                    "'{value}' is an expression identifier",
+                    "Unrecognized identifer name {value}. Add to override list in triplet file.");
 }

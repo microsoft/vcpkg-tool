@@ -626,6 +626,8 @@
   "UnknownVariablesInTemplate": "invalid argument: url template '{value}' contains unknown variables: {list}",
   "_UnknownVariablesInTemplate.comment": "{value} is the value provided by the user and {list} a list of unknown variables seperated by comma",
   "UnrecognizedConfigField": "configuration contains the following unrecognized fields:",
+  "UnrecognizedIdentifier": "Unrecognized identifer name {value}. Add to override list in triplet file.",
+  "_UnrecognizedIdentifier.comment": "'{value}' is an expression identifier",
   "UnsupportedPort": "Port {package_name} is not supported.",
   "_UnsupportedPort.comment": "An example of {package_name} is zlib.",
   "UnsupportedPortDependency": "- dependency {value} is not supported.",

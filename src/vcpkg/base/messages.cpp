@@ -806,4 +806,5 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidTriplet);
     REGISTER_MESSAGE(ManifestConflict);
     REGISTER_MESSAGE(GetParseFailureInfo);
+    REGISTER_MESSAGE(UnrecognizedIdentifier);
 }
