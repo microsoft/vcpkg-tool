@@ -250,6 +250,7 @@
   "InvalidFilename": "Filename cannot contain invalid chars {value}, but was {path}",
   "InvalidFormatString": "invalid format string: {actual}",
   "InvalidLinkage": "Invalid {system_name} linkage type: [{value}]",
+  "InvalidTriplet": "Invalid triplet: {triplet}",
   "IrregularFile": "path was not a regular file: {path}",
   "JsonErrorMustBeAnObject": "Expected \"{path}\" to be an object.",
   "JsonSwitch": "(Experimental) Request JSON output.",

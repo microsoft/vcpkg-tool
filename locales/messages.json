@@ -413,6 +413,8 @@
   "_InvalidFormatString.comment": "{actual} is the provided format string",
   "InvalidLinkage": "Invalid {system_name} linkage type: [{value}]",
   "_InvalidLinkage.comment": "'{value}' is the linkage type vcpkg would did not understand. (Correct values would be static ofr dynamic) An example of {system_name} is Darwin.",
+  "InvalidTriplet": "Invalid triplet: {triplet}",
+  "_InvalidTriplet.comment": "An example of {triplet} is x64-windows.",
   "IrregularFile": "path was not a regular file: {path}",
   "_IrregularFile.comment": "An example of {path} is /foo/bar.",
   "JsonErrorMustBeAnObject": "Expected \"{path}\" to be an object.",
