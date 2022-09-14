@@ -98,7 +98,7 @@ namespace vcpkg
                     fs.create_directory(target, ec);
                     if (ec)
                     {
-                        vcpkg::printf(Color::error, "failed: %s: %s\n", target, ec.message());
+                        msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
                     }
 
                     // Trailing backslash for directories
@@ -110,13 +110,13 @@ namespace vcpkg
                 {
                     if (fs.exists(target, IgnoreErrors{}))
                     {
-                        print2(Color::warning, "File ", target, " was already present and will be overwritten\n");
+                        msg::println_warning(msgOverwritingFile, msg::path = target);
                     }
 
                     fs.copy_file(file, target, CopyOptions::overwrite_existing, ec);
                     if (ec)
                     {
-                        vcpkg::printf(Color::error, "failed: %s: %s\n", target, ec.message());
+                        msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
                     }
 
                     output.push_back(std::move(this_output));
@@ -127,19 +127,19 @@ namespace vcpkg
                 {
                     if (fs.exists(target, IgnoreErrors{}))
                     {
-                        print2(Color::warning, "File ", target, " was already present and will be overwritten\n");
+                        msg::println_warning(msgOverwritingFile, msg::path = target);
                     }
 
                     fs.copy_symlink(file, target, ec);
                     if (ec)
                     {
-                        vcpkg::printf(Color::error, "failed: %s: %s\n", target, ec.message());
+                        msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
                     }
 
                     output.push_back(std::move(this_output));
                     break;
                 }
-                default: vcpkg::printf(Color::error, "failed: %s: cannot handle file type\n", file); break;
+                default: msg::println_error(msgInvalidFileType, msg::path = file); break;
             }
         }
 
@@ -236,20 +236,20 @@ namespace vcpkg
         if (!intersection.empty())
         {
             const auto triplet_install_path = installed.triplet_dir(triplet);
-            vcpkg::printf(Color::error,
-                          "The following files are already installed in %s and are in conflict with %s\n\n",
-                          triplet_install_path.generic_u8string(),
-                          bcf.core_paragraph.spec);
+            msg::println_error(msgConflictingFiles,
+                               msg::path = triplet_install_path.generic_u8string(),
+                               msg::spec = bcf.core_paragraph.spec);
 
             auto i = intersection.begin();
             while (i != intersection.end())
             {
-                print2("Installed by ", i->second, "\n    ");
+                msg::println(msg::format(msgInstalledBy, msg::path = i->second).append_indent());
                 auto next =
                     std::find_if(i, intersection.end(), [i](const auto& val) { return i->second != val.second; });
 
-                print2(Strings::join("\n    ", i, next, [](const file_pack& file) { return file.first; }));
-                print2("\n\n");
+                msg::write_unlocalized_text_to_stdout(
+                    Color::none, Strings::join("\n    ", i, next, [](const file_pack& file) { return file.first; }));
+                msg::write_unlocalized_text_to_stdout(Color::none, "\n\n");
 
                 i = next;
             }
@@ -642,7 +642,7 @@ namespace vcpkg
             auto existing = printed_usages.lower_bound(message);
             if (existing == printed_usages.end() || *existing != message)
             {
-                print2(message);
+                msg::write_unlocalized_text_to_stdout(Color::none, message);
                 printed_usages.insert(existing, std::move(message));
             }
         }
@@ -972,7 +972,7 @@ namespace vcpkg
             if (!maybe_manifest_scf)
             {
                 print_error_message(maybe_manifest_scf.error());
-                print2("See ", docs::manifests_url, " for more information.\n");
+                msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
@@ -1016,10 +1016,8 @@ namespace vcpkg
 
                 if (it == manifest_scf->feature_paragraphs.end())
                 {
-                    vcpkg::printf(Color::warning,
-                                  "Warning: feature %s was passed, but that is not a feature that %s supports.",
-                                  feature,
-                                  manifest_core.name);
+                    msg::println_warning(
+                        msgUnsupportedFeature, msg::feature = feature, msg::package_name = manifest_core.name);
                 }
                 else
                 {
@@ -1103,7 +1101,7 @@ namespace vcpkg
         });
 
         // create the plan
-        print2("Computing installation plan...\n");
+        msg::println(msgComputingInstallPlan);
         StatusParagraphs status_db = database_load_check(fs, paths.installed());
 
         // Note: action_plan will hold raw pointers to SourceControlFileLocations from this map
@@ -1112,7 +1110,7 @@ namespace vcpkg
 
         for (const auto& warning : action_plan.warnings)
         {
-            print2(Color::warning, warning, '\n');
+            msg::write_unlocalized_text_to_stdout(Color::warning, warning + '\n');
         }
         for (auto&& action : action_plan.install_actions)
         {
@@ -1127,7 +1125,7 @@ namespace vcpkg
         var_provider.load_tag_vars(action_plan, provider, host_triplet);
 
         // install plan will be empty if it is already installed - need to change this at status paragraph part
-        Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty(), "Install plan cannot be empty");
+        Checks::msg_check_exit(VCPKG_LINE_INFO, !action_plan.empty(), msgEmptyInstallPlan);
 
 #if defined(_WIN32)
         const auto maybe_common_triplet = Util::common_projection(
@@ -1146,16 +1144,8 @@ namespace vcpkg
                     if (common_arch != vs_prompt)
                     {
                         const auto vs_prompt_view = to_zstring_view(vs_prompt);
-                        print2(vcpkg::Color::warning,
-                               "warning: vcpkg appears to be in a Visual Studio prompt targeting ",
-                               vs_prompt_view,
-                               " but is installing packages for ",
-                               common_triplet,
-                               ". Consider using --triplet ",
-                               vs_prompt_view,
-                               "-windows or --triplet ",
-                               vs_prompt_view,
-                               "-uwp.\n");
+                        msg::println_warning(
+                            msgVcpkgInVsPrompt, msg::value = vs_prompt_view, msg::triplet = common_triplet);
                     }
                 }
             }
@@ -1173,7 +1163,7 @@ namespace vcpkg
             auto pkgsconfig_path = paths.original_cwd / it_pkgsconfig->second;
             auto pkgsconfig_contents = generate_nuget_packages_config(action_plan);
             fs.write_contents(pkgsconfig_path, pkgsconfig_contents, VCPKG_LINE_INFO);
-            print2("Wrote NuGet packages config information to ", pkgsconfig_path, "\n");
+            msg::println(msgWroteNuGetPkgConfInfo, msg::path = pkgsconfig_path);
         }
 
         if (dry_run)
@@ -1187,8 +1177,7 @@ namespace vcpkg
 
         const InstallSummary summary = Install::perform(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), var_provider);
-
-        print2("\nTotal elapsed time: ", GlobalState::timer.to_string(), "\n\n");
+        msg::println(msg::format(msgElapsedInstallTime, msg::count = GlobalState::timer.to_string()).append_raw('\n'));
 
         if (keep_going == KeepGoing::YES)
         {

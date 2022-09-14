@@ -807,4 +807,15 @@ namespace vcpkg
     REGISTER_MESSAGE(ManifestConflict);
     REGISTER_MESSAGE(GetParseFailureInfo);
     REGISTER_MESSAGE(UnrecognizedIdentifier);
+    REGISTER_MESSAGE(InstallFailed);
+    REGISTER_MESSAGE(OverwritingFile);
+    REGISTER_MESSAGE(InvalidFileType);
+    REGISTER_MESSAGE(ConflictingFiles);
+    REGISTER_MESSAGE(InstalledBy);
+    REGISTER_MESSAGE(UnsupportedFeature);
+    REGISTER_MESSAGE(ComputingInstallPlan);
+    REGISTER_MESSAGE(EmptyInstallPlan);
+    REGISTER_MESSAGE(VcpkgInVsPrompt);
+    REGISTER_MESSAGE(ElapsedInstallTime);
+    REGISTER_MESSAGE(Test);
 }

@@ -1657,4 +1657,25 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is an expression identifier",
                     "Unrecognized identifer name {value}. Add to override list in triplet file.");
+    DECLARE_MESSAGE(InstallFailed, (msg::path, msg::error_msg), "", "failed: {path}: {error_msg}");
+    DECLARE_MESSAGE(OverwritingFile, (msg::path), "", "File {path} was already present and will be overwritten");
+    DECLARE_MESSAGE(InvalidFileType, (msg::path), "", "failed: {path} cannot handle file type");
+    DECLARE_MESSAGE(ConflictingFiles,
+                    (msg::path, msg::spec),
+                    "",
+                    "The following files are already installed in {path} and are in conflict with {spec}");
+    DECLARE_MESSAGE(InstalledBy, (msg::path), "", "Installed by {path}");
+    DECLARE_MESSAGE(UnsupportedFeature,
+                    (msg::feature, msg::package_name),
+                    "",
+                    "feature {feature} was passed, but that is not a feature supported by {package_name} supports.");
+    DECLARE_MESSAGE(ComputingInstallPlan, (), "", "Computing installation plan...");
+    DECLARE_MESSAGE(EmptyInstallPlan, (), "", "Install plan cannot be empty");
+    DECLARE_MESSAGE(VcpkgInVsPrompt,
+                    (msg::value, msg::triplet),
+                    "'{value}' is a VS prompt",
+                    "vcpkg appears to be in a Visual Studio prompt targeting {value} but installing for {triplet}. "
+                    "Consider using --triplet {value}-windows or --triplet {value}-uwp.");
+    DECLARE_MESSAGE(ElapsedInstallTime, (msg::count), "", "\nTotal elapsed time: {count}");
+    DECLARE_MESSAGE(Test, (), "", "will this compile");
 }
