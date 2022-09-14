@@ -1647,4 +1647,5 @@ namespace vcpkg
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}.");
+    DECLARE_MESSAGE(InsertedNullParagraph, (), "", "Inserted null paragraph");
 }

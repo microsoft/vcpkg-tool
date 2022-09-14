@@ -216,6 +216,7 @@
   "IncorrectNumberOfArgs": "'{command_name}' requires '{expected}' arguments, but '{actual}' were provided.",
   "InfoSetEnvVar": "You can also set the environment variable '{env_var}' to your editor of choice.",
   "InitRegistryFailedNoRepo": "Could not create a registry at {path} because this is not a git repository root.\nUse `git init {command_line}` to create a git repository in this folder.",
+  "InsertedNullParagraph": "Inserted null paragraph",
   "InstallPackageInstruction": "With a project open, go to Tools->NuGet Package Manager->Package Manager Console and paste:\n Install-Package \"{value}\" -Source \"{path}\"",
   "InstallRootDir": "(Experimental) Specify the install root directory.",
   "InstallWithSystemManager": "You may be able to install this tool via your system package manager.",
