@@ -39,7 +39,7 @@ export async function installEspIdf(session: Session, events: Partial<InstallEve
       chunk.toString().split('\n').forEach((line: string) => {
         const match_array = line.match(regex);
         if (match_array !== null) {
-          events.heartbeat?.('Installing espidf');
+          events.unpackArchiveHeartbeat?.('Installing espidf');
         }
       });
     }
