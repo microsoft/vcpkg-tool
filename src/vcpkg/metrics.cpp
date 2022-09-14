@@ -101,6 +101,27 @@ namespace vcpkg
         return {ENTRIES.data(), ENTRIES.size()};
     }
 
+    View<MetricEntry<StringMetric>> Metrics::get_string_metrics_preregister_values()
+    {
+        // mock values in telemetry
+        static constexpr std::array<MetricEntry<StringMetric>, static_cast<size_t>(StringMetric::COUNT)> ENTRIES{{
+            {StringMetric::BuildError, "gsl:x64-windows"},
+            {StringMetric::CommandArgs, "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff"},
+            {StringMetric::CommandContext, "artifact"},
+            {StringMetric::CommandName, "z-preregister-telemetry"},
+            {StringMetric::Error, "build failed"},
+            {StringMetric::InstallPlan_1, "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff"},
+            {StringMetric::ListFile, "update to new format"},
+            {StringMetric::RegistriesDefaultRegistryKind, "builtin-files"},
+            {StringMetric::RegistriesKindsUsed, "git,filesystem"},
+            {StringMetric::Title, "title"},
+            {StringMetric::UserMac, "0"},
+            {StringMetric::VcpkgVersion, "2999-12-31-unknownhash"},
+            {StringMetric::Warning, "warning"},
+        }};
+        return {ENTRIES.data(), ENTRIES.size()};
+    }
+
     static std::string get_current_date_time_string()
     {
         auto maybe_time = CTime::get_current_date_time();

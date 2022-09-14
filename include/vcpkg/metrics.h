@@ -99,6 +99,7 @@ namespace vcpkg
         // exposed for testing
         static View<MetricEntry<DefineMetric>> get_define_metrics();
         static View<MetricEntry<StringMetric>> get_string_metrics();
+        static View<MetricEntry<StringMetric>> get_string_metrics_preregister_values();
         static View<MetricEntry<BoolMetric>> get_bool_metrics();
     };
 

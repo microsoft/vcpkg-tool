@@ -42,6 +42,7 @@
 #include <vcpkg/commands.xvsinstances.h>
 #include <vcpkg/commands.zbootstrap-standalone.h>
 #include <vcpkg/commands.zce.h>
+#include <vcpkg/commands.zpreregistertelemetry.h>
 #include <vcpkg/commands.zprintconfig.h>
 #include <vcpkg/export.h>
 #include <vcpkg/help.h>
@@ -60,6 +61,7 @@ namespace vcpkg::Commands
         static const GenerateDefaultMessageMapCommand generate_message_map{};
         static const Hash::HashCommand hash{};
         static const ZBootstrapStandaloneCommand zboostrap_standalone{};
+        static const ZPreRegisterTelemetryCommand zpreregister_telemetry{};
 #if defined(_WIN32)
         static const UploadMetrics::UploadMetricsCommand upload_metrics{};
 #endif // defined(_WIN32)
@@ -72,6 +74,7 @@ namespace vcpkg::Commands
             {"x-download", &xdownload},
             {"x-generate-default-message-map", &generate_message_map},
             {"z-bootstrap-standalone", &zboostrap_standalone},
+            {"z-preregister-telemetry", &zpreregister_telemetry},
 #if defined(_WIN32)
             {"x-upload-metrics", &upload_metrics},
 #endif // defined(_WIN32)
