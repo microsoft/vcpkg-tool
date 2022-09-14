@@ -142,6 +142,7 @@
   "ExpectedCharacterHere": "expected '{expected}' here",
   "ExpectedFailOrSkip": "expected 'fail', 'skip', or 'pass' here",
   "ExpectedPortName": "expected a port name here",
+  "ExpectedStatusField": "Expected 'status' field in status paragraph",
   "ExpectedTripletName": "expected a triplet name here",
   "ExpectedValueForOption": "expected value after --{option}.",
   "ExportingPackage": "Exporting {package_name}...",

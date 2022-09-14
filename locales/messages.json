@@ -247,6 +247,7 @@
   "_ExpectedCharacterHere.comment": "{expected} is a locale-invariant delimiter; for example, the ':' or '=' in 'zlib:x64-windows=skip'",
   "ExpectedFailOrSkip": "expected 'fail', 'skip', or 'pass' here",
   "ExpectedPortName": "expected a port name here",
+  "ExpectedStatusField": "Expected 'status' field in status paragraph",
   "ExpectedTripletName": "expected a triplet name here",
   "ExpectedValueForOption": "expected value after --{option}.",
   "_ExpectedValueForOption.comment": "An example of {option} is editable.",

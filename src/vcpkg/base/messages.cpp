@@ -804,4 +804,5 @@ namespace vcpkg
     REGISTER_MESSAGE(WindowsOnlyCommand);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
     REGISTER_MESSAGE(InsertedNullParagraph);
+    REGISTER_MESSAGE(ExpectedStatusField);
 }
