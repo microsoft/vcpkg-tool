@@ -9,13 +9,13 @@ import { argv } from 'process';
 import { CommandLine } from './cli/command-line';
 import { AcquireCommand } from './cli/commands/acquire';
 import { ActivateCommand } from './cli/commands/activate';
-import { ActivateMSBuildPropsCommand } from './cli/commands/activate-msbuildprops';
 import { AddCommand } from './cli/commands/add';
 import { CacheCommand } from './cli/commands/cache';
 import { CleanCommand } from './cli/commands/clean';
 import { DeactivateCommand } from './cli/commands/deactivate';
 import { DeleteCommand } from './cli/commands/delete';
 import { FindCommand } from './cli/commands/find';
+import { GenerateMSBuildPropsCommand } from './cli/commands/generate-msbuildprops';
 import { HelpCommand } from './cli/commands/help';
 import { ListCommand } from './cli/commands/list';
 import { RegenerateCommand } from './cli/commands/regenerate-index';
@@ -89,7 +89,7 @@ async function main() {
   const del = new DeleteCommand(commandline);
 
   const activate = new ActivateCommand(commandline);
-  const activate_msbuildprops = new ActivateMSBuildPropsCommand(commandline);
+  const activate_msbuildprops = new GenerateMSBuildPropsCommand(commandline);
   const deactivate = new DeactivateCommand(commandline);
 
   const regenerate = new RegenerateCommand(commandline);

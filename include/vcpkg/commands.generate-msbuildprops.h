@@ -4,7 +4,7 @@
 
 namespace vcpkg::Commands
 {
-    struct ActivateMSBuildPropsCommand : PathsCommand
+    struct GenerateMSBuildPropsCommand : PathsCommand
     {
         void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const override;
     };

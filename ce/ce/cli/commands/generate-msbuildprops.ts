@@ -13,14 +13,14 @@ import { MSBuildProps } from '../switches/msbuild-props';
 import { Project } from '../switches/project';
 import { WhatIf } from '../switches/whatIf';
 
-export class ActivateMSBuildPropsCommand extends Command {
-  readonly command = 'activate-msbuildprops';
+export class GenerateMSBuildPropsCommand extends Command {
+  readonly command = 'generate-msbuildprops';
   readonly aliases = [];
   seeAlso = [];
   argumentsHelp = [];
   whatIf = new WhatIf(this);
   project: Project = new Project(this);
-  msbuildProps: MSBuildProps = new MSBuildProps(this);
+  msbuildProps: MSBuildProps = new MSBuildProps(this, 'out');
   json : Json = new Json(this);
 
   get summary() {
@@ -31,7 +31,7 @@ export class ActivateMSBuildPropsCommand extends Command {
 
   override async run() {
     if (!this.msbuildProps.active) {
-      error(i`activate-msbuildprops requires --msbuild-props`);
+      error(i`generate-msbuildprops requires --msbuild-props`);
       return false;
     }
 
