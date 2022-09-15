@@ -433,6 +433,7 @@ namespace vcpkg
 
     void InstallSummary::print_failed() const
     {
+        msg::println();
         msg::println(msgResultsHeader);
 
         for (const SpecSummary& result : this->results)
@@ -1206,7 +1207,7 @@ namespace vcpkg
         const InstallSummary summary = Install::perform(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), var_provider);
 
-        print2("\nTotal elapsed time: ", GlobalState::timer.to_string(), "\n");
+        print2("\nTotal elapsed time: ", GlobalState::timer.to_string(), "\n\n");
 
         if (keep_going == KeepGoing::YES)
         {
