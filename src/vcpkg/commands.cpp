@@ -21,7 +21,7 @@
 #include <vcpkg/commands.find.h>
 #include <vcpkg/commands.format-manifest.h>
 #include <vcpkg/commands.generate-message-map.h>
-#include <vcpkg/commands.generate-msbuildprops.h>
+#include <vcpkg/commands.generate-msbuild-props.h>
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.hash.h>
 #include <vcpkg/commands.info.h>
@@ -136,7 +136,7 @@ namespace vcpkg::Commands
             {"update", &update},
             {"x-update-baseline", &update_baseline},
             {"use", &use},
-            {"x-generate-msbuildprops", &generate_msbuildprops},
+            {"x-generate-msbuild-props", &generate_msbuildprops},
             {"x-add-version", &add_version},
             {"x-ci-clean", &ciclean},
             {"x-ci-verify-versions", &ci_verify_versions},

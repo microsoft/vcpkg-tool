@@ -14,7 +14,7 @@ import { Project } from '../switches/project';
 import { WhatIf } from '../switches/whatIf';
 
 export class GenerateMSBuildPropsCommand extends Command {
-  readonly command = 'generate-msbuildprops';
+  readonly command = 'generate-msbuild-props';
   readonly aliases = [];
   seeAlso = [];
   argumentsHelp = [];
@@ -31,7 +31,7 @@ export class GenerateMSBuildPropsCommand extends Command {
 
   override async run() {
     if (!this.msbuildProps.active) {
-      error(i`generate-msbuildprops requires --msbuild-props`);
+      error(i`generate-msbuild-props requires --msbuild-props`);
       return false;
     }
 
