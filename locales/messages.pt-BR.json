@@ -64,7 +64,7 @@
   "BuildTroubleshootingMessage1": "Certifique-se de est arusando os mais recentes arquivos de porta com `git pull' e 'vcpkg update'.\nEm seguida, verifique se há problemas conhecidos em:",
   "BuildTroubleshootingMessage2": "Você pode enviar a respeito de um novo problema em:",
   "BuildTroubleshootingMessage3": "Incluir 'Erro de build [{package_name}]' em seu título de relatório de bug, as seguintes informações de versão em sua descrição de bug, e anexe qualquer logs de falha relevante do erro acima.",
-  "BuildTroubleshootingMessage4": "Você também pode usar o modelo preenchido de {path}.",
+  "BuildTroubleshootingMessage4": "Use o modelo pré-preenchido de {path} ao relatar seu problema.",
   "BuildingFromHead": "Criando {spec} de HEAD...",
   "BuildingPackage": "Criando {spec}...",
   "BuildingPackageFailed": "Ocorreu um erro ao compilar {spec} com: {build_result}",

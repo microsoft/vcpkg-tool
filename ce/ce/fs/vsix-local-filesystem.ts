@@ -22,7 +22,7 @@ export class VsixLocalFilesystem extends LocalFileSystem {
    *
    * @param value A string which represents an URI (see `URI#toString`).
    */
-  override parse(value: string, _strict?: boolean): Uri {
+  override parseUri(value: string, _strict?: boolean): Uri {
     return Uri.parseFilterVsix(this, value, _strict, this.vsixBaseUri);
   }
 }

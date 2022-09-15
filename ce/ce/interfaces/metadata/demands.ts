@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 
-import { Session } from '../../session';
 import { Dictionary, Sequence } from '../collections';
 import { Validation } from '../validation';
 import { Exports } from './exports';
@@ -20,17 +19,11 @@ export interface Demands extends Validation {
   /** An error message that the user should get, and abort the installation */
   error: string | undefined; // markdown text with ${} replacements
 
-
   /** A warning message that the user should get, does not abort the installation */
   warning: string | undefined; // markdown text with ${} replacements
 
-
   /** A text message that the user should get, does not abort the installation */
   message: string | undefined; // markdown text with ${} replacements
-
-
-  /** set of artifacts that the consumer should be aware of */
-  seeAlso: Dictionary<VersionReference>;
 
   /** settings that should be applied to the context when activated */
   exports: Exports;
@@ -45,8 +38,4 @@ export interface Demands extends Validation {
    *       package.
    */
   install: Sequence<Installer>;
-
-
-  init(session: Session): Promise<Demands>;
 }
-

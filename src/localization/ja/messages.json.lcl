@@ -612,10 +612,13 @@
       </Item>
       <Item ItemId=";BuildTroubleshootingMessage4" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[You can also use the prefilled template from {path}.]]></Val>
+          <Val><![CDATA[Please use the prefilled template from {path} when reporting your issue.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} から事前入力されたテンプレートを使用することもできます。]]></Val>
+            <Val><![CDATA[問題を報告するときは、{path} の事前に入力されたテンプレートを使用してください。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[You can also use the prefilled template from {path}.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1890,15 +1893,6 @@
           <Val><![CDATA[Hash a file by specific algorithm, default SHA512.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[特定のアルゴリズム (既定の SHA512) でファイルをハッシュします。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";HelpHistoryCommand" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[(Experimental) Show the history of versions of a package.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[(試験段階) パッケージのバージョンの履歴を表示します。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

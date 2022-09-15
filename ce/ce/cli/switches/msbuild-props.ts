@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { resolve } from 'path';
 import { i } from '../../i18n';
 import { session } from '../../main';
 import { Uri } from '../../util/uri';
-import { resolvePath } from '../command-line';
 import { Switch } from '../switch';
 
 export class MSBuildProps extends Switch {
@@ -17,7 +17,11 @@ export class MSBuildProps extends Switch {
   }
 
   override get value(): Uri | undefined {
-    const v = resolvePath(super.value);
-    return v ? session.fileSystem.file(v) : undefined;
+    const v = super.value;
+    if (v) {
+      return session.fileSystem.file(resolve(v));
+    }
+
+    return undefined;
   }
 }

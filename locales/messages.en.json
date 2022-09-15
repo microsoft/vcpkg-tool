@@ -64,7 +64,7 @@
   "BuildTroubleshootingMessage1": "Please ensure you're using the latest port files with `git pull` and `vcpkg update`.\nThen check for known issues at:",
   "BuildTroubleshootingMessage2": "You can submit a new issue at:",
   "BuildTroubleshootingMessage3": "Include '[{package_name}] Build error' in your bug report title, the following version information in your bug description, and attach any relevant failure logs from above.",
-  "BuildTroubleshootingMessage4": "You can also use the prefilled template from {path}.",
+  "BuildTroubleshootingMessage4": "Please use the prefilled template from {path} when reporting your issue.",
   "BuildingFromHead": "Building {spec} from HEAD...",
   "BuildingPackage": "Building {spec}...",
   "BuildingPackageFailed": "building {spec} failed with: {build_result}",

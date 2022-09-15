@@ -1,12 +1,10 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-
+import { resolve } from 'path';
 import { Document, isMap, LineCounter, parseDocument, YAMLMap } from 'yaml';
-import { Registry } from '../artifacts/registry';
 import { i } from '../i18n';
 import { ErrorKind } from '../interfaces/error-kind';
-import { Profile } from '../interfaces/metadata/metadata-format';
 import { ValidationMessage } from '../interfaces/validation-message';
 import { Session } from '../session';
 import { Uri } from '../util/uri';
@@ -17,37 +15,31 @@ import { Contacts } from './contact';
 import { DemandBlock, Demands } from './demands';
 import { GlobalSettings } from './global-settings';
 import { Info } from './info';
-import { Registries } from './registries';
+import { RegistriesDeclaration } from './registries';
 
-export class MetadataFile extends BaseMap implements Profile {
-  session!: Session;
-
-  private constructor(protected document: Document.Parsed, public readonly filename: string, public lineCounter: LineCounter, public readonly file: Uri, public readonly registry: Registry | undefined) {
+export class MetadataFile extends BaseMap {
+  private constructor(protected document: Document.Parsed, public readonly filename: string, public readonly file: Uri, public lineCounter: LineCounter, public readonly registryUri: Uri | undefined) {
     super(<YAMLMap<string, any>><any>document.contents);
+
   }
 
-  async init(session: Session): Promise<MetadataFile> {
-    await this.demandBlock.init(session);
-    return this;
+  static async parseMetadata(filename: string, uri: Uri, session: Session, registryUri?: Uri): Promise<MetadataFile> {
+    return MetadataFile.parseConfiguration(filename, await uri.readUTF8(), session, registryUri);
   }
 
-  static async parseMetadata(uri: Uri, session: Session, registry?: Registry): Promise<MetadataFile> {
-    return MetadataFile.parseConfiguration(uri.path, await uri.readUTF8(), session, registry);
-  }
-
-  static async parseConfiguration(filename: string, content: string, session: Session, registry?: Registry): Promise<MetadataFile> {
+  static async parseConfiguration(filename: string, content: string, session: Session, registryUri?: Uri): Promise<MetadataFile> {
     const lc = new LineCounter();
     if (!content || content === 'null') {
       content = '{\n}';
     }
     const doc = parseDocument(content, { prettyErrors: false, lineCounter: lc, strict: true });
-    return new MetadataFile(doc, filename, lc, session.parseUri(filename), registry).init(session);
+    return new MetadataFile(doc, filename, session.fileSystem.file(resolve(filename)), lc, registryUri);
   }
 
   #info = new Info(undefined, this, 'info');
 
   contacts = new Contacts(undefined, this, 'contacts');
-  registries = new Registries(undefined, this, 'registries');
+  registries = new RegistriesDeclaration(undefined, this, 'registries');
   globalSettings = new GlobalSettings(undefined, this, 'global');
 
   // rather than re-implement it, use encapsulation with a demand block
@@ -95,7 +87,6 @@ export class MetadataFile extends BaseMap implements Profile {
   get message(): string | undefined { return this.demandBlock.message; }
   set message(value: string | undefined) { this.demandBlock.message = value; }
 
-  get seeAlso() { return this.demandBlock.seeAlso; }
   get requires() { return this.demandBlock.requires; }
   get exports() { return this.demandBlock.exports; }
   get install() { return this.demandBlock.install; }
@@ -181,7 +172,7 @@ export class MetadataFile extends BaseMap implements Profile {
   override *validate(): Iterable<ValidationMessage> {
     yield* super.validate();
     const hasInfo = this.document.has('info');
-    const allowedChildren = ['contacts', 'registries', 'global', 'demands', 'exports', 'requires', 'install', 'seeAlso'];
+    const allowedChildren = ['contacts', 'registries', 'global', 'demands', 'exports', 'requires', 'install'];
 
     if (hasInfo) {
       // 2022-06-17 and earlier used a separate 'info' block for these fields
@@ -239,7 +230,6 @@ export class MetadataFile extends BaseMap implements Profile {
     yield* this.exports.validate();
     yield* this.globalSettings.validate();
     yield* this.requires.validate();
-    yield* this.seeAlso.validate();
   }
 
   normalize() {
