@@ -32,6 +32,7 @@ export async function installEspIdf(session: Session, events: Partial<UnpackEven
   };
 
   const idfTools = targetLocation.join('tools/idf_tools.py').fsPath;
+  session.channels.debug(`Running idf installer ${idfTools}`);
 
   const installResult = await execute(pythonPath, [
     idfTools,
@@ -40,6 +41,7 @@ export async function installEspIdf(session: Session, events: Partial<UnpackEven
   ], {
     env: extendedEnvironment,
     onStdOutData: (chunk) => {
+      session.channels.debug('espidf: ' + chunk);
       const regex = /\s(100)%/;
       chunk.toString().split('\n').forEach((line: string) => {
         const match_array = line.match(regex);
@@ -71,6 +73,14 @@ export async function activateEspIdf(session: Session, activation: Activation, t
     throw new Error(i`Could not activate esp-idf: python was not found.`);
   }
 
+  const targetDirectory = targetLocation.fsPath;
+  const dotEspidf = targetLocation.join('.espressif');
+  const extendedEnvironment: NodeJS.ProcessEnv = {
+    ... session.environment,
+    IDF_PATH: targetDirectory,
+    IDF_TOOLS_PATH: dotEspidf.fsPath
+  };
+
   const activateIdf = await execute(pythonPath, [
     `${targetLocation.fsPath}/tools/idf_tools.py`,
     'export',
@@ -78,6 +88,7 @@ export async function activateEspIdf(session: Session, activation: Activation, t
     'key-value',
     '--prefer-system'
   ], {
+    env: extendedEnvironment,
     onStdOutData: (chunk) => {
       chunk.toString().split('\n').forEach((line: string) => {
         const splitLine = line.split('=');
@@ -106,6 +117,7 @@ export async function activateEspIdf(session: Session, activation: Activation, t
     throw new Error(`Failed to activate esp-idf - ${activateIdf.stderr}`);
   }
 
-  activation.addTool('IDF_TOOLS_PATH', targetLocation.join('.espressif').fsPath);
+  activation.addEnvironmentVariable('IDF_PATH', targetDirectory);
+  activation.addTool('IDF_TOOLS_PATH', dotEspidf.fsPath);
   return true;
 }
