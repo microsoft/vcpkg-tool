@@ -3,7 +3,7 @@
 
 import { strict } from 'assert';
 import { MetadataFile } from './amf/metadata-file';
-import { Activation, deactivate } from './artifacts/activation';
+import { deactivate } from './artifacts/activation';
 import { Artifact, InstalledArtifact } from './artifacts/artifact';
 import { configurationName, defaultConfig, globalConfigurationFile, postscriptVariable, undo } from './constants';
 import { FileSystem } from './fs/filesystem';
@@ -73,7 +73,6 @@ export class Session {
   readonly tmpFolder: Uri;
   readonly installFolder: Uri;
   readonly registryFolder: Uri;
-  readonly activation: Activation = new Activation(this);
   get vcpkgCommand() { return this.settings.vcpkgCommand; }
 
   readonly globalConfig: Uri;

@@ -1,6 +1,7 @@
 #include <vcpkg/base/system.print.h>
 
 #include <vcpkg/build.h>
+#include <vcpkg/commands.activate-msbuildprops.h>
 #include <vcpkg/commands.activate.h>
 #include <vcpkg/commands.add-version.h>
 #include <vcpkg/commands.add.h>
@@ -85,6 +86,7 @@ namespace vcpkg::Commands
     Span<const PackageNameAndFunction<const PathsCommand*>> get_available_paths_commands()
     {
         static const ActivateCommand activate{};
+        static const ActivateMSBuildPropsCommand activate_msbuildprops{};
         static const AddCommand add{};
         static const AddVersion::AddVersionCommand add_version{};
         static const Autocomplete::AutocompleteCommand autocomplete{};
@@ -134,6 +136,7 @@ namespace vcpkg::Commands
             {"update", &update},
             {"x-update-baseline", &update_baseline},
             {"use", &use},
+            {"x-activate-msbuildprops", &activate_msbuildprops},
             {"x-add-version", &add_version},
             {"x-ci-clean", &ciclean},
             {"x-ci-verify-versions", &ci_verify_versions},

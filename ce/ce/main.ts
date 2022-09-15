@@ -9,6 +9,7 @@ import { argv } from 'process';
 import { CommandLine } from './cli/command-line';
 import { AcquireCommand } from './cli/commands/acquire';
 import { ActivateCommand } from './cli/commands/activate';
+import { ActivateMSBuildPropsCommand } from './cli/commands/activate-msbuildprops';
 import { AddCommand } from './cli/commands/add';
 import { CacheCommand } from './cli/commands/cache';
 import { CleanCommand } from './cli/commands/clean';
@@ -88,6 +89,7 @@ async function main() {
   const del = new DeleteCommand(commandline);
 
   const activate = new ActivateCommand(commandline);
+  const activate_msbuildprops = new ActivateMSBuildPropsCommand(commandline);
   const deactivate = new DeactivateCommand(commandline);
 
   const regenerate = new RegenerateCommand(commandline);

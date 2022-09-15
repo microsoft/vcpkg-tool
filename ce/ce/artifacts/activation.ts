@@ -69,7 +69,7 @@ export class Activation {
 
       // the folder is relative to the artifact install
       for (const folder of values) {
-        this.addPath(pathName, resolve(targetFolder.fsPath, folder));
+        this.addPath(pathName, targetFolder.join(folder).fsPath);
       }
     }
 
@@ -78,7 +78,7 @@ export class Activation {
       if (!toolName || !toolPath) {
         continue;
       }
-      this.addTool(toolName, resolve(targetFolder.fsPath, toolPath));
+      this.addTool(toolName, targetFolder.join(toolPath).fsPath);
     }
 
     // **** locations ****
@@ -87,7 +87,7 @@ export class Activation {
         continue;
       }
 
-      this.addLocation(name, resolve(targetFolder.fsPath, location));
+      this.addLocation(name, targetFolder.join(location).fsPath);
     }
 
     // **** variables ****
