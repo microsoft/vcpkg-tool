@@ -34,26 +34,6 @@
 
 using namespace vcpkg;
 
-namespace
-{
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgInvalidCommand, (msg::command_name), "", "invalid command: {command_name}");
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgSendMetricsButDisabled,
-                                 (),
-                                 "",
-                                 "passed --sendmetrics, but metrics are disabled.");
-    DECLARE_AND_REGISTER_MESSAGE(
-        VcpkgHasCrashed,
-        (),
-        "Printed at the start of a crash report.",
-        "vcpkg has crashed. Please create an issue at https://github.com/microsoft/vcpkg containing a brief summary of "
-        "what you were trying to do and the following information.");
-    DECLARE_AND_REGISTER_MESSAGE(
-        ForceSystemBinariesOnWeirdPlatforms,
-        (),
-        "",
-        "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.");
-}
-
 static void invalid_command(const std::string& cmd)
 {
     msg::println(Color::error, msgVcpkgInvalidCommand, msg::command_name = cmd);
@@ -64,7 +44,8 @@ static void invalid_command(const std::string& cmd)
 static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 {
     // track version on each invocation
-    LockGuardPtr<Metrics>(g_metrics)->track_property("vcpkg_version", Commands::Version::version.to_string());
+    LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::VcpkgVersion,
+                                                            Commands::Version::version.to_string());
 
     if (args.command.empty())
     {
@@ -87,11 +68,11 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
         }
     };
 
-    LockGuardPtr<Metrics>(g_metrics)->track_option("overlay_ports", !args.overlay_ports.empty());
+    LockGuardPtr<Metrics>(g_metrics)->track_bool_property(BoolMetric::OptionOverlayPorts, !args.overlay_ports.empty());
 
     if (const auto command_function = find_command(Commands::get_available_basic_commands()))
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("command_name", command_function->name);
+        LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::CommandName, command_function->name);
         return command_function->function->perform_and_exit(args, fs);
     }
 
@@ -102,18 +83,18 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 
     if (const auto command_function = find_command(Commands::get_available_paths_commands()))
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("command_name", command_function->name);
+        LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::CommandName, command_function->name);
         return command_function->function->perform_and_exit(args, paths);
     }
 
     Triplet default_triplet = vcpkg::default_triplet(args);
-    Input::check_triplet(default_triplet, paths);
+    check_triplet(default_triplet, paths);
     Triplet host_triplet = vcpkg::default_host_triplet(args);
-    Input::check_triplet(host_triplet, paths);
+    check_triplet(host_triplet, paths);
 
     if (const auto command_function = find_command(Commands::get_available_triplet_commands()))
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("command_name", command_function->name);
+        LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::CommandName, command_function->name);
         return command_function->function->perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 
@@ -336,7 +317,7 @@ int main(const int argc, const char* const* const argv)
         exc_msg = "unknown error(...)";
     }
 
-    LockGuardPtr<Metrics>(g_metrics)->track_property("error", exc_msg);
+    LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::Error, exc_msg);
 
     fflush(stdout);
     msg::println(msgVcpkgHasCrashed);

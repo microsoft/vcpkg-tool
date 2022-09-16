@@ -31,15 +31,10 @@ namespace
 
     static constexpr StringLiteral registry_versions_dir_name = "versions";
 
-    DECLARE_AND_REGISTER_MESSAGE(PortNotInBaseline,
-                                 (msg::package_name),
-                                 "",
-                                 "the baseline does not contain an entry for port {package_name}");
-
     GitConfig git_registries_config(const VcpkgPaths& paths)
     {
         GitConfig conf;
-        conf.git_work_tree = paths.reg_cache_dir() / "git";
+        conf.git_work_tree = paths.registries_cache() / "git";
         conf.git_dir = conf.git_work_tree / ".git";
         return conf;
     }
@@ -99,12 +94,13 @@ namespace
 
         ExpectedL<Path> git_checkout_registry_port(StringView git_object) const
         {
-            const auto destination = m_paths.reg_cache_dir() / "git-trees" / git_object;
-            auto maybe_path = m_paths.get_git_impl(stdout_sink).splat_object(m_gitconfig,
-                                                                  m_paths.get_filesystem(),
-                                                                  m_paths.get_tool_exe(Tools::CMAKE, stdout_sink),
-                                                                  destination,
-                                                                  git_object);
+            const auto destination = m_paths.registries_cache() / "git-trees" / git_object;
+            auto maybe_path = m_paths.get_git_impl(stdout_sink)
+                                  .splat_object(m_gitconfig,
+                                                m_paths.get_filesystem(),
+                                                m_paths.get_tool_exe(Tools::CMAKE, stdout_sink),
+                                                destination,
+                                                git_object);
             if (auto path = maybe_path.get())
             {
                 return *path;
@@ -120,13 +116,14 @@ namespace
             return m_versions_tree.get([this]() -> Path {
                 auto e = get_lock_entry();
                 e.ensure_up_to_date(m_paths);
-                auto maybe_tree = m_paths.get_git_impl(stdout_sink).rev_parse(
-                    m_gitconfig, Strings::concat(e.commit_id(), ':', registry_versions_dir_name));
+                auto maybe_tree =
+                    m_paths.get_git_impl(stdout_sink)
+                        .rev_parse(m_gitconfig, Strings::concat(e.commit_id(), ':', registry_versions_dir_name));
 
                 if (!maybe_tree)
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-no-versions-at-commit",
-                                                                     "defined");
+                    LockGuardPtr<Metrics>(g_metrics)->track_define_property(
+                        DefineMetric::RegistriesErrorNoVersionsAtCommit);
                     Checks::exit_with_message(
                         VCPKG_LINE_INFO,
                         "Error: could not find the git tree for `versions` in repo `%s` at commit `%s`: %s",
@@ -161,8 +158,9 @@ namespace
             }
             if (!m_stale_versions_tree.has_value())
             {
-                auto maybe_tree = m_paths.get_git_impl(stdout_sink).rev_parse(
-                    m_gitconfig, Strings::concat(e.commit_id(), ':', registry_versions_dir_name));
+                auto maybe_tree =
+                    m_paths.get_git_impl(stdout_sink)
+                        .rev_parse(m_gitconfig, Strings::concat(e.commit_id(), ':', registry_versions_dir_name));
                 if (!maybe_tree)
                 {
                     // This could be caused by git gc or otherwise -- fall back to full fetch
@@ -250,13 +248,6 @@ namespace
         std::vector<Version> port_versions;
         std::vector<Path> version_paths;
     };
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorRequireBaseline,
-                                 (),
-                                 "",
-                                 "this vcpkg instance requires a manifest with a specified baseline in order to "
-                                 "interact with ports. Please add 'builtin-baseline' to the manifest or add a "
-                                 "'vcpkg-configuration.json' that redefines the default registry.");
 
     // This registry implementation is the builtin registry without a baseline
     // that will only consult files in ports
@@ -429,8 +420,9 @@ namespace
         {
             const auto destination_tmp = destination_parent / "baseline.json.tmp";
 
-            auto maybe_contents = paths.get_git_impl(stdout_sink).show(paths.git_builtin_config(),
-                                                            Strings::concat(commit_sha, ":versions/baseline.json"));
+            auto maybe_contents =
+                paths.get_git_impl(stdout_sink)
+                    .show(paths.git_builtin_config(), Strings::concat(commit_sha, ":versions/baseline.json"));
             if (auto contents = maybe_contents.get())
             {
                 std::error_code ec;
@@ -691,7 +683,7 @@ namespace
                 Checks::exit_maybe_upgrade(
                     VCPKG_LINE_INFO,
                     "Error: the git registry entry for \"%s\" must have a \"baseline\" field that is a valid git "
-                    "commit SHA (40 lowercase hexadecimal characters).\n"
+                    "commit SHA (40 hexadecimal characters).\n"
                     "The current HEAD of that repo is \"%s\".\n",
                     m_repo,
                     e.commit_id());
@@ -712,8 +704,8 @@ namespace
                 auto maybe_fetch = git.init_fetch(m_gitconfig, m_paths.get_filesystem(), m_repo, m_baseline_identifier);
                 if (!maybe_fetch)
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-could-not-find-baseline",
-                                                                     "defined");
+                    LockGuardPtr<Metrics>(g_metrics)->track_define_property(
+                        DefineMetric::RegistriesErrorCouldNotFindBaseline);
                     Checks::exit_with_message(
                         VCPKG_LINE_INFO,
                         "Error: Couldn't find baseline `\"%s\"` for repo %s:\n%s\nError: Failed to fetch %s:\n%s",
@@ -728,7 +720,8 @@ namespace
 
             if (!maybe_contents)
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-could-not-find-baseline", "defined");
+                LockGuardPtr<Metrics>(g_metrics)->track_define_property(
+                    DefineMetric::RegistriesErrorCouldNotFindBaseline);
                 Checks::exit_with_message(VCPKG_LINE_INFO,
                                           "Error: Couldn't find baseline in commit `\"%s\"` from repo %s:\n%s\n",
                                           m_baseline_identifier,
@@ -746,8 +739,8 @@ namespace
                 }
                 else
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-could-not-find-baseline",
-                                                                     "defined");
+                    LockGuardPtr<Metrics>(g_metrics)->track_define_property(
+                        DefineMetric::RegistriesErrorCouldNotFindBaseline);
                     Checks::exit_maybe_upgrade(
                         VCPKG_LINE_INFO,
                         "The baseline.json from commit `\"%s\"` in the repo %s did not contain a \"default\" field.",
@@ -813,11 +806,12 @@ namespace
 
         const auto destination = m_paths.versions_output() / port_name / git_tree;
 
-        auto maybe_path = m_paths.get_git_impl(stdout_sink).splat_object(m_paths.git_builtin_config(),
-                                                              m_paths.get_filesystem(),
-                                                              m_paths.get_tool_exe(Tools::CMAKE, stdout_sink),
-                                                              destination,
-                                                              git_tree);
+        auto maybe_path = m_paths.get_git_impl(stdout_sink)
+                              .splat_object(m_paths.git_builtin_config(),
+                                            m_paths.get_filesystem(),
+                                            m_paths.get_tool_exe(Tools::CMAKE, stdout_sink),
+                                            destination,
+                                            git_tree);
         if (auto path = maybe_path.get())
         {
             return PathAndLocation{
@@ -987,7 +981,7 @@ namespace
             return Strings::format("Error: versions file for `%s` does not have a top level object.", port_name);
         }
 
-        const auto& versions_object = maybe_versions_json.get()->first.object();
+        const auto& versions_object = maybe_versions_json.get()->first.object(VCPKG_LINE_INFO);
         auto maybe_versions_array = versions_object.get("versions");
         if (!maybe_versions_array || !maybe_versions_array->is_array())
         {
@@ -1028,7 +1022,7 @@ namespace
 
         auto real_baseline = baseline.size() == 0 ? "default" : baseline;
 
-        const auto& obj = value.first.object();
+        const auto& obj = value.first.object(VCPKG_LINE_INFO);
         auto baseline_value = obj.get(real_baseline);
         if (!baseline_value)
         {
@@ -1196,8 +1190,8 @@ namespace vcpkg
         if (it == range.second)
         {
             print2("Fetching registry information from ", repo, " (", reference, ")...\n");
-            auto x =
-                paths.get_git_impl(stdout_sink).init_fetch(git_registries_config(paths), paths.get_filesystem(), repo, reference);
+            auto x = paths.get_git_impl(stdout_sink)
+                         .init_fetch(git_registries_config(paths), paths.get_filesystem(), repo, reference);
             it = lockdata.emplace(repo.to_string(),
                                   EntryData{reference.to_string(), x.value_or_exit(VCPKG_LINE_INFO), false});
             modified = true;
@@ -1241,11 +1235,6 @@ namespace vcpkg
         }
         return default_registry();
     }
-
-    DECLARE_AND_REGISTER_MESSAGE(NoRegistryForPort,
-                                 (msg::package_name),
-                                 "",
-                                 "no registry configured for port {package_name}");
 
     ExpectedL<Version> RegistrySet::baseline_for_port(StringView port_name) const
     {
@@ -1364,7 +1353,7 @@ namespace vcpkg
         if (paths.use_git_default_registry())
         {
             return std::make_unique<GitRegistry>(
-                paths, builtin_registry_git_url().to_string(), "HEAD", std::move(baseline));
+                paths, builtin_registry_git_url.to_string(), "HEAD", std::move(baseline));
         }
         else
         {

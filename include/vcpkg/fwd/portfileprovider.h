@@ -1,6 +1,6 @@
 #pragma once
 
-namespace vcpkg::PortFileProvider
+namespace vcpkg
 {
     struct PortFileProvider;
     struct PathsPortFileProvider;

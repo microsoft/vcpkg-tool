@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { ZipUnpacker } from '../archivers/ZipUnpacker';
+import { unpackZip } from '../archivers/ZipUnpacker';
 import { acquireNugetFile } from '../fs/acquire';
 import { InstallEvents, InstallOptions } from '../interfaces/events';
 import { NupkgInstaller } from '../interfaces/metadata/installers/nupkg';
@@ -9,10 +9,10 @@ import { Session } from '../session';
 import { Uri } from '../util/uri';
 import { applyAcquireOptions } from './util';
 
-export async function installNuGet(session: Session, name: string, targetLocation: Uri, install: NupkgInstaller, events: Partial<InstallEvents>, options: Partial<InstallOptions>): Promise<void> {
+export async function installNuGet(session: Session, name: string, version: string, targetLocation: Uri, install: NupkgInstaller, events: Partial<InstallEvents>, options: Partial<InstallOptions>): Promise<void> {
   const file = await acquireNugetFile(session, install.location, `${name}.zip`, events, applyAcquireOptions(options, install));
-
-  return new ZipUnpacker(session).unpack(
+  return unpackZip(
+    session,
     file,
     targetLocation,
     events,

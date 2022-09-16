@@ -90,7 +90,7 @@ namespace vcpkg
                    ": Manifest files must have a top-level object\n");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
-        return {std::move(manifest_value.first.object()), std::move(manifest_path)};
+        return {std::move(manifest_value.first.object(VCPKG_LINE_INFO)), std::move(manifest_path)};
     }
 
     static Optional<ManifestConfiguration> config_from_manifest(const Path& manifest_path,
@@ -118,7 +118,7 @@ namespace vcpkg
             msg::println(Color::error, msg::msgSeeURL, msg::url = docs::registries_url);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
-        const auto& obj = parsed_config.first.object();
+        const auto& obj = parsed_config.first.object(VCPKG_LINE_INFO);
 
         Json::Reader reader;
         auto parsed_config_opt = reader.visit(obj, get_configuration_deserializer());
@@ -188,10 +188,10 @@ namespace vcpkg
         {
             if (auto p_baseline = manifest->builtin_baseline.get())
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_baseline", "defined");
+                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ManifestBaseline);
                 if (!is_git_commit_sha(*p_baseline))
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_property("versioning-error-baseline", "defined");
+                    LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::VersioningErrorBaseline);
                     Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
                                                "Error: the top-level builtin-baseline (%s) was not a valid commit sha: "
                                                "expected 40 lowercase hexadecimal characters.\n%s\n",
@@ -220,54 +220,6 @@ namespace vcpkg
 
     namespace details
     {
-        namespace
-        {
-            const ExpectedS<Path>& default_registries_cache_path()
-            {
-                static auto cachepath = get_platform_cache_home().then([](Path p) -> ExpectedS<Path> {
-                    auto maybe_cachepath = get_environment_variable("X_VCPKG_REGISTRIES_CACHE");
-                    if (auto p_str = maybe_cachepath.get())
-                    {
-                        LockGuardPtr<Metrics>(g_metrics)->track_property("X_VCPKG_REGISTRIES_CACHE", "defined");
-                        Path path = *p_str;
-                        path.make_preferred();
-                        const auto status = get_real_filesystem().status(path, VCPKG_LINE_INFO);
-                        if (!vcpkg::exists(status))
-                        {
-                            return {"Path to X_VCPKG_REGISTRIES_CACHE does not exist: " + path.native(),
-                                    expected_right_tag};
-                        }
-
-                        if (!vcpkg::is_directory(status))
-                        {
-                            return {"Value of environment variable X_VCPKG_REGISTRIES_CACHE is not a directory: " +
-                                        path.native(),
-                                    expected_right_tag};
-                        }
-
-                        if (!path.is_absolute())
-                        {
-                            return {"Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute: " +
-                                        path.native(),
-                                    expected_right_tag};
-                        }
-
-                        return {std::move(path), expected_left_tag};
-                    }
-
-                    if (!p.is_absolute())
-                    {
-                        return {"default path was not absolute: " + p.native(), expected_right_tag};
-                    }
-
-                    p /= "vcpkg/registries";
-                    p.make_preferred();
-                    return {std::move(p), expected_left_tag};
-                });
-                return cachepath;
-            }
-        }
-
         struct BundleSettings
         {
             bool m_readonly = false;
@@ -286,20 +238,20 @@ namespace vcpkg
                 auto maybe_bundle_doc = Json::parse(bundle_file, bundle_file);
                 if (auto bundle_doc = maybe_bundle_doc.get())
                 {
-                    const auto& first_object = bundle_doc->first.object();
+                    const auto& first_object = bundle_doc->first.object(VCPKG_LINE_INFO);
                     if (auto v = first_object.get("readonly"))
                     {
-                        ret.m_readonly = v->boolean();
+                        ret.m_readonly = v->boolean(VCPKG_LINE_INFO);
                     }
 
                     if (auto v = first_object.get("usegitregistry"))
                     {
-                        ret.m_usegitregistry = v->boolean();
+                        ret.m_usegitregistry = v->boolean(VCPKG_LINE_INFO);
                     }
 
                     if (auto v = first_object.get("embeddedsha"))
                     {
-                        ret.m_embedded_git_sha = v->string().to_string();
+                        ret.m_embedded_git_sha = v->string(VCPKG_LINE_INFO).to_string();
                     }
                 }
                 else
@@ -370,6 +322,42 @@ namespace vcpkg
             Optional<LockFile> m_installed_lock;
         };
 
+        static Path compute_registries_cache_root(const Filesystem& fs, const VcpkgCmdArguments& args)
+        {
+            Path ret;
+            if (args.registries_cache_dir)
+            {
+                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::X_VcpkgRegistriesCache);
+                ret = *args.registries_cache_dir;
+                const auto status = get_real_filesystem().status(ret, VCPKG_LINE_INFO);
+                if (!vcpkg::exists(status))
+                {
+                    Checks::exit_with_message(VCPKG_LINE_INFO,
+                                              "Path to X_VCPKG_REGISTRIES_CACHE does not exist: " + ret.native());
+                }
+
+                if (!vcpkg::is_directory(status))
+                {
+                    Checks::exit_with_message(
+                        VCPKG_LINE_INFO,
+                        "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not a directory: " + ret.native());
+                }
+
+                if (!ret.is_absolute())
+                {
+                    Checks::exit_with_message(
+                        VCPKG_LINE_INFO,
+                        "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute: " + ret.native());
+                }
+            }
+            else
+            {
+                ret = get_platform_cache_home().value_or_exit(VCPKG_LINE_INFO) / "vcpkg" / "registries";
+            }
+
+            return fs.almost_canonical(ret, VCPKG_LINE_INFO);
+        }
+
         // This structure holds members that
         // 1. Do not have any inter-member dependencies
         // 2. Are const (and therefore initialized in the initializer list)
@@ -381,7 +369,6 @@ namespace vcpkg
                                  const Path& original_cwd)
                 : m_fs(fs)
                 , m_ff_settings(args.feature_flag_settings())
-                , m_reg_cache_root(default_registries_cache_path().value_or_exit(VCPKG_LINE_INFO))
                 , m_manifest_dir(compute_manifest_dir(fs, args, original_cwd))
                 , m_bundle(load_bundle_file(fs, root))
                 , m_download_manager(std::make_shared<DownloadManager>(
@@ -391,6 +378,7 @@ namespace vcpkg
                                         ? fs.almost_canonical(*args.default_visual_studio_path, VCPKG_LINE_INFO)
                                         : Path{})
                 , scripts(process_input_directory(fs, root, args.scripts_root_dir.get(), "scripts", VCPKG_LINE_INFO))
+                , m_registries_cache(compute_registries_cache_root(fs, args))
             {
                 Debug::print("Bundle config: readonly=",
                              m_bundle.m_readonly,
@@ -405,13 +393,13 @@ namespace vcpkg
 
             Filesystem& m_fs;
             const FeatureFlagSettings m_ff_settings;
-            const Path m_reg_cache_root;
             const Path m_manifest_dir;
             const BundleSettings m_bundle;
             const std::shared_ptr<const DownloadManager> m_download_manager;
             const Path m_builtin_ports;
             const Path m_default_vs_path;
             const Path scripts;
+            const Path m_registries_cache;
         };
 
         static Optional<InstalledPaths> compute_installed(Filesystem& fs,
@@ -454,6 +442,7 @@ namespace vcpkg
             {
                 ret = root / "downloads";
             }
+
             return fs.almost_canonical(ret, VCPKG_LINE_INFO);
         }
 
@@ -491,9 +480,10 @@ namespace vcpkg
                                               args.exact_abi_tools_versions.value_or(false) ? RequireExactVersions::YES
                                                                                             : RequireExactVersions::NO))
                 , m_env_cache(m_ff_settings.compiler_tracking)
-                , triplets_dirs(Util::fmap(args.overlay_triplets, [&fs](const std::string& p) {
-                    return fs.almost_canonical(p, VCPKG_LINE_INFO);
-                }))
+                , triplets_dirs(
+                      Util::fmap(args.overlay_triplets,
+                                 [&fs](const std::string& p) { return fs.almost_canonical(p, VCPKG_LINE_INFO); }))
+                , m_artifacts_dir(downloads / "artifacts")
             {
                 if (auto i = m_installed.get())
                 {
@@ -542,8 +532,9 @@ namespace vcpkg
             const Optional<Path> buildtrees;
             const Optional<Path> packages;
             const std::unique_ptr<ToolCache> m_tool_cache;
-            Build::EnvCache m_env_cache;
+            EnvCache m_env_cache;
             std::vector<Path> triplets_dirs;
+            const Path m_artifacts_dir;
 
             std::unique_ptr<IExclusiveFileLock> file_lock_handle;
 
@@ -552,12 +543,6 @@ namespace vcpkg
             std::unique_ptr<RegistrySet> m_registry_set;
         };
     }
-
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgDisallowedClassicMode,
-                                 (),
-                                 "",
-                                 "Could not locate a manifest (vcpkg.json) above the current working "
-                                 "directory.\nThis vcpkg distribution does not have a classic mode instance.");
 
     const InstalledPaths& VcpkgPaths::installed() const
     {
@@ -593,13 +578,6 @@ namespace vcpkg
     const Optional<InstalledPaths>& VcpkgPaths::maybe_installed() const { return m_pimpl->m_installed; }
     const Optional<Path>& VcpkgPaths::maybe_buildtrees() const { return m_pimpl->buildtrees; }
     const Optional<Path>& VcpkgPaths::maybe_packages() const { return m_pimpl->packages; }
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        ErrorMissingVcpkgRoot,
-        (),
-        "",
-        "Could not detect vcpkg-root. If you are trying to use a copy of vcpkg that you've built, you must "
-        "define the VCPKG_ROOT environment variable to point to a cloned copy of https://github.com/Microsoft/vcpkg.");
 
     // Guaranteed to return non-empty
     static Path determine_root(const Filesystem& fs, const Path& original_cwd, const VcpkgCmdArguments& args)
@@ -684,11 +662,12 @@ namespace vcpkg
             LockGuardPtr<Metrics> metrics(g_metrics);
             if (default_registry)
             {
-                metrics->track_property("registries-default-registry-kind", default_registry->kind().to_string());
+                metrics->track_string_property(StringMetric::RegistriesDefaultRegistryKind,
+                                               default_registry->kind().to_string());
             }
             else
             {
-                metrics->track_property("registries-default-registry-kind", "disabled");
+                metrics->track_string_property(StringMetric::RegistriesDefaultRegistryKind, "disabled");
             }
 
             if (other_registries.size() != 0)
@@ -699,7 +678,7 @@ namespace vcpkg
                     registry_kinds.push_back(reg.implementation().kind());
                 }
                 Util::sort_unique_erase(registry_kinds);
-                metrics->track_property("registries-kinds-used", Strings::join(",", registry_kinds));
+                metrics->track_string_property(StringMetric::RegistriesKindsUsed, Strings::join(",", registry_kinds));
             }
         }
     }
@@ -796,7 +775,7 @@ namespace vcpkg
                 return ret;
             }
 
-            for (auto&& reference_to_commit : ref_info_value.object())
+            for (auto&& reference_to_commit : ref_info_value.object(VCPKG_LINE_INFO))
             {
                 auto reference = reference_to_commit.first;
                 const auto& commit = reference_to_commit.second;
@@ -806,7 +785,7 @@ namespace vcpkg
                     Debug::print("Lockfile value for key '", reference, "' was not a string\n");
                     return ret;
                 }
-                auto sv = commit.string();
+                auto sv = commit.string(VCPKG_LINE_INFO);
                 if (!is_git_commit_sha(sv))
                 {
                     Debug::print("Lockfile value for key '", reference, "' was not a git commit sha\n");
@@ -858,7 +837,7 @@ namespace vcpkg
                 return ret;
             }
 
-            ret.lockdata = lockdata_from_json_object(doc.object());
+            ret.lockdata = lockdata_from_json_object(doc.object(VCPKG_LINE_INFO));
 
             return ret;
         }
@@ -889,7 +868,7 @@ namespace vcpkg
         auto obj = lockdata_to_json_object(lockfile.lockdata);
 
         get_filesystem().write_rename_contents(
-            installed().lockfile_path(), "vcpkg-lock.json.tmp", Json::stringify(obj, {}), VCPKG_LINE_INFO);
+            installed().lockfile_path(), "vcpkg-lock.json.tmp", Json::stringify(obj), VCPKG_LINE_INFO);
     }
 
     const Path VcpkgPaths::get_triplet_file_path(Triplet triplet) const
@@ -933,8 +912,6 @@ namespace vcpkg
         conf.git_work_tree = this->root;
         return conf;
     }
-
-    const Path& VcpkgPaths::reg_cache_dir() const { return m_pimpl->m_reg_cache_root; }
 
     Optional<std::string> VcpkgPaths::git_embedded_sha() const { return m_pimpl->m_bundle.m_embedded_git_sha; }
 
@@ -984,27 +961,6 @@ namespace vcpkg
     }
     const DownloadManager& VcpkgPaths::get_download_manager() const { return *m_pimpl->m_download_manager.get(); }
 
-    DECLARE_AND_REGISTER_MESSAGE(ErrorVcvarsUnsupported,
-                                 (msg::triplet),
-                                 "",
-                                 "in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported "
-                                 "on non-Windows hosts.\nDefine 'VCPKG_CMAKE_SYSTEM_NAME' or "
-                                 "'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.");
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstance,
-                                 (msg::triplet),
-                                 "",
-                                 "in triplet {triplet}: Unable to find a valid Visual Studio instance");
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceVersion, (msg::version), "", "with toolset version {version}");
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceFullVersion,
-                                 (msg::version),
-                                 "",
-                                 "with toolset version prefix {version}");
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceAt, (msg::path), "", "at \"{path}\"");
-
 #if defined(_WIN32)
     static const ToolsetsInformation& get_all_toolsets(details::VcpkgPathsImpl& impl, const Filesystem& fs)
     {
@@ -1024,7 +980,7 @@ namespace vcpkg
     }
 #endif
 
-    const Toolset& VcpkgPaths::get_toolset(const Build::PreBuildInfo& prebuildinfo) const
+    const Toolset& VcpkgPaths::get_toolset(const PreBuildInfo& prebuildinfo) const
     {
         if (!prebuildinfo.using_vcvars())
         {
@@ -1083,17 +1039,17 @@ namespace vcpkg
 #endif
     }
 
-    const Environment& VcpkgPaths::get_action_env(const Build::AbiInfo& abi_info) const
+    const Environment& VcpkgPaths::get_action_env(const AbiInfo& abi_info) const
     {
         return m_pimpl->m_env_cache.get_action_env(*this, abi_info);
     }
 
-    const std::string& VcpkgPaths::get_triplet_info(const Build::AbiInfo& abi_info) const
+    const std::string& VcpkgPaths::get_triplet_info(const AbiInfo& abi_info) const
     {
         return m_pimpl->m_env_cache.get_triplet_info(*this, abi_info);
     }
 
-    const Build::CompilerInfo& VcpkgPaths::get_compiler_info(const Build::AbiInfo& abi_info) const
+    const CompilerInfo& VcpkgPaths::get_compiler_info(const AbiInfo& abi_info) const
     {
         return m_pimpl->m_env_cache.get_compiler_info(*this, abi_info);
     }
@@ -1101,6 +1057,9 @@ namespace vcpkg
     Filesystem& VcpkgPaths::get_filesystem() const { return m_pimpl->m_fs; }
 
     bool VcpkgPaths::use_git_default_registry() const { return m_pimpl->m_bundle.m_usegitregistry; }
+
+    const Path& VcpkgPaths::artifacts() const { return m_pimpl->m_artifacts_dir; }
+    const Path& VcpkgPaths::registries_cache() const { return m_pimpl->m_registries_cache; }
 
     const FeatureFlagSettings& VcpkgPaths::get_feature_flags() const { return m_pimpl->m_ff_settings; }
 

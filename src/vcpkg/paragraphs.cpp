@@ -13,28 +13,6 @@
 
 static std::atomic<uint64_t> g_load_ports_stats(0);
 
-namespace
-{
-    using namespace vcpkg;
-
-    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoWhileLoading,
-                                 (msg::path),
-                                 "Error messages are is printed after this.",
-                                 "while loading {path}:");
-
-    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoInvalidFields, (), "", "The following fields were not expected:");
-    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoMissingFields, (), "", "The following fields were missing:");
-    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoWrongTypeFields,
-                                 (),
-                                 "",
-                                 "The following fields had the wrong types:");
-    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoTypesEntry,
-                                 (msg::value, msg::expected),
-                                 "{value} is the name of a field in an on-disk file, {expected} is a short description "
-                                 "of what it should be like 'a non-negative integer' (which isn't localized yet)",
-                                 "{value} was expected to be {expected}");
-}
-
 namespace vcpkg
 {
     void ParseControlErrorInfo::to_string(std::string& target) const
@@ -364,7 +342,8 @@ namespace vcpkg::Paragraphs
         {
             if (val->first.is_object())
             {
-                return SourceControlFile::parse_manifest_object(origin, val->first.object(), warning_sink);
+                return SourceControlFile::parse_port_manifest_object(
+                    origin, val->first.object(VCPKG_LINE_INFO), warning_sink);
             }
 
             error = "Manifest files must have a top-level object";

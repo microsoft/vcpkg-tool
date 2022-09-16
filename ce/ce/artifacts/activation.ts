@@ -11,11 +11,20 @@ import { i } from '../i18n';
 import { Exports } from '../interfaces/metadata/exports';
 import { Session } from '../session';
 import { isIterable } from '../util/checks';
+import { replaceCurlyBraces } from '../util/curly-replacements';
 import { linq, Record } from '../util/linq';
 import { Queue } from '../util/promise';
 import { Uri } from '../util/uri';
-import { toXml } from '../util/xml';
-import { Artifact } from './artifact';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const XMLWriterImpl = require('xml-writer');
+
+export interface XmlWriter {
+  startDocument(version: string | undefined, encoding: string | undefined): XmlWriter;
+  writeElement(name: string, content: string): XmlWriter;
+  writeAttribute(name: string, value: string): XmlWriter;
+  startElement(name: string): XmlWriter;
+  endElement(): XmlWriter;
+}
 
 function findCaseInsensitiveOnWindows<V>(map: Map<string, V>, key: string): V | undefined {
   return process.platform === 'win32' ? linq.find(map, key) : map.get(key);
@@ -28,6 +37,7 @@ export class Activation {
   #aliases = new Map<string, string>();
   #environment = new Map<string, Set<string>>();
   #properties = new Map<string, Set<string>>();
+  #msbuild_properties = new Array<Tuple<string, string>>();
 
   // Relative to the artifact install
   #locations = new Map<string, string>();
@@ -103,6 +113,11 @@ export class Activation {
       }
       this.addAlias(name, alias);
     }
+
+    // **** msbuild-properties ****
+    for (const [name, propertyValue] of exports.msbuild_properties) {
+      this.addMSBuildProperty(name, propertyValue, targetFolder);
+    }
   }
 
 
@@ -119,10 +134,6 @@ export class Activation {
 
   get defines() {
     return linq.entries(this.#defines).selectAsync(async ([key, value]) => <Tuple<string, string>>[key, await this.resolveAndVerify(value)]);
-  }
-
-  get definesCount() {
-    return this.#defines.size;
   }
 
   async getDefine(name: string): Promise<string | undefined> {
@@ -152,10 +163,6 @@ export class Activation {
     return undefined;
   }
 
-  get toolCount() {
-    return this.#tools.size;
-  }
-
   /** Aliases are tools that get exposed to the user as shell aliases */
   addAlias(name: string, value: string) {
     const a = findCaseInsensitiveOnWindows(this.#aliases, name);
@@ -181,7 +188,7 @@ export class Activation {
     return this.#aliases.size;
   }
 
-  /** a collection of 'published locations' from artifacts. useful for msbuild */
+  /** a collection of 'published locations' from artifacts */
   addLocation(name: string, location: string | Uri) {
     if (!name || !location) {
       return;
@@ -202,9 +209,6 @@ export class Activation {
   getLocation(name: string) {
     const l = this.#locations.get(name);
     return l ? this.resolveAndVerify(l) : undefined;
-  }
-  get locationCount() {
-    return this.#locations.size;
   }
 
   /** a collection of environment variables from artifacts that are intended to be combinined into variables that have PATH delimiters */
@@ -231,10 +235,6 @@ export class Activation {
 
   get paths() {
     return linq.entries(this.#paths).selectAsync(async ([key, value]) => <Tuple<string, Set<string>>>[key, await this.resolveAndVerify(value)]);
-  }
-
-  get pathCount() {
-    return this.#paths.size;
   }
 
   async getPath(name: string) {
@@ -270,11 +270,7 @@ export class Activation {
     return linq.entries(this.#environment).selectAsync(async ([key, value]) => <Tuple<string, Set<string>>>[key, await this.resolveAndVerify(value)]);
   }
 
-  get environmentVariableCount() {
-    return this.#environment.size;
-  }
-
-  /** a collection of arbitrary properties from artifacts. useful for msbuild */
+  /** a collection of arbitrary properties from artifacts */
   addProperty(name: string, value: string | Iterable<string>) {
     if (!name) {
       return;
@@ -303,9 +299,20 @@ export class Activation {
     return v ? await this.resolveAndVerify(v) : undefined;
   }
 
-  get propertyCount() {
-    return this.#properties.size;
+  msBuildProcessPropertyValue(value: string, targetFolder: Uri) {
+    // note that this is intended to be consistent with vcpkg's handling:
+    // include/vcpkg/base/api_stable_format.h
+    const initialLocal = targetFolder.fsPath;
+    const endsWithSlash = initialLocal.endsWith('\\') || initialLocal.endsWith('/');
+    const root = endsWithSlash ? initialLocal.substring(0, initialLocal.length - 1) : initialLocal;
+    const replacements = new Map<string, string>([['root', root]]);
+    return replaceCurlyBraces(value, replacements);
   }
+
+  addMSBuildProperty(name: string, value: string, targetFolder: Uri) {
+    this.#msbuild_properties.push([name, this.msBuildProcessPropertyValue(value, targetFolder)]);
+  }
+
   async resolveAndVerify(value: string, locals?: Array<string>, refcheck?: Set<string>): Promise<string>
   async resolveAndVerify(value: Set<string>, locals?: Array<string>, refcheck?: Set<string>): Promise<Set<string>>
   async resolveAndVerify(value: string | Set<string>, locals: Array<string> = [], refcheck = new Set<string>()): Promise<string | Set<string>> {
@@ -335,7 +342,7 @@ export class Activation {
       text = <any>text.value; // spews a --debug warning if a scalar makes its way thru for some reason
     }
 
-    // short-ciruiting
+    // short-circuiting
     if (!text || text.indexOf('$') === -1) {
       return text;
     }
@@ -474,101 +481,22 @@ export class Activation {
     return parts[n].split(delimiter).filter(each => each).map(each => `${front}${each}${back}`);
   }
 
-  async generateMSBuild(artifacts: Iterable<Artifact>): Promise<string> {
-    const msbuildFile = {
-      Project: {
-        $xmlns: 'http://schemas.microsoft.com/developer/msbuild/2003',
-        PropertyGroup: <Array<Record<string, any>>>[]
+  generateMSBuild(): string {
+    const result : XmlWriter = new XMLWriterImpl('  ');
+    result.startDocument('1.0', 'utf-8');
+    result.startElement('Project');
+    result.writeAttribute('xmlns', 'http://schemas.microsoft.com/developer/msbuild/2003');
+    if (this.#msbuild_properties.length) {
+      result.startElement('PropertyGroup');
+      for (const [key, value] of this.#msbuild_properties) {
+        result.writeElement(key, value);
       }
-    };
 
-    if (this.locationCount) {
-      const locations = <Record<string, any>>{
-        $Label: 'Locations'
-      };
-      for await (const [name, location] of this.locations) {
-        locations[name] = location;
-      }
-      msbuildFile.Project.PropertyGroup.push(locations);
+      result.endElement(); // PropertyGroup
     }
 
-    if (this.propertyCount) {
-      const properties = <Record<string, any>>{
-        $Label: 'Properties'
-      };
-
-      for await (const [name, propertyValues] of this.properties) {
-        properties[name] = linq.join(propertyValues, ';');
-      }
-      msbuildFile.Project.PropertyGroup.push(properties);
-    }
-
-    if (this.toolCount) {
-      const tools = <Record<string, any>>{
-        $Label: 'Tools'
-      };
-
-      for await (const [name, tool] of this.tools) {
-        tools[name] = tool;
-      }
-      msbuildFile.Project.PropertyGroup.push(tools);
-    }
-
-    if (this.environmentVariableCount) {
-      const environment = <Record<string, any>>{
-        $Label: 'Environment'
-      };
-
-      for await (const [name, envValues] of this.environmentVariables) {
-        environment[name] = linq.join(envValues, ';');
-      }
-      msbuildFile.Project.PropertyGroup.push(environment);
-    }
-
-    if (this.pathCount) {
-      const paths = <Record<string, any>>{
-        $Label: 'Paths'
-      };
-
-      for await (const [name, pathValues] of this.paths) {
-        paths[name] = linq.join(pathValues, ';');
-      }
-      msbuildFile.Project.PropertyGroup.push(paths);
-    }
-
-    if (this.definesCount) {
-      const defines = <Record<string, any>>{
-        $Label: 'Defines'
-      };
-
-      for await (const [name, define] of this.defines) {
-        defines[name] = linq.join(define, ';');
-      }
-      msbuildFile.Project.PropertyGroup.push(defines);
-    }
-
-    if (this.aliasCount) {
-      const aliases = <Record<string, any>>{
-        $Label: 'Aliases'
-      };
-
-      for await (const [name, alias] of this.aliases) {
-        aliases[name] = alias;
-      }
-      msbuildFile.Project.PropertyGroup.push(aliases);
-    }
-
-    const propertyGroup = <any>{ $Label: 'Artifacts', Artifacts: { Artifact: [] } };
-
-    for (const artifact of artifacts) {
-      propertyGroup.Artifacts.Artifact.push({ $id: artifact.metadata.info.id, '#text': artifact.targetLocation.fsPath });
-    }
-
-    if (propertyGroup.Artifacts.Artifact.length > 0) {
-      msbuildFile.Project.PropertyGroup.push(propertyGroup);
-    }
-
-    return toXml(msbuildFile);
+    result.endElement(); // Project
+    return result.toString();
   }
 
   protected async generateEnvironmentVariables(originalEnvironment: Record<string, string | undefined>): Promise<[Record<string, string>, Record<string, string>]> {
@@ -607,39 +535,52 @@ export class Activation {
     }
 
     // .defines get compiled into a single environment variable.
-    if (this.definesCount) {
-      let defines = '';
-      for await (const [name, value] of this.defines) {
-        defines += value ? `-D${name}=${value} ` : `-D${name} `;
-      }
-      if (defines) {
-        env['DEFINES'] = defines;
-        undo['DEFINES'] = originalEnvironment['DEFINES'] || '';
-      }
+    let defines = '';
+    for await (const [name, value] of this.defines) {
+      defines += value ? `-D${name}=${value} ` : `-D${name} `;
+    }
+    if (defines) {
+      env['DEFINES'] = defines;
+      undo['DEFINES'] = originalEnvironment['DEFINES'] || '';
     }
 
     return [env, undo];
   }
 
-  async activate(artifacts: Iterable<Artifact>, currentEnvironment: Record<string, string | undefined>, shellScriptFile: Uri | undefined, undoEnvironmentFile: Uri | undefined, msbuildFile: Uri | undefined) {
+  async activate(currentEnvironment: Record<string, string | undefined>, shellScriptFile: Uri | undefined, undoEnvironmentFile: Uri | undefined, msbuildFile: Uri | undefined, json: Uri | undefined) {
     let undoDeactivation = '';
     const scriptKind = extname(shellScriptFile?.fsPath || '');
 
     // load previous activation undo data
     const previous = currentEnvironment[undoVariableName];
     if (previous && undoEnvironmentFile) {
-      const deactivationDataFile = this.#session.parseUri(previous);
-      if (deactivationDataFile.scheme === 'file' && await deactivationDataFile.exists()) {
-        const deactivatationData = JSON.parse(await deactivationDataFile.readUTF8());
-        currentEnvironment = undoActivation(currentEnvironment, deactivatationData.environment || {});
+      const deactivationDataFile = this.#session.fileSystem.file(previous);
+      const deactivationData = await deactivationDataFile.tryReadUTF8();
+      if (deactivationData) {
+        const deactivationParsed = JSON.parse(deactivationData);
+        currentEnvironment = undoActivation(currentEnvironment, deactivationParsed.environment || {});
         delete currentEnvironment[undoVariableName];
-        undoDeactivation = generateScriptContent(scriptKind, deactivatationData.environment || {}, deactivatationData.aliases || {});
+        undoDeactivation = generateScriptContent(scriptKind, deactivationParsed.environment || {}, deactivationParsed.aliases || {});
       }
     }
 
     const [variables, undo] = await this.generateEnvironmentVariables(currentEnvironment);
 
-    const aliases = (await toArrayAsync(this.aliases)).reduce((aliases, [name, alias]) => { aliases[name] = alias; return aliases; }, <Record<string, string>>{});
+    async function transformtoRecord<T, U = T> (
+      orig: AsyncGenerator<Promise<Tuple<string, T>>, any, unknown>,
+      // this type cast to U isn't *technically* correct but since it's locally scoped for this next block of code it shouldn't cause problems
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+      func: (value: T) => U = (x => x as unknown as U)) {
+
+      return linq.values((await toArrayAsync(orig))).toObject(tuple => [tuple[0], func(tuple[1])]);
+    }
+
+    const defines = await transformtoRecord(this.defines);
+    const aliases = await transformtoRecord(this.aliases);
+    const locations = await transformtoRecord(this.locations);
+    const tools = await transformtoRecord(this.tools);
+    const properties = await transformtoRecord(this.properties, (set) => Array.from(set));
+    const paths = await transformtoRecord(this.paths, (set) => Array.from(set));
 
     // generate undo file if requested
     if (undoEnvironmentFile) {
@@ -667,9 +608,15 @@ export class Activation {
 
     // generate msbuild props file if requested
     if (msbuildFile) {
-      const contents = await this.generateMSBuild(artifacts);
+      const contents = await this.generateMSBuild();
       this.#session.channels.verbose(`--------[START MSBUILD FILE]--------\n${contents}\n--------[END MSBUILD FILE]---------`);
-      await msbuildFile.writeUTF8(await this.generateMSBuild(artifacts));
+      await msbuildFile.writeUTF8(contents);
+    }
+
+    if (json) {
+      const contents = generateJson(variables, defines, aliases, properties, locations, paths, tools);
+      this.#session.channels.verbose(`--------[START ENV VAR FILE]--------\n${contents}\n--------[END ENV VAR FILE]---------`);
+      await json.writeUTF8(contents);
     }
   }
 
@@ -740,6 +687,22 @@ function generateScriptContent(kind: string, variables: Record<string, string>, 
   return '';
 }
 
+function generateJson(variables: Record<string, string>, defines: Record<string, string>, aliases: Record<string, string>,
+  properties:Record<string, Array<string>>, locations: Record<string, string>, paths: Record<string, Array<string>>, tools: Record<string, string>): string {
+
+  let contents = {
+    'version': 1,
+    variables,
+    defines,
+    aliases,
+    properties,
+    locations,
+    paths,
+    tools
+  };
+
+  return JSON.stringify(contents);
+}
 
 export async function deactivate(shellScriptFile: Uri, variables: Record<string, string>, aliases: Record<string, string>) {
   const kind = extname(shellScriptFile.fsPath);

@@ -14,18 +14,10 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
-using namespace vcpkg;
-
-namespace vcpkg::Dependencies
+namespace vcpkg
 {
     namespace
     {
-        DECLARE_AND_REGISTER_MESSAGE(VersionConstraintViolated,
-                                     (msg::spec, msg::expected_version, msg::actual_version),
-                                     "",
-                                     "dependency {spec} was expected to be at least version "
-                                     "{expected_version}, but is currently {actual_version}.");
-
         struct ClusterGraph;
 
         struct ClusterInstalled
@@ -125,8 +117,8 @@ namespace vcpkg::Dependencies
                     scfl.source_control_file->find_dependencies_for_feature(feature);
                 if (!maybe_qualified_deps.has_value())
                 {
-                    Checks::exit_with_message(
-                        VCPKG_LINE_INFO, "Error: could not find feature '%s' in port '%s'", feature, m_spec.name());
+                    Checks::msg_exit_with_message(
+                        VCPKG_LINE_INFO, msgFailedToFindPortFeature, msg::feature = feature, msg::spec = m_spec.name());
                 }
                 const std::vector<Dependency>* qualified_deps = &maybe_qualified_deps.value_or_exit(VCPKG_LINE_INFO);
 
@@ -232,23 +224,15 @@ namespace vcpkg::Dependencies
 
             const SourceControlFileAndLocation& get_scfl_or_exit() const
             {
-#if defined(_WIN32)
-                static auto vcpkg_remove_cmd = ".\\vcpkg";
-#else
-                static auto vcpkg_remove_cmd = "./vcpkg";
-#endif
-                if (!m_scfl)
+                if (auto scfl = m_scfl.get())
                 {
-                    Checks::exit_maybe_upgrade(
-                        VCPKG_LINE_INFO,
-                        "Error: while loading control file for %s:\n%s\nPlease run \"%s remove %s\" and re-attempt.",
-                        m_spec,
-                        m_scfl.error(),
-                        vcpkg_remove_cmd,
-                        m_spec);
+                    return *scfl;
                 }
 
-                return *m_scfl.get();
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                            msg::format(msgFailedToLoadInstalledManifest, msg::spec = m_spec)
+                                                .append_raw('\n')
+                                                .append_raw(m_scfl.error()));
             }
 
             Optional<const PlatformExpression::Expr&> get_applicable_supports_expression(const FeatureSpec& spec)
@@ -260,11 +244,11 @@ namespace vcpkg::Dependencies
                 else if (spec.feature() != "default")
                 {
                     auto maybe_paragraph = get_scfl_or_exit().source_control_file->find_feature(spec.feature());
-                    Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
-                                                maybe_paragraph.has_value(),
-                                                "Package %s does not have a %s feature",
-                                                spec.port(),
-                                                spec.feature());
+                    Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
+                                                    maybe_paragraph.has_value(),
+                                                    msgFailedToFindPortFeature,
+                                                    msg::feature = spec.feature(),
+                                                    msg::spec = spec.port());
 
                     return maybe_paragraph.get()->supports_expression;
                 }
@@ -296,17 +280,17 @@ namespace vcpkg::Dependencies
 
         struct PackageGraph
         {
-            PackageGraph(const PortFileProvider::PortFileProvider& provider,
+            PackageGraph(const PortFileProvider& provider,
                          const CMakeVars::CMakeVarProvider& var_provider,
                          const StatusParagraphs& status_db,
                          Triplet host_triplet);
-            ~PackageGraph();
+            ~PackageGraph() = default;
 
             void install(Span<const FeatureSpec> specs, UnsupportedPortAction unsupported_port_action);
             void upgrade(Span<const PackageSpec> specs, UnsupportedPortAction unsupported_port_action);
             void mark_user_requested(const PackageSpec& spec);
 
-            ActionPlan serialize(Graphs::Randomizer* randomizer) const;
+            ActionPlan serialize(GraphRandomizer* randomizer) const;
 
             void mark_for_reinstall(const PackageSpec& spec, std::vector<FeatureSpec>& out_reinstall_requirements);
             const CMakeVars::CMakeVarProvider& m_var_provider;
@@ -320,7 +304,7 @@ namespace vcpkg::Dependencies
         /// </summary>
         struct ClusterGraph
         {
-            explicit ClusterGraph(const PortFileProvider::PortFileProvider& port_provider, Triplet host_triplet)
+            explicit ClusterGraph(const PortFileProvider& port_provider, Triplet host_triplet)
                 : m_port_provider(port_provider), m_host_triplet(host_triplet)
             {
             }
@@ -338,19 +322,21 @@ namespace vcpkg::Dependencies
                 auto it = m_graph.find(spec);
                 if (it == m_graph.end())
                 {
-                    const SourceControlFileAndLocation* scfl = m_port_provider.get_control_file(spec.name()).get();
-
-                    Checks::check_exit(VCPKG_LINE_INFO,
-                                       scfl != nullptr,
-                                       "Error: Cannot find definition for package `%s` while getting `%s`.",
-                                       spec.name(),
-                                       spec);
-
-                    it = m_graph
-                             .emplace(std::piecewise_construct,
-                                      std::forward_as_tuple(spec),
-                                      std::forward_as_tuple(spec, *scfl))
-                             .first;
+                    auto maybe_scfl = m_port_provider.get_control_file(spec.name());
+                    if (auto scfl = maybe_scfl.get())
+                    {
+                        it = m_graph
+                                 .emplace(std::piecewise_construct,
+                                          std::forward_as_tuple(spec),
+                                          std::forward_as_tuple(spec, *scfl))
+                                 .first;
+                    }
+                    else
+                    {
+                        Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                                    msg::format(msgWhileLookingForSpec, msg::spec = spec)
+                                                        .append_raw("\n" + maybe_scfl.error()));
+                    }
                 }
 
                 return it->second;
@@ -363,13 +349,11 @@ namespace vcpkg::Dependencies
 
                 if (const auto scfl = maybe_scfl.get())
                 {
-                    Checks::check_exit(VCPKG_LINE_INFO,
-                                       scfl->source_control_file->core_paragraph->type.type ==
-                                           ipv.core->package.type.type,
-                                       "Error: the port type of '%s' differs between the installed and available "
-                                       "portfile.\nPlease manually remove '%s' and re-run this command.",
-                                       ipv.spec().name(),
-                                       ipv.spec());
+                    Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                           scfl->source_control_file->core_paragraph->type.type ==
+                                               ipv.core->package.type.type,
+                                           msgPortTypeConflict,
+                                           msg::spec = ipv.spec());
                 }
 
                 return m_graph
@@ -382,7 +366,7 @@ namespace vcpkg::Dependencies
             const Cluster& find_or_exit(const PackageSpec& spec, LineInfo li) const
             {
                 auto it = m_graph.find(spec);
-                Checks::check_exit(li, it != m_graph.end(), "Failed to locate spec in graph: %s", spec);
+                Checks::msg_check_exit(li, it != m_graph.end(), msgFailedToLocateSpec, msg::spec = spec);
                 return it->second;
             }
 
@@ -391,7 +375,7 @@ namespace vcpkg::Dependencies
 
         private:
             std::map<PackageSpec, Cluster> m_graph;
-            const PortFileProvider::PortFileProvider& m_port_provider;
+            const PortFileProvider& m_port_provider;
 
         public:
             const Triplet m_host_triplet;
@@ -400,7 +384,7 @@ namespace vcpkg::Dependencies
 
     static std::string to_output_string(RequestType request_type,
                                         const ZStringView s,
-                                        const Build::BuildPackageOptions& options,
+                                        const BuildPackageOptions& options,
                                         const SourceControlFileAndLocation* scfl,
                                         const InstalledPackageView* ipv,
                                         const Path& builtin_ports_dir)
@@ -421,7 +405,7 @@ namespace vcpkg::Dependencies
         {
             Strings::append(ret, " -> ", Version{ipv->core->package.version, ipv->core->package.port_version});
         }
-        if (options.use_head_version == Build::UseHeadVersion::YES)
+        if (options.use_head_version == UseHeadVersion::YES)
         {
             Strings::append(ret, " (+HEAD)");
         }
@@ -436,9 +420,7 @@ namespace vcpkg::Dependencies
         return ret;
     }
 
-    std::string to_output_string(RequestType request_type,
-                                 const ZStringView s,
-                                 const Build::BuildPackageOptions& options)
+    std::string to_output_string(RequestType request_type, const ZStringView s, const BuildPackageOptions& options)
     {
         return to_output_string(request_type, s, options, {}, {}, {});
     }
@@ -537,7 +519,7 @@ namespace vcpkg::Dependencies
         if (!p || p->package_abi.empty()) return nullopt;
         return p->package_abi;
     }
-    const Build::PreBuildInfo& InstallPlanAction::pre_build_info(LineInfo li) const
+    const PreBuildInfo& InstallPlanAction::pre_build_info(LineInfo li) const
     {
         return *abi_info.value_or_exit(li).pre_build_info.get();
     }
@@ -609,7 +591,7 @@ namespace vcpkg::Dependencies
     std::vector<RemovePlanAction> create_remove_plan(const std::vector<PackageSpec>& specs,
                                                      const StatusParagraphs& status_db)
     {
-        struct RemoveAdjacencyProvider final : Graphs::AdjacencyProvider<PackageSpec, RemovePlanAction>
+        struct RemoveAdjacencyProvider final : AdjacencyProvider<PackageSpec, RemovePlanAction>
         {
             const StatusParagraphs& status_db;
             const std::vector<InstalledPackageView>& installed_ports;
@@ -661,14 +643,14 @@ namespace vcpkg::Dependencies
 
         auto installed_ports = get_installed_ports(status_db);
         const std::unordered_set<PackageSpec> specs_as_set(specs.cbegin(), specs.cend());
-        return Graphs::topological_sort(
+        return topological_sort(
             std::move(specs), RemoveAdjacencyProvider{status_db, installed_ports, specs_as_set}, {});
     }
 
     std::vector<ExportPlanAction> create_export_plan(const std::vector<PackageSpec>& specs,
                                                      const StatusParagraphs& status_db)
     {
-        struct ExportAdjacencyProvider final : Graphs::AdjacencyProvider<PackageSpec, ExportPlanAction>
+        struct ExportAdjacencyProvider final : AdjacencyProvider<PackageSpec, ExportPlanAction>
         {
             const StatusParagraphs& status_db;
             const std::unordered_set<PackageSpec>& specs_as_set;
@@ -704,7 +686,7 @@ namespace vcpkg::Dependencies
 
         const std::unordered_set<PackageSpec> specs_as_set(specs.cbegin(), specs.cend());
         std::vector<ExportPlanAction> toposort =
-            Graphs::topological_sort(specs, ExportAdjacencyProvider{status_db, specs_as_set}, {});
+            topological_sort(specs, ExportAdjacencyProvider{status_db, specs_as_set}, {});
         return toposort;
     }
 
@@ -713,7 +695,7 @@ namespace vcpkg::Dependencies
         m_graph->get(spec).request_type = RequestType::USER_REQUESTED;
     }
 
-    ActionPlan create_feature_install_plan(const PortFileProvider::PortFileProvider& port_provider,
+    ActionPlan create_feature_install_plan(const PortFileProvider& port_provider,
                                            const CMakeVars::CMakeVarProvider& var_provider,
                                            View<FullPackageSpec> specs,
                                            const StatusParagraphs& status_db,
@@ -812,11 +794,11 @@ namespace vcpkg::Dependencies
                     {
                         auto maybe_paragraph =
                             clust.get_scfl_or_exit().source_control_file->find_feature(spec.feature());
-                        Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
-                                                    maybe_paragraph.has_value(),
-                                                    "Package %s does not have a %s feature",
-                                                    spec.port(),
-                                                    spec.feature());
+                        Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
+                                                        maybe_paragraph.has_value(),
+                                                        msgFailedToFindPortFeature,
+                                                        msg::feature = spec.feature(),
+                                                        msg::spec = spec.port());
                         paragraph_depends = &maybe_paragraph.value_or_exit(VCPKG_LINE_INFO).dependencies;
                         has_supports = !maybe_paragraph.get()->supports_expression.is_empty();
                     }
@@ -838,17 +820,20 @@ namespace vcpkg::Dependencies
                         if (!supports_expression.get()->evaluate(
                                 m_var_provider.get_dep_info_vars(spec.spec()).value_or_exit(VCPKG_LINE_INFO)))
                         {
-                            const auto msg = Strings::format("%s[%s] is only supported on '%s'",
-                                                             spec.port(),
-                                                             spec.feature(),
-                                                             to_string(*supports_expression.get()));
+                            auto localized_msg =
+                                msg::format(msgUnsupportedPortFeature,
+                                            msg::spec = spec,
+                                            msg::supports_expression = to_string(*supports_expression.get()));
+
                             if (unsupported_port_action == UnsupportedPortAction::Error)
                             {
-                                Checks::exit_with_message(VCPKG_LINE_INFO, "Error: " + msg);
+                                Checks::msg_exit_with_message(VCPKG_LINE_INFO, localized_msg);
                             }
                             else
                             {
-                                m_warnings.push_back("Warning: " + msg);
+                                m_warnings.push_back(msg::format(msg::msgWarningMessage)
+                                                         .append(std::move(localized_msg))
+                                                         .extract_data());
                             }
                         }
                     }
@@ -924,7 +909,7 @@ namespace vcpkg::Dependencies
         install(reinstall_reqs, unsupported_port_action);
     }
 
-    ActionPlan create_upgrade_plan(const PortFileProvider::PortFileProvider& port_provider,
+    ActionPlan create_upgrade_plan(const PortFileProvider& port_provider,
                                    const CMakeVars::CMakeVarProvider& var_provider,
                                    const std::vector<PackageSpec>& specs,
                                    const StatusParagraphs& status_db,
@@ -937,9 +922,9 @@ namespace vcpkg::Dependencies
         return pgraph.serialize(options.randomizer);
     }
 
-    ActionPlan PackageGraph::serialize(Graphs::Randomizer* randomizer) const
+    ActionPlan PackageGraph::serialize(GraphRandomizer* randomizer) const
     {
-        struct BaseEdgeProvider : Graphs::AdjacencyProvider<PackageSpec, const Cluster*>
+        struct BaseEdgeProvider : AdjacencyProvider<PackageSpec, const Cluster*>
         {
             BaseEdgeProvider(const ClusterGraph& parent) : m_parent(parent) { }
 
@@ -997,8 +982,8 @@ namespace vcpkg::Dependencies
                 installed_vertices.push_back(kv.first);
             }
         }
-        auto remove_toposort = Graphs::topological_sort(removed_vertices, removeedgeprovider, randomizer);
-        auto insert_toposort = Graphs::topological_sort(installed_vertices, installedgeprovider, randomizer);
+        auto remove_toposort = topological_sort(removed_vertices, removeedgeprovider, randomizer);
+        auto insert_toposort = topological_sort(installed_vertices, installedgeprovider, randomizer);
 
         ActionPlan plan;
 
@@ -1029,7 +1014,10 @@ namespace vcpkg::Dependencies
                                                                             msg::spec = constraints.first,
                                                                             msg::expected_version = constraint,
                                                                             msg::actual_version = *v));
-                                print2("found constraint violation: ", constraint_violations.back().data(), "\n");
+                                msg::println(msg::format(msgConstraintViolation)
+                                                 .append_raw("\n")
+                                                 .append_indent()
+                                                 .append(constraint_violations.back()));
                             }
                         }
                     }
@@ -1075,10 +1063,9 @@ namespace vcpkg::Dependencies
         return plan;
     }
 
-    static std::unique_ptr<ClusterGraph> create_feature_install_graph(
-        const PortFileProvider::PortFileProvider& port_provider,
-        const StatusParagraphs& status_db,
-        Triplet host_triplet)
+    static std::unique_ptr<ClusterGraph> create_feature_install_graph(const PortFileProvider& port_provider,
+                                                                      const StatusParagraphs& status_db,
+                                                                      Triplet host_triplet)
     {
         std::unique_ptr<ClusterGraph> graph = std::make_unique<ClusterGraph>(port_provider, host_triplet);
 
@@ -1097,19 +1084,22 @@ namespace vcpkg::Dependencies
             for (auto&& dep : deps)
             {
                 auto p_installed = graph->get(dep).m_installed.get();
-                Checks::check_maybe_upgrade(
-                    VCPKG_LINE_INFO,
-                    p_installed != nullptr,
-                    "Error: database corrupted. Package %s is installed but dependency %s is not.",
-                    ipv.spec(),
-                    dep);
+                if (p_installed == nullptr)
+                {
+                    Checks::msg_exit_with_error(
+                        VCPKG_LINE_INFO,
+                        msg::format(msgCorruptedDatabase)
+                            .append_raw("\n")
+                            .append(msgMissingDependency, msg::spec = ipv.spec(), msg::package_name = dep));
+                }
+
                 p_installed->remove_edges.emplace(ipv.spec());
             }
         }
         return graph;
     }
 
-    PackageGraph::PackageGraph(const PortFileProvider::PortFileProvider& port_provider,
+    PackageGraph::PackageGraph(const PortFileProvider& port_provider,
                                const CMakeVars::CMakeVarProvider& var_provider,
                                const StatusParagraphs& status_db,
                                Triplet host_triplet)
@@ -1117,14 +1107,12 @@ namespace vcpkg::Dependencies
     {
     }
 
-    PackageGraph::~PackageGraph() = default;
-
     void print_plan(const ActionPlan& action_plan, const bool is_recursive, const Path& builtin_ports_dir)
     {
         if (action_plan.remove_actions.empty() && action_plan.already_installed.empty() &&
             action_plan.install_actions.empty())
         {
-            print2("All requested packages are currently installed.\n");
+            msg::println(msgInstalledRequestedPackages);
             return;
         }
 
@@ -1187,51 +1175,55 @@ namespace vcpkg::Dependencies
 
         if (!excluded.empty())
         {
-            print2("The following packages are excluded:\n", actions_to_output_string(excluded), '\n');
+            msg::println(
+                msg::format(msgExcludedPackages).append_raw("\n").append_raw(actions_to_output_string(excluded)));
         }
 
         if (!already_installed_plans.empty())
         {
-            print2("The following packages are already installed:\n",
-                   actions_to_output_string(already_installed_plans),
-                   '\n');
+            msg::println(msg::format(msgInstalledPackages)
+                             .append_raw("\n")
+                             .append_raw(actions_to_output_string(already_installed_plans)));
         }
 
         if (!remove_specs.empty())
         {
-            std::string msg = "The following packages will be removed:\n";
+            auto message = msg::format(msgPackagesToRemove);
             for (auto&& spec : remove_specs)
             {
-                Strings::append(msg, to_output_string(RequestType::USER_REQUESTED, spec.to_string()), '\n');
+                message.append_raw("\n" + to_output_string(RequestType::USER_REQUESTED, spec.to_string()));
             }
-            print2(msg);
+            msg::println(message);
         }
 
         if (!rebuilt_plans.empty())
         {
-            print2("The following packages will be rebuilt:\n", actions_to_output_string(rebuilt_plans), '\n');
+            msg::println(
+                msg::format(msgPackagesToRebuild).append_raw("\n").append_raw(actions_to_output_string(rebuilt_plans)));
         }
 
         if (!new_plans.empty())
         {
-            print2("The following packages will be built and installed:\n", actions_to_output_string(new_plans), '\n');
+            msg::println(
+                msg::format(msgPackagesToInstall).append_raw("\n").append_raw(actions_to_output_string(new_plans)));
         }
 
         if (!only_install_plans.empty())
         {
-            print2("The following packages will be directly installed:\n",
-                   actions_to_output_string(only_install_plans),
-                   '\n');
+            msg::println(msg::format(msgPackagesToInstallDirectly)
+                             .append_raw("\n")
+                             .append_raw(actions_to_output_string(only_install_plans)));
         }
 
         if (has_non_user_requested_packages)
-            print2("Additional packages (*) will be modified to complete this operation.\n");
+        {
+            msg::println(msgPackagesToModify);
+        }
+
         bool have_removals = !remove_specs.empty() || !rebuilt_plans.empty();
         if (have_removals && !is_recursive)
         {
-            print2(Color::warning,
-                   "If you are sure you want to rebuild the above packages, run the command with the "
-                   "--recurse option\n");
+            msg::println_warning(msgPackagesToRebuildSuggestRecurse);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
     }
@@ -1240,14 +1232,9 @@ namespace vcpkg::Dependencies
     {
         struct VersionedPackageGraph
         {
-        private:
-            using IVersionedPortfileProvider = PortFileProvider::IVersionedPortfileProvider;
-            using IBaselineProvider = PortFileProvider::IBaselineProvider;
-
-        public:
             VersionedPackageGraph(const IVersionedPortfileProvider& ver_provider,
                                   const IBaselineProvider& base_provider,
-                                  const PortFileProvider::IOverlayProvider& oprovider,
+                                  const IOverlayProvider& oprovider,
                                   const CMakeVars::CMakeVarProvider& var_provider,
                                   Triplet host_triplet)
                 : m_ver_provider(ver_provider)
@@ -1268,7 +1255,7 @@ namespace vcpkg::Dependencies
         private:
             const IVersionedPortfileProvider& m_ver_provider;
             const IBaselineProvider& m_base_provider;
-            const PortFileProvider::IOverlayProvider& m_o_provider;
+            const IOverlayProvider& m_o_provider;
             const CMakeVars::CMakeVarProvider& m_var_provider;
             const Triplet m_host_triplet;
 
@@ -2070,9 +2057,9 @@ namespace vcpkg::Dependencies
         }
     }
 
-    ExpectedS<ActionPlan> create_versioned_install_plan(const PortFileProvider::IVersionedPortfileProvider& provider,
-                                                        const PortFileProvider::IBaselineProvider& bprovider,
-                                                        const PortFileProvider::IOverlayProvider& oprovider,
+    ExpectedS<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& provider,
+                                                        const IBaselineProvider& bprovider,
+                                                        const IOverlayProvider& oprovider,
                                                         const CMakeVars::CMakeVarProvider& var_provider,
                                                         const std::vector<Dependency>& deps,
                                                         const std::vector<DependencyOverride>& overrides,

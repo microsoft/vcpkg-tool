@@ -15,30 +15,29 @@ namespace
 {
     using namespace vcpkg;
 
-    DECLARE_AND_REGISTER_MESSAGE(GitCommandFailed, (msg::command_line), "", "failed to execute: {command_line}");
-    DECLARE_AND_REGISTER_MESSAGE(GitUnexpectedCommandOutput, (), "", "unexpected git output");
-    DECLARE_AND_REGISTER_MESSAGE(GitStatusUnknownFileStatus,
-                                 (msg::value),
-                                 "{value} is a single character indicating file status, for example: A, U, M, D",
-                                 "unknown file status: {value}");
+    //     DECLARE_AND_REGISTER_MESSAGE(GitUnexpectedCommandOutput, (), "", "unexpected git output");
+    //     DECLARE_AND_REGISTER_MESSAGE(GitStatusUnknownFileStatus,
+    //                                  (msg::value),
+    //                                  "{value} is a single character indicating file status, for example: A, U, M, D",
+    //                                  "unknown file status: {value}");
     DECLARE_AND_REGISTER_MESSAGE(GitParseExpectedNewLine, (), "", "expected new line");
     DECLARE_AND_REGISTER_MESSAGE(GitParseExpectedPath, (), "", "expected a path");
     DECLARE_AND_REGISTER_MESSAGE(GitParseExpectedNewLineOrPath, (), "", "expected new line or path");
     DECLARE_AND_REGISTER_MESSAGE(GitParseExpectedValue, (), "", "expected a value");
     DECLARE_AND_REGISTER_MESSAGE(GitParseExpectedGitObjectType, (), "", "expected one a valid type git object type");
     DECLARE_AND_REGISTER_MESSAGE(GitParseExpectedGitObject, (), "", "expected a Git SHA");
-    DECLARE_AND_REGISTER_MESSAGE(GitFailedToInitializeLocalRepository,
-                                 (msg::path),
-                                 "",
-                                 "failed to initialize local repository in {path}");
-    DECLARE_AND_REGISTER_MESSAGE(GitFailedToFetchRefFromRepository,
-                                 (msg::git_ref, msg::url),
-                                 "",
-                                 "failed to fetch ref {git_ref} from repository {url}");
+    //     DECLARE_AND_REGISTER_MESSAGE(GitFailedToInitializeLocalRepository,
+    //                                  (msg::path),
+    //                                  "",
+    //                                  "failed to initialize local repository in {path}");
+    //     DECLARE_AND_REGISTER_MESSAGE(GitFailedToFetchRefFromRepository,
+    //                                  (msg::git_ref, msg::url),
+    //                                  "",
+    //                                  "failed to fetch ref {git_ref} from repository {url}");
 
     DECLARE_AND_REGISTER_MESSAGE(GitErrorWhileRemovingFiles, (msg::path), "", "failed to remove {path}");
     DECLARE_AND_REGISTER_MESSAGE(GitErrorCreatingDirectory, (msg::path), "", "failed to create {path}");
-    DECLARE_AND_REGISTER_MESSAGE(GitCheckoutFailedToCreateArchive, (), "", "failed to create .tar file");
+    //     DECLARE_AND_REGISTER_MESSAGE(GitCheckoutFailedToCreateArchive, (), "", "failed to create .tar file");
     DECLARE_AND_REGISTER_MESSAGE(GitErrorRenamingFile,
                                  (msg::old_value, msg::new_value),
                                  "{old_value} is the original path of a renamed file, {new_value} is the new path",

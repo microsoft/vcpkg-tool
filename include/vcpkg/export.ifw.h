@@ -20,7 +20,7 @@ namespace vcpkg::Export::IFW
 
     std::string safe_rich_from_plain_text(StringView text);
 
-    void do_export(const std::vector<Dependencies::ExportPlanAction>& export_plan,
+    void do_export(const std::vector<ExportPlanAction>& export_plan,
                    const std::string& export_id,
                    const Options& ifw_options,
                    const VcpkgPaths& paths);

@@ -17,7 +17,7 @@ export async function resolveRedirect(location: Uri) {
 
   // when the response comes thru, we can grab the headers & stuff from it
   stream.on('response', (response: Response) => {
-    finalUrl = location.fileSystem.parse(response.redirectUrls.last || finalUrl.toString());
+    finalUrl = location.fileSystem.parseUri(response.redirectUrls.last || finalUrl.toString());
   });
 
   // we have to get at least some data for the response event to trigger.

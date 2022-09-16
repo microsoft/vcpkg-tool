@@ -4,58 +4,6 @@
 
 #include <vcpkg/commands.generate-message-map.h>
 
-namespace
-{
-    namespace msg = vcpkg::msg;
-    DECLARE_AND_REGISTER_MESSAGE(AllFormatArgsUnbalancedBraces,
-                                 (msg::value),
-                                 "example of {value} is 'foo bar {'",
-                                 "unbalanced brace in format string \"{value}\"");
-    DECLARE_AND_REGISTER_MESSAGE(AllFormatArgsRawArgument,
-                                 (msg::value),
-                                 "example of {value} is 'foo {} bar'",
-                                 "format string \"{value}\" contains a raw format argument");
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        ErrorMessageMustUsePrintError,
-        (msg::value),
-        "{value} is is a localized message name like ErrorMessageMustUsePrintError",
-        "The message named {value} starts with error:, it must be changed to prepend ErrorMessage in code instead.");
-    DECLARE_AND_REGISTER_MESSAGE(WarningMessageMustUsePrintWarning,
-                                 (msg::value),
-                                 "{value} is is a localized message name like WarningMessageMustUsePrintWarning",
-                                 "The message named {value} starts with warning:, it must be changed to prepend "
-                                 "WarningMessage in code instead.");
-    DECLARE_AND_REGISTER_MESSAGE(LocalizedMessageMustNotContainIndents,
-                                 (msg::value),
-                                 "{value} is is a localized message name like LocalizedMessageMustNotContainIndents. "
-                                 "The 'LocalizedString::append_indent' part is locale-invariant.",
-                                 "The message named {value} contains what appears to be indenting which must be "
-                                 "changed to use LocalizedString::append_indent instead.");
-    DECLARE_AND_REGISTER_MESSAGE(LocalizedMessageMustNotEndWithNewline,
-                                 (msg::value),
-                                 "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
-                                 "The message named {value} ends with a newline which should be added by formatting "
-                                 "rather than by localization.");
-    DECLARE_AND_REGISTER_MESSAGE(GenerateMsgErrorParsingFormatArgs,
-                                 (msg::value),
-                                 "example of {value} 'GenerateMsgNoComment'",
-                                 "parsing format string for {value}:");
-
-    DECLARE_AND_REGISTER_MESSAGE(GenerateMsgIncorrectComment,
-                                 (msg::value),
-                                 "example of {value} is 'GenerateMsgNoComment'",
-                                 R"(message {value} has an incorrect comment:)");
-    DECLARE_AND_REGISTER_MESSAGE(GenerateMsgNoCommentValue,
-                                 (msg::value),
-                                 "example of {value} is 'arch'",
-                                 R"({{{value}}} was used in the message, but not commented.)");
-    DECLARE_AND_REGISTER_MESSAGE(GenerateMsgNoArgumentValue,
-                                 (msg::value),
-                                 "example of {value} is 'arch'",
-                                 R"({{{value}}} was specified in a comment, but was not used in the message.)");
-}
-
 namespace vcpkg::Commands
 {
     static constexpr StringLiteral OPTION_OUTPUT_COMMENTS = "output-comments";
@@ -276,7 +224,7 @@ namespace vcpkg::Commands
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
-        auto stringified = Json::stringify(obj, {});
+        auto stringified = Json::stringify(obj);
         Path filepath = fs.current_path(VCPKG_LINE_INFO) / args.command_arguments[0];
         fs.write_contents(filepath, stringified, VCPKG_LINE_INFO);
         Checks::exit_success(VCPKG_LINE_INFO);

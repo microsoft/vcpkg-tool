@@ -35,7 +35,7 @@ namespace
     };
 }
 
-namespace vcpkg::PortFileProvider
+namespace vcpkg
 {
     MapPortFileProvider::MapPortFileProvider(const std::unordered_map<std::string, SourceControlFileAndLocation>& map)
         : ports(map)
@@ -87,13 +87,6 @@ namespace vcpkg::PortFileProvider
         m_versioned->load_all_control_files(m);
         return Util::fmap(m, [](const auto& p) { return p.second; });
     }
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        VersionSpecMismatch,
-        (msg::path, msg::expected_version, msg::actual_version),
-        "",
-        "Failed to load port because versions are inconsistent. The file \"{path}\" contains the version "
-        "{actual_version}, but the version database indicates that it should be {expected_version}.");
 
     namespace
     {
@@ -211,7 +204,7 @@ namespace vcpkg::PortFileProvider
                     }
                     else
                     {
-                        LockGuardPtr<Metrics>(g_metrics)->track_property("versioning-error-version", "defined");
+                        LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::VersioningErrorVersion);
                         return maybe_path.error();
                     }
                 }
