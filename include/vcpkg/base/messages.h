@@ -462,11 +462,19 @@ namespace vcpkg
                     "",
                     "The first argument to '{command_line}' must be 'artifact' or 'port'.");
     DECLARE_MESSAGE(AddingCompletionEntry, (msg::path), "", "Adding vcpkg completion entry to {path}.");
+    DECLARE_MESSAGE(AdditionalPackagesToRemove,
+                    (),
+                    "",
+                    "Additional packages (*) need to be removed to complete this operation.");
     DECLARE_MESSAGE(AddPortRequiresManifest,
                     (msg::command_line),
                     "",
                     "'{command_line}' requires an active manifest file.");
     DECLARE_MESSAGE(AddPortSucceeded, (), "", "Succeeded in adding ports to vcpkg.json file.");
+    DECLARE_MESSAGE(AddRecurseOption,
+                    (),
+                    "",
+                    "If you are sure you want to remove them, run the command with the --recurse option.");
     DECLARE_MESSAGE(AddTripletExpressionNotAllowed,
                     (msg::package_name, msg::triplet),
                     "",
@@ -727,8 +735,8 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "Could not deduce nuget id and version from filename: {path}");
-    DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
     DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: \"{path}\"");
+    DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
     DECLARE_MESSAGE(CurlReportedUnexpectedResults,
                     (msg::command_line, msg::actual),
                     "{command_line} is the command line to call curl.exe, {actual} is the console output "
@@ -778,6 +786,7 @@ namespace vcpkg
     DECLARE_MESSAGE(EmailVcpkgTeam, (msg::url), "", "Send an email to {url} with any feedback.");
     DECLARE_MESSAGE(EmptyArg, (msg::option), "", "The option --{option} must be passed a non-empty argument.");
     DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
+    DECLARE_MESSAGE(EmptyRemovePlan, (), "", "Remove plan cannot be empty");
     DECLARE_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:");
     DECLARE_MESSAGE(ErrorDetectingCompilerInfo,
                     (msg::path),
@@ -860,42 +869,53 @@ namespace vcpkg
         "expected '{expected}' here");
     DECLARE_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' here");
     DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
+    DECLARE_MESSAGE(ExpectedStatusField, (), "", "Expected 'status' field in status paragraph");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
     DECLARE_MESSAGE(ExpectedValueForOption, (msg::option), "", "expected value after --{option}.");
     DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
     DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
+    DECLARE_MESSAGE(FailedSymlinkStatus,
+                    (msg::path, msg::error_msg),
+                    "",
+                    "failed: symlink_status({path}): {error_msg}");
     DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":");
+    DECLARE_MESSAGE(FailedToFindPortFeature, (msg::feature, msg::spec), "", "Could not find {feature} in {spec}.");
     DECLARE_MESSAGE(FailedToFormatMissingFile,
                     (),
                     "",
                     "No files to format.\nPlease pass either --all, or the explicit files to format or convert.");
+    DECLARE_MESSAGE(FailedToLoadInstalledManifest,
+                    (msg::spec),
+                    "",
+                    "The control or mnaifest file for {spec} could not be loaded due to the following error. Please "
+                    "remove {spec} and re-attempt.");
+    DECLARE_MESSAGE(FailedToLoadPort,
+                    (msg::package_name, msg::path),
+                    "",
+                    "Failed to load port {package_name} from {path}");
+    DECLARE_MESSAGE(FailedToLoadPortFrom, (msg::path), "", "Failed to load port from {path}");
+    DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}");
+    DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
     DECLARE_MESSAGE(FailedToObtainLocalPortGitSha, (), "", "Failed to obtain git SHAs for local ports.");
+    DECLARE_MESSAGE(FailedToObtainPackageVersion, (), "", "Cannot find desired package version.");
     DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
                     (),
                     "",
                     "Failed to parse CMake console output to locate block start/end markers.");
+    DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse control file: {path}");
+    DECLARE_MESSAGE(FailedToParseJson, (msg::path), "", "Failed to parse JSON file: {path}");
+    DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: {path}");
     DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                     (msg::error_msg),
                     "'{error_msg}' is the error message for failing to parse the Binary Paragraph.",
                     "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at "
                     "https://github.com/microsoft/vcpkg, "
                     "with the following output:\n{error_msg}\nSerialized Binary Paragraph:");
-    DECLARE_MESSAGE(FailedToFindPortFeature, (msg::feature, msg::spec), "", "Could not find {feature} in {spec}.");
-    DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}");
-    DECLARE_MESSAGE(FailedToLoadInstalledManifest,
-                    (msg::spec),
-                    "",
-                    "The control or mnaifest file for {spec} could not be loaded due to the following error. Please "
-                    "remove {spec} and re-attempt.");
-    DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
-    DECLARE_MESSAGE(FailedToObtainPackageVersion, (), "", "Cannot find desired package version.");
-    DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse control file: {path}");
-    DECLARE_MESSAGE(FailedToParseJson, (msg::path), "", "Failed to parse JSON file: {path}");
-    DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: {path}");
     DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
     DECLARE_MESSAGE(FailedToRead, (msg::path, msg::error_msg), "", "Failed to read {path}: {error_msg}");
     DECLARE_MESSAGE(FailedToReadParagraph, (msg::path), "", "Failed to read paragraphs from {path}");
     DECLARE_MESSAGE(FailedToRemoveControl, (msg::path), "", "Failed to remove control file {path}");
+    DECLARE_MESSAGE(FailedToRemoveDirectory, (msg::path, msg::error_msg), "", "failed:remove({path}): {error_msg}");
     DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                     (msg::tool_name, msg::path),
                     "Additional information, such as the command line output, if any, will be appended on "
@@ -910,6 +930,7 @@ namespace vcpkg
                     "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details "
                     "on how to provide credentials.");
     DECLARE_MESSAGE(FeedbackAppreciated, (), "", "Thank you for your feedback!");
+    DECLARE_MESSAGE(FileNotFound, (msg::path), "", "{path}: file not found");
     DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at \"{path}\".");
     DECLARE_MESSAGE(FollowingPackagesMissingControl,
                     (),
@@ -1011,6 +1032,7 @@ namespace vcpkg
                     "",
                     "Could not create a registry at {path} because this is not a git repository root.\nUse `git init "
                     "{command_line}` to create a git repository in this folder.");
+    DECLARE_MESSAGE(InsertedNullParagraph, (), "", "Inserted null paragraph");
     DECLARE_MESSAGE(InstalledPackages, (), "", "The following packages are already installed:");
     DECLARE_MESSAGE(InstalledRequestedPackages, (), "", "All requested packages are currently installed.");
     DECLARE_MESSAGE(InstallingFromLocation,
@@ -1108,6 +1130,7 @@ namespace vcpkg
                     (msg::value, msg::path),
                     "'{value}' is a list of invalid characters. I.e. \\/:*?<>|",
                     "Filename cannot contain invalid chars {value}, but was {path}");
+    DECLARE_MESSAGE(InvalidFileType, (msg::path), "", "{path}: cannot handle file type");
     DECLARE_MESSAGE(InvalidFormatString,
                     (msg::actual),
                     "{actual} is the provided format string",
@@ -1117,6 +1140,7 @@ namespace vcpkg
         (msg::system_name, msg::value),
         "'{value}' is the linkage type vcpkg would did not understand. (Correct values would be static ofr dynamic)",
         "Invalid {system_name} linkage type: [{value}]");
+    DECLARE_MESSAGE(InvalidOptionForRemove, (), "", "'remove' accepts either libraries or '--outdated'");
     DECLARE_MESSAGE(IrregularFile, (msg::path), "", "path was not a regular file: {path}");
     DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected \"{path}\" to be an object.");
     DECLARE_MESSAGE(JsonSwitch, (), "", "(Experimental) Request JSON output.");
@@ -1222,6 +1246,10 @@ namespace vcpkg
                     "rather than by localization.");
     DECLARE_MESSAGE(ManifestFormatCompleted, (), "", "Succeeded in formatting the manifest files.");
     DECLARE_MESSAGE(MismatchedFiles, (), "", "file to store does not match hash");
+    DECLARE_MESSAGE(MismatchedNames,
+                    (msg::package_name, msg::actual),
+                    "{actual} is the port name found",
+                    "names did not match: '{package_name}' != '{actual}'");
     DECLARE_MESSAGE(Missing7zHeader, (), "", "Unable to find 7z header.");
     DECLARE_MESSAGE(MissingArgFormatManifest,
                     (),
@@ -1278,6 +1306,7 @@ namespace vcpkg
                     "The name 'search' is the name of a command that is not localized.",
                     "No packages are installed. Did you mean `search`?");
     DECLARE_MESSAGE(NoLocalizationForMessages, (), "", "No localized messages for the following: ");
+    DECLARE_MESSAGE(NoOutdatedPackages, (), "", "There are no outdated packages.");
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
     DECLARE_MESSAGE(NugetPackageFileSucceededButCreationFailed,
                     (msg::path),
@@ -1290,6 +1319,8 @@ namespace vcpkg
                     "{value} is a command line option.",
                     "--{value} requires --{option}");
     DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph");
+    DECLARE_MESSAGE(OverlayPatchDir, (msg::path), "", "Overlay path \"{path}\" must exist and must be a directory.");
+    DECLARE_MESSAGE(PackageAlreadyRemoved, (msg::spec), "", "unable to remove package {spec}: already removed");
     DECLARE_MESSAGE(PackageFailedtWhileExtracting,
                     (msg::value, msg::path),
                     "'{value}' is either a tool name or a package name.",
@@ -1357,11 +1388,20 @@ namespace vcpkg
                     (msg::tool_name, msg::exit_code),
                     "The program's console output is appended after this.",
                     "{tool_name} failed with exit code: ({exit_code}).");
+    DECLARE_MESSAGE(PurgeOptionConflict, (), "", "cannot specify both --no-purge and --purge.");
     DECLARE_MESSAGE(PushingVendorFailed,
                     (msg::vendor, msg::path),
                     "",
                     "Pushing {vendor} to \"{path}\" failed. Use --debug for more information.");
     DECLARE_MESSAGE(RegistryCreated, (msg::path), "", "Successfully created registry at {path}");
+    DECLARE_MESSAGE(RemoveDependencies,
+                    (),
+                    "",
+                    "To remove dependencies in manifest mode, edit your manifest (vcpkg.json) and run 'install'.");
+    DECLARE_MESSAGE(RemovePackageConflict,
+                    (msg::spec),
+                    "",
+                    "Another installed package matches the name of an unmatched request. Did you mean {spec}?");
     DECLARE_MESSAGE(ReplaceSecretsError,
                     (msg::error_msg),
                     "",
@@ -1647,45 +1687,4 @@ namespace vcpkg
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}.");
-    DECLARE_MESSAGE(InsertedNullParagraph, (), "", "Inserted null paragraph");
-    DECLARE_MESSAGE(ExpectedStatusField, (), "", "Expected 'status' field in status paragraph");
-    DECLARE_MESSAGE(PackageAlreadyRemoved, (msg::spec), "", "unable to remove package {spec}: already removed");
-    DECLARE_MESSAGE(FailedSymlinkStatus,
-                    (msg::path, msg::error_msg),
-                    "",
-                    "failed: symlink_status({path}): {error_msg}");
-    DECLARE_MESSAGE(FailedToRemoveDirectory, (msg::path, msg::error_msg), "", "failed:remove({path}): {error_msg}");
-    DECLARE_MESSAGE(InvalidFileType, (msg::path), "", "{path}: cannot handle file type");
-    DECLARE_MESSAGE(FileNotFound, (msg::path), "", "{path}: file not found");
-    DECLARE_MESSAGE(InvalidOptionForRemove, (), "", "'remove' accepts either libraries or '--outdated'");
-    DECLARE_MESSAGE(NoOutdatedPackages, (), "", "There are no outdated packages.");
-    DECLARE_MESSAGE(PurgeOptionConflict, (), "", "cannot specify both --no-purge and --purge.");
-    DECLARE_MESSAGE(EmptyRemovePlan, (), "", "Remove plan cannot be empty");
-    DECLARE_MESSAGE(FailedToLoadPort,
-                    (msg::package_name, msg::path),
-                    "",
-                    "Failed to load port {package_name} from {path}");
-    DECLARE_MESSAGE(AdditionalPackagesToRemove,
-                    (),
-                    "",
-                    "Additional packages (*) need to be removed to complete this operation.");
-    DECLARE_MESSAGE(AddRecurseOption,
-                    (),
-                    "",
-                    "If you are sure you want to remove them, run the command with the --recurse option.");
-    DECLARE_MESSAGE(RemovePackageConflict,
-                    (msg::spec),
-                    "",
-                    "Another installed package matches the name of an unmatched request. Did you mean {spec}?");
-    DECLARE_MESSAGE(RemoveDependencies,
-                    (),
-                    "",
-                    "To remove dependencies in manifest mode, edit your manifest (vcpkg.json) and run 'install'.");
-    DECLARE_MESSAGE(OverlayPatchDir, (msg::path), "", "Overlay path \"{path}\" must exist and must be a directory.");
-    DECLARE_MESSAGE(MismatchedNames,
-                    (msg::package_name, msg::actual),
-                    "{actual} is the port name found",
-                    "names did not match: '{package_name}' != '{actual}'");
-    DECLARE_MESSAGE(FailedToLoadPortFrom, (msg::path), "", "Failed to load port from {path}");
-
 }
