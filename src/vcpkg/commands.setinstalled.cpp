@@ -124,9 +124,10 @@ namespace vcpkg::Commands::SetInstalled
         msg::println();
         msg::println(msgTotalTime, msg::elapsed = GlobalState::timer.to_string());
 
-        if (keep_going == KeepGoing::YES)
+        if (keep_going == KeepGoing::YES && summary.failed())
         {
             summary.print_failed();
+            Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
         std::set<std::string> printed_usages;
