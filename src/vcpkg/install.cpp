@@ -431,6 +431,25 @@ namespace vcpkg
         }
     }
 
+    void InstallSummary::print_failed() const
+    {
+        msg::println();
+        msg::println(msgResultsHeader);
+
+        for (const SpecSummary& result : this->results)
+        {
+            if (result.build_result.value_or_exit(VCPKG_LINE_INFO).code != BuildResult::SUCCEEDED)
+            {
+                msg::println(LocalizedString().append_indent().append_fmt_raw(
+                    "{}: {}: {}",
+                    result.get_spec(),
+                    to_string(result.build_result.value_or_exit(VCPKG_LINE_INFO).code),
+                    result.timing));
+            }
+        }
+        msg::println();
+    }
+
     bool InstallSummary::failed() const
     {
         for (const auto& result : this->results)
