@@ -818,4 +818,8 @@ namespace vcpkg
     REGISTER_MESSAGE(AdditionalPackagesToRemove);
     REGISTER_MESSAGE(AddRecurseOption);
     REGISTER_MESSAGE(RemovePackageConflict);
+    REGISTER_MESSAGE(FailedToLoadPort);
+    REGISTER_MESSAGE(OverlayPatchDir);
+    REGISTER_MESSAGE(MismatchedNames);
+    REGISTER_MESSAGE(FailedToLoadPortFrom);
 }

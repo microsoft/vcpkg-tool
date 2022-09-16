@@ -1661,6 +1661,10 @@ namespace vcpkg
     DECLARE_MESSAGE(NoOutdatedPackages, (), "", "There are no outdated packages.");
     DECLARE_MESSAGE(PurgeOptionConflict, (), "", "cannot specify both --no-purge and --purge.");
     DECLARE_MESSAGE(EmptyRemovePlan, (), "", "Remove plan cannot be empty");
+    DECLARE_MESSAGE(FailedToLoadPort,
+                    (msg::package_name, msg::path),
+                    "",
+                    "Failed to load port {package_name} from {path}");
     DECLARE_MESSAGE(AdditionalPackagesToRemove,
                     (),
                     "",
@@ -1677,4 +1681,11 @@ namespace vcpkg
                     (),
                     "",
                     "To remove dependencies in manifest mode, edit your manifest (vcpkg.json) and run 'install'.");
+    DECLARE_MESSAGE(OverlayPatchDir, (msg::path), "", "Overlay path \"{path}\" must exist and must be a directory.");
+    DECLARE_MESSAGE(MismatchedNames,
+                    (msg::package_name, msg::actual),
+                    "{actual} is the port name found",
+                    "names did not match: '{package_name}' != '{actual}'");
+    DECLARE_MESSAGE(FailedToLoadPortFrom, (msg::path), "", "Failed to load port from {path}");
+
 }
