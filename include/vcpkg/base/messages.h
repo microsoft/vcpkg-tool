@@ -1649,4 +1649,32 @@ namespace vcpkg
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}.");
     DECLARE_MESSAGE(InsertedNullParagraph, (), "", "Inserted null paragraph");
     DECLARE_MESSAGE(ExpectedStatusField, (), "", "Expected 'status' field in status paragraph");
+    DECLARE_MESSAGE(PackageAlreadyRemoved, (msg::spec), "", "unable to remove package {spec}: already removed");
+    DECLARE_MESSAGE(FailedSymlinkStatus,
+                    (msg::path, msg::error_msg),
+                    "",
+                    "failed: symlink_status({path}): {error_msg}");
+    DECLARE_MESSAGE(FailedToRemoveDirectory, (msg::path, msg::error_msg), "", "failed:remove({path}): {error_msg}");
+    DECLARE_MESSAGE(InvalidFileType, (msg::path), "", "{path}: cannot handle file type");
+    DECLARE_MESSAGE(FileNotFound, (msg::path), "", "{path}: file not found");
+    DECLARE_MESSAGE(InvalidOptionForRemove, (), "", "'remove' accepts either libraries or '--outdated'");
+    DECLARE_MESSAGE(NoOutdatedPackages, (), "", "There are no outdated packages.");
+    DECLARE_MESSAGE(PurgeOptionConflict, (), "", "cannot specify both --no-purge and --purge.");
+    DECLARE_MESSAGE(EmptyRemovePlan, (), "", "Remove plan cannot be empty");
+    DECLARE_MESSAGE(AdditionalPackagesToRemove,
+                    (),
+                    "",
+                    "Additional packages (*) need to be removed to complete this operation.");
+    DECLARE_MESSAGE(AddRecurseOption,
+                    (),
+                    "",
+                    "If you are sure you want to remove them, run the command with the --recurse option.");
+    DECLARE_MESSAGE(RemovePackageConflict,
+                    (msg::spec),
+                    "",
+                    "Another installed package matches the name of an unmatched request. Did you mean {spec}?");
+    DECLARE_MESSAGE(RemoveDependencies,
+                    (),
+                    "",
+                    "To remove dependencies in manifest mode, edit your manifest (vcpkg.json) and run 'install'.");
 }

@@ -805,4 +805,17 @@ namespace vcpkg
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
     REGISTER_MESSAGE(InsertedNullParagraph);
     REGISTER_MESSAGE(ExpectedStatusField);
+    REGISTER_MESSAGE(PackageAlreadyRemoved);
+    REGISTER_MESSAGE(FailedSymlinkStatus);
+    REGISTER_MESSAGE(FailedToRemoveDirectory);
+    REGISTER_MESSAGE(InvalidFileType);
+    REGISTER_MESSAGE(FileNotFound);
+    REGISTER_MESSAGE(RemoveDependencies);
+    REGISTER_MESSAGE(InvalidOptionForRemove);
+    REGISTER_MESSAGE(NoOutdatedPackages);
+    REGISTER_MESSAGE(PurgeOptionConflict);
+    REGISTER_MESSAGE(EmptyRemovePlan);
+    REGISTER_MESSAGE(AdditionalPackagesToRemove);
+    REGISTER_MESSAGE(AddRecurseOption);
+    REGISTER_MESSAGE(RemovePackageConflict);
 }
