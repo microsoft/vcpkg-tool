@@ -89,6 +89,7 @@
   "ControlAndManifestFilesPresent": "Both a manifest file and a CONTROL file exist in port directory: {path}",
   "CopyrightIsDir": "`{path}` being a directory is deprecated.",
   "CorruptedDatabase": "Database corrupted.",
+  "CorruptedDatabaseNoCoreParagraph": "Database is corrupted: package {package_name} has features but no core paragraph.",
   "CouldNotDeduceNugetIdAndVersion": "Could not deduce nuget id and version from filename: {path}",
   "CreateFailureLogsDir": "Creating failure logs output directory {path}.",
   "CreatedNuGetPackage": "Created nupkg: \"{path}\"",

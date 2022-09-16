@@ -157,6 +157,8 @@
   "CopyrightIsDir": "`{path}` being a directory is deprecated.",
   "_CopyrightIsDir.comment": "An example of {path} is /foo/bar.",
   "CorruptedDatabase": "Database corrupted.",
+  "CorruptedDatabaseNoCoreParagraph": "Database is corrupted: package {package_name} has features but no core paragraph.",
+  "_CorruptedDatabaseNoCoreParagraph.comment": "An example of {package_name} is zlib.",
   "CouldNotDeduceNugetIdAndVersion": "Could not deduce nuget id and version from filename: {path}",
   "_CouldNotDeduceNugetIdAndVersion.comment": "An example of {path} is /foo/bar.",
   "CreateFailureLogsDir": "Creating failure logs output directory {path}.",
