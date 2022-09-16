@@ -64,6 +64,8 @@ if ([string]::IsNullOrEmpty($VcpkgExe))
     {
         $VcpkgExe = Get-Item './vcpkg'
     }
+} else {
+    $VcpkgExe = Get-Item $VcpkgExe
 }
 
 [Array]$AllTests = Get-ChildItem $PSScriptRoot/end-to-end-tests-dir/*.ps1
