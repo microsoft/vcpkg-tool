@@ -572,7 +572,7 @@
   "ParseControlErrorInfoWhileLoading": "while loading {path}:",
   "_ParseControlErrorInfoWhileLoading.comment": "Error messages are is printed after this. An example of {path} is /foo/bar.",
   "ParseControlErrorInfoWrongTypeFields": "The following fields had the wrong types:",
-  "PathMustBeAbsolute": "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute:  {path}",
+  "PathMustBeAbsolute": "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute: {path}",
   "_PathMustBeAbsolute.comment": "An example of {path} is /foo/bar.",
   "PortDependencyConflict": "Port {package_name} has the following unsupported dependencies:",
   "_PortDependencyConflict.comment": "An example of {package_name} is zlib.",

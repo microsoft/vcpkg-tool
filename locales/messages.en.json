@@ -350,7 +350,7 @@
   "ParseControlErrorInfoTypesEntry": "{value} was expected to be {expected}",
   "ParseControlErrorInfoWhileLoading": "while loading {path}:",
   "ParseControlErrorInfoWrongTypeFields": "The following fields had the wrong types:",
-  "PathMustBeAbsolute": "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute:  {path}",
+  "PathMustBeAbsolute": "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute: {path}",
   "PortDependencyConflict": "Port {package_name} has the following unsupported dependencies:",
   "PortNotInBaseline": "the baseline does not contain an entry for port {package_name}",
   "PortSupportsField": "(supports: \"{supports_expression}\")",
