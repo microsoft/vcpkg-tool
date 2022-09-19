@@ -239,9 +239,9 @@ namespace vcpkg
                 }
                 else
                 {
-                    Checks::exit_with_message(VCPKG_LINE_INFO,
-                                              "Error: Invalid bundle definition.\n%s\n",
-                                              maybe_bundle_doc.error()->to_string());
+                    Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                                  msgInvalidBundleDefinition,
+                                                  msg::error_msg = maybe_bundle_doc.error()->to_string());
                 }
             }
             return ret;
@@ -314,22 +314,18 @@ namespace vcpkg
                 const auto status = get_real_filesystem().status(ret, VCPKG_LINE_INFO);
                 if (!vcpkg::exists(status))
                 {
-                    Checks::exit_with_message(VCPKG_LINE_INFO,
-                                              "Path to X_VCPKG_REGISTRIES_CACHE does not exist: " + ret.native());
+                    Checks::msg_exit_with_message(
+                        VCPKG_LINE_INFO, msgMissingPathToRegistryCache, msg::path = ret.native());
                 }
 
                 if (!vcpkg::is_directory(status))
                 {
-                    Checks::exit_with_message(
-                        VCPKG_LINE_INFO,
-                        "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not a directory: " + ret.native());
+                    Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgValueMustBePath, msg::path = ret.native());
                 }
 
                 if (!ret.is_absolute())
                 {
-                    Checks::exit_with_message(
-                        VCPKG_LINE_INFO,
-                        "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute: " + ret.native());
+                    Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgPathMustBeAbsolute, msg::path = ret.native());
                 }
             }
             else
@@ -362,15 +358,15 @@ namespace vcpkg
                 , scripts(process_input_directory(fs, root, args.scripts_root_dir.get(), "scripts", VCPKG_LINE_INFO))
                 , m_registries_cache(compute_registries_cache_root(fs, args))
             {
-                Debug::print("Bundle config: readonly=",
-                             m_bundle.m_readonly,
-                             ", usegitregistry=",
-                             m_bundle.m_usegitregistry,
-                             ", embeddedsha=",
-                             m_bundle.m_embedded_git_sha.value_or("nullopt"),
-                             "\n");
+                msg::write_unlocalized_text_to_stdout(
+                    Color::none,
+                    fmt::format("Bundle config: readonly={}, usegitregistry={}, embeddedsha={}\n",
+                                m_bundle.m_readonly,
+                                m_bundle.m_usegitregistry,
+                                m_bundle.m_embedded_git_sha.value_or("nullopt")));
 
-                Debug::print("Using builtin-ports: ", m_builtin_ports, '\n');
+                msg::write_unlocalized_text_to_stdout(Color::none,
+                                                      fmt::format("Using builtin-ports: {}\n", m_builtin_ports));
             }
 
             Filesystem& m_fs;
@@ -472,14 +468,19 @@ namespace vcpkg
             {
                 if (auto i = m_installed.get())
                 {
-                    Debug::print("Using installed-root: ", i->root(), '\n');
+                    msg::write_unlocalized_text_to_stdout(Color::none,
+                                                          fmt::format("Using installed-root: {}\n", i->root()));
                 }
-                Debug::print("Using buildtrees-root: ", buildtrees.value_or("nullopt"), '\n');
-                Debug::print("Using packages-root: ", packages.value_or("nullopt"), '\n');
+
+                msg::write_unlocalized_text_to_stdout(
+                    Color::none, fmt::format("Using buildtrees-root: {}\n", buildtrees.value_or("nullopt")));
+                msg::write_unlocalized_text_to_stdout(
+                    Color::none, fmt::format("Using packages-root: {}\n", packages.value_or("nullopt")));
 
                 if (!m_manifest_dir.empty())
                 {
-                    Debug::print("Using manifest-root: ", m_manifest_dir, '\n');
+                    msg::write_unlocalized_text_to_stdout(Color::none,
+                                                          fmt::format("Using manifest-root: {}\n", m_manifest_dir));
 
                     std::error_code ec;
                     const auto vcpkg_root_file = root / ".vcpkg-root";
@@ -498,8 +499,8 @@ namespace vcpkg
                         bool allow_errors = args.ignore_lock_failures.value_or(false);
                         if (is_already_locked || !allow_errors)
                         {
-                            vcpkg::printf(Color::error, "Failed to take the filesystem lock on %s:\n", vcpkg_root_file);
-                            vcpkg::printf(Color::error, "    %s\n", ec.message());
+                            msg::println_error(msgFailedToTakeFileSystemLock, msg::path = vcpkg_root_file);
+                            msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("    {}\n", ec.message()));
                             Checks::exit_fail(VCPKG_LINE_INFO);
                         }
                     }
@@ -622,10 +623,11 @@ namespace vcpkg
         , triplets(filesystem.almost_canonical(root / "triplets", VCPKG_LINE_INFO))
         , community_triplets(filesystem.almost_canonical(triplets / "community", VCPKG_LINE_INFO))
     {
-        Debug::print("Using vcpkg-root: ", root, '\n');
-        Debug::print("Using scripts-root: ", scripts, '\n');
-        Debug::print("Using builtin-registry: ", builtin_registry_versions, '\n');
-        Debug::print("Using downloads-root: ", downloads, '\n');
+        msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("Using vcpkg-root: {}\n", root));
+        msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("Using scripts-root: {}\n", scripts));
+        msg::write_unlocalized_text_to_stdout(Color::none,
+                                              fmt::format("Using builtin-registry: {}\n", builtin_registry_versions));
+        msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("Using downloads-root: {}\n", downloads));
 
         m_pimpl->triplets_dirs.emplace_back(triplets);
         m_pimpl->triplets_dirs.emplace_back(community_triplets);
@@ -759,7 +761,7 @@ namespace vcpkg
 
             if (!ref_info_value.is_object())
             {
-                Debug::print("Lockfile value for key '", repo, "' was not an object\n");
+                msg::println(msgLockfileValueNotObj, msg::package_name = repo);
                 return ret;
             }
 
@@ -770,13 +772,13 @@ namespace vcpkg
 
                 if (!commit.is_string())
                 {
-                    Debug::print("Lockfile value for key '", reference, "' was not a string\n");
+                    msg::println(msgLockfileValueNotString, msg::package_name = reference);
                     return ret;
                 }
                 auto sv = commit.string(VCPKG_LINE_INFO);
                 if (!is_git_commit_sha(sv))
                 {
-                    Debug::print("Lockfile value for key '", reference, "' was not a git commit sha\n");
+                    msg::println(msgLockfileValueNotCommitSha, msg::package_name = reference);
                     return ret;
                 }
                 ret.emplace(repo.to_string(), LockFile::EntryData{reference.to_string(), sv.to_string(), true});
@@ -813,7 +815,7 @@ namespace vcpkg
         auto maybe_lock_contents = Json::parse_file(fs, p, ec);
         if (ec)
         {
-            Debug::print("Failed to load lockfile: ", ec.message(), "\n");
+            msg::println(msgFailedToLoadLockfile, msg::error_msg = ec.message());
             return ret;
         }
         else if (auto lock_contents = maybe_lock_contents.get())
@@ -821,7 +823,7 @@ namespace vcpkg
             auto& doc = lock_contents->first;
             if (!doc.is_object())
             {
-                Debug::print("Lockfile was not an object\n");
+                msg::println(msgLockfileNotObj);
                 return ret;
             }
 
@@ -831,7 +833,7 @@ namespace vcpkg
         }
         else
         {
-            Debug::print("Failed to load lockfile:\n", maybe_lock_contents.error()->to_string());
+            msg::println(msgFailedToLoadLockfile, msg::error_msg = maybe_lock_contents.error()->to_string());
             return ret;
         }
     }
@@ -872,8 +874,8 @@ namespace vcpkg
                     }
                 }
 
-                Checks::exit_with_message(
-                    VCPKG_LINE_INFO, "Error: Triplet file %s.cmake not found", triplet.canonical_name());
+                Checks::msg_exit_with_message(
+                    VCPKG_LINE_INFO, msgTripletFileNotFound, msg::triplet = triplet.canonical_name());
             });
     }
 

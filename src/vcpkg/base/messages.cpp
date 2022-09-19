@@ -830,4 +830,15 @@ namespace vcpkg
     REGISTER_MESSAGE(CurrentCommitBaseline);
     REGISTER_MESSAGE(FailedToDetermineCurrentCommit);
     REGISTER_MESSAGE(AttemptingToSetBuiltInBaseline);
+    REGISTER_MESSAGE(InvalidBundleDefinition);
+    REGISTER_MESSAGE(PathMustBeAbsolute);
+    REGISTER_MESSAGE(MissingPathToRegistryCache);
+    REGISTER_MESSAGE(ValueMustBePath);
+    REGISTER_MESSAGE(FailedToTakeFileSystemLock);
+    REGISTER_MESSAGE(LockfileValueNotObj);
+    REGISTER_MESSAGE(LockfileValueNotString);
+    REGISTER_MESSAGE(LockfileValueNotCommitSha);
+    REGISTER_MESSAGE(FailedToLoadLockfile);
+    REGISTER_MESSAGE(LockfileNotObj);
+    REGISTER_MESSAGE(TripletFileNotFound);
 }

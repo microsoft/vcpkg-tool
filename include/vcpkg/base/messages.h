@@ -1748,4 +1748,33 @@ namespace vcpkg
                     "",
                     "attempting to set builtin-baseline in vcpkg.json while overriding the default-registry in "
                     "vcpkg-configuration.json.\n\tthe default-registry from vcpkg-configuration.json will be used.");
+    DECLARE_MESSAGE(InvalidBundleDefinition, (msg::error_msg), "", "Invalid bundle definition.\n{error_msg}");
+    DECLARE_MESSAGE(MissingPathToRegistryCache,
+                    (msg::path),
+                    "",
+                    "Path to X_VCPKG_REGISTRIES_CACHE does not exist: {path}");
+    DECLARE_MESSAGE(ValueMustBePath,
+                    (msg::path),
+                    "",
+                    "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not a directory: {path}");
+    DECLARE_MESSAGE(PathMustBeAbsolute,
+                    (msg::path),
+                    "",
+                    "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute:  {path}");
+    DECLARE_MESSAGE(FailedToTakeFileSystemLock, (msg::path), "", "Failed to take the filesystem lock on {path}");
+    DECLARE_MESSAGE(LockfileValueNotObj,
+                    (msg::package_name),
+                    "",
+                    "Lockfile value for key {package_name} was not an object");
+    DECLARE_MESSAGE(LockfileValueNotString,
+                    (msg::package_name),
+                    "",
+                    "Lockfile value for key {package_name} was not an string");
+    DECLARE_MESSAGE(LockfileValueNotCommitSha,
+                    (msg::package_name),
+                    "",
+                    "Lockfile value for key {package_name} was not a git commit sha");
+    DECLARE_MESSAGE(FailedToLoadLockfile, (msg::error_msg), "", "Failed to load lockfile: {error_msg}");
+    DECLARE_MESSAGE(LockfileNotObj, (), "", "Lockfile was not an object");
+    DECLARE_MESSAGE(TripletFileNotFound, (msg::triplet), "", "Triplet file {triplet}.cmake not found");
 }
