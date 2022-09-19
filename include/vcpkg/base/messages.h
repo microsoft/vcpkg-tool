@@ -1651,4 +1651,15 @@ namespace vcpkg
                     (msg::package_name),
                     "",
                     "Database is corrupted: package {package_name} has features but no core paragraph.");
+    DECLARE_MESSAGE(UnsupportedUpdateCMD,
+                    (),
+                    "",
+                    "the update command does not currently support manifest mode. Instead, modify your vcpkg.json and "
+                    "run install.");
+    DECLARE_MESSAGE(LocalPortfileVersion,
+                    (),
+                    "",
+                    "Using local portfile versions. To update the local portfiles, use `git pull`.");
+    DECLARE_MESSAGE(PackagesUpToDate, (), "", "No packages need updating.");
+    DECLARE_MESSAGE(PortVersionConflict, (), "", "The following packages differ from their port versions:");
 }

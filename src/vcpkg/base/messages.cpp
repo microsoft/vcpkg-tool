@@ -804,4 +804,8 @@ namespace vcpkg
     REGISTER_MESSAGE(WindowsOnlyCommand);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
     REGISTER_MESSAGE(CorruptedDatabaseNoCoreParagraph);
+    REGISTER_MESSAGE(UnsupportedUpdateCMD);
+    REGISTER_MESSAGE(LocalPortfileVersion);
+    REGISTER_MESSAGE(PackagesUpToDate);
+    REGISTER_MESSAGE(PortVersionConflict);
 }
