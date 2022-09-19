@@ -1662,4 +1662,12 @@ namespace vcpkg
                     "Using local portfile versions. To update the local portfiles, use `git pull`.");
     DECLARE_MESSAGE(PackagesUpToDate, (), "", "No packages need updating.");
     DECLARE_MESSAGE(PortVersionConflict, (), "", "The following packages differ from their port versions:");
+    DECLARE_MESSAGE(ToUpdatePackages,
+                    (msg::command_name),
+                    "",
+                    "To update these packages and all dependencies, run\n\t{command_name} upgrade'");
+    DECLARE_MESSAGE(ToRemovePackages,
+                    (msg::command_name),
+                    "",
+                    "To only remove outdated packages, run\n\t{command_name} remove --outdated");
 }

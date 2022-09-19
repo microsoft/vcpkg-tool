@@ -80,7 +80,8 @@ namespace vcpkg::Update
             msg::println(msgPortVersionConflict);
             for (auto&& package : outdated_packages)
             {
-                msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("    %-32s %s\n", package.spec, package.version_diff.to_string()));
+                msg::write_unlocalized_text_to_stdout(
+                    Color::none, fmt::format("\t{:<32} {}\n", package.spec, package.version_diff.to_string()));
             }
 
 #if defined(_WIN32)
@@ -88,15 +89,8 @@ namespace vcpkg::Update
 #else
             auto vcpkg_cmd = "./vcpkg";
 #endif
-            vcpkg::printf("\n"
-                          "To update these packages and all dependencies, run\n"
-                          "    %s upgrade\n"
-                          "\n"
-                          "To only remove outdated packages, run\n"
-                          "    %s remove --outdated\n"
-                          "\n",
-                          vcpkg_cmd,
-                          vcpkg_cmd);
+            msg::println(msgToUpdatePackages, msg::command_name = vcpkg_cmd);
+            msg::println(msgToRemovePackages, msg::command_name = vcpkg_cmd);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

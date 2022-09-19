@@ -808,4 +808,6 @@ namespace vcpkg
     REGISTER_MESSAGE(LocalPortfileVersion);
     REGISTER_MESSAGE(PackagesUpToDate);
     REGISTER_MESSAGE(PortVersionConflict);
+    REGISTER_MESSAGE(ToUpdatePackages);
+    REGISTER_MESSAGE(ToRemovePackages);
 }
