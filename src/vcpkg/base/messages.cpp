@@ -810,4 +810,12 @@ namespace vcpkg
     REGISTER_MESSAGE(PortVersionConflict);
     REGISTER_MESSAGE(ToUpdatePackages);
     REGISTER_MESSAGE(ToRemovePackages);
+    REGISTER_MESSAGE(CouldNotFindToolVersion);
+    REGISTER_MESSAGE(VersionConflictXML);
+    REGISTER_MESSAGE(FailedToParseVersionXML);
+    REGISTER_MESSAGE(ToolOfVersionXNotFound);
+    REGISTER_MESSAGE(DownloadingPortableToolVersionX);
+    REGISTER_MESSAGE(DownloadingTool);
+    REGISTER_MESSAGE(ExtractingTool);
+    REGISTER_MESSAGE(ExpectedPathToExist);
 }

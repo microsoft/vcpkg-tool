@@ -1670,4 +1670,33 @@ namespace vcpkg
                     (msg::command_name),
                     "",
                     "To only remove outdated packages, run\n\t{command_name} remove --outdated");
+    DECLARE_MESSAGE(CouldNotFindToolVersion,
+                    (msg::version, msg::path),
+                    "",
+                    "Could not find <tools version=\"{version}\"> in {path}");
+    DECLARE_MESSAGE(
+        VersionConflictXML,
+        (msg::path, msg::expected_version, msg::actual_version),
+        "",
+        "Expected {path} version: [{expected_version}], but was [{actual_version}]. Please re-run bootstrap-vcpkg.");
+    DECLARE_MESSAGE(FailedToParseVersionXML,
+                    (msg::tool_name, msg::version),
+                    "",
+                    "Could not parse version for tool {tool_name}. Version string was: {version}");
+    DECLARE_MESSAGE(ToolOfVersionXNotFound,
+                    (msg::tool_name, msg::version),
+                    "",
+                    "A suitable version of {tool_name} was not found (required v{version}) and unable to automatically "
+                    "download a portable one. Please install a newer version of {tool_name}");
+    DECLARE_MESSAGE(DownloadingPortableToolVersionX,
+                    (msg::tool_name, msg::version),
+                    "",
+                    "A suitable version of {tool_name} was not found (required v{version}) Downloading "
+                    "portable {tool_name} v{version}...");
+    DECLARE_MESSAGE(DownloadingTool,
+                    (msg::tool_name, msg::url, msg::path),
+                    "",
+                    "Downloading {tool_name}...\n{url}->{path}");
+    DECLARE_MESSAGE(ExtractingTool, (msg::tool_name), "", "Extracting {tool_name}...");
+    DECLARE_MESSAGE(ExpectedPathToExist, (msg::path), "", "Expected {path} to exist after fetching");
 }
