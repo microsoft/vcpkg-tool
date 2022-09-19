@@ -818,4 +818,16 @@ namespace vcpkg
     REGISTER_MESSAGE(DownloadingTool);
     REGISTER_MESSAGE(ExtractingTool);
     REGISTER_MESSAGE(ExpectedPathToExist);
+    REGISTER_MESSAGE(FailedToLoadManifest);
+    REGISTER_MESSAGE(ManifestWithNoTopLevelObj);
+    REGISTER_MESSAGE(FailedToParseConfig);
+    REGISTER_MESSAGE(ConfigWithNoTopLevelObj);
+    REGISTER_MESSAGE(EmbeddingVcpkgConfigInManifest);
+    REGISTER_MESSAGE(BaselineConflict);
+    REGISTER_MESSAGE(AmbiguousConfigDeleteConfigFile);
+    REGISTER_MESSAGE(DeleteVcpkgConfigFromManifest);
+    REGISTER_MESSAGE(InvalidBuiltInBaseline);
+    REGISTER_MESSAGE(CurrentCommitBaseline);
+    REGISTER_MESSAGE(FailedToDetermineCurrentCommit);
+    REGISTER_MESSAGE(AttemptingToSetBuiltInBaseline);
 }

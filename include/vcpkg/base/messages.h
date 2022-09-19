@@ -1699,4 +1699,53 @@ namespace vcpkg
                     "Downloading {tool_name}...\n{url}->{path}");
     DECLARE_MESSAGE(ExtractingTool, (msg::tool_name), "", "Extracting {tool_name}...");
     DECLARE_MESSAGE(ExpectedPathToExist, (msg::path), "", "Expected {path} to exist after fetching");
+    DECLARE_MESSAGE(FailedToLoadManifest,
+                    (msg::path, msg::error_msg),
+                    "",
+                    "Failed to load manifest from directory {path}: {error_msg}");
+    DECLARE_MESSAGE(ManifestWithNoTopLevelObj,
+                    (msg::path),
+                    "",
+                    "Failed to parse manifest at {path}: manifest files must have a top-level object");
+    DECLARE_MESSAGE(ConfigWithNoTopLevelObj,
+                    (msg::path),
+                    "",
+                    "Failed to parse {path}: configuration files must have a top-level object");
+    DECLARE_MESSAGE(FailedToParseConfig, (msg::path), "", "Failed to parse {path}");
+    DECLARE_MESSAGE(EmbeddingVcpkgConfigInManifest,
+                    (),
+                    "",
+                    "Embedding `vcpkg-configuration` in a manifest file is an EXPERIMENTAL feature.");
+    DECLARE_MESSAGE(BaselineConflict,
+                    (),
+                    "",
+                    "Specifying vcpkg-configuration.default-registry in a manifest file conflicts with built-in "
+                    "baseline.\nPlease remove one of these conflicting settings.");
+    DECLARE_MESSAGE(AmbiguousConfigDeleteConfigFile,
+                    (msg::path),
+                    "",
+                    "Ambiguous vcpkg configuration provided by both manifest and configuration file.\n-- Delete "
+                    "configuration file \"{path}/vcpkg-configuration.json\"");
+    DECLARE_MESSAGE(DeleteVcpkgConfigFromManifest,
+                    (msg::path),
+                    "",
+                    "-- Or remove \"vcpkg-configuration\" from the manifest file \"{path}/vcpkg.json\".");
+    DECLARE_MESSAGE(
+        InvalidBuiltInBaseline,
+        (msg::value),
+        "{value} is a git commit sha",
+        "the top-level builtin-baseline ({value}) was not a valid commit sha: expected 40 hexadecimal characters.");
+    DECLARE_MESSAGE(CurrentCommitBaseline,
+                    (msg::value),
+                    "{value} is a 40 hexadecimal character commit sha",
+                    "You can use the current commit as a baseline, which is:\n\t\"builtin-baseline\": \"{value}\"");
+    DECLARE_MESSAGE(FailedToDetermineCurrentCommit,
+                    (msg::error_msg),
+                    "",
+                    "Failed to determine the current commit:\n{error_msg}");
+    DECLARE_MESSAGE(AttemptingToSetBuiltInBaseline,
+                    (),
+                    "",
+                    "attempting to set builtin-baseline in vcpkg.json while overriding the default-registry in "
+                    "vcpkg-configuration.json.\n\tthe default-registry from vcpkg-configuration.json will be used.");
 }

@@ -49,7 +49,7 @@ namespace
         Filesystem& filesystem, const Path& root, std::string* option, StringLiteral name, LineInfo li)
     {
         auto result = process_input_directory_impl(filesystem, root, option, name, li);
-        Debug::print("Using ", name, "-root: ", result, '\n');
+        msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("Using {}-root: {}\n", name, result));
         return result;
     }
 
@@ -68,25 +68,22 @@ namespace vcpkg
         auto manifest_opt = Json::parse_file(fs, manifest_path, ec);
         if (ec)
         {
-            Checks::exit_maybe_upgrade(
-                VCPKG_LINE_INFO, "Failed to load manifest from directory %s: %s", manifest_dir, ec.message());
+            Checks::msg_exit_maybe_upgrade(
+                VCPKG_LINE_INFO, msgFailedToLoadManifest, msg::path = manifest_dir, msg::error_msg = ec.message());
         }
 
         if (!manifest_opt)
         {
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                       "Failed to parse manifest at %s:\n%s",
-                                       manifest_path,
-                                       manifest_opt.error()->to_string());
+            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                           msgFailedToLoadManifest,
+                                           msg::path = manifest_path,
+                                           msg::error_msg = manifest_opt.error()->to_string());
         }
         auto manifest_value = std::move(manifest_opt).value_or_exit(VCPKG_LINE_INFO);
 
         if (!manifest_value.first.is_object())
         {
-            print2(Color::error,
-                   "Failed to parse manifest at ",
-                   manifest_path,
-                   ": Manifest files must have a top-level object\n");
+            msg::println_error(msgManifestWithNoTopLevelObj, msg::path = manifest_path);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
         return {std::move(manifest_value.first.object(VCPKG_LINE_INFO)), std::move(manifest_path)};
@@ -112,8 +109,7 @@ namespace vcpkg
         auto parsed_config = Json::parse_file(VCPKG_LINE_INFO, fs, config_path);
         if (!parsed_config.first.is_object())
         {
-            print2(
-                Color::error, "Failed to parse ", config_path, ": configuration files must have a top-level object\n");
+            msg::println_error(msgConfigWithNoTopLevelObj, msg::path = config_path);
             msg::println(Color::error, msg::msgSeeURL, msg::url = docs::registries_url);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -123,11 +119,11 @@ namespace vcpkg
         auto parsed_config_opt = reader.visit(obj, get_configuration_deserializer());
         if (!reader.errors().empty())
         {
-            print2(Color::error, "Error: while parsing ", config_path, "\n");
+            msg::println_error(msgFailedToParseConfig, msg::path = config_path);
             for (auto&& msg : reader.errors())
-                print2("    ", msg, '\n');
+                msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("    {}\n", msg));
 
-            print2("See ", docs::registries_url, " for more information.\n");
+            msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
@@ -146,14 +142,11 @@ namespace vcpkg
         {
             if (auto config = manifest->config.get())
             {
-                print2(Color::warning,
-                       "Embedding `vcpkg-configuration` in a manifest file is an EXPERIMENTAL feature.\n");
+                msg::println_warning(msgEmbeddingVcpkgConfigInManifest);
 
                 if (manifest->builtin_baseline && config->default_reg)
                 {
-                    print2(Color::error,
-                           "Error: Specifying vcpkg-configuration.default-registry in a manifest file conflicts with "
-                           "builtin-baseline.\nPlease remove one of these conflicting settings.\n");
+                    msg::println_error(msgBaselineConflict);
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
 
@@ -161,14 +154,10 @@ namespace vcpkg
 
                 if (config_data.has_value())
                 {
-                    print2(Color::error,
-                           "Ambiguous vcpkg configuration provided by both manifest and configuration file.\n"
-                           "-- Delete configuration file \"",
-                           config_dir / "vcpkg-configuration.json",
-                           "\"\n"
-                           "-- Or remove \"vcpkg-configuration\" from the manifest file \"",
-                           manifest_dir / "vcpkg.json",
-                           "\".");
+                    msg::println_error(msg::format(msgAmbiguousConfigDeleteConfigFile, msg::path = config_dir)
+                                           .append_raw('\n')
+                                           .append(msgDeleteVcpkgConfigFromManifest, msg::path = manifest_dir));
+
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
 
@@ -191,19 +180,14 @@ namespace vcpkg
                 if (!is_git_commit_sha(*p_baseline))
                 {
                     LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::VersioningErrorBaseline);
-                    Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                               "Error: the top-level builtin-baseline%s was not a valid commit sha: "
-                                               "expected 40 hexadecimal characters.\n%s\n",
-                                               Strings::concat(" (", *p_baseline, ')'),
-                                               paths.get_current_git_sha_baseline_message());
+                    Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                                   msg::format(msgInvalidBuiltInBaseline, msg::value = *p_baseline)
+                                                       .append(paths.get_current_git_sha_baseline_message()));
                 }
 
                 if (ret.config.default_reg)
                 {
-                    print2(Color::warning,
-                           "warning: attempting to set builtin-baseline in vcpkg.json while overriding the "
-                           "default-registry in vcpkg-configuration.json.\n    The default-registry from "
-                           "vcpkg-configuration.json will be used.");
+                    msg::println_warning(msgAttemptingToSetBuiltInBaseline);
                 }
                 else
                 {
@@ -971,17 +955,16 @@ namespace vcpkg
         }
         return ret;
     }
-    std::string VcpkgPaths::get_current_git_sha_baseline_message() const
+    LocalizedString VcpkgPaths::get_current_git_sha_baseline_message() const
     {
         auto maybe_cur_sha = get_current_git_sha();
         if (auto p_sha = maybe_cur_sha.get())
         {
-            return Strings::concat(
-                "You can use the current commit as a baseline, which is:\n    \"builtin-baseline\": \"", *p_sha, '"');
+            return msg::format(msgCurrentCommitBaseline, msg::value = *p_sha);
         }
         else
         {
-            return Strings::concat("Failed to determine the current commit:\n", maybe_cur_sha.error());
+            return msg::format(msgFailedToDetermineCurrentCommit, msg::error_msg = maybe_cur_sha.error());
         }
     }
 
