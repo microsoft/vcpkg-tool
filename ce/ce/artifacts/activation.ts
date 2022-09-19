@@ -547,9 +547,11 @@ export class Activation {
     return [env, undo];
   }
 
-  async activate(currentEnvironment: Record<string, string | undefined>, shellScriptFile: Uri | undefined, undoEnvironmentFile: Uri | undefined, msbuildFile: Uri | undefined, json: Uri | undefined) {
+  async activate(undoEnvironmentFile: Uri | undefined, msbuildFile: Uri | undefined, json: Uri | undefined) {
     let undoDeactivation = '';
-    const scriptKind = extname(shellScriptFile?.fsPath || '');
+    const scriptKind = extname(this.#session.postscriptFile?.fsPath || '');
+
+    const currentEnvironment = {...this.#session.environment};
 
     // load previous activation undo data
     const previous = currentEnvironment[undoVariableName];
@@ -558,9 +560,10 @@ export class Activation {
       const deactivationData = await deactivationDataFile.tryReadUTF8();
       if (deactivationData) {
         const deactivationParsed = JSON.parse(deactivationData);
-        currentEnvironment = undoActivation(currentEnvironment, deactivationParsed.environment || {});
+        const previousEnvironmentValues = deactivationParsed.environment || {};
+        undoActivation(currentEnvironment, previousEnvironmentValues);
         delete currentEnvironment[undoVariableName];
-        undoDeactivation = generateScriptContent(scriptKind, deactivationParsed.environment || {}, deactivationParsed.aliases || {});
+        undoDeactivation = generateScriptContent(scriptKind, previousEnvironmentValues, deactivationParsed.aliases || {});
       }
     }
 
@@ -599,11 +602,11 @@ export class Activation {
     }
 
     // generate shell script if requested
-    if (shellScriptFile) {
+    if (this.#session.postscriptFile) {
       const contents = undoDeactivation + generateScriptContent(scriptKind, variables, aliases);
 
       this.#session.channels.verbose(`--------[START SHELL SCRIPT FILE]--------\n${contents}\n--------[END SHELL SCRIPT FILE]---------`);
-      await shellScriptFile.writeUTF8(contents);
+      await this.#session.postscriptFile.writeUTF8(contents);
     }
 
     // generate msbuild props file if requested
@@ -621,7 +624,7 @@ export class Activation {
   }
 
 
-  /** produces an environment block that can be passed to child processes to leverage dependent artifacts during installtion/activation. */
+  /** produces an environment block that can be passed to child processes to leverage dependent artifacts during installation/activation. */
   async getEnvironmentBlock(): Promise<NodeJS.ProcessEnv> {
     const result = { ... this.#session.environment };
 
@@ -709,16 +712,14 @@ export async function deactivate(shellScriptFile: Uri, variables: Record<string,
   await shellScriptFile.writeUTF8(generateScriptContent(kind, variables, aliases));
 }
 
-function undoActivation(currentEnvironment: Record<string, string | undefined>, variables: Record<string, string>) {
-  const result = { ...currentEnvironment };
-  for (const [key, value] of linq.entries(variables)) {
+function undoActivation(targetEnvironment: Record<string, string | undefined>, oldVariableValues: Record<string, string>) {
+  for (const [key, value] of linq.entries(oldVariableValues)) {
     if (value) {
-      result[key] = value;
+      targetEnvironment[key] = value;
     } else {
-      delete result[key];
+      delete targetEnvironment[key];
     }
   }
-  return result;
 }
 
 async function toArrayAsync<T>(iterable: AsyncIterable<T>) {

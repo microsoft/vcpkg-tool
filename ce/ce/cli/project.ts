@@ -33,7 +33,7 @@ export async function activate(session: Session, artifacts: Array<ResolvedArtifa
       }
     }
 
-    await activation.activate(session.environment, session.postscriptFile, backupFile, options?.msbuildProps, options?.json);
+    await activation.activate(backupFile, options?.msbuildProps, options?.json);
   }
 
   return success;
