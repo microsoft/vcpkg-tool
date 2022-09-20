@@ -51,6 +51,14 @@
     },
     "exports": {
       "$ref": "vcpkg-schema-definitions.schema.json#/definitions/exports"
+    },
+    "acquisition-tags": {
+      "description": "A set of tags used to partially acquire a graph of artifacts. `vcpkg acquire-manifest --tags a,b` will acquire only those artifacts with a or b in this set.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "^[A-Za-z]+$"
+      }
     }
   },
   "patternProperties": {
