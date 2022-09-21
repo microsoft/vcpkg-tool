@@ -182,7 +182,7 @@ namespace vcpkg
                     LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::VersioningErrorBaseline);
                     Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
                                                    msg::format(msgInvalidBuiltInBaseline, msg::value = *p_baseline)
-                                                       .append(paths.get_current_git_sha_baseline_message()));
+                                                       .append_raw(paths.get_current_git_sha_baseline_message()));
                 }
 
                 if (ret.config.default_reg)
@@ -957,16 +957,16 @@ namespace vcpkg
         }
         return ret;
     }
-    LocalizedString VcpkgPaths::get_current_git_sha_baseline_message() const
+    std::string VcpkgPaths::get_current_git_sha_baseline_message() const
     {
         auto maybe_cur_sha = get_current_git_sha();
         if (auto p_sha = maybe_cur_sha.get())
         {
-            return msg::format(msgCurrentCommitBaseline, msg::value = *p_sha);
+            return msg::format(msgCurrentCommitBaseline, msg::value = *p_sha).to_string();
         }
         else
         {
-            return msg::format(msgFailedToDetermineCurrentCommit, msg::error_msg = maybe_cur_sha.error());
+            return msg::format(msgFailedToDetermineCurrentCommit, msg::error_msg = maybe_cur_sha.error()).to_string();
         }
     }
 
