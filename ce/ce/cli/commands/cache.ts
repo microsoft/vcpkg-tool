@@ -10,7 +10,6 @@ import { Command } from '../command';
 import { Table } from '../markdown-table';
 import { log } from '../styling';
 import { Clear } from '../switches/clear';
-import { WhatIf } from '../switches/whatIf';
 
 export class CacheCommand extends Command {
   readonly command = 'cache';
@@ -18,7 +17,6 @@ export class CacheCommand extends Command {
   seeAlso = [];
   argumentsHelp = [];
   clear = new Clear(this);
-  whatIf = new WhatIf(this);
 
   get summary() {
     return i`Manages the download cache`;

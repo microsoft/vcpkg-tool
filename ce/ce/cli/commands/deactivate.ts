@@ -7,7 +7,6 @@ import { Command } from '../command';
 import { projectFile } from '../format';
 import { log } from '../styling';
 import { Project } from '../switches/project';
-import { WhatIf } from '../switches/whatIf';
 
 export class DeactivateCommand extends Command {
   readonly command = 'deactivate';
@@ -15,7 +14,6 @@ export class DeactivateCommand extends Command {
   seeAlso = [];
   argumentsHelp = [];
   project = new Project(this);
-  whatIf = new WhatIf(this);
 
   get summary() {
     return i`Deactivates the current session`;

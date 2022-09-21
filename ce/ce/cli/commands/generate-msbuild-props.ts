@@ -11,14 +11,12 @@ import { error } from '../styling';
 import { Json } from '../switches/json';
 import { MSBuildProps } from '../switches/msbuild-props';
 import { Project } from '../switches/project';
-import { WhatIf } from '../switches/whatIf';
 
 export class GenerateMSBuildPropsCommand extends Command {
   readonly command = 'generate-msbuild-props';
   readonly aliases = [];
   seeAlso = [];
   argumentsHelp = [];
-  whatIf = new WhatIf(this);
   project: Project = new Project(this);
   msbuildProps: MSBuildProps = new MSBuildProps(this, 'out');
   json : Json = new Json(this);

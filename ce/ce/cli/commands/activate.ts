@@ -9,14 +9,12 @@ import { error } from '../styling';
 import { Json } from '../switches/json';
 import { MSBuildProps } from '../switches/msbuild-props';
 import { Project } from '../switches/project';
-import { WhatIf } from '../switches/whatIf';
 
 export class ActivateCommand extends Command {
   readonly command = 'activate';
   readonly aliases = [];
   seeAlso = [];
   argumentsHelp = [];
-  whatIf = new WhatIf(this);
   project: Project = new Project(this);
   msbuildProps: MSBuildProps = new MSBuildProps(this);
   json : Json = new Json(this);

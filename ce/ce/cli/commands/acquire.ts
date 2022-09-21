@@ -11,7 +11,6 @@ import { cmdSwitch } from '../format';
 import { debug, error, log, warning } from '../styling';
 import { Project } from '../switches/project';
 import { Version } from '../switches/version';
-import { WhatIf } from '../switches/whatIf';
 
 export class AcquireCommand extends Command {
   readonly command = 'acquire';
@@ -20,7 +19,6 @@ export class AcquireCommand extends Command {
   argumentsHelp = [];
   version = new Version(this);
   project: Project = new Project(this);
-  whatIf = new WhatIf(this);
 
   get summary() {
     return i`Acquire artifacts in the registry`;
