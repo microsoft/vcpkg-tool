@@ -42,12 +42,10 @@ export class AcquireProjectCommand extends Command {
       return false;
     }
 
-    const [success] = await acquireArtifacts(session, resolved, projectResolver, {
+    return await acquireArtifacts(session, resolved, projectResolver, {
       force: this.commandLine.force,
       allLanguages: this.commandLine.allLanguages,
       language: this.commandLine.language
     });
-
-    return success;
   }
 }

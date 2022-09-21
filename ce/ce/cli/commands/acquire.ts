@@ -66,13 +66,13 @@ export class AcquireCommand extends Command {
     }
 
     debug(`Installing ${numberOfArtifacts} artifacts`);
-    const [success] = await acquireArtifacts(session, resolved, resolver, { force: this.commandLine.force, language: this.commandLine.language, allLanguages: this.commandLine.allLanguages });
+    const success = await acquireArtifacts(session, resolved, resolver, { force: this.commandLine.force, language: this.commandLine.language, allLanguages: this.commandLine.allLanguages });
     if (success) {
       log(i`${numberOfArtifacts} artifacts installed successfully`);
-      return true;
+    } else {
+      log(i`Installation failed -- stopping`);
     }
 
-    log(i`Installation failed -- stopping`);
-    return false;
+    return success;
   }
 }
