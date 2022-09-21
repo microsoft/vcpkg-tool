@@ -803,4 +803,7 @@ namespace vcpkg
     REGISTER_MESSAGE(WhileLookingForSpec);
     REGISTER_MESSAGE(WindowsOnlyCommand);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
+    REGISTER_MESSAGE(CurlFailedToExecute);
+    REGISTER_MESSAGE(CurlReturnedUnexpectedResponseCodes);
+    REGISTER_MESSAGE(FailedToDownloadFromMirrorSet);
 }

@@ -292,7 +292,7 @@ namespace vcpkg
                            out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
                        }
                    }).value_or_exit(VCPKG_LINE_INFO);
-        Checks::check_exit(VCPKG_LINE_INFO, res == 0, "curl failed to execute with exit code: %d", res);
+        Checks::msg_check_exit(VCPKG_LINE_INFO, res == 0, msgCurlFailedToExecute, msg::exit_code = res);
 
         if (out->size() != start_size + urls.size())
         {
@@ -361,7 +361,7 @@ namespace vcpkg
                                out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
                            }
                        }).value_or_exit(VCPKG_LINE_INFO);
-            Checks::check_exit(VCPKG_LINE_INFO, res == 0, "Error: curl failed to execute with exit code: %d", res);
+            Checks::msg_check_exit(VCPKG_LINE_INFO, res == 0, msgCurlFailedToExecute, msg::exit_code = res);
 
             if (start_size + url_pairs.size() > out->size())
             {
@@ -392,14 +392,11 @@ namespace vcpkg
         }
         if (i != url_pairs.size()) download_files_inner(fs, {url_pairs.begin() + i, url_pairs.end()}, headers, &ret);
 
-        Checks::check_exit(
-            VCPKG_LINE_INFO,
-            ret.size() == url_pairs.size(),
-            "Error: curl returned a different number of response codes than were expected for the request (",
-            ret.size(),
-            " vs expected ",
-            url_pairs.size(),
-            ")");
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               ret.size() == url_pairs.size(),
+                               msgCurlReturnedUnexpectedResponseCodes,
+                               msg::actual = ret.size(),
+                               msg::expected = url_pairs.size());
         return ret;
     }
 
@@ -422,7 +419,7 @@ namespace vcpkg
                     return 0;
                 }
 
-                Debug::print(res->output, '\n');
+                msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("{}\n", res->output));
                 return Strings::concat(
                     "Error: curl failed to put file to ", url, " with exit code: ", res->exit_code, '\n');
             }
@@ -497,14 +494,15 @@ namespace vcpkg
             fs.create_directories(dir, VCPKG_LINE_INFO);
 
             const auto sanitized_url = replace_secrets(url, secrets);
-            Debug::print("Downloading ", sanitized_url, "\n");
+            msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("Downloading {}\n", sanitized_url));
             static auto s = WinHttpSession::make().value_or_exit(VCPKG_LINE_INFO);
             for (size_t trials = 0; trials < 4; ++trials)
             {
                 if (trials > 0)
                 {
                     // 1s, 2s, 4s
-                    Debug::print("Download failed -- retrying after ", 500 << trials, " ms.\n");
+                    msg::write_unlocalized_text_to_stdout(
+                        Color::none, fmt::format("Download failed -- retrying after {}ms.", 500 << trials));
                     std::this_thread::sleep_for(std::chrono::milliseconds(500 << trials));
                 }
                 auto conn = WinHttpConnection::make(s.m_hSession.get(), hostname, port);
@@ -763,7 +761,7 @@ namespace vcpkg
                 }
             }
         }
-        Checks::exit_with_message(VCPKG_LINE_INFO, "Error: Failed to download from mirror set:\n%s", errors);
+        Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgFailedToDownloadFromMirrorSet, msg::error_msg = errors);
     }
 
     ExpectedS<int> DownloadManager::put_file_to_mirror(const Filesystem& fs,

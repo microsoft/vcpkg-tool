@@ -1647,4 +1647,16 @@ namespace vcpkg
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}.");
+    DECLARE_MESSAGE(CurlFailedToExecute, (msg::exit_code), "", "curl failed to execute with exit code {exit_code}.");
+    DECLARE_MESSAGE(CurlReturnedUnexpectedResponseCodes,
+                    (msg::actual, msg::expected),
+                    "{actual} and {expected} are the number of response codes returned by curl vs the expected number "
+                    "of response codes.",
+                    "curl returned a different number of response codes than were expected for the request ({actual} "
+                    "vs expected {expected}).");
+    DECLARE_MESSAGE(FailedToDownloadFromMirrorSet,
+                    (msg::error_msg),
+                    "",
+                    "Failed to download from mirror set:\n{error_msg}");
+
 }
