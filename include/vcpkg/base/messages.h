@@ -1741,5 +1741,48 @@ namespace vcpkg
                     (msg::package_name, msg::value),
                     "{value} is a reference",
                     "Fetching registry information from {package_name} ({value})...");
+    DECLARE_MESSAGE(JsonValueNotString, (), "", "json value is not a string");
+    DECLARE_MESSAGE(JsonValueNotArray, (), "", "json value is not an array");
+    DECLARE_MESSAGE(JsonValueNotObject, (), "", "json value is not an object");
+    DECLARE_MESSAGE(InvalidString, (), "", "Invalid utf8 passed to Value::string(std::string)");
+    DECLARE_MESSAGE(ControlCharacterInString, (), "", "Control character in string");
+    DECLARE_MESSAGE(UnexpectedEOF, (), "", "Unexpected EOF after escape character");
+    DECLARE_MESSAGE(UnexpectedEOFMidUnicodeEscape, (), "", "Unexpected end of file in middle of unicode escape");
+    DECLARE_MESSAGE(InvalidHexDigit, (), "", "Invalid hex digit in unicode escape");
+    DECLARE_MESSAGE(UnexpectedEscapeSequence, (), "", "Unexpected escape sequence continuation");
+    DECLARE_MESSAGE(UnexpectedEOFMidString, (), "", "Unexpected EOF in middle of string");
+    DECLARE_MESSAGE(UnexpectedEOFAfterMinus, (), "", "Unexpected EOF after minus sign");
+    DECLARE_MESSAGE(UnexpectedDigitsAfterLeadingZero, (), "", "Unexpected digits after a leading zero");
+    DECLARE_MESSAGE(ExpectedDigitsAfterDecimal, (), "", "Expected digits after the decimal point");
+    DECLARE_MESSAGE(FloatingPointConstTooBig, (msg::count), "", "Floating point constant too big: {count}");
+    DECLARE_MESSAGE(InvalidFloatingPointConst, (msg::count), "", "Invalid floating point constant: {count}");
+    DECLARE_MESSAGE(InvalidIntegerConst, (msg::count), "", "Invalid integer constant: {count}");
+    DECLARE_MESSAGE(UnexpectedEOFMidKeyword, (), "", "Unexpected EOF in middle of keyword");
+    DECLARE_MESSAGE(UnexpectedCharMidKeyword, (), "", "Unexpected character in middle of keyword");
+    DECLARE_MESSAGE(UnexpectedEOFMidArray, (), "", "Unexpected EOF in middle of array");
+    DECLARE_MESSAGE(TrailingCommaInArray, (), "", "Trailing comma in array");
+    DECLARE_MESSAGE(UnexpectedCharMidArray, (), "", "Unexpected character in middle of array");
+    DECLARE_MESSAGE(
+        VcpkgJsonNoCommentMsg,
+        (),
+        "",
+        "\nvcpkg does not support c-style comments, however most objects allow $-prefixed fields to be used as "
+        "comments.");
+    DECLARE_MESSAGE(UnexpectedCharExpectedColon, (), "", "Unexpected character; expected colon");
+    DECLARE_MESSAGE(UnexpectedCharExpectedComma, (), "", "Unexpected character; expected comma or close brace");
+    DECLARE_MESSAGE(UnexpectedCharExpectedValue, (), "", "Unexpected character; expected value");
+    DECLARE_MESSAGE(UnexpectedEOFExpectedName, (), "", "Unexpected EOF; expected property name");
+    DECLARE_MESSAGE(UnexpectedCharExpectedName, (), "", "Unexpected character; expected property name");
+    DECLARE_MESSAGE(UnexpectedEOFExpectedColon, (), "", "Unexpected EOF; expected colon");
+    DECLARE_MESSAGE(UnexpectedEOFExpectedCloseBrace, (), "", "Unexpected EOF; expected property or close brace");
+    DECLARE_MESSAGE(UnexpectedCharExpectedCloseBrace, (), "", "Unexpected character; expected property or close brace");
+    DECLARE_MESSAGE(UnexpectedEOFExpectedProp, (), "", "Unexpected EOF; expected property");
+    DECLARE_MESSAGE(TrailingCommaInObj, (), "", "Trailing comma in an object");
+    DECLARE_MESSAGE(DuplicatedKeyInObj,
+                    (msg::value),
+                    "{value} is a json property/object",
+                    "Duplicated key \"{value}\" in an object");
+    DECLARE_MESSAGE(UnexpectedEOFExpectedValue, (), "", "Unexpected EOF; expected value");
+    DECLARE_MESSAGE(UnexpectedEOFExpectedChar, (), "", "Unexpected character; expected EOF");
 
 }
