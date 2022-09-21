@@ -8,6 +8,7 @@ import { spawn } from 'child_process';
 import { argv } from 'process';
 import { CommandLine } from './cli/command-line';
 import { AcquireCommand } from './cli/commands/acquire';
+import { AcquireProjectCommand } from './cli/commands/acquire-project';
 import { ActivateCommand } from './cli/commands/activate';
 import { AddCommand } from './cli/commands/add';
 import { CacheCommand } from './cli/commands/cache';
@@ -82,6 +83,7 @@ async function main() {
   const list = new ListCommand(commandline);
 
   const add = new AddCommand(commandline);
+  const acquire_project = new AcquireProjectCommand(commandline);
   const acquire = new AcquireCommand(commandline);
   const use = new UseCommand(commandline);
 

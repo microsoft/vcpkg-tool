@@ -8,7 +8,7 @@ import { trackActivation } from '../insights';
 import { RegistryDisplayContext } from '../registries/registries';
 import { Session } from '../session';
 import { Uri } from '../util/uri';
-import { installArtifacts, showArtifacts } from './artifacts';
+import { acquireArtifacts, showArtifacts } from './artifacts';
 import { projectFile } from './format';
 
 export interface ActivationOptions {
@@ -21,7 +21,7 @@ export interface ActivationOptions {
 
 export async function activate(session: Session, artifacts: Array<ResolvedArtifact>, registries: RegistryDisplayContext, createUndoFile: boolean, options?: ActivationOptions) {
   // install the items in the project
-  const [success, artifactStatus] = await installArtifacts(session, artifacts, registries, options);
+  const [success, artifactStatus] = await acquireArtifacts(session, artifacts, registries, options);
 
   if (success) {
     const backupFile = createUndoFile ? session.tmpFolder.join(`previous-environment-${Date.now().toFixed()}.json`) : undefined;

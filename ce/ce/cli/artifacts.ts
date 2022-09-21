@@ -236,7 +236,7 @@ class NoTtyProgressRenderer implements Partial<ProgressRenderer> {
   }
 }
 
-export async function installArtifacts(session: Session, resolved: Array<ResolvedArtifact>, registries: RegistryDisplayContext, options?: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<[boolean, Map<Artifact, boolean>]> {
+export async function acquireArtifacts(session: Session, resolved: Array<ResolvedArtifact>, registries: RegistryDisplayContext, options?: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<[boolean, Map<Artifact, boolean>]> {
   // resolve the full set of artifacts to install.
   const installed = new Map<Artifact, boolean>();
   const isTty = process.stdout.isTTY === true;
