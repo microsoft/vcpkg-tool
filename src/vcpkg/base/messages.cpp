@@ -806,4 +806,12 @@ namespace vcpkg
     REGISTER_MESSAGE(CurlFailedToExecute);
     REGISTER_MESSAGE(CurlReturnedUnexpectedResponseCodes);
     REGISTER_MESSAGE(FailedToDownloadFromMirrorSet);
+    REGISTER_MESSAGE(IncorrectPESignature);
+    REGISTER_MESSAGE(IncorrectLibHeaderEnd);
+    REGISTER_MESSAGE(IncorrectArchiveFileSignature);
+    REGISTER_MESSAGE(CouldNotFindLinkerMember);
+    REGISTER_MESSAGE(CouldNotFindSecondLinkerMember);
+    REGISTER_MESSAGE(SecondLinkerMemberTooSmallUint32);
+    REGISTER_MESSAGE(SecondLinkerMemberTooSmallArchiveMem);
+    REGISTER_MESSAGE(UnknownMachineCode);
 }

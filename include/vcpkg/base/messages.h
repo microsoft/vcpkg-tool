@@ -1658,5 +1658,22 @@ namespace vcpkg
                     (msg::error_msg),
                     "",
                     "Failed to download from mirror set:\n{error_msg}");
+    DECLARE_MESSAGE(IncorrectPESignature, (), "", "Incorrect PE signature");
+    DECLARE_MESSAGE(IncorrectLibHeaderEnd, (), "", "Incorrect lib header end");
+    DECLARE_MESSAGE(IncorrectArchiveFileSignature, (), "", "Incorrect archive file signature");
+    DECLARE_MESSAGE(CouldNotFindLinkerMember, (), "", "Could not find proper first linker member");
+    DECLARE_MESSAGE(CouldNotFindSecondLinkerMember, (), "", "Could not find proper second linker member");
+    DECLARE_MESSAGE(SecondLinkerMemberTooSmallUint32,
+                    (),
+                    "",
+                    "Second linker member was too small to contain a single uint32_t");
+    DECLARE_MESSAGE(SecondLinkerMemberTooSmallArchiveMem,
+                    (),
+                    "",
+                    "Second linker member was too small to contain the expected number of archive members");
+    DECLARE_MESSAGE(UnknownMachineCode,
+                    (msg::value),
+                    "{value} is machine type code",
+                    "Unknown machine type code {value}");
 
 }
