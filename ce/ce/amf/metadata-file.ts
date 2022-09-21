@@ -213,7 +213,7 @@ export class MetadataFile extends BaseMap {
       } else if (acquisitionTagsType === true) {
         const badTags = new Array<string>();
         for (const testTag of this.acquisitionTags) {
-          if (!/^[A-Za-z]$/.exec(testTag)) {
+          if (!/^[A-Za-z]+$/.exec(testTag)) {
             badTags.push(testTag);
           }
         }

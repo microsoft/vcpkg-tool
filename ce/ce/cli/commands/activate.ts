@@ -45,8 +45,8 @@ export class ActivateCommand extends Command {
       force: this.commandLine.force,
       allLanguages: this.commandLine.allLanguages,
       language: this.commandLine.language,
-      msbuildProps: await this.msbuildProps.value,
-      json: await this.json.value
+      msbuildProps: this.msbuildProps.resolvedValue,
+      json: this.json.resolvedValue
     };
 
     // track what got installed
