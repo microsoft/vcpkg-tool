@@ -1675,5 +1675,71 @@ namespace vcpkg
                     (msg::value),
                     "{value} is machine type code",
                     "Unknown machine type code {value}");
+    DECLARE_MESSAGE(CouldNotFindGitTreeAtCommit,
+                    (msg::package_name, msg::value, msg::error_msg),
+                    "{value} is a commit sha",
+                    "could not find the git tree for `versions` in repo {package_name} at commit {value}: {error_msg}");
+    DECLARE_MESSAGE(FailedToCheckoutRepo,
+                    (msg::package_name, msg::error_msg),
+                    "",
+                    "failed to check out `versions` from repo {package_name}: {error_msg}");
+    DECLARE_MESSAGE(JsonFileMissingExtension,
+                    (msg::path),
+                    "",
+                    "the JSON file {path} must have a .json (all lowercase) extension");
+    DECLARE_MESSAGE(InvalidPortVersonName, (msg::path), "", " found invalid port version file name: `{path}`.");
+    DECLARE_MESSAGE(FailedToLoadPortFrom,
+                    (msg::path, msg::package_name, msg::value),
+                    "{value} is the expected port name",
+                    " Failed to load port from {path}: names did not match: '{package_name}' != '{value}'");
+    DECLARE_MESSAGE(FailedWhileEnumeratingPorts,
+                    (msg::path, msg::error_msg),
+                    "",
+                    "failed while enumerating the builtin ports directory {path}: {error_msg}");
+    DECLARE_MESSAGE(BaselineFileNoDefaultField,
+                    (msg::value),
+                    "{value} is a commit sha",
+                    "The baseline file at commit {value} was invalid (no \"default\" field)");
+    DECLARE_MESSAGE(CouldNotFindBaseline,
+                    (msg::value, msg::path),
+                    "{value} is a commit sha",
+                    " could not find explicitly specified baseline `\"{value}\"` in baseline file `{path}`.");
+    DECLARE_MESSAGE(GitRegistryMustHaveBaseline,
+                    (msg::package_name, msg::value),
+                    "{value} is a commit sha",
+                    "The git registry entry for \"{package_name}\" must have a \"baseline\" field that is a valid git "
+                    "commit SHA (40 hexadecimal characters).\n"
+                    "The current HEAD of that repo is \"{value}\".");
+    DECLARE_MESSAGE(FetchingBaselineInfo,
+                    (msg::package_name),
+                    "",
+                    "Fetching baseline information from {package_name}...");
+    DECLARE_MESSAGE(CouldNotFindBaselineForRepo,
+                    (msg::value, msg::package_name, msg::error_msg, msg::error),
+                    "{value} is a commit sha. {error} is an error code",
+                    "Couldn't find baseline `\"{value}\"` for repo {package_name}:\n{error_msg}\nFailed to fetch "
+                    "{package_name}:\n{error}");
+    DECLARE_MESSAGE(CouldNotFindBaselineInCommit,
+                    (msg::value, msg::package_name, msg::error_msg),
+                    "{value} is a commit sha.",
+                    "Couldn't find baseline in commit `\"{value}\"` from repo {package_name}:\n{error_msg}");
+    DECLARE_MESSAGE(
+        BaselineMissingDefault,
+        (msg::value, msg::package_name),
+        "{value} is a commit sha.",
+        "The baseline.json from commit `\"{value}\"` in the repo {package_name} did not contain a \"default\" field.");
+    DECLARE_MESSAGE(ErrorWhileFetchingBaseline,
+                    (msg::value, msg::package_name, msg::error_msg),
+                    "{value} is a commit sha.",
+                    "Error while fetching baseline `\"{value}\"` from repo {package_name}:\n{error_msg}");
+    DECLARE_MESSAGE(TypeShouldNotBeFilesystem,
+                    (),
+                    "",
+                    "Bug in vcpkg; type should never = Filesystem when registry_root is empty.");
+    DECLARE_MESSAGE(FailedToFindBaseline, (), "", "Failed to find baseline.json");
+    DECLARE_MESSAGE(FetchingRegistryInfo,
+                    (msg::package_name, msg::value),
+                    "{value} is a reference",
+                    "Fetching registry information from {package_name} ({value})...");
 
 }

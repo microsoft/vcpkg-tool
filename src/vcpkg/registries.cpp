@@ -87,20 +87,19 @@ namespace
                 {
                     LockGuardPtr<Metrics>(g_metrics)->track_define_property(
                         DefineMetric::RegistriesErrorNoVersionsAtCommit);
-                    Checks::exit_with_message(
-                        VCPKG_LINE_INFO,
-                        "Error: could not find the git tree for `versions` in repo `%s` at commit `%s`: %s",
-                        m_repo,
-                        e.commit_id(),
-                        maybe_tree.error());
+                    Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                                  msgCouldNotFindGitTreeAtCommit,
+                                                  msg::package_name = m_repo,
+                                                  msg::value = e.commit_id(),
+                                                  msg::error_msg = maybe_tree.error());
                 }
                 auto maybe_path = m_paths.git_checkout_object_from_remote_registry(*maybe_tree.get());
                 if (!maybe_path)
                 {
-                    Checks::exit_with_message(VCPKG_LINE_INFO,
-                                              "Error: failed to check out `versions` from repo %s: %s",
-                                              m_repo,
-                                              maybe_path.error());
+                    Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                                  msgFailedToCheckoutRepo,
+                                                  msg::package_name = m_repo,
+                                                  msg::error_msg = maybe_path.error());
                 }
                 return std::move(*maybe_path.get());
             });
@@ -355,15 +354,13 @@ namespace
 
                 if (!Strings::ends_with(filename, ".json"))
                 {
-                    Checks::exit_with_message(
-                        VCPKG_LINE_INFO, "Error: the JSON file %s must have a .json (all lowercase) extension.", file);
+                    Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgJsonFileMissingExtension, msg::path = file);
                 }
 
                 auto port_name = filename.substr(0, filename.size() - 5);
                 if (!Json::PackageNameDeserializer::is_package_name(port_name))
                 {
-                    Checks::exit_maybe_upgrade(
-                        VCPKG_LINE_INFO, "Error: found invalid port version file name: `%s`.", file);
+                    Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgInvalidPortVersonName, msg::path = file);
                 }
 
                 out.push_back(port_name.to_string());
@@ -446,11 +443,11 @@ namespace
                         scf->core_paragraph->name, port_directory, scf->to_version());
                 }
 
-                Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                           "Error: Failed to load port from %s: names did not match: '%s' != '%s'",
-                                           port_directory,
-                                           port_name,
-                                           scf->core_paragraph->name);
+                Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                               msgFailedToLoadPortFrom,
+                                               msg::path = port_directory,
+                                               msg::package_name = port_name,
+                                               msg::value = scf->core_paragraph->name);
             }
         }
 
@@ -473,11 +470,11 @@ namespace
     {
         std::error_code ec;
         auto port_directories = m_fs.get_directories_non_recursive(m_builtin_ports_directory, ec);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           !ec,
-                           "Error: failed while enumerating the builtin ports directory %s: %s",
-                           m_builtin_ports_directory,
-                           ec.message());
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               !ec,
+                               msgFailedWhileEnumeratingPorts,
+                               msg::path = m_builtin_ports_directory,
+                               msg::error_msg = ec.message());
         for (auto&& port_directory : port_directories)
         {
             auto filename = port_directory.filename();
@@ -530,9 +527,8 @@ namespace
             {
                 return std::move(*p);
             }
-            Checks::exit_with_message(VCPKG_LINE_INFO,
-                                      "Error: The baseline file at commit %s was invalid (no \"default\" field)",
-                                      m_baseline_identifier);
+            Checks::msg_exit_with_message(
+                VCPKG_LINE_INFO, msgBaselineFileNoDefaultField, msg::value = m_baseline_identifier);
         });
 
         auto it = baseline.find(port_name);
@@ -574,11 +570,10 @@ namespace
                     return {};
                 }
 
-                Checks::exit_maybe_upgrade(
-                    VCPKG_LINE_INFO,
-                    "Error: could not find explicitly specified baseline `\"%s\"` in baseline file `%s`.",
-                    m_baseline_identifier,
-                    path_to_baseline);
+                Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                               msgCouldNotFindBaseline,
+                                               msg::value = m_baseline_identifier,
+                                               msg::path = path_to_baseline);
             }
 
             Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, res_baseline.error());
@@ -639,13 +634,10 @@ namespace
             {
                 auto e = get_lock_entry();
                 e.ensure_up_to_date(m_paths);
-                Checks::exit_maybe_upgrade(
-                    VCPKG_LINE_INFO,
-                    "Error: the git registry entry for \"%s\" must have a \"baseline\" field that is a valid git "
-                    "commit SHA (40 hexadecimal characters).\n"
-                    "The current HEAD of that repo is \"%s\".\n",
-                    m_repo,
-                    e.commit_id());
+                Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                               msgGitRegistryMustHaveBaseline,
+                                               msg::package_name = m_repo,
+                                               msg::value = e.commit_id());
             }
 
             auto path_to_baseline = Path(registry_versions_dir_name.to_string()) / "baseline.json";
@@ -657,20 +649,18 @@ namespace
             }
             if (!maybe_contents)
             {
-                print2("Fetching baseline information from ", m_repo, "...\n");
+                msg::println(msgFetchingBaselineInfo, msg::package_name = m_repo);
                 auto maybe_err = m_paths.git_fetch(m_repo, m_baseline_identifier);
                 if (!maybe_err)
                 {
                     LockGuardPtr<Metrics>(g_metrics)->track_define_property(
                         DefineMetric::RegistriesErrorCouldNotFindBaseline);
-                    Checks::exit_with_message(
-                        VCPKG_LINE_INFO,
-                        "Error: Couldn't find baseline `\"%s\"` for repo %s:\n%s\nError: Failed to fetch %s:\n%s",
-                        m_baseline_identifier,
-                        m_repo,
-                        maybe_contents.error(),
-                        m_repo,
-                        maybe_err.error());
+                    Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                                  msgCouldNotFindBaselineForRepo,
+                                                  msg::value = m_baseline_identifier,
+                                                  msg::package_name = m_repo,
+                                                  msg::error_msg = maybe_contents.error(),
+                                                  msg::error = maybe_err.error());
                 }
 
                 maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
@@ -680,11 +670,11 @@ namespace
             {
                 LockGuardPtr<Metrics>(g_metrics)->track_define_property(
                     DefineMetric::RegistriesErrorCouldNotFindBaseline);
-                Checks::exit_with_message(VCPKG_LINE_INFO,
-                                          "Error: Couldn't find baseline in commit `\"%s\"` from repo %s:\n%s\n",
-                                          m_baseline_identifier,
-                                          m_repo,
-                                          maybe_contents.error());
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                              msgCouldNotFindBaselineInCommit,
+                                              msg::value = m_baseline_identifier,
+                                              msg::package_name = m_repo,
+                                              msg::error_msg = maybe_contents.error());
             }
 
             auto contents = maybe_contents.get();
@@ -699,20 +689,19 @@ namespace
                 {
                     LockGuardPtr<Metrics>(g_metrics)->track_define_property(
                         DefineMetric::RegistriesErrorCouldNotFindBaseline);
-                    Checks::exit_maybe_upgrade(
-                        VCPKG_LINE_INFO,
-                        "The baseline.json from commit `\"%s\"` in the repo %s did not contain a \"default\" field.",
-                        m_baseline_identifier,
-                        m_repo);
+                    Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                                   msgBaselineMissingDefault,
+                                                   msg::value = m_baseline_identifier,
+                                                   msg::package_name = m_repo);
                 }
             }
             else
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO,
-                                          "Error while fetching baseline `\"%s\"` from repo %s:\n%s",
-                                          m_baseline_identifier,
-                                          m_repo,
-                                          res_baseline.error());
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                              msgErrorWhileFetchingBaseline,
+                                              msg::value = m_baseline_identifier,
+                                              msg::package_name = m_repo,
+                                              msg::error_msg = res_baseline.error());
             }
         });
 
@@ -883,9 +872,9 @@ namespace
                                                               StringView port_name,
                                                               const Path& registry_root)
     {
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           !(type == VersionDbType::Filesystem && registry_root.empty()),
-                           "Bug in vcpkg; type should never = Filesystem when registry_root is empty.");
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               !(type == VersionDbType::Filesystem && registry_root.empty()),
+                               msgTypeShouldNotBeFilesystem);
 
         auto versions_file_path = registry_versions / relative_path_to_versions(port_name);
 
@@ -985,7 +974,7 @@ namespace
         {
             if (ec == std::errc::no_such_file_or_directory)
             {
-                Debug::print("Failed to find baseline.json\n");
+                msg::println(msgFailedToFindBaseline);
                 return {nullopt, expected_left_tag};
             }
 
@@ -1122,7 +1111,7 @@ namespace vcpkg
 
         if (it == range.second)
         {
-            print2("Fetching registry information from ", repo, " (", reference, ")...\n");
+            msg::println(msgFetchingRegistryInfo, msg::package_name = repo, msg::value = reference);
             auto x = paths.git_fetch_from_remote_registry(repo, reference);
             it = lockdata.emplace(repo.to_string(),
                                   EntryData{reference.to_string(), x.value_or_exit(VCPKG_LINE_INFO), false});
@@ -1137,7 +1126,7 @@ namespace vcpkg
         {
             StringView repo(data->first);
             StringView reference(data->second.reference);
-            print2("Fetching registry information from ", repo, " (", reference, ")...\n");
+            msg::println(msgFetchingRegistryInfo, msg::package_name = repo, msg::value = reference);
 
             data->second.commit_id =
                 paths.git_fetch_from_remote_registry(repo, reference).value_or_exit(VCPKG_LINE_INFO);

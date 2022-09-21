@@ -814,4 +814,21 @@ namespace vcpkg
     REGISTER_MESSAGE(SecondLinkerMemberTooSmallUint32);
     REGISTER_MESSAGE(SecondLinkerMemberTooSmallArchiveMem);
     REGISTER_MESSAGE(UnknownMachineCode);
+    REGISTER_MESSAGE(CouldNotFindGitTreeAtCommit);
+    REGISTER_MESSAGE(FailedToCheckoutRepo);
+    REGISTER_MESSAGE(JsonFileMissingExtension);
+    REGISTER_MESSAGE(InvalidPortVersonName);
+    REGISTER_MESSAGE(FailedToLoadPortFrom);
+    REGISTER_MESSAGE(FailedWhileEnumeratingPorts);
+    REGISTER_MESSAGE(BaselineFileNoDefaultField);
+    REGISTER_MESSAGE(CouldNotFindBaseline);
+    REGISTER_MESSAGE(GitRegistryMustHaveBaseline);
+    REGISTER_MESSAGE(FetchingBaselineInfo);
+    REGISTER_MESSAGE(CouldNotFindBaselineForRepo);
+    REGISTER_MESSAGE(CouldNotFindBaselineInCommit);
+    REGISTER_MESSAGE(BaselineMissingDefault);
+    REGISTER_MESSAGE(ErrorWhileFetchingBaseline);
+    REGISTER_MESSAGE(TypeShouldNotBeFilesystem);
+    REGISTER_MESSAGE(FailedToFindBaseline);
+    REGISTER_MESSAGE(FetchingRegistryInfo);
 }
