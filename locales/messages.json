@@ -629,6 +629,7 @@
   "_UnsupportedPortFeature.comment": "An example of {spec} is zlib:x64-windows. An example of {supports_expression} is windows & !static.",
   "UnsupportedShortOptions": "short options are not supported: '{value}'",
   "_UnsupportedShortOptions.comment": "'{value}' is the short option given",
+  "UnsupportedSyntaxInCDATA": "]]> is not supported in CDATA block",
   "UnsupportedSystemName": "Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. Supported system names are '', 'Windows' and 'WindowsStore'.",
   "_UnsupportedSystemName.comment": "An example of {system_name} is Darwin.",
   "UnsupportedToolchain": "in triplet {triplet}: Unable to find a valid toolchain for requested target architecture {arch}.\nThe selected Visual Studio instance is at: {path}\nThe available toolchain combinations are: {list}",

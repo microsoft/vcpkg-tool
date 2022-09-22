@@ -383,6 +383,7 @@
   "UnsupportedPortDependency": "- dependency {value} is not supported.",
   "UnsupportedPortFeature": "{spec} is only supported on '{supports_expression}'",
   "UnsupportedShortOptions": "short options are not supported: '{value}'",
+  "UnsupportedSyntaxInCDATA": "]]> is not supported in CDATA block",
   "UnsupportedSystemName": "Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. Supported system names are '', 'Windows' and 'WindowsStore'.",
   "UnsupportedToolchain": "in triplet {triplet}: Unable to find a valid toolchain for requested target architecture {arch}.\nThe selected Visual Studio instance is at: {path}\nThe available toolchain combinations are: {list}",
   "UpdateBaselineAddBaselineNoManifest": "the --{option} switch was passed, but there is no manifest file to add a `builtin-baseline` field to.",
