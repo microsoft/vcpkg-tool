@@ -804,4 +804,14 @@ namespace vcpkg
     REGISTER_MESSAGE(WindowsOnlyCommand);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
     REGISTER_MESSAGE(UnsupportedSyntaxInCDATA);
+    REGISTER_MESSAGE(InvalidCodePoint);
+    REGISTER_MESSAGE(NoError);
+    REGISTER_MESSAGE(InvalidCodeUnit);
+    REGISTER_MESSAGE(PairedSurrogatesAreInvalid);
+    REGISTER_MESSAGE(ContinueCodeUnitInStart);
+    REGISTER_MESSAGE(EndOfStringInCodeUnit);
+    REGISTER_MESSAGE(ErrorCodeOutOfRange);
+    REGISTER_MESSAGE(IncrementedUtf8Decoder);
+    REGISTER_MESSAGE(ComparingUtf8Decoders);
+    REGISTER_MESSAGE(StartCodeUnitInContinue);
 }

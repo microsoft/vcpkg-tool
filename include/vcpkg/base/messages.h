@@ -1648,4 +1648,20 @@ namespace vcpkg
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}.");
     DECLARE_MESSAGE(UnsupportedSyntaxInCDATA, (), "", "]]> is not supported in CDATA block");
+    DECLARE_MESSAGE(InvalidCodePoint, (), "", "Invalid code point passed to utf8_encoded_code_point_count");
+    DECLARE_MESSAGE(NoError, (), "", "no error");
+    DECLARE_MESSAGE(InvalidCodeUnit, (), "", "invalid code unit");
+    DECLARE_MESSAGE(PairedSurrogatesAreInvalid,
+                    (),
+                    "",
+                    "trailing surrogate following leading surrogate (paired surrogates are invalid)");
+    DECLARE_MESSAGE(ContinueCodeUnitInStart, (), "", "found continue code unit in start position");
+    DECLARE_MESSAGE(StartCodeUnitInContinue, (), "", "found start code unit in continue position");
+    DECLARE_MESSAGE(EndOfStringInCodeUnit, (), "", "found end of string in middle of code point");
+    DECLARE_MESSAGE(ErrorCodeOutOfRange, (), "", "error code out of range");
+    DECLARE_MESSAGE(IncrementedUtf8Decoder, (), "", "Incremented Utf8Decoder at the end of the string");
+    DECLARE_MESSAGE(ComparingUtf8Decoders,
+                    (),
+                    "",
+                    "Comparing Utf8Decoders with different provenance; this is always an error");
 }
