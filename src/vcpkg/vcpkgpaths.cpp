@@ -49,7 +49,7 @@ namespace
         Filesystem& filesystem, const Path& root, std::string* option, StringLiteral name, LineInfo li)
     {
         auto result = process_input_directory_impl(filesystem, root, option, name, li);
-        msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("Using {}-root: {}\n", name, result));
+        Debug::print("Using ", name, "-root: ", result, '\n');
         return result;
     }
 
@@ -358,15 +358,15 @@ namespace vcpkg
                 , scripts(process_input_directory(fs, root, args.scripts_root_dir.get(), "scripts", VCPKG_LINE_INFO))
                 , m_registries_cache(compute_registries_cache_root(fs, args))
             {
-                msg::write_unlocalized_text_to_stdout(
-                    Color::none,
-                    fmt::format("Bundle config: readonly={}, usegitregistry={}, embeddedsha={}\n",
-                                m_bundle.m_readonly,
-                                m_bundle.m_usegitregistry,
-                                m_bundle.m_embedded_git_sha.value_or("nullopt")));
+                Debug::print("Bundle config: readonly=",
+                             m_bundle.m_readonly,
+                             ", usegitregistry=",
+                             m_bundle.m_usegitregistry,
+                             ", embeddedsha=",
+                             m_bundle.m_embedded_git_sha.value_or("nullopt"),
+                             "\n");
 
-                msg::write_unlocalized_text_to_stdout(Color::none,
-                                                      fmt::format("Using builtin-ports: {}\n", m_builtin_ports));
+                Debug::print("Using builtin-ports: ", m_builtin_ports, '\n');
             }
 
             Filesystem& m_fs;
@@ -468,19 +468,15 @@ namespace vcpkg
             {
                 if (auto i = m_installed.get())
                 {
-                    msg::write_unlocalized_text_to_stdout(Color::none,
-                                                          fmt::format("Using installed-root: {}\n", i->root()));
+                    Debug::print("Using installed-root: ", i->root(), '\n');
                 }
 
-                msg::write_unlocalized_text_to_stdout(
-                    Color::none, fmt::format("Using buildtrees-root: {}\n", buildtrees.value_or("nullopt")));
-                msg::write_unlocalized_text_to_stdout(
-                    Color::none, fmt::format("Using packages-root: {}\n", packages.value_or("nullopt")));
+                Debug::print("Using buildtrees-root: ", buildtrees.value_or("nullopt"), '\n');
+                Debug::print("Using packages-root: ", packages.value_or("nullopt"), '\n');
 
                 if (!m_manifest_dir.empty())
                 {
-                    msg::write_unlocalized_text_to_stdout(Color::none,
-                                                          fmt::format("Using manifest-root: {}\n", m_manifest_dir));
+                    Debug::print("Using manifest-root: ", m_manifest_dir, '\n');
 
                     std::error_code ec;
                     const auto vcpkg_root_file = root / ".vcpkg-root";
@@ -623,11 +619,10 @@ namespace vcpkg
         , triplets(filesystem.almost_canonical(root / "triplets", VCPKG_LINE_INFO))
         , community_triplets(filesystem.almost_canonical(triplets / "community", VCPKG_LINE_INFO))
     {
-        msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("Using vcpkg-root: {}\n", root));
-        msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("Using scripts-root: {}\n", scripts));
-        msg::write_unlocalized_text_to_stdout(Color::none,
-                                              fmt::format("Using builtin-registry: {}\n", builtin_registry_versions));
-        msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("Using downloads-root: {}\n", downloads));
+        Debug::print("Using vcpkg-root: ", root, '\n');
+        Debug::print("Using scripts-root: ", scripts, '\n');
+        Debug::print("Using builtin-registry: ", builtin_registry_versions, '\n');
+        Debug::print("Using downloads-root: ", downloads, '\n');
 
         m_pimpl->triplets_dirs.emplace_back(triplets);
         m_pimpl->triplets_dirs.emplace_back(community_triplets);
@@ -761,7 +756,7 @@ namespace vcpkg
 
             if (!ref_info_value.is_object())
             {
-                msg::println(msgLockfileValueNotObj, msg::package_name = repo);
+                Debug::print("Lockfile value for key '", repo, "' was not an object\n");
                 return ret;
             }
 
@@ -772,13 +767,13 @@ namespace vcpkg
 
                 if (!commit.is_string())
                 {
-                    msg::println(msgLockfileValueNotString, msg::package_name = reference);
+                    Debug::print("Lockfile value for key '", reference, "' was not a string\n");
                     return ret;
                 }
                 auto sv = commit.string(VCPKG_LINE_INFO);
                 if (!is_git_commit_sha(sv))
                 {
-                    msg::println(msgLockfileValueNotCommitSha, msg::package_name = reference);
+                    Debug::print("Lockfile value for key '", reference, "' was not a string\n");
                     return ret;
                 }
                 ret.emplace(repo.to_string(), LockFile::EntryData{reference.to_string(), sv.to_string(), true});
@@ -815,7 +810,7 @@ namespace vcpkg
         auto maybe_lock_contents = Json::parse_file(fs, p, ec);
         if (ec)
         {
-            msg::println(msgFailedToLoadLockfile, msg::error_msg = ec.message());
+            Debug::print("Failed to load lockfile: ", ec.message(), "\n");
             return ret;
         }
         else if (auto lock_contents = maybe_lock_contents.get())
@@ -823,7 +818,7 @@ namespace vcpkg
             auto& doc = lock_contents->first;
             if (!doc.is_object())
             {
-                msg::println(msgLockfileNotObj);
+                Debug::print("Lockfile was not an object\n");
                 return ret;
             }
 
@@ -833,7 +828,7 @@ namespace vcpkg
         }
         else
         {
-            msg::println(msgFailedToLoadLockfile, msg::error_msg = maybe_lock_contents.error()->to_string());
+            Debug::print("Failed to load lockfile:\n", maybe_lock_contents.error()->to_string());
             return ret;
         }
     }

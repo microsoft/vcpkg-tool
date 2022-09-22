@@ -544,7 +544,6 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedToFindPortFeature);
     REGISTER_MESSAGE(FailedToFormatMissingFile);
     REGISTER_MESSAGE(FailedToLoadInstalledManifest);
-    REGISTER_MESSAGE(FailedToLoadLockfile);
     REGISTER_MESSAGE(FailedToLoadManifest);
     REGISTER_MESSAGE(FailedToLocateSpec);
     REGISTER_MESSAGE(FailedToObtainDependencyVersion);
@@ -676,10 +675,6 @@ namespace vcpkg
     REGISTER_MESSAGE(LocalizedMessageMustNotContainIndents);
     REGISTER_MESSAGE(LocalizedMessageMustNotEndWithNewline);
     REGISTER_MESSAGE(LocalPortfileVersion);
-    REGISTER_MESSAGE(LockfileNotObj);
-    REGISTER_MESSAGE(LockfileValueNotCommitSha);
-    REGISTER_MESSAGE(LockfileValueNotObj);
-    REGISTER_MESSAGE(LockfileValueNotString);
     REGISTER_MESSAGE(ManifestFormatCompleted);
     REGISTER_MESSAGE(ManifestWithNoTopLevelObj);
     REGISTER_MESSAGE(MismatchedFiles);

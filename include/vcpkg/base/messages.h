@@ -929,7 +929,6 @@ namespace vcpkg
                     "",
                     "The control or mnaifest file for {spec} could not be loaded due to the following error. Please "
                     "remove {spec} and re-attempt.");
-    DECLARE_MESSAGE(FailedToLoadLockfile, (msg::error_msg), "", "Failed to load lockfile: {error_msg}");
     DECLARE_MESSAGE(FailedToLoadManifest,
                     (msg::path, msg::error_msg),
                     "",
@@ -1295,19 +1294,6 @@ namespace vcpkg
                     (),
                     "",
                     "Using local portfile versions. To update the local portfiles, use `git pull`.");
-    DECLARE_MESSAGE(LockfileNotObj, (), "", "Lockfile was not an object");
-    DECLARE_MESSAGE(LockfileValueNotCommitSha,
-                    (msg::package_name),
-                    "",
-                    "Lockfile value for key {package_name} was not a git commit sha");
-    DECLARE_MESSAGE(LockfileValueNotObj,
-                    (msg::package_name),
-                    "",
-                    "Lockfile value for key {package_name} was not an object");
-    DECLARE_MESSAGE(LockfileValueNotString,
-                    (msg::package_name),
-                    "",
-                    "Lockfile value for key {package_name} was not an string");
     DECLARE_MESSAGE(ManifestFormatCompleted, (), "", "Succeeded in formatting the manifest files.");
     DECLARE_MESSAGE(ManifestWithNoTopLevelObj,
                     (msg::path),
