@@ -572,6 +572,15 @@ namespace vcpkg
                     "An example of env_var is \"HTTP(S)_PROXY\""
                     "'--' at the beginning must be preserved",
                     "-- Automatically setting {env_var} environment variables to \"{url}\".");
+    DECLARE_MESSAGE(BaselineFileNoDefaultField,
+                    (msg::value),
+                    "{value} is a commit sha",
+                    "The baseline file at commit {value} was invalid (no \"default\" field)");
+    DECLARE_MESSAGE(
+        BaselineMissingDefault,
+        (msg::value, msg::package_name),
+        "{value} is a commit sha.",
+        "The baseline.json from commit `\"{value}\"` in the repo {package_name} did not contain a \"default\" field.");
     DECLARE_MESSAGE(BinarySourcesArg, (), "", "Add sources for binary caching. See 'vcpkg help binarycaching'.");
     DECLARE_MESSAGE(BuildAlreadyInstalled,
                     (msg::spec),
@@ -721,14 +730,35 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "Both a manifest file and a CONTROL file exist in port directory: {path}");
+    DECLARE_MESSAGE(ControlCharacterInString, (), "", "Control character in string");
     DECLARE_MESSAGE(CopyrightIsDir, (msg::path), "", "`{path}` being a directory is deprecated.");
     DECLARE_MESSAGE(CorruptedDatabase, (), "", "Database corrupted.");
     DECLARE_MESSAGE(CouldNotDeduceNugetIdAndVersion,
                     (msg::path),
                     "",
                     "Could not deduce nuget id and version from filename: {path}");
-    DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
+    DECLARE_MESSAGE(CouldNotFindBaseline,
+                    (msg::value, msg::path),
+                    "{value} is a commit sha",
+                    " could not find explicitly specified baseline `\"{value}\"` in baseline file `{path}`.");
+    DECLARE_MESSAGE(CouldNotFindBaselineForRepo,
+                    (msg::value, msg::package_name, msg::error_msg, msg::error),
+                    "{value} is a commit sha. {error} is an error code",
+                    "Couldn't find baseline `\"{value}\"` for repo {package_name}:\n{error_msg}\nFailed to fetch "
+                    "{package_name}:\n{error}");
+    DECLARE_MESSAGE(CouldNotFindBaselineInCommit,
+                    (msg::value, msg::package_name, msg::error_msg),
+                    "{value} is a commit sha.",
+                    "Couldn't find baseline in commit `\"{value}\"` from repo {package_name}:\n{error_msg}");
+    DECLARE_MESSAGE(CouldNotFindGitTreeAtCommit,
+                    (msg::package_name, msg::value, msg::error_msg),
+                    "{value} is a commit sha",
+                    "could not find the git tree for `versions` in repo {package_name} at commit {value}: {error_msg}");
+    DECLARE_MESSAGE(CouldNotFindLinkerMember, (), "", "Could not find proper first linker member");
+    DECLARE_MESSAGE(CouldNotFindSecondLinkerMember, (), "", "Could not find proper second linker member");
     DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: \"{path}\"");
+    DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
+    DECLARE_MESSAGE(CurlFailedToExecute, (msg::exit_code), "", "curl failed to execute with exit code {exit_code}.");
     DECLARE_MESSAGE(CurlReportedUnexpectedResults,
                     (msg::command_line, msg::actual),
                     "{command_line} is the command line to call curl.exe, {actual} is the console output "
@@ -740,6 +770,12 @@ namespace vcpkg
                     "=== curl output ===\n"
                     "{actual}\n"
                     "=== end curl output ===");
+    DECLARE_MESSAGE(CurlReturnedUnexpectedResponseCodes,
+                    (msg::actual, msg::expected),
+                    "{actual} and {expected} are the number of response codes returned by curl vs the expected number "
+                    "of response codes.",
+                    "curl returned a different number of response codes than were expected for the request ({actual} "
+                    "vs expected {expected}).");
     DECLARE_MESSAGE(DateTableHeader, (), "", "Date");
     DECLARE_MESSAGE(DefaultBrowserLaunched, (msg::url), "", "Default browser launched to {url}.");
     DECLARE_MESSAGE(DefaultFlag, (msg::option), "", "Defaulting to --{option} being on.");
@@ -770,6 +806,10 @@ namespace vcpkg
                     "",
                     "Specify the downloads root directory.\n(default: {env_var})");
     DECLARE_MESSAGE(DuplicateCommandOption, (msg::option), "", "The option --{option} can only be passed once.");
+    DECLARE_MESSAGE(DuplicatedKeyInObj,
+                    (msg::value),
+                    "{value} is a json property/object",
+                    "Duplicated key \"{value}\" in an object");
     DECLARE_MESSAGE(DuplicateOptions,
                     (msg::value),
                     "'{value}' is a command line option.",
@@ -843,6 +883,10 @@ namespace vcpkg
                     "",
                     "Visual Studio Code was not found and the environment variable {env_var} is not set or invalid.");
     DECLARE_MESSAGE(ErrorVsCodeNotFoundPathExamined, (), "", "The following paths were examined:");
+    DECLARE_MESSAGE(ErrorWhileFetchingBaseline,
+                    (msg::value, msg::package_name, msg::error_msg),
+                    "{value} is a commit sha.",
+                    "Error while fetching baseline `\"{value}\"` from repo {package_name}:\n{error_msg}");
     DECLARE_MESSAGE(ErrorWhileParsing, (msg::path), "", "Errors occurred while parsing {path}.");
     DECLARE_MESSAGE(ErrorWhileWriting, (msg::path), "", "Error occured while writing {path}");
     DECLARE_MESSAGE(ExceededRecursionDepth, (), "", "Recursion depth exceeded.");
@@ -858,40 +902,54 @@ namespace vcpkg
         (msg::expected),
         "{expected} is a locale-invariant delimiter; for example, the ':' or '=' in 'zlib:x64-windows=skip'",
         "expected '{expected}' here");
+    DECLARE_MESSAGE(ExpectedDigitsAfterDecimal, (), "", "Expected digits after the decimal point");
     DECLARE_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' here");
     DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
     DECLARE_MESSAGE(ExpectedValueForOption, (msg::option), "", "expected value after --{option}.");
     DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
     DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
+    DECLARE_MESSAGE(FailedToCheckoutRepo,
+                    (msg::package_name, msg::error_msg),
+                    "",
+                    "failed to check out `versions` from repo {package_name}: {error_msg}");
+    DECLARE_MESSAGE(FailedToDownloadFromMirrorSet,
+                    (msg::error_msg),
+                    "",
+                    "Failed to download from mirror set:\n{error_msg}");
     DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":");
+    DECLARE_MESSAGE(FailedToFindBaseline, (), "", "Failed to find baseline.json");
+    DECLARE_MESSAGE(FailedToFindPortFeature, (msg::feature, msg::spec), "", "Could not find {feature} in {spec}.");
     DECLARE_MESSAGE(FailedToFormatMissingFile,
                     (),
                     "",
                     "No files to format.\nPlease pass either --all, or the explicit files to format or convert.");
+    DECLARE_MESSAGE(FailedToLoadInstalledManifest,
+                    (msg::spec),
+                    "",
+                    "The control or mnaifest file for {spec} could not be loaded due to the following error. Please "
+                    "remove {spec} and re-attempt.");
+    DECLARE_MESSAGE(FailedToLoadPortFrom,
+                    (msg::path, msg::package_name, msg::value),
+                    "{value} is the expected port name",
+                    " Failed to load port from {path}: names did not match: '{package_name}' != '{value}'");
+    DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}");
+    DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
     DECLARE_MESSAGE(FailedToObtainLocalPortGitSha, (), "", "Failed to obtain git SHAs for local ports.");
+    DECLARE_MESSAGE(FailedToObtainPackageVersion, (), "", "Cannot find desired package version.");
     DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
                     (),
                     "",
                     "Failed to parse CMake console output to locate block start/end markers.");
+    DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse control file: {path}");
+    DECLARE_MESSAGE(FailedToParseJson, (msg::path), "", "Failed to parse JSON file: {path}");
+    DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: {path}");
     DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                     (msg::error_msg),
                     "'{error_msg}' is the error message for failing to parse the Binary Paragraph.",
                     "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at "
                     "https://github.com/microsoft/vcpkg, "
                     "with the following output:\n{error_msg}\nSerialized Binary Paragraph:");
-    DECLARE_MESSAGE(FailedToFindPortFeature, (msg::feature, msg::spec), "", "Could not find {feature} in {spec}.");
-    DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}");
-    DECLARE_MESSAGE(FailedToLoadInstalledManifest,
-                    (msg::spec),
-                    "",
-                    "The control or mnaifest file for {spec} could not be loaded due to the following error. Please "
-                    "remove {spec} and re-attempt.");
-    DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
-    DECLARE_MESSAGE(FailedToObtainPackageVersion, (), "", "Cannot find desired package version.");
-    DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse control file: {path}");
-    DECLARE_MESSAGE(FailedToParseJson, (msg::path), "", "Failed to parse JSON file: {path}");
-    DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: {path}");
     DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
     DECLARE_MESSAGE(FailedToRead, (msg::path, msg::error_msg), "", "Failed to read {path}: {error_msg}");
     DECLARE_MESSAGE(FailedToReadParagraph, (msg::path), "", "Failed to read paragraphs from {path}");
@@ -909,8 +967,21 @@ namespace vcpkg
                     "",
                     "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details "
                     "on how to provide credentials.");
+    DECLARE_MESSAGE(FailedWhileEnumeratingPorts,
+                    (msg::path, msg::error_msg),
+                    "",
+                    "failed while enumerating the builtin ports directory {path}: {error_msg}");
     DECLARE_MESSAGE(FeedbackAppreciated, (), "", "Thank you for your feedback!");
+    DECLARE_MESSAGE(FetchingBaselineInfo,
+                    (msg::package_name),
+                    "",
+                    "Fetching baseline information from {package_name}...");
+    DECLARE_MESSAGE(FetchingRegistryInfo,
+                    (msg::package_name, msg::value),
+                    "{value} is a reference",
+                    "Fetching registry information from {package_name} ({value})...");
     DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at \"{path}\".");
+    DECLARE_MESSAGE(FloatingPointConstTooBig, (msg::count), "", "Floating point constant too big: {count}");
     DECLARE_MESSAGE(FollowingPackagesMissingControl,
                     (),
                     "",
@@ -943,6 +1014,12 @@ namespace vcpkg
                     "example of {value} is 'arch'",
                     R"({{{value}}} was used in the message, but not commented.)");
     DECLARE_MESSAGE(GitCommandFailed, (msg::command_line), "", "failed to execute: {command_line}");
+    DECLARE_MESSAGE(GitRegistryMustHaveBaseline,
+                    (msg::package_name, msg::value),
+                    "{value} is a commit sha",
+                    "The git registry entry for \"{package_name}\" must have a \"baseline\" field that is a valid git "
+                    "commit SHA (40 hexadecimal characters).\n"
+                    "The current HEAD of that repo is \"{value}\".");
     DECLARE_MESSAGE(GitStatusOutputExpectedFileName, (), "", "expected a file name");
     DECLARE_MESSAGE(GitStatusOutputExpectedNewLine, (), "", "expected new line");
     DECLARE_MESSAGE(GitStatusOutputExpectedRenameOrNewline, (), "", "expected renamed file or new lines");
@@ -998,10 +1075,13 @@ namespace vcpkg
                     (msg::value),
                     "{value} is a sha.",
                     "SHA512's must be 128 hex characters: {value}");
+    DECLARE_MESSAGE(IncorrectArchiveFileSignature, (), "", "Incorrect archive file signature");
+    DECLARE_MESSAGE(IncorrectLibHeaderEnd, (), "", "Incorrect lib header end");
     DECLARE_MESSAGE(IncorrectNumberOfArgs,
                     (msg::command_name, msg::expected, msg::actual),
                     "'{expected}' is the required number of arguments. '{actual}' is the number of arguments provided.",
                     "'{command_name}' requires '{expected}' arguments, but '{actual}' were provided.");
+    DECLARE_MESSAGE(IncorrectPESignature, (), "", "Incorrect PE signature");
     DECLARE_MESSAGE(InfoSetEnvVar,
                     (msg::env_var),
                     "In this context 'editor' means IDE",
@@ -1108,18 +1188,30 @@ namespace vcpkg
                     (msg::value, msg::path),
                     "'{value}' is a list of invalid characters. I.e. \\/:*?<>|",
                     "Filename cannot contain invalid chars {value}, but was {path}");
+    DECLARE_MESSAGE(InvalidFloatingPointConst, (msg::count), "", "Invalid floating point constant: {count}");
     DECLARE_MESSAGE(InvalidFormatString,
                     (msg::actual),
                     "{actual} is the provided format string",
                     "invalid format string: {actual}");
+    DECLARE_MESSAGE(InvalidHexDigit, (), "", "Invalid hex digit in unicode escape");
+    DECLARE_MESSAGE(InvalidIntegerConst, (msg::count), "", "Invalid integer constant: {count}");
     DECLARE_MESSAGE(
         InvalidLinkage,
         (msg::system_name, msg::value),
         "'{value}' is the linkage type vcpkg would did not understand. (Correct values would be static ofr dynamic)",
         "Invalid {system_name} linkage type: [{value}]");
+    DECLARE_MESSAGE(InvalidPortVersonName, (msg::path), "", " found invalid port version file name: `{path}`.");
+    DECLARE_MESSAGE(InvalidString, (), "", "Invalid utf8 passed to Value::string(std::string)");
     DECLARE_MESSAGE(IrregularFile, (msg::path), "", "path was not a regular file: {path}");
     DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected \"{path}\" to be an object.");
+    DECLARE_MESSAGE(JsonFileMissingExtension,
+                    (msg::path),
+                    "",
+                    "the JSON file {path} must have a .json (all lowercase) extension");
     DECLARE_MESSAGE(JsonSwitch, (), "", "(Experimental) Request JSON output.");
+    DECLARE_MESSAGE(JsonValueNotArray, (), "", "json value is not an array");
+    DECLARE_MESSAGE(JsonValueNotObject, (), "", "json value is not an object");
+    DECLARE_MESSAGE(JsonValueNotString, (), "", "json value is not a string");
     DECLARE_MESSAGE(LaunchingProgramFailed,
                     (msg::tool_name),
                     "A platform API call failure message is appended after this",
@@ -1373,6 +1465,14 @@ namespace vcpkg
         "{value} may be either a 'vendor' like 'Azure' or 'NuGet', or a file path like C:\\example or /usr/example",
         "Restored {count} package(s) from {value} in {elapsed}. Use --debug to see more details.");
     DECLARE_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
+    DECLARE_MESSAGE(SecondLinkerMemberTooSmallArchiveMem,
+                    (),
+                    "",
+                    "Second linker member was too small to contain the expected number of archive members");
+    DECLARE_MESSAGE(SecondLinkerMemberTooSmallUint32,
+                    (),
+                    "",
+                    "Second linker member was too small to contain a single uint32_t");
     DECLARE_MESSAGE(SerializedBinParagraphHeader, (), "", "\nSerialized Binary Paragraph");
     DECLARE_MESSAGE(SettingEnvVar,
                     (msg::env_var, msg::url),
@@ -1440,17 +1540,44 @@ namespace vcpkg
     DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
     DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
     DECLARE_MESSAGE(TotalTime, (msg::elapsed), "", "Total elapsed time: {elapsed}");
+    DECLARE_MESSAGE(TrailingCommaInArray, (), "", "Trailing comma in array");
+    DECLARE_MESSAGE(TrailingCommaInObj, (), "", "Trailing comma in an object");
     DECLARE_MESSAGE(TwoFeatureFlagsSpecified,
                     (msg::value),
                     "'{value}' is a feature flag.",
                     "Both '{value}' and -'{value}' were specified as feature flags.");
+    DECLARE_MESSAGE(TypeShouldNotBeFilesystem,
+                    (),
+                    "",
+                    "Bug in vcpkg; type should never = Filesystem when registry_root is empty.");
     DECLARE_MESSAGE(UndeterminedToolChainForTriplet,
                     (msg::triplet, msg::system_name),
                     "",
                     "Unable to determine toolchain use for {triplet} with with CMAKE_SYSTEM_NAME {system_name}. Did "
                     "you mean to use "
                     "VCPKG_CHAINLOAD_TOOLCHAIN_FILE?");
+    DECLARE_MESSAGE(UnexpectedCharExpectedCloseBrace, (), "", "Unexpected character; expected property or close brace");
+    DECLARE_MESSAGE(UnexpectedCharExpectedColon, (), "", "Unexpected character; expected colon");
+    DECLARE_MESSAGE(UnexpectedCharExpectedComma, (), "", "Unexpected character; expected comma or close brace");
+    DECLARE_MESSAGE(UnexpectedCharExpectedName, (), "", "Unexpected character; expected property name");
+    DECLARE_MESSAGE(UnexpectedCharExpectedValue, (), "", "Unexpected character; expected value");
+    DECLARE_MESSAGE(UnexpectedCharMidArray, (), "", "Unexpected character in middle of array");
+    DECLARE_MESSAGE(UnexpectedCharMidKeyword, (), "", "Unexpected character in middle of keyword");
+    DECLARE_MESSAGE(UnexpectedDigitsAfterLeadingZero, (), "", "Unexpected digits after a leading zero");
+    DECLARE_MESSAGE(UnexpectedEOF, (), "", "Unexpected EOF after escape character");
+    DECLARE_MESSAGE(UnexpectedEOFAfterMinus, (), "", "Unexpected EOF after minus sign");
+    DECLARE_MESSAGE(UnexpectedEOFExpectedChar, (), "", "Unexpected character; expected EOF");
+    DECLARE_MESSAGE(UnexpectedEOFExpectedCloseBrace, (), "", "Unexpected EOF; expected property or close brace");
+    DECLARE_MESSAGE(UnexpectedEOFExpectedColon, (), "", "Unexpected EOF; expected colon");
+    DECLARE_MESSAGE(UnexpectedEOFExpectedName, (), "", "Unexpected EOF; expected property name");
+    DECLARE_MESSAGE(UnexpectedEOFExpectedProp, (), "", "Unexpected EOF; expected property");
+    DECLARE_MESSAGE(UnexpectedEOFExpectedValue, (), "", "Unexpected EOF; expected value");
+    DECLARE_MESSAGE(UnexpectedEOFMidArray, (), "", "Unexpected EOF in middle of array");
+    DECLARE_MESSAGE(UnexpectedEOFMidKeyword, (), "", "Unexpected EOF in middle of keyword");
+    DECLARE_MESSAGE(UnexpectedEOFMidString, (), "", "Unexpected EOF in middle of string");
+    DECLARE_MESSAGE(UnexpectedEOFMidUnicodeEscape, (), "", "Unexpected end of file in middle of unicode escape");
     DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.");
+    DECLARE_MESSAGE(UnexpectedEscapeSequence, (), "", "Unexpected escape sequence continuation");
     DECLARE_MESSAGE(UnexpectedExtension, (msg::extension), "", "Unexpected archive extension: '{extension}'.");
     DECLARE_MESSAGE(UnexpectedFormat,
                     (msg::expected, msg::actual),
@@ -1470,6 +1597,10 @@ namespace vcpkg
                     "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', "
                     "'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', "
                     "'x-aws-config', 'http', and 'files'");
+    DECLARE_MESSAGE(UnknownMachineCode,
+                    (msg::value),
+                    "{value} is machine type code",
+                    "Unknown machine type code {value}");
     DECLARE_MESSAGE(UnknownOptions, (msg::command_name), "", "Unknown option(s) for command '{command_name}':");
     DECLARE_MESSAGE(UnknownParameterForIntegrate,
                     (msg::value),
@@ -1601,6 +1732,12 @@ namespace vcpkg
         "vcpkg has crashed. Please create an issue at https://github.com/microsoft/vcpkg containing a brief summary of "
         "what you were trying to do and the following information.");
     DECLARE_MESSAGE(VcpkgInvalidCommand, (msg::command_name), "", "invalid command: {command_name}");
+    DECLARE_MESSAGE(
+        VcpkgJsonNoCommentMsg,
+        (),
+        "",
+        "\nvcpkg does not support c-style comments, however most objects allow $-prefixed fields to be used as "
+        "comments.");
     DECLARE_MESSAGE(VcpkgRootRequired, (), "", "Setting VCPKG_ROOT is required for standalone bootstrap.");
     DECLARE_MESSAGE(VcpkgRootsDir, (msg::env_var), "", "Specify the vcpkg root directory.\n(default: '{env_var}')");
     DECLARE_MESSAGE(VcpkgSendMetricsButDisabled, (), "", "passed --sendmetrics, but metrics are disabled.");
@@ -1647,142 +1784,4 @@ namespace vcpkg
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}.");
-    DECLARE_MESSAGE(CurlFailedToExecute, (msg::exit_code), "", "curl failed to execute with exit code {exit_code}.");
-    DECLARE_MESSAGE(CurlReturnedUnexpectedResponseCodes,
-                    (msg::actual, msg::expected),
-                    "{actual} and {expected} are the number of response codes returned by curl vs the expected number "
-                    "of response codes.",
-                    "curl returned a different number of response codes than were expected for the request ({actual} "
-                    "vs expected {expected}).");
-    DECLARE_MESSAGE(FailedToDownloadFromMirrorSet,
-                    (msg::error_msg),
-                    "",
-                    "Failed to download from mirror set:\n{error_msg}");
-    DECLARE_MESSAGE(IncorrectPESignature, (), "", "Incorrect PE signature");
-    DECLARE_MESSAGE(IncorrectLibHeaderEnd, (), "", "Incorrect lib header end");
-    DECLARE_MESSAGE(IncorrectArchiveFileSignature, (), "", "Incorrect archive file signature");
-    DECLARE_MESSAGE(CouldNotFindLinkerMember, (), "", "Could not find proper first linker member");
-    DECLARE_MESSAGE(CouldNotFindSecondLinkerMember, (), "", "Could not find proper second linker member");
-    DECLARE_MESSAGE(SecondLinkerMemberTooSmallUint32,
-                    (),
-                    "",
-                    "Second linker member was too small to contain a single uint32_t");
-    DECLARE_MESSAGE(SecondLinkerMemberTooSmallArchiveMem,
-                    (),
-                    "",
-                    "Second linker member was too small to contain the expected number of archive members");
-    DECLARE_MESSAGE(UnknownMachineCode,
-                    (msg::value),
-                    "{value} is machine type code",
-                    "Unknown machine type code {value}");
-    DECLARE_MESSAGE(CouldNotFindGitTreeAtCommit,
-                    (msg::package_name, msg::value, msg::error_msg),
-                    "{value} is a commit sha",
-                    "could not find the git tree for `versions` in repo {package_name} at commit {value}: {error_msg}");
-    DECLARE_MESSAGE(FailedToCheckoutRepo,
-                    (msg::package_name, msg::error_msg),
-                    "",
-                    "failed to check out `versions` from repo {package_name}: {error_msg}");
-    DECLARE_MESSAGE(JsonFileMissingExtension,
-                    (msg::path),
-                    "",
-                    "the JSON file {path} must have a .json (all lowercase) extension");
-    DECLARE_MESSAGE(InvalidPortVersonName, (msg::path), "", " found invalid port version file name: `{path}`.");
-    DECLARE_MESSAGE(FailedToLoadPortFrom,
-                    (msg::path, msg::package_name, msg::value),
-                    "{value} is the expected port name",
-                    " Failed to load port from {path}: names did not match: '{package_name}' != '{value}'");
-    DECLARE_MESSAGE(FailedWhileEnumeratingPorts,
-                    (msg::path, msg::error_msg),
-                    "",
-                    "failed while enumerating the builtin ports directory {path}: {error_msg}");
-    DECLARE_MESSAGE(BaselineFileNoDefaultField,
-                    (msg::value),
-                    "{value} is a commit sha",
-                    "The baseline file at commit {value} was invalid (no \"default\" field)");
-    DECLARE_MESSAGE(CouldNotFindBaseline,
-                    (msg::value, msg::path),
-                    "{value} is a commit sha",
-                    " could not find explicitly specified baseline `\"{value}\"` in baseline file `{path}`.");
-    DECLARE_MESSAGE(GitRegistryMustHaveBaseline,
-                    (msg::package_name, msg::value),
-                    "{value} is a commit sha",
-                    "The git registry entry for \"{package_name}\" must have a \"baseline\" field that is a valid git "
-                    "commit SHA (40 hexadecimal characters).\n"
-                    "The current HEAD of that repo is \"{value}\".");
-    DECLARE_MESSAGE(FetchingBaselineInfo,
-                    (msg::package_name),
-                    "",
-                    "Fetching baseline information from {package_name}...");
-    DECLARE_MESSAGE(CouldNotFindBaselineForRepo,
-                    (msg::value, msg::package_name, msg::error_msg, msg::error),
-                    "{value} is a commit sha. {error} is an error code",
-                    "Couldn't find baseline `\"{value}\"` for repo {package_name}:\n{error_msg}\nFailed to fetch "
-                    "{package_name}:\n{error}");
-    DECLARE_MESSAGE(CouldNotFindBaselineInCommit,
-                    (msg::value, msg::package_name, msg::error_msg),
-                    "{value} is a commit sha.",
-                    "Couldn't find baseline in commit `\"{value}\"` from repo {package_name}:\n{error_msg}");
-    DECLARE_MESSAGE(
-        BaselineMissingDefault,
-        (msg::value, msg::package_name),
-        "{value} is a commit sha.",
-        "The baseline.json from commit `\"{value}\"` in the repo {package_name} did not contain a \"default\" field.");
-    DECLARE_MESSAGE(ErrorWhileFetchingBaseline,
-                    (msg::value, msg::package_name, msg::error_msg),
-                    "{value} is a commit sha.",
-                    "Error while fetching baseline `\"{value}\"` from repo {package_name}:\n{error_msg}");
-    DECLARE_MESSAGE(TypeShouldNotBeFilesystem,
-                    (),
-                    "",
-                    "Bug in vcpkg; type should never = Filesystem when registry_root is empty.");
-    DECLARE_MESSAGE(FailedToFindBaseline, (), "", "Failed to find baseline.json");
-    DECLARE_MESSAGE(FetchingRegistryInfo,
-                    (msg::package_name, msg::value),
-                    "{value} is a reference",
-                    "Fetching registry information from {package_name} ({value})...");
-    DECLARE_MESSAGE(JsonValueNotString, (), "", "json value is not a string");
-    DECLARE_MESSAGE(JsonValueNotArray, (), "", "json value is not an array");
-    DECLARE_MESSAGE(JsonValueNotObject, (), "", "json value is not an object");
-    DECLARE_MESSAGE(InvalidString, (), "", "Invalid utf8 passed to Value::string(std::string)");
-    DECLARE_MESSAGE(ControlCharacterInString, (), "", "Control character in string");
-    DECLARE_MESSAGE(UnexpectedEOF, (), "", "Unexpected EOF after escape character");
-    DECLARE_MESSAGE(UnexpectedEOFMidUnicodeEscape, (), "", "Unexpected end of file in middle of unicode escape");
-    DECLARE_MESSAGE(InvalidHexDigit, (), "", "Invalid hex digit in unicode escape");
-    DECLARE_MESSAGE(UnexpectedEscapeSequence, (), "", "Unexpected escape sequence continuation");
-    DECLARE_MESSAGE(UnexpectedEOFMidString, (), "", "Unexpected EOF in middle of string");
-    DECLARE_MESSAGE(UnexpectedEOFAfterMinus, (), "", "Unexpected EOF after minus sign");
-    DECLARE_MESSAGE(UnexpectedDigitsAfterLeadingZero, (), "", "Unexpected digits after a leading zero");
-    DECLARE_MESSAGE(ExpectedDigitsAfterDecimal, (), "", "Expected digits after the decimal point");
-    DECLARE_MESSAGE(FloatingPointConstTooBig, (msg::count), "", "Floating point constant too big: {count}");
-    DECLARE_MESSAGE(InvalidFloatingPointConst, (msg::count), "", "Invalid floating point constant: {count}");
-    DECLARE_MESSAGE(InvalidIntegerConst, (msg::count), "", "Invalid integer constant: {count}");
-    DECLARE_MESSAGE(UnexpectedEOFMidKeyword, (), "", "Unexpected EOF in middle of keyword");
-    DECLARE_MESSAGE(UnexpectedCharMidKeyword, (), "", "Unexpected character in middle of keyword");
-    DECLARE_MESSAGE(UnexpectedEOFMidArray, (), "", "Unexpected EOF in middle of array");
-    DECLARE_MESSAGE(TrailingCommaInArray, (), "", "Trailing comma in array");
-    DECLARE_MESSAGE(UnexpectedCharMidArray, (), "", "Unexpected character in middle of array");
-    DECLARE_MESSAGE(
-        VcpkgJsonNoCommentMsg,
-        (),
-        "",
-        "\nvcpkg does not support c-style comments, however most objects allow $-prefixed fields to be used as "
-        "comments.");
-    DECLARE_MESSAGE(UnexpectedCharExpectedColon, (), "", "Unexpected character; expected colon");
-    DECLARE_MESSAGE(UnexpectedCharExpectedComma, (), "", "Unexpected character; expected comma or close brace");
-    DECLARE_MESSAGE(UnexpectedCharExpectedValue, (), "", "Unexpected character; expected value");
-    DECLARE_MESSAGE(UnexpectedEOFExpectedName, (), "", "Unexpected EOF; expected property name");
-    DECLARE_MESSAGE(UnexpectedCharExpectedName, (), "", "Unexpected character; expected property name");
-    DECLARE_MESSAGE(UnexpectedEOFExpectedColon, (), "", "Unexpected EOF; expected colon");
-    DECLARE_MESSAGE(UnexpectedEOFExpectedCloseBrace, (), "", "Unexpected EOF; expected property or close brace");
-    DECLARE_MESSAGE(UnexpectedCharExpectedCloseBrace, (), "", "Unexpected character; expected property or close brace");
-    DECLARE_MESSAGE(UnexpectedEOFExpectedProp, (), "", "Unexpected EOF; expected property");
-    DECLARE_MESSAGE(TrailingCommaInObj, (), "", "Trailing comma in an object");
-    DECLARE_MESSAGE(DuplicatedKeyInObj,
-                    (msg::value),
-                    "{value} is a json property/object",
-                    "Duplicated key \"{value}\" in an object");
-    DECLARE_MESSAGE(UnexpectedEOFExpectedValue, (), "", "Unexpected EOF; expected value");
-    DECLARE_MESSAGE(UnexpectedEOFExpectedChar, (), "", "Unexpected character; expected EOF");
-
 }
