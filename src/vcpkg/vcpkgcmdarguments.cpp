@@ -769,15 +769,18 @@ namespace vcpkg
         from_env(get_env, ASSET_SOURCES_ENV, asset_sources_template_env);
         from_env(get_env, REGISTRIES_CACHE_DIR_ENV, registries_cache_dir);
 
-        // detect whether we are running in a CI environment
-        for (auto&& ci_env_var : get_known_ci_variables())
+        if (!disable_metrics)
         {
-            Optional<std::string> maybe_val;
-            from_env(get_env, ci_env_var.first, maybe_val);
-            if (maybe_val.has_value())
+            // detect whether we are running in a CI environment
+            for (auto&& ci_env_var : get_known_ci_variables())
             {
-                m_detected_ci_environment = ci_env_var.second;
-                break;
+                Optional<std::string> maybe_val;
+                from_env(get_env, ci_env_var.first, maybe_val);
+                if (maybe_val.has_value())
+                {
+                    m_detected_ci_environment = ci_env_var.second;
+                    break;
+                }
             }
         }
 
