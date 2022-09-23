@@ -6,10 +6,11 @@
 
 using namespace vcpkg;
 
-template<typename T>
-void validate_enum_values_and_names(View<MetricEntry<T>> entries, const size_t expected_size)
+template<typename MetricEntry, size_t Size>
+void validate_enum_values_and_names(const std::array<MetricEntry, Size>& entries)
 {
-    REQUIRE(expected_size == entries.size());
+    static_assert(static_cast<size_t>(decltype(entries[0].metric)::COUNT) == Size,
+                  "COUNT must be the last enum entry.");
 
     size_t enum_value = 0;
     std::set<StringView> used_names;
@@ -33,34 +34,25 @@ TEST_CASE ("Check metric enum types", "[metrics]")
 {
     SECTION ("define metrics")
     {
-        validate_enum_values_and_names(Metrics::get_define_metrics(), static_cast<size_t>(DefineMetric::COUNT));
+        validate_enum_values_and_names(all_define_metrics);
     }
 
     SECTION ("string metrics")
     {
-        validate_enum_values_and_names(Metrics::get_string_metrics(), static_cast<size_t>(StringMetric::COUNT));
+        validate_enum_values_and_names(all_string_metrics);
     }
 
     SECTION ("bool metrics")
     {
-        validate_enum_values_and_names(Metrics::get_bool_metrics(), static_cast<size_t>(BoolMetric::COUNT));
+        validate_enum_values_and_names(all_bool_metrics);
     }
 }
 
 TEST_CASE ("Check string metrics initialization values", "[metrics]")
 {
-    auto known_metrics = Metrics::get_string_metrics();
-    auto init_values = Metrics::get_string_metrics_preregister_values();
-
-    // check that all init values are complete and in order
-    size_t enum_value = 0;
-    REQUIRE(init_values.size() == known_metrics.size());
-    for (auto&& init_value : init_values)
+    // check that all init values are complete
+    for (auto&& string_metric : all_string_metrics)
     {
-        REQUIRE(enum_value == static_cast<size_t>(init_value.metric));
-        ++enum_value;
-
-        // initialization value should not be empty
-        REQUIRE(!init_value.name.empty());
+        REQUIRE(!string_metric.preregister_value.empty());
     }
 }
