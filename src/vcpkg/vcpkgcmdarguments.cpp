@@ -9,6 +9,58 @@
 #include <vcpkg/metrics.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
+namespace
+{
+    using namespace vcpkg;
+
+    // returns a list of known CI environment variables and the ID for their respective vendors
+    static View<std::pair<StringLiteral, StringLiteral>> get_known_ci_variables()
+    {
+        static constexpr std::array<std::pair<StringLiteral, StringLiteral>, 11> CI_VARS{{
+            // Azure Pipelines
+            // https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables#system-variables
+            {"TF_BUILD", "Azure_Pipelines"},
+
+            // AppVeyor
+            // https://www.appveyor.com/docs/environment-variables/
+            {"APPVEYOR", "AppVeyor"},
+
+            // AWS Code Build
+            // https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-env-vars.html
+            {"CODEBUILD_BUILD_ID", "AWS_CodeBuild"},
+
+            // CircleCI
+            // https://circleci.com/docs/env-vars#built-in-environment-variables
+            {"CIRCLECI", "Circle_CI"},
+
+            // GitHub Actions
+            // https://docs.github.com/en/actions/learn-github-actions/
+            {"GITHUB_ACTIONS", "GitHub_Actions"},
+
+            // GitLab
+            // https://docs.gitlab.com/ee/ci/variables/predefined_variables.html
+            {"GITLAB_CI", "GitLab_CI"},
+
+            // Heroku
+            // https://devcenter.heroku.com/articles/heroku-ci#immutable-environment-variables
+            {"HEROKU_TEST_RUN_ID", "Heroku_CI"},
+
+            // Jenkins
+            // https://wiki.jenkins.io/display/JENKINS/Building+a+software+project#Buildingasoftwareproject-belowJenkinsSetEnvironmentVariables
+            {"JENKINS_URL", "Jenkins_CI"},
+
+            // Travis CI
+            // https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
+            {"TRAVIS", "Travis_CI"},
+
+            // Generic CI environment variables
+            {"CI", "Generic"},
+            {"BUILD_ID", "Generic"},
+        }};
+        return {CI_VARS.data(), CI_VARS.size()};
+    }
+}
+
 namespace vcpkg
 {
     const std::string* ParsedArguments::read_setting(StringLiteral setting) const noexcept
@@ -717,6 +769,18 @@ namespace vcpkg
         from_env(get_env, ASSET_SOURCES_ENV, asset_sources_template_env);
         from_env(get_env, REGISTRIES_CACHE_DIR_ENV, registries_cache_dir);
 
+        // detect whether we are running in a CI environment
+        for (auto&& ci_env_var : get_known_ci_variables())
+        {
+            Optional<std::string> maybe_val;
+            from_env(get_env, ci_env_var.first, maybe_val);
+            if (maybe_val.has_value())
+            {
+                m_detected_ci_environment = ci_env_var.second;
+                break;
+            }
+        }
+
         {
             const auto vcpkg_disable_lock = get_env(IGNORE_LOCK_FAILURES_ENV);
             if (vcpkg_disable_lock.has_value() && !ignore_lock_failures.has_value())
@@ -885,6 +949,15 @@ namespace vcpkg
         for (const auto& flag : flags)
         {
             LockGuardPtr<Metrics>(g_metrics)->track_feature(flag.flag.to_string(), flag.enabled);
+        }
+    }
+
+    void VcpkgCmdArguments::track_environment_metrics() const
+    {
+        if (auto ci_env = m_detected_ci_environment.get())
+        {
+            Debug::println("Detected CI environment: ", *ci_env);
+            LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::DetectedCiEnvironment, *ci_env);
         }
     }
 

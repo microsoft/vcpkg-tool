@@ -248,6 +248,7 @@ namespace vcpkg
 
         void debug_print_feature_flags() const;
         void track_feature_flag_metrics() const;
+        void track_environment_metrics() const;
 
         Optional<std::string> asset_sources_template() const;
 
@@ -263,5 +264,7 @@ namespace vcpkg
         std::map<std::string, std::vector<std::string>, std::less<>> command_options;
 
         std::vector<std::string> forwardable_arguments;
+
+        Optional<StringLiteral> m_detected_ci_environment;
     };
 }
