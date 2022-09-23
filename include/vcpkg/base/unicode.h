@@ -154,7 +154,8 @@ namespace vcpkg::Unicode
         {
             if (is_eof())
             {
-                Checks::exit_with_message_and_line(VCPKG_LINE_INFO, "internal error: dereferenced Utf8Decoder at the end of a string.");
+                Checks::exit_with_message_and_line(VCPKG_LINE_INFO,
+                                                   "internal error: dereferenced Utf8Decoder at the end of a string.");
             }
             return current_;
         }
