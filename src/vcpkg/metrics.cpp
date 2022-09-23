@@ -304,7 +304,7 @@ namespace vcpkg
 
     bool Metrics::metrics_enabled() { return !g_metrics_disabled; }
 
-    void Metrics::track_metric(const std::string& name, double value) { g_metricmessage.track_metric(name, value); }
+    void Metrics::track_elapsed_us(double value) { g_metricmessage.track_metric("elapsed_us", value); }
 
     void Metrics::track_buildtime(const std::string& name, double value)
     {

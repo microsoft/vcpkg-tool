@@ -102,7 +102,7 @@ namespace vcpkg
         // This function is static and must be called outside the g_metrics lock.
         static void enable();
 
-        void track_metric(const std::string& name, double value);
+        void track_elapsed_us(double value);
         void track_buildtime(const std::string& name, double value);
 
         void track_define_property(DefineMetric metric);

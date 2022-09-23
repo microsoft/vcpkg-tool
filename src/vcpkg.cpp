@@ -188,7 +188,7 @@ int main(const int argc, const char* const* const argv)
         bool debugging = Debug::g_debugging;
 
         LockGuardPtr<Metrics> metrics(g_metrics);
-        metrics->track_metric("elapsed_us", elapsed_us_inner);
+        metrics->track_elapsed_us(elapsed_us_inner);
         Debug::g_debugging = false;
         metrics->flush(get_real_filesystem());
 
