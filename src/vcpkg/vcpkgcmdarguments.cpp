@@ -16,7 +16,10 @@ namespace
     // returns a list of known CI environment variables and the ID for their respective vendors
     static View<std::pair<StringLiteral, StringLiteral>> get_known_ci_variables()
     {
-        static constexpr std::array<std::pair<StringLiteral, StringLiteral>, 11> CI_VARS{{
+        static constexpr std::array<std::pair<StringLiteral, StringLiteral>, 12> CI_VARS{{
+            // Opt-out from CI detection
+            {"VCPKG_NO_CI", "VCPKG_NO_CI"},
+
             // Azure Pipelines
             // https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables#system-variables
             {"TF_BUILD", "Azure_Pipelines"},
@@ -769,18 +772,13 @@ namespace vcpkg
         from_env(get_env, ASSET_SOURCES_ENV, asset_sources_template_env);
         from_env(get_env, REGISTRIES_CACHE_DIR_ENV, registries_cache_dir);
 
-        if (!disable_metrics)
+        // detect whether we are running in a CI environment
+        for (auto&& ci_env_var : get_known_ci_variables())
         {
-            // detect whether we are running in a CI environment
-            for (auto&& ci_env_var : get_known_ci_variables())
+            if (get_env(ci_env_var.first).has_value())
             {
-                Optional<std::string> maybe_val;
-                from_env(get_env, ci_env_var.first, maybe_val);
-                if (maybe_val.has_value())
-                {
-                    m_detected_ci_environment = ci_env_var.second;
-                    break;
-                }
+                m_detected_ci_environment = ci_env_var.second;
+                break;
             }
         }
 
