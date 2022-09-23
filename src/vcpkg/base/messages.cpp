@@ -778,7 +778,6 @@ namespace vcpkg
     REGISTER_MESSAGE(UserWideIntegrationRemoved);
     REGISTER_MESSAGE(UsingCommunityTriplet);
     REGISTER_MESSAGE(UsingManifestAt);
-    REGISTER_MESSAGE(Utf8DecoderDereferencedAtEof);
     REGISTER_MESSAGE(VcpkgCeIsExperimental);
     REGISTER_MESSAGE(VcpkgCommitTableHeader);
     REGISTER_MESSAGE(VcpkgCompletion);
