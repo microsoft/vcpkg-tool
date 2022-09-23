@@ -1603,6 +1603,7 @@ namespace vcpkg
     DECLARE_MESSAGE(VcpkgInvalidCommand, (msg::command_name), "", "invalid command: {command_name}");
     DECLARE_MESSAGE(VcpkgRootRequired, (), "", "Setting VCPKG_ROOT is required for standalone bootstrap.");
     DECLARE_MESSAGE(VcpkgRootsDir, (msg::env_var), "", "Specify the vcpkg root directory.\n(default: '{env_var}')");
+    DECLARE_MESSAGE(VcpkgGithubMirror, (msg::env_var), "", "Specify the vcpkg github mirror.\n(default: '{env_var}')");
     DECLARE_MESSAGE(VcpkgSendMetricsButDisabled, (), "", "passed --sendmetrics, but metrics are disabled.");
     DECLARE_MESSAGE(VersionCommandHeader,
                     (msg::version),

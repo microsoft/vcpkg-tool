@@ -121,6 +121,10 @@ namespace vcpkg
         constexpr static StringLiteral VCPKG_ROOT_DIR_ENV = "VCPKG_ROOT";
         constexpr static StringLiteral VCPKG_ROOT_DIR_ARG = "vcpkg-root";
         std::unique_ptr<std::string> vcpkg_root_dir;
+
+        constexpr static StringLiteral GITHUB_MIRROR = "github-mirror";
+        std::unique_ptr<std::string> github_mirror;
+
         constexpr static StringLiteral MANIFEST_ROOT_DIR_ARG = "x-manifest-root";
         std::unique_ptr<std::string> manifest_root_dir;
 

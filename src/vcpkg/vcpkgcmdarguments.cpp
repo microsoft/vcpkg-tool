@@ -288,6 +288,7 @@ namespace vcpkg
             constexpr static std::pair<StringView, std::unique_ptr<std::string> VcpkgCmdArguments::*>
                 cojoined_values[] = {
                     {VCPKG_ROOT_DIR_ARG, &VcpkgCmdArguments::vcpkg_root_dir},
+                    {GITHUB_MIRROR, &VcpkgCmdArguments::github_mirror},
                     {TRIPLET_ARG, &VcpkgCmdArguments::triplet},
                     {HOST_TRIPLET_ARG, &VcpkgCmdArguments::host_triplet},
                     {MANIFEST_ROOT_DIR_ARG, &VcpkgCmdArguments::manifest_root_dir},
@@ -656,6 +657,7 @@ namespace vcpkg
                      msg::format(msgDownloadRootsDir, msg::env_var = "VCPKG_DOWNLOADS"));
         table.format(opt(VCPKG_ROOT_DIR_ARG, "=", "<path>"),
                      msg::format(msgVcpkgRootsDir, msg::env_var = "VCPKG_ROOT"));
+        table.format(opt(GITHUB_MIRROR, "=", "<url>"), msg::format(msgVcpkgGithubMirror, msg::env_var = "VCPKG_ROOT"));
         table.format(opt(BUILDTREES_ROOT_DIR_ARG, "=", "<path>"), msg::format(msgBuildTreesRootDir));
         table.format(opt(INSTALL_ROOT_DIR_ARG, "=", "<path>"), msg::format(msgInstallRootDir));
         table.format(opt(PACKAGES_ROOT_DIR_ARG, "=", "<path>"), msg::format(msgPackageRootDir));
@@ -979,6 +981,7 @@ namespace vcpkg
     // out-of-line definitions since C++14 doesn't allow inline constexpr static variables
     constexpr StringLiteral VcpkgCmdArguments::VCPKG_ROOT_DIR_ENV;
     constexpr StringLiteral VcpkgCmdArguments::VCPKG_ROOT_DIR_ARG;
+    constexpr StringLiteral VcpkgCmdArguments::GITHUB_MIRROR;
     constexpr StringLiteral VcpkgCmdArguments::MANIFEST_ROOT_DIR_ARG;
 
     constexpr StringLiteral VcpkgCmdArguments::BUILDTREES_ROOT_DIR_ARG;

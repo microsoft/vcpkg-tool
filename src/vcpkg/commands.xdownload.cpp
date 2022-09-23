@@ -130,6 +130,16 @@ namespace vcpkg::Commands::X_Download
             View<std::string> urls{};
             if (it_urls != parsed.multisettings.end())
             {
+                std::string github("https://github.com");
+                std::string https("https://");
+                for (std::string& s : it_urls->second)
+                {
+                    if (s.compare(0, github.size(), github) == 0)
+                    {
+                        s = https.append(args.github_mirror->c_str()).append(s.replace(0, 7, ""));
+                        Debug::println("https.appen: ", s);
+                    }
+                }
                 urls = it_urls->second;
             }
 
