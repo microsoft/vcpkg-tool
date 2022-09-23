@@ -1111,7 +1111,8 @@ namespace vcpkg
                                                         dry_run ? Commands::DryRun::Yes : Commands::DryRun::No,
                                                         pkgsconfig,
                                                         host_triplet,
-                                                        keep_going);
+                                                        keep_going,
+                                                        only_downloads);
         }
 
         PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
