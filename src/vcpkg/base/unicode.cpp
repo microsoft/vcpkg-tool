@@ -184,25 +184,24 @@ namespace vcpkg::Unicode
 
     struct Utf8Category : std::error_category
     {
-        inline const char* name() const noexcept override { return "utf8"; }
-        std::string message(int condition) const override;
-    };
+        const char* name() const noexcept override { return "utf8"; }
 
-    std::string Utf8Category::message(int condition) const
-    {
-        switch (static_cast<utf8_errc>(condition))
+        std::string message(int condition) const override
         {
-            case utf8_errc::NoError: return "no error";
-            case utf8_errc::InvalidCodeUnit: return "invalid code unit";
-            case utf8_errc::InvalidCodePoint: return "invalid code point (>0x10FFFF)";
-            case utf8_errc::PairedSurrogates:
-                return "trailing surrogate following leading surrogate (paired surrogates are invalid)";
-            case utf8_errc::UnexpectedContinue: return "found continue code unit in start position";
-            case utf8_errc::UnexpectedStart: return "found start code unit in continue position";
-            case utf8_errc::UnexpectedEof: return "found end of string in middle of code point";
-            default: return "error code out of range";
+            switch (static_cast<utf8_errc>(condition))
+            {
+                case utf8_errc::NoError: return "no error";
+                case utf8_errc::InvalidCodeUnit: return "invalid code unit";
+                case utf8_errc::InvalidCodePoint: return "invalid code point (>0x10FFFF)";
+                case utf8_errc::PairedSurrogates:
+                    return "trailing surrogate following leading surrogate (paired surrogates are invalid)";
+                case utf8_errc::UnexpectedContinue: return "found continue code unit in start position";
+                case utf8_errc::UnexpectedStart: return "found start code unit in continue position";
+                case utf8_errc::UnexpectedEof: return "found end of string in middle of code point";
+                default: return "error code out of range";
+            }
         }
-    }
+    };
 
     const std::error_category& utf8_category() noexcept
     {
