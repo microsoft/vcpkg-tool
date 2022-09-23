@@ -502,23 +502,6 @@ namespace vcpkg
         {
             w.get();
         }
-
-#if defined(__APPLE__)
-        std::size_t i = 0;
-        for (auto& maybe_result : res)
-        {
-            if (const auto result = maybe_result.get())
-            {
-                if (result->exit_code == 127 && result->output.empty())
-                {
-                    Debug::println(cmd_lines[i].command_line(), ": pclose returned 127, try again");
-                    maybe_result = cmd_execute_and_capture_output(cmd_lines[i], wd, env);
-                }
-            }
-            ++i;
-        }
-#endif
-
         return res;
     }
 
@@ -892,7 +875,7 @@ namespace vcpkg
                 return output.wait_and_stream_output(data_cb, encoding);
             });
         g_ctrl_c_state.transition_from_spawn_process();
-#else  // ^^^ _WIN32 // !_WIN32 vvv
+#else // ^^^ _WIN32 // !_WIN32 vvv
         Checks::check_exit(VCPKG_LINE_INFO, encoding == Encoding::Utf8);
         const auto proc_id = std::to_string(::getpid());
 
@@ -916,7 +899,23 @@ namespace vcpkg
         // Flush stdout before launching external process
         fflush(stdout);
 
-        const auto pipe = popen(actual_cmd_line.c_str(), "r");
+        FILE* pipe = nullptr;
+#if defined(__APPLE__)
+        static std::mutex mtx;
+#endif
+
+        // Scope for lock guard
+        {
+#if defined(__APPLE__)
+            // `popen` sometimes returns 127 on OSX when executed in parallel.
+            // Related: https://github.com/microsoft/vcpkg-tool/pull/695#discussion_r973364608
+
+            std::lock_guard guard(mtx);
+#endif
+
+            pipe = popen(actual_cmd_line.c_str(), "r");
+        }
+
         if (pipe == nullptr)
         {
             return format_system_error_message("popen", errno);
