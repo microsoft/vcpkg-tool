@@ -8,28 +8,28 @@ namespace
 {
     static void set_define_metrics()
     {
-        auto metrics = LockGuardPtr<Metrics>(g_metrics);
+        MetricsSubmission metrics(get_global_metrics_collector());
         for (auto&& metric : all_define_metrics)
         {
-            metrics->track_define_property(metric.metric);
+            metrics.track_define_property(metric.metric);
         }
     }
 
     static void set_bool_metrics()
     {
-        auto metrics = LockGuardPtr<Metrics>(g_metrics);
+        MetricsSubmission metrics(get_global_metrics_collector());
         for (auto&& metric : all_bool_metrics)
         {
-            metrics->track_bool_property(metric.metric, false);
+            metrics.track_bool_property(metric.metric, false);
         }
     }
 
     static void set_string_metrics()
     {
-        auto metrics = LockGuardPtr<Metrics>(g_metrics);
+        MetricsSubmission metrics(get_global_metrics_collector());
         for (auto&& metric : all_string_metrics)
         {
-            metrics->track_string_property(metric.metric, metric.preregister_value);
+            metrics.track_string_property(metric.metric, metric.preregister_value);
         }
     }
 
@@ -49,18 +49,12 @@ namespace vcpkg::Commands
         (void)args;
         (void)fs;
 
-        auto metrics_enabled = false;
-
-        {
-            auto metrics = LockGuardPtr<Metrics>(g_metrics);
-            metrics->set_print_metrics(true);
-            metrics_enabled = metrics->metrics_enabled();
-        }
-
+        auto metrics_enabled = g_metrics_enabled.load();
         if (metrics_enabled)
         {
             // fills the property message with dummy data
             // telemetry is uploaded via the usual mechanism
+            g_should_print_metrics = true;
             set_define_metrics();
             set_bool_metrics();
             set_string_metrics();

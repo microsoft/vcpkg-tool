@@ -45,10 +45,10 @@ namespace vcpkg::Commands
             auto artifact_name = args.command_arguments[1];
             auto artifact_hash = Hash::get_string_hash(artifact_name, Hash::Algorithm::Sha256);
             {
-                auto metrics = LockGuardPtr<Metrics>(g_metrics);
-                metrics->track_string_property(StringMetric::CommandContext, "artifact");
-                metrics->track_string_property(StringMetric::CommandArgs, artifact_hash);
-            } // unlock g_metrics
+                MetricsSubmission metrics(get_global_metrics_collector());
+                metrics.track_string_property(StringMetric::CommandContext, "artifact");
+                metrics.track_string_property(StringMetric::CommandArgs, artifact_hash);
+            } // submit metrics
 
             std::string ce_args[] = {"add", artifact_name};
             Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, ce_args));
@@ -121,10 +121,10 @@ namespace vcpkg::Commands
                                                        return Hash::get_string_hash(spec.name, Hash::Algorithm::Sha256);
                                                    }));
             {
-                auto metrics = LockGuardPtr<Metrics>(g_metrics);
-                metrics->track_string_property(StringMetric::CommandContext, "port");
-                metrics->track_string_property(StringMetric::CommandArgs, command_args_hash);
-            } // unlock metrics
+                MetricsSubmission metrics(get_global_metrics_collector());
+                metrics.track_string_property(StringMetric::CommandContext, "port");
+                metrics.track_string_property(StringMetric::CommandArgs, command_args_hash);
+            } // submit metrics
 
             Checks::exit_success(VCPKG_LINE_INFO);
         }

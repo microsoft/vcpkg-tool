@@ -236,13 +236,13 @@ namespace vcpkg::Commands
             Optional<std::string> filter_hash = filter.map(Hash::get_string_sha256);
             auto args_hash = Hash::get_string_hash(filter.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256);
             {
-                auto metrics = LockGuardPtr<Metrics>(g_metrics);
-                metrics->track_string_property(StringMetric::CommandContext, "artifact");
+                MetricsSubmission metrics(get_global_metrics_collector());
+                metrics.track_string_property(StringMetric::CommandContext, "artifact");
                 if (auto p_filter_hash = filter_hash.get())
                 {
-                    metrics->track_string_property(StringMetric::CommandArgs, *p_filter_hash);
+                    metrics.track_string_property(StringMetric::CommandArgs, *p_filter_hash);
                 }
-            } // unlock metrics
+            } // submit metrics
 
             perform_find_artifact_and_exit(paths, filter);
         }
@@ -251,13 +251,13 @@ namespace vcpkg::Commands
         {
             Optional<std::string> filter_hash = filter.map(Hash::get_string_sha256);
             {
-                auto metrics = LockGuardPtr<Metrics>(g_metrics);
-                metrics->track_string_property(StringMetric::CommandContext, "port");
+                MetricsSubmission metrics(get_global_metrics_collector());
+                metrics.track_string_property(StringMetric::CommandContext, "port");
                 if (auto p_filter_hash = filter_hash.get())
                 {
-                    metrics->track_string_property(StringMetric::CommandArgs, *p_filter_hash);
+                    metrics.track_string_property(StringMetric::CommandArgs, *p_filter_hash);
                 }
-            } // unlock metrics
+            } // submit metrics
 
             perform_find_port_and_exit(paths, full_description, enable_json, filter, args.overlay_ports);
         }

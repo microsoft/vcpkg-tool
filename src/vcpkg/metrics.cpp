@@ -14,6 +14,8 @@
 #include <vcpkg/metrics.h>
 #include <vcpkg/userconfig.h>
 
+#include <mutex>
+
 #if defined(_WIN32)
 #pragma comment(lib, "version")
 #pragma comment(lib, "winhttp")
@@ -38,7 +40,120 @@ namespace
 
 namespace vcpkg
 {
+    template<class T>
+    struct LockGuardPtr;
+
+    template<class T>
+    struct LockGuarded
+    {
+        friend struct LockGuardPtr<T>;
+
+    private:
+        std::mutex m_mutex;
+        T m_t;
+    };
+
+    template<class T>
+    struct LockGuardPtr
+    {
+        T& operator*() { return m_ptr; }
+        T* operator->() { return &m_ptr; }
+
+        T* get() { return &m_ptr; }
+
+        LockGuardPtr(LockGuarded<T>& sync) : m_lock(sync.m_mutex), m_ptr(sync.m_t) { }
+
+    private:
+        std::lock_guard<std::mutex> m_lock;
+        T& m_ptr;
+    };
+
+    struct Metrics
+    {
+        Metrics() = default;
+        Metrics(const Metrics&) = delete;
+        Metrics& operator=(const Metrics&) = delete;
+
+        void set_send_metrics(bool should_send_metrics);
+
+        // This function is static and must be called outside the g_metrics lock.
+        static void enable();
+
+        void track_elapsed_us(double value);
+        void track_buildtime(StringView name, double value);
+
+        void track_define_property(DefineMetric metric);
+        void track_string_property(StringMetric metric, StringView value);
+        void track_bool_property(BoolMetric metric, bool value);
+
+        void track_feature(StringView feature, bool value);
+
+        void flush(Filesystem& fs);
+    };
+
     LockGuarded<Metrics> g_metrics;
+
+    MetricsCollector::MetricsCollector() = default;
+    MetricsCollector::~MetricsCollector() = default;
+
+    struct MetricsCollectorImpl : MetricsCollector
+    {
+        virtual void track_elapsed_us(double value) override
+        {
+            LockGuardPtr<Metrics>(g_metrics)->track_elapsed_us(value);
+        };
+        virtual void track_buildtime(StringView name, double value) override
+        {
+            LockGuardPtr<Metrics>(g_metrics)->track_buildtime(name, value);
+        };
+        virtual void track_define_property(DefineMetric metric) override
+        {
+            LockGuardPtr<Metrics>(g_metrics)->track_define_property(metric);
+        }
+        virtual void track_string_property(StringMetric metric, StringView value) override
+        {
+            LockGuardPtr<Metrics>(g_metrics)->track_string_property(metric, value);
+        }
+        virtual void track_bool_property(BoolMetric metric, bool value) override
+        {
+            LockGuardPtr<Metrics>(g_metrics)->track_bool_property(metric, value);
+        }
+        virtual void track_feature(StringView feature, bool value) override
+        {
+            LockGuardPtr<Metrics>(g_metrics)->track_feature(feature, value);
+        }
+        virtual void track_submission(MetricsSubmission&& submission) override
+        {
+            LockGuardPtr<Metrics> metrics(g_metrics);
+            for (auto&& elapsed_us : submission.elapsed_us)
+            {
+                metrics->track_elapsed_us(elapsed_us);
+            }
+            for (auto&& buildtime : submission.buildtimes)
+            {
+                metrics->track_buildtime(buildtime.first, buildtime.second);
+            }
+            for (auto&& define_property : submission.define_properties)
+            {
+                metrics->track_define_property(define_property);
+            }
+            for (auto&& string_property : submission.string_properties)
+            {
+                metrics->track_string_property(string_property.first, string_property.second);
+            }
+            for (auto&& bool_property : submission.bool_properties)
+            {
+                metrics->track_bool_property(bool_property.first, bool_property.second);
+            }
+            for (auto&& feature_metric : submission.feature_metrics)
+            {
+                metrics->track_feature(feature_metric.first, feature_metric.second);
+            }
+        }
+    };
+
+    static MetricsCollectorImpl g_metrics_collector;
+    MetricsCollector& get_global_metrics_collector() noexcept { return g_metrics_collector; }
 
     const constexpr std::array<DefineMetricEntry, static_cast<size_t>(DefineMetric::COUNT)> all_define_metrics{{
         {DefineMetric::AssetSource, "asset-source"},
@@ -240,28 +355,23 @@ namespace vcpkg
     };
 
     static MetricMessage g_metricmessage;
-    static bool g_should_send_metrics =
+    std::atomic<bool> g_should_send_metrics =
 #if defined(NDEBUG)
         true
 #else
         false
 #endif
         ;
-    static bool g_should_print_metrics = false;
-    static std::atomic<bool> g_metrics_disabled = true;
+    std::atomic<bool> g_should_print_metrics = false;
+    std::atomic<bool> g_metrics_enabled = false;
 
-    void Metrics::set_send_metrics(bool should_send_metrics) { g_should_send_metrics = should_send_metrics; }
-
-    void Metrics::set_print_metrics(bool should_print_metrics) { g_should_print_metrics = should_print_metrics; }
-
-    static bool g_initializing_metrics = false;
+    static std::atomic<bool> g_initializing_metrics = false;
 
     void Metrics::enable()
     {
+        if (g_initializing_metrics.exchange(true))
         {
-            LockGuardPtr<Metrics> metrics(g_metrics);
-            if (g_initializing_metrics) return;
-            g_initializing_metrics = true;
+            return;
         }
 
         // Execute this body exactly once
@@ -298,18 +408,12 @@ namespace vcpkg
 
             metrics->track_string_property(StringMetric::UserMac, config.user_mac);
 
-            g_metrics_disabled = false;
+            g_metrics_enabled = true;
         }
     }
 
-    bool Metrics::metrics_enabled() { return !g_metrics_disabled; }
-
     void Metrics::track_elapsed_us(double value) { g_metricmessage.track_metric("elapsed_us", value); }
-
-    void Metrics::track_buildtime(const std::string& name, double value)
-    {
-        g_metricmessage.track_buildtime(name, value);
-    }
+    void Metrics::track_buildtime(StringView name, double value) { g_metricmessage.track_buildtime(name, value); }
 
     void Metrics::track_define_property(DefineMetric metric)
     {
@@ -326,7 +430,7 @@ namespace vcpkg
         g_metricmessage.track_bool(get_metric_name(metric, all_bool_metrics), value);
     }
 
-    void Metrics::track_feature(const std::string& name, bool value) { g_metricmessage.track_feature(name, value); }
+    void Metrics::track_feature(StringView name, bool value) { g_metricmessage.track_feature(name, value); }
 
 #if defined(_WIN32)
     void winhttp_upload_metrics(StringView payload)
@@ -423,7 +527,7 @@ namespace vcpkg
 
     void Metrics::flush(Filesystem& fs)
     {
-        if (!metrics_enabled())
+        if (!g_metrics_enabled.load())
         {
             return;
         }
@@ -489,4 +593,6 @@ namespace vcpkg
         cmd_execute_clean(cmd_line);
 #endif
     }
+    void enable_global_metrics() { Metrics::enable(); }
+    void flush_global_metrics(Filesystem& fs) { LockGuardPtr<Metrics>(g_metrics)->flush(fs); }
 }

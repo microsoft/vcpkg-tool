@@ -187,10 +187,10 @@ namespace vcpkg
         {
             if (auto p_baseline = manifest->builtin_baseline.get())
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ManifestBaseline);
+                get_global_metrics_collector().track_define_property(DefineMetric::ManifestBaseline);
                 if (!is_git_commit_sha(*p_baseline))
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::VersioningErrorBaseline);
+                    get_global_metrics_collector().track_define_property(DefineMetric::VersioningErrorBaseline);
                     Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
                                                "Error: the top-level builtin-baseline%s was not a valid commit sha: "
                                                "expected 40 hexadecimal characters.\n%s\n",
@@ -325,7 +325,7 @@ namespace vcpkg
             Path ret;
             if (args.registries_cache_dir)
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::X_VcpkgRegistriesCache);
+                get_global_metrics_collector().track_define_property(DefineMetric::X_VcpkgRegistriesCache);
                 ret = *args.registries_cache_dir;
                 const auto status = get_real_filesystem().status(ret, VCPKG_LINE_INFO);
                 if (!vcpkg::exists(status))
@@ -660,30 +660,28 @@ namespace vcpkg
         }
 
         // metrics from configuration
+        auto default_registry = m_pimpl->m_registry_set->default_registry();
+        auto other_registries = m_pimpl->m_registry_set->registries();
+        MetricsSubmission metrics(get_global_metrics_collector());
+        if (default_registry)
         {
-            auto default_registry = m_pimpl->m_registry_set->default_registry();
-            auto other_registries = m_pimpl->m_registry_set->registries();
-            LockGuardPtr<Metrics> metrics(g_metrics);
-            if (default_registry)
-            {
-                metrics->track_string_property(StringMetric::RegistriesDefaultRegistryKind,
-                                               default_registry->kind().to_string());
-            }
-            else
-            {
-                metrics->track_string_property(StringMetric::RegistriesDefaultRegistryKind, "disabled");
-            }
+            metrics.track_string_property(StringMetric::RegistriesDefaultRegistryKind,
+                                          default_registry->kind().to_string());
+        }
+        else
+        {
+            metrics.track_string_property(StringMetric::RegistriesDefaultRegistryKind, "disabled");
+        }
 
-            if (other_registries.size() != 0)
+        if (other_registries.size() != 0)
+        {
+            std::vector<StringLiteral> registry_kinds;
+            for (const auto& reg : other_registries)
             {
-                std::vector<StringLiteral> registry_kinds;
-                for (const auto& reg : other_registries)
-                {
-                    registry_kinds.push_back(reg.implementation().kind());
-                }
-                Util::sort_unique_erase(registry_kinds);
-                metrics->track_string_property(StringMetric::RegistriesKindsUsed, Strings::join(",", registry_kinds));
+                registry_kinds.push_back(reg.implementation().kind());
             }
+            Util::sort_unique_erase(registry_kinds);
+            metrics.track_string_property(StringMetric::RegistriesKindsUsed, Strings::join(",", registry_kinds));
         }
     }
 
@@ -1399,10 +1397,10 @@ namespace vcpkg
             bool enabled;
         } flags[] = {{VcpkgCmdArguments::MANIFEST_MODE_FEATURE, manifest_mode_enabled()}};
 
-        LockGuardPtr<Metrics> metrics(g_metrics);
+        MetricsSubmission metrics(get_global_metrics_collector());
         for (const auto& flag : flags)
         {
-            metrics->track_feature(flag.flag.to_string(), flag.enabled);
+            metrics.track_feature(flag.flag.to_string(), flag.enabled);
         }
     }
 

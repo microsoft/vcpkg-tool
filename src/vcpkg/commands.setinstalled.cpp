@@ -180,7 +180,7 @@ namespace vcpkg::Commands::SetInstalled
         auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
         if (it_pkgsconfig != options.settings.end())
         {
-            LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::X_WriteNugetPackagesConfig);
+            get_global_metrics_collector().track_define_property(DefineMetric::X_WriteNugetPackagesConfig);
             pkgsconfig = it_pkgsconfig->second;
         }
 
