@@ -924,7 +924,7 @@ namespace vcpkg
     DECLARE_MESSAGE(FailedToLoadInstalledManifest,
                     (msg::spec),
                     "",
-                    "The control or mnaifest file for {spec} could not be loaded due to the following error. Please "
+                    "The control or manifest file for {spec} could not be loaded due to the following error. Please "
                     "remove {spec} and re-attempt.");
     DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}");
     DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
