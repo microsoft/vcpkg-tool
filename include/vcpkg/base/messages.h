@@ -572,6 +572,8 @@ namespace vcpkg
                     "An example of env_var is \"HTTP(S)_PROXY\""
                     "'--' at the beginning must be preserved",
                     "-- Automatically setting {env_var} environment variables to \"{url}\".");
+    DECLARE_MESSAGE(AvailableArchitectureTriplets, (), "", "Available architecture triplets");
+    DECLARE_MESSAGE(AvailableHelpTopics, (), "", "Available help topics:");
     DECLARE_MESSAGE(BinarySourcesArg, (), "", "Add sources for binary caching. See 'vcpkg help binarycaching'.");
     DECLARE_MESSAGE(BuildAlreadyInstalled,
                     (msg::spec),
@@ -670,6 +672,15 @@ namespace vcpkg
                     "Fourth optional part of build troubleshooting message, printed after the version"
                     "information about vcpkg itself.",
                     "Please use the prefilled template from {path} when reporting your issue.");
+    DECLARE_MESSAGE(
+        BuiltinBaseHelp,
+        (),
+        "",
+        "The baseline references a commit within the vcpkg repository that establishes a minimum version on "
+        "every dependency in the graph. For example, if no other constraints are specified (directly or "
+        "transitively), then the version will resolve to the baseline of the top level manifest. Baselines "
+        "of transitive dependencies are ignored.");
+    DECLARE_MESSAGE(BuiltInTriplets, (), "", "VCPKG built-in triplets:");
     DECLARE_MESSAGE(ChecksFailedCheck, (), "", "vcpkg has crashed; no additional details are available.");
     DECLARE_MESSAGE(ChecksUnreachableCode, (), "", "unreachable code was reached");
     DECLARE_MESSAGE(ChecksUpdateVcpkg, (), "", "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.");
@@ -714,6 +725,7 @@ namespace vcpkg
                     "command:\n"
                     "{command_line}\n"
                     "failed with the following results:");
+    DECLARE_MESSAGE(CommunityTriplets, (), "", "VCPKG community triplets:");
     DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":");
     DECLARE_MESSAGE(ConflictingValuesForOption, (msg::option), "", "conflicting values specified for '--{option}'.");
     DECLARE_MESSAGE(ConstraintViolation, (), "", "Found a constraint violation:");
@@ -727,8 +739,8 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "Could not deduce nuget id and version from filename: {path}");
-    DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
     DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: \"{path}\"");
+    DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
     DECLARE_MESSAGE(CurlReportedUnexpectedResults,
                     (msg::command_line, msg::actual),
                     "{command_line} is the command line to call curl.exe, {actual} is the console output "
@@ -845,6 +857,7 @@ namespace vcpkg
     DECLARE_MESSAGE(ErrorVsCodeNotFoundPathExamined, (), "", "The following paths were examined:");
     DECLARE_MESSAGE(ErrorWhileParsing, (msg::path), "", "Errors occurred while parsing {path}.");
     DECLARE_MESSAGE(ErrorWhileWriting, (msg::path), "", "Error occured while writing {path}");
+    DECLARE_MESSAGE(ExampleManifest, (), "", "Example manifest:");
     DECLARE_MESSAGE(ExceededRecursionDepth, (), "", "Recursion depth exceeded.");
     DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
     DECLARE_MESSAGE(ExcludedPackages, (), "", "The following packages are excluded:");
@@ -865,33 +878,33 @@ namespace vcpkg
     DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
     DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
     DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":");
+    DECLARE_MESSAGE(FailedToFindPortFeature, (msg::feature, msg::spec), "", "Could not find {feature} in {spec}.");
     DECLARE_MESSAGE(FailedToFormatMissingFile,
                     (),
                     "",
                     "No files to format.\nPlease pass either --all, or the explicit files to format or convert.");
+    DECLARE_MESSAGE(FailedToLoadInstalledManifest,
+                    (msg::spec),
+                    "",
+                    "The control or mnaifest file for {spec} could not be loaded due to the following error. Please "
+                    "remove {spec} and re-attempt.");
+    DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}");
+    DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
     DECLARE_MESSAGE(FailedToObtainLocalPortGitSha, (), "", "Failed to obtain git SHAs for local ports.");
+    DECLARE_MESSAGE(FailedToObtainPackageVersion, (), "", "Cannot find desired package version.");
     DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
                     (),
                     "",
                     "Failed to parse CMake console output to locate block start/end markers.");
+    DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse control file: {path}");
+    DECLARE_MESSAGE(FailedToParseJson, (msg::path), "", "Failed to parse JSON file: {path}");
+    DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: {path}");
     DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                     (msg::error_msg),
                     "'{error_msg}' is the error message for failing to parse the Binary Paragraph.",
                     "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at "
                     "https://github.com/microsoft/vcpkg, "
                     "with the following output:\n{error_msg}\nSerialized Binary Paragraph:");
-    DECLARE_MESSAGE(FailedToFindPortFeature, (msg::feature, msg::spec), "", "Could not find {feature} in {spec}.");
-    DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}");
-    DECLARE_MESSAGE(FailedToLoadInstalledManifest,
-                    (msg::spec),
-                    "",
-                    "The control or mnaifest file for {spec} could not be loaded due to the following error. Please "
-                    "remove {spec} and re-attempt.");
-    DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
-    DECLARE_MESSAGE(FailedToObtainPackageVersion, (), "", "Cannot find desired package version.");
-    DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse control file: {path}");
-    DECLARE_MESSAGE(FailedToParseJson, (msg::path), "", "Failed to parse JSON file: {path}");
-    DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: {path}");
     DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
     DECLARE_MESSAGE(FailedToRead, (msg::path, msg::error_msg), "", "Failed to read {path}: {error_msg}");
     DECLARE_MESSAGE(FailedToReadParagraph, (msg::path), "", "Failed to read paragraphs from {path}");
@@ -1117,6 +1130,7 @@ namespace vcpkg
         (msg::system_name, msg::value),
         "'{value}' is the linkage type vcpkg would did not understand. (Correct values would be static ofr dynamic)",
         "Invalid {system_name} linkage type: [{value}]");
+    DECLARE_MESSAGE(InvalidTriplet, (msg::triplet), "", "invalid triplet: {triplet}");
     DECLARE_MESSAGE(IrregularFile, (msg::path), "", "path was not a regular file: {path}");
     DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected \"{path}\" to be an object.");
     DECLARE_MESSAGE(JsonSwitch, (), "", "(Experimental) Request JSON output.");
@@ -1220,7 +1234,17 @@ namespace vcpkg
                     "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
                     "The message named {value} ends with a newline which should be added by formatting "
                     "rather than by localization.");
+    DECLARE_MESSAGE(ManifestConstraints,
+                    (),
+                    "",
+                    "Manifests can place three kinds of constraints upon the versions used");
     DECLARE_MESSAGE(ManifestFormatCompleted, (), "", "Succeeded in formatting the manifest files.");
+    DECLARE_MESSAGE(
+        MinVersionHelp,
+        (),
+        "",
+        "Vcpkg will select the minimum version found that matches all applicable constraints, including the "
+        "version from the baseline specified at top-level as well as any \"version>=\" constraints in the graph.");
     DECLARE_MESSAGE(MismatchedFiles, (), "", "file to store does not match hash");
     DECLARE_MESSAGE(Missing7zHeader, (), "", "Unable to find 7z header.");
     DECLARE_MESSAGE(MissingArgFormatManifest,
@@ -1290,10 +1314,27 @@ namespace vcpkg
                     "{value} is a command line option.",
                     "--{value} requires --{option}");
     DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph");
+    DECLARE_MESSAGE(OverlayTriplets, (msg::path), "", "Overlay triplets from {path} :");
+    DECLARE_MESSAGE(
+        OverridesHelp,
+        (),
+        "",
+        "When used as the top-level manifest (such as when running `vcpkg install` in the directory), overrides "
+        "allow a manifest to short-circuit dependency resolution and specify exactly the version to use. These can "
+        "be used to handle version conflicts, such as with `version-string` dependencies. They will not be "
+        "considered when transitively depended upon.");
     DECLARE_MESSAGE(PackageFailedtWhileExtracting,
                     (msg::value, msg::path),
                     "'{value}' is either a tool name or a package name.",
                     "'{value}' failed while extracting {path}.");
+    DECLARE_MESSAGE(
+        PackagePublisherHelp,
+        (),
+        "",
+        "Additionally, package publishers can use \"version>=\" constraints to ensure that consumers are using at "
+        "least a certain minimum version of a given dependency. For example, if a library needs an API added "
+        "to boost-asio in 1.70, a \"version>=\" constraint will ensure transitive users use a sufficient version "
+        "even in the face of individual version overrides or cross-registry references.");
     DECLARE_MESSAGE(PackageRootDir, (), "", "(Experimental) Specify the packages root directory.");
     DECLARE_MESSAGE(PackagesToInstall, (), "", "The following packages will be built and installed:");
     DECLARE_MESSAGE(PackagesToInstallDirectly, (), "", "The following packages will be directly installed:");
@@ -1339,6 +1380,13 @@ namespace vcpkg
                     "",
                     "The port type of {spec} differs between the installed and available portfile.\nPlease manually "
                     "remove {spec} and re-run this command.");
+    DECLARE_MESSAGE(
+        PortVersionHelp,
+        (),
+        "",
+        "Each version additionally has a \"port-version\" which is a nonnegative integer. When rendered as "
+        "text, the port version (if nonzero) is added as a suffix to the primary version text separated by a "
+        "hash (#). Port-versions are sorted lexographically after the primary version text, for example:");
     DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.");
     DECLARE_MESSAGE(ProcessorArchitectureMalformed,
                     (msg::arch),
@@ -1487,6 +1535,7 @@ namespace vcpkg
                     "",
                     "Unknown setting for VCPKG_BUILD_TYPE {option}. Valid settings are '', 'debug', and 'release'.");
     DECLARE_MESSAGE(UnknownTool, (), "", "vcpkg does not have a definition of this tool for this platform.");
+    DECLARE_MESSAGE(UnknownTopic, (msg::value), "{value} is a vcpkg topic", "unknown topic {value}");
     DECLARE_MESSAGE(
         UnknownVariablesInTemplate,
         (msg::value, msg::list),
@@ -1522,6 +1571,13 @@ namespace vcpkg
         (msg::option),
         "",
         "the --{option} switch was passed, but there is no manifest file to add a `builtin-baseline` field to.");
+    DECLARE_MESSAGE(
+        UpdateBaselineHelp,
+        (),
+        "",
+        "To keep your libraries up to date, the best approach is to update your baseline reference. This will "
+        "ensure all packages, including transitive ones, are updated. However if you need to update a package "
+        "independently, you can use a \"version>=\" constraint.");
     DECLARE_MESSAGE(UpdateBaselineLocalGitError,
                     (msg::path),
                     "",
@@ -1613,6 +1669,20 @@ namespace vcpkg
                     "",
                     "dependency {spec} was expected to be at least version "
                     "{expected_version}, but is currently {actual_version}.");
+    DECLARE_MESSAGE(VersionDateHelp, (), "", "A date (2021-01-01.5)");
+    DECLARE_MESSAGE(VersionFourFlavors, (), "", "Versions in vcpkg come in four primary flavors");
+    DECLARE_MESSAGE(VersionGreaterHelp,
+                    (),
+                    "",
+                    "Within the \"dependencies\" field, each dependency can have a minimum constraint listed. These "
+                    "minimum constraints will be used when transitively depending upon this library. A minimum "
+                    "port-version can additionally be specified with a '#' suffix.");
+    DECLARE_MESSAGE(VersionHelp, (), "", "A dot-separated sequence of numbers (1.2.3.4)");
+    DECLARE_MESSAGE(Versioning,
+                    (),
+                    "",
+                    "Versioning allows you to deterministically control the precise revisions of dependencies used by "
+                    "your project from within your manifest file.");
     DECLARE_MESSAGE(
         VersionInvalidDate,
         (msg::version),
@@ -1627,11 +1697,13 @@ namespace vcpkg
                     (msg::version),
                     "",
                     "`{version}` is not a valid semantic version, consult <https://semver.org>.");
+    DECLARE_MESSAGE(VersionSemverHelp, (), "", "A Semantic Version 2.0 (2.1.0-rc2)");
     DECLARE_MESSAGE(VersionSpecMismatch,
                     (msg::path, msg::expected_version, msg::actual_version),
                     "",
                     "Failed to load port because versions are inconsistent. The file \"{path}\" contains the version "
                     "{actual_version}, but the version database indicates that it should be {expected_version}.");
+    DECLARE_MESSAGE(VersionStringHelp, (), "", "An exact, incomparable version (Vista)");
     DECLARE_MESSAGE(VersionTableHeader, (), "", "Version");
     DECLARE_MESSAGE(VSExaminedInstances, (), "", "The following Visual Studio instances were considered:");
     DECLARE_MESSAGE(VSExaminedPaths, (), "", "The following paths were examined for Visual Studio instances:");
@@ -1647,76 +1719,4 @@ namespace vcpkg
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}.");
-    DECLARE_MESSAGE(InvalidTriplet, (msg::triplet), "", "invalid triplet: {triplet}");
-    DECLARE_MESSAGE(Versioning,
-                    (),
-                    "",
-                    "Versioning allows you to deterministically control the precise revisions of dependencies used by "
-                    "your project from within your manifest file.");
-    DECLARE_MESSAGE(VersionFourFlavors, (), "", "Versions in vcpkg come in four primary flavors");
-    DECLARE_MESSAGE(VersionHelp, (), "", "A dot-separated sequence of numbers (1.2.3.4)");
-    DECLARE_MESSAGE(VersionDateHelp, (), "", "A date (2021-01-01.5)");
-    DECLARE_MESSAGE(VersionSemverHelp, (), "", "A Semantic Version 2.0 (2.1.0-rc2)");
-    DECLARE_MESSAGE(VersionStringHelp, (), "", "An exact, incomparable version (Vista)");
-    DECLARE_MESSAGE(
-        PortVersionHelp,
-        (),
-        "",
-        "Each version additionally has a \"port-version\" which is a nonnegative integer. When rendered as "
-        "text, the port version (if nonzero) is added as a suffix to the primary version text separated by a "
-        "hash (#). Port-versions are sorted lexographically after the primary version text, for example:");
-    DECLARE_MESSAGE(ManifestConstraints,
-                    (),
-                    "",
-                    "Manifests can place three kinds of constraints upon the versions used");
-    DECLARE_MESSAGE(
-        BuiltinBaseHelp,
-        (),
-        "",
-        "The baseline references a commit within the vcpkg repository that establishes a minimum version on "
-        "every dependency in the graph. For example, if no other constraints are specified (directly or "
-        "transitively), then the version will resolve to the baseline of the top level manifest. Baselines "
-        "of transitive dependencies are ignored.");
-    DECLARE_MESSAGE(VersionGreaterHelp,
-                    (),
-                    "",
-                    "Within the \"dependencies\" field, each dependency can have a minimum constraint listed. These "
-                    "minimum constraints will be used when transitively depending upon this library. A minimum "
-                    "port-version can additionally be specified with a '#' suffix.");
-    DECLARE_MESSAGE(
-        OverridesHelp,
-        (),
-        "",
-        "When used as the top-level manifest (such as when running `vcpkg install` in the directory), overrides "
-        "allow a manifest to short-circuit dependency resolution and specify exactly the version to use. These can "
-        "be used to handle version conflicts, such as with `version-string` dependencies. They will not be "
-        "considered when transitively depended upon.");
-    DECLARE_MESSAGE(
-        MinVersionHelp,
-        (),
-        "",
-        "Vcpkg will select the minimum version found that matches all applicable constraints, including the "
-        "version from the baseline specified at top-level as well as any \"version>=\" constraints in the graph.");
-    DECLARE_MESSAGE(
-        UpdateBaselineHelp,
-        (),
-        "",
-        "To keep your libraries up to date, the best approach is to update your baseline reference. This will "
-        "ensure all packages, including transitive ones, are updated. However if you need to update a package "
-        "independently, you can use a \"version>=\" constraint.");
-    DECLARE_MESSAGE(
-        PackagePublisherHelp,
-        (),
-        "",
-        "Additionally, package publishers can use \"version>=\" constraints to ensure that consumers are using at "
-        "least a certain minimum version of a given dependency. For example, if a library needs an API added "
-        "to boost-asio in 1.70, a \"version>=\" constraint will ensure transitive users use a sufficient version "
-        "even in the face of individual version overrides or cross-registry references.");
-    DECLARE_MESSAGE(ExampleManifest, (), "", "Example manifest:");
-    DECLARE_MESSAGE(AvailableHelpTopics, (), "", "Available help topics:");
-    DECLARE_MESSAGE(AvailableArchitectureTriplets, (), "", "Available architecture triplets");
-    DECLARE_MESSAGE(BuiltInTriplets, (), "", "VCPKG built-in triplets:");
-    DECLARE_MESSAGE(CommunityTriplets, (), "", "VCPKG community triplets:");
-    DECLARE_MESSAGE(OverlayTriplets, (msg::path), "", "Overlay triplets from {path} :");
-    DECLARE_MESSAGE(UnknownTopic, (msg::value), "{value} is a vcpkg topic", "unknown topic {value}");
 }
