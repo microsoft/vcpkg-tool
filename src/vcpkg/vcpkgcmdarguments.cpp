@@ -13,55 +13,50 @@ namespace
 {
     using namespace vcpkg;
 
-    // returns a list of known CI environment variables and the ID for their respective vendors
-    static View<std::pair<StringLiteral, StringLiteral>> get_known_ci_variables()
-    {
-        static constexpr std::array<std::pair<StringLiteral, StringLiteral>, 12> CI_VARS{{
-            // Opt-out from CI detection
-            {"VCPKG_NO_CI", "VCPKG_NO_CI"},
+    constexpr const std::pair<StringLiteral, StringLiteral> KNOWN_CI_VARIABLES[]{
+        // Opt-out from CI detection
+        {"VCPKG_NO_CI", "VCPKG_NO_CI"},
 
-            // Azure Pipelines
-            // https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables#system-variables
-            {"TF_BUILD", "Azure_Pipelines"},
+        // Azure Pipelines
+        // https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables#system-variables
+        {"TF_BUILD", "Azure_Pipelines"},
 
-            // AppVeyor
-            // https://www.appveyor.com/docs/environment-variables/
-            {"APPVEYOR", "AppVeyor"},
+        // AppVeyor
+        // https://www.appveyor.com/docs/environment-variables/
+        {"APPVEYOR", "AppVeyor"},
 
-            // AWS Code Build
-            // https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-env-vars.html
-            {"CODEBUILD_BUILD_ID", "AWS_CodeBuild"},
+        // AWS Code Build
+        // https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-env-vars.html
+        {"CODEBUILD_BUILD_ID", "AWS_CodeBuild"},
 
-            // CircleCI
-            // https://circleci.com/docs/env-vars#built-in-environment-variables
-            {"CIRCLECI", "Circle_CI"},
+        // CircleCI
+        // https://circleci.com/docs/env-vars#built-in-environment-variables
+        {"CIRCLECI", "Circle_CI"},
 
-            // GitHub Actions
-            // https://docs.github.com/en/actions/learn-github-actions/
-            {"GITHUB_ACTIONS", "GitHub_Actions"},
+        // GitHub Actions
+        // https://docs.github.com/en/actions/learn-github-actions/
+        {"GITHUB_ACTIONS", "GitHub_Actions"},
 
-            // GitLab
-            // https://docs.gitlab.com/ee/ci/variables/predefined_variables.html
-            {"GITLAB_CI", "GitLab_CI"},
+        // GitLab
+        // https://docs.gitlab.com/ee/ci/variables/predefined_variables.html
+        {"GITLAB_CI", "GitLab_CI"},
 
-            // Heroku
-            // https://devcenter.heroku.com/articles/heroku-ci#immutable-environment-variables
-            {"HEROKU_TEST_RUN_ID", "Heroku_CI"},
+        // Heroku
+        // https://devcenter.heroku.com/articles/heroku-ci#immutable-environment-variables
+        {"HEROKU_TEST_RUN_ID", "Heroku_CI"},
 
-            // Jenkins
-            // https://wiki.jenkins.io/display/JENKINS/Building+a+software+project#Buildingasoftwareproject-belowJenkinsSetEnvironmentVariables
-            {"JENKINS_URL", "Jenkins_CI"},
+        // Jenkins
+        // https://wiki.jenkins.io/display/JENKINS/Building+a+software+project#Buildingasoftwareproject-belowJenkinsSetEnvironmentVariables
+        {"JENKINS_URL", "Jenkins_CI"},
 
-            // Travis CI
-            // https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
-            {"TRAVIS", "Travis_CI"},
+        // Travis CI
+        // https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
+        {"TRAVIS", "Travis_CI"},
 
-            // Generic CI environment variables
-            {"CI", "Generic"},
-            {"BUILD_ID", "Generic"},
-        }};
-        return {CI_VARS.data(), CI_VARS.size()};
-    }
+        // Generic CI environment variables
+        {"CI", "Generic"},
+        {"BUILD_ID", "Generic"},
+    };
 }
 
 namespace vcpkg
@@ -773,7 +768,7 @@ namespace vcpkg
         from_env(get_env, REGISTRIES_CACHE_DIR_ENV, registries_cache_dir);
 
         // detect whether we are running in a CI environment
-        for (auto&& ci_env_var : get_known_ci_variables())
+        for (auto&& ci_env_var : KNOWN_CI_VARIABLES)
         {
             if (get_env(ci_env_var.first).has_value())
             {
