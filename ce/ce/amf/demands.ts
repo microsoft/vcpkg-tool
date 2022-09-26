@@ -6,7 +6,6 @@ import { i } from '../i18n';
 import { ErrorKind } from '../interfaces/error-kind';
 import { ValidationMessage } from '../interfaces/validation-message';
 import { parseQuery } from '../mediaquery/media-query';
-import { Session } from '../session';
 import { Entity } from '../yaml/Entity';
 import { EntityMap } from '../yaml/EntityMap';
 import { Primitive, Yaml, YAMLDictionary } from '../yaml/yaml-types';
@@ -14,9 +13,7 @@ import { Exports } from './exports';
 import { Installs } from './installer';
 import { Requires } from './Requires';
 
-const hostFeatures = new Set<string>(['x64', 'x86', 'arm', 'arm64', 'windows', 'linux', 'osx', 'freebsd']);
-
-const ignore = new Set<string>(['info', 'contacts', 'error', 'message', 'warning', 'requires', 'see-also']);
+const ignore = new Set<string>(['info', 'contacts', 'error', 'message', 'warning', 'requires']);
 /**
  * A map of mediaquery to DemandBlock
  */
@@ -69,7 +66,6 @@ export class DemandBlock extends Entity {
   get message(): string | undefined { return this.asString(this.getMember('message')); }
   set message(value: string | undefined) { this.setMember('message', value); }
 
-  readonly seeAlso = new Requires(undefined, this, 'seeAlso');
   readonly requires = new Requires(undefined, this, 'requires');
   readonly exports = new Exports(undefined, this, 'exports');
   readonly install = new Installs(undefined, this, 'install');
@@ -78,19 +74,9 @@ export class DemandBlock extends Entity {
     super(node, parent, key);
   }
 
-  /**
-   * Async Initializer.
-   *
-   * checks the alternative demand resolution.
-   * when this runs, if the alternative is met, the rest of the demand is redirected to the alternative.
-   */
-  async init(session: Session): Promise<DemandBlock> {
-    return this;
-  }
-
   /** @internal */
   override *validate(): Iterable<ValidationMessage> {
-    yield* this.validateChildKeys(['error', 'warning', 'message', 'seeAlso', 'requires', 'exports', 'install', 'unless']);
+    yield* this.validateChildKeys(['error', 'warning', 'message', 'requires', 'exports', 'install']);
 
     yield* super.validate();
     if (this.exists()) {
@@ -100,7 +86,6 @@ export class DemandBlock extends Entity {
 
       yield* this.exports.validate();
       yield* this.requires.validate();
-      yield* this.seeAlso.validate();
       yield* this.install.validate();
     }
   }

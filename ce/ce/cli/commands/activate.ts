@@ -39,7 +39,7 @@ export class ActivateCommand extends Command {
       return false;
     }
 
-    return await activateProject(projectManifest, {
+    return await activateProject(session, projectManifest, {
       force: this.commandLine.force,
       allLanguages: this.commandLine.allLanguages,
       language: this.commandLine.language,

@@ -368,6 +368,7 @@ namespace vcpkg::Commands::Integrate
 
 #if defined(_WIN32)
         msg::println(msg::format(msgCMakeToolChainFile, msg::path = cmake_toolchain.generic_u8string())
+                         .append_raw("\n\n")
                          .append(msgAutomaticLinkingForMSBuildProjects));
 #else
         msg::println(msgCMakeToolChainFile, msg::path = cmake_toolchain.generic_u8string());
@@ -472,8 +473,8 @@ namespace vcpkg::Commands::Integrate
                                    .append_raw("\n" + script_path.generic_u8string()));
             {
                 auto locked_metrics = LockGuardPtr<Metrics>(g_metrics);
-                locked_metrics->track_property("error", "powershell script failed");
-                locked_metrics->track_property("title", TITLE.to_string());
+                locked_metrics->track_string_property(StringMetric::Error, "powershell script failed");
+                locked_metrics->track_string_property(StringMetric::Title, TITLE.to_string());
             }
         }
 
