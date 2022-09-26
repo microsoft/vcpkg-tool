@@ -489,17 +489,11 @@ namespace vcpkg::Export::Prefab
 
             if (prefab_options.enable_debug)
             {
-                msg::println(msg::format(msgWritingManifest)
-                                 .append_raw("\n")
-                                 .append_indent()
-                                 .append_raw(manifest_path)
-                                 .append_raw("\n"));
+                msg::println(
+                    msg::format(msgWritingManifest).append_raw('\n').append_indent().append_raw(manifest_path));
 
-                msg::println(msg::format(msgWritingPrefabMeta)
-                                 .append_raw("\n")
-                                 .append_indent()
-                                 .append_raw(prefab_path)
-                                 .append_raw("\n"));
+                msg::println(
+                    msg::format(msgWritingPrefabMeta).append_raw('\n').append_indent().append_raw(prefab_path));
             }
 
             utils.write_contents(manifest_path, manifest, VCPKG_LINE_INFO);
@@ -515,7 +509,7 @@ namespace vcpkg::Export::Prefab
                 msg::println(msg::format(msgFoundTriplets, msg::count = triplets.size())
                                  .append_raw("\n\t")
                                  .append_raw(Strings::join("\n\t", triplet_names))
-                                 .append_raw("\n"));
+                                 .append_raw('\n'));
             }
 
             for (const auto& triplet : triplets)

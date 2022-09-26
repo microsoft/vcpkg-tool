@@ -106,10 +106,10 @@ namespace vcpkg::Export
             switch (plan_type)
             {
                 case ExportPlanType::ALREADY_BUILT:
-                    msg::println(msg::format(msgExportingPackages).append_raw("\n" + as_string + "\n"));
+                    msg::println(msg::format(msgExportingPackages).append_raw("\n" + as_string));
                     continue;
                 case ExportPlanType::NOT_BUILT:
-                    msg::println(msg::format(msgBuildingPackages).append_raw("\n" + as_string + "\n"));
+                    msg::println(msg::format(msgBuildingPackages).append_raw("\n" + as_string));
                     continue;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
@@ -482,7 +482,7 @@ namespace vcpkg::Export
     {
         const auto cmake_toolchain = prefix / "scripts/buildsystems/vcpkg.cmake";
         const CMakeVariable cmake_variable = CMakeVariable("CMAKE_TOOLCHAIN_FILE", cmake_toolchain.generic_u8string());
-        msg::println(msg::format(msgUsingExportedLibs).append_indent().append_raw(cmake_variable.s).append_raw("\n\n"));
+        msg::println(msg::format(msgUsingExportedLibs).append_indent().append_raw(cmake_variable.s).append_raw("\n"));
     }
 
     static void handle_raw_based_export(Span<const ExportPlanAction> export_plan,

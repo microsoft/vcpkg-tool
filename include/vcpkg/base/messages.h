@@ -1744,9 +1744,9 @@ namespace vcpkg
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WritingABI, (msg::path), "", "Writing abi metadata to\n{path}");
-    DECLARE_MESSAGE(WritingManifest, (), "", " [DEBUG]\nWriting manifest to");
+    DECLARE_MESSAGE(WritingManifest, (), "", " [DEBUG] Writing manifest to");
     DECLARE_MESSAGE(WritingModuleMetaData, (msg::path), "", "Writing module metadata to\n{path}");
     DECLARE_MESSAGE(WritingPrefabMeta, (), "", "Writing prefab meta data to");
-    DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}.");
+    DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}");
 
 }

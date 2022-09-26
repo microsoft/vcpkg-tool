@@ -786,10 +786,10 @@
   "WindowsOnlyCommand": "This command only supports Windows.",
   "WritingABI": "Writing abi metadata to\n{path}",
   "_WritingABI.comment": "An example of {path} is /foo/bar.",
-  "WritingManifest": " [DEBUG]\nWriting manifest to",
+  "WritingManifest": " [DEBUG] Writing manifest to",
   "WritingModuleMetaData": "Writing module metadata to\n{path}",
   "_WritingModuleMetaData.comment": "An example of {path} is /foo/bar.",
   "WritingPrefabMeta": "Writing prefab meta data to",
-  "WroteNuGetPkgConfInfo": "Wrote NuGet package config information to {path}.",
+  "WroteNuGetPkgConfInfo": "Wrote NuGet package config information to {path}",
   "_WroteNuGetPkgConfInfo.comment": "An example of {path} is /foo/bar."
 }

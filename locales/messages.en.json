@@ -482,8 +482,8 @@
   "WhileLookingForSpec": "while looking for {spec}:",
   "WindowsOnlyCommand": "This command only supports Windows.",
   "WritingABI": "Writing abi metadata to\n{path}",
-  "WritingManifest": " [DEBUG]\nWriting manifest to",
+  "WritingManifest": " [DEBUG] Writing manifest to",
   "WritingModuleMetaData": "Writing module metadata to\n{path}",
   "WritingPrefabMeta": "Writing prefab meta data to",
-  "WroteNuGetPkgConfInfo": "Wrote NuGet package config information to {path}."
+  "WroteNuGetPkgConfInfo": "Wrote NuGet package config information to {path}"
 }
