@@ -142,6 +142,7 @@
   "ExceededRecursionDepth": "Recursion depth exceeded.",
   "ExcludedPackage": "Excluded {spec}",
   "ExcludedPackages": "The following packages are excluded:",
+  "ExpectedAtMostOneSetOfTags": "Found {count} sets of {old_value}.*{new_value} but expected at most 1, in block:\n{value}",
   "ExpectedCascadeFailure": "Expected {expected} cascade failure, but there were {actual} cascade failures.",
   "ExpectedCharacterHere": "expected '{expected}' here",
   "ExpectedFailOrSkip": "expected 'fail', 'skip', or 'pass' here",
