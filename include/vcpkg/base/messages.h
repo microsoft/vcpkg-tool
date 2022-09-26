@@ -925,7 +925,7 @@ namespace vcpkg
                     (msg::spec),
                     "",
                     "The control or manifest file for {spec} could not be loaded due to the following error. Please "
-                    "remove {spec} and re-attempt.");
+                    "remove {spec} and try again.");
     DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}");
     DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
     DECLARE_MESSAGE(FailedToObtainLocalPortGitSha, (), "", "Failed to obtain git SHAs for local ports.");
@@ -1674,7 +1674,7 @@ namespace vcpkg
                     (msg::triplet),
                     "'--' at the beginning must be preserved",
                     "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.");
-    DECLARE_MESSAGE(UsingExportedLibs, (), "", "\nTo use exported libraries in CMake projects use:");
+    DECLARE_MESSAGE(UsingExportedLibs, (), "", "To use exported libraries in CMake projects use:");
     DECLARE_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
     DECLARE_MESSAGE(VcpkgCeIsExperimental,
                     (),
