@@ -714,9 +714,14 @@ namespace vcpkg
                     "command:\n"
                     "{command_line}\n"
                     "failed with the following results:");
+    DECLARE_MESSAGE(ComparingUtf8Decoders,
+                    (),
+                    "",
+                    "Comparing Utf8Decoders with different provenance; this is always an error");
     DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":");
     DECLARE_MESSAGE(ConflictingValuesForOption, (msg::option), "", "conflicting values specified for '--{option}'.");
     DECLARE_MESSAGE(ConstraintViolation, (), "", "Found a constraint violation:");
+    DECLARE_MESSAGE(ContinueCodeUnitInStart, (), "", "found continue code unit in start position");
     DECLARE_MESSAGE(ControlAndManifestFilesPresent,
                     (msg::path),
                     "",
@@ -727,8 +732,8 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "Could not deduce nuget id and version from filename: {path}");
-    DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
     DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: \"{path}\"");
+    DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
     DECLARE_MESSAGE(CurlReportedUnexpectedResults,
                     (msg::command_line, msg::actual),
                     "{command_line} is the command line to call curl.exe, {actual} is the console output "
@@ -778,7 +783,9 @@ namespace vcpkg
     DECLARE_MESSAGE(EmailVcpkgTeam, (msg::url), "", "Send an email to {url} with any feedback.");
     DECLARE_MESSAGE(EmptyArg, (msg::option), "", "The option --{option} must be passed a non-empty argument.");
     DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
+    DECLARE_MESSAGE(EndOfStringInCodeUnit, (), "", "found end of string in middle of code point");
     DECLARE_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:");
+    DECLARE_MESSAGE(ErrorCodeOutOfRange, (), "", "error code out of range");
     DECLARE_MESSAGE(ErrorDetectingCompilerInfo,
                     (msg::path),
                     "",
@@ -848,6 +855,10 @@ namespace vcpkg
     DECLARE_MESSAGE(ExceededRecursionDepth, (), "", "Recursion depth exceeded.");
     DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
     DECLARE_MESSAGE(ExcludedPackages, (), "", "The following packages are excluded:");
+    DECLARE_MESSAGE(ExpectedAtMostOneSetOfTags,
+                    (msg::count, msg::old_value, msg::new_value, msg::value),
+                    "{old_value} is a left tag and {new_value} is the right tag. {value} is the input.",
+                    "Found {count} sets of {old_value}.*{new_value} but expected at most 1, in block:\n{value}");
     DECLARE_MESSAGE(
         ExpectedCascadeFailure,
         (msg::expected, msg::actual),
@@ -859,39 +870,43 @@ namespace vcpkg
         "{expected} is a locale-invariant delimiter; for example, the ':' or '=' in 'zlib:x64-windows=skip'",
         "expected '{expected}' here");
     DECLARE_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' here");
+    DECLARE_MESSAGE(ExpectedOneSetOfTags,
+                    (msg::count, msg::old_value, msg::new_value, msg::value),
+                    "{old_value} is a left tag and {new_value} is the right tag. {value} is the input.",
+                    "Found {count} sets of {old_value}.*{new_value} but expected exactly 1, in block:\n{value}");
     DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
     DECLARE_MESSAGE(ExpectedValueForOption, (msg::option), "", "expected value after --{option}.");
     DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
     DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
     DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":");
+    DECLARE_MESSAGE(FailedToFindPortFeature, (msg::feature, msg::spec), "", "Could not find {feature} in {spec}.");
     DECLARE_MESSAGE(FailedToFormatMissingFile,
                     (),
                     "",
                     "No files to format.\nPlease pass either --all, or the explicit files to format or convert.");
+    DECLARE_MESSAGE(FailedToLoadInstalledManifest,
+                    (msg::spec),
+                    "",
+                    "The control or mnaifest file for {spec} could not be loaded due to the following error. Please "
+                    "remove {spec} and re-attempt.");
+    DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}");
+    DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
     DECLARE_MESSAGE(FailedToObtainLocalPortGitSha, (), "", "Failed to obtain git SHAs for local ports.");
+    DECLARE_MESSAGE(FailedToObtainPackageVersion, (), "", "Cannot find desired package version.");
     DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
                     (),
                     "",
                     "Failed to parse CMake console output to locate block start/end markers.");
+    DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse control file: {path}");
+    DECLARE_MESSAGE(FailedToParseJson, (msg::path), "", "Failed to parse JSON file: {path}");
+    DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: {path}");
     DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                     (msg::error_msg),
                     "'{error_msg}' is the error message for failing to parse the Binary Paragraph.",
                     "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at "
                     "https://github.com/microsoft/vcpkg, "
                     "with the following output:\n{error_msg}\nSerialized Binary Paragraph:");
-    DECLARE_MESSAGE(FailedToFindPortFeature, (msg::feature, msg::spec), "", "Could not find {feature} in {spec}.");
-    DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}");
-    DECLARE_MESSAGE(FailedToLoadInstalledManifest,
-                    (msg::spec),
-                    "",
-                    "The control or mnaifest file for {spec} could not be loaded due to the following error. Please "
-                    "remove {spec} and re-attempt.");
-    DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
-    DECLARE_MESSAGE(FailedToObtainPackageVersion, (), "", "Cannot find desired package version.");
-    DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse control file: {path}");
-    DECLARE_MESSAGE(FailedToParseJson, (msg::path), "", "Failed to parse JSON file: {path}");
-    DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: {path}");
     DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
     DECLARE_MESSAGE(FailedToRead, (msg::path, msg::error_msg), "", "Failed to read {path}: {error_msg}");
     DECLARE_MESSAGE(FailedToReadParagraph, (msg::path), "", "Failed to read paragraphs from {path}");
@@ -1002,6 +1017,7 @@ namespace vcpkg
                     (msg::command_name, msg::expected, msg::actual),
                     "'{expected}' is the required number of arguments. '{actual}' is the number of arguments provided.",
                     "'{command_name}' requires '{expected}' arguments, but '{actual}' were provided.");
+    DECLARE_MESSAGE(IncrementedUtf8Decoder, (), "", "Incremented Utf8Decoder at the end of the string");
     DECLARE_MESSAGE(InfoSetEnvVar,
                     (msg::env_var),
                     "In this context 'editor' means IDE",
@@ -1099,6 +1115,8 @@ namespace vcpkg
                     "invalid argument: binary config '{binary_source}' requires a SAS token without a "
                     "preceeding '?' as the second argument");
     DECLARE_MESSAGE(InvalidBuildInfo, (msg::error_msg), "", "Invalid BUILD_INFO file for package: {error_msg}");
+    DECLARE_MESSAGE(InvalidCodePoint, (), "", "Invalid code point passed to utf8_encoded_code_point_count");
+    DECLARE_MESSAGE(InvalidCodeUnit, (), "", "invalid code unit");
     DECLARE_MESSAGE(InvalidCommandArgSort,
                     (),
                     "",
@@ -1273,6 +1291,7 @@ namespace vcpkg
     DECLARE_MESSAGE(NewVersionCannotBeEmpty, (), "", "--version cannot be empty.");
     DECLARE_MESSAGE(NoArgumentsForOption, (msg::option), "", "The option --{option} does not accept an argument.");
     DECLARE_MESSAGE(NoCachedPackages, (), "", "No packages are cached.");
+    DECLARE_MESSAGE(NoError, (), "", "no error");
     DECLARE_MESSAGE(NoInstalledPackages,
                     (),
                     "The name 'search' is the name of a command that is not localized.",
@@ -1309,6 +1328,10 @@ namespace vcpkg
                     (msg::vendor),
                     "",
                     "Packing {vendor} failed. Use --debug for more information.");
+    DECLARE_MESSAGE(PairedSurrogatesAreInvalid,
+                    (),
+                    "",
+                    "trailing surrogate following leading surrogate (paired surrogates are invalid)");
     DECLARE_MESSAGE(ParseControlErrorInfoInvalidFields, (), "", "The following fields were not expected:");
     DECLARE_MESSAGE(ParseControlErrorInfoMissingFields, (), "", "The following fields were missing:");
     DECLARE_MESSAGE(ParseControlErrorInfoTypesEntry,
@@ -1417,6 +1440,7 @@ namespace vcpkg
                     (msg::env_var),
                     "",
                     "Specify the target architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')");
+    DECLARE_MESSAGE(StartCodeUnitInContinue, (), "", "found start code unit in continue position");
     DECLARE_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: \"{path}\"");
     DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512");
     DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.");
@@ -1506,6 +1530,7 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is the short option given",
                     "short options are not supported: '{value}'");
+    DECLARE_MESSAGE(UnsupportedSyntaxInCDATA, (), "", "]]> is not supported in CDATA block");
     DECLARE_MESSAGE(UnsupportedSystemName,
                     (msg::system_name),
                     "",
@@ -1579,6 +1604,7 @@ namespace vcpkg
                     "'--' at the beginning must be preserved",
                     "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.");
     DECLARE_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
+    DECLARE_MESSAGE(Utf8ConversionFailed, (), "", "Failed to convert to UTF-8");
     DECLARE_MESSAGE(VcpkgCeIsExperimental,
                     (),
                     "",
@@ -1647,21 +1673,4 @@ namespace vcpkg
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}.");
-    DECLARE_MESSAGE(UnsupportedSyntaxInCDATA, (), "", "]]> is not supported in CDATA block");
-    DECLARE_MESSAGE(InvalidCodePoint, (), "", "Invalid code point passed to utf8_encoded_code_point_count");
-    DECLARE_MESSAGE(NoError, (), "", "no error");
-    DECLARE_MESSAGE(InvalidCodeUnit, (), "", "invalid code unit");
-    DECLARE_MESSAGE(PairedSurrogatesAreInvalid,
-                    (),
-                    "",
-                    "trailing surrogate following leading surrogate (paired surrogates are invalid)");
-    DECLARE_MESSAGE(ContinueCodeUnitInStart, (), "", "found continue code unit in start position");
-    DECLARE_MESSAGE(StartCodeUnitInContinue, (), "", "found start code unit in continue position");
-    DECLARE_MESSAGE(EndOfStringInCodeUnit, (), "", "found end of string in middle of code point");
-    DECLARE_MESSAGE(ErrorCodeOutOfRange, (), "", "error code out of range");
-    DECLARE_MESSAGE(IncrementedUtf8Decoder, (), "", "Incremented Utf8Decoder at the end of the string");
-    DECLARE_MESSAGE(ComparingUtf8Decoders,
-                    (),
-                    "",
-                    "Comparing Utf8Decoders with different provenance; this is always an error");
 }

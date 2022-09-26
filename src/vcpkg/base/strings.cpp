@@ -156,10 +156,11 @@ void Strings::to_utf8(std::string& output, const wchar_t* w, size_t size_in_char
     if (size <= 0)
     {
         unsigned long last_error = ::GetLastError();
-        Checks::exit_with_message(VCPKG_LINE_INFO,
-                                  "Failed to convert to UTF-8. %08lX %s",
-                                  last_error,
-                                  std::system_category().message(static_cast<int>(last_error)));
+        Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                      msg::format(msgUtf8ConversionFailed)
+                                          .append_raw(last_error)
+                                          .append_raw("\n")
+                                          .append_raw(std::system_category().message(static_cast<int>(last_error))));
     }
 
     output.resize(size);
@@ -352,26 +353,26 @@ std::vector<StringView> Strings::find_all_enclosed(StringView input, StringView 
 StringView Strings::find_exactly_one_enclosed(StringView input, StringView left_tag, StringView right_tag)
 {
     std::vector<StringView> result = find_all_enclosed(input, left_tag, right_tag);
-    Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
-                                result.size() == 1,
-                                "Found %d sets of %s.*%s but expected exactly 1, in block:\n%s",
-                                result.size(),
-                                left_tag,
-                                right_tag,
-                                input);
+    Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
+                                    result.size() == 1,
+                                    msgExpectedOneSetOfTags,
+                                    msg::count = result.size(),
+                                    msg::old_value = left_tag,
+                                    msg::new_value = right_tag,
+                                    msg::value = input);
     return result.front();
 }
 
 Optional<StringView> Strings::find_at_most_one_enclosed(StringView input, StringView left_tag, StringView right_tag)
 {
     std::vector<StringView> result = find_all_enclosed(input, left_tag, right_tag);
-    Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
-                                result.size() <= 1,
-                                "Found %d sets of %s.*%s but expected at most 1, in block:\n%s",
-                                result.size(),
-                                left_tag,
-                                right_tag,
-                                input);
+    Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
+                                    result.size() <= 1,
+                                    msgExpectedAtMostOneSetOfTags,
+                                    msg::count = result.size(),
+                                    msg::old_value = left_tag,
+                                    msg::new_value = right_tag,
+                                    msg::value = input);
 
     if (result.empty())
     {

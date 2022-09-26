@@ -465,9 +465,11 @@ namespace vcpkg
     REGISTER_MESSAGE(CMakeTargetsUsageHeuristicMessage);
     REGISTER_MESSAGE(CMakeToolChainFile);
     REGISTER_MESSAGE(CommandFailed);
+    REGISTER_MESSAGE(ComparingUtf8Decoders);
     REGISTER_MESSAGE(CompressFolderFailed);
-    REGISTER_MESSAGE(ConstraintViolation);
     REGISTER_MESSAGE(ConflictingValuesForOption);
+    REGISTER_MESSAGE(ConstraintViolation);
+    REGISTER_MESSAGE(ContinueCodeUnitInStart);
     REGISTER_MESSAGE(ControlAndManifestFilesPresent);
     REGISTER_MESSAGE(CopyrightIsDir);
     REGISTER_MESSAGE(CorruptedDatabase);
@@ -494,7 +496,9 @@ namespace vcpkg
     REGISTER_MESSAGE(EmailVcpkgTeam);
     REGISTER_MESSAGE(EmptyArg);
     REGISTER_MESSAGE(EmptyLicenseExpression);
+    REGISTER_MESSAGE(EndOfStringInCodeUnit);
     REGISTER_MESSAGE(EnvStrFailedToExtract);
+    REGISTER_MESSAGE(ErrorCodeOutOfRange);
     REGISTER_MESSAGE(ErrorDetectingCompilerInfo);
     REGISTER_MESSAGE(ErrorIndividualPackagesUnsupported);
     REGISTER_MESSAGE(ErrorInvalidClassicModeOption);
@@ -518,9 +522,11 @@ namespace vcpkg
     REGISTER_MESSAGE(ExceededRecursionDepth);
     REGISTER_MESSAGE(ExcludedPackage);
     REGISTER_MESSAGE(ExcludedPackages);
+    REGISTER_MESSAGE(ExpectedAtMostOneSetOfTags);
     REGISTER_MESSAGE(ExpectedCascadeFailure);
     REGISTER_MESSAGE(ExpectedCharacterHere);
     REGISTER_MESSAGE(ExpectedFailOrSkip);
+    REGISTER_MESSAGE(ExpectedOneSetOfTags);
     REGISTER_MESSAGE(ExpectedPortName);
     REGISTER_MESSAGE(ExpectedTripletName);
     REGISTER_MESSAGE(ExpectedValueForOption);
@@ -593,6 +599,7 @@ namespace vcpkg
     REGISTER_MESSAGE(IllegalPlatformSpec);
     REGISTER_MESSAGE(ImproperShaLength);
     REGISTER_MESSAGE(IncorrectNumberOfArgs);
+    REGISTER_MESSAGE(IncrementedUtf8Decoder);
     REGISTER_MESSAGE(InfoSetEnvVar);
     REGISTER_MESSAGE(InitRegistryFailedNoRepo);
     REGISTER_MESSAGE(InstalledPackages);
@@ -622,6 +629,8 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidArgumentRequiresTwoOrThreeArguments);
     REGISTER_MESSAGE(InvalidArgumentRequiresValidToken);
     REGISTER_MESSAGE(InvalidBuildInfo);
+    REGISTER_MESSAGE(InvalidCodePoint);
+    REGISTER_MESSAGE(InvalidCodeUnit);
     REGISTER_MESSAGE(InvalidCommandArgSort);
     REGISTER_MESSAGE(InvalidCommitId);
     REGISTER_MESSAGE(InvalidFilename);
@@ -661,8 +670,8 @@ namespace vcpkg
     REGISTER_MESSAGE(MissingDependency);
     REGISTER_MESSAGE(MissingExtension);
     REGISTER_MESSAGE(MissingOption);
-    REGISTER_MESSAGE(MissmatchedBinParagraphs);
     REGISTER_MESSAGE(MissingPortSuggestPullRequest);
+    REGISTER_MESSAGE(MissmatchedBinParagraphs);
     REGISTER_MESSAGE(MonoInstructions);
     REGISTER_MESSAGE(MsiexecFailedToExtract);
     REGISTER_MESSAGE(MultiArch);
@@ -675,6 +684,7 @@ namespace vcpkg
     REGISTER_MESSAGE(NewVersionCannotBeEmpty);
     REGISTER_MESSAGE(NoArgumentsForOption);
     REGISTER_MESSAGE(NoCachedPackages);
+    REGISTER_MESSAGE(NoError);
     REGISTER_MESSAGE(NoInstalledPackages);
     REGISTER_MESSAGE(NoLocalizationForMessages);
     REGISTER_MESSAGE(NoRegistryForPort);
@@ -692,6 +702,7 @@ namespace vcpkg
     REGISTER_MESSAGE(PackagesToRebuildSuggestRecurse);
     REGISTER_MESSAGE(PackagesToRemove);
     REGISTER_MESSAGE(PackingVendorFailed);
+    REGISTER_MESSAGE(PairedSurrogatesAreInvalid);
     REGISTER_MESSAGE(ParseControlErrorInfoInvalidFields);
     REGISTER_MESSAGE(ParseControlErrorInfoMissingFields);
     REGISTER_MESSAGE(ParseControlErrorInfoTypesEntry);
@@ -727,6 +738,7 @@ namespace vcpkg
     REGISTER_MESSAGE(SpecifyDirectoriesWhenSearching);
     REGISTER_MESSAGE(SpecifyHostArch);
     REGISTER_MESSAGE(SpecifyTargetArch);
+    REGISTER_MESSAGE(StartCodeUnitInContinue);
     REGISTER_MESSAGE(StoredBinaryCache);
     REGISTER_MESSAGE(StoreOptionMissingSha);
     REGISTER_MESSAGE(SuggestGitPull);
@@ -757,6 +769,7 @@ namespace vcpkg
     REGISTER_MESSAGE(UnsupportedPortDependency);
     REGISTER_MESSAGE(UnsupportedPortFeature);
     REGISTER_MESSAGE(UnsupportedShortOptions);
+    REGISTER_MESSAGE(UnsupportedSyntaxInCDATA);
     REGISTER_MESSAGE(UnsupportedSystemName);
     REGISTER_MESSAGE(UnsupportedToolchain);
     REGISTER_MESSAGE(UpdateBaselineAddBaselineNoManifest);
@@ -777,6 +790,7 @@ namespace vcpkg
     REGISTER_MESSAGE(UserWideIntegrationRemoved);
     REGISTER_MESSAGE(UsingCommunityTriplet);
     REGISTER_MESSAGE(UsingManifestAt);
+    REGISTER_MESSAGE(Utf8ConversionFailed);
     REGISTER_MESSAGE(VcpkgCeIsExperimental);
     REGISTER_MESSAGE(VcpkgCommitTableHeader);
     REGISTER_MESSAGE(VcpkgCompletion);
@@ -803,15 +817,4 @@ namespace vcpkg
     REGISTER_MESSAGE(WhileLookingForSpec);
     REGISTER_MESSAGE(WindowsOnlyCommand);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
-    REGISTER_MESSAGE(UnsupportedSyntaxInCDATA);
-    REGISTER_MESSAGE(InvalidCodePoint);
-    REGISTER_MESSAGE(NoError);
-    REGISTER_MESSAGE(InvalidCodeUnit);
-    REGISTER_MESSAGE(PairedSurrogatesAreInvalid);
-    REGISTER_MESSAGE(ContinueCodeUnitInStart);
-    REGISTER_MESSAGE(EndOfStringInCodeUnit);
-    REGISTER_MESSAGE(ErrorCodeOutOfRange);
-    REGISTER_MESSAGE(IncrementedUtf8Decoder);
-    REGISTER_MESSAGE(ComparingUtf8Decoders);
-    REGISTER_MESSAGE(StartCodeUnitInContinue);
 }
