@@ -1648,4 +1648,75 @@ namespace vcpkg
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}.");
     DECLARE_MESSAGE(InvalidTriplet, (msg::triplet), "", "invalid triplet: {triplet}");
+    DECLARE_MESSAGE(Versioning,
+                    (),
+                    "",
+                    "Versioning allows you to deterministically control the precise revisions of dependencies used by "
+                    "your project from within your manifest file.");
+    DECLARE_MESSAGE(VersionFourFlavors, (), "", "Versions in vcpkg come in four primary flavors");
+    DECLARE_MESSAGE(VersionHelp, (), "", "A dot-separated sequence of numbers (1.2.3.4)");
+    DECLARE_MESSAGE(VersionDateHelp, (), "", "A date (2021-01-01.5)");
+    DECLARE_MESSAGE(VersionSemverHelp, (), "", "A Semantic Version 2.0 (2.1.0-rc2)");
+    DECLARE_MESSAGE(VersionStringHelp, (), "", "An exact, incomparable version (Vista)");
+    DECLARE_MESSAGE(
+        PortVersionHelp,
+        (),
+        "",
+        "Each version additionally has a \"port-version\" which is a nonnegative integer. When rendered as "
+        "text, the port version (if nonzero) is added as a suffix to the primary version text separated by a "
+        "hash (#). Port-versions are sorted lexographically after the primary version text, for example:");
+    DECLARE_MESSAGE(ManifestConstraints,
+                    (),
+                    "",
+                    "Manifests can place three kinds of constraints upon the versions used");
+    DECLARE_MESSAGE(
+        BuiltinBaseHelp,
+        (),
+        "",
+        "The baseline references a commit within the vcpkg repository that establishes a minimum version on "
+        "every dependency in the graph. For example, if no other constraints are specified (directly or "
+        "transitively), then the version will resolve to the baseline of the top level manifest. Baselines "
+        "of transitive dependencies are ignored.");
+    DECLARE_MESSAGE(VersionGreaterHelp,
+                    (),
+                    "",
+                    "Within the \"dependencies\" field, each dependency can have a minimum constraint listed. These "
+                    "minimum constraints will be used when transitively depending upon this library. A minimum "
+                    "port-version can additionally be specified with a '#' suffix.");
+    DECLARE_MESSAGE(
+        OverridesHelp,
+        (),
+        "",
+        "When used as the top-level manifest (such as when running `vcpkg install` in the directory), overrides "
+        "allow a manifest to short-circuit dependency resolution and specify exactly the version to use. These can "
+        "be used to handle version conflicts, such as with `version-string` dependencies. They will not be "
+        "considered when transitively depended upon.");
+    DECLARE_MESSAGE(
+        MinVersionHelp,
+        (),
+        "",
+        "Vcpkg will select the minimum version found that matches all applicable constraints, including the "
+        "version from the baseline specified at top-level as well as any \"version>=\" constraints in the graph.");
+    DECLARE_MESSAGE(
+        UpdateBaselineHelp,
+        (),
+        "",
+        "To keep your libraries up to date, the best approach is to update your baseline reference. This will "
+        "ensure all packages, including transitive ones, are updated. However if you need to update a package "
+        "independently, you can use a \"version>=\" constraint.");
+    DECLARE_MESSAGE(
+        PackagePublisherHelp,
+        (),
+        "",
+        "Additionally, package publishers can use \"version>=\" constraints to ensure that consumers are using at "
+        "least a certain minimum version of a given dependency. For example, if a library needs an API added "
+        "to boost-asio in 1.70, a \"version>=\" constraint will ensure transitive users use a sufficient version "
+        "even in the face of individual version overrides or cross-registry references.");
+    DECLARE_MESSAGE(ExampleManifest, (), "", "Example manifest:");
+    DECLARE_MESSAGE(AvailableHelpTopics, (), "", "Available help topics:");
+    DECLARE_MESSAGE(AvailableArchitectureTriplets, (), "", "Available architecture triplets");
+    DECLARE_MESSAGE(BuiltInTriplets, (), "", "VCPKG built-in triplets:");
+    DECLARE_MESSAGE(CommunityTriplets, (), "", "VCPKG community triplets:");
+    DECLARE_MESSAGE(OverlayTriplets, (msg::path), "", "Overlay triplets from {path} :");
+    DECLARE_MESSAGE(UnknownTopic, (msg::value), "{value} is a vcpkg topic", "unknown topic {value}");
 }

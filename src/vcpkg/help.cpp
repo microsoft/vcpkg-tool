@@ -34,7 +34,10 @@ namespace vcpkg::Help
         print_usage(S);
     }
 
-    static void integrate_topic_fn(const VcpkgPaths&) { print2("Commands:\n", Commands::Integrate::get_helpstring()); }
+    static void integrate_topic_fn(const VcpkgPaths&)
+    {
+        msg::write_unlocalized_text_to_stdout(Color::none, "Commands:\n" + Commands::Integrate::get_helpstring());
+    }
 
     static void help_topics(const VcpkgPaths&);
 
@@ -49,58 +52,35 @@ namespace vcpkg::Help
     static void help_topic_versioning(const VcpkgPaths&)
     {
         HelpTableFormatter tbl;
-        tbl.text("Versioning allows you to deterministically control the precise revisions of dependencies used by "
-                 "your project from within your manifest file.");
+        tbl.text(msg::format(msgVersioning));
         tbl.blank();
         tbl.blank();
-        tbl.header("Versions in vcpkg come in four primary flavors");
-        tbl.format("version", "A dot-separated sequence of numbers (1.2.3.4)");
-        tbl.format("version-date", "A date (2021-01-01.5)");
-        tbl.format("version-semver", "A Semantic Version 2.0 (2.1.0-rc2)");
-        tbl.format("version-string", "An exact, incomparable version (Vista)");
+        tbl.header(msg::format(msgVersionFourFlavors));
+        tbl.format("version", msg::format(msgVersionHelp));
+        tbl.format("version-date", msg::format(msgVersionDateHelp));
+        tbl.format("version-semver", msg::format(msgVersionSemverHelp));
+        tbl.format("version-string", msg::format(msgVersionStringHelp));
         tbl.blank();
-        tbl.text("Each version additionally has a \"port-version\" which is a nonnegative integer. When rendered as "
-                 "text, the port version (if nonzero) is added as a suffix to the primary version text separated by a "
-                 "hash (#). Port-versions are sorted lexographically after the primary version text, for example:");
+        tbl.text(msg::format(msgPortVersionHelp));
         tbl.blank();
         tbl.blank();
         tbl.text("    1.0.0 < 1.0.0#1 < 1.0.1 < 1.0.1#5 < 2.0.0");
         tbl.blank();
         tbl.blank();
-        tbl.header("Manifests can place three kinds of constraints upon the versions used");
-        tbl.format("builtin-baseline",
-                   "The baseline references a commit within the vcpkg repository that establishes a minimum version on "
-                   "every dependency in the graph. For example, if no other constraints are specified (directly or "
-                   "transitively), then the version will resolve to the baseline of the top level manifest. Baselines "
-                   "of transitive dependencies are ignored.");
+        tbl.header(msg::format(msgManifestConstraints));
+        tbl.format("builtin-baseline", msg::format(msgBuiltinBaseHelp));
         tbl.blank();
-        tbl.format("version>=",
-                   "Within the \"dependencies\" field, each dependency can have a minimum constraint listed. These "
-                   "minimum constraints will be used when transitively depending upon this library. A minimum "
-                   "port-version can additionally be specified with a '#' suffix.");
+        tbl.format("version>=", msg::format(msgVersionGreaterHelp));
         tbl.blank();
-        tbl.format(
-            "overrides",
-            "When used as the top-level manifest (such as when running `vcpkg install` in the directory), overrides "
-            "allow a manifest to short-circuit dependency resolution and specify exactly the version to use. These can "
-            "be used to handle version conflicts, such as with `version-string` dependencies. They will not be "
-            "considered when transitively depended upon.");
+        tbl.format("overrides", msg::format(msgOverridesHelp));
         tbl.blank();
-        tbl.text(
-            "Vcpkg will select the minimum version found that matches all applicable constraints, including the "
-            "version from the baseline specified at top-level as well as any \"version>=\" constraints in the graph.");
+        tbl.text(msg::format(msgMinVersionHelp));
         tbl.blank();
-        tbl.text("To keep your libraries up to date, the best approach is to update your baseline reference. This will "
-                 "ensure all packages, including transitive ones, are updated. However if you need to update a package "
-                 "independently, you can use a \"version>=\" constraint.");
+        tbl.text(msg::format(msgUpdateBaselineHelp));
         tbl.blank();
-        tbl.text(
-            "Additionally, package publishers can use \"version>=\" constraints to ensure that consumers are using at "
-            "least a certain minimum version of a given dependency. For example, if a library needs an API added "
-            "to boost-asio in 1.70, a \"version>=\" constraint will ensure transitive users use a sufficient version "
-            "even in the face of individual version overrides or cross-registry references.");
+        tbl.text(msg::format(msgPackagePublisherHelp));
         tbl.blank();
-        tbl.text("Example manifest:");
+        tbl.text(msg::format(msgExampleManifest));
         tbl.blank();
         tbl.text(R"({
     "name": "example",
@@ -114,7 +94,8 @@ namespace vcpkg::Help
         { "name": "rapidjson", "version": "2020-09-14" }
     ]
 })");
-        print2(tbl.m_str, "\nExtended documentation is available at ", docs::versioning_url, "\n");
+        msg::write_unlocalized_text_to_stdout(Color::none, tbl.m_str);
+        msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::versioning_url);
     }
 
     static constexpr std::array<Topic, 17> topics = {{
@@ -139,9 +120,12 @@ namespace vcpkg::Help
 
     static void help_topics(const VcpkgPaths&)
     {
-        print2("Available help topics:",
-               Strings::join("", topics, [](const Topic& topic) { return std::string("\n  ") + topic.name; }),
-               "\n");
+        auto msg = msg::format(msgAvailableHelpTopics);
+        for (auto topic : topics)
+        {
+            msg.append_raw(fmt::format("\n  {}", topic.name));
+        }
+        msg::println(msg);
     }
 
     void help_topic_valid_triplet(const VcpkgPaths& paths)
@@ -152,27 +136,27 @@ namespace vcpkg::Help
             &triplets_per_location,
             [](const VcpkgPaths::TripletFile& triplet_file) -> StringView { return triplet_file.location; });
 
-        print2("Available architecture triplets\n");
-        print2("VCPKG built-in triplets:\n");
+        msg::println(msgAvailableArchitectureTriplets);
+        msg::println(msgBuiltInTriplets);
         for (auto* triplet : triplets_per_location[paths.triplets])
         {
-            print2("  ", triplet->name, '\n');
+            msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("  {}\n", triplet->name));
         }
 
         triplets_per_location.erase(paths.triplets);
-        print2("\nVCPKG community triplets:\n");
+        msg::println(msgCommunityTriplets);
         for (auto* triplet : triplets_per_location[paths.community_triplets])
         {
-            print2("  ", triplet->name, '\n');
+            msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("  {}\n", triplet->name));
         }
 
         triplets_per_location.erase(paths.community_triplets);
         for (auto&& kv_pair : triplets_per_location)
         {
-            print2("\nOverlay triplets from ", kv_pair.first, ":\n");
+            msg::println(msgOverlayTriplets, msg::path = kv_pair.first);
             for (auto* triplet : kv_pair.second)
             {
-                print2("  ", triplet->name, '\n');
+                msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("  {}\n", triplet->name));
             }
         }
     }
@@ -200,7 +184,7 @@ namespace vcpkg::Help
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        print2(Color::error, "Error: unknown topic ", topic, '\n');
+        msg::println_error(msgUnknownTopic, msg::value = topic);
         help_topics(paths);
         Checks::exit_fail(VCPKG_LINE_INFO);
     }

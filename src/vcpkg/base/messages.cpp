@@ -804,4 +804,25 @@ namespace vcpkg
     REGISTER_MESSAGE(WindowsOnlyCommand);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
     REGISTER_MESSAGE(InvalidTriplet);
+    REGISTER_MESSAGE(Versioning);
+    REGISTER_MESSAGE(VersionFourFlavors);
+    REGISTER_MESSAGE(VersionHelp);
+    REGISTER_MESSAGE(VersionDateHelp);
+    REGISTER_MESSAGE(VersionSemverHelp);
+    REGISTER_MESSAGE(VersionStringHelp);
+    REGISTER_MESSAGE(PortVersionHelp);
+    REGISTER_MESSAGE(ManifestConstraints);
+    REGISTER_MESSAGE(BuiltinBaseHelp);
+    REGISTER_MESSAGE(VersionGreaterHelp);
+    REGISTER_MESSAGE(OverridesHelp);
+    REGISTER_MESSAGE(MinVersionHelp);
+    REGISTER_MESSAGE(UpdateBaselineHelp);
+    REGISTER_MESSAGE(PackagePublisherHelp);
+    REGISTER_MESSAGE(ExampleManifest);
+    REGISTER_MESSAGE(AvailableHelpTopics);
+    REGISTER_MESSAGE(AvailableArchitectureTriplets);
+    REGISTER_MESSAGE(BuiltInTriplets);
+    REGISTER_MESSAGE(CommunityTriplets);
+    REGISTER_MESSAGE(OverlayTriplets);
+    REGISTER_MESSAGE(UnknownTopic);
 }
