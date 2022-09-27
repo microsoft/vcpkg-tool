@@ -542,7 +542,7 @@ namespace vcpkg::PostBuildLint
                            expected_architectures.size() == 1,
                            "Only expected one architecture, got: %s",
                            Strings::join(";", expected_architectures));
-        
+
         std::vector<FileAndArch> binaries_with_invalid_architecture;
         const auto& expected_architecture = expected_architectures[0];
 
@@ -596,7 +596,7 @@ namespace vcpkg::PostBuildLint
                 {
                     continue;
                 }
-                for (const auto & expected_architecture : expected_architectures)
+                for (const auto& expected_architecture : expected_architectures)
                 {
                     if (!Util::Vectors::contains(machine_types, expected_architecture))
                     {
