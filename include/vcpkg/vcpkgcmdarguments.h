@@ -229,6 +229,7 @@ namespace vcpkg
             f.manifests = manifests_enabled();
             return f;
         }
+        const Optional<StringLiteral>& detected_ci_environment() const { return m_detected_ci_environment; }
 
         bool output_json() const { return json.value_or(false); }
 

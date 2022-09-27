@@ -13,7 +13,7 @@ namespace
 {
     using namespace vcpkg;
 
-    constexpr const std::pair<StringLiteral, StringLiteral> KNOWN_CI_VARIABLES[]{
+    constexpr std::pair<StringLiteral, StringLiteral> KNOWN_CI_VARIABLES[]{
         // Opt-out from CI detection
         {"VCPKG_NO_CI", "VCPKG_NO_CI"},
 
