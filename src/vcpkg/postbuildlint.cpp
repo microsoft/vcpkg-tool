@@ -595,9 +595,16 @@ namespace vcpkg::PostBuildLint
                 // we need at least one of the machine types to match.
                 // Agnostic example: Folly's debug library
                 // Multiple example: arm64x libraries
-                if (!machine_types.empty() && !Util::Vectors::contains(machine_types, expected_architecture))
+                if (machine_types.empty())
                 {
-                    binaries_with_invalid_architecture.push_back({file, Strings::join(",", machine_types)});
+                    continue;
+                }
+                for (const auto & expected_architecture : expected_architectures)
+                {
+                    if (!Util::Vectors::contains(machine_types, expected_architecture))
+                    {
+                        binaries_with_invalid_architecture.push_back({file, Strings::join(",", machine_types)});
+                    }
                 }
             }
         }
