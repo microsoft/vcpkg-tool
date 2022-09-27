@@ -601,6 +601,7 @@ namespace vcpkg::PostBuildLint
                     if (!Util::Vectors::contains(machine_types, expected_architecture))
                     {
                         binaries_with_invalid_architecture.push_back({file, Strings::join(",", machine_types)});
+                        break; // Only register binary once
                     }
                 }
             }
