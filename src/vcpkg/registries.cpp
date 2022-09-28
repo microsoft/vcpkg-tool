@@ -241,7 +241,7 @@ namespace
 
         const Filesystem& m_fs;
         const Path m_builtin_ports_directory;
-        AtomicCache<Path, ParseExpected<SourceControlFile>> m_scfs;
+        Cache<Path, ParseExpected<SourceControlFile>> m_scfs;
     };
     constexpr StringLiteral BuiltinFilesRegistry::s_kind;
 

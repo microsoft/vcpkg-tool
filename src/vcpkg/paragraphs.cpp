@@ -1,6 +1,5 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
-#include <vcpkg/base/parallel-algorithms.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
@@ -489,29 +488,27 @@ namespace vcpkg::Paragraphs
         }
 
         Util::sort_unique_erase(ports);
-        std::mutex mtx;
 
-        auto work = [&](const std::string& port_name) {
+        for (const auto& port_name : ports)
+        {
             auto impl = registries.registry_for_port(port_name);
             if (!impl)
             {
                 // this is a port for which no registry is set
                 // this can happen when there's no default registry,
                 // and a registry has a port definition which it doesn't own the name of.
-                return;
+                continue;
             }
 
             const auto baseline_version = impl->get_baseline_version(port_name);
-            if (!baseline_version) return; // port is attributed to this registry, but it is not in the baseline
+            if (!baseline_version) continue; // port is attributed to this registry, but it is not in the baseline
             const auto port_entry = impl->get_port_entry(port_name);
-            if (!port_entry) return; // port is attributed to this registry, but there is no version db
+            if (!port_entry) continue; // port is attributed to this registry, but there is no version db
             auto port_location = port_entry->get_version(*baseline_version.get());
-            if (!port_location) return; // baseline version was not in version db (registry consistency issue)
+            if (!port_location) continue; // baseline version was not in version db (registry consistency issue)
             auto maybe_spgh = try_load_port(fs, port_location.get()->path);
             if (const auto spgh = maybe_spgh.get())
             {
-                std::lock_guard guard(mtx);
-
                 ret.paragraphs.push_back({
                     std::move(*spgh),
                     std::move(port_location.get()->path),
@@ -520,12 +517,9 @@ namespace vcpkg::Paragraphs
             }
             else
             {
-                std::lock_guard guard(mtx);
                 ret.errors.emplace_back(std::move(maybe_spgh).error());
             }
-        };
-
-        vcpkg_parallel_for_each(ports.begin(), ports.end(), work);
+        }
 
         return ret;
     }

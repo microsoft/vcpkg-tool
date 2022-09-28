@@ -13,9 +13,6 @@
 #define vcpkg_par_unseq_for_each(BEGIN, END, CB) std::for_each(std::execution::par_unseq, BEGIN, END, CB)
 
 #else
-#if 1
-#include <vcpkg/base/checks.h>
-
 #include <future>
 #include <vector>
 
@@ -69,9 +66,4 @@ namespace vcpkg
 
 #define vcpkg_parallel_for_each(BEGIN, END, CB) ::vcpkg::parallel_for_each(BEGIN, END, CB)
 #define vcpkg_par_unseq_for_each(BEGIN, END, CB) vcpkg_parallel_for_each(BEGIN, END, CB)
-#else
-#include <algorithm>
-#define vcpkg_parallel_for_each(BEGIN, END, CB) std::for_each(BEGIN, END, CB)
-#define vcpkg_par_unseq_for_each(BEGIN, END, CB) vcpkg_parallel_for_each(BEGIN, END, CB)
-#endif
 #endif
