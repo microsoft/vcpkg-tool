@@ -50,7 +50,8 @@ namespace vcpkg
             workers.emplace_back(std::async(std::launch::async, [&]() {
                 for (size_t j = 0; j < static_cast<unsigned int>(std::abs(_quot)); ++j)
                 {
-                    //Checks::check_exit(VCPKG_LINE_INFO, begin + i + j < end);
+                    vcpkg::print2(*(begin + i + j));
+                    // Checks::check_exit(VCPKG_LINE_INFO, begin + i + j < end);
                     cb(*(begin + i + j));
                 }
             }));
