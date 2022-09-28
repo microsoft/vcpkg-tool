@@ -37,6 +37,7 @@ namespace vcpkg
             std::max(static_cast<ptrdiff_t>(1), std::min(static_cast<ptrdiff_t>(thread_count), work_count)));
         // How many items each thread should do; main thread does the remainder
         auto [quot, rem] = std::div(work_count, num_threads);
+        auto _quot = quot; // Structured bindings can't be captured by lambdas
 
         std::vector<std::future<void>> workers;
         workers.reserve(num_threads - 1);
@@ -44,7 +45,7 @@ namespace vcpkg
         for (size_t i = 0; i < num_threads - 1; ++i)
         {
             workers.emplace_back(std::async(std::launch::async, [&]() {
-                for (size_t j = 0; j < static_cast<unsigned int>(std::abs(quot)); ++j)
+                for (size_t j = 0; j < static_cast<unsigned int>(std::abs(_quot)); ++j)
                 {
                     Checks::check_exit(VCPKG_LINE_INFO, begin + i + j < end);
                     cb(*(begin + i + j));
