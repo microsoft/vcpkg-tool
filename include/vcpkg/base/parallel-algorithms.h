@@ -13,7 +13,7 @@
 #define vcpkg_par_unseq_for_each(BEGIN, END, CB) std::for_each(std::execution::par_unseq, BEGIN, END, CB)
 
 #else
-
+#if 0
 #include <vcpkg/base/checks.h>
 
 #include <future>
@@ -50,7 +50,7 @@ namespace vcpkg
             workers.emplace_back(std::async(std::launch::async, [&]() {
                 for (size_t j = 0; j < static_cast<unsigned int>(std::abs(_quot)); ++j)
                 {
-                    Checks::check_exit(VCPKG_LINE_INFO, begin + i + j < end);
+                    //Checks::check_exit(VCPKG_LINE_INFO, begin + i + j < end);
                     cb(*(begin + i + j));
                 }
             }));
@@ -69,5 +69,9 @@ namespace vcpkg
 }
 
 #define vcpkg_parallel_for_each(BEGIN, END, CB) ::vcpkg::parallel_for_each(BEGIN, END, CB)
+#define vcpkg_par_unseq_for_each(BEGIN, END, CB) vcpkg_parallel_for_each(BEGIN, END, CB)
+#endif
+#include <algorithm>
+#define vcpkg_parallel_for_each(BEGIN, END, CB) std::for_each(BEGIN, END, CB)
 #define vcpkg_par_unseq_for_each(BEGIN, END, CB) vcpkg_parallel_for_each(BEGIN, END, CB)
 #endif
