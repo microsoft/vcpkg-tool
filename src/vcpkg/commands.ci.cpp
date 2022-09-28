@@ -428,6 +428,7 @@ namespace vcpkg::Commands::CI
             compute_action_statuses(ExclusionPredicate{&exclusions_map}, var_provider, precheck_results, action_plan);
 
         {
+            auto timer_p = ElapsedTimer::create_started();
             std::string msg;
             for (size_t i = 0; i < action_plan.install_actions.size(); ++i)
             {
@@ -444,6 +445,7 @@ namespace vcpkg::Commands::CI
             {
                 const Path output_hash_json = paths.original_cwd / it_output_hashes->second;
                 Json::Array arr;
+                arr.reserve(action_plan.install_actions.size());
                 for (size_t i = 0; i < action_plan.install_actions.size(); ++i)
                 {
                     auto&& action = action_plan.install_actions[i];
@@ -456,6 +458,7 @@ namespace vcpkg::Commands::CI
                 }
                 filesystem.write_contents(output_hash_json, Json::stringify(arr), VCPKG_LINE_INFO);
             }
+            vcpkg::print2(timer_p.elapsed());
         }
 
         std::vector<std::string> parent_hashes;
@@ -490,7 +493,9 @@ namespace vcpkg::Commands::CI
 
         if (is_dry_run)
         {
+            auto timer_p = ElapsedTimer::create_started();
             print_plan(action_plan, true, paths.builtin_ports_directory());
+            vcpkg::print2(timer_p.elapsed());
         }
         else
         {
