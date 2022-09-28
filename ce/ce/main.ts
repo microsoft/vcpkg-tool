@@ -15,6 +15,7 @@ import { CleanCommand } from './cli/commands/clean';
 import { DeactivateCommand } from './cli/commands/deactivate';
 import { DeleteCommand } from './cli/commands/delete';
 import { FindCommand } from './cli/commands/find';
+import { GenerateMSBuildPropsCommand } from './cli/commands/generate-msbuild-props';
 import { HelpCommand } from './cli/commands/help';
 import { ListCommand } from './cli/commands/list';
 import { RegenerateCommand } from './cli/commands/regenerate-index';
@@ -88,6 +89,7 @@ async function main() {
   const del = new DeleteCommand(commandline);
 
   const activate = new ActivateCommand(commandline);
+  const activate_msbuildprops = new GenerateMSBuildPropsCommand(commandline);
   const deactivate = new DeactivateCommand(commandline);
 
   const regenerate = new RegenerateCommand(commandline);

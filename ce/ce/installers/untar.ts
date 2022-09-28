@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { TarBzUnpacker, TarGzUnpacker, TarUnpacker } from '../archivers/tar';
+import { unpackTar, unpackTarBz, unpackTarGz } from '../archivers/tar';
 import { Unpacker } from '../archivers/unpacker';
 import { acquireArtifactFile } from '../fs/acquire';
 import { InstallEvents, InstallOptions } from '../interfaces/events';
@@ -16,12 +16,12 @@ export async function installUnTar(session: Session, name: string, version: stri
   const x = await file.readBlock(0, 128);
   let unpacker: Unpacker;
   if (x[0] === 0x1f && x[1] === 0x8b) {
-    unpacker = new TarGzUnpacker(session);
+    unpacker = unpackTarGz;
   } else if (x[0] === 66 && x[1] === 90) {
-    unpacker = new TarBzUnpacker(session);
+    unpacker = unpackTarBz;
   } else {
-    unpacker = new TarUnpacker(session);
+    unpacker = unpackTar;
   }
 
-  return unpacker.unpack(file, targetLocation, events, { strip: install.strip, transform: [...install.transform] });
+  return unpacker(session, file, targetLocation, events, { strip: install.strip, transform: [...install.transform] });
 }

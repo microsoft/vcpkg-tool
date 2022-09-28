@@ -2,19 +2,14 @@
 
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/lockguarded.h>
+#include <vcpkg/base/stringview.h>
 #include <vcpkg/base/util.h>
 
+#include <array>
 #include <string>
 
 namespace vcpkg
 {
-    template<typename T>
-    struct MetricEntry
-    {
-        T metric;
-        StringLiteral name;
-    };
-
     enum class DefineMetric
     {
         AssetSource,
@@ -45,6 +40,14 @@ namespace vcpkg
         COUNT // always keep COUNT last
     };
 
+    struct DefineMetricEntry
+    {
+        DefineMetric metric;
+        StringLiteral name;
+    };
+
+    extern const std::array<DefineMetricEntry, static_cast<size_t>(DefineMetric::COUNT)> all_define_metrics;
+
     enum class StringMetric
     {
         BuildError,
@@ -63,12 +66,29 @@ namespace vcpkg
         COUNT // always keep COUNT last
     };
 
+    struct StringMetricEntry
+    {
+        StringMetric metric;
+        StringLiteral name;
+        StringLiteral preregister_value; // mock values
+    };
+
+    extern const std::array<StringMetricEntry, static_cast<size_t>(StringMetric::COUNT)> all_string_metrics;
+
     enum class BoolMetric
     {
         InstallManifestMode,
         OptionOverlayPorts,
         COUNT // always keep COUNT last
     };
+
+    struct BoolMetricEntry
+    {
+        BoolMetric metric;
+        StringLiteral name;
+    };
+
+    extern const std::array<BoolMetricEntry, static_cast<size_t>(BoolMetric::COUNT)> all_bool_metrics;
 
     struct Metrics
     {
@@ -95,11 +115,6 @@ namespace vcpkg
 
         void upload(const std::string& payload);
         void flush(Filesystem& fs);
-
-        // exposed for testing
-        static View<MetricEntry<DefineMetric>> get_define_metrics();
-        static View<MetricEntry<StringMetric>> get_string_metrics();
-        static View<MetricEntry<BoolMetric>> get_bool_metrics();
     };
 
     extern LockGuarded<Metrics> g_metrics;
