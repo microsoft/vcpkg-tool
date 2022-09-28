@@ -13,6 +13,7 @@
 #define vcpkg_par_unseq_for_each(BEGIN, END, CB) std::for_each(std::execution::par_unseq, BEGIN, END, CB)
 
 #else
+#include <atomic>
 #include <future>
 #include <vector>
 
@@ -31,31 +32,27 @@ namespace vcpkg
         }
 
         const auto thread_count = std::thread::hardware_concurrency() * 2;
-        const auto work_count = std::distance(begin, end);
+        const ptrdiff_t work_count = std::distance(begin, end);
         const auto num_threads = static_cast<size_t>(
             std::max(static_cast<ptrdiff_t>(1), std::min(static_cast<ptrdiff_t>(thread_count), work_count)));
-        // How many items each thread should do; main thread does the remainder
-        const auto [quot, rem] = std::div(work_count, num_threads);
-        const auto _quot = quot; // Structured bindings can't be captured by lambdas
-        const auto other_threads = rem == 0 ? num_threads - 1 : num_threads;
 
         std::vector<std::future<void>> workers;
-        workers.reserve(other_threads);
+        workers.reserve(num_threads);
 
-        for (size_t i = 0; i < other_threads; ++i)
-        {
-            workers.emplace_back(std::async(std::launch::async, [&]() {
-                for (size_t j = 0; j < static_cast<unsigned int>(std::abs(_quot)); ++j)
-                {
-                    cb(*(begin + i + j));
-                }
-            }));
-        }
+        std::atomic_size_t next{0};
+        auto work = [&begin, &next, &work_count, &cb]() {
+            size_t i;
+            while (i = next.fetch_add(1, std::memory_order_relaxed), i < static_cast<size_t>(work_count))
+            {
+                cb(*(begin + i));
+            }
+        };
 
-        for (It start = begin + other_threads * quot; start != end; ++start)
+        for (size_t i = 0; i < num_threads - 1; ++i)
         {
-            cb(*start);
+            workers.emplace_back(std::async(std::launch::async, work));
         }
+        work();
 
         for (auto&& w : workers)
         {
