@@ -17,7 +17,6 @@
 #include <vcpkg/base/checks.h>
 
 #include <future>
-#include <iostream>
 #include <vector>
 
 namespace vcpkg
