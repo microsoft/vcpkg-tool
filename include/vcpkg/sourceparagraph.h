@@ -131,6 +131,8 @@ namespace vcpkg
         }
         VersionSpec to_version_spec() const { return {core_paragraph->name, core_paragraph->to_version()}; }
 
+        std::unique_ptr<ParseControlErrorInfo> canonicalize();
+
         friend bool operator==(const SourceControlFile& lhs, const SourceControlFile& rhs);
         friend bool operator!=(const SourceControlFile& lhs, const SourceControlFile& rhs) { return !(lhs == rhs); }
     };

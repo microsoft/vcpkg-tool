@@ -10,6 +10,7 @@
 #include <vcpkg/configuration.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
+#include <vcpkg/portlint.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -29,6 +30,8 @@ namespace
     static constexpr StringLiteral OPTION_OVERWRITE_VERSION = "overwrite-version";
     static constexpr StringLiteral OPTION_SKIP_FORMATTING_CHECK = "skip-formatting-check";
     static constexpr StringLiteral OPTION_SKIP_VERSION_FORMAT_CHECK = "skip-version-format-check";
+    static constexpr StringLiteral OPTION_SKIP_LICENSE_CHECK = "skip-license-check";
+    static constexpr StringLiteral OPTION_SKIP_PORTFILE_CHECK = "skip-portfile-check";
     static constexpr StringLiteral OPTION_VERBOSE = "verbose";
 
     enum class UpdateResult
@@ -68,30 +71,7 @@ namespace
         Checks::unreachable(VCPKG_LINE_INFO);
     }
 
-    void check_used_version_scheme(const SchemedVersion& version, const std::string& port_name)
-    {
-        if (version.scheme == VersionScheme::String)
-        {
-            if (DateVersion::try_parse(version.version.text()))
-            {
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                              msgAddVersionSuggestNewVersionScheme,
-                                              msg::new_scheme = VERSION_DATE,
-                                              msg::old_scheme = VERSION_STRING,
-                                              msg::package_name = port_name,
-                                              msg::option = OPTION_SKIP_VERSION_FORMAT_CHECK);
-            }
-            if (DotVersion::try_parse_relaxed(version.version.text()))
-            {
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                              msgAddVersionSuggestNewVersionScheme,
-                                              msg::new_scheme = VERSION_RELAXED,
-                                              msg::old_scheme = VERSION_STRING,
-                                              msg::package_name = port_name,
-                                              msg::option = OPTION_SKIP_VERSION_FORMAT_CHECK);
-            }
-        }
-    }
+    void lint_port(SourceControlFileAndLocation& scf) { }
 
     static Json::Object serialize_baseline(const std::map<std::string, Version, std::less<>>& baseline)
     {
@@ -192,15 +172,44 @@ namespace
                                                bool overwrite_version,
                                                bool print_success,
                                                bool keep_going,
-                                               bool skip_version_format_check)
+                                               bool skip_version_format_check,
+                                               bool skip_license_check,
+                                               bool skip_portfile_check,
+                                               SourceControlFileAndLocation& scf)
     {
         auto& fs = paths.get_filesystem();
-        if (!fs.exists(version_db_file_path, IgnoreErrors{}))
-        {
+        const auto lint_port = [=, &scf, &fs]() {
+            Lint::Status status = Lint::Status::Ok;
             if (!skip_version_format_check)
             {
-                check_used_version_scheme(port_version, port_name);
+                if (Lint::check_used_version_scheme(*scf.source_control_file, Lint::Fix::NO) == Lint::Status::Problem)
+                {
+                    status = Lint::Status::Problem;
+                    msg::println(msgAddVersionDisableCheck, msg::option = OPTION_SKIP_VERSION_FORMAT_CHECK);
+                }
             }
+            if (!skip_license_check)
+            {
+                if (Lint::check_license_expression(*scf.source_control_file, Lint::Fix::NO) == Lint::Status::Problem)
+                {
+                    status = Lint::Status::Problem;
+                    msg::println(msgAddVersionDisableCheck, msg::option = OPTION_SKIP_LICENSE_CHECK);
+                }
+            }
+            if (!skip_portfile_check)
+            {
+                if (Lint::check_portfile_deprecated_functions(fs, scf, Lint::Fix::NO) == Lint::Status::Problem)
+                {
+                    status = Lint::Status::Problem;
+                    msg::println(msgAddVersionDisableCheck, msg::option = OPTION_SKIP_PORTFILE_CHECK);
+                }
+            }
+            Checks::msg_check_exit(
+                VCPKG_LINE_INFO, status == Lint::Status::Problem, msgAddVersionLintPort, msg::package_name = port_name);
+        };
+        if (!fs.exists(version_db_file_path, IgnoreErrors{}))
+        {
+            lint_port();
             std::vector<VersionGitTree> new_entry{{port_version, git_tree}};
             write_versions_file(fs, new_entry, version_db_file_path);
             if (print_success)
@@ -285,10 +294,7 @@ namespace
                 versions->insert(versions->begin(), std::make_pair(port_version, git_tree));
             }
 
-            if (!skip_version_format_check)
-            {
-                check_used_version_scheme(port_version, port_name);
-            }
+            lint_port();
 
             write_versions_file(fs, *versions, version_db_file_path);
             if (print_success)
@@ -315,6 +321,8 @@ namespace vcpkg::Commands::AddVersion
         {OPTION_OVERWRITE_VERSION, "Overwrite `git-tree` of an existing version."},
         {OPTION_SKIP_FORMATTING_CHECK, "Skips the formatting check of vcpkg.json files."},
         {OPTION_SKIP_VERSION_FORMAT_CHECK, "Skips the version format check."},
+        {OPTION_SKIP_LICENSE_CHECK, "Skips the license expression check."},
+        {OPTION_SKIP_PORTFILE_CHECK, "Skips the portfile.cmake check."},
         {OPTION_VERBOSE, "Print success messages instead of just errors."},
     };
 
@@ -334,6 +342,8 @@ namespace vcpkg::Commands::AddVersion
         const bool skip_formatting_check = Util::Sets::contains(parsed_args.switches, OPTION_SKIP_FORMATTING_CHECK);
         const bool skip_version_format_check =
             Util::Sets::contains(parsed_args.switches, OPTION_SKIP_VERSION_FORMAT_CHECK);
+        const bool skip_license_check = Util::Sets::contains(parsed_args.switches, OPTION_SKIP_LICENSE_CHECK);
+        const bool skip_portfile_check = Util::Sets::contains(parsed_args.switches, OPTION_SKIP_PORTFILE_CHECK);
         const bool verbose = !add_all || Util::Sets::contains(parsed_args.switches, OPTION_VERBOSE);
 
         auto& fs = paths.get_filesystem();
@@ -413,7 +423,8 @@ namespace vcpkg::Commands::AddVersion
                 continue;
             }
 
-            const auto& scf = maybe_scf.value_or_exit(VCPKG_LINE_INFO);
+            SourceControlFileAndLocation scf{std::move(maybe_scf.value_or_exit(VCPKG_LINE_INFO)),
+                                             paths.builtin_ports_directory() / port_name};
 
             if (!skip_formatting_check)
             {
@@ -422,7 +433,7 @@ namespace vcpkg::Commands::AddVersion
                 if (fs.exists(path_to_manifest, IgnoreErrors{}))
                 {
                     const auto current_file_content = fs.read_contents(path_to_manifest, VCPKG_LINE_INFO);
-                    const auto json = serialize_manifest(*scf);
+                    const auto json = serialize_manifest(*scf.source_control_file);
                     const auto formatted_content = Json::stringify(json);
                     if (current_file_content != formatted_content)
                     {
@@ -446,7 +457,7 @@ namespace vcpkg::Commands::AddVersion
                 msg::println_warning(msgAddVersionUncommittedChanges, msg::package_name = port_name);
             }
 
-            const auto& schemed_version = scf->to_schemed_version();
+            const auto& schemed_version = scf.source_control_file->to_schemed_version();
 
             auto git_tree_it = git_tree_map.find(port_name);
             if (git_tree_it == git_tree_map.end())
@@ -472,7 +483,10 @@ namespace vcpkg::Commands::AddVersion
                                                                 overwrite_version,
                                                                 verbose,
                                                                 add_all,
-                                                                skip_version_format_check);
+                                                                skip_version_format_check,
+                                                                skip_license_check,
+                                                                skip_portfile_check,
+                                                                scf);
             auto updated_baseline_file = update_baseline_version(
                 paths, port_name, schemed_version.version, baseline_path, baseline_map, verbose);
             if (verbose && updated_versions_file == UpdateResult::NotUpdated &&

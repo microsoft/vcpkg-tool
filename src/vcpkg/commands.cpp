@@ -27,6 +27,7 @@
 #include <vcpkg/commands.info.h>
 #include <vcpkg/commands.init-registry.h>
 #include <vcpkg/commands.integrate.h>
+#include <vcpkg/commands.lint-port.h>
 #include <vcpkg/commands.list.h>
 #include <vcpkg/commands.new.h>
 #include <vcpkg/commands.owns.h>
@@ -102,6 +103,7 @@ namespace vcpkg::Commands
         static const Help::HelpCommand help{};
         static const Info::InfoCommand info{};
         static const Integrate::IntegrateCommand integrate{};
+        static const LintPort::LintPortCommand lintport{};
         static const List::ListCommand list{};
         static const NewCommand new_{};
         static const Owns::OwnsCommand owns{};
@@ -140,6 +142,7 @@ namespace vcpkg::Commands
             {"x-add-version", &add_version},
             {"x-ci-clean", &ciclean},
             {"x-ci-verify-versions", &ci_verify_versions},
+            {"x-lint-port", &lintport},
             {"x-package-info", &info},
             {"x-regenerate", &regenerate},
             {"x-vsinstances", &vsinstances},

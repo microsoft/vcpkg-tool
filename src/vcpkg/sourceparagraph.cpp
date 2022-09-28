@@ -136,7 +136,7 @@ namespace vcpkg
 
     namespace
     {
-        constexpr static struct Canonicalize
+        constexpr struct Canonicalize
         {
             struct FeatureLess
             {
@@ -212,16 +212,16 @@ namespace vcpkg
             void operator()(SourceParagraph& spgh) const
             {
                 std::for_each(spgh.dependencies.begin(), spgh.dependencies.end(), *this);
-                std::sort(spgh.dependencies.begin(), spgh.dependencies.end(), DependencyLess{});
+                Util::sort_unique_erase(spgh.dependencies, DependencyLess{});
 
-                std::sort(spgh.default_features.begin(), spgh.default_features.end());
+                Util::sort_unique_erase(spgh.default_features);
 
                 spgh.extra_info.sort_keys();
             }
             void operator()(FeatureParagraph& fpgh) const
             {
                 std::for_each(fpgh.dependencies.begin(), fpgh.dependencies.end(), *this);
-                std::sort(fpgh.dependencies.begin(), fpgh.dependencies.end(), DependencyLess{});
+                Util::sort_unique_erase(fpgh.dependencies, DependencyLess{});
 
                 fpgh.extra_info.sort_keys();
             }
@@ -245,7 +245,7 @@ namespace vcpkg
                 }
                 return nullptr;
             }
-        } canonicalize{};
+        } canonicalize_{};
     }
 
     static ParseExpected<SourceParagraph> parse_source_paragraph(StringView origin, Paragraph&& fields)
@@ -394,7 +394,7 @@ namespace vcpkg
                 return std::move(maybe_feature).error();
         }
 
-        if (auto maybe_error = canonicalize(*control_file))
+        if (auto maybe_error = canonicalize_(*control_file))
         {
             return maybe_error;
         }
@@ -1081,7 +1081,7 @@ namespace vcpkg
                 }
             }
 
-            if (auto maybe_error = canonicalize(*control_file))
+            if (auto maybe_error = control_file->canonicalize())
             {
                 Checks::exit_with_message(VCPKG_LINE_INFO, maybe_error->error);
             }
@@ -1356,6 +1356,8 @@ namespace vcpkg
         }
         return nullopt;
     }
+
+    std::unique_ptr<ParseControlErrorInfo> SourceControlFile::canonicalize() { return canonicalize_(*this); }
 
     std::string ParseControlErrorInfo::format_errors(View<std::unique_ptr<ParseControlErrorInfo>> error_info_list)
     {

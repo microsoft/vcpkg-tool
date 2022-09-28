@@ -393,10 +393,12 @@ namespace vcpkg
     REGISTER_MESSAGE(AddVersionCommitChangesReminder);
     REGISTER_MESSAGE(AddVersionCommitResultReminder);
     REGISTER_MESSAGE(AddVersionDetectLocalChangesError);
+    REGISTER_MESSAGE(AddVersionDisableCheck);
     REGISTER_MESSAGE(AddVersionFileNotFound);
     REGISTER_MESSAGE(AddVersionFormatPortSuggestion);
     REGISTER_MESSAGE(AddVersionIgnoringOptionAll);
     REGISTER_MESSAGE(AddVersionLoadPortFailed);
+    REGISTER_MESSAGE(AddVersionLintPort);
     REGISTER_MESSAGE(AddVersionNewFile);
     REGISTER_MESSAGE(AddVersionNewShaIs);
     REGISTER_MESSAGE(AddVersionNoFilesUpdated);
@@ -408,7 +410,6 @@ namespace vcpkg
     REGISTER_MESSAGE(AddVersionPortFilesShaChanged);
     REGISTER_MESSAGE(AddVersionPortFilesShaUnchanged);
     REGISTER_MESSAGE(AddVersionPortHasImproperFormat);
-    REGISTER_MESSAGE(AddVersionSuggestNewVersionScheme);
     REGISTER_MESSAGE(AddVersionUnableToParseVersionsFile);
     REGISTER_MESSAGE(AddVersionUncommittedChanges);
     REGISTER_MESSAGE(AddVersionUpdateVersionReminder);
@@ -466,8 +467,8 @@ namespace vcpkg
     REGISTER_MESSAGE(CMakeToolChainFile);
     REGISTER_MESSAGE(CommandFailed);
     REGISTER_MESSAGE(CompressFolderFailed);
-    REGISTER_MESSAGE(ConstraintViolation);
     REGISTER_MESSAGE(ConflictingValuesForOption);
+    REGISTER_MESSAGE(ConstraintViolation);
     REGISTER_MESSAGE(ControlAndManifestFilesPresent);
     REGISTER_MESSAGE(CopyrightIsDir);
     REGISTER_MESSAGE(CorruptedDatabase);
@@ -648,6 +649,13 @@ namespace vcpkg
     REGISTER_MESSAGE(LicenseExpressionImbalancedParens);
     REGISTER_MESSAGE(LicenseExpressionUnknownException);
     REGISTER_MESSAGE(LicenseExpressionUnknownLicense);
+    REGISTER_MESSAGE(LintDeprecatedFunction);
+    REGISTER_MESSAGE(LintDeprecatedLicenseExpressionWithoutReplacement);
+    REGISTER_MESSAGE(LintDeprecatedLicenseExpressionWithReplacement);
+    REGISTER_MESSAGE(LintMissingLicenseExpression);
+    REGISTER_MESSAGE(LintSuggestNewVersionScheme);
+    REGISTER_MESSAGE(LintPortErrors);
+    REGISTER_MESSAGE(LintPortErrorsFixed);
     REGISTER_MESSAGE(ListOfValidFieldsForControlFiles);
     REGISTER_MESSAGE(LoadingCommunityTriplet);
     REGISTER_MESSAGE(LoadingDependencyInformation);
@@ -661,8 +669,8 @@ namespace vcpkg
     REGISTER_MESSAGE(MissingDependency);
     REGISTER_MESSAGE(MissingExtension);
     REGISTER_MESSAGE(MissingOption);
-    REGISTER_MESSAGE(MissmatchedBinParagraphs);
     REGISTER_MESSAGE(MissingPortSuggestPullRequest);
+    REGISTER_MESSAGE(MissmatchedBinParagraphs);
     REGISTER_MESSAGE(MonoInstructions);
     REGISTER_MESSAGE(MsiexecFailedToExtract);
     REGISTER_MESSAGE(MultiArch);
