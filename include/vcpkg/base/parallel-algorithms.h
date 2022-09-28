@@ -14,6 +14,8 @@
 
 #else
 
+#include <vcpkg/base/checks.h>
+
 #include <future>
 #include <vector>
 
