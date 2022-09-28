@@ -52,10 +52,9 @@ namespace vcpkg
             }));
         }
 
-        for (size_t i = 0; i < (rem == 0) ? quot : rem; ++i)
+        for (It start = begin + workers.size() * quot; start != end; ++start)
         {
-            assert(begin + i < end);
-            cb(*(begin + i));
+            cb(*start);
         }
 
         for (auto&& w : workers)
