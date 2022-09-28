@@ -338,16 +338,6 @@ if(MINGW)
     target_link_libraries(vcpkglib PUBLIC winhttp bcrypt version ole32 uuid)
 endif()
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    find_package(OpenMP REQUIRED)
-    target_link_libraries(vcpkglib PRIVATE OpenMP::OpenMP_CXX)
-    target_compile_definitions(vcpkglib PRIVATE USE_PARALLEL_ALG GNU_USE_PARALLEL_ALG)
-endif()
-
-if(MSVC)
-    target_compile_definitions(vcpkglib PRIVATE USE_PARALLEL_ALG)
-endif()
-
 # === Target: vcpkg ===
 add_custom_command(
     OUTPUT
