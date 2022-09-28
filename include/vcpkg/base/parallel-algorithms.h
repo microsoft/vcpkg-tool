@@ -33,18 +33,19 @@ namespace vcpkg
             return cb(*begin);
         }
 
-        auto thread_count = std::thread::hardware_concurrency() * 2;
-        auto work_count = std::distance(begin, end);
-        auto num_threads = static_cast<size_t>(
+        const auto thread_count = std::thread::hardware_concurrency() * 2;
+        const auto work_count = std::distance(begin, end);
+        const auto num_threads = static_cast<size_t>(
             std::max(static_cast<ptrdiff_t>(1), std::min(static_cast<ptrdiff_t>(thread_count), work_count)));
         // How many items each thread should do; main thread does the remainder
-        auto [quot, rem] = std::div(work_count, num_threads);
-        auto _quot = quot; // Structured bindings can't be captured by lambdas
+        const auto [quot, rem] = std::div(work_count, num_threads);
+        const auto _quot = quot; // Structured bindings can't be captured by lambdas
+        const auto other_threads = rem == 0 ? num_threads - 1 : num_threads;
 
         std::vector<std::future<void>> workers;
-        workers.reserve(num_threads - 1);
+        workers.reserve(other_threads);
 
-        for (size_t i = 0; i < num_threads - 1; ++i)
+        for (size_t i = 0; i < other_threads; ++i)
         {
             workers.emplace_back(std::async(std::launch::async, [&]() {
                 for (size_t j = 0; j < static_cast<unsigned int>(std::abs(_quot)); ++j)
@@ -55,7 +56,7 @@ namespace vcpkg
             }));
         }
 
-        for (It start = begin + workers.size() * quot; start != end; ++start)
+        for (It start = begin + other_threads * quot; start != end; ++start)
         {
             cb(*start);
         }
