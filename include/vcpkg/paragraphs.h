@@ -6,6 +6,7 @@
 #include <vcpkg/base/expected.h>
 
 #include <vcpkg/binaryparagraph.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg::Paragraphs
 {

@@ -11,7 +11,6 @@
 #include <vcpkg/paragraphparser.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/registries.h>
-#include <vcpkg/vcpkgpaths.h>
 
 static std::atomic<uint64_t> g_load_ports_stats(0);
 
