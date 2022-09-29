@@ -888,7 +888,7 @@ namespace vcpkg
                     (msg::spec),
                     "",
                     "The control or mnaifest file for {spec} could not be loaded due to the following error. Please "
-                    "remove {spec} and re-attempt.");
+                    "remove {spec} and try again.");
     DECLARE_MESSAGE(FailedToLoadPort,
                     (msg::package_name, msg::path),
                     "",
@@ -1140,7 +1140,10 @@ namespace vcpkg
         (msg::system_name, msg::value),
         "'{value}' is the linkage type vcpkg would did not understand. (Correct values would be static ofr dynamic)",
         "Invalid {system_name} linkage type: [{value}]");
-    DECLARE_MESSAGE(InvalidOptionForRemove, (), "", "'remove' accepts either libraries or '--outdated'");
+    DECLARE_MESSAGE(InvalidOptionForRemove,
+                    (),
+                    "'remove' is a command that should not be changed.",
+                    "'remove' accepts either libraries or '--outdated'");
     DECLARE_MESSAGE(IrregularFile, (msg::path), "", "path was not a regular file: {path}");
     DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected \"{path}\" to be an object.");
     DECLARE_MESSAGE(JsonSwitch, (), "", "(Experimental) Request JSON output.");
