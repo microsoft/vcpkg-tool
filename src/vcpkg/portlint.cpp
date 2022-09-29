@@ -5,17 +5,12 @@
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/versions.h>
 
-#include "vcpkg/base/system.print.h"
-#include "vcpkg/base/system.process.h"
 #include "vcpkg/base/util.h"
-#include "vcpkg/installedpaths.h"
-#include "vcpkg/vcpkgpaths.h"
 
 namespace vcpkg::Lint
 {
 
     constexpr StringLiteral VERSION_RELAXED = "version";
-    constexpr StringLiteral VERSION_SEMVER = "version-semver";
     constexpr StringLiteral VERSION_DATE = "version-date";
     constexpr StringLiteral VERSION_STRING = "version-string";
 
@@ -58,7 +53,7 @@ namespace vcpkg::Lint
             msg::println_warning(msgLintMissingLicenseExpression, msg::package_name = scf.core_paragraph->name);
             return Status::Problem;
         }
-        const std::pair<StringLiteral, StringLiteral> deprecated_licenses[] = {
+        static constexpr std::pair<StringLiteral, StringLiteral> deprecated_licenses[] = {
             {"AGPL-1.0", "AGPL-1.0-only"},
             {"AGPL-3.0", "AGPL-3.0-only"},
             {"eCos-2.0",

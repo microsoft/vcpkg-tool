@@ -71,8 +71,6 @@ namespace
         Checks::unreachable(VCPKG_LINE_INFO);
     }
 
-    void lint_port(SourceControlFileAndLocation& scf) { }
-
     static Json::Object serialize_baseline(const std::map<std::string, Version, std::less<>>& baseline)
     {
         Json::Object port_entries_obj;
