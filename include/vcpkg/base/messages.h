@@ -779,7 +779,7 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is a command line option.",
                     "'--{value}' specified multiple times.");
-    DECLARE_MESSAGE(ElapsedInstallTime, (msg::count), "", "\nTotal elapsed time: {count}");
+    DECLARE_MESSAGE(ElapsedInstallTime, (msg::count), "", "Total elapsed time: {count}");
     DECLARE_MESSAGE(ElapsedTimeForChecks, (msg::elapsed), "", "Time to determine pass/fail: {elapsed}");
     DECLARE_MESSAGE(EmailVcpkgTeam, (msg::url), "", "Send an email to {url} with any feedback.");
     DECLARE_MESSAGE(EmptyArg, (msg::option), "", "The option --{option} must be passed a non-empty argument.");
@@ -880,7 +880,7 @@ namespace vcpkg
     DECLARE_MESSAGE(FailedToLoadInstalledManifest,
                     (msg::spec),
                     "",
-                    "The control or mnaifest file for {spec} could not be loaded due to the following error. Please "
+                    "The control or manifest file for {spec} could not be loaded due to the following error. Please "
                     "remove {spec} and re-attempt.");
     DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}");
     DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
@@ -1235,7 +1235,7 @@ namespace vcpkg
     DECLARE_MESSAGE(ManifestConflict,
                     (msg::path),
                     "",
-                    "Found both a manifest and CONTROL files in port {path}; please rename one or the other");
+                    "Found both a manifest and CONTROL files in port \"{path}\"; please rename one or the other");
     DECLARE_MESSAGE(ManifestFormatCompleted, (), "", "Succeeded in formatting the manifest files.");
     DECLARE_MESSAGE(MismatchedFiles, (), "", "file to store does not match hash");
     DECLARE_MESSAGE(Missing7zHeader, (), "", "Unable to find 7z header.");
@@ -1454,7 +1454,6 @@ namespace vcpkg
                     (msg::system_api, msg::exit_code, msg::error_msg),
                     "",
                     "calling {system_api} failed with {exit_code} ({error_msg})");
-    DECLARE_MESSAGE(Test, (), "", "will this compile");
     DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
     DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
     DECLARE_MESSAGE(TotalTime, (msg::elapsed), "", "Total elapsed time: {elapsed}");
@@ -1513,7 +1512,8 @@ namespace vcpkg
     DECLARE_MESSAGE(UnrecognizedConfigField, (), "", "configuration contains the following unrecognized fields:");
     DECLARE_MESSAGE(UnrecognizedIdentifier,
                     (msg::value),
-                    "'{value}' is an expression identifier",
+                    "'{value}' is an expression identifier. For example, given an expression 'windows & x86', "
+                    "'windows' and 'x86' are identifiers.",
                     "Unrecognized identifer name {value}. Add to override list in triplet file.");
     DECLARE_MESSAGE(UnsupportedFeature,
                     (msg::feature, msg::package_name),

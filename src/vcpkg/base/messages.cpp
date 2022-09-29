@@ -746,7 +746,6 @@ namespace vcpkg
     REGISTER_MESSAGE(SuggestUpdateVcpkg);
     REGISTER_MESSAGE(SupportedPort);
     REGISTER_MESSAGE(SystemApiErrorMessage);
-    REGISTER_MESSAGE(Test);
     REGISTER_MESSAGE(ToolFetchFailed);
     REGISTER_MESSAGE(ToolInWin10);
     REGISTER_MESSAGE(TotalTime);
