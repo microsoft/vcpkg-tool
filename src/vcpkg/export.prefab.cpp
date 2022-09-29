@@ -301,8 +301,7 @@ namespace vcpkg::Export::Prefab
 
         if (!android_ndk_home.has_value())
         {
-            msg::println_error(msgMissingAndroidEnv);
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgMissingAndroidEnv);
         }
 
         Filesystem& utils = paths.get_filesystem();
@@ -318,6 +317,7 @@ namespace vcpkg::Export::Prefab
         Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
                                         utils.exists(ndk_location, IgnoreErrors{}),
                                         msgAndroidHomeDirMissingProps,
+                                        msg::env_var = "ANDROID_NDK_HOME",
                                         msg::path = source_properties_location);
 
         std::string content = utils.read_contents(source_properties_location, VCPKG_LINE_INFO);
@@ -608,16 +608,22 @@ namespace vcpkg::Export::Prefab
                                         IgnoreErrors{});
                         if (prefab_options.enable_debug)
                         {
-                            msg::println(msg::format(msgCopyingLibs, msg::path = installed_module_path)
-                                             .append_raw(exported_module_path));
+                            msg::println(msg::format(msgCopyingLibs)
+                                             .append_raw('\n')
+                                             .append(msgFromPath, msg::path = installed_module_path)
+                                             .append_raw('\n')
+                                             .append(msgToPath, msg::path = exported_module_path));
                         }
                         auto installed_headers_dir = installed_dir / "include";
                         auto exported_headers_dir = module_libs_dir / "include";
 
                         if (prefab_options.enable_debug)
                         {
-                            msg::println(msg::format(msgCopyingHeaders, msg::path = installed_headers_dir)
-                                             .append_raw(exported_headers_dir));
+                            msg::println(msg::format(msgCopyingHeaders)
+                                             .append_raw('\n')
+                                             .append(msgFromPath, msg::path = installed_headers_dir)
+                                             .append_raw('\n')
+                                             .append(msgToPath, msg::path = exported_headers_dir));
                         }
 
                         utils.copy_regular_recursive(installed_headers_dir, exported_headers_dir, VCPKG_LINE_INFO);
@@ -650,11 +656,11 @@ namespace vcpkg::Export::Prefab
                 paths.get_filesystem(), paths.get_tool_cache(), stdout_sink, package_directory, exported_archive_path);
             if (!compress_result)
             {
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                              std::move(compress_result)
-                                                  .error()
-                                                  .append(msgFailedToCompress)
-                                                  .append_raw(package_directory.native()));
+                Checks::msg_exit_with_message(
+                    VCPKG_LINE_INFO,
+                    std::move(compress_result)
+                        .error()
+                        .append(msgCompressFolderFailed, msg::path = package_directory.native()));
             }
 
             std::string POM = R"(<?xml version="1.0" encoding="UTF-8"?>

@@ -106,10 +106,10 @@ namespace vcpkg::Export
             switch (plan_type)
             {
                 case ExportPlanType::ALREADY_BUILT:
-                    msg::println(msg::format(msgExportingPackages).append_raw("\n" + as_string));
+                    msg::println(msg::format(msgExportingAlreadyBuiltPackages).append_raw("\n" + as_string));
                     continue;
                 case ExportPlanType::NOT_BUILT:
-                    msg::println(msg::format(msgBuildingPackages).append_raw("\n" + as_string));
+                    msg::println(msg::format(msgPackagesToInstall).append_raw("\n" + as_string));
                     continue;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
@@ -124,7 +124,11 @@ namespace vcpkg::Export
         // 15 characters + 1 null terminating character will be written for a total of 16 chars
         char mbstr[16];
         const size_t bytes_written = std::strftime(mbstr, sizeof(mbstr), "%Y%m%d-%H%M%S", &date_time);
-        Checks::msg_check_exit(VCPKG_LINE_INFO, bytes_written == 15, msgUnexpectedByteSize, msg::count = bytes_written);
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               bytes_written == 15,
+                               msgUnexpectedByteSize,
+                               msg::expected = "15",
+                               msg::actual = bytes_written);
         const std::string date_time_as_string(mbstr);
         return ("vcpkg-export-" + date_time_as_string);
     }
@@ -434,7 +438,7 @@ namespace vcpkg::Export
                 for (auto&& opt : implying_opts)
                     Checks::msg_check_exit(VCPKG_LINE_INFO,
                                            !maybe_lookup(options.settings, opt.name),
-                                           msgIncompatibleOptionSetting,
+                                           msgMutuallyRequiredOption,
                                            msg::value = opt.name,
                                            msg::option = main_opt_name);
             }
@@ -482,7 +486,7 @@ namespace vcpkg::Export
     {
         const auto cmake_toolchain = prefix / "scripts/buildsystems/vcpkg.cmake";
         const CMakeVariable cmake_variable = CMakeVariable("CMAKE_TOOLCHAIN_FILE", cmake_toolchain.generic_u8string());
-        msg::println(msg::format(msgUsingExportedLibs).append_indent().append_raw(cmake_variable.s).append_raw("\n"));
+        msg::println(msg::format(msgCMakeUsingExportedLibs, msg::value = cmake_variable.s));
     }
 
     static void handle_raw_based_export(Span<const ExportPlanAction> export_plan,
@@ -540,14 +544,16 @@ namespace vcpkg::Export
 
         if (opts.nuget)
         {
-            msg::println(msgPackingNuget);
-
             const auto nuget_id = opts.maybe_nuget_id.value_or(raw_exported_dir_path.filename().to_string());
             const auto nuget_version = opts.maybe_nuget_version.value_or("1.0.0");
             const auto nuget_description = opts.maybe_nuget_description.value_or("Vcpkg NuGet export");
+
+            msg::println(msgCreatingNugetPackage);
+
             const auto output_path = do_nuget_export(
                 paths, nuget_id, nuget_version, nuget_description, raw_exported_dir_path, opts.output_dir);
-            msg::println(Color::success, msgNugetPackageExported, msg::path = output_path);
+
+            msg::println(Color::success, msgCreatedNuGetPackage, msg::path = output_path);
             msg::println(msgInstallPackageInstruction, msg::value = nuget_id, msg::path = output_path.parent_path());
         }
 
@@ -608,15 +614,13 @@ namespace vcpkg::Export
         const auto it = group_by_plan_type.find(ExportPlanType::NOT_BUILT);
         if (it != group_by_plan_type.cend() && !it->second.empty())
         {
-            msg::println_error(msgPrebuiltPackages);
-
             // No need to show all of them, just the user-requested ones. Dependency resolution will handle the rest.
             std::vector<const ExportPlanAction*> unbuilt = it->second;
             Util::erase_remove_if(
                 unbuilt, [](const ExportPlanAction* a) { return a->request_type != RequestType::USER_REQUESTED; });
 
             const auto s = Strings::join(" ", unbuilt, [](const ExportPlanAction* a) { return a->spec.to_string(); });
-            msg::println(msg::format(msgInstructionToBuild).append_indent().append_raw("vcpkg install ").append_raw(s));
+            msg::println(msg::format(msgPrebuiltPackages).append_raw('\n').append_raw("vcpkg install ").append_raw(s));
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 

@@ -564,9 +564,9 @@ namespace vcpkg
                     "'HEAD' means the most recent version of source code",
                     "{spec} is already installed -- not building from HEAD");
     DECLARE_MESSAGE(AndroidHomeDirMissingProps,
-                    (msg::path),
-                    "",
-                    "source.properties missing in ANDROID_NDK_HOME directory: {path}");
+                    (msg::env_var, msg::path),
+                    "Note: 'source.properties' is code and should not be translated.",
+                    "source.properties missing in {env_var} directory: {path}");
     DECLARE_MESSAGE(AndroidStudioConfigProp,
                     (),
                     "",
@@ -621,7 +621,6 @@ namespace vcpkg
                     (),
                     "Printed after BuildingPackageFailed, and followed by a list of dependencies that were missing.",
                     "due to the following missing dependencies:");
-    DECLARE_MESSAGE(BuildingPackages, (), "", "The following packages need to be built:");
     DECLARE_MESSAGE(BuildResultBuildFailed,
                     (),
                     "Printed after the name of an installed entity to indicate that it failed to build.",
@@ -748,20 +747,21 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "Both a manifest file and a CONTROL file exist in port directory: {path}");
-    DECLARE_MESSAGE(CopyingHeaders, (msg::path), "", "Copying headers...\nFrom {path}\nTo ");
-    DECLARE_MESSAGE(CopyingLibs, (msg::path), "", "Copying libs...\nFrom {path}\nTo ");
+    DECLARE_MESSAGE(CopyingHeaders, (), "", "Copying headers...");
+    DECLARE_MESSAGE(CopyingLibs, (), "", "Copying libs...");
+    DECLARE_MESSAGE(FromPath, (msg::path), "", "From {path}");
+    DECLARE_MESSAGE(ToPath, (msg::path), "", "To {path}");
     DECLARE_MESSAGE(CopyrightIsDir, (msg::path), "", "`{path}` being a directory is deprecated.");
     DECLARE_MESSAGE(CorruptedDatabase, (), "", "Database corrupted.");
     DECLARE_MESSAGE(CouldNotDeduceNugetIdAndVersion,
                     (msg::path),
                     "",
                     "Could not deduce nuget id and version from filename: {path}");
-    DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: \"{path}\"");
+    DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: {path}");
     DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
     DECLARE_MESSAGE(Creating7ZipArchive, (), "", "Creating 7zip archive...");
-    DECLARE_MESSAGE(CreatingPackageDirFailed, (msg::path), "", "Could not create package directory {path}.");
     DECLARE_MESSAGE(CreatingZipArchive, (), "", "Creating zip archive...");
-    DECLARE_MESSAGE(CreationFailed, (msg::path), "", "{path} creation failed.");
+    DECLARE_MESSAGE(CreationFailed, (msg::path), "", "Creating {path} failed.");
     DECLARE_MESSAGE(CurlReportedUnexpectedResults,
                     (msg::command_line, msg::actual),
                     "{command_line} is the command line to call curl.exe, {actual} is the console output "
@@ -899,22 +899,23 @@ namespace vcpkg
     DECLARE_MESSAGE(ExportArchitectureReq,
                     (),
                     "",
-                    "Export requires the following architectures arm64-v8a, armeabi-v7a, x86_64, x86 to be present.");
+                    "Export prefab requires targeting at least one of the following architectures arm64-v8a, "
+                    "armeabi-v7a, x86_64, x86 to be present.");
     DECLARE_MESSAGE(Exported7zipArchive, (msg::path), "", "7zip archive exported at: {path}");
-    DECLARE_MESSAGE(ExportedMaintenanceTool, (), "", "Maintenance tool exported.");
     DECLARE_MESSAGE(ExportedZipArchive, (msg::path), "", "Zip archive exported at: {path}");
     DECLARE_MESSAGE(ExportingAARandPOM, (), "", "[DEBUG] Exporting AAR and POM");
     DECLARE_MESSAGE(ExportingMaintenanceTool, (), "", "Exporting maintenance tool...");
     DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
-    DECLARE_MESSAGE(ExportingPackages, (), "", "The following packages are already built and will be exported:");
-    DECLARE_MESSAGE(ExportingPackagesComplete, (msg::path), "", "Exporting packages {path} complete.");
+    DECLARE_MESSAGE(ExportingAlreadyBuiltPackages,
+                    (),
+                    "",
+                    "The following packages are already built and will be exported:");
     DECLARE_MESSAGE(ExportUnsupportedInManifest,
                     (),
                     "",
                     "vcpkg export does not support manifest mode, in order to allow for future design considerations. "
                     "You may use export in classic mode by running vcpkg outside of a manifest-based project.");
     DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
-    DECLARE_MESSAGE(FailedToCompress, (), "", "Failed to compress folder ");
     DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":");
     DECLARE_MESSAGE(FailedToFindPortFeature, (msg::feature, msg::spec), "", "Could not find {feature} in {spec}.");
     DECLARE_MESSAGE(FailedToFormatMissingFile,
@@ -986,7 +987,6 @@ namespace vcpkg
     DECLARE_MESSAGE(FoundTriplets, (msg::count), "", "[DEBUG] Found {count} triplets");
     DECLARE_MESSAGE(GeneratedConfiguration, (msg::path), "", "Generated configuration {path}.");
     DECLARE_MESSAGE(GeneratedInstaller, (msg::path), "", "{path} installer generated.");
-    DECLARE_MESSAGE(GeneratedRepo, (msg::path), "", "{path} repository generated.");
     DECLARE_MESSAGE(GenerateMsgErrorParsingFormatArgs,
                     (msg::value),
                     "example of {value} 'GenerateMsgNoComment'",
@@ -1063,10 +1063,10 @@ namespace vcpkg
                     (msg::value),
                     "{value} is a sha.",
                     "SHA512's must be 128 hex characters: {value}");
-    DECLARE_MESSAGE(IncompatibleOptionSetting,
+    DECLARE_MESSAGE(MutuallyRequiredOption,
                     (msg::value, msg::option),
-                    "{value} is the 'main' option.",
-                    "--{value} is only valid with --{option}.");
+                    "--{value} is a second {option} switch.",
+                    "--{value} must be used with --{option}.");
     DECLARE_MESSAGE(IncorrectNumberOfArgs,
                     (msg::command_name, msg::expected, msg::actual),
                     "'{expected}' is the required number of arguments. '{actual}' is the number of arguments provided.",
@@ -1110,7 +1110,6 @@ namespace vcpkg
                     (msg::command_line),
                     "",
                     "You may be able to install this tool via your system package manager ({command_line}).");
-    DECLARE_MESSAGE(InstructionToBuild, (), "", "To build them, run:");
     DECLARE_MESSAGE(IntegrationFailed, (), "", "Integration was not applied.");
     DECLARE_MESSAGE(InternalCICommand,
                     (),
@@ -1295,7 +1294,7 @@ namespace vcpkg
     DECLARE_MESSAGE(ManifestFormatCompleted, (), "", "Succeeded in formatting the manifest files.");
     DECLARE_MESSAGE(MismatchedFiles, (), "", "file to store does not match hash");
     DECLARE_MESSAGE(Missing7zHeader, (), "", "Unable to find 7z header.");
-    DECLARE_MESSAGE(MissingAndroidEnv, (), "", "ANDROID_NDK_HOME environment missing");
+    DECLARE_MESSAGE(MissingAndroidEnv, (), "", "ANDROID_NDK_HOME environment variable missing");
     DECLARE_MESSAGE(MissingAndroidHomeDir, (msg::path), "", "ANDROID_NDK_HOME directory does not exist: {path}");
     DECLARE_MESSAGE(MissingArgFormatManifest,
                     (),
@@ -1354,7 +1353,6 @@ namespace vcpkg
                     "No packages are installed. Did you mean `search`?");
     DECLARE_MESSAGE(NoLocalizationForMessages, (), "", "No localized messages for the following: ");
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
-    DECLARE_MESSAGE(NugetPackageExported, (msg::path), "", "NuGet package exported at: {path}");
     DECLARE_MESSAGE(NugetPackageFileSucceededButCreationFailed,
                     (msg::path),
                     "",
@@ -1385,7 +1383,7 @@ namespace vcpkg
         "",
         "If you are sure you want to rebuild the above packages, run the command with the --recurse option.");
     DECLARE_MESSAGE(PackagesToRemove, (), "", "The following packages will be removed:");
-    DECLARE_MESSAGE(PackingNuget, (), "", "Packing NuGet package...");
+    DECLARE_MESSAGE(CreatingNugetPackage, (), "", "Packing NuGet package...");
     DECLARE_MESSAGE(PackingVendorFailed,
                     (msg::vendor),
                     "",
@@ -1421,7 +1419,7 @@ namespace vcpkg
                     "",
                     "The port type of {spec} differs between the installed and available portfile.\nPlease manually "
                     "remove {spec} and re-run this command.");
-    DECLARE_MESSAGE(PrebuiltPackages, (), "", "There are packages that have not been built.");
+    DECLARE_MESSAGE(PrebuiltPackages, (), "", "There are packages that have not been built. To build them run:");
     DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.");
     DECLARE_MESSAGE(ProcessorArchitectureMalformed,
                     (msg::arch),
@@ -1440,10 +1438,11 @@ namespace vcpkg
                     (msg::tool_name, msg::exit_code),
                     "The program's console output is appended after this.",
                     "{tool_name} failed with exit code: ({exit_code}).");
-    DECLARE_MESSAGE(ProvideExportType,
-                    (),
-                    "",
-                    "Must provide at least one export type: --raw --nuget --ifw --zip --7zip --chocolatey --prefab.");
+    DECLARE_MESSAGE(
+        ProvideExportType,
+        (),
+        "",
+        "At least one of the following options are required: --raw --nuget --ifw --zip --7zip --chocolatey --prefab.");
     DECLARE_MESSAGE(PushingVendorFailed,
                     (msg::vendor, msg::path),
                     "",
@@ -1545,7 +1544,10 @@ namespace vcpkg
                     "Unable to determine toolchain use for {triplet} with with CMAKE_SYSTEM_NAME {system_name}. Did "
                     "you mean to use "
                     "VCPKG_CHAINLOAD_TOOLCHAIN_FILE?");
-    DECLARE_MESSAGE(UnexpectedByteSize, (msg::count), "", "Expected 15 bytes to be written, but {count} were written.");
+    DECLARE_MESSAGE(UnexpectedByteSize,
+                    (msg::expected, msg::actual),
+                    "{expected} is the expected byte size and {actual} is the actual byte size.",
+                    "Expected {expected} bytes to be written, but {actual} were written.");
     DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.");
     DECLARE_MESSAGE(UnexpectedExtension, (msg::extension), "", "Unexpected archive extension: '{extension}'.");
     DECLARE_MESSAGE(UnexpectedFormat,
@@ -1674,7 +1676,10 @@ namespace vcpkg
                     (msg::triplet),
                     "'--' at the beginning must be preserved",
                     "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.");
-    DECLARE_MESSAGE(UsingExportedLibs, (), "", "To use exported libraries in CMake projects use:");
+    DECLARE_MESSAGE(CMakeUsingExportedLibs,
+                    (msg::value),
+                    "{value} is a CMake command line switch of the form -DFOO=BAR",
+                    "To use exported libraries in CMake projects, add {value} to your CMake command line.");
     DECLARE_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
     DECLARE_MESSAGE(VcpkgCeIsExperimental,
                     (),

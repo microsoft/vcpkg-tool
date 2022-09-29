@@ -463,7 +463,6 @@ namespace vcpkg
     REGISTER_MESSAGE(BuildingPackage);
     REGISTER_MESSAGE(BuildingPackageFailed);
     REGISTER_MESSAGE(BuildingPackageFailedDueToMissingDeps);
-    REGISTER_MESSAGE(BuildingPackages);
     REGISTER_MESSAGE(BuildResultBuildFailed);
     REGISTER_MESSAGE(BuildResultCacheMissing);
     REGISTER_MESSAGE(BuildResultCascadeDueToMissingDependencies);
@@ -500,13 +499,14 @@ namespace vcpkg
     REGISTER_MESSAGE(ControlAndManifestFilesPresent);
     REGISTER_MESSAGE(CopyingHeaders);
     REGISTER_MESSAGE(CopyingLibs);
+    REGISTER_MESSAGE(FromPath);
+    REGISTER_MESSAGE(ToPath);
     REGISTER_MESSAGE(CopyrightIsDir);
     REGISTER_MESSAGE(CorruptedDatabase);
     REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion);
     REGISTER_MESSAGE(CreatedNuGetPackage);
     REGISTER_MESSAGE(CreateFailureLogsDir);
     REGISTER_MESSAGE(Creating7ZipArchive);
-    REGISTER_MESSAGE(CreatingPackageDirFailed);
     REGISTER_MESSAGE(CreatingZipArchive);
     REGISTER_MESSAGE(CreationFailed);
     REGISTER_MESSAGE(CurlReportedUnexpectedResults);
@@ -562,16 +562,13 @@ namespace vcpkg
     REGISTER_MESSAGE(ExpectedValueForOption);
     REGISTER_MESSAGE(ExportArchitectureReq);
     REGISTER_MESSAGE(Exported7zipArchive);
-    REGISTER_MESSAGE(ExportedMaintenanceTool);
     REGISTER_MESSAGE(ExportedZipArchive);
     REGISTER_MESSAGE(ExportingAARandPOM);
     REGISTER_MESSAGE(ExportingMaintenanceTool);
     REGISTER_MESSAGE(ExportingPackage);
-    REGISTER_MESSAGE(ExportingPackages);
-    REGISTER_MESSAGE(ExportingPackagesComplete);
+    REGISTER_MESSAGE(ExportingAlreadyBuiltPackages);
     REGISTER_MESSAGE(ExportUnsupportedInManifest);
     REGISTER_MESSAGE(ExtendedDocumentationAtUrl);
-    REGISTER_MESSAGE(FailedToCompress);
     REGISTER_MESSAGE(FailedToExtract);
     REGISTER_MESSAGE(FailedToFindPortFeature);
     REGISTER_MESSAGE(FailedToFormatMissingFile);
@@ -607,7 +604,6 @@ namespace vcpkg
     REGISTER_MESSAGE(FoundTriplets);
     REGISTER_MESSAGE(GeneratedConfiguration);
     REGISTER_MESSAGE(GeneratedInstaller);
-    REGISTER_MESSAGE(GeneratedRepo);
     REGISTER_MESSAGE(GenerateMsgErrorParsingFormatArgs);
     REGISTER_MESSAGE(GenerateMsgIncorrectComment);
     REGISTER_MESSAGE(GenerateMsgNoArgumentValue);
@@ -649,7 +645,7 @@ namespace vcpkg
     REGISTER_MESSAGE(IllegalFeatures);
     REGISTER_MESSAGE(IllegalPlatformSpec);
     REGISTER_MESSAGE(ImproperShaLength);
-    REGISTER_MESSAGE(IncompatibleOptionSetting);
+    REGISTER_MESSAGE(MutuallyRequiredOption);
     REGISTER_MESSAGE(IncorrectNumberOfArgs);
     REGISTER_MESSAGE(InfoSetEnvVar);
     REGISTER_MESSAGE(InitRegistryFailedNoRepo);
@@ -664,7 +660,6 @@ namespace vcpkg
     REGISTER_MESSAGE(InstallWithSystemManager);
     REGISTER_MESSAGE(InstallWithSystemManagerMono);
     REGISTER_MESSAGE(InstallWithSystemManagerPkg);
-    REGISTER_MESSAGE(InstructionToBuild);
     REGISTER_MESSAGE(IntegrationFailed);
     REGISTER_MESSAGE(InternalCICommand);
     REGISTER_MESSAGE(InvalidArgMustBeAnInt);
@@ -742,7 +737,6 @@ namespace vcpkg
     REGISTER_MESSAGE(NoInstalledPackages);
     REGISTER_MESSAGE(NoLocalizationForMessages);
     REGISTER_MESSAGE(NoRegistryForPort);
-    REGISTER_MESSAGE(NugetPackageExported);
     REGISTER_MESSAGE(NugetPackageFileSucceededButCreationFailed);
     REGISTER_MESSAGE(OptionMustBeInteger);
     REGISTER_MESSAGE(OptionRequired);
@@ -757,7 +751,7 @@ namespace vcpkg
     REGISTER_MESSAGE(PackagesToRebuild);
     REGISTER_MESSAGE(PackagesToRebuildSuggestRecurse);
     REGISTER_MESSAGE(PackagesToRemove);
-    REGISTER_MESSAGE(PackingNuget);
+    REGISTER_MESSAGE(CreatingNugetPackage);
     REGISTER_MESSAGE(PackingVendorFailed);
     REGISTER_MESSAGE(ParseControlErrorInfoInvalidFields);
     REGISTER_MESSAGE(ParseControlErrorInfoMissingFields);
@@ -782,8 +776,8 @@ namespace vcpkg
     REGISTER_MESSAGE(ProvideExportType);
     REGISTER_MESSAGE(PushingVendorFailed);
     REGISTER_MESSAGE(RegistryCreated);
-    REGISTER_MESSAGE(RemovingPackageDirFailed);
     REGISTER_MESSAGE(ReplaceSecretsError);
+    REGISTER_MESSAGE(RemovingPackageDirFailed);
     REGISTER_MESSAGE(RestoredPackage);
     REGISTER_MESSAGE(RestoredPackagesFromVendor);
     REGISTER_MESSAGE(ResultsHeader);
@@ -849,8 +843,8 @@ namespace vcpkg
     REGISTER_MESSAGE(UserWideIntegrationDeleted);
     REGISTER_MESSAGE(UserWideIntegrationRemoved);
     REGISTER_MESSAGE(UsingCommunityTriplet);
-    REGISTER_MESSAGE(UsingExportedLibs);
     REGISTER_MESSAGE(UsingManifestAt);
+    REGISTER_MESSAGE(CMakeUsingExportedLibs);
     REGISTER_MESSAGE(VcpkgCeIsExperimental);
     REGISTER_MESSAGE(VcpkgCommitTableHeader);
     REGISTER_MESSAGE(VcpkgCompletion);

@@ -344,7 +344,6 @@ namespace vcpkg::Export::IFW
             const auto script_source = paths.root / "scripts" / "ifw" / "maintenance.qs";
             const auto script_destination = ifw_packages_dir_path / "maintenance" / "meta" / "maintenance.qs";
             fs.copy_file(script_source, script_destination, CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
-            msg::println(Color::success, msgExportedMaintenanceTool);
         }
 
         void do_repository(const std::string& export_id, const Options& ifw_options, const VcpkgPaths& paths)
@@ -364,7 +363,6 @@ namespace vcpkg::Export::IFW
             flatten(cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()),
                     repogen_exe)
                 .value_or_exit(VCPKG_LINE_INFO);
-            msg::println(Color::success, msgGeneratedRepo, msg::path = repository_dir);
         }
 
         void do_installer(const std::string& export_id, const Options& ifw_options, const VcpkgPaths& paths)
@@ -426,7 +424,7 @@ namespace vcpkg::Export::IFW
             msg::format(msgRemovingPackageDirFailed, msg::path = ifw_packages_dir_path).append_raw(failure_point));
 
         fs.create_directory(ifw_packages_dir_path, ec);
-        Checks::msg_check_exit(VCPKG_LINE_INFO, !ec, msgCreatingPackageDirFailed, msg::path = ifw_packages_dir_path);
+        Checks::msg_check_exit(VCPKG_LINE_INFO, !ec, msgCreationFailed, msg::path = ifw_packages_dir_path);
 
         // Export maintenance tool
         export_maintenance_tool(ifw_packages_dir_path, paths);
@@ -457,7 +455,6 @@ namespace vcpkg::Export::IFW
 
             install_package_and_write_listfile(fs, paths.package_dir(action.spec), dirs);
         }
-        msg::println(Color::success, msgExportingPackagesComplete, msg::path = ifw_packages_dir_path);
 
         const auto config_file = get_config_file_path(export_id, ifw_options, paths);
         msg::println(msgGeneratingConfiguration, msg::path = config_file);
