@@ -477,7 +477,7 @@ namespace vcpkg::Paragraphs
         auto& fs = paths.get_filesystem();
         std::atomic_size_t next{0};
         std::vector<ParseExpected<SourceControlFile>> res(port_names.size());
-        
+
         auto work = [&](StringView name) {
             auto port_dir = dir / name;
             size_t i;
@@ -486,9 +486,9 @@ namespace vcpkg::Paragraphs
             {
                 if (!fs.exists(port_dir, IgnoreErrors{}))
                 {
-                    res[i] = std::make_unique<ParseControlErrorInfo>(
-                        std::move(name),
-                        msg::format_error(msgAddVersionPortDoesNotExist, msg::package_name = name).to_string());
+                    std::string error_msg =
+                        msg::format_error(msgAddVersionPortDoesNotExist, msg::package_name = name).to_string();
+                    res[i] = std::make_unique<ParseControlErrorInfo>(std::move(name), std::move(error_msg));
                     return;
                 }
 
