@@ -492,6 +492,7 @@ namespace vcpkg
     REGISTER_MESSAGE(CMakeTargetsUsage);
     REGISTER_MESSAGE(CMakeTargetsUsageHeuristicMessage);
     REGISTER_MESSAGE(CMakeToolChainFile);
+    REGISTER_MESSAGE(CMakeUsingExportedLibs);
     REGISTER_MESSAGE(CommandFailed);
     REGISTER_MESSAGE(CompressFolderFailed);
     REGISTER_MESSAGE(ConflictingValuesForOption);
@@ -499,14 +500,13 @@ namespace vcpkg
     REGISTER_MESSAGE(ControlAndManifestFilesPresent);
     REGISTER_MESSAGE(CopyingHeaders);
     REGISTER_MESSAGE(CopyingLibs);
-    REGISTER_MESSAGE(FromPath);
-    REGISTER_MESSAGE(ToPath);
     REGISTER_MESSAGE(CopyrightIsDir);
     REGISTER_MESSAGE(CorruptedDatabase);
     REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion);
     REGISTER_MESSAGE(CreatedNuGetPackage);
     REGISTER_MESSAGE(CreateFailureLogsDir);
     REGISTER_MESSAGE(Creating7ZipArchive);
+    REGISTER_MESSAGE(CreatingNugetPackage);
     REGISTER_MESSAGE(CreatingZipArchive);
     REGISTER_MESSAGE(CreationFailed);
     REGISTER_MESSAGE(CurlReportedUnexpectedResults);
@@ -564,9 +564,9 @@ namespace vcpkg
     REGISTER_MESSAGE(Exported7zipArchive);
     REGISTER_MESSAGE(ExportedZipArchive);
     REGISTER_MESSAGE(ExportingAARandPOM);
+    REGISTER_MESSAGE(ExportingAlreadyBuiltPackages);
     REGISTER_MESSAGE(ExportingMaintenanceTool);
     REGISTER_MESSAGE(ExportingPackage);
-    REGISTER_MESSAGE(ExportingAlreadyBuiltPackages);
     REGISTER_MESSAGE(ExportUnsupportedInManifest);
     REGISTER_MESSAGE(ExtendedDocumentationAtUrl);
     REGISTER_MESSAGE(FailedToExtract);
@@ -602,6 +602,7 @@ namespace vcpkg
     REGISTER_MESSAGE(FormattedParseMessageExpression);
     REGISTER_MESSAGE(FoundModule);
     REGISTER_MESSAGE(FoundTriplets);
+    REGISTER_MESSAGE(FromPath);
     REGISTER_MESSAGE(GeneratedConfiguration);
     REGISTER_MESSAGE(GeneratedInstaller);
     REGISTER_MESSAGE(GenerateMsgErrorParsingFormatArgs);
@@ -645,7 +646,6 @@ namespace vcpkg
     REGISTER_MESSAGE(IllegalFeatures);
     REGISTER_MESSAGE(IllegalPlatformSpec);
     REGISTER_MESSAGE(ImproperShaLength);
-    REGISTER_MESSAGE(MutuallyRequiredOption);
     REGISTER_MESSAGE(IncorrectNumberOfArgs);
     REGISTER_MESSAGE(InfoSetEnvVar);
     REGISTER_MESSAGE(InitRegistryFailedNoRepo);
@@ -725,6 +725,7 @@ namespace vcpkg
     REGISTER_MESSAGE(MonoInstructions);
     REGISTER_MESSAGE(MsiexecFailedToExtract);
     REGISTER_MESSAGE(MultiArch);
+    REGISTER_MESSAGE(MutuallyRequiredOption);
     REGISTER_MESSAGE(NavigateToNPS);
     REGISTER_MESSAGE(NewConfigurationAlreadyExists);
     REGISTER_MESSAGE(NewManifestAlreadyExists);
@@ -751,7 +752,6 @@ namespace vcpkg
     REGISTER_MESSAGE(PackagesToRebuild);
     REGISTER_MESSAGE(PackagesToRebuildSuggestRecurse);
     REGISTER_MESSAGE(PackagesToRemove);
-    REGISTER_MESSAGE(CreatingNugetPackage);
     REGISTER_MESSAGE(PackingVendorFailed);
     REGISTER_MESSAGE(ParseControlErrorInfoInvalidFields);
     REGISTER_MESSAGE(ParseControlErrorInfoMissingFields);
@@ -776,8 +776,8 @@ namespace vcpkg
     REGISTER_MESSAGE(ProvideExportType);
     REGISTER_MESSAGE(PushingVendorFailed);
     REGISTER_MESSAGE(RegistryCreated);
-    REGISTER_MESSAGE(ReplaceSecretsError);
     REGISTER_MESSAGE(RemovingPackageDirFailed);
+    REGISTER_MESSAGE(ReplaceSecretsError);
     REGISTER_MESSAGE(RestoredPackage);
     REGISTER_MESSAGE(RestoredPackagesFromVendor);
     REGISTER_MESSAGE(ResultsHeader);
@@ -803,6 +803,7 @@ namespace vcpkg
     REGISTER_MESSAGE(SystemApiErrorMessage);
     REGISTER_MESSAGE(ToolFetchFailed);
     REGISTER_MESSAGE(ToolInWin10);
+    REGISTER_MESSAGE(ToPath);
     REGISTER_MESSAGE(TotalTime);
     REGISTER_MESSAGE(TwoFeatureFlagsSpecified);
     REGISTER_MESSAGE(UndeterminedToolChainForTriplet);
@@ -844,7 +845,6 @@ namespace vcpkg
     REGISTER_MESSAGE(UserWideIntegrationRemoved);
     REGISTER_MESSAGE(UsingCommunityTriplet);
     REGISTER_MESSAGE(UsingManifestAt);
-    REGISTER_MESSAGE(CMakeUsingExportedLibs);
     REGISTER_MESSAGE(VcpkgCeIsExperimental);
     REGISTER_MESSAGE(VcpkgCommitTableHeader);
     REGISTER_MESSAGE(VcpkgCompletion);

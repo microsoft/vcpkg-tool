@@ -734,6 +734,10 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "CMake projects should use: \"-DCMAKE_TOOLCHAIN_FILE={path}\"");
+    DECLARE_MESSAGE(CMakeUsingExportedLibs,
+                    (msg::value),
+                    "{value} is a CMake command line switch of the form -DFOO=BAR",
+                    "To use exported libraries in CMake projects, add {value} to your CMake command line.");
     DECLARE_MESSAGE(CommandFailed,
                     (msg::command_line),
                     "",
@@ -749,8 +753,6 @@ namespace vcpkg
                     "Both a manifest file and a CONTROL file exist in port directory: {path}");
     DECLARE_MESSAGE(CopyingHeaders, (), "", "Copying headers...");
     DECLARE_MESSAGE(CopyingLibs, (), "", "Copying libs...");
-    DECLARE_MESSAGE(FromPath, (msg::path), "", "From {path}");
-    DECLARE_MESSAGE(ToPath, (msg::path), "", "To {path}");
     DECLARE_MESSAGE(CopyrightIsDir, (msg::path), "", "`{path}` being a directory is deprecated.");
     DECLARE_MESSAGE(CorruptedDatabase, (), "", "Database corrupted.");
     DECLARE_MESSAGE(CouldNotDeduceNugetIdAndVersion,
@@ -760,6 +762,7 @@ namespace vcpkg
     DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: {path}");
     DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
     DECLARE_MESSAGE(Creating7ZipArchive, (), "", "Creating 7zip archive...");
+    DECLARE_MESSAGE(CreatingNugetPackage, (), "", "Packing NuGet package...");
     DECLARE_MESSAGE(CreatingZipArchive, (), "", "Creating zip archive...");
     DECLARE_MESSAGE(CreationFailed, (msg::path), "", "Creating {path} failed.");
     DECLARE_MESSAGE(CurlReportedUnexpectedResults,
@@ -904,12 +907,12 @@ namespace vcpkg
     DECLARE_MESSAGE(Exported7zipArchive, (msg::path), "", "7zip archive exported at: {path}");
     DECLARE_MESSAGE(ExportedZipArchive, (msg::path), "", "Zip archive exported at: {path}");
     DECLARE_MESSAGE(ExportingAARandPOM, (), "", "[DEBUG] Exporting AAR and POM");
-    DECLARE_MESSAGE(ExportingMaintenanceTool, (), "", "Exporting maintenance tool...");
-    DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
     DECLARE_MESSAGE(ExportingAlreadyBuiltPackages,
                     (),
                     "",
                     "The following packages are already built and will be exported:");
+    DECLARE_MESSAGE(ExportingMaintenanceTool, (), "", "Exporting maintenance tool...");
+    DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
     DECLARE_MESSAGE(ExportUnsupportedInManifest,
                     (),
                     "",
@@ -985,6 +988,7 @@ namespace vcpkg
                     "on expression: {value}");
     DECLARE_MESSAGE(FoundModule, (msg::package_name), "", "[DEBUG] Found module {package_name}:");
     DECLARE_MESSAGE(FoundTriplets, (msg::count), "", "[DEBUG] Found {count} triplets");
+    DECLARE_MESSAGE(FromPath, (msg::path), "", "From {path}");
     DECLARE_MESSAGE(GeneratedConfiguration, (msg::path), "", "Generated configuration {path}.");
     DECLARE_MESSAGE(GeneratedInstaller, (msg::path), "", "{path} installer generated.");
     DECLARE_MESSAGE(GenerateMsgErrorParsingFormatArgs,
@@ -1063,10 +1067,6 @@ namespace vcpkg
                     (msg::value),
                     "{value} is a sha.",
                     "SHA512's must be 128 hex characters: {value}");
-    DECLARE_MESSAGE(MutuallyRequiredOption,
-                    (msg::value, msg::option),
-                    "--{value} is a second {option} switch.",
-                    "--{value} must be used with --{option}.");
     DECLARE_MESSAGE(IncorrectNumberOfArgs,
                     (msg::command_name, msg::expected, msg::actual),
                     "'{expected}' is the required number of arguments. '{actual}' is the number of arguments provided.",
@@ -1328,6 +1328,10 @@ namespace vcpkg
                     "",
                     "msiexec failed while extracting \"{path}\" with launch or exit code {exit_code} and message:");
     DECLARE_MESSAGE(MultiArch, (msg::option), "", "Multi-Arch must be 'same' but was {option}");
+    DECLARE_MESSAGE(MutuallyRequiredOption,
+                    (msg::value, msg::option),
+                    "--{value} is a second {option} switch.",
+                    "--{value} must be used with --{option}.");
     DECLARE_MESSAGE(NavigateToNPS, (msg::url), "", "Please navigate to {url} in your preferred browser.");
     DECLARE_MESSAGE(NewConfigurationAlreadyExists,
                     (msg::path),
@@ -1383,7 +1387,6 @@ namespace vcpkg
         "",
         "If you are sure you want to rebuild the above packages, run the command with the --recurse option.");
     DECLARE_MESSAGE(PackagesToRemove, (), "", "The following packages will be removed:");
-    DECLARE_MESSAGE(CreatingNugetPackage, (), "", "Packing NuGet package...");
     DECLARE_MESSAGE(PackingVendorFailed,
                     (msg::vendor),
                     "",
@@ -1533,6 +1536,7 @@ namespace vcpkg
                     "calling {system_api} failed with {exit_code} ({error_msg})");
     DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
     DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
+    DECLARE_MESSAGE(ToPath, (msg::path), "", "To {path}");
     DECLARE_MESSAGE(TotalTime, (msg::elapsed), "", "Total elapsed time: {elapsed}");
     DECLARE_MESSAGE(TwoFeatureFlagsSpecified,
                     (msg::value),
@@ -1676,10 +1680,6 @@ namespace vcpkg
                     (msg::triplet),
                     "'--' at the beginning must be preserved",
                     "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.");
-    DECLARE_MESSAGE(CMakeUsingExportedLibs,
-                    (msg::value),
-                    "{value} is a CMake command line switch of the form -DFOO=BAR",
-                    "To use exported libraries in CMake projects, add {value} to your CMake command line.");
     DECLARE_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
     DECLARE_MESSAGE(VcpkgCeIsExperimental,
                     (),
