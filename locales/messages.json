@@ -162,7 +162,7 @@
   "CorruptedDatabase": "Database corrupted.",
   "CouldNotDeduceNugetIdAndVersion": "Could not deduce nuget id and version from filename: {path}",
   "_CouldNotDeduceNugetIdAndVersion.comment": "An example of {path} is /foo/bar.",
-  "CreateFailureLogsDir": "Creating failure logs output directory {path}.",
+  "CreateFailureLogsDir": "Creating failure logs output directory {path}",
   "_CreateFailureLogsDir.comment": "An example of {path} is /foo/bar.",
   "CreatedNuGetPackage": "Created nupkg: \"{path}\"",
   "_CreatedNuGetPackage.comment": "An example of {path} is /foo/bar.",
