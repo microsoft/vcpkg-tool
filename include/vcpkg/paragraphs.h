@@ -26,6 +26,8 @@ namespace vcpkg::Paragraphs
                                                         bool is_manifest,
                                                         MessageSink& warning_sink);
 
+    std::vector<ParseExpected<SourceControlFile>> try_load_ports(View<std::string> port_names, const Path& dir, const VcpkgPaths& paths);
+
     ExpectedS<BinaryControlFile> try_load_cached_package(const Filesystem& fs,
                                                          const Path& package_dir,
                                                          const PackageSpec& spec);

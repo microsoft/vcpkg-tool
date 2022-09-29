@@ -1,5 +1,6 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/parallel-algorithms.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
@@ -10,6 +11,7 @@
 #include <vcpkg/paragraphparser.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/registries.h>
+#include <vcpkg/vcpkgpaths.h>
 
 static std::atomic<uint64_t> g_load_ports_stats(0);
 
@@ -385,29 +387,29 @@ namespace vcpkg::Paragraphs
     {
         StatsTimer timer(g_load_ports_stats);
 
-        const auto manifest_path = port_directory / "vcpkg.json";
-        const auto control_path = port_directory / "CONTROL";
-        const auto port_name = port_directory.filename().to_string();
+        const Path manifest_path = port_directory / "vcpkg.json";
+        const Path control_path = port_directory / "CONTROL";
+        auto port_name = port_directory.filename().to_string();
         std::error_code ec;
         auto manifest_contents = fs.read_contents(manifest_path, ec);
         if (ec)
         {
             if (fs.exists(manifest_path, IgnoreErrors{}))
             {
-                auto error_info = std::make_unique<ParseControlErrorInfo>();
-                error_info->name = port_name;
-                error_info->error =
-                    Strings::format("Failed to load manifest file for port: %s\n", manifest_path, ec.message());
-                return error_info;
+                return std::make_unique<ParseControlErrorInfo>(
+                    std::move(port_name),
+                    Strings::format("Failed to load manifest file for port: %s\n", manifest_path, ec.message()));
             }
         }
         else
         {
-            vcpkg::Checks::check_exit(VCPKG_LINE_INFO,
-                                      !fs.exists(control_path, IgnoreErrors{}),
-                                      "Found both manifest and CONTROL file in port %s; please rename one or the other",
-                                      port_directory);
-
+            if (fs.exists(control_path, IgnoreErrors{}))
+            {
+                return std::make_unique<ParseControlErrorInfo>(
+                    std::move(port_name),
+                    Strings::format("Found both manifest and CONTROL file in port %s; please rename one or the other\n",
+                                    port_directory));
+            }
             return try_load_manifest_text(manifest_contents, manifest_path, stdout_sink);
         }
 
@@ -418,14 +420,12 @@ namespace vcpkg::Paragraphs
             {
                 return SourceControlFile::parse_control_file(control_path, std::move(*vector_pghs));
             }
-            auto error_info = std::make_unique<ParseControlErrorInfo>();
-            error_info->name = port_name;
-            error_info->error = pghs.error();
-            return error_info;
+
+            std::string error_msg = pghs.error();
+            return std::make_unique<ParseControlErrorInfo>(std::move(port_name), std::move(error_msg));
         }
 
-        auto error_info = std::make_unique<ParseControlErrorInfo>();
-        error_info->name = port_name;
+        auto error_info = std::make_unique<ParseControlErrorInfo>(std::move(port_name));
         if (fs.exists(port_directory, IgnoreErrors{}))
         {
             error_info->error = "Failed to find either a CONTROL file or vcpkg.json file.";
@@ -469,6 +469,36 @@ namespace vcpkg::Paragraphs
         }
 
         return pghs.error();
+    }
+
+    std::vector<ParseExpected<SourceControlFile>> try_load_ports(View<std::string> port_names,
+                                                                 const Path& dir,
+                                                                 const VcpkgPaths& paths)
+    {
+        auto& fs = paths.get_filesystem();
+        std::atomic_size_t next{0};
+        std::vector<ParseExpected<SourceControlFile>> res(port_names.size());
+        
+        auto work = [&](StringView name) {
+            auto port_dir = dir / name;
+            size_t i;
+
+            while (i = next.fetch_add(1, std::memory_order_relaxed), i < res.size())
+            {
+                if (!fs.exists(port_dir, IgnoreErrors{}))
+                {
+                    res[i] = std::make_unique<ParseControlErrorInfo>(
+                        std::move(name),
+                        msg::format_error(msgAddVersionPortDoesNotExist, msg::package_name = name).to_string());
+                    return;
+                }
+
+                res[i] = Paragraphs::try_load_port(fs, port_dir);
+            }
+        };
+
+        vcpkg_par_unseq_for_each(port_names.begin(), port_names.end(), std::move(work));
+        return res;
     }
 
     LoadResults try_load_all_registry_ports(const Filesystem& fs, const RegistrySet& registries)

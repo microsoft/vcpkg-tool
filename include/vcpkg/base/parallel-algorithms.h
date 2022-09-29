@@ -20,7 +20,7 @@
 namespace vcpkg
 {
     template<class It, class F>
-    void parallel_for_each(It begin, It end, F cb)
+    void parallel_for_each(It begin, It end, F&& cb)
     {
         if (begin == end)
         {
@@ -40,7 +40,7 @@ namespace vcpkg
         workers.reserve(num_threads);
 
         std::atomic_size_t next{0};
-        auto work = [&begin, &next, &work_count, &cb]() {
+        auto work = [&]() {
             size_t i;
             while (i = next.fetch_add(1, std::memory_order_relaxed), i < static_cast<size_t>(work_count))
             {

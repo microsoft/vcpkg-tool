@@ -406,7 +406,7 @@ namespace vcpkg::Commands::AddVersion
                 return;
             }
 
-            auto maybe_scf = Paragraphs::try_load_port(fs, paths.builtin_ports_directory() / port_name);
+            auto maybe_scf = Paragraphs::try_load_port(fs, port_dir);
             if (!maybe_scf)
             {
                 msg::println_error(msgAddVersionLoadPortFailed, msg::package_name = port_name);
