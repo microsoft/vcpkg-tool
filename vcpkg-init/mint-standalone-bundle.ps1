@@ -52,6 +52,7 @@ try {
     New-Item -Path 'out/scripts' -ItemType 'Directory' -Force
     Push-Location "vcpkg-$sha"
     try {
+        Move-Item 'LICENSE.txt' '../out/LICENSE.txt'
         Move-Item 'triplets' '../out/triplets'
         foreach ($exclusion in $scripts_exclusions) {
             Remove-Item "scripts/$exclusion" -Recurse -Force

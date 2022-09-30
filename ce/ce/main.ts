@@ -15,6 +15,7 @@ import { CleanCommand } from './cli/commands/clean';
 import { DeactivateCommand } from './cli/commands/deactivate';
 import { DeleteCommand } from './cli/commands/delete';
 import { FindCommand } from './cli/commands/find';
+import { GenerateMSBuildPropsCommand } from './cli/commands/generate-msbuild-props';
 import { HelpCommand } from './cli/commands/help';
 import { ListCommand } from './cli/commands/list';
 import { RegenerateCommand } from './cli/commands/regenerate-index';
@@ -22,7 +23,7 @@ import { RemoveCommand } from './cli/commands/remove';
 import { UpdateCommand } from './cli/commands/update';
 import { UseCommand } from './cli/commands/use';
 import { VersionCommand } from './cli/commands/version';
-import { blank, cli, product } from './cli/constants';
+import { cli, product } from './cli/constants';
 import { command as formatCommand, hint } from './cli/format';
 import { debug, error, initStyling, log } from './cli/styling';
 import { i, setLocale } from './i18n';
@@ -88,6 +89,7 @@ async function main() {
   const del = new DeleteCommand(commandline);
 
   const activate = new ActivateCommand(commandline);
+  const activate_msbuildprops = new GenerateMSBuildPropsCommand(commandline);
   const deactivate = new DeactivateCommand(commandline);
 
   const regenerate = new RegenerateCommand(commandline);
@@ -115,12 +117,10 @@ async function main() {
     if (commandline.inputs.length > 0) {
       // unrecognized command
       error(i`Unrecognized command '${commandline.inputs[0]}'`);
-      log(blank);
       log(hint(i`Use ${formatCommand(`${cli} ${help.command}`)} to get help`));
       return process.exitCode = 1;
     }
 
-    log(blank);
     log(hint(i`Use ${formatCommand(`${cli} ${help.command}`)} to get help`));
 
     return process.exitCode = 0;
@@ -128,7 +128,6 @@ async function main() {
   let result = true;
   try {
     result = await command.run();
-    log(blank);
   } catch (e) {
     // in --debug mode we want to see the stack trace(s).
     if (commandline.debug && e instanceof Error) {

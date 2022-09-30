@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { buildRegistryResolver } from '../../artifacts/artifact';
 import { i } from '../../i18n';
 import { session } from '../../main';
-import { Registries } from '../../registries/registries';
 import { selectArtifacts, showArtifacts } from '../artifacts';
 import { Command } from '../command';
 import { cmdSwitch } from '../format';
@@ -11,7 +11,6 @@ import { activate } from '../project';
 import { error, log, warning } from '../styling';
 import { MSBuildProps } from '../switches/msbuild-props';
 import { Project } from '../switches/project';
-import { Registry } from '../switches/registry';
 import { Version } from '../switches/version';
 import { WhatIf } from '../switches/whatIf';
 
@@ -22,7 +21,6 @@ export class UseCommand extends Command {
   argumentsHelp = [];
   version = new Version(this);
   whatIf = new WhatIf(this);
-  registrySwitch = new Registry(this);
   project = new Project(this);
   msbuildProps = new MSBuildProps(this);
 
@@ -42,10 +40,8 @@ export class UseCommand extends Command {
       return false;
     }
 
-    // load registries (from the current project too if available)
-    let registries: Registries = await this.registrySwitch.loadRegistries(session);
-    registries = (await this.project.manifest)?.registries ?? registries;
-
+    const resolver = session.globalRegistryResolver.with(
+      await buildRegistryResolver(session, (await this.project.manifest)?.metadata.registries));
     const versions = this.version.values;
     if (versions.length && this.inputs.length !== versions.length) {
       error(i`Multiple packages specified, but not an equal number of ${cmdSwitch('version')} switches`);
@@ -53,18 +49,17 @@ export class UseCommand extends Command {
     }
 
     const selections = new Map(this.inputs.map((v, i) => [v, versions[i] || '*']));
-    const artifacts = await selectArtifacts(selections, registries);
-
+    const artifacts = await selectArtifacts(session, selections, resolver, 1);
     if (!artifacts) {
       return false;
     }
 
-    if (!await showArtifacts(artifacts.artifacts, this.commandLine)) {
+    if (!await showArtifacts(artifacts, resolver, this.commandLine)) {
       warning(i`No artifacts are being acquired`);
       return false;
     }
 
-    const success = await activate(artifacts, false, { force: this.commandLine.force, language: this.commandLine.language, allLanguages: this.commandLine.allLanguages });
+    const success = await activate(session, artifacts, resolver, false, { force: this.commandLine.force, language: this.commandLine.language, allLanguages: this.commandLine.allLanguages });
     if (success) {
       log(i`Activating individual artifacts`);
     } else {

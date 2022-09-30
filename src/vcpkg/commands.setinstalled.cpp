@@ -46,7 +46,8 @@ namespace vcpkg::Commands::SetInstalled
                              DryRun dry_run,
                              const Optional<Path>& maybe_pkgsconfig,
                              Triplet host_triplet,
-                             const KeepGoing keep_going)
+                             const KeepGoing keep_going,
+                             const bool only_downloads)
     {
         auto& fs = paths.get_filesystem();
 
@@ -121,7 +122,17 @@ namespace vcpkg::Commands::SetInstalled
 
         const auto summary = Install::perform(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), cmake_vars);
+        msg::println();
         msg::println(msgTotalTime, msg::elapsed = GlobalState::timer.to_string());
+
+        if (keep_going == KeepGoing::YES && summary.failed())
+        {
+            summary.print_failed();
+            if (!only_downloads)
+            {
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
 
         std::set<std::string> printed_usages;
         for (auto&& ur_spec : user_requested_specs)
@@ -164,7 +175,7 @@ namespace vcpkg::Commands::SetInstalled
         auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
         if (it_pkgsconfig != options.settings.end())
         {
-            LockGuardPtr<Metrics>(g_metrics)->track_property("x-write-nuget-packages-config", "defined");
+            LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::X_WriteNugetPackagesConfig);
             pkgsconfig = it_pkgsconfig->second;
         }
 
@@ -187,7 +198,8 @@ namespace vcpkg::Commands::SetInstalled
                             dry_run ? DryRun::Yes : DryRun::No,
                             pkgsconfig,
                             host_triplet,
-                            keep_going);
+                            keep_going,
+                            only_downloads);
     }
 
     void SetInstalledCommand::perform_and_exit(const VcpkgCmdArguments& args,
