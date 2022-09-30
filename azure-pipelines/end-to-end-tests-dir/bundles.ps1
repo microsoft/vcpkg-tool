@@ -21,6 +21,7 @@ New-Item -ItemType File -Force $bundle/.vcpkg-root | Out-Null
 $a = Run-Vcpkg z-print-config `
     --vcpkg-root=$bundle `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
     --x-scripts-root=$env:VCPKG_ROOT/scripts
 $a
 Throw-IfFailed
@@ -52,6 +53,7 @@ New-Item -ItemType File -Force $bundle/.vcpkg-root | Out-Null
 $a = Run-Vcpkg z-print-config `
     --vcpkg-root=$bundle `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
     --x-scripts-root=$env:VCPKG_ROOT/scripts
 $a
 Throw-IfFailed
@@ -90,6 +92,7 @@ $a = Run-Vcpkg z-print-config `
     --vcpkg-root=$bundle `
     --x-manifest-root=$manifestdir `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
     --x-scripts-root=$env:VCPKG_ROOT/scripts
 $a
 Throw-IfFailed
@@ -132,6 +135,7 @@ $a = Run-Vcpkg z-print-config `
     --vcpkg-root=$bundle `
     --x-manifest-root=$manifestdir `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
     --x-buildtrees-root=$buildtreesRoot `
     --x-install-root=$installRoot `
     --x-packages-root=$packagesRoot `
@@ -158,6 +162,7 @@ foreach ($k in $b.keys) {
 
 Run-Vcpkg install zlib --dry-run --vcpkg-root=$bundle `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
     --x-buildtrees-root=$buildtreesRoot `
     --x-builtin-ports-root=$env:VCPKG_ROOT/ports `
     --x-install-root=$installRoot `
@@ -174,6 +179,7 @@ $CurrentTest = "Testing bundle.usegitregistry"
 Run-Vcpkg install --dry-run --vcpkg-root=$bundle `
     --x-manifest-root=$manifestdir `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
     --x-buildtrees-root=$buildtreesRoot `
     --x-builtin-ports-root=$env:VCPKG_ROOT/ports `
     --x-install-root=$installRoot `
@@ -193,6 +199,7 @@ New-Item -ItemType Directory -Force $manifestdir2 | Out-Null
 Run-Vcpkg install --vcpkg-root=$bundle `
     --x-manifest-root=$manifestdir2 `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
     --x-buildtrees-root=$buildtreesRoot `
     --x-builtin-ports-root=$env:VCPKG_ROOT/ports `
     --x-install-root=$installRoot `
@@ -203,6 +210,7 @@ Throw-IfFailed
 Run-Vcpkg search zlib --vcpkg-root=$bundle `
     --x-manifest-root=$manifestdir2 `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
     --x-buildtrees-root=$buildtreesRoot `
     --x-builtin-ports-root=$env:VCPKG_ROOT/ports `
     --x-install-root=$installRoot `
