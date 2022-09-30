@@ -1391,7 +1391,10 @@ namespace vcpkg
                     (msg::tool_name, msg::exit_code),
                     "The program's console output is appended after this.",
                     "{tool_name} failed with exit code: ({exit_code}).");
-    DECLARE_MESSAGE(PurgeOptionConflict, (), "", "cannot specify both --no-purge and --purge.");
+    DECLARE_MESSAGE(MutuallyExclusiveOption,
+                    (msg::value, msg::option),
+                    "{value} is a second {option} switch",
+                    "--{value} can not be used with --{option}.");
     DECLARE_MESSAGE(PushingVendorFailed,
                     (msg::vendor, msg::path),
                     "",

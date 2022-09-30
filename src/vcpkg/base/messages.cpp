@@ -726,7 +726,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ProcessorArchitectureMissing);
     REGISTER_MESSAGE(ProcessorArchitectureW6432Malformed);
     REGISTER_MESSAGE(ProgramReturnedNonzeroExitCode);
-    REGISTER_MESSAGE(PurgeOptionConflict);
+    REGISTER_MESSAGE(MutuallyExclusiveOption);
     REGISTER_MESSAGE(PushingVendorFailed);
     REGISTER_MESSAGE(RegistryCreated);
     REGISTER_MESSAGE(RemoveDependencies);

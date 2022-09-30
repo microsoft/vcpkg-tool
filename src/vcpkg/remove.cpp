@@ -234,7 +234,7 @@ namespace vcpkg::Remove
         const bool no_purge = Util::Sets::contains(options.switches, OPTION_NO_PURGE);
         if (no_purge && Util::Sets::contains(options.switches, OPTION_PURGE))
         {
-            msg::println_error(msgPurgeOptionConflict);
+            msg::println_error(msgMutuallyExclusiveOption, msg::value = "no-purge", msg::option = "purge");
             msg::write_unlocalized_text_to_stdout(Color::none, COMMAND_STRUCTURE.example_text);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
