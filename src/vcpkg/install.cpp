@@ -890,7 +890,8 @@ namespace vcpkg
         const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
-        const bool no_print_usage = Util::Sets::contains(options.switches, OPTION_NO_PRINT_USAGE);
+        const PrintUsage print_cmake_usage =
+            Util::Sets::contains(options.switches, OPTION_NO_PRINT_USAGE) ? PrintUsage::NO : PrintUsage::YES;
 
         LockGuardPtr<Metrics>(g_metrics)->track_bool_property(BoolMetric::InstallManifestMode,
                                                               paths.manifest_mode_enabled());
@@ -971,8 +972,7 @@ namespace vcpkg
             PurgeDecompressFailure::NO,
             Util::Enum::to_enum<Editable>(is_editable),
             prohibit_backcompat_features ? BackcompatFeatures::PROHIBIT : BackcompatFeatures::ALLOW,
-            Util::Enum::to_enum<PrintUsage>(!no_print_usage),
-        };
+            print_cmake_usage};
 
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
@@ -1112,7 +1112,8 @@ namespace vcpkg
                                                         pkgsconfig,
                                                         host_triplet,
                                                         keep_going,
-                                                        only_downloads);
+                                                        only_downloads,
+                                                        print_cmake_usage);
         }
 
         PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
