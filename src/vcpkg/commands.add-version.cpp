@@ -203,7 +203,7 @@ namespace
                 }
             }
             Checks::msg_check_exit(
-                VCPKG_LINE_INFO, status == Lint::Status::Problem, msgAddVersionLintPort, msg::package_name = port_name);
+                VCPKG_LINE_INFO, status == Lint::Status::Ok, msgAddVersionLintPort, msg::package_name = port_name);
         };
         if (!fs.exists(version_db_file_path, IgnoreErrors{}))
         {
