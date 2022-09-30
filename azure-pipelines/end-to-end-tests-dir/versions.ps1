@@ -34,35 +34,35 @@ Throw-IfNotFailed
 
 $CurrentTest = "x-add-version cat"
 # Do not fail if there's nothing to update
-Run-Vcpkg @portsRedirectArgsIncomplete x-add-version cat
+Run-Vcpkg @portsRedirectArgsIncomplete x-add-version --skip-license-check cat
 Throw-IfFailed
 
 $CurrentTest = "x-add-version dog"
 # Local version is not in baseline and versions file
-Run-Vcpkg @portsRedirectArgsIncomplete x-add-version dog
+Run-Vcpkg @portsRedirectArgsIncomplete x-add-version --skip-license-check dog
 Throw-IfFailed
 
 $CurrentTest = "x-add-version duck"
 # Missing versions file
-Run-Vcpkg @portsRedirectArgsIncomplete x-add-version duck
+Run-Vcpkg @portsRedirectArgsIncomplete x-add-version --skip-license-check duck
 Throw-IfFailed
 
 $CurrentTest = "x-add-version ferret"
 # Missing versions file and missing baseline entry
-Run-Vcpkg @portsRedirectArgsIncomplete x-add-version ferret
+Run-Vcpkg @portsRedirectArgsIncomplete x-add-version --skip-license-check ferret
 Throw-IfFailed
 
 $CurrentTest = "x-add-version fish (must fail)"
 # Discrepancy between local SHA and SHA in fish.json. Requires --overwrite-version.
-$out = Run-Vcpkg @portsRedirectArgsIncomplete x-add-version fish
+$out = Run-Vcpkg @portsRedirectArgsIncomplete x-add-version --skip-license-check fish
 Throw-IfNotFailed
 $CurrentTest = "x-add-version fish --overwrite-version"
-Run-Vcpkg @portsRedirectArgsIncomplete x-add-version fish --overwrite-version --skip-version-format-check
+Run-Vcpkg @portsRedirectArgsIncomplete x-add-version fish --overwrite-version --skip-version-format-check  --skip-license-check
 Throw-IfFailed
 
 $CurrentTest = "x-add-version mouse"
 # Missing baseline entry
-Run-Vcpkg @portsRedirectArgsIncomplete x-add-version mouse
+Run-Vcpkg @portsRedirectArgsIncomplete x-add-version --skip-license-check mouse
 Throw-IfFailed
 # Validate changes
 Run-Vcpkg @portsRedirectArgsIncomplete x-ci-verify-versions --verbose
