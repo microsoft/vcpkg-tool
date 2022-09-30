@@ -403,7 +403,6 @@
   "UserWideIntegrationRemoved": "User-wide integration was removed.",
   "UsingCommunityTriplet": "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.",
   "UsingManifestAt": "Using manifest file at {path}.",
-  "Utf8DecoderDereferencedAtEof": "dereferenced Utf8Decoder at the end of a string.",
   "VSExaminedInstances": "The following Visual Studio instances were considered:",
   "VSExaminedPaths": "The following paths were examined for Visual Studio instances:",
   "VSNoInstances": "Could not locate a complete Visual Studio instance",

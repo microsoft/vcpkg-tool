@@ -664,7 +664,6 @@
   "_UsingCommunityTriplet.comment": "'--' at the beginning must be preserved An example of {triplet} is x64-windows.",
   "UsingManifestAt": "Using manifest file at {path}.",
   "_UsingManifestAt.comment": "An example of {path} is /foo/bar.",
-  "Utf8DecoderDereferencedAtEof": "dereferenced Utf8Decoder at the end of a string.",
   "VSExaminedInstances": "The following Visual Studio instances were considered:",
   "VSExaminedPaths": "The following paths were examined for Visual Studio instances:",
   "VSNoInstances": "Could not locate a complete Visual Studio instance",
