@@ -46,7 +46,8 @@ namespace vcpkg::Commands::SetInstalled
                              DryRun dry_run,
                              const Optional<Path>& maybe_pkgsconfig,
                              Triplet host_triplet,
-                             const KeepGoing keep_going)
+                             const KeepGoing keep_going,
+                             const bool only_downloads)
     {
         auto& fs = paths.get_filesystem();
 
@@ -127,7 +128,10 @@ namespace vcpkg::Commands::SetInstalled
         if (keep_going == KeepGoing::YES && summary.failed())
         {
             summary.print_failed();
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            if (!only_downloads)
+            {
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
         }
 
         std::set<std::string> printed_usages;
@@ -194,7 +198,8 @@ namespace vcpkg::Commands::SetInstalled
                             dry_run ? DryRun::Yes : DryRun::No,
                             pkgsconfig,
                             host_triplet,
-                            keep_going);
+                            keep_going,
+                            only_downloads);
     }
 
     void SetInstalledCommand::perform_and_exit(const VcpkgCmdArguments& args,
