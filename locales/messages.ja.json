@@ -403,7 +403,6 @@
   "UserWideIntegrationRemoved": "ユーザー全体の統合が削除されました。",
   "UsingCommunityTriplet": "-- コミュニティ トリプレット {triplet} を使用しています。このトリプレット構成の成功は保証されていません。",
   "UsingManifestAt": "{path} でマニフェスト ファイルを使用しています。",
-  "Utf8DecoderDereferencedAtEof": "文字列の末尾に逆参照された Utf8Decoder。",
   "VSExaminedInstances": "次の Visual Studio インスタンスが考慮されました。",
   "VSExaminedPaths": "Visual Studio インスタンスについて、次のパスが調べられました。",
   "VSNoInstances": "完全な Visual Studio インスタンスが見つかりませんでした",

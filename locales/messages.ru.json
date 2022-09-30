@@ -403,7 +403,6 @@
   "UserWideIntegrationRemoved": "Общепользовательская интеграция удалена.",
   "UsingCommunityTriplet": "-- Использование триплета сообщества {triplet}. Успех этой тройной конфигурации не гарантируется.",
   "UsingManifestAt": "Использование файла манифеста в {path}.",
-  "Utf8DecoderDereferencedAtEof": "Utf8Decoder без ссылки в конце строки.",
   "VSExaminedInstances": "Рассмотрены следующие экземпляры Visual Studio:",
   "VSExaminedPaths": "Следующие пути проверены на наличие экземпляров Visual Studio:",
   "VSNoInstances": "Не удалось найти полный экземпляр Visual Studio",

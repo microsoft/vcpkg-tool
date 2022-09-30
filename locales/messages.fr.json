@@ -403,7 +403,6 @@
   "UserWideIntegrationRemoved": "L’intégration à l’échelle de l’utilisateur a été supprimée.",
   "UsingCommunityTriplet": "-- Utilisation de la {triplet} triplet de la communauté. La réussite de cette configuration triplet n’est pas garantie.",
   "UsingManifestAt": "Utilisation du fichier manifeste au {path}.",
-  "Utf8DecoderDereferencedAtEof": "Utf8Decoder déréférencement à la fin d’une chaîne",
   "VSExaminedInstances": "Les instances de Visual Studio suivantes ont été prises en compte :",
   "VSExaminedPaths": "Les chemins d’accès suivants ont été examinés pour Visual Studio instances :",
   "VSNoInstances": "Instance de Visual Studio complète introuvable",

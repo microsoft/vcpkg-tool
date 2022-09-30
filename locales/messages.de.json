@@ -403,7 +403,6 @@
   "UserWideIntegrationRemoved": "Die benutzerweite Integration wurde entfernt.",
   "UsingCommunityTriplet": "-- Verwendung von Community-Triplett {Triplett}. Der Erfolg dieser Triplet-Konfiguration ist nicht garantiert.",
   "UsingManifestAt": "Die Manifestdatei unter {path} wird verwendet.",
-  "Utf8DecoderDereferencedAtEof": "Dereferenzierter Utf8Decoder am Ende einer Zeichenfolge.",
   "VSExaminedInstances": "Die folgenden Visual Studio-Instanzen wurden berücksichtigt:",
   "VSExaminedPaths": "Die folgenden Pfade wurden für Visual Studio-Instanzen untersucht:",
   "VSNoInstances": "Es konnte keine vollständige Visual Studio-Instanz gefunden werden.",

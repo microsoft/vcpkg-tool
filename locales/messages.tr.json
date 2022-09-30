@@ -403,7 +403,6 @@
   "UserWideIntegrationRemoved": "Kullanıcı genelinde integral alma kaldırıldı.",
   "UsingCommunityTriplet": "-- Topluluk üçlü {triplet} kullanılıyor. Bu üçlü yapılandırmanın başarılı olması garanti değildir.",
   "UsingManifestAt": "{path} konumunda bildirim dosyası kullanılıyor.",
-  "Utf8DecoderDereferencedAtEof": "bir dizenin sonunda Utf8Decoder başvurusu kaldırıldı.",
   "VSExaminedInstances": "Şu Visual Studio örnekleri değerlendirildi:",
   "VSExaminedPaths": "Visual Studio örnekleri için şu yollar incelendi:",
   "VSNoInstances": "Tam bir Visual Studio örneği bulunamadı",

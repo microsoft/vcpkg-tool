@@ -403,7 +403,6 @@
   "UserWideIntegrationRemoved": "Integracja na poziomie użytkownika została usunięta.",
   "UsingCommunityTriplet": "-- Używanie {triplet} triplet społeczności. Ta konfiguracja potrójnej konfiguracji nie gwarantuje powodzenia.",
   "UsingManifestAt": "Używanie pliku manifestu w ścieżce {path}.",
-  "Utf8DecoderDereferencedAtEof": "wyłuskanie utf8Decoder na końcu ciągu.",
   "VSExaminedInstances": "Brano pod uwagę następujące wystąpienia programu Visual Studio:",
   "VSExaminedPaths": "Następujące ścieżki zostały sprawdzone pod kątem wystąpień programu Visual Studio:",
   "VSNoInstances": "Nie można zlokalizować pełnego wystąpienia programu Visual Studio",

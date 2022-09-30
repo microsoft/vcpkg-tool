@@ -403,7 +403,6 @@
   "UserWideIntegrationRemoved": "Integrace na úrovni uživatele byla odebrána.",
   "UsingCommunityTriplet": "-- Používá se triplet {triplet} komunity. U této trojité konfigurace není zaručeno, že bude úspěšná.",
   "UsingManifestAt": "Používá se soubor manifestu na {path}.",
-  "Utf8DecoderDereferencedAtEof": "Utf8Decoder bez reference na konci řetězce.",
   "VSExaminedInstances": "Zvažovaly se následující instance Visual Studio:",
   "VSExaminedPaths": "Následující cesty byly zkontrolovány pro Visual Studio instance:",
   "VSNoInstances": "Nepovedlo se najít úplnou instanci Visual Studio.",

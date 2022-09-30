@@ -403,7 +403,6 @@
   "UserWideIntegrationRemoved": "已删除用户范围的集成。",
   "UsingCommunityTriplet": "-- 正在使用社区三联 {triplet}。此三联配置不能保证成功。",
   "UsingManifestAt": "正在 {path} 使用清单文件。",
-  "Utf8DecoderDereferencedAtEof": "已在字符串末尾取消引用 Utf8Decoder。",
   "VSExaminedInstances": "考虑了以下 Visual Studio 实例:",
   "VSExaminedPaths": "检查了 Visual Studio 实例的以下路径:",
   "VSNoInstances": "找不到完整的 Visual Studio 实例",

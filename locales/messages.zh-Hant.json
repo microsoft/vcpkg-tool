@@ -403,7 +403,6 @@
   "UserWideIntegrationRemoved": "已移除整個使用者整合。",
   "UsingCommunityTriplet": "-- 正在使用社群三重 {triplet}。這個三重設定不保證成功。",
   "UsingManifestAt": "使用位於 {path} 的資訊清單檔案。",
-  "Utf8DecoderDereferencedAtEof": "字串結尾的 Utf8Decoder 有差異。",
   "VSExaminedInstances": "已考慮下列 Visual Studio 執行個體:",
   "VSExaminedPaths": "已檢查 Visual Studio 執行個體的下列路徑:",
   "VSNoInstances": "找不到完整的 Visual Studio 執行個體",

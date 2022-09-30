@@ -403,7 +403,6 @@
   "UserWideIntegrationRemoved": "A integração de todo o usuário foi removida.",
   "UsingCommunityTriplet": "-- Usando o triplet da comunidade {triplet}. Essa configuração triplet não tem garantia de êxito.",
   "UsingManifestAt": "Usando o arquivo de manifesto em {path}.",
-  "Utf8DecoderDereferencedAtEof": "utf8Decoder desreferenciado no final de uma cadeia de caracteres.",
   "VSExaminedInstances": "As seguintes instâncias do Visual Studio foram consideradas:",
   "VSExaminedPaths": "Os seguintes caminhos foram examinados para as instâncias do Visual Studio:",
   "VSNoInstances": "Não foi possível localizar uma instância completa do Visual Studio",
