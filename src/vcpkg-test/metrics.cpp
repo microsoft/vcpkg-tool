@@ -6,10 +6,11 @@
 
 using namespace vcpkg;
 
-template<typename T>
-void validate_enum_values_and_names(View<MetricEntry<T>> entries, const size_t expected_size)
+template<typename MetricEntry, size_t Size>
+void validate_enum_values_and_names(const std::array<MetricEntry, Size>& entries)
 {
-    REQUIRE(expected_size == entries.size());
+    static_assert(static_cast<size_t>(decltype(entries[0].metric)::COUNT) == Size,
+                  "COUNT must be the last enum entry.");
 
     size_t enum_value = 0;
     std::set<StringView> used_names;
@@ -29,8 +30,8 @@ void validate_enum_values_and_names(View<MetricEntry<T>> entries, const size_t e
     }
 }
 
-template<typename T>
-void validate_unique_names(std::set<StringLiteral>& unique_names, View<MetricEntry<T>> entries)
+template<typename MetricEntry, size_t Size>
+void validate_unique_names(std::set<StringLiteral>& unique_names, const std::array<MetricEntry, Size>& entries)
 {
     for (auto&& entry : entries)
     {
@@ -46,30 +47,39 @@ TEST_CASE ("Check metric enum types", "[metrics]")
 {
     SECTION ("define metrics")
     {
-        validate_enum_values_and_names(Metrics::get_define_metrics(), static_cast<size_t>(DefineMetric::COUNT));
+        validate_enum_values_and_names(all_define_metrics);
     }
 
     SECTION ("string metrics")
     {
-        validate_enum_values_and_names(Metrics::get_string_metrics(), static_cast<size_t>(StringMetric::COUNT));
+        validate_enum_values_and_names(all_string_metrics);
     }
 
     SECTION ("bool metrics")
     {
-        validate_enum_values_and_names(Metrics::get_bool_metrics(), static_cast<size_t>(BoolMetric::COUNT));
+        validate_enum_values_and_names(all_bool_metrics);
     }
 
     SECTION ("array metrics")
     {
-        validate_enum_values_and_names(Metrics::get_array_metrics(), static_cast<size_t>(ArrayMetric::COUNT));
+        validate_enum_values_and_names(all_array_metrics);
+    }
+}
+
+TEST_CASE ("Check string metrics initialization values", "[metrics]")
+{
+    // check that all init values are complete
+    for (auto&& string_metric : all_string_metrics)
+    {
+        REQUIRE(!string_metric.preregister_value.empty());
     }
 }
 
 TEST_CASE ("Check all metric names are diferent", "[metrics]")
 {
     std::set<StringLiteral> used_names;
-    validate_unique_names(used_names, Metrics::get_define_metrics());
-    validate_unique_names(used_names, Metrics::get_string_metrics());
-    validate_unique_names(used_names, Metrics::get_bool_metrics());
-    validate_unique_names(used_names, Metrics::get_array_metrics());
+    validate_unique_names(used_names, all_define_metrics);
+    validate_unique_names(used_names, all_string_metrics);
+    validate_unique_names(used_names, all_bool_metrics);
+    validate_unique_names(used_names, all_array_metrics);
 }

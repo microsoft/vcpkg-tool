@@ -5,17 +5,18 @@ import { fail } from 'assert';
 import { createHash } from 'crypto';
 import { Readable } from 'stream';
 import { ProgressTrackingStream } from '../fs/streams';
+import { HashVerifyEvents } from '../interfaces/events';
 import { Uri } from './uri';
 
 // sha256, sha512, sha384
 export type Algorithm = 'sha256' | 'sha384' | 'sha512'
 
-export async function hash(stream: Readable, uri: Uri, size: number, algorithm: 'sha256' | 'sha384' | 'sha512' = 'sha256', events: Partial<VerifyEvents>) {
+export async function hash(stream: Readable, uri: Uri, size: number, algorithm: 'sha256' | 'sha384' | 'sha512' = 'sha256', events: Partial<HashVerifyEvents>) {
   stream = await stream;
 
   try {
     const p = new ProgressTrackingStream(0, size);
-    p.on('progress', (filePercentage) => events.verifying?.(uri.fsPath, filePercentage));
+    p.on('progress', (filePercentage) => events.hashVerifyProgress?.(uri.fsPath, filePercentage));
 
     for await (const chunk of stream.pipe(p).pipe(createHash(algorithm)).setEncoding('hex')) {
       // it should be done reading here
@@ -25,10 +26,6 @@ export async function hash(stream: Readable, uri: Uri, size: number, algorithm: 
     stream.destroy();
   }
   fail('Should have returned a chunk from the pipe');
-}
-
-export interface VerifyEvents {
-  verifying(file: string, percent: number): void;
 }
 
 export interface Hash {

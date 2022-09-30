@@ -7,7 +7,6 @@ import { resolve } from 'path';
 import { MetadataFile } from '../amf/metadata-file';
 import { RegistriesDeclaration, RegistryDeclaration } from '../amf/registries';
 import { artifactIdentity, prettyRegistryName } from '../cli/format';
-import { FileType } from '../fs/filesystem';
 import { i } from '../i18n';
 import { activateEspIdf, installEspIdf } from '../installers/espidf';
 import { InstallEvents } from '../interfaces/events';
@@ -15,6 +14,7 @@ import { getArtifact, Registry, RegistryResolver } from '../registries/registrie
 import { Session } from '../session';
 import { linq } from '../util/linq';
 import { Uri } from '../util/uri';
+import { Activation } from './activation';
 import { SetOfDemands } from './SetOfDemands';
 
 export type Selections = Map<string, string>; // idOrShortName, version
@@ -82,6 +82,8 @@ export abstract class ArtifactBase {
 
     return Promise.resolve(undefined);
   }
+
+  abstract loadActivationSettings(activation: Activation): Promise<boolean>;
 }
 
 export enum InstallStatus {
@@ -91,8 +93,6 @@ export enum InstallStatus {
 }
 
 export class Artifact extends ArtifactBase {
-  allPaths: Array<string> = [];
-
   constructor(session: Session, metadata: MetadataFile, public shortName: string, public targetLocation: Uri) {
     super(session, metadata);
   }
@@ -129,10 +129,7 @@ export class Artifact extends ArtifactBase {
     this.session.channels.message(addDisplayPrefix(thisDisplayName, applicableDemands.messages));
 
     if (await this.isInstalled && !options.force) {
-      if (!await this.loadActivationSettings(events)) {
-        throw new Error(i`Failed during artifact activation`);
-      }
-
+      events.alreadyInstalledArtifact?.(thisDisplayName);
       return InstallStatus.AlreadyInstalled;
     }
 
@@ -146,6 +143,7 @@ export class Artifact extends ArtifactBase {
       }
 
       // ok, let's install this.
+      events.startInstallArtifact?.(thisDisplayName);
       for (const installInfo of applicableDemands.installer) {
         if (installInfo.lang && !options.allLanguages && options.language && options.language.toLowerCase() !== installInfo.lang.toLowerCase()) {
           continue;
@@ -158,11 +156,12 @@ export class Artifact extends ArtifactBase {
         await installer(this.session, this.id, this.version, this.targetLocation, installInfo, events, options);
       }
 
+      if (this.metadata.espidf) {
+        await installEspIdf(this.session, events, this.targetLocation);
+      }
+
       // after we unpack it, write out the installed manifest
       await this.writeManifest();
-      if (!await this.loadActivationSettings(events)) {
-        throw new Error(i`Failed during artifact activation`);
-      }
       return InstallStatus.Installed;
     } catch (err) {
       try {
@@ -184,27 +183,23 @@ export class Artifact extends ArtifactBase {
     await this.targetLocation.delete({ recursive: true, useTrash: false });
   }
 
-  async loadActivationSettings(events: Partial<InstallEvents>) {
+
+  async loadActivationSettings(activation: Activation) : Promise<boolean> {
     // construct paths (bin, lib, include, etc.)
     // construct tools
     // compose variables
     // defines
 
-    // record all the files in the artifact
-    this.allPaths = (await this.targetLocation.readDirectory(undefined, { recursive: true })).select(([name, stat]) => stat === FileType.Directory ? name.fsPath + '/' : name.fsPath);
     for (const exportsBlock of this.applicableDemands.exports) {
-      this.session.activation.addExports(exportsBlock, this.targetLocation);
+      activation.addExports(exportsBlock, this.targetLocation);
     }
 
     // if espressif install
     if (this.metadata.espidf) {
-      // check for some file that espressif installs to see if it's installed.
-      if (!await this.targetLocation.exists('.espressif')) {
-        await installEspIdf(this.session, events, this.targetLocation);
-      }
-
       // activate
-      await activateEspIdf(this.session, this.targetLocation);
+      if (!await activateEspIdf(this.session, activation, this.targetLocation)) {
+        return false;
+      }
     }
 
     return true;
@@ -254,6 +249,9 @@ export function sanitizeUri(u: string) {
 }
 
 export class ProjectManifest extends ArtifactBase {
+  loadActivationSettings(activation: Activation) {
+    return Promise.resolve(true);
+  }
 }
 
 export class InstalledArtifact extends Artifact {
