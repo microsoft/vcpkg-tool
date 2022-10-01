@@ -36,15 +36,14 @@ namespace vcpkg
         duration m_duration;
     };
 
+    // This type is safe to access from multiple threads.
     struct ElapsedTimer
     {
-        static ElapsedTimer create_started();
-
-        constexpr ElapsedTimer() noexcept : m_start_tick() { }
+        ElapsedTimer() noexcept;
 
         ElapsedTime elapsed() const
         {
-            return ElapsedTime(std::chrono::high_resolution_clock::now() - this->m_start_tick);
+            return ElapsedTime(std::chrono::high_resolution_clock::now() - this->m_start_tick.load());
         }
 
         double microseconds() const { return elapsed().as<std::chrono::duration<double, std::micro>>().count(); }
@@ -54,12 +53,12 @@ namespace vcpkg
         void to_string(std::string& into) const;
 
     private:
-        std::chrono::high_resolution_clock::time_point m_start_tick;
+        std::atomic<std::chrono::high_resolution_clock::time_point> m_start_tick;
     };
 
     struct StatsTimer
     {
-        StatsTimer(std::atomic<uint64_t>& stat) : m_stat(&stat), m_timer(ElapsedTimer::create_started()) { }
+        StatsTimer(std::atomic<uint64_t>& stat) : m_stat(&stat), m_timer() { }
         ~StatsTimer() { m_stat->fetch_add(m_timer.us_64()); }
 
     private:

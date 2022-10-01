@@ -465,7 +465,7 @@ namespace vcpkg
     struct TrackedPackageInstallGuard
     {
         SpecSummary* current_summary = nullptr;
-        ElapsedTimer build_timer = ElapsedTimer::create_started();
+        ElapsedTimer build_timer;
 
         TrackedPackageInstallGuard(const size_t action_index,
                                    const size_t action_count,
@@ -514,6 +514,7 @@ namespace vcpkg
                                     const IBuildLogsRecorder& build_logs_recorder,
                                     const CMakeVars::CMakeVarProvider& var_provider)
     {
+        const ElapsedTimer timer;
         std::vector<SpecSummary> results;
         const size_t action_count = action_plan.remove_actions.size() + action_plan.install_actions.size();
         size_t action_index = 1;
@@ -553,6 +554,7 @@ namespace vcpkg
             this_install.current_summary->build_result.emplace(std::move(result));
         }
 
+        msg::println(msgTotalInstallTime, msg::elapsed = timer.to_string());
         return InstallSummary{std::move(results)};
     }
 
@@ -1208,8 +1210,6 @@ namespace vcpkg
 
         const InstallSummary summary = Install::perform(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), var_provider);
-
-        print2("\nTotal elapsed time: ", GlobalState::timer.to_string(), "\n\n");
 
         if (keep_going == KeepGoing::YES)
         {

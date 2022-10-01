@@ -1,4 +1,3 @@
-#include <vcpkg/base/lockguarded.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
@@ -218,8 +217,6 @@ namespace vcpkg::Commands::Upgrade
 
         const InstallSummary summary = Install::perform(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), var_provider);
-
-        msg::println(msgTotalTime, msg::elapsed = GlobalState::timer.to_string());
 
         if (keep_going == KeepGoing::YES)
         {

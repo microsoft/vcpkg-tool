@@ -6,7 +6,7 @@
 
 namespace vcpkg::Checks
 {
-    void register_global_shutdown_handler(void (*func)());
+    void register_global_shutdown_handler(void (*func)(void*), void*);
 
     // Note: for internal use
     [[noreturn]] void final_cleanup_and_exit(const int exit_code);

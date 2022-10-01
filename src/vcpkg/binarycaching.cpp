@@ -199,7 +199,7 @@ namespace
 
             for (const auto& archives_root_dir : m_read_dirs)
             {
-                const auto timer = ElapsedTimer::create_started();
+                const ElapsedTimer timer;
                 to_try_restore_idxs.clear();
                 to_try_restore.clear();
                 for (size_t idx = 0; idx < cache_status.size(); ++idx)
@@ -430,7 +430,7 @@ namespace
 
         void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
-            const auto timer = ElapsedTimer::create_started();
+            const ElapsedTimer timer;
             auto& fs = paths.get_filesystem();
             size_t this_restore_count = 0;
             std::vector<std::pair<std::string, Path>> url_paths;
@@ -671,8 +671,8 @@ namespace
             {
                 return;
             }
-            const auto timer = ElapsedTimer::create_started();
 
+            const ElapsedTimer timer;
             auto& fs = paths.get_filesystem();
 
             std::vector<NuGetPrefetchAttempt> attempts;
@@ -943,8 +943,7 @@ namespace
         {
             auto& fs = paths.get_filesystem();
 
-            const auto timer = ElapsedTimer::create_started();
-
+            const ElapsedTimer timer;
             size_t restored_count = 0;
             for (const auto& prefix : m_read_prefixes)
             {
@@ -1014,7 +1013,7 @@ namespace
         void push_success(const InstallPlanAction& action) const override
         {
             if (m_write_prefixes.empty()) return;
-            const auto timer = ElapsedTimer::create_started();
+            const ElapsedTimer timer;
             const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
             auto& spec = action.spec;
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);

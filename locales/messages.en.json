@@ -363,7 +363,7 @@
   "SystemApiErrorMessage": "calling {system_api} failed with {exit_code} ({error_msg})",
   "ToolFetchFailed": "Could not fetch {tool_name}.",
   "ToolInWin10": "This utility is bundled with Windows 10 or later.",
-  "TotalTime": "Total elapsed time: {elapsed}",
+  "TotalInstallTime": "Total install time: {elapsed}",
   "TwoFeatureFlagsSpecified": "Both '{value}' and -'{value}' were specified as feature flags.",
   "UndeterminedToolChainForTriplet": "Unable to determine toolchain use for {triplet} with with CMAKE_SYSTEM_NAME {system_name}. Did you mean to use VCPKG_CHAINLOAD_TOOLCHAIN_FILE?",
   "UnexpectedErrorDuringBulkDownload": "an unexpected error occurred during bulk download.",

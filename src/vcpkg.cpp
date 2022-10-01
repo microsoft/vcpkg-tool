@@ -122,6 +122,7 @@ int main(const int argc, const char* const* const argv)
 {
     if (argc == 0) std::abort();
 
+    ElapsedTimer total_timer;
     auto& fs = get_real_filesystem();
     {
         auto locale = get_environment_variable("VCPKG_LOCALE");
@@ -143,12 +144,10 @@ int main(const int argc, const char* const* const argv)
         }
     }
 
-    GlobalState::timer = ElapsedTimer::create_started();
-
 #if defined(_WIN32)
-    GlobalState::g_init_console_cp = GetConsoleCP();
-    GlobalState::g_init_console_output_cp = GetConsoleOutputCP();
-    GlobalState::g_init_console_initialized = true;
+    g_init_console_cp = GetConsoleCP();
+    g_init_console_output_cp = GetConsoleOutputCP();
+    g_init_console_initialized = true;
 
     SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
@@ -182,49 +181,52 @@ int main(const int argc, const char* const* const argv)
     set_environment_variable("CLICOLOR_FORCE", {});
     set_environment_variable("CLICOLOR", "0");
 
-    Checks::register_global_shutdown_handler([]() {
-        const auto elapsed_us_inner = GlobalState::timer.microseconds();
+    Checks::register_global_shutdown_handler(
+        [](void* ptimer) {
+            const auto& total_timer = *static_cast<ElapsedTimer*>(ptimer);
+            const auto elapsed_us_inner = total_timer.microseconds();
 
-        bool debugging = Debug::g_debugging;
+            bool debugging = Debug::g_debugging;
 
-        LockGuardPtr<Metrics> metrics(g_metrics);
-        metrics->track_elapsed_us(elapsed_us_inner);
-        Debug::g_debugging = false;
-        metrics->flush(get_real_filesystem());
+            LockGuardPtr<Metrics> metrics(g_metrics);
+            metrics->track_elapsed_us(elapsed_us_inner);
+            Debug::g_debugging = false;
+            metrics->flush(get_real_filesystem());
 
 #if defined(_WIN32)
-        if (GlobalState::g_init_console_initialized)
-        {
-            SetConsoleCP(GlobalState::g_init_console_cp);
-            SetConsoleOutputCP(GlobalState::g_init_console_output_cp);
-        }
+            if (g_init_console_initialized)
+            {
+                SetConsoleCP(g_init_console_cp);
+                SetConsoleOutputCP(g_init_console_output_cp);
+            }
 #endif
 
-        if (debugging)
-        {
-            msg::write_unlocalized_text_to_stdout(Color::none,
-                                                  Strings::concat("[DEBUG] Time in subprocesses: ",
-                                                                  get_subproccess_stats(),
-                                                                  " us\n",
-                                                                  "[DEBUG] Time in parsing JSON: ",
-                                                                  Json::get_json_parsing_stats(),
-                                                                  " us\n",
-                                                                  "[DEBUG] Time in JSON reader: ",
-                                                                  Json::Reader::get_reader_stats(),
-                                                                  " us\n",
-                                                                  "[DEBUG] Time in filesystem: ",
-                                                                  get_filesystem_stats(),
-                                                                  " us\n",
-                                                                  "[DEBUG] Time in loading ports: ",
-                                                                  Paragraphs::get_load_ports_stats(),
-                                                                  " us\n",
-                                                                  "[DEBUG] Exiting after ",
-                                                                  GlobalState::timer.to_string(),
-                                                                  " (",
-                                                                  static_cast<int64_t>(elapsed_us_inner),
-                                                                  " us)\n"));
-        }
-    });
+            if (debugging)
+            {
+                msg::write_unlocalized_text_to_stdout(Color::none,
+                                                      Strings::concat("[DEBUG] Time in subprocesses: ",
+                                                                      get_subproccess_stats(),
+                                                                      " us\n",
+                                                                      "[DEBUG] Time in parsing JSON: ",
+                                                                      Json::get_json_parsing_stats(),
+                                                                      " us\n",
+                                                                      "[DEBUG] Time in JSON reader: ",
+                                                                      Json::Reader::get_reader_stats(),
+                                                                      " us\n",
+                                                                      "[DEBUG] Time in filesystem: ",
+                                                                      get_filesystem_stats(),
+                                                                      " us\n",
+                                                                      "[DEBUG] Time in loading ports: ",
+                                                                      Paragraphs::get_load_ports_stats(),
+                                                                      " us\n",
+                                                                      "[DEBUG] Exiting after ",
+                                                                      total_timer.to_string(),
+                                                                      " (",
+                                                                      static_cast<int64_t>(elapsed_us_inner),
+                                                                      " us)\n"));
+            }
+        },
+        static_cast<void*>(&total_timer));
 
     register_console_ctrl_handler();
 
