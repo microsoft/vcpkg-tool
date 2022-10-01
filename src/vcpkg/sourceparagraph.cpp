@@ -989,7 +989,6 @@ namespace vcpkg
         constexpr static StringLiteral DOCUMENTATION = "documentation";
         constexpr static StringLiteral LICENSE = "license";
         constexpr static StringLiteral DEPENDENCIES = "dependencies";
-        constexpr static StringLiteral DEV_DEPENDENCIES = "dev-dependencies";
         constexpr static StringLiteral FEATURES = "features";
         constexpr static StringLiteral DEFAULT_FEATURES = "default-features";
         constexpr static StringLiteral SUPPORTS = "supports";
@@ -1009,7 +1008,6 @@ namespace vcpkg
                 DOCUMENTATION,
                 LICENSE,
                 DEPENDENCIES,
-                DEV_DEPENDENCIES,
                 FEATURES,
                 DEFAULT_FEATURES,
                 SUPPORTS,
@@ -1055,10 +1053,6 @@ namespace vcpkg
                 "an array of overrides"};
             r.optional_object_field(obj, OVERRIDES, spgh.overrides, overrides_deserializer);
 
-            if (obj.contains(DEV_DEPENDENCIES))
-            {
-                r.add_generic_error(type_name(), DEV_DEPENDENCIES, " are not yet supported");
-            }
             std::string baseline;
             if (r.optional_object_field(obj, BUILTIN_BASELINE, baseline, BaselineCommitDeserializer::instance))
             {
@@ -1103,7 +1097,6 @@ namespace vcpkg
     constexpr StringLiteral ManifestDeserializer::DOCUMENTATION;
     constexpr StringLiteral ManifestDeserializer::LICENSE;
     constexpr StringLiteral ManifestDeserializer::DEPENDENCIES;
-    constexpr StringLiteral ManifestDeserializer::DEV_DEPENDENCIES;
     constexpr StringLiteral ManifestDeserializer::FEATURES;
     constexpr StringLiteral ManifestDeserializer::DEFAULT_FEATURES;
     constexpr StringLiteral ManifestDeserializer::SUPPORTS;
@@ -1297,7 +1290,7 @@ namespace vcpkg
                 {
                     if (dep.constraint.type != VersionConstraintKind::None)
                     {
-                        LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-disabled", "defined");
+                        LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ErrorVersioningDisabled);
                         return Strings::concat(
                             origin,
                             " was rejected because it uses constraints and the `",
@@ -1318,7 +1311,7 @@ namespace vcpkg
 
             if (core_paragraph->overrides.size() != 0)
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-disabled", "defined");
+                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ErrorVersioningDisabled);
                 return Strings::concat(
                     origin,
                     format_error_message(ManifestDeserializer::OVERRIDES, VcpkgCmdArguments::VERSIONS_FEATURE),
@@ -1327,7 +1320,7 @@ namespace vcpkg
 
             if (core_paragraph->builtin_baseline.has_value())
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-disabled", "defined");
+                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ErrorVersioningDisabled);
                 return Strings::concat(
                     origin,
                     format_error_message(ManifestDeserializer::BUILTIN_BASELINE, VcpkgCmdArguments::VERSIONS_FEATURE),
@@ -1344,7 +1337,7 @@ namespace vcpkg
                                     return dependency.constraint.type != VersionConstraintKind::None;
                                 }))
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-no-baseline", "defined");
+                    LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ErrorVersioningNoBaseline);
                     return Strings::concat(
                         origin,
                         " was rejected because it uses \"version>=\" and does not have a \"builtin-baseline\".\n",
@@ -1353,7 +1346,7 @@ namespace vcpkg
 
                 if (!core_paragraph->overrides.empty())
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-no-baseline", "defined");
+                    LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ErrorVersioningNoBaseline);
                     return Strings::concat(
                         origin,
                         " was rejected because it uses \"overrides\" and does not have a \"builtin-baseline\".\n",

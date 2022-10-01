@@ -187,13 +187,13 @@ namespace vcpkg
         {
             if (auto p_baseline = manifest->builtin_baseline.get())
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_baseline", "defined");
+                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ManifestBaseline);
                 if (!is_git_commit_sha(*p_baseline))
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_property("versioning-error-baseline", "defined");
+                    LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::VersioningErrorBaseline);
                     Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
                                                "Error: the top-level builtin-baseline%s was not a valid commit sha: "
-                                               "expected 40 lowercase hexadecimal characters.\n%s\n",
+                                               "expected 40 hexadecimal characters.\n%s\n",
                                                Strings::concat(" (", *p_baseline, ')'),
                                                paths.get_current_git_sha_baseline_message());
                 }
@@ -325,7 +325,7 @@ namespace vcpkg
             Path ret;
             if (args.registries_cache_dir)
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("X_VCPKG_REGISTRIES_CACHE", "defined");
+                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::X_VcpkgRegistriesCache);
                 ret = *args.registries_cache_dir;
                 const auto status = get_real_filesystem().status(ret, VCPKG_LINE_INFO);
                 if (!vcpkg::exists(status))
@@ -666,11 +666,12 @@ namespace vcpkg
             LockGuardPtr<Metrics> metrics(g_metrics);
             if (default_registry)
             {
-                metrics->track_property("registries-default-registry-kind", default_registry->kind().to_string());
+                metrics->track_string_property(StringMetric::RegistriesDefaultRegistryKind,
+                                               default_registry->kind().to_string());
             }
             else
             {
-                metrics->track_property("registries-default-registry-kind", "disabled");
+                metrics->track_string_property(StringMetric::RegistriesDefaultRegistryKind, "disabled");
             }
 
             if (other_registries.size() != 0)
@@ -681,7 +682,7 @@ namespace vcpkg
                     registry_kinds.push_back(reg.implementation().kind());
                 }
                 Util::sort_unique_erase(registry_kinds);
-                metrics->track_property("registries-kinds-used", Strings::join(",", registry_kinds));
+                metrics->track_string_property(StringMetric::RegistriesKindsUsed, Strings::join(",", registry_kinds));
             }
         }
     }
@@ -877,7 +878,7 @@ namespace vcpkg
     const Path VcpkgPaths::get_triplet_file_path(Triplet triplet) const
     {
         return m_pimpl->m_triplets_cache.get_lazy(
-            triplet, [&]() -> auto {
+            triplet, [&]() -> auto{
                 for (const auto& triplet_dir : m_pimpl->triplets_dirs)
                 {
                     auto path = triplet_dir / (triplet.canonical_name() + ".cmake");

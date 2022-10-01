@@ -431,6 +431,37 @@ namespace vcpkg
         }
     }
 
+    void InstallSummary::print_failed() const
+    {
+        msg::println();
+        msg::println(msgResultsHeader);
+
+        for (const SpecSummary& result : this->results)
+        {
+            if (result.build_result.value_or_exit(VCPKG_LINE_INFO).code != BuildResult::SUCCEEDED)
+            {
+                msg::println(LocalizedString().append_indent().append_fmt_raw(
+                    "{}: {}: {}",
+                    result.get_spec(),
+                    to_string(result.build_result.value_or_exit(VCPKG_LINE_INFO).code),
+                    result.timing));
+            }
+        }
+        msg::println();
+    }
+
+    bool InstallSummary::failed() const
+    {
+        for (const auto& result : this->results)
+        {
+            if (result.build_result.value_or_exit(VCPKG_LINE_INFO).code != BuildResult::SUCCEEDED)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     struct TrackedPackageInstallGuard
     {
         SpecSummary* current_summary = nullptr;
@@ -510,15 +541,13 @@ namespace vcpkg
                 perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder);
             if (result.code != BuildResult::SUCCEEDED && keep_going == KeepGoing::NO)
             {
-                Checks::msg_exit_with_message(
-                    VCPKG_LINE_INFO,
-                    create_user_troubleshooting_message(
-                        action, paths, result.stdoutlog.then([&](auto&) -> Optional<Path> {
-                            const auto issue_body_path = paths.installed().root() / "vcpkg" / "issue_body.md";
-                            paths.get_filesystem().write_contents(
-                                issue_body_path, create_github_issue(args, result, paths, action), VCPKG_LINE_INFO);
-                            return issue_body_path;
-                        })));
+                print_user_troubleshooting_message(action, paths, result.stdoutlog.then([&](auto&) -> Optional<Path> {
+                    auto issue_body_path = paths.installed().root() / "vcpkg" / "issue_body.md";
+                    paths.get_filesystem().write_contents(
+                        issue_body_path, create_github_issue(args, result, paths, action), VCPKG_LINE_INFO);
+                    return issue_body_path;
+                }));
+                Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
             this_install.current_summary->build_result.emplace(std::move(result));
@@ -548,34 +577,34 @@ namespace vcpkg
     static constexpr StringLiteral OPTION_PROHIBIT_BACKCOMPAT_FEATURES = "x-prohibit-backcompat-features";
     static constexpr StringLiteral OPTION_ENFORCE_PORT_CHECKS = "enforce-port-checks";
     static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
+    static constexpr StringLiteral OPTION_NO_PRINT_USAGE = "no-print-usage";
 
-    static constexpr std::array<CommandSwitch, 18> INSTALL_SWITCHES = {{
-        {OPTION_DRY_RUN, "Do not actually build or install"},
-        {OPTION_USE_HEAD_VERSION,
-         "Install the libraries on the command line using the latest upstream sources (classic mode)"},
-        {OPTION_NO_DOWNLOADS, "Do not download new sources"},
-        {OPTION_ONLY_DOWNLOADS, "Download sources but don't build packages"},
-        {OPTION_ONLY_BINARYCACHING, "Fail if cached binaries are not available"},
-        {OPTION_RECURSE, "Allow removal of packages as part of installation"},
-        {OPTION_KEEP_GOING, "Continue installing packages on failure"},
-        {OPTION_EDITABLE,
-         "Disable source re-extraction and binary caching for libraries on the command line (classic mode)"},
-        {OPTION_CHECK_STAMP,
-         "If the configuration (triplets, manifest file, registries, selected features) is the same as the last time "
-         "install is skipped. Local port modifications are not detected anymore."},
-
-        {OPTION_USE_ARIA2, "Use aria2 to perform download tasks"},
-        {OPTION_CLEAN_AFTER_BUILD, "Clean buildtrees, packages and downloads after building each package"},
-        {OPTION_CLEAN_BUILDTREES_AFTER_BUILD, "Clean buildtrees after building each package"},
-        {OPTION_CLEAN_PACKAGES_AFTER_BUILD, "Clean packages after building each package"},
-        {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, "Clean downloads after building each package"},
-        {OPTION_MANIFEST_NO_DEFAULT_FEATURES,
-         "Don't install the default features from the top-level manifest (manifest mode)."},
-        {OPTION_ENFORCE_PORT_CHECKS,
-         "Fail install if a port has detected problems or attempts to use a deprecated feature"},
-        {OPTION_PROHIBIT_BACKCOMPAT_FEATURES, ""},
-        {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
-    }};
+    static constexpr std::array<CommandSwitch, 19> INSTALL_SWITCHES = {
+        {{OPTION_DRY_RUN, "Do not actually build or install"},
+         {OPTION_USE_HEAD_VERSION,
+          "Install the libraries on the command line using the latest upstream sources (classic mode)"},
+         {OPTION_NO_DOWNLOADS, "Do not download new sources"},
+         {OPTION_ONLY_DOWNLOADS, "Download sources but don't build packages"},
+         {OPTION_ONLY_BINARYCACHING, "Fail if cached binaries are not available"},
+         {OPTION_RECURSE, "Allow removal of packages as part of installation"},
+         {OPTION_KEEP_GOING, "Continue installing packages on failure"},
+         {OPTION_EDITABLE,
+          "Disable source re-extraction and binary caching for libraries on the command line (classic mode)"},
+         {OPTION_CHECK_STAMP,
+          "If the configuration (triplets, manifest file, registries, selected features) is the same as the last time "
+          "install is skipped. Local port modifications are not detected anymore."},
+         {OPTION_USE_ARIA2, "Use aria2 to perform download tasks"},
+         {OPTION_CLEAN_AFTER_BUILD, "Clean buildtrees, packages and downloads after building each package"},
+         {OPTION_CLEAN_BUILDTREES_AFTER_BUILD, "Clean buildtrees after building each package"},
+         {OPTION_CLEAN_PACKAGES_AFTER_BUILD, "Clean packages after building each package"},
+         {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, "Clean downloads after building each package"},
+         {OPTION_MANIFEST_NO_DEFAULT_FEATURES,
+          "Don't install the default features from the top-level manifest (manifest mode)."},
+         {OPTION_ENFORCE_PORT_CHECKS,
+          "Fail install if a port has detected problems or attempts to use a deprecated feature"},
+         {OPTION_PROHIBIT_BACKCOMPAT_FEATURES, ""},
+         {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
+         {OPTION_NO_PRINT_USAGE, "Don't print cmake usage information after install."}}};
 
     static constexpr std::array<CommandSetting, 2> INSTALL_SETTINGS = {{
         {OPTION_XUNIT, ""}, // internal use
@@ -865,8 +894,11 @@ namespace vcpkg
         const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
+        const PrintUsage print_cmake_usage =
+            Util::Sets::contains(options.switches, OPTION_NO_PRINT_USAGE) ? PrintUsage::NO : PrintUsage::YES;
 
-        LockGuardPtr<Metrics>(g_metrics)->track_property("install_manifest_mode", paths.manifest_mode_enabled());
+        LockGuardPtr<Metrics>(g_metrics)->track_bool_property(BoolMetric::InstallManifestMode,
+                                                              paths.manifest_mode_enabled());
 
         if (auto p = paths.get_manifest().get())
         {
@@ -949,7 +981,7 @@ namespace vcpkg
             PurgeDecompressFailure::NO,
             Util::Enum::to_enum<Editable>(is_editable),
             prohibit_backcompat_features ? BackcompatFeatures::PROHIBIT : BackcompatFeatures::ALLOW,
-        };
+            print_cmake_usage};
 
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
@@ -960,7 +992,7 @@ namespace vcpkg
             auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
             if (it_pkgsconfig != options.settings.end())
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("x-write-nuget-packages-config", "defined");
+                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::X_WriteNugetPackagesConfig);
                 pkgsconfig = Path(it_pkgsconfig->second);
             }
             auto maybe_manifest_scf =
@@ -1028,12 +1060,12 @@ namespace vcpkg
                     return dep.constraint.type != VersionConstraintKind::None;
                 }))
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_version_constraint", "defined");
+                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ManifestVersionConstraint);
             }
 
             if (!manifest_core.overrides.empty())
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_overrides", "defined");
+                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ManifestOverrides);
             }
 
             auto verprovider = make_versioned_portfile_provider(paths);
@@ -1162,7 +1194,9 @@ namespace vcpkg
                                                dry_run ? Commands::DryRun::Yes : Commands::DryRun::No,
                                                pkgsconfig,
                                                host_triplet,
-                                               keep_going);
+                                               keep_going,
+                                               only_downloads,
+                                               print_cmake_usage);
             fs.write_contents_and_dirs(paths.installed().stampfile_path(), hash, VCPKG_LINE_INFO);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
@@ -1239,7 +1273,7 @@ namespace vcpkg
         auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
         if (it_pkgsconfig != options.settings.end())
         {
-            LockGuardPtr<Metrics>(g_metrics)->track_property("x-write-nuget-packages-config", "defined");
+            LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::X_WriteNugetPackagesConfig);
             compute_all_abis(paths, action_plan, var_provider, status_db);
 
             auto pkgsconfig_path = paths.original_cwd / it_pkgsconfig->second;
@@ -1285,17 +1319,21 @@ namespace vcpkg
             fs.write_contents(it_xunit->second, xwriter.build_xml(default_triplet), VCPKG_LINE_INFO);
         }
 
-        std::set<std::string> printed_usages;
-        for (auto&& result : summary.results)
+        if (install_plan_options.print_usage == PrintUsage::YES)
         {
-            if (!result.is_user_requested_install()) continue;
-            auto bpgh = result.get_binary_paragraph();
-            assert(bpgh);
-            if (!bpgh) continue;
-            Install::print_usage_information(*bpgh, printed_usages, fs, paths.installed());
+            std::set<std::string> printed_usages;
+            for (auto&& result : summary.results)
+            {
+                if (!result.is_user_requested_install()) continue;
+                auto bpgh = result.get_binary_paragraph();
+                // If a package failed to build, don't attempt to print usage.
+                // e.g. --keep-going
+                if (!bpgh) continue;
+                Install::print_usage_information(*bpgh, printed_usages, fs, paths.installed());
+            }
         }
 
-        Checks::exit_success(VCPKG_LINE_INFO);
+        Checks::exit_with_code(VCPKG_LINE_INFO, summary.failed());
     }
 
     void InstallCommand::perform_and_exit(const VcpkgCmdArguments& args,
@@ -1384,6 +1422,6 @@ namespace vcpkg
                                             Hash::get_string_hash(version_as_string, Hash::Algorithm::Sha256));
         }
 
-        LockGuardPtr<Metrics>(g_metrics)->track_property("installplan_1", specs_string);
+        LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::InstallPlan_1, specs_string);
     }
 }

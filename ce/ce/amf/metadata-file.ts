@@ -1,65 +1,45 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-
-import { extname } from 'path';
+import { resolve } from 'path';
 import { Document, isMap, LineCounter, parseDocument, YAMLMap } from 'yaml';
-import { Registry } from '../artifacts/registry';
 import { i } from '../i18n';
 import { ErrorKind } from '../interfaces/error-kind';
-import { Profile } from '../interfaces/metadata/metadata-format';
 import { ValidationMessage } from '../interfaces/validation-message';
 import { Session } from '../session';
 import { Uri } from '../util/uri';
 import { BaseMap } from '../yaml/BaseMap';
 import { Options } from '../yaml/Options';
-import { toYAML } from '../yaml/yaml';
 import { Yaml, YAMLDictionary } from '../yaml/yaml-types';
 import { Contacts } from './contact';
 import { DemandBlock, Demands } from './demands';
-import { DocumentContext } from './document-context';
 import { GlobalSettings } from './global-settings';
 import { Info } from './info';
-import { Registries } from './registries';
+import { RegistriesDeclaration } from './registries';
 
-
-export class MetadataFile extends BaseMap implements Profile {
-  readonly context: DocumentContext;
-  session!: Session;
-
-  private constructor(protected document: Document.Parsed, public readonly filename: string, public lineCounter: LineCounter, public readonly registry: Registry | undefined) {
+export class MetadataFile extends BaseMap {
+  private constructor(protected document: Document.Parsed, public readonly filename: string, public readonly file: Uri, public lineCounter: LineCounter, public readonly registryUri: Uri | undefined) {
     super(<YAMLMap<string, any>><any>document.contents);
-    this.context = <DocumentContext>{
-      filename,
-      lineCounter,
-    };
+
   }
 
-  async init(session: Session): Promise<MetadataFile> {
-    this.context.session = session;
-    this.context.file = session.parseUri(this.context.filename);
-    this.context.folder = this.context.file.parent;
-    await this.demandBlock.init(session);
-    return this;
+  static async parseMetadata(filename: string, uri: Uri, session: Session, registryUri?: Uri): Promise<MetadataFile> {
+    return MetadataFile.parseConfiguration(filename, await uri.readUTF8(), session, registryUri);
   }
 
-  static async parseMetadata(uri: Uri, session: Session, registry?: Registry): Promise<MetadataFile> {
-    return MetadataFile.parseConfiguration(uri.path, await uri.readUTF8(), session, registry);
-  }
-
-  static async parseConfiguration(filename: string, content: string, session: Session, registry?: Registry): Promise<MetadataFile> {
+  static async parseConfiguration(filename: string, content: string, session: Session, registryUri?: Uri): Promise<MetadataFile> {
     const lc = new LineCounter();
     if (!content || content === 'null') {
       content = '{\n}';
     }
     const doc = parseDocument(content, { prettyErrors: false, lineCounter: lc, strict: true });
-    return new MetadataFile(doc, filename, lc, registry).init(session);
+    return new MetadataFile(doc, filename, session.fileSystem.file(resolve(filename)), lc, registryUri);
   }
 
   #info = new Info(undefined, this, 'info');
 
   contacts = new Contacts(undefined, this, 'contacts');
-  registries = new Registries(undefined, this, 'registries');
+  registries = new RegistriesDeclaration(undefined, this, 'registries');
   globalSettings = new GlobalSettings(undefined, this, 'global');
 
   // rather than re-implement it, use encapsulation with a demand block
@@ -107,7 +87,6 @@ export class MetadataFile extends BaseMap implements Profile {
   get message(): string | undefined { return this.demandBlock.message; }
   set message(value: string | undefined) { this.demandBlock.message = value; }
 
-  get seeAlso() { return this.demandBlock.seeAlso; }
   get requires() { return this.demandBlock.requires; }
   get exports() { return this.demandBlock.exports; }
   get install() { return this.demandBlock.install; }
@@ -118,32 +97,19 @@ export class MetadataFile extends BaseMap implements Profile {
     return this.document.errors.length === 0;
   }
 
-  get content() {
-    return toYAML(this.document.toString());
-  }
-
-  async save(uri: Uri = this.context.file): Promise<void> {
-    // check the filename, and select the format.
-    let content = '';
-
-    switch (extname(uri.path).toLowerCase()) {
-      case '.yaml':
-      case '.yml':
-        // format as yaml
-        content = this.content;
-        break;
-
-      case '.json':
-        content = JSON.stringify(this.document.toJSON(), null, 2);
-        break;
-      default:
-        throw new Error(`Unsupported file type ${extname(uri.path)}`);
-    }
+  toJsonString() {
+    let content = JSON.stringify(this.document.toJSON(), null, 2);
     if (!content || content === 'null') {
       content = '{}\n';
     }
-    await uri.writeUTF8(content);
+
+    return content;
   }
+
+  async save(uri: Uri = this.file): Promise<void> {
+    await uri.writeUTF8(this.toJsonString());
+  }
+
   #errors!: Array<string>;
   get formatErrors(): Array<string> {
     const t = this;
@@ -206,7 +172,7 @@ export class MetadataFile extends BaseMap implements Profile {
   override *validate(): Iterable<ValidationMessage> {
     yield* super.validate();
     const hasInfo = this.document.has('info');
-    const allowedChildren = ['contacts', 'registries', 'global', 'demands', 'apply', 'exports', 'requires', 'install', 'seeAlso', 'unless'];
+    const allowedChildren = ['contacts', 'registries', 'global', 'demands', 'exports', 'requires', 'install'];
 
     if (hasInfo) {
       // 2022-06-17 and earlier used a separate 'info' block for these fields
@@ -264,7 +230,6 @@ export class MetadataFile extends BaseMap implements Profile {
     yield* this.exports.validate();
     yield* this.globalSettings.validate();
     yield* this.requires.validate();
-    yield* this.seeAlso.validate();
   }
 
   normalize() {
@@ -288,7 +253,7 @@ export class MetadataFile extends BaseMap implements Profile {
 
   /** @internal */override assert(recreateIfDisposed = false, node = this.node): asserts this is Yaml<YAMLDictionary> & { node: YAMLDictionary } {
     if (!isMap(this.node)) {
-      this.document = parseDocument('{}\n', { prettyErrors: false, lineCounter: this.context.lineCounter, strict: true });
+      this.document = parseDocument('{}\n', { prettyErrors: false, lineCounter: this.lineCounter, strict: true });
       this.node = <YAMLMap<string, any>><any>this.document.contents;
     }
   }

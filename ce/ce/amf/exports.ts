@@ -9,20 +9,27 @@ import { ScalarMap } from '../yaml/ScalarMap';
 import { StringsMap } from '../yaml/strings';
 
 export class Exports extends BaseMap implements IExports {
-  paths: StringsMap = new StringsMap(undefined, this, 'paths');
-  locations: ScalarMap<string> = new ScalarMap<string>(undefined, this, 'locations');
-  properties: StringsMap = new StringsMap(undefined, this, 'properties');
-  environment: StringsMap = new StringsMap(undefined, this, 'environment');
-  tools: ScalarMap<string> = new ScalarMap<string>(undefined, this, 'tools');
-  defines: ScalarMap<string> = new ScalarMap<string>(undefined, this, 'defines');
-
   aliases: ScalarMap<string> = new ScalarMap<string>(undefined, this, 'aliases');
-  contents: StringsMap = new StringsMap(undefined, this, 'contents');
+  defines: ScalarMap<string> = new ScalarMap<string>(undefined, this, 'defines');
+  environment: StringsMap = new StringsMap(undefined, this, 'environment');
+  locations: ScalarMap<string> = new ScalarMap<string>(undefined, this, 'locations');
+  msbuild_properties: ScalarMap<string> = new ScalarMap<string>(undefined, this, 'msbuild-properties');
+  paths: StringsMap = new StringsMap(undefined, this, 'paths');
+  properties: StringsMap = new StringsMap(undefined, this, 'properties');
+  tools: ScalarMap<string> = new ScalarMap<string>(undefined, this, 'tools');
 
   /** @internal */
   override *validate(): Iterable<ValidationMessage> {
     yield* super.validate();
-    yield* this.validateChildKeys(['paths', 'locations', 'properties', 'environment', 'tools', 'defines', 'aliases', 'contents']);
-    // todo: what validations do we need?
+    yield* this.validateChildKeys([
+      'aliases',
+      'defines',
+      'environment',
+      'locations',
+      'msbuild-properties',
+      'paths',
+      'properties',
+      'tools'
+    ]);
   }
 }

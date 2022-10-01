@@ -55,7 +55,7 @@ export class SuiteLocal {
     this.resourcesFolderUri = this.fs.file(this.resourcesFolder);
     // set the debug=1 in the environment to have the debug messages dumped during testing
     if (process.env['DEBUG'] || process.env['debug']) {
-      this.session.channels.on('debug', (text, context, msec) => {
+      this.session.channels.on('debug', (text, msec) => {
         SuiteLocal.log(`[${msec}msec] ${text}`);
       });
     }

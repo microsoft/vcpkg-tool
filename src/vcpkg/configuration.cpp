@@ -228,7 +228,6 @@ namespace
         constexpr static StringLiteral CE_APPLY = "apply";
         constexpr static StringLiteral CE_SETTINGS = "settings";
         constexpr static StringLiteral CE_REQUIRES = "requires";
-        constexpr static StringLiteral CE_SEE_ALSO = "see-also";
 
         virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) override;
 
@@ -241,7 +240,6 @@ namespace
     constexpr StringLiteral CeMetadataDeserializer::CE_APPLY;
     constexpr StringLiteral CeMetadataDeserializer::CE_SETTINGS;
     constexpr StringLiteral CeMetadataDeserializer::CE_REQUIRES;
-    constexpr StringLiteral CeMetadataDeserializer::CE_SEE_ALSO;
 
     struct DemandsDeserializer final : Json::IDeserializer<Json::Object>
     {
@@ -338,7 +336,6 @@ namespace
         extract_object(obj, CE_APPLY, ret);
         extract_object(obj, CE_SETTINGS, ret);
         extract_dictionary(obj, CE_REQUIRES, ret);
-        extract_dictionary(obj, CE_SEE_ALSO, ret);
         return ret;
     }
 
@@ -485,7 +482,6 @@ namespace
         extract_object(ce_metadata, CeMetadataDeserializer::CE_SETTINGS, put_into);
         extract_object(ce_metadata, CeMetadataDeserializer::CE_APPLY, put_into);
         extract_object(ce_metadata, CeMetadataDeserializer::CE_REQUIRES, put_into);
-        extract_object(ce_metadata, CeMetadataDeserializer::CE_SEE_ALSO, put_into);
         serialize_demands(ce_metadata, put_into);
     }
 
@@ -617,7 +613,6 @@ namespace vcpkg
             CeMetadataDeserializer::CE_SETTINGS,
             CeMetadataDeserializer::CE_APPLY,
             CeMetadataDeserializer::CE_REQUIRES,
-            CeMetadataDeserializer::CE_SEE_ALSO,
             DemandsDeserializer::CE_DEMANDS,
         };
         return known_fields;
@@ -630,11 +625,9 @@ namespace vcpkg
             auto unknown_fields = find_unknown_fields(*this);
             if (!unknown_fields.empty())
             {
-                vcpkg::print2(
-                    Color::warning,
-                    "Warning: configuration contains the following unrecognized fields:\n\n",
-                    Strings::join("\n", unknown_fields),
-                    "\n\nIf these are documented fields that should be recognized try updating the vcpkg tool.\n");
+                msg::println_warning(msg::format(msgUnrecognizedConfigField)
+                                         .append_raw("\n\n" + Strings::join("\n", unknown_fields))
+                                         .append(msgDocumentedFieldsSuggestUpdate));
             }
         }
     }

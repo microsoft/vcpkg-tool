@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { InstallEvents } from '../interfaces/events';
-import { Session } from '../session';
+import { UnpackEvents } from '../interfaces/events';
 import { Credentials } from '../util/credentials';
 import { execute } from '../util/exec-cmd';
 import { isFilePath, Uri } from '../util/uri';
@@ -14,16 +13,12 @@ export interface CloneOptions {
 
 /** @internal */
 export class Git {
-  #session: Session;
   #toolPath: string;
   #targetFolder: Uri;
-  #environment: NodeJS.ProcessEnv;
 
-  constructor(session: Session, toolPath: string, environment: NodeJS.ProcessEnv, targetFolder: Uri) {
-    this.#session = session;
+  constructor(toolPath: string, targetFolder: Uri) {
     this.#toolPath = toolPath;
     this.#targetFolder = targetFolder;
-    this.#environment = environment;
   }
 
   /**
@@ -34,7 +29,7 @@ export class Git {
    * @returns Boolean representing whether the execution was completed without error, this is not necessarily
    *  a guarantee that the clone did what we expected.
    */
-  async clone(repo: Uri, events: Partial<InstallEvents>, options: { recursive?: boolean, depth?: number } = {}) {
+  async clone(repo: Uri, events: Partial<UnpackEvents>, options: { recursive?: boolean, depth?: number } = {}) {
     const remote = await isFilePath(repo) ? repo.fsPath : repo.toString();
 
     const result = await execute(this.#toolPath, [
@@ -45,7 +40,6 @@ export class Git {
       options.depth ? `--depth=${options.depth}` : '',
       '--progress'
     ], {
-      env: this.#environment,
       onStdErrData: chunkToHeartbeat(events),
       onStdOutData: chunkToHeartbeat(events)
     });
@@ -61,7 +55,7 @@ export class Git {
    * @returns Boolean representing whether the execution was completed without error, this is not necessarily
    *  a guarantee that the fetch did what we expected.
    */
-  async fetch(remoteName: string, events: Partial<InstallEvents>, options: { commit?: string, depth?: number } = {}) {
+  async fetch(remoteName: string, events: Partial<UnpackEvents>, options: { commit?: string, depth?: number } = {}) {
     const result = await execute(this.#toolPath, [
       '-C',
       this.#targetFolder.fsPath,
@@ -70,7 +64,6 @@ export class Git {
       options.commit ? options.commit : '',
       options.depth ? `--depth=${options.depth}` : ''
     ], {
-      env: this.#environment,
       cwd: this.#targetFolder.fsPath
     });
 
@@ -85,14 +78,13 @@ export class Git {
    * @returns Boolean representing whether the execution was completed without error, this is not necessarily
    *  a guarantee that the checkout did what we expected.
    */
-  async checkout(events: Partial<InstallEvents>, options: { commit?: string } = {}) {
+  async checkout(events: Partial<UnpackEvents>, options: { commit?: string } = {}) {
     const result = await execute(this.#toolPath, [
       '-C',
       this.#targetFolder.fsPath,
       'checkout',
       options.commit ? options.commit : ''
     ], {
-      env: this.#environment,
       cwd: this.#targetFolder.fsPath,
       onStdErrData: chunkToHeartbeat(events),
       onStdOutData: chunkToHeartbeat(events)
@@ -108,7 +100,7 @@ export class Git {
    * @returns Boolean representing whether the execution was completed without error, this is not necessarily
    *  a guarantee that the reset did what we expected.
    */
-  async reset(events: Partial<InstallEvents>, options: { commit?: string, recurse?: boolean, hard?: boolean } = {}) {
+  async reset(events: Partial<UnpackEvents>, options: { commit?: string, recurse?: boolean, hard?: boolean } = {}) {
     const result = await execute(this.#toolPath, [
       '-C',
       this.#targetFolder.fsPath,
@@ -117,7 +109,6 @@ export class Git {
       options.recurse ? '--recurse-submodules' : '',
       options.hard ? '--hard' : ''
     ], {
-      env: this.#environment,
       cwd: this.#targetFolder.fsPath,
       onStdErrData: chunkToHeartbeat(events),
       onStdOutData: chunkToHeartbeat(events)
@@ -140,7 +131,6 @@ export class Git {
     }
 
     const result = await execute(this.#toolPath, ['init'], {
-      env: this.#environment,
       cwd: this.#targetFolder.fsPath
     });
 
@@ -162,7 +152,6 @@ export class Git {
       name,
       location.toString()
     ], {
-      env: this.#environment,
       cwd: this.#targetFolder.fsPath
     });
 
@@ -175,7 +164,7 @@ export class Git {
    * @param options Options to control how the submodule update is called.
    * @returns true if the update was successful, false otherwise.
    */
-  async updateSubmodules(events: Partial<InstallEvents>, options: { init?: boolean, recursive?: boolean, depth?: number } = {}) {
+  async updateSubmodules(events: Partial<UnpackEvents>, options: { init?: boolean, recursive?: boolean, depth?: number } = {}) {
     const result = await execute(this.#toolPath, [
       '-C',
       this.#targetFolder.fsPath,
@@ -186,7 +175,6 @@ export class Git {
       options.depth ? `--depth=${options.depth}` : '',
       options.recursive ? '--recursive' : '',
     ], {
-      env: this.#environment,
       cwd: this.#targetFolder.fsPath,
       onStdErrData: chunkToHeartbeat(events),
       onStdOutData: chunkToHeartbeat(events)
@@ -210,19 +198,18 @@ export class Git {
       key,
       value
     ], {
-      env: this.#environment,
       cwd: this.#targetFolder.fsPath
     });
     return result.code === 0;
   }
 }
-function chunkToHeartbeat(events: Partial<InstallEvents>): (chunk: any) => void {
+function chunkToHeartbeat(events: Partial<UnpackEvents>): (chunk: any) => void {
   return (chunk: any) => {
     const regex = /\s([0-9]*?)%/;
     chunk.toString().split(/^/gim).map((x: string) => x.trim()).filter((each: any) => each).forEach((line: string) => {
       const match_array = line.match(regex);
       if (match_array !== null) {
-        events.heartbeat?.(line.trim());
+        events.unpackArchiveHeartbeat?.(line.trim());
       }
     });
   };

@@ -150,6 +150,12 @@ namespace vcpkg
         YES
     };
 
+    enum class PrintUsage
+    {
+        YES = 0,
+        NO
+    };
+
     struct BuildPackageOptions
     {
         BuildMissing build_missing;
@@ -163,6 +169,7 @@ namespace vcpkg
         PurgeDecompressFailure purge_decompress_failure;
         Editable editable;
         BackcompatFeatures backcompat_features;
+        PrintUsage print_usage;
     };
 
     static constexpr BuildPackageOptions default_build_package_options{
@@ -177,6 +184,7 @@ namespace vcpkg
         PurgeDecompressFailure::YES,
         Editable::NO,
         BackcompatFeatures::ALLOW,
+        PrintUsage::YES,
     };
 
     static constexpr BuildPackageOptions backcompat_prohibiting_package_options{
@@ -191,6 +199,7 @@ namespace vcpkg
         PurgeDecompressFailure::YES,
         Editable::NO,
         BackcompatFeatures::PROHIBIT,
+        PrintUsage::YES,
     };
 
     struct BuildResultCounts
@@ -211,9 +220,18 @@ namespace vcpkg
 
     StringLiteral to_string_locale_invariant(const BuildResult build_result);
     LocalizedString to_string(const BuildResult build_result);
-    LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action,
-                                                        const VcpkgPaths& paths,
-                                                        Optional<Path>&& issue_body = nullopt);
+    LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action, const VcpkgPaths& paths);
+    inline void print_user_troubleshooting_message(const InstallPlanAction& action,
+                                                   const VcpkgPaths& paths,
+                                                   Optional<Path>&& issue_body)
+    {
+        msg::println_error(create_user_troubleshooting_message(action, paths));
+        if (issue_body)
+        {
+            msg::println(
+                Color::warning, msgBuildTroubleshootingMessage4, msg::path = issue_body.value_or_exit(VCPKG_LINE_INFO));
+        }
+    }
 
     /// <summary>
     /// Settings from the triplet file which impact the build environment and post-build checks

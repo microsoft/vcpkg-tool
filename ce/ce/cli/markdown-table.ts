@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import { strict } from 'assert';
-import { blue, gray, green, white } from 'chalk';
+import { blue, gray, green, red, white } from 'chalk';
 import * as renderer from 'marked-terminal';
 
 
@@ -27,6 +27,10 @@ marked.setOptions({
         , 'bottom': '', 'bottom-mid': '', 'bottom-left': '', 'bottom-right': ''
         , 'left': '', 'left-mid': '', 'mid': '', 'mid-mid': ''
         , 'right': '', 'right-mid': '', 'middle': ''
+      },
+      style: {
+        'head': [],
+        'border': []
       }
     }
   }),
@@ -39,7 +43,7 @@ export class Table {
   public anyRows = false;
   constructor(...columnNames: Array<string>) {
     this.numberOfColumns = columnNames.length;
-    this.rows.push(`|${columnNames.join('|')}|`);
+    this.rows.push(`|${columnNames.map(name => red(name)).join('|')}|`);
     this.rows.push(`${'|--'.repeat(this.numberOfColumns)}|`);
   }
   push(...values: Array<string>) {
@@ -48,6 +52,6 @@ export class Table {
     this.anyRows = true;
   }
   toString() {
-    return marked.marked(this.rows.join('\n'));
+    return marked.marked(this.rows.join('\n')).trimEnd();
   }
 }
