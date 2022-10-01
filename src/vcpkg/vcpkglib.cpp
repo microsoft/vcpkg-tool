@@ -111,7 +111,7 @@ namespace vcpkg
         if (!was_tracked)
         {
             was_tracked = true;
-            LockGuardPtr<Metrics>(g_metrics)->track_property("listfile", "update to new format");
+            LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::ListFile, "update to new format");
         }
 
         // The files are sorted such that directories are placed just before the files they contain
@@ -221,7 +221,7 @@ namespace vcpkg
         return installed_files;
     }
 
-    std::string shorten_text(const std::string& desc, const size_t length)
+    std::string shorten_text(StringView desc, const size_t length)
     {
         Checks::check_exit(VCPKG_LINE_INFO, length >= 3);
         std::string simple_desc;

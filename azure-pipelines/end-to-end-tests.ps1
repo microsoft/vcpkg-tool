@@ -74,6 +74,8 @@ $n = 1
 $m = $AllTests.Count
 
 $envvars_clear = @(
+    "VCPKG_FORCE_SYSTEM_BINARIES",
+    "VCPKG_FORCE_DOWNLOADED_BINARIES",
     "VCPKG_DEFAULT_HOST_TRIPLET",
     "VCPKG_DEFAULT_TRIPLET",
     "VCPKG_BINARY_SOURCES",
@@ -84,7 +86,7 @@ $envvars_clear = @(
     "VCPKG_FEATURE_FLAGS",
     "VCPKG_DISABLE_METRICS"
 )
-$envvars = $envvars_clear + @("VCPKG_DOWNLOADS", "X_VCPKG_REGISTRIES_CACHE")
+$envvars = $envvars_clear + @("VCPKG_DOWNLOADS", "X_VCPKG_REGISTRIES_CACHE", "PATH")
 
 foreach ($Test in $AllTests)
 {

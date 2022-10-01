@@ -10,28 +10,6 @@
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
 
-namespace
-{
-    using namespace vcpkg;
-
-    DECLARE_AND_REGISTER_MESSAGE(CurlReportedUnexpectedResults,
-                                 (msg::command_line, msg::actual),
-                                 "{command_line} is the command line to call curl.exe, {actual} is the console output "
-                                 "of curl.exe locale-invariant download results.",
-                                 "curl has reported unexpected results to vcpkg and vcpkg cannot continue.\n"
-                                 "Please review the following text for sensitive information and open an issue on the "
-                                 "Microsoft/vcpkg GitHub to help fix this problem!\n"
-                                 "cmd: {command_line}\n"
-                                 "=== curl output ===\n"
-                                 "{actual}\n"
-                                 "=== end curl output ===\n");
-    DECLARE_AND_REGISTER_MESSAGE(UnexpectedErrorDuringBulkDownload,
-                                 (),
-                                 "",
-                                 "an unexpected error occurred during bulk download.");
-    DECLARE_AND_REGISTER_MESSAGE(FailedToStoreBackToMirror, (), "", "failed to store back to mirror:");
-}
-
 namespace vcpkg
 {
 #if defined(_WIN32)
@@ -252,9 +230,9 @@ namespace vcpkg
     }
 
     void verify_downloaded_file_hash(const Filesystem& fs,
-                                     const std::string& url,
+                                     StringView url,
                                      const Path& downloaded_path,
-                                     const std::string& sha512)
+                                     StringView sha512)
     {
         auto maybe_error = try_verify_downloaded_file_hash(fs, url, downloaded_path, sha512);
         if (auto err = maybe_error.get())
@@ -308,12 +286,12 @@ namespace vcpkg
         std::vector<std::string> lines;
 
         auto res = cmd_execute_and_stream_lines(cmd, [out, &lines](StringView line) {
-            lines.push_back(line.to_string());
-            if (Strings::starts_with(line, guid_marker))
-            {
-                out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
-            }
-        });
+                       lines.push_back(line.to_string());
+                       if (Strings::starts_with(line, guid_marker))
+                       {
+                           out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
+                       }
+                   }).value_or_exit(VCPKG_LINE_INFO);
         Checks::check_exit(VCPKG_LINE_INFO, res == 0, "curl failed to execute with exit code: %d", res);
 
         if (out->size() != start_size + urls.size())
@@ -353,7 +331,10 @@ namespace vcpkg
         return input;
     }
 
-    static void download_files_inner(Filesystem&, View<std::pair<std::string, Path>> url_pairs, std::vector<int>* out)
+    static void download_files_inner(Filesystem&,
+                                     View<std::pair<std::string, Path>> url_pairs,
+                                     View<std::string> headers,
+                                     std::vector<int>* out)
     {
         for (auto i : {100, 1000, 10000, 0})
         {
@@ -366,22 +347,26 @@ namespace vcpkg
                 .string_arg("--location")
                 .string_arg("-w")
                 .string_arg(Strings::concat(guid_marker, " %{http_code}\\n"));
+            for (StringView header : headers)
+            {
+                cmd.string_arg("-H").string_arg(header);
+            }
             for (auto&& url : url_pairs)
             {
                 cmd.string_arg(url.first).string_arg("-o").string_arg(url.second);
             }
             auto res = cmd_execute_and_stream_lines(cmd, [out](StringView line) {
-                if (Strings::starts_with(line, guid_marker))
-                {
-                    out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
-                }
-            });
+                           if (Strings::starts_with(line, guid_marker))
+                           {
+                               out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
+                           }
+                       }).value_or_exit(VCPKG_LINE_INFO);
             Checks::check_exit(VCPKG_LINE_INFO, res == 0, "Error: curl failed to execute with exit code: %d", res);
 
             if (start_size + url_pairs.size() > out->size())
             {
                 // curl stopped before finishing all downloads; retry after some time
-                msg::print_warning(msgUnexpectedErrorDuringBulkDownload);
+                msg::println_warning(msgUnexpectedErrorDuringBulkDownload);
                 std::this_thread::sleep_for(std::chrono::milliseconds(i));
                 url_pairs =
                     View<std::pair<std::string, Path>>{url_pairs.begin() + out->size() - start_size, url_pairs.end()};
@@ -392,7 +377,9 @@ namespace vcpkg
             }
         }
     }
-    std::vector<int> download_files(Filesystem& fs, View<std::pair<std::string, Path>> url_pairs)
+    std::vector<int> download_files(Filesystem& fs,
+                                    View<std::pair<std::string, Path>> url_pairs,
+                                    View<std::string> headers)
     {
         static constexpr size_t batch_size = 50;
 
@@ -401,9 +388,9 @@ namespace vcpkg
         size_t i = 0;
         for (; i + batch_size <= url_pairs.size(); i += batch_size)
         {
-            download_files_inner(fs, {url_pairs.data() + i, batch_size}, &ret);
+            download_files_inner(fs, {url_pairs.data() + i, batch_size}, headers, &ret);
         }
-        if (i != url_pairs.size()) download_files_inner(fs, {url_pairs.begin() + i, url_pairs.end()}, &ret);
+        if (i != url_pairs.size()) download_files_inner(fs, {url_pairs.begin() + i, url_pairs.end()}, headers, &ret);
 
         Checks::check_exit(
             VCPKG_LINE_INFO,
@@ -427,15 +414,22 @@ namespace vcpkg
             cmd.string_arg("curl");
             cmd.string_arg(url);
             cmd.string_arg("-T").string_arg(file);
-            auto res = cmd_execute_and_capture_output(cmd);
-            if (res.exit_code != 0)
+            auto maybe_res = cmd_execute_and_capture_output(cmd);
+            if (auto res = maybe_res.get())
             {
-                Debug::print(res.output, '\n');
+                if (res->exit_code == 0)
+                {
+                    return 0;
+                }
+
+                Debug::print(res->output, '\n');
                 return Strings::concat(
-                    "Error: curl failed to put file to ", url, " with exit code: ", res.exit_code, '\n');
+                    "Error: curl failed to put file to ", url, " with exit code: ", res->exit_code, '\n');
             }
-            return 0;
+
+            return Strings::concat("Error: launching curl failed: ", maybe_res.error());
         }
+
         Command cmd;
         cmd.string_arg("curl").string_arg("-X").string_arg("PUT");
         for (auto&& header : headers)
@@ -447,17 +441,26 @@ namespace vcpkg
         cmd.string_arg("-T").string_arg(file);
         int code = 0;
         auto res = cmd_execute_and_stream_lines(cmd, [&code](StringView line) {
-            if (Strings::starts_with(line, guid_marker))
-            {
-                code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
-            }
-        });
-        if (res != 0 || (code >= 100 && code < 200) || code >= 300)
+                       if (Strings::starts_with(line, guid_marker))
+                       {
+                           code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
+                       }
+                   }).map_error([](LocalizedString&& ls) { return ls.extract_data(); });
+        if (auto pres = res.get())
         {
-            return Strings::concat(
-                "Error: curl failed to put file to ", url, " with exit code '", res, "' and http code '", code, "'\n");
+            if (*pres != 0 || (code >= 100 && code < 200) || code >= 300)
+            {
+                res = Strings::concat("Error: curl failed to put file to ",
+                                      url,
+                                      " with exit code '",
+                                      *pres,
+                                      "' and http code '",
+                                      code,
+                                      "'\n");
+            }
         }
-        return code;
+
+        return res;
     }
 
 #if defined(_WIN32)
@@ -601,19 +604,27 @@ namespace vcpkg
         {
             cmd.string_arg("-H").string_arg(header);
         }
-        const auto out = cmd_execute_and_capture_output(cmd);
+        const auto maybe_out = cmd_execute_and_capture_output(cmd);
         const auto sanitized_url = replace_secrets(url, secrets);
-        if (out.exit_code != 0)
+        if (const auto out = maybe_out.get())
         {
-            Strings::append(errors, sanitized_url, ": ", out.output, '\n');
-            return false;
+            if (out->exit_code != 0)
+            {
+                Strings::append(errors, sanitized_url, ": ", out->output, '\n');
+                return false;
+            }
+
+            if (check_downloaded_file_hash(fs, sha512, sanitized_url, download_path_part_path, errors))
+            {
+                fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
+                return true;
+            }
+        }
+        else
+        {
+            Strings::append(errors, sanitized_url, ": ", maybe_out.error(), '\n');
         }
 
-        if (check_downloaded_file_hash(fs, sha512, sanitized_url, download_path_part_path, errors))
-        {
-            fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
-            return true;
-        }
         return false;
     }
 
@@ -672,7 +683,9 @@ namespace vcpkg
                 auto read_url = Strings::replace_all(*read_template, "<SHA>", *hash);
                 if (try_download_file(
                         fs, read_url, m_config.m_read_headers, download_path, sha512, m_config.m_secrets, errors))
+                {
                     return read_url;
+                }
             }
             else if (auto script = m_config.m_script.get())
             {
@@ -700,12 +713,14 @@ namespace vcpkg
                                    }
                                }).value_or_exit(VCPKG_LINE_INFO);
 
-                    auto res = cmd_execute_and_capture_output(Command{}.raw_arg(cmd),
-                                                              default_working_directory,
-                                                              get_clean_environment(),
-                                                              Encoding::Utf8,
-                                                              EchoInDebug::Show);
-                    if (res.exit_code == 0)
+                    auto maybe_res = flatten(cmd_execute_and_capture_output(Command{}.raw_arg(cmd),
+                                                                            default_working_directory,
+                                                                            get_clean_environment(),
+                                                                            Encoding::Utf8,
+                                                                            EchoInDebug::Show),
+                                             "<mirror-script>");
+
+                    if (maybe_res)
                     {
                         auto maybe_error =
                             try_verify_downloaded_file_hash(fs, "<mirror-script>", download_path_part_path, *hash);
@@ -721,7 +736,7 @@ namespace vcpkg
                     }
                     else
                     {
-                        Strings::append(errors, res.output);
+                        Strings::append(errors, maybe_res.error(), '\n');
                     }
                 }
             }
@@ -738,9 +753,9 @@ namespace vcpkg
                     if (auto hash = sha512.get())
                     {
                         auto maybe_push = put_file_to_mirror(fs, download_path, *hash);
-                        if (!maybe_push.has_value())
+                        if (!maybe_push)
                         {
-                            msg::print_warning(msgFailedToStoreBackToMirror);
+                            msg::println_warning(msgFailedToStoreBackToMirror);
                             msg::write_unlocalized_text_to_stdout(Color::warning, maybe_push.error());
                         }
                     }

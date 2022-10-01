@@ -13,6 +13,7 @@
 #include <vcpkg/commands.civerifyversions.h>
 #include <vcpkg/commands.contact.h>
 #include <vcpkg/commands.create.h>
+#include <vcpkg/commands.deactivate.h>
 #include <vcpkg/commands.dependinfo.h>
 #include <vcpkg/commands.edit.h>
 #include <vcpkg/commands.env.h>
@@ -20,6 +21,7 @@
 #include <vcpkg/commands.find.h>
 #include <vcpkg/commands.format-manifest.h>
 #include <vcpkg/commands.generate-message-map.h>
+#include <vcpkg/commands.generate-msbuild-props.h>
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.hash.h>
 #include <vcpkg/commands.info.h>
@@ -28,7 +30,6 @@
 #include <vcpkg/commands.list.h>
 #include <vcpkg/commands.new.h>
 #include <vcpkg/commands.owns.h>
-#include <vcpkg/commands.porthistory.h>
 #include <vcpkg/commands.portsdiff.h>
 #include <vcpkg/commands.regenerate.h>
 #include <vcpkg/commands.search.h>
@@ -42,6 +43,7 @@
 #include <vcpkg/commands.xvsinstances.h>
 #include <vcpkg/commands.zbootstrap-standalone.h>
 #include <vcpkg/commands.zce.h>
+#include <vcpkg/commands.zpreregistertelemetry.h>
 #include <vcpkg/commands.zprintconfig.h>
 #include <vcpkg/export.h>
 #include <vcpkg/help.h>
@@ -60,6 +62,7 @@ namespace vcpkg::Commands
         static const GenerateDefaultMessageMapCommand generate_message_map{};
         static const Hash::HashCommand hash{};
         static const ZBootstrapStandaloneCommand zboostrap_standalone{};
+        static const ZPreRegisterTelemetryCommand zpreregister_telemetry{};
 #if defined(_WIN32)
         static const UploadMetrics::UploadMetricsCommand upload_metrics{};
 #endif // defined(_WIN32)
@@ -72,6 +75,7 @@ namespace vcpkg::Commands
             {"x-download", &xdownload},
             {"x-generate-default-message-map", &generate_message_map},
             {"z-bootstrap-standalone", &zboostrap_standalone},
+            {"z-preregister-telemetry", &zpreregister_telemetry},
 #if defined(_WIN32)
             {"x-upload-metrics", &upload_metrics},
 #endif // defined(_WIN32)
@@ -82,6 +86,7 @@ namespace vcpkg::Commands
     Span<const PackageNameAndFunction<const PathsCommand*>> get_available_paths_commands()
     {
         static const ActivateCommand activate{};
+        static const GenerateMSBuildPropsCommand generate_msbuildprops{};
         static const AddCommand add{};
         static const AddVersion::AddVersionCommand add_version{};
         static const Autocomplete::AutocompleteCommand autocomplete{};
@@ -89,6 +94,7 @@ namespace vcpkg::Commands
         static const CIClean::CICleanCommand ciclean{};
         static const CIVerifyVersions::CIVerifyVersionsCommand ci_verify_versions{};
         static const Create::CreateCommand create{};
+        static const DeactivateCommand deactivate{};
         static const Edit::EditCommand edit{};
         static const Fetch::FetchCommand fetch{};
         static const FindCommand find_{};
@@ -99,7 +105,6 @@ namespace vcpkg::Commands
         static const List::ListCommand list{};
         static const NewCommand new_{};
         static const Owns::OwnsCommand owns{};
-        static const PortHistory::PortHistoryCommand porthistory{};
         static const PortsDiff::PortsDiffCommand portsdiff{};
         static const RegenerateCommand regenerate{};
         static const SearchCommand search{};
@@ -117,6 +122,7 @@ namespace vcpkg::Commands
             {"autocomplete", &autocomplete},
             {"cache", &cache},
             {"create", &create},
+            {"deactivate", &deactivate},
             {"edit", &edit},
             {"fetch", &fetch},
             {"find", &find_},
@@ -130,10 +136,10 @@ namespace vcpkg::Commands
             {"update", &update},
             {"x-update-baseline", &update_baseline},
             {"use", &use},
+            {"x-generate-msbuild-props", &generate_msbuildprops},
             {"x-add-version", &add_version},
             {"x-ci-clean", &ciclean},
             {"x-ci-verify-versions", &ci_verify_versions},
-            {"x-history", &porthistory},
             {"x-package-info", &info},
             {"x-regenerate", &regenerate},
             {"x-vsinstances", &vsinstances},
@@ -144,12 +150,12 @@ namespace vcpkg::Commands
 
     Span<const PackageNameAndFunction<const TripletCommand*>> get_available_triplet_commands()
     {
-        static const Install::InstallCommand install{};
+        static const InstallCommand install{};
         static const SetInstalled::SetInstalledCommand set_installed{};
         static const CI::CICommand ci{};
         static const Remove::RemoveCommand remove{};
         static const Upgrade::UpgradeCommand upgrade{};
-        static const Build::BuildCommand build{};
+        static const BuildCommand build{};
         static const Env::EnvCommand env{};
         static const BuildExternal::BuildExternalCommand build_external{};
         static const Export::ExportCommand export_command{};

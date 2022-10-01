@@ -5,7 +5,7 @@ specifiers:
   '@rush-temp/vcpkg-ce': file:./projects/vcpkg-ce.tgz
   '@rush-temp/vcpkg-ce.test': file:./projects/vcpkg-ce.test.tgz
   '@snyk/nuget-semver': 1.3.0
-  '@types/cli-progress': 3.9.2
+  '@types/cli-progress': 3.11.0
   '@types/marked': 4.0.2
   '@types/marked-terminal': 3.1.3
   '@types/micromatch': 4.0.2
@@ -17,15 +17,14 @@ specifiers:
   '@typescript-eslint/parser': 5.10.2
   applicationinsights: 2.2.1
   chalk: 4.1.2
-  cli-progress: 3.10.0
+  cli-progress: 3.11.1
   ee-ts: 2.0.0-rc.6
   end-of-stream: ^1.4.1
   eslint: 8.8.0
   eslint-plugin-notice: 0.9.10
   fast-glob: 3.2.11
-  fast-xml-parser: 4.0.3
   fs-constants: ^1.0.0
-  got: 11.8.3
+  got: 11.8.5
   inherits: ^2.0.3
   marked: 4.0.12
   marked-terminal: 5.1.1
@@ -50,7 +49,7 @@ dependencies:
   '@rush-temp/vcpkg-ce': file:projects/vcpkg-ce.tgz
   '@rush-temp/vcpkg-ce.test': file:projects/vcpkg-ce.test.tgz
   '@snyk/nuget-semver': 1.3.0
-  '@types/cli-progress': 3.9.2
+  '@types/cli-progress': 3.11.0
   '@types/marked': 4.0.2
   '@types/marked-terminal': 3.1.3
   '@types/micromatch': 4.0.2
@@ -62,15 +61,14 @@ dependencies:
   '@typescript-eslint/parser': 5.10.2_eslint@8.8.0+typescript@4.5.5
   applicationinsights: 2.2.1
   chalk: 4.1.2
-  cli-progress: 3.10.0
+  cli-progress: 3.11.1
   ee-ts: 2.0.0-rc.6_typescript@4.5.5
   end-of-stream: 1.4.4
   eslint: 8.8.0
   eslint-plugin-notice: 0.9.10_eslint@8.8.0
   fast-glob: 3.2.11
-  fast-xml-parser: 4.0.3
   fs-constants: 1.0.0
-  got: 11.8.3
+  got: 11.8.5
   inherits: 2.0.4
   marked: 4.0.12
   marked-terminal: 5.1.1_marked@4.0.12
@@ -337,8 +335,8 @@ packages:
       '@types/responselike': 1.0.0
     dev: false
 
-  /@types/cli-progress/3.9.2:
-    resolution: {integrity: sha512-VO5/X5Ij+oVgEVjg5u0IXVe3JQSKJX+Ev8C5x+0hPy0AuWyW+bF8tbajR7cPFnDGhs7pidztcac+ccrDtk5teA==}
+  /@types/cli-progress/3.11.0:
+    resolution: {integrity: sha512-XhXhBv1R/q2ahF3BM7qT5HLzJNlIL0wbcGyZVjqOTqAybAnsLisd7gy1UCyIqpL+5Iv6XhlSyzjLCnI2sIdbCg==}
     dependencies:
       '@types/node': 17.0.15
     dev: false
@@ -816,8 +814,8 @@ packages:
       fsevents: 2.3.2
     dev: false
 
-  /cli-progress/3.10.0:
-    resolution: {integrity: sha512-kLORQrhYCAtUPLZxqsAt2YJGOvRdt34+O6jl5cQGb7iF3dM55FQZlTR+rQyIK9JUcO9bBMwZsTlND+3dmFU2Cw==}
+  /cli-progress/3.11.1:
+    resolution: {integrity: sha512-TTMA2LHrYaZeNMcgZGO10oYqj9hvd03pltNtVbu4ddeyDTHlYV7gWxsFiuvaQlgwMBFCv1TukcjiODWFlb16tQ==}
     engines: {node: '>=4'}
     dependencies:
       string-width: 4.2.3
@@ -841,7 +839,7 @@ packages:
     dev: false
 
   /clone-response/1.0.2:
-    resolution: {integrity: sha1-0dyXOSAxTfZ/vrlCI7TuNQI56Ws=}
+    resolution: {integrity: sha512-yjLXh88P599UOyPTFX0POsd7WxnbsVsGohcwzHOLspIhhpalPw1BcqED8NblyZLKcGrL8dTgMlcaZxV2jAD41Q==}
     dependencies:
       mimic-response: 1.0.1
     dev: false
@@ -1451,8 +1449,8 @@ packages:
       slash: 3.0.0
     dev: false
 
-  /got/11.8.3:
-    resolution: {integrity: sha512-7gtQ5KiPh1RtGS9/Jbv1ofDpBFuq42gyfEib+ejaRBJuj/3tQFeR5+gw57e4ipaU8c/rCjvX6fkQz2lyDlGAOg==}
+  /got/11.8.5:
+    resolution: {integrity: sha512-o0Je4NvQObAuZPHLFoRSkdG2lTgtcynqymzg2Vupdx6PorhaT5MCbIyXG6d4D94kk8ZG57QeosgdiqfJWhEhlQ==}
     engines: {node: '>=10.19.0'}
     dependencies:
       '@sindresorhus/is': 4.6.0
@@ -2004,7 +2002,7 @@ packages:
     dev: false
 
   /once/1.4.0:
-    resolution: {integrity: sha1-WDsap3WWHUsROsF9nFC6753Xa9E=}
+    resolution: {integrity: sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==}
     dependencies:
       wrappy: 1.0.2
     dev: false
@@ -2613,7 +2611,12 @@ packages:
     dev: false
 
   /wrappy/1.0.2:
-    resolution: {integrity: sha1-tSQ9jz7BqjXxNkYFvA0QNuMKtp8=}
+    resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
+    dev: false
+
+  /xml-writer/1.7.0:
+    resolution: {integrity: sha512-elFVMRiV5jb59fbc87zzVa0C01QLBEWP909mRuWqFqrYC5wNTH5QW4AaKMNv7d6zAsuOulkD7wnztZNLQW0Nfg==}
+    engines: {node: '>=0.4.0'}
     dev: false
 
   /xml2js/0.4.23:
@@ -2688,7 +2691,7 @@ packages:
     dev: false
 
   file:projects/vcpkg-ce.test.tgz:
-    resolution: {integrity: sha512-/bzmskWSXUXHuRaSwIgHnWdqLwXNGmtZlVM5fPazQCC/Q+clcXxZGpGPDapHNVFsvLKLQdFWCeSW9DE0Fb8Xag==, tarball: file:projects/vcpkg-ce.test.tgz}
+    resolution: {integrity: sha512-klUKkCyoQSAtn7Lpvc51ImuKWmVgcp+aZgflvPyizm4ekHREwJzLTvuG5Hl85plMQRenkpVsc0b6EgAo6yrIzg==, tarball: file:projects/vcpkg-ce.test.tgz}
     name: '@rush-temp/vcpkg-ce.test'
     version: 0.0.0
     dependencies:
@@ -2711,12 +2714,12 @@ packages:
     dev: false
 
   file:projects/vcpkg-ce.tgz:
-    resolution: {integrity: sha512-w5KSYh3XmlMetgClCJl9yaqPTwWOiuUZ91yXM/L3SUkpH8RL3Ti49xC7ma7Jq2/UaJVWSpu2o74mnvjE5P/xQg==, tarball: file:projects/vcpkg-ce.tgz}
+    resolution: {integrity: sha512-PKXMytuWY5e8evBEHth9x1Hxoo8GTiCvn5rLB7xZtV4abNPSPYkptk1v3B4VndefCKN2ofH965BA8asWxwcrMQ==, tarball: file:projects/vcpkg-ce.tgz}
     name: '@rush-temp/vcpkg-ce'
     version: 0.0.0
     dependencies:
       '@snyk/nuget-semver': 1.3.0
-      '@types/cli-progress': 3.9.2
+      '@types/cli-progress': 3.11.0
       '@types/marked': 4.0.2
       '@types/marked-terminal': 3.1.3
       '@types/micromatch': 4.0.2
@@ -2728,13 +2731,13 @@ packages:
       '@typescript-eslint/parser': 5.10.2_eslint@8.8.0+typescript@4.5.5
       applicationinsights: 2.2.1
       chalk: 4.1.2
-      cli-progress: 3.10.0
+      cli-progress: 3.11.1
       ee-ts: 2.0.0-rc.6_typescript@4.5.5
       eslint: 8.8.0
       eslint-plugin-notice: 0.9.10_eslint@8.8.0
       fast-glob: 3.2.11
       fast-xml-parser: 4.0.3
-      got: 11.8.3
+      got: 11.8.5
       marked: 4.0.12
       marked-terminal: 5.1.1_marked@4.0.12
       micromatch: 4.0.4
@@ -2747,6 +2750,7 @@ packages:
       typescript: 4.5.5
       unbzip2-stream: 1.4.3
       vscode-uri: 3.0.3
+      xml-writer: 1.7.0
       yaml: 2.0.0-10
     transitivePeerDependencies:
       - applicationinsights-native-metrics

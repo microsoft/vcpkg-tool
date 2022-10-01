@@ -1,68 +1,82 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-
-import { extname } from 'path';
+import { resolve } from 'path';
 import { Document, isMap, LineCounter, parseDocument, YAMLMap } from 'yaml';
-import { Registry } from '../artifacts/registry';
 import { i } from '../i18n';
 import { ErrorKind } from '../interfaces/error-kind';
-import { Profile } from '../interfaces/metadata/metadata-format';
-import { ValidationError } from '../interfaces/validation-error';
+import { ValidationMessage } from '../interfaces/validation-message';
 import { Session } from '../session';
 import { Uri } from '../util/uri';
 import { BaseMap } from '../yaml/BaseMap';
-import { toYAML } from '../yaml/yaml';
+import { Options } from '../yaml/Options';
 import { Yaml, YAMLDictionary } from '../yaml/yaml-types';
 import { Contacts } from './contact';
 import { DemandBlock, Demands } from './demands';
-import { DocumentContext } from './document-context';
 import { GlobalSettings } from './global-settings';
 import { Info } from './info';
-import { Registries } from './registries';
+import { RegistriesDeclaration } from './registries';
 
-
-export class MetadataFile extends BaseMap implements Profile {
-  readonly context: DocumentContext;
-  session!: Session;
-
-  private constructor(protected document: Document.Parsed, public readonly filename: string, public lineCounter: LineCounter, public readonly registry: Registry | undefined) {
+export class MetadataFile extends BaseMap {
+  private constructor(protected document: Document.Parsed, public readonly filename: string, public readonly file: Uri, public lineCounter: LineCounter, public readonly registryUri: Uri | undefined) {
     super(<YAMLMap<string, any>><any>document.contents);
-    this.context = <DocumentContext>{
-      filename,
-      lineCounter,
-    };
+
   }
 
-  async init(session: Session): Promise<MetadataFile> {
-    this.context.session = session;
-    this.context.file = session.parseUri(this.context.filename);
-    this.context.folder = this.context.file.parent;
-    await this.demandBlock.init(session);
-    return this;
+  static async parseMetadata(filename: string, uri: Uri, session: Session, registryUri?: Uri): Promise<MetadataFile> {
+    return MetadataFile.parseConfiguration(filename, await uri.readUTF8(), session, registryUri);
   }
 
-  static async parseMetadata(uri: Uri, session: Session, registry?: Registry): Promise<MetadataFile> {
-    return MetadataFile.parseConfiguration(uri.path, await uri.readUTF8(), session, registry);
-  }
-
-  static async parseConfiguration(filename: string, content: string, session: Session, registry?: Registry): Promise<MetadataFile> {
+  static async parseConfiguration(filename: string, content: string, session: Session, registryUri?: Uri): Promise<MetadataFile> {
     const lc = new LineCounter();
     if (!content || content === 'null') {
       content = '{\n}';
     }
     const doc = parseDocument(content, { prettyErrors: false, lineCounter: lc, strict: true });
-    return new MetadataFile(doc, filename, lc, registry).init(session);
+    return new MetadataFile(doc, filename, session.fileSystem.file(resolve(filename)), lc, registryUri);
   }
 
-  info = new Info(undefined, this, 'info');
+  #info = new Info(undefined, this, 'info');
 
   contacts = new Contacts(undefined, this, 'contacts');
-  registries = new Registries(undefined, this, 'registries');
+  registries = new RegistriesDeclaration(undefined, this, 'registries');
   globalSettings = new GlobalSettings(undefined, this, 'global');
 
-  // rather than re-implement it, use encapsulatiob with a demand block
+  // rather than re-implement it, use encapsulation with a demand block
   private demandBlock = new DemandBlock(this.node, undefined);
+
+  /** Artifact identity
+ *
+ * this should be the 'path' to the artifact (following the guidelines)
+ *
+ * ie, 'compilers/microsoft/msvc'
+ *
+ * artifacts install to artifacts-root/<source>/<id>/<VER>
+ */
+  get id(): string { return this.asString(this.getMember('id')) || this.#info.id || ''; }
+  set id(value: string) { this.normalize(); this.setMember('id', value); }
+
+  /** the version of this artifact */
+  get version(): string { return this.asString(this.getMember('version')) || this.#info.version || ''; }
+  set version(value: string) { this.normalize(); this.setMember('version', value); }
+
+  /** a short 1 line descriptive text */
+  get summary(): string | undefined { return this.asString(this.getMember('summary')) || this.#info.summary; }
+  set summary(value: string | undefined) { this.normalize(); this.setMember('summary', value); }
+
+  /** if a longer description is required, the value should go here */
+  get description(): string | undefined { return this.asString(this.getMember('description')) || this.#info.description; }
+  set description(value: string | undefined) { this.normalize(); this.setMember('description', value); }
+
+  readonly #options = new Options(undefined, this, 'options');
+
+  /** if true, intended to be used only as a dependency; for example, do not show in search results or lists */
+  get dependencyOnly(): boolean { return this.#options.has('dependencyOnly') || this.#info.options.has('dependencyOnly'); }
+  get espidf(): boolean { return this.#options.has('espidf') || this.#info.options.has('espidf'); }
+
+  /** higher priority artifacts should install earlier; the default is zero */
+  get priority(): number { return this.asNumber(this.getMember('priority')) || this.#info.priority || 0; }
+  set priority(value: number) { this.normalize(); this.setMember('priority', value); }
 
   get error(): string | undefined { return this.demandBlock.error; }
   set error(value: string | undefined) { this.demandBlock.error = value; }
@@ -73,7 +87,6 @@ export class MetadataFile extends BaseMap implements Profile {
   get message(): string | undefined { return this.demandBlock.message; }
   set message(value: string | undefined) { this.demandBlock.message = value; }
 
-  get seeAlso() { return this.demandBlock.seeAlso; }
   get requires() { return this.demandBlock.requires; }
   get exports() { return this.demandBlock.exports; }
   get install() { return this.demandBlock.install; }
@@ -84,32 +97,19 @@ export class MetadataFile extends BaseMap implements Profile {
     return this.document.errors.length === 0;
   }
 
-  get content() {
-    return toYAML(this.document.toString());
-  }
-
-  async save(uri: Uri = this.context.file): Promise<void> {
-    // check the filename, and select the format.
-    let content = '';
-
-    switch (extname(uri.path).toLowerCase()) {
-      case '.yaml':
-      case '.yml':
-        // format as yaml
-        content = this.content;
-        break;
-
-      case '.json':
-        content = JSON.stringify(this.document.toJSON(), null, 2);
-        break;
-      default:
-        throw new Error(`Unsupported file type ${extname(uri.path)}`);
-    }
+  toJsonString() {
+    let content = JSON.stringify(this.document.toJSON(), null, 2);
     if (!content || content === 'null') {
-      content = '{\n}';
+      content = '{}\n';
     }
-    await uri.writeUTF8(content);
+
+    return content;
   }
+
+  async save(uri: Uri = this.file): Promise<void> {
+    await uri.writeUTF8(this.toJsonString());
+  }
+
   #errors!: Array<string>;
   get formatErrors(): Array<string> {
     const t = this;
@@ -129,25 +129,30 @@ export class MetadataFile extends BaseMap implements Profile {
     }
   }
 
-  get isValid(): boolean {
-    return this.validationErrors.length === 0;
+  formatVMessage(vMessage: ValidationMessage): string {
+    const message = vMessage.message;
+    const range = vMessage.range;
+    const rangeOffset = vMessage.rangeOffset;
+    const category = vMessage.category;
+    const r = Array.isArray(range) ? range : range?.sourcePosition();
+    const { line, column } = this.positionAt(r, rangeOffset);
+
+    return this.formatMessage(category, message, line, column);
   }
 
-  #validationErrors!: Array<string>;
-  get validationErrors(): Array<string> {
-    if (this.#validationErrors) {
-      return this.#validationErrors;
+  *deprecationWarnings(): Iterable<ValidationMessage> {
+    const node = this.node;
+    if (node) {
+      const info = node.get('info');
+      if (info) {
+        const infoNode = <YAMLMap>info;
+        yield {
+          message: i`The info block is deprecated for consistency with vcpkg.json; move info members to the outside.`,
+          range: infoNode.range || undefined,
+          category: ErrorKind.InfoBlockPresent
+        };
+      }
     }
-
-    const errs = new Set<string>();
-    for (const { message, range, rangeOffset, category } of this.validate()) {
-      const r = Array.isArray(range) ? range : range?.sourcePosition();
-
-      const { line, column } = this.positionAt(r, rangeOffset);
-      errs.add(this.formatMessage(category, message, line, column));
-    }
-    this.#validationErrors = [...errs];
-    return this.#validationErrors;
   }
 
   private positionAt(range?: [number, number, number?], offset?: { line: number, column: number }) {
@@ -164,17 +169,44 @@ export class MetadataFile extends BaseMap implements Profile {
   }
 
   /** @internal */
-  override *validate(): Iterable<ValidationError> {
+  override *validate(): Iterable<ValidationMessage> {
     yield* super.validate();
-    yield* this.validateChildKeys(['info', 'contacts', 'registries', 'global', 'demands', 'apply', 'exports', 'requires', 'install', 'seeAlso', 'unless']);
+    const hasInfo = this.document.has('info');
+    const allowedChildren = ['contacts', 'registries', 'global', 'demands', 'exports', 'requires', 'install'];
 
-    // verify that we have info
-    if (!this.document.has('info')) {
-      yield { message: i`Missing section '${'info'}'`, range: this, category: ErrorKind.SectionNotFound };
+    if (hasInfo) {
+      // 2022-06-17 and earlier used a separate 'info' block for these fields
+      allowedChildren.push('info');
     } else {
-      yield* this.info.validate();
+      allowedChildren.push('version', 'id', 'summary', 'priority', 'description', 'options');
     }
 
+    yield* this.validateChildKeys(allowedChildren);
+
+    if (hasInfo) {
+      yield* this.#info.validate();
+    } else {
+      if (!this.has('id')) {
+        yield { message: i`Missing identity '${'id'}'`, range: this, category: ErrorKind.FieldMissing };
+      } else if (!this.childIs('id', 'string')) {
+        yield { message: i`id should be of type 'string', found '${this.kind('id')}'`, range: this.sourcePosition('id'), category: ErrorKind.IncorrectType };
+      }
+
+      if (!this.has('version')) {
+        yield { message: i`Missing version '${'version'}'`, range: this, category: ErrorKind.FieldMissing };
+      } else if (!this.childIs('version', 'string')) {
+        yield { message: i`version should be of type 'string', found '${this.kind('version')}'`, range: this.sourcePosition('version'), category: ErrorKind.IncorrectType };
+      }
+      if (this.childIs('summary', 'string') === false) {
+        yield { message: i`summary should be of type 'string', found '${this.kind('summary')}'`, range: this.sourcePosition('summary'), category: ErrorKind.IncorrectType };
+      }
+      if (this.childIs('description', 'string') === false) {
+        yield { message: i`description should be of type 'string', found '${this.kind('description')}'`, range: this.sourcePosition('description'), category: ErrorKind.IncorrectType };
+      }
+      if (this.childIs('options', 'sequence') === false) {
+        yield { message: i`options should be a sequence, found '${this.kind('options')}'`, range: this.sourcePosition('options'), category: ErrorKind.IncorrectType };
+      }
+    }
 
     if (this.document.has('contacts')) {
       for (const each of this.contacts.values) {
@@ -183,14 +215,12 @@ export class MetadataFile extends BaseMap implements Profile {
     }
 
     const set = new Set<string>();
-
     for (const [mediaQuery, demandBlock] of this.conditionalDemands) {
-
       if (set.has(mediaQuery)) {
         yield { message: i`Duplicate keys detected in manifest: '${mediaQuery}'`, range: demandBlock, category: ErrorKind.DuplicateKey };
       }
-      set.add(mediaQuery);
 
+      set.add(mediaQuery);
       yield* demandBlock.validate();
     }
     yield* this.conditionalDemands.validate();
@@ -200,12 +230,30 @@ export class MetadataFile extends BaseMap implements Profile {
     yield* this.exports.validate();
     yield* this.globalSettings.validate();
     yield* this.requires.validate();
-    yield* this.seeAlso.validate();
+  }
+
+  normalize() {
+    if (!this.node) { return; }
+    if (this.document.has('info')) {
+      this.setMember('id', this.#info.id);
+      this.setMember('version', this.#info.version);
+      this.setMember('summary', this.#info.summary);
+      this.setMember('description', this.#info.description);
+      const maybeOptions = this.#info.options.node?.items;
+      if (maybeOptions) {
+        for (const option of maybeOptions) {
+          this.#options.set(option.value, true);
+        }
+      }
+
+      this.setMember('priority', this.#info.priority);
+      this.node.delete('info');
+    }
   }
 
   /** @internal */override assert(recreateIfDisposed = false, node = this.node): asserts this is Yaml<YAMLDictionary> & { node: YAMLDictionary } {
     if (!isMap(this.node)) {
-      this.document = parseDocument('{\n}', { prettyErrors: false, lineCounter: this.context.lineCounter, strict: true });
+      this.document = parseDocument('{}\n', { prettyErrors: false, lineCounter: this.lineCounter, strict: true });
       this.node = <YAMLMap<string, any>><any>this.document.contents;
     }
   }

@@ -632,7 +632,7 @@ namespace vcpkg::PlatformExpression
 
         if (auto p = parser.extract_error())
         {
-            return p->format();
+            return p->to_string();
         }
         else
         {
@@ -708,14 +708,14 @@ namespace vcpkg::PlatformExpression
             }
             std::string operator()(const detail::ExprImpl& expr, bool outer) const
             {
-                const char* join = nullptr;
+                StringLiteral join = "bug";
                 switch (expr.kind)
                 {
                     case ExprKind::identifier: return expr.identifier;
                     case ExprKind::op_and: join = " & "; break;
                     case ExprKind::op_or: join = " | "; break;
                     case ExprKind::op_list: join = ", "; break;
-                    case ExprKind::op_not: return Strings::format("!%s", (*this)(expr.exprs.at(0)));
+                    case ExprKind::op_not: return Strings::concat('!', (*this)(expr.exprs.at(0)));
                     case ExprKind::op_empty: join = ""; break;
                     case ExprKind::op_invalid: join = " invalid "; break;
                     default: Checks::unreachable(VCPKG_LINE_INFO);
@@ -727,7 +727,7 @@ namespace vcpkg::PlatformExpression
                 }
                 else
                 {
-                    return Strings::format("(%s)", Strings::join(join, expr.exprs, *this));
+                    return Strings::concat('(', Strings::join(join, expr.exprs, *this), ')');
                 }
             }
         };

@@ -13,4 +13,5 @@ export enum ErrorKind {
   InvalidDefinition = 'InvalidDefinition',
   InvalidChild = 'InvalidChild',
   InvalidExpression = 'InvalidExpression',
+  InfoBlockPresent = 'InfoBlockPresent',
 }

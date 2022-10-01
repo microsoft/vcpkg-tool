@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/format.h>
+#include <vcpkg/base/fwd/span.h>
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/pragmas.h>
@@ -353,7 +354,8 @@ namespace vcpkg
                                                                                  std::error_code&) = 0;
         std::unique_ptr<IExclusiveFileLock> try_take_exclusive_file_lock(const Path& lockfile, LineInfo li);
 
-        virtual std::vector<Path> find_from_PATH(StringView name) const = 0;
+        virtual std::vector<Path> find_from_PATH(View<StringView> stems) const = 0;
+        std::vector<Path> find_from_PATH(StringView stem) const;
 
         virtual ReadFilePointer open_for_read(const Path& file_path, std::error_code& ec) const = 0;
         ReadFilePointer open_for_read(const Path& file_path, LineInfo li) const;

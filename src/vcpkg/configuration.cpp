@@ -10,15 +10,6 @@ namespace
 {
     using namespace vcpkg;
 
-    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineRemoteGitError,
-                                 (msg::url),
-                                 "",
-                                 "git failed to fetch remote repository '{url}'");
-    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineLocalGitError,
-                                 (msg::path),
-                                 "",
-                                 "git failed to parse HEAD for the local vcpkg registry at '{path}'");
-
     struct RegistryConfigDeserializer : Json::IDeserializer<RegistryConfig>
     {
         constexpr static StringLiteral KIND = "kind";
@@ -237,7 +228,6 @@ namespace
         constexpr static StringLiteral CE_APPLY = "apply";
         constexpr static StringLiteral CE_SETTINGS = "settings";
         constexpr static StringLiteral CE_REQUIRES = "requires";
-        constexpr static StringLiteral CE_SEE_ALSO = "see-also";
 
         virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) override;
 
@@ -250,7 +240,6 @@ namespace
     constexpr StringLiteral CeMetadataDeserializer::CE_APPLY;
     constexpr StringLiteral CeMetadataDeserializer::CE_SETTINGS;
     constexpr StringLiteral CeMetadataDeserializer::CE_REQUIRES;
-    constexpr StringLiteral CeMetadataDeserializer::CE_SEE_ALSO;
 
     struct DemandsDeserializer final : Json::IDeserializer<Json::Object>
     {
@@ -347,7 +336,6 @@ namespace
         extract_object(obj, CE_APPLY, ret);
         extract_object(obj, CE_SETTINGS, ret);
         extract_dictionary(obj, CE_REQUIRES, ret);
-        extract_dictionary(obj, CE_SEE_ALSO, ret);
         return ret;
     }
 
@@ -370,7 +358,7 @@ namespace
                 continue;
             }
 
-            const auto& demand_obj = el.second.object();
+            const auto& demand_obj = el.second.object(VCPKG_LINE_INFO);
             if (demand_obj.contains(CE_DEMANDS))
             {
                 r.add_generic_error(type_name(),
@@ -460,7 +448,7 @@ namespace
                 }
 
                 Json::Object serialized_demands;
-                for (const auto& el : demands->object())
+                for (const auto& el : demands->object(VCPKG_LINE_INFO))
                 {
                     auto key = el.first;
                     if (Strings::starts_with(key, "$"))
@@ -472,7 +460,7 @@ namespace
                     if (el.second.is_object())
                     {
                         auto& inserted = serialized_demands.insert_or_replace(key, Json::Object{});
-                        serialize_ce_metadata(el.second.object(), inserted);
+                        serialize_ce_metadata(el.second.object(VCPKG_LINE_INFO), inserted);
                     }
                 }
                 put_into.insert_or_replace(DemandsDeserializer::CE_DEMANDS, serialized_demands);
@@ -494,7 +482,6 @@ namespace
         extract_object(ce_metadata, CeMetadataDeserializer::CE_SETTINGS, put_into);
         extract_object(ce_metadata, CeMetadataDeserializer::CE_APPLY, put_into);
         extract_object(ce_metadata, CeMetadataDeserializer::CE_REQUIRES, put_into);
-        extract_object(ce_metadata, CeMetadataDeserializer::CE_SEE_ALSO, put_into);
         serialize_demands(ce_metadata, put_into);
     }
 
@@ -525,7 +512,7 @@ namespace
                     continue;
                 }
 
-                for (const auto& demand : el.second.object())
+                for (const auto& demand : el.second.object(VCPKG_LINE_INFO))
                 {
                     if (Strings::starts_with(demand.first, "$"))
                     {
@@ -533,7 +520,7 @@ namespace
                     }
 
                     find_unknown_fields_impl(
-                        demand.second.object(),
+                        demand.second.object(VCPKG_LINE_INFO),
                         out,
                         Strings::concat(path, ".", DemandsDeserializer::CE_DEMANDS, ".", demand.first));
                 }
@@ -554,7 +541,7 @@ namespace vcpkg
         else
         {
             return msg::format(msgUpdateBaselineRemoteGitError, msg::url = url)
-                .appendnl()
+                .append_raw('\n')
                 .append_raw(Strings::trim(res.error()));
         }
     }
@@ -569,7 +556,7 @@ namespace vcpkg
         {
             if (paths.use_git_default_registry())
             {
-                return get_baseline_from_git_repo(paths, builtin_registry_git_url());
+                return get_baseline_from_git_repo(paths, builtin_registry_git_url);
             }
             else
             {
@@ -582,7 +569,7 @@ namespace vcpkg
                 else
                 {
                     return msg::format(msgUpdateBaselineLocalGitError, msg::path = paths.root)
-                        .appendnl()
+                        .append_raw('\n')
                         .append_raw(Strings::trim(res.error()));
                 }
             }
@@ -597,7 +584,7 @@ namespace vcpkg
     {
         if (kind == RegistryConfigDeserializer::KIND_BUILTIN)
         {
-            return builtin_registry_git_url();
+            return builtin_registry_git_url;
         }
         if (kind == RegistryConfigDeserializer::KIND_FILESYSTEM)
         {
@@ -626,7 +613,6 @@ namespace vcpkg
             CeMetadataDeserializer::CE_SETTINGS,
             CeMetadataDeserializer::CE_APPLY,
             CeMetadataDeserializer::CE_REQUIRES,
-            CeMetadataDeserializer::CE_SEE_ALSO,
             DemandsDeserializer::CE_DEMANDS,
         };
         return known_fields;
@@ -639,11 +625,9 @@ namespace vcpkg
             auto unknown_fields = find_unknown_fields(*this);
             if (!unknown_fields.empty())
             {
-                vcpkg::print2(
-                    Color::warning,
-                    "Warning: configuration contains the following unrecognized fields:\n\n",
-                    Strings::join("\n", unknown_fields),
-                    "\n\nIf these are documented fields that should be recognized try updating the vcpkg tool.\n");
+                msg::println_warning(msg::format(msgUnrecognizedConfigField)
+                                         .append_raw("\n\n" + Strings::join("\n", unknown_fields))
+                                         .append(msgDocumentedFieldsSuggestUpdate));
             }
         }
     }

@@ -57,7 +57,8 @@ namespace vcpkg::Util
         void transform_values(const std::unordered_map<K, V1>& container, std::unordered_map<K, V2>& output, Func func)
         {
             std::for_each(container.cbegin(), container.cend(), [&](const std::pair<const K, V1>& p) {
-                output[p.first] = func(p.second);
+                output.emplace(
+                    std::piecewise_construct, std::forward_as_tuple(p.first), std::forward_as_tuple(func(p.second)));
             });
         }
     }
@@ -69,7 +70,10 @@ namespace vcpkg::Util
 
         for (auto&& x : xs)
         {
-            if (f(x)) ret.push_back(x);
+            if (f(x))
+            {
+                ret.emplace_back(x);
+            }
         }
 
         return ret;
@@ -81,14 +85,16 @@ namespace vcpkg::Util
     template<class Range, class Func>
     using FmapOut = std::decay_t<FmapRefOut<Range, Func>>;
 
-    template<class Range, class Func, class Out = FmapOut<Range, Func>>
-    std::vector<Out> fmap(Range&& xs, Func&& f)
+    template<class Range, class Func>
+    std::vector<FmapOut<Range, Func>> fmap(Range&& xs, Func&& f)
     {
-        std::vector<Out> ret;
+        std::vector<FmapOut<Range, Func>> ret;
         ret.reserve(xs.size());
 
         for (auto&& x : xs)
-            ret.push_back(f(x));
+        {
+            ret.emplace_back(f(x));
+        }
 
         return ret;
     }
@@ -122,10 +128,15 @@ namespace vcpkg::Util
     std::vector<Out> fmap_flatten(Cont&& xs, Func&& f)
     {
         std::vector<Out> ret;
+        ret.reserve(xs.size());
 
         for (auto&& x : xs)
+        {
             for (auto&& y : f(x))
+            {
                 ret.push_back(std::move(y));
+            }
+        }
 
         return ret;
     }
@@ -139,6 +150,12 @@ namespace vcpkg::Util
     void erase_remove_if(Container& cont, Pred pred)
     {
         cont.erase(std::remove_if(cont.begin(), cont.end(), pred), cont.end());
+    }
+
+    template<class Range, class F>
+    void transform(Range& r, F f)
+    {
+        std::transform(r.begin(), r.end(), r.begin(), f);
     }
 
     template<class ForwardIt1, class ForwardIt2>
@@ -317,6 +334,13 @@ namespace vcpkg::Util
         // 0 - 1 => b is larger
         // 1 - 1 => equal
         return (b_cur == b_end) - (a_cur == a_end);
+    }
+
+    template<class... BoolIsh>
+    bool zero_or_one_set(const BoolIsh&... boolish)
+    {
+        unsigned int total = (0u + ... + static_cast<unsigned int>(static_cast<bool>(boolish)));
+        return total <= 1;
     }
 
     namespace Enum

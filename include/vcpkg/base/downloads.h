@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/downloads.h>
+
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/optional.h>
@@ -24,13 +26,15 @@ namespace vcpkg
     }
 
     void verify_downloaded_file_hash(const Filesystem& fs,
-                                     const std::string& sanitized_url,
+                                     StringView sanitized_url,
                                      const Path& downloaded_path,
-                                     const std::string& sha512);
+                                     StringView sha512);
 
     View<std::string> azure_blob_headers();
 
-    std::vector<int> download_files(Filesystem& fs, View<std::pair<std::string, Path>> url_pairs);
+    std::vector<int> download_files(Filesystem& fs,
+                                    View<std::pair<std::string, Path>> url_pairs,
+                                    View<std::string> headers);
     ExpectedS<int> put_file(const Filesystem&, StringView url, View<std::string> headers, const Path& file);
     std::vector<int> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets);
     std::string replace_secrets(std::string input, View<std::string> secrets);

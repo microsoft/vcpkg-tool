@@ -11,10 +11,6 @@
 
 namespace vcpkg::Export::IFW
 {
-    using Dependencies::ExportPlanAction;
-    using Dependencies::ExportPlanType;
-    using Install::InstallDir;
-
     // requires: after_prefix <= semi
     // requires: *semi == ';'
     static bool is_character_ref(const char* after_prefix, const char* semi)
@@ -320,7 +316,7 @@ namespace vcpkg::Export::IFW
 
             Filesystem& fs = paths.get_filesystem();
 
-            const Path& installerbase_exe = paths.get_tool_exe(Tools::IFW_INSTALLER_BASE);
+            const Path& installerbase_exe = paths.get_tool_exe(Tools::IFW_INSTALLER_BASE, stdout_sink);
             auto tempmaintenancetool_dir = ifw_packages_dir_path / "maintenance/data";
             auto tempmaintenancetool = tempmaintenancetool_dir / "tempmaintenancetool.exe";
             fs.create_directories(tempmaintenancetool_dir, VCPKG_LINE_INFO);
@@ -354,7 +350,8 @@ namespace vcpkg::Export::IFW
 
         void do_repository(const std::string& export_id, const Options& ifw_options, const VcpkgPaths& paths)
         {
-            const Path& repogen_exe = paths.get_tool_exe(Tools::IFW_REPOGEN);
+            Path repogen_exe = paths.get_tool_exe(Tools::IFW_INSTALLER_BASE, stdout_sink);
+            repogen_exe.replace_filename("repogen.exe");
             const auto packages_dir = get_packages_dir_path(export_id, ifw_options, paths);
             const auto repository_dir = get_repository_dir_path(export_id, ifw_options, paths);
 
@@ -366,16 +363,16 @@ namespace vcpkg::Export::IFW
             auto cmd_line =
                 Command(repogen_exe).string_arg("--packages").string_arg(packages_dir).string_arg(repository_dir);
 
-            const int exit_code =
-                cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()).exit_code;
-            Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: IFW repository generating failed");
-
+            flatten(cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()),
+                    repogen_exe)
+                .value_or_exit(VCPKG_LINE_INFO);
             vcpkg::printf(Color::success, "Generating repository %s... done.\n", repository_dir);
         }
 
         void do_installer(const std::string& export_id, const Options& ifw_options, const VcpkgPaths& paths)
         {
-            const Path& binarycreator_exe = paths.get_tool_exe(Tools::IFW_BINARYCREATOR);
+            Path binarycreator_exe = paths.get_tool_exe(Tools::IFW_INSTALLER_BASE, stdout_sink);
+            binarycreator_exe.replace_filename("binarycreator.exe");
             const auto config_file = get_config_file_path(export_id, ifw_options, paths);
             const auto packages_dir = get_packages_dir_path(export_id, ifw_options, paths);
             const auto repository_dir = get_repository_dir_path(export_id, ifw_options, paths);
@@ -406,9 +403,9 @@ namespace vcpkg::Export::IFW
                                .string_arg(installer_file);
             }
 
-            const int exit_code =
-                cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()).exit_code;
-            Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: IFW installer generating failed");
+            flatten(cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()),
+                    binarycreator_exe)
+                .value_or_exit(VCPKG_LINE_INFO);
 
             vcpkg::printf(Color::success, "Generating installer %s... done.\n", installer_file);
         }
@@ -465,7 +462,7 @@ namespace vcpkg::Export::IFW
             const InstallDir dirs =
                 InstallDir::from_destination_root(installed, action.spec.triplet(), binary_paragraph);
 
-            Install::install_package_and_write_listfile(fs, paths.package_dir(action.spec), dirs);
+            install_package_and_write_listfile(fs, paths.package_dir(action.spec), dirs);
         }
 
         vcpkg::printf("Exporting packages %s... done\n", ifw_packages_dir_path);

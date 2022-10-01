@@ -13,18 +13,11 @@
 #include <map>
 #include <vector>
 
-namespace vcpkg::Graphs
-{
-    struct Randomizer;
-}
-
 namespace vcpkg
 {
+    struct GraphRandomizer;
     struct StatusParagraphs;
-}
 
-namespace vcpkg::Dependencies
-{
     enum class UnsupportedPortAction : bool
     {
         Warn,
@@ -38,9 +31,7 @@ namespace vcpkg::Dependencies
         AUTO_SELECTED
     };
 
-    std::string to_output_string(RequestType request_type,
-                                 const ZStringView s,
-                                 const Build::BuildPackageOptions& options);
+    std::string to_output_string(RequestType request_type, const ZStringView s, const BuildPackageOptions& options);
     std::string to_output_string(RequestType request_type, const ZStringView s);
 
     enum class InstallPlanType
@@ -74,7 +65,7 @@ namespace vcpkg::Dependencies
         const std::string& public_abi() const;
         bool has_package_abi() const;
         Optional<const std::string&> package_abi() const;
-        const Build::PreBuildInfo& pre_build_info(LineInfo li) const;
+        const PreBuildInfo& pre_build_info(LineInfo li) const;
 
         PackageSpec spec;
 
@@ -83,7 +74,7 @@ namespace vcpkg::Dependencies
 
         InstallPlanType plan_type;
         RequestType request_type;
-        Build::BuildPackageOptions build_options;
+        BuildPackageOptions build_options;
 
         std::map<std::string, std::vector<FeatureSpec>> feature_dependencies;
         std::vector<PackageSpec> package_dependencies;
@@ -91,7 +82,7 @@ namespace vcpkg::Dependencies
         InternalFeatureSet feature_list;
         Triplet host_triplet;
 
-        Optional<Build::AbiInfo> abi_info;
+        Optional<AbiInfo> abi_info;
     };
 
     enum class RemovePlanType
@@ -165,13 +156,13 @@ namespace vcpkg::Dependencies
 
     struct CreateInstallPlanOptions
     {
-        CreateInstallPlanOptions(Graphs::Randomizer* r, Triplet t) : randomizer(r), host_triplet(t) { }
+        CreateInstallPlanOptions(GraphRandomizer* r, Triplet t) : randomizer(r), host_triplet(t) { }
         CreateInstallPlanOptions(Triplet t, UnsupportedPortAction action = UnsupportedPortAction::Error)
             : host_triplet(t), unsupported_port_action(action)
         {
         }
 
-        Graphs::Randomizer* randomizer = nullptr;
+        GraphRandomizer* randomizer = nullptr;
         Triplet host_triplet;
         UnsupportedPortAction unsupported_port_action;
     };
@@ -186,13 +177,13 @@ namespace vcpkg::Dependencies
     /// <param name="provider">Contains the ports of the current environment.</param>
     /// <param name="specs">Feature specifications to resolve dependencies for.</param>
     /// <param name="status_db">Status of installed packages in the current environment.</param>
-    ActionPlan create_feature_install_plan(const PortFileProvider::PortFileProvider& provider,
+    ActionPlan create_feature_install_plan(const PortFileProvider& provider,
                                            const CMakeVars::CMakeVarProvider& var_provider,
                                            View<FullPackageSpec> specs,
                                            const StatusParagraphs& status_db,
                                            const CreateInstallPlanOptions& options = {Triplet{}});
 
-    ActionPlan create_upgrade_plan(const PortFileProvider::PortFileProvider& provider,
+    ActionPlan create_upgrade_plan(const PortFileProvider& provider,
                                    const CMakeVars::CMakeVarProvider& var_provider,
                                    const std::vector<PackageSpec>& specs,
                                    const StatusParagraphs& status_db,
@@ -204,9 +195,9 @@ namespace vcpkg::Dependencies
         YES,
     };
 
-    ExpectedS<ActionPlan> create_versioned_install_plan(const PortFileProvider::IVersionedPortfileProvider& vprovider,
-                                                        const PortFileProvider::IBaselineProvider& bprovider,
-                                                        const PortFileProvider::IOverlayProvider& oprovider,
+    ExpectedS<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& vprovider,
+                                                        const IBaselineProvider& bprovider,
+                                                        const IOverlayProvider& oprovider,
                                                         const CMakeVars::CMakeVarProvider& var_provider,
                                                         const std::vector<Dependency>& deps,
                                                         const std::vector<DependencyOverride>& overrides,

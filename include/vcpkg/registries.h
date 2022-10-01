@@ -20,7 +20,7 @@
 
 namespace vcpkg
 {
-    constexpr StringLiteral builtin_registry_git_url() { return "https://github.com/microsoft/vcpkg"; }
+    constexpr StringLiteral builtin_registry_git_url = "https://github.com/microsoft/vcpkg";
 
     struct LockFile
     {
@@ -80,7 +80,7 @@ namespace vcpkg
         // may result in duplicated port names; make sure to Util::sort_unique_erase at the end
         virtual void get_all_port_names(std::vector<std::string>& port_names) const = 0;
 
-        virtual Optional<Version> get_baseline_version(StringView port_name) const = 0;
+        virtual ExpectedL<Version> get_baseline_version(StringView port_name) const = 0;
 
         virtual ~RegistryImplementation() = default;
     };
@@ -119,7 +119,7 @@ namespace vcpkg
         // finds the correct registry for the port name
         // Returns the null pointer if there is no registry set up for that name
         const RegistryImplementation* registry_for_port(StringView port_name) const;
-        Optional<Version> baseline_for_port(StringView port_name) const;
+        ExpectedL<Version> baseline_for_port(StringView port_name) const;
 
         View<Registry> registries() const { return registries_; }
 

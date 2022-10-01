@@ -46,6 +46,8 @@ namespace vcpkg
 
     CPUArchitecture get_host_processor();
 
+    std::string get_host_os_name();
+
     std::vector<CPUArchitecture> get_supported_host_architectures();
 
     const Optional<Path>& get_program_files_32_bit();

@@ -72,10 +72,12 @@ namespace vcpkg
                 VCPKG_LINE_INFO, "Failed to load manifest from directory %s: %s", manifest_dir, ec.message());
         }
 
-        if (!manifest_opt.has_value())
+        if (!manifest_opt)
         {
-            Checks::exit_maybe_upgrade(
-                VCPKG_LINE_INFO, "Failed to parse manifest at %s:\n%s", manifest_path, manifest_opt.error()->format());
+            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                       "Failed to parse manifest at %s:\n%s",
+                                       manifest_path,
+                                       manifest_opt.error()->to_string());
         }
         auto manifest_value = std::move(manifest_opt).value_or_exit(VCPKG_LINE_INFO);
 
@@ -87,7 +89,7 @@ namespace vcpkg
                    ": Manifest files must have a top-level object\n");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
-        return {std::move(manifest_value.first.object()), std::move(manifest_path)};
+        return {std::move(manifest_value.first.object(VCPKG_LINE_INFO)), std::move(manifest_path)};
     }
 
     static Optional<ManifestConfiguration> config_from_manifest(const Path& manifest_path,
@@ -115,7 +117,7 @@ namespace vcpkg
             msg::println(Color::error, msg::msgSeeURL, msg::url = docs::registries_url);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
-        const auto& obj = parsed_config.first.object();
+        const auto& obj = parsed_config.first.object(VCPKG_LINE_INFO);
 
         Json::Reader reader;
         auto parsed_config_opt = reader.visit(obj, get_configuration_deserializer());
@@ -185,13 +187,13 @@ namespace vcpkg
         {
             if (auto p_baseline = manifest->builtin_baseline.get())
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_baseline", "defined");
+                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ManifestBaseline);
                 if (!is_git_commit_sha(*p_baseline))
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_property("versioning-error-baseline", "defined");
+                    LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::VersioningErrorBaseline);
                     Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
                                                "Error: the top-level builtin-baseline%s was not a valid commit sha: "
-                                               "expected 40 lowercase hexadecimal characters.\n%s\n",
+                                               "expected 40 hexadecimal characters.\n%s\n",
                                                Strings::concat(" (", *p_baseline, ')'),
                                                paths.get_current_git_sha_baseline_message());
                 }
@@ -217,54 +219,6 @@ namespace vcpkg
 
     namespace details
     {
-        namespace
-        {
-            const ExpectedS<Path>& default_registries_cache_path()
-            {
-                static auto cachepath = get_platform_cache_home().then([](Path p) -> ExpectedS<Path> {
-                    auto maybe_cachepath = get_environment_variable("X_VCPKG_REGISTRIES_CACHE");
-                    if (auto p_str = maybe_cachepath.get())
-                    {
-                        LockGuardPtr<Metrics>(g_metrics)->track_property("X_VCPKG_REGISTRIES_CACHE", "defined");
-                        Path path = *p_str;
-                        path.make_preferred();
-                        const auto status = get_real_filesystem().status(path, VCPKG_LINE_INFO);
-                        if (!vcpkg::exists(status))
-                        {
-                            return {"Path to X_VCPKG_REGISTRIES_CACHE does not exist: " + path.native(),
-                                    expected_right_tag};
-                        }
-
-                        if (!vcpkg::is_directory(status))
-                        {
-                            return {"Value of environment variable X_VCPKG_REGISTRIES_CACHE is not a directory: " +
-                                        path.native(),
-                                    expected_right_tag};
-                        }
-
-                        if (!path.is_absolute())
-                        {
-                            return {"Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute: " +
-                                        path.native(),
-                                    expected_right_tag};
-                        }
-
-                        return {std::move(path), expected_left_tag};
-                    }
-
-                    if (!p.is_absolute())
-                    {
-                        return {"default path was not absolute: " + p.native(), expected_right_tag};
-                    }
-
-                    p /= "vcpkg/registries";
-                    p.make_preferred();
-                    return {std::move(p), expected_left_tag};
-                });
-                return cachepath;
-            }
-        }
-
         struct BundleSettings
         {
             bool m_readonly = false;
@@ -283,26 +237,27 @@ namespace vcpkg
                 auto maybe_bundle_doc = Json::parse(bundle_file, bundle_file);
                 if (auto bundle_doc = maybe_bundle_doc.get())
                 {
-                    const auto& first_object = bundle_doc->first.object();
+                    const auto& first_object = bundle_doc->first.object(VCPKG_LINE_INFO);
                     if (auto v = first_object.get("readonly"))
                     {
-                        ret.m_readonly = v->boolean();
+                        ret.m_readonly = v->boolean(VCPKG_LINE_INFO);
                     }
 
                     if (auto v = first_object.get("usegitregistry"))
                     {
-                        ret.m_usegitregistry = v->boolean();
+                        ret.m_usegitregistry = v->boolean(VCPKG_LINE_INFO);
                     }
 
                     if (auto v = first_object.get("embeddedsha"))
                     {
-                        ret.m_embedded_git_sha = v->string().to_string();
+                        ret.m_embedded_git_sha = v->string(VCPKG_LINE_INFO).to_string();
                     }
                 }
                 else
                 {
-                    print2(Color::error, "Error: Invalid bundle definition.\n", maybe_bundle_doc.error()->format());
-                    Checks::exit_fail(VCPKG_LINE_INFO);
+                    Checks::exit_with_message(VCPKG_LINE_INFO,
+                                              "Error: Invalid bundle definition.\n%s\n",
+                                              maybe_bundle_doc.error()->to_string());
                 }
             }
             return ret;
@@ -365,6 +320,42 @@ namespace vcpkg
             Optional<LockFile> m_installed_lock;
         };
 
+        static Path compute_registries_cache_root(const Filesystem& fs, const VcpkgCmdArguments& args)
+        {
+            Path ret;
+            if (args.registries_cache_dir)
+            {
+                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::X_VcpkgRegistriesCache);
+                ret = *args.registries_cache_dir;
+                const auto status = get_real_filesystem().status(ret, VCPKG_LINE_INFO);
+                if (!vcpkg::exists(status))
+                {
+                    Checks::exit_with_message(VCPKG_LINE_INFO,
+                                              "Path to X_VCPKG_REGISTRIES_CACHE does not exist: " + ret.native());
+                }
+
+                if (!vcpkg::is_directory(status))
+                {
+                    Checks::exit_with_message(
+                        VCPKG_LINE_INFO,
+                        "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not a directory: " + ret.native());
+                }
+
+                if (!ret.is_absolute())
+                {
+                    Checks::exit_with_message(
+                        VCPKG_LINE_INFO,
+                        "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute: " + ret.native());
+                }
+            }
+            else
+            {
+                ret = get_platform_cache_home().value_or_exit(VCPKG_LINE_INFO) / "vcpkg" / "registries";
+            }
+
+            return fs.almost_canonical(ret, VCPKG_LINE_INFO);
+        }
+
         // This structure holds members that
         // 1. Do not have any inter-member dependencies
         // 2. Are const (and therefore initialized in the initializer list)
@@ -376,17 +367,16 @@ namespace vcpkg
                                  const Path& original_cwd)
                 : m_fs(fs)
                 , m_ff_settings(args.feature_flag_settings())
-                , m_cache_root(default_registries_cache_path().value_or_exit(VCPKG_LINE_INFO))
                 , m_manifest_dir(compute_manifest_dir(fs, args, original_cwd))
                 , m_bundle(load_bundle_file(fs, root))
-                , m_tool_cache(get_tool_cache(args.exact_abi_tools_versions.value_or(false) ? RequireExactVersions::YES
-                                                                                            : RequireExactVersions::NO))
-                , m_download_manager(
-                      parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO))
+                , m_download_manager(std::make_shared<DownloadManager>(
+                      parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)))
                 , m_builtin_ports(process_output_directory(fs, args.builtin_ports_root_dir.get(), root / "ports"))
                 , m_default_vs_path(args.default_visual_studio_path
                                         ? fs.almost_canonical(*args.default_visual_studio_path, VCPKG_LINE_INFO)
                                         : Path{})
+                , scripts(process_input_directory(fs, root, args.scripts_root_dir.get(), "scripts", VCPKG_LINE_INFO))
+                , m_registries_cache(compute_registries_cache_root(fs, args))
             {
                 Debug::print("Bundle config: readonly=",
                              m_bundle.m_readonly,
@@ -401,13 +391,13 @@ namespace vcpkg
 
             Filesystem& m_fs;
             const FeatureFlagSettings m_ff_settings;
-            const Path m_cache_root;
             const Path m_manifest_dir;
             const BundleSettings m_bundle;
-            const std::unique_ptr<ToolCache> m_tool_cache;
-            const DownloadManager m_download_manager;
+            const std::shared_ptr<const DownloadManager> m_download_manager;
             const Path m_builtin_ports;
             const Path m_default_vs_path;
+            const Path scripts;
+            const Path m_registries_cache;
         };
 
         static Optional<InstalledPaths> compute_installed(Filesystem& fs,
@@ -432,6 +422,28 @@ namespace vcpkg
             return nullopt;
         }
 
+        static Path compute_downloads_root(const Filesystem& fs,
+                                           const VcpkgCmdArguments& args,
+                                           const Path& root,
+                                           const details::BundleSettings& bundle)
+        {
+            Path ret;
+            if (args.downloads_root_dir)
+            {
+                ret = *args.downloads_root_dir;
+            }
+            else if (bundle.m_readonly)
+            {
+                ret = get_platform_cache_home().value_or_exit(VCPKG_LINE_INFO) / "vcpkg" / "downloads";
+            }
+            else
+            {
+                ret = root / "downloads";
+            }
+
+            return fs.almost_canonical(ret, VCPKG_LINE_INFO);
+        }
+
         struct VcpkgPathsImpl : VcpkgPathsImplStage1
         {
             VcpkgPathsImpl(Filesystem& fs, const VcpkgCmdArguments& args, const Path& root, const Path& original_cwd)
@@ -439,9 +451,11 @@ namespace vcpkg
                 , m_config_dir(m_manifest_dir.empty() ? root : m_manifest_dir)
                 , m_has_configuration_file(fs.exists(m_config_dir / "vcpkg-configuration.json", VCPKG_LINE_INFO))
                 , m_manifest_path(m_manifest_dir.empty() ? Path{} : m_manifest_dir / "vcpkg.json")
-                , m_registries_work_tree_dir(m_cache_root / "git")
-                , m_registries_dot_git_dir(m_cache_root / "git" / ".git")
-                , m_registries_git_trees(m_cache_root / "git-trees")
+                , m_registries_work_tree_dir(m_registries_cache / "git")
+                , m_registries_dot_git_dir(m_registries_cache / "git" / ".git")
+                , m_registries_git_trees(m_registries_cache / "git-trees")
+                , downloads(compute_downloads_root(fs, args, root, m_bundle))
+                , tools(downloads / "tools")
                 , m_installed(compute_installed(fs, args, root, m_manifest_dir, m_bundle))
                 , buildtrees(maybe_get_tmp_path(fs,
                                                 m_bundle,
@@ -459,10 +473,18 @@ namespace vcpkg
                                               "packages",
                                               "pkgs",
                                               VCPKG_LINE_INFO))
+                , m_tool_cache(get_tool_cache(fs,
+                                              m_download_manager,
+                                              downloads,
+                                              scripts / "vcpkgTools.xml",
+                                              tools,
+                                              args.exact_abi_tools_versions.value_or(false) ? RequireExactVersions::YES
+                                                                                            : RequireExactVersions::NO))
                 , m_env_cache(m_ff_settings.compiler_tracking)
-                , triplets_dirs(Util::fmap(args.overlay_triplets, [&fs](const std::string& p) {
-                    return fs.almost_canonical(p, VCPKG_LINE_INFO);
-                }))
+                , triplets_dirs(
+                      Util::fmap(args.overlay_triplets,
+                                 [&fs](const std::string& p) { return fs.almost_canonical(p, VCPKG_LINE_INFO); }))
+                , m_artifacts_dir(downloads / "artifacts")
             {
                 if (auto i = m_installed.get())
                 {
@@ -508,11 +530,15 @@ namespace vcpkg
             const Path m_registries_work_tree_dir;
             const Path m_registries_dot_git_dir;
             const Path m_registries_git_trees;
+            const Path downloads;
+            const Path tools;
             const Optional<InstalledPaths> m_installed;
             const Optional<Path> buildtrees;
             const Optional<Path> packages;
-            Build::EnvCache m_env_cache;
+            const std::unique_ptr<ToolCache> m_tool_cache;
+            EnvCache m_env_cache;
             std::vector<Path> triplets_dirs;
+            const Path m_artifacts_dir;
 
             std::unique_ptr<IExclusiveFileLock> file_lock_handle;
 
@@ -522,20 +548,14 @@ namespace vcpkg
         };
     }
 
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgDisallowedClassicMode,
-                                 (),
-                                 "",
-                                 "Error: Could not locate a manifest (vcpkg.json) above the current working "
-                                 "directory.\nThis vcpkg distribution does not have a classic mode instance.");
-
     const InstalledPaths& VcpkgPaths::installed() const
     {
         if (auto i = m_pimpl->m_installed.get())
         {
             return *i;
         }
-        msg::println(Color::error, msgVcpkgDisallowedClassicMode);
-        Checks::exit_fail(VCPKG_LINE_INFO);
+
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgVcpkgDisallowedClassicMode);
     }
 
     const Path& VcpkgPaths::buildtrees() const
@@ -563,13 +583,6 @@ namespace vcpkg
     const Optional<Path>& VcpkgPaths::maybe_buildtrees() const { return m_pimpl->buildtrees; }
     const Optional<Path>& VcpkgPaths::maybe_packages() const { return m_pimpl->packages; }
 
-    DECLARE_AND_REGISTER_MESSAGE(
-        ErrorMissingVcpkgRoot,
-        (msg::url),
-        "",
-        "Error: Could not detect vcpkg-root. If you are trying to use a copy of vcpkg that you've built, you must "
-        "define the VCPKG_ROOT environment variable to point to a cloned copy of {url}.");
-
     // Guaranteed to return non-empty
     static Path determine_root(const Filesystem& fs, const Path& original_cwd, const VcpkgCmdArguments& args)
     {
@@ -592,8 +605,7 @@ namespace vcpkg
 
         if (ret.empty())
         {
-            msg::println(Color::error, msgErrorMissingVcpkgRoot, msg::url = "https://github.com/Microsoft/vcpkg");
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorMissingVcpkgRoot);
         }
 
         return ret;
@@ -608,41 +620,20 @@ namespace vcpkg
 #endif
     }
 
-    static Path compute_downloads_root(const Filesystem& fs,
-                                       const VcpkgCmdArguments& args,
-                                       const Path& root,
-                                       const details::BundleSettings& bundle)
-    {
-        Path ret;
-        if (args.downloads_root_dir)
-        {
-            ret = *args.downloads_root_dir;
-        }
-        else if (bundle.m_readonly)
-        {
-            ret = get_platform_cache_home().value_or_exit(VCPKG_LINE_INFO) / "vcpkg" / "downloads";
-        }
-        else
-        {
-            ret = root / "downloads";
-        }
-        return fs.almost_canonical(ret, VCPKG_LINE_INFO);
-    }
-
     VcpkgPaths::VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args)
         : original_cwd(preferred_current_path(filesystem))
         , root(determine_root(filesystem, original_cwd, args))
         // this is used during the initialization of the below public members
         , m_pimpl(std::make_unique<details::VcpkgPathsImpl>(filesystem, args, root, original_cwd))
+        , scripts(m_pimpl->scripts)
+        , downloads(m_pimpl->downloads)
+        , tools(m_pimpl->tools)
         , builtin_registry_versions(
               process_output_directory(filesystem, args.builtin_registry_versions_dir.get(), root / "versions"))
-        , scripts(process_input_directory(filesystem, root, args.scripts_root_dir.get(), "scripts", VCPKG_LINE_INFO))
         , prefab(root / "prefab")
         , buildsystems(scripts / "buildsystems")
         , buildsystems_msbuild_targets(buildsystems / "msbuild" / "vcpkg.targets")
         , buildsystems_msbuild_props(buildsystems / "msbuild" / "vcpkg.props")
-        , downloads(compute_downloads_root(filesystem, args, root, m_pimpl->m_bundle))
-        , tools(downloads / "tools")
         , ports_cmake(filesystem.almost_canonical(scripts / "ports.cmake", VCPKG_LINE_INFO))
         , triplets(filesystem.almost_canonical(root / "triplets", VCPKG_LINE_INFO))
         , community_triplets(filesystem.almost_canonical(triplets / "community", VCPKG_LINE_INFO))
@@ -675,11 +666,12 @@ namespace vcpkg
             LockGuardPtr<Metrics> metrics(g_metrics);
             if (default_registry)
             {
-                metrics->track_property("registries-default-registry-kind", default_registry->kind().to_string());
+                metrics->track_string_property(StringMetric::RegistriesDefaultRegistryKind,
+                                               default_registry->kind().to_string());
             }
             else
             {
-                metrics->track_property("registries-default-registry-kind", "disabled");
+                metrics->track_string_property(StringMetric::RegistriesDefaultRegistryKind, "disabled");
             }
 
             if (other_registries.size() != 0)
@@ -690,14 +682,14 @@ namespace vcpkg
                     registry_kinds.push_back(reg.implementation().kind());
                 }
                 Util::sort_unique_erase(registry_kinds);
-                metrics->track_property("registries-kinds-used", Strings::join(",", registry_kinds));
+                metrics->track_string_property(StringMetric::RegistriesKindsUsed, Strings::join(",", registry_kinds));
             }
         }
     }
 
     Path VcpkgPaths::package_dir(const PackageSpec& spec) const { return this->packages() / spec.dir(); }
     Path VcpkgPaths::build_dir(const PackageSpec& spec) const { return this->buildtrees() / spec.name(); }
-    Path VcpkgPaths::build_dir(const std::string& package_name) const { return this->buildtrees() / package_name; }
+    Path VcpkgPaths::build_dir(StringView package_name) const { return this->buildtrees() / package_name.to_string(); }
 
     Path VcpkgPaths::build_info_file_path(const PackageSpec& spec) const
     {
@@ -787,7 +779,7 @@ namespace vcpkg
                 return ret;
             }
 
-            for (auto&& reference_to_commit : ref_info_value.object())
+            for (auto&& reference_to_commit : ref_info_value.object(VCPKG_LINE_INFO))
             {
                 auto reference = reference_to_commit.first;
                 const auto& commit = reference_to_commit.second;
@@ -797,7 +789,7 @@ namespace vcpkg
                     Debug::print("Lockfile value for key '", reference, "' was not a string\n");
                     return ret;
                 }
-                auto sv = commit.string();
+                auto sv = commit.string(VCPKG_LINE_INFO);
                 if (!is_git_commit_sha(sv))
                 {
                     Debug::print("Lockfile value for key '", reference, "' was not a git commit sha\n");
@@ -849,13 +841,13 @@ namespace vcpkg
                 return ret;
             }
 
-            ret.lockdata = lockdata_from_json_object(doc.object());
+            ret.lockdata = lockdata_from_json_object(doc.object(VCPKG_LINE_INFO));
 
             return ret;
         }
         else
         {
-            Debug::print("Failed to load lockfile:\n", maybe_lock_contents.error()->format());
+            Debug::print("Failed to load lockfile:\n", maybe_lock_contents.error()->to_string());
             return ret;
         }
     }
@@ -880,13 +872,13 @@ namespace vcpkg
         auto obj = lockdata_to_json_object(lockfile.lockdata);
 
         get_filesystem().write_rename_contents(
-            installed().lockfile_path(), "vcpkg-lock.json.tmp", Json::stringify(obj, {}), VCPKG_LINE_INFO);
+            installed().lockfile_path(), "vcpkg-lock.json.tmp", Json::stringify(obj), VCPKG_LINE_INFO);
     }
 
     const Path VcpkgPaths::get_triplet_file_path(Triplet triplet) const
     {
         return m_pimpl->m_triplets_cache.get_lazy(
-            triplet, [&]() -> auto {
+            triplet, [&]() -> auto{
                 for (const auto& triplet_dir : m_pimpl->triplets_dirs)
                 {
                     auto path = triplet_dir / (triplet.canonical_name() + ".cmake");
@@ -901,19 +893,20 @@ namespace vcpkg
             });
     }
 
-    const Path& VcpkgPaths::get_tool_exe(StringView tool) const
+    const ToolCache& VcpkgPaths::get_tool_cache() const { return *m_pimpl->m_tool_cache; }
+    const Path& VcpkgPaths::get_tool_exe(StringView tool, MessageSink& status_messages) const
     {
-        return m_pimpl->m_tool_cache->get_tool_path(*this, tool);
+        return m_pimpl->m_tool_cache->get_tool_path(tool, status_messages);
     }
-    const std::string& VcpkgPaths::get_tool_version(StringView tool) const
+    const std::string& VcpkgPaths::get_tool_version(StringView tool, MessageSink& status_messages) const
     {
-        return m_pimpl->m_tool_cache->get_tool_version(*this, tool);
+        return m_pimpl->m_tool_cache->get_tool_version(tool, status_messages);
     }
 
     GitConfig VcpkgPaths::git_builtin_config() const
     {
         GitConfig conf;
-        conf.git_exe = get_tool_exe(Tools::GIT);
+        conf.git_exe = get_tool_exe(Tools::GIT, stdout_sink);
         conf.git_dir = this->root / ".git";
         conf.git_work_tree = this->root;
         return conf;
@@ -921,7 +914,7 @@ namespace vcpkg
 
     Command VcpkgPaths::git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const
     {
-        Command ret(get_tool_exe(Tools::GIT));
+        Command ret(get_tool_exe(Tools::GIT, stdout_sink));
         if (!dot_git_dir.empty())
         {
             ret.string_arg(Strings::concat("--git-dir=", dot_git_dir));
@@ -934,7 +927,7 @@ namespace vcpkg
         return ret;
     }
 
-    ExpectedS<std::string> VcpkgPaths::get_current_git_sha() const
+    ExpectedL<std::string> VcpkgPaths::get_current_git_sha() const
     {
         if (auto sha = m_pimpl->m_bundle.m_embedded_git_sha.get())
         {
@@ -942,15 +935,9 @@ namespace vcpkg
         }
         auto cmd = git_cmd_builder(this->root / ".git", this->root);
         cmd.string_arg("rev-parse").string_arg("HEAD");
-        auto output = cmd_execute_and_capture_output(cmd);
-        if (output.exit_code != 0)
-        {
-            return {std::move(output.output), expected_right_tag};
-        }
-        else
-        {
-            return {Strings::trim(std::move(output.output)), expected_left_tag};
-        }
+        return flatten_out(cmd_execute_and_capture_output(cmd), Tools::GIT).map([](std::string&& output) {
+            return Strings::trim(std::move(output));
+        });
     }
     std::string VcpkgPaths::get_toolver_diagnostics() const
     {
@@ -972,10 +959,10 @@ namespace vcpkg
                                   .string_arg("--date=short")
                                   .string_arg("HEAD");
 
-            auto output = cmd_execute_and_capture_output(showcmd);
-            if (output.exit_code == 0)
+            const auto maybe_output = flatten_out(cmd_execute_and_capture_output(showcmd), Tools::GIT);
+            if (const auto output = maybe_output.get())
             {
-                Strings::append(ret, "    vcpkg-scripts version: ", output.output, "\n");
+                Strings::append(ret, "    vcpkg-scripts version: ", *output, "\n");
             }
             else
             {
@@ -998,21 +985,12 @@ namespace vcpkg
         }
     }
 
-    ExpectedS<std::string> VcpkgPaths::git_show(const std::string& treeish, const Path& dot_git_dir) const
+    ExpectedL<std::string> VcpkgPaths::git_show(StringView treeish, const Path& dot_git_dir) const
     {
         // All git commands are run with: --git-dir={dot_git_dir} --work-tree={work_tree_temp}
         // git clone --no-checkout --local {vcpkg_root} {dot_git_dir}
         Command showcmd = git_cmd_builder(dot_git_dir, dot_git_dir).string_arg("show").string_arg(treeish);
-
-        auto output = cmd_execute_and_capture_output(showcmd);
-        if (output.exit_code == 0)
-        {
-            return {std::move(output.output), expected_left_tag};
-        }
-        else
-        {
-            return {std::move(output.output), expected_right_tag};
-        }
+        return flatten_out(cmd_execute_and_capture_output(showcmd), Tools::GIT);
     }
 
     ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
@@ -1026,32 +1004,38 @@ namespace vcpkg
                                  .string_arg("HEAD")
                                  .string_arg("--");
 
-        auto output = cmd_execute_and_capture_output(git_cmd);
-        if (output.exit_code != 0)
-            return Strings::format("Error: Couldn't get local treeish objects for ports.\n%s", output.output);
-
-        std::map<std::string, std::string, std::less<>> ret;
-        const auto lines = Strings::split(output.output, '\n');
-        // The first line of the output is always the parent directory itself.
-        for (auto&& line : lines)
+        auto maybe_output = flatten_out(cmd_execute_and_capture_output(git_cmd), Tools::GIT);
+        if (const auto output = maybe_output.get())
         {
-            // The default output comes in the format:
-            // <mode> SP <type> SP <object> TAB <file>
-            auto split_line = Strings::split(line, '\t');
-            if (split_line.size() != 2)
-                return Strings::format("Error: Unexpected output from command `%s`. Couldn't split by `\\t`.\n%s",
-                                       git_cmd.command_line(),
-                                       line);
+            std::map<std::string, std::string, std::less<>> ret;
+            const auto lines = Strings::split(std::move(*output), '\n');
+            // The first line of the output is always the parent directory itself.
+            for (auto&& line : lines)
+            {
+                // The default output comes in the format:
+                // <mode> SP <type> SP <object> TAB <file>
+                auto split_line = Strings::split(line, '\t');
+                if (split_line.size() != 2)
+                {
+                    return Strings::format("Error: Unexpected output from command `%s`. Couldn't split by `\\t`.\n%s",
+                                           git_cmd.command_line(),
+                                           line);
+                }
 
-            auto file_info_section = Strings::split(split_line[0], ' ');
-            if (file_info_section.size() != 3)
-                return Strings::format("Error: Unexpected output from command `%s`. Couldn't split by ` `.\n%s",
-                                       git_cmd.command_line(),
-                                       line);
+                auto file_info_section = Strings::split(split_line[0], ' ');
+                if (file_info_section.size() != 3)
+                {
+                    return Strings::format("Error: Unexpected output from command `%s`. Couldn't split by ` `.\n%s",
+                                           git_cmd.command_line(),
+                                           line);
+                }
 
-            ret.emplace(split_line[1], file_info_section.back());
+                ret.emplace(split_line[1], file_info_section.back());
+            }
+            return ret;
         }
-        return ret;
+
+        return Strings::format("Error: Couldn't get local treeish objects for ports.\n%s", maybe_output.error());
     }
 
     ExpectedS<Path> VcpkgPaths::git_checkout_port(StringView port_name,
@@ -1093,14 +1077,15 @@ namespace vcpkg
                                    .string_arg(git_tree)
                                    .string_arg("-o")
                                    .string_arg(destination_tar);
-        const auto tar_output = cmd_execute_and_capture_output(tar_cmd_builder);
-        if (tar_output.exit_code != 0)
+        auto maybe_tar_output = flatten(cmd_execute_and_capture_output(tar_cmd_builder), Tools::TAR);
+        if (!maybe_tar_output)
         {
-            return {Strings::concat(PRELUDE, "Error: Failed to tar port directory\n", tar_output.output),
-                    expected_right_tag};
+            return {
+                Strings::concat(PRELUDE, "Error: Failed to tar port directory\n", std::move(maybe_tar_output).error()),
+                expected_right_tag};
         }
 
-        extract_tar_cmake(this->get_tool_exe(Tools::CMAKE), destination_tar, destination_tmp);
+        extract_tar_cmake(this->get_tool_exe(Tools::CMAKE, stdout_sink), destination_tar, destination_tmp);
         fs.remove(destination_tar, ec);
         if (ec)
         {
@@ -1128,11 +1113,12 @@ namespace vcpkg
         const auto& dot_git_dir = m_pimpl->m_registries_dot_git_dir;
 
         Command init_registries_git_dir = git_cmd_builder(dot_git_dir, work_tree).string_arg("init");
-        auto init_output = cmd_execute_and_capture_output(init_registries_git_dir);
-        if (init_output.exit_code != 0)
+        auto maybe_init_output = flatten(cmd_execute_and_capture_output(init_registries_git_dir), Tools::GIT);
+        if (!maybe_init_output)
         {
-            return {Strings::format(
-                        "Error: Failed to initialize local repository %s.\n%s\n", work_tree, init_output.output),
+            return {Strings::format("Error: Failed to initialize local repository %s.\n%s\n",
+                                    work_tree,
+                                    std::move(maybe_init_output).error()),
                     expected_right_tag};
         }
 
@@ -1146,26 +1132,26 @@ namespace vcpkg
                                     .string_arg(repo)
                                     .string_arg(treeish);
 
-        auto fetch_output = cmd_execute_and_capture_output(fetch_git_ref);
-        if (fetch_output.exit_code != 0)
+        auto maybe_fetch_output = flatten(cmd_execute_and_capture_output(fetch_git_ref), Tools::GIT);
+        if (!maybe_fetch_output)
         {
-            return {Strings::format(
-                        "Error: Failed to fetch ref %s from repository %s.\n%s\n", treeish, repo, fetch_output.output),
+            return {Strings::format("Error: Failed to fetch ref %s from repository %s.\n%s\n",
+                                    treeish,
+                                    repo,
+                                    std::move(maybe_fetch_output).error()),
                     expected_right_tag};
         }
 
         Command get_fetch_head =
             git_cmd_builder(dot_git_dir, work_tree).string_arg("rev-parse").string_arg("FETCH_HEAD");
-        auto fetch_head_output = cmd_execute_and_capture_output(get_fetch_head);
-        if (fetch_head_output.exit_code != 0)
-        {
-            return {Strings::format("Error: Failed to rev-parse FETCH_HEAD.\n%s\n", fetch_head_output.output),
-                    expected_right_tag};
-        }
-        return {Strings::trim(fetch_head_output.output).to_string(), expected_left_tag};
+        return flatten_out(cmd_execute_and_capture_output(get_fetch_head), Tools::GIT)
+            .map([](std::string&& output) { return Strings::trim(output).to_string(); })
+            .map_error([](LocalizedString&& err) {
+                return Strings::concat("Error: Failed to rev-parse FETCH_HEAD.\n", err.extract_data(), "\n");
+            });
     }
 
-    Optional<std::string> VcpkgPaths::git_fetch(StringView repo, StringView treeish) const
+    ExpectedS<Unit> VcpkgPaths::git_fetch(StringView repo, StringView treeish) const
     {
         auto& fs = get_filesystem();
 
@@ -1179,12 +1165,14 @@ namespace vcpkg
         const auto& dot_git_dir = m_pimpl->m_registries_dot_git_dir;
 
         Command init_registries_git_dir = git_cmd_builder(dot_git_dir, work_tree).string_arg("init");
-        auto init_output = cmd_execute_and_capture_output(init_registries_git_dir);
-        if (init_output.exit_code != 0)
+        auto maybe_init_output = flatten(cmd_execute_and_capture_output(init_registries_git_dir), Tools::GIT);
+        if (!maybe_init_output)
         {
-            return Strings::format(
-                "Error: Failed to initialize local repository %s.\n%s\n", work_tree, init_output.output);
+            return Strings::format("Error: Failed to initialize local repository %s.\n%s\n",
+                                   work_tree,
+                                   std::move(maybe_init_output).error());
         }
+
         Command fetch_git_ref = git_cmd_builder(dot_git_dir, work_tree)
                                     .string_arg("fetch")
                                     .string_arg("--update-shallow")
@@ -1192,32 +1180,30 @@ namespace vcpkg
                                     .string_arg(repo)
                                     .string_arg(treeish);
 
-        auto fetch_output = cmd_execute_and_capture_output(fetch_git_ref);
-        if (fetch_output.exit_code != 0)
+        auto maybe_fetch_output = flatten(cmd_execute_and_capture_output(fetch_git_ref), Tools::GIT);
+        if (!maybe_fetch_output)
         {
-            return Strings::format(
-                "Error: Failed to fetch ref %s from repository %s.\n%s\n", treeish, repo, fetch_output.output);
+            return Strings::format("Error: Failed to fetch ref %s from repository %s.\n%s\n",
+                                   treeish,
+                                   repo,
+                                   std::move(maybe_fetch_output).error());
         }
-        return nullopt;
+
+        return {Unit{}};
     }
 
     // returns an error if there was an unexpected error; returns nullopt if the file doesn't exist at the specified
     // hash
-    ExpectedS<std::string> VcpkgPaths::git_show_from_remote_registry(StringView hash, const Path& relative_path) const
+    ExpectedL<std::string> VcpkgPaths::git_show_from_remote_registry(StringView hash, const Path& relative_path) const
     {
         auto revision = Strings::format("%s:%s", hash, relative_path.generic_u8string());
         Command git_show = git_cmd_builder(m_pimpl->m_registries_dot_git_dir, m_pimpl->m_registries_work_tree_dir)
                                .string_arg("show")
                                .string_arg(revision);
 
-        auto git_show_output = cmd_execute_and_capture_output(git_show);
-        if (git_show_output.exit_code != 0)
-        {
-            return {git_show_output.output, expected_right_tag};
-        }
-        return {git_show_output.output, expected_left_tag};
+        return flatten_out(cmd_execute_and_capture_output(git_show), Tools::GIT);
     }
-    ExpectedS<std::string> VcpkgPaths::git_find_object_id_for_remote_registry_path(StringView hash,
+    ExpectedL<std::string> VcpkgPaths::git_find_object_id_for_remote_registry_path(StringView hash,
                                                                                    const Path& relative_path) const
     {
         auto revision = Strings::format("%s:%s", hash, relative_path.generic_u8string());
@@ -1225,12 +1211,9 @@ namespace vcpkg
                                     .string_arg("rev-parse")
                                     .string_arg(revision);
 
-        auto git_rev_parse_output = cmd_execute_and_capture_output(git_rev_parse);
-        if (git_rev_parse_output.exit_code != 0)
-        {
-            return {git_rev_parse_output.output, expected_right_tag};
-        }
-        return {Strings::trim(git_rev_parse_output.output).to_string(), expected_left_tag};
+        return flatten_out(cmd_execute_and_capture_output(git_rev_parse), Tools::GIT).map([](std::string&& output) {
+            return Strings::trim(std::move(output));
+        });
     }
     ExpectedS<Path> VcpkgPaths::git_checkout_object_from_remote_registry(StringView object) const
     {
@@ -1258,14 +1241,15 @@ namespace vcpkg
                                   .string_arg(object)
                                   .string_arg("--output")
                                   .string_arg(git_tree_temp_tar);
-        auto git_archive_output = cmd_execute_and_capture_output(git_archive);
-        if (git_archive_output.exit_code != 0)
+        auto maybe_git_archive_output = flatten(cmd_execute_and_capture_output(git_archive), Tools::GIT);
+        if (!maybe_git_archive_output)
         {
-            return {Strings::format("git archive failed with message:\n%s", git_archive_output.output),
-                    expected_right_tag};
+            return {
+                Strings::format("git archive failed with message:\n%s", std::move(maybe_git_archive_output).error()),
+                expected_right_tag};
         }
 
-        extract_tar_cmake(get_tool_exe(Tools::CMAKE), git_tree_temp_tar, git_tree_temp);
+        extract_tar_cmake(get_tool_exe(Tools::CMAKE, stdout_sink), git_tree_temp_tar, git_tree_temp);
         // Attempt to remove temporary files, though non-critical.
         fs.remove(git_tree_temp_tar, IgnoreErrors{});
 
@@ -1303,28 +1287,7 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, m_pimpl->m_registry_set != nullptr);
         return *m_pimpl->m_registry_set;
     }
-    const DownloadManager& VcpkgPaths::get_download_manager() const { return m_pimpl->m_download_manager; }
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorVcvarsUnsupported,
-                                 (msg::triplet),
-                                 "",
-                                 "Error: in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported "
-                                 "on non-Windows hosts.\nDefine 'VCPKG_CMAKE_SYSTEM_NAME' or "
-                                 "'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.");
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstance,
-                                 (msg::triplet),
-                                 "",
-                                 "Error: in triplet {triplet}: Unable to find a valid Visual Studio instance");
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceVersion, (msg::version), "", "    with toolset version {version}");
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceFullVersion,
-                                 (msg::version),
-                                 "",
-                                 "    with toolset version prefix {version}");
-
-    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceAt, (msg::path), "", "     at \"{path}\"");
+    const DownloadManager& VcpkgPaths::get_download_manager() const { return *m_pimpl->m_download_manager.get(); }
 
 #if defined(_WIN32)
     static const ToolsetsInformation& get_all_toolsets(details::VcpkgPathsImpl& impl, const Filesystem& fs)
@@ -1345,7 +1308,7 @@ namespace vcpkg
     }
 #endif
 
-    const Toolset& VcpkgPaths::get_toolset(const Build::PreBuildInfo& prebuildinfo) const
+    const Toolset& VcpkgPaths::get_toolset(const PreBuildInfo& prebuildinfo) const
     {
         if (!prebuildinfo.using_vcvars())
         {
@@ -1363,8 +1326,7 @@ namespace vcpkg
         }
 
 #if !defined(WIN32)
-        msg::println(Color::error, msgErrorVcvarsUnsupported, msg::triplet = prebuildinfo.triplet);
-        Checks::exit_fail(VCPKG_LINE_INFO);
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorVcvarsUnsupported, msg::triplet = prebuildinfo.triplet);
 #else
         const auto& toolsets_info = get_all_toolsets(*m_pimpl, get_filesystem());
         View<Toolset> vs_toolsets = toolsets_info.toolsets;
@@ -1383,38 +1345,39 @@ namespace vcpkg
         });
         if (candidate == vs_toolsets.end())
         {
-            msg::println(Color::error, msgErrorNoVSInstance, msg::triplet = prebuildinfo.triplet);
+            auto error_message = msg::format(msgErrorNoVSInstance, msg::triplet = prebuildinfo.triplet);
             if (vsp)
             {
-                msg::println(Color::error, msgErrorNoVSInstanceAt, msg::path = *vsp);
+                error_message.append_raw('\n').append_indent().append(msgErrorNoVSInstanceAt, msg::path = *vsp);
             }
             if (tsv)
             {
-                msg::println(Color::error, msgErrorNoVSInstanceVersion, msg::version = *tsv);
+                error_message.append_raw('\n').append_indent().append(msgErrorNoVSInstanceVersion, msg::version = *tsv);
             }
             if (tsvf)
             {
-                msg::println(Color::error, msgErrorNoVSInstanceFullVersion, msg::version = *tsvf);
+                error_message.append_raw('\n').append_indent().append(msgErrorNoVSInstanceFullVersion,
+                                                                      msg::version = *tsvf);
             }
 
-            msg::print(Color::error, toolsets_info.get_localized_debug_info());
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            error_message.append_raw('\n').append(toolsets_info.get_localized_debug_info());
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, error_message);
         }
         return *candidate;
 #endif
     }
 
-    const Environment& VcpkgPaths::get_action_env(const Build::AbiInfo& abi_info) const
+    const Environment& VcpkgPaths::get_action_env(const AbiInfo& abi_info) const
     {
         return m_pimpl->m_env_cache.get_action_env(*this, abi_info);
     }
 
-    const std::string& VcpkgPaths::get_triplet_info(const Build::AbiInfo& abi_info) const
+    const std::string& VcpkgPaths::get_triplet_info(const AbiInfo& abi_info) const
     {
         return m_pimpl->m_env_cache.get_triplet_info(*this, abi_info);
     }
 
-    const Build::CompilerInfo& VcpkgPaths::get_compiler_info(const Build::AbiInfo& abi_info) const
+    const CompilerInfo& VcpkgPaths::get_compiler_info(const AbiInfo& abi_info) const
     {
         return m_pimpl->m_env_cache.get_compiler_info(*this, abi_info);
     }
@@ -1422,6 +1385,9 @@ namespace vcpkg
     Filesystem& VcpkgPaths::get_filesystem() const { return m_pimpl->m_fs; }
 
     bool VcpkgPaths::use_git_default_registry() const { return m_pimpl->m_bundle.m_usegitregistry; }
+
+    const Path& VcpkgPaths::artifacts() const { return m_pimpl->m_artifacts_dir; }
+    const Path& VcpkgPaths::registries_cache() const { return m_pimpl->m_registries_cache; }
 
     const FeatureFlagSettings& VcpkgPaths::get_feature_flags() const { return m_pimpl->m_ff_settings; }
 

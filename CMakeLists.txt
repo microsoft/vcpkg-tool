@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.15) # 3.15 for MSVC_RUNTIME_LIBRARY, removing d
 
 cmake_policy(SET CMP0091 NEW)
 cmake_policy(SET CMP0092 NEW)
+
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.24)
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
 if(NOT CMAKE_MSVC_RUNTIME_LIBRARY)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
@@ -19,6 +24,7 @@ option(VCPKG_BUILD_TLS12_DOWNLOADER "Enable building the tls12-downloader" OFF)
 option(VCPKG_BUILD_FUZZING "Option for enabling vcpkg-fuzz support" OFF)
 option(VCPKG_EMBED_GIT_SHA "Option for to fill in the Git SHA version; off by default to avoid privacy concerns out of official builds" OFF)
 option(VCPKG_ADD_SOURCELINK "Option for enabling SourceLink in debug information on Windows/MSVC builds" "${VCPKG_EMBED_GIT_SHA}")
+option(VCPKG_ARTIFACTS_DEVELOPMENT "Hard code path to artifacts TypeScript. Requires node.js and global install of @microsoft/rush." OFF)
 option(VCPKG_OFFICIAL_BUILD "Option to cause immediate failure if variables required for official builds are unset." OFF)
 set(VCPKG_PDB_SUFFIX "" CACHE STRING "Append this string to the name of the PDB for shipping vcpkg binaries.")
 
@@ -37,6 +43,11 @@ endif()
 
 if(VCPKG_DEVELOPMENT_WARNINGS)
     set(FMT_PEDANTIC ON CACHE BOOL "")
+endif()
+
+if (VCPKG_ARTIFACTS_DEVELOPMENT)
+    # https://gitlab.kitware.com/cmake/cmake/-/issues/20245
+    cmake_minimum_required(VERSION 3.17)
 endif()
 
 project(vcpkg
@@ -170,7 +181,95 @@ if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
     if(VCPKG_OFFICIAL_BUILD)
         message(FATAL_ERROR "VCPKG_CE_SHA is required for official builds.")
     endif()
+    if (VCPKG_ARTIFACTS_DEVELOPMENT)
+        file(TO_CMAKE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/ce/ce" VCPKG_ARTIFACTS_PATH)
+        target_compile_definitions(vcpkglib PUBLIC "VCPKG_ARTIFACTS_PATH=${VCPKG_ARTIFACTS_PATH}")
+        mark_as_advanced(VCPKG_ARTIFACTS_PATH)
+
+        if (WIN32)
+            set(RUSH_SUFFIX ".cmd")
+        else()
+            set(RUSH_SUFFIX "")
+        endif()
+
+        find_program(NODEJS "node")
+        if (NOT NODEJS)
+            message(FATAL_ERROR "node.js and @microsoft/rush must be installed when VCPKG_ARTIFACTS_DEVELOPMENT is set")
+        endif()
+
+        find_program(RUSH "rush${RUSH_SUFFIX}")
+        if (NOT RUSH)
+            message(FATAL_ERROR "@microsoft/rush is required when VCPKG_ARTIFACTS_DEVELOPMENT is set; use `npm install -g @microsoft/rush`")
+        endif()
+
+        add_custom_command(
+            OUTPUT
+                "${CMAKE_CURRENT_SOURCE_DIR}/ce/ce/node_modules"
+                "${CMAKE_CURRENT_SOURCE_DIR}/ce/test/node_modules"
+            COMMAND "${RUSH}" ARGS "update"
+            COMMAND "${RUSH}" ARGS "rebuild"
+            WORKING_DIRECTORY
+                "${CMAKE_CURRENT_SOURCE_DIR}/ce"
+            COMMENT
+                "Running rush update..."
+            VERBATIM
+            )
+
+        add_custom_target(rush-update
+            ALL
+            DEPENDS
+                "${CMAKE_CURRENT_SOURCE_DIR}/ce/ce/node_modules"
+                "${CMAKE_CURRENT_SOURCE_DIR}/ce/test/node_modules"
+                )
+
+# === Target: vcpkg-artifacts ===
+        file(GLOB_RECURSE VCPKG_ARTIFACTS_SOURCES CONFIGURE_DEPENDS "ce/ce/*.ts")
+        add_custom_command(
+            OUTPUT
+                "${CMAKE_CURRENT_LIST_DIR}/ce/ce/dist/tsconfig.tsbuildinfo"
+            COMMAND
+                "${NODEJS}" "${CMAKE_CURRENT_LIST_DIR}/ce/ce/node_modules/typescript/bin/tsc"
+                    -p "${CMAKE_CURRENT_LIST_DIR}/ce/ce"
+            DEPENDS
+                ${VCPKG_ARTIFACTS_SOURCES}
+                "${CMAKE_CURRENT_SOURCE_DIR}/ce/ce/node_modules"
+            COMMENT
+                "Building vcpkg-ce..."
+            VERBATIM
+            )
+
+        add_custom_target(vcpkg-artifacts
+            ALL
+            DEPENDS
+                "${CMAKE_CURRENT_LIST_DIR}/ce/ce/dist/tsconfig.tsbuildinfo"
+            )
+
+# === Target: vcpkg-artifacts-test ===
+        file(GLOB_RECURSE VCPKG_ARTIFACTS_TEST_SOURCES CONFIGURE_DEPENDS "ce/test/*.ts")
+        add_custom_command(
+            OUTPUT
+                "${CMAKE_CURRENT_LIST_DIR}/ce/test/dist/tsconfig.tsbuildinfo"
+            COMMAND
+                "${NODEJS}" "${CMAKE_CURRENT_LIST_DIR}/ce/test/node_modules/typescript/bin/tsc"
+                    -p "${CMAKE_CURRENT_LIST_DIR}/ce/test"
+            DEPENDS
+                ${VCPKG_ARTIFACTS_TEST_SOURCES}
+                "${CMAKE_CURRENT_SOURCE_DIR}/ce/test/node_modules"
+            COMMENT
+                "Building vcpkg-ce-test..."
+            VERBATIM
+            )
+
+        add_custom_target(vcpkg-artifacts-test
+            ALL
+            DEPENDS
+                "${CMAKE_CURRENT_LIST_DIR}/ce/test/dist/tsconfig.tsbuildinfo"
+            )
+    endif()
 else()
+    if (VCPKG_ARTIFACTS_DEVELOPMENT)
+        message(WARNING "VCPKG_CE_SHA overrides VCPKG_ARTIFACTS_DEVELOPMENT")
+    endif()
     target_compile_definitions(vcpkglib PUBLIC
         VCPKG_CE_SHA=${VCPKG_CE_SHA}
     )
@@ -240,9 +339,21 @@ if(MINGW)
 endif()
 
 # === Target: vcpkg ===
+add_custom_command(
+    OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/vcpkg.ps1"
+    COMMAND
+        "${CMAKE_COMMAND}" ARGS -E copy "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-in-development.ps1" "${CMAKE_CURRENT_BINARY_DIR}/vcpkg.ps1"
+    DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-in-development.ps1"
+    VERBATIM
+    )
 
-add_executable(vcpkg ${VCPKG_SOURCES})
+add_custom_target(vcpkg-ps1 ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/vcpkg.ps1")
+
+add_executable(vcpkg ${VCPKG_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
 target_link_libraries(vcpkg PRIVATE vcpkglib)
+
 vcpkg_target_add_warning_options(vcpkg)
 if(VCPKG_ADD_SOURCELINK)
     if(VCPKG_VERSION STREQUAL "unknownhash")
@@ -260,7 +371,7 @@ endif()
 # === Target: generate-message-map ===
 
 add_custom_target(generate-message-map
-   COMMAND vcpkg x-generate-default-message-map --no-allow-incorrect-comments locales/messages.json
+   COMMAND vcpkg x-generate-default-message-map locales/messages.json
    COMMAND vcpkg x-generate-default-message-map --no-output-comments locales/messages.en.json
    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
    COMMENT "Update locales/messages.json"
@@ -275,6 +386,7 @@ if (BUILD_TESTING)
     add_executable(vcpkg-test
         ${VCPKG_TEST_SOURCES}
         ${VCPKG_TEST_INCLUDES}
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest"
     )
     target_link_libraries(vcpkg-test PRIVATE vcpkglib)
     if(ANDROID)
@@ -292,7 +404,7 @@ endif()
 # === Target: vcpkg-fuzz ===
 
 if(VCPKG_BUILD_FUZZING)
-    add_executable(vcpkg-fuzz ${VCPKG_FUZZ_SOURCES})
+    add_executable(vcpkg-fuzz ${VCPKG_FUZZ_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
     target_link_libraries(vcpkg-fuzz PRIVATE vcpkglib)
     vcpkg_target_add_warning_options(vcpkg-fuzz)
 endif()
@@ -301,7 +413,7 @@ endif()
 # === Target: tls12-download ===
 
 if(VCPKG_BUILD_TLS12_DOWNLOADER)
-    add_executable(tls12-download ${TLS12_DOWNLOAD_SOURCES})
+    add_executable(tls12-download ${TLS12_DOWNLOAD_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
     set_property(TARGET tls12-download PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
     set_property(TARGET tls12-download APPEND PROPERTY LINK_OPTIONS "$<IF:$<CONFIG:Debug>,,/ENTRY:entry>")
     target_link_libraries(tls12-download winhttp wintrust shell32)
@@ -313,7 +425,7 @@ endif()
 
 # === Target: format ===
 
-find_program(CLANG_FORMAT clang-format)
+find_program(CLANG_FORMAT clang-format PATHS "$ENV{PROGRAMFILES}/LLVM/bin")
 if(CLANG_FORMAT)
     # doing all of these formats in one line has a tendency to overflow the command line length
     add_custom_target(format

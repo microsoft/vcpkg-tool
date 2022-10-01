@@ -3,6 +3,7 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
+#include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
 #include <ctime>
@@ -17,26 +18,6 @@
 #else
 extern char** environ;
 #endif
-
-namespace
-{
-    namespace msg = vcpkg::msg;
-    DECLARE_AND_REGISTER_MESSAGE(ProcessorArchitectureW6432Malformed,
-                                 (msg::arch),
-                                 "",
-                                 "Failed to parse %PROCESSOR_ARCHITEW6432% ({arch}) as a valid CPU architecture. "
-                                 "Falling back to %PROCESSOR_ARCHITECTURE%.");
-
-    DECLARE_AND_REGISTER_MESSAGE(ProcessorArchitectureMissing,
-                                 (),
-                                 "",
-                                 "The required environment variable %PROCESSOR_ARCHITECTURE% is missing.");
-
-    DECLARE_AND_REGISTER_MESSAGE(ProcessorArchitectureMalformed,
-                                 (msg::arch),
-                                 "",
-                                 "Failed to parse %PROCESSOR_ARCHITECTURE% ({arch}) as a valid CPU architecture.");
-}
 
 namespace vcpkg
 {
@@ -477,6 +458,23 @@ namespace vcpkg
         }
 
         return nullopt;
+    }
+
+    std::string get_host_os_name()
+    {
+#if defined(_WIN32)
+        return "windows";
+#elif defined(__APPLE__)
+        return "osx";
+#elif defined(__FreeBSD__)
+        return "freebsd";
+#elif defined(__OpenBSD__)
+        return "openbsd";
+#elif defined(__linux__)
+        return "linux";
+#else
+        return "unknown"
+#endif
     }
 }
 

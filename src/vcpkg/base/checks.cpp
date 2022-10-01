@@ -13,14 +13,6 @@ namespace
     {
         return LocalizedString::from_raw(fmt::format("{}: ", line_info));
     }
-
-    DECLARE_AND_REGISTER_MESSAGE(ChecksUnreachableCode, (), "", "unreachable code was reached");
-    DECLARE_AND_REGISTER_MESSAGE(ChecksFailedCheck, (), "", "vcpkg has crashed; no additional details are available.");
-    DECLARE_AND_REGISTER_MESSAGE(ChecksUpdateVcpkg,
-                                 (),
-                                 "",
-                                 "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.");
-
     void (*g_shutdown_handler)() = nullptr;
 }
 
@@ -102,7 +94,7 @@ namespace vcpkg
                          msg::format(msg::msgInternalErrorMessage)
                              .append(locale_invariant_lineinfo(line_info))
                              .append(msgChecksFailedCheck)
-                             .appendnl()
+                             .append_raw('\n')
                              .append(msg::msgInternalErrorMessageContact));
             exit_fail(line_info);
         }

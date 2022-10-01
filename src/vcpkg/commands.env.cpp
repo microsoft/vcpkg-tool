@@ -44,16 +44,16 @@ namespace vcpkg::Commands::Env
 
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
 
-        PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
+        PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
         var_provider.load_generic_triplet_vars(triplet);
 
-        const Build::PreBuildInfo pre_build_info(
+        const PreBuildInfo pre_build_info(
             paths, triplet, var_provider.get_generic_triplet_vars(triplet).value_or_exit(VCPKG_LINE_INFO));
         const Toolset& toolset = paths.get_toolset(pre_build_info);
-        auto build_env_cmd = Build::make_build_env_cmd(pre_build_info, toolset);
+        auto build_env_cmd = make_build_env_cmd(pre_build_info, toolset);
 
         std::unordered_map<std::string, std::string> extra_env = {};
         const bool add_bin = Util::Sets::contains(options.switches, OPTION_BIN);
@@ -112,7 +112,7 @@ namespace vcpkg::Commands::Env
 #ifdef _WIN32
         exit_interactive_subprocess();
 #endif
-        Checks::exit_with_code(VCPKG_LINE_INFO, rc);
+        Checks::exit_with_code(VCPKG_LINE_INFO, rc.value_or_exit(VCPKG_LINE_INFO));
     }
 
     void EnvCommand::perform_and_exit(const VcpkgCmdArguments& args,

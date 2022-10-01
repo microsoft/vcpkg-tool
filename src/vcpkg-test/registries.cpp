@@ -17,7 +17,10 @@ namespace
 
         void get_all_port_names(std::vector<std::string>&) const override { }
 
-        Optional<Version> get_baseline_version(StringView) const override { return nullopt; }
+        ExpectedL<Version> get_baseline_version(StringView) const override
+        {
+            return LocalizedString::from_raw("error");
+        }
 
         int number;
 

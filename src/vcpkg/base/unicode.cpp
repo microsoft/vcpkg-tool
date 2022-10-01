@@ -3,8 +3,6 @@
 
 namespace vcpkg::Unicode
 {
-    REGISTER_MESSAGE(Utf8DecoderDereferencedAtEof);
-
     Utf8CodeUnitKind utf8_code_unit_kind(unsigned char code_unit) noexcept
     {
         if (code_unit < 0b1000'0000)
@@ -33,10 +31,9 @@ namespace vcpkg::Unicode
         }
     }
 
-    int utf8_code_unit_count(Utf8CodeUnitKind kind) noexcept { return static_cast<int>(kind); }
     int utf8_code_unit_count(char code_unit) noexcept { return utf8_code_unit_count(utf8_code_unit_kind(code_unit)); }
 
-    static int utf8_encode_code_unit_count(char32_t code_point) noexcept
+    static constexpr int utf8_encode_code_unit_count(char32_t code_point) noexcept
     {
         if (code_point < 0x80)
         {
@@ -164,33 +161,6 @@ namespace vcpkg::Unicode
         return {it, utf8_errc::NoError};
     }
 
-    // uses the C++20 definition
-    /*
-        [format.string.std]
-        * U+1100 - U+115F
-        * U+2329 - U+232A
-        * U+2E80 - U+303E
-        * U+3040 - U+A4CF
-        * U+AC00 - U+D7A3
-        * U+F900 - U+FAFF
-        * U+FE10 - U+FE19
-        * U+FE30 - U+FE6F
-        * U+FF00 - U+FF60
-        * U+FFE0 - U+FFE6
-        * U+1F300 - U+1F64F
-        * U+1F900 - U+1F9FF
-        * U+20000 - U+2FFFD
-        * U+30000 - U+3FFFD
-    */
-    bool is_double_width_code_point(char32_t ch) noexcept
-    {
-        return (ch >= 0x1100 && ch <= 0x115F) || (ch >= 0x2329 && ch <= 0x232A) || (ch >= 0x2E80 && ch <= 0x303E) ||
-               (ch >= 0x3040 && ch <= 0xA4CF) || (ch >= 0xAC00 && ch <= 0xD7A3) || (ch >= 0xF900 && ch <= 0xFAFF) ||
-               (ch >= 0xFE10 && ch <= 0xFE19) || (ch >= 0xFE30 && ch <= 0xFE6F) || (ch >= 0xFF00 && ch <= 0xFF60) ||
-               (ch >= 0xFFE0 && ch <= 0xFFE6) || (ch >= 0x1F300 && ch <= 0x1F64F) || (ch >= 0x1F900 && ch <= 0x1F9FF) ||
-               (ch >= 0x20000 && ch <= 0x2FFFD) || (ch >= 0x30000 && ch <= 0x3FFFD);
-    }
-
     bool utf8_is_valid_string(const char* first, const char* last) noexcept
     {
         utf8_errc err = utf8_errc::NoError;
@@ -214,44 +184,29 @@ namespace vcpkg::Unicode
 
     struct Utf8Category : std::error_category
     {
-        const char* name() const noexcept override;
-        std::string message(int condition) const override;
-    };
+        const char* name() const noexcept override { return "utf8"; }
 
-    const char* Utf8Category::name() const noexcept { return "utf8"; }
-    std::string Utf8Category::message(int condition) const
-    {
-        switch (static_cast<utf8_errc>(condition))
+        std::string message(int condition) const override
         {
-            case utf8_errc::NoError: return "no error";
-            case utf8_errc::InvalidCodeUnit: return "invalid code unit";
-            case utf8_errc::InvalidCodePoint: return "invalid code point (>0x10FFFF)";
-            case utf8_errc::PairedSurrogates:
-                return "trailing surrogate following leading surrogate (paired surrogates are invalid)";
-            case utf8_errc::UnexpectedContinue: return "found continue code unit in start position";
-            case utf8_errc::UnexpectedStart: return "found start code unit in continue position";
-            case utf8_errc::UnexpectedEof: return "found end of string in middle of code point";
-            default: return "error code out of range";
+            switch (static_cast<utf8_errc>(condition))
+            {
+                case utf8_errc::NoError: return "no error";
+                case utf8_errc::InvalidCodeUnit: return "invalid code unit";
+                case utf8_errc::InvalidCodePoint: return "invalid code point (>0x10FFFF)";
+                case utf8_errc::PairedSurrogates:
+                    return "trailing surrogate following leading surrogate (paired surrogates are invalid)";
+                case utf8_errc::UnexpectedContinue: return "found continue code unit in start position";
+                case utf8_errc::UnexpectedStart: return "found start code unit in continue position";
+                case utf8_errc::UnexpectedEof: return "found end of string in middle of code point";
+                default: return "error code out of range";
+            }
         }
-    }
+    };
 
     const std::error_category& utf8_category() noexcept
     {
         static const Utf8Category t;
         return t;
-    }
-
-    Utf8Decoder::Utf8Decoder() noexcept : current_(end_of_file), next_(nullptr), last_(nullptr) { }
-    Utf8Decoder::Utf8Decoder(const char* first, const char* last) noexcept : current_(0), next_(first), last_(last)
-    {
-        if (next_ != last_)
-        {
-            ++*this;
-        }
-        else
-        {
-            current_ = end_of_file;
-        }
     }
 
     char const* Utf8Decoder::pointer_to_current() const noexcept
@@ -325,5 +280,4 @@ namespace vcpkg::Unicode
 
         return lhs.next_ == rhs.next_;
     }
-
 }

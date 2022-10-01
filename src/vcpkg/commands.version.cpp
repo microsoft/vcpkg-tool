@@ -9,13 +9,6 @@
 namespace
 {
     using namespace vcpkg;
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        VersionCommandHeader,
-        (msg::version),
-        "",
-        "vcpkg package management program version {version}\n\nSee LICENSE.txt for license information.");
-
     constexpr StringLiteral version_init = VCPKG_BASE_VERSION_AS_STRING "-" VCPKG_VERSION_AS_STRING
 #ifndef NDEBUG
                                                                         "-debug"

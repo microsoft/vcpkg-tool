@@ -16,10 +16,6 @@
 
 namespace vcpkg::Export::Prefab
 {
-    using Dependencies::ExportPlanAction;
-    using Dependencies::ExportPlanType;
-    using Install::InstallDir;
-
     static std::vector<Path> find_modules(const VcpkgPaths& system, const Path& root, const std::string& ext)
     {
         Filesystem& fs = system.get_filesystem();
@@ -227,19 +223,19 @@ namespace vcpkg::Export::Prefab
         cmd_line.string_arg("install:install-file")
             .string_arg(Strings::concat("-Dfile=", aar))
             .string_arg(Strings::concat("-DpomFile=", pom));
-        const int exit_code = cmd_execute_clean(cmd_line);
+        const int exit_code = cmd_execute_clean(cmd_line).value_or_exit(VCPKG_LINE_INFO);
         Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: %s installing maven file", aar);
     }
 
-    static std::unique_ptr<Build::PreBuildInfo> build_info_from_triplet(
+    static std::unique_ptr<PreBuildInfo> build_info_from_triplet(
         const VcpkgPaths& paths, const std::unique_ptr<CMakeVars::CMakeVarProvider>& provider, const Triplet& triplet)
     {
         provider->load_generic_triplet_vars(triplet);
-        return std::make_unique<Build::PreBuildInfo>(
+        return std::make_unique<PreBuildInfo>(
             paths, triplet, provider->get_generic_triplet_vars(triplet).value_or_exit(VCPKG_LINE_INFO));
     }
 
-    static bool is_supported(const Build::PreBuildInfo& info)
+    static bool is_supported(const PreBuildInfo& info)
     {
         return Strings::case_insensitive_ascii_equals(info.cmake_system_name, "android");
     }
@@ -372,8 +368,8 @@ namespace vcpkg::Export::Prefab
             const std::string name = action.spec.name();
             auto dependencies = action.dependencies();
 
-            const auto action_build_info = Build::read_build_info(utils, paths.build_info_file_path(action.spec));
-            const bool is_empty_package = action_build_info.policies.is_enabled(Build::BuildPolicy::EMPTY_PACKAGE);
+            const auto action_build_info = read_build_info(utils, paths.build_info_file_path(action.spec));
+            const bool is_empty_package = action_build_info.policies.is_enabled(BuildPolicy::EMPTY_PACKAGE);
 
             if (is_empty_package)
             {
@@ -636,9 +632,17 @@ namespace vcpkg::Export::Prefab
                     "[DEBUG] Exporting AAR And POM\n\tAAR Path %s\n\tPOM Path %s\n", exported_archive_path, pom_path));
             }
 
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               compress_directory_to_zip(paths, package_directory, exported_archive_path) != 0,
-                               Strings::concat("Failed to compress folder ", package_directory));
+            auto compress_result = compress_directory_to_zip(
+                paths.get_filesystem(), paths.get_tool_cache(), stdout_sink, package_directory, exported_archive_path);
+            if (!compress_result)
+            {
+                Checks::exit_with_message(VCPKG_LINE_INFO,
+                                          std::move(compress_result)
+                                              .error()
+                                              .append_raw("\nFailed to compress folder ")
+                                              .append_raw(package_directory.native())
+                                              .extract_data());
+            }
 
             std::string POM = R"(<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"

@@ -7,43 +7,55 @@ import { InstallEvents, InstallOptions } from '../interfaces/events';
 import { CloneSettings, GitInstaller } from '../interfaces/metadata/installers/git';
 import { Session } from '../session';
 import { Uri } from '../util/uri';
+import { Vcpkg } from '../vcpkg';
 
-export async function installGit(session: Session, name: string, targetLocation: Uri, install: GitInstaller, events: Partial<InstallEvents>, options: Partial<InstallOptions & CloneOptions & CloneSettings>): Promise<void> {
-  // const gitPath = await session.activation.getAlias('git');
-  const gitPath = '';
+export async function installGit(session: Session, name: string, version: string, targetLocation: Uri, install: GitInstaller, events: Partial<InstallEvents>, options: Partial<InstallOptions & CloneOptions & CloneSettings>): Promise<void> {
+  const vcpkg = new Vcpkg(session);
 
+  const gitPath = await vcpkg.fetch('git');
 
   if (!gitPath) {
     throw new Error(i`Git is not installed`);
   }
 
-  const repo = session.parseUri(install.location);
+  const repo = session.parseLocation(install.location);
   const targetDirectory = targetLocation.join(options.subdirectory ?? '');
 
-  const gitTool = new Git(session, gitPath, await session.activation.getEnvironmentBlock(), targetDirectory);
+  const gitTool = new Git(gitPath, targetDirectory);
+  events.unpackArchiveStart?.(repo, targetDirectory);
 
-  await gitTool.clone(repo, events, {
-    recursive: install.recurse,
-    depth: install.full ? undefined : 1,
-  });
+  // changing the clone process to do an init/add remote/fetch/checkout because
+  // it's far faster to clone a specific commit and this allows us to support
+  // recursive shallow submodules as well.
 
-  if (install.commit) {
-    if (install.full) {
-      await gitTool.reset(events, {
-        commit: install.commit,
-        recurse: install.recurse,
-        hard: true
-      });
+  if (! await gitTool.init()) {
+    events.unpackArchiveHeartbeat?.(i`Initializing repository folder`);
+    throw new Error(i`Failed to initialize git repository folder (${targetDirectory.fsPath})`);
+  }
+
+  if (!await gitTool.addRemote('origin', repo)) {
+    events.unpackArchiveHeartbeat?.(i`Adding remote ${repo.toString()} to git repository folder`);
+    throw new Error(i`Failed to set git origin (${repo.toString()}) in folder (${targetDirectory.fsPath})`);
+  }
+
+  if (!await gitTool.fetch('origin', events, { commit: install.commit, depth: install.full ? undefined : 1 })) {
+    events.unpackArchiveHeartbeat?.(i`Fetching remote ${repo.toString()} for git repository folder`);
+    throw new Error(i`Unable to fetch git data for (${repo.toString()}) in folder (${targetDirectory.fsPath})`);
+  }
+
+  if (!await gitTool.checkout(events, { commit: 'FETCH_HEAD' })) {
+    events.unpackArchiveHeartbeat?.(i`Checking out commit ${install.commit} for ${repo.toString()} to git repository folder`);
+    throw new Error(i`Unable to checkout data for (${repo.toString()}) in folder (${targetDirectory.fsPath})`);
+  }
+
+  if (install.recurse) {
+    events.unpackArchiveHeartbeat?.(i`Updating submodules for repository ${repo.toString()} in the git repository folder`);
+    if (!await gitTool.config('.gitmodules', 'submodule.*.shallow', 'true')) {
+      throw new Error(i`Unable to set submodule shallow data for (${repo.toString()}) in folder (${targetDirectory.fsPath})`);
     }
-    else {
-      await gitTool.fetch('origin', events, {
-        commit: install.commit,
-        recursive: install.recurse,
-        depth: install.full ? undefined : 1
-      });
-      await gitTool.checkout(events, {
-        commit: install.commit
-      });
+
+    if (!await gitTool.updateSubmodules(events, { init: true, recursive: true, depth: install.full ? undefined : 1 })) {
+      throw new Error(i`Unable update submodules for (${repo.toString()}) in folder (${targetDirectory.fsPath})`);
     }
   }
 }
