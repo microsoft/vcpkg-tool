@@ -113,9 +113,12 @@ namespace vcpkg
 
         bool metrics_enabled();
 
-        void upload(const std::string& payload);
         void flush(Filesystem& fs);
     };
 
     extern LockGuarded<Metrics> g_metrics;
+
+#if defined(_WIN32)
+    void winhttp_upload_metrics(StringView payload);
+#endif // ^^^ _WIN32
 }

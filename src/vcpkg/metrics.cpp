@@ -328,14 +328,9 @@ namespace vcpkg
 
     void Metrics::track_feature(const std::string& name, bool value) { g_metricmessage.track_feature(name, value); }
 
-    void Metrics::upload(const std::string& payload)
-    {
-        if (!metrics_enabled())
-        {
-            return;
-        }
-
 #if defined(_WIN32)
+    void winhttp_upload_metrics(StringView payload)
+    {
         HINTERNET connect = nullptr, request = nullptr;
         BOOL results = FALSE;
 
@@ -361,15 +356,15 @@ namespace vcpkg
 
         if (request)
         {
-            if (MAXDWORD <= payload.size()) abort();
+            auto mutable_payload = payload.to_string();
+            if (MAXDWORD <= mutable_payload.size()) abort();
             std::wstring hdrs = L"Content-Type: application/json\r\n";
-            std::string& p = const_cast<std::string&>(payload);
             results = WinHttpSendRequest(request,
                                          hdrs.c_str(),
                                          static_cast<DWORD>(hdrs.size()),
-                                         static_cast<void*>(&p[0]),
-                                         static_cast<DWORD>(payload.size()),
-                                         static_cast<DWORD>(payload.size()),
+                                         static_cast<void*>(mutable_payload.data()),
+                                         static_cast<DWORD>(mutable_payload.size()),
+                                         static_cast<DWORD>(mutable_payload.size()),
                                          0);
         }
 
@@ -423,10 +418,8 @@ namespace vcpkg
         if (request) WinHttpCloseHandle(request);
         if (connect) WinHttpCloseHandle(connect);
         if (session) WinHttpCloseHandle(session);
-#else  // ^^^ _WIN32 // !_WIN32 vvv
-        (void)payload;
-#endif // ^^^ !_WIN32
     }
+#endif // ^^^ _WIN32
 
     void Metrics::flush(Filesystem& fs)
     {
