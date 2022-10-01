@@ -8,21 +8,22 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
-#include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/stringview.h>
 
 #include <map>
 #include <memory>
-#include <unordered_map>
-#include <unordered_set>
+#include <set>
 #include <vector>
 
 namespace vcpkg
 {
     struct ParsedArguments
     {
-        std::unordered_set<std::string> switches;
-        std::unordered_map<std::string, std::string> settings;
-        std::unordered_map<std::string, std::vector<std::string>> multisettings;
+        std::set<std::string, std::less<>> switches;
+        std::map<std::string, std::string, std::less<>> settings;
+        std::map<std::string, std::vector<std::string>, std::less<>> multisettings;
+
+        const std::string* read_setting(StringLiteral setting) const noexcept;
     };
 
     struct CommandSwitch
@@ -88,8 +89,6 @@ namespace vcpkg
 
     std::string create_example_string(const std::string& command_and_arguments);
 
-    std::string format_environment_variable(StringLiteral lit);
-
     struct HelpTableFormatter
     {
         void format(StringView col1, StringView col2);
@@ -140,6 +139,9 @@ namespace vcpkg
         std::unique_ptr<std::string> builtin_ports_root_dir;
         constexpr static StringLiteral BUILTIN_REGISTRY_VERSIONS_DIR_ARG = "x-builtin-registry-versions-dir";
         std::unique_ptr<std::string> builtin_registry_versions_dir;
+        constexpr static StringLiteral REGISTRIES_CACHE_DIR_ENV = "X_VCPKG_REGISTRIES_CACHE";
+        constexpr static StringLiteral REGISTRIES_CACHE_DIR_ARG = "x-registries-cache";
+        std::unique_ptr<std::string> registries_cache_dir;
 
         constexpr static StringLiteral DEFAULT_VISUAL_STUDIO_PATH_ENV = "VCPKG_VISUAL_STUDIO_PATH";
         std::unique_ptr<std::string> default_visual_studio_path;
@@ -168,6 +170,8 @@ namespace vcpkg
 
         constexpr static StringLiteral DEBUG_SWITCH = "debug";
         Optional<bool> debug = nullopt;
+        constexpr static StringLiteral DEBUG_ENV_SWITCH = "debug-env";
+        Optional<bool> debug_env = nullopt;
         constexpr static StringLiteral SEND_METRICS_SWITCH = "sendmetrics";
         Optional<bool> send_metrics = nullopt;
         // fully disable metrics -- both printing and sending
@@ -255,8 +259,8 @@ namespace vcpkg
         Optional<std::string> asset_sources_template_env;        // for ASSET_SOURCES_ENV
         std::unique_ptr<std::string> asset_sources_template_arg; // for ASSET_SOURCES_ARG
 
-        std::unordered_set<std::string> command_switches;
-        std::unordered_map<std::string, std::vector<std::string>> command_options;
+        std::set<std::string, std::less<>> command_switches;
+        std::map<std::string, std::vector<std::string>, std::less<>> command_options;
 
         std::vector<std::string> forwardable_arguments;
     };

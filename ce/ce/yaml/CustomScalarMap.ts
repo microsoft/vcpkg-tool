@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 import { isScalar, Scalar } from 'yaml';
+import { ValidationMessage } from '../interfaces/validation-message';
 import { BaseMap } from './BaseMap';
 import { EntityFactory, Yaml, YAMLDictionary } from './yaml-types';
 
@@ -50,5 +51,9 @@ export /** @internal */ class CustomScalarMap<TElement extends Yaml<Scalar>> ext
     this.assert(true);   // if we don't have a node at the moment, we need to create one.
 
     this.node.set(key, new Scalar(value));
+  }
+
+  override *validate(): Iterable<ValidationMessage> {
+    yield* this.validateIsObject();
   }
 }

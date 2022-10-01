@@ -1,28 +1,9 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <algorithm>
 #include <utility>
-
-using namespace vcpkg;
-
-namespace
-{
-    DECLARE_AND_REGISTER_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
-
-    DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessageExpression,
-                                 (msg::value),
-                                 "Example of {value} is 'x64 & windows'",
-                                 "    on expression: {value}");
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        ExpectedCharacterHere,
-        (msg::expected),
-        "{expected} is a locale-invariant delimiter; for example, the ':' or '=' in 'zlib:x64-windows=skip'",
-        "expected '{expected}' here");
-}
 
 namespace vcpkg
 {
@@ -41,41 +22,39 @@ namespace vcpkg
         }
     }
 
-    std::string ParseError::format() const
+    std::string ParseError::to_string() const
     {
         auto decoder = Unicode::Utf8Decoder(line.data(), line.data() + line.size());
         ParseMessage as_message;
         as_message.location = SourceLoc{std::next(decoder, caret_col), decoder, row, column};
         as_message.message = LocalizedString::from_raw(std::string(message));
-
-        auto res = as_message.format(origin, MessageKind::Error).extract_data();
-        res.push_back('\n');
-        return res;
+        return as_message.format(origin, MessageKind::Error).extract_data();
     }
 
     LocalizedString ParseMessage::format(StringView origin, MessageKind kind) const
     {
-        LocalizedString res =
-            LocalizedString::from_raw(fmt::format("{}:{}:{}: ", origin, location.row, location.column));
+        LocalizedString res;
+        if (!origin.empty())
+            res = LocalizedString::from_raw(fmt::format("{}:{}:{}: ", origin, location.row, location.column));
         if (kind == MessageKind::Warning)
         {
-            res.append(msg::format(msg::msgWarningMessage));
+            res.append(msg::msgWarningMessage);
         }
         else
         {
-            res.append(msg::format(msg::msgErrorMessage));
+            res.append(msg::msgErrorMessage);
         }
         res.append(message);
 
-        res.appendnl();
+        res.append_raw('\n');
 
         auto line_end = Util::find_if(location.it, ParserBase::is_lineend);
         StringView line = StringView{
             location.start_of_line.pointer_to_current(),
             line_end.pointer_to_current(),
         };
-        res.append(msg::format(msgFormattedParseMessageExpression, msg::value = line));
-        res.appendnl();
+        res.append_indent().append(msgFormattedParseMessageExpression, msg::value = line);
+        res.append_raw('\n');
 
         auto caret_point = StringView{location.start_of_line.pointer_to_current(), location.it.pointer_to_current()};
         auto formatted_caret_point = msg::format(msgFormattedParseMessageExpression, msg::value = caret_point);
@@ -93,12 +72,10 @@ namespace vcpkg
         }
         caret_string.push_back('^');
 
-        res.append_raw(std::move(caret_string));
+        res.append_indent().append_raw(std::move(caret_string));
 
         return res;
     }
-
-    const std::string& ParseError::get_message() const { return this->message; }
 
     void ParseMessages::exit_if_errors_or_warnings(StringView origin) const
     {
@@ -109,7 +86,7 @@ namespace vcpkg
 
         if (error)
         {
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO, LocalizedString::from_raw(error->format()));
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, LocalizedString::from_raw(error->to_string()));
         }
 
         if (!warnings.empty())

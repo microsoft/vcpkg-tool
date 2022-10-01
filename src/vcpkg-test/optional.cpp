@@ -119,3 +119,127 @@ TEST_CASE ("common_projection", "[optional]")
     input.push_back(1729);
     CHECK(!common_projection(input, identity_projection{}).has_value());
 }
+
+TEST_CASE ("operator==/operator!=", "[optional]")
+{
+    using vcpkg::Optional;
+    using vcpkg::StringLiteral;
+
+    SECTION ("same type - opt == opt")
+    {
+        Optional<std::string> s1;
+        Optional<std::string> s2;
+
+        // none == none
+        CHECK(s1 == s2);
+        CHECK_FALSE(s1 != s2);
+        CHECK(s2 == s1);
+        CHECK_FALSE(s2 != s1);
+
+        // some("") != none
+        s1 = "";
+        CHECK_FALSE(s1 == s2);
+        CHECK(s1 != s2);
+        CHECK_FALSE(s2 == s1);
+        CHECK(s2 != s1);
+
+        // some("") == some("")
+        s2 = "";
+        CHECK(s1 == s2);
+        CHECK_FALSE(s1 != s2);
+        CHECK(s2 == s1);
+        CHECK_FALSE(s2 != s1);
+
+        // some("hi") != some("")
+        s1 = "hi";
+        CHECK_FALSE(s1 == s2);
+        CHECK(s1 != s2);
+        CHECK_FALSE(s2 == s1);
+        CHECK(s2 != s1);
+    };
+
+    SECTION ("same type - opt == raw")
+    {
+        Optional<std::string> opt_string;
+        std::string string;
+
+        // none != ""
+        CHECK_FALSE(opt_string == string);
+        CHECK(opt_string != string);
+        CHECK_FALSE(string == opt_string);
+        CHECK(string != opt_string);
+
+        // some("") == ""
+        opt_string = "";
+        CHECK(opt_string == string);
+        CHECK_FALSE(opt_string != string);
+        CHECK(string == opt_string);
+        CHECK_FALSE(string != opt_string);
+
+        // some("hi") != ""
+        opt_string = "hi";
+        CHECK_FALSE(opt_string == string);
+        CHECK(opt_string != string);
+        CHECK_FALSE(string == opt_string);
+        CHECK(string != opt_string);
+    };
+
+    SECTION ("different types - opt == opt")
+    {
+        Optional<std::string> opt_string;
+        Optional<StringLiteral> opt_literal;
+
+        // none == none
+        CHECK(opt_string == opt_literal);
+        CHECK_FALSE(opt_string != opt_literal);
+        CHECK(opt_literal == opt_string);
+        CHECK_FALSE(opt_literal != opt_string);
+
+        // some("") != none
+        opt_string = "";
+        CHECK_FALSE(opt_string == opt_literal);
+        CHECK(opt_string != opt_literal);
+        CHECK_FALSE(opt_literal == opt_string);
+        CHECK(opt_literal != opt_string);
+
+        // some("") == some("")
+        opt_literal = "";
+        CHECK(opt_string == opt_literal);
+        CHECK_FALSE(opt_string != opt_literal);
+        CHECK(opt_literal == opt_string);
+        CHECK_FALSE(opt_literal != opt_string);
+
+        // some("hi") != some("")
+        opt_string = "hi";
+        CHECK_FALSE(opt_string == opt_literal);
+        CHECK(opt_string != opt_literal);
+        CHECK_FALSE(opt_literal == opt_string);
+        CHECK(opt_literal != opt_string);
+    };
+
+    SECTION ("different types - opt == raw")
+    {
+        Optional<std::string> opt_string;
+        StringLiteral literal = "";
+
+        // none != ""
+        CHECK_FALSE(opt_string == literal);
+        CHECK(opt_string != literal);
+        CHECK_FALSE(literal == opt_string);
+        CHECK(literal != opt_string);
+
+        // some("") == ""
+        opt_string = "";
+        CHECK(opt_string == literal);
+        CHECK_FALSE(opt_string != literal);
+        CHECK(literal == opt_string);
+        CHECK_FALSE(literal != opt_string);
+
+        // some("hi") != ""
+        opt_string = "hi";
+        CHECK_FALSE(opt_string == literal);
+        CHECK(opt_string != literal);
+        CHECK_FALSE(literal == opt_string);
+        CHECK(literal != opt_string);
+    };
+}

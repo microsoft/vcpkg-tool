@@ -5,12 +5,13 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/zstringview.h>
 
 namespace vcpkg
 {
     Optional<std::string> get_environment_variable(ZStringView varname) noexcept;
     void set_environment_variable(ZStringView varname, Optional<ZStringView> value) noexcept;
+
+    std::string get_environment_variables();
 
     const ExpectedS<Path>& get_home_dir() noexcept;
 
@@ -44,6 +45,8 @@ namespace vcpkg
     ZStringView to_zstring_view(CPUArchitecture arch) noexcept;
 
     CPUArchitecture get_host_processor();
+
+    std::string get_host_os_name();
 
     std::vector<CPUArchitecture> get_supported_host_architectures();
 

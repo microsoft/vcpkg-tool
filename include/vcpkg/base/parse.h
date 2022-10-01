@@ -6,7 +6,6 @@
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/unicode.h>
-#include <vcpkg/base/zstringview.h>
 
 #include <vcpkg/textrowcol.h>
 
@@ -34,9 +33,15 @@ namespace vcpkg
         const std::string line;
         const std::string message;
 
-        std::string format() const;
-        const std::string& get_message() const;
+        std::string to_string() const;
     };
+} // namespace vcpkg
+
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::ParseError);
+
+namespace vcpkg
+{
+    inline std::string to_string(const std::unique_ptr<ParseError>& up) { return up->to_string(); }
 
     struct SourceLoc
     {

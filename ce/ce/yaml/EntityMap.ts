@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 import { Dictionary } from '../interfaces/collections';
+import { ValidationMessage } from '../interfaces/validation-message';
 import { BaseMap } from './BaseMap';
 import { EntityFactory, Node, Yaml, YAMLDictionary } from './yaml-types';
 
@@ -20,10 +21,15 @@ export /** @internal */ abstract class EntityMap<TNode extends Node, TElement ex
       for (const each of this.node.items) {
         const k = this.asString(each.key);
         if (k) {
-          yield [k, new this.factory(each.value)];
+          yield [k, new this.factory(each.value, this, k)];
         }
       }
     }
+  }
+
+  override *validate(): Iterable<ValidationMessage> {
+    yield* super.validate();
+    yield* this.validateIsObject();
   }
 
   add(key: string): TElement {

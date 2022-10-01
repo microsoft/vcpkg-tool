@@ -1,34 +1,35 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { bold, cyan, gray, green, greenBright, grey, underline, whiteBright, yellowBright } from 'chalk';
+import { bold, cyan, gray, green, greenBright, grey, underline, whiteBright, yellow, yellowBright } from 'chalk';
 import { Uri } from '../util/uri';
 
 export function projectFile(uri: Uri): string {
   return cyan(uri.fsPath);
 }
 
-export function artifactIdentity(registryName: string, identity: string, alias?: string) {
-  if (alias) {
-    return `${registryName}:${identity.substr(0, identity.length - alias.length)}${yellowBright(alias)}`;
-  }
-  return yellowBright(identity);
+export function prettyRegistryName(registryName: string) {
+  return `${whiteBright(registryName)}`;
 }
 
-export function artifactReference(registryName: string, identity: string, version: string) {
-  return `${artifactIdentity(registryName, identity)}-v${gray(version)}`;
+export function artifactIdentity(registryName: string, identity: string, shortName: string) : string {
+  return `${whiteBright(registryName)}:${yellow.dim(identity.substr(0, identity.length - shortName.length))}${yellowBright(shortName)}`;
+}
+
+export function addVersionToArtifactIdentity(identity: string, version: string) {
+  return version && version !== '*' ? `${identity}-${gray(version)}` : identity;
 }
 
 export function heading(text: string, level = 1) {
   switch (level) {
     case 1:
-      return `${underline.bold(text)}\n`;
+      return `${underline.bold(text)}`;
     case 2:
-      return `${greenBright(text)}\n`;
+      return `${greenBright(text)}`;
     case 3:
-      return `${green(text)}\n`;
+      return `${green(text)}`;
   }
-  return `${bold(text)}\n`;
+  return `${bold(text)}`;
 }
 
 export function optional(text: string) {

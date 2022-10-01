@@ -32,6 +32,8 @@ namespace vcpkg
 
         bool is_feature() const { return !feature.empty(); }
 
+        Version get_version() const { return {version, port_version}; }
+
         PackageSpec spec;
         std::string version;
         int port_version = 0;
@@ -54,4 +56,5 @@ namespace vcpkg
     };
 
     void serialize(const BinaryParagraph& pgh, std::string& out_str);
+    std::string format_binary_paragraph(BinaryParagraph paragraph);
 }

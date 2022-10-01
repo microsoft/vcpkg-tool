@@ -1,6 +1,5 @@
 . "$PSScriptRoot/../end-to-end-tests-prelude.ps1"
 
-
 Write-Trace "test manifest features"
 $manifestDir = "$TestingRoot/manifest-dir"
 
@@ -15,8 +14,6 @@ function feature {
 }
 
 $vcpkgJson = @{
-    'name' = "manifest-test";
-    'version' = "1.0.0";
     'default-features' = @( 'default-fail' );
     'features' = @{
         'default-fail' = feature 'vcpkg-fail-if-depended-upon';
@@ -39,6 +36,8 @@ New-Item -Path $manifestDir -ItemType Directory
 $manifestDir = (Get-Item $manifestDir).FullName
 New-Item -Path "$manifestDir/vcpkg.json" -ItemType File `
     -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgJson)
+
+New-Item -Path "$manifestDir/CONTROL" -ItemType File -Value [string]::Empty
 
 Write-Trace "test manifest features: default-features, features = []"
 Run-Vcpkg install @manifestDirArgs

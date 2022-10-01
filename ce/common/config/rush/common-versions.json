@@ -24,6 +24,7 @@
      * instead of the latest version.
      */
     // "some-library": "1.2.3"
+    "minimist": "1.2.6"
   },
 
   /**

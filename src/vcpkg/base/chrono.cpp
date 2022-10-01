@@ -29,7 +29,7 @@ namespace vcpkg
         return parts;
     }
 
-    static Optional<tm> to_utc_time(const std::time_t& t)
+    Optional<tm> to_utc_time(const std::time_t& t)
     {
         tm parts{};
 #if defined(_WIN32)
@@ -160,10 +160,11 @@ namespace vcpkg
 
     CTime CTime::add_hours(const int hours) const { return CTime{date_plus_hours(&this->m_tm, hours)}; }
 
-    std::string CTime::to_string() const
+    std::string CTime::to_string() const { return this->strftime("%Y-%m-%dT%H:%M:%S.0Z"); }
+    std::string CTime::strftime(const char* format) const
     {
         std::array<char, 80> date{};
-        strftime(&date[0], date.size(), "%Y-%m-%dT%H:%M:%S.0Z", &m_tm);
+        ::strftime(&date[0], date.size(), format, &m_tm);
         return &date[0];
     }
     std::chrono::system_clock::time_point CTime::to_time_point() const

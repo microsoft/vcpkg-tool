@@ -6,7 +6,7 @@ trigger: none
 
 parameters:
 - name: SignTypeOverride
-  displayName: Signing Type Override
+  displayName: Signing Type (default is real for the main branch and test otherwise)
   type: string
   default: default
   values:
@@ -16,14 +16,25 @@ parameters:
 - name: VcpkgBaseVersionOverride
   displayName: vcpkg Base Version (default is today's date in ISO 8601)
   type: string
-  default:
-
+  default: default
+- name: PublishTo
+  displayName: 'Publish To'
+  type: string
+  default: 'GitHub and NuGet'
+  values:
+  - 'GitHub and NuGet'
+  - 'NuGet Only'
 variables:
   - name: TeamName
     value: vcpkg
   - group: vcpkg-dependency-source-blobs
   - name: FMT_TARBALL_URL
     value: "$(fmt-tarball-url)"
+  - group: vcpkgdockercontainers-secrets
+  - name: AZURE_CONTAINER_REGISTRY_USERNAME
+    value: "$(vcpkgdockercontainers-pull-username)"
+  - name: AZURE_CONTAINER_REGISTRY_PASSWORD
+    value: "$(vcpkgdockercontainers-pull-password)"
   # If the user didn't override the signing type, then only real-sign on main.
   - ${{ if ne(parameters.SignTypeOverride, 'default') }}:
     - name: SignType
@@ -42,10 +53,10 @@ jobs:
     # would make subsequent pipeline stages use a different day producing a broken build.
     # Note that pipeline.startTime seems to refer to the start of the *job*, not the overall pipeline run.
     variables:
-    - ${{ if eq(parameters.VcpkgBaseVersionOverride, '') }}:
+    - ${{ if eq(parameters.VcpkgBaseVersionOverride, 'default') }}:
       - name: VCPKG_INITIAL_BASE_VERSION
         value: $[format('{0:yyyy}-{0:MM}-{0:dd}', pipeline.startTime)]
-    - ${{ if ne(parameters.VcpkgBaseVersionOverride, '') }}:
+    - ${{ if ne(parameters.VcpkgBaseVersionOverride, 'default') }}:
       - name: VCPKG_INITIAL_BASE_VERSION
         value: ${{parameters.VcpkgBaseVersionOverride}}
     pool:
@@ -70,9 +81,15 @@ jobs:
       displayName: Use Node 16 or later
       inputs:
         version: "16.x"
+    - script: copy azure-pipelines\.npmrc-internal ce\common\config\rush\.npmrc
+      displayName: Use internal .npmrc
+    - task: npmAuthenticate@0
+      inputs:
+        workingFile: 'ce\common\config\rush\.npmrc'
+      # The working directory change is to get the above .npmrc used when installing rush
     - script: npm install -g @microsoft/rush
       displayName: Install Rush
-      workingDirectory: ce
+      workingDirectory: ce\common\config\rush
     - script: rush update
       displayName: Install vcpkg-ce Dependencies
       workingDirectory: ce
@@ -93,6 +110,9 @@ jobs:
     - script: mkdir "$(Build.BinariesDirectory)\ce" && rush deploy -t "$(Build.BinariesDirectory)\ce"
       displayName: Collect vcpkg-ce Dependencies
       workingDirectory: ce
+    - script: |
+        xcopy /F "$(Build.SourcesDirectory)/scripts" "$(Build.BinariesDirectory)"
+      displayName: Collect PowerShell scripts
     - task: ComponentGovernanceComponentDetection@0
       displayName: Detect Components
       inputs:
@@ -123,7 +143,7 @@ jobs:
       inputs:
         solution: 'azure-pipelines\arch-independent-signing.signproj'
         msbuildArguments: '/p:OutDir=$(Build.BinariesDirectory)\ /p:IntermediateOutputPath=$(Build.BinariesDirectory)\'
-      # Note that signing must happen before packing step because the packs contain files that are themselves signed.
+      # Note that signing must happen before packing steps because the packs contain files that are themselves signed.
     - script: |
         copy "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.BinariesDirectory)\vcpkg-init.cmd"
       displayName: 'Duplicate Install Scripts'
@@ -132,7 +152,7 @@ jobs:
       inputs:
         pwsh: true
         filePath: vcpkg-init/mint-standalone-bundle.ps1
-        arguments: '-DestinationTarball "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" -TempDir standalone-temp "$(Build.BinariesDirectory)\vcpkg-init.cmd" "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.BinariesDirectory)\vcpkg-init"'
+        arguments: '-DestinationTarball "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" -TempDir standalone-temp -SignedFilesRoot "$(Build.BinariesDirectory)"'
     - script: npm pack
       displayName: Create vcpkg-ce Pack
       workingDirectory: $(Build.BinariesDirectory)/ce
@@ -143,6 +163,9 @@ jobs:
         move "$(Build.BinariesDirectory)\vcpkg-init" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init"
         move "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init.ps1"
         move "$(Build.BinariesDirectory)\vcpkg-init.cmd" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init.cmd"
+        move "$(Build.BinariesDirectory)\applocal.ps1" "$(Build.ArtifactStagingDirectory)\staging\applocal.ps1"
+        move "$(Build.BinariesDirectory)\addPoshVcpkgToPowershellProfile.ps1" "$(Build.ArtifactStagingDirectory)\staging\addPoshVcpkgToPowershellProfile.ps1"
+        move "$(Build.BinariesDirectory)\posh-vcpkg.psm1" "$(Build.ArtifactStagingDirectory)\staging\posh-vcpkg.psm1"
       displayName: 'Arrange Architecture-independent Files for Staging'
     - task: Powershell@2
       displayName: Generate Arch-independent SHA512s
@@ -223,13 +246,14 @@ jobs:
     - task: CmdLine@2
       displayName: "Build vcpkg in Alpine"
       inputs:
-        failOnStderr: true
+        failOnStderr: false
         script: |
-          docker build --build-arg "VCPKG_FMT_URL=$FMT_TARBALL_URL" -t vcpkg-muslc-image -f azure-pipelines/vcpkg-alpine/Dockerfile .
-          docker create -ti --name vcpkg-muslc-container vcpkg-muslc-image sh
-          docker cp vcpkg-muslc-container:/build/vcpkg "$(Build.ArtifactStagingDirectory)/vcpkg-muslc"
-          docker container rm vcpkg-muslc-container
-          docker image rm vcpkg-muslc-image
+          docker login vcpkgdockercontainers.azurecr.io -u $(AZURE_CONTAINER_REGISTRY_USERNAME) -p $(AZURE_CONTAINER_REGISTRY_PASSWORD) || exit 1
+          docker build --build-arg "VCPKG_FMT_URL=$FMT_TARBALL_URL" -t vcpkg-muslc-image -f azure-pipelines/vcpkg-alpine/Dockerfile . || exit 1
+          docker create -ti --name vcpkg-muslc-container vcpkg-muslc-image sh || exit 1
+          docker cp vcpkg-muslc-container:/build/vcpkg "$(Build.ArtifactStagingDirectory)/vcpkg-muslc" || exit 1
+          docker container rm vcpkg-muslc-container || exit 1
+          docker image rm vcpkg-muslc-image || exit 1
     - task: PublishBuildArtifacts@1
       displayName: "Publish Unsigned muslc Binary"
       inputs:
@@ -325,7 +349,7 @@ jobs:
       inputs:
         pwsh: true
         filePath: vcpkg-init/mint-standalone-bundle.ps1
-        arguments: '-DestinationDir "$(Build.ArtifactStagingDirectory)/vs-insertion/staging" -readonly -TempDir standalone-temp'
+        arguments: '-DestinationDir "$(Build.ArtifactStagingDirectory)/vs-insertion/staging" -readonly -TempDir standalone-temp -SignedFilesRoot "$(Build.ArtifactStagingDirectory)\staging"'
     - task: CmdLine@2
       displayName: 'Arrange Drop'
       inputs:
@@ -336,6 +360,9 @@ jobs:
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init.cmd" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init.cmd"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init.ps1" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init.ps1"
+          move "$(Build.ArtifactStagingDirectory)\staging\applocal.ps1" "$(Build.ArtifactStagingDirectory)\drop\applocal.ps1"
+          move "$(Build.ArtifactStagingDirectory)\staging\addPoshVcpkgToPowershellProfile.ps1" "$(Build.ArtifactStagingDirectory)\drop\addPoshVcpkgToPowershellProfile.ps1"
+          move "$(Build.ArtifactStagingDirectory)\staging\posh-vcpkg.psm1" "$(Build.ArtifactStagingDirectory)\drop\posh-vcpkg.psm1"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-ce.tgz" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-ce.tgz"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-glibc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-glibc"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-muslc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-muslc"
@@ -372,6 +399,12 @@ jobs:
       inputs:
         command: custom
         arguments: 'pack $(Build.ArtifactStagingDirectory)/vs-insertion/staging/vcpkg.nuspec -NoDefaultExcludes -OutputDirectory "$(Build.ArtifactStagingDirectory)/vs-insertion/drop" -Properties version=$(VCPKG_BASE_VERSION)'
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish nupkg as Artifact'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/vs-insertion/drop'
+        ArtifactName: 'vs-insertion'
+        publishLocation: 'Container'
     # Do compliance checks.
     - task: BinSkim@3
       inputs:
@@ -433,40 +466,41 @@ jobs:
         packagesToPush: '$(Build.ArtifactStagingDirectory)/vs-insertion/drop/VS.Redist.Vcpkg.x86.1.0.0-$(VCPKG_BASE_VERSION).nupkg'
         publishVstsFeed: '97a41293-2972-4f48-8c0e-05493ae82010'
     # Publish everything to a GitHub Release
-    - task: DownloadSecureFile@1
-      displayName: Download Deploy Key
-      name: githubDeployKey
-      condition: and(eq(variables.SignType, 'real'), succeeded())
-      inputs:
-        secureFile: id_vcpkg_tool
-    # GitHub has a large, regularly changing set of IP address, so ignore the
-    # hostname and allow anything with the right key.
-    # https://docs.github.com/en/github/authenticating-to-github/keeping-your-account-and-data-secure/about-githubs-ip-addresses
-    # This public key should have the well-known fingerprint documented below.
-    # SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8
-    # https://docs.github.com/en/github/authenticating-to-github/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
-    - script: mkdir %USERPROFILE%\.ssh && echo * ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==>>%USERPROFILE%\.ssh\known_hosts
-      displayName: Store GitHub Public Key
-      condition: and(eq(variables.SignType, 'real'), succeeded())
-    - script: git -c user.email=embeddedbot@microsoft.com -c user.name="Embedded Bot" push git@github.com:microsoft/vcpkg-tool HEAD:refs/tags/%VCPKG_BASE_VERSION%
-      condition: and(eq(variables.SignType, 'real'), succeeded())
-      env:
-        GIT_SSH_COMMAND: ssh -i "$(githubDeployKey.secureFilePath)"
-      displayName: Push Release Tag
-    - task: GitHubRelease@0
-      displayName: Publish GitHub Release
-      condition: and(eq(variables.SignType, 'real'), succeeded())
-      inputs:
-        gitHubConnection: embeddedbot
-        repositoryName: microsoft/vcpkg-tool
-        isPreRelease: true
-        isDraft: true
-        title: $(VCPKG_BASE_VERSION) Release
-        tagSource: manual
-        tag: $(VCPKG_BASE_VERSION)
-        assets: "$(Build.ArtifactStagingDirectory)\\drop\\*"
-        addChangeLog: true
-        compareWith: 'lastFullRelease'
+    - ${{ if eq(parameters.PublishTo, 'GitHub and NuGet') }}:
+      - task: DownloadSecureFile@1
+        displayName: Download Deploy Key
+        name: githubDeployKey
+        condition: and(eq(variables.SignType, 'real'), succeeded())
+        inputs:
+          secureFile: id_vcpkg_tool
+      # GitHub has a large, regularly changing set of IP address, so ignore the
+      # hostname and allow anything with the right key.
+      # https://docs.github.com/en/github/authenticating-to-github/keeping-your-account-and-data-secure/about-githubs-ip-addresses
+      # This public key should have the well-known fingerprint documented below.
+      # SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8
+      # https://docs.github.com/en/github/authenticating-to-github/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
+      - script: mkdir %USERPROFILE%\.ssh && echo * ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==>>%USERPROFILE%\.ssh\known_hosts
+        displayName: Store GitHub Public Key
+        condition: and(eq(variables.SignType, 'real'), succeeded())
+      - script: git -c user.email=embeddedbot@microsoft.com -c user.name="Embedded Bot" push git@github.com:microsoft/vcpkg-tool HEAD:refs/tags/%VCPKG_BASE_VERSION%
+        condition: and(eq(variables.SignType, 'real'), succeeded())
+        env:
+          GIT_SSH_COMMAND: ssh -i "$(githubDeployKey.secureFilePath)"
+        displayName: Push Release Tag
+      - task: GitHubRelease@0
+        displayName: Publish GitHub Release
+        condition: and(eq(variables.SignType, 'real'), succeeded())
+        inputs:
+          gitHubConnection: embeddedbot
+          repositoryName: microsoft/vcpkg-tool
+          isPreRelease: true
+          isDraft: true
+          title: $(VCPKG_BASE_VERSION) Release
+          tagSource: manual
+          tag: $(VCPKG_BASE_VERSION)
+          assets: "$(Build.ArtifactStagingDirectory)\\drop\\*"
+          addChangeLog: false
+          compareWith: 'lastFullRelease'
     - task: MicroBuildCleanup@1
       condition: succeededOrFailed()
       displayName: MicroBuild Cleanup

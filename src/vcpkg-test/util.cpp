@@ -17,11 +17,17 @@
 
 namespace vcpkg::Test
 {
+    const Triplet ARM64_WINDOWS = Triplet::from_canonical_name("arm64-windows");
     const Triplet X86_WINDOWS = Triplet::from_canonical_name("x86-windows");
     const Triplet X64_WINDOWS = Triplet::from_canonical_name("x64-windows");
+    const Triplet X64_WINDOWS_STATIC = Triplet::from_canonical_name("x64-windows-static");
+    const Triplet X64_WINDOWS_STATIC_MD = Triplet::from_canonical_name("x64-windows-static-md");
+    const Triplet X64_UWP = Triplet::from_canonical_name("x64-uwp");
     const Triplet X86_UWP = Triplet::from_canonical_name("x86-uwp");
     const Triplet ARM_UWP = Triplet::from_canonical_name("arm-uwp");
     const Triplet X64_ANDROID = Triplet::from_canonical_name("x64-android");
+    const Triplet X64_OSX = Triplet::from_canonical_name("x64-osx");
+    const Triplet X64_LINUX = Triplet::from_canonical_name("x64-linux");
 
     std::unique_ptr<SourceControlFile> make_control_file(
         const char* name,
@@ -109,6 +115,15 @@ namespace vcpkg::Test
 
     static void check_json_eq(const Json::Value& l, const Json::Value& r, std::string& path, bool ordered);
 
+    static void double_set_difference(const std::set<std::string>& a,
+                                      const std::set<std::string>& b,
+                                      std::vector<std::string>& a_extra,
+                                      std::vector<std::string>& b_extra)
+    {
+        std::set_difference(a.begin(), a.end(), b.begin(), b.end(), std::back_inserter(a_extra));
+        std::set_difference(b.begin(), b.end(), a.begin(), a.end(), std::back_inserter(b_extra));
+    }
+
     static void check_json_eq(const Json::Object& l, const Json::Object& r, std::string& path, bool ordered)
     {
         std::set<std::string> keys_l;
@@ -123,7 +138,10 @@ namespace vcpkg::Test
         }
         {
             INFO(path)
-            CHECK(keys_l == keys_r);
+            std::vector<std::string> l_extra, r_extra;
+            double_set_difference(keys_l, keys_r, l_extra, r_extra);
+            CHECK(l_extra == std::vector<std::string>{});
+            CHECK(r_extra == std::vector<std::string>{});
             if (ordered && keys_l == keys_r)
             {
                 size_t index = 0;
@@ -170,17 +188,17 @@ namespace vcpkg::Test
     {
         if (l.is_object() && r.is_object())
         {
-            check_json_eq(l.object(), r.object(), path, ordered);
+            check_json_eq(l.object(VCPKG_LINE_INFO), r.object(VCPKG_LINE_INFO), path, ordered);
         }
         else if (l.is_array() && r.is_array())
         {
-            check_json_eq(l.array(), r.array(), path, ordered);
+            check_json_eq(l.array(VCPKG_LINE_INFO), r.array(VCPKG_LINE_INFO), path, ordered);
         }
         else if (l != r)
         {
             INFO(path);
-            INFO("l = " << Json::stringify(l, {}));
-            INFO("r = " << Json::stringify(r, {}));
+            INFO("l = " << Json::stringify(l));
+            INFO("r = " << Json::stringify(r));
             CHECK(false);
         }
     }

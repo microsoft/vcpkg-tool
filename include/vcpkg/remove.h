@@ -4,6 +4,8 @@
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
+#include <vcpkg/base/messages.h>
+
 #include <vcpkg/commands.interface.h>
 
 namespace vcpkg::Remove
@@ -14,8 +16,13 @@ namespace vcpkg::Remove
         YES
     };
 
+    DECLARE_MESSAGE(RemovingPackage,
+                    (msg::action_index, msg::count, msg::spec),
+                    "",
+                    "Removing {action_index}/{count} {spec}");
+
     void perform_remove_plan_action(const VcpkgPaths& paths,
-                                    const Dependencies::RemovePlanAction& action,
+                                    const RemovePlanAction& action,
                                     const Purge purge,
                                     StatusParagraphs* status_db);
 

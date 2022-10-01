@@ -158,7 +158,7 @@ TEST_CASE ("SHA512: NIST test cases (large)", "[.][hash-expensive][sha512-expens
 
 #if defined(CATCH_CONFIG_ENABLE_BENCHMARKING)
 using Catch::Benchmark::Chronometer;
-void benchmark_hasher(Chronometer& meter, Hash::Hasher& hasher, std::uint64_t size, unsigned char byte) noexcept
+static void benchmark_hasher(Chronometer& meter, Hash::Hasher& hasher, std::uint64_t size, unsigned char byte) noexcept
 {
     unsigned char buffer[1024];
     std::fill(std::begin(buffer), std::end(buffer), byte);

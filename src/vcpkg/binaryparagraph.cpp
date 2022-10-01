@@ -90,13 +90,13 @@ namespace vcpkg
 
         if (const auto err = parser.error_info(this->spec.to_string()))
         {
-            print2(Color::error, "Error: while parsing the Binary Paragraph for ", this->spec, '\n');
+            msg::println_error(msgErrorParsingBinaryParagraph, msg::spec = this->spec);
             print_error_message(err);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
         // prefer failing above when possible because it gives better information
-        Checks::check_exit(VCPKG_LINE_INFO, multi_arch == "same", "Multi-Arch must be 'same' but was %s", multi_arch);
+        Checks::msg_check_exit(VCPKG_LINE_INFO, multi_arch == "same", msgMultiArch, msg::option = multi_arch);
 
         canonicalize();
     }
@@ -210,7 +210,7 @@ namespace vcpkg
     static void serialize_array(StringView name,
                                 const std::vector<std::string>& array,
                                 std::string& out_str,
-                                const char* joiner = ", ")
+                                StringLiteral joiner = ", ")
     {
         if (array.empty())
         {
@@ -278,73 +278,41 @@ namespace vcpkg
         const auto my_paragraph = out_str.substr(initial_end);
         auto parsed_paragraph = Paragraphs::parse_single_paragraph(
             out_str.substr(initial_end), "vcpkg::serialize(const BinaryParagraph&, std::string&)");
-        if (!parsed_paragraph.has_value())
+        if (!parsed_paragraph)
         {
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                       R"([sanity check] Failed to parse a serialized binary paragraph.
-Please open an issue at https://github.com/microsoft/vcpkg, with the following output:
-    Error: %s
-
-=== Serialized BinaryParagraph ===
-%s
-            )",
-                                       parsed_paragraph.error(),
-                                       my_paragraph);
+            Checks::msg_exit_maybe_upgrade(
+                VCPKG_LINE_INFO,
+                msg::format(msgFailedToParseSerializedBinParagraph, msg::error_msg = parsed_paragraph.error())
+                    .append_raw("\n" + my_paragraph));
         }
 
         auto binary_paragraph = BinaryParagraph(*parsed_paragraph.get());
         if (binary_paragraph != pgh)
         {
-            const auto& join_str = R"(", ")";
-            Checks::exit_maybe_upgrade(
-                VCPKG_LINE_INFO,
-                R"([sanity check] The serialized binary paragraph was different from the original binary paragraph.
-Please open an issue at https://github.com/microsoft/vcpkg, with the following output:
-
-=== Original BinaryParagraph ===
-spec: "%s"
-version: "%s"
-port_version: %d
-description: ["%s"]
-maintainers: ["%s"]
-feature: "%s"
-default_features: ["%s"]
-dependencies: ["%s"]
-abi: "%s"
-type: %s
-
-=== Serialized BinaryParagraph ===
-spec: "%s"
-version: "%s"
-port_version: %d
-description: ["%s"]
-maintainers: ["%s"]
-feature: "%s"
-default_features: ["%s"]
-dependencies: ["%s"]
-abi: "%s"
-type: %s
-)",
-                pgh.spec.to_string(),
-                pgh.version,
-                pgh.port_version,
-                Strings::join(join_str, pgh.description),
-                Strings::join(join_str, pgh.maintainers),
-                pgh.feature,
-                Strings::join(join_str, pgh.default_features),
-                Strings::join(join_str, pgh.dependencies),
-                pgh.abi,
-                Type::to_string(pgh.type),
-                binary_paragraph.spec.to_string(),
-                binary_paragraph.version,
-                binary_paragraph.port_version,
-                Strings::join(join_str, binary_paragraph.description),
-                Strings::join(join_str, binary_paragraph.maintainers),
-                binary_paragraph.feature,
-                Strings::join(join_str, binary_paragraph.default_features),
-                Strings::join(join_str, binary_paragraph.dependencies),
-                binary_paragraph.abi,
-                Type::to_string(binary_paragraph.type));
+            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                           msg::format(msgMissmatchedBinParagraphs)
+                                               .append(msgOriginalBinParagraphHeader)
+                                               .append_raw(format_binary_paragraph(pgh))
+                                               .append(msgSerializedBinParagraphHeader)
+                                               .append_raw(format_binary_paragraph(binary_paragraph)));
         }
+    }
+
+    std::string format_binary_paragraph(BinaryParagraph paragraph)
+    {
+        constexpr StringLiteral join_str = R"(", ")";
+        return fmt::format(
+            "\nspec: \"{}\"\nversion: \"{}\"\nport_version: {}\ndescription: [\"{}\"]\nmaintainers: [\"{}\"]\nfeature: "
+            "\"{}\"\ndefault_features: [\"{}\"]\ndependencies: [\"{}\"]\nabi: \"{}\"\ntype: {}",
+            paragraph.spec.to_string(),
+            paragraph.version,
+            paragraph.port_version,
+            Strings::join(join_str, paragraph.description),
+            Strings::join(join_str, paragraph.maintainers),
+            paragraph.feature,
+            Strings::join(join_str, paragraph.default_features),
+            Strings::join(join_str, paragraph.dependencies),
+            paragraph.abi,
+            Type::to_string(paragraph.type));
     }
 }

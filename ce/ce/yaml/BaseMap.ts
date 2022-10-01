@@ -8,9 +8,7 @@ import { EntityFactory, Node, Primitive, Yaml, YAMLSequence } from './yaml-types
 
 
 export /** @internal */ abstract class BaseMap extends Entity {
-  get keys(): Array<string> {
-    return this.exists() ? this.node.items.map(each => this.asString(each.key)!) : [];
-  }
+
 
   get length(): number {
     return this.exists() ? this.node.items.length : 0;

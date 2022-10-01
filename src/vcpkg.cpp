@@ -34,36 +34,6 @@
 
 using namespace vcpkg;
 
-namespace
-{
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgInvalidCommand, (msg::command_name), "", "invalid command: {command_name}");
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgSendMetricsButDisabled,
-                                 (),
-                                 "",
-                                 "Warning: passed --sendmetrics, but metrics are disabled.");
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashed,
-                                 (msg::email),
-                                 "",
-                                 R"(vcpkg.exe has crashed.
-Please send an email to:
-    {email}
-containing a brief summary of what you were trying to do and the following data blob:)");
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedDataBlob,
-                                 (msg::version, msg::error),
-                                 "{Locked}",
-                                 R"(
-Version={version}
-EXCEPTION='{error}'
-CMD=)");
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedArgument, (msg::value), "{Locked}", "{value}|");
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        ForceSystemBinariesOnWeirdPlatforms,
-        (),
-        "",
-        "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.");
-}
-
 static void invalid_command(const std::string& cmd)
 {
     msg::println(Color::error, msgVcpkgInvalidCommand, msg::command_name = cmd);
@@ -73,6 +43,10 @@ static void invalid_command(const std::string& cmd)
 
 static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 {
+    // track version on each invocation
+    LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::VcpkgVersion,
+                                                            Commands::Version::version.to_string());
+
     if (args.command.empty())
     {
         print_usage();
@@ -94,9 +68,11 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
         }
     };
 
+    LockGuardPtr<Metrics>(g_metrics)->track_bool_property(BoolMetric::OptionOverlayPorts, !args.overlay_ports.empty());
+
     if (const auto command_function = find_command(Commands::get_available_basic_commands()))
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("command_name", command_function->name);
+        LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::CommandName, command_function->name);
         return command_function->function->perform_and_exit(args, fs);
     }
 
@@ -107,18 +83,18 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 
     if (const auto command_function = find_command(Commands::get_available_paths_commands()))
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("command_name", command_function->name);
+        LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::CommandName, command_function->name);
         return command_function->function->perform_and_exit(args, paths);
     }
 
     Triplet default_triplet = vcpkg::default_triplet(args);
-    Input::check_triplet(default_triplet, paths);
+    check_triplet(default_triplet, paths);
     Triplet host_triplet = vcpkg::default_host_triplet(args);
-    Input::check_triplet(host_triplet, paths);
+    check_triplet(host_triplet, paths);
 
     if (const auto command_function = find_command(Commands::get_available_triplet_commands()))
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("command_name", command_function->name);
+        LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::CommandName, command_function->name);
         return command_function->function->perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 
@@ -250,8 +226,6 @@ int main(const int argc, const char* const* const argv)
         }
     });
 
-    LockGuardPtr<Metrics>(g_metrics)->track_property("version", Commands::Version::version());
-
     register_console_ctrl_handler();
 
 #if (defined(__aarch64__) || defined(__arm__) || defined(__s390x__) ||                                                 \
@@ -269,6 +243,16 @@ int main(const int argc, const char* const* const argv)
     if (const auto p = args.debug.get()) Debug::g_debugging = *p;
     args.imbue_from_environment();
     VcpkgCmdArguments::imbue_or_apply_process_recursion(args);
+    if (const auto p = args.debug_env.get(); p && *p)
+    {
+        msg::write_unlocalized_text_to_stdout(Color::none,
+                                              "[DEBUG] The following environment variables are currently set:\n" +
+                                                  get_environment_variables() + '\n');
+    }
+    else if (Debug::g_debugging)
+    {
+        Debug::println("To include the environment variables in debug output, pass --debug-env");
+    }
     args.check_feature_flag_consistency();
 
     bool to_enable_metrics = true;
@@ -306,7 +290,7 @@ int main(const int argc, const char* const* const argv)
 
     if (args.send_metrics.value_or(false) && !to_enable_metrics)
     {
-        msg::println(Color::warning, msgVcpkgSendMetricsButDisabled);
+        msg::println_warning(msgVcpkgSendMetricsButDisabled);
     }
 
     args.debug_print_feature_flags();
@@ -333,21 +317,28 @@ int main(const int argc, const char* const* const argv)
         exc_msg = "unknown error(...)";
     }
 
-    LockGuardPtr<Metrics>(g_metrics)->track_property("error", exc_msg);
+    LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::Error, exc_msg);
 
     fflush(stdout);
-    msg::println(msgVcpkgHasCrashed, msg::email = Commands::Contact::email());
+    msg::println(msgVcpkgHasCrashed);
     fflush(stdout);
-    msg::println(msgVcpkgHasCrashedDataBlob, msg::version = Commands::Version::version(), msg::error = exc_msg);
-    fflush(stdout);
+    msg::println();
+    LocalizedString data_blob;
+    data_blob.append_raw("Version=")
+        .append_raw(Commands::Version::version)
+        .append_raw("\nEXCEPTION=")
+        .append_raw(exc_msg)
+        .append_raw("\nCMD=\n");
     for (int x = 0; x < argc; ++x)
     {
 #if defined(_WIN32)
-        msg::println(msgVcpkgHasCrashedArgument, msg::value = Strings::to_utf8(argv[x]));
+        data_blob.append_raw(Strings::to_utf8(argv[x])).append_raw("|\n");
 #else
-        msg::println(msgVcpkgHasCrashedArgument, msg::value = argv[x]);
+        data_blob.append_raw(argv[x]).append_raw("|\n");
 #endif
     }
+
+    msg::print(data_blob);
     fflush(stdout);
 
     // It is expected that one of the sub-commands will exit cleanly before we get here.

@@ -1,10 +1,10 @@
 #pragma once
 
 #include <vcpkg/base/fwd/format.h>
+#include <vcpkg/base/fwd/span.h>
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/pragmas.h>
-#include <vcpkg/base/stringliteral.h>
 #include <vcpkg/base/stringview.h>
 
 #include <stdio.h>
@@ -90,9 +90,6 @@ namespace vcpkg
         bool is_relative() const { return !is_absolute(); }
 
         friend const char* to_printf_arg(const Path& p) noexcept { return p.m_str.c_str(); }
-
-        friend bool operator==(const Path& lhs, const Path& rhs) noexcept { return lhs.m_str == rhs.m_str; }
-        friend bool operator!=(const Path& lhs, const Path& rhs) noexcept { return lhs.m_str != rhs.m_str; }
 
     private:
         std::string m_str;
@@ -247,12 +244,12 @@ namespace vcpkg
         virtual void write_lines(const Path& file_path, const std::vector<std::string>& lines, std::error_code& ec) = 0;
         void write_lines(const Path& file_path, const std::vector<std::string>& lines, LineInfo li);
 
-        virtual void write_contents(const Path& file_path, const std::string& data, std::error_code& ec) = 0;
-        void write_contents(const Path& file_path, const std::string& data, LineInfo li);
+        virtual void write_contents(const Path& file_path, StringView data, std::error_code& ec) = 0;
+        void write_contents(const Path& file_path, StringView data, LineInfo li);
 
-        void write_rename_contents(const Path& file_path, const Path& temp_name, const std::string& data, LineInfo li);
-        void write_contents_and_dirs(const Path& file_path, const std::string& data, LineInfo li);
-        virtual void write_contents_and_dirs(const Path& file_path, const std::string& data, std::error_code& ec) = 0;
+        void write_rename_contents(const Path& file_path, const Path& temp_name, StringView data, LineInfo li);
+        void write_contents_and_dirs(const Path& file_path, StringView data, LineInfo li);
+        virtual void write_contents_and_dirs(const Path& file_path, StringView data, std::error_code& ec) = 0;
 
         virtual void rename(const Path& old_path, const Path& new_path, std::error_code& ec) = 0;
         void rename(const Path& old_path, const Path& new_path, LineInfo li);
@@ -357,7 +354,8 @@ namespace vcpkg
                                                                                  std::error_code&) = 0;
         std::unique_ptr<IExclusiveFileLock> try_take_exclusive_file_lock(const Path& lockfile, LineInfo li);
 
-        virtual std::vector<Path> find_from_PATH(const std::string& name) const = 0;
+        virtual std::vector<Path> find_from_PATH(View<StringView> stems) const = 0;
+        std::vector<Path> find_from_PATH(StringView stem) const;
 
         virtual ReadFilePointer open_for_read(const Path& file_path, std::error_code& ec) const = 0;
         ReadFilePointer open_for_read(const Path& file_path, LineInfo li) const;

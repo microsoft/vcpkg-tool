@@ -63,6 +63,12 @@ namespace Catch
     {
         static const std::string convert(const vcpkg::PackageSpec& value) { return value.to_string(); }
     };
+
+    template<>
+    struct StringMaker<vcpkg::Path>
+    {
+        static const std::string convert(const vcpkg::Path& value) { return "\"" + value.native() + "\""; }
+    };
 }
 
 namespace vcpkg
@@ -107,9 +113,15 @@ namespace vcpkg::Test
 
     extern const Triplet X86_WINDOWS;
     extern const Triplet X64_WINDOWS;
+    extern const Triplet X64_WINDOWS_STATIC;
+    extern const Triplet X64_WINDOWS_STATIC_MD;
+    extern const Triplet ARM64_WINDOWS;
     extern const Triplet X86_UWP;
+    extern const Triplet X64_UWP;
     extern const Triplet ARM_UWP;
     extern const Triplet X64_ANDROID;
+    extern const Triplet X64_OSX;
+    extern const Triplet X64_LINUX;
 
     /// <summary>
     /// Map of source control files by their package name.
@@ -128,20 +140,6 @@ namespace vcpkg::Test
         PackageSpec emplace(vcpkg::SourceControlFileAndLocation&& scfl);
     };
 
-    template<class T, class S>
-    T&& unwrap(vcpkg::ExpectedT<T, S>&& p)
-    {
-        REQUIRE(p.has_value());
-        return std::move(*p.get());
-    }
-
-    template<class T>
-    T&& unwrap(vcpkg::Optional<T>&& opt)
-    {
-        REQUIRE(opt.has_value());
-        return std::move(*opt.get());
-    }
-
     inline std::vector<FullPackageSpec> parse_test_fspecs(StringView sv, Triplet t = X86_WINDOWS)
     {
         std::vector<FullPackageSpec> ret;
@@ -150,7 +148,7 @@ namespace vcpkg::Test
         {
             auto opt = parse_qualified_specifier(parser);
             REQUIRE(opt.has_value());
-            ret.push_back(unwrap(opt.get()->to_full_spec(t, ImplicitDefault::YES)));
+            ret.push_back(opt.get()->to_full_spec(t, ImplicitDefault::YES).value_or_exit(VCPKG_LINE_INFO));
         }
         return ret;
     }

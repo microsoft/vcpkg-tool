@@ -5,29 +5,6 @@
 
 #include <vcpkg/versions.h>
 
-namespace
-{
-    using namespace vcpkg;
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        VersionInvalidRelaxed,
-        (msg::version),
-        "",
-        "`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).");
-
-    DECLARE_AND_REGISTER_MESSAGE(VersionInvalidSemver,
-                                 (msg::version),
-                                 "",
-                                 "`{version}` is not a valid semantic version, consult <https://semver.org>.");
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        VersionInvalidDate,
-        (msg::version),
-        "",
-        "`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be "
-        "dot-separated positive integer values without leading zeroes.");
-}
-
 namespace vcpkg
 {
     Version::Version() noexcept : m_text("0.0.0"), m_port_version(0) { }
@@ -254,7 +231,7 @@ namespace vcpkg
 
     ExpectedL<DotVersion> DotVersion::try_parse_relaxed(StringView str)
     {
-        return try_parse_dot_version(str).replace_error([&] {
+        return try_parse_dot_version(str).map_error([&](LocalizedString&&) {
             return msg::format(msg::msgErrorMessage).append(msg::format(msgVersionInvalidRelaxed, msg::version = str));
         });
     }
@@ -357,7 +334,11 @@ namespace vcpkg
 
     void to_string(std::string& out, VersionScheme scheme)
     {
-        if (scheme == VersionScheme::String)
+        if (scheme == VersionScheme::Missing)
+        {
+            out.append("missing");
+        }
+        else if (scheme == VersionScheme::String)
         {
             out.append("string");
         }
@@ -392,6 +373,44 @@ namespace vcpkg
         return VerComp::eq;
     }
 
+    static VerComp compare_version_texts(VersionScheme sa, const Version& a, VersionScheme sb, const Version& b)
+    {
+        if (sa == VersionScheme::String && sb == VersionScheme::String)
+        {
+            return a.text() == b.text() ? VerComp::eq : VerComp::unk;
+        }
+
+        if (sa == VersionScheme::Date && sb == VersionScheme::Date)
+        {
+            return compare(DateVersion::try_parse(a.text()).value_or_exit(VCPKG_LINE_INFO),
+                           DateVersion::try_parse(b.text()).value_or_exit(VCPKG_LINE_INFO));
+        }
+
+        if ((sa == VersionScheme::Semver || sa == VersionScheme::Relaxed) &&
+            (sb == VersionScheme::Semver || sb == VersionScheme::Relaxed))
+        {
+            return compare(DotVersion::try_parse(a.text(), sa).value_or_exit(VCPKG_LINE_INFO),
+                           DotVersion::try_parse(b.text(), sb).value_or_exit(VCPKG_LINE_INFO));
+        }
+
+        return VerComp::unk;
+    }
+
+    static VerComp integer_vercomp(int a, int b)
+    {
+        if (a == b) return VerComp::eq;
+        return a < b ? VerComp::lt : VerComp::gt;
+    }
+    static inline VerComp portversion_vercomp(VerComp base, int a, int b)
+    {
+        return base == VerComp::eq ? integer_vercomp(a, b) : base;
+    }
+
+    VerComp compare_versions(VersionScheme sa, const Version& a, VersionScheme sb, const Version& b)
+    {
+        return portversion_vercomp(compare_version_texts(sa, a, sb, b), a.port_version(), b.port_version());
+    }
+
     VerComp compare(const DateVersion& a, const DateVersion& b)
     {
         if (auto x = strcmp(a.version_string.c_str(), b.version_string.c_str()))
@@ -400,6 +419,34 @@ namespace vcpkg
         }
 
         return static_cast<VerComp>(Util::range_lexcomp(a.identifiers, b.identifiers, uint64_comp));
+    }
+
+    VerComp compare_any(const Version& a, const Version& b)
+    {
+        if (a.text() == b.text())
+        {
+            return integer_vercomp(a.port_version(), b.port_version());
+        }
+        auto date_a = DateVersion::try_parse(a.text());
+        if (auto p_date_a = date_a.get())
+        {
+            auto date_b = DateVersion::try_parse(b.text());
+            if (auto p_date_b = date_b.get())
+            {
+                return portversion_vercomp(compare(*p_date_a, *p_date_b), a.port_version(), b.port_version());
+            }
+        }
+
+        auto dot_a = DotVersion::try_parse_relaxed(a.text());
+        if (auto p_dot_a = dot_a.get())
+        {
+            auto dot_b = DotVersion::try_parse_relaxed(b.text());
+            if (auto p_dot_b = dot_b.get())
+            {
+                return portversion_vercomp(compare(*p_dot_a, *p_dot_b), a.port_version(), b.port_version());
+            }
+        }
+        return VerComp::unk;
     }
 
     StringView normalize_external_version_zeros(StringView sv)

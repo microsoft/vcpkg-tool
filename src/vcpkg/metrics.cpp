@@ -3,7 +3,11 @@
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.mac.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/uuid.h>
+#include <vcpkg/base/view.h>
 
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.version.h>
@@ -15,70 +19,77 @@
 #pragma comment(lib, "winhttp")
 #endif
 
+namespace
+{
+    using namespace vcpkg;
+
+    template<typename T, typename MetricEntry, size_t Size>
+    constexpr StringLiteral get_metric_name(const T metric, const std::array<MetricEntry, Size>& entries) noexcept
+    {
+        auto metric_index = static_cast<size_t>(metric);
+        if (metric_index < entries.size())
+        {
+            return entries[metric_index].name;
+        }
+        // abort() is used because Checks:: will call back into metrics machinery.
+        abort();
+    }
+}
+
 namespace vcpkg
 {
     LockGuarded<Metrics> g_metrics;
 
-    Optional<StringView> find_first_nonzero_mac(StringView sv)
-    {
-        static constexpr StringLiteral ZERO_MAC = "00-00-00-00-00-00";
+    const constexpr std::array<DefineMetricEntry, static_cast<size_t>(DefineMetric::COUNT)> all_define_metrics{{
+        {DefineMetric::AssetSource, "asset-source"},
+        {DefineMetric::BinaryCachingAws, "binarycaching_aws"},
+        {DefineMetric::BinaryCachingAzBlob, "binarycaching_azblob"},
+        {DefineMetric::BinaryCachingCos, "binarycaching_cos"},
+        {DefineMetric::BinaryCachingDefault, "binarycaching_default"},
+        {DefineMetric::BinaryCachingFiles, "binarycaching_files"},
+        {DefineMetric::BinaryCachingGcs, "binarycaching_gcs"},
+        {DefineMetric::BinaryCachingHttp, "binarycaching_http"},
+        {DefineMetric::BinaryCachingNuget, "binarycaching_nuget"},
+        {DefineMetric::BinaryCachingSource, "binarycaching-source"},
+        {DefineMetric::ErrorVersioningDisabled, "error-versioning-disabled"},
+        {DefineMetric::ErrorVersioningNoBaseline, "error-versioning-no-baseline"},
+        {DefineMetric::GitHubRepository, "GITHUB_REPOSITORY"},
+        {DefineMetric::ManifestBaseline, "manifest_baseline"},
+        {DefineMetric::ManifestOverrides, "manifest_overrides"},
+        {DefineMetric::ManifestVersionConstraint, "manifest_version_constraint"},
+        {DefineMetric::RegistriesErrorCouldNotFindBaseline, "registries-error-could-not-find-baseline"},
+        {DefineMetric::RegistriesErrorNoVersionsAtCommit, "registries-error-no-versions-at-commit"},
+        {DefineMetric::VcpkgBinarySources, "VCPKG_BINARY_SOURCES"},
+        {DefineMetric::VcpkgDefaultBinaryCache, "VCPKG_DEFAULT_BINARY_CACHE"},
+        {DefineMetric::VcpkgNugetRepository, "VCPKG_NUGET_REPOSITORY"},
+        {DefineMetric::VersioningErrorBaseline, "versioning-error-baseline"},
+        {DefineMetric::VersioningErrorVersion, "versioning-error-version"},
+        {DefineMetric::X_VcpkgRegistriesCache, "X_VCPKG_REGISTRIES_CACHE"},
+        {DefineMetric::X_WriteNugetPackagesConfig, "x-write-nuget-packages-config"},
+    }};
 
-        auto first = sv.begin();
-        const auto last = sv.end();
+    const constexpr std::array<StringMetricEntry, static_cast<size_t>(StringMetric::COUNT)> all_string_metrics{{
+        {StringMetric::BuildError, "build_error", "gsl:x64-windows"},
+        {StringMetric::CommandArgs, "command_args", "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff"},
+        {StringMetric::CommandContext, "command_context", "artifact"},
+        {StringMetric::CommandName, "command_name", "z-preregister-telemetry"},
+        {StringMetric::Error, "error", "build failed"},
+        {StringMetric::InstallPlan_1,
+         "installplan_1",
+         "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff"},
+        {StringMetric::ListFile, "listfile", "update to new format"},
+        {StringMetric::RegistriesDefaultRegistryKind, "registries-default-registry-kind", "builtin-files"},
+        {StringMetric::RegistriesKindsUsed, "registries-kinds-used", "git,filesystem"},
+        {StringMetric::Title, "title", "title"},
+        {StringMetric::UserMac, "user_mac", "0"},
+        {StringMetric::VcpkgVersion, "vcpkg_version", "2999-12-31-unknownhash"},
+        {StringMetric::Warning, "warning", "warning"},
+    }};
 
-        while (first != last)
-        {
-            // XX-XX-XX-XX-XX-XX
-            // 1  2  3  4  5  6
-            // size = 6 * 2 + 5 = 17
-            first = std::find_if(first, last, ParserBase::is_hex_digit);
-            if (last - first < 17)
-            {
-                break;
-            }
-
-            bool is_first = true;
-            bool is_valid = true;
-            auto end_of_mac = first;
-            for (int i = 0; is_valid && i < 6; ++i)
-            {
-                if (!is_first)
-                {
-                    if (*end_of_mac != '-')
-                    {
-                        is_valid = false;
-                        break;
-                    }
-                    ++end_of_mac;
-                }
-                is_first = false;
-
-                if (!ParserBase::is_hex_digit(*end_of_mac))
-                {
-                    is_valid = false;
-                    break;
-                }
-                ++end_of_mac;
-
-                if (!ParserBase::is_hex_digit(*end_of_mac))
-                {
-                    is_valid = false;
-                    break;
-                }
-                ++end_of_mac;
-            }
-            if (is_valid && StringView{first, end_of_mac} != ZERO_MAC)
-            {
-                return StringView{first, end_of_mac};
-            }
-            else
-            {
-                first = end_of_mac;
-            }
-        }
-
-        return nullopt;
-    }
+    const constexpr std::array<BoolMetricEntry, static_cast<size_t>(BoolMetric::COUNT)> all_bool_metrics{{
+        {BoolMetric::InstallManifestMode, "install_manifest_mode"},
+        {BoolMetric::OptionOverlayPorts, "option_overlay_ports"},
+    }};
 
     static std::string get_current_date_time_string()
     {
@@ -89,82 +100,6 @@ namespace vcpkg
         }
 
         return "";
-    }
-
-    struct append_hexits
-    {
-        constexpr static char hex[17] = "0123456789abcdef";
-        void operator()(std::string& res, std::uint8_t bits) const
-        {
-            res.push_back(hex[(bits >> 4) & 0x0F]);
-            res.push_back(hex[(bits >> 0) & 0x0F]);
-        }
-    };
-    constexpr char append_hexits::hex[17];
-
-    // note: this ignores the bits of these numbers that would be where format and variant go
-    static std::string uuid_of_integers(uint64_t top, uint64_t bottom)
-    {
-        // uuid_field_size in bytes, not hex characters
-        constexpr size_t uuid_top_field_size[] = {4, 2, 2};
-        constexpr size_t uuid_bottom_field_size[] = {2, 6};
-
-        // uuid_field_size in hex characters, not bytes
-        constexpr size_t uuid_size = 8 + 1 + 4 + 1 + 4 + 1 + 4 + 1 + 12;
-
-        constexpr static append_hexits write_byte;
-
-        // set the version bits to 4
-        top &= 0xFFFF'FFFF'FFFF'0FFFULL;
-        top |= 0x0000'0000'0000'4000ULL;
-
-        // set the variant bits to 2 (variant one)
-        bottom &= 0x3FFF'FFFF'FFFF'FFFFULL;
-        bottom |= 0x8000'0000'0000'0000ULL;
-
-        std::string res;
-        res.reserve(uuid_size);
-
-        bool first = true;
-        size_t start_byte = 0;
-        for (auto field_size : uuid_top_field_size)
-        {
-            if (!first)
-            {
-                res.push_back('-');
-            }
-            first = false;
-            for (size_t i = start_byte; i < start_byte + field_size; ++i)
-            {
-                auto shift = 64 - (i + 1) * 8;
-                write_byte(res, (top >> shift) & 0xFF);
-            }
-            start_byte += field_size;
-        }
-
-        start_byte = 0;
-        for (auto field_size : uuid_bottom_field_size)
-        {
-            res.push_back('-');
-            for (size_t i = start_byte; i < start_byte + field_size; ++i)
-            {
-                auto shift = 64 - (i + 1) * 8;
-                write_byte(res, (bottom >> shift) & 0xFF);
-            }
-            start_byte += field_size;
-        }
-
-        return res;
-    }
-
-    // UUID format version 4, variant 1
-    // http://en.wikipedia.org/wiki/Universally_unique_identifier
-    // [0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}
-    static std::string generate_random_UUID()
-    {
-        std::random_device rnd{};
-        std::uniform_int_distribution<std::uint64_t> uid{};
-        return uuid_of_integers(uid(rnd), uid(rnd));
     }
 
     static const std::string& get_session_id()
@@ -207,9 +142,8 @@ namespace vcpkg
 
     struct MetricMessage
     {
-        std::string user_id = generate_random_UUID();
+        std::string user_id;
         std::string user_timestamp;
-        std::string timestamp = get_current_date_time_string();
 
         Json::Object properties;
         Json::Object measurements;
@@ -217,24 +151,29 @@ namespace vcpkg
         Json::Array buildtime_names;
         Json::Array buildtime_times;
 
-        void track_property(const std::string& name, const std::string& value)
+        void track_string(StringView name, StringView value)
         {
             properties.insert_or_replace(name, Json::Value::string(value));
         }
 
-        void track_metric(const std::string& name, double value)
+        void track_bool(StringView name, bool value)
+        {
+            properties.insert_or_replace(name, Json::Value::boolean(value));
+        }
+
+        void track_metric(StringView name, double value)
         {
             measurements.insert_or_replace(name, Json::Value::number(value));
         }
 
-        void track_buildtime(const std::string& name, double value)
+        void track_buildtime(StringView name, double value)
         {
             buildtime_names.push_back(Json::Value::string(name));
             buildtime_times.push_back(Json::Value::number(value));
         }
-        void track_feature(const std::string& name, bool value)
+        void track_feature(StringView name, bool value)
         {
-            properties.insert("feature-flag-" + name, Json::Value::boolean(value));
+            properties.insert(Strings::concat("feature-flag-", name), Json::Value::boolean(value));
         }
 
         std::string format_event_data_template() const
@@ -251,7 +190,7 @@ namespace vcpkg
 
             obj.insert("ver", Json::Value::integer(1));
             obj.insert("name", Json::Value::string("Microsoft.ApplicationInsights.Event"));
-            obj.insert("time", Json::Value::string(timestamp));
+            obj.insert("time", Json::Value::string(get_current_date_time_string()));
             obj.insert("sampleRate", Json::Value::number(100.0));
             obj.insert("seq", Json::Value::string("0:0"));
             obj.insert("iKey", Json::Value::string("b4e88960-4393-4dd9-ab8e-97e8fe6d7603"));
@@ -296,7 +235,7 @@ namespace vcpkg
                 base_data.insert("measurements", measurements);
             }
 
-            return Json::stringify(arr, vcpkg::Json::JsonStyle());
+            return Json::stringify(arr);
         }
     };
 
@@ -310,30 +249,6 @@ namespace vcpkg
         ;
     static bool g_should_print_metrics = false;
     static std::atomic<bool> g_metrics_disabled = true;
-
-#if defined(_WIN32)
-    static std::string get_MAC_user()
-    {
-        if (!LockGuardPtr<Metrics>(g_metrics)->metrics_enabled())
-        {
-            return "{}";
-        }
-
-        auto getmac = cmd_execute_and_capture_output(Command("getmac"));
-
-        if (getmac.exit_code != 0) return "0";
-
-        auto found_mac = find_first_nonzero_mac(getmac.output);
-        if (auto p = found_mac.get())
-        {
-            return Hash::get_string_hash(*p, Hash::Algorithm::Sha256);
-        }
-        else
-        {
-            return "0";
-        }
-    }
-#endif
 
     void Metrics::set_send_metrics(bool should_send_metrics) { g_should_send_metrics = should_send_metrics; }
 
@@ -363,13 +278,13 @@ namespace vcpkg
             write_config = true;
         }
 
-#if defined(_WIN32)
-        if (config.user_mac.empty())
+        // For a while we had a bug where we always set "{}" without attempting to get a MAC address.
+        // We will attempt to get a MAC address and store a "0" if we fail.
+        if (config.user_mac.empty() || config.user_mac == "{}")
         {
-            config.user_mac = get_MAC_user();
+            config.user_mac = get_user_mac_hash();
             write_config = true;
         }
-#endif
 
         if (write_config)
         {
@@ -381,9 +296,7 @@ namespace vcpkg
             g_metricmessage.user_id = config.user_id;
             g_metricmessage.user_timestamp = config.user_time;
 
-#if defined(_WIN32)
-            metrics->track_property("user_mac", config.user_mac);
-#endif
+            metrics->track_string_property(StringMetric::UserMac, config.user_mac);
 
             g_metrics_disabled = false;
         }
@@ -398,9 +311,19 @@ namespace vcpkg
         g_metricmessage.track_buildtime(name, value);
     }
 
-    void Metrics::track_property(const std::string& name, const std::string& value)
+    void Metrics::track_define_property(DefineMetric metric)
     {
-        g_metricmessage.track_property(name, value);
+        g_metricmessage.track_string(get_metric_name(metric, all_define_metrics), "defined");
+    }
+
+    void Metrics::track_string_property(StringMetric metric, StringView value)
+    {
+        g_metricmessage.track_string(get_metric_name(metric, all_string_metrics), value);
+    }
+
+    void Metrics::track_bool_property(BoolMetric metric, bool value)
+    {
+        g_metricmessage.track_bool(get_metric_name(metric, all_bool_metrics), value);
     }
 
     void Metrics::track_feature(const std::string& name, bool value) { g_metricmessage.track_feature(name, value); }

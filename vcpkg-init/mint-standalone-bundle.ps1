@@ -8,28 +8,14 @@ Param(
     [string]$TempDir,
     [Parameter()]
     [switch]$ReadOnly,
-    [Parameter(ValueFromRemainingArguments = $true)]
-    [string[]]$AdditionalFiles
+    [Parameter(Mandatory = $True)]
+    [string]$SignedFilesRoot
 )
-
-$AdditionalFilesNames = New-Object string[] $AdditionalFiles.Length
-for ($idx = 0; $idx -ne $AdditionalFiles.Length; $idx++) {
-    $raw = $AdditionalFiles[$idx]
-    if (-not (Test-Path $raw)) {
-        Write-Error "'$raw' did not exist."
-        throw
-    }
-
-    $itemized = Get-Item $raw
-    $AdditionalFiles[$idx] = $itemized.FullName
-    $AdditionalFilesNames[$idx] = $itemized.Name
-}
 
 $sha = Get-Content "$PSScriptRoot/vcpkg-scripts-sha.txt" -Raw
 $sha = $sha.Trim()
 
 $scripts_dependencies = @(
-    'addPoshVcpkgToPowershellProfile.ps1',
     'build_info.cmake',
     'buildsystems',
     'cmake',
@@ -47,6 +33,11 @@ $scripts_dependencies = @(
     'vcpkgTools.xml'
 )
 
+$scripts_exclusions = @(
+    'buildsystems/msbuild/applocal.ps1',
+    'posh-vcpkg/0.0.1/posh-vcpkg.psm1'
+)
+
 if (Test-Path $TempDir) {
     Remove-Item -Recurse $TempDir
 }
@@ -61,7 +52,11 @@ try {
     New-Item -Path 'out/scripts' -ItemType 'Directory' -Force
     Push-Location "vcpkg-$sha"
     try {
+        Move-Item 'LICENSE.txt' '../out/LICENSE.txt'
         Move-Item 'triplets' '../out/triplets'
+        foreach ($exclusion in $scripts_exclusions) {
+            Remove-Item "scripts/$exclusion" -Recurse -Force
+        }
         foreach ($dep in $scripts_dependencies) {
             Move-Item "scripts/$dep" "../out/scripts/$dep"
         }
@@ -70,9 +65,14 @@ try {
         Pop-Location
     }
 
-    for ($idx = 0; $idx -ne $AdditionalFiles.Length; $idx++) {
-        Copy-Item -Path $AdditionalFiles[$idx] -Destination "out/$($AdditionalFilesNames[$idx])"
-    }
+    Copy-Item -Path "$SignedFilesRoot/vcpkg-init" -Destination 'out/vcpkg-init'
+    Copy-Item -Path "$SignedFilesRoot/vcpkg-init.ps1" -Destination 'out/vcpkg-init.ps1'
+    Copy-Item -Path "$SignedFilesRoot/vcpkg-init.cmd" -Destination 'out/vcpkg-init.cmd'
+    Copy-Item -Path "$SignedFilesRoot/addPoshVcpkgToPowershellProfile.ps1" -Destination 'out/scripts/addPoshVcpkgToPowershellProfile.ps1'
+    New-Item -Path 'out/scripts/buildsystems/msbuild' -ItemType 'Directory' -Force
+    Copy-Item -Path "$SignedFilesRoot/applocal.ps1" -Destination 'out/scripts/buildsystems/msbuild/applocal.ps1'
+    New-Item -Path 'out/scripts/posh-vcpkg/0.0.1' -ItemType 'Directory' -Force
+    Copy-Item -Path "$SignedFilesRoot/posh-vcpkg.psm1" -Destination 'out/scripts/posh-vcpkg/0.0.1/posh-vcpkg.psm1'
 
     $bundleConfig = @{
         'readonly'       = [bool]$ReadOnly;

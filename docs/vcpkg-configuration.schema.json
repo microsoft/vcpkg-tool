@@ -1,0 +1,36 @@
+{
+  "$id": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/master/docs/vcpkg-configuration.schema.json",
+  "type": "object",
+  "properties": {
+    "default-registry": {
+      "$ref": "vcpkg-schema-definitions.schema.json#/definitions/default-registry"
+    },
+    "registries": {
+      "$ref": "vcpkg-schema-definitions.schema.json#/definitions/registry-array"
+    },
+    "error": {
+      "type": "string",
+      "description": "An error message to print if this entry is evaluated."
+    },
+    "warning": {
+      "type": "string",
+      "description": "A warning message to print if this entry is evaluated."
+    },
+    "message": {
+      "type": "string",
+      "description": "A message to print if this entry is evaluated."
+    },
+    "requires": {
+      "description": "Artifacts that are required for this package to function.",
+      "$ref": "vcpkg-schema-definitions.schema.json#/definitions/artifact-references"
+    },
+    "global": {
+      "description": "Global settings that control how artifacts behave.",
+      "$ref": "vcpkg-schema-definitions.schema.json#/definitions/string-map"
+    }
+  },
+  "patternProperties": {
+    "^\\$": {}
+  },
+  "additionalProperties": false
+}

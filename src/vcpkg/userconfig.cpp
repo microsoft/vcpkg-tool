@@ -53,25 +53,18 @@ namespace vcpkg
 
     void UserConfig::try_write_data(Filesystem& fs) const
     {
-        try
-        {
-            auto config_path = get_config_path();
-            auto config_dir = config_path.parent_path();
-            std::error_code ec;
-            fs.create_directory(config_dir, ec);
-            fs.write_contents(config_path,
-                              Strings::format("User-Id: %s\n"
-                                              "User-Since: %s\n"
-                                              "Mac-Hash: %s\n"
-                                              "Survey-Completed: %s\n",
-                                              user_id,
-                                              user_time,
-                                              user_mac,
-                                              last_completed_survey),
-                              ec);
-        }
-        catch (...)
-        {
-        }
+        auto config_path = get_config_path();
+        auto config_dir = config_path.parent_path();
+        fs.create_directory(config_dir, IgnoreErrors{});
+        fs.write_contents(config_path,
+                          Strings::format("User-Id: %s\n"
+                                          "User-Since: %s\n"
+                                          "Mac-Hash: %s\n"
+                                          "Survey-Completed: %s\n",
+                                          user_id,
+                                          user_time,
+                                          user_mac,
+                                          last_completed_survey),
+                          IgnoreErrors{});
     }
 }

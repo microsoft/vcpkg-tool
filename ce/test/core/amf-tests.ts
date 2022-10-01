@@ -14,57 +14,47 @@ s;
 // sample test using decorators.
 describe('Amf', () => {
   const local = new SuiteLocal();
-  const fs = local.fs;
 
   after(local.after.bind(local));
 
   it('readProfile', async () => {
-    const content = await (await readFile(join(rootFolder(), 'resources', 'sample1.yaml'))).toString('utf-8');
-    const doc = await MetadataFile.parseConfiguration('./sample1.yaml', content, local.session);
+    const content = await (await readFile(join(rootFolder(), 'resources', 'sample1.json'))).toString('utf-8');
+    const doc = await MetadataFile.parseConfiguration('./sample1.json', content, local.session);
 
-    strict.ok(doc.isFormatValid, 'Ensure it is valid yaml');
-    strict.ok(doc.isValid, 'Is it valid?');
+    strict.ok(doc.isFormatValid, 'Ensure it is valid json');
+    strict.sequenceEqual(doc.validate(), []);
 
-    strict.equal(doc.info.id, 'sample1', 'identity incorrect');
-    strict.equal(doc.info.version, '1.2.3', 'version incorrect');
+    strict.equal(doc.id, 'sample1', 'name incorrect');
+    strict.equal(doc.version, '1.2.3', 'version incorrect');
   });
 
   it('reads file with nupkg', async () => {
-    const content = await (await readFile(join(rootFolder(), 'resources', 'repo', 'sdks', 'microsoft', 'windows.yaml'))).toString('utf-8');
-    const doc = await MetadataFile.parseConfiguration('./windows.yaml', content, local.session);
+    const content = await (await readFile(join(rootFolder(), 'resources', 'repo', 'sdks', 'microsoft', 'windows.json'))).toString('utf-8');
+    const doc = await MetadataFile.parseConfiguration('./windows.json', content, local.session);
 
-    strict.ok(doc.isFormatValid, 'Ensure it is valid yaml');
-    strict.ok(doc.isValid, 'Is it valid?');
+    strict.ok(doc.isFormatValid, 'Ensure it is valid json');
+    strict.sequenceEqual(doc.validate(), []);
 
-    SuiteLocal.log(doc.content);
+    SuiteLocal.log(doc.toJsonString());
   });
 
-  it('load/persist environment.yaml', async () => {
-    const content = await (await readFile(join(rootFolder(), 'resources', 'environment.yaml'))).toString('utf-8');
-    const doc = await MetadataFile.parseConfiguration('./cenvironment.yaml', content, local.session);
+  it('load/persist an artifact', async () => {
+    const content = await (await readFile(join(rootFolder(), 'resources', 'example-artifact.json'))).toString('utf-8');
+    const doc = await MetadataFile.parseConfiguration('./example-artifact.json', content, local.session);
 
-    SuiteLocal.log(doc.content);
-    for (const each of doc.validationErrors) {
-      SuiteLocal.log(each);
+    SuiteLocal.log(doc.toJsonString());
+    strict.ok(doc.isFormatValid, 'Ensure it\'s valid');
+    for (const each of doc.validate()) {
+      SuiteLocal.log(doc.formatVMessage(each));
     }
-
-    strict.ok(doc.isFormatValid, 'Ensure it\'s valid yaml');
-    strict.ok(doc.isValid, 'better be valid!');
-
-    SuiteLocal.log(doc.content);
   });
 
   it('profile checks', async () => {
-    const content = await (await readFile(join(rootFolder(), 'resources', 'sample1.yaml'))).toString('utf-8');
-    const doc = await MetadataFile.parseConfiguration('./sample1.yaml', content, local.session);
+    const content = await (await readFile(join(rootFolder(), 'resources', 'sample1.json'))).toString('utf-8');
+    const doc = await MetadataFile.parseConfiguration('./sample1.json', content, local.session);
 
-    strict.ok(doc.isFormatValid, 'Ensure it\'s valid yaml');
-    SuiteLocal.log(doc.validationErrors);
-    strict.ok(doc.isValid, 'better be valid!');
-
-    // fixme: validate inputs again.
-    // strict.throws(() => doc.info.version = '4.1', 'Setting invalid version should throw');
-    // strict.equal(doc.info.version = '4.1.0', '4.1.0', 'Version should set correctly');
+    strict.ok(doc.isFormatValid, 'Ensure that it is valid json');
+    strict.sequenceEqual(doc.validate(), []);
 
     SuiteLocal.log(doc.contacts.get('Bob Smith'));
 
@@ -112,21 +102,21 @@ describe('Amf', () => {
     doc.requires.set('range/with/resolved', <any>{ range: '1.*', resolved: '1.0.0' });
     strict.equal(doc.requires.get('range/with/resolved')!.raw, '1.* 1.0.0');
 
-    strict.equal(doc.settings.tools.get('CC'), 'foo/bar/cl.exe', 'should have a value');
-    strict.equal(doc.settings.tools.get('CXX'), 'bin/baz/cl.exe', 'should have a value');
-    strict.equal(doc.settings.tools.get('Whatever'), 'some/tool/path/foo', 'should have a value');
+    strict.equal(doc.exports.tools.get('CC'), 'foo/bar/cl.exe', 'should have a value');
+    strict.equal(doc.exports.tools.get('CXX'), 'bin/baz/cl.exe', 'should have a value');
+    strict.equal(doc.exports.tools.get('Whatever'), 'some/tool/path/foo', 'should have a value');
 
-    doc.settings.tools.delete('CXX');
-    strict.equal(doc.settings.tools.keys.length, 2, 'should only have two tools now');
+    doc.exports.tools.delete('CXX');
+    strict.equal(doc.exports.tools.keys.length, 2, 'should only have two tools now');
 
-    strict.sequenceEqual(doc.settings.variables.get('test'), ['abc'], 'variables should be an array');
-    strict.sequenceEqual(doc.settings.variables.get('cxxflags'), ['foo=bar', 'bar=baz'], 'variables should be an array');
+    strict.sequenceEqual(doc.exports.environment.get('test'), ['abc'], 'variables should be an array');
+    strict.sequenceEqual(doc.exports.environment.get('cxxflags'), ['foo=bar', 'bar=baz'], 'variables should be an array');
 
-    doc.settings.variables.add('test').add('another value');
-    strict.sequenceEqual(doc.settings.variables.get('test'), ['abc', 'another value'], 'variables should be an array of two items now');
+    doc.exports.environment.add('test').add('another value');
+    strict.sequenceEqual(doc.exports.environment.get('test'), ['abc', 'another value'], 'variables should be an array of two items now');
 
-    doc.settings.paths.add('bin').add('hello/there');
-    strict.deepEqual(doc.settings.paths.get('bin')?.length, 3, 'there should be three paths in bin now');
+    doc.exports.paths.add('bin').add('hello/there');
+    strict.deepEqual(doc.exports.paths.get('bin')?.length, 3, 'there should be three paths in bin now');
 
     strict.sequenceEqual(doc.conditionalDemands.keys, ['windows and arm'], 'should have one conditional demand');
     /*
@@ -138,34 +128,34 @@ describe('Amf', () => {
     SuiteLocal.log(doc.toString());
   });
 
-  it('read invalid yaml file', async () => {
-    const content = await (await readFile(join(rootFolder(), 'resources', 'errors.yaml'))).toString('utf-8');
-    const doc = await MetadataFile.parseConfiguration('./errors.yaml', content, local.session);
+  it('read invalid json file', async () => {
+    const content = await (await readFile(join(rootFolder(), 'resources', 'errors.json'))).toString('utf-8');
+    const doc = await MetadataFile.parseConfiguration('./errors.json', content, local.session);
 
     strict.equal(doc.isFormatValid, false, 'this document should have errors');
     strict.equal(doc.formatErrors.length, 2, 'This document should have two error');
 
-    strict.equal(doc.info.id, 'bob', 'identity incorrect');
-    strict.equal(doc.info.version, '1.0.2', 'version incorrect');
+    strict.equal(doc.id, 'bob', 'name incorrect');
+    strict.equal(doc.version, '1.0.2', 'version incorrect');
   });
 
-  it('read empty yaml file', async () => {
-    const content = await (await readFile(join(rootFolder(), 'resources', 'empty.yaml'))).toString('utf-8');
-    const doc = await MetadataFile.parseConfiguration('./empty.yaml', content, local.session);
+  it('read empty json file', async () => {
+    const content = await (await readFile(join(rootFolder(), 'resources', 'empty.json'))).toString('utf-8');
+    const doc = await MetadataFile.parseConfiguration('./empty.json', content, local.session);
 
-    strict.ok(doc.isFormatValid, 'Ensure it is valid yaml');
+    strict.ok(doc.isFormatValid, 'Ensure it is valid json');
 
-    strict.equal(doc.isValid, false, 'Should have some validation errors');
-    strict.equal(doc.validationErrors[0], './empty.yaml:1:1 SectionMessing, Missing section \'info\'', 'Should have an error about info');
+    const [firstError] = doc.validate();
+    strict.equal(doc.formatVMessage(firstError), './empty.json:1:1 FieldMissing, Missing identity \'id\'', 'Should have an error about id');
   });
 
   it('validation errors', async () => {
-    const content = await (await readFile(join(rootFolder(), 'resources', 'validation-errors.yaml'))).toString('utf-8');
-    const doc = await MetadataFile.parseConfiguration('./validation-errors.yaml', content, local.session);
+    const content = await (await readFile(join(rootFolder(), 'resources', 'validation-errors.json'))).toString('utf-8');
+    const doc = await MetadataFile.parseConfiguration('./validation-errors.json', content, local.session);
 
-    strict.ok(doc.isFormatValid, 'Ensure it is valid yaml');
+    strict.ok(doc.isFormatValid, 'Ensure it is valid json');
 
-    SuiteLocal.log(doc.validationErrors);
-    strict.equal(doc.validationErrors.length, 2, `Expecting two errors, found: ${JSON.stringify(doc.validationErrors, null, 2)}`);
+    const validationErrors = Array.from(doc.validate(), (error) => doc.formatVMessage(error));
+    strict.equal(validationErrors.length, 7, `Expecting 7 errors, found: ${JSON.stringify(validationErrors, null, 2)}`);
   });
 });

@@ -228,7 +228,6 @@ namespace
         constexpr static StringLiteral CE_APPLY = "apply";
         constexpr static StringLiteral CE_SETTINGS = "settings";
         constexpr static StringLiteral CE_REQUIRES = "requires";
-        constexpr static StringLiteral CE_SEE_ALSO = "see-also";
 
         virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) override;
 
@@ -241,7 +240,6 @@ namespace
     constexpr StringLiteral CeMetadataDeserializer::CE_APPLY;
     constexpr StringLiteral CeMetadataDeserializer::CE_SETTINGS;
     constexpr StringLiteral CeMetadataDeserializer::CE_REQUIRES;
-    constexpr StringLiteral CeMetadataDeserializer::CE_SEE_ALSO;
 
     struct DemandsDeserializer final : Json::IDeserializer<Json::Object>
     {
@@ -276,15 +274,13 @@ namespace
         Json::Object ret;
         for (const auto& el : obj)
         {
-            auto value = el.second;
-
-            if (!value.is_string())
+            if (!el.second.is_string())
             {
                 r.add_generic_error(type_name(), "value of [\"", el.first, "\"] must be a string");
                 continue;
             }
 
-            ret.insert_or_replace(el.first.to_string(), el.second);
+            ret.insert_or_replace(el.first, el.second);
         }
         return ret;
     }
@@ -299,7 +295,7 @@ namespace
             if (r.optional_object_field(obj, key, value, string_deserializer))
             {
                 if (errors_count != r.errors()) return;
-                put_into.insert_or_replace(key.to_string(), Json::Value::string(value));
+                put_into.insert_or_replace(key, std::move(value));
             }
         };
         auto extract_object = [&](const Json::Object& obj, StringView key, Json::Object& put_into) {
@@ -311,7 +307,7 @@ namespace
                 }
                 else
                 {
-                    put_into.insert_or_replace(key.to_string(), *value);
+                    put_into.insert_or_replace(key, *value);
                 }
             }
         };
@@ -321,7 +317,7 @@ namespace
             if (r.optional_object_field(obj, key, value, DictionaryDeserializer::instance))
             {
                 if (errors_count != r.errors()) return;
-                put_into.insert_or_replace(key.to_string(), value);
+                put_into.insert_or_replace(key, value);
             }
         };
 
@@ -331,7 +327,7 @@ namespace
             auto&& key = el.first;
             if (Util::find(Configuration::known_fields(), key) == std::end(Configuration::known_fields()))
             {
-                ret.insert_or_replace(key.to_string(), el.second);
+                ret.insert_or_replace(key, el.second);
             }
         }
         extract_string(obj, CE_ERROR, ret);
@@ -340,7 +336,6 @@ namespace
         extract_object(obj, CE_APPLY, ret);
         extract_object(obj, CE_SETTINGS, ret);
         extract_dictionary(obj, CE_REQUIRES, ret);
-        extract_dictionary(obj, CE_SEE_ALSO, ret);
         return ret;
     }
 
@@ -349,7 +344,7 @@ namespace
         Json::Object ret;
         for (const auto& el : obj)
         {
-            auto key = el.first.to_string();
+            const auto key = el.first;
             if (Strings::starts_with(key, "$"))
             {
                 // Put comments back without attempting to parse.
@@ -363,7 +358,7 @@ namespace
                 continue;
             }
 
-            const auto& demand_obj = el.second.object();
+            const auto& demand_obj = el.second.object(VCPKG_LINE_INFO);
             if (demand_obj.contains(CE_DEMANDS))
             {
                 r.add_generic_error(type_name(),
@@ -391,9 +386,8 @@ namespace
         {
             if (Strings::starts_with(el.first, "$"))
             {
-                auto key = el.first.to_string();
-                extra_info.insert_or_replace(key, el.second);
-                comment_keys.push_back(key);
+                extra_info.insert_or_replace(el.first, el.second);
+                comment_keys.emplace_back(el.first);
             }
         }
 
@@ -441,7 +435,7 @@ namespace
         auto extract_object = [](const Json::Object& obj, StringView key, Json::Object& put_into) {
             if (auto value = obj.get(key))
             {
-                put_into.insert_or_replace(key.to_string(), *value);
+                put_into.insert_or_replace(key, *value);
             }
         };
 
@@ -454,9 +448,9 @@ namespace
                 }
 
                 Json::Object serialized_demands;
-                for (const auto& el : demands->object())
+                for (const auto& el : demands->object(VCPKG_LINE_INFO))
                 {
-                    auto key = el.first.to_string();
+                    auto key = el.first;
                     if (Strings::starts_with(key, "$"))
                     {
                         serialized_demands.insert_or_replace(key, el.second);
@@ -466,7 +460,7 @@ namespace
                     if (el.second.is_object())
                     {
                         auto& inserted = serialized_demands.insert_or_replace(key, Json::Object{});
-                        serialize_ce_metadata(el.second.object(), inserted);
+                        serialize_ce_metadata(el.second.object(VCPKG_LINE_INFO), inserted);
                     }
                 }
                 put_into.insert_or_replace(DemandsDeserializer::CE_DEMANDS, serialized_demands);
@@ -478,7 +472,7 @@ namespace
         {
             if (Util::find(Configuration::known_fields(), el.first) == std::end(Configuration::known_fields()))
             {
-                put_into.insert_or_replace(el.first.to_string(), el.second);
+                put_into.insert_or_replace(el.first, el.second);
             }
         }
 
@@ -488,7 +482,6 @@ namespace
         extract_object(ce_metadata, CeMetadataDeserializer::CE_SETTINGS, put_into);
         extract_object(ce_metadata, CeMetadataDeserializer::CE_APPLY, put_into);
         extract_object(ce_metadata, CeMetadataDeserializer::CE_REQUIRES, put_into);
-        extract_object(ce_metadata, CeMetadataDeserializer::CE_SEE_ALSO, put_into);
         serialize_demands(ce_metadata, put_into);
     }
 
@@ -497,7 +490,7 @@ namespace
         std::vector<StringView> ret;
         for (const auto& el : obj)
         {
-            auto key = el.first.to_string();
+            auto key = el.first;
             if (Strings::starts_with(key, "$"))
             {
                 continue;
@@ -519,7 +512,7 @@ namespace
                     continue;
                 }
 
-                for (const auto& demand : el.second.object())
+                for (const auto& demand : el.second.object(VCPKG_LINE_INFO))
                 {
                     if (Strings::starts_with(demand.first, "$"))
                     {
@@ -527,7 +520,7 @@ namespace
                     }
 
                     find_unknown_fields_impl(
-                        demand.second.object(),
+                        demand.second.object(VCPKG_LINE_INFO),
                         out,
                         Strings::concat(path, ".", DemandsDeserializer::CE_DEMANDS, ".", demand.first));
                 }
@@ -538,6 +531,77 @@ namespace
 
 namespace vcpkg
 {
+    static ExpectedL<Optional<std::string>> get_baseline_from_git_repo(const VcpkgPaths& paths, StringView url)
+    {
+        auto res = paths.git_fetch_from_remote_registry(url, "HEAD");
+        if (auto p = res.get())
+        {
+            return Optional<std::string>(std::move(*p));
+        }
+        else
+        {
+            return msg::format(msgUpdateBaselineRemoteGitError, msg::url = url)
+                .append_raw('\n')
+                .append_raw(Strings::trim(res.error()));
+        }
+    }
+
+    ExpectedL<Optional<std::string>> RegistryConfig::get_latest_baseline(const VcpkgPaths& paths) const
+    {
+        if (kind == RegistryConfigDeserializer::KIND_GIT)
+        {
+            return get_baseline_from_git_repo(paths, repo.value_or_exit(VCPKG_LINE_INFO));
+        }
+        else if (kind == RegistryConfigDeserializer::KIND_BUILTIN)
+        {
+            if (paths.use_git_default_registry())
+            {
+                return get_baseline_from_git_repo(paths, builtin_registry_git_url);
+            }
+            else
+            {
+                // use the vcpkg git repository sha from the user's machine
+                auto res = paths.get_current_git_sha();
+                if (auto p = res.get())
+                {
+                    return Optional<std::string>(std::move(*p));
+                }
+                else
+                {
+                    return msg::format(msgUpdateBaselineLocalGitError, msg::path = paths.root)
+                        .append_raw('\n')
+                        .append_raw(Strings::trim(res.error()));
+                }
+            }
+        }
+        else
+        {
+            return baseline;
+        }
+    }
+
+    StringView RegistryConfig::pretty_location() const
+    {
+        if (kind == RegistryConfigDeserializer::KIND_BUILTIN)
+        {
+            return builtin_registry_git_url;
+        }
+        if (kind == RegistryConfigDeserializer::KIND_FILESYSTEM)
+        {
+            return path.value_or_exit(VCPKG_LINE_INFO);
+        }
+        if (kind == RegistryConfigDeserializer::KIND_GIT)
+        {
+            return repo.value_or_exit(VCPKG_LINE_INFO);
+        }
+        if (kind == RegistryConfigDeserializer::KIND_ARTIFACT)
+        {
+            return location.value_or_exit(VCPKG_LINE_INFO);
+        }
+
+        Checks::unreachable(VCPKG_LINE_INFO);
+    }
+
     View<StringView> Configuration::known_fields()
     {
         static constexpr StringView known_fields[]{
@@ -549,7 +613,6 @@ namespace vcpkg
             CeMetadataDeserializer::CE_SETTINGS,
             CeMetadataDeserializer::CE_APPLY,
             CeMetadataDeserializer::CE_REQUIRES,
-            CeMetadataDeserializer::CE_SEE_ALSO,
             DemandsDeserializer::CE_DEMANDS,
         };
         return known_fields;
@@ -562,11 +625,9 @@ namespace vcpkg
             auto unknown_fields = find_unknown_fields(*this);
             if (!unknown_fields.empty())
             {
-                vcpkg::print2(
-                    Color::warning,
-                    "Warning: configuration contains the following unrecognized fields:\n\n",
-                    Strings::join("\n", unknown_fields),
-                    "\n\nIf these are documented fields that should be recognized try updating the vcpkg tool.\n");
+                msg::println_warning(msg::format(msgUnrecognizedConfigField)
+                                         .append_raw("\n\n" + Strings::join("\n", unknown_fields))
+                                         .append(msgDocumentedFieldsSuggestUpdate));
             }
         }
     }
@@ -661,7 +722,7 @@ namespace vcpkg
 
         for (const auto& el : extra_info)
         {
-            obj.insert(el.first.to_string(), el.second);
+            obj.insert(el.first, el.second);
         }
 
         if (auto default_registry = default_reg.get())

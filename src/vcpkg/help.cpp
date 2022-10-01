@@ -22,9 +22,9 @@ namespace vcpkg::Help
     {
         using topic_function = void (*)(const VcpkgPaths& paths);
 
-        constexpr Topic(ZStringView n, topic_function fn) : name(n), print(fn) { }
+        constexpr Topic(StringLiteral n, topic_function fn) : name(n), print(fn) { }
 
-        ZStringView name;
+        StringLiteral name;
         topic_function print;
     };
 

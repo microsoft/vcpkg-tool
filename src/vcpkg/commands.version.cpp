@@ -6,17 +6,19 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
+namespace
+{
+    using namespace vcpkg;
+    constexpr StringLiteral version_init = VCPKG_BASE_VERSION_AS_STRING "-" VCPKG_VERSION_AS_STRING
+#ifndef NDEBUG
+                                                                        "-debug"
+#endif
+        ;
+}
+
 namespace vcpkg::Commands::Version
 {
-    const char* version() noexcept
-    {
-        return VCPKG_BASE_VERSION_AS_STRING "-" VCPKG_VERSION_AS_STRING
-#ifndef NDEBUG
-                                            "-debug"
-#endif
-            ;
-    }
-
+    const StringLiteral version = version_init;
     const CommandStructure COMMAND_STRUCTURE = {
         create_example_string("version"),
         0,
@@ -28,11 +30,7 @@ namespace vcpkg::Commands::Version
     void perform_and_exit(const VcpkgCmdArguments& args, Filesystem&)
     {
         (void)args.parse_arguments(COMMAND_STRUCTURE);
-        print2("Vcpkg package management program version ",
-               version(),
-               "\n"
-               "\n"
-               "See LICENSE.txt for license information.\n");
+        msg::println(msgVersionCommandHeader, msg::version = version);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 

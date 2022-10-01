@@ -1,6 +1,5 @@
 #include <catch2/catch.hpp>
 
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/packagespec.h>
@@ -86,11 +85,7 @@ TEST_CASE ("specifier parsing", "[specifier]")
 
     SECTION ("parsed specifier wildcard feature")
     {
-        auto maybe_spec = vcpkg::parse_qualified_specifier("zlib[*]");
-        print2(maybe_spec.error());
-        REQUIRE(maybe_spec);
-
-        auto& spec = *maybe_spec.get();
+        auto spec = vcpkg::parse_qualified_specifier("zlib[*]").value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(spec.features.value_or(std::vector<std::string>{}) == std::vector<std::string>{"*"});
     }
 

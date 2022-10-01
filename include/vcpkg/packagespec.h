@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/base/fwd/format.h>
 #include <vcpkg/base/fwd/parse.h>
 
 #include <vcpkg/base/expected.h>
@@ -213,20 +214,6 @@ namespace vcpkg
     Optional<ParsedQualifiedSpecifier> parse_qualified_specifier(ParserBase& parser);
 }
 
-template<class Char>
-struct fmt::formatter<vcpkg::PackageSpec, Char>
-{
-    constexpr auto parse(format_parse_context& ctx) const -> decltype(ctx.begin())
-    {
-        return vcpkg::basic_format_parse_impl(ctx);
-    }
-    template<class FormatContext>
-    auto format(const vcpkg::PackageSpec& spec, FormatContext& ctx) const -> decltype(ctx.out())
-    {
-        return fmt::formatter<std::string, Char>{}.format(spec.to_string(), ctx);
-    }
-};
-
 template<>
 struct std::hash<vcpkg::PackageSpec>
 {
@@ -249,3 +236,6 @@ struct std::hash<vcpkg::FeatureSpec>
         return hash;
     }
 };
+
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::PackageSpec);
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::FeatureSpec);

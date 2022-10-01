@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 import { isScalar, isSeq, Scalar, YAMLSeq } from 'yaml';
+import { ErrorKind } from '../interfaces/error-kind';
+import { ValidationMessage } from '../interfaces/validation-message';
 import { Primitive, Yaml, YAMLScalar, YAMLSequence } from './yaml-types';
 
 /**
@@ -100,9 +102,10 @@ export /** @internal */ class ScalarSequence<TElement extends Primitive> extends
       return yield <any>this.asPrimitive(this.node.value);
     }
     if (isSeq(this.node)) {
+
       for (const each of this.node.items.values()) {
         const v = this.asPrimitive(each);
-        if (v) {
+        if (v !== undefined) {
           yield <any>v;
         }
       }
@@ -115,5 +118,15 @@ export /** @internal */ class ScalarSequence<TElement extends Primitive> extends
       this.node.items.length = 0;
     }
     this.dispose(true);
+  }
+
+  override *validate(): Iterable<ValidationMessage> {
+    if (this.node && !isSeq(this.node) && !isScalar(this.node)) {
+      yield {
+        message: `'${this.fullName}' is not an sequence or primitive value`,
+        range: this,
+        category: ErrorKind.IncorrectType
+      };
+    }
   }
 }

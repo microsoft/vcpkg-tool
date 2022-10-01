@@ -116,4 +116,16 @@ namespace vcpkg
 
         return deps;
     }
+
+    std::vector<StatusParagraph> InstalledPackageView::all_status_paragraphs() const
+    {
+        std::vector<StatusParagraph> result;
+        result.emplace_back(*core);
+        for (const StatusParagraph* feature : features)
+        {
+            result.emplace_back(*feature);
+        }
+
+        return result;
+    }
 }

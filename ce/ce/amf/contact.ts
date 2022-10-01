@@ -3,7 +3,7 @@
 
 import { Dictionary } from '../interfaces/collections';
 import { Contact as IContact } from '../interfaces/metadata/contact';
-import { ValidationError } from '../interfaces/validation-error';
+import { ValidationMessage } from '../interfaces/validation-message';
 import { Entity } from '../yaml/Entity';
 import { EntityMap } from '../yaml/EntityMap';
 import { Strings } from '../yaml/strings';
@@ -15,8 +15,10 @@ export class Contact extends Entity implements IContact {
 
   readonly roles = new Strings(undefined, this, 'role');
   /** @internal */
-  override *validate(): Iterable<ValidationError> {
+  override *validate(): Iterable<ValidationMessage> {
     yield* super.validate();
+    yield* this.validateChildKeys(['email', 'role']);
+    yield* this.validateChild('email', 'string');
   }
 }
 
@@ -25,7 +27,7 @@ export class Contacts extends EntityMap<YAMLDictionary, Contact> implements Dict
     super(Contact, node, parent, key);
   }
   /** @internal */
-  override *validate(): Iterable<ValidationError> {
+  override *validate(): Iterable<ValidationMessage> {
     yield* super.validate();
     if (this.exists()) {
       for (const [key, contact] of this) {

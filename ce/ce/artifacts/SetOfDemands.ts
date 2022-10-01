@@ -7,8 +7,7 @@ import { VersionReference } from '../interfaces/metadata/version-reference';
 import { parseQuery } from '../mediaquery/media-query';
 import { Session } from '../session';
 import { MultipleInstallsMatched } from '../util/exceptions';
-import { Dictionary, linq } from '../util/linq';
-import { Activation } from './activation';
+import { linq, Record } from '../util/linq';
 
 
 export class SetOfDemands {
@@ -22,19 +21,6 @@ export class SetOfDemands {
         session.channels.debug(`Matching demand query: '${query}'`);
         this._demands.set(query, demands);
       }
-    }
-  }
-
-  setActivation(activation: Activation) {
-    for (const [, demandBlock] of this._demands.entries()) {
-      demandBlock.setActivation(activation);
-    }
-  }
-
-  /** Async Initializer */
-  async init(session: Session) {
-    for (const [query, demands] of this._demands) {
-      await demands.init(session);
     }
   }
 
@@ -58,17 +44,14 @@ export class SetOfDemands {
   get messages() {
     return linq.values(this._demands).selectNonNullable(d => d.message).toArray();
   }
-  get settings() {
-    return linq.values(this._demands).selectNonNullable(d => d.settings).toArray();
-  }
-  get seeAlso() {
-    return linq.values(this._demands).selectNonNullable(d => d.seeAlso).toArray();
+  get exports() {
+    return linq.values(this._demands).selectNonNullable(d => d.exports).toArray();
   }
 
   get requires() {
     const d = this._demands;
     const rq1 = linq.values(d).selectNonNullable(d => d.requires).toArray();
-    const result = new Dictionary<VersionReference>();
+    const result = new Record<string,VersionReference>();
     for (const dict of rq1) {
       for (const [query, demands] of dict) {
         result[query] = demands;

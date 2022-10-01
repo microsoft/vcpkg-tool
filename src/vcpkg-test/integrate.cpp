@@ -61,7 +61,7 @@ TEST_CASE ("find_targets_file_version", "[integrate]")
 
 TEST_CASE ("get_bash_source_completion_lines", "[integrate]")
 {
-    constexpr static StringLiteral default_bashrc = R"sh(
+    const std::string default_bashrc = R"sh(
 # ~/.bashrc: executed by bash(1) for non-login shells.
 # see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
 # for examples
@@ -90,8 +90,8 @@ fi
 
     CHECK(Integrate::get_bash_source_completion_lines(default_bashrc) == std::vector<std::string>{});
 
-    constexpr static StringLiteral source_line_1 = "source /blah/bloop/scripts/vcpkg_completion.bash";
-    constexpr static StringLiteral source_line_2 = "source /floop/scripts/vcpkg_completion.bash";
+    const std::string source_line_1 = "source /blah/bloop/scripts/vcpkg_completion.bash";
+    const std::string source_line_2 = "source /floop/scripts/vcpkg_completion.bash";
 
     std::string with_bash_completion = default_bashrc;
     with_bash_completion.append(source_line_1.begin(), source_line_1.end());
@@ -124,7 +124,7 @@ fi
 
 TEST_CASE ("get_zsh_autocomplete_data", "[integrate]")
 {
-    constexpr static StringLiteral zshrc = R"sh(
+    const std::string zshrc = R"sh(
 source ~/.profile
 
 if [ -z "${HOMEBREW_PREFIX+x}" ]; then
@@ -141,9 +141,9 @@ alias -g kill-gpg='gpgconf --kill gpg-agent'
     CHECK(!res.has_bashcompinit);
     CHECK(!res.has_autoload_bashcompinit);
 
-    constexpr static StringLiteral source_line_1 = "source /blah/bloop/scripts/vcpkg_completion.zsh";
-    constexpr static StringLiteral source_line_2 = "source /floop/scripts/vcpkg_completion.zsh";
-    constexpr static StringLiteral bash_source_line = "source /scripts/vcpkg_completion.bash";
+    const std::string source_line_1 = "source /blah/bloop/scripts/vcpkg_completion.zsh";
+    const std::string source_line_2 = "source /floop/scripts/vcpkg_completion.zsh";
+    const std::string bash_source_line = "source /scripts/vcpkg_completion.bash";
 
     std::string my_zshrc = zshrc;
     my_zshrc.append(source_line_1.begin(), source_line_1.end());

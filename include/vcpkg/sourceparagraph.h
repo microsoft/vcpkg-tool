@@ -100,8 +100,13 @@ namespace vcpkg
     struct SourceControlFile
     {
         SourceControlFile clone() const;
+        static ParseExpected<SourceControlFile> parse_project_manifest_object(StringView origin,
+                                                                              const Json::Object& object,
+                                                                              MessageSink& warnings_sink);
 
-        static ParseExpected<SourceControlFile> parse_manifest_object(StringView origin, const Json::Object& object);
+        static ParseExpected<SourceControlFile> parse_port_manifest_object(StringView origin,
+                                                                           const Json::Object& object,
+                                                                           MessageSink& warnings_sink);
 
         static ParseExpected<SourceControlFile> parse_control_file(StringView origin,
                                                                    std::vector<Paragraph>&& control_paragraphs);
@@ -111,7 +116,7 @@ namespace vcpkg
         std::vector<std::unique_ptr<FeatureParagraph>> feature_paragraphs;
         Json::Object extra_features_info;
 
-        Optional<const FeatureParagraph&> find_feature(const std::string& featurename) const;
+        Optional<const FeatureParagraph&> find_feature(StringView featurename) const;
         Optional<const std::vector<Dependency>&> find_dependencies_for_feature(const std::string& featurename) const;
         bool has_qualified_dependencies() const;
 
@@ -144,6 +149,9 @@ namespace vcpkg
 
         std::unique_ptr<SourceControlFile> source_control_file;
         Path source_location;
+        /// Should model SPDX PackageDownloadLocation. Empty implies NOASSERTION.
+        /// See https://spdx.github.io/spdx-spec/package-information/#77-package-download-location-field
+        std::string registry_location;
     };
 
     void print_error_message(Span<const std::unique_ptr<ParseControlErrorInfo>> error_info_list);

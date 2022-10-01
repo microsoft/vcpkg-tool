@@ -7,7 +7,6 @@
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
-#include <vcpkg/base/zstringview.h>
 
 #include <string>
 

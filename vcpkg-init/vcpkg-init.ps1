@@ -18,7 +18,11 @@ if ($hash.count -gt 0) {
 $args=[System.Collections.ArrayList][System.Array]$args
 
 # GLOBALS
-$VCPKG_START_TIME=get-date
+$VCPKG_START_TIME=Get-Date
+# Workaround for $IsWindows not existing in Windows PowerShell
+if (-not (Test-Path variable:IsWindows)) {
+  $IsWindows = $true
+}
 
 function z-vcpkg-resolve([string]$name) {
   $name = Resolve-Path $name -ErrorAction 0 -ErrorVariable _err
@@ -58,6 +62,10 @@ function download($url, $path) {
   if( (get-item $path).Length -ne $wc.ResponseHeaders['Content-Length'] ) {
     throw "Download of '$url' failed.  Check your internet connection."
   }
+  if (-not $IsWindows) {
+    chmod +x $path
+  }
+
   z-vcpkg-debug "Completed Download of $url"
   return $path
 }
@@ -71,8 +79,14 @@ if( $ENV:VCPKG_ROOT ) {
   $ENV:VCPKG_ROOT=$VCPKG_ROOT
 }
 
-$VCPKG = "${VCPKG_ROOT}/vcpkg.exe"
+$VCPKG = "${VCPKG_ROOT}/vcpkg"
+if ($IsWindows) {
+  $VCPKG += '.exe'
+}
+
 $SCRIPT:VCPKG_SCRIPT = "${VCPKG_ROOT}/vcpkg-init.ps1"
+$SCRIPT:VCPKG_VERSION_MARKER = "${VCPKG_ROOT}/vcpkg-one-liner-version.txt"
+$SCRIPT:VCPKG_INIT_VERSION = 'latest'
 
 $remove = $args.IndexOf('--remove-vcpkg') -gt -1
 
@@ -84,7 +98,15 @@ if( $remove ) {
 }
 
 function bootstrap-vcpkg {
-  if( test-path $VCPKG_SCRIPT ) {
+  [bool]$do_bootstrap = -not (test-path $VCPKG_SCRIPT) -or ($VCPKG_INIT_VERSION -eq 'latest')
+  if(-not $do_bootstrap -and (test-path $VCPKG_VERSION_MARKER)) {
+    $previous_version = Get-Content -Path $VCPKG_VERSION_MARKER -Raw
+    if ($previous_version.Trim() -ne $VCPKG_INIT_VERSION) {
+      $do_bootstrap = $true
+    }
+  }
+
+  if( -not $do_bootstrap ) {
     return $true
   }
 
@@ -93,11 +115,22 @@ function bootstrap-vcpkg {
       mkdir $VCPKG_ROOT
   }
 
-  download https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg.exe $VCPKG
+  if ($IsWindows) {
+    download https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg.exe $VCPKG
+  } elseif ($IsMacOS) {
+    download https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-macos $VCPKG
+  } elseif (Test-Path '/etc/alpine-release') {
+    download https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-muslc $VCPKG
+  } else {
+    download https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-glibc $VCPKG
+  }
+
   & $VCPKG z-bootstrap-standalone
 
   $PATH = $ENV:PATH
   $ENV:PATH="$VCPKG_ROOT;$PATH"
+
+  Set-Content -Path $VCPKG_VERSION_MARKER -Value "$VCPKG_INIT_VERSION`n" -Force -NoNewline
 
   z-vcpkg-debug "Bootstrapped vcpkg: ${VCPKG_ROOT}"
 

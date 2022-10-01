@@ -1,0 +1,5 @@
+LIBRARY hello-world-1
+
+EXPORTS
+
+hello_earth

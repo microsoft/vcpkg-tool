@@ -60,6 +60,7 @@ namespace vcpkg
 
     enum class VersionScheme
     {
+        Missing,
         Relaxed,
         Semver,
         Date,
@@ -133,6 +134,11 @@ namespace vcpkg
 
     VerComp compare(const DateVersion& a, const DateVersion& b);
 
+    // Try parsing with all version schemas and return 'unk' if none match
+    VerComp compare_any(const Version& a, const Version& b);
+
+    VerComp compare_versions(VersionScheme sa, const Version& a, VersionScheme sb, const Version& b);
+
     enum class VersionConstraintKind
     {
         None,
@@ -158,3 +164,4 @@ namespace vcpkg
 }
 
 VCPKG_FORMAT_WITH_TO_STRING(vcpkg::VersionSpec);
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::Version);

@@ -2,7 +2,7 @@
 
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/zstringview.h>
+#include <vcpkg/base/stringview.h>
 
 #include <atomic>
 #include <chrono>
@@ -21,6 +21,12 @@ namespace vcpkg
         TimeUnit as() const
         {
             return std::chrono::duration_cast<TimeUnit>(m_duration);
+        }
+
+        ElapsedTime& operator+=(const ElapsedTime& other)
+        {
+            m_duration += other.m_duration;
+            return *this;
         }
 
         std::string to_string() const;
@@ -73,27 +79,21 @@ namespace vcpkg
 
         std::string to_string() const;
 
+        std::string strftime(const char* format) const;
+
         std::chrono::system_clock::time_point to_time_point() const;
 
     private:
         mutable tm m_tm;
     };
 
+    Optional<tm> to_utc_time(const std::time_t& t);
+
     tm get_current_date_time();
 
     tm get_current_date_time_local();
 }
 
-template<class Char>
-struct fmt::formatter<vcpkg::ElapsedTime, Char>
-{
-    constexpr auto parse(format_parse_context& ctx) const -> decltype(ctx.begin())
-    {
-        return vcpkg::basic_format_parse_impl(ctx);
-    }
-    template<class FormatContext>
-    auto format(const vcpkg::ElapsedTime& time, FormatContext& ctx) const -> decltype(ctx.out())
-    {
-        return fmt::formatter<std::string, Char>{}.format(time.to_string(), ctx);
-    }
-};
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::ElapsedTime);
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::ElapsedTimer);
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::CTime);

@@ -2,13 +2,10 @@
 // Licensed under the MIT License.
 
 
-import { Activation } from '../../artifacts/activation';
-import { Session } from '../../session';
 import { Dictionary, Sequence } from '../collections';
 import { Validation } from '../validation';
-import { AlternativeFulfillment } from './alternative-fulfillment';
+import { Exports } from './exports';
 import { Installer } from './installers/Installer';
-import { Settings } from './Settings';
 import { VersionReference } from './version-reference';
 
 /**
@@ -22,20 +19,14 @@ export interface Demands extends Validation {
   /** An error message that the user should get, and abort the installation */
   error: string | undefined; // markdown text with ${} replacements
 
-
   /** A warning message that the user should get, does not abort the installation */
   warning: string | undefined; // markdown text with ${} replacements
-
 
   /** A text message that the user should get, does not abort the installation */
   message: string | undefined; // markdown text with ${} replacements
 
-
-  /** set of artifacts that the consumer should be aware of */
-  seeAlso: Dictionary<VersionReference>;
-
   /** settings that should be applied to the context when activated */
-  settings: Settings;
+  exports: Exports;
 
   /**
    * defines what should be physically laid out on disk for this artifact
@@ -47,11 +38,4 @@ export interface Demands extends Validation {
    *       package.
    */
   install: Sequence<Installer>;
-
-  /** a means to an alternative fulfillment */
-  unless: AlternativeFulfillment;
-
-  init(session: Session): Promise<Demands>;
-  setActivation(activation: Activation): void;
 }
-

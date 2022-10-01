@@ -90,6 +90,16 @@ namespace vcpkg
         }
         return *this;
     }
+    XmlSerializer& XmlSerializer::cdata(StringView sv)
+    {
+        emit_pending_indent();
+        Checks::check_exit(
+            VCPKG_LINE_INFO, Strings::search(sv, "]]>") == sv.end(), "]]> is not supported in a CDATA block");
+        buf.append("<![CDATA[");
+        buf.append(sv.begin(), sv.size());
+        buf.append("]]>");
+        return *this;
+    }
     XmlSerializer& XmlSerializer::simple_tag(StringLiteral tag, StringView content)
     {
         return emit_pending_indent().open_tag(tag).text(content).close_tag(tag);

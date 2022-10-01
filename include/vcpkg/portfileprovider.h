@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/fwd/portfileprovider.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
 #include <vcpkg/base/expected.h>
@@ -9,7 +10,7 @@
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/versions.h>
 
-namespace vcpkg::PortFileProvider
+namespace vcpkg
 {
     struct PortFileProvider
     {
@@ -42,7 +43,7 @@ namespace vcpkg::PortFileProvider
 
     struct IBaselineProvider
     {
-        virtual Optional<Version> get_baseline_version(StringView port_name) const = 0;
+        virtual ExpectedL<Version> get_baseline_version(StringView port_name) const = 0;
         virtual ~IBaselineProvider() = default;
     };
 
@@ -55,7 +56,7 @@ namespace vcpkg::PortFileProvider
 
     struct PathsPortFileProvider : PortFileProvider
     {
-        explicit PathsPortFileProvider(const vcpkg::VcpkgPaths& paths, View<std::string> overlay_ports);
+        explicit PathsPortFileProvider(const vcpkg::VcpkgPaths& paths, std::unique_ptr<IOverlayProvider>&& overlay);
         ExpectedS<const SourceControlFileAndLocation&> get_control_file(const std::string& src_name) const override;
         std::vector<const SourceControlFileAndLocation*> load_all_control_files() const override;
 
@@ -69,4 +70,8 @@ namespace vcpkg::PortFileProvider
     std::unique_ptr<IVersionedPortfileProvider> make_versioned_portfile_provider(const vcpkg::VcpkgPaths& paths);
     std::unique_ptr<IOverlayProvider> make_overlay_provider(const vcpkg::VcpkgPaths& paths,
                                                             View<std::string> overlay_ports);
+    std::unique_ptr<IOverlayProvider> make_manifest_provider(const vcpkg::VcpkgPaths& paths,
+                                                             View<std::string> overlay_ports,
+                                                             const Path& manifest_path,
+                                                             std::unique_ptr<SourceControlFile>&& manifest_scf);
 }

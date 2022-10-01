@@ -1,22 +1,12 @@
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/build.h>
 #include <vcpkg/ci-baseline.h>
 
 #include <tuple>
 
 using namespace vcpkg;
-
-namespace
-{
-    DECLARE_AND_REGISTER_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
-    DECLARE_AND_REGISTER_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
-    DECLARE_AND_REGISTER_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail' or 'skip' here");
-    DECLARE_AND_REGISTER_MESSAGE(UnknownBaselineFileContent,
-                                 (),
-                                 "",
-                                 "unrecognizable baseline entry; expected 'port:triplet=(fail|skip)'");
-}
 
 namespace vcpkg
 {
@@ -116,6 +106,7 @@ namespace vcpkg
 
             static constexpr StringLiteral FAIL = "fail";
             static constexpr StringLiteral SKIP = "skip";
+            static constexpr StringLiteral PASS = "pass";
             CiBaselineState state;
             if (parser.try_match_keyword(FAIL))
             {
@@ -124,6 +115,10 @@ namespace vcpkg
             else if (parser.try_match_keyword(SKIP))
             {
                 state = CiBaselineState::Skip;
+            }
+            else if (parser.try_match_keyword(PASS))
+            {
+                state = CiBaselineState::Pass;
             }
             else
             {
@@ -157,9 +152,12 @@ namespace vcpkg
         return result;
     }
 
-    SortedVector<PackageSpec> parse_and_apply_ci_baseline(View<CiBaselineLine> lines, ExclusionsMap& exclusions_map)
+    CiBaselineData parse_and_apply_ci_baseline(View<CiBaselineLine> lines,
+                                               ExclusionsMap& exclusions_map,
+                                               SkipFailures skip_failures)
     {
         std::vector<PackageSpec> expected_failures;
+        std::vector<PackageSpec> required_success;
         std::map<Triplet, std::vector<std::string>> added_exclusions;
         for (const auto& triplet_entry : exclusions_map.triplets)
         {
@@ -172,14 +170,21 @@ namespace vcpkg
             auto triplet_match = added_exclusions.find(line.triplet);
             if (triplet_match != added_exclusions.end())
             {
-                if (line.state == CiBaselineState::Skip)
+                if (line.state == CiBaselineState::Pass)
                 {
-                    triplet_match->second.push_back(line.port_name);
+                    required_success.emplace_back(line.port_name, line.triplet);
+                    continue;
                 }
-                else if (line.state == CiBaselineState::Fail)
+                if (line.state == CiBaselineState::Fail)
                 {
                     expected_failures.emplace_back(line.port_name, line.triplet);
+                    if (skip_failures == SkipFailures::No)
+                    {
+                        continue;
+                    }
                 }
+
+                triplet_match->second.push_back(line.port_name);
             }
         }
 
@@ -189,6 +194,44 @@ namespace vcpkg
                 SortedVector<std::string>(std::move(added_exclusions.find(triplet_entry.triplet)->second)));
         }
 
-        return SortedVector<PackageSpec>{std::move(expected_failures)};
+        return CiBaselineData{
+            SortedVector<PackageSpec>(std::move(expected_failures)),
+            SortedVector<PackageSpec>(std::move(required_success)),
+        };
+    }
+
+    LocalizedString format_ci_result(const PackageSpec& spec,
+                                     BuildResult result,
+                                     const CiBaselineData& cidata,
+                                     StringView cifile,
+                                     bool allow_unexpected_passing)
+    {
+        switch (result)
+        {
+            case BuildResult::BUILD_FAILED:
+            case BuildResult::POST_BUILD_CHECKS_FAILED:
+            case BuildResult::FILE_CONFLICTS:
+                if (!cidata.expected_failures.contains(spec))
+                {
+                    return msg::format(msgCiBaselineRegression,
+                                       msg::spec = spec,
+                                       msg::build_result = to_string_locale_invariant(result),
+                                       msg::path = cifile);
+                }
+                break;
+            case BuildResult::SUCCEEDED:
+                if (!allow_unexpected_passing && cidata.expected_failures.contains(spec))
+                {
+                    return msg::format(msgCiBaselineUnexpectedPass, msg::spec = spec, msg::path = cifile);
+                }
+                break;
+            case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
+                if (cidata.required_success.contains(spec))
+                {
+                    return msg::format(msgCiBaselineDisallowedCascade, msg::spec = spec, msg::path = cifile);
+                }
+            default: break;
+        }
+        return {};
     }
 }

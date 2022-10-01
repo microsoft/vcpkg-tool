@@ -38,12 +38,14 @@ Z_VCPKG_init() {
 }
 
 Z_VCPKG_bootstrap() {
-  if [ -f "${VCPKG_ROOT}/vcpkg" ]; then
-    return 0
-  fi
+  VCPKG_BASE_VERSION='latest'
 
-  # it's not there!
-  # let's install it where we want it
+  if [ $VCPKG_BASE_VERSION != 'latest' ] \
+      && [ -f "${VCPKG_ROOT}/vcpkg" ] \
+      && [ -f "${VCPKG_ROOT}/vcpkg-one-liner-version.txt" ] \
+      && [ "$(cat "${VCPKG_ROOT}/vcpkg-one-liner-version.txt")" = $VCPKG_BASE_VERSION ]; then
+    return 0;
+  fi
 
   echo installing vcpkg in $VCPKG_ROOT
 
@@ -62,6 +64,7 @@ Z_VCPKG_bootstrap() {
 
   chmod +x "${VCPKG_ROOT}/vcpkg"
   "${VCPKG_ROOT}/vcpkg" z-bootstrap-standalone
+  echo $VCPKG_BASE_VERSION > "${VCPKG_ROOT}/vcpkg-one-liner-version.txt"
   return 0;
 }
 

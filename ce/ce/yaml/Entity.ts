@@ -1,10 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { isMap, isScalar, isSeq } from 'yaml';
-import { i } from '../i18n';
-import { ErrorKind } from '../interfaces/error-kind';
-import { ValidationError } from '../interfaces/validation-error';
+import { isMap, isScalar, isSeq, Scalar } from 'yaml';
+import { ValidationMessage } from '../interfaces/validation-message';
 import { isNullish } from '../util/checks';
 import { Node, Primitive, Yaml, YAMLDictionary } from './yaml-types';
 
@@ -23,18 +21,16 @@ export /** @internal */ class Entity extends Yaml<YAMLDictionary> {
       return;
     }
 
-    this.node.set(name, value);
+    this.node.set(name, new Scalar(value));
   }
 
   protected getMember(name: string): Primitive | undefined {
-
     return this.exists() ? <Primitive | undefined>this.node?.get(name, false) : undefined;
   }
 
-  override /** @internal */ *validate(): Iterable<ValidationError> {
-    if (this.node && !isMap(this.node)) {
-      yield { message: i`Incorrect type for '${this.key}' - should be an object`, range: this.sourcePosition(), category: ErrorKind.IncorrectType };
-    }
+  override /** @internal */ *validate(): Iterable<ValidationMessage> {
+    yield* super.validate();
+    yield* this.validateIsObject();
   }
 
   has(key: string, kind?: 'sequence' | 'entity' | 'scalar'): boolean {
@@ -77,7 +73,7 @@ export /** @internal */ class Entity extends Yaml<YAMLDictionary> {
     return undefined;
   }
 
-  is(key: string, kind: 'sequence' | 'entity' | 'scalar' | 'string' | 'number' | 'boolean'): boolean | undefined {
+  childIs(key: string, kind: 'sequence' | 'entity' | 'scalar' | 'string' | 'number' | 'boolean'): boolean | undefined {
     if (this.node) {
       const v = <Node>this.node.get(key, true);
       if (v === undefined) {

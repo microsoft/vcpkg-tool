@@ -19,7 +19,7 @@
 
 namespace vcpkg::Commands::Version
 {
-    const char* version() noexcept;
+    extern const StringLiteral version;
     void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs);
 
     struct VersionCommand : BasicCommand

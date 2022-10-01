@@ -1,4 +1,4 @@
-FROM alpine:3.11
+FROM vcpkgdockercontainers.azurecr.io/vcpkg/alpine:3.11
 
 RUN apk add alpine-sdk cmake ninja git curl tar gzip zip
 

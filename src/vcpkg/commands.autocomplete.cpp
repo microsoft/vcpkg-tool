@@ -18,7 +18,7 @@ namespace vcpkg::Commands::Autocomplete
                                                             std::vector<std::string>&& results)
     {
         const SortedVector<std::string> sorted_results(results);
-        print2(Strings::join("\n", sorted_results), '\n');
+        msg::write_unlocalized_text_to_stdout(Color::none, Strings::join("\n", sorted_results));
 
         Checks::exit_success(line_info);
     }
@@ -102,7 +102,7 @@ namespace vcpkg::Commands::Autocomplete
                 // TODO: Support autocomplete for ports in --overlay-ports
                 auto maybe_port =
                     Paragraphs::try_load_port(paths.get_filesystem(), paths.builtin_ports_directory() / port_name);
-                if (maybe_port.error())
+                if (!maybe_port)
                 {
                     Checks::exit_success(VCPKG_LINE_INFO);
                 }
@@ -120,7 +120,7 @@ namespace vcpkg::Commands::Autocomplete
 
         struct CommandEntry
         {
-            ZStringView name;
+            StringLiteral name;
             const CommandStructure& structure;
         };
 

@@ -1,4 +1,4 @@
-#include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
@@ -22,11 +22,6 @@
 
 namespace vcpkg::Export
 {
-    using Dependencies::ExportPlanAction;
-    using Dependencies::ExportPlanType;
-    using Dependencies::RequestType;
-    using Install::InstallDir;
-
     static std::string create_nuspec_file_contents(const Path& raw_exported_dir,
                                                    const Path& targets_redirect_path,
                                                    const Path& props_redirect_path,
@@ -105,8 +100,7 @@ namespace vcpkg::Export
             std::vector<const ExportPlanAction*> cont = it->second;
             std::sort(cont.begin(), cont.end(), &ExportPlanAction::compare_by_name);
             const std::string as_string = Strings::join("\n", cont, [](const ExportPlanAction* p) {
-                return Dependencies::to_output_string(
-                    p->request_type, p->spec.to_string(), vcpkg::Build::default_build_package_options);
+                return to_output_string(p->request_type, p->spec.to_string(), default_build_package_options);
             });
 
             switch (plan_type)
@@ -146,9 +140,7 @@ namespace vcpkg::Export
                                 const Path& output_dir)
     {
         Filesystem& fs = paths.get_filesystem();
-
-        std::error_code ec;
-        fs.create_directories(paths.buildsystems / "tmp", ec);
+        fs.create_directories(paths.buildsystems / "tmp", IgnoreErrors{});
 
         // This file will be placed in "build\native" in the nuget package. Therefore, go up two dirs.
         const std::string targets_redirect_content =
@@ -170,25 +162,19 @@ namespace vcpkg::Export
         // -NoDefaultExcludes is needed for ".vcpkg-root"
         Command cmd;
 #ifndef _WIN32
-        cmd.string_arg(paths.get_tool_exe(Tools::MONO));
+        cmd.string_arg(paths.get_tool_exe(Tools::MONO, stdout_sink));
 #endif
-        cmd.string_arg(paths.get_tool_exe(Tools::NUGET))
+        cmd.string_arg(paths.get_tool_exe(Tools::NUGET, stdout_sink))
             .string_arg("pack")
             .string_arg(nuspec_file_path)
             .string_arg("-OutputDirectory")
             .string_arg(output_dir)
             .string_arg("-NoDefaultExcludes");
 
-        const auto output = cmd_execute_and_capture_output(cmd, default_working_directory, get_clean_environment());
-        const auto exit_code = output.exit_code;
-        if (exit_code != 0)
-        {
-            print2(output.output, '\n');
-        }
-        Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: NuGet package creation failed");
-
-        const auto output_path = output_dir / (nuget_id + "." + nuget_version + ".nupkg");
-        return output_path;
+        return flatten(cmd_execute_and_capture_output(cmd, default_working_directory, get_clean_environment()),
+                       Tools::NUGET)
+            .map([&](Unit) { return output_dir / (nuget_id + "." + nuget_version + ".nupkg"); })
+            .value_or_exit(VCPKG_LINE_INFO);
     }
 
     struct ArchiveFormat final
@@ -201,19 +187,19 @@ namespace vcpkg::Export
 
         constexpr ArchiveFormat() = delete;
 
-        constexpr ArchiveFormat(BackingEnum backing_enum, ZStringView extension, ZStringView cmake_option)
+        constexpr ArchiveFormat(BackingEnum backing_enum, StringLiteral extension, StringLiteral cmake_option)
             : backing_enum(backing_enum), m_extension(extension), m_cmake_option(cmake_option)
         {
         }
 
         constexpr operator BackingEnum() const { return backing_enum; }
-        constexpr ZStringView extension() const { return this->m_extension; }
-        constexpr ZStringView cmake_option() const { return this->m_cmake_option; }
+        constexpr StringLiteral extension() const { return this->m_extension; }
+        constexpr StringLiteral cmake_option() const { return this->m_cmake_option; }
 
     private:
         BackingEnum backing_enum;
-        ZStringView m_extension;
-        ZStringView m_cmake_option;
+        StringLiteral m_extension;
+        StringLiteral m_cmake_option;
     };
 
     namespace ArchiveFormatC
@@ -227,7 +213,7 @@ namespace vcpkg::Export
                                   const Path& output_dir,
                                   const ArchiveFormat& format)
     {
-        const Path& cmake_exe = paths.get_tool_exe(Tools::CMAKE);
+        const Path& cmake_exe = paths.get_tool_exe(Tools::CMAKE, stdout_sink);
 
         const auto exported_dir_filename = raw_exported_dir.filename();
         const auto exported_archive_filename = Strings::format("%s.%s", exported_dir_filename, format.extension());
@@ -243,13 +229,13 @@ namespace vcpkg::Export
             .string_arg("--")
             .string_arg(raw_exported_dir);
 
-        const int exit_code = cmd_execute_clean(cmd, WorkingDirectory{raw_exported_dir.parent_path()});
+        const int exit_code =
+            cmd_execute_clean(cmd, WorkingDirectory{raw_exported_dir.parent_path()}).value_or_exit(VCPKG_LINE_INFO);
         Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: %s creation failed", exported_archive_path);
         return exported_archive_path;
     }
 
-    static Optional<std::string> maybe_lookup(std::unordered_map<std::string, std::string> const& m,
-                                              std::string const& key)
+    static Optional<std::string> maybe_lookup(std::map<std::string, std::string, std::less<>> const& m, StringView key)
     {
         const auto it = m.find(key);
         if (it != m.end()) return it->second;
@@ -420,7 +406,7 @@ namespace vcpkg::Export
         {
             // input sanitization
             ret.specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
-                return Input::check_and_get_package_spec(
+                return check_and_get_package_spec(
                     std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
             });
         }
@@ -518,8 +504,7 @@ namespace vcpkg::Export
         fs.remove_all(raw_exported_dir_path, VCPKG_LINE_INFO);
 
         // TODO: error handling
-        std::error_code ec;
-        fs.create_directory(raw_exported_dir_path, ec);
+        fs.create_directory(raw_exported_dir_path, IgnoreErrors{});
 
         // execute the plan
         {
@@ -549,8 +534,7 @@ namespace vcpkg::Export
                     files.push_back(paths.installed().root() / suffix);
                 }
 
-                Install::install_files_and_write_listfile(
-                    fs, paths.installed().triplet_dir(action.spec.triplet()), files, dirs);
+                install_files_and_write_listfile(fs, paths.installed().triplet_dir(action.spec.triplet()), files, dirs);
             }
         }
 
@@ -623,10 +607,10 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         const auto opts = handle_export_command_arguments(paths, args, default_triplet, status_db);
 
         // Load ports from ports dirs
-        PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
+        PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
 
         // create the plan
-        std::vector<ExportPlanAction> export_plan = Dependencies::create_export_plan(opts.specs, status_db);
+        std::vector<ExportPlanAction> export_plan = create_export_plan(opts.specs, status_db);
         Checks::check_exit(VCPKG_LINE_INFO, !export_plan.empty(), "Export plan cannot be empty");
 
         std::map<ExportPlanType, std::vector<const ExportPlanAction*>> group_by_plan_type;

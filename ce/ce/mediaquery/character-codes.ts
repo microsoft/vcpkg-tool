@@ -188,7 +188,7 @@ export function isIdentifierPart(ch: number,): boolean {
   return ch >= CharacterCodes.A && ch <= CharacterCodes.Z ||
     ch >= CharacterCodes.a && ch <= CharacterCodes.z ||
     ch >= CharacterCodes._0 && ch <= CharacterCodes._9 ||
-    ch === CharacterCodes.$ || ch === CharacterCodes._ ||
+    ch === CharacterCodes.$ || ch === CharacterCodes._ || ch === CharacterCodes.minus ||
     ch > CharacterCodes.maxAsciiCharacter && isUnicodeIdentifierPart(ch);
 }
 

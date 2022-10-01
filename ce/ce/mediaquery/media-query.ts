@@ -10,7 +10,7 @@ export function parseQuery(text: string) {
   return QueryList.parse(cursor);
 }
 
-function takeWhitespace(cursor: Scanner) {
+export function takeWhitespace(cursor: Scanner) {
   while (!cursor.eof && isWhiteSpace(cursor)) {
     cursor.take();
   }

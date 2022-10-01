@@ -3,4 +3,6 @@
 namespace vcpkg
 {
     struct StringView;
+    struct ZStringView;
+    struct StringLiteral;
 }
