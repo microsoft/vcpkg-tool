@@ -33,7 +33,7 @@ namespace vcpkg::Commands::Contact
             auto maybe_now = CTime::now();
             if (const auto p_now = maybe_now.get())
             {
-                auto config = try_read_user_config(fs);
+                auto config = try_read_metrics_user(fs);
                 config.last_completed_survey = p_now->to_string();
                 config.try_write(fs);
             }

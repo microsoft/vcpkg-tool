@@ -4,27 +4,27 @@
 
 using namespace vcpkg;
 
-TEST_CASE ("parses empty", "[userconfig]")
+TEST_CASE ("user config parses empty", "[metrics]")
 {
-    auto result = try_parse_user_config("");
+    auto result = try_parse_metrics_user("");
     CHECK(result.user_id == "");
     CHECK(result.user_time == "");
     CHECK(result.user_mac == "");
     CHECK(result.last_completed_survey == "");
 }
 
-TEST_CASE ("parses partial", "[userconfig]")
+TEST_CASE ("user config parses partial", "[metrics]")
 {
-    auto result = try_parse_user_config("User-Id: hello");
+    auto result = try_parse_metrics_user("User-Id: hello");
     CHECK(result.user_id == "hello");
     CHECK(result.user_time == "");
     CHECK(result.user_mac == "");
     CHECK(result.last_completed_survey == "");
 }
 
-TEST_CASE ("parses multiple paragraphs ", "[userconfig]")
+TEST_CASE ("user config parses multiple paragraphs ", "[metrics]")
 {
-    auto result = try_parse_user_config("User-Id: hello\n\n\n"
+    auto result = try_parse_metrics_user("User-Id: hello\n\n\n"
                                         "User-Since: there\n"
                                         "Mac-Hash: world\n\n\n"
                                         "Survey-Completed: survey\n");
@@ -35,9 +35,9 @@ TEST_CASE ("parses multiple paragraphs ", "[userconfig]")
     CHECK(result.last_completed_survey == "survey");
 }
 
-TEST_CASE ("to string", "[userconfig]")
+TEST_CASE ("user config to string", "[metrics]")
 {
-    UserConfig uut;
+    MetricsUserConfig uut;
     CHECK(uut.to_string() == "User-Id: \n"
                              "User-Since: \n"
                              "Mac-Hash: \n"
@@ -55,11 +55,11 @@ TEST_CASE ("to string", "[userconfig]")
 
 static constexpr char example_mac_hash[] = "291b9573f5e31e8e73d6b5c7d5026fcff58606fb04f7c0ac4ed83e37a0adb999";
 
-TEST_CASE ("fills in system values", "[userconfig]")
+TEST_CASE ("user config fills in system values", "[metrics]")
 {
     const std::string default_user_name = "exampleuser";
     const std::string default_time = "2022-09-20T01:16:50.0Z";
-    UserConfig uut;
+    MetricsUserConfig uut;
     uut.user_mac = example_mac_hash;
 
     SECTION ("blank")

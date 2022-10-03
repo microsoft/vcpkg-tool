@@ -26,7 +26,7 @@ namespace
 
 namespace vcpkg
 {
-    void UserConfig::to_string(std::string& target) const
+    void MetricsUserConfig::to_string(std::string& target) const
     {
         fmt::format_to(std::back_inserter(target),
                        "User-Id: {}\n"
@@ -39,14 +39,14 @@ namespace vcpkg
                        last_completed_survey);
     }
 
-    std::string UserConfig::to_string() const
+    std::string MetricsUserConfig::to_string() const
     {
         std::string ret;
         to_string(ret);
         return ret;
     }
 
-    void UserConfig::try_write(Filesystem& fs) const
+    void MetricsUserConfig::try_write(Filesystem& fs) const
     {
         auto user_dir = get_user_dir();
         fs.create_directories(user_dir, IgnoreErrors{});
@@ -54,7 +54,7 @@ namespace vcpkg
         fs.write_contents(config_path, to_string(), IgnoreErrors{});
     }
 
-    bool UserConfig::fill_in_system_values()
+    bool MetricsUserConfig::fill_in_system_values()
     {
         bool result = false;
         // config file not found, could not be read, or invalid
@@ -74,9 +74,9 @@ namespace vcpkg
         return result;
     }
 
-    UserConfig try_parse_user_config(StringView content)
+    MetricsUserConfig try_parse_metrics_user(StringView content)
     {
-        UserConfig ret;
+        MetricsUserConfig ret;
         auto maybe_paragraph = Paragraphs::parse_single_merged_paragraph(content, "userconfig");
         if (const auto p = maybe_paragraph.get())
         {
@@ -90,16 +90,16 @@ namespace vcpkg
         return ret;
     }
 
-    UserConfig try_read_user_config(const Filesystem& fs)
+    MetricsUserConfig try_read_metrics_user(const Filesystem& fs)
     {
         std::error_code ec;
         const auto content = fs.read_contents(get_user_dir() / CONFIG_NAME, ec);
         if (ec)
         {
-            return UserConfig{};
+            return MetricsUserConfig{};
         }
 
-        return try_parse_user_config(content);
+        return try_parse_metrics_user(content);
     }
 
     Path get_user_dir()

@@ -5,5 +5,5 @@
 
 namespace vcpkg
 {
-    struct UserConfig;
+    struct MetricsUserConfig;
 }

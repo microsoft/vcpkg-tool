@@ -541,7 +541,7 @@ namespace vcpkg
         }
 
         // Execute this body exactly once
-        auto config = try_read_user_config(fs);
+        auto config = try_read_metrics_user(fs);
         if (config.fill_in_system_values())
         {
             config.try_write(fs);

@@ -8,7 +8,7 @@
 
 namespace vcpkg
 {
-    struct UserConfig
+    struct MetricsUserConfig
     {
         std::string user_id;
         std::string user_time;
@@ -26,7 +26,7 @@ namespace vcpkg
         bool fill_in_system_values();
     };
 
-    UserConfig try_parse_user_config(StringView content);
-    UserConfig try_read_user_config(const Filesystem& fs);
+    MetricsUserConfig try_parse_metrics_user(StringView content);
+    MetricsUserConfig try_read_metrics_user(const Filesystem& fs);
     Path get_user_dir();
 }
