@@ -59,9 +59,11 @@ namespace vcpkg
             Optional<bool>& local_option;
         };
 
+        // Parsed for command line backcompat, but cannot be disabled
+        Optional<bool> manifest_mode;
         const FeatureFlag flag_descriptions[] = {
             {VcpkgCmdArguments::BINARY_CACHING_FEATURE, args.binary_caching},
-            {VcpkgCmdArguments::MANIFEST_MODE_FEATURE, args.manifest_mode},
+            {VcpkgCmdArguments::MANIFEST_MODE_FEATURE, manifest_mode},
             {VcpkgCmdArguments::COMPILER_TRACKING_FEATURE, args.compiler_tracking},
             {VcpkgCmdArguments::REGISTRIES_FEATURE, args.registries_feature},
             {VcpkgCmdArguments::VERSIONS_FEATURE, args.versions_feature},
@@ -828,7 +830,6 @@ namespace vcpkg
             bool is_inconsistent;
         } possible_inconsistencies[] = {
             {BINARY_CACHING_FEATURE, BINARY_SOURCES_ARG, !binary_sources.empty() && !binary_caching.value_or(true)},
-            {MANIFEST_MODE_FEATURE, MANIFEST_ROOT_DIR_ARG, manifest_root_dir && !manifest_mode.value_or(true)},
         };
         for (const auto& el : possible_inconsistencies)
         {
@@ -851,7 +852,6 @@ namespace vcpkg
             Optional<bool> flag;
         } flags[] = {
             {BINARY_CACHING_FEATURE, binary_caching},
-            {MANIFEST_MODE_FEATURE, manifest_mode},
             {COMPILER_TRACKING_FEATURE, compiler_tracking},
             {REGISTRIES_FEATURE, registries_feature},
             {VERSIONS_FEATURE, versions_feature},
@@ -872,21 +872,12 @@ namespace vcpkg
 
     void VcpkgCmdArguments::track_feature_flag_metrics() const
     {
-        struct
-        {
-            StringView flag;
-            bool enabled;
-        } flags[] = {
-            {BINARY_CACHING_FEATURE, binary_caching_enabled()},
-            {COMPILER_TRACKING_FEATURE, compiler_tracking_enabled()},
-            {REGISTRIES_FEATURE, registries_enabled()},
-            {VERSIONS_FEATURE, versions_enabled()},
-        };
-
-        for (const auto& flag : flags)
-        {
-            get_global_metrics_collector().track_feature(flag.flag.to_string(), flag.enabled);
-        }
+        MetricsSubmission submission;
+        submission.track_bool_property(BoolMetric::FeatureFlagBinaryCaching, binary_caching_enabled());
+        submission.track_bool_property(BoolMetric::FeatureFlagCompilerTracking, compiler_tracking_enabled());
+        submission.track_bool_property(BoolMetric::FeatureFlagRegistries, registries_enabled());
+        submission.track_bool_property(BoolMetric::FeatureFlagVersions, versions_enabled());
+        get_global_metrics_collector().track_submission(std::move(submission));
     }
 
     Optional<std::string> VcpkgCmdArguments::asset_sources_template() const

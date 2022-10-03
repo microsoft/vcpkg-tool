@@ -77,7 +77,7 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
     }
 
     const VcpkgPaths paths(fs, args);
-    paths.track_feature_flag_metrics();
+    get_global_metrics_collector().track_bool_property(BoolMetric::FeatureFlagManifests, paths.manifest_mode_enabled());
 
     fs.current_path(paths.root, VCPKG_LINE_INFO);
 

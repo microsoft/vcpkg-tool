@@ -295,18 +295,14 @@ namespace vcpkg
 
         static Path compute_manifest_dir(const Filesystem& fs, const VcpkgCmdArguments& args, const Path& original_cwd)
         {
-            if (args.manifests_enabled())
+            if (args.manifest_root_dir)
             {
-                if (args.manifest_root_dir)
-                {
-                    return fs.almost_canonical(*args.manifest_root_dir, VCPKG_LINE_INFO);
-                }
-                else
-                {
-                    return fs.find_file_recursively_up(original_cwd, "vcpkg.json", VCPKG_LINE_INFO);
-                }
+                return fs.almost_canonical(*args.manifest_root_dir, VCPKG_LINE_INFO);
             }
-            return {};
+            else
+            {
+                return fs.find_file_recursively_up(original_cwd, "vcpkg.json", VCPKG_LINE_INFO);
+            }
         }
 
         // This structure holds members for VcpkgPathsImpl that don't require explicit initialization/destruction
@@ -1390,23 +1386,6 @@ namespace vcpkg
     const Path& VcpkgPaths::registries_cache() const { return m_pimpl->m_registries_cache; }
 
     const FeatureFlagSettings& VcpkgPaths::get_feature_flags() const { return m_pimpl->m_ff_settings; }
-
-    void VcpkgPaths::track_feature_flag_metrics() const
-    {
-        struct
-        {
-            StringView flag;
-            bool enabled;
-        } flags[] = {{VcpkgCmdArguments::MANIFEST_MODE_FEATURE, manifest_mode_enabled()}};
-
-        MetricsSubmission metrics;
-        for (const auto& flag : flags)
-        {
-            metrics.track_feature(flag.flag.to_string(), flag.enabled);
-        }
-
-        get_global_metrics_collector().track_submission(std::move(metrics));
-    }
 
     VcpkgPaths::~VcpkgPaths() = default;
 }

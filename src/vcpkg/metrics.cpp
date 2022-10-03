@@ -103,6 +103,11 @@ namespace vcpkg
     }};
 
     const constexpr std::array<BoolMetricEntry, static_cast<size_t>(BoolMetric::COUNT)> all_bool_metrics{{
+        {BoolMetric::FeatureFlagBinaryCaching, "feature-flag-binarycaching"},
+        {BoolMetric::FeatureFlagCompilerTracking, "feature-flag-compilertracking"},
+        {BoolMetric::FeatureFlagManifests, "feature-flag-manifests"},
+        {BoolMetric::FeatureFlagRegistries, "feature-flag-registries"},
+        {BoolMetric::FeatureFlagVersions, "feature-flag-versions"},
         {BoolMetric::InstallManifestMode, "install_manifest_mode"},
         {BoolMetric::OptionOverlayPorts, "option_overlay_ports"},
     }};
@@ -156,22 +161,6 @@ namespace vcpkg
         bool_properties.insert_or_assign(metric, value);
     }
 
-    void MetricsSubmission::track_feature(StringView feature, bool value)
-    {
-        const auto position = feature_metrics.lower_bound(feature);
-        if (position == feature_metrics.end() || feature < position->first)
-        {
-            feature_metrics.emplace_hint(position,
-                                         std::piecewise_construct,
-                                         std::forward_as_tuple(feature.data(), feature.size()),
-                                         std::forward_as_tuple(value));
-        }
-        else
-        {
-            position->second = value;
-        }
-    }
-
     void MetricsSubmission::merge(MetricsSubmission&& other)
     {
         if (other.elapsed_us != 0.0)
@@ -183,7 +172,6 @@ namespace vcpkg
         define_properties.merge(other.define_properties);
         string_properties.merge(other.string_properties);
         bool_properties.merge(other.bool_properties);
-        feature_metrics.merge(other.feature_metrics);
     }
 
     void MetricsCollector::track_elapsed_us(double value)
@@ -214,12 +202,6 @@ namespace vcpkg
     {
         std::lock_guard<std::mutex> lock{mtx};
         submission.track_bool_property(metric, value);
-    }
-
-    void MetricsCollector::track_feature(StringView feature, bool value)
-    {
-        std::lock_guard<std::mutex> lock{mtx};
-        submission.track_feature(feature, value);
     }
 
     void MetricsCollector::track_submission(MetricsSubmission&& submission_)
@@ -317,12 +299,6 @@ namespace vcpkg
             {
                 properties.insert_or_replace(get_metric_name(bool_property.first, all_bool_metrics),
                                              Json::Value::boolean(bool_property.second));
-            }
-
-            for (auto&& feature_property : submission.feature_metrics)
-            {
-                properties.insert(Strings::concat("feature-flag-", feature_property.first),
-                                  Json::Value::boolean(feature_property.second));
             }
         }
 

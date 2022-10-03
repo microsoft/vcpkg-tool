@@ -79,6 +79,11 @@ namespace vcpkg
 
     enum class BoolMetric
     {
+        FeatureFlagBinaryCaching,
+        FeatureFlagCompilerTracking,
+        FeatureFlagManifests,
+        FeatureFlagRegistries,
+        FeatureFlagVersions,
         InstallManifestMode,
         OptionOverlayPorts,
         COUNT // always keep COUNT last
@@ -101,7 +106,6 @@ namespace vcpkg
         void track_define_property(DefineMetric metric);
         void track_string_property(StringMetric metric, StringView value);
         void track_bool_property(BoolMetric metric, bool value);
-        void track_feature(StringView feature, bool value);
         void merge(MetricsSubmission&& other);
 
         double elapsed_us = 0.0;
@@ -109,7 +113,6 @@ namespace vcpkg
         std::set<DefineMetric> define_properties;
         std::map<StringMetric, std::string> string_properties;
         std::map<BoolMetric, bool> bool_properties;
-        std::map<std::string, bool, std::less<>> feature_metrics;
     };
 
     // Collects metrics, potentially from multiple threads.
@@ -128,7 +131,6 @@ namespace vcpkg
         void track_define_property(DefineMetric metric);
         void track_string_property(StringMetric metric, StringView value);
         void track_bool_property(BoolMetric metric, bool value);
-        void track_feature(StringView feature, bool value);
         void track_submission(MetricsSubmission&& submission_);
 
         // Consume
