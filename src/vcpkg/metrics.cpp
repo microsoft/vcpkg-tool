@@ -53,34 +53,6 @@ namespace
 
 namespace vcpkg
 {
-    template<class T>
-    struct LockGuardPtr;
-
-    template<class T>
-    struct LockGuarded
-    {
-        friend struct LockGuardPtr<T>;
-
-    private:
-        std::mutex m_mutex;
-        T m_t;
-    };
-
-    template<class T>
-    struct LockGuardPtr
-    {
-        T& operator*() { return m_ptr; }
-        T* operator->() { return &m_ptr; }
-
-        T* get() { return &m_ptr; }
-
-        LockGuardPtr(LockGuarded<T>& sync) : m_lock(sync.m_mutex), m_ptr(sync.m_t) { }
-
-    private:
-        std::lock_guard<std::mutex> m_lock;
-        T& m_ptr;
-    };
-
     struct Metrics
     {
         Metrics() = default;
@@ -99,7 +71,8 @@ namespace vcpkg
         void flush(Filesystem& fs);
     };
 
-    LockGuarded<Metrics> g_metrics;
+    Metrics g_metrics;
+    std::mutex g_metrics_lock;
 
     MetricsCollector::MetricsCollector() = default;
     MetricsCollector::~MetricsCollector() = default;
@@ -108,54 +81,60 @@ namespace vcpkg
     {
         virtual void track_elapsed_us(double value) override
         {
-            LockGuardPtr<Metrics>(g_metrics)->track_elapsed_us(value);
+            std::lock_guard<std::mutex> lock{g_metrics_lock};
+            g_metrics.track_elapsed_us(value);
         };
         virtual void track_buildtime(StringView name, double value) override
         {
-            LockGuardPtr<Metrics>(g_metrics)->track_buildtime(name, value);
+            std::lock_guard<std::mutex> lock{g_metrics_lock};
+            g_metrics.track_buildtime(name, value);
         };
         virtual void track_define_property(DefineMetric metric) override
         {
-            LockGuardPtr<Metrics>(g_metrics)->track_define_property(metric);
+            std::lock_guard<std::mutex> lock{g_metrics_lock};
+            g_metrics.track_define_property(metric);
         }
         virtual void track_string_property(StringMetric metric, StringView value) override
         {
-            LockGuardPtr<Metrics>(g_metrics)->track_string_property(metric, value);
+            std::lock_guard<std::mutex> lock{g_metrics_lock};
+            g_metrics.track_string_property(metric, value);
         }
         virtual void track_bool_property(BoolMetric metric, bool value) override
         {
-            LockGuardPtr<Metrics>(g_metrics)->track_bool_property(metric, value);
+            std::lock_guard<std::mutex> lock{g_metrics_lock};
+            g_metrics.track_bool_property(metric, value);
         }
         virtual void track_feature(StringView feature, bool value) override
         {
-            LockGuardPtr<Metrics>(g_metrics)->track_feature(feature, value);
+            std::lock_guard<std::mutex> lock{g_metrics_lock};
+            g_metrics.track_feature(feature, value);
         }
         virtual void track_submission(MetricsSubmission&& submission) override
         {
-            LockGuardPtr<Metrics> metrics(g_metrics);
+            std::lock_guard<std::mutex> lock{g_metrics_lock};
             for (auto&& elapsed_us : submission.elapsed_us)
             {
-                metrics->track_elapsed_us(elapsed_us);
+                g_metrics.track_elapsed_us(elapsed_us);
             }
             for (auto&& buildtime : submission.buildtimes)
             {
-                metrics->track_buildtime(buildtime.first, buildtime.second);
+                g_metrics.track_buildtime(buildtime.first, buildtime.second);
             }
             for (auto&& define_property : submission.define_properties)
             {
-                metrics->track_define_property(define_property);
+                g_metrics.track_define_property(define_property);
             }
             for (auto&& string_property : submission.string_properties)
             {
-                metrics->track_string_property(string_property.first, string_property.second);
+                g_metrics.track_string_property(string_property.first, string_property.second);
             }
             for (auto&& bool_property : submission.bool_properties)
             {
-                metrics->track_bool_property(bool_property.first, bool_property.second);
+                g_metrics.track_bool_property(bool_property.first, bool_property.second);
             }
             for (auto&& feature_metric : submission.feature_metrics)
             {
-                metrics->track_feature(feature_metric.first, feature_metric.second);
+                g_metrics.track_feature(feature_metric.first, feature_metric.second);
             }
         }
     };
@@ -644,14 +623,18 @@ namespace vcpkg
         }
 
         {
-            LockGuardPtr<Metrics> metrics(g_metrics);
+            std::lock_guard<std::mutex> lock{g_metrics_lock};
             g_metricmessage.user_id = config.user_id;
             g_metricmessage.user_timestamp = config.user_time;
 
-            metrics->track_string_property(StringMetric::UserMac, config.user_mac);
+            g_metrics.track_string_property(StringMetric::UserMac, config.user_mac);
 
             g_metrics_enabled = true;
         }
     }
-    void flush_global_metrics(Filesystem& fs) { LockGuardPtr<Metrics>(g_metrics)->flush(fs); }
+    void flush_global_metrics(Filesystem& fs)
+    {
+        std::lock_guard<std::mutex> lock{g_metrics_lock};
+        g_metrics.flush(fs);
+    }
 }
