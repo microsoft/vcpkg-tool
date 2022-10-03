@@ -68,7 +68,8 @@ namespace vcpkg
 
     struct CTime
     {
-        static Optional<CTime> get_current_date_time();
+        static Optional<CTime> now();
+        static std::string now_string();
         static Optional<CTime> parse(ZStringView str);
 
         constexpr CTime() noexcept : m_tm{} { }
@@ -87,8 +88,6 @@ namespace vcpkg
     };
 
     Optional<tm> to_utc_time(const std::time_t& t);
-
-    tm get_current_date_time();
 
     tm get_current_date_time_local();
 }

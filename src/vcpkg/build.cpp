@@ -858,7 +858,7 @@ namespace vcpkg
                                       '-',
                                       generate_random_UUID());
 
-        const auto now = CTime::get_current_date_time().value_or_exit(VCPKG_LINE_INFO).strftime("%Y-%m-%dT%H:%M:%SZ");
+        const auto now = CTime::now_string();
         const auto& abi = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
 
         const auto json_path = paths.package_dir(action.spec) / "share" / action.spec.name() / "vcpkg.spdx.json";

@@ -273,7 +273,7 @@ int main(const int argc, const char* const* const argv)
 
     if (to_enable_metrics)
     {
-        enable_global_metrics();
+        enable_global_metrics(fs);
     }
 
     if (const auto p = args.print_metrics.get())

@@ -175,7 +175,7 @@ namespace vcpkg
     extern std::atomic<bool> g_should_print_metrics;
     extern std::atomic<bool> g_should_send_metrics;
 
-    void enable_global_metrics();
+    void enable_global_metrics(Filesystem&);
     void flush_global_metrics(Filesystem&);
 #if defined(_WIN32)
     void winhttp_upload_metrics(StringView payload);

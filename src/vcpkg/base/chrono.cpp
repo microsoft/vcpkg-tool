@@ -114,7 +114,7 @@ namespace vcpkg
     std::string ElapsedTimer::to_string() const { return elapsed().to_string(); }
     void ElapsedTimer::to_string(std::string& into) const { return elapsed().to_string(into); }
 
-    Optional<CTime> CTime::get_current_date_time()
+    Optional<CTime> CTime::now()
     {
         const std::time_t ct = get_current_time_as_time_since_epoch();
         const Optional<tm> opt = to_utc_time(ct);
@@ -124,6 +124,17 @@ namespace vcpkg
         }
 
         return nullopt;
+    }
+
+    std::string CTime::now_string()
+    {
+        auto maybe_time = CTime::now();
+        if (auto ptime = maybe_time.get())
+        {
+            return ptime->to_string();
+        }
+
+        return std::string();
     }
 
     Optional<CTime> CTime::parse(ZStringView str)
@@ -155,7 +166,7 @@ namespace vcpkg
 
     CTime CTime::add_hours(const int hours) const { return CTime{date_plus_hours(&this->m_tm, hours)}; }
 
-    std::string CTime::to_string() const { return this->strftime("%Y-%m-%dT%H:%M:%S.0Z"); }
+    std::string CTime::to_string() const { return this->strftime("%Y-%m-%dT%H:%M:%SZ"); }
     std::string CTime::strftime(const char* format) const
     {
         std::array<char, 80> date{};

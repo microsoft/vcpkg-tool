@@ -276,7 +276,8 @@ namespace vcpkg::Paragraphs
         }
     };
 
-    ExpectedS<Paragraph> parse_single_merged_paragraph(StringView str, StringView origin) {
+    ExpectedS<Paragraph> parse_single_merged_paragraph(StringView str, StringView origin)
+    {
         return PghParser(str, origin).get_paragraphs().map([](std::vector<Paragraph>&& paragraphs) {
             if (paragraphs.empty())
             {

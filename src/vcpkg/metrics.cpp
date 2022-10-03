@@ -201,17 +201,6 @@ namespace vcpkg
         {BoolMetric::OptionOverlayPorts, "option_overlay_ports"},
     }};
 
-    static std::string get_current_date_time_string()
-    {
-        auto maybe_time = CTime::get_current_date_time();
-        if (auto ptime = maybe_time.get())
-        {
-            return ptime->to_string();
-        }
-
-        return "";
-    }
-
     static const std::string& get_session_id()
     {
         static const std::string ID = generate_random_UUID();
@@ -300,7 +289,7 @@ namespace vcpkg
 
             obj.insert("ver", Json::Value::integer(1));
             obj.insert("name", Json::Value::string("Microsoft.ApplicationInsights.Event"));
-            obj.insert("time", Json::Value::string(get_current_date_time_string()));
+            obj.insert("time", Json::Value::string(CTime::now_string()));
             obj.insert("sampleRate", Json::Value::number(100.0));
             obj.insert("seq", Json::Value::string("0:0"));
             obj.insert("iKey", Json::Value::string("b4e88960-4393-4dd9-ab8e-97e8fe6d7603"));
@@ -545,35 +534,15 @@ namespace vcpkg
     }
 
     // Must be called outside the g_metrics lock.
-    void enable_global_metrics() {
+    void enable_global_metrics(Filesystem& fs) {
         if (g_initializing_metrics.exchange(true))
         {
             return;
         }
 
         // Execute this body exactly once
-        auto& fs = get_real_filesystem();
         auto config = try_read_user_config(fs);
-
-        bool write_config = false;
-
-        // config file not found, could not be read, or invalid
-        if (config.user_id.empty() || config.user_time.empty())
-        {
-            config.user_id = generate_random_UUID();
-            config.user_time = get_current_date_time_string();
-            write_config = true;
-        }
-
-        // For a while we had a bug where we always set "{}" without attempting to get a MAC address.
-        // We will attempt to get a MAC address and store a "0" if we fail.
-        if (config.user_mac.empty() || config.user_mac == "{}")
-        {
-            config.user_mac = get_user_mac_hash();
-            write_config = true;
-        }
-
-        if (write_config)
+        if (config.fill_in_system_values())
         {
             config.try_write(fs);
         }

@@ -1,11 +1,13 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/system.h>
+#include <vcpkg/base/uuid.h>
 
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/userconfig.h>
 
 #include <iterator>
+#include <vcpkg/base/system.mac.h>
 
 namespace
 {
@@ -50,6 +52,26 @@ namespace vcpkg
         fs.create_directories(user_dir, IgnoreErrors{});
         auto config_path = user_dir / CONFIG_NAME;
         fs.write_contents(config_path, to_string(), IgnoreErrors{});
+    }
+
+    bool UserConfig::fill_in_system_values()
+    {
+        bool result = false;
+        // config file not found, could not be read, or invalid
+        if (user_id.empty() || user_time.empty())
+        {
+            user_id = generate_random_UUID();
+            user_time = CTime::now_string();
+            result = true;
+        }
+
+        if (user_mac.empty() || user_mac == "{}")
+        {
+            user_mac = get_user_mac_hash();
+            result = true;
+        }
+
+        return result;
     }
 
     UserConfig try_parse_user_config(StringView content)

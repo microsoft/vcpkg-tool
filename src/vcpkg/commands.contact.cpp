@@ -30,7 +30,7 @@ namespace vcpkg::Commands::Contact
 
         if (Util::Sets::contains(parsed_args.switches, SWITCHES[0].name))
         {
-            auto maybe_now = CTime::get_current_date_time();
+            auto maybe_now = CTime::now();
             if (const auto p_now = maybe_now.get())
             {
                 auto config = try_read_user_config(fs);

@@ -19,6 +19,11 @@ namespace vcpkg
         void to_string(std::string&) const;
         std::string to_string() const;
         void try_write(Filesystem& fs) const;
+
+        // If *this is missing data normally provided by the system, fill it in;
+        // otherwise, no effects.
+        // Returns whether any values needed to be modified.
+        bool fill_in_system_values();
     };
 
     UserConfig try_parse_user_config(StringView content);
