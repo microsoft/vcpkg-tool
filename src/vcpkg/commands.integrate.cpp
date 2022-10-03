@@ -260,7 +260,12 @@ namespace vcpkg::Commands::Integrate
     }
 #endif
 
-    static Path get_path_txt_path() { return get_user_dir() / "vcpkg.path.txt"; }
+    static const ExpectedS<Path>& get_path_txt_path() noexcept
+    {
+        static const ExpectedS<Path> result = get_user_configuration_home().map(
+            [](const Path& user_configuration_home) { return user_configuration_home / "vcpkg.path.txt"; });
+        return result;
+    }
 
 #if defined(_WIN32)
     static void integrate_install_msbuild14(Filesystem& fs, const Path& tmp_dir)
@@ -361,8 +366,12 @@ namespace vcpkg::Commands::Integrate
         }
 #endif
 
-        const auto pathtxt = get_path_txt_path();
-        fs.write_contents(pathtxt, paths.root.generic_u8string(), VCPKG_LINE_INFO);
+        const auto& maybe_pathtxt = get_path_txt_path();
+        if (auto pathtxt = maybe_pathtxt.get())
+        {
+            fs.write_contents(*pathtxt, paths.root.generic_u8string(), VCPKG_LINE_INFO);
+        }
+
         msg::println(Color::success, msgAppliedUserIntegration);
         const auto cmake_toolchain = paths.buildsystems / "vcpkg.cmake";
 
@@ -385,7 +394,12 @@ namespace vcpkg::Commands::Integrate
         was_deleted |= fs.remove(get_appdata_props_path(), VCPKG_LINE_INFO);
 #endif
 
-        was_deleted |= fs.remove(get_path_txt_path(), VCPKG_LINE_INFO);
+        const auto& maybe_pathtxt = get_path_txt_path();
+        if (auto pathtxt = maybe_pathtxt.get())
+        {
+            was_deleted |= fs.remove(*pathtxt, VCPKG_LINE_INFO);
+        }
+
         if (was_deleted)
         {
             msg::println(msgUserWideIntegrationRemoved);

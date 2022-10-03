@@ -1,18 +1,18 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/system.h>
+#include <vcpkg/base/system.mac.h>
 #include <vcpkg/base/uuid.h>
 
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/userconfig.h>
 
 #include <iterator>
-#include <vcpkg/base/system.mac.h>
 
 namespace
 {
     using namespace vcpkg;
-    static constexpr char CONFIG_NAME[] = "config";
+    static constexpr char METRICS_CONFIG_NAME[] = "config";
 
     void set_value_if_set(std::string& target, const Paragraph& p, const std::string& key)
     {
@@ -48,10 +48,12 @@ namespace vcpkg
 
     void MetricsUserConfig::try_write(Filesystem& fs) const
     {
-        auto user_dir = get_user_dir();
-        fs.create_directories(user_dir, IgnoreErrors{});
-        auto config_path = user_dir / CONFIG_NAME;
-        fs.write_contents(config_path, to_string(), IgnoreErrors{});
+        const auto& maybe_user_dir = get_user_configuration_home();
+        if (auto p_user_dir = maybe_user_dir.get())
+        {
+            fs.create_directories(*p_user_dir, IgnoreErrors{});
+            fs.write_contents(*p_user_dir / METRICS_CONFIG_NAME, to_string(), IgnoreErrors{});
+        }
     }
 
     bool MetricsUserConfig::fill_in_system_values()
@@ -92,23 +94,17 @@ namespace vcpkg
 
     MetricsUserConfig try_read_metrics_user(const Filesystem& fs)
     {
-        std::error_code ec;
-        const auto content = fs.read_contents(get_user_dir() / CONFIG_NAME, ec);
-        if (ec)
+        const auto& maybe_user_dir = get_user_configuration_home();
+        if (auto p_user_dir = maybe_user_dir.get())
         {
-            return MetricsUserConfig{};
+            std::error_code ec;
+            const auto content = fs.read_contents(*p_user_dir / METRICS_CONFIG_NAME, ec);
+            if (!ec)
+            {
+                return try_parse_metrics_user(content);
+            }
         }
 
-        return try_parse_metrics_user(content);
-    }
-
-    Path get_user_dir()
-    {
-#if defined(_WIN32)
-        return get_appdata_local().value_or_exit(VCPKG_LINE_INFO) / "vcpkg";
-#else
-        auto maybe_home = get_environment_variable("HOME");
-        return Path(maybe_home.value_or("/var")) / ".vcpkg";
-#endif
+        return MetricsUserConfig{};
     }
 }

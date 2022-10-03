@@ -28,5 +28,4 @@ namespace vcpkg
 
     MetricsUserConfig try_parse_metrics_user(StringView content);
     MetricsUserConfig try_read_metrics_user(const Filesystem& fs);
-    Path get_user_dir();
 }
