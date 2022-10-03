@@ -193,12 +193,6 @@ namespace vcpkg
         {BoolMetric::OptionOverlayPorts, "option_overlay_ports"},
     }};
 
-    static const std::string& get_session_id()
-    {
-        static const std::string ID = generate_random_UUID();
-        return ID;
-    }
-
     static std::string get_os_version_string()
     {
 #if defined(_WIN32)
@@ -309,7 +303,7 @@ namespace vcpkg
 
                 tags.insert("ai.device.osVersion",
                             Json::Value::string(Strings::format("%s-%s", os_name, get_os_version_string())));
-                tags.insert("ai.session.id", Json::Value::string(get_session_id()));
+                tags.insert("ai.session.id", Json::Value::string(generate_random_UUID()));
                 tags.insert("ai.user.id", Json::Value::string(user_id));
                 tags.insert("ai.user.accountAcquisitionDate", Json::Value::string(user_timestamp));
             }
