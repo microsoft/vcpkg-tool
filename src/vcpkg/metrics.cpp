@@ -42,7 +42,7 @@ namespace
         abort();
     }
 
-    static constexpr char METRICS_CONFIG_NAME[] = "config";
+    static constexpr char METRICS_CONFIG_FILE_NAME[] = "config";
 
     void set_value_if_set(std::string& target, const Paragraph& p, const std::string& key)
     {
@@ -388,7 +388,7 @@ namespace vcpkg
         if (auto p_user_dir = maybe_user_dir.get())
         {
             fs.create_directories(*p_user_dir, IgnoreErrors{});
-            fs.write_contents(*p_user_dir / METRICS_CONFIG_NAME, to_string(), IgnoreErrors{});
+            fs.write_contents(*p_user_dir / METRICS_CONFIG_FILE_NAME, to_string(), IgnoreErrors{});
         }
     }
 
@@ -434,7 +434,7 @@ namespace vcpkg
         if (auto p_user_dir = maybe_user_dir.get())
         {
             std::error_code ec;
-            const auto content = fs.read_contents(*p_user_dir / METRICS_CONFIG_NAME, ec);
+            const auto content = fs.read_contents(*p_user_dir / METRICS_CONFIG_FILE_NAME, ec);
             if (!ec)
             {
                 return try_parse_metrics_user(content);
