@@ -52,6 +52,38 @@ namespace
             target = position->second.first;
         }
     }
+
+    std::string get_os_version_string()
+    {
+#if defined(_WIN32)
+        std::wstring path;
+        path.resize(MAX_PATH);
+        const auto n = GetSystemDirectoryW(&path[0], static_cast<UINT>(path.size()));
+        path.resize(n);
+        path += L"\\kernel32.dll";
+
+        const auto versz = GetFileVersionInfoSizeW(path.c_str(), nullptr);
+        if (versz == 0) return "";
+
+        std::vector<char> verbuf;
+        verbuf.resize(versz);
+
+        if (!GetFileVersionInfoW(path.c_str(), 0, static_cast<DWORD>(verbuf.size()), &verbuf[0])) return "";
+
+        void* rootblock;
+        UINT rootblocksize;
+        if (!VerQueryValueW(&verbuf[0], L"\\", &rootblock, &rootblocksize)) return "";
+
+        auto rootblock_ffi = static_cast<VS_FIXEDFILEINFO*>(rootblock);
+
+        return Strings::format("%d.%d.%d",
+                               static_cast<int>(HIWORD(rootblock_ffi->dwProductVersionMS)),
+                               static_cast<int>(LOWORD(rootblock_ffi->dwProductVersionMS)),
+                               static_cast<int>(HIWORD(rootblock_ffi->dwProductVersionLS)));
+#else
+        return "unknown";
+#endif
+    }
 }
 
 namespace vcpkg
@@ -224,144 +256,6 @@ namespace vcpkg
         return g_metrics_collector;
     }
 
-    static std::string get_os_version_string()
-    {
-#if defined(_WIN32)
-        std::wstring path;
-        path.resize(MAX_PATH);
-        const auto n = GetSystemDirectoryW(&path[0], static_cast<UINT>(path.size()));
-        path.resize(n);
-        path += L"\\kernel32.dll";
-
-        const auto versz = GetFileVersionInfoSizeW(path.c_str(), nullptr);
-        if (versz == 0) return "";
-
-        std::vector<char> verbuf;
-        verbuf.resize(versz);
-
-        if (!GetFileVersionInfoW(path.c_str(), 0, static_cast<DWORD>(verbuf.size()), &verbuf[0])) return "";
-
-        void* rootblock;
-        UINT rootblocksize;
-        if (!VerQueryValueW(&verbuf[0], L"\\", &rootblock, &rootblocksize)) return "";
-
-        auto rootblock_ffi = static_cast<VS_FIXEDFILEINFO*>(rootblock);
-
-        return Strings::format("%d.%d.%d",
-                               static_cast<int>(HIWORD(rootblock_ffi->dwProductVersionMS)),
-                               static_cast<int>(LOWORD(rootblock_ffi->dwProductVersionMS)),
-                               static_cast<int>(HIWORD(rootblock_ffi->dwProductVersionLS)));
-#else
-        return "unknown";
-#endif
-    }
-
-    struct MetricMessage
-    {
-        std::string user_id;
-        std::string user_timestamp;
-
-        Json::Object properties;
-        Json::Object measurements;
-
-        Json::Array buildtime_names;
-        Json::Array buildtime_times;
-
-        void track_submission(const MetricsSubmission& submission)
-        {
-            if (submission.elapsed_us != 0.0)
-            {
-                measurements.insert_or_replace("elapsed_us", Json::Value::number(submission.elapsed_us));
-            }
-
-            for (auto&& buildtime : submission.buildtimes)
-            {
-                buildtime_names.push_back(Json::Value::string(buildtime.first));
-                buildtime_times.push_back(Json::Value::number(buildtime.second));
-            }
-
-            for (auto&& define_property : submission.defines)
-            {
-                properties.insert_or_replace(get_metric_name(define_property, all_define_metrics),
-                                             Json::Value::string("defined"));
-            }
-
-            for (auto&& string_property : submission.strings)
-            {
-                properties.insert_or_replace(get_metric_name(string_property.first, all_string_metrics),
-                                             Json::Value::string(string_property.second));
-            }
-
-            for (auto&& bool_property : submission.bools)
-            {
-                properties.insert_or_replace(get_metric_name(bool_property.first, all_bool_metrics),
-                                             Json::Value::boolean(bool_property.second));
-            }
-        }
-
-        std::string format_event_data_template() const
-        {
-            auto props_plus_buildtimes = properties;
-            if (buildtime_names.size() > 0)
-            {
-                props_plus_buildtimes.insert("buildnames_1", buildtime_names);
-                props_plus_buildtimes.insert("buildtimes", buildtime_times);
-            }
-
-            Json::Array arr = Json::Array();
-            Json::Object& obj = arr.push_back(Json::Object());
-
-            obj.insert("ver", Json::Value::integer(1));
-            obj.insert("name", Json::Value::string("Microsoft.ApplicationInsights.Event"));
-            obj.insert("time", Json::Value::string(CTime::now_string()));
-            obj.insert("sampleRate", Json::Value::number(100.0));
-            obj.insert("seq", Json::Value::string("0:0"));
-            obj.insert("iKey", Json::Value::string("b4e88960-4393-4dd9-ab8e-97e8fe6d7603"));
-            obj.insert("flags", Json::Value::integer(0));
-
-            {
-                Json::Object& tags = obj.insert("tags", Json::Object());
-
-                tags.insert("ai.device.os", Json::Value::string("Other"));
-
-                const char* os_name =
-#if defined(_WIN32)
-                    "Windows";
-#elif defined(__APPLE__)
-                    "OSX";
-#elif defined(__linux__)
-                    "Linux";
-#elif defined(__FreeBSD__)
-                    "FreeBSD";
-#elif defined(__unix__)
-                    "Unix";
-#else
-                    "Other";
-#endif
-
-                tags.insert("ai.device.osVersion",
-                            Json::Value::string(Strings::format("%s-%s", os_name, get_os_version_string())));
-                tags.insert("ai.session.id", Json::Value::string(generate_random_UUID()));
-                tags.insert("ai.user.id", Json::Value::string(user_id));
-                tags.insert("ai.user.accountAcquisitionDate", Json::Value::string(user_timestamp));
-            }
-
-            {
-                Json::Object& data = obj.insert("data", Json::Object());
-
-                data.insert("baseType", Json::Value::string("EventData"));
-                Json::Object& base_data = data.insert("baseData", Json::Object());
-
-                base_data.insert("ver", Json::Value::integer(2));
-                base_data.insert("name", Json::Value::string("commandline_test7"));
-                base_data.insert("properties", std::move(props_plus_buildtimes));
-                base_data.insert("measurements", measurements);
-            }
-
-            return Json::stringify(arr);
-        }
-    };
-
     void MetricsUserConfig::to_string(std::string& target) const
     {
         fmt::format_to(std::back_inserter(target),
@@ -442,6 +336,108 @@ namespace vcpkg
         }
 
         return MetricsUserConfig{};
+    }
+
+    MetricsSessionData MetricsSessionData::from_system()
+    {
+        MetricsSessionData result;
+        result.submission_time = CTime::now_string();
+        StringLiteral os_name =
+#if defined(_WIN32)
+            "Windows";
+#elif defined(__APPLE__)
+            "OSX";
+#elif defined(__linux__)
+            "Linux";
+#elif defined(__FreeBSD__)
+            "FreeBSD";
+#elif defined(__unix__)
+            "Unix";
+#else
+            "Other";
+#endif
+
+        result.os_version.assign(os_name.data(), os_name.size());
+        result.os_version.push_back('-');
+        result.os_version.append(get_os_version_string());
+
+        result.session_id = generate_random_UUID();
+        return result;
+    }
+
+    std::string format_metrics_payload(const MetricsUserConfig& user,
+                                       const MetricsSessionData& session,
+                                       const MetricsSubmission& submission)
+    {
+        Json::Array arr = Json::Array();
+        Json::Object& obj = arr.push_back(Json::Object());
+
+        obj.insert("ver", Json::Value::integer(1));
+        obj.insert("name", Json::Value::string("Microsoft.ApplicationInsights.Event"));
+        obj.insert("time", Json::Value::string(session.submission_time));
+        obj.insert("sampleRate", Json::Value::number(100.0));
+        obj.insert("seq", Json::Value::string("0:0"));
+        obj.insert("iKey", Json::Value::string("b4e88960-4393-4dd9-ab8e-97e8fe6d7603"));
+        obj.insert("flags", Json::Value::integer(0));
+
+        Json::Object& tags = obj.insert("tags", Json::Object());
+
+        tags.insert("ai.device.os", Json::Value::string("Other"));
+
+        tags.insert("ai.device.osVersion", Json::Value::string(session.os_version));
+        tags.insert("ai.session.id", Json::Value::string(session.session_id));
+        tags.insert("ai.user.id", Json::Value::string(user.user_id));
+        tags.insert("ai.user.accountAcquisitionDate", Json::Value::string(user.user_time));
+
+        Json::Object& data = obj.insert("data", Json::Object());
+
+        data.insert("baseType", Json::Value::string("EventData"));
+        Json::Object& base_data = data.insert("baseData", Json::Object());
+
+        base_data.insert("ver", Json::Value::integer(2));
+        base_data.insert("name", Json::Value::string("commandline_test7"));
+        Json::Object& properties = base_data.insert("properties", Json::Object());
+        for (auto&& define_property : submission.defines)
+        {
+            properties.insert_or_replace(get_metric_name(define_property, all_define_metrics),
+                                         Json::Value::string("defined"));
+        }
+
+        properties.insert_or_replace(get_metric_name(StringMetric::UserMac, all_string_metrics),
+                                     Json::Value::string(user.user_mac));
+        for (auto&& string_property : submission.strings)
+        {
+            properties.insert_or_replace(get_metric_name(string_property.first, all_string_metrics),
+                                         Json::Value::string(string_property.second));
+        }
+
+        for (auto&& bool_property : submission.bools)
+        {
+            properties.insert_or_replace(get_metric_name(bool_property.first, all_bool_metrics),
+                                         Json::Value::boolean(bool_property.second));
+        }
+
+        if (!submission.buildtimes.empty())
+        {
+            Json::Array buildtime_names;
+            Json::Array buildtime_times;
+            for (auto&& buildtime : submission.buildtimes)
+            {
+                buildtime_names.push_back(Json::Value::string(buildtime.first));
+                buildtime_times.push_back(Json::Value::number(buildtime.second));
+            }
+
+            properties.insert("buildnames_1", buildtime_names);
+            properties.insert("buildtimes", buildtime_times);
+        }
+
+        Json::Object& measurements = base_data.insert("measurements", Json::Object());
+        if (submission.elapsed_us != 0.0)
+        {
+            measurements.insert_or_replace("elapsed_us", Json::Value::number(submission.elapsed_us));
+        }
+
+        return Json::stringify(arr);
     }
 
     std::atomic<bool> g_should_send_metrics =
@@ -554,20 +550,16 @@ namespace vcpkg
             return;
         }
 
-        auto submission = get_global_metrics_collector().get_submission();
-        auto config = try_read_metrics_user(fs);
-        if (config.fill_in_system_values())
+        auto user = try_read_metrics_user(fs);
+        if (user.fill_in_system_values())
         {
-            config.try_write(fs);
+            user.try_write(fs);
         }
 
-        MetricMessage message;
-        message.user_id = config.user_id;
-        message.user_timestamp = config.user_time;
-        submission.track_string(StringMetric::UserMac, config.user_mac);
-        message.track_submission(submission);
+        auto session = MetricsSessionData::from_system();
 
-        const std::string payload = message.format_event_data_template();
+        auto submission = get_global_metrics_collector().get_submission();
+        const std::string payload = format_metrics_payload(user, session, submission);
         if (g_should_print_metrics.load())
         {
             fprintf(stderr, "%s\n", payload.c_str());

@@ -164,6 +164,19 @@ namespace vcpkg
     MetricsUserConfig try_parse_metrics_user(StringView content);
     MetricsUserConfig try_read_metrics_user(const Filesystem& fs);
 
+    struct MetricsSessionData
+    {
+        std::string submission_time;
+        std::string os_version;
+        std::string session_id;
+
+        static MetricsSessionData from_system();
+    };
+
+    std::string format_metrics_payload(const MetricsUserConfig& user,
+                                       const MetricsSessionData& session,
+                                       const MetricsSubmission& submission);
+
     extern std::atomic<bool> g_metrics_enabled;
     extern std::atomic<bool> g_should_print_metrics;
     extern std::atomic<bool> g_should_send_metrics;
