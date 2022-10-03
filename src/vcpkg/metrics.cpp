@@ -538,8 +538,34 @@ namespace vcpkg
     }
 #endif // ^^^ _WIN32
 
-    void Metrics::flush(Filesystem& fs)
+    // Must be called outside the g_metrics lock.
+    void enable_global_metrics(Filesystem& fs)
     {
+        if (g_initializing_metrics.exchange(true))
+        {
+            return;
+        }
+
+        // Execute this body exactly once
+        auto config = try_read_metrics_user(fs);
+        if (config.fill_in_system_values())
+        {
+            config.try_write(fs);
+        }
+
+        {
+            std::lock_guard<std::mutex> lock{g_metrics_lock};
+            g_metricmessage.user_id = config.user_id;
+            g_metricmessage.user_timestamp = config.user_time;
+
+            g_metrics.track_string_property(StringMetric::UserMac, config.user_mac);
+
+            g_metrics_enabled = true;
+        }
+    }
+    void flush_global_metrics(Filesystem& fs)
+    {
+        std::lock_guard<std::mutex> lock{g_metrics_lock};
         if (!g_metrics_enabled.load())
         {
             return;
@@ -605,36 +631,5 @@ namespace vcpkg
         cmd_line.raw_arg("(").raw_arg(curl.command_line()).raw_arg(";").raw_arg(remove.command_line()).raw_arg(") &");
         cmd_execute_clean(cmd_line);
 #endif
-    }
-
-    // Must be called outside the g_metrics lock.
-    void enable_global_metrics(Filesystem& fs)
-    {
-        if (g_initializing_metrics.exchange(true))
-        {
-            return;
-        }
-
-        // Execute this body exactly once
-        auto config = try_read_metrics_user(fs);
-        if (config.fill_in_system_values())
-        {
-            config.try_write(fs);
-        }
-
-        {
-            std::lock_guard<std::mutex> lock{g_metrics_lock};
-            g_metricmessage.user_id = config.user_id;
-            g_metricmessage.user_timestamp = config.user_time;
-
-            g_metrics.track_string_property(StringMetric::UserMac, config.user_mac);
-
-            g_metrics_enabled = true;
-        }
-    }
-    void flush_global_metrics(Filesystem& fs)
-    {
-        std::lock_guard<std::mutex> lock{g_metrics_lock};
-        g_metrics.flush(fs);
     }
 }
