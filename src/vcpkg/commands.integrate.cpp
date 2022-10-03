@@ -484,9 +484,10 @@ namespace vcpkg::Commands::Integrate
         {
             msg::println_error(msg::format(msgCommandFailed, msg::command_line = TITLE)
                                    .append_raw("\n" + script_path.generic_u8string()));
-            MetricsSubmission metrics(get_global_metrics_collector());
+            MetricsSubmission metrics;
             metrics.track_string_property(StringMetric::Error, "powershell script failed");
             metrics.track_string_property(StringMetric::Title, TITLE.to_string());
+            get_global_metrics_collector().track_submission(std::move(metrics));
         }
 
         Checks::exit_with_code(VCPKG_LINE_INFO, rc);

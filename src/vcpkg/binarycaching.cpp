@@ -2007,7 +2007,7 @@ namespace
                 {"nuget", DefineMetric::BinaryCachingNuget},
             };
 
-            MetricsSubmission metrics(get_global_metrics_collector());
+            MetricsSubmission metrics;
             for (const auto& cache_provider : state->binary_cache_providers)
             {
                 auto it = metric_names.find(cache_provider);
@@ -2016,6 +2016,8 @@ namespace
                     metrics.track_define_property(it->second);
                 }
             }
+
+            get_global_metrics_collector().track_submission(std::move(metrics));
         }
     };
 

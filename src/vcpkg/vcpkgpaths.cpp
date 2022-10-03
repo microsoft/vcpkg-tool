@@ -662,7 +662,7 @@ namespace vcpkg
         // metrics from configuration
         auto default_registry = m_pimpl->m_registry_set->default_registry();
         auto other_registries = m_pimpl->m_registry_set->registries();
-        MetricsSubmission metrics(get_global_metrics_collector());
+        MetricsSubmission metrics;
         if (default_registry)
         {
             metrics.track_string_property(StringMetric::RegistriesDefaultRegistryKind,
@@ -683,6 +683,8 @@ namespace vcpkg
             Util::sort_unique_erase(registry_kinds);
             metrics.track_string_property(StringMetric::RegistriesKindsUsed, Strings::join(",", registry_kinds));
         }
+
+        get_global_metrics_collector().track_submission(std::move(metrics));
     }
 
     Path VcpkgPaths::package_dir(const PackageSpec& spec) const { return this->packages() / spec.dir(); }
@@ -1397,11 +1399,13 @@ namespace vcpkg
             bool enabled;
         } flags[] = {{VcpkgCmdArguments::MANIFEST_MODE_FEATURE, manifest_mode_enabled()}};
 
-        MetricsSubmission metrics(get_global_metrics_collector());
+        MetricsSubmission metrics;
         for (const auto& flag : flags)
         {
             metrics.track_feature(flag.flag.to_string(), flag.enabled);
         }
+
+        get_global_metrics_collector().track_submission(std::move(metrics));
     }
 
     VcpkgPaths::~VcpkgPaths() = default;

@@ -933,31 +933,35 @@ namespace vcpkg
         const auto buildtimeus = timer.microseconds();
         const auto spec_string = action.spec.to_string();
 
+        MetricsSubmission metrics;
+        metrics.track_buildtime(Hash::get_string_hash(spec_string, Hash::Algorithm::Sha256) + ":[" +
+                                    Strings::join(",",
+                                                  action.feature_list,
+                                                  [](const std::string& feature) {
+                                                      return Hash::get_string_hash(feature, Hash::Algorithm::Sha256);
+                                                  }) +
+                                    "]",
+                                buildtimeus);
+
+        const bool build_success = !succeeded(return_code);
+        if (build_success)
         {
-            MetricsSubmission metrics(get_global_metrics_collector());
-            metrics.track_buildtime(Hash::get_string_hash(spec_string, Hash::Algorithm::Sha256) + ":[" +
-                                        Strings::join(",",
-                                                      action.feature_list,
-                                                      [](const std::string& feature) {
-                                                          return Hash::get_string_hash(feature,
-                                                                                       Hash::Algorithm::Sha256);
-                                                      }) +
-                                        "]",
-                                    buildtimeus);
-            if (!succeeded(return_code))
+            metrics.track_string_property(StringMetric::Error, "build failed");
+            metrics.track_string_property(StringMetric::BuildError, spec_string);
+        }
+
+        get_global_metrics_collector().track_submission(std::move(metrics));
+        if (build_success)
+        {
+            const auto logs = buildpath / Strings::concat("error-logs-", action.spec.triplet(), ".txt");
+            std::vector<std::string> error_logs;
+            if (fs.exists(logs, VCPKG_LINE_INFO))
             {
-                metrics.track_string_property(StringMetric::Error, "build failed");
-                metrics.track_string_property(StringMetric::BuildError, spec_string);
-                const auto logs = buildpath / Strings::concat("error-logs-", action.spec.triplet(), ".txt");
-                std::vector<std::string> error_logs;
-                if (fs.exists(logs, VCPKG_LINE_INFO))
-                {
-                    error_logs = fs.read_lines(logs, VCPKG_LINE_INFO);
-                    Util::erase_remove_if(error_logs, [](const auto& line) { return line.empty(); });
-                }
-                return ExtendedBuildResult{BuildResult::BUILD_FAILED, stdoutlog, std::move(error_logs)};
+                error_logs = fs.read_lines(logs, VCPKG_LINE_INFO);
+                Util::erase_remove_if(error_logs, [](const auto& line) { return line.empty(); });
             }
-        } // submit metrics
+            return ExtendedBuildResult{BuildResult::BUILD_FAILED, stdoutlog, std::move(error_logs)};
+        }
 
         const BuildInfo build_info = read_build_info(fs, paths.build_info_file_path(action.spec));
         const size_t error_count =

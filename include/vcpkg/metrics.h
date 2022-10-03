@@ -95,7 +95,24 @@ namespace vcpkg
 
     extern const std::array<BoolMetricEntry, static_cast<size_t>(BoolMetric::COUNT)> all_bool_metrics;
 
-    struct MetricsSubmission;
+    // Batches metrics changes so they can be submitted under a single lock acquisition or
+    // in a single JSON payload.
+    struct MetricsSubmission
+    {
+        void track_elapsed_us(double value);
+        void track_buildtime(StringView name, double value);
+        void track_define_property(DefineMetric metric);
+        void track_string_property(StringMetric metric, StringView value);
+        void track_bool_property(BoolMetric metric, bool value);
+        void track_feature(StringView feature, bool value);
+
+        std::vector<double> elapsed_us;
+        std::map<std::string, double, std::less<>> buildtimes;
+        std::set<DefineMetric> define_properties;
+        std::map<StringMetric, std::string> string_properties;
+        std::map<BoolMetric, bool> bool_properties;
+        std::map<std::string, bool, std::less<>> feature_metrics;
+    };
 
     // This interface collects metrics submitted by other parts of the codebase.
     // Implementations are expected to be safe to call from multiple threads.
@@ -120,85 +137,6 @@ namespace vcpkg
     };
 
     MetricsCollector& get_global_metrics_collector() noexcept;
-
-    struct MetricsCollectorImpl;
-
-    // Batches metrics changes so they can be submitted under a single lock acquisition.
-    struct MetricsSubmission
-    {
-        friend MetricsCollectorImpl;
-
-        MetricsSubmission(MetricsCollector& target_) : target(target_) { }
-        MetricsSubmission(const MetricsSubmission&) = delete;
-        MetricsSubmission& operator=(const MetricsSubmission&) = delete;
-        ~MetricsSubmission() { target.track_submission(std::move(*this)); }
-
-        void track_elapsed_us(double value) { elapsed_us.push_back(value); }
-
-        void track_buildtime(StringView name, double value)
-        {
-            const auto position = buildtimes.lower_bound(name);
-            if (position == buildtimes.end() || position->first != name)
-            {
-                buildtimes.emplace_hint(position,
-                                        std::piecewise_construct,
-                                        std::forward_as_tuple(name.data(), name.size()),
-                                        std::forward_as_tuple(value));
-            }
-            else
-            {
-                position->second = value;
-            }
-        }
-
-        void track_define_property(DefineMetric metric) { define_properties.insert(metric); }
-
-        void track_string_property(StringMetric metric, StringView value)
-        {
-            const auto position = string_properties.lower_bound(metric);
-            if (position == string_properties.end() || position->first != metric)
-            {
-                string_properties.emplace_hint(position,
-                                               std::piecewise_construct,
-                                               std::forward_as_tuple(metric),
-                                               std::forward_as_tuple(value.data(), value.size()));
-            }
-            else
-            {
-                position->second.assign(value.data(), value.size());
-            }
-        }
-
-        void track_bool_property(BoolMetric metric, bool value)
-        {
-            bool_properties.insert(std::pair<const BoolMetric, bool>(metric, value));
-        }
-
-        void track_feature(StringView feature, bool value)
-        {
-            const auto position = feature_metrics.lower_bound(feature);
-            if (position == feature_metrics.end() || position->first != feature)
-            {
-                feature_metrics.emplace_hint(position,
-                                             std::piecewise_construct,
-                                             std::forward_as_tuple(feature.data(), feature.size()),
-                                             std::forward_as_tuple(value));
-            }
-            else
-            {
-                position->second = value;
-            }
-        }
-
-    private:
-        MetricsCollector& target;
-        std::vector<double> elapsed_us;
-        std::map<std::string, double, std::less<>> buildtimes;
-        std::set<DefineMetric> define_properties;
-        std::map<StringMetric, std::string> string_properties;
-        std::map<BoolMetric, bool> bool_properties;
-        std::map<std::string, bool, std::less<>> feature_metrics;
-    };
 
     struct MetricsUserConfig
     {
