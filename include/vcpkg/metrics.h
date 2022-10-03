@@ -2,16 +2,13 @@
 
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/util.h>
-#include <vcpkg/base/view.h>
 
 #include <array>
 #include <atomic>
 #include <map>
+#include <mutex>
 #include <set>
 #include <string>
-#include <utility>
-#include <vector>
 
 namespace vcpkg
 {
@@ -105,8 +102,9 @@ namespace vcpkg
         void track_string_property(StringMetric metric, StringView value);
         void track_bool_property(BoolMetric metric, bool value);
         void track_feature(StringView feature, bool value);
+        void merge(MetricsSubmission&& other);
 
-        std::vector<double> elapsed_us;
+        double elapsed_us = 0.0;
         std::map<std::string, double, std::less<>> buildtimes;
         std::set<DefineMetric> define_properties;
         std::map<StringMetric, std::string> string_properties;
@@ -114,29 +112,34 @@ namespace vcpkg
         std::map<std::string, bool, std::less<>> feature_metrics;
     };
 
-    // This interface collects metrics submitted by other parts of the codebase.
-    // Implementations are expected to be safe to call from multiple threads.
+    // Collects metrics, potentially from multiple threads.
+    // Member functions of this type are safe to call from multiple threads, and will
+    // be observed in a total order.
     struct MetricsCollector
     {
-        virtual void track_elapsed_us(double value) = 0;
-        virtual void track_buildtime(StringView name, double value) = 0;
-
-        virtual void track_define_property(DefineMetric metric) = 0;
-        virtual void track_string_property(StringMetric metric, StringView value) = 0;
-        virtual void track_bool_property(BoolMetric metric, bool value) = 0;
-
-        virtual void track_feature(StringView feature, bool value) = 0;
-
-        virtual void track_submission(MetricsSubmission&& submission) = 0;
-
-    protected:
-        MetricsCollector();
+        MetricsCollector() = default;
         MetricsCollector(const MetricsCollector&) = delete;
         MetricsCollector& operator=(const MetricsCollector&) = delete;
-        ~MetricsCollector();
+        ~MetricsCollector() = default;
+
+        // Track
+        void track_elapsed_us(double value);
+        void track_buildtime(StringView name, double value);
+        void track_define_property(DefineMetric metric);
+        void track_string_property(StringMetric metric, StringView value);
+        void track_bool_property(BoolMetric metric, bool value);
+        void track_feature(StringView feature, bool value);
+        void track_submission(MetricsSubmission&& submission_);
+
+        // Consume
+        MetricsSubmission get_submission() const;
+
+    private:
+        mutable std::mutex mtx;
+        MetricsSubmission submission;
     };
 
-    MetricsCollector& get_global_metrics_collector() noexcept;
+    MetricsCollector& get_global_metrics_collector() noexcept; // Meyers singleton
 
     struct MetricsUserConfig
     {
@@ -163,7 +166,6 @@ namespace vcpkg
     extern std::atomic<bool> g_should_print_metrics;
     extern std::atomic<bool> g_should_send_metrics;
 
-    void enable_global_metrics(Filesystem&);
     void flush_global_metrics(Filesystem&);
 #if defined(_WIN32)
     void winhttp_upload_metrics(StringView payload);

@@ -15,8 +15,11 @@
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 
+#include <math.h>
+
 #include <iterator>
 #include <mutex>
+#include <utility>
 
 #if defined(_WIN32)
 #pragma comment(lib, "version")
@@ -104,7 +107,15 @@ namespace vcpkg
         {BoolMetric::OptionOverlayPorts, "option_overlay_ports"},
     }};
 
-    void MetricsSubmission::track_elapsed_us(double value) { elapsed_us.push_back(value); }
+    void MetricsSubmission::track_elapsed_us(double value)
+    {
+        if (!isfinite(value) || value <= 0.0)
+        {
+            Checks::unreachable(VCPKG_LINE_INFO);
+        }
+
+        elapsed_us = value;
+    }
 
     void MetricsSubmission::track_buildtime(StringView name, double value)
     {
@@ -142,7 +153,7 @@ namespace vcpkg
 
     void MetricsSubmission::track_bool_property(BoolMetric metric, bool value)
     {
-        bool_properties.insert(std::pair<const BoolMetric, bool>(metric, value));
+        bool_properties.insert_or_assign(metric, value);
     }
 
     void MetricsSubmission::track_feature(StringView feature, bool value)
@@ -161,92 +172,78 @@ namespace vcpkg
         }
     }
 
-    struct Metrics
+    void MetricsSubmission::merge(MetricsSubmission&& other)
     {
-        Metrics() = default;
-        Metrics(const Metrics&) = delete;
-        Metrics& operator=(const Metrics&) = delete;
+        if (other.elapsed_us != 0.0)
+        {
+            elapsed_us = other.elapsed_us;
+        }
 
-        void track_elapsed_us(double value);
-        void track_buildtime(StringView name, double value);
+        buildtimes.merge(other.buildtimes);
+        define_properties.merge(other.define_properties);
+        string_properties.merge(other.string_properties);
+        bool_properties.merge(other.bool_properties);
+        feature_metrics.merge(other.feature_metrics);
+    }
 
-        void track_define_property(DefineMetric metric);
-        void track_string_property(StringMetric metric, StringView value);
-        void track_bool_property(BoolMetric metric, bool value);
-
-        void track_feature(StringView feature, bool value);
-    };
-
-    Metrics g_metrics;
-    std::mutex g_metrics_lock;
-
-    MetricsCollector::MetricsCollector() = default;
-    MetricsCollector::~MetricsCollector() = default;
-
-    struct MetricsCollectorImpl : MetricsCollector
+    void MetricsCollector::track_elapsed_us(double value)
     {
-        virtual void track_elapsed_us(double value) override
-        {
-            std::lock_guard<std::mutex> lock{g_metrics_lock};
-            g_metrics.track_elapsed_us(value);
-        };
-        virtual void track_buildtime(StringView name, double value) override
-        {
-            std::lock_guard<std::mutex> lock{g_metrics_lock};
-            g_metrics.track_buildtime(name, value);
-        };
-        virtual void track_define_property(DefineMetric metric) override
-        {
-            std::lock_guard<std::mutex> lock{g_metrics_lock};
-            g_metrics.track_define_property(metric);
-        }
-        virtual void track_string_property(StringMetric metric, StringView value) override
-        {
-            std::lock_guard<std::mutex> lock{g_metrics_lock};
-            g_metrics.track_string_property(metric, value);
-        }
-        virtual void track_bool_property(BoolMetric metric, bool value) override
-        {
-            std::lock_guard<std::mutex> lock{g_metrics_lock};
-            g_metrics.track_bool_property(metric, value);
-        }
-        virtual void track_feature(StringView feature, bool value) override
-        {
-            std::lock_guard<std::mutex> lock{g_metrics_lock};
-            g_metrics.track_feature(feature, value);
-        }
-        virtual void track_submission(MetricsSubmission&& submission) override
-        {
-            std::lock_guard<std::mutex> lock{g_metrics_lock};
-            for (auto&& elapsed_us : submission.elapsed_us)
-            {
-                g_metrics.track_elapsed_us(elapsed_us);
-            }
-            for (auto&& buildtime : submission.buildtimes)
-            {
-                g_metrics.track_buildtime(buildtime.first, buildtime.second);
-            }
-            for (auto&& define_property : submission.define_properties)
-            {
-                g_metrics.track_define_property(define_property);
-            }
-            for (auto&& string_property : submission.string_properties)
-            {
-                g_metrics.track_string_property(string_property.first, string_property.second);
-            }
-            for (auto&& bool_property : submission.bool_properties)
-            {
-                g_metrics.track_bool_property(bool_property.first, bool_property.second);
-            }
-            for (auto&& feature_metric : submission.feature_metrics)
-            {
-                g_metrics.track_feature(feature_metric.first, feature_metric.second);
-            }
-        }
-    };
+        std::lock_guard<std::mutex> lock{mtx};
+        submission.track_elapsed_us(value);
+    }
 
-    static MetricsCollectorImpl g_metrics_collector;
-    MetricsCollector& get_global_metrics_collector() noexcept { return g_metrics_collector; }
+    void MetricsCollector::track_buildtime(StringView name, double value)
+    {
+        std::lock_guard<std::mutex> lock{mtx};
+        submission.track_buildtime(name, value);
+    }
+
+    void MetricsCollector::track_define_property(DefineMetric metric)
+    {
+        std::lock_guard<std::mutex> lock{mtx};
+        submission.track_define_property(metric);
+    }
+
+    void MetricsCollector::track_string_property(StringMetric metric, StringView value)
+    {
+        std::lock_guard<std::mutex> lock{mtx};
+        submission.track_string_property(metric, value);
+    }
+
+    void MetricsCollector::track_bool_property(BoolMetric metric, bool value)
+    {
+        std::lock_guard<std::mutex> lock{mtx};
+        submission.track_bool_property(metric, value);
+    }
+
+    void MetricsCollector::track_feature(StringView feature, bool value)
+    {
+        std::lock_guard<std::mutex> lock{mtx};
+        submission.track_feature(feature, value);
+    }
+
+    void MetricsCollector::track_submission(MetricsSubmission&& submission_)
+    {
+        std::lock_guard<std::mutex> lock{mtx};
+        submission.merge(std::move(submission_));
+    }
+
+    MetricsSubmission MetricsCollector::get_submission() const
+    {
+        Optional<MetricsSubmission> result;
+        {
+            std::lock_guard<std::mutex> lock{mtx};
+            result.emplace(submission);
+        } // unlock
+
+        return std::move(result).value_or_exit(VCPKG_LINE_INFO);
+    }
+
+    MetricsCollector& get_global_metrics_collector() noexcept
+    {
+        static MetricsCollector g_metrics_collector;
+        return g_metrics_collector;
+    }
 
     static std::string get_os_version_string()
     {
@@ -291,29 +288,42 @@ namespace vcpkg
         Json::Array buildtime_names;
         Json::Array buildtime_times;
 
-        void track_string(StringView name, StringView value)
+        void track_submission(const MetricsSubmission& submission)
         {
-            properties.insert_or_replace(name, Json::Value::string(value));
-        }
+            if (submission.elapsed_us != 0.0)
+            {
+                measurements.insert_or_replace("elapsed_us", Json::Value::number(submission.elapsed_us));
+            }
 
-        void track_bool(StringView name, bool value)
-        {
-            properties.insert_or_replace(name, Json::Value::boolean(value));
-        }
+            for (auto&& buildtime : submission.buildtimes)
+            {
+                buildtime_names.push_back(Json::Value::string(buildtime.first));
+                buildtime_times.push_back(Json::Value::number(buildtime.second));
+            }
 
-        void track_metric(StringView name, double value)
-        {
-            measurements.insert_or_replace(name, Json::Value::number(value));
-        }
+            for (auto&& define_property : submission.define_properties)
+            {
+                properties.insert_or_replace(get_metric_name(define_property, all_define_metrics),
+                                             Json::Value::string("defined"));
+            }
 
-        void track_buildtime(StringView name, double value)
-        {
-            buildtime_names.push_back(Json::Value::string(name));
-            buildtime_times.push_back(Json::Value::number(value));
-        }
-        void track_feature(StringView name, bool value)
-        {
-            properties.insert(Strings::concat("feature-flag-", name), Json::Value::boolean(value));
+            for (auto&& string_property : submission.string_properties)
+            {
+                properties.insert_or_replace(get_metric_name(string_property.first, all_string_metrics),
+                                             Json::Value::string(string_property.second));
+            }
+
+            for (auto&& bool_property : submission.bool_properties)
+            {
+                properties.insert_or_replace(get_metric_name(bool_property.first, all_bool_metrics),
+                                             Json::Value::boolean(bool_property.second));
+            }
+
+            for (auto&& feature_property : submission.feature_metrics)
+            {
+                properties.insert(Strings::concat("feature-flag-", feature_property.first),
+                                  Json::Value::boolean(feature_property.second));
+            }
         }
 
         std::string format_event_data_template() const
@@ -461,7 +471,6 @@ namespace vcpkg
         return MetricsUserConfig{};
     }
 
-    static MetricMessage g_metricmessage;
     std::atomic<bool> g_should_send_metrics =
 #if defined(NDEBUG)
         true
@@ -471,28 +480,6 @@ namespace vcpkg
         ;
     std::atomic<bool> g_should_print_metrics = false;
     std::atomic<bool> g_metrics_enabled = false;
-
-    static std::atomic<bool> g_initializing_metrics = false;
-
-    void Metrics::track_elapsed_us(double value) { g_metricmessage.track_metric("elapsed_us", value); }
-    void Metrics::track_buildtime(StringView name, double value) { g_metricmessage.track_buildtime(name, value); }
-
-    void Metrics::track_define_property(DefineMetric metric)
-    {
-        g_metricmessage.track_string(get_metric_name(metric, all_define_metrics), "defined");
-    }
-
-    void Metrics::track_string_property(StringMetric metric, StringView value)
-    {
-        g_metricmessage.track_string(get_metric_name(metric, all_string_metrics), value);
-    }
-
-    void Metrics::track_bool_property(BoolMetric metric, bool value)
-    {
-        g_metricmessage.track_bool(get_metric_name(metric, all_bool_metrics), value);
-    }
-
-    void Metrics::track_feature(StringView name, bool value) { g_metricmessage.track_feature(name, value); }
 
 #if defined(_WIN32)
     void winhttp_upload_metrics(StringView payload)
@@ -587,41 +574,28 @@ namespace vcpkg
     }
 #endif // ^^^ _WIN32
 
-    // Must be called outside the g_metrics lock.
-    void enable_global_metrics(Filesystem& fs)
+    void flush_global_metrics(Filesystem& fs)
     {
-        if (g_initializing_metrics.exchange(true))
+        if (!g_metrics_enabled.load())
         {
             return;
         }
 
-        // Execute this body exactly once
+        auto submission = get_global_metrics_collector().get_submission();
         auto config = try_read_metrics_user(fs);
         if (config.fill_in_system_values())
         {
             config.try_write(fs);
         }
 
-        {
-            std::lock_guard<std::mutex> lock{g_metrics_lock};
-            g_metricmessage.user_id = config.user_id;
-            g_metricmessage.user_timestamp = config.user_time;
+        MetricMessage message;
+        message.user_id = config.user_id;
+        message.user_timestamp = config.user_time;
+        submission.track_string_property(StringMetric::UserMac, config.user_mac);
+        message.track_submission(submission);
 
-            g_metrics.track_string_property(StringMetric::UserMac, config.user_mac);
-
-            g_metrics_enabled = true;
-        }
-    }
-    void flush_global_metrics(Filesystem& fs)
-    {
-        std::lock_guard<std::mutex> lock{g_metrics_lock};
-        if (!g_metrics_enabled.load())
-        {
-            return;
-        }
-
-        const std::string payload = g_metricmessage.format_event_data_template();
-        if (g_should_print_metrics)
+        const std::string payload = message.format_event_data_template();
+        if (g_should_print_metrics.load())
         {
             fprintf(stderr, "%s\n", payload.c_str());
         }

@@ -2,6 +2,7 @@
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.integrate.h>
