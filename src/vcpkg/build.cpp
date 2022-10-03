@@ -946,8 +946,8 @@ namespace vcpkg
         const bool build_success = !succeeded(return_code);
         if (build_success)
         {
-            metrics.track_string_property(StringMetric::Error, "build failed");
-            metrics.track_string_property(StringMetric::BuildError, spec_string);
+            metrics.track_string(StringMetric::Error, "build failed");
+            metrics.track_string(StringMetric::BuildError, spec_string);
         }
 
         get_global_metrics_collector().track_submission(std::move(metrics));

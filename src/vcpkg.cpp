@@ -44,8 +44,7 @@ static void invalid_command(const std::string& cmd)
 static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 {
     // track version on each invocation
-    get_global_metrics_collector().track_string_property(StringMetric::VcpkgVersion,
-                                                         Commands::Version::version.to_string());
+    get_global_metrics_collector().track_string(StringMetric::VcpkgVersion, Commands::Version::version.to_string());
 
     if (args.command.empty())
     {
@@ -68,22 +67,22 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
         }
     };
 
-    get_global_metrics_collector().track_bool_property(BoolMetric::OptionOverlayPorts, !args.overlay_ports.empty());
+    get_global_metrics_collector().track_bool(BoolMetric::OptionOverlayPorts, !args.overlay_ports.empty());
 
     if (const auto command_function = find_command(Commands::get_available_basic_commands()))
     {
-        get_global_metrics_collector().track_string_property(StringMetric::CommandName, command_function->name);
+        get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->name);
         return command_function->function->perform_and_exit(args, fs);
     }
 
     const VcpkgPaths paths(fs, args);
-    get_global_metrics_collector().track_bool_property(BoolMetric::FeatureFlagManifests, paths.manifest_mode_enabled());
+    get_global_metrics_collector().track_bool(BoolMetric::FeatureFlagManifests, paths.manifest_mode_enabled());
 
     fs.current_path(paths.root, VCPKG_LINE_INFO);
 
     if (const auto command_function = find_command(Commands::get_available_paths_commands()))
     {
-        get_global_metrics_collector().track_string_property(StringMetric::CommandName, command_function->name);
+        get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->name);
         return command_function->function->perform_and_exit(args, paths);
     }
 
@@ -94,7 +93,7 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 
     if (const auto command_function = find_command(Commands::get_available_triplet_commands()))
     {
-        get_global_metrics_collector().track_string_property(StringMetric::CommandName, command_function->name);
+        get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->name);
         return command_function->function->perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 
@@ -315,7 +314,7 @@ int main(const int argc, const char* const* const argv)
         exc_msg = "unknown error(...)";
     }
 
-    get_global_metrics_collector().track_string_property(StringMetric::Error, exc_msg);
+    get_global_metrics_collector().track_string(StringMetric::Error, exc_msg);
 
     fflush(stdout);
     msg::println(msgVcpkgHasCrashed);

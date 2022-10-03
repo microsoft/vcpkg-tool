@@ -138,17 +138,17 @@ namespace vcpkg
         }
     }
 
-    void MetricsSubmission::track_define_property(DefineMetric metric) { define_properties.insert(metric); }
+    void MetricsSubmission::track_define(DefineMetric metric) { defines.insert(metric); }
 
-    void MetricsSubmission::track_string_property(StringMetric metric, StringView value)
+    void MetricsSubmission::track_string(StringMetric metric, StringView value)
     {
-        const auto position = string_properties.lower_bound(metric);
-        if (position == string_properties.end() || metric < position->first)
+        const auto position = strings.lower_bound(metric);
+        if (position == strings.end() || metric < position->first)
         {
-            string_properties.emplace_hint(position,
-                                           std::piecewise_construct,
-                                           std::forward_as_tuple(metric),
-                                           std::forward_as_tuple(value.data(), value.size()));
+            strings.emplace_hint(position,
+                                 std::piecewise_construct,
+                                 std::forward_as_tuple(metric),
+                                 std::forward_as_tuple(value.data(), value.size()));
         }
         else
         {
@@ -156,10 +156,7 @@ namespace vcpkg
         }
     }
 
-    void MetricsSubmission::track_bool_property(BoolMetric metric, bool value)
-    {
-        bool_properties.insert_or_assign(metric, value);
-    }
+    void MetricsSubmission::track_bool(BoolMetric metric, bool value) { bools.insert_or_assign(metric, value); }
 
     void MetricsSubmission::merge(MetricsSubmission&& other)
     {
@@ -169,9 +166,9 @@ namespace vcpkg
         }
 
         buildtimes.merge(other.buildtimes);
-        define_properties.merge(other.define_properties);
-        string_properties.merge(other.string_properties);
-        bool_properties.merge(other.bool_properties);
+        defines.merge(other.defines);
+        strings.merge(other.strings);
+        bools.merge(other.bools);
     }
 
     void MetricsCollector::track_elapsed_us(double value)
@@ -186,22 +183,22 @@ namespace vcpkg
         submission.track_buildtime(name, value);
     }
 
-    void MetricsCollector::track_define_property(DefineMetric metric)
+    void MetricsCollector::track_define(DefineMetric metric)
     {
         std::lock_guard<std::mutex> lock{mtx};
-        submission.track_define_property(metric);
+        submission.track_define(metric);
     }
 
-    void MetricsCollector::track_string_property(StringMetric metric, StringView value)
+    void MetricsCollector::track_string(StringMetric metric, StringView value)
     {
         std::lock_guard<std::mutex> lock{mtx};
-        submission.track_string_property(metric, value);
+        submission.track_string(metric, value);
     }
 
-    void MetricsCollector::track_bool_property(BoolMetric metric, bool value)
+    void MetricsCollector::track_bool(BoolMetric metric, bool value)
     {
         std::lock_guard<std::mutex> lock{mtx};
-        submission.track_bool_property(metric, value);
+        submission.track_bool(metric, value);
     }
 
     void MetricsCollector::track_submission(MetricsSubmission&& submission_)
@@ -283,19 +280,19 @@ namespace vcpkg
                 buildtime_times.push_back(Json::Value::number(buildtime.second));
             }
 
-            for (auto&& define_property : submission.define_properties)
+            for (auto&& define_property : submission.defines)
             {
                 properties.insert_or_replace(get_metric_name(define_property, all_define_metrics),
                                              Json::Value::string("defined"));
             }
 
-            for (auto&& string_property : submission.string_properties)
+            for (auto&& string_property : submission.strings)
             {
                 properties.insert_or_replace(get_metric_name(string_property.first, all_string_metrics),
                                              Json::Value::string(string_property.second));
             }
 
-            for (auto&& bool_property : submission.bool_properties)
+            for (auto&& bool_property : submission.bools)
             {
                 properties.insert_or_replace(get_metric_name(bool_property.first, all_bool_metrics),
                                              Json::Value::boolean(bool_property.second));
@@ -567,7 +564,7 @@ namespace vcpkg
         MetricMessage message;
         message.user_id = config.user_id;
         message.user_timestamp = config.user_time;
-        submission.track_string_property(StringMetric::UserMac, config.user_mac);
+        submission.track_string(StringMetric::UserMac, config.user_mac);
         message.track_submission(submission);
 
         const std::string payload = message.format_event_data_template();

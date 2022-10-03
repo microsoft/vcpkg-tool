@@ -10,7 +10,7 @@ namespace
     {
         for (auto&& metric : all_define_metrics)
         {
-            metrics.track_define_property(metric.metric);
+            metrics.track_define(metric.metric);
         }
     }
 
@@ -18,7 +18,7 @@ namespace
     {
         for (auto&& metric : all_bool_metrics)
         {
-            metrics.track_bool_property(metric.metric, false);
+            metrics.track_bool(metric.metric, false);
         }
     }
 
@@ -26,7 +26,7 @@ namespace
     {
         for (auto&& metric : all_string_metrics)
         {
-            metrics.track_string_property(metric.metric, metric.preregister_value);
+            metrics.track_string(metric.metric, metric.preregister_value);
         }
     }
 

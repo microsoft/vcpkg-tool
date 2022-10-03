@@ -45,8 +45,8 @@ namespace vcpkg::Commands
 
             auto artifact_name = args.command_arguments[1];
             auto artifact_hash = Hash::get_string_hash(artifact_name, Hash::Algorithm::Sha256);
-            metrics.track_string_property(StringMetric::CommandContext, "artifact");
-            metrics.track_string_property(StringMetric::CommandArgs, artifact_hash);
+            metrics.track_string(StringMetric::CommandContext, "artifact");
+            metrics.track_string(StringMetric::CommandArgs, artifact_hash);
             get_global_metrics_collector().track_submission(std::move(metrics));
 
             std::string ce_args[] = {"add", artifact_name};
@@ -119,8 +119,8 @@ namespace vcpkg::Commands
             auto command_args_hash = Strings::join(" ", Util::fmap(specs, [](auto&& spec) -> std::string {
                                                        return Hash::get_string_hash(spec.name, Hash::Algorithm::Sha256);
                                                    }));
-            metrics.track_string_property(StringMetric::CommandContext, "port");
-            metrics.track_string_property(StringMetric::CommandArgs, command_args_hash);
+            metrics.track_string(StringMetric::CommandContext, "port");
+            metrics.track_string(StringMetric::CommandArgs, command_args_hash);
             get_global_metrics_collector().track_submission(std::move(metrics));
 
             Checks::exit_success(VCPKG_LINE_INFO);

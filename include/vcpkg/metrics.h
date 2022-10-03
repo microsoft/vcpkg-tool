@@ -103,16 +103,16 @@ namespace vcpkg
     {
         void track_elapsed_us(double value);
         void track_buildtime(StringView name, double value);
-        void track_define_property(DefineMetric metric);
-        void track_string_property(StringMetric metric, StringView value);
-        void track_bool_property(BoolMetric metric, bool value);
+        void track_define(DefineMetric metric);
+        void track_string(StringMetric metric, StringView value);
+        void track_bool(BoolMetric metric, bool value);
         void merge(MetricsSubmission&& other);
 
         double elapsed_us = 0.0;
         std::map<std::string, double, std::less<>> buildtimes;
-        std::set<DefineMetric> define_properties;
-        std::map<StringMetric, std::string> string_properties;
-        std::map<BoolMetric, bool> bool_properties;
+        std::set<DefineMetric> defines;
+        std::map<StringMetric, std::string> strings;
+        std::map<BoolMetric, bool> bools;
     };
 
     // Collects metrics, potentially from multiple threads.
@@ -128,9 +128,9 @@ namespace vcpkg
         // Track
         void track_elapsed_us(double value);
         void track_buildtime(StringView name, double value);
-        void track_define_property(DefineMetric metric);
-        void track_string_property(StringMetric metric, StringView value);
-        void track_bool_property(BoolMetric metric, bool value);
+        void track_define(DefineMetric metric);
+        void track_string(StringMetric metric, StringView value);
+        void track_bool(BoolMetric metric, bool value);
         void track_submission(MetricsSubmission&& submission_);
 
         // Consume

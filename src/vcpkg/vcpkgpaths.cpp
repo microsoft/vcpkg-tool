@@ -187,10 +187,10 @@ namespace vcpkg
         {
             if (auto p_baseline = manifest->builtin_baseline.get())
             {
-                get_global_metrics_collector().track_define_property(DefineMetric::ManifestBaseline);
+                get_global_metrics_collector().track_define(DefineMetric::ManifestBaseline);
                 if (!is_git_commit_sha(*p_baseline))
                 {
-                    get_global_metrics_collector().track_define_property(DefineMetric::VersioningErrorBaseline);
+                    get_global_metrics_collector().track_define(DefineMetric::VersioningErrorBaseline);
                     Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
                                                "Error: the top-level builtin-baseline%s was not a valid commit sha: "
                                                "expected 40 hexadecimal characters.\n%s\n",
@@ -321,7 +321,7 @@ namespace vcpkg
             Path ret;
             if (args.registries_cache_dir)
             {
-                get_global_metrics_collector().track_define_property(DefineMetric::X_VcpkgRegistriesCache);
+                get_global_metrics_collector().track_define(DefineMetric::X_VcpkgRegistriesCache);
                 ret = *args.registries_cache_dir;
                 const auto status = get_real_filesystem().status(ret, VCPKG_LINE_INFO);
                 if (!vcpkg::exists(status))
@@ -661,12 +661,11 @@ namespace vcpkg
         MetricsSubmission metrics;
         if (default_registry)
         {
-            metrics.track_string_property(StringMetric::RegistriesDefaultRegistryKind,
-                                          default_registry->kind().to_string());
+            metrics.track_string(StringMetric::RegistriesDefaultRegistryKind, default_registry->kind().to_string());
         }
         else
         {
-            metrics.track_string_property(StringMetric::RegistriesDefaultRegistryKind, "disabled");
+            metrics.track_string(StringMetric::RegistriesDefaultRegistryKind, "disabled");
         }
 
         if (other_registries.size() != 0)
@@ -677,7 +676,7 @@ namespace vcpkg
                 registry_kinds.push_back(reg.implementation().kind());
             }
             Util::sort_unique_erase(registry_kinds);
-            metrics.track_string_property(StringMetric::RegistriesKindsUsed, Strings::join(",", registry_kinds));
+            metrics.track_string(StringMetric::RegistriesKindsUsed, Strings::join(",", registry_kinds));
         }
 
         get_global_metrics_collector().track_submission(std::move(metrics));

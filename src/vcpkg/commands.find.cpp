@@ -236,10 +236,10 @@ namespace vcpkg::Commands
             Optional<std::string> filter_hash = filter.map(Hash::get_string_sha256);
             auto args_hash = Hash::get_string_hash(filter.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256);
             MetricsSubmission metrics;
-            metrics.track_string_property(StringMetric::CommandContext, "artifact");
+            metrics.track_string(StringMetric::CommandContext, "artifact");
             if (auto p_filter_hash = filter_hash.get())
             {
-                metrics.track_string_property(StringMetric::CommandArgs, *p_filter_hash);
+                metrics.track_string(StringMetric::CommandArgs, *p_filter_hash);
             }
 
             get_global_metrics_collector().track_submission(std::move(metrics));
@@ -250,10 +250,10 @@ namespace vcpkg::Commands
         {
             Optional<std::string> filter_hash = filter.map(Hash::get_string_sha256);
             MetricsSubmission metrics;
-            metrics.track_string_property(StringMetric::CommandContext, "port");
+            metrics.track_string(StringMetric::CommandContext, "port");
             if (auto p_filter_hash = filter_hash.get())
             {
-                metrics.track_string_property(StringMetric::CommandArgs, *p_filter_hash);
+                metrics.track_string(StringMetric::CommandArgs, *p_filter_hash);
             }
 
             get_global_metrics_collector().track_submission(std::move(metrics));
