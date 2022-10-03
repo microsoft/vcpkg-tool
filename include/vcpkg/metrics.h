@@ -7,6 +7,8 @@
 
 #include <array>
 #include <atomic>
+#include <map>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -135,40 +137,67 @@ namespace vcpkg
 
         void track_buildtime(StringView name, double value)
         {
-            buildtimes.emplace_back(std::piecewise_construct,
-                                    std::forward_as_tuple(name.data(), name.size()),
-                                    std::forward_as_tuple(value));
+            const auto position = buildtimes.lower_bound(name);
+            if (position == buildtimes.end() || position->first != name)
+            {
+                buildtimes.emplace_hint(position,
+                                        std::piecewise_construct,
+                                        std::forward_as_tuple(name.data(), name.size()),
+                                        std::forward_as_tuple(value));
+            }
+            else
+            {
+                position->second = value;
+            }
         }
 
-        void track_define_property(DefineMetric metric) { define_properties.push_back(metric); }
+        void track_define_property(DefineMetric metric) { define_properties.insert(metric); }
 
         void track_string_property(StringMetric metric, StringView value)
         {
-            string_properties.emplace_back(std::piecewise_construct,
-                                           std::forward_as_tuple(metric),
-                                           std::forward_as_tuple(value.data(), value.size()));
+            const auto position = string_properties.lower_bound(metric);
+            if (position == string_properties.end() || position->first != metric)
+            {
+                string_properties.emplace_hint(position,
+                                               std::piecewise_construct,
+                                               std::forward_as_tuple(metric),
+                                               std::forward_as_tuple(value.data(), value.size()));
+            }
+            else
+            {
+                position->second.assign(value.data(), value.size());
+            }
         }
 
         void track_bool_property(BoolMetric metric, bool value)
         {
-            bool_properties.insert(std::map<BoolMetric, bool>::value_type(metric, value));
+            bool_properties.insert(std::pair<const BoolMetric, bool>(metric, value));
         }
 
         void track_feature(StringView feature, bool value)
         {
-            feature_metrics.emplace_back(std::piecewise_construct,
-                                         std::forward_as_tuple(feature.data(), feature.size()),
-                                         std::forward_as_tuple(value));
+            const auto position = feature_metrics.lower_bound(feature);
+            if (position == feature_metrics.end() || position->first != feature)
+            {
+                feature_metrics.emplace_hint(position,
+                                             std::piecewise_construct,
+                                             std::forward_as_tuple(feature.data(), feature.size()),
+                                             std::forward_as_tuple(value));
+            }
+            else
+            {
+                position->second = value;
+            }
         }
 
     private:
         MetricsCollector& target;
         std::vector<double> elapsed_us;
-        std::vector<std::pair<std::string, double>> buildtimes;
-        std::vector<DefineMetric> define_properties;
-        std::vector<std::pair<StringMetric, std::string>> string_properties;
+        std::map<std::string, double, std::less<>> buildtimes;
+        std::set<DefineMetric> define_properties;
+        std::map<StringMetric, std::string> string_properties;
         std::map<BoolMetric, bool> bool_properties;
-        std::vector<std::pair<std::string, bool>> feature_metrics;
+        std::map<std::string, bool, std::less<>> feature_metrics;
     };
 
     struct MetricsUserConfig
