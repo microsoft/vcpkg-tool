@@ -33,9 +33,9 @@ namespace vcpkg::Commands::Contact
             auto maybe_now = CTime::get_current_date_time();
             if (const auto p_now = maybe_now.get())
             {
-                auto config = UserConfig::try_read_data(fs);
+                auto config = try_read_user_config(fs);
                 config.last_completed_survey = p_now->to_string();
-                config.try_write_data(fs);
+                config.try_write(fs);
             }
 
 #if defined(_WIN32)

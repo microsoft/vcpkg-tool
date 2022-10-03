@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/fwd/userconfig.h>
+
 #include <vcpkg/base/files.h>
 
 #include <string>
@@ -14,10 +16,12 @@ namespace vcpkg
 
         std::string last_completed_survey;
 
-        static UserConfig try_read_data(const Filesystem& fs);
-
-        void try_write_data(Filesystem& fs) const;
+        void to_string(std::string&) const;
+        std::string to_string() const;
+        void try_write(Filesystem& fs) const;
     };
 
+    UserConfig try_parse_user_config(StringView content);
+    UserConfig try_read_user_config(const Filesystem& fs);
     Path get_user_dir();
 }

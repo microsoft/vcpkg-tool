@@ -74,11 +74,6 @@ namespace vcpkg
         Metrics(const Metrics&) = delete;
         Metrics& operator=(const Metrics&) = delete;
 
-        void set_send_metrics(bool should_send_metrics);
-
-        // This function is static and must be called outside the g_metrics lock.
-        static void enable();
-
         void track_elapsed_us(double value);
         void track_buildtime(StringView name, double value);
 
@@ -367,51 +362,6 @@ namespace vcpkg
 
     static std::atomic<bool> g_initializing_metrics = false;
 
-    void Metrics::enable()
-    {
-        if (g_initializing_metrics.exchange(true))
-        {
-            return;
-        }
-
-        // Execute this body exactly once
-        auto& fs = get_real_filesystem();
-        auto config = UserConfig::try_read_data(fs);
-
-        bool write_config = false;
-
-        // config file not found, could not be read, or invalid
-        if (config.user_id.empty() || config.user_time.empty())
-        {
-            config.user_id = generate_random_UUID();
-            config.user_time = get_current_date_time_string();
-            write_config = true;
-        }
-
-        // For a while we had a bug where we always set "{}" without attempting to get a MAC address.
-        // We will attempt to get a MAC address and store a "0" if we fail.
-        if (config.user_mac.empty() || config.user_mac == "{}")
-        {
-            config.user_mac = get_user_mac_hash();
-            write_config = true;
-        }
-
-        if (write_config)
-        {
-            config.try_write_data(fs);
-        }
-
-        {
-            LockGuardPtr<Metrics> metrics(g_metrics);
-            g_metricmessage.user_id = config.user_id;
-            g_metricmessage.user_timestamp = config.user_time;
-
-            metrics->track_string_property(StringMetric::UserMac, config.user_mac);
-
-            g_metrics_enabled = true;
-        }
-    }
-
     void Metrics::track_elapsed_us(double value) { g_metricmessage.track_metric("elapsed_us", value); }
     void Metrics::track_buildtime(StringView name, double value) { g_metricmessage.track_buildtime(name, value); }
 
@@ -593,6 +543,50 @@ namespace vcpkg
         cmd_execute_clean(cmd_line);
 #endif
     }
-    void enable_global_metrics() { Metrics::enable(); }
+
+    // Must be called outside the g_metrics lock.
+    void enable_global_metrics() {
+        if (g_initializing_metrics.exchange(true))
+        {
+            return;
+        }
+
+        // Execute this body exactly once
+        auto& fs = get_real_filesystem();
+        auto config = try_read_user_config(fs);
+
+        bool write_config = false;
+
+        // config file not found, could not be read, or invalid
+        if (config.user_id.empty() || config.user_time.empty())
+        {
+            config.user_id = generate_random_UUID();
+            config.user_time = get_current_date_time_string();
+            write_config = true;
+        }
+
+        // For a while we had a bug where we always set "{}" without attempting to get a MAC address.
+        // We will attempt to get a MAC address and store a "0" if we fail.
+        if (config.user_mac.empty() || config.user_mac == "{}")
+        {
+            config.user_mac = get_user_mac_hash();
+            write_config = true;
+        }
+
+        if (write_config)
+        {
+            config.try_write(fs);
+        }
+
+        {
+            LockGuardPtr<Metrics> metrics(g_metrics);
+            g_metricmessage.user_id = config.user_id;
+            g_metricmessage.user_timestamp = config.user_time;
+
+            metrics->track_string_property(StringMetric::UserMac, config.user_mac);
+
+            g_metrics_enabled = true;
+        }
+    }
     void flush_global_metrics(Filesystem& fs) { LockGuardPtr<Metrics>(g_metrics)->flush(fs); }
 }
