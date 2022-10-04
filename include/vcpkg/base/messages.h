@@ -723,6 +723,11 @@ namespace vcpkg
                     "{command_line}\n"
                     "failed with the following results:");
     DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":");
+    DECLARE_MESSAGE(ComputingInstallPlan, (), "", "Computing installation plan...");
+    DECLARE_MESSAGE(ConflictingFiles,
+                    (msg::path, msg::spec),
+                    "",
+                    "The following files are already installed in {path} and are in conflict with {spec}");
     DECLARE_MESSAGE(ConflictingValuesForOption, (msg::option), "", "conflicting values specified for '--{option}'.");
     DECLARE_MESSAGE(ConstraintViolation, (), "", "Found a constraint violation:");
     DECLARE_MESSAGE(ControlAndManifestFilesPresent,
@@ -736,7 +741,7 @@ namespace vcpkg
                     "",
                     "Could not deduce nuget id and version from filename: {path}");
     DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: \"{path}\"");
-    DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
+    DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}");
     DECLARE_MESSAGE(CurlReportedUnexpectedResults,
                     (msg::command_line, msg::actual),
                     "{command_line} is the command line to call curl.exe, {actual} is the console output "
@@ -782,6 +787,7 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is a command line option.",
                     "'--{value}' specified multiple times.");
+    DECLARE_MESSAGE(ElapsedInstallTime, (msg::count), "", "Total elapsed time: {count}");
     DECLARE_MESSAGE(ElapsedTimeForChecks, (msg::elapsed), "", "Time to determine pass/fail: {elapsed}");
     DECLARE_MESSAGE(EmailVcpkgTeam, (msg::url), "", "Send an email to {url} with any feedback.");
     DECLARE_MESSAGE(EmptyArg, (msg::option), "", "The option --{option} must be passed a non-empty argument.");
@@ -957,6 +963,7 @@ namespace vcpkg
                     (msg::value),
                     "example of {value} is 'arch'",
                     R"({{{value}}} was used in the message, but not commented.)");
+    DECLARE_MESSAGE(GetParseFailureInfo, (), "", "Use '--debug' to get more information about the parse failures.");
     DECLARE_MESSAGE(GitCommandFailed, (msg::command_line), "", "failed to execute: {command_line}");
     DECLARE_MESSAGE(GitStatusOutputExpectedFileName, (), "", "expected a file name");
     DECLARE_MESSAGE(GitStatusOutputExpectedNewLine, (), "", "expected new line");
@@ -1026,8 +1033,10 @@ namespace vcpkg
                     "",
                     "Could not create a registry at {path} because this is not a git repository root.\nUse `git init "
                     "{command_line}` to create a git repository in this folder.");
+    DECLARE_MESSAGE(InstalledBy, (msg::path), "", "Installed by {path}");
     DECLARE_MESSAGE(InstalledPackages, (), "", "The following packages are already installed:");
     DECLARE_MESSAGE(InstalledRequestedPackages, (), "", "All requested packages are currently installed.");
+    DECLARE_MESSAGE(InstallFailed, (msg::path, msg::error_msg), "", "failed: {path}: {error_msg}");
     DECLARE_MESSAGE(InstallingFromLocation,
                     (msg::path),
                     "'--' at the beginning must be preserved",
@@ -1123,6 +1132,7 @@ namespace vcpkg
                     (msg::value, msg::path),
                     "'{value}' is a list of invalid characters. I.e. \\/:*?<>|",
                     "Filename cannot contain invalid chars {value}, but was {path}");
+    DECLARE_MESSAGE(InvalidFileType, (msg::path), "", "failed: {path} cannot handle file type");
     DECLARE_MESSAGE(InvalidFormatString,
                     (msg::actual),
                     "{actual} is the provided format string",
@@ -1136,6 +1146,7 @@ namespace vcpkg
                     (),
                     "'remove' is a command that should not be changed.",
                     "'remove' accepts either libraries or '--outdated'");
+    DECLARE_MESSAGE(InvalidTriplet, (msg::triplet), "", "Invalid triplet: {triplet}");
     DECLARE_MESSAGE(IrregularFile, (msg::path), "", "path was not a regular file: {path}");
     DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected \"{path}\" to be an object.");
     DECLARE_MESSAGE(JsonSwitch, (), "", "(Experimental) Request JSON output.");
@@ -1239,6 +1250,10 @@ namespace vcpkg
                     "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
                     "The message named {value} ends with a newline which should be added by formatting "
                     "rather than by localization.");
+    DECLARE_MESSAGE(ManifestConflict,
+                    (msg::path),
+                    "",
+                    "Found both a manifest and CONTROL files in port \"{path}\"; please rename one or the other");
     DECLARE_MESSAGE(ManifestFormatCompleted, (), "", "Succeeded in formatting the manifest files.");
     DECLARE_MESSAGE(MismatchedFiles, (), "", "file to store does not match hash");
     DECLARE_MESSAGE(MismatchedNames,
@@ -1315,6 +1330,7 @@ namespace vcpkg
                     "--{value} requires --{option}");
     DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph");
     DECLARE_MESSAGE(OverlayPatchDir, (msg::path), "", "Overlay path \"{path}\" must exist and must be a directory.");
+    DECLARE_MESSAGE(OverwritingFile, (msg::path), "", "File {path} was already present and will be overwritten");
     DECLARE_MESSAGE(PackageAlreadyRemoved, (msg::spec), "", "unable to remove package {spec}: already removed");
     DECLARE_MESSAGE(PackageFailedtWhileExtracting,
                     (msg::value, msg::path),
@@ -1531,6 +1547,15 @@ namespace vcpkg
         "{value} is the value provided by the user and {list} a list of unknown variables seperated by comma",
         "invalid argument: url template '{value}' contains unknown variables: {list}");
     DECLARE_MESSAGE(UnrecognizedConfigField, (), "", "configuration contains the following unrecognized fields:");
+    DECLARE_MESSAGE(UnrecognizedIdentifier,
+                    (msg::value),
+                    "'{value}' is an expression identifier. For example, given an expression 'windows & x86', "
+                    "'windows' and 'x86' are identifiers.",
+                    "Unrecognized identifer name {value}. Add to override list in triplet file.");
+    DECLARE_MESSAGE(UnsupportedFeature,
+                    (msg::feature, msg::package_name),
+                    "",
+                    "feature {feature} was passed, but that is not a feature supported by {package_name} supports.");
     DECLARE_MESSAGE(UnsupportedPort, (msg::package_name), "", "Port {package_name} is not supported.");
     DECLARE_MESSAGE(UnsupportedPortDependency,
                     (msg::value),
@@ -1639,6 +1664,11 @@ namespace vcpkg
         "vcpkg has crashed. Please create an issue at https://github.com/microsoft/vcpkg containing a brief summary of "
         "what you were trying to do and the following information.");
     DECLARE_MESSAGE(VcpkgInvalidCommand, (msg::command_name), "", "invalid command: {command_name}");
+    DECLARE_MESSAGE(VcpkgInVsPrompt,
+                    (msg::value, msg::triplet),
+                    "'{value}' is a VS prompt",
+                    "vcpkg appears to be in a Visual Studio prompt targeting {value} but installing for {triplet}. "
+                    "Consider using --triplet {value}-windows or --triplet {value}-uwp.");
     DECLARE_MESSAGE(VcpkgRootRequired, (), "", "Setting VCPKG_ROOT is required for standalone bootstrap.");
     DECLARE_MESSAGE(VcpkgRootsDir, (msg::env_var), "", "Specify the vcpkg root directory.\n(default: '{env_var}')");
     DECLARE_MESSAGE(VcpkgSendMetricsButDisabled, (), "", "passed --sendmetrics, but metrics are disabled.");
