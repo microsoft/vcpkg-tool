@@ -18,16 +18,6 @@ namespace vcpkg::Remove
     using Update::OutdatedPackage;
 
     REGISTER_MESSAGE(RemovingPackage);
-
-    static LocalizedString format_filesystem_call_error(const std::error_code& ec,
-                                                        StringView call_name,
-                                                        std::initializer_list<StringView> args)
-    {
-        auto arguments = args.size() == 0 ? "()" : "(\"" + Strings::join("\", \"", args.begin(), args.end()) + "\")";
-        return msg::format(msgFileSystemOperationFailed)
-            .append_raw(fmt::format("\n{} {}:{}", call_name, arguments, ec.message()));
-    }
-
     static void remove_package(Filesystem& fs,
                                const InstalledPaths& installed,
                                const PackageSpec& spec,
@@ -60,8 +50,7 @@ namespace vcpkg::Remove
                 const auto status = fs.symlink_status(target, ec);
                 if (ec)
                 {
-                    Checks::exit_with_message_and_line(
-                        VCPKG_LINE_INFO, format_filesystem_call_error(ec, __func__, {target, spec.to_string()}));
+                    msg::println_error(format_filesystem_call_error(ec, "symlink_status", {target}));
                     continue;
                 }
 
@@ -74,8 +63,7 @@ namespace vcpkg::Remove
                     fs.remove(target, ec);
                     if (ec)
                     {
-                        Checks::exit_with_message_and_line(
-                            VCPKG_LINE_INFO, format_filesystem_call_error(ec, __func__, {target, spec.to_string()}));
+                        msg::println_error(format_filesystem_call_error(ec, "remove", {target}));
                     }
                 }
                 else if (vcpkg::exists(status))
@@ -97,8 +85,7 @@ namespace vcpkg::Remove
                     fs.remove(*b, ec);
                     if (ec)
                     {
-                        Checks::exit_with_message_and_line(VCPKG_LINE_INFO,
-                                                           format_filesystem_call_error(ec, __func__, {*b}));
+                        msg::println_error(format_filesystem_call_error(ec, "remove", {*b}));
                     }
                 }
             }
