@@ -19,9 +19,9 @@ namespace vcpkg::Remove
 
     REGISTER_MESSAGE(RemovingPackage);
 
-    LocalizedString format_filesystem_call_error(const std::error_code& ec,
-                                                 StringView call_name,
-                                                 std::initializer_list<StringView> args)
+    static LocalizedString format_filesystem_call_error(const std::error_code& ec,
+                                                        StringView call_name,
+                                                        std::initializer_list<StringView> args)
     {
         auto arguments = args.size() == 0 ? "()" : "(\"" + Strings::join("\", \"", args.begin(), args.end()) + "\")";
         return msg::format(msgFileSystemOperationFailed)
