@@ -29,7 +29,6 @@ namespace vcpkg::Commands::CIClean
 {
     void perform_and_exit(const VcpkgCmdArguments&, const VcpkgPaths& paths)
     {
-        using vcpkg::print2;
         auto& fs = paths.get_filesystem();
         clear_directory(fs, paths.buildtrees());
         clear_directory(fs, paths.installed().root());
