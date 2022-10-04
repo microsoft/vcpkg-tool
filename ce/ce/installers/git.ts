@@ -21,7 +21,7 @@ export async function installGit(session: Session, name: string, version: string
   const repo = session.parseLocation(install.location);
   const targetDirectory = targetLocation.join(options.subdirectory ?? '');
 
-  const gitTool = new Git(gitPath, targetDirectory);
+  const gitTool = new Git(session, gitPath, await session.activation.getEnvironmentBlock(), targetDirectory);
   events.unpackArchiveStart?.(repo, targetDirectory);
 
   // changing the clone process to do an init/add remote/fetch/checkout because

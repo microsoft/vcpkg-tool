@@ -519,7 +519,10 @@ namespace vcpkg::PlatformExpression
                             // Point out in the diagnostic that they should add to the override list because that is
                             // what most users should do, however it is also valid to update the built in identifiers to
                             // recognize the name.
-                            msg::println_error(msgUnrecognizedIdentifier, msg::value = expr.identifier);
+                            vcpkg::printf(
+                                Color::error,
+                                "Error: Unrecognized identifer name %s. Add to override list in triplet file.\n",
+                                expr.identifier);
                             return false;
                         case Identifier::x64: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "x64");
                         case Identifier::x86: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "x86");

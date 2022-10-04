@@ -14,7 +14,6 @@ namespace vcpkg::Checks
     // Indicate that an internal error has occurred and exit the tool. This should be used when invariants have been
     // broken.
     [[noreturn]] void unreachable(const LineInfo& line_info);
-    [[noreturn]] void unreachable(const LineInfo& line_info, StringView message);
 
     [[noreturn]] void exit_with_code(const LineInfo& line_info, const int exit_code);
 

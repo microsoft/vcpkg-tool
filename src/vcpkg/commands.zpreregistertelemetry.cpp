@@ -9,7 +9,7 @@ namespace
     static void set_define_metrics()
     {
         auto metrics = LockGuardPtr<Metrics>(g_metrics);
-        for (auto&& metric : all_define_metrics)
+        for (auto metric : Metrics::get_define_metrics())
         {
             metrics->track_define_property(metric.metric);
         }
@@ -18,7 +18,7 @@ namespace
     static void set_bool_metrics()
     {
         auto metrics = LockGuardPtr<Metrics>(g_metrics);
-        for (auto&& metric : all_bool_metrics)
+        for (auto metric : Metrics::get_bool_metrics())
         {
             metrics->track_bool_property(metric.metric, false);
         }
@@ -27,9 +27,9 @@ namespace
     static void set_string_metrics()
     {
         auto metrics = LockGuardPtr<Metrics>(g_metrics);
-        for (auto&& metric : all_string_metrics)
+        for (auto&& kv : Metrics::get_string_metrics_preregister_values())
         {
-            metrics->track_string_property(metric.metric, metric.preregister_value);
+            metrics->track_string_property(kv.metric, kv.name.to_string());
         }
     }
 

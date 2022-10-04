@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { Activation } from '../artifacts/activation';
 import { buildRegistryResolver, ProjectManifest, ResolvedArtifact, resolveDependencies } from '../artifacts/artifact';
 import { i } from '../i18n';
 import { trackActivation } from '../insights';
@@ -10,8 +9,9 @@ import { Session } from '../session';
 import { Uri } from '../util/uri';
 import { installArtifacts, showArtifacts } from './artifacts';
 import { projectFile } from './format';
+import { error, log } from './styling';
 
-export interface ActivationOptions {
+class ActivationOptions {
   force?: boolean;
   allLanguages?: boolean;
   language?: string;
@@ -25,15 +25,7 @@ export async function activate(session: Session, artifacts: Array<ResolvedArtifa
 
   if (success) {
     const backupFile = createUndoFile ? session.tmpFolder.join(`previous-environment-${Date.now().toFixed()}.json`) : undefined;
-    const activation = new Activation(session);
-    for (const artifact of artifacts) {
-      if (!await artifact.artifact.loadActivationSettings(activation)) {
-        session.channels.error(i`Unable to activate project.`);
-        return false;
-      }
-    }
-
-    await activation.activate(backupFile, options?.msbuildProps, options?.json);
+    await session.activation.activate(session.environment, session.postscriptFile, backupFile, options?.msbuildProps, options?.json);
   }
 
   return success;
@@ -46,16 +38,17 @@ export async function activateProject(session: Session, project: ProjectManifest
 
   // print the status of what is going to be activated.
   if (!await showArtifacts(resolved, projectResolver, options)) {
-    session.channels.error(i`Unable to activate project`);
+    error(i`Unable to activate project`);
     return false;
   }
 
   if (await activate(session, resolved, projectResolver, true, options)) {
     trackActivation();
-    session.channels.message(i`Project ${projectFile(project.metadata.file.parent)} activated`);
+    log(i`Project ${projectFile(project.metadata.file.parent)} activated`);
     return true;
   }
 
-  session.channels.message(i`Failed to activate project ${projectFile(project.metadata.file.parent)}`);
+  log(i`Failed to activate project ${projectFile(project.metadata.file.parent)}`);
+
   return false;
 }

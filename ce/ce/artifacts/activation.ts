@@ -69,7 +69,7 @@ export class Activation {
 
       // the folder is relative to the artifact install
       for (const folder of values) {
-        this.addPath(pathName, targetFolder.join(folder).fsPath);
+        this.addPath(pathName, resolve(targetFolder.fsPath, folder));
       }
     }
 
@@ -78,7 +78,7 @@ export class Activation {
       if (!toolName || !toolPath) {
         continue;
       }
-      this.addTool(toolName, targetFolder.join(toolPath).fsPath);
+      this.addTool(toolName, resolve(targetFolder.fsPath, toolPath));
     }
 
     // **** locations ****
@@ -87,7 +87,7 @@ export class Activation {
         continue;
       }
 
-      this.addLocation(name, targetFolder.join(location).fsPath);
+      this.addLocation(name, resolve(targetFolder.fsPath, location));
     }
 
     // **** variables ****
@@ -547,11 +547,9 @@ export class Activation {
     return [env, undo];
   }
 
-  async activate(undoEnvironmentFile: Uri | undefined, msbuildFile: Uri | undefined, json: Uri | undefined) {
+  async activate(currentEnvironment: Record<string, string | undefined>, shellScriptFile: Uri | undefined, undoEnvironmentFile: Uri | undefined, msbuildFile: Uri | undefined, json: Uri | undefined) {
     let undoDeactivation = '';
-    const scriptKind = extname(this.#session.postscriptFile?.fsPath || '');
-
-    const currentEnvironment = {...this.#session.environment};
+    const scriptKind = extname(shellScriptFile?.fsPath || '');
 
     // load previous activation undo data
     const previous = currentEnvironment[undoVariableName];
@@ -560,10 +558,9 @@ export class Activation {
       const deactivationData = await deactivationDataFile.tryReadUTF8();
       if (deactivationData) {
         const deactivationParsed = JSON.parse(deactivationData);
-        const previousEnvironmentValues = deactivationParsed.environment || {};
-        undoActivation(currentEnvironment, previousEnvironmentValues);
+        currentEnvironment = undoActivation(currentEnvironment, deactivationParsed.environment || {});
         delete currentEnvironment[undoVariableName];
-        undoDeactivation = generateScriptContent(scriptKind, previousEnvironmentValues, deactivationParsed.aliases || {});
+        undoDeactivation = generateScriptContent(scriptKind, deactivationParsed.environment || {}, deactivationParsed.aliases || {});
       }
     }
 
@@ -602,11 +599,11 @@ export class Activation {
     }
 
     // generate shell script if requested
-    if (this.#session.postscriptFile) {
+    if (shellScriptFile) {
       const contents = undoDeactivation + generateScriptContent(scriptKind, variables, aliases);
 
       this.#session.channels.verbose(`--------[START SHELL SCRIPT FILE]--------\n${contents}\n--------[END SHELL SCRIPT FILE]---------`);
-      await this.#session.postscriptFile.writeUTF8(contents);
+      await shellScriptFile.writeUTF8(contents);
     }
 
     // generate msbuild props file if requested
@@ -624,7 +621,7 @@ export class Activation {
   }
 
 
-  /** produces an environment block that can be passed to child processes to leverage dependent artifacts during installation/activation. */
+  /** produces an environment block that can be passed to child processes to leverage dependent artifacts during installtion/activation. */
   async getEnvironmentBlock(): Promise<NodeJS.ProcessEnv> {
     const result = { ... this.#session.environment };
 
@@ -712,14 +709,16 @@ export async function deactivate(shellScriptFile: Uri, variables: Record<string,
   await shellScriptFile.writeUTF8(generateScriptContent(kind, variables, aliases));
 }
 
-function undoActivation(targetEnvironment: Record<string, string | undefined>, oldVariableValues: Record<string, string>) {
-  for (const [key, value] of linq.entries(oldVariableValues)) {
+function undoActivation(currentEnvironment: Record<string, string | undefined>, variables: Record<string, string>) {
+  const result = { ...currentEnvironment };
+  for (const [key, value] of linq.entries(variables)) {
     if (value) {
-      targetEnvironment[key] = value;
+      result[key] = value;
     } else {
-      delete targetEnvironment[key];
+      delete result[key];
     }
   }
+  return result;
 }
 
 async function toArrayAsync<T>(iterable: AsyncIterable<T>) {

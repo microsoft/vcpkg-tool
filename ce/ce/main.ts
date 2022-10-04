@@ -3,6 +3,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { green, white } from 'chalk';
 import { spawn } from 'child_process';
 import { argv } from 'process';
 import { CommandLine } from './cli/command-line';
@@ -14,25 +15,38 @@ import { CleanCommand } from './cli/commands/clean';
 import { DeactivateCommand } from './cli/commands/deactivate';
 import { DeleteCommand } from './cli/commands/delete';
 import { FindCommand } from './cli/commands/find';
-import { GenerateMSBuildPropsCommand } from './cli/commands/generate-msbuild-props';
 import { HelpCommand } from './cli/commands/help';
 import { ListCommand } from './cli/commands/list';
 import { RegenerateCommand } from './cli/commands/regenerate-index';
 import { RemoveCommand } from './cli/commands/remove';
 import { UpdateCommand } from './cli/commands/update';
 import { UseCommand } from './cli/commands/use';
-import { cli } from './cli/constants';
+import { VersionCommand } from './cli/commands/version';
+import { cli, product } from './cli/constants';
 import { command as formatCommand, hint } from './cli/format';
 import { debug, error, initStyling, log } from './cli/styling';
 import { i, setLocale } from './i18n';
 import { flushTelemetry, trackEvent } from './insights';
 import { Session } from './session';
+import { Version as cliVersion } from './version';
 
 // parse the command line
 const commandline = new CommandLine(argv.slice(2));
 
 // try to set the locale based on the users's settings.
 setLocale(commandline.language, `${__dirname}/i18n/`);
+
+function header() {
+  if (!commandline.vcpkgCommand) {
+    if (commandline.debug) {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      log(`${green.bold(`${product} command line utility`)} ${white.bold(cliVersion)} [node: ${white.bold(process.version)}; max-memory: ${white.bold(Math.round((require('v8').getHeapStatistics().heap_size_limit) / (1024 * 1024)) & 0xffffffff00)} gb]`);
+    } else {
+      log(`${green.bold(`${product} command line utility`)} ${white.bold(cliVersion)}`);
+    }
+    log('');
+  }
+}
 
 export let session: Session;
 require('./exports');
@@ -50,6 +64,9 @@ async function main() {
   session = new Session(process.cwd(), commandline.context, <any>commandline, process.env);
 
   initStyling(commandline, session);
+
+  // dump out the version information
+  header();
 
   // start up the session and init the channel listeners.
   await session.init();
@@ -71,12 +88,12 @@ async function main() {
   const del = new DeleteCommand(commandline);
 
   const activate = new ActivateCommand(commandline);
-  const activate_msbuildprops = new GenerateMSBuildPropsCommand(commandline);
   const deactivate = new DeactivateCommand(commandline);
 
   const regenerate = new RegenerateCommand(commandline);
   const update = new UpdateCommand(commandline);
 
+  const version = new VersionCommand(commandline);
   const cache = new CacheCommand(commandline);
   const clean = new CleanCommand(commandline);
 

@@ -34,7 +34,7 @@ namespace vcpkg
     {
         if (!paths.is_valid_triplet(t))
         {
-            msg::println_error(msgInvalidTriplet, msg::triplet = t);
+            print2(Color::error, "Error: invalid triplet: ", t, '\n');
             LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::Error,
                                                                     "invalid triplet: " + t.to_string());
             Help::help_topic_valid_triplet(paths);
@@ -57,8 +57,8 @@ namespace vcpkg
         }
 
         // Intentionally show the lowercased string
-        msg::write_unlocalized_text_to_stdout(Color::error, expected_spec.error());
-        msg::write_unlocalized_text_to_stdout(Color::none, example_text);
+        print2(Color::error, expected_spec.error());
+        print2(example_text);
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 }

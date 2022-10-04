@@ -403,10 +403,10 @@ namespace vcpkg::Paragraphs
         }
         else
         {
-            vcpkg::Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                          !fs.exists(control_path, IgnoreErrors{}),
-                                          msgManifestConflict,
-                                          msg::path = port_directory);
+            vcpkg::Checks::check_exit(VCPKG_LINE_INFO,
+                                      !fs.exists(control_path, IgnoreErrors{}),
+                                      "Found both manifest and CONTROL file in port %s; please rename one or the other",
+                                      port_directory);
 
             return try_load_manifest_text(manifest_contents, manifest_path, stdout_sink);
         }
@@ -536,9 +536,9 @@ namespace vcpkg::Paragraphs
             {
                 for (auto&& error : results.errors)
                 {
-                    msg::println_warning(msgErrorWhileParsing, msg::path = error->name);
+                    print2(Color::warning, "Warning: an error occurred while parsing '", error->name, "'\n");
                 }
-                msg::println_warning(msgGetParseFailureInfo);
+                print2(Color::warning, "Use '--debug' to get more information about the parse failures.\n\n");
             }
         }
     }

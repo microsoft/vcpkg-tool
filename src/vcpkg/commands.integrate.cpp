@@ -368,7 +368,6 @@ namespace vcpkg::Commands::Integrate
 
 #if defined(_WIN32)
         msg::println(msg::format(msgCMakeToolChainFile, msg::path = cmake_toolchain.generic_u8string())
-                         .append_raw("\n\n")
                          .append(msgAutomaticLinkingForMSBuildProjects));
 #else
         msg::println(msgCMakeToolChainFile, msg::path = cmake_toolchain.generic_u8string());

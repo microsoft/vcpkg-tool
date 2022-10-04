@@ -73,7 +73,8 @@ namespace
                                                  StringView call_name,
                                                  std::initializer_list<StringView> args)
     {
-        Checks::msg_exit_with_message(li, format_filesystem_call_error(ec, call_name, args));
+        auto arguments = args.size() == 0 ? "()" : "(\"" + Strings::join("\", \"", args.begin(), args.end()) + "\")";
+        Checks::exit_with_message_and_line(li, Strings::concat(call_name, arguments, ": ", ec.message()));
     }
 
 #if defined(_WIN32)
@@ -958,14 +959,6 @@ namespace
 
 namespace vcpkg
 {
-    LocalizedString format_filesystem_call_error(const std::error_code& ec,
-                                                 StringView call_name,
-                                                 std::initializer_list<StringView> args)
-    {
-        auto arguments = args.size() == 0 ? "()" : "(\"" + Strings::join("\", \"", args.begin(), args.end()) + "\")";
-        return LocalizedString::from_raw(Strings::concat(call_name, arguments, ": ", ec.message()));
-    }
-
     std::string Path::generic_u8string() const
     {
 #if defined(_WIN32)

@@ -124,11 +124,7 @@ namespace vcpkg
 
     StatusParagraphs::iterator StatusParagraphs::insert(std::unique_ptr<StatusParagraph> pgh)
     {
-        if (pgh == nullptr)
-        {
-            Checks::unreachable(VCPKG_LINE_INFO, "Inserted null paragraph");
-        }
-
+        Checks::check_exit(VCPKG_LINE_INFO, pgh != nullptr, "Inserted null paragraph");
         const PackageSpec& spec = pgh->package.spec;
         const auto ptr = find(spec.name(), spec.triplet(), pgh->package.feature);
         if (ptr == end())

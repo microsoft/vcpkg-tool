@@ -18,6 +18,7 @@ namespace vcpkg::Remove
     using Update::OutdatedPackage;
 
     REGISTER_MESSAGE(RemovingPackage);
+
     static void remove_package(Filesystem& fs,
                                const InstalledPaths& installed,
                                const PackageSpec& spec,
@@ -25,7 +26,8 @@ namespace vcpkg::Remove
     {
         auto maybe_ipv = status_db->get_installed_package_view(spec);
 
-        Checks::msg_check_exit(VCPKG_LINE_INFO, maybe_ipv.has_value(), msgPackageAlreadyRemoved, msg::spec = spec);
+        Checks::check_exit(
+            VCPKG_LINE_INFO, maybe_ipv.has_value(), "unable to remove package %s: already removed", spec);
 
         auto&& ipv = maybe_ipv.value_or_exit(VCPKG_LINE_INFO);
 
@@ -50,7 +52,7 @@ namespace vcpkg::Remove
                 const auto status = fs.symlink_status(target, ec);
                 if (ec)
                 {
-                    msg::println_error(format_filesystem_call_error(ec, "symlink_status", {target}));
+                    print2(Color::error, "failed: symlink_status(", target, "): ", ec.message(), "\n");
                     continue;
                 }
 
@@ -63,16 +65,16 @@ namespace vcpkg::Remove
                     fs.remove(target, ec);
                     if (ec)
                     {
-                        msg::println_error(format_filesystem_call_error(ec, "remove", {target}));
+                        vcpkg::printf(Color::error, "failed: remove(%s): %s\n", target, ec.message());
                     }
                 }
                 else if (vcpkg::exists(status))
                 {
-                    Checks::unreachable(VCPKG_LINE_INFO, fmt::format("\"{}\": cannot handle file type", target));
+                    vcpkg::printf(Color::warning, "Warning: %s: cannot handle file type\n", target);
                 }
                 else
                 {
-                    msg::println_warning(msgFileNotFound, msg::path = target);
+                    vcpkg::printf(Color::warning, "Warning: %s: file not found\n", target);
                 }
             }
 
@@ -85,7 +87,7 @@ namespace vcpkg::Remove
                     fs.remove(*b, ec);
                     if (ec)
                     {
-                        msg::println_error(format_filesystem_call_error(ec, "remove", {*b}));
+                        print2(Color::error, "failed: ", ec.message(), "\n");
                     }
                 }
             }
@@ -123,10 +125,10 @@ namespace vcpkg::Remove
             switch (plan_type)
             {
                 case RemovePlanType::NOT_INSTALLED:
-                    msg::println(msg::format(msgFollowingPackagesNotInstalled).append_raw(as_string));
+                    print2("The following packages are not installed, so not removed:\n", as_string, "\n");
                     continue;
                 case RemovePlanType::REMOVE:
-                    msg::println(msg::format(msgPackagesToRemove).append_raw("\n" + as_string));
+                    print2("The following packages will be removed:\n", as_string, "\n");
                     continue;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
@@ -190,7 +192,9 @@ namespace vcpkg::Remove
     {
         if (paths.manifest_mode_enabled())
         {
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgRemoveDependencies);
+            Checks::exit_maybe_upgrade(
+                VCPKG_LINE_INFO,
+                "To remove dependencies in manifest mode, edit your manifest (vcpkg.json) and run 'install'.");
         }
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
 
@@ -200,7 +204,7 @@ namespace vcpkg::Remove
         {
             if (args.command_arguments.size() != 0)
             {
-                msg::println_error(msgInvalidOptionForRemove);
+                print2(Color::error, "Error: 'remove' accepts either libraries or '--outdated'\n");
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
@@ -212,7 +216,7 @@ namespace vcpkg::Remove
 
             if (specs.empty())
             {
-                msg::println(Color::success, msgNoOutdatedPackages);
+                print2(Color::success, "There are no outdated packages.\n");
                 Checks::exit_success(VCPKG_LINE_INFO);
             }
         }
@@ -220,7 +224,7 @@ namespace vcpkg::Remove
         {
             if (args.command_arguments.size() < 1)
             {
-                msg::println_error(msgInvalidOptionForRemove);
+                print2(Color::error, "Error: 'remove' accepts either libraries or '--outdated'\n");
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
             specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
@@ -232,8 +236,8 @@ namespace vcpkg::Remove
         const bool no_purge = Util::Sets::contains(options.switches, OPTION_NO_PURGE);
         if (no_purge && Util::Sets::contains(options.switches, OPTION_PURGE))
         {
-            msg::println_error(msgMutuallyExclusiveOption, msg::value = "no-purge", msg::option = "purge");
-            msg::write_unlocalized_text_to_stdout(Color::none, COMMAND_STRUCTURE.example_text);
+            print2(Color::error, "Error: cannot specify both --no-purge and --purge.\n");
+            print2(COMMAND_STRUCTURE.example_text);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
         const Purge purge = no_purge ? Purge::NO : Purge::YES;
@@ -242,11 +246,7 @@ namespace vcpkg::Remove
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
 
         const std::vector<RemovePlanAction> remove_plan = create_remove_plan(specs, status_db);
-
-        if (remove_plan.empty())
-        {
-            Checks::unreachable(VCPKG_LINE_INFO, "Remove plan cannot be empty");
-        }
+        Checks::check_exit(VCPKG_LINE_INFO, !remove_plan.empty(), "Remove plan cannot be empty");
 
         std::map<RemovePlanType, std::vector<const RemovePlanAction*>> group_by_plan_type;
         Util::group_by(remove_plan, &group_by_plan_type, [](const RemovePlanAction& p) { return p.plan_type; });
@@ -259,11 +259,12 @@ namespace vcpkg::Remove
 
         if (has_non_user_requested_packages)
         {
-            msg::println_warning(msgAdditionalPackagesToRemove);
+            print2(Color::warning, "Additional packages (*) need to be removed to complete this operation.\n");
 
             if (!is_recursive)
             {
-                msg::println_warning(msgAddRecurseOption);
+                print2(Color::warning,
+                       "If you are sure you want to remove them, run the command with the --recurse option\n");
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
@@ -279,7 +280,10 @@ namespace vcpkg::Remove
                     if (package->is_installed() && !package->package.is_feature() &&
                         package->package.spec.name() == action.spec.name())
                     {
-                        msg::println_warning(msgRemovePackageConflict, msg::spec = package->package.spec);
+                        print2(Color::warning,
+                               "Another installed package matches the name of an unmatched request. Did you mean ",
+                               package->package.spec,
+                               "?\n");
                     }
                 }
             }

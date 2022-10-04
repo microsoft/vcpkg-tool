@@ -27,7 +27,7 @@ namespace vcpkg::Commands::Z_PrintConfig
         }
     }
 
-    void PrintConfigCommand::perform_and_exit(const VcpkgCmdArguments& args,
+    void PrintConfigCommand::perform_and_exit(const VcpkgCmdArguments&,
                                               const VcpkgPaths& paths,
                                               Triplet default_triplet,
                                               Triplet host_triplet) const
@@ -38,10 +38,6 @@ namespace vcpkg::Commands::Z_PrintConfig
         obj.insert("host_triplet", host_triplet.canonical_name());
         obj.insert("vcpkg_root", paths.root.native());
         obj.insert("tools", paths.tools.native());
-        if (auto ci_env = args.detected_ci_environment().get())
-        {
-            obj.insert("detected_ci_environment", *ci_env);
-        }
         if (auto i = paths.maybe_installed().get())
         {
             obj.insert("installed", i->root().native());

@@ -4,15 +4,12 @@
 #include <vcpkg/base/fwd/span.h>
 
 #include <vcpkg/base/checks.h>
-#include <vcpkg/base/lineinfo.h>
-#include <vcpkg/base/messages.h>
 #include <vcpkg/base/pragmas.h>
 #include <vcpkg/base/stringview.h>
 
 #include <stdio.h>
 #include <string.h>
 
-#include <initializer_list>
 #include <memory>
 #include <system_error>
 
@@ -24,10 +21,6 @@
 
 namespace vcpkg
 {
-    LocalizedString format_filesystem_call_error(const std::error_code& ec,
-                                                 StringView call_name,
-                                                 std::initializer_list<StringView> args);
-
     struct IgnoreErrors
     {
         operator std::error_code&() { return ec; }
@@ -124,7 +117,10 @@ namespace vcpkg
     inline bool is_regular_file(FileType s) { return s == FileType::regular; }
     inline bool is_directory(FileType s) { return s == FileType::directory; }
     inline bool exists(FileType s) { return s != FileType::not_found && s != FileType::none; }
+}
 
+namespace vcpkg
+{
     struct FilePointer
     {
     protected:
