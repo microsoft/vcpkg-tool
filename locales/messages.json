@@ -205,7 +205,6 @@
   "_EmailVcpkgTeam.comment": "An example of {url} is https://github.com/microsoft/vcpkg.",
   "EmptyArg": "The option --{option} must be passed a non-empty argument.",
   "_EmptyArg.comment": "An example of {option} is editable.",
-  "EmptyInstallPlan": "Install plan cannot be empty",
   "EmptyLicenseExpression": "SPDX license expression was empty.",
   "EnvStrFailedToExtract": "could not expand the environment string:",
   "ErrorDetectingCompilerInfo": "while detecting compiler information:\nThe log file content at \"{path}\" is:",

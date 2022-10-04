@@ -1125,7 +1125,11 @@ namespace vcpkg
         var_provider.load_tag_vars(action_plan, provider, host_triplet);
 
         // install plan will be empty if it is already installed - need to change this at status paragraph part
-        Checks::msg_check_exit(VCPKG_LINE_INFO, !action_plan.empty(), msgEmptyInstallPlan);
+        if (action_plan.empty())
+        {
+            Debug::print("Install plan cannot be empty");
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
 
 #if defined(_WIN32)
         const auto maybe_common_triplet = Util::common_projection(

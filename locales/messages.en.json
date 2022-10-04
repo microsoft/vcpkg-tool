@@ -115,7 +115,6 @@
   "ElapsedTimeForChecks": "Time to determine pass/fail: {elapsed}",
   "EmailVcpkgTeam": "Send an email to {url} with any feedback.",
   "EmptyArg": "The option --{option} must be passed a non-empty argument.",
-  "EmptyInstallPlan": "Install plan cannot be empty",
   "EmptyLicenseExpression": "SPDX license expression was empty.",
   "EnvStrFailedToExtract": "could not expand the environment string:",
   "ErrorDetectingCompilerInfo": "while detecting compiler information:\nThe log file content at \"{path}\" is:",
