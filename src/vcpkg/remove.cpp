@@ -19,6 +19,15 @@ namespace vcpkg::Remove
 
     REGISTER_MESSAGE(RemovingPackage);
 
+    LocalizedString format_filesystem_call_error(const std::error_code& ec,
+                                                 StringView call_name,
+                                                 std::initializer_list<StringView> args)
+    {
+        auto arguments = args.size() == 0 ? "()" : "(\"" + Strings::join("\", \"", args.begin(), args.end()) + "\")";
+        return msg::format(msgFileSystemOperationFailed)
+            .append_raw(fmt::format("\n{} {}:{}", call_name, arguments, ec.message()));
+    }
+
     static void remove_package(Filesystem& fs,
                                const InstalledPaths& installed,
                                const PackageSpec& spec,
@@ -51,7 +60,8 @@ namespace vcpkg::Remove
                 const auto status = fs.symlink_status(target, ec);
                 if (ec)
                 {
-                    msg::println_error(msgFailedSymlinkStatus, msg::path = target, msg::error_msg = ec.message());
+                    Checks::exit_with_message_and_line(
+                        VCPKG_LINE_INFO, format_filesystem_call_error(ec, __func__, {target, spec.to_string()}));
                     continue;
                 }
 
@@ -64,13 +74,13 @@ namespace vcpkg::Remove
                     fs.remove(target, ec);
                     if (ec)
                     {
-                        msg::println_error(
-                            msgFailedToRemoveDirectory, msg::path = target, msg::error_msg = ec.message());
+                        Checks::exit_with_message_and_line(
+                            VCPKG_LINE_INFO, format_filesystem_call_error(ec, __func__, {target, spec.to_string()}));
                     }
                 }
                 else if (vcpkg::exists(status))
                 {
-                    msg::println_warning(msgInvalidFileType, msg::path = target);
+                    Checks::unreachable(VCPKG_LINE_INFO, fmt::format("\"{}\": cannot handle file type", target));
                 }
                 else
                 {
@@ -87,7 +97,8 @@ namespace vcpkg::Remove
                     fs.remove(*b, ec);
                     if (ec)
                     {
-                        msg::write_unlocalized_text_to_stdout(Color::error, ec.message());
+                        Checks::exit_with_message_and_line(VCPKG_LINE_INFO,
+                                                           format_filesystem_call_error(ec, __func__, {*b}));
                     }
                 }
             }
@@ -244,7 +255,11 @@ namespace vcpkg::Remove
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
 
         const std::vector<RemovePlanAction> remove_plan = create_remove_plan(specs, status_db);
-        Checks::msg_check_exit(VCPKG_LINE_INFO, !remove_plan.empty(), msgEmptyRemovePlan);
+
+        if (remove_plan.empty())
+        {
+            Checks::unreachable(VCPKG_LINE_INFO, "Remove plan cannot be empty");
+        }
 
         std::map<RemovePlanType, std::vector<const RemovePlanAction*>> group_by_plan_type;
         Util::group_by(remove_plan, &group_by_plan_type, [](const RemovePlanAction& p) { return p.plan_type; });

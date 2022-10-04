@@ -496,7 +496,6 @@ namespace vcpkg
     REGISTER_MESSAGE(EmailVcpkgTeam);
     REGISTER_MESSAGE(EmptyArg);
     REGISTER_MESSAGE(EmptyLicenseExpression);
-    REGISTER_MESSAGE(EmptyRemovePlan);
     REGISTER_MESSAGE(EnvStrFailedToExtract);
     REGISTER_MESSAGE(ErrorDetectingCompilerInfo);
     REGISTER_MESSAGE(ErrorIndividualPackagesUnsupported);
@@ -530,7 +529,6 @@ namespace vcpkg
     REGISTER_MESSAGE(ExpectedValueForOption);
     REGISTER_MESSAGE(ExportingPackage);
     REGISTER_MESSAGE(ExtendedDocumentationAtUrl);
-    REGISTER_MESSAGE(FailedSymlinkStatus);
     REGISTER_MESSAGE(FailedToExtract);
     REGISTER_MESSAGE(FailedToFindPortFeature);
     REGISTER_MESSAGE(FailedToFormatMissingFile);
@@ -550,7 +548,6 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedToRead);
     REGISTER_MESSAGE(FailedToReadParagraph);
     REGISTER_MESSAGE(FailedToRemoveControl);
-    REGISTER_MESSAGE(FailedToRemoveDirectory);
     REGISTER_MESSAGE(FailedToRunToolToDetermineVersion);
     REGISTER_MESSAGE(FailedToStoreBackToMirror);
     REGISTER_MESSAGE(FailedToStoreBinaryCache);
@@ -604,7 +601,6 @@ namespace vcpkg
     REGISTER_MESSAGE(IncorrectNumberOfArgs);
     REGISTER_MESSAGE(InfoSetEnvVar);
     REGISTER_MESSAGE(InitRegistryFailedNoRepo);
-    REGISTER_MESSAGE(InsertedNullParagraph);
     REGISTER_MESSAGE(InstalledPackages);
     REGISTER_MESSAGE(InstalledRequestedPackages);
     REGISTER_MESSAGE(InstallingFromLocation);
@@ -635,7 +631,6 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidCommandArgSort);
     REGISTER_MESSAGE(InvalidCommitId);
     REGISTER_MESSAGE(InvalidFilename);
-    REGISTER_MESSAGE(InvalidFileType);
     REGISTER_MESSAGE(InvalidFormatString);
     REGISTER_MESSAGE(InvalidLinkage);
     REGISTER_MESSAGE(InvalidOptionForRemove);
@@ -822,4 +817,5 @@ namespace vcpkg
     REGISTER_MESSAGE(WhileLookingForSpec);
     REGISTER_MESSAGE(WindowsOnlyCommand);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
+    REGISTER_MESSAGE(FileSystemOperationFailed);
 }
