@@ -22,6 +22,8 @@
 
 #if defined(_WIN32)
 #pragma comment(lib, "Advapi32")
+#else
+#include <spawn.h>
 #endif
 
 namespace
@@ -41,7 +43,7 @@ namespace
                                  msg::exit_code = error_value,
                                  msg::error_msg = std::system_category().message(static_cast<int>(error_value)));
     }
-}
+} // unnamed namespace
 
 namespace vcpkg
 {
@@ -719,22 +721,6 @@ namespace vcpkg
 #endif
 
 #if defined(_WIN32)
-    void cmd_execute_background(const Command& cmd_line)
-    {
-        const ElapsedTimer timer;
-        auto process_info =
-            windows_create_windowless_process(cmd_line.command_line(),
-                                              default_working_directory,
-                                              default_environment,
-                                              CREATE_NEW_CONSOLE | CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB);
-        if (!process_info)
-        {
-            Debug::print("cmd_execute_background() failed: ", process_info.error(), "\n");
-        }
-
-        Debug::print("cmd_execute_background() took ", static_cast<int>(timer.microseconds()), " us\n");
-    }
-
     Environment cmd_execute_and_capture_environment(const Command& cmd_line, const Environment& env)
     {
         static StringLiteral magic_string = "cdARN4xjKueKScMy9C6H";
@@ -785,6 +771,46 @@ namespace vcpkg
         return new_env;
     }
 #endif
+
+    void cmd_execute_background(const Command& cmd_line)
+    {
+        Debug::println("cmd_execute_background: ", cmd_line.command_line());
+#if defined(_WIN32)
+        auto process_info =
+            windows_create_windowless_process(cmd_line.command_line(),
+                                              default_working_directory,
+                                              default_environment,
+                                              CREATE_NEW_CONSOLE | CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB);
+        if (!process_info)
+        {
+            Debug::println("cmd_execute_background() failed: ", process_info.error());
+        }
+#else  // ^^^ _WIN32 // !_WIN32
+        pid_t pid;
+
+        std::vector<std::string> argv_builder; // as if by system()
+        argv_builder.reserve(3);
+        argv_builder.emplace_back("sh");
+        argv_builder.emplace_back("-c");
+        StringView command_line = cmd_line.command_line();
+        argv_builder.emplace_back(command_line.data(), command_line.size());
+
+        std::vector<char*> argv;
+        argv.reserve(argv_builder.size() + 1);
+        for (std::string& arg : argv_builder)
+        {
+            argv.emplace_back(arg.data());
+        }
+
+        argv.emplace_back(nullptr);
+
+        int error = posix_spawn(&pid, "/bin/sh", nullptr /*file_actions*/, nullptr /*attrp*/, argv.data(), environ);
+        if (error)
+        {
+            Debug::println(fmt::format("cmd_execute_background() failed: {}", error));
+        }
+#endif // ^^^ !_WIN32
+    }
 
     static ExpectedL<int> cmd_execute_impl(const Command& cmd_line, const WorkingDirectory& wd, const Environment& env)
     {

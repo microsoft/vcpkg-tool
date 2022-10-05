@@ -566,54 +566,39 @@ namespace vcpkg
             return;
         }
 
-#if defined(_WIN32)
-        wchar_t temp_folder[MAX_PATH];
-        GetTempPathW(MAX_PATH, temp_folder);
-
-        const Path temp_folder_path = Path(Strings::to_utf8(temp_folder)) / "vcpkg";
-        const Path temp_folder_path_exe = temp_folder_path / "vcpkg-" VCPKG_BASE_VERSION_AS_STRING ".exe";
-#endif
-
-        std::error_code ec;
-#if defined(_WIN32)
-        fs.create_directories(temp_folder_path, ec);
-        if (ec) return;
-        fs.copy_file(get_exe_path_of_current_process(), temp_folder_path_exe, CopyOptions::skip_existing, ec);
-        if (ec) return;
-#else
-        if (!fs.exists("/tmp", IgnoreErrors{})) return;
-        const Path temp_folder_path = "/tmp/vcpkg";
-        fs.create_directory(temp_folder_path, IgnoreErrors{});
-#endif
+        const Path temp_folder_path = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
         const Path vcpkg_metrics_txt_path = temp_folder_path / ("vcpkg" + generate_random_UUID() + ".txt");
+        Debug::println("Uploading metrics ", vcpkg_metrics_txt_path);
+        std::error_code ec;
         fs.write_contents(vcpkg_metrics_txt_path, payload, ec);
         if (ec) return;
 
 #if defined(_WIN32)
+        const Path temp_folder_path_exe = temp_folder_path / "vcpkg-" VCPKG_BASE_VERSION_AS_STRING ".exe";
+        fs.copy_file(get_exe_path_of_current_process(), temp_folder_path_exe, CopyOptions::skip_existing, ec);
+        if (ec) return;
         Command builder;
         builder.string_arg(temp_folder_path_exe);
         builder.string_arg("x-upload-metrics");
         builder.string_arg(vcpkg_metrics_txt_path);
         cmd_execute_background(builder);
 #else
-        // TODO: convert to cmd_execute_background or something.
-        auto curl = Command("curl")
-                        .string_arg("https://dc.services.visualstudio.com/v2/track")
-                        .string_arg("--max-time")
-                        .string_arg("3")
-                        .string_arg("-H")
-                        .string_arg("Content-Type: application/json")
-                        .string_arg("-X")
-                        .string_arg("POST")
-                        .string_arg("--tlsv1.2")
-                        .string_arg("--data")
-                        .string_arg(Strings::concat("@", vcpkg_metrics_txt_path))
-                        .raw_arg(">/dev/null")
-                        .raw_arg("2>&1");
-        auto remove = Command("rm").string_arg(vcpkg_metrics_txt_path);
-        Command cmd_line;
-        cmd_line.raw_arg("(").raw_arg(curl.command_line()).raw_arg(";").raw_arg(remove.command_line()).raw_arg(") &");
-        cmd_execute_clean(cmd_line);
+        cmd_execute_background(Command("curl")
+                                   .string_arg("https://dc.services.visualstudio.com/v2/track")
+                                   .string_arg("--max-time")
+                                   .string_arg("60")
+                                   .string_arg("-H")
+                                   .string_arg("Content-Type: application/json")
+                                   .string_arg("-X")
+                                   .string_arg("POST")
+                                   .string_arg("--tlsv1.2")
+                                   .string_arg("--data")
+                                   .string_arg(Strings::concat("@", vcpkg_metrics_txt_path))
+                                   .raw_arg(">/dev/null")
+                                   .raw_arg("2>&1")
+                                   .raw_arg(";")
+                                   .string_arg("rm")
+                                   .string_arg(vcpkg_metrics_txt_path));
 #endif
     }
 }
