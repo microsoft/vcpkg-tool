@@ -154,7 +154,7 @@ TEST_CASE ("user config fills in system values", "[metrics]")
         CHECK(uut.user_mac == "0");
     }
 
-    SECTION ("{} mac is not replaced")
+    SECTION ("{} mac is replaced")
     {
         // For a while we had a bug where we always set "{}" without attempting to get a MAC address.
         // We will attempt to get a MAC address and store a "0" if we fail.
