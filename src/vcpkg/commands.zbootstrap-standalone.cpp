@@ -23,13 +23,13 @@ namespace vcpkg::Commands
     void ZBootstrapStandaloneCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
     {
         DownloadManager download_manager{{}};
-        const auto& vcpkg_root_arg = args.vcpkg_root_dir;
-        if (!vcpkg_root_arg)
+        const auto maybe_vcpkg_root_arg = args.vcpkg_root_dir.get();
+        if (!maybe_vcpkg_root_arg)
         {
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgVcpkgRootRequired);
         }
 
-        const auto& vcpkg_root = fs.almost_canonical(*vcpkg_root_arg, VCPKG_LINE_INFO);
+        const auto& vcpkg_root = fs.almost_canonical(*maybe_vcpkg_root_arg, VCPKG_LINE_INFO);
         fs.create_directories(vcpkg_root, VCPKG_LINE_INFO);
         const auto bundle_tarball = vcpkg_root / "vcpkg-standalone-bundle.tar.gz";
 #if defined(VCPKG_STANDALONE_BUNDLE_SHA)
