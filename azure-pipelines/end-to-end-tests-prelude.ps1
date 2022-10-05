@@ -101,7 +101,9 @@ function Run-Vcpkg {
     )
     $Script:CurrentTest = "$VcpkgExe $($testArgs -join ' ')"
     if (!$EndToEndTestSilent) { Write-Host $Script:CurrentTest }
-    (& $VcpkgExe @testArgs) | Out-String
+    $result = (& $VcpkgExe @testArgs) | Out-String
+    if (!$EndToEndTestSilent) { Write-Host $result }
+    $result
 }
 
 Refresh-TestRoot

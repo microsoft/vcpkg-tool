@@ -2,7 +2,7 @@
 
 # Test that metrics are on by default
 $metricsTagName = 'vcpkg.disable-metrics'
-$metricsAreDisabledMessage = 'Warning: passed --sendmetrics, but metrics are disabled.'
+$metricsAreDisabledMessage = 'warning: passed --sendmetrics, but metrics are disabled.'
 
 function Test-MetricsEnabled() {
     Param(
