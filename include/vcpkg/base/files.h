@@ -295,6 +295,9 @@ namespace vcpkg
         virtual bool create_directories(const Path& new_directory, std::error_code& ec) = 0;
         bool create_directories(const Path& new_directory, LineInfo);
 
+        virtual Path create_or_get_temp_directory(std::error_code& ec) = 0;
+        Path create_or_get_temp_directory(LineInfo);
+
         virtual void create_symlink(const Path& to, const Path& from, std::error_code& ec) = 0;
         void create_symlink(const Path& to, const Path& from, LineInfo);
 
