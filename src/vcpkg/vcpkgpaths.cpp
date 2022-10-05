@@ -589,9 +589,9 @@ namespace vcpkg
     static Path determine_root(const Filesystem& fs, const Path& original_cwd, const VcpkgCmdArguments& args)
     {
         Path ret;
-        if (auto vcpkg_root_dir = args.vcpkg_root_dir.get())
+        if (auto vcpkg_root_dir_arg = args.vcpkg_root_dir_arg.get())
         {
-            ret = fs.almost_canonical(*vcpkg_root_dir, VCPKG_LINE_INFO);
+            ret = fs.almost_canonical(*vcpkg_root_dir_arg, VCPKG_LINE_INFO);
         }
         else
         {
@@ -602,6 +602,20 @@ namespace vcpkg
                     fs.find_file_recursively_up(fs.almost_canonical(get_exe_path_of_current_process(), VCPKG_LINE_INFO),
                                                 ".vcpkg-root",
                                                 VCPKG_LINE_INFO);
+            }
+
+            if (auto vcpkg_root_dir_env = args.vcpkg_root_dir_env.get())
+            {
+                auto canonical_root_dir_env = fs.almost_canonical(*vcpkg_root_dir_env, VCPKG_LINE_INFO);
+                if (ret.empty())
+                {
+                    ret = std::move(canonical_root_dir_env);
+                }
+                else if (ret != canonical_root_dir_env)
+                {
+                    msg::println_warning(
+                        msgIgnoringVcpkgRootEnvironment, msg::path = *vcpkg_root_dir_env, msg::actual = ret);
+                }
             }
         }
 

@@ -599,6 +599,7 @@ namespace vcpkg
     REGISTER_MESSAGE(HelpUpdateCommand);
     REGISTER_MESSAGE(HelpUpgradeCommand);
     REGISTER_MESSAGE(HelpVersionCommand);
+    REGISTER_MESSAGE(IgnoringVcpkgRootEnvironment);
     REGISTER_MESSAGE(IllegalFeatures);
     REGISTER_MESSAGE(IllegalPlatformSpec);
     REGISTER_MESSAGE(ImproperShaLength);

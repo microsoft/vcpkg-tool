@@ -361,6 +361,8 @@
   "HelpUpdateCommand": "List packages that can be updated.",
   "HelpUpgradeCommand": "Rebuild all outdated packages.",
   "HelpVersionCommand": "Display version information.",
+  "IgnoringVcpkgRootEnvironment": "Ignoring VCPKG_ROOT environment variable; use --vcpkg-root \"{path}\" to use the environment value or unset the VCPKG_ROOT environment variable to suppress this message. Using detected vcpkg root: \"{actual}\".",
+  "_IgnoringVcpkgRootEnvironment.comment": "{actual} is the path we actually used An example of {path} is /foo/bar.",
   "IllegalFeatures": "List of features is not allowed in this context",
   "IllegalPlatformSpec": "Platform qualifier is not allowed in this context",
   "ImproperShaLength": "SHA512's must be 128 hex characters: {value}",

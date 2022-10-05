@@ -120,7 +120,11 @@ namespace vcpkg
 
         constexpr static StringLiteral VCPKG_ROOT_DIR_ENV = "VCPKG_ROOT";
         constexpr static StringLiteral VCPKG_ROOT_DIR_ARG = "vcpkg-root";
-        Optional<std::string> vcpkg_root_dir;
+
+        constexpr static StringLiteral VCPKG_ROOT_ARG_NAME = "VCPKG_ROOT_ARG";
+        Optional<std::string> vcpkg_root_dir_arg;
+        constexpr static StringLiteral VCPKG_ROOT_ENV_NAME = "VCPKG_ROOT_ENV";
+        Optional<std::string> vcpkg_root_dir_env;
         constexpr static StringLiteral MANIFEST_ROOT_DIR_ARG = "x-manifest-root";
         Optional<std::string> manifest_root_dir;
 

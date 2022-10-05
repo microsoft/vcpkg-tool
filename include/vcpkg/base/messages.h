@@ -1014,6 +1014,12 @@ namespace vcpkg
     DECLARE_MESSAGE(HelpUpdateCommand, (), "", "List packages that can be updated.");
     DECLARE_MESSAGE(HelpUpgradeCommand, (), "", "Rebuild all outdated packages.");
     DECLARE_MESSAGE(HelpVersionCommand, (), "", "Display version information.");
+    DECLARE_MESSAGE(
+        IgnoringVcpkgRootEnvironment,
+        (msg::path, msg::actual),
+        "{actual} is the path we actually used",
+        "Ignoring VCPKG_ROOT environment variable; use --vcpkg-root \"{path}\" to use the environment value or unset "
+        "the VCPKG_ROOT environment variable to suppress this message. Using detected vcpkg root: \"{actual}\".");
     DECLARE_MESSAGE(IllegalFeatures, (), "", "List of features is not allowed in this context");
     DECLARE_MESSAGE(IllegalPlatformSpec, (), "", "Platform qualifier is not allowed in this context");
     DECLARE_MESSAGE(ImproperShaLength,

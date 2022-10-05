@@ -124,7 +124,7 @@ namespace vcpkg
 
     static void parse_cojoined_value(StringView new_value, StringView option_name, Optional<std::string>& option_field)
     {
-        if (nullptr != option_field)
+        if (option_field.has_value())
         {
             msg::println_error(msgDuplicateOptions, msg::value = option_name);
             LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::Error,
@@ -334,7 +334,7 @@ namespace vcpkg
             // basic_arg[0] == '-' && basic_arg[1] == '-'
             StringView arg = StringView(basic_arg).substr(2);
             constexpr static std::pair<StringView, Optional<std::string> VcpkgCmdArguments::*> cojoined_values[] = {
-                {VCPKG_ROOT_DIR_ARG, &VcpkgCmdArguments::vcpkg_root_dir},
+                {VCPKG_ROOT_DIR_ARG, &VcpkgCmdArguments::vcpkg_root_dir_arg},
                 {TRIPLET_ARG, &VcpkgCmdArguments::triplet},
                 {HOST_TRIPLET_ARG, &VcpkgCmdArguments::host_triplet},
                 {MANIFEST_ROOT_DIR_ARG, &VcpkgCmdArguments::manifest_root_dir},
@@ -746,7 +746,7 @@ namespace vcpkg
 
         from_env(get_env, TRIPLET_ENV, triplet);
         from_env(get_env, HOST_TRIPLET_ENV, host_triplet);
-        from_env(get_env, VCPKG_ROOT_DIR_ENV, vcpkg_root_dir);
+        vcpkg_root_dir_env = get_environment_variable(VCPKG_ROOT_DIR_ENV);
         from_env(get_env, DOWNLOADS_ROOT_DIR_ENV, downloads_root_dir);
         from_env(get_env, DEFAULT_VISUAL_STUDIO_PATH_ENV, default_visual_studio_path);
         from_env(get_env, ASSET_SOURCES_ENV, asset_sources_template_env);
@@ -812,10 +812,16 @@ namespace vcpkg
             auto rec_doc = Json::parse(*vcpkg_recursive_data).value_or_exit(VCPKG_LINE_INFO).first;
             const auto& obj = rec_doc.object(VCPKG_LINE_INFO);
 
-            if (auto entry = obj.get(VCPKG_ROOT_DIR_ENV))
+            if (auto entry = obj.get(VCPKG_ROOT_ARG_NAME))
             {
                 auto as_sv = entry->string(VCPKG_LINE_INFO);
-                args.vcpkg_root_dir.emplace(as_sv.data(), as_sv.size());
+                args.vcpkg_root_dir_arg.emplace(as_sv.data(), as_sv.size());
+            }
+
+            if (auto entry = obj.get(VCPKG_ROOT_ENV_NAME))
+            {
+                auto as_sv = entry->string(VCPKG_LINE_INFO);
+                args.vcpkg_root_dir_env.emplace(as_sv.data(), as_sv.size());
             }
 
             if (auto entry = obj.get(DOWNLOADS_ROOT_DIR_ENV))
@@ -842,9 +848,14 @@ namespace vcpkg
         else
         {
             Json::Object obj;
-            if (auto vcpkg_root_dir = args.vcpkg_root_dir.get())
+            if (auto vcpkg_root_dir_arg = args.vcpkg_root_dir_arg.get())
             {
-                obj.insert(VCPKG_ROOT_DIR_ENV, Json::Value::string(*vcpkg_root_dir));
+                obj.insert(VCPKG_ROOT_ARG_NAME, Json::Value::string(*vcpkg_root_dir_arg));
+            }
+
+            if (auto vcpkg_root_dir_env = args.vcpkg_root_dir_env.get())
+            {
+                obj.insert(VCPKG_ROOT_ENV_NAME, Json::Value::string(*vcpkg_root_dir_env));
             }
 
             if (auto downloads_root_dir = args.downloads_root_dir.get())
