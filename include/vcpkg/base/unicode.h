@@ -29,12 +29,11 @@ namespace vcpkg::Unicode
         UnexpectedEof = 6,
     };
 
-    DECLARE_MESSAGE(Utf8DecoderDereferencedAtEof, (), "", "dereferenced Utf8Decoder at the end of a string.");
-
     const std::error_category& utf8_category() noexcept;
 
     Utf8CodeUnitKind utf8_code_unit_kind(unsigned char code_unit) noexcept;
-    int utf8_code_unit_count(Utf8CodeUnitKind kind) noexcept;
+
+    constexpr int utf8_code_unit_count(Utf8CodeUnitKind kind) noexcept { return static_cast<int>(kind); }
     int utf8_code_unit_count(char code_unit) noexcept;
 
     int utf8_encode_code_point(char (&array)[4], char32_t code_point) noexcept;
@@ -47,7 +46,31 @@ namespace vcpkg::Unicode
                                                              char32_t& out) noexcept;
 
     // uses the C++20 definition
-    bool is_double_width_code_point(char32_t ch) noexcept;
+    /*
+        [format.string.std]
+        * U+1100 - U+115F
+        * U+2329 - U+232A
+        * U+2E80 - U+303E
+        * U+3040 - U+A4CF
+        * U+AC00 - U+D7A3
+        * U+F900 - U+FAFF
+        * U+FE10 - U+FE19
+        * U+FE30 - U+FE6F
+        * U+FF00 - U+FF60
+        * U+FFE0 - U+FFE6
+        * U+1F300 - U+1F64F
+        * U+1F900 - U+1F9FF
+        * U+20000 - U+2FFFD
+        * U+30000 - U+3FFFD
+    */
+    constexpr bool is_double_width_code_point(char32_t ch) noexcept
+    {
+        return (ch >= 0x1100 && ch <= 0x115F) || (ch >= 0x2329 && ch <= 0x232A) || (ch >= 0x2E80 && ch <= 0x303E) ||
+               (ch >= 0x3040 && ch <= 0xA4CF) || (ch >= 0xAC00 && ch <= 0xD7A3) || (ch >= 0xF900 && ch <= 0xFAFF) ||
+               (ch >= 0xFE10 && ch <= 0xFE19) || (ch >= 0xFE30 && ch <= 0xFE6F) || (ch >= 0xFF00 && ch <= 0xFF60) ||
+               (ch >= 0xFFE0 && ch <= 0xFFE6) || (ch >= 0x1F300 && ch <= 0x1F64F) || (ch >= 0x1F900 && ch <= 0x1F9FF) ||
+               (ch >= 0x20000 && ch <= 0x2FFFD) || (ch >= 0x30000 && ch <= 0x3FFFD);
+    }
 
     inline std::string& utf8_append_code_point(std::string& str, char32_t code_point)
     {
@@ -102,10 +125,19 @@ namespace vcpkg::Unicode
     */
     struct Utf8Decoder
     {
-        Utf8Decoder() noexcept;
-        explicit Utf8Decoder(StringView sv) : Utf8Decoder(sv.begin(), sv.end()) { }
-        Utf8Decoder(const char* first, const char* last) noexcept;
-
+        constexpr Utf8Decoder() noexcept : current_(end_of_file), next_(nullptr), last_(nullptr) { }
+        explicit constexpr Utf8Decoder(StringView sv) : Utf8Decoder(sv.begin(), sv.end()) { }
+        constexpr Utf8Decoder(const char* first, const char* last) noexcept : current_(0), next_(first), last_(last)
+        {
+            if (next_ != last_)
+            {
+                ++*this;
+            }
+            else
+            {
+                current_ = end_of_file;
+            }
+        }
         struct sentinel
         {
         };
@@ -122,9 +154,8 @@ namespace vcpkg::Unicode
         {
             if (is_eof())
             {
-                msg::print(Color::error, msg::msgInternalErrorMessage);
-                msg::println(Color::error, msgUtf8DecoderDereferencedAtEof);
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msg::msgInternalErrorMessageContact);
+                Checks::exit_with_message_and_line(VCPKG_LINE_INFO,
+                                                   "internal error: dereferenced Utf8Decoder at the end of a string.");
             }
             return current_;
         }
@@ -137,9 +168,9 @@ namespace vcpkg::Unicode
             return res;
         }
 
-        Utf8Decoder begin() const { return *this; }
+        constexpr Utf8Decoder begin() const { return *this; }
 
-        sentinel end() const { return sentinel(); }
+        constexpr sentinel end() const { return sentinel(); }
 
         friend bool operator==(const Utf8Decoder& lhs, const Utf8Decoder& rhs) noexcept;
 
@@ -157,11 +188,10 @@ namespace vcpkg::Unicode
 
     inline bool operator!=(const Utf8Decoder& lhs, const Utf8Decoder& rhs) noexcept { return !(lhs == rhs); }
 
-    inline bool operator==(const Utf8Decoder& d, Utf8Decoder::sentinel) { return d.is_eof(); }
-    inline bool operator==(Utf8Decoder::sentinel s, const Utf8Decoder& d) { return d == s; }
-    inline bool operator!=(const Utf8Decoder& d, Utf8Decoder::sentinel) { return !d.is_eof(); }
-    inline bool operator!=(Utf8Decoder::sentinel s, const Utf8Decoder& d) { return d != s; }
-
+    constexpr bool operator==(const Utf8Decoder& d, Utf8Decoder::sentinel) { return d.is_eof(); }
+    constexpr bool operator==(Utf8Decoder::sentinel s, const Utf8Decoder& d) { return d == s; }
+    constexpr bool operator!=(const Utf8Decoder& d, Utf8Decoder::sentinel) { return !d.is_eof(); }
+    constexpr bool operator!=(Utf8Decoder::sentinel s, const Utf8Decoder& d) { return d != s; }
 }
 
 namespace std
@@ -170,5 +200,4 @@ namespace std
     struct is_error_code_enum<vcpkg::Unicode::utf8_errc> : std::true_type
     {
     };
-
 }
