@@ -888,7 +888,7 @@ namespace vcpkg
     DECLARE_MESSAGE(FailedToLoadInstalledManifest,
                     (msg::spec),
                     "",
-                    "The control or mnaifest file for {spec} could not be loaded due to the following error. Please "
+                    "The control or manifest file for {spec} could not be loaded due to the following error. Please "
                     "remove {spec} and try again.");
     DECLARE_MESSAGE(FailedToLoadPort,
                     (msg::package_name, msg::path),
