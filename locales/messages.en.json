@@ -122,7 +122,6 @@
   "EmptyLicenseExpression": "SPDX license expression was empty.",
   "EndOfStringInCodeUnit": "found end of string in middle of code point",
   "EnvStrFailedToExtract": "could not expand the environment string:",
-  "ErrorCodeOutOfRange": "error code out of range",
   "ErrorDetectingCompilerInfo": "while detecting compiler information:\nThe log file content at \"{path}\" is:",
   "ErrorIndividualPackagesUnsupported": "In manifest mode, `vcpkg install` does not support individual package arguments.\nTo install additional packages, edit vcpkg.json and then run `vcpkg install` without any package arguments.",
   "ErrorInvalidClassicModeOption": "The option --{option} is not supported in classic mode and no manifest was found.",

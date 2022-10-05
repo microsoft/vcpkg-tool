@@ -199,7 +199,7 @@ namespace vcpkg::Unicode
                 case utf8_errc::UnexpectedContinue: return msg::format(msgContinueCodeUnitInStart).extract_data();
                 case utf8_errc::UnexpectedStart: return msg::format(msgStartCodeUnitInContinue).extract_data();
                 case utf8_errc::UnexpectedEof: return msg::format(msgEndOfStringInCodeUnit).extract_data();
-                default: return msg::format(msgErrorCodeOutOfRange).extract_data();
+                default: Checks::unreachable(VCPKG_LINE_INFO);
             }
         }
     };

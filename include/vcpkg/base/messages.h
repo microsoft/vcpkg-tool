@@ -799,7 +799,6 @@ namespace vcpkg
     DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
     DECLARE_MESSAGE(EndOfStringInCodeUnit, (), "", "found end of string in middle of code point");
     DECLARE_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:");
-    DECLARE_MESSAGE(ErrorCodeOutOfRange, (), "", "error code out of range");
     DECLARE_MESSAGE(ErrorDetectingCompilerInfo,
                     (msg::path),
                     "",

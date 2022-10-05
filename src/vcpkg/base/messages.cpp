@@ -503,7 +503,6 @@ namespace vcpkg
     REGISTER_MESSAGE(EmptyLicenseExpression);
     REGISTER_MESSAGE(EndOfStringInCodeUnit);
     REGISTER_MESSAGE(EnvStrFailedToExtract);
-    REGISTER_MESSAGE(ErrorCodeOutOfRange);
     REGISTER_MESSAGE(ErrorDetectingCompilerInfo);
     REGISTER_MESSAGE(ErrorIndividualPackagesUnsupported);
     REGISTER_MESSAGE(ErrorInvalidClassicModeOption);
