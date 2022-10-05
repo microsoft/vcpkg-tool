@@ -292,6 +292,7 @@ int main(const int argc, const char* const* const argv)
 
     args.debug_print_feature_flags();
     args.track_feature_flag_metrics();
+    args.track_environment_metrics();
 
     if (Debug::g_debugging)
     {
