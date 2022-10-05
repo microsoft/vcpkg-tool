@@ -47,6 +47,7 @@ namespace vcpkg
         std::vector<SpecSummary> results;
 
         void print() const;
+        void print_failed() const;
         std::string xunit_results() const;
         bool failed() const;
     };

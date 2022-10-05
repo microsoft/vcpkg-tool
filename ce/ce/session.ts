@@ -3,7 +3,7 @@
 
 import { strict } from 'assert';
 import { MetadataFile } from './amf/metadata-file';
-import { Activation, deactivate } from './artifacts/activation';
+import { deactivate } from './artifacts/activation';
 import { Artifact, InstalledArtifact } from './artifacts/artifact';
 import { configurationName, defaultConfig, globalConfigurationFile, postscriptVariable, undo } from './constants';
 import { FileSystem } from './fs/filesystem';
@@ -50,7 +50,7 @@ export type Context = { [key: string]: Array<string> | undefined; } & {
 
 export type SessionSettings = {
   readonly vcpkgCommand?: string;
-  readonly homeFolder?: string;
+  readonly homeFolder: string;
   readonly vcpkgArtifactsRoot?: string;
   readonly vcpkgDownloads?: string;
   readonly vcpkgRegistriesCache?: string;
@@ -73,14 +73,14 @@ export class Session {
   readonly tmpFolder: Uri;
   readonly installFolder: Uri;
   readonly registryFolder: Uri;
-  readonly activation: Activation = new Activation(this);
   get vcpkgCommand() { return this.settings.vcpkgCommand; }
 
   readonly globalConfig: Uri;
   readonly downloads: Uri;
   readonly telemetryEnabled: boolean;
   currentDirectory: Uri;
-  configuration!: MetadataFile;
+  configuration?: MetadataFile;
+  readonly postscriptFile?: Uri;
 
   /** register installer functions here */
   private installers = new Map<string, InstallerTool>([
@@ -108,7 +108,7 @@ export class Session {
 
     this.telemetryEnabled = this.settings['telemetryEnabled'];
 
-    this.homeFolder = this.fileSystem.file(settings.homeFolder!);
+    this.homeFolder = this.fileSystem.file(settings.homeFolder);
     this.downloads = this.processVcpkgArg(settings.vcpkgDownloads, 'downloads');
     this.globalConfig = this.homeFolder.join(globalConfigurationFile);
 
@@ -116,6 +116,9 @@ export class Session {
 
     this.registryFolder = this.processVcpkgArg(settings.vcpkgRegistriesCache, 'registries').join('artifact');
     this.installFolder = this.processVcpkgArg(settings.vcpkgArtifactsRoot, 'artifacts');
+
+    const postscriptFileName = this.environment[postscriptVariable];
+    this.postscriptFile = postscriptFileName ? this.fileSystem.file(postscriptFileName) : undefined;
 
     this.currentDirectory = this.fileSystem.file(currentDirectory);
   }
@@ -131,12 +134,7 @@ export class Session {
   }
 
   async saveConfig() {
-    await this.configuration.save(this.globalConfig);
-  }
-
-  #postscriptFile?: Uri;
-  get postscriptFile() {
-    return this.#postscriptFile || (this.#postscriptFile = this.environment[postscriptVariable] ? this.fileSystem.file(this.environment[postscriptVariable]!) : undefined);
+    await this.configuration?.save(this.globalConfig);
   }
 
   async init() {
