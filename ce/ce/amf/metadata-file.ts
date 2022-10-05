@@ -92,8 +92,6 @@ export class MetadataFile extends BaseMap {
 
   readonly conditionalDemands = new Demands(undefined, this, 'demands');
 
-  readonly acquisitionTags = new Strings(undefined, this, 'acquisition-tags');
-
   get isFormatValid(): boolean {
     return this.document.errors.length === 0;
   }
@@ -173,7 +171,7 @@ export class MetadataFile extends BaseMap {
   override *validate(): Iterable<ValidationMessage> {
     yield* super.validate();
     const hasInfo = this.document.has('info');
-    const allowedChildren = ['acquisition-tags', 'contacts', 'registries', 'demands', 'exports', 'requires', 'install'];
+    const allowedChildren = ['contacts', 'registries', 'demands', 'exports', 'requires', 'install'];
 
     if (hasInfo) {
       // 2022-06-17 and earlier used a separate 'info' block for these fields
@@ -206,21 +204,6 @@ export class MetadataFile extends BaseMap {
       }
       if (this.childIs('options', 'sequence') === false) {
         yield { message: i`options should be a sequence, found '${this.kind('options')}'`, range: this.sourcePosition('options'), category: ErrorKind.IncorrectType };
-      }
-      const acquisitionTagsType = this.childIs('acquisition-tags', 'sequence');
-      if (acquisitionTagsType === false) {
-        yield { message: i`acquisition-tags should be a sequence, found '${this.kind('acquisition-tags')}'`, range: this.sourcePosition('acquisition-tags'), category: ErrorKind.IncorrectType };
-      } else if (acquisitionTagsType === true) {
-        const badTags = new Array<string>();
-        for (const testTag of this.acquisitionTags) {
-          if (!/^[A-Za-z]+$/.exec(testTag)) {
-            badTags.push(testTag);
-          }
-        }
-
-        if (badTags.length !== 0) {
-          yield { message: i`acquisition-tags may only be letters, found bad tags ${badTags.join(',')}`, range: this.sourcePosition('acquisition-tags'), category: ErrorKind.ParseError };
-        }
       }
     }
 
