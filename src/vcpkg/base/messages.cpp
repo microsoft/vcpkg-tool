@@ -475,7 +475,6 @@ namespace vcpkg
     REGISTER_MESSAGE(ConstraintViolation);
     REGISTER_MESSAGE(ContinueCodeUnitInStart);
     REGISTER_MESSAGE(ControlAndManifestFilesPresent);
-
     REGISTER_MESSAGE(CopyrightIsDir);
     REGISTER_MESSAGE(CorruptedDatabase);
     REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion);
