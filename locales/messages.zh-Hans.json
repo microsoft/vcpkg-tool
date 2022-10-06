@@ -155,7 +155,7 @@
   "FailedToExtract": "无法提取“{path}”:",
   "FailedToFindPortFeature": "在 {spec} 中找不到 {feature}。",
   "FailedToFormatMissingFile": "没有要设置格式的文件。\n请传递 --all 或要设置格式或转换的显式文件。",
-  "FailedToLoadInstalledManifest": "The control or mnaifest file for {spec} could not be loaded due to the following error. Please remove {spec} and try again.",
+  "FailedToLoadInstalledManifest": "The control or manifest file for {spec} could not be loaded due to the following error. Please remove {spec} and try again.",
   "FailedToLoadPort": "Failed to load port {package_name} from {path}",
   "FailedToLoadPortFrom": "Failed to load port from {path}",
   "FailedToLocateSpec": "未能在图形中定位规范: {spec}",
