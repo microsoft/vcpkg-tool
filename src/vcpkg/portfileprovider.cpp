@@ -196,10 +196,10 @@ namespace vcpkg
                         {
                             // This should change to a soft error when ParseExpected is eliminated.
                             print_error_message(maybe_control_file.error());
-                            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                                       "Error: Failed to load port %s from %s",
-                                                       version_spec.port_name,
-                                                       path->path);
+                            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                                           msgFailedToLoadNamedPortFromPath,
+                                                           msg::package_name = version_spec.port_name,
+                                                           msg::path = path->path);
                         }
                     }
                     else
@@ -258,10 +258,10 @@ namespace vcpkg
                 {
                     Debug::print("Using overlay: ", overlay, "\n");
 
-                    Checks::check_exit(VCPKG_LINE_INFO,
-                                       vcpkg::is_directory(m_fs.status(overlay, VCPKG_LINE_INFO)),
-                                       "Error: Overlay path \"%s\" must exist and must be a directory",
-                                       overlay);
+                    Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                           vcpkg::is_directory(m_fs.status(overlay, VCPKG_LINE_INFO)),
+                                           msgOverlayPatchDir,
+                                           msg::path = overlay);
                 }
             }
 
@@ -289,8 +289,10 @@ namespace vcpkg
                         else
                         {
                             print_error_message(maybe_scf.error());
-                            Checks::exit_maybe_upgrade(
-                                VCPKG_LINE_INFO, "Error: Failed to load port %s from %s", port_name, ports_dir);
+                            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                                           msgFailedToLoadNamedPortFromPath,
+                                                           msg::package_name = port_name,
+                                                           msg::path = ports_dir);
                         }
 
                         continue;
@@ -307,18 +309,22 @@ namespace vcpkg
                             {
                                 return SourceControlFileAndLocation{std::move(scf), std::move(ports_spec)};
                             }
-                            Checks::exit_maybe_upgrade(
-                                VCPKG_LINE_INFO,
-                                "Error: Failed to load port from %s: names did not match: '%s' != '%s'",
-                                ports_spec,
-                                port_name,
-                                scf->core_paragraph->name);
+                            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                                           msg::format(msgFailedToLoadNamedPortFromPath,
+                                                                       msg::package_name = port_name,
+                                                                       msg::path = ports_spec)
+                                                               .append_raw("\n")
+                                                               .append(msgMismatchedNames,
+                                                                       msg::package_name = port_name,
+                                                                       msg::actual = scf->core_paragraph->name));
                         }
                         else
                         {
                             print_error_message(found_scf.error());
-                            Checks::exit_maybe_upgrade(
-                                VCPKG_LINE_INFO, "Error: Failed to load port %s from %s", port_name, ports_dir);
+                            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                                           msgFailedToLoadNamedPortFromPath,
+                                                           msg::package_name = port_name,
+                                                           msg::path = ports_dir);
                         }
                     }
                 }
@@ -358,8 +364,8 @@ namespace vcpkg
                         else
                         {
                             print_error_message(maybe_scf.error());
-                            Checks::exit_maybe_upgrade(
-                                VCPKG_LINE_INFO, "Error: Failed to load port from %s", ports_dir);
+                            Checks::msg_exit_maybe_upgrade(
+                                VCPKG_LINE_INFO, msgFailedToLoadUnnamedPortFromPath, msg::path = ports_dir);
                         }
 
                         continue;

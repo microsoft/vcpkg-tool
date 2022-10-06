@@ -441,7 +441,7 @@ namespace
                     return std::make_unique<BuiltinPortTreeRegistryEntry>(
                         scf->core_paragraph->name, port_directory, scf->to_version());
                 }
-                msg::println_error(msgFailedToLoadPortFrom,
+                msg::println_error(msgUnexpectedPortName,
                                    msg::expected = scf->core_paragraph->name,
                                    msg::actual = port_name,
                                    msg::path = port_directory);
