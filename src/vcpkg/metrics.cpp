@@ -116,15 +116,24 @@ namespace vcpkg
         {DefineMetric::X_WriteNugetPackagesConfig, "x-write-nuget-packages-config"},
     }};
 
+    // SHA256s separated by colons, separated by commas
+    static constexpr char plan_example[] = "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff:"
+                                           "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff:"
+                                           "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff,"
+                                           "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff:"
+                                           "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff:"
+                                           "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff";
+
     const constexpr std::array<StringMetricEntry, static_cast<size_t>(StringMetric::COUNT)> all_string_metrics{{
+        // registryUri:id:version,...
+        {StringMetric::AcquiredArtifacts, "acquired_artifacts", plan_example},
         {StringMetric::BuildError, "build_error", "gsl:x64-windows"},
         {StringMetric::CommandArgs, "command_args", "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff"},
         {StringMetric::CommandContext, "command_context", "artifact"},
         {StringMetric::CommandName, "command_name", "z-preregister-telemetry"},
         {StringMetric::DetectedCiEnvironment, "detected_ci_environment", "Generic"},
-        {StringMetric::InstallPlan_1,
-         "installplan_1",
-         "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff"},
+        // spec:triplet:version,...
+        {StringMetric::InstallPlan_1, "installplan_1", plan_example},
         {StringMetric::ListFile, "listfile", "update to new format"},
         {StringMetric::RegistriesDefaultRegistryKind, "registries-default-registry-kind", "builtin-files"},
         {StringMetric::RegistriesKindsUsed, "registries-kinds-used", "git,filesystem"},
