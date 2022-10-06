@@ -1,14 +1,14 @@
 {
   "name": "@microsoft/vcpkg-ce",
   "version": "0.8.0",
-  "description": "vcpkg-ce",
+  "description": "vcpkg-artifacts",
   "main": "dist/main.js",
   "typings": "dist/exports.d.ts",
   "directories": {
     "doc": "docs"
   },
   "engines": {
-    "node": ">=10.12.0"
+    "node": ">=14.0.0"
   },
   "scripts": {
     "eslint-fix": "eslint  . --fix --ext .ts",
@@ -22,20 +22,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Microsoft/vcpkg-ce.git"
+    "url": "git+https://github.com/Microsoft/vcpkg-tool.git"
   },
   "keywords": [
-    "vcpkg-ce",
-    "vcpkg",
-    "ce"
+    "vcpkg-artifacts",
+    "vcpkg"
   ],
   "author": "Microsoft",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Microsoft/vcpkg-ce/issues"
+    "url": "https://github.com/Microsoft/vcpkg/issues"
   },
-  "homepage": "https://github.com/Microsoft/vcpkg-ce#readme",
-  "readme": "https://github.com/Microsoft/vcpkg-ce/blob/master/readme.md",
+  "homepage": "https://github.com/Microsoft/vcpkg#readme",
+  "readme": "https://github.com/Microsoft/vcpkg/blob/master/readme.md",
   "devDependencies": {
     "@types/node": "17.0.15",
     "@typescript-eslint/eslint-plugin": "5.10.2",
