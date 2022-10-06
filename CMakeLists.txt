@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.15) # 3.15 for MSVC_RUNTIME_LIBRARY, removing d
 cmake_policy(SET CMP0091 NEW)
 cmake_policy(SET CMP0092 NEW)
 
-if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.20)
+if(POLICY CMP0115)
     cmake_policy(SET CMP0115 NEW)
 endif()
 
