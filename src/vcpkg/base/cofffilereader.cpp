@@ -111,8 +111,12 @@ namespace vcpkg
 
         char file_start[FILE_START.size()];
         Checks::check_exit(VCPKG_LINE_INFO, fs.read(&file_start, FILE_START.size(), 1) == 1);
-        Checks::msg_check_exit(
-            VCPKG_LINE_INFO, FILE_START == StringView{file_start, FILE_START.size()}, msgIncorrectArchiveFileSignature);
+
+        if (FILE_START != StringView{file_start, FILE_START.size()})
+        {
+            msg::println_error(msgIncorrectArchiveFileSignature);
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
     }
 
     static void read_and_skip_first_linker_member(const vcpkg::ReadFilePointer& fs)

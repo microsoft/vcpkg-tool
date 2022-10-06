@@ -292,7 +292,11 @@ namespace vcpkg
                            out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
                        }
                    }).value_or_exit(VCPKG_LINE_INFO);
-        Checks::msg_check_exit(VCPKG_LINE_INFO, res == 0, msgCurlFailedToExecute, msg::exit_code = res);
+
+        if (res != 0)
+        {
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgCurlFailedToExecute, msg::exit_code = res);
+        }
 
         if (out->size() != start_size + urls.size())
         {
@@ -361,7 +365,11 @@ namespace vcpkg
                                out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
                            }
                        }).value_or_exit(VCPKG_LINE_INFO);
-            Checks::msg_check_exit(VCPKG_LINE_INFO, res == 0, msgCurlFailedToExecute, msg::exit_code = res);
+
+            if (res != 0)
+            {
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgCurlFailedToExecute, msg::exit_code = res);
+            }
 
             if (start_size + url_pairs.size() > out->size())
             {
@@ -419,7 +427,7 @@ namespace vcpkg
                     return 0;
                 }
 
-                msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("{}\n", res->output));
+                Debug::print(res->output, '\n');
                 return Strings::concat(
                     "Error: curl failed to put file to ", url, " with exit code: ", res->exit_code, '\n');
             }
@@ -761,7 +769,9 @@ namespace vcpkg
                 }
             }
         }
-        Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgFailedToDownloadFromMirrorSet, msg::error_msg = errors);
+        msg::println_error(msgFailedToDownloadFromMirrorSet);
+        msg::println_error(LocalizedString::from_raw(errors));
+        Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
     ExpectedS<int> DownloadManager::put_file_to_mirror(const Filesystem& fs,

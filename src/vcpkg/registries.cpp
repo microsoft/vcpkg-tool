@@ -87,19 +87,18 @@ namespace
                 {
                     LockGuardPtr<Metrics>(g_metrics)->track_define_property(
                         DefineMetric::RegistriesErrorNoVersionsAtCommit);
-                    Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                                  msgCouldNotFindGitTreeAtCommit,
-                                                  msg::package_name = m_repo,
-                                                  msg::value = e.commit_id(),
-                                                  msg::error_msg = maybe_tree.error());
+                    Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                                msgCouldNotFindGitTreeAtCommit,
+                                                msg::package_name = m_repo,
+                                                msg::value = e.commit_id(),
+                                                msg::error_msg = maybe_tree.error());
                 }
                 auto maybe_path = m_paths.git_checkout_object_from_remote_registry(*maybe_tree.get());
                 if (!maybe_path)
                 {
-                    Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                                  msgFailedToCheckoutRepo,
-                                                  msg::package_name = m_repo,
-                                                  msg::error_msg = maybe_path.error());
+                    msg::println_error(msgFailedToCheckoutRepo, msg::package_name = m_repo);
+                    msg::println_error(LocalizedString::from_raw(maybe_path.error()));
+                    Checks::exit_fail(VCPKG_LINE_INFO);
                 }
                 return std::move(*maybe_path.get());
             });
@@ -442,12 +441,11 @@ namespace
                     return std::make_unique<BuiltinPortTreeRegistryEntry>(
                         scf->core_paragraph->name, port_directory, scf->to_version());
                 }
-
-                Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                               msgFailedToLoadPortFrom,
-                                               msg::path = port_directory,
-                                               msg::package_name = port_name,
-                                               msg::value = scf->core_paragraph->name);
+                msg::println_error(msgFailedToLoadPortFrom,
+                                   msg::expected = scf->core_paragraph->name,
+                                   msg::actual = port_name,
+                                   msg::path = port_directory);
+                Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
 
@@ -469,12 +467,8 @@ namespace
     void BuiltinFilesRegistry::get_all_port_names(std::vector<std::string>& out) const
     {
         std::error_code ec;
-        auto port_directories = m_fs.get_directories_non_recursive(m_builtin_ports_directory, ec);
-        Checks::msg_check_exit(VCPKG_LINE_INFO,
-                               !ec,
-                               msgFailedWhileEnumeratingPorts,
-                               msg::path = m_builtin_ports_directory,
-                               msg::error_msg = ec.message());
+        auto port_directories = m_fs.get_directories_non_recursive(m_builtin_ports_directory, VCPKG_LINE_INFO);
+
         for (auto&& port_directory : port_directories)
         {
             auto filename = port_directory.filename();
@@ -570,10 +564,10 @@ namespace
                     return {};
                 }
 
-                Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                               msgCouldNotFindBaseline,
-                                               msg::value = m_baseline_identifier,
-                                               msg::path = path_to_baseline);
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                            msgCouldNotFindBaseline,
+                                            msg::value = m_baseline_identifier,
+                                            msg::path = path_to_baseline);
             }
 
             Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, res_baseline.error());
@@ -655,12 +649,13 @@ namespace
                 {
                     LockGuardPtr<Metrics>(g_metrics)->track_define_property(
                         DefineMetric::RegistriesErrorCouldNotFindBaseline);
-                    Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                                  msgCouldNotFindBaselineForRepo,
-                                                  msg::value = m_baseline_identifier,
-                                                  msg::package_name = m_repo,
-                                                  msg::error_msg = maybe_contents.error(),
-                                                  msg::error = maybe_err.error());
+                    msg::println_error(
+                        msgCouldNotFindBaselineForRepo, msg::value = m_baseline_identifier, msg::package_name = m_repo);
+                    msg::println_error(msgFailedToFetchError,
+                                       msg::error_msg = maybe_contents.error(),
+                                       msg::package_name = m_repo,
+                                       msg::error = maybe_err.error());
+                    Checks::exit_fail(VCPKG_LINE_INFO);
                 }
 
                 maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
@@ -697,11 +692,12 @@ namespace
             }
             else
             {
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                              msgErrorWhileFetchingBaseline,
-                                              msg::value = m_baseline_identifier,
-                                              msg::package_name = m_repo,
-                                              msg::error_msg = res_baseline.error());
+                msg::println_error(msg::format(msgErrorWhileFetchingBaseline,
+                                               msg::value = m_baseline_identifier,
+                                               msg::package_name = m_repo)
+                                       .append_raw('\n')
+                                       .append(LocalizedString::from_raw(res_baseline.error())));
+                Checks::exit_fail(VCPKG_LINE_INFO);
             }
         });
 
@@ -872,9 +868,11 @@ namespace
                                                               StringView port_name,
                                                               const Path& registry_root)
     {
-        Checks::msg_check_exit(VCPKG_LINE_INFO,
-                               !(type == VersionDbType::Filesystem && registry_root.empty()),
-                               msgTypeShouldNotBeFilesystem);
+        if (type == VersionDbType::Filesystem && registry_root.empty())
+        {
+            Debug::print("Bug in vcpkg; type should never = Filesystem when registry_root is empty.");
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
 
         auto versions_file_path = registry_versions / relative_path_to_versions(port_name);
 

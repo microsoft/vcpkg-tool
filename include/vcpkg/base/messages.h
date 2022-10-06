@@ -575,12 +575,12 @@ namespace vcpkg
     DECLARE_MESSAGE(BaselineFileNoDefaultField,
                     (msg::value),
                     "{value} is a commit sha",
-                    "The baseline file at commit {value} was invalid (no \"default\" field)");
-    DECLARE_MESSAGE(
-        BaselineMissingDefault,
-        (msg::value, msg::package_name),
-        "{value} is a commit sha.",
-        "The baseline.json from commit `\"{value}\"` in the repo {package_name} did not contain a \"default\" field.");
+                    "The baseline file at commit {value} was invalid (no \"default\" field).");
+    DECLARE_MESSAGE(BaselineMissingDefault,
+                    (msg::value, msg::package_name),
+                    "{value} is a commit sha.",
+                    "The baseline.json from commit `\"{value}\"` in the repo {package_name} was invalid (did not "
+                    "contain a \"default\" field).");
     DECLARE_MESSAGE(BinarySourcesArg, (), "", "Add sources for binary caching. See 'vcpkg help binarycaching'.");
     DECLARE_MESSAGE(BuildAlreadyInstalled,
                     (msg::spec),
@@ -740,12 +740,15 @@ namespace vcpkg
     DECLARE_MESSAGE(CouldNotFindBaseline,
                     (msg::value, msg::path),
                     "{value} is a commit sha",
-                    " could not find explicitly specified baseline `\"{value}\"` in baseline file `{path}`.");
+                    "Could not find explicitly specified baseline `\"{value}\"` in baseline file {path}");
     DECLARE_MESSAGE(CouldNotFindBaselineForRepo,
-                    (msg::value, msg::package_name, msg::error_msg, msg::error),
-                    "{value} is a commit sha. {error} is an error code",
-                    "Couldn't find baseline `\"{value}\"` for repo {package_name}:\n{error_msg}\nFailed to fetch "
-                    "{package_name}:\n{error}");
+                    (msg::value, msg::package_name),
+                    "{value} is a commit sha.",
+                    "Couldn't find baseline `\"{value}\"` for repo {package_name}");
+    DECLARE_MESSAGE(FailedToFetchError,
+                    (msg::error_msg, msg::package_name, msg::error),
+                    "{error} is the error code",
+                    "{error_msg}\nFailed to fetch {package_name}:\n{error}");
     DECLARE_MESSAGE(CouldNotFindBaselineInCommit,
                     (msg::value, msg::package_name, msg::error_msg),
                     "{value} is a commit sha.",
@@ -884,9 +887,9 @@ namespace vcpkg
                     "Visual Studio Code was not found and the environment variable {env_var} is not set or invalid.");
     DECLARE_MESSAGE(ErrorVsCodeNotFoundPathExamined, (), "", "The following paths were examined:");
     DECLARE_MESSAGE(ErrorWhileFetchingBaseline,
-                    (msg::value, msg::package_name, msg::error_msg),
+                    (msg::value, msg::package_name),
                     "{value} is a commit sha.",
-                    "Error while fetching baseline `\"{value}\"` from repo {package_name}:\n{error_msg}");
+                    "while fetching baseline `\"{value}\"` from repo {package_name}:");
     DECLARE_MESSAGE(ErrorWhileParsing, (msg::path), "", "Errors occurred while parsing {path}.");
     DECLARE_MESSAGE(ErrorWhileWriting, (msg::path), "", "Error occured while writing {path}");
     DECLARE_MESSAGE(ExceededRecursionDepth, (), "", "Recursion depth exceeded.");
@@ -910,13 +913,10 @@ namespace vcpkg
     DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
     DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
     DECLARE_MESSAGE(FailedToCheckoutRepo,
-                    (msg::package_name, msg::error_msg),
+                    (msg::package_name),
                     "",
-                    "failed to check out `versions` from repo {package_name}: {error_msg}");
-    DECLARE_MESSAGE(FailedToDownloadFromMirrorSet,
-                    (msg::error_msg),
-                    "",
-                    "Failed to download from mirror set:\n{error_msg}");
+                    "failed to check out `versions` from repo {package_name}");
+    DECLARE_MESSAGE(FailedToDownloadFromMirrorSet, (), "", "Failed to download from mirror set");
     DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":");
     DECLARE_MESSAGE(FailedToFindBaseline, (), "", "Failed to find baseline.json");
     DECLARE_MESSAGE(FailedToFindPortFeature, (msg::feature, msg::spec), "", "Could not find {feature} in {spec}.");
@@ -927,12 +927,12 @@ namespace vcpkg
     DECLARE_MESSAGE(FailedToLoadInstalledManifest,
                     (msg::spec),
                     "",
-                    "The control or mnaifest file for {spec} could not be loaded due to the following error. Please "
-                    "remove {spec} and re-attempt.");
+                    "The control or manifest file for {spec} could not be loaded due to the following error. Please "
+                    "remove {spec} and try again.");
     DECLARE_MESSAGE(FailedToLoadPortFrom,
-                    (msg::path, msg::package_name, msg::value),
-                    "{value} is the expected port name",
-                    " Failed to load port from {path}: names did not match: '{package_name}' != '{value}'");
+                    (msg::expected, msg::actual, msg::path),
+                    "{expected} is the expected port and {actual} is the port declared by the user.",
+                    "the port {expected} is declared as {actual} in {path}");
     DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}");
     DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
     DECLARE_MESSAGE(FailedToObtainLocalPortGitSha, (), "", "Failed to obtain git SHAs for local ports.");
@@ -967,10 +967,6 @@ namespace vcpkg
                     "",
                     "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details "
                     "on how to provide credentials.");
-    DECLARE_MESSAGE(FailedWhileEnumeratingPorts,
-                    (msg::path, msg::error_msg),
-                    "",
-                    "failed while enumerating the builtin ports directory {path}: {error_msg}");
     DECLARE_MESSAGE(FeedbackAppreciated, (), "", "Thank you for your feedback!");
     DECLARE_MESSAGE(FetchingBaselineInfo,
                     (msg::package_name),
@@ -1546,10 +1542,6 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is a feature flag.",
                     "Both '{value}' and -'{value}' were specified as feature flags.");
-    DECLARE_MESSAGE(TypeShouldNotBeFilesystem,
-                    (),
-                    "",
-                    "Bug in vcpkg; type should never = Filesystem when registry_root is empty.");
     DECLARE_MESSAGE(UndeterminedToolChainForTriplet,
                     (msg::triplet, msg::system_name),
                     "",
@@ -1564,7 +1556,7 @@ namespace vcpkg
     DECLARE_MESSAGE(UnexpectedCharMidArray, (), "", "Unexpected character in middle of array");
     DECLARE_MESSAGE(UnexpectedCharMidKeyword, (), "", "Unexpected character in middle of keyword");
     DECLARE_MESSAGE(UnexpectedDigitsAfterLeadingZero, (), "", "Unexpected digits after a leading zero");
-    DECLARE_MESSAGE(UnexpectedEOF, (), "", "Unexpected EOF after escape character");
+    DECLARE_MESSAGE(UnexpectedEOFAfterEscape, (), "", "Unexpected EOF after escape character");
     DECLARE_MESSAGE(UnexpectedEOFAfterMinus, (), "", "Unexpected EOF after minus sign");
     DECLARE_MESSAGE(UnexpectedEOFExpectedChar, (), "", "Unexpected character; expected EOF");
     DECLARE_MESSAGE(UnexpectedEOFExpectedCloseBrace, (), "", "Unexpected EOF; expected property or close brace");
@@ -1733,10 +1725,10 @@ namespace vcpkg
         "what you were trying to do and the following information.");
     DECLARE_MESSAGE(VcpkgInvalidCommand, (msg::command_name), "", "invalid command: {command_name}");
     DECLARE_MESSAGE(
-        VcpkgJsonNoCommentMsg,
+        InvalidCommentStyle,
         (),
         "",
-        "\nvcpkg does not support c-style comments, however most objects allow $-prefixed fields to be used as "
+        "vcpkg does not support c-style comments, however most objects allow $-prefixed fields to be used as "
         "comments.");
     DECLARE_MESSAGE(VcpkgRootRequired, (), "", "Setting VCPKG_ROOT is required for standalone bootstrap.");
     DECLARE_MESSAGE(VcpkgRootsDir, (msg::env_var), "", "Specify the vcpkg root directory.\n(default: '{env_var}')");

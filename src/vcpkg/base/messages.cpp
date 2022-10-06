@@ -566,7 +566,6 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedToStoreBinaryCache);
     REGISTER_MESSAGE(FailedToWriteManifest);
     REGISTER_MESSAGE(FailedVendorAuthentication);
-    REGISTER_MESSAGE(FailedWhileEnumeratingPorts);
     REGISTER_MESSAGE(FeedbackAppreciated);
     REGISTER_MESSAGE(FetchingBaselineInfo);
     REGISTER_MESSAGE(FetchingRegistryInfo);
@@ -778,7 +777,6 @@ namespace vcpkg
     REGISTER_MESSAGE(TrailingCommaInArray);
     REGISTER_MESSAGE(TrailingCommaInObj);
     REGISTER_MESSAGE(TwoFeatureFlagsSpecified);
-    REGISTER_MESSAGE(TypeShouldNotBeFilesystem);
     REGISTER_MESSAGE(UndeterminedToolChainForTriplet);
     REGISTER_MESSAGE(UnexpectedCharExpectedCloseBrace);
     REGISTER_MESSAGE(UnexpectedCharExpectedColon);
@@ -788,7 +786,7 @@ namespace vcpkg
     REGISTER_MESSAGE(UnexpectedCharMidArray);
     REGISTER_MESSAGE(UnexpectedCharMidKeyword);
     REGISTER_MESSAGE(UnexpectedDigitsAfterLeadingZero);
-    REGISTER_MESSAGE(UnexpectedEOF);
+    REGISTER_MESSAGE(UnexpectedEOFAfterEscape);
     REGISTER_MESSAGE(UnexpectedEOFAfterMinus);
     REGISTER_MESSAGE(UnexpectedEOFExpectedChar);
     REGISTER_MESSAGE(UnexpectedEOFExpectedCloseBrace);
@@ -845,7 +843,7 @@ namespace vcpkg
     REGISTER_MESSAGE(VcpkgDisallowedClassicMode);
     REGISTER_MESSAGE(VcpkgHasCrashed);
     REGISTER_MESSAGE(VcpkgInvalidCommand);
-    REGISTER_MESSAGE(VcpkgJsonNoCommentMsg);
+    REGISTER_MESSAGE(InvalidCommentStyle);
     REGISTER_MESSAGE(VcpkgRootRequired);
     REGISTER_MESSAGE(VcpkgRootsDir);
     REGISTER_MESSAGE(VcpkgSendMetricsButDisabled);
@@ -866,4 +864,5 @@ namespace vcpkg
     REGISTER_MESSAGE(WhileLookingForSpec);
     REGISTER_MESSAGE(WindowsOnlyCommand);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
+    REGISTER_MESSAGE(FailedToFetchError);
 }

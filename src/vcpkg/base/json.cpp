@@ -538,7 +538,7 @@ namespace vcpkg::Json
                 // cur == '\\'
                 if (at_eof())
                 {
-                    add_error(msg::format(msgUnexpectedEOF));
+                    add_error(msg::format(msgUnexpectedEOFAfterEscape));
                     return Unicode::end_of_file;
                 }
                 current = next();
@@ -822,8 +822,10 @@ namespace vcpkg::Json
                     }
                     else if (current == '/')
                     {
-                        add_error(
-                            msg::format(msgUnexpectedCharMidArray).append(msgVcpkgJsonNoCommentMsg).extract_data());
+                        add_error(msg::format(msgUnexpectedCharMidArray)
+                                      .append_raw('\n')
+                                      .append(msgInvalidCommentStyle)
+                                      .extract_data());
                     }
                     else
                     {
@@ -868,8 +870,10 @@ namespace vcpkg::Json
                 }
                 else if (current == '/')
                 {
-                    add_error(
-                        msg::format(msgUnexpectedCharExpectedColon).append(msgVcpkgJsonNoCommentMsg).extract_data());
+                    add_error(msg::format(msgUnexpectedCharExpectedColon)
+                                  .append_raw('\n')
+                                  .append(msgInvalidCommentStyle)
+                                  .extract_data());
                     return res;
                 }
                 else
@@ -931,7 +935,8 @@ namespace vcpkg::Json
                     else if (current == '/')
                     {
                         add_error(msg::format(msgUnexpectedCharExpectedColon)
-                                      .append(msgVcpkgJsonNoCommentMsg)
+                                      .append_raw('\n')
+                                      .append(msgInvalidCommentStyle)
                                       .extract_data());
                     }
                     else
@@ -971,7 +976,8 @@ namespace vcpkg::Json
                     case '/':
                     {
                         add_error(msg::format(msgUnexpectedCharExpectedValue)
-                                      .append(msgVcpkgJsonNoCommentMsg)
+                                      .append_raw('\n')
+                                      .append(msgInvalidCommentStyle)
                                       .extract_data());
                         return Value();
                     }
