@@ -52,35 +52,32 @@ namespace vcpkg::Help
     static void help_topic_versioning(const VcpkgPaths&)
     {
         HelpTableFormatter tbl;
-        tbl.text(msg::format(msgVersioning));
+        tbl.text(msg::format(msgHelpVersioning));
         tbl.blank();
         tbl.blank();
-        tbl.header(msg::format(msgVersionFourFlavors));
-        tbl.format("version", msg::format(msgVersionHelp));
-        tbl.format("version-date", msg::format(msgVersionDateHelp));
-        tbl.format("version-semver", msg::format(msgVersionSemverHelp));
-        tbl.format("version-string", msg::format(msgVersionStringHelp));
+        tbl.header(msg::format(msgHelpVersionSchemes));
+        tbl.format("version", msg::format(msgHelpVersionScheme));
+        tbl.format("version-date", msg::format(msgHelpVersionDateScheme));
+        tbl.format("version-semver", msg::format(msgHelpVersionSemverScheme));
+        tbl.format("version-string", msg::format(msgHelpVersionStringScheme));
         tbl.blank();
-        tbl.text(msg::format(msgPortVersionHelp));
-        tbl.blank();
-        tbl.blank();
-        tbl.text("    1.0.0 < 1.0.0#1 < 1.0.1 < 1.0.1#5 < 2.0.0");
+        tbl.text(msg::format(msgHelpPortVersionScheme));
         tbl.blank();
         tbl.blank();
-        tbl.header(msg::format(msgManifestConstraints));
-        tbl.format("builtin-baseline", msg::format(msgBuiltinBaseHelp));
+        tbl.header(msg::format(msgHelpManifestConstraints));
+        tbl.format("builtin-baseline", msg::format(msgHelpBuiltinBase));
         tbl.blank();
-        tbl.format("version>=", msg::format(msgVersionGreaterHelp));
+        tbl.format("version>=", msg::format(msgHelpVersionGreater));
         tbl.blank();
-        tbl.format("overrides", msg::format(msgOverridesHelp));
+        tbl.format("overrides", msg::format(msgHelpOverrides));
         tbl.blank();
-        tbl.text(msg::format(msgMinVersionHelp));
+        tbl.text(msg::format(msgHelpMinVersion));
         tbl.blank();
-        tbl.text(msg::format(msgUpdateBaselineHelp));
+        tbl.text(msg::format(msgHelpUpdateBaseline));
         tbl.blank();
-        tbl.text(msg::format(msgPackagePublisherHelp));
+        tbl.text(msg::format(msgHelpPackagePublisher));
         tbl.blank();
-        tbl.text(msg::format(msgExampleManifest));
+        tbl.text(msg::format(msgHelpExampleManifest));
         tbl.blank();
         tbl.text(R"({
     "name": "example",
