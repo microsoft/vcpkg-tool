@@ -722,6 +722,10 @@ namespace vcpkg
                     "command:\n"
                     "{command_line}\n"
                     "failed with the following results:");
+    DECLARE_MESSAGE(ComparingUtf8Decoders,
+                    (),
+                    "",
+                    "Comparing Utf8Decoders with different provenance; this is always an error");
     DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":");
     DECLARE_MESSAGE(ComputingInstallPlan, (), "", "Computing installation plan...");
     DECLARE_MESSAGE(ConflictingFiles,
@@ -730,6 +734,7 @@ namespace vcpkg
                     "The following files are already installed in {path} and are in conflict with {spec}");
     DECLARE_MESSAGE(ConflictingValuesForOption, (msg::option), "", "conflicting values specified for '--{option}'.");
     DECLARE_MESSAGE(ConstraintViolation, (), "", "Found a constraint violation:");
+    DECLARE_MESSAGE(ContinueCodeUnitInStart, (), "", "found continue code unit in start position");
     DECLARE_MESSAGE(ControlAndManifestFilesPresent,
                     (msg::path),
                     "",
@@ -792,6 +797,7 @@ namespace vcpkg
     DECLARE_MESSAGE(EmailVcpkgTeam, (msg::url), "", "Send an email to {url} with any feedback.");
     DECLARE_MESSAGE(EmptyArg, (msg::option), "", "The option --{option} must be passed a non-empty argument.");
     DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
+    DECLARE_MESSAGE(EndOfStringInCodeUnit, (), "", "found end of string in middle of code point");
     DECLARE_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:");
     DECLARE_MESSAGE(ErrorDetectingCompilerInfo,
                     (msg::path),
@@ -862,6 +868,10 @@ namespace vcpkg
     DECLARE_MESSAGE(ExceededRecursionDepth, (), "", "Recursion depth exceeded.");
     DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
     DECLARE_MESSAGE(ExcludedPackages, (), "", "The following packages are excluded:");
+    DECLARE_MESSAGE(ExpectedAtMostOneSetOfTags,
+                    (msg::count, msg::old_value, msg::new_value, msg::value),
+                    "{old_value} is a left tag and {new_value} is the right tag. {value} is the input.",
+                    "Found {count} sets of {old_value}.*{new_value} but expected at most 1, in block:\n{value}");
     DECLARE_MESSAGE(
         ExpectedCascadeFailure,
         (msg::expected, msg::actual),
@@ -873,6 +883,10 @@ namespace vcpkg
         "{expected} is a locale-invariant delimiter; for example, the ':' or '=' in 'zlib:x64-windows=skip'",
         "expected '{expected}' here");
     DECLARE_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' here");
+    DECLARE_MESSAGE(ExpectedOneSetOfTags,
+                    (msg::count, msg::old_value, msg::new_value, msg::value),
+                    "{old_value} is a left tag and {new_value} is the right tag. {value} is the input.",
+                    "Found {count} sets of {old_value}.*{new_value} but expected exactly 1, in block:\n{value}");
     DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
     DECLARE_MESSAGE(ExpectedStatusField, (), "", "Expected 'status' field in status paragraph");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
@@ -1024,6 +1038,7 @@ namespace vcpkg
                     (msg::command_name, msg::expected, msg::actual),
                     "'{expected}' is the required number of arguments. '{actual}' is the number of arguments provided.",
                     "'{command_name}' requires '{expected}' arguments, but '{actual}' were provided.");
+    DECLARE_MESSAGE(IncrementedUtf8Decoder, (), "", "Incremented Utf8Decoder at the end of the string");
     DECLARE_MESSAGE(InfoSetEnvVar,
                     (msg::env_var),
                     "In this context 'editor' means IDE",
@@ -1123,6 +1138,8 @@ namespace vcpkg
                     "invalid argument: binary config '{binary_source}' requires a SAS token without a "
                     "preceeding '?' as the second argument");
     DECLARE_MESSAGE(InvalidBuildInfo, (msg::error_msg), "", "Invalid BUILD_INFO file for package: {error_msg}");
+    DECLARE_MESSAGE(InvalidCodePoint, (), "", "Invalid code point passed to utf8_encoded_code_point_count");
+    DECLARE_MESSAGE(InvalidCodeUnit, (), "", "invalid code unit");
     DECLARE_MESSAGE(InvalidCommandArgSort,
                     (),
                     "",
@@ -1311,6 +1328,7 @@ namespace vcpkg
     DECLARE_MESSAGE(NewVersionCannotBeEmpty, (), "", "--version cannot be empty.");
     DECLARE_MESSAGE(NoArgumentsForOption, (msg::option), "", "The option --{option} does not accept an argument.");
     DECLARE_MESSAGE(NoCachedPackages, (), "", "No packages are cached.");
+    DECLARE_MESSAGE(NoError, (), "", "no error");
     DECLARE_MESSAGE(NoInstalledPackages,
                     (),
                     "The name 'search' is the name of a command that is not localized.",
@@ -1351,6 +1369,10 @@ namespace vcpkg
                     (msg::vendor),
                     "",
                     "Packing {vendor} failed. Use --debug for more information.");
+    DECLARE_MESSAGE(PairedSurrogatesAreInvalid,
+                    (),
+                    "",
+                    "trailing surrogate following leading surrogate (paired surrogates are invalid)");
     DECLARE_MESSAGE(ParseControlErrorInfoInvalidFields, (), "", "The following fields were not expected:");
     DECLARE_MESSAGE(ParseControlErrorInfoMissingFields, (), "", "The following fields were missing:");
     DECLARE_MESSAGE(ParseControlErrorInfoTypesEntry,
@@ -1471,6 +1493,7 @@ namespace vcpkg
                     (msg::env_var),
                     "",
                     "Specify the target architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')");
+    DECLARE_MESSAGE(StartCodeUnitInContinue, (), "", "found start code unit in continue position");
     DECLARE_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: \"{path}\"");
     DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512");
     DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.");
@@ -1569,6 +1592,7 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is the short option given",
                     "short options are not supported: '{value}'");
+    DECLARE_MESSAGE(UnsupportedSyntaxInCDATA, (), "", "]]> is not supported in CDATA block");
     DECLARE_MESSAGE(UnsupportedSystemName,
                     (msg::system_name),
                     "",
@@ -1642,6 +1666,7 @@ namespace vcpkg
                     "'--' at the beginning must be preserved",
                     "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.");
     DECLARE_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
+    DECLARE_MESSAGE(Utf8ConversionFailed, (), "", "Failed to convert to UTF-8");
     DECLARE_MESSAGE(VcpkgCeIsExperimental,
                     (),
                     "",
