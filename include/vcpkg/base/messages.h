@@ -580,6 +580,8 @@ namespace vcpkg
                     "An example of env_var is \"HTTP(S)_PROXY\""
                     "'--' at the beginning must be preserved",
                     "-- Automatically setting {env_var} environment variables to \"{url}\".");
+    DECLARE_MESSAGE(AvailableArchitectureTriplets, (), "", "Available architecture triplets:");
+    DECLARE_MESSAGE(AvailableHelpTopics, (), "", "Available help topics:");
     DECLARE_MESSAGE(BinarySourcesArg, (), "", "Add sources for binary caching. See 'vcpkg help binarycaching'.");
     DECLARE_MESSAGE(BuildAlreadyInstalled,
                     (msg::spec),
@@ -678,6 +680,7 @@ namespace vcpkg
                     "Fourth optional part of build troubleshooting message, printed after the version"
                     "information about vcpkg itself.",
                     "Please use the prefilled template from {path} when reporting your issue.");
+    DECLARE_MESSAGE(BuiltInTriplets, (), "", "vcpkg built-in triplets:");
     DECLARE_MESSAGE(ChecksFailedCheck, (), "", "vcpkg has crashed; no additional details are available.");
     DECLARE_MESSAGE(ChecksUnreachableCode, (), "", "unreachable code was reached");
     DECLARE_MESSAGE(ChecksUpdateVcpkg, (), "", "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.");
@@ -722,6 +725,7 @@ namespace vcpkg
                     "command:\n"
                     "{command_line}\n"
                     "failed with the following results:");
+    DECLARE_MESSAGE(CommunityTriplets, (), "", "VCPKG community triplets:");
     DECLARE_MESSAGE(ComparingUtf8Decoders,
                     (),
                     "",
@@ -945,6 +949,7 @@ namespace vcpkg
                     "on how to provide credentials.");
     DECLARE_MESSAGE(FeedbackAppreciated, (), "", "Thank you for your feedback!");
     DECLARE_MESSAGE(FileNotFound, (msg::path), "", "{path}: file not found");
+    DECLARE_MESSAGE(FileSystemOperationFailed, (), "", "Filesystem operation failed:");
     DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at \"{path}\".");
     DECLARE_MESSAGE(FollowingPackagesMissingControl,
                     (),
@@ -996,6 +1001,14 @@ namespace vcpkg
                     (msg::package_name),
                     "'header' refers to C/C++ .h files",
                     "{package_name} is header-only and can be used from CMake via:");
+    DECLARE_MESSAGE(
+        HelpBuiltinBase,
+        (),
+        "",
+        "The baseline references a commit within the vcpkg repository that establishes a minimum version on "
+        "every dependency in the graph. For example, if no other constraints are specified (directly or "
+        "transitively), then the version will resolve to the baseline of the top level manifest. Baselines "
+        "of transitive dependencies are ignored.");
     DECLARE_MESSAGE(HelpContactCommand, (), "", "Display contact information to send feedback.");
     DECLARE_MESSAGE(HelpCreateCommand, (), "", "Create a new port.");
     DECLARE_MESSAGE(HelpDependInfoCommand, (), "", "Display a list of dependencies for ports.");
@@ -1009,6 +1022,7 @@ namespace vcpkg
                     (),
                     "",
                     "For more help (including examples) see the accompanying README.md and docs folder.");
+    DECLARE_MESSAGE(HelpExampleManifest, (), "", "Example manifest:");
     DECLARE_MESSAGE(HelpExportCommand, (), "", "Exports a package.");
     DECLARE_MESSAGE(HelpFormatManifestCommand,
                     (),
@@ -1018,16 +1032,74 @@ namespace vcpkg
     DECLARE_MESSAGE(HelpInitializeRegistryCommand, (), "", "Initializes a registry in the directory <path>.");
     DECLARE_MESSAGE(HelpInstallCommand, (), "", "Install a package.");
     DECLARE_MESSAGE(HelpListCommand, (), "", "List installed packages.");
+    DECLARE_MESSAGE(HelpManifestConstraints,
+                    (),
+                    "",
+                    "Manifests can place three kinds of constraints upon the versions used");
+    DECLARE_MESSAGE(
+        HelpMinVersion,
+        (),
+        "",
+        "Vcpkg will select the minimum version found that matches all applicable constraints, including the "
+        "version from the baseline specified at top-level as well as any \"version>=\" constraints in the graph.");
+    DECLARE_MESSAGE(
+        HelpOverrides,
+        (),
+        "",
+        "When used as the top-level manifest (such as when running `vcpkg install` in the directory), overrides "
+        "allow a manifest to short-circuit dependency resolution and specify exactly the version to use. These can "
+        "be used to handle version conflicts, such as with `version-string` dependencies. They will not be "
+        "considered when transitively depended upon.");
     DECLARE_MESSAGE(HelpOwnsCommand, (), "", "Search for files in installed packages.");
+    DECLARE_MESSAGE(
+        HelpPackagePublisher,
+        (),
+        "",
+        "Additionally, package publishers can use \"version>=\" constraints to ensure that consumers are using at "
+        "least a certain minimum version of a given dependency. For example, if a library needs an API added "
+        "to boost-asio in 1.70, a \"version>=\" constraint will ensure transitive users use a sufficient version "
+        "even in the face of individual version overrides or cross-registry references.");
+    DECLARE_MESSAGE(
+        HelpPortVersionScheme,
+        (),
+        "",
+        "Each version additionally has a \"port-version\" which is a nonnegative integer. When rendered as "
+        "text, the port version (if nonzero) is added as a suffix to the primary version text separated by a "
+        "hash (#). Port-versions are sorted lexographically after the primary version text, for example:\n1.0.0 < "
+        "1.0.0#1 < 1.0.1 < 1.0.1#5 < 2.0.0");
     DECLARE_MESSAGE(HelpRemoveCommand, (), "", "Uninstall a package.");
     DECLARE_MESSAGE(HelpRemoveOutdatedCommand, (), "", "Uninstall all out-of-date packages.");
     DECLARE_MESSAGE(HelpResponseFileCommand, (), "", "Specify a response file to provide additional parameters.");
     DECLARE_MESSAGE(HelpSearchCommand, (), "", "Search for packages available to be built.");
     DECLARE_MESSAGE(HelpTopicCommand, (), "", "Display help for a specific topic.");
     DECLARE_MESSAGE(HelpTopicsCommand, (), "", "Display the list of help topics.");
+    DECLARE_MESSAGE(
+        HelpUpdateBaseline,
+        (),
+        "",
+        "The best approach to keep your libraries up to date, the best approach is to update your baseline reference. "
+        "This will "
+        "ensure all packages, including transitive ones, are updated. However if you need to update a package "
+        "independently, you can use a \"version>=\" constraint.");
     DECLARE_MESSAGE(HelpUpdateCommand, (), "", "List packages that can be updated.");
     DECLARE_MESSAGE(HelpUpgradeCommand, (), "", "Rebuild all outdated packages.");
     DECLARE_MESSAGE(HelpVersionCommand, (), "", "Display version information.");
+    DECLARE_MESSAGE(HelpVersionDateScheme, (), "", "A date (2021-01-01.5)");
+    DECLARE_MESSAGE(HelpVersionGreater,
+                    (),
+                    "",
+                    "Within the \"dependencies\" field, each dependency can have a minimum constraint listed. These "
+                    "minimum constraints will be used when transitively depending upon this library. A minimum "
+                    "port-version can additionally be specified with a '#' suffix.");
+    DECLARE_MESSAGE(HelpVersioning,
+                    (),
+                    "",
+                    "Versioning allows you to deterministically control the precise revisions of dependencies used by "
+                    "your project from within your manifest file.");
+    DECLARE_MESSAGE(HelpVersionScheme, (), "", "A dot-separated sequence of numbers (1.2.3.4)");
+    DECLARE_MESSAGE(HelpVersionSchemes, (), "", "The following versioning schemes are accepted.");
+    DECLARE_MESSAGE(HelpVersionSemverScheme, (), "", "A Semantic Version 2.0 (2.1.0-rc2)");
+    DECLARE_MESSAGE(HelpVersionStringScheme, (), "", "An exact, incomparable version (Vista)");
     DECLARE_MESSAGE(IllegalFeatures, (), "", "List of features is not allowed in this context");
     DECLARE_MESSAGE(IllegalPlatformSpec, (), "", "Platform qualifier is not allowed in this context");
     DECLARE_MESSAGE(ImproperShaLength,
@@ -1309,6 +1381,10 @@ namespace vcpkg
                     "",
                     "msiexec failed while extracting \"{path}\" with launch or exit code {exit_code} and message:");
     DECLARE_MESSAGE(MultiArch, (msg::option), "", "Multi-Arch must be 'same' but was {option}");
+    DECLARE_MESSAGE(MutuallyExclusiveOption,
+                    (msg::value, msg::option),
+                    "{value} is a second {option} switch",
+                    "--{value} can not be used with --{option}.");
     DECLARE_MESSAGE(NavigateToNPS, (msg::url), "", "Please navigate to {url} in your preferred browser.");
     DECLARE_MESSAGE(NewConfigurationAlreadyExists,
                     (msg::path),
@@ -1348,6 +1424,7 @@ namespace vcpkg
                     "--{value} requires --{option}");
     DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph");
     DECLARE_MESSAGE(OverlayPatchDir, (msg::path), "", "Overlay path \"{path}\" must exist and must be a directory.");
+    DECLARE_MESSAGE(OverlayTriplets, (msg::path), "", "Overlay triplets from {path} :");
     DECLARE_MESSAGE(OverwritingFile, (msg::path), "", "File {path} was already present and will be overwritten");
     DECLARE_MESSAGE(PackageAlreadyRemoved, (msg::spec), "", "unable to remove package {spec}: already removed");
     DECLARE_MESSAGE(PackageFailedtWhileExtracting,
@@ -1421,10 +1498,6 @@ namespace vcpkg
                     (msg::tool_name, msg::exit_code),
                     "The program's console output is appended after this.",
                     "{tool_name} failed with exit code: ({exit_code}).");
-    DECLARE_MESSAGE(MutuallyExclusiveOption,
-                    (msg::value, msg::option),
-                    "{value} is a second {option} switch",
-                    "--{value} can not be used with --{option}.");
     DECLARE_MESSAGE(PushingVendorFailed,
                     (msg::vendor, msg::path),
                     "",
@@ -1564,6 +1637,10 @@ namespace vcpkg
                     "",
                     "Unknown setting for VCPKG_BUILD_TYPE {option}. Valid settings are '', 'debug', and 'release'.");
     DECLARE_MESSAGE(UnknownTool, (), "", "vcpkg does not have a definition of this tool for this platform.");
+    DECLARE_MESSAGE(UnknownTopic,
+                    (msg::value),
+                    "{value} the value a user passed to `vcpkg help` that we don't understand",
+                    "unknown topic {value}");
     DECLARE_MESSAGE(
         UnknownVariablesInTemplate,
         (msg::value, msg::list),
@@ -1740,5 +1817,4 @@ namespace vcpkg
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}.");
-    DECLARE_MESSAGE(FileSystemOperationFailed, (), "", "Filesystem operation failed:");
 }

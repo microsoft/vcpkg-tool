@@ -430,6 +430,8 @@ namespace vcpkg
     REGISTER_MESSAGE(AuthenticationMayRequireManualAction);
     REGISTER_MESSAGE(AutomaticLinkingForMSBuildProjects);
     REGISTER_MESSAGE(AutoSettingEnvVar);
+    REGISTER_MESSAGE(AvailableArchitectureTriplets);
+    REGISTER_MESSAGE(AvailableHelpTopics);
     REGISTER_MESSAGE(BinarySourcesArg);
     REGISTER_MESSAGE(BuildAlreadyInstalled);
     REGISTER_MESSAGE(BuildDependenciesMissing);
@@ -453,6 +455,7 @@ namespace vcpkg
     REGISTER_MESSAGE(BuildTroubleshootingMessage2);
     REGISTER_MESSAGE(BuildTroubleshootingMessage3);
     REGISTER_MESSAGE(BuildTroubleshootingMessage4);
+    REGISTER_MESSAGE(BuiltInTriplets);
     REGISTER_MESSAGE(ChecksFailedCheck);
     REGISTER_MESSAGE(ChecksUnreachableCode);
     REGISTER_MESSAGE(ChecksUpdateVcpkg);
@@ -467,6 +470,7 @@ namespace vcpkg
     REGISTER_MESSAGE(CMakeTargetsUsageHeuristicMessage);
     REGISTER_MESSAGE(CMakeToolChainFile);
     REGISTER_MESSAGE(CommandFailed);
+    REGISTER_MESSAGE(CommunityTriplets);
     REGISTER_MESSAGE(ComparingUtf8Decoders);
     REGISTER_MESSAGE(CompressFolderFailed);
     REGISTER_MESSAGE(ComputingInstallPlan);
@@ -563,6 +567,7 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedVendorAuthentication);
     REGISTER_MESSAGE(FeedbackAppreciated);
     REGISTER_MESSAGE(FileNotFound);
+    REGISTER_MESSAGE(FileSystemOperationFailed);
     REGISTER_MESSAGE(FishCompletion);
     REGISTER_MESSAGE(FollowingPackagesMissingControl);
     REGISTER_MESSAGE(FollowingPackagesNotInstalled);
@@ -582,28 +587,43 @@ namespace vcpkg
     REGISTER_MESSAGE(GitUnexpectedCommandOutput);
     REGISTER_MESSAGE(HashFileFailureToRead);
     REGISTER_MESSAGE(HeaderOnlyUsage);
+    REGISTER_MESSAGE(HelpBuiltinBase);
     REGISTER_MESSAGE(HelpContactCommand);
     REGISTER_MESSAGE(HelpCreateCommand);
     REGISTER_MESSAGE(HelpDependInfoCommand);
     REGISTER_MESSAGE(HelpEditCommand);
     REGISTER_MESSAGE(HelpEnvCommand);
     REGISTER_MESSAGE(HelpExampleCommand);
+    REGISTER_MESSAGE(HelpExampleManifest);
     REGISTER_MESSAGE(HelpExportCommand);
     REGISTER_MESSAGE(HelpFormatManifestCommand);
     REGISTER_MESSAGE(HelpHashCommand);
     REGISTER_MESSAGE(HelpInitializeRegistryCommand);
     REGISTER_MESSAGE(HelpInstallCommand);
     REGISTER_MESSAGE(HelpListCommand);
+    REGISTER_MESSAGE(HelpManifestConstraints);
+    REGISTER_MESSAGE(HelpMinVersion);
+    REGISTER_MESSAGE(HelpOverrides);
     REGISTER_MESSAGE(HelpOwnsCommand);
+    REGISTER_MESSAGE(HelpPackagePublisher);
+    REGISTER_MESSAGE(HelpPortVersionScheme);
     REGISTER_MESSAGE(HelpRemoveCommand);
     REGISTER_MESSAGE(HelpRemoveOutdatedCommand);
     REGISTER_MESSAGE(HelpResponseFileCommand);
     REGISTER_MESSAGE(HelpSearchCommand);
     REGISTER_MESSAGE(HelpTopicCommand);
     REGISTER_MESSAGE(HelpTopicsCommand);
+    REGISTER_MESSAGE(HelpUpdateBaseline);
     REGISTER_MESSAGE(HelpUpdateCommand);
     REGISTER_MESSAGE(HelpUpgradeCommand);
     REGISTER_MESSAGE(HelpVersionCommand);
+    REGISTER_MESSAGE(HelpVersionDateScheme);
+    REGISTER_MESSAGE(HelpVersionGreater);
+    REGISTER_MESSAGE(HelpVersioning);
+    REGISTER_MESSAGE(HelpVersionScheme);
+    REGISTER_MESSAGE(HelpVersionSchemes);
+    REGISTER_MESSAGE(HelpVersionSemverScheme);
+    REGISTER_MESSAGE(HelpVersionStringScheme);
     REGISTER_MESSAGE(IllegalFeatures);
     REGISTER_MESSAGE(IllegalPlatformSpec);
     REGISTER_MESSAGE(ImproperShaLength);
@@ -691,6 +711,7 @@ namespace vcpkg
     REGISTER_MESSAGE(MonoInstructions);
     REGISTER_MESSAGE(MsiexecFailedToExtract);
     REGISTER_MESSAGE(MultiArch);
+    REGISTER_MESSAGE(MutuallyExclusiveOption);
     REGISTER_MESSAGE(NavigateToNPS);
     REGISTER_MESSAGE(NewConfigurationAlreadyExists);
     REGISTER_MESSAGE(NewManifestAlreadyExists);
@@ -711,6 +732,7 @@ namespace vcpkg
     REGISTER_MESSAGE(OptionRequiresOption);
     REGISTER_MESSAGE(OriginalBinParagraphHeader);
     REGISTER_MESSAGE(OverlayPatchDir);
+    REGISTER_MESSAGE(OverlayTriplets);
     REGISTER_MESSAGE(OverwritingFile);
     REGISTER_MESSAGE(PackageAlreadyRemoved);
     REGISTER_MESSAGE(PackageFailedtWhileExtracting);
@@ -741,7 +763,6 @@ namespace vcpkg
     REGISTER_MESSAGE(ProcessorArchitectureMissing);
     REGISTER_MESSAGE(ProcessorArchitectureW6432Malformed);
     REGISTER_MESSAGE(ProgramReturnedNonzeroExitCode);
-    REGISTER_MESSAGE(MutuallyExclusiveOption);
     REGISTER_MESSAGE(PushingVendorFailed);
     REGISTER_MESSAGE(RegistryCreated);
     REGISTER_MESSAGE(RemoveDependencies);
@@ -786,6 +807,7 @@ namespace vcpkg
     REGISTER_MESSAGE(UnknownPolicySetting);
     REGISTER_MESSAGE(UnknownSettingForBuildType);
     REGISTER_MESSAGE(UnknownTool);
+    REGISTER_MESSAGE(UnknownTopic);
     REGISTER_MESSAGE(UnknownVariablesInTemplate);
     REGISTER_MESSAGE(UnrecognizedConfigField);
     REGISTER_MESSAGE(UnrecognizedIdentifier);
@@ -843,5 +865,4 @@ namespace vcpkg
     REGISTER_MESSAGE(WhileLookingForSpec);
     REGISTER_MESSAGE(WindowsOnlyCommand);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
-    REGISTER_MESSAGE(FileSystemOperationFailed);
 }

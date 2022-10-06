@@ -25,8 +25,8 @@ namespace vcpkg
         }
 
         // Intentionally show the lowercased string
-        print2(Color::error, expected_spec.error());
-        print2(example_text);
+        msg::write_unlocalized_text_to_stdout(Color::error, expected_spec.error());
+        msg::write_unlocalized_text_to_stdout(Color::none, example_text);
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
