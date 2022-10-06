@@ -1,11 +1,7 @@
-cmake_minimum_required(VERSION 3.15) # 3.15 for MSVC_RUNTIME_LIBRARY, removing default warning flags
+cmake_minimum_required(VERSION 3.15..3.24) # 3.15 for MSVC_RUNTIME_LIBRARY, removing default warning flags
 
 cmake_policy(SET CMP0091 NEW)
 cmake_policy(SET CMP0092 NEW)
-
-if(POLICY CMP0115)
-    cmake_policy(SET CMP0115 NEW)
-endif()
 
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.24)
     cmake_policy(SET CMP0135 NEW)
