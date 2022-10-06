@@ -8,20 +8,16 @@ import { session } from '../../main';
 import { showArtifacts } from '../artifacts';
 import { Command } from '../command';
 import { error } from '../styling';
-import { Json } from '../switches/json';
 import { MSBuildProps } from '../switches/msbuild-props';
 import { Project } from '../switches/project';
-import { WhatIf } from '../switches/whatIf';
 
 export class GenerateMSBuildPropsCommand extends Command {
   readonly command = 'generate-msbuild-props';
   readonly aliases = [];
   seeAlso = [];
   argumentsHelp = [];
-  whatIf = new WhatIf(this);
   project: Project = new Project(this);
   msbuildProps: MSBuildProps = new MSBuildProps(this, 'out');
-  json : Json = new Json(this);
 
   get summary() {
     return i`Generates MSBuild properties for an activation without downloading anything for a project`;
@@ -60,7 +56,7 @@ export class GenerateMSBuildPropsCommand extends Command {
     }
 
     const content = activation.generateMSBuild();
-    await this.msbuildProps.value?.writeUTF8(content);
+    await this.msbuildProps.resolvedValue?.writeUTF8(content);
     return true;
   }
 }
