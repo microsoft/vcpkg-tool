@@ -10,10 +10,10 @@ import { Session } from '../session';
 import { Uri } from '../util/uri';
 import { BaseMap } from '../yaml/BaseMap';
 import { Options } from '../yaml/Options';
+import { Strings } from '../yaml/strings';
 import { Yaml, YAMLDictionary } from '../yaml/yaml-types';
 import { Contacts } from './contact';
 import { DemandBlock, Demands } from './demands';
-import { GlobalSettings } from './global-settings';
 import { Info } from './info';
 import { RegistriesDeclaration } from './registries';
 
@@ -40,7 +40,6 @@ export class MetadataFile extends BaseMap {
 
   contacts = new Contacts(undefined, this, 'contacts');
   registries = new RegistriesDeclaration(undefined, this, 'registries');
-  globalSettings = new GlobalSettings(undefined, this, 'global');
 
   // rather than re-implement it, use encapsulation with a demand block
   private demandBlock = new DemandBlock(this.node, undefined);
@@ -91,7 +90,7 @@ export class MetadataFile extends BaseMap {
   get exports() { return this.demandBlock.exports; }
   get install() { return this.demandBlock.install; }
 
-  conditionalDemands = new Demands(undefined, this, 'demands');
+  readonly conditionalDemands = new Demands(undefined, this, 'demands');
 
   get isFormatValid(): boolean {
     return this.document.errors.length === 0;
@@ -172,7 +171,7 @@ export class MetadataFile extends BaseMap {
   override *validate(): Iterable<ValidationMessage> {
     yield* super.validate();
     const hasInfo = this.document.has('info');
-    const allowedChildren = ['contacts', 'registries', 'global', 'demands', 'exports', 'requires', 'install'];
+    const allowedChildren = ['contacts', 'registries', 'demands', 'exports', 'requires', 'install'];
 
     if (hasInfo) {
       // 2022-06-17 and earlier used a separate 'info' block for these fields
@@ -228,7 +227,6 @@ export class MetadataFile extends BaseMap {
     yield* this.registries.validate();
     yield* this.contacts.validate();
     yield* this.exports.validate();
-    yield* this.globalSettings.validate();
     yield* this.requires.validate();
   }
 
