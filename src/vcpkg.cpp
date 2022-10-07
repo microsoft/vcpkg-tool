@@ -41,6 +41,26 @@ static void invalid_command(const std::string& cmd)
     Checks::exit_fail(VCPKG_LINE_INFO);
 }
 
+static void try_container_heuristics() 
+{
+#if defined(_WIN32)
+    auto registry_heuristic = test_registry_key(HKEY_LOCAL_MACHINE, R"(SYSTEM\CurrentControlSet\Services\cexecsvc)");
+    if (registry_heuristic)
+    {
+        Debug::println("Detected Container Execution Service");
+    }
+
+    auto username = get_username();
+    Debug::println("USER is: ", username);
+#else
+    auto file_heuristic = get_filesystem().exists("/.dockerenv", IgnoreErrors{});
+    if (file_heuristic)
+    {
+        Debug::println("Detected /.dockerenv file");
+    }
+#endif
+}
+
 static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 {
     // track version on each invocation
@@ -67,6 +87,8 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
             return static_cast<decltype(&*it)>(nullptr);
         }
     };
+
+    try_container_heuristics();
 
     LockGuardPtr<Metrics>(g_metrics)->track_bool_property(BoolMetric::OptionOverlayPorts, !args.overlay_ports.empty());
 

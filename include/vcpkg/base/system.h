@@ -23,6 +23,10 @@ namespace vcpkg
     const ExpectedS<Path>& get_system_root() noexcept;
 
     const ExpectedS<Path>& get_system32() noexcept;
+
+    std::string get_username();
+
+    bool test_registry_key(void* base_hkey, StringView sub_key);
 #endif
 
     Optional<std::string> get_registry_string(void* base_hkey, StringView subkey, StringView valuename);
