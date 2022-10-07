@@ -728,7 +728,7 @@
   "VSExaminedInstances": "The following Visual Studio instances were considered:",
   "VSExaminedPaths": "The following paths were examined for Visual Studio instances:",
   "VSNoInstances": "Could not locate a complete Visual Studio instance",
-  "VcpkgCeIsExperimental": "vcpkg-ce ('configure environment') is experimental and may change at any time.",
+  "VcpkgCeIsExperimental": "vcpkg-artifacts are experimental and may change at any time.",
   "VcpkgCommitTableHeader": "VCPKG Commit",
   "VcpkgCompletion": "vcpkg {value} completion is already imported to your \"{path}\" file.\nThe following entries were found:",
   "_VcpkgCompletion.comment": "'{value}' is the subject for completion. i.e. bash, zsh, etc. An example of {path} is /foo/bar.",
