@@ -22,8 +22,8 @@ export class MSBuildProps extends Switch {
     ];
   }
 
-  override get value(): Uri | undefined {
-    const v = super.value;
+  get resolvedValue(): Uri | undefined {
+    const v = this.value;
     if (v) {
       return session.fileSystem.file(resolve(v));
     }
