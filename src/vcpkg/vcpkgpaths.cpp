@@ -1280,6 +1280,17 @@ namespace vcpkg
         return nullopt;
     }
 
+    Optional<const Path&> VcpkgPaths::get_manifest_directory() const
+    {
+        auto& maybe_manifest_dir = m_pimpl->m_manifest_dir;
+        if (maybe_manifest_dir.empty())
+        {
+            return nullopt;
+        }
+
+        return maybe_manifest_dir;
+    }
+
     const ConfigurationAndSource& VcpkgPaths::get_configuration() const { return m_pimpl->m_config; }
 
     const RegistrySet& VcpkgPaths::get_registry_set() const

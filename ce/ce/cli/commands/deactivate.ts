@@ -6,14 +6,12 @@ import { session } from '../../main';
 import { Command } from '../command';
 import { projectFile } from '../format';
 import { log } from '../styling';
-import { Project } from '../switches/project';
 
 export class DeactivateCommand extends Command {
   readonly command = 'deactivate';
   readonly aliases = [];
   seeAlso = [];
   argumentsHelp = [];
-  project = new Project(this);
 
   get summary() {
     return i`Deactivates the current session`;
@@ -26,14 +24,12 @@ export class DeactivateCommand extends Command {
   }
 
   override async run() {
-    const project = await this.project.resolvedValue;
-    if (!project) {
-      return false;
+    const project = await session.findProjectProfile();
+    if (project) {
+      log(i`Deactivating project ${projectFile(project)}`);
     }
 
-    log(i`Deactivating project ${projectFile(project)}`);
     await session.deactivate();
-
     return true;
   }
 }

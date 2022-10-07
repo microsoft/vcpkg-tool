@@ -9,17 +9,14 @@ import { showArtifacts } from '../artifacts';
 import { Command } from '../command';
 import { projectFile } from '../format';
 import { activate } from '../project';
-import { error } from '../styling';
 import { Json } from '../switches/json';
 import { MSBuildProps } from '../switches/msbuild-props';
-import { Project } from '../switches/project';
 
 export class ActivateCommand extends Command {
   readonly command = 'activate';
   readonly aliases = [];
   seeAlso = [];
   argumentsHelp = [];
-  project: Project = new Project(this);
   msbuildProps: MSBuildProps = new MSBuildProps(this);
   json : Json = new Json(this);
 
@@ -34,10 +31,8 @@ export class ActivateCommand extends Command {
   }
 
   override async run() {
-    const projectManifest = await this.project.manifest;
-
+    const projectManifest = await session.loadRequiredProjectProfile();
     if (!projectManifest) {
-      error(i`Unable to find project in folder (or parent folders) for ${session.currentDirectory.fsPath}`);
       return false;
     }
 

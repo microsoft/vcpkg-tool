@@ -10,14 +10,12 @@ import { Command } from '../command';
 import { CommandLine } from '../command-line';
 import { count } from '../format';
 import { error, log, writeException } from '../styling';
-import { Project } from '../switches/project';
 
 export class UpdateCommand extends Command {
   readonly command = 'update';
   readonly aliases = [];
   seeAlso = [];
   argumentsHelp = [];
-  project: Project = new Project(this);
 
   get summary() {
     return i`update the registry from the remote`;
@@ -31,7 +29,7 @@ export class UpdateCommand extends Command {
 
   override async run() {
     const resolver = session.globalRegistryResolver.with(
-      await buildRegistryResolver(session, (await this.project.manifest)?.metadata.registries));
+      await buildRegistryResolver(session, (await session.loadProjectProfile())?.metadata.registries));
     for (const registryName of this.inputs) {
       const registry = resolver.getRegistryByName(registryName);
       if (registry) {

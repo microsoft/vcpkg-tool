@@ -4,7 +4,7 @@
 import { strict } from 'assert';
 import { MetadataFile } from './amf/metadata-file';
 import { deactivate } from './artifacts/activation';
-import { Artifact, InstalledArtifact } from './artifacts/artifact';
+import { Artifact, InstalledArtifact, ProjectManifest } from './artifacts/artifact';
 import { configurationName, defaultConfig, globalConfigurationFile, postscriptVariable, undo } from './constants';
 import { FileSystem } from './fs/filesystem';
 import { HttpsFileSystem } from './fs/http-filesystem';
@@ -54,6 +54,7 @@ export type SessionSettings = {
   readonly vcpkgArtifactsRoot?: string;
   readonly vcpkgDownloads?: string;
   readonly vcpkgRegistriesCache?: string;
+  readonly vcpkgManifestDirectory?: string;
   readonly telemetryEnabled: boolean;
 }
 
@@ -73,6 +74,7 @@ export class Session {
   readonly tmpFolder: Uri;
   readonly installFolder: Uri;
   readonly registryFolder: Uri;
+  readonly manifestFolder: Uri | undefined;
   get vcpkgCommand() { return this.settings.vcpkgCommand; }
 
   readonly globalConfig: Uri;
@@ -116,6 +118,7 @@ export class Session {
 
     this.registryFolder = this.processVcpkgArg(settings.vcpkgRegistriesCache, 'registries').join('artifact');
     this.installFolder = this.processVcpkgArg(settings.vcpkgArtifactsRoot, 'artifacts');
+    this.manifestFolder = settings.vcpkgManifestDirectory ? this.fileSystem.file(settings.vcpkgManifestDirectory) : undefined;
 
     const postscriptFileName = this.environment[postscriptVariable];
     this.postscriptFile = postscriptFileName ? this.fileSystem.file(postscriptFileName) : undefined;
@@ -181,15 +184,35 @@ export class Session {
     return this;
   }
 
-  async findProjectProfile(startLocation = this.currentDirectory): Promise<Uri | undefined> {
-    let location = startLocation;
-    const path = location.join(configurationName);
-    if (await this.fileSystem.isFile(path)) {
-      return path;
+  async findProjectProfile(): Promise<Uri | undefined> {
+    const location = this.manifestFolder;
+    if (location) {
+      const path = location.join(configurationName);
+      if (await this.fileSystem.isFile(path)) {
+        return path;
+      }
     }
 
-    location = location.join('..');
-    return (location.toString() === startLocation.toString()) ? undefined : this.findProjectProfile(location);
+    return undefined;
+  }
+
+  async loadProjectProfile(): Promise<ProjectManifest | undefined> {
+    const path = await this.findProjectProfile();
+    if (path) {
+      this.channels.debug(`Loading project manifest ${path.fsPath} `);
+      return new ProjectManifest(this, await this.openManifest(path.fsPath, path));
+    }
+
+    return undefined;
+  }
+
+  async loadRequiredProjectProfile(): Promise<ProjectManifest | undefined> {
+    const manifest = await this.loadProjectProfile();
+    if (!manifest) {
+      this.channels.error(i`Unable to find project in folder (or parent folders) for ${this.manifestFolder?.fsPath}`);
+    }
+
+    return manifest;
   }
 
   async deactivate() {
