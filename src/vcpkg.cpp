@@ -41,9 +41,10 @@ static void invalid_command(const std::string& cmd)
     Checks::exit_fail(VCPKG_LINE_INFO);
 }
 
-static void try_container_heuristics() 
+static void try_container_heuristics(vcpkg::Filesystem& fs)
 {
 #if defined(_WIN32)
+    (void)fs;
     auto registry_heuristic = test_registry_key(HKEY_LOCAL_MACHINE, R"(SYSTEM\CurrentControlSet\Services\cexecsvc)");
     if (registry_heuristic)
     {
@@ -51,12 +52,39 @@ static void try_container_heuristics()
     }
 
     auto username = get_username();
-    Debug::println("USER is: ", username);
-#else
-    auto file_heuristic = get_filesystem().exists("/.dockerenv", IgnoreErrors{});
+    if (Strings::case_insensitive_ascii_equals(username, "ContainerUser") ||
+        Strings::case_insensitive_ascii_equals(username, "ContainerAdministrator"))
+    {
+        Debug::println("Detected container username");
+    }
+#elif defined(__linux__)
+    auto file_heuristic = fs.exists("/.dockerenv", IgnoreErrors{});
     if (file_heuristic)
     {
         Debug::println("Detected /.dockerenv file");
+    }
+
+    // check /proc/1/cgroup, if we're running in a container then the control group for each hierarchy will be:
+    //   /docker/<containerid>, or
+    //   /lxc/<containerid>
+    //
+    // Example of /proc/1/cgroup contents:
+    // 2:memory:/docker/66a5f8000f3f2e2a19c3f7d60d870064d26996bdfe77e40df7e3fc955b811d14
+    // 1:name=systemd:/docker/66a5f8000f3f2e2a19c3f7d60d870064d26996bdfe77e40df7e3fc955b811d14
+    // 0::/docker/66a5f8000f3f2e2a19c3f7d60d870064d26996bdfe77e40df7e3fc955b811d14
+    auto cgroup_contents = fs.read_contents("/proc/1/cgroup", IgnoreErrors{});
+    for (auto&& line : Strings::split(cgroup_contents, '\n'))
+    {
+        auto idx = line.rfind(':');
+        if (idx != std::string::npos)
+        {
+            auto&& cgroup = line.substr(idx);
+            if (Strings::starts_with(cgroup, ":/docker/") || Strings::starts_with(cgroup, ":/lxc/"))
+            {
+                Debug::println("Detected docker in cgroup");
+                break;
+            }
+        }
     }
 #endif
 }
@@ -88,7 +116,7 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
         }
     };
 
-    try_container_heuristics();
+    try_container_heuristics(fs);
 
     LockGuardPtr<Metrics>(g_metrics)->track_bool_property(BoolMetric::OptionOverlayPorts, !args.overlay_ports.empty());
 
