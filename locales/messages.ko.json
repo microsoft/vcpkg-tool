@@ -164,7 +164,7 @@
   "FailedToExtract": "\"{path}\"을(를) 추출하지 못했습니다.",
   "FailedToFindPortFeature": "{spec}에서 {feature}을(를) 찾을 수 없습니다.",
   "FailedToFormatMissingFile": "형식을 지정할 파일이 없습니다.\n형식을 지정하거나 변환하려면 --all 또는 명시적 파일을 전달하세요.",
-  "FailedToLoadInstalledManifest": "The control or manifest file for {spec} could not be loaded due to the following error. Please remove {spec} and try again.",
+  "FailedToLoadInstalledManifest": "다음 오류로 인해 {spec}에 대한 컨트롤 또는 매니페스트 파일을 로드할 수 없습니다. {spec}을(를) 제거하고 다시 시도하세요.",
   "FailedToLoadPort": "{path}에서 포트 {package_name}을(를) 로드하지 못했습니다.",
   "FailedToLoadPortFrom": "{path}에서 포트를 로드하지 못했습니다.",
   "FailedToLocateSpec": "그래프에서 사양을 찾지 못했습니다({spec}).",

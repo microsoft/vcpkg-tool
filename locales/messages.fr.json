@@ -164,7 +164,7 @@
   "FailedToExtract": "Échec de l’extraction de «{path}» :",
   "FailedToFindPortFeature": "La fonctionnalité {feature} est introuvable dans {spec}.",
   "FailedToFormatMissingFile": "Aucun fichier à mettre en forme.\nVeuillez transmettre --all ou les fichiers explicites à mettre en forme ou convertir.",
-  "FailedToLoadInstalledManifest": "The control or manifest file for {spec} could not be loaded due to the following error. Please remove {spec} and try again.",
+  "FailedToLoadInstalledManifest": "Impossible de charger le fichier de contrôle ou manifeste pour {spec} en raison de l’erreur suivante. Supprimez {spec} et réessayez.",
   "FailedToLoadPort": "Échec du chargement du {package_name} de port à partir de {path}",
   "FailedToLoadPortFrom": "Échec du chargement du port à partir de {path}",
   "FailedToLocateSpec": "Impossible de localiser la spécification dans le graphique : {spec}",

@@ -164,7 +164,7 @@
   "FailedToExtract": "\"{path}\" を抽出できませんでした:",
   "FailedToFindPortFeature": "{spec} で {feature} が見つかりませんでした。",
   "FailedToFormatMissingFile": "書式設定するファイルがありません。\n--all または明示的なファイルを渡して、書式設定または変換してください。",
-  "FailedToLoadInstalledManifest": "The control or manifest file for {spec} could not be loaded due to the following error. Please remove {spec} and try again.",
+  "FailedToLoadInstalledManifest": "次のエラーのため、{spec} の制御ファイルまたはマニフェスト ファイルを読み込めませんでした。{spec} を削除してから、もう一度お試しください。",
   "FailedToLoadPort": "{path} からポート {package_name} を読み込めませんでした",
   "FailedToLoadPortFrom": "{path} からポートを読み込めませんでした",
   "FailedToLocateSpec": "グラフで以下の仕様の検索に失敗しました: {spec}",
