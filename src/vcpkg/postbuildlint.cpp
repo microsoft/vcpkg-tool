@@ -1251,10 +1251,13 @@ namespace vcpkg::PostBuildLint
         error_count += check_no_files_in_dir(fs, package_dir);
         error_count += check_no_files_in_dir(fs, package_dir / "debug");
         error_count += check_pkgconfig_dir_only_in_lib_dir(fs, package_dir);
-        error_count += check_no_absolute_paths_in(
-            fs,
-            package_dir,
-            std::vector<Path>{package_dir.native(), paths.installed().root().native(), paths.build_dir(spec)});
+        if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ABSOLUTE_PATHS_CHECK))
+        {
+            error_count += check_no_absolute_paths_in(
+                fs,
+                package_dir,
+                std::vector<Path>{package_dir.native(), paths.installed().root().native(), paths.build_dir(spec)});
+        }
 
         return error_count;
     }
