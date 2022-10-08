@@ -78,9 +78,9 @@ namespace vcpkg
 
     enum class BoolMetric
     {
+        DetectedContainerEnvironment,
         InstallManifestMode,
         OptionOverlayPorts,
-        DetectedContainerEnvironment,
         COUNT // always keep COUNT last
     };
 
