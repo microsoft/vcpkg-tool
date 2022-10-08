@@ -128,8 +128,7 @@ namespace vcpkg
     {
         if (!fields.empty() || !missing_fields.empty())
         {
-            auto err = std::make_unique<ParseControlErrorInfo>();
-            err->name = name.to_string();
+            auto err = std::make_unique<ParseControlErrorInfo>(name);
             err->extra_fields = Util::extract_keys(fields);
             err->missing_fields = missing_fields;
             err->expected_types = expected_types;
@@ -353,10 +352,7 @@ namespace vcpkg::Paragraphs
         {
             error = res.error()->to_string();
         }
-        auto error_info = std::make_unique<ParseControlErrorInfo>();
-        error_info->name = origin.to_string();
-        error_info->error = std::move(error);
-        return error_info;
+        return std::make_unique<ParseControlErrorInfo>(origin, std::move(error));
     }
 
     ParseExpected<SourceControlFile> try_load_port_text(const std::string& text,
@@ -376,10 +372,7 @@ namespace vcpkg::Paragraphs
         {
             return SourceControlFile::parse_control_file(origin, std::move(*vector_pghs));
         }
-        auto error_info = std::make_unique<ParseControlErrorInfo>();
-        error_info->name = origin.to_string();
-        error_info->error = pghs.error();
-        return error_info;
+        return std::make_unique<ParseControlErrorInfo>(origin, pghs.error());
     }
 
     ParseExpected<SourceControlFile> try_load_port(const Filesystem& fs, const Path& port_directory)

@@ -26,12 +26,30 @@ namespace vcpkg
         std::vector<std::string> other_errors;
         std::string error;
 
+        ParseControlErrorInfo() = default;
+
         ParseControlErrorInfo(std::string&& port_name, std::string&& error_msg)
             : name(std::forward<std::string>(port_name)), error(std::forward<std::string>(error_msg))
         {
         }
 
+        ParseControlErrorInfo(StringView port_name, std::string&& error_msg)
+            : name(port_name.begin(), port_name.size()), error(std::forward<std::string>(error_msg))
+        {
+        }
+
+        ParseControlErrorInfo(std::string&& port_name, StringView error_msg)
+            : name(std::forward<std::string>(port_name)), error(error_msg.begin(), error_msg.size())
+        {
+        }
+
+        ParseControlErrorInfo(StringView port_name, StringView error_msg)
+            : name(port_name.begin(), port_name.size()), error(error_msg.begin(), error_msg.size())
+        {
+        }
+
         ParseControlErrorInfo(std::string&& port_name) : name(std::forward<std::string>(port_name)) { }
+        ParseControlErrorInfo(StringView port_name) : name(port_name.begin(), port_name.size()) { }
 
         bool has_error() const
         {
