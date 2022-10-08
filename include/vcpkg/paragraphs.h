@@ -27,8 +27,6 @@ namespace vcpkg::Paragraphs
                                                         bool is_manifest,
                                                         MessageSink& warning_sink);
 
-    std::vector<ParseExpected<SourceControlFile>> try_load_ports(View<std::string> port_names, const Path& dir, const VcpkgPaths& paths);
-
     ExpectedS<BinaryControlFile> try_load_cached_package(const Filesystem& fs,
                                                          const Path& package_dir,
                                                          const PackageSpec& spec);
@@ -38,6 +36,8 @@ namespace vcpkg::Paragraphs
         std::vector<SourceControlFileAndLocation> paragraphs;
         std::vector<std::unique_ptr<ParseControlErrorInfo>> errors;
     };
+    
+    LoadResults try_load_ports_and_format(View<std::string> port_names, const Path& dir, const VcpkgPaths& paths, bool format = false);
 
     // this allows one to pass this around as an overload set to stuff like `Util::fmap`,
     // as opposed to making it a function

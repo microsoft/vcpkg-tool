@@ -463,34 +463,54 @@ namespace vcpkg::Paragraphs
         return pghs.error();
     }
 
-    std::vector<ParseExpected<SourceControlFile>> try_load_ports(View<std::string> port_names,
-                                                                 const Path& dir,
-                                                                 const VcpkgPaths& paths)
+    LoadResults try_load_ports_and_format(View<std::string> port_names,
+                                          const Path& dir,
+                                          const VcpkgPaths& paths,
+                                          bool format)
     {
         auto& fs = paths.get_filesystem();
         std::atomic_size_t next{0};
-        std::vector<ParseExpected<SourceControlFile>> res(port_names.size());
+        std::vector<SourceControlFileAndLocation> paragraphs(port_names.size());
+        LoadResults results;
+        std::mutex mtx;
 
         auto work = [&](StringView name) {
             auto port_dir = dir / name;
             size_t i;
 
-            while (i = next.fetch_add(1, std::memory_order_relaxed), i < res.size())
+            while (i = next.fetch_add(1, std::memory_order_relaxed), i < paragraphs.size())
             {
                 if (!fs.exists(port_dir, IgnoreErrors{}))
                 {
                     std::string error_msg =
                         msg::format_error(msgAddVersionPortDoesNotExist, msg::package_name = name).to_string();
-                    res[i] = std::make_unique<ParseControlErrorInfo>(std::move(name), std::move(error_msg));
+                    std::lock_guard guard(mtx);
+                    results.errors.emplace_back(
+                        std::make_unique<ParseControlErrorInfo>(std::move(name), std::move(error_msg)));
                     return;
                 }
 
-                res[i] = Paragraphs::try_load_port(fs, port_dir);
+                auto maybe_res = Paragraphs::try_load_port(fs, port_dir);
+                if (!maybe_res.has_value())
+                {
+                    std::lock_guard guard(mtx);
+                    results.errors.emplace_back(std::make_unique<ParseControlErrorInfo>(*(maybe_res.error())));
+                    return;
+                }
+                paragraphs[i] = {
+                    std::unique_ptr<SourceControlFile>{maybe_res.get()->release()}, std::move(port_dir), {}};
+
+                if (format)
+                {
+                    auto& scf = paragraphs[i].source_control_file;
+                }
             }
         };
 
-        vcpkg_par_unseq_for_each(port_names.begin(), port_names.end(), std::move(work));
-        return res;
+        vcpkg_parallel_for_each(port_names.begin(), port_names.end(), std::move(work));
+
+        results.paragraphs = std::move(paragraphs);
+        return results;
     }
 
     LoadResults try_load_all_registry_ports(const Filesystem& fs, const RegistrySet& registries)
