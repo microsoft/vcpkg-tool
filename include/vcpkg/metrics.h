@@ -80,6 +80,7 @@ namespace vcpkg
     {
         InstallManifestMode,
         OptionOverlayPorts,
+        DetectedContainerEnvironment,
         COUNT // always keep COUNT last
     };
 

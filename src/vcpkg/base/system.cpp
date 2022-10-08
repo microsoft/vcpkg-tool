@@ -354,6 +354,7 @@ namespace vcpkg
         std::wstring buffer;
         buffer.resize(static_cast<size_t>(buffer_size));
         GetUserNameW(buffer.data(), &buffer_size);
+        buffer.resize(buffer_size);
         return buffer;
     }
 

@@ -41,26 +41,27 @@ static void invalid_command(const std::string& cmd)
     Checks::exit_fail(VCPKG_LINE_INFO);
 }
 
-static void try_container_heuristics(vcpkg::Filesystem& fs)
+static bool detect_container(vcpkg::Filesystem& fs)
 {
     (void)fs;
 #if defined(_WIN32)
-    auto registry_heuristic = test_registry_key(HKEY_LOCAL_MACHINE, R"(SYSTEM\CurrentControlSet\Services\cexecsvc)");
-    if (registry_heuristic)
+    if (test_registry_key(HKEY_LOCAL_MACHINE, R"(SYSTEM\CurrentControlSet\Services\cexecsvc)"))
     {
         Debug::println("Detected Container Execution Service");
+        return true;
     }
 
     auto username = get_username();
     if (!wcscmp(username.data(), L"ContainerUser") || !wcscmp(username.data(), L"ContainerAdministrator"))
     {
         Debug::println("Detected container username");
+        return true;
     }
 #elif defined(__linux__)
-    auto file_heuristic = fs.exists("/.dockerenv", IgnoreErrors{});
-    if (file_heuristic)
+    if (fs.exists("/.dockerenv", IgnoreErrors{}))
     {
         Debug::println("Detected /.dockerenv file");
+        return true;
     }
 
     // check /proc/1/cgroup, if we're running in a container then the control group for each hierarchy will be:
@@ -75,17 +76,16 @@ static void try_container_heuristics(vcpkg::Filesystem& fs)
     for (auto&& line : Strings::split(cgroup_contents, '\n'))
     {
         auto idx = line.rfind(':');
-        if (idx != std::string::npos)
+        if (idx == std::string::npos) continue;
+        auto&& cgroup = line.substr(idx);
+        if (Strings::starts_with(cgroup, ":/docker/") || Strings::starts_with(cgroup, ":/lxc/"))
         {
-            auto&& cgroup = line.substr(idx);
-            if (Strings::starts_with(cgroup, ":/docker/") || Strings::starts_with(cgroup, ":/lxc/"))
-            {
-                Debug::println("Detected docker in cgroup");
-                break;
-            }
+            Debug::println("Detected docker in cgroup");
+            return true;
         }
     }
 #endif
+    return false;
 }
 
 static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
@@ -115,7 +115,13 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
         }
     };
 
-    try_container_heuristics(fs);
+    {
+        auto metrics = LockGuardPtr<Metrics>(g_metrics);
+        if (metrics->metrics_enabled())
+        {
+            metrics->track_bool_property(BoolMetric::DetectedContainerEnvironment, detect_container(fs));
+        }
+    }
 
     LockGuardPtr<Metrics>(g_metrics)->track_bool_property(BoolMetric::OptionOverlayPorts, !args.overlay_ports.empty());
 
