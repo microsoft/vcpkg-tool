@@ -164,7 +164,7 @@
   "FailedToExtract": "No se pudieron extraer \"{path}\":",
   "FailedToFindPortFeature": "No se ha encontrado {feature} en {spec}.",
   "FailedToFormatMissingFile": "No hay archivos a los que aplicar formato.\nPase --all o los archivos explícitos para aplicar formato o convertir.",
-  "FailedToLoadInstalledManifest": "The control or manifest file for {spec} could not be loaded due to the following error. Please remove {spec} and try again.",
+  "FailedToLoadInstalledManifest": "No se ha podido cargar el control o el archivo de manifiesto para {spec} debido al siguiente error. Quite {spec} y vuelva a intentarlo.",
   "FailedToLoadPort": "No se pudo cargar el puerto {package_name} desde {path}",
   "FailedToLoadPortFrom": "No se pudo cargar el puerto desde {path}",
   "FailedToLocateSpec": "No se ha podido encontrar la especificación en el gráfico: {spec}",

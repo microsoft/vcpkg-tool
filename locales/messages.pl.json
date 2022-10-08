@@ -164,7 +164,7 @@
   "FailedToExtract": "Nie można wyodrębnić \"{path}\":",
   "FailedToFindPortFeature": "Nie można odnaleźć funkcji {feature} w lokalizacji {spec}.",
   "FailedToFormatMissingFile": "Brak plików do formatowania.\nPrzekaż --all lub jawne pliki do sformatowania lub przekonwertowania.",
-  "FailedToLoadInstalledManifest": "The control or manifest file for {spec} could not be loaded due to the following error. Please remove {spec} and try again.",
+  "FailedToLoadInstalledManifest": "Nie można załadować mechanizmu kontroli pliku manifestu dla {spec} z powodu następującego błędu. Usuń {spec} i spróbuj ponownie.",
   "FailedToLoadPort": "Nie można załadować portu {package_name} ze ścieżki {path}",
   "FailedToLoadPortFrom": "Nie można załadować portu ze ścieżki {path}",
   "FailedToLocateSpec": "Nie można zlokalizować specyfikacji na wykresie: {spec}",

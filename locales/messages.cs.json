@@ -164,7 +164,7 @@
   "FailedToExtract": "{path} se nepodařilo extrahovat:",
   "FailedToFindPortFeature": "Ve {spec} se nepovedlo najít {feature}.",
   "FailedToFormatMissingFile": "Nejsou k dispozici žádné soubory k formátování.\nPředejte prosím buď --all, nebo explicitní soubory, které se mají formátovat nebo převést.",
-  "FailedToLoadInstalledManifest": "The control or manifest file for {spec} could not be loaded due to the following error. Please remove {spec} and try again.",
+  "FailedToLoadInstalledManifest": "Soubor ovládacího prvku nebo manifestu pro {spec} nejde načíst z důvodu následující chyby. Odeberte prosím {spec} a zkuste to znovu.",
   "FailedToLoadPort": "Nepovedlo načíst port {package_name} z {path}.",
   "FailedToLoadPortFrom": "Nepovedlo se načíst port z {path}.",
   "FailedToLocateSpec": "Nepovedlo se najít specifikaci v grafu: {spec}",
