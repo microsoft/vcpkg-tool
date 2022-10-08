@@ -24,7 +24,7 @@ namespace vcpkg
 
     const ExpectedS<Path>& get_system32() noexcept;
 
-    std::string get_username();
+    std::wstring get_username();
 
     bool test_registry_key(void* base_hkey, StringView sub_key);
 #endif

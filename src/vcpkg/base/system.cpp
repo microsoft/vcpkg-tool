@@ -13,8 +13,8 @@
 #endif
 
 #if defined(_WIN32)
-#include <winbase.h>
 #include <lmcons.h>
+#include <winbase.h>
 // needed for mingw
 #include <processenv.h>
 #else
@@ -342,19 +342,18 @@ namespace vcpkg
 #endif
     }
 
-
 #if defined(_WIN32)
     static bool is_string_keytype(const DWORD hkey_type)
     {
         return hkey_type == REG_SZ || hkey_type == REG_MULTI_SZ || hkey_type == REG_EXPAND_SZ;
     }
 
-    std::string get_username()
-    { 
+    std::wstring get_username()
+    {
         DWORD buffer_size = UNLEN + 1;
-        std::string buffer;
+        std::wstring buffer;
         buffer.resize(static_cast<size_t>(buffer_size));
-        GetUserNameA(buffer.data(), &buffer_size);
+        GetUserNameW(buffer.data(), &buffer_size);
         return buffer;
     }
 

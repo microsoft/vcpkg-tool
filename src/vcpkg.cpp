@@ -43,8 +43,8 @@ static void invalid_command(const std::string& cmd)
 
 static void try_container_heuristics(vcpkg::Filesystem& fs)
 {
-#if defined(_WIN32)
     (void)fs;
+#if defined(_WIN32)
     auto registry_heuristic = test_registry_key(HKEY_LOCAL_MACHINE, R"(SYSTEM\CurrentControlSet\Services\cexecsvc)");
     if (registry_heuristic)
     {
@@ -52,8 +52,7 @@ static void try_container_heuristics(vcpkg::Filesystem& fs)
     }
 
     auto username = get_username();
-    if (Strings::case_insensitive_ascii_equals(username, "ContainerUser") ||
-        Strings::case_insensitive_ascii_equals(username, "ContainerAdministrator"))
+    if (!wcscmp(username.data(), L"ContainerUser") || !wcscmp(username.data(), L"ContainerAdministrator"))
     {
         Debug::println("Detected container username");
     }
