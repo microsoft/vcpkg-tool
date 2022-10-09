@@ -237,10 +237,10 @@ namespace vcpkg
                 {
                     return std::make_unique<ParseControlErrorInfo>(
                         scf.core_paragraph->name,
-                        std::move(Strings::format(R"(Multiple features with the same name for port %s: %s
+                        Strings::format(R"(Multiple features with the same name for port %s: %s
     This is invalid; please make certain that features have distinct names.)",
-                                                  scf.core_paragraph->name,
-                                                  (*adjacent_equal)->name)));
+                                        scf.core_paragraph->name,
+                                        (*adjacent_equal)->name));
                 }
                 return nullptr;
             }
