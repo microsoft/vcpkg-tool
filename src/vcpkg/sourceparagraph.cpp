@@ -301,8 +301,7 @@ namespace vcpkg
         }
         else
         {
-            return std::make_unique<ParseControlErrorInfo>(origin,
-                                                           maybe_default_features.error());
+            return std::make_unique<ParseControlErrorInfo>(origin, maybe_default_features.error());
         }
 
         auto supports_expr = parser.optional_field(SourceParagraphFields::SUPPORTS);

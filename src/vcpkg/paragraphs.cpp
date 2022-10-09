@@ -126,7 +126,7 @@ namespace vcpkg
     std::unique_ptr<ParseControlErrorInfo> ParagraphParser::error_info(StringView name) const
     {
         if (fields.empty() && missing_fields.empty()) return nullptr;
-        
+
         auto err = std::make_unique<ParseControlErrorInfo>(name);
         err->extra_fields = Util::extract_keys(fields);
         err->missing_fields = missing_fields;
@@ -394,7 +394,7 @@ namespace vcpkg::Paragraphs
             if (fs.exists(control_path, IgnoreErrors{}))
             {
                 return std::make_unique<ParseControlErrorInfo>(
-                    std::move(port_directory.filename()),
+                    port_directory.filename(),
                     msg::format_error(msgManifestConflict, msg::path = port_directory).to_string());
             }
             return try_load_manifest_text(manifest_contents, manifest_path, stdout_sink);
