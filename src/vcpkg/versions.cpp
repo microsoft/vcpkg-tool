@@ -86,11 +86,7 @@ namespace vcpkg
 
     std::size_t VersionSpecHasher::operator()(const VersionSpec& key) const
     {
-        using std::hash;
-        using std::size_t;
-        using std::string;
-
-        return hash<string>()(key.port_name) ^ (hash<string>()(key.version.to_string()) >> 1);
+        return std::hash<std::string>()(key.port_name) ^ (std::hash<std::string>()(key.version.to_string()) >> 1);
     }
 
     // 0|[1-9][0-9]*

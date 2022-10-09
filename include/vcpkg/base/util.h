@@ -27,9 +27,7 @@ namespace vcpkg::Util
         template<class Vec, class Key>
         bool contains(const Vec& container, const Key& item)
         {
-            using std::begin;
-            using std::end;
-            return std::find(begin(container), end(container), item) != end(container);
+            return std::find(std::begin(container), std::end(container), item) != std::end(container);
         }
         template<class T>
         std::vector<T> concat(View<T> r1, View<T> r2)
@@ -172,19 +170,13 @@ namespace vcpkg::Util
     template<class ForwardIt1, class ForwardRange2>
     ForwardIt1 search_and_skip(ForwardIt1 first, ForwardIt1 last, const ForwardRange2& rng)
     {
-        using std::begin;
-        using std::end;
-
-        return ::vcpkg::Util::search_and_skip(first, last, begin(rng), end(rng));
+        return ::vcpkg::Util::search_and_skip(first, last, std::begin(rng), std::end(rng));
     }
 
     template<class ForwardIt1, class ForwardRange2>
     ForwardIt1 search(ForwardIt1 first, ForwardIt1 last, const ForwardRange2& rng)
     {
-        using std::begin;
-        using std::end;
-
-        return std::search(first, last, begin(rng), end(rng));
+        return std::search(first, last, std::begin(rng), std::end(rng));
     }
 
     // 0th is the first occurence
@@ -205,10 +197,7 @@ namespace vcpkg::Util
     template<class R, class V>
     auto find_nth(R& r, const V& v, size_t n)
     {
-        using std::begin;
-        using std::end;
-
-        return find_nth(begin(r), end(r), v, n);
+        return find_nth(std::begin(r), std::end(r), v, n);
     }
 
     // 0th is the last occurence
@@ -217,30 +206,22 @@ namespace vcpkg::Util
     template<class R, class V>
     auto find_nth_from_last(R& r, const V& v, size_t n)
     {
-        using std::end;
-        using std::rbegin;
-        using std::rend;
-
-        auto res = find_nth(rbegin(r), rend(r), v, n);
-        return res == rend(r) ? end(r) : res.base() - 1;
+        auto res = find_nth(std::rbegin(r), std::rend(r), v, n);
+        return res == std::rend(r) ? std::end(r) : res.base() - 1;
     }
 
     template<class Container, class V>
     auto find(Container&& cont, V&& v)
     {
-        using std::begin;
-        using std::end;
-        return std::find(begin(cont), end(cont), v);
+        return std::find(std::begin(cont), std::end(cont), v);
     }
 
     template<class Container, class Pred>
     auto find_if(Container&& cont, Pred pred)
     {
-        using std::begin;
-        using std::end;
         // allow cont.begin() to not have the same type as cont.end()
-        auto it = begin(cont);
-        auto last = end(cont);
+        auto it = std::begin(cont);
+        auto last = std::end(cont);
         for (; it != last; ++it)
         {
             if (pred(*it))
@@ -254,9 +235,7 @@ namespace vcpkg::Util
     template<class Container, class Pred>
     auto find_if_not(Container&& cont, Pred pred)
     {
-        using std::begin;
-        using std::end;
-        return std::find_if_not(begin(cont), end(cont), pred);
+        return std::find_if_not(std::begin(cont), std::end(cont), pred);
     }
 
     template<class K, class V, class Container, class Func>
@@ -272,9 +251,7 @@ namespace vcpkg::Util
     template<class Range, class Comp = std::less<>>
     void sort(Range& cont, Comp comp = Comp())
     {
-        using std::begin;
-        using std::end;
-        std::sort(begin(cont), end(cont), comp);
+        std::sort(std::begin(cont), std::end(cont), comp);
     }
 
     template<class Range, class Pred>
@@ -286,10 +263,8 @@ namespace vcpkg::Util
     template<class Range, class Comp = std::less<>>
     Range&& sort_unique_erase(Range&& cont, Comp comp = Comp())
     {
-        using std::begin;
-        using std::end;
-        std::sort(begin(cont), end(cont), comp);
-        cont.erase(std::unique(begin(cont), end(cont)), end(cont));
+        std::sort(std::begin(cont), std::end(cont), comp);
+        cont.erase(std::unique(std::begin(cont), std::end(cont)), std::end(cont));
 
         return std::forward<Range>(cont);
     }
@@ -297,9 +272,7 @@ namespace vcpkg::Util
     template<class Range1, class Range2>
     bool all_equal(const Range1& r1, const Range2& r2)
     {
-        using std::begin;
-        using std::end;
-        return std::equal(begin(r1), end(r1), begin(r2), end(r2));
+        return std::equal(std::begin(r1), std::end(r1), std::begin(r2), std::end(r2));
     }
 
     template<class AssocContainer, class K = std::decay_t<decltype(begin(std::declval<AssocContainer>())->first)>>
@@ -311,16 +284,14 @@ namespace vcpkg::Util
     template<class Range1, class Range2, class Comp>
     int range_lexcomp(const Range1& r1, const Range2& r2, Comp cmp)
     {
-        using std::begin;
-        using std::end;
-        static_assert(std::is_same_v<int, decltype(cmp(*begin(r1), *begin(r2)))>,
+        static_assert(std::is_same_v<int, decltype(cmp(*begin(r1), *std::begin(r2)))>,
                       "Comp must return 'int' (negative for less, 0 for equal, positive for greater)");
 
-        auto a_cur = begin(r1);
-        auto a_end = end(r1);
+        auto a_cur = std::begin(r1);
+        auto a_end = std::end(r1);
 
-        auto b_cur = begin(r2);
-        auto b_end = end(r2);
+        auto b_cur = std::begin(r2);
+        auto b_end = std::end(r2);
 
         for (; a_cur != a_end && b_cur != b_end; ++a_cur, ++b_cur)
         {
@@ -337,7 +308,7 @@ namespace vcpkg::Util
     }
 
     template<class... BoolIsh>
-    bool zero_or_one_set(const BoolIsh&... boolish)
+    constexpr bool zero_or_one_set(const BoolIsh&... boolish)
     {
         unsigned int total = (0u + ... + static_cast<unsigned int>(static_cast<bool>(boolish)));
         return total <= 1;
@@ -346,13 +317,13 @@ namespace vcpkg::Util
     namespace Enum
     {
         template<class E>
-        E to_enum(bool b)
+        constexpr E to_enum(bool b) noexcept
         {
             return b ? E::YES : E::NO;
         }
 
         template<class E>
-        bool to_bool(E e)
+        constexpr bool to_bool(E e) noexcept
         {
             return e == E::YES;
         }

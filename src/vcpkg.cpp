@@ -57,8 +57,7 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
         auto it = Util::find_if(commands, [&](auto&& commandc) {
             return Strings::case_insensitive_ascii_equals(commandc.name, args.command);
         });
-        using std::end;
-        if (it != end(commands))
+        if (it != std::end(commands))
         {
             return &*it;
         }
