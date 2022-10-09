@@ -299,7 +299,7 @@ namespace vcpkg::Commands::CIVerifyVersions
         {
             Checks::msg_exit_with_error(
                 VCPKG_LINE_INFO,
-                msg::format(msgFailedToObtainLocalPortGitSha).append_raw("\n" + maybe_port_git_tree_map.error()));
+                msg::format(msgFailedToObtainLocalPortGitSha).append_raw('\n').append_raw(maybe_port_git_tree_map.error()));
         }
 
         auto port_git_tree_map = maybe_port_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
@@ -397,10 +397,10 @@ namespace vcpkg::Commands::CIVerifyVersions
             auto message = msg::format(msgErrorsFound);
             for (auto&& error : errors)
             {
-                message.append_raw("\n").append_indent().append_raw(error);
+                message.append_raw('\n').append_indent().append_raw(error);
             }
 
-            message.append_raw("\n").append(
+            message.append_raw('\n').append(
                 msgSuggestResolution, msg::command_name = "x-add-version", msg::option = "all");
 
             msg::println_error(message);
