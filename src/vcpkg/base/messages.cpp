@@ -718,6 +718,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ResultsHeader);
     REGISTER_MESSAGE(SerializedBinParagraphHeader);
     REGISTER_MESSAGE(SettingEnvVar);
+    REGISTER_MESSAGE(ShallowRepositoryDetected);
     REGISTER_MESSAGE(ShaPassedAsArgAndOption);
     REGISTER_MESSAGE(ShaPassedWithConflict);
     REGISTER_MESSAGE(SkipClearingInvalidDir);

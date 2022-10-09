@@ -976,7 +976,7 @@ namespace vcpkg
     {
         if (git_is_shallow_clone(this->root / ".git"))
         {
-            return "Error: vcpkg was cloned in a shallow repository. Try again with a full vcpkg clone.";
+            return msg::format(msgShallowRepositoryDetected, msg::path = this->root / ".git").to_string();
         }
 
         auto maybe_cur_sha = get_current_git_sha();
@@ -1009,7 +1009,7 @@ namespace vcpkg
             Debug::println(output.error());
             return false;
         }
-        return Strings::case_insensitive_ascii_equals("true", Strings::trim(output.value_or_exit(VCPKG_LINE_INFO)));
+        return Strings::case_insensitive_ascii_equals("true", Strings::trim(*output.get()));
     }
 
     ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
@@ -1103,10 +1103,13 @@ namespace vcpkg
                 Strings::concat(PRELUDE, "Error: Failed to tar port directory\n", std::move(maybe_tar_output).error());
             if (git_is_shallow_clone(this->root / ".git"))
             {
-                message.append("\n");
-                message.append("Error: vcpkg was cloned in a shallow repository. Try again with a full vcpkg clone.");
+                message.push_back('\n');
+                message.append(msg::format(msgShallowRepositoryDetected, msg::path = this->root / ".git").to_string());
             }
-            return {message, expected_right_tag};
+            return {
+                std::move(message),
+                expected_right_tag,
+            };
         }
 
         extract_tar_cmake(this->get_tool_exe(Tools::CMAKE, stdout_sink), destination_tar, destination_tmp);
