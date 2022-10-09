@@ -656,17 +656,17 @@ namespace vcpkg
             rc = cmd_execute_and_stream_lines(
                 command,
                 [&](StringView s) {
-                    static const StringLiteral s_hash_marker = "#COMPILER_HASH#";
+                    static constexpr StringLiteral s_hash_marker = "#COMPILER_HASH#";
                     if (Strings::starts_with(s, s_hash_marker))
                     {
                         compiler_info.hash = s.substr(s_hash_marker.size()).to_string();
                     }
-                    static const StringLiteral s_version_marker = "#COMPILER_CXX_VERSION#";
+                    static constexpr StringLiteral s_version_marker = "#COMPILER_CXX_VERSION#";
                     if (Strings::starts_with(s, s_version_marker))
                     {
                         compiler_info.version = s.substr(s_version_marker.size()).to_string();
                     }
-                    static const StringLiteral s_id_marker = "#COMPILER_CXX_ID#";
+                    static constexpr StringLiteral s_id_marker = "#COMPILER_CXX_ID#";
                     if (Strings::starts_with(s, s_id_marker))
                     {
                         compiler_info.id = s.substr(s_id_marker.size()).to_string();
@@ -729,12 +729,12 @@ namespace vcpkg
 
         if (action.build_options.download_tool == DownloadTool::ARIA2)
         {
-            variables.push_back({"ARIA2", paths.get_tool_exe(Tools::ARIA2, stdout_sink)});
+            variables.emplace_back("ARIA2", paths.get_tool_exe(Tools::ARIA2, stdout_sink));
         }
 
         for (const auto& cmake_arg : args.cmake_args)
         {
-            variables.push_back(CMakeVariable{cmake_arg});
+            variables.emplace_back(cmake_arg);
         }
 
         if (action.build_options.backcompat_features == BackcompatFeatures::PROHIBIT)
@@ -1327,23 +1327,6 @@ namespace vcpkg
         return result;
     }
 
-    void BuildResultCounts::increment(const BuildResult build_result)
-    {
-        switch (build_result)
-        {
-            case BuildResult::SUCCEEDED: ++succeeded; return;
-            case BuildResult::BUILD_FAILED: ++build_failed; return;
-            case BuildResult::POST_BUILD_CHECKS_FAILED: ++post_build_checks_failed; return;
-            case BuildResult::FILE_CONFLICTS: ++file_conflicts; return;
-            case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES: ++cascaded_due_to_missing_dependencies; return;
-            case BuildResult::EXCLUDED: ++excluded; return;
-            case BuildResult::CACHE_MISSING: ++cache_missing; return;
-            case BuildResult::DOWNLOADED: ++downloaded; return;
-            case BuildResult::REMOVED: ++removed; return;
-            default: Checks::unreachable(VCPKG_LINE_INFO);
-        }
-    }
-
     template<class Message>
     static void print_build_result_summary_line(Message build_result_message, int count)
     {
@@ -1430,11 +1413,11 @@ namespace vcpkg
     {
         const auto& fs = paths.get_filesystem();
         const auto create_log_details = [&fs](vcpkg::Path&& path) {
-            static constexpr auto MAX_LOG_LENGTH = 20'000;
-            static constexpr auto START_BLOCK_LENGTH = 3'000;
-            static constexpr auto START_BLOCK_MAX_LENGTH = 5'000;
-            static constexpr auto END_BLOCK_LENGTH = 13'000;
-            static constexpr auto END_BLOCK_MAX_LENGTH = 15'000;
+            static constexpr std::size_t MAX_LOG_LENGTH = 20'000;
+            static constexpr std::size_t START_BLOCK_LENGTH = 3'000;
+            static constexpr std::size_t START_BLOCK_MAX_LENGTH = 5'000;
+            static constexpr std::size_t END_BLOCK_LENGTH = 13'000;
+            static constexpr std::size_t END_BLOCK_MAX_LENGTH = 15'000;
             auto log = fs.read_contents(path, VCPKG_LINE_INFO);
             if (log.size() > MAX_LOG_LENGTH)
             {
@@ -1639,21 +1622,21 @@ namespace vcpkg
             DISABLE_COMPILER_TRACKING,
         };
 
-        static const std::vector<std::pair<std::string, VcpkgTripletVar>> VCPKG_OPTIONS = {
-            {"VCPKG_TARGET_ARCHITECTURE", VcpkgTripletVar::TARGET_ARCHITECTURE},
-            {"VCPKG_CMAKE_SYSTEM_NAME", VcpkgTripletVar::CMAKE_SYSTEM_NAME},
-            {"VCPKG_CMAKE_SYSTEM_VERSION", VcpkgTripletVar::CMAKE_SYSTEM_VERSION},
-            {"VCPKG_PLATFORM_TOOLSET", VcpkgTripletVar::PLATFORM_TOOLSET},
-            {"VCPKG_PLATFORM_TOOLSET_VERSION", VcpkgTripletVar::PLATFORM_TOOLSET_VERSION},
-            {"VCPKG_VISUAL_STUDIO_PATH", VcpkgTripletVar::VISUAL_STUDIO_PATH},
-            {"VCPKG_CHAINLOAD_TOOLCHAIN_FILE", VcpkgTripletVar::CHAINLOAD_TOOLCHAIN_FILE},
-            {"VCPKG_BUILD_TYPE", VcpkgTripletVar::BUILD_TYPE},
-            {"VCPKG_ENV_PASSTHROUGH", VcpkgTripletVar::ENV_PASSTHROUGH},
-            {"VCPKG_ENV_PASSTHROUGH_UNTRACKED", VcpkgTripletVar::ENV_PASSTHROUGH_UNTRACKED},
-            {"VCPKG_PUBLIC_ABI_OVERRIDE", VcpkgTripletVar::PUBLIC_ABI_OVERRIDE},
+        static const std::array<std::pair<std::string, VcpkgTripletVar>, 13> VCPKG_OPTIONS = {
+            std::make_pair("VCPKG_TARGET_ARCHITECTURE", VcpkgTripletVar::TARGET_ARCHITECTURE),
+            std::make_pair("VCPKG_CMAKE_SYSTEM_NAME", VcpkgTripletVar::CMAKE_SYSTEM_NAME),
+            std::make_pair("VCPKG_CMAKE_SYSTEM_VERSION", VcpkgTripletVar::CMAKE_SYSTEM_VERSION),
+            std::make_pair("VCPKG_PLATFORM_TOOLSET", VcpkgTripletVar::PLATFORM_TOOLSET),
+            std::make_pair("VCPKG_PLATFORM_TOOLSET_VERSION", VcpkgTripletVar::PLATFORM_TOOLSET_VERSION),
+            std::make_pair("VCPKG_VISUAL_STUDIO_PATH", VcpkgTripletVar::VISUAL_STUDIO_PATH),
+            std::make_pair("VCPKG_CHAINLOAD_TOOLCHAIN_FILE", VcpkgTripletVar::CHAINLOAD_TOOLCHAIN_FILE),
+            std::make_pair("VCPKG_BUILD_TYPE", VcpkgTripletVar::BUILD_TYPE),
+            std::make_pair("VCPKG_ENV_PASSTHROUGH", VcpkgTripletVar::ENV_PASSTHROUGH),
+            std::make_pair("VCPKG_ENV_PASSTHROUGH_UNTRACKED", VcpkgTripletVar::ENV_PASSTHROUGH_UNTRACKED),
+            std::make_pair("VCPKG_PUBLIC_ABI_OVERRIDE", VcpkgTripletVar::PUBLIC_ABI_OVERRIDE),
             // Note: this value must come after VCPKG_CHAINLOAD_TOOLCHAIN_FILE because its default depends upon it.
-            {"VCPKG_LOAD_VCVARS_ENV", VcpkgTripletVar::LOAD_VCVARS_ENV},
-            {"VCPKG_DISABLE_COMPILER_TRACKING", VcpkgTripletVar::DISABLE_COMPILER_TRACKING},
+            std::make_pair("VCPKG_LOAD_VCVARS_ENV", VcpkgTripletVar::LOAD_VCVARS_ENV),
+            std::make_pair("VCPKG_DISABLE_COMPILER_TRACKING", VcpkgTripletVar::DISABLE_COMPILER_TRACKING)
         };
 
         std::string empty;

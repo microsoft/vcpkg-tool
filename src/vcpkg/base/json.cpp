@@ -36,10 +36,10 @@ namespace vcpkg::Json
                 Object object;
             };
 
-            ValueImpl(ValueKindConstant<VK::Null> vk, std::nullptr_t) : tag(vk), null() { }
-            ValueImpl(ValueKindConstant<VK::Boolean> vk, bool b) : tag(vk), boolean(b) { }
-            ValueImpl(ValueKindConstant<VK::Integer> vk, int64_t i) : tag(vk), integer(i) { }
-            ValueImpl(ValueKindConstant<VK::Number> vk, double d) : tag(vk), number(d) { }
+            constexpr ValueImpl(ValueKindConstant<VK::Null> vk, std::nullptr_t) : tag(vk), null() { }
+            constexpr ValueImpl(ValueKindConstant<VK::Boolean> vk, bool b) : tag(vk), boolean(b) { }
+            constexpr ValueImpl(ValueKindConstant<VK::Integer> vk, int64_t i) : tag(vk), integer(i) { }
+            constexpr ValueImpl(ValueKindConstant<VK::Number> vk, double d) : tag(vk), number(d) { }
             ValueImpl(ValueKindConstant<VK::String> vk, std::string&& s) : tag(vk), string(std::move(s)) { }
             ValueImpl(ValueKindConstant<VK::String> vk, const std::string& s) : tag(vk), string(s) { }
             ValueImpl(ValueKindConstant<VK::Array> vk, Array&& arr) : tag(vk), array(std::move(arr)) { }
@@ -253,7 +253,7 @@ namespace vcpkg::Json
     }
     Value Value::number(double d) noexcept
     {
-        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, isfinite(d));
+        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, std::isfinite(d));
         Value val;
         val.underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Number>(), d);
         return val;
@@ -294,7 +294,7 @@ namespace vcpkg::Json
         return val;
     }
 
-    bool operator==(const Value& lhs, const Value& rhs)
+    bool operator==(const Value& lhs, const Value& rhs) noexcept
     {
         if (lhs.kind() != rhs.kind()) return false;
 
@@ -334,7 +334,6 @@ namespace vcpkg::Json
     {
         return insert_before(it, Value::array(std::move(arr))).array(VCPKG_LINE_INFO);
     }
-    bool operator==(const Array& lhs, const Array& rhs) { return lhs.underlying_ == rhs.underlying_; }
     // } struct Array
     // struct Object {
     Value& Object::insert(StringView key, std::string&& value) { return insert(key, Value::string(std::move(value))); }
@@ -487,7 +486,7 @@ namespace vcpkg::Json
                 return ParserBase::next();
             }
 
-            static bool is_number_start(char32_t code_point) noexcept
+            static constexpr bool is_number_start(char32_t code_point) noexcept
             {
                 return code_point == '-' || is_ascii_digit(code_point);
             }
@@ -1011,7 +1010,7 @@ namespace vcpkg::Json
                 }
             }
 
-            JsonStyle style() const noexcept { return style_; }
+            constexpr JsonStyle style() const noexcept { return style_; }
 
         private:
             JsonStyle style_;
@@ -1436,7 +1435,7 @@ namespace vcpkg::Json
     Optional<std::vector<std::string>> ParagraphDeserializer::visit_string(Reader&, StringView sv)
     {
         std::vector<std::string> out;
-        out.push_back(sv.to_string());
+        out.emplace_back(sv.begin(), sv.size());
         return out;
     }
 
@@ -1481,7 +1480,7 @@ namespace vcpkg::Json
         return true;
     }
 
-    uint64_t get_json_parsing_stats() { return g_json_parsing_stats.load(); }
+    uint64_t get_json_parsing_stats() noexcept { return g_json_parsing_stats.load(); }
 
     Optional<std::string> PackageNameDeserializer::visit_string(Json::Reader&, StringView sv)
     {

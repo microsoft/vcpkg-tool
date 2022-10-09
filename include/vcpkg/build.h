@@ -204,17 +204,33 @@ namespace vcpkg
 
     struct BuildResultCounts
     {
-        int succeeded = 0;
-        int build_failed = 0;
-        int post_build_checks_failed = 0;
-        int file_conflicts = 0;
-        int cascaded_due_to_missing_dependencies = 0;
-        int excluded = 0;
-        int cache_missing = 0;
-        int downloaded = 0;
-        int removed = 0;
+        unsigned int succeeded = 0;
+        unsigned int build_failed = 0;
+        unsigned int post_build_checks_failed = 0;
+        unsigned int file_conflicts = 0;
+        unsigned int cascaded_due_to_missing_dependencies = 0;
+        unsigned int excluded = 0;
+        unsigned int cache_missing = 0;
+        unsigned int downloaded = 0;
+        unsigned int removed = 0;
 
-        void increment(const BuildResult build_result);
+        constexpr void increment(const BuildResult build_result) noexcept
+        {
+            switch (build_result)
+            {
+                case BuildResult::SUCCEEDED: ++succeeded; return;
+                case BuildResult::BUILD_FAILED: ++build_failed; return;
+                case BuildResult::POST_BUILD_CHECKS_FAILED: ++post_build_checks_failed; return;
+                case BuildResult::FILE_CONFLICTS: ++file_conflicts; return;
+                case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES: ++cascaded_due_to_missing_dependencies; return;
+                case BuildResult::EXCLUDED: ++excluded; return;
+                case BuildResult::CACHE_MISSING: ++cache_missing; return;
+                case BuildResult::DOWNLOADED: ++downloaded; return;
+                case BuildResult::REMOVED: ++removed; return;
+                default: Checks::unreachable(VCPKG_LINE_INFO);
+            }
+        }
+
         void println(const Triplet& triplet) const;
     };
 

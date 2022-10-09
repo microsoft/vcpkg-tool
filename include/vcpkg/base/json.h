@@ -27,22 +27,22 @@ namespace vcpkg::Json
 
         constexpr JsonStyle() noexcept = default;
 
-        static JsonStyle with_tabs() noexcept { return JsonStyle{-1}; }
+        static constexpr JsonStyle with_tabs() noexcept { return JsonStyle{-1}; }
         static JsonStyle with_spaces(int indent) noexcept
         {
             vcpkg::Checks::check_exit(VCPKG_LINE_INFO, indent >= 0);
             return JsonStyle{indent};
         }
 
-        void set_tabs() noexcept { this->indent = -1; }
+        constexpr void set_tabs() noexcept { this->indent = -1; }
         void set_spaces(int indent_) noexcept
         {
             vcpkg::Checks::check_exit(VCPKG_LINE_INFO, indent >= 0);
             this->indent = indent_;
         }
 
-        bool use_tabs() const noexcept { return indent == -1; }
-        bool use_spaces() const noexcept { return indent >= 0; }
+        constexpr bool use_tabs() const noexcept { return indent == -1; }
+        constexpr bool use_spaces() const noexcept { return indent >= 0; }
 
         int spaces() const noexcept
         {
@@ -50,7 +50,7 @@ namespace vcpkg::Json
             return indent;
         }
 
-        const char* newline() const noexcept
+        constexpr const char* newline() const noexcept
         {
             switch (this->newline_kind)
             {
@@ -133,8 +133,8 @@ namespace vcpkg::Json
         static Value object(Object&&) noexcept;
         static Value object(const Object&) noexcept;
 
-        friend bool operator==(const Value& lhs, const Value& rhs);
-        friend bool operator!=(const Value& lhs, const Value& rhs) { return !(lhs == rhs); }
+        friend bool operator==(const Value& lhs, const Value& rhs) noexcept;
+        friend bool operator!=(const Value& lhs, const Value& rhs) noexcept { return !(lhs == rhs); }
 
     private:
         friend struct impl::ValueImpl;
@@ -148,10 +148,10 @@ namespace vcpkg::Json
 
     public:
         Array() = default;
-        Array(Array const&) = default;
-        Array(Array&&) = default;
-        Array& operator=(Array const&) = default;
-        Array& operator=(Array&&) = default;
+        Array(const Array&) = default;
+        Array(Array&&) noexcept = default;
+        Array& operator=(const Array&) = default;
+        Array& operator=(Array&&) noexcept = default;
         ~Array() = default;
 
         using iterator = underlying_t::iterator;
@@ -185,14 +185,14 @@ namespace vcpkg::Json
             return this->underlying_[idx];
         }
 
-        iterator begin() { return underlying_.begin(); }
-        iterator end() { return underlying_.end(); }
-        const_iterator begin() const { return cbegin(); }
-        const_iterator end() const { return cend(); }
-        const_iterator cbegin() const { return underlying_.cbegin(); }
-        const_iterator cend() const { return underlying_.cend(); }
+        iterator begin() noexcept { return underlying_.begin(); }
+        iterator end() noexcept { return underlying_.end(); }
+        const_iterator begin() const noexcept { return cbegin(); }
+        const_iterator end() const noexcept { return cend(); }
+        const_iterator cbegin() const noexcept { return underlying_.cbegin(); }
+        const_iterator cend() const noexcept { return underlying_.cend(); }
 
-        friend bool operator==(const Array& lhs, const Array& rhs);
+        friend bool operator==(const Array& lhs, const Array& rhs) { return lhs.underlying_ == rhs.underlying_; }
         friend bool operator!=(const Array& lhs, const Array& rhs) { return !(lhs == rhs); }
 
     private:
@@ -210,10 +210,10 @@ namespace vcpkg::Json
     public:
         // these are here for better diagnostics
         Object() = default;
-        Object(Object const&) = default;
-        Object(Object&&) = default;
-        Object& operator=(Object const&) = default;
-        Object& operator=(Object&&) = default;
+        Object(const Object&) = default;
+        Object(Object&&) noexcept = default;
+        Object& operator=(const Object&) = default;
+        Object& operator=(Object&&) noexcept = default;
         ~Object() = default;
 
         // asserts if the key is found
@@ -330,5 +330,5 @@ namespace vcpkg::Json
     std::string stringify(const Array&);
     std::string stringify(const Array&, JsonStyle style);
 
-    uint64_t get_json_parsing_stats();
+    uint64_t get_json_parsing_stats() noexcept;
 }

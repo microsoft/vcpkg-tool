@@ -7,7 +7,7 @@
 
 namespace vcpkg
 {
-    static void advance_rowcol(char32_t ch, int& row, int& column)
+    static constexpr void advance_rowcol(char32_t ch, int& row, int& column) noexcept
     {
         if (ch == '\t')
             column = (column + 7) / 8 * 8 + 1; // round to next 8-width tab stop

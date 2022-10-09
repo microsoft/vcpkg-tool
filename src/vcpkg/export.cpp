@@ -485,12 +485,12 @@ namespace vcpkg::Export
     static void print_next_step_info(const Path& prefix)
     {
         const auto cmake_toolchain = prefix / "scripts/buildsystems/vcpkg.cmake";
-        const CMakeVariable cmake_variable = CMakeVariable("CMAKE_TOOLCHAIN_FILE", cmake_toolchain.generic_u8string());
+        CMakeVariable cmake_variable{"CMAKE_TOOLCHAIN_FILE", cmake_toolchain.generic_u8string()};
         print2("\n"
                "To use the exported libraries in CMake projects use:"
                "\n"
                "    ",
-               cmake_variable.s,
+               std::move(cmake_variable.s),
                "\n\n");
     }
 

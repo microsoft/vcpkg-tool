@@ -16,10 +16,11 @@ namespace vcpkg
 {
     struct CMakeVariable
     {
-        CMakeVariable(const StringView varname, const char* varvalue);
-        CMakeVariable(const StringView varname, const std::string& varvalue);
-        CMakeVariable(const StringView varname, const Path& varvalue);
-        CMakeVariable(std::string var);
+        CMakeVariable(StringView varname, const char* varvalue);
+        CMakeVariable(StringView varname, const std::string& varvalue);
+        CMakeVariable(StringView varname, const Path& varvalue);
+        CMakeVariable(std::string&& var);
+        CMakeVariable(StringView var);
 
         std::string s;
     };

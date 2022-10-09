@@ -240,19 +240,20 @@ namespace vcpkg
 #endif
     }
 
-    CMakeVariable::CMakeVariable(const StringView varname, const char* varvalue)
+    CMakeVariable::CMakeVariable(StringView varname, const char* varvalue)
         : s(Strings::format("-D%s=%s", varname, varvalue))
     {
     }
-    CMakeVariable::CMakeVariable(const StringView varname, const std::string& varvalue)
+    CMakeVariable::CMakeVariable(StringView varname, const std::string& varvalue)
         : CMakeVariable(varname, varvalue.c_str())
     {
     }
-    CMakeVariable::CMakeVariable(const StringView varname, const Path& varvalue)
+    CMakeVariable::CMakeVariable(StringView varname, const Path& varvalue)
         : CMakeVariable(varname, varvalue.generic_u8string())
     {
     }
-    CMakeVariable::CMakeVariable(std::string var) : s(std::move(var)) { }
+    CMakeVariable::CMakeVariable(std::string&& var) : s(std::forward<std::string>(var)) { }
+    CMakeVariable::CMakeVariable(StringView var) : s(var.begin(), var.size()) { }
 
     Command make_basic_cmake_cmd(const Path& cmake_tool_path,
                                  const Path& cmake_script,

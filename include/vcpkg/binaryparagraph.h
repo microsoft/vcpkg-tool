@@ -11,7 +11,7 @@ namespace vcpkg
     /// </summary>
     struct BinaryParagraph
     {
-        BinaryParagraph();
+        BinaryParagraph() = default;
         explicit BinaryParagraph(Paragraph fields);
         BinaryParagraph(const SourceParagraph& spgh,
                         Triplet triplet,
@@ -30,7 +30,7 @@ namespace vcpkg
 
         std::string dir() const;
 
-        bool is_feature() const { return !feature.empty(); }
+        bool is_feature() const noexcept { return !feature.empty(); }
 
         Version get_version() const { return {version, port_version}; }
 

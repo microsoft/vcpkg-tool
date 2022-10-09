@@ -83,20 +83,20 @@ namespace vcpkg::Commands::DependInfo
             }
         }
 
-        constexpr StringLiteral OPTION_DOT = "dot";
-        constexpr StringLiteral OPTION_DGML = "dgml";
-        constexpr StringLiteral OPTION_SHOW_DEPTH = "show-depth";
-        constexpr StringLiteral OPTION_MAX_RECURSE = "max-recurse";
-        constexpr StringLiteral OPTION_SORT = "sort";
+        static constexpr StringLiteral OPTION_DOT = "dot";
+        static constexpr StringLiteral OPTION_DGML = "dgml";
+        static constexpr StringLiteral OPTION_SHOW_DEPTH = "show-depth";
+        static constexpr StringLiteral OPTION_MAX_RECURSE = "max-recurse";
+        static constexpr StringLiteral OPTION_SORT = "sort";
 
-        constexpr int NO_RECURSE_LIMIT_VALUE = -1;
+        static constexpr int NO_RECURSE_LIMIT_VALUE = -1;
 
-        constexpr std::array<CommandSwitch, 3> DEPEND_SWITCHES = {
+        static constexpr std::array<CommandSwitch, 3> DEPEND_SWITCHES = {
             {{OPTION_DOT, "Creates graph on basis of dot"},
              {OPTION_DGML, "Creates graph on basis of dgml"},
              {OPTION_SHOW_DEPTH, "Show recursion depth in output"}}};
 
-        constexpr std::array<CommandSetting, 2> DEPEND_SETTINGS = {
+        static constexpr std::array<CommandSetting, 2> DEPEND_SETTINGS = {
             {{OPTION_MAX_RECURSE, "Set max recursion depth, a value of -1 indicates no limit"},
              {OPTION_SORT,
               "Set sort order for the list of dependencies, accepted values are: lexicographical, topological "
@@ -133,10 +133,10 @@ namespace vcpkg::Commands::DependInfo
 
         SortMode get_sort_mode(const ParsedArguments& options)
         {
-            constexpr StringLiteral OPTION_SORT_LEXICOGRAPHICAL = "lexicographical";
-            constexpr StringLiteral OPTION_SORT_TOPOLOGICAL = "topological";
-            constexpr StringLiteral OPTION_SORT_REVERSE = "reverse";
-            constexpr StringLiteral OPTION_SORT_TREE = "x-tree";
+            static constexpr StringLiteral OPTION_SORT_LEXICOGRAPHICAL = "lexicographical";
+            static constexpr StringLiteral OPTION_SORT_TOPOLOGICAL = "topological";
+            static constexpr StringLiteral OPTION_SORT_REVERSE = "reverse";
+            static constexpr StringLiteral OPTION_SORT_TREE = "x-tree";
 
             static const std::map<StringLiteral, SortMode, std::less<>> sortModesMap{
                 {OPTION_SORT_LEXICOGRAPHICAL, Lexicographical},
@@ -163,14 +163,13 @@ namespace vcpkg::Commands::DependInfo
         {
             int empty_node_count = 0;
 
-            std::string s;
-            s.append("digraph G{ rankdir=LR; edge [minlen=3]; overlap=false;");
+            std::string s("digraph G{ rankdir=LR; edge [minlen=3]; overlap=false;");
 
             for (const auto& package : depend_info)
             {
                 if (package.dependencies.empty())
                 {
-                    empty_node_count++;
+                    ++empty_node_count;
                     continue;
                 }
 
