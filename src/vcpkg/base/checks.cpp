@@ -58,6 +58,16 @@ namespace vcpkg
 #endif
     }
 
+    [[noreturn]] void Checks::unreachable(const LineInfo& line_info, StringView message)
+    {
+        msg::write_unlocalized_text_to_stdout(Color::error, locale_invariant_lineinfo(line_info).append_raw(message));
+#ifndef NDEBUG
+        std::abort();
+#else
+        final_cleanup_and_exit(EXIT_FAILURE);
+#endif
+    }
+
     [[noreturn]] void Checks::exit_with_code(const LineInfo& line_info, const int exit_code)
     {
         Debug::println(locale_invariant_lineinfo(line_info));
