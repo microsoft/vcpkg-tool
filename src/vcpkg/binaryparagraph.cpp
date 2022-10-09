@@ -10,25 +10,23 @@ namespace vcpkg
 {
     namespace Fields
     {
-        static const std::string PACKAGE = "Package";
-        static const std::string VERSION = "Version";
+        static constexpr StringLiteral PACKAGE = "Package";
+        static constexpr StringLiteral VERSION = "Version";
         static const std::string PORT_VERSION = "Port-Version";
-        static const std::string ARCHITECTURE = "Architecture";
-        static const std::string MULTI_ARCH = "Multi-Arch";
+        static constexpr StringLiteral ARCHITECTURE = "Architecture";
+        static constexpr StringLiteral MULTI_ARCH = "Multi-Arch";
     }
 
     namespace Fields
     {
-        static const std::string ABI = "Abi";
-        static const std::string FEATURE = "Feature";
-        static const std::string DESCRIPTION = "Description";
-        static const std::string MAINTAINER = "Maintainer";
-        static const std::string DEPENDS = "Depends";
-        static const std::string DEFAULT_FEATURES = "Default-Features";
-        static const std::string TYPE = "Type";
+        static constexpr StringLiteral ABI = "Abi";
+        static constexpr StringLiteral FEATURE = "Feature";
+        static constexpr StringLiteral DESCRIPTION = "Description";
+        static constexpr StringLiteral MAINTAINER = "Maintainer";
+        static constexpr StringLiteral DEPENDS = "Depends";
+        static constexpr StringLiteral DEFAULT_FEATURES = "Default-Features";
+        static constexpr StringLiteral TYPE = "Type";
     }
-
-    BinaryParagraph::BinaryParagraph() = default;
 
     BinaryParagraph::BinaryParagraph(Paragraph fields)
     {
