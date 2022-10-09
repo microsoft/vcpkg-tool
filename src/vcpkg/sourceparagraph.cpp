@@ -235,13 +235,12 @@ namespace vcpkg
                     std::adjacent_find(scf.feature_paragraphs.begin(), scf.feature_paragraphs.end(), FeatureEqual{});
                 if (adjacent_equal != scf.feature_paragraphs.end())
                 {
-                    auto error_info = std::make_unique<ParseControlErrorInfo>();
-                    error_info->name = scf.core_paragraph->name;
-                    error_info->error = Strings::format(R"(Multiple features with the same name for port %s: %s
+                    return std::make_unique<ParseControlErrorInfo>(
+                        scf.core_paragraph->name,
+                        std::move(Strings::format(R"(Multiple features with the same name for port %s: %s
     This is invalid; please make certain that features have distinct names.)",
-                                                        scf.core_paragraph->name,
-                                                        (*adjacent_equal)->name);
-                    return error_info;
+                                                  scf.core_paragraph->name,
+                                                  (*adjacent_equal)->name)));
                 }
                 return nullptr;
             }
@@ -289,10 +288,7 @@ namespace vcpkg
         }
         else
         {
-            auto error_info = std::make_unique<ParseControlErrorInfo>();
-            error_info->name = origin.to_string();
-            error_info->error = maybe_dependencies.error();
-            return error_info;
+            return std::make_unique<ParseControlErrorInfo>(origin, maybe_dependencies.error());
         }
 
         buf.clear();
@@ -305,10 +301,8 @@ namespace vcpkg
         }
         else
         {
-            auto error_info = std::make_unique<ParseControlErrorInfo>();
-            error_info->name = origin.to_string();
-            error_info->error = maybe_default_features.error();
-            return error_info;
+            return std::make_unique<ParseControlErrorInfo>(origin,
+                                                           maybe_default_features.error());
         }
 
         auto supports_expr = parser.optional_field(SourceParagraphFields::SUPPORTS);
@@ -352,10 +346,7 @@ namespace vcpkg
         }
         else
         {
-            auto error_info = std::make_unique<ParseControlErrorInfo>();
-            error_info->name = origin.to_string();
-            error_info->error = maybe_dependencies.error();
-            return error_info;
+            return std::make_unique<ParseControlErrorInfo>(origin, maybe_dependencies.error());
         }
 
         auto err = parser.error_info(fpgh->name.empty() ? origin : fpgh->name);
@@ -370,9 +361,7 @@ namespace vcpkg
     {
         if (control_paragraphs.size() == 0)
         {
-            auto ret = std::make_unique<ParseControlErrorInfo>();
-            ret->name = origin.to_string();
-            return ret;
+            return std::make_unique<ParseControlErrorInfo>(origin);
         }
 
         auto control_file = std::make_unique<SourceControlFile>();
@@ -1241,8 +1230,7 @@ namespace vcpkg
 
         if (!reader.errors().empty())
         {
-            auto err = std::make_unique<ParseControlErrorInfo>();
-            err->name = origin.to_string();
+            auto err = std::make_unique<ParseControlErrorInfo>(origin);
             err->other_errors = std::move(reader.errors());
             return err;
         }

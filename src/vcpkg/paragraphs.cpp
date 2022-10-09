@@ -125,16 +125,13 @@ namespace vcpkg
 
     std::unique_ptr<ParseControlErrorInfo> ParagraphParser::error_info(StringView name) const
     {
-        if (!fields.empty() || !missing_fields.empty())
-        {
-            auto err = std::make_unique<ParseControlErrorInfo>();
-            err->name = name.to_string();
-            err->extra_fields = Util::extract_keys(fields);
-            err->missing_fields = missing_fields;
-            err->expected_types = expected_types;
-            return err;
-        }
-        return nullptr;
+        if (fields.empty() && missing_fields.empty()) return nullptr;
+        
+        auto err = std::make_unique<ParseControlErrorInfo>(name);
+        err->extra_fields = Util::extract_keys(fields);
+        err->missing_fields = missing_fields;
+        err->expected_types = expected_types;
+        return err;
     }
 
     template<class T, class F>
@@ -352,10 +349,7 @@ namespace vcpkg::Paragraphs
         {
             error = res.error()->to_string();
         }
-        auto error_info = std::make_unique<ParseControlErrorInfo>();
-        error_info->name = origin.to_string();
-        error_info->error = std::move(error);
-        return error_info;
+        return std::make_unique<ParseControlErrorInfo>(origin, std::move(error));
     }
 
     ParseExpected<SourceControlFile> try_load_port_text(const std::string& text,
@@ -375,10 +369,7 @@ namespace vcpkg::Paragraphs
         {
             return SourceControlFile::parse_control_file(origin, std::move(*vector_pghs));
         }
-        auto error_info = std::make_unique<ParseControlErrorInfo>();
-        error_info->name = origin.to_string();
-        error_info->error = pghs.error();
-        return error_info;
+        return std::make_unique<ParseControlErrorInfo>(origin, pghs.error());
     }
 
     ParseExpected<SourceControlFile> try_load_port(const Filesystem& fs, const Path& port_directory)
@@ -387,27 +378,25 @@ namespace vcpkg::Paragraphs
 
         const auto manifest_path = port_directory / "vcpkg.json";
         const auto control_path = port_directory / "CONTROL";
-        const auto port_name = port_directory.filename().to_string();
         std::error_code ec;
         auto manifest_contents = fs.read_contents(manifest_path, ec);
         if (ec)
         {
             if (fs.exists(manifest_path, IgnoreErrors{}))
             {
-                auto error_info = std::make_unique<ParseControlErrorInfo>();
-                error_info->name = port_name;
-                error_info->error =
-                    Strings::format("Failed to load manifest file for port: %s\n", manifest_path, ec.message());
-                return error_info;
+                return std::make_unique<ParseControlErrorInfo>(
+                    port_directory.filename(),
+                    Strings::format("Failed to load manifest file for port: %s\n%s", manifest_path, ec.message()));
             }
         }
         else
         {
-            vcpkg::Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                          !fs.exists(control_path, IgnoreErrors{}),
-                                          msgManifestConflict,
-                                          msg::path = port_directory);
-
+            if (fs.exists(control_path, IgnoreErrors{}))
+            {
+                return std::make_unique<ParseControlErrorInfo>(
+                    std::move(port_directory.filename()),
+                    msg::format_error(msgManifestConflict, msg::path = port_directory).to_string());
+            }
             return try_load_manifest_text(manifest_contents, manifest_path, stdout_sink);
         }
 
@@ -418,14 +407,10 @@ namespace vcpkg::Paragraphs
             {
                 return SourceControlFile::parse_control_file(control_path, std::move(*vector_pghs));
             }
-            auto error_info = std::make_unique<ParseControlErrorInfo>();
-            error_info->name = port_name;
-            error_info->error = pghs.error();
-            return error_info;
+            return std::make_unique<ParseControlErrorInfo>(port_directory.filename(), pghs.error());
         }
 
-        auto error_info = std::make_unique<ParseControlErrorInfo>();
-        error_info->name = port_name;
+        auto error_info = std::make_unique<ParseControlErrorInfo>(port_directory.filename());
         if (fs.exists(port_directory, IgnoreErrors{}))
         {
             error_info->error = "Failed to find either a CONTROL file or vcpkg.json file.";
@@ -480,7 +465,7 @@ namespace vcpkg::Paragraphs
         for (const auto& registry : registries.registries())
         {
             const auto packages = registry.packages();
-            ports.insert(end(ports), begin(packages), end(packages));
+            ports.insert(ports.end(), packages.begin(), packages.end());
         }
         if (auto registry = registries.default_registry())
         {
