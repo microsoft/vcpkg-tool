@@ -283,7 +283,8 @@ namespace vcpkg
             Checks::msg_exit_maybe_upgrade(
                 VCPKG_LINE_INFO,
                 msg::format(msgFailedToParseSerializedBinParagraph, msg::error_msg = parsed_paragraph.error())
-                    .append_raw('\n').append_raw(my_paragraph));
+                    .append_raw('\n')
+                    .append_raw(my_paragraph));
         }
 
         auto binary_paragraph = BinaryParagraph(*parsed_paragraph.get());

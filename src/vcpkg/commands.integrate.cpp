@@ -470,7 +470,8 @@ namespace vcpkg::Commands::Integrate
         if (rc)
         {
             msg::println_error(msg::format(msgCommandFailed, msg::command_line = TITLE)
-                                   .append_raw('\n').append_raw(script_path.generic_u8string()));
+                                   .append_raw('\n')
+                                   .append_raw(script_path.generic_u8string()));
             {
                 auto locked_metrics = LockGuardPtr<Metrics>(g_metrics);
                 locked_metrics->track_string_property(StringMetric::Error, "powershell script failed");

@@ -688,9 +688,9 @@ namespace vcpkg
         if (compiler_info.hash.empty() || !succeeded(rc))
         {
             Debug::println("Compiler information tracking can be disabled by passing --",
-                         VcpkgCmdArguments::FEATURE_FLAGS_ARG,
-                         "=-",
-                         VcpkgCmdArguments::COMPILER_TRACKING_FEATURE);
+                           VcpkgCmdArguments::FEATURE_FLAGS_ARG,
+                           "=-",
+                           VcpkgCmdArguments::COMPILER_TRACKING_FEATURE);
 
             msg::println_error(msgErrorDetectingCompilerInfo, msg::path = stdoutlog);
             msg::write_unlocalized_text_to_stdout(Color::none, buf);
