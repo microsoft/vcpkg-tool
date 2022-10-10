@@ -47,7 +47,7 @@ export class ActivateCommand extends Command {
 
     // track what got installed
     const projectResolver = await buildRegistryResolver(session, projectManifest.metadata.registries);
-    if (!checkDemands(session, (await this.project.resolvedValue)?.fsPath ?? configurationName, projectManifest.applicableDemands)) {
+    if (!checkDemands(session, (await session.findProjectProfile())?.fsPath ?? configurationName, projectManifest.applicableDemands)) {
       return false;
     }
 
