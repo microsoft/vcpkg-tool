@@ -920,11 +920,11 @@ namespace vcpkg
         {
             if (auto r = flag.flag.get())
             {
-                Debug::print("Feature flag '", flag.name, "' = ", *r ? "on" : "off", "\n");
+                Debug::println("Feature flag '", flag.name, "' = ", *r ? "on" : "off");
             }
             else
             {
-                Debug::print("Feature flag '", flag.name, "' unset\n");
+                Debug::println("Feature flag '", flag.name, "' unset");
             }
         }
     }
