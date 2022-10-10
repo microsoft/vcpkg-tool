@@ -943,15 +943,15 @@ namespace vcpkg
                                     "]",
                                 buildtimeus);
 
-        const bool build_success = !succeeded(return_code);
-        if (build_success)
+        const bool build_failed = !succeeded(return_code);
+        if (build_failed)
         {
             metrics.track_string(StringMetric::Error, "build failed");
             metrics.track_string(StringMetric::BuildError, spec_string);
         }
 
         get_global_metrics_collector().track_submission(std::move(metrics));
-        if (build_success)
+        if (build_failed)
         {
             const auto logs = buildpath / Strings::concat("error-logs-", action.spec.triplet(), ".txt");
             std::vector<std::string> error_logs;
