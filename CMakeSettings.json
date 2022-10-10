@@ -13,7 +13,7 @@
       "variables": [
         {
           "name": "VCPKG_ARTIFACTS_DEVELOPMENT",
-          "value": "True",
+          "value": "False",
           "type": "BOOL"
         },
         {
@@ -46,7 +46,7 @@
       "variables": [
         {
           "name": "VCPKG_ARTIFACTS_DEVELOPMENT",
-          "value": "True",
+          "value": "False",
           "type": "BOOL"
         },
         {

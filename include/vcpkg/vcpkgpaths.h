@@ -72,7 +72,7 @@ namespace vcpkg
             TripletFile(StringView name, StringView location) : name(name.data(), name.size()), location(location) { }
         };
 
-        VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args);
+        VcpkgPaths(Filesystem& filesystem, VcpkgCmdArguments& args);
         VcpkgPaths(const VcpkgPaths&) = delete;
         VcpkgPaths& operator=(const VcpkgPaths&) = delete;
         ~VcpkgPaths();

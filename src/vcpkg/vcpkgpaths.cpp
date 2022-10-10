@@ -620,7 +620,7 @@ namespace vcpkg
 #endif
     }
 
-    VcpkgPaths::VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args)
+    VcpkgPaths::VcpkgPaths(Filesystem& filesystem, VcpkgCmdArguments& args)
         : original_cwd(preferred_current_path(filesystem))
         , root(determine_root(filesystem, original_cwd, args))
         // this is used during the initialization of the below public members
@@ -651,10 +651,12 @@ namespace vcpkg
             auto maybe_config_json = config_from_json(m_pimpl->m_config_dir / "vcpkg-configuration.json", filesystem);
 
             m_pimpl->m_config = merge_validate_configs(std::move(maybe_manifest_config),
-                                                       m_pimpl->m_manifest_dir,
-                                                       std::move(maybe_config_json),
-                                                       m_pimpl->m_config_dir,
-                                                       *this);
+                                                                m_pimpl->m_manifest_dir,
+                                                                std::move(maybe_config_json),
+                                                                m_pimpl->m_config_dir,
+                                                                *this);
+           
+            args.set_manifest_overlays(m_pimpl->m_config.config.overlay_ports, m_pimpl->m_config.config.overlay_triplets);
 
             m_pimpl->m_registry_set = m_pimpl->m_config.instantiate_registry_set(*this);
         }

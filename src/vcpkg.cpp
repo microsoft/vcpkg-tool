@@ -41,7 +41,7 @@ static void invalid_command(const std::string& cmd)
     Checks::exit_fail(VCPKG_LINE_INFO);
 }
 
-static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
+static void inner(vcpkg::Filesystem& fs, VcpkgCmdArguments& args)
 {
     // track version on each invocation
     LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::VcpkgVersion,
@@ -78,6 +78,8 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 
     const VcpkgPaths paths(fs, args);
     paths.track_feature_flag_metrics();
+
+    args.merge_overlays();
 
     fs.current_path(paths.root, VCPKG_LINE_INFO);
 

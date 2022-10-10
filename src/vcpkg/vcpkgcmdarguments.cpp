@@ -636,6 +636,23 @@ namespace vcpkg
         msg::println(LocalizedString::from_raw(table.m_str));
     }
 
+    // Merges overlay ports in the specific order
+    void VcpkgCmdArguments::merge_overlays() {
+        overlay_ports.insert(
+            std::end(overlay_ports), std::begin(manifest_overlay_ports), std::end(manifest_overlay_ports));
+        overlay_ports.insert(
+            std::end(overlay_ports), std::begin(env_overlay_ports), std::end(env_overlay_ports));
+        overlay_triplets.insert(
+            std::end(overlay_triplets), std::begin(manifest_overlay_triplets), std::end(manifest_overlay_triplets));
+        overlay_triplets.insert(
+            std::end(overlay_triplets), std::begin(env_overlay_triplets), std::end(env_overlay_triplets));
+    }
+
+    void VcpkgCmdArguments::set_manifest_overlays(std::vector<std::string>& op, std::vector<std::string>& ot) {
+        manifest_overlay_ports.insert(std::end(manifest_overlay_ports), std::begin(op), std::end(op));
+        manifest_overlay_triplets.insert(std::end(manifest_overlay_triplets), std::begin(ot), std::end(ot));
+    }
+
     void VcpkgCmdArguments::append_common_options(HelpTableFormatter& table)
     {
         static auto opt = [](StringView arg, StringView joiner, StringView value) {
@@ -729,16 +746,14 @@ namespace vcpkg
             const auto vcpkg_overlay_ports_env = get_env(OVERLAY_PORTS_ENV);
             if (const auto unpacked = vcpkg_overlay_ports_env.get())
             {
-                auto overlays = Strings::split_paths(*unpacked);
-                overlay_ports.insert(std::end(overlay_ports), std::begin(overlays), std::end(overlays));
+                env_overlay_ports = Strings::split_paths(*unpacked);
             }
         }
         {
             const auto vcpkg_overlay_triplets_env = get_env(OVERLAY_TRIPLETS_ENV);
             if (const auto unpacked = vcpkg_overlay_triplets_env.get())
             {
-                auto triplets = Strings::split_paths(*unpacked);
-                overlay_triplets.insert(std::end(overlay_triplets), std::begin(triplets), std::end(triplets));
+                env_overlay_triplets = Strings::split_paths(*unpacked);
             }
         }
         {

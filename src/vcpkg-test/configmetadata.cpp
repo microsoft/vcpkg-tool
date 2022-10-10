@@ -466,6 +466,104 @@ $.demands (a demand object): $.demands.["f"] contains a `demands` object (nested
 
 TEST_CASE ("serialize configuration", "[ce-metadata]")
 {
+    SECTION ("only overlay ports")
+    {
+        std::string raw = R"json({
+    "overlay-ports": [
+		"./my-ports/fmt" ,
+		"/custom-ports",
+		"../share/team-ports"
+	]
+})json";
+        // parsing of configuration is tested elsewhere
+        auto config = parse_test_configuration(raw);
+        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+    }
+
+    SECTION ("invalid overlay ports")
+    {
+        std::string raw = R"json({
+    "overlay-ports": [
+		"./my-ports/fmt" ,
+		"/custom-ports",
+		123
+	]
+})json";
+        check_errors(raw, R"(
+$.overlay-ports[2]: mismatched type: expected an overlay path
+)");
+    }
+
+    SECTION ("only overlay triplets")
+    {
+        std::string raw = R"json({
+    "overlay-triplets": [
+		"./team-triplets"
+	]
+})json";
+        // parsing of configuration is tested elsewhere
+        auto config = parse_test_configuration(raw);
+        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+    }
+
+    SECTION ("invalid overlay triplets")
+    {
+        std::string raw = R"json({
+    "overlay-triplets": [
+		123
+	]
+})json";
+        check_errors(raw, R"(
+$.overlay-triplets[0]: mismatched type: expected a triplet path
+)");
+    }
+
+    SECTION ("both overlay ports and overlay triplets")
+    {
+        std::string raw = R"json({
+    "overlay-ports": [
+		"./my-ports/fmt" ,
+		"/custom-ports",
+		"../share/team-ports"
+	],
+    "overlay-triplets": [
+		"./team-triplets"
+	]
+})json";
+        // parsing of configuration is tested elsewhere
+        auto config = parse_test_configuration(raw);
+        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+    }
+
+    SECTION ("overriden default registry, registries and overlays")
+    {
+        std::string raw = R"json({
+    "default-registry": {
+        "kind": "builtin",
+        "baseline": "843e0ba0d8f9c9c572e45564263eedfc7745e74f"
+    },
+    "registries": [
+        {
+            "kind": "git",
+            "repository": "https://github.com/microsoft/vcpkg",
+            "baseline": "843e0ba0d8f9c9c572e45564263eedfc7745e74f",
+            "packages": [ "zlib" ]
+        }
+    ],
+    "overlay-ports": [
+		"./my-ports/fmt" ,
+		"/custom-ports",
+		"../share/team-ports"
+	],
+    "overlay-triplets": [
+		"./team-triplets"
+	]
+})json";
+        // parsing of configuration is tested elsewhere
+        auto config = parse_test_configuration(raw);
+        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+    }
+
     SECTION ("null default registry")
     {
         std::string raw = R"json({
