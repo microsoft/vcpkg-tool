@@ -276,7 +276,7 @@ namespace vcpkg
         const auto& maybe_user_dir = get_user_configuration_home();
         if (auto p_user_dir = maybe_user_dir.get())
         {
-            fs.create_directories(*p_user_dir, IgnoreErrors{});
+            fs.create_directory(*p_user_dir, IgnoreErrors{});
             fs.write_contents(*p_user_dir / METRICS_CONFIG_FILE_NAME, to_string(), IgnoreErrors{});
         }
     }
