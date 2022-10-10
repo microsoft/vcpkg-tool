@@ -464,17 +464,15 @@ namespace vcpkg
 
     struct TrackedPackageInstallGuard
     {
-        SpecSummary* current_summary = nullptr;
-        ElapsedTimer build_timer;
+        SpecSummary& current_summary;
+        const ElapsedTimer build_timer;
 
         TrackedPackageInstallGuard(const size_t action_index,
                                    const size_t action_count,
                                    std::vector<SpecSummary>& results,
                                    const InstallPlanAction& action)
+            : current_summary(results.emplace_back(action)), build_timer()
         {
-            results.emplace_back(action);
-            current_summary = &results.back();
-
             msg::println(msgInstallingPackage,
                          msg::action_index = action_index,
                          msg::count = action_count,
@@ -485,9 +483,8 @@ namespace vcpkg
                                    const size_t action_count,
                                    std::vector<SpecSummary>& results,
                                    const RemovePlanAction& action)
+            : current_summary(results.emplace_back(action)), build_timer()
         {
-            results.emplace_back(action);
-            current_summary = &results.back();
             msg::println(Remove::msgRemovingPackage,
                          msg::action_index = action_index,
                          msg::count = action_count,
@@ -496,9 +493,9 @@ namespace vcpkg
 
         ~TrackedPackageInstallGuard()
         {
-            current_summary->timing = build_timer.elapsed();
+            current_summary.timing = build_timer.elapsed();
             msg::println(
-                msgElapsedForPackage, msg::spec = current_summary->get_spec(), msg::elapsed = current_summary->timing);
+                msgElapsedForPackage, msg::spec = current_summary.get_spec(), msg::elapsed = current_summary.timing);
         }
 
         TrackedPackageInstallGuard(const TrackedPackageInstallGuard&) = delete;
@@ -551,7 +548,7 @@ namespace vcpkg
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            this_install.current_summary->build_result.emplace(std::move(result));
+            this_install.current_summary.build_result.emplace(std::move(result));
         }
 
         msg::println(msgTotalInstallTime, msg::elapsed = timer.to_string());
