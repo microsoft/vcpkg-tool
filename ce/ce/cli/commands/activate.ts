@@ -1,22 +1,24 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { buildRegistryResolver, resolveDependencies } from '../../artifacts/artifact';
 import { i } from '../../i18n';
+import { trackActivation } from '../../insights';
 import { session } from '../../main';
+import { showArtifacts } from '../artifacts';
 import { Command } from '../command';
-import { activateProject } from '../project';
+import { projectFile } from '../format';
+import { activate } from '../project';
 import { error } from '../styling';
 import { Json } from '../switches/json';
 import { MSBuildProps } from '../switches/msbuild-props';
 import { Project } from '../switches/project';
-import { WhatIf } from '../switches/whatIf';
 
 export class ActivateCommand extends Command {
   readonly command = 'activate';
   readonly aliases = [];
   seeAlso = [];
   argumentsHelp = [];
-  whatIf = new WhatIf(this);
   project: Project = new Project(this);
   msbuildProps: MSBuildProps = new MSBuildProps(this);
   json : Json = new Json(this);
@@ -39,12 +41,31 @@ export class ActivateCommand extends Command {
       return false;
     }
 
-    return await activateProject(session, projectManifest, {
+    const options = {
       force: this.commandLine.force,
       allLanguages: this.commandLine.allLanguages,
       language: this.commandLine.language,
-      msbuildProps: await this.msbuildProps.value,
-      json: await this.json.value
-    });
+      msbuildProps: this.msbuildProps.resolvedValue,
+      json: this.json.resolvedValue
+    };
+
+    // track what got installed
+    const projectResolver = await buildRegistryResolver(session, projectManifest.metadata.registries);
+    const resolved = await resolveDependencies(session, projectResolver, [projectManifest], 3);
+
+    // print the status of what is going to be activated.
+    if (!await showArtifacts(resolved, projectResolver, options)) {
+      session.channels.error(i`Unable to activate project`);
+      return false;
+    }
+
+    if (await activate(session, resolved, projectResolver, true, options)) {
+      trackActivation();
+      session.channels.message(i`Project ${projectFile(projectManifest.metadata.file.parent)} activated`);
+      return true;
+    }
+
+    session.channels.message(i`Failed to activate project ${projectFile(projectManifest.metadata.file.parent)}`);
+    return false;
   }
 }

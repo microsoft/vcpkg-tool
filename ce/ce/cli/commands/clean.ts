@@ -6,7 +6,6 @@ import { session } from '../../main';
 import { Command } from '../command';
 import { debug, log } from '../styling';
 import { Switch } from '../switch';
-import { WhatIf } from '../switches/whatIf';
 
 export class All extends Switch {
   switch = 'all';
@@ -43,7 +42,6 @@ export class CleanCommand extends Command {
   all = new All(this);
   artifacts = new Artifacts(this);
   downloads = new Downloads(this);
-  whatIf = new WhatIf(this);
 
   get summary() {
     return i`cleans up`;

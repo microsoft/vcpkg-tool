@@ -5,22 +5,20 @@ import { Artifact, buildRegistryResolver } from '../../artifacts/artifact';
 import { i } from '../../i18n';
 import { session } from '../../main';
 import { countWhere } from '../../util/linq';
-import { installArtifacts, selectArtifacts, showArtifacts } from '../artifacts';
+import { acquireArtifacts, selectArtifacts, showArtifacts } from '../artifacts';
 import { Command } from '../command';
 import { cmdSwitch } from '../format';
 import { debug, error, log, warning } from '../styling';
 import { Project } from '../switches/project';
 import { Version } from '../switches/version';
-import { WhatIf } from '../switches/whatIf';
 
 export class AcquireCommand extends Command {
   readonly command = 'acquire';
   readonly aliases = ['install'];
   seeAlso = [];
   argumentsHelp = [];
-  version = new Version(this);
+  version: Version = new Version(this);
   project: Project = new Project(this);
-  whatIf = new WhatIf(this);
 
   get summary() {
     return i`Acquire artifacts in the registry`;
@@ -68,13 +66,13 @@ export class AcquireCommand extends Command {
     }
 
     debug(`Installing ${numberOfArtifacts} artifacts`);
-    const [success] = await installArtifacts(session, resolved, resolver, { force: this.commandLine.force, language: this.commandLine.language, allLanguages: this.commandLine.allLanguages });
+    const success = await acquireArtifacts(session, resolved, resolver, { force: this.commandLine.force, language: this.commandLine.language, allLanguages: this.commandLine.allLanguages });
     if (success) {
       log(i`${numberOfArtifacts} artifacts installed successfully`);
-      return true;
+    } else {
+      log(i`Installation failed -- stopping`);
     }
 
-    log(i`Installation failed -- stopping`);
-    return false;
+    return success;
   }
 }

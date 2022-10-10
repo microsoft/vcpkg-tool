@@ -30,7 +30,7 @@ export abstract class Switch implements Help {
     return this.#values || (this.#values = this.command.commandLine.claim(this.switch) || []);
   }
 
-  get value(): any | undefined {
+  get value(): string | undefined {
     const v = this.values;
     strict.ok(v.length < 2, i`Expected a single value for ${cmdSwitch(this.switch)} - found multiple`);
     return v[0];
@@ -47,6 +47,6 @@ export abstract class Switch implements Help {
     return !!v && v.length > 0 && v[0] !== 'false';
   }
   get isRangeOfVersions() {
-    return !!/[*[\]()~^]/.exec(this.value);
+    return !!/[*[\]()~^]/.exec(this.value ?? '');
   }
 }
