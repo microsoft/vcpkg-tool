@@ -974,9 +974,11 @@ namespace vcpkg
 
     std::string VcpkgPaths::get_current_git_sha_baseline_message() const
     {
-        if (git_is_shallow_clone(this->root / ".git"))
+        const auto& git_config = git_builtin_config();
+        auto maybe_shallow_clone = is_shallow_clone(git_config).get();
+        if (maybe_shallow_clone && *maybe_shallow_clone)
         {
-            return msg::format(msgShallowRepositoryDetected, msg::path = this->root / ".git").to_string();
+            return msg::format(msgShallowRepositoryDetected, msg::path = git_config.git_dir).to_string();
         }
 
         auto maybe_cur_sha = get_current_git_sha();
@@ -997,19 +999,6 @@ namespace vcpkg
         // git clone --no-checkout --local {vcpkg_root} {dot_git_dir}
         Command showcmd = git_cmd_builder(dot_git_dir, dot_git_dir).string_arg("show").string_arg(treeish);
         return flatten_out(cmd_execute_and_capture_output(showcmd), Tools::GIT);
-    }
-
-    bool VcpkgPaths::git_is_shallow_clone(const Path& dot_git_dir) const
-    {
-        auto cmd =
-            git_cmd_builder(dot_git_dir, dot_git_dir).string_arg("rev-parse").string_arg("--is-shallow-repository");
-        auto output = flatten_out(cmd_execute_and_capture_output(cmd), Tools::GIT);
-        if (!output)
-        {
-            Debug::println(output.error());
-            return false;
-        }
-        return Strings::case_insensitive_ascii_equals("true", Strings::trim(*output.get()));
     }
 
     ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
@@ -1101,10 +1090,13 @@ namespace vcpkg
         {
             auto message =
                 Strings::concat(PRELUDE, "Error: Failed to tar port directory\n", std::move(maybe_tar_output).error());
-            if (git_is_shallow_clone(this->root / ".git"))
+
+            const auto& git_config = git_builtin_config();
+            auto maybe_shallow_clone = is_shallow_clone(git_config).get();
+            if (maybe_shallow_clone && *maybe_shallow_clone)
             {
                 message.push_back('\n');
-                message.append(msg::format(msgShallowRepositoryDetected, msg::path = this->root / ".git").to_string());
+                message.append(msg::format(msgShallowRepositoryDetected, msg::path = git_config.git_dir).to_string());
             }
             return {
                 std::move(message),

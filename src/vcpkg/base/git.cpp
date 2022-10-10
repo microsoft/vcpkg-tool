@@ -6,6 +6,8 @@
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.process.h>
 
+#include <vcpkg/tools.h>
+
 namespace
 {
     using namespace vcpkg;
@@ -186,5 +188,16 @@ namespace vcpkg
             return ret;
         }
         return std::move(maybe_results.error());
+    }
+
+    ExpectedL<bool> is_shallow_clone(const GitConfig& config)
+    {
+        auto cmd = git_cmd_builder(config).string_arg("rev-parse").string_arg("--is-shallow-repository");
+        auto output = flatten_out(cmd_execute_and_capture_output(cmd), Tools::GIT);
+        if (!output)
+        {
+            return output.error();
+        }
+        return "true" == Strings::trim(*output.get());
     }
 }

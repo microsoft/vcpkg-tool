@@ -136,7 +136,6 @@ namespace vcpkg
         std::string get_current_git_sha_baseline_message() const;
         ExpectedS<Path> git_checkout_port(StringView port_name, StringView git_tree, const Path& dot_git_dir) const;
         ExpectedL<std::string> git_show(StringView treeish, const Path& dot_git_dir) const;
-        bool git_is_shallow_clone(const Path& dot_git_dir) const;
 
         const DownloadManager& get_download_manager() const;
 
