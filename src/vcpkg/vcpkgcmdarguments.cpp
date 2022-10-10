@@ -89,10 +89,7 @@ namespace vcpkg
             {
                 if (place.has_value())
                 {
-                    msg::println_error(msgTwoFeatureFlagsSpecified, msg::value = flag);
-                    get_global_metrics_collector().track_string(StringMetric::Error,
-                                                                "error feature flag +-" + flag.to_string());
-                    Checks::exit_fail(VCPKG_LINE_INFO);
+                    Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgTwoFeatureFlagsSpecified, msg::value = flag);
                 }
 
                 place = false;
@@ -132,7 +129,6 @@ namespace vcpkg
         if (nullptr != option_field)
         {
             msg::println_error(msgDuplicateOptions, msg::value = option_name);
-            get_global_metrics_collector().track_string(StringMetric::Error, "error option specified multiple times");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -145,7 +141,6 @@ namespace vcpkg
         if (option_field && option_field != new_setting)
         {
             msg::println_error(msgConflictingValuesForOption, msg::option = option_name);
-            get_global_metrics_collector().track_string(StringMetric::Error, "error conflicting switches");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -159,7 +154,6 @@ namespace vcpkg
         if (new_value.size() == 0)
         {
             msg::println_error(msgExpectedValueForOption, msg::option = option_name);
-            get_global_metrics_collector().track_string(StringMetric::Error, "error option name");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -174,7 +168,6 @@ namespace vcpkg
         if (new_value.size() == 0)
         {
             msg::println_error(msgExpectedValueForOption, msg::option = option_name);
-            get_global_metrics_collector().track_string(StringMetric::Error, "error option name");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -241,7 +234,6 @@ namespace vcpkg
                 }
 
                 msg::println_error(msgExpectedValueForOption, msg::option = option);
-                get_global_metrics_collector().track_string(StringMetric::Error, "error option name");
                 print_usage();
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
@@ -314,8 +306,6 @@ namespace vcpkg
 
             if (basic_arg.size() >= 2 && basic_arg[0] == '-' && basic_arg[1] != '-')
             {
-                get_global_metrics_collector().track_string(StringMetric::Error,
-                                                            "error short options are not supported");
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgUnsupportedShortOptions, msg::value = basic_arg);
             }
 

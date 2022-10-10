@@ -315,8 +315,6 @@ int main(const int argc, const char* const* const argv)
         exc_msg = "unknown error(...)";
     }
 
-    get_global_metrics_collector().track_string(StringMetric::Error, exc_msg);
-
     fflush(stdout);
     msg::println(msgVcpkgHasCrashed);
     fflush(stdout);

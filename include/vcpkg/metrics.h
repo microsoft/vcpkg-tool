@@ -57,7 +57,6 @@ namespace vcpkg
         CommandContext,
         CommandName,
         DetectedCiEnvironment,
-        Error,
         InstallPlan_1,
         ListFile,
         RegistriesDefaultRegistryKind,

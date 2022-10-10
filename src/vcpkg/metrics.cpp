@@ -122,7 +122,6 @@ namespace vcpkg
         {StringMetric::CommandContext, "command_context", "artifact"},
         {StringMetric::CommandName, "command_name", "z-preregister-telemetry"},
         {StringMetric::DetectedCiEnvironment, "detected_ci_environment", "Generic"},
-        {StringMetric::Error, "error", "build failed"},
         {StringMetric::InstallPlan_1,
          "installplan_1",
          "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff"},
