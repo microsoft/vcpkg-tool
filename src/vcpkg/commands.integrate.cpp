@@ -365,12 +365,8 @@ namespace vcpkg::Commands::Integrate
         }
 #endif
 
-        const auto& maybe_pathtxt = get_path_txt_path();
-        if (auto pathtxt = maybe_pathtxt.get())
-        {
-            fs.write_contents(*pathtxt, paths.root.generic_u8string(), VCPKG_LINE_INFO);
-        }
-
+        fs.write_contents(
+            get_path_txt_path().value_or_exit(VCPKG_LINE_INFO), paths.root.generic_u8string(), VCPKG_LINE_INFO);
         msg::println(Color::success, msgAppliedUserIntegration);
         const auto cmake_toolchain = paths.buildsystems / "vcpkg.cmake";
 
