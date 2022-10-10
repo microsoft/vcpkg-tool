@@ -335,7 +335,8 @@ namespace vcpkg
                     {
                         Checks::msg_exit_with_error(VCPKG_LINE_INFO,
                                                     msg::format(msgWhileLookingForSpec, msg::spec = spec)
-                                                        .append_raw("\n" + maybe_scfl.error()));
+                                                        .append_raw('\n')
+                                                        .append_raw(maybe_scfl.error()));
                     }
                 }
 
@@ -1015,7 +1016,7 @@ namespace vcpkg
                                                                             msg::expected_version = constraint,
                                                                             msg::actual_version = *v));
                                 msg::println(msg::format(msgConstraintViolation)
-                                                 .append_raw("\n")
+                                                 .append_raw('\n')
                                                  .append_indent()
                                                  .append(constraint_violations.back()));
                             }
@@ -1089,7 +1090,7 @@ namespace vcpkg
                     Checks::msg_exit_with_error(
                         VCPKG_LINE_INFO,
                         msg::format(msgCorruptedDatabase)
-                            .append_raw("\n")
+                            .append_raw('\n')
                             .append(msgMissingDependency, msg::spec = ipv.spec(), msg::package_name = dep));
                 }
 
@@ -1176,13 +1177,13 @@ namespace vcpkg
         if (!excluded.empty())
         {
             msg::println(
-                msg::format(msgExcludedPackages).append_raw("\n").append_raw(actions_to_output_string(excluded)));
+                msg::format(msgExcludedPackages).append_raw('\n').append_raw(actions_to_output_string(excluded)));
         }
 
         if (!already_installed_plans.empty())
         {
             msg::println(msg::format(msgInstalledPackages)
-                             .append_raw("\n")
+                             .append_raw('\n')
                              .append_raw(actions_to_output_string(already_installed_plans)));
         }
 
@@ -1191,7 +1192,7 @@ namespace vcpkg
             auto message = msg::format(msgPackagesToRemove);
             for (auto&& spec : remove_specs)
             {
-                message.append_raw("\n" + to_output_string(RequestType::USER_REQUESTED, spec.to_string()));
+                message.append_raw('\n').append_raw(to_output_string(RequestType::USER_REQUESTED, spec.to_string()));
             }
             msg::println(message);
         }
@@ -1199,19 +1200,19 @@ namespace vcpkg
         if (!rebuilt_plans.empty())
         {
             msg::println(
-                msg::format(msgPackagesToRebuild).append_raw("\n").append_raw(actions_to_output_string(rebuilt_plans)));
+                msg::format(msgPackagesToRebuild).append_raw('\n').append_raw(actions_to_output_string(rebuilt_plans)));
         }
 
         if (!new_plans.empty())
         {
             msg::println(
-                msg::format(msgPackagesToInstall).append_raw("\n").append_raw(actions_to_output_string(new_plans)));
+                msg::format(msgPackagesToInstall).append_raw('\n').append_raw(actions_to_output_string(new_plans)));
         }
 
         if (!only_install_plans.empty())
         {
             msg::println(msg::format(msgPackagesToInstallDirectly)
-                             .append_raw("\n")
+                             .append_raw('\n')
                              .append_raw(actions_to_output_string(only_install_plans)));
         }
 

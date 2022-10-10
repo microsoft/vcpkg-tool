@@ -146,7 +146,7 @@ namespace vcpkg
         return flatten_out(cmd_execute_and_capture_output(cmd), exe_path).map_error([&](LocalizedString&& output) {
             return msg::format_error(
                        msgFailedToRunToolToDetermineVersion, msg::tool_name = tool_name, msg::path = exe_path)
-                .append_raw("\n")
+                .append_raw('\n')
                 .append(std::move(output))
                 .extract_data();
         });

@@ -126,7 +126,7 @@ namespace vcpkg::Remove
                     msg::println(msg::format(msgFollowingPackagesNotInstalled).append_raw(as_string));
                     continue;
                 case RemovePlanType::REMOVE:
-                    msg::println(msg::format(msgPackagesToRemove).append_raw("\n" + as_string));
+                    msg::println(msg::format(msgPackagesToRemove).append_raw('\n').append_raw(as_string));
                     continue;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
