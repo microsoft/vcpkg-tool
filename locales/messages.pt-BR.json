@@ -467,7 +467,7 @@
   "VSExaminedInstances": "As seguintes instâncias do Visual Studio foram consideradas:",
   "VSExaminedPaths": "Os seguintes caminhos foram examinados para as instâncias do Visual Studio:",
   "VSNoInstances": "Não foi possível localizar uma instância completa do Visual Studio",
-  "VcpkgCeIsExperimental": "vcpkg-ce ('configurar ambiente') é experimental e pode mudar a qualquer momento.",
+  "VcpkgCeIsExperimental": "vcpkg-artifacts are experimental and may change at any time.",
   "VcpkgCommitTableHeader": "Confirmação de VCPKG",
   "VcpkgCompletion": "a conclusão do vcpkg {value} já foi importada para o arquivo \"{path}\".\nAs seguintes entradas foram encontradas:",
   "VcpkgDisallowedClassicMode": "Não foi possível localizar um manifesto (vcpkg.json) acima do diretório de trabalho atual.\nEsta distribuição vcpkg não tem uma instância de modo clássico.",

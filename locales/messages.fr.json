@@ -467,7 +467,7 @@
   "VSExaminedInstances": "Les instances de Visual Studio suivantes ont été prises en compte :",
   "VSExaminedPaths": "Les chemins d’accès suivants ont été examinés pour Visual Studio instances :",
   "VSNoInstances": "Instance de Visual Studio complète introuvable",
-  "VcpkgCeIsExperimental": "vcpkg-ce (« configurer l’environnement ») est expérimental et peut changer à tout moment.",
+  "VcpkgCeIsExperimental": "vcpkg-artifacts are experimental and may change at any time.",
   "VcpkgCommitTableHeader": "Validation VCPKG",
   "VcpkgCompletion": "L’achèvement {value} vcpkg est déjà importé dans votre fichier \"{path}\".\nLes entrées suivantes ont été trouvées :",
   "VcpkgDisallowedClassicMode": "Impossible de localiser un manifeste (vcpkg.json) au-dessus du répertoire de travail actuel.\nCette distribution vcpkg n’a pas d’instance de mode classique.",

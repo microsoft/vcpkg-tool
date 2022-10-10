@@ -467,7 +467,7 @@
   "VSExaminedInstances": "考虑了以下 Visual Studio 实例:",
   "VSExaminedPaths": "检查了 Visual Studio 实例的以下路径:",
   "VSNoInstances": "找不到完整的 Visual Studio 实例",
-  "VcpkgCeIsExperimental": "vcpkg-ce (“配置环境”)是实验性的，可能会随时更改。",
+  "VcpkgCeIsExperimental": "vcpkg-artifacts are experimental and may change at any time.",
   "VcpkgCommitTableHeader": "VCPKG 提交",
   "VcpkgCompletion": "vcpkg {value}完成已导入到“{path}”文件。\n找到以下条目:",
   "VcpkgDisallowedClassicMode": "无法在当前工作目录之上找到清单(vcpkg.json)。\n此 vcpkg 分发没有经典模式实例。",

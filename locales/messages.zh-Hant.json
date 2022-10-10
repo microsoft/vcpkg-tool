@@ -467,7 +467,7 @@
   "VSExaminedInstances": "已考慮下列 Visual Studio 執行個體:",
   "VSExaminedPaths": "已檢查 Visual Studio 執行個體的下列路徑:",
   "VSNoInstances": "找不到完整的 Visual Studio 執行個體",
-  "VcpkgCeIsExperimental": "vcpkg-ce ([設定環境]) 為實驗性，可能隨時變更。",
+  "VcpkgCeIsExperimental": "vcpkg-artifacts are experimental and may change at any time.",
   "VcpkgCommitTableHeader": "VCPKG 認可",
   "VcpkgCompletion": "已將 vcpkg {value} 完成匯入到您的 \"{path}\" 檔案。\n找到下列項目:",
   "VcpkgDisallowedClassicMode": "找不到目前工作目錄上方的資訊清單 (vcpkg.json)。\n這個 vcpkg 發佈沒有傳統模式執行個體。",

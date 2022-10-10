@@ -467,7 +467,7 @@
   "VSExaminedInstances": "Рассмотрены следующие экземпляры Visual Studio:",
   "VSExaminedPaths": "Следующие пути проверены на наличие экземпляров Visual Studio:",
   "VSNoInstances": "Не удалось найти полный экземпляр Visual Studio",
-  "VcpkgCeIsExperimental": "vcpkg-ce ('configure environment') является экспериментальной функцией и может измениться в любое время.",
+  "VcpkgCeIsExperimental": "vcpkg-artifacts are experimental and may change at any time.",
   "VcpkgCommitTableHeader": "Фиксация VCPKG",
   "VcpkgCompletion": "Завершение vcpkg {value} уже импортировано в ваш файл \"{path}\".\nНайдены следующие записи:",
   "VcpkgDisallowedClassicMode": "Не удалось найти манифест (vcpkg.json) над текущим рабочим каталогом.\nЭто распределение vcpkg не имеет экземпляра классического режима.",
