@@ -234,7 +234,7 @@ if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
                 ${VCPKG_ARTIFACTS_SOURCES}
                 "${CMAKE_CURRENT_SOURCE_DIR}/ce/ce/node_modules"
             COMMENT
-                "Building vcpkg-ce..."
+                "Building vcpkg-artifacts..."
             VERBATIM
             )
 
@@ -256,7 +256,7 @@ if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
                 ${VCPKG_ARTIFACTS_TEST_SOURCES}
                 "${CMAKE_CURRENT_SOURCE_DIR}/ce/test/node_modules"
             COMMENT
-                "Building vcpkg-ce-test..."
+                "Building vcpkg-artifacts-test..."
             VERBATIM
             )
 
