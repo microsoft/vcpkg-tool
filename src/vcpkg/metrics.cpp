@@ -242,13 +242,8 @@ namespace vcpkg
 
     MetricsSubmission MetricsCollector::get_submission() const
     {
-        Optional<MetricsSubmission> result;
-        {
-            std::lock_guard<std::mutex> lock{mtx};
-            result.emplace(submission);
-        } // unlock
-
-        return std::move(result).value_or_exit(VCPKG_LINE_INFO);
+        std::lock_guard<std::mutex> lock{mtx};
+        return submission;
     }
 
     MetricsCollector& get_global_metrics_collector() noexcept
