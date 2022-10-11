@@ -975,8 +975,7 @@ namespace vcpkg
     std::string VcpkgPaths::get_current_git_sha_baseline_message() const
     {
         const auto& git_config = git_builtin_config();
-        auto maybe_shallow_clone = is_shallow_clone(git_config).get();
-        if (maybe_shallow_clone && *maybe_shallow_clone)
+        if (is_shallow_clone(git_config).value_or(false))
         {
             return msg::format(msgShallowRepositoryDetected, msg::path = git_config.git_dir).to_string();
         }
@@ -1092,8 +1091,7 @@ namespace vcpkg
                 Strings::concat(PRELUDE, "Error: Failed to tar port directory\n", std::move(maybe_tar_output).error());
 
             const auto& git_config = git_builtin_config();
-            auto maybe_shallow_clone = is_shallow_clone(git_config).get();
-            if (maybe_shallow_clone && *maybe_shallow_clone)
+            if (is_shallow_clone(git_config).value_or(false))
             {
                 message.push_back('\n');
                 message.append(msg::format(msgShallowRepositoryDetected, msg::path = git_config.git_dir).to_string());
