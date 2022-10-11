@@ -245,6 +245,7 @@
   "HelpVersionSemverScheme": "セマンティック バージョン 2.0 (2.1.0-rc2)",
   "HelpVersionStringScheme": "厳密で互換性のないバージョン (Vista)",
   "HelpVersioning": "バージョン管理を使用すると、マニフェスト ファイル内からプロジェクトによって使用される依存関係の正確なリビジョンを明確に制御できます。",
+  "IgnoringVcpkgRootEnvironment": "Ignoring VCPKG_ROOT environment variable; use --vcpkg-root \"{path}\" to use the environment value or unset the VCPKG_ROOT environment variable to suppress this message. Using detected vcpkg root: \"{actual}\".",
   "IllegalFeatures": "このコンテキストでは機能のリストは許可されていません",
   "IllegalPlatformSpec": "プラットフォーム修飾子はこのコンテキストでは許可されていません",
   "ImproperShaLength": "SHA512 は 128 文字の 16 進文字である必要があります: {value}",

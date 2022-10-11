@@ -245,6 +245,7 @@
   "HelpVersionSemverScheme": "Sémantická verze 2.0 (2.1.0-rc2)",
   "HelpVersionStringScheme": "Přesná, nekompatibilní verze (Vista)",
   "HelpVersioning": "Správa verzí umožňuje deterministicky řídit přesné revize závislostí používaných vaším projektem ze souboru manifest.",
+  "IgnoringVcpkgRootEnvironment": "Ignoring VCPKG_ROOT environment variable; use --vcpkg-root \"{path}\" to use the environment value or unset the VCPKG_ROOT environment variable to suppress this message. Using detected vcpkg root: \"{actual}\".",
   "IllegalFeatures": "Seznam funkcí není v tomto kontextu povolený.",
   "IllegalPlatformSpec": "Kvalifikátor platformy není v tomto kontextu povolený.",
   "ImproperShaLength": "Algoritmy SHA512 musí mít 128 šestnáctkových znaků: {value}",

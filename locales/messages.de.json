@@ -245,6 +245,7 @@
   "HelpVersionSemverScheme": "EIne Semantische Version 2.0 (2.1.0-rc2)",
   "HelpVersionStringScheme": "Eine genaue, nicht kompatible Version (Vista)",
   "HelpVersioning": "Mithilfe der Versionsverwaltung können Sie deterministisch die genauen Revisionen von Abhängigkeiten steuern, die von Ihrem Projekt innerhalb Ihrer Manifestdatei verwendet werden.",
+  "IgnoringVcpkgRootEnvironment": "Ignoring VCPKG_ROOT environment variable; use --vcpkg-root \"{path}\" to use the environment value or unset the VCPKG_ROOT environment variable to suppress this message. Using detected vcpkg root: \"{actual}\".",
   "IllegalFeatures": "Die Liste der Features ist in diesem Kontext nicht zulässig",
   "IllegalPlatformSpec": "Der Plattformqualifizierer ist in diesem Kontext nicht zulässig",
   "ImproperShaLength": "SHA512-Zeichen müssen 128 Hexadezimalzeichen umfassen: {value}",

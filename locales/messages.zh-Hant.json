@@ -245,6 +245,7 @@
   "HelpVersionSemverScheme": "語意版本 2.0 (2.1.0-rc2)",
   "HelpVersionStringScheme": "精確、無法比較的版本 (Vista)",
   "HelpVersioning": "版本設定可讓您從資訊清單檔案內，明確控制專案所使用的相依性精確修訂。",
+  "IgnoringVcpkgRootEnvironment": "Ignoring VCPKG_ROOT environment variable; use --vcpkg-root \"{path}\" to use the environment value or unset the VCPKG_ROOT environment variable to suppress this message. Using detected vcpkg root: \"{actual}\".",
   "IllegalFeatures": "此情境中不允許功能清單",
   "IllegalPlatformSpec": "此內容不允許平台限定詞",
   "ImproperShaLength": "SHA512 必須是 128 十六進位字元: {value}",

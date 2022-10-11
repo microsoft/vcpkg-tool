@@ -245,6 +245,7 @@
   "HelpVersionSemverScheme": "Семантическая версия 2.0 (2.1.0-rc2)",
   "HelpVersionStringScheme": "Точная несовместимая версия (Vista)",
   "HelpVersioning": "Управление версиями позволяет вам детерминированно управлять точными версиями зависимостей, используемых вашим проектом, из своего файла манифеста.",
+  "IgnoringVcpkgRootEnvironment": "Ignoring VCPKG_ROOT environment variable; use --vcpkg-root \"{path}\" to use the environment value or unset the VCPKG_ROOT environment variable to suppress this message. Using detected vcpkg root: \"{actual}\".",
   "IllegalFeatures": "Список функций не разрешен в этом контексте",
   "IllegalPlatformSpec": "Квалификатор платформы не разрешен в этом контексте",
   "ImproperShaLength": "Длина SHA512 должна составлять 128 шестнадцатеричных символов: {value}",

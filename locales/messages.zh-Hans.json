@@ -245,6 +245,7 @@
   "HelpVersionSemverScheme": "语义版本 2.0 (2.1.0-rc2)",
   "HelpVersionStringScheme": "精确、不兼容的版本(Vista)",
   "HelpVersioning": "使用版本控制，可以从清单文件中确定性地控制项目所用依赖项的精确修订。",
+  "IgnoringVcpkgRootEnvironment": "Ignoring VCPKG_ROOT environment variable; use --vcpkg-root \"{path}\" to use the environment value or unset the VCPKG_ROOT environment variable to suppress this message. Using detected vcpkg root: \"{actual}\".",
   "IllegalFeatures": "在此上下文中不允许使用功能列表",
   "IllegalPlatformSpec": "此上下文中不允许使用平台限定符",
   "ImproperShaLength": "SHA512 必须是 128 个十六进制字符: {value}",

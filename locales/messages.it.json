@@ -245,6 +245,7 @@
   "HelpVersionSemverScheme": "Una versione semantica 2.0 (2.1.0-rc2)",
   "HelpVersionStringScheme": "Versione esatta e incomparabile (Vista)",
   "HelpVersioning": "Il controllo delle versioni consente di controllare in modo deterministico le revisioni precise delle dipendenze usate dal progetto dall'interno del file manifesto.",
+  "IgnoringVcpkgRootEnvironment": "Ignoring VCPKG_ROOT environment variable; use --vcpkg-root \"{path}\" to use the environment value or unset the VCPKG_ROOT environment variable to suppress this message. Using detected vcpkg root: \"{actual}\".",
   "IllegalFeatures": "L'elenco delle funzionalità non è consentito in questo contesto",
   "IllegalPlatformSpec": "Qualificatore di piattaforma non consentito in questo contesto",
   "ImproperShaLength": "I caratteri SHA512 devono essere composti da 128 caratteri esadecimali: {value}",
