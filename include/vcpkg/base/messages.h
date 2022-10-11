@@ -1100,6 +1100,12 @@ namespace vcpkg
     DECLARE_MESSAGE(HelpVersionSchemes, (), "", "The following versioning schemes are accepted.");
     DECLARE_MESSAGE(HelpVersionSemverScheme, (), "", "A Semantic Version 2.0 (2.1.0-rc2)");
     DECLARE_MESSAGE(HelpVersionStringScheme, (), "", "An exact, incomparable version (Vista)");
+    DECLARE_MESSAGE(
+        IgnoringVcpkgRootEnvironment,
+        (msg::path, msg::actual),
+        "{actual} is the path we actually used",
+        "Ignoring VCPKG_ROOT environment variable; use --vcpkg-root \"{path}\" to use the environment value or unset "
+        "the VCPKG_ROOT environment variable to suppress this message. Using detected vcpkg root: \"{actual}\".");
     DECLARE_MESSAGE(IllegalFeatures, (), "", "List of features is not allowed in this context");
     DECLARE_MESSAGE(IllegalPlatformSpec, (), "", "Platform qualifier is not allowed in this context");
     DECLARE_MESSAGE(ImproperShaLength,

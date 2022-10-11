@@ -387,6 +387,8 @@
   "HelpVersionSemverScheme": "A Semantic Version 2.0 (2.1.0-rc2)",
   "HelpVersionStringScheme": "An exact, incomparable version (Vista)",
   "HelpVersioning": "Versioning allows you to deterministically control the precise revisions of dependencies used by your project from within your manifest file.",
+  "IgnoringVcpkgRootEnvironment": "Ignoring VCPKG_ROOT environment variable; use --vcpkg-root \"{path}\" to use the environment value or unset the VCPKG_ROOT environment variable to suppress this message. Using detected vcpkg root: \"{actual}\".",
+  "_IgnoringVcpkgRootEnvironment.comment": "{actual} is the path we actually used An example of {path} is /foo/bar.",
   "IllegalFeatures": "List of features is not allowed in this context",
   "IllegalPlatformSpec": "Platform qualifier is not allowed in this context",
   "ImproperShaLength": "SHA512's must be 128 hex characters: {value}",

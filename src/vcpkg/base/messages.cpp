@@ -624,6 +624,7 @@ namespace vcpkg
     REGISTER_MESSAGE(HelpVersionSchemes);
     REGISTER_MESSAGE(HelpVersionSemverScheme);
     REGISTER_MESSAGE(HelpVersionStringScheme);
+    REGISTER_MESSAGE(IgnoringVcpkgRootEnvironment);
     REGISTER_MESSAGE(IllegalFeatures);
     REGISTER_MESSAGE(IllegalPlatformSpec);
     REGISTER_MESSAGE(ImproperShaLength);
