@@ -134,6 +134,18 @@ namespace vcpkg
         return parsed_config_opt;
     }
 
+    static std::vector<std::string> merge_overlays(std::vector<std::string> cli_overlays,
+                                                   std::vector<std::string> manifest_overlays,
+                                                   std::vector<std::string> env_overlays)
+    {
+        std::vector<std::string> ret = cli_overlays;
+
+        ret.insert(std::end(ret), std::begin(manifest_overlays), std::end(manifest_overlays));
+        ret.insert(std::end(ret), std::begin(env_overlays), std::end(env_overlays));
+
+        return ret;
+    }
+
     static ConfigurationAndSource merge_validate_configs(Optional<ManifestConfiguration>&& manifest_data,
                                                          const Path& manifest_dir,
                                                          Optional<Configuration>&& config_data,
@@ -482,7 +494,7 @@ namespace vcpkg
                                                                                             : RequireExactVersions::NO))
                 , m_env_cache(m_ff_settings.compiler_tracking)
                 , triplets_dirs(
-                      Util::fmap(args.overlay_triplets,
+                      Util::fmap(args.cli_overlay_triplets,
                                  [&fs](const std::string& p) { return fs.almost_canonical(p, VCPKG_LINE_INFO); }))
                 , m_artifacts_dir(downloads / "artifacts")
             {
@@ -620,7 +632,7 @@ namespace vcpkg
 #endif
     }
 
-    VcpkgPaths::VcpkgPaths(Filesystem& filesystem, VcpkgCmdArguments& args)
+    VcpkgPaths::VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args)
         : original_cwd(preferred_current_path(filesystem))
         , root(determine_root(filesystem, original_cwd, args))
         // this is used during the initialization of the below public members
@@ -656,8 +668,10 @@ namespace vcpkg
                                                        m_pimpl->m_config_dir,
                                                        *this);
 
-            args.set_manifest_overlays(m_pimpl->m_config.config.overlay_ports,
-                                       m_pimpl->m_config.config.overlay_triplets);
+            this->overlay_ports = merge_overlays(
+                args.cli_overlay_ports, this->get_configuration().config.overlay_ports, args.env_overlay_ports);
+            this->overlay_triplets = merge_overlays(
+                args.cli_overlay_triplets, this->get_configuration().config.overlay_triplets, args.env_overlay_triplets);
 
             m_pimpl->m_registry_set = m_pimpl->m_config.instantiate_registry_set(*this);
         }

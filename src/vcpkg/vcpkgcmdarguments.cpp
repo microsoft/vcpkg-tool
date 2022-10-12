@@ -304,8 +304,8 @@ namespace vcpkg
 
             constexpr static std::pair<StringView, std::vector<std::string> VcpkgCmdArguments::*>
                 cojoined_multivalues[] = {
-                    {OVERLAY_PORTS_ARG, &VcpkgCmdArguments::overlay_ports},
-                    {OVERLAY_TRIPLETS_ARG, &VcpkgCmdArguments::overlay_triplets},
+                    {OVERLAY_PORTS_ARG, &VcpkgCmdArguments::cli_overlay_ports},
+                    {OVERLAY_TRIPLETS_ARG, &VcpkgCmdArguments::cli_overlay_triplets},
                     {BINARY_SOURCES_ARG, &VcpkgCmdArguments::binary_sources},
                     {CMAKE_SCRIPT_ARG, &VcpkgCmdArguments::cmake_args},
                 };
@@ -634,24 +634,6 @@ namespace vcpkg
 
         VcpkgCmdArguments::append_common_options(table);
         msg::println(LocalizedString::from_raw(table.m_str));
-    }
-
-    // Merges overlay ports in the specific order
-    void VcpkgCmdArguments::merge_overlays()
-    {
-        overlay_ports.insert(
-            std::end(overlay_ports), std::begin(manifest_overlay_ports), std::end(manifest_overlay_ports));
-        overlay_ports.insert(std::end(overlay_ports), std::begin(env_overlay_ports), std::end(env_overlay_ports));
-        overlay_triplets.insert(
-            std::end(overlay_triplets), std::begin(manifest_overlay_triplets), std::end(manifest_overlay_triplets));
-        overlay_triplets.insert(
-            std::end(overlay_triplets), std::begin(env_overlay_triplets), std::end(env_overlay_triplets));
-    }
-
-    void VcpkgCmdArguments::set_manifest_overlays(std::vector<std::string>& op, std::vector<std::string>& ot)
-    {
-        manifest_overlay_ports.insert(std::end(manifest_overlay_ports), std::begin(op), std::end(op));
-        manifest_overlay_triplets.insert(std::end(manifest_overlay_triplets), std::begin(ot), std::end(ot));
     }
 
     void VcpkgCmdArguments::append_common_options(HelpTableFormatter& table)

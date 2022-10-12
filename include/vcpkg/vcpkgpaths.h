@@ -72,7 +72,7 @@ namespace vcpkg
             TripletFile(StringView name, StringView location) : name(name.data(), name.size()), location(location) { }
         };
 
-        VcpkgPaths(Filesystem& filesystem, VcpkgCmdArguments& args);
+        VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args);
         VcpkgPaths(const VcpkgPaths&) = delete;
         VcpkgPaths& operator=(const VcpkgPaths&) = delete;
         ~VcpkgPaths();
@@ -121,6 +121,9 @@ namespace vcpkg
         const Path ports_cmake;
         const Path triplets;
         const Path community_triplets;
+
+        std::vector<std::string> overlay_ports;
+        std::vector<std::string> overlay_triplets;
 
         std::string get_toolver_diagnostics() const;
 

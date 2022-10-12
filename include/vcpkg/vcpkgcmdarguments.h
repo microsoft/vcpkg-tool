@@ -118,9 +118,6 @@ namespace vcpkg
 
         static void append_common_options(HelpTableFormatter& target);
 
-        void set_manifest_overlays(std::vector<std::string>&, std::vector<std::string>&);
-        void merge_overlays();
-
         constexpr static StringLiteral VCPKG_ROOT_DIR_ENV = "VCPKG_ROOT";
         constexpr static StringLiteral VCPKG_ROOT_DIR_ARG = "vcpkg-root";
         std::unique_ptr<std::string> vcpkg_root_dir;
@@ -157,14 +154,12 @@ namespace vcpkg
         std::unique_ptr<std::string> host_triplet;
         constexpr static StringLiteral OVERLAY_PORTS_ENV = "VCPKG_OVERLAY_PORTS";
         constexpr static StringLiteral OVERLAY_PORTS_ARG = "overlay-ports";
-        std::vector<std::string> overlay_ports;
+        std::vector<std::string> cli_overlay_ports;
         std::vector<std::string> env_overlay_ports;
-        std::vector<std::string> manifest_overlay_ports;
         constexpr static StringLiteral OVERLAY_TRIPLETS_ENV = "VCPKG_OVERLAY_TRIPLETS";
         constexpr static StringLiteral OVERLAY_TRIPLETS_ARG = "overlay-triplets";
-        std::vector<std::string> overlay_triplets;
+        std::vector<std::string> cli_overlay_triplets;
         std::vector<std::string> env_overlay_triplets;
-        std::vector<std::string> manifest_overlay_triplets;
 
         constexpr static StringLiteral BINARY_SOURCES_ARG = "binarysource";
         std::vector<std::string> binary_sources;

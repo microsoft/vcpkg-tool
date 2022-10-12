@@ -259,7 +259,7 @@ namespace vcpkg::Commands
                 }
             } // unlock metrics
 
-            perform_find_port_and_exit(paths, full_description, enable_json, filter, args.overlay_ports);
+            perform_find_port_and_exit(paths, full_description, enable_json, filter, paths.overlay_ports);
         }
 
         Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgAddCommandFirstArg);

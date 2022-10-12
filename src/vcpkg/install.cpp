@@ -1065,8 +1065,8 @@ namespace vcpkg
             std::vector<std::string> extended_overlay_ports;
             const bool add_builtin_ports_directory_as_overlay =
                 paths.get_registry_set().is_default_builtin_registry() && !paths.use_git_default_registry();
-            extended_overlay_ports.reserve(args.overlay_ports.size() + add_builtin_ports_directory_as_overlay);
-            extended_overlay_ports = args.overlay_ports;
+            extended_overlay_ports.reserve(paths.overlay_ports.size() + add_builtin_ports_directory_as_overlay);
+            extended_overlay_ports = paths.overlay_ports;
             if (add_builtin_ports_directory_as_overlay)
             {
                 extended_overlay_ports.emplace_back(paths.builtin_ports_directory().native());
@@ -1114,7 +1114,7 @@ namespace vcpkg
                                                         keep_going);
         }
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
+        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
