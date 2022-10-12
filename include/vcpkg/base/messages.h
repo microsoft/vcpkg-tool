@@ -452,7 +452,6 @@ namespace vcpkg
     extern MessageSink& stdout_sink;
     extern MessageSink& stderr_sink;
 
-    DECLARE_MESSAGE(AARpath, (msg::path), "", "AAR path {path}");
     DECLARE_MESSAGE(AddArtifactOnlyOne,
                     (msg::command_line),
                     "",
@@ -559,10 +558,7 @@ namespace vcpkg
                     (msg::env_var, msg::path),
                     "Note: 'source.properties' is code and should not be translated.",
                     "source.properties missing in {env_var} directory: {path}");
-    DECLARE_MESSAGE(AndroidStudioConfigProp,
-                    (),
-                    "",
-                    "[DEBUG] Configuration properties in Android Studio\nIn app/build.gradle");
+
     DECLARE_MESSAGE(AndroidTripletSupported, (), "", "Currently supported on android triplet.");
     DECLARE_MESSAGE(AnotherInstallationInProgress,
                     (),
@@ -757,8 +753,6 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "Both a manifest file and a CONTROL file exist in port directory: {path}");
-    DECLARE_MESSAGE(CopyingHeaders, (), "", "Copying headers...");
-    DECLARE_MESSAGE(CopyingLibs, (), "", "Copying libs...");
     DECLARE_MESSAGE(CopyrightIsDir, (msg::path), "", "`{path}` being a directory is deprecated.");
     DECLARE_MESSAGE(CorruptedDatabase, (), "", "Database corrupted.");
     DECLARE_MESSAGE(CouldNotDeduceNugetIdAndVersion,
@@ -923,7 +917,6 @@ namespace vcpkg
                     "armeabi-v7a, x86_64, x86 to be present.");
     DECLARE_MESSAGE(Exported7zipArchive, (msg::path), "", "7zip archive exported at: {path}");
     DECLARE_MESSAGE(ExportedZipArchive, (msg::path), "", "Zip archive exported at: {path}");
-    DECLARE_MESSAGE(ExportingAARandPOM, (), "", "[DEBUG] Exporting AAR and POM");
     DECLARE_MESSAGE(ExportingAlreadyBuiltPackages,
                     (),
                     "",
@@ -1010,9 +1003,6 @@ namespace vcpkg
                     (msg::value),
                     "Example of {value} is 'x64 & windows'",
                     "on expression: {value}");
-    DECLARE_MESSAGE(FoundModule, (msg::package_name), "", "[DEBUG] Found module {package_name}:");
-    DECLARE_MESSAGE(FoundTriplets, (msg::count), "", "[DEBUG] Found {count} triplets");
-    DECLARE_MESSAGE(FromPath, (msg::path), "", "From {path}");
     DECLARE_MESSAGE(GeneratedConfiguration, (msg::path), "", "Generated configuration {path}.");
     DECLARE_MESSAGE(GeneratedInstaller, (msg::path), "", "{path} installer generated.");
     DECLARE_MESSAGE(GenerateMsgErrorParsingFormatArgs,
@@ -1191,7 +1181,6 @@ namespace vcpkg
                     (msg::action_index, msg::count, msg::spec),
                     "",
                     "Installing {action_index}/{count} {spec}...");
-    DECLARE_MESSAGE(InstallingPOM, (), "", "[DEBUG] Installing POM and AAR file to ~/.m2");
     DECLARE_MESSAGE(InstallPackageInstruction,
                     (msg::value, msg::path),
                     "'{value}' is the nuget id.",
@@ -1529,7 +1518,6 @@ namespace vcpkg
                     "Error messages are is printed after this.",
                     "while loading {path}:");
     DECLARE_MESSAGE(ParseControlErrorInfoWrongTypeFields, (), "", "The following fields had the wrong types:");
-    DECLARE_MESSAGE(POMpath, (msg::path), "", "POM path {path}");
     DECLARE_MESSAGE(PortDependencyConflict,
                     (msg::package_name),
                     "",
@@ -1676,7 +1664,6 @@ namespace vcpkg
                     "calling {system_api} failed with {exit_code} ({error_msg})");
     DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
     DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
-    DECLARE_MESSAGE(ToPath, (msg::path), "", "To {path}");
     DECLARE_MESSAGE(TotalTime, (msg::elapsed), "", "Total elapsed time: {elapsed}");
     DECLARE_MESSAGE(TwoFeatureFlagsSpecified,
                     (msg::value),
@@ -1905,10 +1892,7 @@ namespace vcpkg
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
-    DECLARE_MESSAGE(WritingABI, (msg::path), "", "Writing abi metadata to\n{path}");
-    DECLARE_MESSAGE(WritingManifest, (), "", " [DEBUG] Writing manifest to");
-    DECLARE_MESSAGE(WritingModuleMetaData, (msg::path), "", "Writing module metadata to\n{path}");
-    DECLARE_MESSAGE(WritingPrefabMeta, (), "", "Writing prefab meta data to");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}");
+    DECLARE_MESSAGE(DeprecatedPrefabDebugOption, (), "", "--prefab-debug is now deprecated.");
 
 }

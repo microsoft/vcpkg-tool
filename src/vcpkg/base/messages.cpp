@@ -383,7 +383,6 @@ namespace vcpkg
     MessageSink& stderr_sink = stderr_sink_instance;
     MessageSink& stdout_sink = stdout_sink_instance;
 
-    REGISTER_MESSAGE(AARpath);
     REGISTER_MESSAGE(AddArtifactOnlyOne);
     REGISTER_MESSAGE(AddCommandFirstArg);
     REGISTER_MESSAGE(AddFirstArgument);
@@ -425,7 +424,6 @@ namespace vcpkg
     REGISTER_MESSAGE(AlreadyInstalled);
     REGISTER_MESSAGE(AlreadyInstalledNotHead);
     REGISTER_MESSAGE(AndroidHomeDirMissingProps);
-    REGISTER_MESSAGE(AndroidStudioConfigProp);
     REGISTER_MESSAGE(AndroidTripletSupported);
     REGISTER_MESSAGE(AnotherInstallationInProgress);
     REGISTER_MESSAGE(AppliedUserIntegration);
@@ -485,8 +483,6 @@ namespace vcpkg
     REGISTER_MESSAGE(ConstraintViolation);
     REGISTER_MESSAGE(ContinueCodeUnitInStart);
     REGISTER_MESSAGE(ControlAndManifestFilesPresent);
-    REGISTER_MESSAGE(CopyingHeaders);
-    REGISTER_MESSAGE(CopyingLibs);
     REGISTER_MESSAGE(CopyrightIsDir);
     REGISTER_MESSAGE(CorruptedDatabase);
     REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion);
@@ -555,7 +551,6 @@ namespace vcpkg
     REGISTER_MESSAGE(ExportArchitectureReq);
     REGISTER_MESSAGE(Exported7zipArchive);
     REGISTER_MESSAGE(ExportedZipArchive);
-    REGISTER_MESSAGE(ExportingAARandPOM);
     REGISTER_MESSAGE(ExportingAlreadyBuiltPackages);
     REGISTER_MESSAGE(ExportingMaintenanceTool);
     REGISTER_MESSAGE(ExportingPackage);
@@ -596,9 +591,6 @@ namespace vcpkg
     REGISTER_MESSAGE(FollowingPackagesUpgraded);
     REGISTER_MESSAGE(ForceSystemBinariesOnWeirdPlatforms);
     REGISTER_MESSAGE(FormattedParseMessageExpression);
-    REGISTER_MESSAGE(FoundModule);
-    REGISTER_MESSAGE(FoundTriplets);
-    REGISTER_MESSAGE(FromPath);
     REGISTER_MESSAGE(GeneratedConfiguration);
     REGISTER_MESSAGE(GeneratedInstaller);
     REGISTER_MESSAGE(GenerateMsgErrorParsingFormatArgs);
@@ -669,7 +661,6 @@ namespace vcpkg
     REGISTER_MESSAGE(InstallingFromLocation);
     REGISTER_MESSAGE(InstallingMavenFile);
     REGISTER_MESSAGE(InstallingPackage);
-    REGISTER_MESSAGE(InstallingPOM);
     REGISTER_MESSAGE(InstallPackageInstruction);
     REGISTER_MESSAGE(InstallRootDir);
     REGISTER_MESSAGE(InstallWithSystemManager);
@@ -787,7 +778,6 @@ namespace vcpkg
     REGISTER_MESSAGE(ParseControlErrorInfoTypesEntry);
     REGISTER_MESSAGE(ParseControlErrorInfoWhileLoading);
     REGISTER_MESSAGE(ParseControlErrorInfoWrongTypeFields);
-    REGISTER_MESSAGE(POMpath);
     REGISTER_MESSAGE(PortDependencyConflict);
     REGISTER_MESSAGE(PortNotInBaseline);
     REGISTER_MESSAGE(PortsAdded);
@@ -836,7 +826,6 @@ namespace vcpkg
     REGISTER_MESSAGE(SystemApiErrorMessage);
     REGISTER_MESSAGE(ToolFetchFailed);
     REGISTER_MESSAGE(ToolInWin10);
-    REGISTER_MESSAGE(ToPath);
     REGISTER_MESSAGE(TotalTime);
     REGISTER_MESSAGE(TwoFeatureFlagsSpecified);
     REGISTER_MESSAGE(UndeterminedToolChainForTriplet);
@@ -909,9 +898,6 @@ namespace vcpkg
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
     REGISTER_MESSAGE(WhileLookingForSpec);
     REGISTER_MESSAGE(WindowsOnlyCommand);
-    REGISTER_MESSAGE(WritingABI);
-    REGISTER_MESSAGE(WritingManifest);
-    REGISTER_MESSAGE(WritingModuleMetaData);
-    REGISTER_MESSAGE(WritingPrefabMeta);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
+    REGISTER_MESSAGE(DeprecatedPrefabDebugOption);
 }
