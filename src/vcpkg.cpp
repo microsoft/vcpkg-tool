@@ -114,7 +114,7 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
         auto metrics = LockGuardPtr<Metrics>(g_metrics);
         if (metrics->metrics_enabled())
         {
-            metrics->track_bool_property(BoolMetric::DetectedContainerEnvironment, detect_container(fs));
+            metrics->track_bool_property(BoolMetric::DetectedContainer, detect_container(fs));
         }
     }
 
