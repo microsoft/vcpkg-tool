@@ -19,10 +19,11 @@ namespace vcpkg::Commands::SetInstalled
     static constexpr StringLiteral OPTION_KEEP_GOING = "keep-going";
     static constexpr StringLiteral OPTION_ONLY_DOWNLOADS = "only-downloads";
     static constexpr StringLiteral OPTION_WRITE_PACKAGES_CONFIG = "x-write-nuget-packages-config";
+    static constexpr StringLiteral OPTION_NO_PRINT_USAGE = "no-print-usage";
 
     static constexpr CommandSwitch INSTALL_SWITCHES[] = {
         {OPTION_DRY_RUN, "Do not actually build or install"},
-    };
+        {OPTION_NO_PRINT_USAGE, "Don't print cmake usage information after install."}};
     static constexpr CommandSetting INSTALL_SETTINGS[] = {
         {OPTION_WRITE_PACKAGES_CONFIG,
          "Writes out a NuGet packages.config-formatted file for use with external binary caching.\n"
@@ -46,7 +47,9 @@ namespace vcpkg::Commands::SetInstalled
                              DryRun dry_run,
                              const Optional<Path>& maybe_pkgsconfig,
                              Triplet host_triplet,
-                             const KeepGoing keep_going)
+                             const KeepGoing keep_going,
+                             const bool only_downloads,
+                             const PrintUsage print_cmake_usage)
     {
         auto& fs = paths.get_filesystem();
 
@@ -127,16 +130,22 @@ namespace vcpkg::Commands::SetInstalled
         if (keep_going == KeepGoing::YES && summary.failed())
         {
             summary.print_failed();
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            if (!only_downloads)
+            {
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
         }
 
-        std::set<std::string> printed_usages;
-        for (auto&& ur_spec : user_requested_specs)
+        if (print_cmake_usage == PrintUsage::YES)
         {
-            auto it = status_db.find_installed(ur_spec);
-            if (it != status_db.end())
+            std::set<std::string> printed_usages;
+            for (auto&& ur_spec : user_requested_specs)
             {
-                Install::print_usage_information(it->get()->package, printed_usages, fs, paths.installed());
+                auto it = status_db.find_installed(ur_spec);
+                if (it != status_db.end())
+                {
+                    Install::print_usage_information(it->get()->package, printed_usages, fs, paths.installed());
+                }
             }
         }
 
@@ -163,6 +172,8 @@ namespace vcpkg::Commands::SetInstalled
         const KeepGoing keep_going = Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads
                                          ? KeepGoing::YES
                                          : KeepGoing::NO;
+        const PrintUsage print_cmake_usage =
+            Util::Sets::contains(options.switches, OPTION_NO_PRINT_USAGE) ? PrintUsage::NO : PrintUsage::YES;
 
         PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
@@ -194,7 +205,9 @@ namespace vcpkg::Commands::SetInstalled
                             dry_run ? DryRun::Yes : DryRun::No,
                             pkgsconfig,
                             host_triplet,
-                            keep_going);
+                            keep_going,
+                            only_downloads,
+                            print_cmake_usage);
     }
 
     void SetInstalledCommand::perform_and_exit(const VcpkgCmdArguments& args,

@@ -86,6 +86,18 @@ export abstract class ArtifactBase {
   abstract loadActivationSettings(activation: Activation): Promise<boolean>;
 }
 
+export function checkDemands(session: Session, thisDisplayName: string, applicableDemands: SetOfDemands): boolean {
+  const errors = addDisplayPrefix(thisDisplayName, applicableDemands.errors);
+  session.channels.error(errors);
+  if (errors.length) {
+    return false;
+  }
+
+  session.channels.warning(addDisplayPrefix(thisDisplayName, applicableDemands.warnings));
+  session.channels.message(addDisplayPrefix(thisDisplayName, applicableDemands.messages));
+  return true;
+}
+
 export enum InstallStatus {
   Installed,
   AlreadyInstalled,
@@ -119,14 +131,9 @@ export class Artifact extends ArtifactBase {
 
   async install(thisDisplayName: string, events: Partial<InstallEvents>, options: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<InstallStatus> {
     const applicableDemands = this.applicableDemands;
-    const errors = addDisplayPrefix(thisDisplayName, applicableDemands.errors);
-    this.session.channels.error(errors);
-    if (errors.length) {
+    if (!checkDemands(this.session, thisDisplayName, applicableDemands)) {
       return InstallStatus.Failed;
     }
-
-    this.session.channels.warning(addDisplayPrefix(thisDisplayName, applicableDemands.warnings));
-    this.session.channels.message(addDisplayPrefix(thisDisplayName, applicableDemands.messages));
 
     if (await this.isInstalled && !options.force) {
       events.alreadyInstalledArtifact?.(thisDisplayName);

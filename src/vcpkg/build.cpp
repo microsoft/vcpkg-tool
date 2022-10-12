@@ -600,7 +600,8 @@ namespace vcpkg
         std::string start = Strings::serialize(bcf.core_paragraph);
         for (auto&& feature : bcf.features)
         {
-            start += "\n" + Strings::serialize(feature);
+            start.push_back('\n');
+            start += Strings::serialize(feature);
         }
         const auto binary_control_file = paths.package_dir(bcf.core_paragraph.spec) / "CONTROL";
         paths.get_filesystem().write_contents(binary_control_file, start, VCPKG_LINE_INFO);
@@ -671,7 +672,7 @@ namespace vcpkg
                     {
                         compiler_info.id = s.substr(s_id_marker.size()).to_string();
                     }
-                    Debug::print(s, '\n');
+                    Debug::println(s);
                     const auto old_buf_size = buf.size();
                     Strings::append(buf, s, '\n');
                     const auto write_size = buf.size() - old_buf_size;
@@ -686,18 +687,17 @@ namespace vcpkg
 
         if (compiler_info.hash.empty() || !succeeded(rc))
         {
-            Debug::print("Compiler information tracking can be disabled by passing --",
-                         VcpkgCmdArguments::FEATURE_FLAGS_ARG,
-                         "=-",
-                         VcpkgCmdArguments::COMPILER_TRACKING_FEATURE,
-                         "\n");
+            Debug::println("Compiler information tracking can be disabled by passing --",
+                           VcpkgCmdArguments::FEATURE_FLAGS_ARG,
+                           "=-",
+                           VcpkgCmdArguments::COMPILER_TRACKING_FEATURE);
 
             msg::println_error(msgErrorDetectingCompilerInfo, msg::path = stdoutlog);
             msg::write_unlocalized_text_to_stdout(Color::none, buf);
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorUnableToDetectCompilerInfo);
         }
 
-        Debug::print("Detected compiler hash for triplet ", triplet, ": ", compiler_info.hash, "\n");
+        Debug::println("Detected compiler hash for triplet ", triplet, ": ", compiler_info.hash);
         return compiler_info;
     }
 
@@ -720,6 +720,7 @@ namespace vcpkg
             {"_HOST_TRIPLET", action.host_triplet.canonical_name()},
             {"FEATURES", Strings::join(";", action.feature_list)},
             {"PORT", scf.core_paragraph->name},
+            {"VERSION", scf.core_paragraph->raw_version},
             {"VCPKG_USE_HEAD_VERSION", Util::Enum::to_bool(action.build_options.use_head_version) ? "1" : "0"},
             {"_VCPKG_DOWNLOAD_TOOL", to_string(action.build_options.download_tool)},
             {"_VCPKG_EDITABLE", Util::Enum::to_bool(action.build_options.editable) ? "1" : "0"},
@@ -1193,10 +1194,9 @@ namespace vcpkg
                 run_resource_heuristics(portfile_cmake_contents)};
         }
 
-        Debug::print(
+        Debug::println(
             "Warning: abi keys are missing values:\n",
-            Strings::join("", abi_tag_entries_missing, [](const AbiEntry& e) { return "    " + e.key + "\n"; }),
-            "\n");
+            Strings::join("", abi_tag_entries_missing, [](const AbiEntry& e) { return "    " + e.key + '\n'; }));
 
         return nullopt;
     }
@@ -1488,7 +1488,7 @@ namespace vcpkg
                                                  VCPKG_LINE_INFO),
             "\n```\n",
             Strings::join("\n", Util::fmap(build_result.error_logs, create_log_details)),
-            "\n**Additional context**\n\n",
+            "\n\n**Additional context**\n\n",
             manifest);
     }
 

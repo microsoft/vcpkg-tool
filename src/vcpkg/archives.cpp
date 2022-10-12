@@ -53,7 +53,7 @@ namespace
         {
             Checks::msg_exit_with_message(
                 VCPKG_LINE_INFO,
-                msg::format(msgFailedToExtract, msg::path = archive).append_raw("\n").append(result.error()));
+                msg::format(msgFailedToExtract, msg::path = archive).append_raw('\n').append(result.error()));
         }
     }
 
@@ -119,7 +119,7 @@ namespace
             Checks::msg_exit_with_message(
                 VCPKG_LINE_INFO,
                 msg::format(msgPackageFailedtWhileExtracting, msg::value = "7zip", msg::path = archive)
-                    .append_raw("\n")
+                    .append_raw('\n')
                     .append(maybe_output.error()));
         }
 

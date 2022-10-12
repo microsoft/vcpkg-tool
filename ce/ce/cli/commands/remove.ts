@@ -5,16 +5,12 @@ import { i } from '../../i18n';
 import { session } from '../../main';
 import { Command } from '../command';
 import { error, log } from '../styling';
-import { Project } from '../switches/project';
-import { WhatIf } from '../switches/whatIf';
 
 export class RemoveCommand extends Command {
   readonly command = 'remove';
   readonly aliases = [];
   seeAlso = [];
   argumentsHelp = [];
-  whatIf = new WhatIf(this);
-  project: Project = new Project(this);
 
   get summary() {
     return i`Removes an artifact from a project`;
@@ -27,10 +23,8 @@ export class RemoveCommand extends Command {
   }
 
   override async run() {
-    const projectManifest = await this.project.manifest;
-
+    const projectManifest = await session.loadRequiredProjectProfile();
     if (!projectManifest) {
-      error(i`Unable to find project in folder (or parent folders) for ${session.currentDirectory.fsPath}`);
       return false;
     }
 

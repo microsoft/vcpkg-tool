@@ -71,13 +71,13 @@ namespace vcpkg::Commands
                 else
                 {
                     msg::println(msg::format(msgUnsupportedPort, msg::package_name = full_port_name(p))
-                                     .append_raw("\n")
+                                     .append_raw('\n')
                                      .append(msgPortSupportsField, msg::supports_expression = p.supports_expr));
                 }
 
                 return;
             }
-            auto message = msg::format(msgUnsupportedPort, msg::package_name = full_port_name(p)).append_raw("\n");
+            auto message = msg::format(msgUnsupportedPort, msg::package_name = full_port_name(p)).append_raw('\n');
             if (is_top_level_supported)
             {
                 message.append(msgPortDependencyConflict, msg::package_name = full_port_name(p));
@@ -85,13 +85,13 @@ namespace vcpkg::Commands
             else
             {
                 message.append(msgPortSupportsField, msg::supports_expression = p.supports_expr)
-                    .append_raw("\n")
+                    .append_raw('\n')
                     .append(msgPortDependencyConflict, msg::package_name = full_port_name(p));
             }
 
             for (const Port& reason : reasons)
             {
-                message.append_raw("\n")
+                message.append_raw('\n')
                     .append_indent()
                     .append(msgUnsupportedPortDependency, msg::value = full_port_name(p))
                     .append(msgPortSupportsField, msg::supports_expression = reason.supports_expr);

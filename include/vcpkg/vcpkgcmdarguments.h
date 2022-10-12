@@ -120,38 +120,42 @@ namespace vcpkg
 
         constexpr static StringLiteral VCPKG_ROOT_DIR_ENV = "VCPKG_ROOT";
         constexpr static StringLiteral VCPKG_ROOT_DIR_ARG = "vcpkg-root";
-        std::unique_ptr<std::string> vcpkg_root_dir;
+
+        constexpr static StringLiteral VCPKG_ROOT_ARG_NAME = "VCPKG_ROOT_ARG";
+        Optional<std::string> vcpkg_root_dir_arg;
+        constexpr static StringLiteral VCPKG_ROOT_ENV_NAME = "VCPKG_ROOT_ENV";
+        Optional<std::string> vcpkg_root_dir_env;
         constexpr static StringLiteral MANIFEST_ROOT_DIR_ARG = "x-manifest-root";
-        std::unique_ptr<std::string> manifest_root_dir;
+        Optional<std::string> manifest_root_dir;
 
         constexpr static StringLiteral BUILDTREES_ROOT_DIR_ARG = "x-buildtrees-root";
-        std::unique_ptr<std::string> buildtrees_root_dir;
+        Optional<std::string> buildtrees_root_dir;
         constexpr static StringLiteral DOWNLOADS_ROOT_DIR_ENV = "VCPKG_DOWNLOADS";
         constexpr static StringLiteral DOWNLOADS_ROOT_DIR_ARG = "downloads-root";
-        std::unique_ptr<std::string> downloads_root_dir;
+        Optional<std::string> downloads_root_dir;
         constexpr static StringLiteral INSTALL_ROOT_DIR_ARG = "x-install-root";
-        std::unique_ptr<std::string> install_root_dir;
+        Optional<std::string> install_root_dir;
         constexpr static StringLiteral PACKAGES_ROOT_DIR_ARG = "x-packages-root";
-        std::unique_ptr<std::string> packages_root_dir;
+        Optional<std::string> packages_root_dir;
         constexpr static StringLiteral SCRIPTS_ROOT_DIR_ARG = "x-scripts-root";
-        std::unique_ptr<std::string> scripts_root_dir;
+        Optional<std::string> scripts_root_dir;
         constexpr static StringLiteral BUILTIN_PORTS_ROOT_DIR_ARG = "x-builtin-ports-root";
-        std::unique_ptr<std::string> builtin_ports_root_dir;
+        Optional<std::string> builtin_ports_root_dir;
         constexpr static StringLiteral BUILTIN_REGISTRY_VERSIONS_DIR_ARG = "x-builtin-registry-versions-dir";
-        std::unique_ptr<std::string> builtin_registry_versions_dir;
+        Optional<std::string> builtin_registry_versions_dir;
         constexpr static StringLiteral REGISTRIES_CACHE_DIR_ENV = "X_VCPKG_REGISTRIES_CACHE";
         constexpr static StringLiteral REGISTRIES_CACHE_DIR_ARG = "x-registries-cache";
-        std::unique_ptr<std::string> registries_cache_dir;
+        Optional<std::string> registries_cache_dir;
 
         constexpr static StringLiteral DEFAULT_VISUAL_STUDIO_PATH_ENV = "VCPKG_VISUAL_STUDIO_PATH";
-        std::unique_ptr<std::string> default_visual_studio_path;
+        Optional<std::string> default_visual_studio_path;
 
         constexpr static StringLiteral TRIPLET_ENV = "VCPKG_DEFAULT_TRIPLET";
         constexpr static StringLiteral TRIPLET_ARG = "triplet";
-        std::unique_ptr<std::string> triplet;
+        Optional<std::string> triplet;
         constexpr static StringLiteral HOST_TRIPLET_ENV = "VCPKG_DEFAULT_HOST_TRIPLET";
         constexpr static StringLiteral HOST_TRIPLET_ARG = "host-triplet";
-        std::unique_ptr<std::string> host_triplet;
+        Optional<std::string> host_triplet;
         constexpr static StringLiteral OVERLAY_PORTS_ENV = "VCPKG_OVERLAY_PORTS";
         constexpr static StringLiteral OVERLAY_PORTS_ARG = "overlay-ports";
         std::vector<std::string> cli_overlay_ports;
@@ -231,6 +235,7 @@ namespace vcpkg
             f.manifests = manifests_enabled();
             return f;
         }
+        const Optional<StringLiteral>& detected_ci_environment() const { return m_detected_ci_environment; }
 
         bool output_json() const { return json.value_or(false); }
 
@@ -250,6 +255,7 @@ namespace vcpkg
 
         void debug_print_feature_flags() const;
         void track_feature_flag_metrics() const;
+        void track_environment_metrics() const;
 
         Optional<std::string> asset_sources_template() const;
 
@@ -258,12 +264,14 @@ namespace vcpkg
     private:
         void imbue_from_environment_impl(std::function<Optional<std::string>(ZStringView)> get_env);
 
-        Optional<std::string> asset_sources_template_env;        // for ASSET_SOURCES_ENV
-        std::unique_ptr<std::string> asset_sources_template_arg; // for ASSET_SOURCES_ARG
+        Optional<std::string> asset_sources_template_env; // for ASSET_SOURCES_ENV
+        Optional<std::string> asset_sources_template_arg; // for ASSET_SOURCES_ARG
 
         std::set<std::string, std::less<>> command_switches;
         std::map<std::string, std::vector<std::string>, std::less<>> command_options;
 
         std::vector<std::string> forwardable_arguments;
+
+        Optional<StringLiteral> m_detected_ci_environment;
     };
 }
