@@ -8,7 +8,7 @@
 namespace vcpkg
 {
     ControlGroup::ControlGroup(long id, StringView s, StringView c)
-        : hierarchy_id(id), subsystems(std::move(s.to_string())), control_group(std::move(c.to_string()))
+        : hierarchy_id(id), subsystems(s.data(), s.size()), control_group(c.data(), c.size())
     {
     }
 
