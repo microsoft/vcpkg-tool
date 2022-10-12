@@ -402,6 +402,7 @@
   "SettingEnvVar": "-- \"{env_var}\"環境変数を\"{url}\"に設定しています。",
   "ShaPassedAsArgAndOption": "SHA512 は引数とオプションの両方として渡されました。これらのいずれかを渡すだけです。",
   "ShaPassedWithConflict": "SHA512 は渡されましたが、--skip-sha512 も渡されました。どちらか一方のみを実行してください。",
+  "ShallowRepositoryDetected": "vcpkg was cloned as a shallow repository in: {path}\nTry again with a full vcpkg clone.",
   "SkipClearingInvalidDir": "ディレクトリでなかったため、{path} のコンテンツのクリアをスキップしています。",
   "SourceFieldPortNameMismatch": "CONTROL ファイル内の 'Source' フィールド、または vcpkg.json ファイル内の \"name\" フィールドに名前 {package_name} があり、ポート ディレクトリ \"{path}\" と一致しません。",
   "SpecifiedFeatureTurnedOff": "'{command_name}'機能は明確に無効になっていますが、--{option} が指定されました。",

@@ -402,6 +402,7 @@
   "SettingEnvVar": "-- Estableciendo variables de entorno \"{env_var}\" en \"{url}\".",
   "ShaPassedAsArgAndOption": "SHA512 se superó como argumento y como opción. Pase solo uno de estos elementos.",
   "ShaPassedWithConflict": "SHA512 se superó, pero también se superó --skip-sha512; hacer solo una o la otra.",
+  "ShallowRepositoryDetected": "vcpkg was cloned as a shallow repository in: {path}\nTry again with a full vcpkg clone.",
   "SkipClearingInvalidDir": "Omitiendo el borrado del contenido de {path} porque no era un directorio.",
   "SourceFieldPortNameMismatch": "El campo \"Source\" dentro del archivo CONTROL o \"name\" dentro del archivo vcpkg.json tiene el nombre {package_name} y no coincide con el directorio de puerto \"{path}\".",
   "SpecifiedFeatureTurnedOff": "La característica '{command_name}' está desactivada específicamente, pero se especificó --{option}.",

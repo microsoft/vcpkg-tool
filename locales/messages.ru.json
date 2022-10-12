@@ -402,6 +402,7 @@
   "SettingEnvVar": "-- Установка переменных среды \"{env_var}\" в \"{url}\".",
   "ShaPassedAsArgAndOption": "SHA512 передан как аргумент и как параметр. Передайте только один из этих вариантов.",
   "ShaPassedWithConflict": "Передано SHA512, но также передан параметр --skip-sha512. Выберите только один из этих вариантов.",
+  "ShallowRepositoryDetected": "vcpkg was cloned as a shallow repository in: {path}\nTry again with a full vcpkg clone.",
   "SkipClearingInvalidDir": "Очистка содержимого {path} пропущена: это не каталог.",
   "SourceFieldPortNameMismatch": "Поле \"Source\" в файле CONTROL или поле \"name\" в файле vcpkg.json содержит имя {package_name} и не соответствует каталогу порта {path}.",
   "SpecifiedFeatureTurnedOff": "Функция '{command_name}' специально отключена, но указан --{option}.",

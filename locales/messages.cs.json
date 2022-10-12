@@ -402,6 +402,7 @@
   "SettingEnvVar": "-- Nastavení proměnných prostředí {env_var} na {url}.",
   "ShaPassedAsArgAndOption": "Algoritmus SHA512 se předal jako argument i jako možnost. Můžete předat jen jedno z toho.",
   "ShaPassedWithConflict": "Algoritmus SHA512 proběhl úspěšně, ale předal se i parametr --skip-sha512; můžete udělat jen jedno nebo druhé.",
+  "ShallowRepositoryDetected": "vcpkg was cloned as a shallow repository in: {path}\nTry again with a full vcpkg clone.",
   "SkipClearingInvalidDir": "Vymazání obsahu cesty {path} se přeskakuje, protože se nejedná o adresář.",
   "SourceFieldPortNameMismatch": "Pole Source v souboru CONTROL nebo pole name v souboru vcpkg.json má název {package_name} a neodpovídá adresáři portu {path}.",
   "SpecifiedFeatureTurnedOff": "Funkce {command_name} je konkrétně vypnutá, ale zadala se možnost --{option}.",

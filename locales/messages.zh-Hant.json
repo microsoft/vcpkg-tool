@@ -402,6 +402,7 @@
   "SettingEnvVar": "-- 正在將 \"{env_var}\" 環境變數設為 \"{url}\"。",
   "ShaPassedAsArgAndOption": "SHA512 同時以引數和選項通過。只通過其中一項。",
   "ShaPassedWithConflict": "SHA512 通過，但 --skip-sha512 也通過; 只執行一個或另一個。",
+  "ShallowRepositoryDetected": "vcpkg was cloned as a shallow repository in: {path}\nTry again with a full vcpkg clone.",
   "SkipClearingInvalidDir": "正在跳過清除 {path} 的內容，因為它不是目錄。",
   "SourceFieldPortNameMismatch": "CONTROL 檔案內的 'Source' 欄位或 vcpkg.json 檔案內的 \"name\" 欄位名稱為 {package_name}，與連接埠目錄 \"{path}\" 不相符。",
   "SpecifiedFeatureTurnedOff": "'{command_name}' 功能已特別關閉，但已指定 --{option}。",

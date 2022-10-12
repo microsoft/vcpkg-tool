@@ -402,6 +402,7 @@
   "SettingEnvVar": "-- \" {env_var}\" ortam değişkenlerini \" {url}\" olarak ayarlama.",
   "ShaPassedAsArgAndOption": "SHA512 hem bağımsız değişken hem de seçenek olarak geçti. Yalnızca birini geçirin.",
   "ShaPassedWithConflict": "SHA512 geçti, ancak --skip-sha512 de geçti. Sadece biri için işlem yapın.",
+  "ShallowRepositoryDetected": "vcpkg was cloned as a shallow repository in: {path}\nTry again with a full vcpkg clone.",
   "SkipClearingInvalidDir": "{path} bir dizin olmadığından, {path} içeriğinin temizlenmesi atlanıyor.",
   "SourceFieldPortNameMismatch": "CONTROL dosyasının içindeki 'Source' alanı veya vcpkg.json dosyasındaki \"name\" alanı {package_name} adına sahip ve “{path}” bağlantı noktası diziniyle eşleşmiyor.",
   "SpecifiedFeatureTurnedOff": "'{command_name}' özelliği özellikle kapatıldı, ancak --{option} belirtildi.",
