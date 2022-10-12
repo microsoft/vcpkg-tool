@@ -438,7 +438,7 @@ namespace vcpkg::Export
                 for (auto&& opt : implying_opts)
                     Checks::msg_check_exit(VCPKG_LINE_INFO,
                                            !maybe_lookup(options.settings, opt.name),
-                                           msgMutuallyRequiredOption,
+                                           msgMutuallyExclusiveOption,
                                            msg::value = opt.name,
                                            msg::option = main_opt_name);
             }

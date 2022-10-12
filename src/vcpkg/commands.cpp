@@ -1,6 +1,8 @@
 #include <vcpkg/base/system.print.h>
 
 #include <vcpkg/build.h>
+#include <vcpkg/commands.acquire-project.h>
+#include <vcpkg/commands.acquire.h>
 #include <vcpkg/commands.activate.h>
 #include <vcpkg/commands.add-version.h>
 #include <vcpkg/commands.add.h>
@@ -21,6 +23,7 @@
 #include <vcpkg/commands.find.h>
 #include <vcpkg/commands.format-manifest.h>
 #include <vcpkg/commands.generate-message-map.h>
+#include <vcpkg/commands.generate-msbuild-props.h>
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.hash.h>
 #include <vcpkg/commands.info.h>
@@ -29,7 +32,6 @@
 #include <vcpkg/commands.list.h>
 #include <vcpkg/commands.new.h>
 #include <vcpkg/commands.owns.h>
-#include <vcpkg/commands.porthistory.h>
 #include <vcpkg/commands.portsdiff.h>
 #include <vcpkg/commands.regenerate.h>
 #include <vcpkg/commands.search.h>
@@ -43,6 +45,7 @@
 #include <vcpkg/commands.xvsinstances.h>
 #include <vcpkg/commands.zbootstrap-standalone.h>
 #include <vcpkg/commands.zce.h>
+#include <vcpkg/commands.zpreregistertelemetry.h>
 #include <vcpkg/commands.zprintconfig.h>
 #include <vcpkg/export.h>
 #include <vcpkg/help.h>
@@ -61,6 +64,7 @@ namespace vcpkg::Commands
         static const GenerateDefaultMessageMapCommand generate_message_map{};
         static const Hash::HashCommand hash{};
         static const ZBootstrapStandaloneCommand zboostrap_standalone{};
+        static const ZPreRegisterTelemetryCommand zpreregister_telemetry{};
 #if defined(_WIN32)
         static const UploadMetrics::UploadMetricsCommand upload_metrics{};
 #endif // defined(_WIN32)
@@ -73,6 +77,7 @@ namespace vcpkg::Commands
             {"x-download", &xdownload},
             {"x-generate-default-message-map", &generate_message_map},
             {"z-bootstrap-standalone", &zboostrap_standalone},
+            {"z-preregister-telemetry", &zpreregister_telemetry},
 #if defined(_WIN32)
             {"x-upload-metrics", &upload_metrics},
 #endif // defined(_WIN32)
@@ -82,6 +87,8 @@ namespace vcpkg::Commands
 
     Span<const PackageNameAndFunction<const PathsCommand*>> get_available_paths_commands()
     {
+        static const AcquireCommand acquire{};
+        static const AcquireProjectCommand acquire_project{};
         static const ActivateCommand activate{};
         static const AddCommand add{};
         static const AddVersion::AddVersionCommand add_version{};
@@ -95,13 +102,13 @@ namespace vcpkg::Commands
         static const Fetch::FetchCommand fetch{};
         static const FindCommand find_{};
         static const FormatManifest::FormatManifestCommand format_manifest{};
+        static const GenerateMSBuildPropsCommand generate_msbuildprops{};
         static const Help::HelpCommand help{};
         static const Info::InfoCommand info{};
         static const Integrate::IntegrateCommand integrate{};
         static const List::ListCommand list{};
         static const NewCommand new_{};
         static const Owns::OwnsCommand owns{};
-        static const PortHistory::PortHistoryCommand porthistory{};
         static const PortsDiff::PortsDiffCommand portsdiff{};
         static const RegenerateCommand regenerate{};
         static const SearchCommand search{};
@@ -114,6 +121,8 @@ namespace vcpkg::Commands
         static std::vector<PackageNameAndFunction<const PathsCommand*>> t = {
             {"/?", &help},
             {"help", &help},
+            {"acquire", &acquire},
+            {"acquire-project", &acquire_project},
             {"activate", &activate},
             {"add", &add},
             {"autocomplete", &autocomplete},
@@ -133,10 +142,10 @@ namespace vcpkg::Commands
             {"update", &update},
             {"x-update-baseline", &update_baseline},
             {"use", &use},
+            {"x-generate-msbuild-props", &generate_msbuildprops},
             {"x-add-version", &add_version},
             {"x-ci-clean", &ciclean},
             {"x-ci-verify-versions", &ci_verify_versions},
-            {"x-history", &porthistory},
             {"x-package-info", &info},
             {"x-regenerate", &regenerate},
             {"x-vsinstances", &vsinstances},

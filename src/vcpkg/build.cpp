@@ -600,7 +600,8 @@ namespace vcpkg
         std::string start = Strings::serialize(bcf.core_paragraph);
         for (auto&& feature : bcf.features)
         {
-            start += "\n" + Strings::serialize(feature);
+            start.push_back('\n');
+            start += Strings::serialize(feature);
         }
         const auto binary_control_file = paths.package_dir(bcf.core_paragraph.spec) / "CONTROL";
         paths.get_filesystem().write_contents(binary_control_file, start, VCPKG_LINE_INFO);
@@ -671,7 +672,7 @@ namespace vcpkg
                     {
                         compiler_info.id = s.substr(s_id_marker.size()).to_string();
                     }
-                    Debug::print(s, '\n');
+                    Debug::println(s);
                     const auto old_buf_size = buf.size();
                     Strings::append(buf, s, '\n');
                     const auto write_size = buf.size() - old_buf_size;
@@ -686,18 +687,17 @@ namespace vcpkg
 
         if (compiler_info.hash.empty() || !succeeded(rc))
         {
-            Debug::print("Compiler information tracking can be disabled by passing --",
-                         VcpkgCmdArguments::FEATURE_FLAGS_ARG,
-                         "=-",
-                         VcpkgCmdArguments::COMPILER_TRACKING_FEATURE,
-                         "\n");
+            Debug::println("Compiler information tracking can be disabled by passing --",
+                           VcpkgCmdArguments::FEATURE_FLAGS_ARG,
+                           "=-",
+                           VcpkgCmdArguments::COMPILER_TRACKING_FEATURE);
 
             msg::println_error(msgErrorDetectingCompilerInfo, msg::path = stdoutlog);
             msg::write_unlocalized_text_to_stdout(Color::none, buf);
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorUnableToDetectCompilerInfo);
         }
 
-        Debug::print("Detected compiler hash for triplet ", triplet, ": ", compiler_info.hash, "\n");
+        Debug::println("Detected compiler hash for triplet ", triplet, ": ", compiler_info.hash);
         return compiler_info;
     }
 
@@ -720,6 +720,7 @@ namespace vcpkg
             {"_HOST_TRIPLET", action.host_triplet.canonical_name()},
             {"FEATURES", Strings::join(";", action.feature_list)},
             {"PORT", scf.core_paragraph->name},
+            {"VERSION", scf.core_paragraph->raw_version},
             {"VCPKG_USE_HEAD_VERSION", Util::Enum::to_bool(action.build_options.use_head_version) ? "1" : "0"},
             {"_VCPKG_DOWNLOAD_TOOL", to_string(action.build_options.download_tool)},
             {"_VCPKG_EDITABLE", Util::Enum::to_bool(action.build_options.editable) ? "1" : "0"},
@@ -947,8 +948,8 @@ namespace vcpkg
                                      buildtimeus);
             if (!succeeded(return_code))
             {
-                metrics->track_property("error", "build failed");
-                metrics->track_property("build_error", spec_string);
+                metrics->track_string_property(StringMetric::Error, "build failed");
+                metrics->track_string_property(StringMetric::BuildError, spec_string);
                 const auto logs = buildpath / Strings::concat("error-logs-", action.spec.triplet(), ".txt");
                 std::vector<std::string> error_logs;
                 if (fs.exists(logs, VCPKG_LINE_INFO))
@@ -1193,10 +1194,9 @@ namespace vcpkg
                 run_resource_heuristics(portfile_cmake_contents)};
         }
 
-        Debug::print(
+        Debug::println(
             "Warning: abi keys are missing values:\n",
-            Strings::join("", abi_tag_entries_missing, [](const AbiEntry& e) { return "    " + e.key + "\n"; }),
-            "\n");
+            Strings::join("", abi_tag_entries_missing, [](const AbiEntry& e) { return "    " + e.key + '\n'; }));
 
         return nullopt;
     }
@@ -1430,11 +1430,11 @@ namespace vcpkg
     {
         const auto& fs = paths.get_filesystem();
         const auto create_log_details = [&fs](vcpkg::Path&& path) {
-            constexpr auto MAX_LOG_LENGTH = 20'000;
-            constexpr auto START_BLOCK_LENGTH = 3'000;
-            constexpr auto START_BLOCK_MAX_LENGTH = 5'000;
-            constexpr auto END_BLOCK_LENGTH = 13'000;
-            constexpr auto END_BLOCK_MAX_LENGTH = 15'000;
+            static constexpr auto MAX_LOG_LENGTH = 20'000;
+            static constexpr auto START_BLOCK_LENGTH = 3'000;
+            static constexpr auto START_BLOCK_MAX_LENGTH = 5'000;
+            static constexpr auto END_BLOCK_LENGTH = 13'000;
+            static constexpr auto END_BLOCK_MAX_LENGTH = 15'000;
             auto log = fs.read_contents(path, VCPKG_LINE_INFO);
             if (log.size() > MAX_LOG_LENGTH)
             {
@@ -1470,8 +1470,8 @@ namespace vcpkg
             action.displayname(),
             " -> ",
             action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version(),
-            "\n**Host Environment**",
-            "\n- Host: ",
+            "\n\n**Host Environment**",
+            "\n\n- Host: ",
             to_zstring_view(get_host_processor()),
             '-',
             get_host_os_name(),
@@ -1481,20 +1481,18 @@ namespace vcpkg
             compiler_info.version,
             "\n-",
             paths.get_toolver_diagnostics(),
-            "\n\n**To Reproduce**\n",
+            "\n**To Reproduce**\n\n",
             Strings::concat("`vcpkg ", args.command, " ", Strings::join(" ", args.command_arguments), "`\n"),
-            "\n\n**Failure logs**\n```\n",
+            "\n**Failure logs**\n\n```\n",
             paths.get_filesystem().read_contents(build_result.stdoutlog.value_or_exit(VCPKG_LINE_INFO),
                                                  VCPKG_LINE_INFO),
             "\n```\n",
             Strings::join("\n", Util::fmap(build_result.error_logs, create_log_details)),
-            "\n\n**Additional context**\n",
+            "\n\n**Additional context**\n\n",
             manifest);
     }
 
-    LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action,
-                                                        const VcpkgPaths& paths,
-                                                        Optional<Path>&& issue_body)
+    LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action, const VcpkgPaths& paths)
     {
         std::string package = action.displayname();
         if (auto scfl = action.source_control_file_and_location.get())
@@ -1515,11 +1513,7 @@ namespace vcpkg
             .append_raw('\n');
         result.append(msgBuildTroubleshootingMessage3, msg::package_name = spec_name).append_raw('\n');
         result.append_raw(paths.get_toolver_diagnostics()).append_raw('\n');
-        if (issue_body)
-        {
-            result.append(msgBuildTroubleshootingMessage4, msg::path = issue_body.value_or_exit(VCPKG_LINE_INFO))
-                .append_raw('\n');
-        }
+
         return result;
     }
 

@@ -26,10 +26,11 @@ TEST_CASE ("VcpkgCmdArguments from lowercase argument sequence", "[arguments]")
                                   "--overlay-triplets=C:\\tripletsB"};
     auto v = VcpkgCmdArguments::create_from_arg_sequence(t.data(), t.data() + t.size());
 
-    REQUIRE(*v.vcpkg_root_dir == "C:\\vcpkg");
-    REQUIRE(*v.scripts_root_dir == "C:\\scripts");
-    REQUIRE(*v.builtin_ports_root_dir == "C:\\ports");
-    REQUIRE(*v.builtin_registry_versions_dir == "C:\\versions");
+    REQUIRE(v.vcpkg_root_dir_arg.value_or_exit(VCPKG_LINE_INFO) == "C:\\vcpkg");
+    REQUIRE(!v.vcpkg_root_dir_env.has_value());
+    REQUIRE(v.scripts_root_dir.value_or_exit(VCPKG_LINE_INFO) == "C:\\scripts");
+    REQUIRE(v.builtin_ports_root_dir.value_or_exit(VCPKG_LINE_INFO) == "C:\\ports");
+    REQUIRE(v.builtin_registry_versions_dir.value_or_exit(VCPKG_LINE_INFO) == "C:\\versions");
     REQUIRE(v.debug);
     REQUIRE(*v.debug.get());
     REQUIRE(v.send_metrics);
@@ -62,10 +63,11 @@ TEST_CASE ("VcpkgCmdArguments from uppercase argument sequence", "[arguments]")
                                   "--OVERLAY-TRIPLETS=C:\\tripletsB"};
     auto v = VcpkgCmdArguments::create_from_arg_sequence(t.data(), t.data() + t.size());
 
-    REQUIRE(*v.vcpkg_root_dir == "C:\\vcpkg");
-    REQUIRE(*v.scripts_root_dir == "C:\\scripts");
-    REQUIRE(*v.builtin_ports_root_dir == "C:\\ports");
-    REQUIRE(*v.builtin_registry_versions_dir == "C:\\versions");
+    REQUIRE(v.vcpkg_root_dir_arg.value_or_exit(VCPKG_LINE_INFO) == "C:\\vcpkg");
+    REQUIRE(!v.vcpkg_root_dir_env.has_value());
+    REQUIRE(v.scripts_root_dir.value_or_exit(VCPKG_LINE_INFO) == "C:\\scripts");
+    REQUIRE(v.builtin_ports_root_dir.value_or_exit(VCPKG_LINE_INFO) == "C:\\ports");
+    REQUIRE(v.builtin_registry_versions_dir.value_or_exit(VCPKG_LINE_INFO) == "C:\\versions");
     REQUIRE(v.debug);
     REQUIRE(*v.debug.get());
     REQUIRE(v.send_metrics);
@@ -121,18 +123,14 @@ TEST_CASE ("vcpkg_root parse with arg separator", "[arguments]")
 {
     std::vector<std::string> t = {"--vcpkg-root", "C:\\vcpkg"};
     auto v = VcpkgCmdArguments::create_from_arg_sequence(t.data(), t.data() + t.size());
-    auto& vcpkg_root_dir = v.vcpkg_root_dir;
-    REQUIRE(vcpkg_root_dir);
-    REQUIRE(*vcpkg_root_dir == "C:\\vcpkg");
+    REQUIRE(v.vcpkg_root_dir_arg.value_or_exit(VCPKG_LINE_INFO) == "C:\\vcpkg");
 }
 
 TEST_CASE ("vcpkg_root parse with equal separator", "[arguments]")
 {
     std::vector<std::string> t = {"--vcpkg-root=C:\\vcpkg"};
     auto v = VcpkgCmdArguments::create_from_arg_sequence(t.data(), t.data() + t.size());
-    auto& vcpkg_root_dir = v.vcpkg_root_dir;
-    REQUIRE(vcpkg_root_dir);
-    REQUIRE(*vcpkg_root_dir == "C:\\vcpkg");
+    REQUIRE(v.vcpkg_root_dir_arg.value_or_exit(VCPKG_LINE_INFO) == "C:\\vcpkg");
 }
 
 TEST_CASE ("Combine asset cache params", "[arguments]")

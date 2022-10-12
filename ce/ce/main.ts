@@ -3,51 +3,37 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { green, white } from 'chalk';
 import { spawn } from 'child_process';
 import { argv } from 'process';
 import { CommandLine } from './cli/command-line';
 import { AcquireCommand } from './cli/commands/acquire';
+import { AcquireProjectCommand } from './cli/commands/acquire-project';
 import { ActivateCommand } from './cli/commands/activate';
 import { AddCommand } from './cli/commands/add';
-import { ApplyVsManCommand } from './cli/commands/apply-vsman';
 import { CacheCommand } from './cli/commands/cache';
 import { CleanCommand } from './cli/commands/clean';
 import { DeactivateCommand } from './cli/commands/deactivate';
 import { DeleteCommand } from './cli/commands/delete';
 import { FindCommand } from './cli/commands/find';
+import { GenerateMSBuildPropsCommand } from './cli/commands/generate-msbuild-props';
 import { HelpCommand } from './cli/commands/help';
 import { ListCommand } from './cli/commands/list';
 import { RegenerateCommand } from './cli/commands/regenerate-index';
 import { RemoveCommand } from './cli/commands/remove';
 import { UpdateCommand } from './cli/commands/update';
 import { UseCommand } from './cli/commands/use';
-import { VersionCommand } from './cli/commands/version';
-import { blank, cli, product } from './cli/constants';
+import { cli } from './cli/constants';
 import { command as formatCommand, hint } from './cli/format';
 import { debug, error, initStyling, log } from './cli/styling';
 import { i, setLocale } from './i18n';
 import { flushTelemetry, trackEvent } from './insights';
 import { Session } from './session';
-import { Version as cliVersion } from './version';
 
 // parse the command line
 const commandline = new CommandLine(argv.slice(2));
 
 // try to set the locale based on the users's settings.
 setLocale(commandline.language, `${__dirname}/i18n/`);
-
-function header() {
-  if (!commandline.vcpkgCommand) {
-    if (commandline.debug) {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      log(`${green.bold(`${product} command line utility`)} ${white.bold(cliVersion)} [node: ${white.bold(process.version)}; max-memory: ${white.bold(Math.round((require('v8').getHeapStatistics().heap_size_limit) / (1024 * 1024)) & 0xffffffff00)} gb]`);
-    } else {
-      log(`${green.bold(`${product} command line utility`)} ${white.bold(cliVersion)}`);
-    }
-    log('');
-  }
-}
 
 export let session: Session;
 require('./exports');
@@ -66,9 +52,6 @@ async function main() {
 
   initStyling(commandline, session);
 
-  // dump out the version information
-  header();
-
   // start up the session and init the channel listeners.
   await session.init();
 
@@ -76,13 +59,13 @@ async function main() {
   debug(`Anonymous Telemetry Enabled: ${telemetryEnabled}`);
   // find a project profile.
 
-  const zApplyVsMan = new ApplyVsManCommand(commandline);
   const help = new HelpCommand(commandline);
 
   const find = new FindCommand(commandline);
   const list = new ListCommand(commandline);
 
   const add = new AddCommand(commandline);
+  const acquire_project = new AcquireProjectCommand(commandline);
   const acquire = new AcquireCommand(commandline);
   const use = new UseCommand(commandline);
 
@@ -90,12 +73,12 @@ async function main() {
   const del = new DeleteCommand(commandline);
 
   const activate = new ActivateCommand(commandline);
+  const activate_msbuildprops = new GenerateMSBuildPropsCommand(commandline);
   const deactivate = new DeactivateCommand(commandline);
 
   const regenerate = new RegenerateCommand(commandline);
   const update = new UpdateCommand(commandline);
 
-  const version = new VersionCommand(commandline);
   const cache = new CacheCommand(commandline);
   const clean = new CleanCommand(commandline);
 
@@ -117,12 +100,10 @@ async function main() {
     if (commandline.inputs.length > 0) {
       // unrecognized command
       error(i`Unrecognized command '${commandline.inputs[0]}'`);
-      log(blank);
       log(hint(i`Use ${formatCommand(`${cli} ${help.command}`)} to get help`));
       return process.exitCode = 1;
     }
 
-    log(blank);
     log(hint(i`Use ${formatCommand(`${cli} ${help.command}`)} to get help`));
 
     return process.exitCode = 0;
@@ -130,7 +111,6 @@ async function main() {
   let result = true;
   try {
     result = await command.run();
-    log(blank);
   } catch (e) {
     // in --debug mode we want to see the stack trace(s).
     if (commandline.debug && e instanceof Error) {

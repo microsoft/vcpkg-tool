@@ -225,7 +225,7 @@ if "%1" EQU "--remove-vcpkg" (
 :: do we even have it installed?
 if NOT exist "%Z_VCPKG_CMD%" goto BOOTSTRAP
 
-:: if this is the actual installed vcpkg-ce, let's get to the invocation
+:: if this is the actual installed vcpkg, let's get to the invocation
 if "%~dfp0" == "%Z_VCPKG_CMD%" goto INVOKE
 
 :: this is not the 'right' vcpkg cmd, let's forward this on to that one.

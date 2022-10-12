@@ -129,6 +129,12 @@ namespace vcpkg
         cmd_run.string_arg("--z-vcpkg-downloads").string_arg(paths.downloads);
         cmd_run.string_arg("--z-vcpkg-registries-cache").string_arg(paths.registries_cache());
 
+        auto maybe_manifest_dir = paths.get_manifest_directory();
+        if (const auto manifest_directory = maybe_manifest_dir.get())
+        {
+            cmd_run.string_arg("--z-vcpkg-manifest-dir").string_arg(*manifest_directory);
+        }
+
         Debug::println("Running configure-environment with ", cmd_run.command_line());
 
         return cmd_execute(cmd_run, WorkingDirectory{paths.original_cwd}).value_or_exit(VCPKG_LINE_INFO);

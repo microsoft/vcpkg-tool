@@ -368,6 +368,7 @@ namespace vcpkg::Commands::Integrate
 
 #if defined(_WIN32)
         msg::println(msg::format(msgCMakeToolChainFile, msg::path = cmake_toolchain.generic_u8string())
+                         .append_raw("\n\n")
                          .append(msgAutomaticLinkingForMSBuildProjects));
 #else
         msg::println(msgCMakeToolChainFile, msg::path = cmake_toolchain.generic_u8string());
@@ -433,7 +434,7 @@ namespace vcpkg::Commands::Integrate
         if (!maybe_nuget_output)
         {
             msg::println_error(msg::format(msgCommandFailed, msg::command_line = cmd_line.command_line())
-                                   .append_raw("\n")
+                                   .append_raw('\n')
                                    .append(maybe_nuget_output.error()));
             Checks::unreachable(VCPKG_LINE_INFO);
         }
@@ -469,11 +470,12 @@ namespace vcpkg::Commands::Integrate
         if (rc)
         {
             msg::println_error(msg::format(msgCommandFailed, msg::command_line = TITLE)
-                                   .append_raw("\n" + script_path.generic_u8string()));
+                                   .append_raw('\n')
+                                   .append_raw(script_path.generic_u8string()));
             {
                 auto locked_metrics = LockGuardPtr<Metrics>(g_metrics);
-                locked_metrics->track_property("error", "powershell script failed");
-                locked_metrics->track_property("title", TITLE.to_string());
+                locked_metrics->track_string_property(StringMetric::Error, "powershell script failed");
+                locked_metrics->track_string_property(StringMetric::Title, TITLE.to_string());
             }
         }
 
@@ -499,7 +501,7 @@ namespace vcpkg::Commands::Integrate
         {
             msg::println(msg::format(msgVcpkgCompletion, msg::value = "bash", msg::path = bashrc_path)
                              .append_raw(Strings::join("\n   ", matches))
-                             .append_raw("\n")
+                             .append_raw('\n')
                              .append(msgSuggestStartingBashShell));
             Checks::exit_success(VCPKG_LINE_INFO);
         }
@@ -528,7 +530,7 @@ namespace vcpkg::Commands::Integrate
         {
             msg::println(msg::format(msgVcpkgCompletion, msg::value = "zsh", msg::path = zshrc_path)
                              .append_raw(Strings::join("\n   ", data.source_completion_lines))
-                             .append_raw("\n")
+                             .append_raw('\n')
                              .append(msgSuggestStartingBashShell));
             Checks::exit_success(VCPKG_LINE_INFO);
         }

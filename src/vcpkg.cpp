@@ -8,6 +8,7 @@
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.process.h>
 
+#include <vcpkg/cgroup-parser.h>
 #include <vcpkg/commands.contact.h>
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.version.h>
@@ -41,10 +42,52 @@ static void invalid_command(const std::string& cmd)
     Checks::exit_fail(VCPKG_LINE_INFO);
 }
 
+static bool detect_container(vcpkg::Filesystem& fs)
+{
+    (void)fs;
+#if defined(_WIN32)
+    if (test_registry_key(HKEY_LOCAL_MACHINE, R"(SYSTEM\CurrentControlSet\Services\cexecsvc)"))
+    {
+        Debug::println("Detected Container Execution Service");
+        return true;
+    }
+
+    auto username = get_username();
+    if (username == L"ContainerUser" || username == L"ContainerAdministrator")
+    {
+        Debug::println("Detected container username");
+        return true;
+    }
+#elif defined(__linux__)
+    if (fs.exists("/.dockerenv", IgnoreErrors{}))
+    {
+        Debug::println("Detected /.dockerenv file");
+        return true;
+    }
+
+    // check /proc/1/cgroup, if we're running in a container then the control group for each hierarchy will be:
+    //   /docker/<containerid>, or
+    //   /lxc/<containerid>
+    //
+    // Example of /proc/1/cgroup contents:
+    // 2:memory:/docker/66a5f8000f3f2e2a19c3f7d60d870064d26996bdfe77e40df7e3fc955b811d14
+    // 1:name=systemd:/docker/66a5f8000f3f2e2a19c3f7d60d870064d26996bdfe77e40df7e3fc955b811d14
+    // 0::/docker/66a5f8000f3f2e2a19c3f7d60d870064d26996bdfe77e40df7e3fc955b811d14
+    auto cgroup_contents = fs.read_contents("/proc/1/cgroup", IgnoreErrors{});
+    if (detect_docker_in_cgroup_file(cgroup_contents, "/proc/1/cgroup"))
+    {
+        Debug::println("Detected docker in cgroup");
+        return true;
+    }
+#endif
+    return false;
+}
+
 static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 {
     // track version on each invocation
-    LockGuardPtr<Metrics>(g_metrics)->track_property("vcpkg_version", Commands::Version::version.to_string());
+    LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::VcpkgVersion,
+                                                            Commands::Version::version.to_string());
 
     if (args.command.empty())
     {
@@ -67,11 +110,19 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
         }
     };
 
-    LockGuardPtr<Metrics>(g_metrics)->track_option("overlay_ports", !args.overlay_ports.empty());
+    {
+        auto metrics = LockGuardPtr<Metrics>(g_metrics);
+        if (metrics->metrics_enabled())
+        {
+            metrics->track_bool_property(BoolMetric::DetectedContainer, detect_container(fs));
+        }
+    }
+
+    LockGuardPtr<Metrics>(g_metrics)->track_bool_property(BoolMetric::OptionOverlayPorts, !args.overlay_ports.empty());
 
     if (const auto command_function = find_command(Commands::get_available_basic_commands()))
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("command_name", command_function->name);
+        LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::CommandName, command_function->name);
         return command_function->function->perform_and_exit(args, fs);
     }
 
@@ -82,7 +133,7 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 
     if (const auto command_function = find_command(Commands::get_available_paths_commands()))
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("command_name", command_function->name);
+        LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::CommandName, command_function->name);
         return command_function->function->perform_and_exit(args, paths);
     }
 
@@ -93,7 +144,7 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 
     if (const auto command_function = find_command(Commands::get_available_triplet_commands()))
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("command_name", command_function->name);
+        LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::CommandName, command_function->name);
         return command_function->function->perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 
@@ -294,6 +345,7 @@ int main(const int argc, const char* const* const argv)
 
     args.debug_print_feature_flags();
     args.track_feature_flag_metrics();
+    args.track_environment_metrics();
 
     if (Debug::g_debugging)
     {
@@ -316,7 +368,7 @@ int main(const int argc, const char* const* const argv)
         exc_msg = "unknown error(...)";
     }
 
-    LockGuardPtr<Metrics>(g_metrics)->track_property("error", exc_msg);
+    LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::Error, exc_msg);
 
     fflush(stdout);
     msg::println(msgVcpkgHasCrashed);

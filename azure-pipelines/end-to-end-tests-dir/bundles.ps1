@@ -21,6 +21,7 @@ New-Item -ItemType File -Force $bundle/.vcpkg-root | Out-Null
 $a = Run-Vcpkg z-print-config `
     --vcpkg-root=$bundle `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
     --x-scripts-root=$env:VCPKG_ROOT/scripts
 $a
 Throw-IfFailed
@@ -52,6 +53,7 @@ New-Item -ItemType File -Force $bundle/.vcpkg-root | Out-Null
 $a = Run-Vcpkg z-print-config `
     --vcpkg-root=$bundle `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
     --x-scripts-root=$env:VCPKG_ROOT/scripts
 $a
 Throw-IfFailed
@@ -90,6 +92,7 @@ $a = Run-Vcpkg z-print-config `
     --vcpkg-root=$bundle `
     --x-manifest-root=$manifestdir `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
     --x-scripts-root=$env:VCPKG_ROOT/scripts
 $a
 Throw-IfFailed
@@ -132,6 +135,7 @@ $a = Run-Vcpkg z-print-config `
     --vcpkg-root=$bundle `
     --x-manifest-root=$manifestdir `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
     --x-buildtrees-root=$buildtreesRoot `
     --x-install-root=$installRoot `
     --x-packages-root=$packagesRoot `
@@ -158,6 +162,7 @@ foreach ($k in $b.keys) {
 
 Run-Vcpkg install zlib --dry-run --vcpkg-root=$bundle `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
     --x-buildtrees-root=$buildtreesRoot `
     --x-builtin-ports-root=$env:VCPKG_ROOT/ports `
     --x-install-root=$installRoot `
@@ -174,6 +179,7 @@ $CurrentTest = "Testing bundle.usegitregistry"
 Run-Vcpkg install --dry-run --vcpkg-root=$bundle `
     --x-manifest-root=$manifestdir `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
     --x-buildtrees-root=$buildtreesRoot `
     --x-builtin-ports-root=$env:VCPKG_ROOT/ports `
     --x-install-root=$installRoot `
@@ -193,6 +199,7 @@ New-Item -ItemType Directory -Force $manifestdir2 | Out-Null
 Run-Vcpkg install --vcpkg-root=$bundle `
     --x-manifest-root=$manifestdir2 `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
     --x-buildtrees-root=$buildtreesRoot `
     --x-builtin-ports-root=$env:VCPKG_ROOT/ports `
     --x-install-root=$installRoot `
@@ -203,9 +210,84 @@ Throw-IfFailed
 Run-Vcpkg search zlib --vcpkg-root=$bundle `
     --x-manifest-root=$manifestdir2 `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
     --x-buildtrees-root=$buildtreesRoot `
     --x-builtin-ports-root=$env:VCPKG_ROOT/ports `
     --x-install-root=$installRoot `
     --x-packages-root=$packagesRoot `
     --x-scripts-root=$env:VCPKG_ROOT/scripts
 Throw-IfFailed
+
+# Test CI environment detection
+$detected_ci_key = 'detected_ci_environment'
+$known_ci_vars = (
+    "env:VCPKG_NO_CI",
+    "env:TF_BUILD",
+    "env:APPVEYOR",
+    "env:CODEBUILD_BUILD_ID",
+    "env:CIRCLECI",
+    "env:GITHUB_ACTIONS",
+    "env:GITLAB_CI",
+    "env:HEROKU_TEST_RUN_ID",
+    "env:JENKINS_URL",
+    "env:TRAVIS",
+    "env:CI",
+    "env:BUILD_ID"
+)
+
+foreach ($var in $known_ci_vars) {
+    if (Test-Path $var) {
+        Remove-Item $var
+    }
+}
+
+$env:VCPKG_NO_CI="1"
+$env:TF_BUILD="1"
+$env:CI="1"
+
+$a = Run-Vcpkg z-print-config `
+    --vcpkg-root=$bundle `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --x-scripts-root=$env:VCPKG_ROOT/scripts
+$a
+Throw-IfFailed
+$a = $($a | ConvertFrom-JSON -AsHashtable)
+if ($a[$detected_ci_key] -ne 'VCPKG_NO_CI') {
+    throw "Expected VCPKG_NO_CI as detected CI environment but found: $($a[$detected_ci_key])"
+}
+
+Remove-Item env:VCPKG_NO_CI
+$a = Run-Vcpkg z-print-config `
+    --vcpkg-root=$bundle `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --x-scripts-root=$env:VCPKG_ROOT/scripts
+$a
+Throw-IfFailed
+$a = $($a | ConvertFrom-JSON -AsHashtable)
+if ($a[$detected_ci_key] -ne 'Azure_Pipelines') {
+    throw "Expected Azure_Pipelines as detected CI environment but found: $($a[$detected_ci_key])"
+}
+
+Remove-Item env:TF_BUILD
+$a = Run-Vcpkg z-print-config `
+    --vcpkg-root=$bundle `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --x-scripts-root=$env:VCPKG_ROOT/scripts
+$a
+Throw-IfFailed
+$a = $($a | ConvertFrom-JSON -AsHashtable)
+if ($a[$detected_ci_key] -ne 'Generic') {
+    throw "Expected Generic as detected CI environment but found: $($a[$detected_ci_key])"
+}
+
+Remove-Item env:CI
+$a = Run-Vcpkg z-print-config `
+    --vcpkg-root=$bundle `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --x-scripts-root=$env:VCPKG_ROOT/scripts
+$a
+Throw-IfFailed
+$a = $($a | ConvertFrom-JSON -AsHashtable)
+if ($a[$detected_ci_key] -ne $null) {
+    throw "Expected no CI environment but found $($a[$detected_ci_key]))"
+}

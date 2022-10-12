@@ -20,17 +20,9 @@
       "type": "string",
       "description": "A message to print if this entry is evaluated."
     },
-    "see-also": {
-      "description": "Suggested additional artifacts.",
-      "$ref": "vcpkg-schema-definitions.schema.json#/definitions/artifact-references"
-    },
     "requires": {
       "description": "Artifacts that are required for this package to function.",
       "$ref": "vcpkg-schema-definitions.schema.json#/definitions/artifact-references"
-    },
-    "global": {
-      "description": "Global settings that control how artifacts behave.",
-      "$ref": "vcpkg-schema-definitions.schema.json#/definitions/string-map"
     }
   },
   "patternProperties": {

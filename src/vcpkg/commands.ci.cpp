@@ -315,7 +315,7 @@ namespace vcpkg::Commands::CI
             if (!msg.empty())
             {
                 has_error = true;
-                output.append(msg).append_raw("\n");
+                output.append(msg).append_raw('\n');
             }
         }
 

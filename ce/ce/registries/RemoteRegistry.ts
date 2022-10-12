@@ -2,22 +2,20 @@
 // Licensed under the MIT License.
 
 import { strict } from 'assert';
+import { createHash } from 'crypto';
 import { parse } from 'yaml';
-import { ZipUnpacker } from '../archivers/ZipUnpacker';
-import { Registry } from '../artifacts/registry';
+import { unpackZip } from '../archivers/ZipUnpacker';
 import { registryIndexFile } from '../constants';
 import { acquireArtifactFile } from '../fs/acquire';
 import { i } from '../i18n';
 import { Session } from '../session';
+import { isGithubRepo } from '../util/checks';
 import { Uri } from '../util/uri';
 import { ArtifactIndex } from './artifact-index';
 import { ArtifactRegistry } from './ArtifactRegistry';
 import { Index } from './indexer';
-import { createHash } from 'crypto';
-import { isGithubRepo } from '../util/checks';
 
-export class RemoteRegistry extends ArtifactRegistry implements Registry {
-
+export class RemoteRegistry extends ArtifactRegistry {
   protected indexYaml: Uri;
   readonly installationFolder;
   readonly cacheFolder: Uri;
@@ -62,7 +60,6 @@ export class RemoteRegistry extends ArtifactRegistry implements Registry {
   }
 
   override async load(force?: boolean): Promise<void> {
-
     if (force || !this.loaded) {
       if (!await this.indexYaml.exists()) {
         await this.update();
@@ -91,8 +88,7 @@ export class RemoteRegistry extends ArtifactRegistry implements Registry {
 
     const file = await acquireArtifactFile(this.session, locations, `${this.safeName}-registry.zip`, {});
     if (await file.exists()) {
-      const unpacker = new ZipUnpacker(this.session);
-      await unpacker.unpack(file, this.cacheFolder, {}, { strip: -1 });
+      await unpackZip(this.session, file, this.cacheFolder, {}, { strip: -1 });
       await file.delete();
     }
   }
