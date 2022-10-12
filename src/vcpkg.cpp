@@ -53,7 +53,7 @@ static bool detect_container(vcpkg::Filesystem& fs)
     }
 
     auto username = get_username();
-    if (!wcscmp(username.data(), L"ContainerUser") || !wcscmp(username.data(), L"ContainerAdministrator"))
+    if (username == L"ContainerUser" || username == L"ContainerAdministrator")
     {
         Debug::println("Detected container username");
         return true;
