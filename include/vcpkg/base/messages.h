@@ -1534,6 +1534,11 @@ namespace vcpkg
                     "An example of env_var is \"HTTP(S)_PROXY\""
                     "'--' at the beginning must be preserved",
                     "-- Setting \"{env_var}\" environment variables to \"{url}\".");
+    DECLARE_MESSAGE(ShallowRepositoryDetected,
+                    (msg::path),
+                    "",
+                    "vcpkg was cloned as a shallow repository in: {path}\n"
+                    "Try again with a full vcpkg clone.");
     DECLARE_MESSAGE(ShaPassedAsArgAndOption,
                     (),
                     "",
