@@ -512,7 +512,6 @@ namespace vcpkg
     REGISTER_MESSAGE(ElapsedTimeForChecks);
     REGISTER_MESSAGE(EmailVcpkgTeam);
     REGISTER_MESSAGE(EmptyArg);
-    REGISTER_MESSAGE(EmptyExportPlan);
     REGISTER_MESSAGE(EmptyLicenseExpression);
     REGISTER_MESSAGE(EndOfStringInCodeUnit);
     REGISTER_MESSAGE(EnvStrFailedToExtract);
@@ -764,7 +763,7 @@ namespace vcpkg
     REGISTER_MESSAGE(PackageAlreadyRemoved);
     REGISTER_MESSAGE(PackageFailedtWhileExtracting);
     REGISTER_MESSAGE(PackageRootDir);
-    REGISTER_MESSAGE(PackagesNotInstalled);
+    REGISTER_MESSAGE(CorruptedInstallTree);
     REGISTER_MESSAGE(PackagesToInstall);
     REGISTER_MESSAGE(PackagesToInstallDirectly);
     REGISTER_MESSAGE(PackagesToModify);
@@ -795,7 +794,6 @@ namespace vcpkg
     REGISTER_MESSAGE(ProvideExportType);
     REGISTER_MESSAGE(PushingVendorFailed);
     REGISTER_MESSAGE(RegistryCreated);
-    REGISTER_MESSAGE(RemovingPackageDirFailed);
     REGISTER_MESSAGE(RemoveDependencies);
     REGISTER_MESSAGE(RemovePackageConflict);
     REGISTER_MESSAGE(ReplaceSecretsError);

@@ -559,7 +559,11 @@ namespace vcpkg
                     "Note: 'source.properties' is code and should not be translated.",
                     "source.properties missing in {env_var} directory: {path}");
 
-    DECLARE_MESSAGE(AndroidTripletSupported, (), "", "Currently supported on android triplet.");
+    DECLARE_MESSAGE(AndroidTripletSupported,
+                    (),
+                    "",
+                    "export prefab requires selecting a triplet selecting a toolchain where CMAKE_SYSTEM_NAME is set "
+                    "to \"android\"");
     DECLARE_MESSAGE(AnotherInstallationInProgress,
                     (),
                     "",
@@ -814,7 +818,6 @@ namespace vcpkg
     DECLARE_MESSAGE(ElapsedTimeForChecks, (msg::elapsed), "", "Time to determine pass/fail: {elapsed}");
     DECLARE_MESSAGE(EmailVcpkgTeam, (msg::url), "", "Send an email to {url} with any feedback.");
     DECLARE_MESSAGE(EmptyArg, (msg::option), "", "The option --{option} must be passed a non-empty argument.");
-    DECLARE_MESSAGE(EmptyExportPlan, (), "", "Export plan cannot be empty");
     DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
     DECLARE_MESSAGE(EndOfStringInCodeUnit, (), "", "found end of string in middle of code point");
     DECLARE_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:");
@@ -1484,10 +1487,7 @@ namespace vcpkg
                     "'{value}' is either a tool name or a package name.",
                     "'{value}' failed while extracting {path}.");
     DECLARE_MESSAGE(PackageRootDir, (), "", "(Experimental) Specify the packages root directory.");
-    DECLARE_MESSAGE(PackagesNotInstalled,
-                    (msg::package_name, msg::triplet, msg::path),
-                    "",
-                    "Packages not installed {package_name}:{triplet} {path}");
+    DECLARE_MESSAGE(CorruptedInstallTree, (), "", "Your vcpkg 'installed' tree is corrupted.");
     DECLARE_MESSAGE(PackagesToInstall, (), "", "The following packages will be built and installed:");
     DECLARE_MESSAGE(PackagesToInstallDirectly, (), "", "The following packages will be directly installed:");
     DECLARE_MESSAGE(PackagesToModify, (), "", "Additional packages (*) will be modified to complete this operation.");
@@ -1565,10 +1565,6 @@ namespace vcpkg
                     "",
                     "Pushing {vendor} to \"{path}\" failed. Use --debug for more information.");
     DECLARE_MESSAGE(RegistryCreated, (msg::path), "", "Successfully created registry at {path}");
-    DECLARE_MESSAGE(RemovingPackageDirFailed,
-                    (msg::path),
-                    "",
-                    "Could not remove outdated packages directory {path} due to file: ");
     DECLARE_MESSAGE(RemoveDependencies,
                     (),
                     "",

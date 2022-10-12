@@ -517,11 +517,7 @@ namespace vcpkg::Export::Prefab
                 const auto installed_dir = paths.packages() / Strings::format("%s_%s", name, triplet);
                 if (!(utils.exists(listfile, IgnoreErrors{})))
                 {
-                    msg::println_error(msgPackagesNotInstalled,
-                                       msg::package_name = name,
-                                       msg::triplet = triplet,
-                                       msg::path = listfile);
-
+                    msg::println_error(msgCorruptedInstallTree);
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
 

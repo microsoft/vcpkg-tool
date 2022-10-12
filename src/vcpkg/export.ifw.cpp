@@ -418,10 +418,7 @@ namespace vcpkg::Export::IFW
         const auto ifw_packages_dir_path = get_packages_dir_path(export_id, ifw_options, paths);
 
         fs.remove_all(ifw_packages_dir_path, ec, failure_point);
-        Checks::msg_check_exit(
-            VCPKG_LINE_INFO,
-            !ec,
-            msg::format(msgRemovingPackageDirFailed, msg::path = ifw_packages_dir_path).append_raw(failure_point));
+        fs.remove_all(ifw_packages_dir_path, VCPKG_LINE_INFO);
 
         fs.create_directory(ifw_packages_dir_path, ec);
         Checks::msg_check_exit(VCPKG_LINE_INFO, !ec, msgCreationFailed, msg::path = ifw_packages_dir_path);

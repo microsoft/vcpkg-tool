@@ -1,4 +1,5 @@
 #include <vcpkg/base/stringview.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
@@ -595,7 +596,11 @@ namespace vcpkg::Export
 
         // create the plan
         std::vector<ExportPlanAction> export_plan = create_export_plan(opts.specs, status_db);
-        Checks::msg_check_exit(VCPKG_LINE_INFO, !export_plan.empty(), msgEmptyExportPlan);
+        if (export_plan.empty())
+        {
+            Debug::print("Export plan cannot be empty.");
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
 
         std::map<ExportPlanType, std::vector<const ExportPlanAction*>> group_by_plan_type;
         Util::group_by(export_plan, &group_by_plan_type, [](const ExportPlanAction& p) { return p.plan_type; });
