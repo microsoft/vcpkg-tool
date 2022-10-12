@@ -22,3 +22,4 @@ node_modules/
 /ce/test/vcpkg-ce.test.build.log
 /ce/common/temp
 /vcpkg-root
+/CMakePresets.json
