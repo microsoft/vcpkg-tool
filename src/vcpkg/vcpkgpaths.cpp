@@ -686,8 +686,9 @@ namespace vcpkg
 
             this->overlay_ports = merge_overlays(
                 args.cli_overlay_ports, this->get_configuration().config.overlay_ports, args.env_overlay_ports);
-            this->overlay_triplets = merge_overlays(
-                args.cli_overlay_triplets, this->get_configuration().config.overlay_triplets, args.env_overlay_triplets);
+            this->overlay_triplets = merge_overlays(args.cli_overlay_triplets,
+                                                    this->get_configuration().config.overlay_triplets,
+                                                    args.env_overlay_triplets);
 
             m_pimpl->m_registry_set = m_pimpl->m_config.instantiate_registry_set(*this);
         }

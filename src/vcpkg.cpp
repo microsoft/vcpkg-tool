@@ -120,7 +120,7 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 
     const VcpkgPaths paths(fs, args);
     paths.track_feature_flag_metrics();
-    
+
     LockGuardPtr<Metrics>(g_metrics)->track_bool_property(BoolMetric::OptionOverlayPorts, !paths.overlay_ports.empty());
 
     if (const auto command_function = find_command(Commands::get_available_basic_commands()))
