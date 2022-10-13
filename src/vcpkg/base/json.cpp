@@ -1435,7 +1435,7 @@ namespace vcpkg::Json
     Optional<std::vector<std::string>> ParagraphDeserializer::visit_string(Reader&, StringView sv)
     {
         std::vector<std::string> out;
-        out.emplace_back(sv.begin(), sv.size());
+        out.emplace_back(sv.data(), sv.size());
         return out;
     }
 

@@ -208,14 +208,6 @@ namespace vcpkg::Json
         underlying_t::const_iterator internal_find_key(StringView key) const noexcept;
 
     public:
-        // these are here for better diagnostics
-        Object() = default;
-        Object(const Object&) = default;
-        Object(Object&&) noexcept = default;
-        Object& operator=(const Object&) = default;
-        Object& operator=(Object&&) noexcept = default;
-        ~Object() = default;
-
         // asserts if the key is found
         template<class StringLike,
                  std::enable_if_t<std::is_constructible<StringView, const StringLike&>::value, int> = 0>

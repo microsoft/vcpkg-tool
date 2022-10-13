@@ -83,25 +83,28 @@ namespace vcpkg::Commands::DependInfo
             }
         }
 
-        static constexpr StringLiteral OPTION_DOT = "dot";
-        static constexpr StringLiteral OPTION_DGML = "dgml";
-        static constexpr StringLiteral OPTION_SHOW_DEPTH = "show-depth";
-        static constexpr StringLiteral OPTION_MAX_RECURSE = "max-recurse";
-        static constexpr StringLiteral OPTION_SORT = "sort";
+        namespace
+        {
+            constexpr StringLiteral OPTION_DOT = "dot";
+            constexpr StringLiteral OPTION_DGML = "dgml";
+            constexpr StringLiteral OPTION_SHOW_DEPTH = "show-depth";
+            constexpr StringLiteral OPTION_MAX_RECURSE = "max-recurse";
+            constexpr StringLiteral OPTION_SORT = "sort";
 
-        static constexpr int NO_RECURSE_LIMIT_VALUE = -1;
+            constexpr int NO_RECURSE_LIMIT_VALUE = -1;
 
-        static constexpr std::array<CommandSwitch, 3> DEPEND_SWITCHES = {
-            {{OPTION_DOT, "Creates graph on basis of dot"},
-             {OPTION_DGML, "Creates graph on basis of dgml"},
-             {OPTION_SHOW_DEPTH, "Show recursion depth in output"}}};
+            constexpr std::array<CommandSwitch, 3> DEPEND_SWITCHES = {
+                {{OPTION_DOT, "Creates graph on basis of dot"},
+                 {OPTION_DGML, "Creates graph on basis of dgml"},
+                 {OPTION_SHOW_DEPTH, "Show recursion depth in output"}}};
 
-        static constexpr std::array<CommandSetting, 2> DEPEND_SETTINGS = {
-            {{OPTION_MAX_RECURSE, "Set max recursion depth, a value of -1 indicates no limit"},
-             {OPTION_SORT,
-              "Set sort order for the list of dependencies, accepted values are: lexicographical, topological "
-              "(default), x-tree, "
-              "reverse"}}};
+            constexpr std::array<CommandSetting, 2> DEPEND_SETTINGS = {
+                {{OPTION_MAX_RECURSE, "Set max recursion depth, a value of -1 indicates no limit"},
+                 {OPTION_SORT,
+                  "Set sort order for the list of dependencies, accepted values are: lexicographical, topological "
+                  "(default), x-tree, "
+                  "reverse"}}};
+        }
 
         enum SortMode
         {
@@ -161,7 +164,7 @@ namespace vcpkg::Commands::DependInfo
 
         std::string create_dot_as_string(const std::vector<PackageDependInfo>& depend_info)
         {
-            int empty_node_count = 0;
+            std::size_t empty_node_count = 0;
 
             std::string s("digraph G{ rankdir=LR; edge [minlen=3]; overlap=false;");
 
@@ -182,7 +185,7 @@ namespace vcpkg::Commands::DependInfo
                 }
             }
 
-            s.append(Strings::format("empty [label=\"%d singletons...\"]; }", empty_node_count));
+            s.append(fmt::format("empty [label=\"{} singletons...\"]; }", empty_node_count));
             return s;
         }
 
