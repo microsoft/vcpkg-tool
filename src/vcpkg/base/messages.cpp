@@ -581,7 +581,6 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedVendorAuthentication);
     REGISTER_MESSAGE(FeedbackAppreciated);
     REGISTER_MESSAGE(FilesExported);
-    REGISTER_MESSAGE(FindModulesFailedToEnum);
     REGISTER_MESSAGE(FileNotFound);
     REGISTER_MESSAGE(FileSystemOperationFailed);
     REGISTER_MESSAGE(FishCompletion);
@@ -730,7 +729,6 @@ namespace vcpkg
     REGISTER_MESSAGE(MissingArgFormatManifest);
     REGISTER_MESSAGE(MissingDependency);
     REGISTER_MESSAGE(MissingExtension);
-    REGISTER_MESSAGE(MissingNDKVersion);
     REGISTER_MESSAGE(MissingOption);
     REGISTER_MESSAGE(MissingPortSuggestPullRequest);
     REGISTER_MESSAGE(MissmatchedBinParagraphs);

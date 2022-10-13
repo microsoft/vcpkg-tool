@@ -28,9 +28,7 @@ namespace vcpkg::Export::Prefab
             {
                 return paths;
             }
-
-            Checks::msg_exit_with_message(
-                VCPKG_LINE_INFO, msg::format(msgFindModulesFailedToEnum, msg::path = root).append_raw(ec.message()));
+            exit_filesystem_call_error(VCPKG_LINE_INFO, ec, "find_modules", {root, ec.message()});
         }
 
         Util::erase_remove_if(paths, NotExtensionCaseSensitive{ext});
@@ -326,8 +324,7 @@ namespace vcpkg::Export::Prefab
 
         Optional<std::string> version_opt = find_ndk_version(content);
 
-        Checks::msg_check_maybe_upgrade(
-            VCPKG_LINE_INFO, version_opt.has_value(), msgMissingNDKVersion, msg::path = source_properties_location);
+        Checks::check_maybe_upgrade(VCPKG_LINE_INFO, version_opt.has_value());
 
         NdkVersion version = to_version(version_opt.value_or_exit(VCPKG_LINE_INFO)).value_or_exit(VCPKG_LINE_INFO);
 
@@ -366,8 +363,6 @@ namespace vcpkg::Export::Prefab
         std::unordered_map<std::string, std::string> version_map;
 
         std::unordered_map<std::string, std::set<PackageSpec>> empty_package_dependencies;
-
-        //
 
         for (const auto& action : export_plan)
         {

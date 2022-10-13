@@ -417,7 +417,6 @@ namespace vcpkg::Export::IFW
         // Prepare packages directory
         const auto ifw_packages_dir_path = get_packages_dir_path(export_id, ifw_options, paths);
 
-        fs.remove_all(ifw_packages_dir_path, ec, failure_point);
         fs.remove_all(ifw_packages_dir_path, VCPKG_LINE_INFO);
 
         fs.create_directory(ifw_packages_dir_path, ec);

@@ -559,11 +559,7 @@ namespace vcpkg
                     "Note: 'source.properties' is code and should not be translated.",
                     "source.properties missing in {env_var} directory: {path}");
 
-    DECLARE_MESSAGE(AndroidTripletSupported,
-                    (),
-                    "",
-                    "export prefab requires selecting a triplet selecting a toolchain where CMAKE_SYSTEM_NAME is set "
-                    "to \"android\"");
+    DECLARE_MESSAGE(AndroidTripletSupported, (), "", "export prefab requires an Android triplet.");
     DECLARE_MESSAGE(AnotherInstallationInProgress,
                     (),
                     "",
@@ -984,10 +980,6 @@ namespace vcpkg
                     "on how to provide credentials.");
     DECLARE_MESSAGE(FeedbackAppreciated, (), "", "Thank you for your feedback!");
     DECLARE_MESSAGE(FilesExported, (msg::path), "", "Files exported at: {path}");
-    DECLARE_MESSAGE(FindModulesFailedToEnum,
-                    (msg::path),
-                    "",
-                    "Could not enumerate directory to find modules in {path}: ");
     DECLARE_MESSAGE(FileNotFound, (msg::path), "", "{path}: file not found");
     DECLARE_MESSAGE(FileSystemOperationFailed, (), "", "Filesystem operation failed:");
     DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at \"{path}\".");
@@ -1414,7 +1406,6 @@ namespace vcpkg
                     "",
                     "Package {spec} is installed, but dependency {package_name} is not.");
     DECLARE_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
-    DECLARE_MESSAGE(MissingNDKVersion, (msg::path), "", "NDK version missing: {path}");
     DECLARE_MESSAGE(MissingOption, (msg::option), "", "This command requires --{option}");
     DECLARE_MESSAGE(MissingPortSuggestPullRequest,
                     (),
@@ -1636,10 +1627,7 @@ namespace vcpkg
     DECLARE_MESSAGE(StartCodeUnitInContinue, (), "", "found start code unit in continue position");
     DECLARE_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: \"{path}\"");
     DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512");
-    DECLARE_MESSAGE(SuccessfulyExported,
-                    (msg::package_name, msg::path),
-                    "",
-                    "Successfully exported {package_name}. Checkout {path}");
+    DECLARE_MESSAGE(SuccessfulyExported, (msg::package_name, msg::path), "", "Exported {package_name} to {path}");
     DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.");
     DECLARE_MESSAGE(SuggestResolution,
                     (msg::command_name, msg::option),
