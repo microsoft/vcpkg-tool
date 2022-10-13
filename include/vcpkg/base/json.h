@@ -147,13 +147,6 @@ namespace vcpkg::Json
         using underlying_t = std::vector<Value>;
 
     public:
-        Array() = default;
-        Array(const Array&) = default;
-        Array(Array&&) noexcept = default;
-        Array& operator=(const Array&) = default;
-        Array& operator=(Array&&) noexcept = default;
-        ~Array() = default;
-
         using iterator = underlying_t::iterator;
         using const_iterator = underlying_t::const_iterator;
 
