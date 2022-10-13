@@ -134,9 +134,9 @@ namespace vcpkg
         return parsed_config_opt;
     }
 
-    static std::vector<std::string> merge_overlays(std::vector<std::string> cli_overlays,
-                                                   std::vector<std::string> manifest_overlays,
-                                                   std::vector<std::string> env_overlays)
+    static std::vector<std::string> merge_overlays(const std::vector<std::string>& cli_overlays,
+                                                   const std::vector<std::string>& manifest_overlays,
+                                                   const std::vector<std::string>& env_overlays)
     {
         std::vector<std::string> ret = cli_overlays;
 
