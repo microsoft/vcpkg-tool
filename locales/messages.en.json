@@ -125,6 +125,7 @@
   "EmptyArg": "The option --{option} must be passed a non-empty argument.",
   "EmptyLicenseExpression": "SPDX license expression was empty.",
   "EndOfStringInCodeUnit": "found end of string in middle of code point",
+  "EnvInvalidMaxConcurrency": "{env_var} is {value}, must be > 0",
   "EnvStrFailedToExtract": "could not expand the environment string:",
   "ErrorDetectingCompilerInfo": "while detecting compiler information:\nThe log file content at \"{path}\" is:",
   "ErrorIndividualPackagesUnsupported": "In manifest mode, `vcpkg install` does not support individual package arguments.\nTo install additional packages, edit vcpkg.json and then run `vcpkg install` without any package arguments.",
