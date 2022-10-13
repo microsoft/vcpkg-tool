@@ -2335,6 +2335,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";IgnoringVcpkgRootEnvironment" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Ignoring VCPKG_ROOT environment variable; use --vcpkg-root "{path}" to use the environment value or unset the VCPKG_ROOT environment variable to suppress this message. Using detected vcpkg root: "{actual}".]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ignorando a variável de ambiente VCPKG_ROOT; use --vcpkg-root "{path}" para usar o valor do ambiente ou desmarque a variável de ambiente VCPKG_ROOT para suprimir essa mensagem. Usando a raiz vcpkg detectada: "{actual}".]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";IllegalFeatures" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[List of features is not allowed in this context]]></Val>
@@ -3787,6 +3796,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ShallowRepositoryDetected" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg was cloned as a shallow repository in: {path}]A;Try again with a full vcpkg clone.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[O vcpkg foi clonado como um repositório superficial em: {path} ]A; Tente novamente com um clone completo do vcpkg.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";SkipClearingInvalidDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Skipping clearing contents of {path} because it was not a directory.]]></Val>
@@ -4413,10 +4431,13 @@
       </Item>
       <Item ItemId=";VcpkgCeIsExperimental" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[vcpkg-ce ('configure environment') is experimental and may change at any time.]]></Val>
+          <Val><![CDATA[vcpkg-artifacts are experimental and may change at any time.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg-ce ('configurar ambiente') é experimental e pode mudar a qualquer momento.]]></Val>
+            <Val><![CDATA[vcpkg-artifacts são experimentais e podem ser alterados a qualquer momento.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[vcpkg-ce ('configure environment') is experimental and may change at any time.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
