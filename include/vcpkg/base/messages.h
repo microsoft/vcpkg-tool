@@ -803,7 +803,7 @@ namespace vcpkg
     DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
     DECLARE_MESSAGE(EnvInvalidMaxConcurrency,
                     (msg::env_var, msg::value),
-                    "value is the invalid value of an environment variable",
+                    "{value} is the invalid value of an environment variable",
                     "{env_var} is {value}, must be > 0");
     DECLARE_MESSAGE(EndOfStringInCodeUnit, (), "", "found end of string in middle of code point");
     DECLARE_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:");
