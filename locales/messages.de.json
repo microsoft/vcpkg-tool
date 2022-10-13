@@ -469,7 +469,7 @@
   "VSExaminedInstances": "Die folgenden Visual Studio-Instanzen wurden berücksichtigt:",
   "VSExaminedPaths": "Die folgenden Pfade wurden für Visual Studio-Instanzen untersucht:",
   "VSNoInstances": "Es konnte keine vollständige Visual Studio-Instanz gefunden werden.",
-  "VcpkgCeIsExperimental": "vcpkg-artifacts are experimental and may change at any time.",
+  "VcpkgCeIsExperimental": "„vcpkg-artifacts“ sind experimentell und können sich jederzeit ändern.",
   "VcpkgCommitTableHeader": "VCPKG-Commit",
   "VcpkgCompletion": "Die vcpkg {value}-Vervollständigung wurde bereits in Ihr „{path}“-Datei importiert.\nDie folgenden Einträge wurden gefunden:",
   "VcpkgDisallowedClassicMode": "Es wurde kein Manifest (vcpkg.json) über dem aktuellen Arbeitsverzeichnis gefunden.\nDiese „vcpkg“-Verteilung verfügt nicht über eine Instanz im klassischen Modus.",
