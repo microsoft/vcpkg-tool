@@ -924,6 +924,8 @@ namespace vcpkg
         char buf[1024];
         // Use fgets because fread will block until the entire buffer is filled.
         // 1 less than buffer size because OSX writes \0 1 byte after the given char count
+        // See
+        // https://developer.apple.com/library/archive/documentation/Security/Conceptual/SecureCodingGuide/Articles/BufferOverflows.html
         while (fgets(buf, 1023, pipe))
         {
             data_cb(StringView{buf, strlen(buf)});

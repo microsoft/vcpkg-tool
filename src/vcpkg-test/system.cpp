@@ -172,11 +172,6 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
 #if defined(_WIN32)
         REQUIRE(out->output == (std::to_string(i) + "\r\n"));
 #else
-        if (i != 0)
-        {
-            REQUIRE(out->output[0] == 'a');
-            REQUIRE(out->output[i - 1] == 'a');
-        }
         REQUIRE(out->output == (std::string(i, 'a') + "\n"));
 #endif
     }

@@ -426,8 +426,13 @@ namespace vcpkg
                 try
                 {
                     int res = std::stoi(user_defined_concurrency.value_or_exit(VCPKG_LINE_INFO));
-                    vcpkg::Checks::check_exit(
-                        VCPKG_LINE_INFO, res > 0, "VCPKG_MAX_CONCURRENCY is %d, must be > 0", res);
+                    if (!(res > 0))
+                    {
+                        Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                                      msgEnvInvalidMaxConcurrency,
+                                                      msg::env_var = "VCPKG_MAX_CONCURRENCY",
+                                                      msg::value = res);
+                    }
                     return static_cast<unsigned int>(res);
                 }
                 catch (std::exception&)
