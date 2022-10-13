@@ -495,9 +495,7 @@ namespace vcpkg
                                               args.exact_abi_tools_versions.value_or(false) ? RequireExactVersions::YES
                                                                                             : RequireExactVersions::NO))
                 , m_env_cache(m_ff_settings.compiler_tracking)
-                , triplets_dirs(
-                      Util::fmap(args.cli_overlay_triplets,
-                                 [&fs](const std::string& p) { return fs.almost_canonical(p, VCPKG_LINE_INFO); }))
+                , triplets_dirs()
                 , m_artifacts_dir(downloads / "artifacts")
             {
                 if (auto i = m_installed.get())
@@ -671,9 +669,6 @@ namespace vcpkg
         Debug::print("Using builtin-registry: ", builtin_registry_versions, '\n');
         Debug::print("Using downloads-root: ", downloads, '\n');
 
-        m_pimpl->triplets_dirs.emplace_back(triplets);
-        m_pimpl->triplets_dirs.emplace_back(community_triplets);
-
         {
             auto maybe_manifest_config = config_from_manifest(m_pimpl->m_manifest_path, m_pimpl->m_manifest_doc);
             auto maybe_config_json = config_from_json(m_pimpl->m_config_dir / "vcpkg-configuration.json", filesystem);
@@ -692,6 +687,13 @@ namespace vcpkg
 
             m_pimpl->m_registry_set = m_pimpl->m_config.instantiate_registry_set(*this);
         }
+
+        for (std::string triplet : this->overlay_triplets)
+        {
+            m_pimpl->triplets_dirs.emplace_back(filesystem.almost_canonical(triplet, VCPKG_LINE_INFO));
+        }
+        m_pimpl->triplets_dirs.emplace_back(triplets);
+        m_pimpl->triplets_dirs.emplace_back(community_triplets);
 
         // metrics from configuration
         {
