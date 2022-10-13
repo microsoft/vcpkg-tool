@@ -328,7 +328,7 @@ namespace
                 auto maybe_success = put_file(fs, url, put_url_template.headers_for_put, tmp_archive_path);
                 if (maybe_success)
                 {
-                    http_remotes_pushed++;
+                    ++http_remotes_pushed;
                     continue;
                 }
 
