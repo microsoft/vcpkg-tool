@@ -2338,6 +2338,9 @@
       <Item ItemId=";IgnoringVcpkgRootEnvironment" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Ignoring VCPKG_ROOT environment variable; use --vcpkg-root "{path}" to use the environment value or unset the VCPKG_ROOT environment variable to suppress this message. Using detected vcpkg root: "{actual}".]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Omitiendo variable de entorno VCPKG_ROOT; use --vcpkg-root "{path}" para usar el valor de entorno o desactive la variable de entorno VCPKG_ROOT para suprimir este mensaje. Usando la raíz vcpkg detectada: "{actual}".]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3796,6 +3799,9 @@
       <Item ItemId=";ShallowRepositoryDetected" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[vcpkg was cloned as a shallow repository in: {path}]A;Try again with a full vcpkg clone.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg se clonó como repositorio superficial en: {path}]A;Vuelva a intentarlo con un clon completo de vcpkg.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
