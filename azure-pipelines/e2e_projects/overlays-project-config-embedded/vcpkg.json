@@ -1,0 +1,12 @@
+{
+	"dependencies": [
+		"fmt",
+		"vcpkg-empty-port",
+		"another-vcpkg-empty-port",
+		"beicode"
+	],
+	"vcpkg-configuration": {
+		"overlay-ports": [ ".\\azure-pipelines\\e2e_projects\\overlays-project-with-config\\config-overlays" ],
+		"overlay-triplets": [ "../my-triplets" ]
+	}
+}
