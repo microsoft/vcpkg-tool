@@ -7,8 +7,16 @@ $manifestRoot = "$e2eProjects/overlays-project-with-config"
 $env:VCPKG_OVERLAY_PORTS = "$manifestRoot/env-overlays"
 
 Run-Vcpkg install --x-manifest-root=$manifestRoot --overlay-ports=$manifestRoot/cli-overlays --overlay-triplets=$manifestRoot/my-triplets
+Throw-IfFailed
 
 # Tests overlays configured in env and cli on a project with configuration embedded on the manifest file
 $manifestRoot = "$e2eProjects/overlays-project-config-embedded"
 $env:VCPKG_OVERLAY_PORTS = "$manifestRoot/env-overlays"
 Run-Vcpkg install --x-manifest-root=$manifestRoot --overlay-ports=$manifestRoot/cli-overlays --overlay-triplets=$manifestRoot/my-triplets
+Throw-IfFailed
+
+# Config with bad paths
+$manifestRoot = "$e2eProjects/overlays-bad-paths"
+$env:VCPKG_OVERLAY_PORTS = "$manifestRoot/env_overlays"
+Run-Vcpkg install --x-manifest-root=$manifestRoot --overlay-triplets=$manifestRoot/my-triplets
+Throw-IfNotFailed

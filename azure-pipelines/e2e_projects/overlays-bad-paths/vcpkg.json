@@ -1,0 +1,8 @@
+{
+	"dependencies": [
+		"fmt",
+		"vcpkg-empty-port",
+		"another-vcpkg-empty-port",
+		"beicode"
+	]
+}
