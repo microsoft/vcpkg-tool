@@ -26,6 +26,7 @@ namespace vcpkg
         constexpr Span(std::nullptr_t) noexcept : m_ptr(nullptr), m_count(0) { }
         constexpr Span(pointer ptr, size_t count) noexcept : m_ptr(ptr), m_count(count) { }
         constexpr Span(pointer ptr_begin, pointer ptr_end) noexcept : m_ptr(ptr_begin), m_count(ptr_end - ptr_begin) { }
+        constexpr Span(const std::initializer_list<T>& list) noexcept : m_ptr(list.begin()), m_count(list.size()) { }
 
         template<size_t N>
         constexpr Span(T (&arr)[N]) noexcept : m_ptr(arr), m_count(N)

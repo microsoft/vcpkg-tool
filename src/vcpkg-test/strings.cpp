@@ -3,6 +3,7 @@
 #include <vcpkg/base/api_stable_format.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/view.h>
 
 #include <stdint.h>
 
@@ -53,6 +54,22 @@ TEST_CASE ("find_first_of", "[strings]")
     REQUIRE(find_first_of("abcdefg", "g") == std::string("g"));
     REQUIRE(find_first_of("abcdefg", "bg") == std::string("bcdefg"));
     REQUIRE(find_first_of("abcdefg", "gb") == std::string("bcdefg"));
+}
+
+TEST_CASE ("contains_any_ignoring_c_comments", "[strings]")
+{
+    using vcpkg::Strings::contains_any_ignoring_c_comments;
+    REQUIRE(contains_any_ignoring_c_comments(R"(abc)", {"abc"}));
+    REQUIRE(contains_any_ignoring_c_comments(R"("abc")", {"abc"}));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"("" //abc)", {"abc"}));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"(/*abc*/ "")", {"abc"}));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments("// test \\\nabc", {"abc"}));
+    REQUIRE(contains_any_ignoring_c_comments("\"//\" test \\\nabc", {"abc"}));
+    REQUIRE(contains_any_ignoring_c_comments(R"(R"-( // abc )-")", {"abc"}));
+    REQUIRE(contains_any_ignoring_c_comments(R"(R"-( /* abc */ )-")", {"abc"}));
+    REQUIRE(contains_any_ignoring_c_comments(R"(R"-()- /* abc */ )-")", {"abc"}));
+    REQUIRE(contains_any_ignoring_c_comments(R"(qwer )", {"abc", "wer"}));
+    REQUIRE(contains_any_ignoring_c_comments("\"a\" \"g\" // er \n test)", {"test"}));
 }
 
 TEST_CASE ("edit distance", "[strings]")
