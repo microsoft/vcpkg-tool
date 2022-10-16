@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include <vcpkg-test/mockcmakevarprovider.h>
@@ -113,7 +114,7 @@ static void check_name_and_features(const InstallPlanAction& ipa,
 
 static void check_name_and_version(const InstallPlanAction& ipa,
                                    StringLiteral name,
-                                   Version v,
+                                   const Version& v,
                                    std::initializer_list<StringLiteral> features = {})
 {
     check_name_and_features(ipa, name, features);
@@ -684,7 +685,7 @@ TEST_CASE ("version parse relaxed", "[versionplan]")
     check_relaxed_version(DotVersion::try_parse_relaxed("1"), {1});
     check_relaxed_version(
         DotVersion::try_parse_relaxed("1.20.300.4000.50000.6000000.70000000.80000000.18446744073709551610"),
-        {1, 20, 300, 4000, 50000, 6000000, 70000000, 80000000, 18446744073709551610u});
+        {1, 20, 300, 4000, 50000, 6000000, 70000000, 80000000, 18446744073709551610U});
     check_relaxed_version(DotVersion::try_parse_relaxed("1.0.0.0-alpha"), {1, 0, 0, 0}, {"alpha"});
     check_relaxed_version(DotVersion::try_parse_relaxed("1.0.0.0-alpha-0.1"), {1, 0, 0, 0}, {"alpha-0", "1"});
     check_relaxed_version(DotVersion::try_parse_relaxed("1.0.0.0-alpha+build-ok"), {1, 0, 0, 0}, {"alpha"});
@@ -1569,7 +1570,7 @@ TEST_CASE ("version install default features", "[versionplan]")
 
     auto a_x = make_fpgh("x");
     auto& a_scf = vp.emplace("a", {"1", 0}, VersionScheme::Relaxed).source_control_file;
-    a_scf->core_paragraph->default_features.push_back("x");
+    a_scf->core_paragraph->default_features.emplace_back("x");
     a_scf->feature_paragraphs.push_back(std::move(a_x));
 
     MockCMakeVarProvider var_provider;
@@ -1590,7 +1591,7 @@ TEST_CASE ("version dont install default features", "[versionplan]")
 
     auto a_x = make_fpgh("x");
     auto& a_scf = vp.emplace("a", {"1", 0}, VersionScheme::Relaxed).source_control_file;
-    a_scf->core_paragraph->default_features.push_back("x");
+    a_scf->core_paragraph->default_features.emplace_back("x");
     a_scf->feature_paragraphs.push_back(std::move(a_x));
 
     MockCMakeVarProvider var_provider;
@@ -1612,7 +1613,7 @@ TEST_CASE ("version install transitive default features", "[versionplan]")
 
     auto a_x = make_fpgh("x");
     auto& a_scf = vp.emplace("a", {"1", 0}, VersionScheme::Relaxed).source_control_file;
-    a_scf->core_paragraph->default_features.push_back("x");
+    a_scf->core_paragraph->default_features.emplace_back("x");
     a_scf->feature_paragraphs.push_back(std::move(a_x));
 
     auto& b_scf = vp.emplace("b", {"1", 0}, VersionScheme::Relaxed).source_control_file;
@@ -1703,7 +1704,7 @@ TEST_CASE ("version install qualified default suppression", "[versionplan]")
     MockVersionedPortfileProvider vp;
 
     auto& a_scf = vp.emplace("a", {"1", 0}, VersionScheme::Relaxed).source_control_file;
-    a_scf->core_paragraph->default_features.push_back("x");
+    a_scf->core_paragraph->default_features.emplace_back("x");
     a_scf->feature_paragraphs.push_back(make_fpgh("x"));
 
     vp.emplace("b", {"1", 0}, VersionScheme::Relaxed)
@@ -1789,17 +1790,17 @@ TEST_CASE ("version install qualified features", "[versionplan]")
     MockVersionedPortfileProvider vp;
 
     auto& b_scf = vp.emplace("b", {"1", 0}, VersionScheme::Relaxed).source_control_file;
-    b_scf->core_paragraph->default_features.push_back("x");
+    b_scf->core_paragraph->default_features.emplace_back("x");
     b_scf->feature_paragraphs.push_back(make_fpgh("x"));
     b_scf->feature_paragraphs.back()->dependencies.push_back({"a", {}, parse_platform("!linux")});
 
     auto& a_scf = vp.emplace("a", {"1", 0}, VersionScheme::Relaxed).source_control_file;
-    a_scf->core_paragraph->default_features.push_back("y");
+    a_scf->core_paragraph->default_features.emplace_back("y");
     a_scf->feature_paragraphs.push_back(make_fpgh("y"));
     a_scf->feature_paragraphs.back()->dependencies.push_back({"c", {}, parse_platform("linux")});
 
     auto& c_scf = vp.emplace("c", {"1", 0}, VersionScheme::Relaxed).source_control_file;
-    c_scf->core_paragraph->default_features.push_back("z");
+    c_scf->core_paragraph->default_features.emplace_back("z");
     c_scf->feature_paragraphs.push_back(make_fpgh("z"));
     c_scf->feature_paragraphs.back()->dependencies.push_back({"d", {}, parse_platform("linux")});
 
@@ -1846,7 +1847,7 @@ TEST_CASE ("version install self features", "[versionplan]")
 
 static auto create_versioned_install_plan(MockVersionedPortfileProvider& vp,
                                           MockBaselineProvider& bp,
-                                          std::vector<Dependency> deps,
+                                          const std::vector<Dependency>& deps,
                                           MockCMakeVarProvider& var_provider)
 {
     return create_versioned_install_plan(vp, bp, var_provider, deps, {}, toplevel_spec());
@@ -1857,7 +1858,7 @@ static auto create_versioned_install_plan(MockVersionedPortfileProvider& vp,
                                           std::vector<Dependency> deps)
 {
     MockCMakeVarProvider var_provider;
-    return create_versioned_install_plan(vp, bp, deps, var_provider);
+    return create_versioned_install_plan(vp, bp, std::move(deps), var_provider);
 }
 
 TEST_CASE ("version install nonexisting features", "[versionplan]")

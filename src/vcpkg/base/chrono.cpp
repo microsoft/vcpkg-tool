@@ -164,8 +164,8 @@ namespace vcpkg
     std::string CTime::strftime(const char* format) const
     {
         std::array<char, 80> date{};
-        ::strftime(&date[0], date.size(), format, &m_tm);
-        return &date[0];
+        ::strftime(date.data(), date.size(), format, &m_tm);
+        return date.data();
     }
     std::chrono::system_clock::time_point CTime::to_time_point() const
     {

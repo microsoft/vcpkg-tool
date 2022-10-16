@@ -15,6 +15,7 @@
 #include <vcpkg/versions.h>
 
 #include <map>
+#include <utility>
 
 namespace
 {
@@ -22,7 +23,7 @@ namespace
 
     using Baseline = std::map<std::string, Version, std::less<>>;
 
-    static constexpr StringLiteral registry_versions_dir_name = "versions";
+    constexpr StringLiteral registry_versions_dir_name = "versions";
 
     struct GitRegistry;
 
@@ -153,7 +154,7 @@ namespace
     struct BuiltinPortTreeRegistryEntry final : RegistryEntry
     {
         BuiltinPortTreeRegistryEntry(StringView name_, Path root_, Version version_)
-            : name(name_.to_string()), root(root_), version(version_)
+            : name(name_.to_string()), root(std::move(root_)), version(std::move(version_))
         {
         }
 
@@ -371,7 +372,7 @@ namespace
         }
     }
 
-    static ExpectedS<Path> git_checkout_baseline(const VcpkgPaths& paths, StringView commit_sha)
+    ExpectedS<Path> git_checkout_baseline(const VcpkgPaths& paths, StringView commit_sha)
     {
         Filesystem& fs = paths.get_filesystem();
         const auto destination_parent = paths.baselines_output() / commit_sha;
@@ -884,7 +885,7 @@ namespace
                                                               const Path& registry_root)
     {
         Checks::check_exit(VCPKG_LINE_INFO,
-                           !(type == VersionDbType::Filesystem && registry_root.empty()),
+                           type != VersionDbType::Filesystem || !registry_root.empty(),
                            "Bug in vcpkg; type should never = Filesystem when registry_root is empty.");
 
         auto versions_file_path = registry_versions / relative_path_to_versions(port_name);
@@ -902,7 +903,7 @@ namespace
                 "Error: Failed to load the versions database file %s: %s", versions_file_path, ec.message());
         }
 
-        auto maybe_versions_json = Json::parse(std::move(contents));
+        auto maybe_versions_json = Json::parse(contents);
         if (!maybe_versions_json)
         {
             return Strings::format("Error: failed to parse versions file for `%s`: %s",
@@ -992,7 +993,7 @@ namespace
             return Strings::format("Error: failed to read baseline file \"%s\": %s", baseline_path, ec.message());
         }
 
-        return parse_baseline_versions(std::move(contents), baseline, baseline_path);
+        return parse_baseline_versions(contents, baseline, baseline_path);
     }
 }
 

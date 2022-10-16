@@ -158,7 +158,7 @@ namespace vcpkg
         const RegistrySet& get_registry_set() const;
 
         // Retrieve a toolset matching the requirements in prebuildinfo
-        const Toolset& get_toolset(const PreBuildInfo& prebuildinfo) const;
+        static const Toolset& get_toolset(const PreBuildInfo& prebuildinfo) ;
 
         Filesystem& get_filesystem() const;
 

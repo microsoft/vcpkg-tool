@@ -5,7 +5,7 @@ namespace vcpkg
     template<class T>
     struct Lazy
     {
-        Lazy() : value(T()), initialized(false) { }
+        Lazy() : value(T()) { }
 
         template<class F>
         T const& get_lazy(const F& f) const
@@ -20,6 +20,6 @@ namespace vcpkg
 
     private:
         mutable T value;
-        mutable bool initialized;
+        mutable bool initialized{false};
     };
 }

@@ -67,13 +67,13 @@ namespace vcpkg
                                "Incorrect lib header end");
         }
 
-        uint64_t decoded_size() const
+        [[nodiscard]] uint64_t decoded_size() const
         {
             char size_plus_null[11];
             memcpy(size_plus_null, size, 10);
             size_plus_null[10] = '\0';
             uint64_t value = strtoull(size_plus_null, nullptr, 10);
-            if (value & 1u)
+            if ((value & 1U) != 0u)
             {
                 ++value; // align to short
             }
@@ -149,10 +149,10 @@ namespace vcpkg
                            "Second linker member was too small to contain the expected number of archive members");
         std::vector<uint32_t> offsets(archive_member_count);
         Checks::check_exit(VCPKG_LINE_INFO,
-                           fs.read(&offsets[0], sizeof(uint32_t), archive_member_count) == archive_member_count);
+                           fs.read(offsets.data(), sizeof(uint32_t), archive_member_count) == archive_member_count);
 
         // Ignore offsets that point to offset 0. See vcpkg github #223 #288 #292
-        offsets.erase(std::remove(offsets.begin(), offsets.end(), 0u), offsets.end());
+        offsets.erase(std::remove(offsets.begin(), offsets.end(), 0U), offsets.end());
         // Sort the offsets, because it is possible for them to be unsorted. See vcpkg github #292
         std::sort(offsets.begin(), offsets.end());
         uint64_t leftover = second_size - sizeof(uint32_t) - (archive_member_count * sizeof(uint32_t));
@@ -165,9 +165,8 @@ namespace vcpkg
     {
         std::vector<MachineType> machine_types; // used as a set because n is tiny
         // Next we have the obj and pseudo-object files
-        for (size_t idx = 0; idx < member_offsets.size(); ++idx)
+        for (unsigned int offset : member_offsets)
         {
-            const auto offset = member_offsets[idx];
             // Skip the header, no need to read it
             Checks::check_exit(VCPKG_LINE_INFO, fs.seek(offset + sizeof(ArchiveMemberHeader), SEEK_SET) == 0);
             uint16_t machine_type_raw;

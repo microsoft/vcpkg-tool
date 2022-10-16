@@ -136,7 +136,7 @@ namespace vcpkg
 
     namespace
     {
-        constexpr static struct Canonicalize
+        constexpr struct Canonicalize
         {
             struct FeatureLess
             {
@@ -484,7 +484,7 @@ namespace vcpkg
             r.optional_object_field(obj, DEFAULT_FEATURES, default_features, Json::BooleanDeserializer::instance);
             if (!default_features)
             {
-                dep.features.push_back("core");
+                dep.features.emplace_back("core");
             }
             r.optional_object_field(obj, HOST, dep.host, Json::BooleanDeserializer::instance);
 
@@ -1024,7 +1024,7 @@ namespace vcpkg
             const vcpkg::Json::Object& obj,
             vcpkg::SourceParagraph& spgh,
             vcpkg::Json::Reader& r,
-            std::unique_ptr<vcpkg::SourceControlFile>& control_file)
+            std::unique_ptr<vcpkg::SourceControlFile>& control_file) const
         {
             for (const auto& el : obj)
             {
@@ -1551,9 +1551,9 @@ namespace vcpkg
             else
             {
                 auto& dep_obj = arr.push_back(Json::Object());
-                for (const auto& el : dep.extra_info)
+                for (const auto& [fst, snd] : dep.extra_info)
                 {
-                    dep_obj.insert(el.first.to_string(), el.second);
+                    dep_obj.insert(fst.to_string(), snd);
                 }
 
                 dep_obj.insert(DependencyDeserializer::NAME, dep.name);
@@ -1583,9 +1583,9 @@ namespace vcpkg
 
         auto serialize_override = [&](Json::Array& arr, const DependencyOverride& dep) {
             auto& dep_obj = arr.push_back(Json::Object());
-            for (const auto& el : dep.extra_info)
+            for (const auto& [fst, snd] : dep.extra_info)
             {
-                dep_obj.insert(el.first.to_string(), el.second);
+                dep_obj.insert(fst.to_string(), snd);
             }
 
             dep_obj.insert(DependencyOverrideDeserializer::NAME, Json::Value::string(dep.name));
@@ -1595,9 +1595,9 @@ namespace vcpkg
 
         Json::Object obj;
 
-        for (const auto& el : scf.core_paragraph->extra_info)
+        for (const auto& [fst, snd] : scf.core_paragraph->extra_info)
         {
-            obj.insert(el.first.to_string(), el.second);
+            obj.insert(fst.to_string(), snd);
         }
 
         if (auto configuration = scf.core_paragraph->vcpkg_configuration.get())

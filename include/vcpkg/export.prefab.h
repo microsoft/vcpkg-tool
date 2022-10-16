@@ -25,9 +25,9 @@ namespace vcpkg::Export::Prefab
     struct NdkVersion
     {
         NdkVersion(int _major, int _minor, int _patch) : m_major{_major}, m_minor{_minor}, m_patch{_patch} { }
-        int major() { return this->m_major; }
-        int minor() { return this->m_minor; }
-        int patch() { return this->m_patch; }
+        int major() const { return this->m_major; }
+        int minor() const { return this->m_minor; }
+        int patch() const { return this->m_patch; }
         std::string to_string();
         void to_string(std::string& out);
 

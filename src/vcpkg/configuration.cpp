@@ -25,8 +25,8 @@ namespace
         constexpr static StringLiteral KIND_GIT = "git";
         constexpr static StringLiteral KIND_ARTIFACT = "artifact";
 
-        virtual StringView type_name() const override { return "a registry"; }
-        virtual View<StringView> valid_fields() const override;
+        [[nodiscard]] virtual StringView type_name() const override { return "a registry"; }
+        [[nodiscard]] virtual View<StringView> valid_fields() const override;
 
         virtual Optional<RegistryConfig> visit_null(Json::Reader&) override;
         virtual Optional<RegistryConfig> visit_object(Json::Reader&, const Json::Object&) override;
@@ -34,31 +34,31 @@ namespace
         static RegistryConfigDeserializer instance;
     };
     RegistryConfigDeserializer RegistryConfigDeserializer::instance;
-    constexpr StringLiteral RegistryConfigDeserializer::KIND;
-    constexpr StringLiteral RegistryConfigDeserializer::BASELINE;
-    constexpr StringLiteral RegistryConfigDeserializer::PATH;
-    constexpr StringLiteral RegistryConfigDeserializer::REPO;
-    constexpr StringLiteral RegistryConfigDeserializer::REFERENCE;
-    constexpr StringLiteral RegistryConfigDeserializer::NAME;
-    constexpr StringLiteral RegistryConfigDeserializer::LOCATION;
-    constexpr StringLiteral RegistryConfigDeserializer::KIND_BUILTIN;
-    constexpr StringLiteral RegistryConfigDeserializer::KIND_FILESYSTEM;
-    constexpr StringLiteral RegistryConfigDeserializer::KIND_GIT;
-    constexpr StringLiteral RegistryConfigDeserializer::KIND_ARTIFACT;
+
+
+
+
+
+
+
+
+
+
+
 
     struct RegistryDeserializer final : Json::IDeserializer<RegistryConfig>
     {
         constexpr static StringLiteral PACKAGES = "packages";
 
-        virtual StringView type_name() const override { return "a registry"; }
-        virtual View<StringView> valid_fields() const override;
+        [[nodiscard]] virtual StringView type_name() const override { return "a registry"; }
+        [[nodiscard]] virtual View<StringView> valid_fields() const override;
 
         virtual Optional<RegistryConfig> visit_object(Json::Reader&, const Json::Object&) override;
 
         static RegistryDeserializer instance;
     };
     RegistryDeserializer RegistryDeserializer::instance;
-    constexpr StringLiteral RegistryDeserializer::PACKAGES;
+
 
     View<StringView> RegistryConfigDeserializer::valid_fields() const
     {
@@ -164,7 +164,7 @@ namespace
         {
             StringLiteral valid_kinds[] = {KIND_BUILTIN, KIND_FILESYSTEM, KIND_GIT, KIND_ARTIFACT};
             r.add_generic_error(type_name(),
-                                "Field \"kind\" did not have an expected value (expected one of: \"",
+                                R"(Field "kind" did not have an expected value (expected one of: ")",
                                 Strings::join("\", \"", valid_kinds),
                                 "\"; found \"",
                                 kind,
@@ -210,7 +210,7 @@ namespace
 
     struct DictionaryDeserializer final : Json::IDeserializer<Json::Object>
     {
-        virtual StringView type_name() const override { return "a `string: string` dictionary"; }
+        [[nodiscard]] virtual StringView type_name() const override { return "a `string: string` dictionary"; }
 
         virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) override;
 
@@ -220,7 +220,7 @@ namespace
 
     struct CeMetadataDeserializer final : Json::IDeserializer<Json::Object>
     {
-        virtual StringView type_name() const override { return "an object containing ce metadata"; }
+        [[nodiscard]] virtual StringView type_name() const override { return "an object containing ce metadata"; }
 
         constexpr static StringLiteral CE_ERROR = "error";
         constexpr static StringLiteral CE_WARNING = "warning";
@@ -234,16 +234,16 @@ namespace
         static CeMetadataDeserializer instance;
     };
     CeMetadataDeserializer CeMetadataDeserializer::instance;
-    constexpr StringLiteral CeMetadataDeserializer::CE_ERROR;
-    constexpr StringLiteral CeMetadataDeserializer::CE_WARNING;
-    constexpr StringLiteral CeMetadataDeserializer::CE_MESSAGE;
-    constexpr StringLiteral CeMetadataDeserializer::CE_APPLY;
-    constexpr StringLiteral CeMetadataDeserializer::CE_SETTINGS;
-    constexpr StringLiteral CeMetadataDeserializer::CE_REQUIRES;
+
+
+
+
+
+
 
     struct DemandsDeserializer final : Json::IDeserializer<Json::Object>
     {
-        virtual StringView type_name() const override { return "a demand object"; }
+        [[nodiscard]] virtual StringView type_name() const override { return "a demand object"; }
 
         constexpr static StringLiteral CE_DEMANDS = "demands";
 
@@ -252,11 +252,11 @@ namespace
         static DemandsDeserializer instance;
     };
     DemandsDeserializer DemandsDeserializer::instance;
-    constexpr StringLiteral DemandsDeserializer::CE_DEMANDS;
+
 
     struct ConfigurationDeserializer final : Json::IDeserializer<Configuration>
     {
-        virtual StringView type_name() const override { return "a configuration object"; }
+        [[nodiscard]] virtual StringView type_name() const override { return "a configuration object"; }
 
         constexpr static StringLiteral DEFAULT_REGISTRY = "default-registry";
         constexpr static StringLiteral REGISTRIES = "registries";
@@ -266,8 +266,8 @@ namespace
         static ConfigurationDeserializer instance;
     };
     ConfigurationDeserializer ConfigurationDeserializer::instance;
-    constexpr StringLiteral ConfigurationDeserializer::DEFAULT_REGISTRY;
-    constexpr StringLiteral ConfigurationDeserializer::REGISTRIES;
+
+
 
     Optional<Json::Object> DictionaryDeserializer::visit_object(Json::Reader& r, const Json::Object& obj)
     {
@@ -430,7 +430,7 @@ namespace
         return std::move(ret);
     }
 
-    static void serialize_ce_metadata(const Json::Object& ce_metadata, Json::Object& put_into)
+    void serialize_ce_metadata(const Json::Object& ce_metadata, Json::Object& put_into)
     {
         auto extract_object = [](const Json::Object& obj, StringView key, Json::Object& put_into) {
             if (auto value = obj.get(key))
@@ -485,7 +485,7 @@ namespace
         serialize_demands(ce_metadata, put_into);
     }
 
-    static void find_unknown_fields_impl(const Json::Object& obj, std::vector<std::string>& out, StringView path)
+    void find_unknown_fields_impl(const Json::Object& obj, std::vector<std::string>& out, StringView path)
     {
         std::vector<StringView> ret;
         for (const auto& el : obj)
@@ -618,7 +618,7 @@ namespace vcpkg
         return known_fields;
     }
 
-    void Configuration::validate_as_active()
+    void Configuration::validate_as_active() const
     {
         if (!ce_metadata.is_empty())
         {

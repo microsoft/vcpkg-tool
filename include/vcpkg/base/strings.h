@@ -155,7 +155,7 @@ namespace vcpkg::Strings
     {
         if (begin == end)
         {
-            return std::string();
+            return {};
         }
 
         std::string output;

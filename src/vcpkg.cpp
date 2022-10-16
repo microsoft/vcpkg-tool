@@ -21,8 +21,6 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
-#include <locale.h>
-
 #include <cassert>
 #include <clocale>
 #include <memory>
@@ -213,9 +211,9 @@ int main(const int argc, const char* const* const argv)
 
     for (const char* utf8_locale : utf8_locales)
     {
-        if (::setlocale(LC_ALL, utf8_locale))
+        if (::setlocale(LC_ALL, utf8_locale) != nullptr)
         {
-            ::setenv("LC_ALL", utf8_locale, true);
+            ::setenv("LC_ALL", utf8_locale, 1);
             break;
         }
     }
@@ -293,7 +291,7 @@ int main(const int argc, const char* const* const argv)
     if (const auto p = args.debug.get()) Debug::g_debugging = *p;
     args.imbue_from_environment();
     VcpkgCmdArguments::imbue_or_apply_process_recursion(args);
-    if (const auto p = args.debug_env.get(); p && *p)
+    if (const auto p = args.debug_env.get(); (p != nullptr) && *p)
     {
         msg::write_unlocalized_text_to_stdout(Color::none,
                                               "[DEBUG] The following environment variables are currently set:\n" +

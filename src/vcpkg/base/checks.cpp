@@ -20,7 +20,7 @@ namespace vcpkg
 {
     void Checks::register_global_shutdown_handler(void (*func)())
     {
-        if (g_shutdown_handler)
+        if (g_shutdown_handler != nullptr)
             // Setting the handler twice is a program error. Terminate.
             std::abort();
         g_shutdown_handler = func;
@@ -38,7 +38,7 @@ namespace vcpkg
 #endif
         }
 
-        if (g_shutdown_handler) g_shutdown_handler();
+        if (g_shutdown_handler != nullptr) g_shutdown_handler();
 
         fflush(nullptr);
 

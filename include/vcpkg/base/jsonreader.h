@@ -40,8 +40,8 @@ namespace vcpkg::Json
         IDeserializer() = default;
         IDeserializer(const IDeserializer&) = default;
         IDeserializer& operator=(const IDeserializer&) = default;
-        IDeserializer(IDeserializer&&) = default;
-        IDeserializer& operator=(IDeserializer&&) = default;
+        IDeserializer(IDeserializer&&)  noexcept = default;
+        IDeserializer& operator=(IDeserializer&&)  noexcept = default;
     };
 
     struct Reader

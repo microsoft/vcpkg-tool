@@ -9,6 +9,8 @@
 
 #include <inttypes.h>
 
+#include <memory>
+
 namespace vcpkg::Json
 {
     static std::atomic<uint64_t> g_json_parsing_stats(0);
@@ -186,22 +188,22 @@ namespace vcpkg::Json
         {
             case ValueKind::Null: return; // default construct underlying_
             case ValueKind::Boolean:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Boolean>(), other.underlying_->boolean));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Boolean>(), other.underlying_->boolean);
                 break;
             case ValueKind::Integer:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Integer>(), other.underlying_->integer));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Integer>(), other.underlying_->integer);
                 break;
             case ValueKind::Number:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Number>(), other.underlying_->number));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Number>(), other.underlying_->number);
                 break;
             case ValueKind::String:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::String>(), other.underlying_->string));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::String>(), other.underlying_->string);
                 break;
             case ValueKind::Array:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Array>(), other.underlying_->array));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Array>(), other.underlying_->array);
                 break;
             case ValueKind::Object:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Object>(), other.underlying_->object));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Object>(), other.underlying_->object);
                 break;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
@@ -213,22 +215,22 @@ namespace vcpkg::Json
         {
             case ValueKind::Null: underlying_.reset(); break;
             case ValueKind::Boolean:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Boolean>(), other.underlying_->boolean));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Boolean>(), other.underlying_->boolean);
                 break;
             case ValueKind::Integer:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Integer>(), other.underlying_->integer));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Integer>(), other.underlying_->integer);
                 break;
             case ValueKind::Number:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Number>(), other.underlying_->number));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Number>(), other.underlying_->number);
                 break;
             case ValueKind::String:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::String>(), other.underlying_->string));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::String>(), other.underlying_->string);
                 break;
             case ValueKind::Array:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Array>(), other.underlying_->array));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Array>(), other.underlying_->array);
                 break;
             case ValueKind::Object:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Object>(), other.underlying_->object));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Object>(), other.underlying_->object);
                 break;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
@@ -238,7 +240,7 @@ namespace vcpkg::Json
 
     Value::~Value() = default;
 
-    Value Value::null(std::nullptr_t) noexcept { return Value(); }
+    Value Value::null(std::nullptr_t) noexcept { return {}; }
     Value Value::boolean(bool b) noexcept
     {
         Value val;
@@ -477,7 +479,7 @@ namespace vcpkg::Json
     {
         struct Parser : private ParserBase
         {
-            Parser(StringView text, StringView origin) : ParserBase(text, origin), style_() { }
+            Parser(StringView text, StringView origin) : ParserBase(text, origin) { }
 
             char32_t next() noexcept
             {
@@ -647,7 +649,7 @@ namespace vcpkg::Json
                     if (current == Unicode::end_of_file)
                     {
                         add_error("Unexpected EOF after minus sign");
-                        return Value();
+                        return {};
                     }
                 }
 
@@ -663,7 +665,7 @@ namespace vcpkg::Json
                     else if (is_ascii_digit(current))
                     {
                         add_error("Unexpected digits after a leading zero");
-                        return Value();
+                        return {};
                     }
                     else
                     {
@@ -691,7 +693,7 @@ namespace vcpkg::Json
                     if (!is_ascii_digit(current))
                     {
                         add_error("Expected digits after the decimal point");
-                        return Value();
+                        return {};
                     }
                     while (is_ascii_digit(current))
                     {
@@ -732,7 +734,7 @@ namespace vcpkg::Json
                     }
                 }
 
-                return Value();
+                return {};
             }
 
 #define VCPKG_JSON_NO_COMMENTS_MSG                                                                                     \
@@ -768,7 +770,7 @@ namespace vcpkg::Json
                     if (current == Unicode::end_of_file)
                     {
                         add_error("Unexpected EOF in middle of keyword");
-                        return Value();
+                        return {};
                     }
                     if (current != *rest_it)
                     {
@@ -795,7 +797,7 @@ namespace vcpkg::Json
                     if (current == Unicode::end_of_file)
                     {
                         add_error("Unexpected EOF in middle of array");
-                        return Value();
+                        return {};
                     }
                     if (current == ']')
                     {
@@ -816,7 +818,7 @@ namespace vcpkg::Json
                         if (current == Unicode::end_of_file)
                         {
                             add_error("Unexpected EOF in middle of array");
-                            return Value();
+                            return {};
                         }
                         if (current == ']')
                         {
@@ -831,7 +833,7 @@ namespace vcpkg::Json
                     else
                     {
                         add_error("Unexpected character in middle of array");
-                        return Value();
+                        return {};
                     }
 
                     arr.push_back(parse_value());
@@ -901,7 +903,7 @@ namespace vcpkg::Json
                     if (current == Unicode::end_of_file)
                     {
                         add_error("Unexpected EOF; expected property or close brace");
-                        return Value();
+                        return {};
                     }
                     else if (current == '}')
                     {
@@ -922,7 +924,7 @@ namespace vcpkg::Json
                         if (current == Unicode::end_of_file)
                         {
                             add_error("Unexpected EOF; expected property");
-                            return Value();
+                            return {};
                         }
                         else if (current == '}')
                         {
@@ -944,9 +946,9 @@ namespace vcpkg::Json
                     if (obj.contains(val.first))
                     {
                         add_error(Strings::format("Duplicated key \"%s\" in an object", val.first), keyPairLoc);
-                        return Value();
+                        return {};
                     }
-                    obj.insert(std::move(val.first), std::move(val.second));
+                    obj.insert(val.first, std::move(val.second));
                 }
             }
 
@@ -957,7 +959,7 @@ namespace vcpkg::Json
                 if (current == Unicode::end_of_file)
                 {
                     add_error("Unexpected EOF; expected value");
-                    return Value();
+                    return {};
                 }
 
                 switch (current)
@@ -971,7 +973,7 @@ namespace vcpkg::Json
                     case '/':
                     {
                         add_error("Unexpected character; expected value" VCPKG_JSON_NO_COMMENTS_MSG);
-                        return Value();
+                        return {};
                     }
                     default:
                         if (is_number_start(current))
@@ -981,7 +983,7 @@ namespace vcpkg::Json
                         else
                         {
                             add_error("Unexpected character; expected value");
-                            return Value();
+                            return {};
                         }
                 }
             }
@@ -1087,7 +1089,7 @@ namespace vcpkg::Json
             return std::unique_ptr<ParseError>();
         }
 
-        return parse(std::move(res), json_file);
+        return parse(res, json_file);
     }
 
     std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo li, const Filesystem& fs, const Path& json_file)

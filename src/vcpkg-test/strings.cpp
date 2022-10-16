@@ -19,8 +19,8 @@ TEST_CASE ("b32 encoding", "[strings]")
     map.emplace_back(0, "AAAAAAAAAAAAA");
     map.emplace_back(1, "BAAAAAAAAAAAA");
 
-    map.emplace_back(u64(1) << 32, "AAAAAAEAAAAAA");
-    map.emplace_back((u64(1) << 32) + 1, "BAAAAAEAAAAAA");
+    map.emplace_back(static_cast<u64>(1) << 32, "AAAAAAEAAAAAA");
+    map.emplace_back((static_cast<u64>(1) << 32) + 1, "BAAAAAEAAAAAA");
 
     map.emplace_back(0xE4D0'1065'D11E'0229, "JRA4RIXMQAUJO");
     map.emplace_back(0xA626'FE45'B135'07FF, "77BKTYWI6XJMK");

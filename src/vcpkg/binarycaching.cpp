@@ -1254,7 +1254,7 @@ namespace
 
 namespace vcpkg
 {
-    LocalizedString UrlTemplate::valid()
+    LocalizedString UrlTemplate::valid() const
     {
         std::vector<std::string> invalid_keys;
         auto result = api_stable_format(url_template, [&](std::string&, StringView key) {
@@ -2371,7 +2371,7 @@ details::NuGetRepoInfo details::get_nuget_repo_info_from_env()
 std::string vcpkg::generate_nuspec(const Path& package_dir,
                                    const InstallPlanAction& action,
                                    const vcpkg::NugetReference& ref,
-                                   details::NuGetRepoInfo rinfo)
+                                   const details::NuGetRepoInfo& rinfo)
 {
     auto& spec = action.spec;
     auto& scf = *action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;

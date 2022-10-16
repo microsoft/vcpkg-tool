@@ -1011,7 +1011,7 @@ namespace vcpkg
             }
             if (Util::Sets::contains(options.switches, OPTION_MANIFEST_NO_DEFAULT_FEATURES))
             {
-                features.push_back("core");
+                features.emplace_back("core");
             }
 
             auto core_it = std::remove(features.begin(), features.end(), "core");
@@ -1253,18 +1253,14 @@ namespace vcpkg
     }
 
     SpecSummary::SpecSummary(const InstallPlanAction& action)
-        : build_result()
-        , timing()
-        , start_time(std::chrono::system_clock::now())
+        : start_time(std::chrono::system_clock::now())
         , m_install_action(&action)
         , m_spec(action.spec)
     {
     }
 
     SpecSummary::SpecSummary(const RemovePlanAction& action)
-        : build_result()
-        , timing()
-        , start_time(std::chrono::system_clock::now())
+        : start_time(std::chrono::system_clock::now())
         , m_install_action(nullptr)
         , m_spec(action.spec)
     {

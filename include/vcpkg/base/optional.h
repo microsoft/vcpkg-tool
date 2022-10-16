@@ -278,7 +278,7 @@ namespace vcpkg
         details::OptionalStorage<T> m_base;
 
     public:
-        constexpr Optional() noexcept { }
+        constexpr Optional() noexcept = default;
 
         // Constructors are intentionally implicit
         constexpr Optional(NullOpt) { }

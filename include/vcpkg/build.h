@@ -272,7 +272,7 @@ namespace vcpkg
     struct ExtendedBuildResult
     {
         explicit ExtendedBuildResult(BuildResult code);
-        explicit ExtendedBuildResult(BuildResult code, vcpkg::Path stdoutlog, std::vector<std::string>&& error_logs);
+        explicit ExtendedBuildResult(BuildResult code, const vcpkg::Path& stdoutlog, std::vector<std::string>&& error_logs);
         ExtendedBuildResult(BuildResult code, std::vector<FeatureSpec>&& unmet_deps);
         ExtendedBuildResult(BuildResult code, std::unique_ptr<BinaryControlFile>&& bcf);
 
@@ -316,7 +316,7 @@ namespace vcpkg
     };
 
     // could be constexpr, but we want to generate this and that's not constexpr in C++14
-    extern const std::array<BuildPolicy, size_t(BuildPolicy::COUNT)> ALL_POLICIES;
+    extern const std::array<BuildPolicy, static_cast<size_t>(BuildPolicy::COUNT)> ALL_POLICIES;
 
     const std::string& to_string(BuildPolicy policy);
     ZStringView to_cmake_variable(BuildPolicy policy);
@@ -400,7 +400,7 @@ namespace vcpkg
     {
         explicit EnvCache(bool compiler_tracking) : m_compiler_tracking(compiler_tracking) { }
 
-        const Environment& get_action_env(const VcpkgPaths& paths, const AbiInfo& abi_info);
+        static const Environment& get_action_env(const VcpkgPaths& paths, const AbiInfo& abi_info);
         const std::string& get_triplet_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
         const CompilerInfo& get_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
 

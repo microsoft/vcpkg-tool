@@ -80,7 +80,7 @@ namespace vcpkg
             *mac++ = hexits[(c & 0x0f)];
             non_zero_mac |= c;
         }
-        return std::string(mac_address, non_zero_mac ? MAC_STRING_LENGTH : 0);
+        return {mac_address, non_zero_mac != 0U ? MAC_STRING_LENGTH : 0};
     }
 
     bool extract_mac_from_getmac_output_line(StringView line, std::string& out)
@@ -157,7 +157,7 @@ namespace vcpkg
             ifaddrs* ptr = nullptr;
             ~ifaddrs_guard()
             {
-                if (ptr) freeifaddrs(ptr);
+                if (ptr != nullptr) freeifaddrs(ptr);
             }
         } interfaces;
 
@@ -166,15 +166,15 @@ namespace vcpkg
             return "0";
         }
 
-        for (auto interface = interfaces.ptr; interface; interface = interface->ifa_next)
+        for (auto interface = interfaces.ptr; interface != nullptr; interface = interface->ifa_next)
         {
             // The ifa_addr field points to a structure containing the interface
             // address (the sa_family subfield should be consulted to
             // determine the format of the address structure).  This field may
             // contain a null pointer.
-            if (!interface->ifa_addr || interface->ifa_addr->sa_family != AF_TYPE ||
-                (interface->ifa_flags & IFF_LOOPBACK) || !(interface->ifa_flags & IFF_UP) ||
-                !(interface->ifa_flags & IFF_RUNNING))
+            if ((interface->ifa_addr == nullptr) || interface->ifa_addr->sa_family != AF_TYPE ||
+                ((interface->ifa_flags & IFF_LOOPBACK) != 0U) || ((interface->ifa_flags & IFF_UP) == 0U) ||
+                ((interface->ifa_flags & IFF_RUNNING) == 0U))
             {
                 continue;
             }

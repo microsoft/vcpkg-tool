@@ -63,7 +63,7 @@ namespace vcpkg::Hash
             for (uchar& ch : buff)
             {
                 ch = top_bits(tmp);
-                tmp = UIntTy(tmp << 8);
+                tmp = (tmp << 8);
             }
 
             for (const auto byte : buff)
@@ -179,14 +179,14 @@ namespace vcpkg::Hash
             return value << by;
         }
 
-        static std::uint32_t shr32(std::uint32_t value, int by) noexcept { return value >> by; }
-        static std::uint32_t ror32(std::uint32_t value, int by) noexcept
+        std::uint32_t shr32(std::uint32_t value, int by) noexcept { return value >> by; }
+        std::uint32_t ror32(std::uint32_t value, int by) noexcept
         {
             return (value >> by) | (value << (32 - by));
         }
 
-        static std::uint64_t shr64(std::uint64_t value, int by) noexcept { return value >> by; }
-        static std::uint64_t ror64(std::uint64_t value, int by) noexcept
+        std::uint64_t shr64(std::uint64_t value, int by) noexcept { return value >> by; }
+        std::uint64_t ror64(std::uint64_t value, int by) noexcept
         {
             return (value >> by) | (value << (64 - by));
         }
@@ -329,7 +329,7 @@ namespace vcpkg::Hash
             {
                 std::uint32_t words[64];
 
-                sha_fill_initial_words(&chunk[0], words);
+                sha_fill_initial_words(chunk.data(), words);
 
                 for (std::size_t i = 16; i < number_of_rounds; ++i)
                 {
@@ -415,7 +415,7 @@ namespace vcpkg::Hash
             {
                 std::uint64_t words[80];
 
-                sha_fill_initial_words(&chunk[0], words);
+                sha_fill_initial_words(chunk.data(), words);
 
                 for (std::size_t i = 16; i < number_of_rounds; ++i)
                 {

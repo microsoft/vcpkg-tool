@@ -59,5 +59,5 @@ namespace vcpkg
     std::string generate_nuspec(const Path& package_dir,
                                 const InstallPlanAction& action,
                                 const NugetReference& ref,
-                                details::NuGetRepoInfo rinfo = details::get_nuget_repo_info_from_env());
+                                const details::NuGetRepoInfo& rinfo = details::get_nuget_repo_info_from_env());
 }

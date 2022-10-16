@@ -260,7 +260,7 @@ namespace vcpkg
         const std::vector<std::string>& get_forwardable_arguments() const noexcept;
 
     private:
-        void imbue_from_environment_impl(std::function<Optional<std::string>(ZStringView)> get_env);
+        void imbue_from_environment_impl(const std::function<Optional<std::string>(ZStringView)>& get_env);
 
         Optional<std::string> asset_sources_template_env; // for ASSET_SOURCES_ENV
         Optional<std::string> asset_sources_template_arg; // for ASSET_SOURCES_ARG

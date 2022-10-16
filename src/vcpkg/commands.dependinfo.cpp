@@ -190,7 +190,7 @@ namespace vcpkg::Commands::DependInfo
         std::string create_dgml_as_string(const std::vector<PackageDependInfo>& depend_info)
         {
             std::string s;
-            s.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+            s.append(R"(<?xml version="1.0" encoding="utf-8"?>)");
             s.append("<DirectedGraph xmlns=\"http://schemas.microsoft.com/vs/2009/dgml\">");
 
             std::string nodes, links;
@@ -202,7 +202,7 @@ namespace vcpkg::Commands::DependInfo
                 // Iterate over dependencies.
                 for (const auto& d : package.dependencies)
                 {
-                    links.append(Strings::format("<Link Source=\"%s\" Target=\"%s\" />", name, d));
+                    links.append(Strings::format(R"(<Link Source="%s" Target="%s" />)", name, d));
                 }
             }
 

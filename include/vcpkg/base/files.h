@@ -45,7 +45,7 @@ namespace vcpkg
 
     struct Path
     {
-        Path() : m_str() { }
+        Path() = default;
         Path(const Path&) = default;
         Path(Path&&) = default;
         Path& operator=(const Path&) = default;
@@ -128,10 +128,10 @@ namespace vcpkg
     struct FilePointer
     {
     protected:
-        FILE* m_fs;
+        FILE* m_fs{nullptr};
 
     public:
-        FilePointer() noexcept : m_fs(nullptr) { }
+        FilePointer() noexcept = default;
 
         FilePointer(const FilePointer&) = delete;
         FilePointer(FilePointer&& other) noexcept : m_fs(other.m_fs) { other.m_fs = nullptr; }

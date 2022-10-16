@@ -137,7 +137,7 @@ namespace
             }
 
 #if !defined(_WIN32)
-            if (urbg() & 1u)
+            if (urbg() & 1U)
             {
                 const auto chmod_result = ::chmod(base.c_str(), 0444);
                 if (chmod_result != 0)
@@ -273,7 +273,7 @@ TEST_CASE ("vcpkg Path generic", "[filesystem][files]")
     Path p_dup("some/path/with//////duplicate//////////forward/slashes");
     CHECK(p_dup.generic_u8string() == StringView("some/path/with//////duplicate//////////forward/slashes"));
 
-    Path bp("some\\path\\/\\/with\\backslashes");
+    Path bp(R"(some\path\/\/with\backslashes)");
 #if defined(_WIN32)
     CHECK(bp.generic_u8string() == StringView("some/path////with/backslashes"));
 #else  // ^^^ _WIN32 / !_WIN32 vvv
@@ -366,7 +366,7 @@ TEST_CASE ("vcpkg Path::preferred and Path::make_preferred", "[filesystem][files
 #endif // ^^^ !_WIN32
 }
 
-static void test_lexically_normal(Path p, Path expected_generic)
+static void test_lexically_normal(const Path& p, Path expected_generic)
 {
     auto as_lexically_normal = p.lexically_normal();
     expected_generic.make_preferred(); // now expected
@@ -517,7 +517,7 @@ TEST_CASE ("Path::make_parent_path and Path::parent_path", "[filesystem][files]"
 }
 
 static void test_path_decomposition(
-    Path input, bool is_absolute, StringView expected_stem, StringView expected_extension, StringView ads = {})
+    const Path& input, bool is_absolute, StringView expected_stem, StringView expected_extension, StringView ads = {})
 {
     auto expected_filename = expected_stem.to_string();
     expected_filename.append(expected_extension.data(), expected_extension.size());

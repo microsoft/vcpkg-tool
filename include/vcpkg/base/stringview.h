@@ -47,7 +47,7 @@ namespace vcpkg
         friend std::string operator+(std::string&& l, const StringView& r);
 
     private:
-        const char* m_ptr = 0;
+        const char* m_ptr = nullptr;
         size_t m_size = 0;
     };
 

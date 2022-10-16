@@ -96,7 +96,7 @@ namespace vcpkg::Commands::X_Download
         if (Util::Sets::contains(parsed.switches, OPTION_STORE))
         {
             auto hash = sha.get();
-            if (!hash)
+            if (hash == nullptr)
             {
                 Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgStoreOptionMissingSha);
             }

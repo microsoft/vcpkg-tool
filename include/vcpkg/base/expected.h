@@ -33,9 +33,9 @@ namespace vcpkg
     {
         ExpectedHolder() = delete;
         ExpectedHolder(const ExpectedHolder&) = default;
-        ExpectedHolder(ExpectedHolder&&) = default;
+        ExpectedHolder(ExpectedHolder&&)  noexcept = default;
         ExpectedHolder& operator=(const ExpectedHolder&) = default;
-        ExpectedHolder& operator=(ExpectedHolder&&) = default;
+        ExpectedHolder& operator=(ExpectedHolder&&)  noexcept = default;
         template<
             class Fwd,
             std::enable_if_t<!std::is_same_v<ExpectedHolder, std::remove_cv_t<std::remove_reference_t<Fwd>>>, int> = 0>
@@ -74,7 +74,7 @@ namespace vcpkg
                  std::enable_if_t<std::is_convertible_v<ConvToT, T> &&
                                       !std::is_same_v<std::remove_reference_t<ConvToT>, Error>,
                                   int> = 0>
-        ExpectedT(ConvToT&& t) : m_t(std::forward<ConvToT>(t)), value_is_error(false)
+        ExpectedT(ConvToT&& t) : m_t(std::forward<ConvToT>(t))
         {
         }
 
@@ -110,7 +110,7 @@ namespace vcpkg
             }
         }
 
-        ExpectedT(ExpectedT&& other) : value_is_error(other.value_is_error)
+        ExpectedT(ExpectedT&& other)  noexcept : value_is_error(other.value_is_error)
         {
             if (value_is_error)
             {
@@ -368,7 +368,7 @@ namespace vcpkg
             ExpectedHolder<T> m_t;
         };
 
-        bool value_is_error;
+        bool value_is_error{false};
     };
 
     template<class T>

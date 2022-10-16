@@ -225,7 +225,7 @@ namespace
             --last;
         }
 
-        return StringView(first, static_cast<size_t>(last - first));
+        return {first, static_cast<size_t>(last - first)};
     }
 
     const char* find_filename(const char* const first, const char* last) noexcept
@@ -246,7 +246,7 @@ namespace
         const auto first = str.data();
         const auto last = first + str.size();
         const auto filename = find_filename(first, last);
-        return StringView(filename, static_cast<size_t>(last - filename));
+        return {filename, static_cast<size_t>(last - filename)};
     }
 
     constexpr const char* find_extension(const char* const filename, const char* const ads) noexcept
@@ -302,7 +302,7 @@ namespace
 #else  // ^^^ _WIN32 / !_WIN32 vvv
         const auto extension = find_extension(filename, last);
 #endif // _WIN32
-        return StringView(filename, static_cast<size_t>(extension - filename));
+        return {filename, static_cast<size_t>(extension - filename)};
     }
 
     StringView parse_extension(const StringView str) noexcept
@@ -317,7 +317,7 @@ namespace
         return StringView(extension, static_cast<size_t>(ads - extension));
 #else  // ^^^ _WIN32 / !_WIN32 vvv
         const auto extension = find_extension(filename, last);
-        return StringView(extension, static_cast<size_t>(last - extension));
+        return {extension, static_cast<size_t>(last - extension)};
 #endif // _WIN32
     }
 
@@ -630,9 +630,9 @@ namespace
         void swap(PosixFd& other) noexcept { std::swap(fd, other.fd); }
 
         PosixFd(const PosixFd&) = delete;
-        PosixFd(PosixFd&& other) : fd(std::exchange(other.fd, -1)) { }
+        PosixFd(PosixFd&& other) noexcept : fd(std::exchange(other.fd, -1)) { }
         PosixFd& operator=(const PosixFd&) = delete;
-        PosixFd& operator=(PosixFd&& other)
+        PosixFd& operator=(PosixFd&& other) noexcept
         {
             PosixFd{std::move(other)}.swap(*this);
             return *this;
@@ -700,7 +700,7 @@ namespace
     private:
         int fd = -1;
 
-        void check_error(std::error_code& ec)
+        void check_error(std::error_code& ec) const
         {
             if (fd >= 0)
             {
@@ -1119,7 +1119,7 @@ namespace vcpkg
     // This implementation does collapse slashes because we primarily use it for shiny display purposes.
     void Path::make_preferred()
     {
-        char* first = &m_str[0];
+        char* first = (m_str).data();
         char* last = first + m_str.size();
         char* after_root_name = const_cast<char*>(find_root_name_end(first, last));
         char* after_root_directory = std::find_if_not(after_root_name, last, is_slash);
@@ -1722,7 +1722,7 @@ namespace vcpkg
         if (ec)
         {
             Checks::exit_with_message(
-                li, "Failure to remove_all(\"%s\") due to file \"%s\": %s", base, failure_point, ec.message());
+                li, R"(Failure to remove_all("%s") due to file "%s": %s)", base, failure_point, ec.message());
         }
     }
 
@@ -1770,7 +1770,7 @@ namespace vcpkg
         if (ec)
         {
             Checks::exit_with_message(
-                li, "Failure to remove_all_inside(\"%s\") due to file \"%s\": %s", base, failure_point, ec.message());
+                li, R"(Failure to remove_all_inside("%s") due to file "%s": %s)", base, failure_point, ec.message());
         }
     }
 
@@ -1887,7 +1887,7 @@ namespace vcpkg
             if (ec)
             {
                 Debug::print("Failed to open: ", file_path, '\n');
-                return std::string();
+                return {};
             }
 
             std::string output;
@@ -1902,7 +1902,7 @@ namespace vcpkg
                 }
                 else if ((ec = file.error()))
                 {
-                    return std::string();
+                    return {};
                 }
             } while (!file.eof());
 
@@ -1921,7 +1921,7 @@ namespace vcpkg
             if (ec)
             {
                 Debug::print("Failed to open: ", file_path, '\n');
-                return std::vector<std::string>();
+                return {};
             }
 
             Strings::LinesCollector output;
@@ -1936,7 +1936,7 @@ namespace vcpkg
                 }
                 else if ((ec = file.error()))
                 {
-                    return std::vector<std::string>();
+                    return {};
                 }
             } while (!file.eof());
 
@@ -2358,7 +2358,7 @@ namespace vcpkg
         virtual std::vector<Path> get_files_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            Path out_base = dir;
+            const Path& out_base = dir;
             get_files_recursive_impl(result, dir, out_base, ec, true, true, true);
             return result;
         }
@@ -2373,7 +2373,7 @@ namespace vcpkg
         virtual std::vector<Path> get_directories_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            Path out_base = dir;
+            const Path& out_base = dir;
             get_files_recursive_impl(result, dir, out_base, ec, true, false, false);
 
             return result;
@@ -2403,7 +2403,7 @@ namespace vcpkg
         virtual std::vector<Path> get_regular_files_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            Path out_base = dir;
+            const Path& out_base = dir;
             get_files_recursive_impl(result, dir, out_base, ec, false, true, false);
             return result;
         }
@@ -2905,7 +2905,7 @@ namespace vcpkg
             }
 
 #if defined(__APPLE__)
-            if (fcopyfile(source_fd.get(), destination_fd.get(), 0, COPYFILE_ALL) == -1)
+            if (fcopyfile(source_fd.get(), destination_fd.get(), nullptr, COPYFILE_ALL) == -1)
             {
                 ec.assign(errno, std::generic_category());
                 return false;
@@ -2988,7 +2988,7 @@ namespace vcpkg
             buffer.resize(PATH_MAX);
             for (;;)
             {
-                ssize_t result = ::readlink(source.c_str(), &buffer[0], buffer.size());
+                ssize_t result = ::readlink(source.c_str(), buffer.data(), buffer.size());
                 if (result < 0)
                 {
                     ec.assign(errno, std::generic_category());
@@ -3138,7 +3138,7 @@ namespace vcpkg
             buf.resize(PATH_MAX);
             for (;;)
             {
-                if (getcwd(&buf[0], buf.size() + 1) != nullptr)
+                if (getcwd(buf.data(), buf.size() + 1) != nullptr)
                 {
                     buf.resize(strlen(buf.c_str()));
                     ec.clear();
@@ -3310,7 +3310,7 @@ namespace vcpkg
 #endif // ^^^!_WIN32
 
                 static const std::vector<Path> path_bases = calculate_path_bases();
-                for (Path path_base : path_bases)
+                for (const Path& path_base : path_bases)
                 {
                     for (auto&& stem : stems)
                     {

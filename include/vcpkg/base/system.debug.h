@@ -37,7 +37,7 @@ namespace vcpkg::Debug
             return f();
     }
 
-    template<class F, class R = std::result_of_t<F && ()>, class = std::enable_if_t<std::is_void<R>::value>>
+    template<class F, class R = std::result_of_t<F && ()>, class = std::enable_if_t<std::is_void_v<R>>>
     void time(LineInfo line, F&& f)
     {
         if (g_debugging)

@@ -34,7 +34,7 @@ namespace vcpkg::Update
                 if (latest_version != installed_version)
                 {
                     output.push_back(
-                        {pgh->package.spec, VersionDiff(std::move(installed_version), std::move(latest_version))});
+                        {pgh->package.spec, VersionDiff(installed_version, latest_version)});
                 }
             }
             else

@@ -19,6 +19,7 @@ namespace vcpkg::CMakeVars
                                          Triplet host_triplet) const
     {
         std::vector<FullPackageSpec> install_package_specs;
+        install_package_specs.reserve(action_plan.install_actions.size());
         for (auto&& action : action_plan.install_actions)
         {
             install_package_specs.emplace_back(FullPackageSpec{action.spec, action.feature_list});
@@ -345,7 +346,7 @@ endfunction()
 
     void TripletCMakeVarProvider::load_dep_info_vars(View<PackageSpec> specs, Triplet host_triplet) const
     {
-        if (specs.size() == 0) return;
+        if (specs.empty()) return;
         std::vector<std::vector<std::pair<std::string, std::string>>> vars(specs.size());
         const auto file_path = create_dep_info_extraction_file(specs);
         if (specs.size() > 100)
@@ -372,7 +373,7 @@ endfunction()
                                                 const PortFileProvider& port_provider,
                                                 Triplet host_triplet) const
     {
-        if (specs.size() == 0) return;
+        if (specs.empty()) return;
         std::vector<std::pair<const FullPackageSpec*, std::string>> spec_abi_settings;
         spec_abi_settings.reserve(specs.size());
 

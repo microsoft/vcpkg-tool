@@ -81,7 +81,7 @@ namespace vcpkg::Commands::Env
             extra_env.emplace("PYTHONPATH", (current_triplet_path / "python").native());
         }
 
-        if (path_vars.size() > 0) extra_env.emplace("PATH", Strings::join(";", path_vars));
+        if (!path_vars.empty()) extra_env.emplace("PATH", Strings::join(";", path_vars));
         for (auto&& passthrough : pre_build_info.passthrough_env_vars)
         {
             if (auto e = get_environment_variable(passthrough))

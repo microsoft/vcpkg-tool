@@ -279,7 +279,7 @@ StringView Strings::trim(StringView sv)
 {
     auto last = std::find_if_not(sv.rbegin(), sv.rend(), details::is_space).base();
     auto first = std::find_if_not(sv.begin(), sv.end(), details::is_space);
-    return StringView(first, last);
+    return {first, last};
 }
 
 void Strings::trim_all_and_remove_whitespace_strings(std::vector<std::string>* strings)
@@ -414,7 +414,7 @@ size_t Strings::byte_edit_distance(StringView a, StringView b)
         else
             return std::max(a.size(), b.size());
     }
-    if (a.size() == 0 || b.size() == 0) return std::max(a.size(), b.size());
+    if (a.empty() || b.empty()) return std::max(a.size(), b.size());
 
     auto pa = a.data();
     auto pb = b.data();

@@ -76,7 +76,7 @@ namespace vcpkg
         std::vector<std::string> headers_for_put;
         std::vector<std::string> headers_for_get;
 
-        LocalizedString valid();
+        LocalizedString valid() const;
         std::string instantiate_variables(const InstallPlanAction& action) const;
     };
 

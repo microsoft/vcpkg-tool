@@ -20,7 +20,7 @@ struct vcpkg::XunitTest
 
 namespace
 {
-    static void xml_test(XmlSerializer& xml, const XunitTest& test)
+    void xml_test(XmlSerializer& xml, const XunitTest& test)
     {
         StringLiteral result_string = "";
         switch (test.result)

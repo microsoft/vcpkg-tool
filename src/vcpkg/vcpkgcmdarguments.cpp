@@ -733,7 +733,7 @@ namespace vcpkg
             }
         });
     }
-    void VcpkgCmdArguments::imbue_from_environment_impl(std::function<Optional<std::string>(ZStringView)> get_env)
+    void VcpkgCmdArguments::imbue_from_environment_impl(const std::function<Optional<std::string>(ZStringView)>& get_env)
     {
         if (!disable_metrics)
         {

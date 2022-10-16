@@ -24,7 +24,7 @@ namespace vcpkg::Commands
     {
         DownloadManager download_manager{{}};
         const auto maybe_vcpkg_root_env = args.vcpkg_root_dir_env.get();
-        if (!maybe_vcpkg_root_env)
+        if (maybe_vcpkg_root_env == nullptr)
         {
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgVcpkgRootRequired);
         }

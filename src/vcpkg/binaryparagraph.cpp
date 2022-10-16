@@ -30,7 +30,7 @@ namespace vcpkg
 
     BinaryParagraph::BinaryParagraph() = default;
 
-    BinaryParagraph::BinaryParagraph(Paragraph fields)
+    BinaryParagraph::BinaryParagraph(Paragraph fields) : port_version(0)
     {
         ParagraphParser parser(std::move(fields));
 
@@ -47,7 +47,7 @@ namespace vcpkg
         this->feature = parser.optional_field(Fields::FEATURE);
 
         auto pv_str = parser.optional_field(Fields::PORT_VERSION);
-        this->port_version = 0;
+
         if (!pv_str.empty())
         {
             auto pv_opt = Strings::strto<int>(pv_str);
@@ -110,9 +110,7 @@ namespace vcpkg
         , port_version(spgh.port_version)
         , description(spgh.description)
         , maintainers(spgh.maintainers)
-        , feature()
         , default_features(spgh.default_features)
-        , dependencies()
         , abi(abi_tag)
         , type(spgh.type)
     {
@@ -125,14 +123,8 @@ namespace vcpkg
                                      Triplet triplet,
                                      const std ::vector<FeatureSpec>& deps)
         : spec(spgh.name, triplet)
-        , version()
-        , port_version()
         , description(fpgh.description)
-        , maintainers()
         , feature(fpgh.name)
-        , default_features()
-        , dependencies()
-        , abi()
         , type(spgh.type)
     {
         this->dependencies = Util::fmap(deps, [](const FeatureSpec& spec) { return spec.spec(); });

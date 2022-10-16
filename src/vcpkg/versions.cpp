@@ -7,7 +7,7 @@
 
 namespace vcpkg
 {
-    Version::Version() noexcept : m_text("0.0.0"), m_port_version(0) { }
+    Version::Version() noexcept : m_text("0.0.0") { }
     Version::Version(std::string&& value, int port_version) : m_text(std::move(value)), m_port_version(port_version) { }
     Version::Version(const std::string& value, int port_version) : m_text(value), m_port_version(port_version) { }
 
@@ -39,7 +39,7 @@ namespace vcpkg
         return left.m_port_version < right.m_port_version;
     }
 
-    VersionDiff::VersionDiff() noexcept : left(), right() { }
+    VersionDiff::VersionDiff() noexcept = default;
     VersionDiff::VersionDiff(const Version& left, const Version& right) : left(left), right(right) { }
 
     std::string VersionDiff::to_string() const
@@ -54,13 +54,11 @@ namespace vcpkg
         Optional<uint64_t> as_numeric(StringView str)
         {
             uint64_t res = 0;
-            size_t digits = 0;
             for (auto&& ch : str)
             {
                 uint64_t digit_value = static_cast<unsigned char>(ch) - static_cast<unsigned char>('0');
                 if (digit_value > 9) return nullopt;
                 if (res > std::numeric_limits<uint64_t>::max() / 10 - digit_value) return nullopt;
-                ++digits;
                 res = res * 10 + digit_value;
             }
             return res;
@@ -194,26 +192,20 @@ namespace vcpkg
 
         // build
         if (*cur != '+') return LocalizedString{};
-        ++cur;
-        for (;;)
+        // Require non-empty identifier element
+        while (ParserBase::is_alphanumdash(*(++cur)))
         {
-            // Require non-empty identifier element
-            if (!ParserBase::is_alphanumdash(*cur)) return LocalizedString{};
-            ++cur;
-            while (ParserBase::is_alphanumdash(*cur))
+            do
             {
                 ++cur;
-            }
+            } while (ParserBase::is_alphanumdash(*cur));
             if (*cur == 0) return ret;
-            if (*cur == '.')
+            if (*cur != '.')
             {
-                ++cur;
-            }
-            else
-            {
-                return LocalizedString{};
+                break;
             }
         }
+        return LocalizedString{};
     }
 
     bool operator==(const DotVersion& lhs, const DotVersion& rhs) { return compare(lhs, rhs) == VerComp::eq; }

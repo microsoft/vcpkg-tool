@@ -12,7 +12,7 @@ namespace vcpkg::Commands::List
 {
     static constexpr StringLiteral OPTION_FULLDESC = "x-full-desc"; // TODO: This should find a better home, eventually
 
-    static void do_print_json(std::vector<const vcpkg::StatusParagraph*> installed_packages)
+    static void do_print_json(const std::vector<const vcpkg::StatusParagraph*>& installed_packages)
     {
         Json::Object obj;
         for (const StatusParagraph* status_paragraph : installed_packages)

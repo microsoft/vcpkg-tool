@@ -32,7 +32,7 @@ namespace
 {
     using namespace vcpkg;
 
-    static Path process_input_directory_impl(
+    Path process_input_directory_impl(
         Filesystem& filesystem, const Path& root, const std::string* option, StringLiteral name, LineInfo li)
     {
         if (option)
@@ -45,7 +45,7 @@ namespace
         }
     }
 
-    static Path process_input_directory(
+    Path process_input_directory(
         Filesystem& filesystem, const Path& root, const std::string* option, StringLiteral name, LineInfo li)
     {
         auto result = process_input_directory_impl(filesystem, root, option, name, li);
@@ -53,7 +53,7 @@ namespace
         return result;
     }
 
-    static Path process_output_directory(Filesystem& fs, const std::string* option, const Path& default_path)
+    Path process_output_directory(Filesystem& fs, const std::string* option, const Path& default_path)
     {
         return fs.almost_canonical(option ? Path(*option) : default_path, VCPKG_LINE_INFO);
     }
@@ -1031,7 +1031,7 @@ namespace vcpkg
         if (const auto output = maybe_output.get())
         {
             std::map<std::string, std::string, std::less<>> ret;
-            const auto lines = Strings::split(std::move(*output), '\n');
+            const auto lines = Strings::split(*output, '\n');
             // The first line of the output is always the parent directory itself.
             for (auto&& line : lines)
             {
@@ -1331,7 +1331,7 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, m_pimpl->m_registry_set != nullptr);
         return *m_pimpl->m_registry_set;
     }
-    const DownloadManager& VcpkgPaths::get_download_manager() const { return *m_pimpl->m_download_manager.get(); }
+    const DownloadManager& VcpkgPaths::get_download_manager() const { return *m_pimpl->m_download_manager; }
 
 #if defined(_WIN32)
     static const ToolsetsInformation& get_all_toolsets(details::VcpkgPathsImpl& impl, const Filesystem& fs)
@@ -1352,7 +1352,7 @@ namespace vcpkg
     }
 #endif
 
-    const Toolset& VcpkgPaths::get_toolset(const PreBuildInfo& prebuildinfo) const
+    const Toolset& VcpkgPaths::get_toolset(const PreBuildInfo& prebuildinfo)
     {
         if (!prebuildinfo.using_vcvars())
         {
