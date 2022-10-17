@@ -9,6 +9,7 @@ import { acquireArtifacts, selectArtifacts, showArtifacts } from '../artifacts';
 import { Command } from '../command';
 import { cmdSwitch } from '../format';
 import { debug, error, log, warning } from '../styling';
+import { Project } from '../switches/project';
 import { Version } from '../switches/version';
 
 export class AcquireCommand extends Command {
@@ -17,6 +18,7 @@ export class AcquireCommand extends Command {
   seeAlso = [];
   argumentsHelp = [];
   version: Version = new Version(this);
+  project: Project = new Project(this);
 
   get summary() {
     return i`Acquire artifacts in the registry`;
@@ -41,7 +43,7 @@ export class AcquireCommand extends Command {
     }
 
     const resolver = session.globalRegistryResolver.with(
-      await buildRegistryResolver(session, (await session.loadProjectProfile())?.metadata.registries));
+      await buildRegistryResolver(session, (await this.project.manifest)?.metadata.registries));
     const resolved = await selectArtifacts(session, new Map(this.inputs.map((v, i) => [v, versions[i] || '*'])), resolver, 1);
     if (!resolved) {
       debug('No artifacts selected - stopping');

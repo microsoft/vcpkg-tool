@@ -8,6 +8,7 @@ import { selectArtifacts, showArtifacts } from '../artifacts';
 import { Command } from '../command';
 import { cmdSwitch } from '../format';
 import { error } from '../styling';
+import { Project } from '../switches/project';
 import { Version } from '../switches/version';
 
 export class AddCommand extends Command {
@@ -17,6 +18,7 @@ export class AddCommand extends Command {
   argumentsHelp = [];
 
   version = new Version(this);
+  project: Project = new Project(this);
 
   get summary() {
     return i`Adds an artifact to the project`;
@@ -29,8 +31,10 @@ export class AddCommand extends Command {
   }
 
   override async run() {
-    const projectManifest = await session.loadRequiredProjectProfile();
+    const projectManifest = await this.project.manifest;
+
     if (!projectManifest) {
+      error(i`Unable to find project in folder (or parent folders) for ${session.currentDirectory.fsPath}`);
       return false;
     }
 
