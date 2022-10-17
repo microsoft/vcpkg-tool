@@ -1,4 +1,4 @@
 {
-  "overlay-ports": [ ".\\azure-pipelines\\e2e_projects\\overlays-project-with-config\\config-overlays" ],
+  "overlay-ports": [ "./azure-pipelines/e2e_projects/overlays-project-with-config/config-overlays" ],
   "overlay-triplets": [ 123 ]
 }

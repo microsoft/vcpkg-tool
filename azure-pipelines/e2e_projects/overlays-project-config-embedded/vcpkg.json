@@ -6,7 +6,7 @@
 		"beicode"
 	],
 	"vcpkg-configuration": {
-		"overlay-ports": [ ".\\config-overlays" ],
-		"overlay-triplets": [ ".\\my-triplets" ]
+		"overlay-ports": [ "./config-overlays" ],
+		"overlay-triplets": [ "./my-triplets" ]
 	}
 }
