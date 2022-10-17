@@ -739,7 +739,7 @@ namespace vcpkg
                 if (port_path.is_relative())
                 {
                     std::string result = manifest_dir_str;
-                    port = result.append("\\" + port);
+                    port = result.append("/" + port);
                 }
             }
 
@@ -749,7 +749,7 @@ namespace vcpkg
                 if (triplet_path.is_relative())
                 {
                     std::string result = manifest_dir_str;
-                    triplet = result.append("\\" + triplet);
+                    triplet = result.append("/" + triplet);
                 }
             }
         }
