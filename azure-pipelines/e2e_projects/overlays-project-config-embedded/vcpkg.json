@@ -6,7 +6,7 @@
 		"beicode"
 	],
 	"vcpkg-configuration": {
-		"overlay-ports": [ ".\\azure-pipelines\\e2e_projects\\overlays-project-with-config\\config-overlays" ],
-		"overlay-triplets": [ "../my-triplets" ]
+		"overlay-ports": [ ".\\config-overlays" ],
+		"overlay-triplets": [ ".\\my-triplets" ]
 	}
 }
