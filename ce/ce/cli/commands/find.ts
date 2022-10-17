@@ -9,6 +9,7 @@ import { session } from '../../main';
 import { Command } from '../command';
 import { Table } from '../markdown-table';
 import { error, log } from '../styling';
+import { Project } from '../switches/project';
 import { Version } from '../switches/version';
 
 export class FindCommand extends Command {
@@ -17,6 +18,7 @@ export class FindCommand extends Command {
   seeAlso = [];
   argumentsHelp = [];
   version = new Version(this);
+  project = new Project(this);
 
   get summary() {
     return i`Find artifacts in the registry`;
@@ -31,7 +33,7 @@ export class FindCommand extends Command {
   override async run() {
     // load registries (from the current project too if available)
     const resolver = session.globalRegistryResolver.with(
-      await buildRegistryResolver(session, (await session.loadProjectProfile())?.metadata.registries));
+      await buildRegistryResolver(session, (await this.project.manifest)?.metadata.registries));
     const table = new Table('Artifact', 'Version', 'Summary');
 
     for (const each of this.inputs) {

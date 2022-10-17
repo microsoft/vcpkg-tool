@@ -115,10 +115,6 @@ export class CommandLine {
     return this.switches['z-vcpkg-registries-cache']?.[0];
   }
 
-  get vcpkgManifestDirectory() {
-    return this.switches['z-vcpkg-manifest-dir']?.[0];
-  }
-
   get telemetryEnabled() {
     return !!this.switches['z-enable-metrics'];
   }

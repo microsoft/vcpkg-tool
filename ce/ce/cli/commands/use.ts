@@ -10,6 +10,7 @@ import { cmdSwitch } from '../format';
 import { activate } from '../project';
 import { error, log, warning } from '../styling';
 import { MSBuildProps } from '../switches/msbuild-props';
+import { Project } from '../switches/project';
 import { Version } from '../switches/version';
 
 export class UseCommand extends Command {
@@ -18,6 +19,7 @@ export class UseCommand extends Command {
   seeAlso = [];
   argumentsHelp = [];
   version = new Version(this);
+  project = new Project(this);
   msbuildProps = new MSBuildProps(this);
 
   get summary() {
@@ -37,7 +39,7 @@ export class UseCommand extends Command {
     }
 
     const resolver = session.globalRegistryResolver.with(
-      await buildRegistryResolver(session, (await session.loadProjectProfile())?.metadata.registries));
+      await buildRegistryResolver(session, (await this.project.manifest)?.metadata.registries));
     const versions = this.version.values;
     if (versions.length && this.inputs.length !== versions.length) {
       error(i`Multiple packages specified, but not an equal number of ${cmdSwitch('version')} switches`);
