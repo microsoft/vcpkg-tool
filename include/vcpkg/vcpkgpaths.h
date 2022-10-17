@@ -152,8 +152,8 @@ namespace vcpkg
                                                                            const Path& relative_path_to_file) const;
         ExpectedS<Path> git_checkout_object_from_remote_registry(StringView tree) const;
 
-        Optional<const ManifestAndPath&> get_manifest() const;
-        Optional<const Path&> get_manifest_directory() const;
+        const Optional<ManifestAndPath>& get_manifest() const;
+        const Optional<Path>& get_manifest_directory() const;
         const ConfigurationAndSource& get_configuration() const;
         const RegistrySet& get_registry_set() const;
 

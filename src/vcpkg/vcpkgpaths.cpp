@@ -92,16 +92,6 @@ namespace vcpkg
         return {std::move(manifest_value.first.object(VCPKG_LINE_INFO)), std::move(manifest_path)};
     }
 
-    static Optional<ManifestConfiguration> config_from_manifest(const Path& manifest_path,
-                                                                const Optional<ManifestAndPath>& manifest_doc)
-    {
-        if (auto manifest = manifest_doc.get())
-        {
-            return parse_manifest_configuration(manifest_path, manifest->manifest).value_or_exit(VCPKG_LINE_INFO);
-        }
-        return nullopt;
-    }
-
     static Optional<Configuration> config_from_json(const Path& config_path, const Filesystem& fs)
     {
         if (!fs.exists(config_path, VCPKG_LINE_INFO))
@@ -134,22 +124,23 @@ namespace vcpkg
         return parsed_config_opt;
     }
 
-    static ConfigurationAndSource merge_validate_configs(Optional<ManifestConfiguration>&& manifest_data,
-                                                         const Path& manifest_dir,
+    static ConfigurationAndSource merge_validate_configs(const Optional<ManifestAndPath>& manifest_doc,
                                                          Optional<Configuration>&& config_data,
                                                          const Path& config_dir,
                                                          const VcpkgPaths& paths)
     {
         ConfigurationAndSource ret;
+        ManifestConfiguration maybe_config;
 
-        if (auto manifest = manifest_data.get())
+        if (auto manifest = manifest_doc.get())
         {
-            if (auto config = manifest->config.get())
+            maybe_config = parse_manifest_configuration(manifest->path, manifest->manifest).value_or_exit(VCPKG_LINE_INFO);
+            if (auto config = maybe_config.config.get())
             {
                 print2(Color::warning,
                        "Embedding `vcpkg-configuration` in a manifest file is an EXPERIMENTAL feature.\n");
 
-                if (manifest->builtin_baseline && config->default_reg)
+                if (maybe_config.builtin_baseline && config->default_reg)
                 {
                     print2(Color::error,
                            "Error: Specifying vcpkg-configuration.default-registry in a manifest file conflicts with "
@@ -167,7 +158,7 @@ namespace vcpkg
                            config_dir / "vcpkg-configuration.json",
                            "\"\n"
                            "-- Or remove \"vcpkg-configuration\" from the manifest file \"",
-                           manifest_dir / "vcpkg.json",
+                           manifest->path,
                            "\".");
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
@@ -183,34 +174,31 @@ namespace vcpkg
             ret = ConfigurationAndSource{std::move(*config), config_dir, ConfigurationSource::VcpkgConfigurationFile};
         }
 
-        if (auto manifest = manifest_data.get())
+        if (auto p_baseline = maybe_config.builtin_baseline.get())
         {
-            if (auto p_baseline = manifest->builtin_baseline.get())
+            LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ManifestBaseline);
+            if (!is_git_commit_sha(*p_baseline))
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ManifestBaseline);
-                if (!is_git_commit_sha(*p_baseline))
-                {
-                    LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::VersioningErrorBaseline);
-                    Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                               "Error: the top-level builtin-baseline%s was not a valid commit sha: "
-                                               "expected 40 hexadecimal characters.\n%s\n",
-                                               Strings::concat(" (", *p_baseline, ')'),
-                                               paths.get_current_git_sha_baseline_message());
-                }
+                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::VersioningErrorBaseline);
+                Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                            "Error: the top-level builtin-baseline%s was not a valid commit sha: "
+                                            "expected 40 hexadecimal characters.\n%s\n",
+                                            Strings::concat(" (", *p_baseline, ')'),
+                                            paths.get_current_git_sha_baseline_message());
+            }
 
-                if (ret.config.default_reg)
-                {
-                    print2(Color::warning,
-                           "warning: attempting to set builtin-baseline in vcpkg.json while overriding the "
-                           "default-registry in vcpkg-configuration.json.\n    The default-registry from "
-                           "vcpkg-configuration.json will be used.");
-                }
-                else
-                {
-                    auto& default_reg = ret.config.default_reg.emplace();
-                    default_reg.kind = "builtin";
-                    default_reg.baseline = std::move(*p_baseline);
-                }
+            if (ret.config.default_reg)
+            {
+                print2(Color::warning,
+                        "warning: attempting to set builtin-baseline in vcpkg.json while overriding the "
+                        "default-registry in vcpkg-configuration.json.\n    The default-registry from "
+                        "vcpkg-configuration.json will be used.");
+            }
+            else
+            {
+                auto& default_reg = ret.config.default_reg.emplace();
+                default_reg.kind = "builtin";
+                default_reg.baseline = std::move(*p_baseline);
             }
         }
 
@@ -293,7 +281,9 @@ namespace vcpkg
             }
         }
 
-        static Path compute_manifest_dir(const Filesystem& fs, const VcpkgCmdArguments& args, const Path& original_cwd)
+        static Optional<Path> compute_manifest_dir(const Filesystem& fs,
+                                                   const VcpkgCmdArguments& args,
+                                                   const Path& original_cwd)
         {
             if (args.manifests_enabled())
             {
@@ -303,7 +293,7 @@ namespace vcpkg
                 }
                 else
                 {
-                    return fs.find_file_recursively_up(original_cwd, "vcpkg.json", VCPKG_LINE_INFO);
+                    return fs.find_directory_name_of_file_above(original_cwd, "vcpkg.json", VCPKG_LINE_INFO);
                 }
             }
             return {};
@@ -393,7 +383,7 @@ namespace vcpkg
 
             Filesystem& m_fs;
             const FeatureFlagSettings m_ff_settings;
-            const Path m_manifest_dir;
+            const Optional<Path> m_manifest_dir;
             const BundleSettings m_bundle;
             const std::shared_ptr<const DownloadManager> m_download_manager;
             const Path m_builtin_ports;
@@ -405,23 +395,21 @@ namespace vcpkg
         static Optional<InstalledPaths> compute_installed(Filesystem& fs,
                                                           const VcpkgCmdArguments& args,
                                                           const Path& root,
-                                                          const Path& manifest_dir,
+                                                          const Optional<Path>& maybe_manifest_dir,
                                                           const BundleSettings& bundle)
         {
-            if (manifest_dir.empty())
-            {
-                if (!bundle.m_readonly)
-                {
-                    return InstalledPaths{
-                        process_output_directory(fs, args.install_root_dir.get(), root / "installed")};
-                }
-            }
-            else
+            if (auto manifest_dir = maybe_manifest_dir.get())
             {
                 return InstalledPaths{
-                    process_output_directory(fs, args.install_root_dir.get(), manifest_dir / "vcpkg_installed")};
+                    process_output_directory(fs, args.install_root_dir.get(), *manifest_dir / "vcpkg_installed")};
             }
-            return nullopt;
+
+            if (bundle.m_readonly)
+            {
+                return nullopt;
+            }
+
+            return InstalledPaths{process_output_directory(fs, args.install_root_dir.get(), root / "installed")};
         }
 
         static Path compute_downloads_root(const Filesystem& fs,
@@ -450,9 +438,8 @@ namespace vcpkg
         {
             VcpkgPathsImpl(Filesystem& fs, const VcpkgCmdArguments& args, const Path& root, const Path& original_cwd)
                 : VcpkgPathsImplStage1(fs, args, root, original_cwd)
-                , m_config_dir(m_manifest_dir.empty() ? root : m_manifest_dir)
+                , m_config_dir(m_manifest_dir.value_or(root))
                 , m_has_configuration_file(fs.exists(m_config_dir / "vcpkg-configuration.json", VCPKG_LINE_INFO))
-                , m_manifest_path(m_manifest_dir.empty() ? Path{} : m_manifest_dir / "vcpkg.json")
                 , m_registries_work_tree_dir(m_registries_cache / "git")
                 , m_registries_dot_git_dir(m_registries_cache / "git" / ".git")
                 , m_registries_git_trees(m_registries_cache / "git-trees")
@@ -495,9 +482,9 @@ namespace vcpkg
                 Debug::print("Using buildtrees-root: ", buildtrees.value_or("nullopt"), '\n');
                 Debug::print("Using packages-root: ", packages.value_or("nullopt"), '\n');
 
-                if (!m_manifest_dir.empty())
+                if (auto manifest_dir = m_manifest_dir.get())
                 {
-                    Debug::print("Using manifest-root: ", m_manifest_dir, '\n');
+                    Debug::print("Using manifest-root: ", *manifest_dir, '\n');
 
                     std::error_code ec;
                     const auto vcpkg_root_file = root / ".vcpkg-root";
@@ -522,13 +509,12 @@ namespace vcpkg
                         }
                     }
 
-                    m_manifest_doc = load_manifest(fs, m_manifest_dir);
+                    m_manifest_doc = load_manifest(fs, *manifest_dir);
                 }
             }
 
             const Path m_config_dir;
             const bool m_has_configuration_file;
-            const Path m_manifest_path;
             const Path m_registries_work_tree_dir;
             const Path m_registries_dot_git_dir;
             const Path m_registries_git_trees;
@@ -588,43 +574,47 @@ namespace vcpkg
     // Guaranteed to return non-empty
     static Path determine_root(const Filesystem& fs, const Path& original_cwd, const VcpkgCmdArguments& args)
     {
-        Path ret;
         if (auto vcpkg_root_dir_arg = args.vcpkg_root_dir_arg.get())
         {
-            ret = fs.almost_canonical(*vcpkg_root_dir_arg, VCPKG_LINE_INFO);
-        }
-        else
-        {
-            ret = fs.find_file_recursively_up(original_cwd, ".vcpkg-root", VCPKG_LINE_INFO);
-            if (ret.empty())
+            if (!vcpkg_root_dir_arg->empty())
             {
-                ret =
-                    fs.find_file_recursively_up(fs.almost_canonical(get_exe_path_of_current_process(), VCPKG_LINE_INFO),
-                                                ".vcpkg-root",
-                                                VCPKG_LINE_INFO);
-            }
-
-            if (auto vcpkg_root_dir_env = args.vcpkg_root_dir_env.get())
-            {
-                auto canonical_root_dir_env = fs.almost_canonical(*vcpkg_root_dir_env, VCPKG_LINE_INFO);
-                if (ret.empty())
-                {
-                    ret = std::move(canonical_root_dir_env);
-                }
-                else if (ret != canonical_root_dir_env)
-                {
-                    msg::println_warning(
-                        msgIgnoringVcpkgRootEnvironment, msg::path = *vcpkg_root_dir_env, msg::actual = ret);
-                }
+                return fs.almost_canonical(*vcpkg_root_dir_arg, VCPKG_LINE_INFO);
             }
         }
 
-        if (ret.empty())
+        Optional<Path> maybe_fs_relative_root = fs.find_directory_name_of_file_above(original_cwd, ".vcpkg-root", VCPKG_LINE_INFO);
+        if (!maybe_fs_relative_root.has_value())
         {
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorMissingVcpkgRoot);
+            maybe_fs_relative_root = fs.find_directory_name_of_file_above(
+                fs.almost_canonical(get_exe_path_of_current_process(), VCPKG_LINE_INFO),
+                                            ".vcpkg-root",
+                                            VCPKG_LINE_INFO);
         }
 
-        return ret;
+        if (auto vcpkg_root_dir_env = args.vcpkg_root_dir_env.get())
+        {
+            auto canonical_root_dir_env = fs.almost_canonical(*vcpkg_root_dir_env, VCPKG_LINE_INFO);
+            if (auto fs_relative_root = maybe_fs_relative_root.get())
+            {
+                if (*fs_relative_root != canonical_root_dir_env)
+                {
+                    msg::println_warning(msgIgnoringVcpkgRootEnvironment,
+                                         msg::path = *vcpkg_root_dir_env,
+                                         msg::actual = *fs_relative_root);
+                }
+
+                return std::move(*fs_relative_root);
+            }
+
+            return canonical_root_dir_env;
+        }
+
+        if (auto fs_relative_root = maybe_fs_relative_root.get())
+        {
+            return std::move(*fs_relative_root);
+        }
+
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorMissingVcpkgRoot);
     }
 
     static Path preferred_current_path(const Filesystem& fs)
@@ -662,18 +652,15 @@ namespace vcpkg
         m_pimpl->triplets_dirs.emplace_back(triplets);
         m_pimpl->triplets_dirs.emplace_back(community_triplets);
 
-        {
-            auto maybe_manifest_config = config_from_manifest(m_pimpl->m_manifest_path, m_pimpl->m_manifest_doc);
-            auto maybe_config_json = config_from_json(m_pimpl->m_config_dir / "vcpkg-configuration.json", filesystem);
 
-            m_pimpl->m_config = merge_validate_configs(std::move(maybe_manifest_config),
-                                                       m_pimpl->m_manifest_dir,
-                                                       std::move(maybe_config_json),
-                                                       m_pimpl->m_config_dir,
-                                                       *this);
+        auto maybe_config_json = config_from_json(m_pimpl->m_config_dir / "vcpkg-configuration.json", filesystem);
+        m_pimpl->m_config =
+            merge_validate_configs(m_pimpl->m_manifest_doc,
+                                                   std::move(maybe_config_json),
+                                                   m_pimpl->m_config_dir,
+                                                   *this);
 
-            m_pimpl->m_registry_set = m_pimpl->m_config.instantiate_registry_set(*this);
-        }
+        m_pimpl->m_registry_set = m_pimpl->m_config.instantiate_registry_set(*this);
 
         // metrics from configuration
         {
@@ -1304,26 +1291,8 @@ namespace vcpkg
         }
     }
 
-    Optional<const ManifestAndPath&> VcpkgPaths::get_manifest() const
-    {
-        if (auto p = m_pimpl->m_manifest_doc.get())
-        {
-            return *p;
-        }
-        return nullopt;
-    }
-
-    Optional<const Path&> VcpkgPaths::get_manifest_directory() const
-    {
-        auto& maybe_manifest_dir = m_pimpl->m_manifest_dir;
-        if (maybe_manifest_dir.empty())
-        {
-            return nullopt;
-        }
-
-        return maybe_manifest_dir;
-    }
-
+    const Optional<ManifestAndPath>& VcpkgPaths::get_manifest() const { return m_pimpl->m_manifest_doc; }
+    const Optional<Path>& VcpkgPaths::get_manifest_directory() const { return m_pimpl->m_manifest_dir; }
     const ConfigurationAndSource& VcpkgPaths::get_configuration() const { return m_pimpl->m_config; }
 
     const RegistrySet& VcpkgPaths::get_registry_set() const

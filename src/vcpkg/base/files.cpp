@@ -76,6 +76,14 @@ namespace
         Checks::msg_exit_with_message(li, format_filesystem_call_error(ec, call_name, args));
     }
 
+    [[noreturn]] void exit_filesystem_call_error(LineInfo li,
+                                                 const std::error_code& ec,
+                                                 StringView call_name,
+                                                 View<StringView> args)
+    {
+        Checks::msg_exit_with_message(li, format_filesystem_call_error(ec, call_name, args));
+    }
+
 #if defined(_WIN32)
     FileType convert_file_type(stdfs::file_type type) noexcept
     {
@@ -958,12 +966,17 @@ namespace
 
 namespace vcpkg
 {
+    LocalizedString format_filesystem_call_error(const std::error_code& ec, StringView call_name, View<StringView> args)
+    {
+        auto arguments = args.size() == 0 ? "()" : "(\"" + Strings::join("\", \"", args.begin(), args.end()) + "\")";
+        return LocalizedString::from_raw(Strings::concat(call_name, arguments, ": ", ec.message()));
+    }
+
     LocalizedString format_filesystem_call_error(const std::error_code& ec,
                                                  StringView call_name,
                                                  std::initializer_list<StringView> args)
     {
-        auto arguments = args.size() == 0 ? "()" : "(\"" + Strings::join("\", \"", args.begin(), args.end()) + "\")";
-        return LocalizedString::from_raw(Strings::concat(call_name, arguments, ": ", ec.message()));
+        return format_filesystem_call_error(ec, call_name, View<StringView>{args.begin(), args.end()});
     }
 
     std::string Path::generic_u8string() const
@@ -1353,6 +1366,26 @@ namespace vcpkg
 #endif // ^^^ !_WIN32
     }
 
+    void FindDirectoryNameMatch::to_string(std::string& target) const
+    {
+        auto full = directory / match;
+        target = std::move(full).native();
+    }
+
+    std::string FindDirectoryNameMatch::to_string() const
+    {
+        std::string result;
+        this->to_string(result);
+        return result;
+    }
+
+    bool operator==(const FindDirectoryNameMatch& lhs, const FindDirectoryNameMatch& rhs)
+    {
+        return lhs.directory == rhs.directory && lhs.match == rhs.match;
+    }
+
+    bool operator!=(const FindDirectoryNameMatch& lhs, const FindDirectoryNameMatch& rhs) { return !(lhs == rhs); }
+
     std::vector<std::string> Filesystem::read_lines(const Path& file_path, LineInfo li) const
     {
         std::error_code ec;
@@ -1377,13 +1410,39 @@ namespace vcpkg
         return maybe_contents;
     }
 
-    Path Filesystem::find_file_recursively_up(const Path& starting_dir, const Path& filename, LineInfo li) const
+    Optional<Path> Filesystem::find_directory_name_of_file_above(const Path& starting_dir,
+                                                                 StringLiteral filename,
+                                                                 std::error_code& ec) const
+    {
+        return this->find_directory_name_of_file_above(starting_dir, {filename}, ec)
+            .map([](FindDirectoryNameMatch&& match) -> Path { return std::move(match.directory); });
+    }
+
+    Optional<Path> Filesystem::find_directory_name_of_file_above(const Path& starting_dir,
+                                                                 StringLiteral filename,
+                                                                 LineInfo li) const
     {
         std::error_code ec;
-        auto result = this->find_file_recursively_up(starting_dir, filename, ec);
+        auto result = this->find_directory_name_of_file_above(starting_dir, filename, ec);
         if (ec)
         {
             exit_filesystem_call_error(li, ec, __func__, {starting_dir, filename});
+        }
+
+        return result;
+    }
+
+    Optional<FindDirectoryNameMatch> Filesystem::find_directory_name_of_file_above(
+        const Path& starting_dir, std::initializer_list<StringLiteral> filenames, LineInfo li) const
+    {
+        std::error_code ec;
+        auto result = this->find_directory_name_of_file_above(starting_dir, filenames, ec);
+        if (ec)
+        {
+            std::vector<StringView> args;
+            args.push_back(starting_dir);
+            args.insert(args.end(), filenames.begin(), filenames.end());
+            exit_filesystem_call_error(li, ec, __func__, args);
         }
 
         return result;
@@ -1949,48 +2008,34 @@ namespace vcpkg
             return res;
         }
 
-        virtual Path find_file_recursively_up(const Path& starting_dir,
-                                              const Path& filename,
-                                              std::error_code& ec) const override
+        virtual Optional<FindDirectoryNameMatch> find_directory_name_of_file_above(
+            const Path& starting_dir,
+            std::initializer_list<StringLiteral> filenames,
+            std::error_code& ec) const override
         {
             Path current_dir = starting_dir;
-            if (exists(current_dir / filename, ec))
+            for (int counter = 0; counter < 10000; ++counter)
             {
-                return current_dir;
-            }
+                for (auto&& filename : filenames)
+                {
+                    if (exists(current_dir / filename, ec))
+                    {
+                        return FindDirectoryNameMatch{current_dir, filename};
+                    }
 
-            if (ec)
-            {
-                current_dir.clear();
-                return current_dir;
-            }
+                    if (ec)
+                    {
+                        return nullopt;
+                    }
+                }
 
-            int counter = 10000;
-            for (;;)
-            {
                 if (!current_dir.make_parent_path())
                 {
-                    current_dir.clear();
-                    return current_dir;
+                    return nullopt;
                 }
-
-                const auto candidate = current_dir / filename;
-                if (exists(candidate, ec))
-                {
-                    return current_dir;
-                }
-
-                if (ec)
-                {
-                    current_dir.clear();
-                    return current_dir;
-                }
-
-                --counter;
-                Checks::check_exit(VCPKG_LINE_INFO,
-                                   counter > 0,
-                                   "infinite loop encountered while trying to find_file_recursively_up()");
             }
+
+            Checks::unreachable(VCPKG_LINE_INFO);
         }
 
 #if defined(_WIN32)

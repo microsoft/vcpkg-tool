@@ -974,10 +974,10 @@ TEST_CASE ("LinesCollector", "[files]")
     CHECK(lc.extract() == std::vector<std::string>{"", "abc", ""});
 }
 
-TEST_CASE ("find_file_recursively_up", "[files]")
+TEST_CASE ("find_directory_name_of_file_above", "[files]")
 {
     auto& fs = setup();
-    auto test_root = base_temporary_directory() / "find_file_recursively_up_test";
+    auto test_root = base_temporary_directory() / "find_directory_name_of_file_above_test";
     fs.create_directory(test_root, VCPKG_LINE_INFO);
     auto one = test_root / "one";
     auto two = one / "two";
@@ -987,18 +987,39 @@ TEST_CASE ("find_file_recursively_up", "[files]")
     fs.write_contents(one_marker, "", VCPKG_LINE_INFO);
 
     std::error_code ec;
-    auto result = fs.find_file_recursively_up(test_root, ".one-marker", ec);
-    REQUIRE(result.empty());
+    auto single_result = fs.find_directory_name_of_file_above(test_root, ".one-marker", ec);
+    REQUIRE(!ec);
+    REQUIRE(!single_result.has_value());
+
+    single_result = fs.find_directory_name_of_file_above(one, ".one-marker", ec);
+    REQUIRE(!ec);
+    REQUIRE(single_result.value_or_exit(VCPKG_LINE_INFO) == one);
+    single_result = fs.find_directory_name_of_file_above(one_marker, ".one-marker", ec);
+    REQUIRE(!ec);
+    REQUIRE(single_result.value_or_exit(VCPKG_LINE_INFO) == one);
+    single_result = fs.find_directory_name_of_file_above(two, ".one-marker", ec);
+    REQUIRE(!ec);
+    REQUIRE(single_result.value_or_exit(VCPKG_LINE_INFO) == one);
+
+    const FindDirectoryNameMatch expected_multi_match{one, ".one-marker"};
+    auto multi_result = fs.find_directory_name_of_file_above(one, {".one-marker", "unrelated"}, ec);
+    REQUIRE(!ec);
+    REQUIRE(multi_result.value_or_exit(VCPKG_LINE_INFO) == expected_multi_match);
+    multi_result = fs.find_directory_name_of_file_above(one_marker, {".one-marker", "unrelated"}, ec);
+    REQUIRE(multi_result.value_or_exit(VCPKG_LINE_INFO) == expected_multi_match);
+    REQUIRE(!ec);
+    multi_result = fs.find_directory_name_of_file_above(two, {".one-marker", "unrelated"}, ec);
+    REQUIRE(multi_result.value_or_exit(VCPKG_LINE_INFO) == expected_multi_match);
     REQUIRE(!ec);
 
-    result = fs.find_file_recursively_up(one, ".one-marker", ec);
-    REQUIRE(result == one);
+    multi_result = fs.find_directory_name_of_file_above(one, {"unrelated", ".one-marker"}, ec);
+    REQUIRE(multi_result.value_or_exit(VCPKG_LINE_INFO) == expected_multi_match);
     REQUIRE(!ec);
-    result = fs.find_file_recursively_up(one_marker, ".one-marker", ec);
-    REQUIRE(result == one);
+    multi_result = fs.find_directory_name_of_file_above(one_marker, {"unrelated", ".one-marker"}, ec);
+    REQUIRE(multi_result.value_or_exit(VCPKG_LINE_INFO) == expected_multi_match);
     REQUIRE(!ec);
-    result = fs.find_file_recursively_up(two, ".one-marker", ec);
-    REQUIRE(result == one);
+    multi_result = fs.find_directory_name_of_file_above(two, {"unrelated", ".one-marker"}, ec);
+    REQUIRE(multi_result.value_or_exit(VCPKG_LINE_INFO) == expected_multi_match);
     REQUIRE(!ec);
 
     fs.remove_all(test_root, VCPKG_LINE_INFO);

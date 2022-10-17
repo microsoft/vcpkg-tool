@@ -6,6 +6,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/optional.h>
 #include <vcpkg/base/pragmas.h>
 #include <vcpkg/base/stringview.h>
 
@@ -24,6 +25,9 @@
 
 namespace vcpkg
 {
+    LocalizedString format_filesystem_call_error(const std::error_code& ec,
+                                                 StringView call_name,
+                                                 View<StringView> args);
     LocalizedString format_filesystem_call_error(const std::error_code& ec,
                                                  StringView call_name,
                                                  std::initializer_list<StringView> args);
@@ -210,6 +214,17 @@ namespace vcpkg
 
     uint64_t get_filesystem_stats();
 
+    struct FindDirectoryNameMatch
+    {
+        Path directory;
+        StringLiteral match;
+        
+        void to_string(std::string&) const;
+        std::string to_string() const;
+        friend bool operator==(const FindDirectoryNameMatch&, const FindDirectoryNameMatch&);
+        friend bool operator!=(const FindDirectoryNameMatch&, const FindDirectoryNameMatch&);
+    };
+
     struct Filesystem
     {
         virtual std::string read_contents(const Path& file_path, std::error_code& ec) const = 0;
@@ -218,10 +233,17 @@ namespace vcpkg
         virtual std::vector<std::string> read_lines(const Path& file_path, std::error_code& ec) const = 0;
         std::vector<std::string> read_lines(const Path& file_path, LineInfo li) const;
 
-        virtual Path find_file_recursively_up(const Path& starting_dir,
-                                              const Path& filename,
-                                              std::error_code& ec) const = 0;
-        Path find_file_recursively_up(const Path& starting_dir, const Path& filename, LineInfo li) const;
+        Optional<Path> find_directory_name_of_file_above(const Path& starting_dir,
+                                                         StringLiteral filename,
+                                                         std::error_code& ec) const;
+        Optional<Path> find_directory_name_of_file_above(const Path& starting_dir,
+                                                         StringLiteral filename,
+                                                         LineInfo li) const;
+
+        virtual Optional<FindDirectoryNameMatch> find_directory_name_of_file_above(
+            const Path& starting_dir, std::initializer_list<StringLiteral> filenames, std::error_code& ec) const = 0;
+        Optional<FindDirectoryNameMatch> find_directory_name_of_file_above(
+            const Path& starting_dir, std::initializer_list<StringLiteral> filenames, LineInfo li) const;
 
         virtual std::vector<Path> get_files_recursive(const Path& dir, std::error_code& ec) const = 0;
         std::vector<Path> get_files_recursive(const Path& dir, LineInfo li) const;
