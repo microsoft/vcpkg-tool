@@ -1,6 +1,11 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/setup_messages.h>
 #include <vcpkg/base/system.debug.h>
+
+#include <cmrc/cmrc.hpp>
+
+CMRC_DECLARE(cmakerc);
 
 using namespace vcpkg;
 
@@ -163,7 +168,6 @@ namespace vcpkg::msg
             std::vector<StringLiteral> default_strings;     // const after startup
             std::vector<ZStringView> localization_comments; // const after startup
 
-            bool initialized = false;
             std::vector<std::string> localized_strings;
         };
 
@@ -179,14 +183,8 @@ namespace vcpkg::msg
     void threadunsafe_initialize_context()
     {
         Messages& m = messages();
-        if (m.initialized)
-        {
-            write_unlocalized_text_to_stdout(
-                Color::error, "double-initialized message context; this is a very serious bug in vcpkg\n");
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
+
         m.localized_strings.resize(m.names.size());
-        m.initialized = true;
 
         std::set<StringLiteral, std::less<>> names_set(m.names.begin(), m.names.end());
         if (names_set.size() < m.names.size())
@@ -214,9 +212,10 @@ namespace vcpkg::msg
             Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
-    static void load_from_message_map(const Json::Object& message_map)
+    void load_from_message_map(const Json::Object& message_map)
     {
         Messages& m = messages();
+
         std::vector<std::string> names_without_localization;
 
         for (::size_t index = 0; index < m.names.size(); ++index)
@@ -243,29 +242,49 @@ namespace vcpkg::msg
         }
     }
 
-    static std::string locale_file_name(StringView language)
-    {
-        std::string filename = "messages.";
-        filename.append(language.begin(), language.end()).append(".json");
-        return filename;
-    }
-
-    void threadunsafe_initialize_context(const Filesystem& fs, StringView language, const Path& locale_base)
+    ExpectedS<Json::Object> get_message_map_from_lcid(int LCID)
     {
         threadunsafe_initialize_context();
+        auto embedded_filesystem = cmrc::cmakerc::get_filesystem();
 
-        auto path_to_locale = locale_base / locale_file_name(language);
+        const std::string locale_path = get_locale_path(LCID);
 
-        auto message_map = Json::parse_file(VCPKG_LINE_INFO, fs, path_to_locale);
-        if (!message_map.first.is_object())
+        auto file = embedded_filesystem.open(locale_path);
+
+        auto maybe_map = Json::parse_object(StringView{file.begin(), file.end()}, locale_path);
+
+        return maybe_map;
+    }
+
+    std::string get_locale_path(int LCID) { return fmt::format("locales/messages.{}.json", get_language_tag(LCID)); }
+
+    StringLiteral get_language_tag(int LCID)
+    {
+        std::array<std::pair<int, StringLiteral>, 14> languages = {std::pair<int, StringLiteral>(1029, "cs"),
+                                                                   std::pair<int, StringLiteral>(1031, "de"),
+                                                                   std::pair<int, StringLiteral>(1033, "en"),
+                                                                   std::pair<int, StringLiteral>(1034, "es"),
+                                                                   std::pair<int, StringLiteral>(1036, "fr"),
+                                                                   std::pair<int, StringLiteral>(1040, "it"),
+                                                                   std::pair<int, StringLiteral>(1041, "ja"),
+                                                                   std::pair<int, StringLiteral>(1042, "ko"),
+                                                                   std::pair<int, StringLiteral>(1045, "pl"),
+                                                                   std::pair<int, StringLiteral>(1046, "pt-BR"),
+                                                                   std::pair<int, StringLiteral>(1049, "ru"),
+                                                                   std::pair<int, StringLiteral>(1055, "tr"),
+                                                                   std::pair<int, StringLiteral>(2052, "zh-Hans"),
+                                                                   std::pair<int, StringLiteral>(1028, "zh-Hant")};
+
+        for (auto l : languages)
         {
-            write_unlocalized_text_to_stdout(
-                Color::error,
-                fmt::format("Invalid locale file '{}' - locale file must be an object.\n", path_to_locale));
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            if (l.first == LCID)
+            {
+                return l.second;
+            }
         }
 
-        load_from_message_map(message_map.first.object(VCPKG_LINE_INFO));
+        // default to english
+        return "en";
     }
 
     ::size_t detail::number_of_messages() { return messages().names.size(); }
