@@ -254,7 +254,8 @@ namespace vcpkg::Export::Prefab
 
         {
             auto build_info = build_info_from_triplet(paths, provider, default_triplet);
-            Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO, is_supported(*build_info), msgAndroidTripletSupported);
+            Checks::msg_check_maybe_upgrade(
+                VCPKG_LINE_INFO, is_supported(*build_info), msgExportPrefabRequiresAndroidTriplet);
         }
 
         std::vector<VcpkgPaths::TripletFile> available_triplets = paths.get_available_triplets();
@@ -648,7 +649,7 @@ namespace vcpkg::Export::Prefab
             {
                 maven_install(exported_archive_path, pom_path, prefab_options);
 
-                Debug::print(
+                Debug::println(
                     fmt::format("Configuration properties in Android Studio\nIn app/build.gradle\n\n\t{}:{}:{}",
                                 group_id,
                                 artifact_id,

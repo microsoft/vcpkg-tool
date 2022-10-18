@@ -388,6 +388,7 @@ namespace vcpkg
     REGISTER_MESSAGE(AddFirstArgument);
     REGISTER_MESSAGE(AddingCompletionEntry);
     REGISTER_MESSAGE(AdditionalPackagesToExport);
+    REGISTER_MESSAGE(AdditionalPackagesToRemove);
     REGISTER_MESSAGE(AddPortRequiresManifest);
     REGISTER_MESSAGE(AddPortSucceeded);
     REGISTER_MESSAGE(AddRecurseOption);
@@ -424,7 +425,7 @@ namespace vcpkg
     REGISTER_MESSAGE(AlreadyInstalled);
     REGISTER_MESSAGE(AlreadyInstalledNotHead);
     REGISTER_MESSAGE(AndroidHomeDirMissingProps);
-    REGISTER_MESSAGE(AndroidTripletSupported);
+    REGISTER_MESSAGE(ExportPrefabRequiresAndroidTriplet);
     REGISTER_MESSAGE(AnotherInstallationInProgress);
     REGISTER_MESSAGE(AppliedUserIntegration);
     REGISTER_MESSAGE(ArtifactsOptionIncompatibility);

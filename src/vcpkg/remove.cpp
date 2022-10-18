@@ -259,7 +259,7 @@ namespace vcpkg::Remove
 
         if (has_non_user_requested_packages)
         {
-            msg::println_warning(msgAdditionalPackagesToExport);
+            msg::println_warning(msgAdditionalPackagesToRemove);
 
             if (!is_recursive)
             {

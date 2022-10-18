@@ -466,6 +466,10 @@ namespace vcpkg
                     (),
                     "",
                     "Additional packages (*) need to be exported to complete this operation.");
+    DECLARE_MESSAGE(AdditionalPackagesToRemove,
+                    (),
+                    "",
+                    "Additional packages (*) need to be removed to complete this operation.");
     DECLARE_MESSAGE(AddPortRequiresManifest,
                     (msg::command_line),
                     "",
@@ -559,7 +563,7 @@ namespace vcpkg
                     "Note: 'source.properties' is code and should not be translated.",
                     "source.properties missing in {env_var} directory: {path}");
 
-    DECLARE_MESSAGE(AndroidTripletSupported, (), "", "export prefab requires an Android triplet.");
+    DECLARE_MESSAGE(ExportPrefabRequiresAndroidTriplet, (), "", "export prefab requires an Android triplet.");
     DECLARE_MESSAGE(AnotherInstallationInProgress,
                     (),
                     "",
@@ -762,7 +766,7 @@ namespace vcpkg
     DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: {path}");
     DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
     DECLARE_MESSAGE(Creating7ZipArchive, (), "", "Creating 7zip archive...");
-    DECLARE_MESSAGE(CreatingNugetPackage, (), "", "Packing NuGet package...");
+    DECLARE_MESSAGE(CreatingNugetPackage, (), "", "Creating NuGet package...");
     DECLARE_MESSAGE(CreatingZipArchive, (), "", "Creating zip archive...");
     DECLARE_MESSAGE(CreationFailed, (msg::path), "", "Creating {path} failed.");
     DECLARE_MESSAGE(CurlReportedUnexpectedResults,
@@ -1171,7 +1175,10 @@ namespace vcpkg
                     (msg::path),
                     "'--' at the beginning must be preserved",
                     "-- Installing port from location: {path}");
-    DECLARE_MESSAGE(InstallingMavenFile, (msg::path), "", "{path} installing maven file");
+    DECLARE_MESSAGE(InstallingMavenFile,
+                    (msg::path),
+                    "Printed after a filesystem operation error",
+                    "{path} installing maven file");
     DECLARE_MESSAGE(InstallingPackage,
                     (msg::action_index, msg::count, msg::spec),
                     "",
