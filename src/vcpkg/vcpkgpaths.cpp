@@ -679,24 +679,10 @@ namespace vcpkg
                                                        m_pimpl->m_config_dir,
                                                        *this);
 
-            auto make_relative_to_manifest = [&](std::string& overlay_path) -> std::string {
-                auto p = Path(overlay_path);
-                if (p.is_relative())
-                {
-                    if (auto manifest_directory = this->get_manifest_directory().get())
-                    {
-                        Path tmp(*manifest_directory);
-                        auto res = tmp / p;
-                        overlay_path = res.generic_u8string();
-                        return overlay_path;
-                    }
-                }
-                return overlay_path;
-            };
             auto& config_ports = m_pimpl->m_config.config.overlay_ports;
             auto& config_triplets = m_pimpl->m_config.config.overlay_triplets;
-            Util::transform(config_ports, make_relative_to_manifest);
-            Util::transform(config_triplets, make_relative_to_manifest);
+            make_relative_to_manifest(config_ports);
+            make_relative_to_manifest(config_triplets);
 
             overlay_ports = merge_overlays(
                 args.cli_overlay_ports, get_configuration().config.overlay_ports, args.env_overlay_ports);
@@ -737,6 +723,23 @@ namespace vcpkg
                 }
                 Util::sort_unique_erase(registry_kinds);
                 metrics->track_string_property(StringMetric::RegistriesKindsUsed, Strings::join(",", registry_kinds));
+            }
+        }
+    }
+
+    void VcpkgPaths::make_relative_to_manifest(std::vector<std::string>& overlays)
+    {
+        for (auto& path : overlays)
+        {
+            auto p = Path(path);
+            if (p.is_relative())
+            {
+                if (auto manifest_directory = get_manifest_directory().get())
+                {
+                    Path tmp(*manifest_directory);
+                    auto res = tmp / p;
+                    path = res.generic_u8string();
+                }
             }
         }
     }
