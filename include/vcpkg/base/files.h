@@ -218,7 +218,7 @@ namespace vcpkg
     {
         Path directory;
         StringLiteral match;
-        
+
         void to_string(std::string&) const;
         std::string to_string() const;
         friend bool operator==(const FindDirectoryNameMatch&, const FindDirectoryNameMatch&);
