@@ -9,12 +9,14 @@ import { showArtifacts } from '../artifacts';
 import { Command } from '../command';
 import { error } from '../styling';
 import { MSBuildProps } from '../switches/msbuild-props';
+import { Project } from '../switches/project';
 
 export class GenerateMSBuildPropsCommand extends Command {
   readonly command = 'generate-msbuild-props';
   readonly aliases = [];
   seeAlso = [];
   argumentsHelp = [];
+  project: Project = new Project(this);
   msbuildProps: MSBuildProps = new MSBuildProps(this, 'out');
 
   get summary() {
@@ -29,8 +31,10 @@ export class GenerateMSBuildPropsCommand extends Command {
       return false;
     }
 
-    const projectManifest = await session.loadRequiredProjectProfile();
+    const projectManifest = await this.project.manifest;
+
     if (!projectManifest) {
+      error(i`Unable to find project in folder (or parent folders) for ${session.currentDirectory.fsPath}`);
       return false;
     }
 
