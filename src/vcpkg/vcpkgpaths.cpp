@@ -683,9 +683,10 @@ namespace vcpkg
                 auto p = Path(overlay_path);
                 if (p.is_relative())
                 {
-                    if (auto manifest_directory = this->get_manifest_directory().get())
+                    auto maybe_manifest_dir = get_manifest_directory();
+                    if (const auto manifest_dir = maybe_manifest_dir.get())
                     {
-                        Path tmp(*manifest_directory);
+                        Path tmp(*manifest_dir);
                         auto res = tmp / p;
                         overlay_path = res.generic_u8string();
                         return overlay_path;
