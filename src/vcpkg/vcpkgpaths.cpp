@@ -696,8 +696,8 @@ namespace vcpkg
             };
             auto& config_ports = m_pimpl->m_config.config.overlay_ports;
             auto& config_triplets = m_pimpl->m_config.config.overlay_triplets;
-            make_relative_to_manifest(config_ports);
-            make_relative_to_manifest(config_triplets);
+            Util::transform(config_ports, make_relative_to_manifest);
+            Util::transform(config_triplets, make_relative_to_manifest);
 
             overlay_ports = merge_overlays(
                 args.cli_overlay_ports, get_configuration().config.overlay_ports, args.env_overlay_ports);
