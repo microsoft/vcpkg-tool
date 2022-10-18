@@ -562,8 +562,6 @@ namespace vcpkg
                     (msg::env_var, msg::path),
                     "Note: 'source.properties' is code and should not be translated.",
                     "source.properties missing in {env_var} directory: {path}");
-
-    DECLARE_MESSAGE(ExportPrefabRequiresAndroidTriplet, (), "", "export prefab requires an Android triplet.");
     DECLARE_MESSAGE(AnotherInstallationInProgress,
                     (),
                     "",
@@ -759,6 +757,7 @@ namespace vcpkg
                     "Both a manifest file and a CONTROL file exist in port directory: {path}");
     DECLARE_MESSAGE(CopyrightIsDir, (msg::path), "", "`{path}` being a directory is deprecated.");
     DECLARE_MESSAGE(CorruptedDatabase, (), "", "Database corrupted.");
+    DECLARE_MESSAGE(CorruptedInstallTree, (), "", "Your vcpkg 'installed' tree is corrupted.");
     DECLARE_MESSAGE(CouldNotDeduceNugetIdAndVersion,
                     (msg::path),
                     "",
@@ -788,6 +787,7 @@ namespace vcpkg
                     "",
                     "Based on your system settings, the default path to store binaries is \"{path}\". This consults "
                     "%LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.");
+    DECLARE_MESSAGE(DeprecatedPrefabDebugOption, (), "", "--prefab-debug is now deprecated.");
     DECLARE_MESSAGE(DetectCompilerHash, (msg::triplet), "", "Detecting compiler hash for triplet {triplet}...");
     DECLARE_MESSAGE(DocumentedFieldsSuggestUpdate,
                     (),
@@ -926,6 +926,7 @@ namespace vcpkg
                     "The following packages are already built and will be exported:");
     DECLARE_MESSAGE(ExportingMaintenanceTool, (), "", "Exporting maintenance tool...");
     DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
+    DECLARE_MESSAGE(ExportPrefabRequiresAndroidTriplet, (), "", "export prefab requires an Android triplet.");
     DECLARE_MESSAGE(ExportUnsupportedInManifest,
                     (),
                     "",
@@ -983,8 +984,8 @@ namespace vcpkg
                     "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details "
                     "on how to provide credentials.");
     DECLARE_MESSAGE(FeedbackAppreciated, (), "", "Thank you for your feedback!");
-    DECLARE_MESSAGE(FilesExported, (msg::path), "", "Files exported at: {path}");
     DECLARE_MESSAGE(FileNotFound, (msg::path), "", "{path}: file not found");
+    DECLARE_MESSAGE(FilesExported, (msg::path), "", "Files exported at: {path}");
     DECLARE_MESSAGE(FileSystemOperationFailed, (), "", "Filesystem operation failed:");
     DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at \"{path}\".");
     DECLARE_MESSAGE(FollowingPackagesMissingControl,
@@ -1485,7 +1486,6 @@ namespace vcpkg
                     "'{value}' is either a tool name or a package name.",
                     "'{value}' failed while extracting {path}.");
     DECLARE_MESSAGE(PackageRootDir, (), "", "(Experimental) Specify the packages root directory.");
-    DECLARE_MESSAGE(CorruptedInstallTree, (), "", "Your vcpkg 'installed' tree is corrupted.");
     DECLARE_MESSAGE(PackagesToInstall, (), "", "The following packages will be built and installed:");
     DECLARE_MESSAGE(PackagesToInstallDirectly, (), "", "The following packages will be directly installed:");
     DECLARE_MESSAGE(PackagesToModify, (), "", "Additional packages (*) will be modified to complete this operation.");
@@ -1884,6 +1884,5 @@ namespace vcpkg
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}");
-    DECLARE_MESSAGE(DeprecatedPrefabDebugOption, (), "", "--prefab-debug is now deprecated.");
 
 }

@@ -425,7 +425,6 @@ namespace vcpkg
     REGISTER_MESSAGE(AlreadyInstalled);
     REGISTER_MESSAGE(AlreadyInstalledNotHead);
     REGISTER_MESSAGE(AndroidHomeDirMissingProps);
-    REGISTER_MESSAGE(ExportPrefabRequiresAndroidTriplet);
     REGISTER_MESSAGE(AnotherInstallationInProgress);
     REGISTER_MESSAGE(AppliedUserIntegration);
     REGISTER_MESSAGE(ArtifactsOptionIncompatibility);
@@ -486,6 +485,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ControlAndManifestFilesPresent);
     REGISTER_MESSAGE(CopyrightIsDir);
     REGISTER_MESSAGE(CorruptedDatabase);
+    REGISTER_MESSAGE(CorruptedInstallTree);
     REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion);
     REGISTER_MESSAGE(CreatedNuGetPackage);
     REGISTER_MESSAGE(CreateFailureLogsDir);
@@ -498,6 +498,7 @@ namespace vcpkg
     REGISTER_MESSAGE(DefaultBrowserLaunched);
     REGISTER_MESSAGE(DefaultFlag);
     REGISTER_MESSAGE(DefaultPathToBinaries);
+    REGISTER_MESSAGE(DeprecatedPrefabDebugOption);
     REGISTER_MESSAGE(DetectCompilerHash);
     REGISTER_MESSAGE(DocumentedFieldsSuggestUpdate);
     REGISTER_MESSAGE(DownloadAvailable);
@@ -554,6 +555,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ExportingAlreadyBuiltPackages);
     REGISTER_MESSAGE(ExportingMaintenanceTool);
     REGISTER_MESSAGE(ExportingPackage);
+    REGISTER_MESSAGE(ExportPrefabRequiresAndroidTriplet);
     REGISTER_MESSAGE(ExportUnsupportedInManifest);
     REGISTER_MESSAGE(ExtendedDocumentationAtUrl);
     REGISTER_MESSAGE(FailedToExtract);
@@ -581,8 +583,8 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedToWriteManifest);
     REGISTER_MESSAGE(FailedVendorAuthentication);
     REGISTER_MESSAGE(FeedbackAppreciated);
-    REGISTER_MESSAGE(FilesExported);
     REGISTER_MESSAGE(FileNotFound);
+    REGISTER_MESSAGE(FilesExported);
     REGISTER_MESSAGE(FileSystemOperationFailed);
     REGISTER_MESSAGE(FishCompletion);
     REGISTER_MESSAGE(FollowingPackagesMissingControl);
@@ -762,7 +764,6 @@ namespace vcpkg
     REGISTER_MESSAGE(PackageAlreadyRemoved);
     REGISTER_MESSAGE(PackageFailedtWhileExtracting);
     REGISTER_MESSAGE(PackageRootDir);
-    REGISTER_MESSAGE(CorruptedInstallTree);
     REGISTER_MESSAGE(PackagesToInstall);
     REGISTER_MESSAGE(PackagesToInstallDirectly);
     REGISTER_MESSAGE(PackagesToModify);
@@ -896,5 +897,4 @@ namespace vcpkg
     REGISTER_MESSAGE(WhileLookingForSpec);
     REGISTER_MESSAGE(WindowsOnlyCommand);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
-    REGISTER_MESSAGE(DeprecatedPrefabDebugOption);
 }
