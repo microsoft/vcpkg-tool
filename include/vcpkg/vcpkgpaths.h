@@ -125,8 +125,6 @@ namespace vcpkg
         std::vector<std::string> overlay_ports;
         std::vector<std::string> overlay_triplets;
 
-        void make_relative_to_manifest(std::vector<std::string>&);
-
         std::string get_toolver_diagnostics() const;
 
         const ToolCache& get_tool_cache() const;
