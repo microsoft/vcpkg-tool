@@ -6,16 +6,12 @@ import { i } from '../../i18n';
 import { session } from '../../main';
 import { acquireArtifacts, showArtifacts } from '../artifacts';
 import { Command } from '../command';
-import { error } from '../styling';
-import { Project } from '../switches/project';
 
 export class AcquireProjectCommand extends Command {
   readonly command = 'acquire-project';
   readonly aliases = [];
   seeAlso = [];
   argumentsHelp = [];
-  project: Project = new Project(this);
-
   get summary() {
     return i`Acquires everything referenced by a project, without activating`;
   }
@@ -27,9 +23,8 @@ export class AcquireProjectCommand extends Command {
   }
 
   override async run() {
-    const projectManifest = await this.project.manifest;
+    const projectManifest = await session.loadRequiredProjectProfile();
     if (!projectManifest) {
-      error(i`Unable to find project in folder (or parent folders) for ${session.currentDirectory.fsPath}`);
       return false;
     }
 
