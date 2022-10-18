@@ -1100,6 +1100,12 @@ namespace vcpkg
     DECLARE_MESSAGE(HelpVersionSchemes, (), "", "The following versioning schemes are accepted.");
     DECLARE_MESSAGE(HelpVersionSemverScheme, (), "", "A Semantic Version 2.0 (2.1.0-rc2)");
     DECLARE_MESSAGE(HelpVersionStringScheme, (), "", "An exact, incomparable version (Vista)");
+    DECLARE_MESSAGE(
+        IgnoringVcpkgRootEnvironment,
+        (msg::path, msg::actual),
+        "{actual} is the path we actually used",
+        "Ignoring VCPKG_ROOT environment variable; use --vcpkg-root \"{path}\" to use the environment value or unset "
+        "the VCPKG_ROOT environment variable to suppress this message. Using detected vcpkg root: \"{actual}\".");
     DECLARE_MESSAGE(IllegalFeatures, (), "", "List of features is not allowed in this context");
     DECLARE_MESSAGE(IllegalPlatformSpec, (), "", "Platform qualifier is not allowed in this context");
     DECLARE_MESSAGE(ImproperShaLength,
@@ -1528,6 +1534,11 @@ namespace vcpkg
                     "An example of env_var is \"HTTP(S)_PROXY\""
                     "'--' at the beginning must be preserved",
                     "-- Setting \"{env_var}\" environment variables to \"{url}\".");
+    DECLARE_MESSAGE(ShallowRepositoryDetected,
+                    (msg::path),
+                    "",
+                    "vcpkg was cloned as a shallow repository in: {path}\n"
+                    "Try again with a full vcpkg clone.");
     DECLARE_MESSAGE(ShaPassedAsArgAndOption,
                     (),
                     "",
@@ -1744,10 +1755,7 @@ namespace vcpkg
                     "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.");
     DECLARE_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
     DECLARE_MESSAGE(Utf8ConversionFailed, (), "", "Failed to convert to UTF-8");
-    DECLARE_MESSAGE(VcpkgCeIsExperimental,
-                    (),
-                    "",
-                    "vcpkg-ce ('configure environment') is experimental and may change at any time.");
+    DECLARE_MESSAGE(VcpkgCeIsExperimental, (), "", "vcpkg-artifacts are experimental and may change at any time.");
     DECLARE_MESSAGE(VcpkgCommitTableHeader, (), "", "VCPKG Commit");
     DECLARE_MESSAGE(
         VcpkgCompletion,

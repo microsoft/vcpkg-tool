@@ -79,6 +79,7 @@ namespace vcpkg
 
     enum class BoolMetric
     {
+        DetectedContainer,
         FeatureFlagBinaryCaching,
         FeatureFlagCompilerTracking,
         FeatureFlagManifests,

@@ -443,7 +443,7 @@ namespace vcpkg::Commands::Integrate
         if (!maybe_nuget_output)
         {
             msg::println_error(msg::format(msgCommandFailed, msg::command_line = cmd_line.command_line())
-                                   .append_raw("\n")
+                                   .append_raw('\n')
                                    .append(maybe_nuget_output.error()));
             Checks::unreachable(VCPKG_LINE_INFO);
         }
@@ -479,10 +479,9 @@ namespace vcpkg::Commands::Integrate
         if (rc)
         {
             msg::println_error(msg::format(msgCommandFailed, msg::command_line = TITLE)
-                                   .append_raw("\n" + script_path.generic_u8string()));
-            MetricsSubmission metrics;
-            metrics.track_string(StringMetric::Title, TITLE.to_string());
-            get_global_metrics_collector().track_submission(std::move(metrics));
+                                   .append_raw('\n')
+                                   .append_raw(script_path.generic_u8string()));
+            get_global_metrics_collector().track_string(StringMetric::Title, TITLE.to_string());
         }
 
         Checks::exit_with_code(VCPKG_LINE_INFO, rc);
@@ -507,7 +506,7 @@ namespace vcpkg::Commands::Integrate
         {
             msg::println(msg::format(msgVcpkgCompletion, msg::value = "bash", msg::path = bashrc_path)
                              .append_raw(Strings::join("\n   ", matches))
-                             .append_raw("\n")
+                             .append_raw('\n')
                              .append(msgSuggestStartingBashShell));
             Checks::exit_success(VCPKG_LINE_INFO);
         }
@@ -536,7 +535,7 @@ namespace vcpkg::Commands::Integrate
         {
             msg::println(msg::format(msgVcpkgCompletion, msg::value = "zsh", msg::path = zshrc_path)
                              .append_raw(Strings::join("\n   ", data.source_completion_lines))
-                             .append_raw("\n")
+                             .append_raw('\n')
                              .append(msgSuggestStartingBashShell));
             Checks::exit_success(VCPKG_LINE_INFO);
         }
