@@ -679,25 +679,22 @@ namespace vcpkg
                                                        m_pimpl->m_config_dir,
                                                        *this);
 
-            auto make_relative_to_manifest = [&](std::string& overlay_path) -> std::string {
-                auto p = Path(overlay_path);
+            auto make_relative_to_manifest = [&](std::string overlay_path) -> std::string {
+                auto const p = Path(overlay_path);
                 if (p.is_relative())
                 {
-                    auto maybe_manifest_dir = get_manifest_directory();
-                    if (const auto manifest_dir = maybe_manifest_dir.get())
-                    {
-                        Path tmp(*manifest_dir);
-                        auto res = tmp / p;
-                        overlay_path = res.generic_u8string();
-                        return overlay_path;
-                    }
+                    Path ret = *get_manifest_directory().get() / overlay_path;
+                    return ret.c_str();
                 }
                 return overlay_path;
             };
-            auto& config_ports = m_pimpl->m_config.config.overlay_ports;
-            auto& config_triplets = m_pimpl->m_config.config.overlay_triplets;
-            Util::transform(config_ports, make_relative_to_manifest);
-            Util::transform(config_triplets, make_relative_to_manifest);
+            if (const auto manifest_dir = get_manifest_directory().get())
+            {
+                auto& config_ports = m_pimpl->m_config.config.overlay_ports;
+                auto& config_triplets = m_pimpl->m_config.config.overlay_triplets;
+                Util::transform(config_ports, make_relative_to_manifest);
+                Util::transform(config_triplets, make_relative_to_manifest);
+            }
 
             overlay_ports = merge_overlays(
                 args.cli_overlay_ports, get_configuration().config.overlay_ports, args.env_overlay_ports);
