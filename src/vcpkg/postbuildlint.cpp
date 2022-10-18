@@ -1067,7 +1067,7 @@ namespace vcpkg::PostBuildLint
             const auto extension = path_and_contents.first.extension().substr(1 /* ignore dot */);
             const bool is_header = extension == "h" || extension == "hpp" || extension == "hxx";
             if ((is_header && Strings::contains_any_ignoring_c_comments(path_and_contents.second, stringview_paths)) ||
-                Util::any_of(string_paths, [&path_and_contents, extension](const std::string& path) {
+                (!is_header && Util::any_of(string_paths, [&path_and_contents, extension](const std::string& path) {
                     if (extension == "cfg" || extension == "conf")
                     {
                         return Strings::contains(path_and_contents.second, path);
@@ -1083,7 +1083,7 @@ namespace vcpkg::PostBuildLint
                         }
                         offset = index + path.size();
                     }
-                }))
+                })))
             {
                 result += "\n    ";
                 result += path_and_contents.first.native();
