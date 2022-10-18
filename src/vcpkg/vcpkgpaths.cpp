@@ -683,7 +683,7 @@ namespace vcpkg
                 auto p = Path(overlay_path);
                 if (p.is_relative())
                 {
-                    if (auto manifest_directory = get_manifest_directory().get())
+                    if (auto manifest_directory = this->get_manifest_directory().get())
                     {
                         Path tmp(*manifest_directory);
                         auto res = tmp / p;
