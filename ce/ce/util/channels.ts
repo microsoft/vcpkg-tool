@@ -56,9 +56,6 @@ export class Channels extends EventEmitter<ChannelEvents> {
   debug(text: string | Array<string>) {
     typeof text === 'string' ? this.emit('debug', text, this.stopwatch.total) : text.forEach(t => this.emit('debug', t, this.stopwatch.total));
   }
-  verbose(text: string | Array<string>) {
-    typeof text === 'string' ? this.emit('verbose', text, this.stopwatch.total) : text.forEach(t => this.emit('verbose', t, this.stopwatch.total));
-  }
   constructor(session: Session) {
     super();
     this.stopwatch = session.stopwatch;

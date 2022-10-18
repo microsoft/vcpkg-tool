@@ -448,6 +448,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AvailableArchitectureTriplets" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Available architecture triplets:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Triplets d’architecture disponibles :]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AvailableHelpTopics" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Available help topics:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Rubriques d’aide disponibles :]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";BinarySourcesArg" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Add sources for binary caching. See 'vcpkg help binarycaching'.]]></Val>
@@ -676,6 +694,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";BuiltInTriplets" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg built-in triplets:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Triplets intégrés vcpkg :]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CMakeTargetsUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{package_name} provides CMake targets:]]></Val>
@@ -808,6 +835,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CommunityTriplets" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[VCPKG community triplets:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Triplets de communauté VCPKG :]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ComparingUtf8Decoders" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Comparing Utf8Decoders with different provenance; this is always an error]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Comparaison des Utf8Decoders avec une provenance différente ; il s’agit toujours d’une erreur]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CompressFolderFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to compress folder "{path}":]]></Val>
@@ -855,6 +900,15 @@
           <Val><![CDATA[Found a constraint violation:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Une violation de contrainte a été trouvée :]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ContinueCodeUnitInStart" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[found continue code unit in start position]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[unité de code continue trouvée en position de départ]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1126,6 +1180,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";EndOfStringInCodeUnit" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[found end of string in middle of code point]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[fin de chaîne trouvée au milieu du point de code]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";EnvStrFailedToExtract" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[could not expand the environment string:]]></Val>
@@ -1387,6 +1450,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExpectedAtMostOneSetOfTags" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Found {count} sets of {old_value}.*{new_value} but expected at most 1, in block:]A;{value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{count} jeux trouvés de {old_value}.*{new_value}, mais 1 attendu au plus, dans le bloc :]A;{value}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExpectedCascadeFailure" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected {expected} cascade failure, but there were {actual} cascade failures.]]></Val>
@@ -1414,6 +1486,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[expected 'fail' or 'skip' here]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExpectedOneSetOfTags" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Found {count} sets of {old_value}.*{new_value} but expected exactly 1, in block:]A;{value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{count} jeux trouvés de {old_value}.*{new_value}, mais 1 attendu exactement, dans le bloc :]A;{value}]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1503,12 +1584,12 @@
       </Item>
       <Item ItemId=";FailedToLoadInstalledManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The control or mnaifest file for {spec} could not be loaded due to the following error. Please remove {spec} and try again.]]></Val>
+          <Val><![CDATA[The control or manifest file for {spec} could not be loaded due to the following error. Please remove {spec} and try again.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Impossible de charger le fichier de contrôle ou manifeste pour {spec} en raison de l’erreur suivante. Supprimez {spec} et réessayez.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[The control or mnaifest file for {spec} could not be loaded due to the following error. Please remove {spec} and re-attempt.]]></Val>
+            <Val><![CDATA[The control or mnaifest file for {spec} could not be loaded due to the following error. Please remove {spec} and try again.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -1921,6 +2002,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";HelpBuiltinBase" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The baseline references a commit within the vcpkg repository that establishes a minimum version on every dependency in the graph. For example, if no other constraints are specified (directly or transitively), then the version will resolve to the baseline of the top level manifest. Baselines of transitive dependencies are ignored.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[La ligne de base référence une validation dans le référentiel vcpkg qui établit une version minimale sur chaque dépendance dans le graphique. Par exemple, si aucune autre contrainte n’est spécifiée (directement ou transitivement), la version est résolue en ligne de base du manifeste de niveau supérieur. Les lignes de base des dépendances transitives sont ignorées.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";HelpContactCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Display contact information to send feedback.]]></Val>
@@ -1971,6 +2061,15 @@
           <Val><![CDATA[For more help (including examples) see the accompanying README.md and docs folder.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Pour obtenir de l’aide supplémentaire (notamment des exemples), consultez le dossier des README.md et documents qui l’accompagnent.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpExampleManifest" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Example manifest:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Exemple de manifeste :]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2029,11 +2128,56 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";HelpManifestConstraints" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Manifests can place three kinds of constraints upon the versions used]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Les manifestes peuvent placer trois types de contraintes sur les versions utilisées]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpMinVersion" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Vcpkg will select the minimum version found that matches all applicable constraints, including the version from the baseline specified at top-level as well as any "version>=" constraints in the graph.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Vcpkg sélectionne la version minimale trouvée qui correspond à toutes les contraintes applicables, y compris la version de la base de référence spécifiée au niveau supérieur, ainsi que toute contrainte « version>= » dans le graphique.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpOverrides" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[When used as the top-level manifest (such as when running `vcpkg install` in the directory), overrides allow a manifest to short-circuit dependency resolution and specify exactly the version to use. These can be used to handle version conflicts, such as with `version-string` dependencies. They will not be considered when transitively depended upon.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Lorsqu’ils sont utilisés comme manifeste de niveau supérieur (par exemple, lors de l’exécution de « vcpkg install » dans le répertoire), les remplacements permettent à un manifeste de court-circuiter la résolution des dépendances et de spécifier exactement la version à utiliser. Ils peuvent être utilisés pour gérer les conflits de version, par exemple avec les dépendances « version-string ». Elles ne sont pas prises en compte quand elles dépendent de manière transitive.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";HelpOwnsCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Search for files in installed packages.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Recherchez des fichiers dans les packages installés.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpPackagePublisher" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Additionally, package publishers can use "version>=" constraints to ensure that consumers are using at least a certain minimum version of a given dependency. For example, if a library needs an API added to boost-asio in 1.70, a "version>=" constraint will ensure transitive users use a sufficient version even in the face of individual version overrides or cross-registry references.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[En outre, les éditeurs de package peuvent utiliser « version>= » pour s’assurer que les consommateurs utilisent au moins une certaine version minimale d’une dépendance donnée. Par exemple, si une bibliothèque a besoin d’une API ajoutée à boost-asio dans la version 1.70, une contrainte « version>= » garantit que les utilisateurs transitifs utilisent une version suffisante, même en cas de remplacements de version individuels ou de références entre registres.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpPortVersionScheme" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Each version additionally has a "port-version" which is a nonnegative integer. When rendered as text, the port version (if nonzero) is added as a suffix to the primary version text separated by a hash (#). Port-versions are sorted lexographically after the primary version text, for example:]A;1.0.0 < 1.0.0#1 < 1.0.1 < 1.0.1#5 < 2.0.0]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Chaque version a en outre une « port-version » qui est un entier non négatif. Lorsqu’elle est rendue sous forme de texte, la version du port (si la valeur est différente de zéro) est ajoutée en tant que suffixe au texte de la version principale séparée par un signe dièse (#). Les versions de port sont triées lexographiquement après le texte de la version principale, par exemple :]A;1.0.0 < 1.0.0#1 < 1.0.1 < 1.0.1#5 < 2.0.0]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2092,6 +2236,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";HelpUpdateBaseline" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The best approach to keep your libraries up to date, the best approach is to update your baseline reference. This will ensure all packages, including transitive ones, are updated. However if you need to update a package independently, you can use a "version>=" constraint.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[La meilleure approche pour maintenir vos bibliothèques à jour consiste à mettre à jour votre référence de base. Cela permet de s’assurer que tous les packages, y compris les packages transitifs, sont mis à jour. Toutefois, si vous devez mettre à jour un package indépendamment, vous pouvez utiliser une contrainte « version>= ».]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";HelpUpdateCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[List packages that can be updated.]]></Val>
@@ -2115,6 +2268,78 @@
           <Val><![CDATA[Display version information.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Affiche les informations de version.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionDateScheme" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[A date (2021-01-01.5)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Une date (2021-01-01.5)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionGreater" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Within the "dependencies" field, each dependency can have a minimum constraint listed. These minimum constraints will be used when transitively depending upon this library. A minimum port-version can additionally be specified with a '#' suffix.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Dans le champ « dependencies », chaque dépendance peut avoir une contrainte minimale listée. Ces contraintes minimales seront utilisées en cas de transitivité selon cette bibliothèque. Une version de port minimale peut également être spécifiée avec un suffixe « # ».]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionScheme" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[A dot-separated sequence of numbers (1.2.3.4)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Séquence de nombres séparés par des points (1.2.3.4)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionSchemes" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following versioning schemes are accepted.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Les schémas de contrôle de version suivants sont acceptés.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionSemverScheme" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[A Semantic Version 2.0 (2.1.0-rc2)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Une sémantique version 2.0 (2.1.0-rc2)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionStringScheme" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[An exact, incomparable version (Vista)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Une version exacte et inégalée (Vista)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersioning" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Versioning allows you to deterministically control the precise revisions of dependencies used by your project from within your manifest file.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Le contrôle de version vous permet de contrôler de manière déterministe les révisions précises des dépendances utilisées par votre projet à partir de votre fichier manifeste.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IgnoringVcpkgRootEnvironment" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Ignoring VCPKG_ROOT environment variable; use --vcpkg-root "{path}" to use the environment value or unset the VCPKG_ROOT environment variable to suppress this message. Using detected vcpkg root: "{actual}".]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Variable d’environnement VCPKG_ROOT ignorée ; utilisez --vcpkg-root "{path}" pour utiliser la valeur d’environnement ou annulez la définition de la variable d’environnement VCPKG_ROOT pour supprimer ce message. Utilisation de la racine vcpkg détectée : "{actual}".]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2157,6 +2382,15 @@
           <Val><![CDATA['{command_name}' requires '{expected}' arguments, but '{actual}' were provided.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA['{command_name}' requiert '{expected}' arguments, mais '{actual}' ont été fournis.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IncrementedUtf8Decoder" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Incremented Utf8Decoder at the end of the string]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Utf8Decoder incrémenté à la fin de la chaîne]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2469,6 +2703,24 @@
           <Val><![CDATA[Invalid BUILD_INFO file for package: {error_msg}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Fichier BUILD_INFO non valide pour le package : {error_msg}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidCodePoint" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid code point passed to utf8_encoded_code_point_count]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Point de code non valide passé à utf8_encoded_code_point_count]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidCodeUnit" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid code unit]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[unité de code non valide]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3010,6 +3262,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";NoError" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[no error]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[aucune erreur]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";NoInstalledPackages" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[No packages are installed. Did you mean `search`?]]></Val>
@@ -3108,6 +3369,15 @@
           <Val><![CDATA[Overlay path "{path}" must exist and must be a directory.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Le chemin de superposition "{path}" doit exister et doit être un répertoire.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";OverlayTriplets" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Overlay triplets from {path} :]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Superposer les triplets à partir de {path} :]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3211,6 +3481,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Packing {vendor} failed.  Use --debug for more information.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PairedSurrogatesAreInvalid" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[trailing surrogate following leading surrogate (paired surrogates are invalid)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[substitut de fin suivant le substitut de début (les substituts couplés ne sont pas valides)]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3517,6 +3796,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ShallowRepositoryDetected" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg was cloned as a shallow repository in: {path}]A;Try again with a full vcpkg clone.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg a été cloné en tant que référentiel peu profond dans : {path}]A;Réessayez avec un clone vcpkg complet.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";SkipClearingInvalidDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Skipping clearing contents of {path} because it was not a directory.]]></Val>
@@ -3579,6 +3867,15 @@
           <Val><![CDATA[Specify the target architecture triplet. See 'vcpkg help triplet'.]A;(default: '{env_var}')]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Spécifiez le triplet de l’architecture cible. Consultez « vcpkg help triplet ».]A;(valeur par défaut : '{env_var}')]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";StartCodeUnitInContinue" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[found start code unit in continue position]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[unité de code de démarrage trouvée en position continue]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3808,6 +4105,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UnknownTopic" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unknown topic {value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[rubrique inconnue {value}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UnknownVariablesInTemplate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[invalid argument: url template '{value}' contains unknown variables: {list}]]></Val>
@@ -3876,6 +4182,15 @@
           <Val><![CDATA[short options are not supported: '{value}']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[les options courtes ne sont pas prises en charge : '{value}']]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnsupportedSyntaxInCDATA" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[]5D;]5D;> is not supported in CDATA block]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[]5D;]5D;> n’est pas pris en charge dans le bloc CDATA]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4078,6 +4393,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";Utf8ConversionFailed" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to convert to UTF-8]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Échec de la conversion en UTF-8]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";VSExaminedInstances" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The following Visual Studio instances were considered:]]></Val>
@@ -4107,10 +4431,13 @@
       </Item>
       <Item ItemId=";VcpkgCeIsExperimental" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[vcpkg-ce ('configure environment') is experimental and may change at any time.]]></Val>
+          <Val><![CDATA[vcpkg-artifacts are experimental and may change at any time.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg-ce (« configurer l’environnement ») est expérimental et peut changer à tout moment.]]></Val>
+            <Val><![CDATA[Les artefacts vcpkg sont expérimentaux et peuvent changer à tout moment.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[vcpkg-ce ('configure environment') is experimental and may change at any time.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>

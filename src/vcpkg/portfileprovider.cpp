@@ -197,7 +197,7 @@ namespace vcpkg
                             // This should change to a soft error when ParseExpected is eliminated.
                             print_error_message(maybe_control_file.error());
                             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                                           msgFailedToLoadNamedPortFromPath,
+                                                           msgFailedToLoadPort,
                                                            msg::package_name = version_spec.port_name,
                                                            msg::path = path->path);
                         }
@@ -256,7 +256,7 @@ namespace vcpkg
             {
                 for (auto&& overlay : m_overlay_ports)
                 {
-                    Debug::print("Using overlay: ", overlay, "\n");
+                    Debug::println("Using overlay: ", overlay);
 
                     Checks::msg_check_exit(VCPKG_LINE_INFO,
                                            vcpkg::is_directory(m_fs.status(overlay, VCPKG_LINE_INFO)),
@@ -290,7 +290,7 @@ namespace vcpkg
                         {
                             print_error_message(maybe_scf.error());
                             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                                           msgFailedToLoadNamedPortFromPath,
+                                                           msgFailedToLoadPort,
                                                            msg::package_name = port_name,
                                                            msg::path = ports_dir);
                         }
@@ -309,20 +309,19 @@ namespace vcpkg
                             {
                                 return SourceControlFileAndLocation{std::move(scf), std::move(ports_spec)};
                             }
-                            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                                           msg::format(msgFailedToLoadNamedPortFromPath,
-                                                                       msg::package_name = port_name,
-                                                                       msg::path = ports_spec)
-                                                               .append_raw("\n")
-                                                               .append(msgMismatchedNames,
-                                                                       msg::package_name = port_name,
-                                                                       msg::actual = scf->core_paragraph->name));
+                            Checks::msg_exit_maybe_upgrade(
+                                VCPKG_LINE_INFO,
+                                msg::format(msgFailedToLoadPort, msg::package_name = port_name, msg::path = ports_spec)
+                                    .append_raw('\n')
+                                    .append(msgMismatchedNames,
+                                            msg::package_name = port_name,
+                                            msg::actual = scf->core_paragraph->name));
                         }
                         else
                         {
                             print_error_message(found_scf.error());
                             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                                           msgFailedToLoadNamedPortFromPath,
+                                                           msgFailedToLoadPort,
                                                            msg::package_name = port_name,
                                                            msg::path = ports_dir);
                         }

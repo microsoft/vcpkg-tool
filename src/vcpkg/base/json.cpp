@@ -1137,7 +1137,7 @@ namespace vcpkg::Json
         }
 
         return msg::format(msgFailedToParseJson, msg::path = origin)
-            .append_raw("\n")
+            .append_raw('\n')
             .append_raw(maybeValueIsh.error()->to_string())
             .extract_data();
     }
