@@ -103,8 +103,6 @@ namespace vcpkg
         Path baselines_output() const;
         Path versions_output() const;
 
-        void translateRelativePaths();
-
         const Path original_cwd;
         const Path root;
 

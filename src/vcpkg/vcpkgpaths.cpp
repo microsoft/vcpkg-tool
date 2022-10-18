@@ -679,7 +679,25 @@ namespace vcpkg
                                                        m_pimpl->m_config_dir,
                                                        *this);
 
-            translateRelativePaths();
+            auto make_relative_to_manifest = [&](std::string& overlay_path) -> std::string {
+                auto p = Path(overlay_path);
+                if (p.is_relative())
+                {
+                    if (auto manifest_directory = get_manifest_directory().get())
+                    {
+                        Path tmp(*manifest_directory);
+                        auto res = tmp / p;
+                        overlay_path = res.generic_u8string();
+                        return overlay_path;
+                    }
+                }
+                return overlay_path;
+            };
+            auto& config_ports = m_pimpl->m_config.config.overlay_ports;
+            auto& config_triplets = m_pimpl->m_config.config.overlay_triplets;
+            Util::transform(config_ports, make_relative_to_manifest);
+            Util::transform(config_triplets, make_relative_to_manifest);
+
             overlay_ports = merge_overlays(
                 args.cli_overlay_ports, get_configuration().config.overlay_ports, args.env_overlay_ports);
             overlay_triplets = merge_overlays(
@@ -719,38 +737,6 @@ namespace vcpkg
                 }
                 Util::sort_unique_erase(registry_kinds);
                 metrics->track_string_property(StringMetric::RegistriesKindsUsed, Strings::join(",", registry_kinds));
-            }
-        }
-    }
-
-    /// <summary>
-    /// This is used to translate relative paths in the configuration file
-    /// to be relative to the file instead of the working directory
-    /// </summary>
-    void VcpkgPaths::translateRelativePaths()
-    {
-        auto maybe_manifest_dir = get_manifest_directory();
-        if (const auto manifest_dir = maybe_manifest_dir.get())
-        {
-            std::string manifest_dir_str = manifest_dir->c_str();
-            for (auto& port : m_pimpl->m_config.config.overlay_ports)
-            {
-                Path port_path(port);
-                if (port_path.is_relative())
-                {
-                    std::string result = manifest_dir_str;
-                    port = result.append("/" + port);
-                }
-            }
-
-            for (auto& triplet : m_pimpl->m_config.config.overlay_triplets)
-            {
-                Path triplet_path(triplet);
-                if (triplet_path.is_relative())
-                {
-                    std::string result = manifest_dir_str;
-                    triplet = result.append("/" + triplet);
-                }
             }
         }
     }
