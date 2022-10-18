@@ -124,8 +124,12 @@ namespace vcpkg
         ArchiveMemberHeader first_linker_member_header;
         Checks::check_exit(VCPKG_LINE_INFO,
                            fs.read(&first_linker_member_header, sizeof(first_linker_member_header), 1) == 1);
-        Checks::msg_check_exit(
-            VCPKG_LINE_INFO, memcmp(first_linker_member_header.name, "/ ", 2) == 0, msgCouldNotFindLinkerMember);
+        if (memcmp(first_linker_member_header.name, "/ ", 2) != 0)
+        {
+            Debug::println("Could not find proper first linker member");
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
         Checks::check_exit(VCPKG_LINE_INFO, fs.seek(first_linker_member_header.decoded_size(), SEEK_CUR) == 0);
     }
 
@@ -134,19 +138,30 @@ namespace vcpkg
         ArchiveMemberHeader second_linker_member_header;
         Checks::check_exit(VCPKG_LINE_INFO,
                            fs.read(&second_linker_member_header, sizeof(second_linker_member_header), 1) == 1);
-        Checks::msg_check_exit(
-            VCPKG_LINE_INFO, memcmp(second_linker_member_header.name, "/ ", 2) == 0, msgCouldNotFindSecondLinkerMember);
+        if (memcmp(second_linker_member_header.name, "/ ", 2) != 0)
+        {
+            Debug::println("Could not find proper second linker member");
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
 
         const auto second_size = second_linker_member_header.decoded_size();
         // The first 4 bytes contains the number of archive members
         uint32_t archive_member_count;
-        Checks::msg_check_exit(
-            VCPKG_LINE_INFO, second_size >= sizeof(archive_member_count), msgSecondLinkerMemberTooSmallUint32);
+
+        if (second_size < sizeof(archive_member_count))
+        {
+            Debug::println("Second linker member was too small to contain a single uint32_t");
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
         Checks::check_exit(VCPKG_LINE_INFO, fs.read(&archive_member_count, sizeof(archive_member_count), 1) == 1);
         const auto maximum_possible_archive_members = (second_size / sizeof(uint32_t)) - 1;
-        Checks::msg_check_exit(VCPKG_LINE_INFO,
-                               archive_member_count <= maximum_possible_archive_members,
-                               msgSecondLinkerMemberTooSmallArchiveMem);
+        if (archive_member_count > maximum_possible_archive_members)
+        {
+            Debug::println("Second linker member was too small to contain the expected number of archive members");
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
         std::vector<uint32_t> offsets(archive_member_count);
         Checks::check_exit(VCPKG_LINE_INFO,
                            fs.read(&offsets[0], sizeof(uint32_t), archive_member_count) == archive_member_count);
@@ -172,6 +187,7 @@ namespace vcpkg
             Checks::check_exit(VCPKG_LINE_INFO, fs.seek(offset + sizeof(ArchiveMemberHeader), SEEK_SET) == 0);
             uint16_t machine_type_raw;
             Checks::check_exit(VCPKG_LINE_INFO, fs.read(&machine_type_raw, sizeof(machine_type_raw), 1) == 1);
+
             auto result_machine_type = to_machine_type(machine_type_raw);
             if (result_machine_type == MachineType::UNKNOWN)
             {

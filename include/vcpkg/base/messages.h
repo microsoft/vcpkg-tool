@@ -792,8 +792,6 @@ namespace vcpkg
                     (msg::package_name, msg::value, msg::error_msg),
                     "{value} is a commit sha",
                     "could not find the git tree for `versions` in repo {package_name} at commit {value}: {error_msg}");
-    DECLARE_MESSAGE(CouldNotFindLinkerMember, (), "", "Could not find proper first linker member");
-    DECLARE_MESSAGE(CouldNotFindSecondLinkerMember, (), "", "Could not find proper second linker member");
     DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: {path}");
     DECLARE_MESSAGE(CurlFailedToExecute, (msg::exit_code), "", "curl failed to execute with exit code {exit_code}.");
     DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
@@ -1671,14 +1669,6 @@ namespace vcpkg
         "{value} may be either a 'vendor' like 'Azure' or 'NuGet', or a file path like C:\\example or /usr/example",
         "Restored {count} package(s) from {value} in {elapsed}. Use --debug to see more details.");
     DECLARE_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
-    DECLARE_MESSAGE(SecondLinkerMemberTooSmallArchiveMem,
-                    (),
-                    "",
-                    "Second linker member was too small to contain the expected number of archive members");
-    DECLARE_MESSAGE(SecondLinkerMemberTooSmallUint32,
-                    (),
-                    "",
-                    "Second linker member was too small to contain a single uint32_t");
     DECLARE_MESSAGE(SerializedBinParagraphHeader, (), "", "\nSerialized Binary Paragraph");
     DECLARE_MESSAGE(SettingEnvVar,
                     (msg::env_var, msg::url),

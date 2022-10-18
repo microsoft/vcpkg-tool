@@ -493,8 +493,6 @@ namespace vcpkg
     REGISTER_MESSAGE(CouldNotFindBaselineForRepo);
     REGISTER_MESSAGE(CouldNotFindBaselineInCommit);
     REGISTER_MESSAGE(CouldNotFindGitTreeAtCommit);
-    REGISTER_MESSAGE(CouldNotFindLinkerMember);
-    REGISTER_MESSAGE(CouldNotFindSecondLinkerMember);
     REGISTER_MESSAGE(CreatedNuGetPackage);
     REGISTER_MESSAGE(CreateFailureLogsDir);
     REGISTER_MESSAGE(CurlFailedToExecute);
@@ -832,8 +830,6 @@ namespace vcpkg
     REGISTER_MESSAGE(RestoredPackage);
     REGISTER_MESSAGE(RestoredPackagesFromVendor);
     REGISTER_MESSAGE(ResultsHeader);
-    REGISTER_MESSAGE(SecondLinkerMemberTooSmallArchiveMem);
-    REGISTER_MESSAGE(SecondLinkerMemberTooSmallUint32);
     REGISTER_MESSAGE(SerializedBinParagraphHeader);
     REGISTER_MESSAGE(SettingEnvVar);
     REGISTER_MESSAGE(ShallowRepositoryDetected);
