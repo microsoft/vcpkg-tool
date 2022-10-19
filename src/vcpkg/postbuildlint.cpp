@@ -1066,8 +1066,19 @@ namespace vcpkg::PostBuildLint
         {
             const auto extension = path_and_contents.first.extension().substr(1 /* ignore dot */);
             const bool is_header = extension == "h" || extension == "hpp" || extension == "hxx";
-            if ((is_header && Strings::contains_any_ignoring_c_comments(path_and_contents.second, stringview_paths)) ||
-                (!is_header && Util::any_of(string_paths, [&path_and_contents, extension](const std::string& path) {
+            bool found_absolute = false;
+            if (is_header)
+            {
+                found_absolute = Util::any_of(string_paths, [&path_and_contents](const std::string& path) {
+                    StringView sv(path);
+                    bool contains = path_and_contents.second.find(path) != std::string::npos;
+                    // First do a cheap search and then a complicated one
+                    return contains && Strings::contains_any_ignoring_c_comments(path_and_contents.second, {&sv, 1});
+                });
+            }
+            else
+            {
+                found_absolute = Util::any_of(string_paths, [&path_and_contents, extension](const std::string& path) {
                     if (extension == "cfg" || extension == "conf")
                     {
                         return Strings::contains(path_and_contents.second, path);
@@ -1083,7 +1094,9 @@ namespace vcpkg::PostBuildLint
                         }
                         offset = index + path.size();
                     }
-                })))
+                });
+            }
+            if (found_absolute)
             {
                 result += "\n    ";
                 result += path_and_contents.first.native();
