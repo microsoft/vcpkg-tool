@@ -23,5 +23,3 @@ node_modules/
 /ce/common/temp
 /vcpkg-root
 /CMakePresets.json
-/azure-pipelines/e2e_projects/overlays-project-config-embedded/vcpkg_installed
-/azure-pipelines/e2e_projects/overlays-project-with-config/vcpkg_installed

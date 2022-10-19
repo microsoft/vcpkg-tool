@@ -470,9 +470,10 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
     {
         std::string raw = R"json({
     "overlay-ports": [
-		"./my-ports/fmt" ,
+		"./my-ports/fmt",
 		"/custom-ports",
-		"../share/team-ports"
+		"../share/team-ports",
+        "my-ports/fmt"
 	]
 })json";
         // parsing of configuration is tested elsewhere

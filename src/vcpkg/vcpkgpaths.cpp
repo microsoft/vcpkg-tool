@@ -683,12 +683,13 @@ namespace vcpkg
                 auto const p = Path(overlay_path);
                 if (p.is_relative())
                 {
-                    Path ret = *get_manifest_directory().get() / overlay_path;
+                    Path ret = m_pimpl->m_config.directory / overlay_path;
                     return ret.c_str();
                 }
                 return overlay_path;
             };
-            if (const auto manifest_dir = get_manifest_directory().get())
+
+            if (!m_pimpl->m_config.directory.empty())
             {
                 auto& config_ports = m_pimpl->m_config.config.overlay_ports;
                 auto& config_triplets = m_pimpl->m_config.config.overlay_triplets;
