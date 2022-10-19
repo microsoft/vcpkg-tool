@@ -27,7 +27,10 @@ namespace vcpkg
     LocalizedString format_filesystem_call_error(const std::error_code& ec,
                                                  StringView call_name,
                                                  std::initializer_list<StringView> args);
-
+    [[noreturn]] void exit_filesystem_call_error(LineInfo li,
+                                                 const std::error_code& ec,
+                                                 StringView call_name,
+                                                 std::initializer_list<StringView> args);
     struct IgnoreErrors
     {
         operator std::error_code&() { return ec; }

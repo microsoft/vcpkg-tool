@@ -88,6 +88,7 @@ namespace vcpkg
     }};
 
     const constexpr std::array<BoolMetricEntry, static_cast<size_t>(BoolMetric::COUNT)> all_bool_metrics{{
+        {BoolMetric::DetectedContainer, "detected_container"},
         {BoolMetric::InstallManifestMode, "install_manifest_mode"},
         {BoolMetric::OptionOverlayPorts, "option_overlay_ports"},
     }};

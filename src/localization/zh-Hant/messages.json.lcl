@@ -448,6 +448,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AvailableArchitectureTriplets" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Available architecture triplets:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[可用的架構三元組:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AvailableHelpTopics" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Available help topics:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[可用的說明主題:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";BinarySourcesArg" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Add sources for binary caching. See 'vcpkg help binarycaching'.]]></Val>
@@ -676,6 +694,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";BuiltInTriplets" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg built-in triplets:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg 內建三元組:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CMakeTargetsUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{package_name} provides CMake targets:]]></Val>
@@ -808,6 +835,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CommunityTriplets" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[VCPKG community triplets:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[VCPKG 社群三元組:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ComparingUtf8Decoders" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Comparing Utf8Decoders with different provenance; this is always an error]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[將 Utf8Decoders 與不同起源比較; 這一律會是錯誤]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CompressFolderFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to compress folder "{path}":]]></Val>
@@ -855,6 +900,15 @@
           <Val><![CDATA[Found a constraint violation:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[發現強制違規:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ContinueCodeUnitInStart" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[found continue code unit in start position]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[在開始位置找到繼續字碼單位]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1126,6 +1180,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";EndOfStringInCodeUnit" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[found end of string in middle of code point]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[在字碼元素中間找到字串結尾]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";EnvStrFailedToExtract" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[could not expand the environment string:]]></Val>
@@ -1387,6 +1450,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExpectedAtMostOneSetOfTags" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Found {count} sets of {old_value}.*{new_value} but expected at most 1, in block:]A;{value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[發現 {count} 組 {old_value}.*{new_value}，但預期為最多 1 組，於區塊: ]A;{value}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExpectedCascadeFailure" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected {expected} cascade failure, but there were {actual} cascade failures.]]></Val>
@@ -1414,6 +1486,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[expected 'fail' or 'skip' here]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExpectedOneSetOfTags" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Found {count} sets of {old_value}.*{new_value} but expected exactly 1, in block:]A;{value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[發現 {count} 組 {old_value}.*{new_value}，但預期為確切 1 組，於區塊: ]A;{value}]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1503,12 +1584,12 @@
       </Item>
       <Item ItemId=";FailedToLoadInstalledManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The control or mnaifest file for {spec} could not be loaded due to the following error. Please remove {spec} and try again.]]></Val>
+          <Val><![CDATA[The control or manifest file for {spec} could not be loaded due to the following error. Please remove {spec} and try again.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[無法載入 {spec} 的控制項或資訊清單檔案，因為發生下列錯誤。請移除 {spec} 並重試。]]></Val>
+            <Val><![CDATA[因為發生下列錯誤，無法載入 {spec} 的控制項或資訊清單檔案。請移除 {spec} 並重試。]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[The control or mnaifest file for {spec} could not be loaded due to the following error. Please remove {spec} and re-attempt.]]></Val>
+            <Val><![CDATA[The control or mnaifest file for {spec} could not be loaded due to the following error. Please remove {spec} and try again.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -1921,6 +2002,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";HelpBuiltinBase" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The baseline references a commit within the vcpkg repository that establishes a minimum version on every dependency in the graph. For example, if no other constraints are specified (directly or transitively), then the version will resolve to the baseline of the top level manifest. Baselines of transitive dependencies are ignored.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[基準會參考 vcpkg 存放庫內的一個認可，其會建立圖表中每個相依性的最低版本。例如，如果未指定其他限制式 (直接或可轉移)，則版本會解析為最上層資訊清單的基準。會忽略可轉移相依性的基準。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";HelpContactCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Display contact information to send feedback.]]></Val>
@@ -1971,6 +2061,15 @@
           <Val><![CDATA[For more help (including examples) see the accompanying README.md and docs folder.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[如需更多說明 (包含範例)，請參閱隨附的 README.md 與文件資料夾。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpExampleManifest" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Example manifest:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[範例資訊清單:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2029,11 +2128,56 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";HelpManifestConstraints" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Manifests can place three kinds of constraints upon the versions used]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[資訊清單可以在使用的版本上實施三種限制式]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpMinVersion" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Vcpkg will select the minimum version found that matches all applicable constraints, including the version from the baseline specified at top-level as well as any "version>=" constraints in the graph.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Vcpkg 將會選取所找到符合所有適用限制式的最低版本，包括在最上層指定的基準版本，以及圖表中的任何 "version>=" 限制式。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpOverrides" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[When used as the top-level manifest (such as when running `vcpkg install` in the directory), overrides allow a manifest to short-circuit dependency resolution and specify exactly the version to use. These can be used to handle version conflicts, such as with `version-string` dependencies. They will not be considered when transitively depended upon.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[做為最上層資訊清單時 (例如，在目錄中執行 `vcpkg install` 時)，覆寫會允許資訊清單讓相依性解決方案中斷，並指定要使用的確切版本。這些可用來處理版本衝突，例如使用 `version-string` 相依性。可轉移依據它們的時候不會加以考慮。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";HelpOwnsCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Search for files in installed packages.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[搜尋已安裝套件中的檔案。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpPackagePublisher" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Additionally, package publishers can use "version>=" constraints to ensure that consumers are using at least a certain minimum version of a given dependency. For example, if a library needs an API added to boost-asio in 1.70, a "version>=" constraint will ensure transitive users use a sufficient version even in the face of individual version overrides or cross-registry references.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[此外，套件發行者可以使用 "version>=" 限制式，以確保取用者至少使用指定相依性的特定最低版本。例如，如果程式庫需要將 API 新增至 1.70 的 boost-asio，則 "version>=" 限制式可確保可轉移使用者會使用足夠的版本，即使是在面臨個別版本覆寫或跨登錄參考時亦然。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpPortVersionScheme" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Each version additionally has a "port-version" which is a nonnegative integer. When rendered as text, the port version (if nonzero) is added as a suffix to the primary version text separated by a hash (#). Port-versions are sorted lexographically after the primary version text, for example:]A;1.0.0 < 1.0.0#1 < 1.0.1 < 1.0.1#5 < 2.0.0]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[此外，每個版本都有一個 "port-version"，其為非負整數。當呈現為文字時，連接埠版本 (如果非零) 會新增為主要版本文字的尾碼 (以井字號 (#) 分隔)。Port-version 會在主要版本文字之後以字典方式排序，例如:]A;1.0.0 < 1.0.0#1 < 1.0.1 < 1.0.1#5 < 2.0.0]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2092,6 +2236,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";HelpUpdateBaseline" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The best approach to keep your libraries up to date, the best approach is to update your baseline reference. This will ensure all packages, including transitive ones, are updated. However if you need to update a package independently, you can use a "version>=" constraint.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[將程式庫保持在最新的最佳做法是更新您的基準參考。這可確保所有套件 (包括可轉移套件) 都會更新。不過，如果您需要單獨更新套件，您可以使用 "version>=" 限制式。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";HelpUpdateCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[List packages that can be updated.]]></Val>
@@ -2115,6 +2268,78 @@
           <Val><![CDATA[Display version information.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[顯示版本資訊。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionDateScheme" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[A date (2021-01-01.5)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[日期 (2021-01-01.5)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionGreater" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Within the "dependencies" field, each dependency can have a minimum constraint listed. These minimum constraints will be used when transitively depending upon this library. A minimum port-version can additionally be specified with a '#' suffix.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[在 [相依性]5D; 欄位內，每個相依性可以列出一個最低限制式。這些最低限制式會在可轉移依據此程式庫時使用。也可以額外使用 '#' 尾碼指定最低 port-version。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionScheme" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[A dot-separated sequence of numbers (1.2.3.4)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[以句點分隔的數字序列 (1.2.3.4)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionSchemes" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following versioning schemes are accepted.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[接受下列版本設定配置。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionSemverScheme" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[A Semantic Version 2.0 (2.1.0-rc2)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[語意版本 2.0 (2.1.0-rc2)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionStringScheme" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[An exact, incomparable version (Vista)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[精確、無法比較的版本 (Vista)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersioning" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Versioning allows you to deterministically control the precise revisions of dependencies used by your project from within your manifest file.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[版本設定可讓您從資訊清單檔案內，明確控制專案所使用的相依性精確修訂。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IgnoringVcpkgRootEnvironment" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Ignoring VCPKG_ROOT environment variable; use --vcpkg-root "{path}" to use the environment value or unset the VCPKG_ROOT environment variable to suppress this message. Using detected vcpkg root: "{actual}".]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[略過 VCPKG_ROOT 環境變數;使用 --vcpkg-root "{path}" 使用環境值，或取消設定 VCPKG_ROOT 環境變數以隱藏此訊息。使用偵測到的 vcpkg 根目錄: "{actual}"。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2157,6 +2382,15 @@
           <Val><![CDATA['{command_name}' requires '{expected}' arguments, but '{actual}' were provided.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA['{command_name}' 需要 '{expected}' 引數，但已提供 '{actual}'。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IncrementedUtf8Decoder" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Incremented Utf8Decoder at the end of the string]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[在字串結尾遞增 Utf8Decoder]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2469,6 +2703,24 @@
           <Val><![CDATA[Invalid BUILD_INFO file for package: {error_msg}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[套件的 BUILD_INFO 檔案無效: {error_msg}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidCodePoint" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid code point passed to utf8_encoded_code_point_count]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[傳遞至 utf8_encoded_code_point_count 的字碼元素無效]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidCodeUnit" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid code unit]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[字碼元素無效]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3013,6 +3265,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";NoError" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[no error]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[沒有錯誤]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";NoInstalledPackages" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[No packages are installed. Did you mean `search`?]]></Val>
@@ -3111,6 +3372,15 @@
           <Val><![CDATA[Overlay path "{path}" must exist and must be a directory.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[重疊路徑「{path}」必須存在且必須是目錄。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";OverlayTriplets" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Overlay triplets from {path} :]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[來自 {path} 的重疊三元組:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3214,6 +3484,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Packing {vendor} failed.  Use --debug for more information.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PairedSurrogatesAreInvalid" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[trailing surrogate following leading surrogate (paired surrogates are invalid)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[後置代理接在前置代理之後 (代理字組無效)]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3520,6 +3799,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ShallowRepositoryDetected" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg was cloned as a shallow repository in: {path}]A;Try again with a full vcpkg clone.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg 已複製為下列其中的淺層存放庫: {path}]A;請使用完整的 vcpkg 複製品再試一次。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";SkipClearingInvalidDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Skipping clearing contents of {path} because it was not a directory.]]></Val>
@@ -3582,6 +3870,15 @@
           <Val><![CDATA[Specify the target architecture triplet. See 'vcpkg help triplet'.]A;(default: '{env_var}')]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[指定目標架構三元組。請參閱 'vcpkg help triplet'。]A;(預設值: '{env_var}')]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";StartCodeUnitInContinue" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[found start code unit in continue position]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[在繼續位置找到開始字碼單位]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3814,6 +4111,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UnknownTopic" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unknown topic {value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[未知的主題 {value}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UnknownVariablesInTemplate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[invalid argument: url template '{value}' contains unknown variables: {list}]]></Val>
@@ -3882,6 +4188,15 @@
           <Val><![CDATA[short options are not supported: '{value}']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[不支援簡短選項: '{value}']]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnsupportedSyntaxInCDATA" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[]5D;]5D;> is not supported in CDATA block]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[CDATA 區塊中不支援 ]5D;]5D;>]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4084,6 +4399,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";Utf8ConversionFailed" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to convert to UTF-8]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[無法轉換成 UTF-8]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";VSExaminedInstances" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The following Visual Studio instances were considered:]]></Val>
@@ -4113,10 +4437,13 @@
       </Item>
       <Item ItemId=";VcpkgCeIsExperimental" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[vcpkg-ce ('configure environment') is experimental and may change at any time.]]></Val>
+          <Val><![CDATA[vcpkg-artifacts are experimental and may change at any time.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg-ce ([設定環境]5D;) 為實驗性，可能隨時變更。]]></Val>
+            <Val><![CDATA[vcpkg-artifacts 為實驗性，隨時可能會變更。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[vcpkg-ce ('configure environment') is experimental and may change at any time.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
