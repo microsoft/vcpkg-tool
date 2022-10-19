@@ -59,17 +59,18 @@ TEST_CASE ("find_first_of", "[strings]")
 TEST_CASE ("contains_any_ignoring_c_comments", "[strings]")
 {
     using vcpkg::Strings::contains_any_ignoring_c_comments;
-    REQUIRE(contains_any_ignoring_c_comments(R"(abc)", {"abc"}));
-    REQUIRE(contains_any_ignoring_c_comments(R"("abc")", {"abc"}));
-    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"("" //abc)", {"abc"}));
-    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"(/*abc*/ "")", {"abc"}));
-    REQUIRE_FALSE(contains_any_ignoring_c_comments("// test \\\nabc", {"abc"}));
-    REQUIRE(contains_any_ignoring_c_comments("\"//\" test \\\nabc", {"abc"}));
-    REQUIRE(contains_any_ignoring_c_comments(R"(R"-( // abc )-")", {"abc"}));
-    REQUIRE(contains_any_ignoring_c_comments(R"(R"-( /* abc */ )-")", {"abc"}));
-    REQUIRE(contains_any_ignoring_c_comments(R"(R"-()- /* abc */ )-")", {"abc"}));
-    REQUIRE(contains_any_ignoring_c_comments(R"(qwer )", {"abc", "wer"}));
-    REQUIRE(contains_any_ignoring_c_comments("\"a\" \"g\" // er \n test)", {"test"}));
+    vcpkg::StringView to_find[] = {"abc", "wer"};
+    REQUIRE(contains_any_ignoring_c_comments(R"(abc)", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"("abc")", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"("" //abc)", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"(/*abc*/ "")", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments("// test \\\nabc", to_find));
+    REQUIRE(contains_any_ignoring_c_comments("\"//\" test \\\nabc", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"(R"-( // abc )-")", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"(R"-( /* abc */ )-")", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"(R"-()- /* abc */ )-")", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"(qwer )", to_find));
+    REQUIRE(contains_any_ignoring_c_comments("\"a\" \"g\" // er \n abc)", to_find));
 }
 
 TEST_CASE ("edit distance", "[strings]")
