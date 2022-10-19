@@ -258,7 +258,8 @@ namespace vcpkg::msg
 
     std::string get_locale_path(int LCID) { return fmt::format("locales/messages.{}.json", get_language_tag(LCID)); }
 
-    // LCID docs: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-oe376/6c085406-a698-4e12-9d4d-c3b0ee3dbc4a
+    // LCID docs:
+    // https://learn.microsoft.com/en-us/openspecs/office_standards/ms-oe376/6c085406-a698-4e12-9d4d-c3b0ee3dbc4a
     StringLiteral get_language_tag(int LCID)
     {
         std::array<std::pair<int, StringLiteral>, 14> languages = {std::pair<int, StringLiteral>(1029, "cs"),
