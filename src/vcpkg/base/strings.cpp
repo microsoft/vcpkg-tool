@@ -444,7 +444,7 @@ bool vcpkg::Strings::contains_any_ignoring_c_comments(const std::string& source,
             if (no_comment_offset != std::string::npos) ++no_comment_offset;
             continue;
         }
-        ++no_comment_offset;
+        no_comment_offset = start + 1;
     }
     return false;
 }
