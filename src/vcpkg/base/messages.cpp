@@ -378,14 +378,16 @@ namespace
 
 namespace vcpkg
 {
+
     MessageSink& null_sink = null_sink_instance;
-    MessageSink& stdout_sink = stdout_sink_instance;
     MessageSink& stderr_sink = stderr_sink_instance;
+    MessageSink& stdout_sink = stdout_sink_instance;
 
     REGISTER_MESSAGE(AddArtifactOnlyOne);
     REGISTER_MESSAGE(AddCommandFirstArg);
     REGISTER_MESSAGE(AddFirstArgument);
     REGISTER_MESSAGE(AddingCompletionEntry);
+    REGISTER_MESSAGE(AdditionalPackagesToExport);
     REGISTER_MESSAGE(AdditionalPackagesToRemove);
     REGISTER_MESSAGE(AddPortRequiresManifest);
     REGISTER_MESSAGE(AddPortSucceeded);
@@ -422,6 +424,7 @@ namespace vcpkg
     REGISTER_MESSAGE(AllPackagesAreUpdated);
     REGISTER_MESSAGE(AlreadyInstalled);
     REGISTER_MESSAGE(AlreadyInstalledNotHead);
+    REGISTER_MESSAGE(AndroidHomeDirMissingProps);
     REGISTER_MESSAGE(AnotherInstallationInProgress);
     REGISTER_MESSAGE(AppliedUserIntegration);
     REGISTER_MESSAGE(ArtifactsOptionIncompatibility);
@@ -469,6 +472,7 @@ namespace vcpkg
     REGISTER_MESSAGE(CMakeTargetsUsage);
     REGISTER_MESSAGE(CMakeTargetsUsageHeuristicMessage);
     REGISTER_MESSAGE(CMakeToolChainFile);
+    REGISTER_MESSAGE(CMakeUsingExportedLibs);
     REGISTER_MESSAGE(CommandFailed);
     REGISTER_MESSAGE(CommunityTriplets);
     REGISTER_MESSAGE(ComparingUtf8Decoders);
@@ -481,14 +485,20 @@ namespace vcpkg
     REGISTER_MESSAGE(ControlAndManifestFilesPresent);
     REGISTER_MESSAGE(CopyrightIsDir);
     REGISTER_MESSAGE(CorruptedDatabase);
+    REGISTER_MESSAGE(CorruptedInstallTree);
     REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion);
     REGISTER_MESSAGE(CreatedNuGetPackage);
     REGISTER_MESSAGE(CreateFailureLogsDir);
+    REGISTER_MESSAGE(Creating7ZipArchive);
+    REGISTER_MESSAGE(CreatingNugetPackage);
+    REGISTER_MESSAGE(CreatingZipArchive);
+    REGISTER_MESSAGE(CreationFailed);
     REGISTER_MESSAGE(CurlReportedUnexpectedResults);
     REGISTER_MESSAGE(DateTableHeader);
     REGISTER_MESSAGE(DefaultBrowserLaunched);
     REGISTER_MESSAGE(DefaultFlag);
     REGISTER_MESSAGE(DefaultPathToBinaries);
+    REGISTER_MESSAGE(DeprecatedPrefabDebugOption);
     REGISTER_MESSAGE(DetectCompilerHash);
     REGISTER_MESSAGE(DocumentedFieldsSuggestUpdate);
     REGISTER_MESSAGE(DownloadAvailable);
@@ -539,7 +549,14 @@ namespace vcpkg
     REGISTER_MESSAGE(ExpectedStatusField);
     REGISTER_MESSAGE(ExpectedTripletName);
     REGISTER_MESSAGE(ExpectedValueForOption);
+    REGISTER_MESSAGE(ExportArchitectureReq);
+    REGISTER_MESSAGE(Exported7zipArchive);
+    REGISTER_MESSAGE(ExportedZipArchive);
+    REGISTER_MESSAGE(ExportingAlreadyBuiltPackages);
+    REGISTER_MESSAGE(ExportingMaintenanceTool);
     REGISTER_MESSAGE(ExportingPackage);
+    REGISTER_MESSAGE(ExportPrefabRequiresAndroidTriplet);
+    REGISTER_MESSAGE(ExportUnsupportedInManifest);
     REGISTER_MESSAGE(ExtendedDocumentationAtUrl);
     REGISTER_MESSAGE(FailedToExtract);
     REGISTER_MESSAGE(FailedToFindPortFeature);
@@ -567,6 +584,7 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedVendorAuthentication);
     REGISTER_MESSAGE(FeedbackAppreciated);
     REGISTER_MESSAGE(FileNotFound);
+    REGISTER_MESSAGE(FilesExported);
     REGISTER_MESSAGE(FileSystemOperationFailed);
     REGISTER_MESSAGE(FishCompletion);
     REGISTER_MESSAGE(FollowingPackagesMissingControl);
@@ -574,10 +592,15 @@ namespace vcpkg
     REGISTER_MESSAGE(FollowingPackagesUpgraded);
     REGISTER_MESSAGE(ForceSystemBinariesOnWeirdPlatforms);
     REGISTER_MESSAGE(FormattedParseMessageExpression);
+    REGISTER_MESSAGE(GeneratedConfiguration);
+    REGISTER_MESSAGE(GeneratedInstaller);
     REGISTER_MESSAGE(GenerateMsgErrorParsingFormatArgs);
     REGISTER_MESSAGE(GenerateMsgIncorrectComment);
     REGISTER_MESSAGE(GenerateMsgNoArgumentValue);
     REGISTER_MESSAGE(GenerateMsgNoCommentValue);
+    REGISTER_MESSAGE(GeneratingConfiguration);
+    REGISTER_MESSAGE(GeneratingInstaller);
+    REGISTER_MESSAGE(GeneratingRepo);
     REGISTER_MESSAGE(GetParseFailureInfo);
     REGISTER_MESSAGE(GitCommandFailed);
     REGISTER_MESSAGE(GitStatusOutputExpectedFileName);
@@ -637,6 +660,7 @@ namespace vcpkg
     REGISTER_MESSAGE(InstalledRequestedPackages);
     REGISTER_MESSAGE(InstallFailed);
     REGISTER_MESSAGE(InstallingFromLocation);
+    REGISTER_MESSAGE(InstallingMavenFile);
     REGISTER_MESSAGE(InstallingPackage);
     REGISTER_MESSAGE(InstallPackageInstruction);
     REGISTER_MESSAGE(InstallRootDir);
@@ -703,6 +727,8 @@ namespace vcpkg
     REGISTER_MESSAGE(MismatchedFiles);
     REGISTER_MESSAGE(MismatchedNames);
     REGISTER_MESSAGE(Missing7zHeader);
+    REGISTER_MESSAGE(MissingAndroidEnv);
+    REGISTER_MESSAGE(MissingAndroidHomeDir);
     REGISTER_MESSAGE(MissingArgFormatManifest);
     REGISTER_MESSAGE(MissingDependency);
     REGISTER_MESSAGE(MissingExtension);
@@ -759,11 +785,13 @@ namespace vcpkg
     REGISTER_MESSAGE(PortsUpdated);
     REGISTER_MESSAGE(PortSupportsField);
     REGISTER_MESSAGE(PortTypeConflict);
+    REGISTER_MESSAGE(PrebuiltPackages);
     REGISTER_MESSAGE(PreviousIntegrationFileRemains);
     REGISTER_MESSAGE(ProcessorArchitectureMalformed);
     REGISTER_MESSAGE(ProcessorArchitectureMissing);
     REGISTER_MESSAGE(ProcessorArchitectureW6432Malformed);
     REGISTER_MESSAGE(ProgramReturnedNonzeroExitCode);
+    REGISTER_MESSAGE(ProvideExportType);
     REGISTER_MESSAGE(PushingVendorFailed);
     REGISTER_MESSAGE(RegistryCreated);
     REGISTER_MESSAGE(RemoveDependencies);
@@ -787,6 +815,7 @@ namespace vcpkg
     REGISTER_MESSAGE(StartCodeUnitInContinue);
     REGISTER_MESSAGE(StoredBinaryCache);
     REGISTER_MESSAGE(StoreOptionMissingSha);
+    REGISTER_MESSAGE(SuccessfulyExported);
     REGISTER_MESSAGE(SuggestGitPull);
     REGISTER_MESSAGE(SuggestResolution);
     REGISTER_MESSAGE(SuggestStartingBashShell);
@@ -798,6 +827,7 @@ namespace vcpkg
     REGISTER_MESSAGE(TotalTime);
     REGISTER_MESSAGE(TwoFeatureFlagsSpecified);
     REGISTER_MESSAGE(UndeterminedToolChainForTriplet);
+    REGISTER_MESSAGE(UnexpectedByteSize);
     REGISTER_MESSAGE(UnexpectedErrorDuringBulkDownload);
     REGISTER_MESSAGE(UnexpectedExtension);
     REGISTER_MESSAGE(UnexpectedFormat);
