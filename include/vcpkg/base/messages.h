@@ -329,6 +329,9 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(extension, ".exe");
     DECLARE_MSG_ARG(supports_expression, "windows & !static");
     DECLARE_MSG_ARG(feature, "avisynthplus");
+    DECLARE_MSG_ARG(commit_sha,
+                    "a18442042722dd48e20714ec034a12fcc0576c9af7be5188586970e2edf47529825bdc99af366b1d5891630c8dbf6f63bf"
+                    "a9f012e77ab3d3ed80d1a118e3b2be");
 
 #undef DECLARE_MSG_ARG
 
@@ -591,13 +594,13 @@ namespace vcpkg
     DECLARE_MESSAGE(AvailableArchitectureTriplets, (), "", "Available architecture triplets:");
     DECLARE_MESSAGE(AvailableHelpTopics, (), "", "Available help topics:");
     DECLARE_MESSAGE(BaselineFileNoDefaultField,
-                    (msg::value),
-                    "{value} is a commit sha",
-                    "The baseline file at commit {value} was invalid (no \"default\" field).");
+                    (msg::commit_sha),
+                    "",
+                    "The baseline file at commit {commit_sha} was invalid (no \"default\" field).");
     DECLARE_MESSAGE(BaselineMissingDefault,
-                    (msg::value, msg::package_name),
-                    "{value} is a commit sha.",
-                    "The baseline.json from commit `\"{value}\"` in the repo {package_name} was invalid (did not "
+                    (msg::commit_sha, msg::url),
+                    "",
+                    "The baseline.json from commit `\"{commit_sha}\"` in the repo {url} was invalid (did not "
                     "contain a \"default\" field).");
     DECLARE_MESSAGE(BinarySourcesArg, (), "", "Add sources for binary caching. See 'vcpkg help binarycaching'.");
     DECLARE_MESSAGE(BuildAlreadyInstalled,
@@ -773,25 +776,25 @@ namespace vcpkg
                     "",
                     "Could not deduce nuget id and version from filename: {path}");
     DECLARE_MESSAGE(CouldNotFindBaseline,
-                    (msg::value, msg::path),
-                    "{value} is a commit sha",
-                    "Could not find explicitly specified baseline `\"{value}\"` in baseline file {path}");
+                    (msg::commit_sha, msg::path),
+                    "",
+                    "Could not find explicitly specified baseline `\"{commit_sha}\"` in baseline file {path}");
     DECLARE_MESSAGE(CouldNotFindBaselineForRepo,
-                    (msg::value, msg::package_name),
-                    "{value} is a commit sha.",
-                    "Couldn't find baseline `\"{value}\"` for repo {package_name}");
+                    (msg::commit_sha, msg::package_name),
+                    "",
+                    "Couldn't find baseline `\"{commit_sha}\"` for repo {package_name}");
     DECLARE_MESSAGE(FailedToFetchError,
-                    (msg::error_msg, msg::package_name, msg::error),
-                    "{error} is the error code",
-                    "{error_msg}\nFailed to fetch {package_name}:\n{error}");
+                    (msg::error_msg, msg::package_name),
+                    "",
+                    "{error_msg}\nFailed to fetch {package_name}:");
     DECLARE_MESSAGE(CouldNotFindBaselineInCommit,
-                    (msg::value, msg::package_name, msg::error_msg),
-                    "{value} is a commit sha.",
-                    "Couldn't find baseline in commit `\"{value}\"` from repo {package_name}:\n{error_msg}");
+                    (msg::commit_sha, msg::package_name),
+                    "",
+                    "Couldn't find baseline in commit `\"{commit_sha}\"` from repo {package_name}:");
     DECLARE_MESSAGE(CouldNotFindGitTreeAtCommit,
-                    (msg::package_name, msg::value, msg::error_msg),
-                    "{value} is a commit sha",
-                    "could not find the git tree for `versions` in repo {package_name} at commit {value}: {error_msg}");
+                    (msg::package_name, msg::commit_sha),
+                    "",
+                    "could not find the git tree for `versions` in repo {package_name} at commit {commit_sha}");
     DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: {path}");
     DECLARE_MESSAGE(CurlFailedToExecute, (msg::exit_code), "", "curl failed to execute with exit code {exit_code}.");
     DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
@@ -812,7 +815,7 @@ namespace vcpkg
                     "=== end curl output ===");
     DECLARE_MESSAGE(CurlReturnedUnexpectedResponseCodes,
                     (msg::actual, msg::expected),
-                    "{actual} and {expected} are the number of response codes returned by curl vs the expected number "
+                    "{actual} and {expected} are integers"
                     "of response codes.",
                     "curl returned a different number of response codes than were expected for the request ({actual} "
                     "vs expected {expected}).");
@@ -1046,9 +1049,9 @@ namespace vcpkg
                     "",
                     "Fetching baseline information from {package_name}...");
     DECLARE_MESSAGE(FetchingRegistryInfo,
-                    (msg::package_name, msg::value),
+                    (msg::url, msg::value),
                     "{value} is a reference",
-                    "Fetching registry information from {package_name} ({value})...");
+                    "Fetching registry information from {url} ({value})...");
     DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at \"{path}\".");
     DECLARE_MESSAGE(FloatingPointConstTooBig, (msg::count), "", "Floating point constant too big: {count}");
     DECLARE_MESSAGE(FileNotFound, (msg::path), "", "{path}: file not found");
@@ -1343,7 +1346,7 @@ namespace vcpkg
                     (),
                     "",
                     "Value of --sort must be one of 'lexicographical', 'topological', 'reverse'.");
-    DECLARE_MESSAGE(InvalidCommitId, (msg::value), "'{value}' is a commit id.", "Invalid commit id {value}");
+    DECLARE_MESSAGE(InvalidCommitId, (msg::commit_sha), "", "Invalid commit id: {commit_sha}");
     DECLARE_MESSAGE(InvalidFilename,
                     (msg::value, msg::path),
                     "'{value}' is a list of invalid characters. I.e. \\/:*?<>|",
@@ -1361,7 +1364,7 @@ namespace vcpkg
         (msg::system_name, msg::value),
         "'{value}' is the linkage type vcpkg would did not understand. (Correct values would be static ofr dynamic)",
         "Invalid {system_name} linkage type: [{value}]");
-    DECLARE_MESSAGE(InvalidPortVersonName, (msg::path), "", " found invalid port version file name: `{path}`.");
+    DECLARE_MESSAGE(InvalidPortVersonName, (msg::path), "", "Found invalid port version file name: `{path}`.");
     DECLARE_MESSAGE(InvalidString, (), "", "Invalid utf8 passed to Value::string(std::string)");
     DECLARE_MESSAGE(InvalidOptionForRemove,
                     (),
@@ -1802,7 +1805,8 @@ namespace vcpkg
                     "'x-aws-config', 'http', and 'files'");
     DECLARE_MESSAGE(UnknownMachineCode,
                     (msg::value),
-                    "{value} is machine type code",
+                    "{value} is machine type code, see "
+                    "https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#machine-types",
                     "Unknown machine type code {value}");
     DECLARE_MESSAGE(UnknownOptions, (msg::command_name), "", "Unknown option(s) for command '{command_name}':");
     DECLARE_MESSAGE(UnknownParameterForIntegrate,

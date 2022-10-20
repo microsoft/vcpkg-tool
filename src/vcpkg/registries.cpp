@@ -88,10 +88,11 @@ namespace
                     LockGuardPtr<Metrics>(g_metrics)->track_define_property(
                         DefineMetric::RegistriesErrorNoVersionsAtCommit);
                     Checks::msg_exit_with_error(VCPKG_LINE_INFO,
-                                                msgCouldNotFindGitTreeAtCommit,
-                                                msg::package_name = m_repo,
-                                                msg::value = e.commit_id(),
-                                                msg::error_msg = maybe_tree.error());
+                                                msg::format(msgCouldNotFindGitTreeAtCommit,
+                                                            msg::package_name = m_repo,
+                                                            msg::commit_sha = e.commit_id())
+                                                    .append_raw('\n')
+                                                    .append_raw(maybe_tree.error()));
                 }
                 auto maybe_path = m_paths.git_checkout_object_from_remote_registry(*maybe_tree.get());
                 if (!maybe_path)
@@ -522,7 +523,7 @@ namespace
                 return std::move(*p);
             }
             Checks::msg_exit_with_message(
-                VCPKG_LINE_INFO, msgBaselineFileNoDefaultField, msg::value = m_baseline_identifier);
+                VCPKG_LINE_INFO, msgBaselineFileNoDefaultField, msg::commit_sha = m_baseline_identifier);
         });
 
         auto it = baseline.find(port_name);
@@ -566,7 +567,7 @@ namespace
 
                 Checks::msg_exit_with_error(VCPKG_LINE_INFO,
                                             msgCouldNotFindBaseline,
-                                            msg::value = m_baseline_identifier,
+                                            msg::commit_sha = m_baseline_identifier,
                                             msg::path = path_to_baseline);
             }
 
@@ -649,12 +650,17 @@ namespace
                 {
                     LockGuardPtr<Metrics>(g_metrics)->track_define_property(
                         DefineMetric::RegistriesErrorCouldNotFindBaseline);
-                    msg::println_error(
-                        msgCouldNotFindBaselineForRepo, msg::value = m_baseline_identifier, msg::package_name = m_repo);
-                    msg::println_error(msgFailedToFetchError,
-                                       msg::error_msg = maybe_contents.error(),
-                                       msg::package_name = m_repo,
-                                       msg::error = maybe_err.error());
+
+                    msg::println_error(msgCouldNotFindBaselineForRepo,
+                                       msg::commit_sha = m_baseline_identifier,
+                                       msg::package_name = m_repo);
+
+                    msg::println_error(msg::format(msgFailedToFetchError,
+                                                   msg::error_msg = maybe_contents.error(),
+                                                   msg::package_name = m_repo)
+                                           .append_raw('\n')
+                                           .append_raw(maybe_err.error()));
+
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
 
@@ -666,10 +672,11 @@ namespace
                 LockGuardPtr<Metrics>(g_metrics)->track_define_property(
                     DefineMetric::RegistriesErrorCouldNotFindBaseline);
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                              msgCouldNotFindBaselineInCommit,
-                                              msg::value = m_baseline_identifier,
-                                              msg::package_name = m_repo,
-                                              msg::error_msg = maybe_contents.error());
+                                              msg::format(msgCouldNotFindBaselineInCommit,
+                                                          msg::commit_sha = m_baseline_identifier,
+                                                          msg::package_name = m_repo)
+                                                  .append_raw('\n')
+                                                  .append_raw(maybe_contents.error()));
             }
 
             auto contents = maybe_contents.get();
@@ -686,8 +693,8 @@ namespace
                         DefineMetric::RegistriesErrorCouldNotFindBaseline);
                     Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
                                                    msgBaselineMissingDefault,
-                                                   msg::value = m_baseline_identifier,
-                                                   msg::package_name = m_repo);
+                                                   msg::commit_sha = m_baseline_identifier,
+                                                   msg::url = m_repo);
                 }
             }
             else
@@ -1109,7 +1116,7 @@ namespace vcpkg
 
         if (it == range.second)
         {
-            msg::println(msgFetchingRegistryInfo, msg::package_name = repo, msg::value = reference);
+            msg::println(msgFetchingRegistryInfo, msg::url = repo, msg::value = reference);
             auto x = paths.git_fetch_from_remote_registry(repo, reference);
             it = lockdata.emplace(repo.to_string(),
                                   EntryData{reference.to_string(), x.value_or_exit(VCPKG_LINE_INFO), false});
@@ -1124,7 +1131,7 @@ namespace vcpkg
         {
             StringView repo(data->first);
             StringView reference(data->second.reference);
-            msg::println(msgFetchingRegistryInfo, msg::package_name = repo, msg::value = reference);
+            msg::println(msgFetchingRegistryInfo, msg::url = repo, msg::value = reference);
 
             data->second.commit_id =
                 paths.git_fetch_from_remote_registry(repo, reference).value_or_exit(VCPKG_LINE_INFO);
