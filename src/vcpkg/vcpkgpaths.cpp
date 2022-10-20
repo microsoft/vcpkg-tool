@@ -679,22 +679,15 @@ namespace vcpkg
                                                        m_pimpl->m_config_dir,
                                                        *this);
 
-            auto make_relative_to_manifest = [&](std::string overlay_path) -> std::string {
-                auto const p = Path(overlay_path);
-                if (p.is_relative())
-                {
-                    Path ret = m_pimpl->m_config.directory / overlay_path;
-                    return ret.c_str();
-                }
-                return overlay_path;
+            auto resolve_relative_to_config = [&](const std::string& overlay_path) {
+                return (m_pimpl->m_config.directory / overlay_path).native();
             };
 
             if (!m_pimpl->m_config.directory.empty())
             {
-                auto& config_ports = m_pimpl->m_config.config.overlay_ports;
-                auto& config_triplets = m_pimpl->m_config.config.overlay_triplets;
-                Util::transform(config_ports, make_relative_to_manifest);
-                Util::transform(config_triplets, make_relative_to_manifest);
+                auto& config = m_pimpl->m_config.config;
+                Util::transform(config.overlay_ports, resolve_relative_to_config);
+                Util::transform(config.overlay_triplets, resolve_relative_to_config);
             }
 
             overlay_ports = merge_overlays(
@@ -1348,17 +1341,6 @@ namespace vcpkg
             return *p;
         }
         return nullopt;
-    }
-
-    Optional<const Path&> VcpkgPaths::get_manifest_directory() const
-    {
-        auto& maybe_manifest_dir = m_pimpl->m_manifest_dir;
-        if (maybe_manifest_dir.empty())
-        {
-            return nullopt;
-        }
-
-        return maybe_manifest_dir;
     }
 
     const ConfigurationAndSource& VcpkgPaths::get_configuration() const { return m_pimpl->m_config; }
