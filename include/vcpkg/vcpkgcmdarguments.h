@@ -158,10 +158,12 @@ namespace vcpkg
         Optional<std::string> host_triplet;
         constexpr static StringLiteral OVERLAY_PORTS_ENV = "VCPKG_OVERLAY_PORTS";
         constexpr static StringLiteral OVERLAY_PORTS_ARG = "overlay-ports";
-        std::vector<std::string> overlay_ports;
+        std::vector<std::string> cli_overlay_ports;
+        std::vector<std::string> env_overlay_ports;
         constexpr static StringLiteral OVERLAY_TRIPLETS_ENV = "VCPKG_OVERLAY_TRIPLETS";
         constexpr static StringLiteral OVERLAY_TRIPLETS_ARG = "overlay-triplets";
-        std::vector<std::string> overlay_triplets;
+        std::vector<std::string> cli_overlay_triplets;
+        std::vector<std::string> env_overlay_triplets;
 
         constexpr static StringLiteral BINARY_SOURCES_ARG = "binarysource";
         std::vector<std::string> binary_sources;

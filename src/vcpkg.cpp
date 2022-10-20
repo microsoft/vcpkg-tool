@@ -118,8 +118,6 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
         }
     }
 
-    LockGuardPtr<Metrics>(g_metrics)->track_bool_property(BoolMetric::OptionOverlayPorts, !args.overlay_ports.empty());
-
     if (const auto command_function = find_command(Commands::get_available_basic_commands()))
     {
         LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::CommandName, command_function->name);
@@ -128,6 +126,8 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 
     const VcpkgPaths paths(fs, args);
     paths.track_feature_flag_metrics();
+
+    LockGuardPtr<Metrics>(g_metrics)->track_bool_property(BoolMetric::OptionOverlayPorts, !paths.overlay_ports.empty());
 
     fs.current_path(paths.root, VCPKG_LINE_INFO);
 
