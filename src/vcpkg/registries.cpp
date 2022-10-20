@@ -364,7 +364,7 @@ namespace
                 {
                     Checks::exit_maybe_upgrade(
                         VCPKG_LINE_INFO, "Error: found invalid port version file name: `%s`.", file);
-                }
+               }
 
                 out.push_back(port_name.to_string());
             }

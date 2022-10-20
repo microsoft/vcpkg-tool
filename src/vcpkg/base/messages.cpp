@@ -265,7 +265,7 @@ namespace vcpkg::msg
         std::array<std::pair<int, StringLiteral>, 14> languages = {std::pair<int, StringLiteral>(1029, "cs"),
                                                                    std::pair<int, StringLiteral>(1031, "de"),
                                                                    std::pair<int, StringLiteral>(1033, "en"),
-                                                                   std::pair<int, StringLiteral>(1034, "es"),
+                                                                   std::pair<int, StringLiteral>(3082, "es"),
                                                                    std::pair<int, StringLiteral>(1036, "fr"),
                                                                    std::pair<int, StringLiteral>(1040, "it"),
                                                                    std::pair<int, StringLiteral>(1041, "ja"),
