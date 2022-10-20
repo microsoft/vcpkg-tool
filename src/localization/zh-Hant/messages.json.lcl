@@ -322,6 +322,12 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AdditionalPackagesToExport" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Additional packages (*) need to be exported to complete this operation.]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AdditionalPackagesToRemove" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Additional packages (*) need to be removed to complete this operation.]]></Val>
@@ -373,6 +379,12 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{spec} 已安裝 -- 未從 HEAD 建立]]></Val>
           </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AndroidHomeDirMissingProps" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[source.properties missing in {env_var} directory: {path}]]></Val>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -730,6 +742,12 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CMakeUsingExportedLibs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[To use exported libraries in CMake projects, add {value} to your CMake command line.]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ChecksFailedCheck" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[vcpkg has crashed; no additional details are available.]]></Val>
@@ -940,6 +958,12 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CorruptedInstallTree" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Your vcpkg 'installed' tree is corrupted.]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CouldNotDeduceNugetIdAndVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not deduce nuget id and version from filename: {path}]]></Val>
@@ -951,22 +975,49 @@
       </Item>
       <Item ItemId=";CreateFailureLogsDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Creating failure logs output directory {path}]]></Val>
+          <Val><![CDATA[Creating failure logs output directory {path}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[正在建立失敗記錄輸出目錄 {path}]]></Val>
+            <Val><![CDATA[正在建立失敗記錄輸出目錄 {path}。]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Creating failure logs output directory {path}.]]></Val>
+            <Val><![CDATA[Creating failure logs output directory {path}]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CreatedNuGetPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Created nupkg: "{path}"]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
+          <Val><![CDATA[Created nupkg: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Update" Orig="New">
             <Val><![CDATA[建立的 nupkg: "{path}"]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Created nupkg: "{path}"]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";Creating7ZipArchive" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Creating 7zip archive...]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CreatingNugetPackage" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Creating NuGet package...]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CreatingZipArchive" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Creating zip archive...]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CreationFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Creating {path} failed.]]></Val>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1018,6 +1069,12 @@
           <Prev Cat="Text">
             <Val><![CDATA[Based on your system settings, the default path to store binaries is ]A; '{path}'. This consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DeprecatedPrefabDebugOption" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[--prefab-debug is now deprecated.]]></Val>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1537,6 +1594,48 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExportArchitectureReq" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Export prefab requires targeting at least one of the following architectures arm64-v8a, armeabi-v7a, x86_64, x86 to be present.]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExportPrefabRequiresAndroidTriplet" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[export prefab requires an Android triplet.]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExportUnsupportedInManifest" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg export does not support manifest mode, in order to allow for future design considerations. You may use export in classic mode by running vcpkg outside of a manifest-based project.]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";Exported7zipArchive" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[7zip archive exported at: {path}]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExportedZipArchive" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Zip archive exported at: {path}]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExportingAlreadyBuiltPackages" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following packages are already built and will be exported:]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExportingMaintenanceTool" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Exporting maintenance tool...]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExportingPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Exporting {package_name}...]]></Val>
@@ -1807,6 +1906,12 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FilesExported" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Files exported at: {path}]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FishCompletion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[vcpkg fish completion is already added at "{path}".]]></Val>
@@ -1906,6 +2011,36 @@
           <Prev Cat="Text">
             <Val><![CDATA[    {{{value}}} was used in the message, but not commented.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GeneratedConfiguration" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Generated configuration {path}.]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GeneratedInstaller" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{path} installer generated.]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GeneratingConfiguration" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Generating configuration {path}...]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GeneratingInstaller" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Generating installer {path}...]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GeneratingRepo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Generating repository {path}...]]></Val>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2506,6 +2641,12 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InstallingMavenFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{path} installing maven file]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InstallingPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Installing {action_index}/{count} {spec}...]]></Val>
@@ -3088,6 +3229,18 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";MissingAndroidEnv" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[ANDROID_NDK_HOME environment variable missing]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";MissingAndroidHomeDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[ANDROID_NDK_HOME directory does not exist: {path}]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";MissingArgFormatManifest" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[format-manifest was passed --convert-control without '--all'.]A;This doesn't do anything: control files passed explicitly are converted automatically.]]></Val>
@@ -3616,6 +3769,12 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PrebuiltPackages" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[There are packages that have not been built. To build them run:]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PreviousIntegrationFileRemains" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Previous integration file was not removed.]]></Val>
@@ -3658,6 +3817,12 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{tool_name} 失敗，結束代碼: ({exit_code})。]]></Val>
           </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ProvideExportType" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[At least one of the following options are required: --raw --nuget --ifw --zip --7zip --chocolatey --prefab.]]></Val>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3904,6 +4069,12 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";SuccessfulyExported" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Exported {package_name} to {path}]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";SuggestGitPull" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The result may be outdated. Run `git pull` to get the latest results.]]></Val>
@@ -4003,6 +4174,12 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[無法判斷 {triplet} 與 CMAKE_SYSTEM_NAME {system_name} 搭配使用的工具鏈。您是否想要使用VCPKG_CHAINLOAD_TOOLCHAIN_FILE?]]></Val>
           </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedByteSize" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Expected {expected} bytes to be written, but {actual} were written.]]></Val>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4668,10 +4845,13 @@
       </Item>
       <Item ItemId=";WroteNuGetPkgConfInfo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Wrote NuGet package config information to {path}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
+          <Val><![CDATA[Wrote NuGet package config information to {path}]]></Val>
+          <Tgt Cat="Text" Stat="Update" Orig="New">
             <Val><![CDATA[已將 NuGet 套件設定資訊寫入{path}。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Wrote NuGet package config information to {path}.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
