@@ -68,16 +68,18 @@ namespace vcpkg
         auto manifest_opt = Json::parse_file(fs, manifest_path, ec);
         if (ec)
         {
-            Checks::msg_exit_maybe_upgrade(
-                VCPKG_LINE_INFO, msgFailedToLoadManifest, msg::path = manifest_dir, msg::error_msg = ec.message());
+            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                           msg::format(msgFailedToLoadManifest, msg::path = manifest_dir)
+                                               .append_raw('\n')
+                                               .append_raw(ec.message()));
         }
 
         if (!manifest_opt)
         {
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                           msgFailedToLoadManifest,
-                                           msg::path = manifest_path,
-                                           msg::error_msg = manifest_opt.error()->to_string());
+                                           msg::format(msgFailedToLoadManifest, msg::path = manifest_dir)
+                                               .append_raw('\n')
+                                               .append_raw(manifest_opt.error()->to_string()));
         }
         auto manifest_value = std::move(manifest_opt).value_or_exit(VCPKG_LINE_INFO);
 
@@ -120,8 +122,11 @@ namespace vcpkg
         if (!reader.errors().empty())
         {
             msg::println_error(msgFailedToParseConfig, msg::path = config_path);
+
             for (auto&& msg : reader.errors())
+            {
                 msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("    {}\n", msg));
+            }
 
             msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -158,8 +163,7 @@ namespace vcpkg
 
                 if (manifest->builtin_baseline && config->default_reg)
                 {
-                    msg::println_error(msgBaselineConflict);
-                    Checks::exit_fail(VCPKG_LINE_INFO);
+                    Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgBaselineConflict);
                 }
 
                 config->validate_as_active();
@@ -251,9 +255,10 @@ namespace vcpkg
                 }
                 else
                 {
-                    Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                                  msgInvalidBundleDefinition,
-                                                  msg::error_msg = maybe_bundle_doc.error()->to_string());
+                    msg::println_error(msg::format(msgInvalidBundleDefinition)
+                                           .append_raw('\n')
+                                           .append_raw(maybe_bundle_doc.error()->to_string()));
+                    Checks::exit_fail(VCPKG_LINE_INFO);
                 }
             }
             return ret;
@@ -332,7 +337,8 @@ namespace vcpkg
 
                 if (!vcpkg::is_directory(status))
                 {
-                    Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgValueMustBePath, msg::path = ret.native());
+                    Checks::msg_exit_with_message(
+                        VCPKG_LINE_INFO, msgVcpkgRegistriesCacheIsNotDirectory, msg::path = ret.native());
                 }
 
                 if (!ret.is_absolute())
@@ -1014,7 +1020,10 @@ namespace vcpkg
         }
         else
         {
-            return msg::format(msgFailedToDetermineCurrentCommit, msg::error_msg = maybe_cur_sha.error()).to_string();
+            return msg::format(msgFailedToDetermineCurrentCommit)
+                .append_raw('\n')
+                .append_raw(maybe_cur_sha.error())
+                .to_string();
         }
     }
 

@@ -585,7 +585,7 @@ namespace vcpkg
                     (),
                     "",
                     "attempting to set builtin-baseline in vcpkg.json while overriding the default-registry in "
-                    "vcpkg-configuration.json.\n\tthe default-registry from vcpkg-configuration.json will be used.");
+                    "vcpkg-configuration.json.\nthe default-registry from vcpkg-configuration.json will be used.");
     DECLARE_MESSAGE(AuthenticationMayRequireManualAction,
                     (msg::vendor),
                     "",
@@ -872,7 +872,7 @@ namespace vcpkg
                     (msg::tool_name, msg::version),
                     "",
                     "A suitable version of {tool_name} was not found (required v{version}) Downloading "
-                    "portable {tool_name} v{version}...");
+                    "portable {tool_name} {version}...");
     DECLARE_MESSAGE(DownloadingTool,
                     (msg::tool_name, msg::url, msg::path),
                     "",
@@ -1034,10 +1034,7 @@ namespace vcpkg
     DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":");
     DECLARE_MESSAGE(FailedToFindBaseline, (), "", "Failed to find baseline.json");
     DECLARE_MESSAGE(ExtractingTool, (msg::tool_name), "", "Extracting {tool_name}...");
-    DECLARE_MESSAGE(FailedToDetermineCurrentCommit,
-                    (msg::error_msg),
-                    "",
-                    "Failed to determine the current commit:\n{error_msg}");
+    DECLARE_MESSAGE(FailedToDetermineCurrentCommit, (), "", "Failed to determine the current commit:");
     DECLARE_MESSAGE(FailedToFindPortFeature, (msg::feature, msg::spec), "", "Could not find {feature} in {spec}.");
     DECLARE_MESSAGE(FailedToFormatMissingFile,
                     (),
@@ -1057,10 +1054,7 @@ namespace vcpkg
                     "",
                     "Failed to load port {package_name} from {path}");
     DECLARE_MESSAGE(FailedToLoadPortFrom, (msg::path), "", "Failed to load port from {path}");
-    DECLARE_MESSAGE(FailedToLoadManifest,
-                    (msg::path, msg::error_msg),
-                    "",
-                    "Failed to load manifest from directory {path}: {error_msg}");
+    DECLARE_MESSAGE(FailedToLoadManifest, (msg::path), "", "Failed to load manifest from directory {path}");
     DECLARE_MESSAGE(FailedToLoadUnnamedPortFromPath, (msg::path), "", "Failed to load port from {path}");
     DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}");
     DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
@@ -1070,7 +1064,7 @@ namespace vcpkg
                     (),
                     "",
                     "Failed to parse CMake console output to locate block start/end markers.");
-    DECLARE_MESSAGE(FailedToParseConfig, (msg::path), "", "Failed to parse {path}");
+    DECLARE_MESSAGE(FailedToParseConfig, (msg::path), "", "Failed to parse configuration {path}");
     DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse control file: {path}");
     DECLARE_MESSAGE(FailedToParseJson, (msg::path), "", "Failed to parse JSON file: {path}");
     DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: {path}");
@@ -1404,7 +1398,7 @@ namespace vcpkg
         (msg::value),
         "{value} is a git commit sha",
         "the top-level builtin-baseline ({value}) was not a valid commit sha: expected 40 hexadecimal characters.");
-    DECLARE_MESSAGE(InvalidBundleDefinition, (msg::error_msg), "", "Invalid bundle definition.\n{error_msg}");
+    DECLARE_MESSAGE(InvalidBundleDefinition, (), "", "Invalid bundle definition.");
     DECLARE_MESSAGE(InvalidCodePoint, (), "", "Invalid code point passed to utf8_encoded_code_point_count");
     DECLARE_MESSAGE(InvalidCodeUnit, (), "", "invalid code unit");
     DECLARE_MESSAGE(InvalidCommandArgSort,
@@ -1836,12 +1830,12 @@ namespace vcpkg
     DECLARE_MESSAGE(ToRemovePackages,
                     (msg::command_name),
                     "",
-                    "To only remove outdated packages, run\n\t{command_name} remove --outdated");
+                    "To only remove outdated packages, run\n{command_name} remove --outdated");
     DECLARE_MESSAGE(TotalTime, (msg::elapsed), "", "Total elapsed time: {elapsed}");
     DECLARE_MESSAGE(ToUpdatePackages,
                     (msg::command_name),
                     "",
-                    "To update these packages and all dependencies, run\n\t{command_name} upgrade'");
+                    "To update these packages and all dependencies, run\n{command_name} upgrade'");
     DECLARE_MESSAGE(TripletFileNotFound, (msg::triplet), "", "Triplet file {triplet}.cmake not found");
     DECLARE_MESSAGE(TrailingCommaInArray, (), "", "Trailing comma in array");
     DECLARE_MESSAGE(TrailingCommaInObj, (), "", "Trailing comma in an object");
@@ -2033,7 +2027,7 @@ namespace vcpkg
                     "'--' at the beginning must be preserved",
                     "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.");
     DECLARE_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
-    DECLARE_MESSAGE(ValueMustBePath,
+    DECLARE_MESSAGE(VcpkgRegistriesCacheIsNotDirectory,
                     (msg::path),
                     "",
                     "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not a directory: {path}");

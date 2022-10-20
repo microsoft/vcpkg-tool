@@ -709,8 +709,11 @@ namespace vcpkg
                 fs.rename(download_path, exe_path, IgnoreErrors{});
             }
 
-            Checks::msg_check_exit(
-                VCPKG_LINE_INFO, fs.exists(exe_path, IgnoreErrors{}), msgExpectedPathToExist, msg::path = exe_path);
+            if (!fs.exists(exe_path, IgnoreErrors{}))
+            {
+                msg::println_error(msgExpectedPathToExist, msg::path = exe_path);
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
 
             return exe_path;
         }

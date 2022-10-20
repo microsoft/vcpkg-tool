@@ -988,5 +988,5 @@ namespace vcpkg
     REGISTER_MESSAGE(ToUpdatePackages);
     REGISTER_MESSAGE(AmbiguousConfigDeleteConfigFile);
     REGISTER_MESSAGE(TripletFileNotFound);
-    REGISTER_MESSAGE(ValueMustBePath);
+    REGISTER_MESSAGE(VcpkgRegistriesCacheIsNotDirectory);
 }
