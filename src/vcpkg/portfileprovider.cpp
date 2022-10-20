@@ -256,7 +256,7 @@ namespace vcpkg
             {
                 for (auto&& overlay : m_overlay_ports)
                 {
-                    Debug::print("Using overlay: ", overlay, "\n");
+                    Debug::println("Using overlay: ", overlay);
 
                     Checks::msg_check_exit(VCPKG_LINE_INFO,
                                            vcpkg::is_directory(m_fs.status(overlay, VCPKG_LINE_INFO)),
@@ -312,7 +312,7 @@ namespace vcpkg
                             Checks::msg_exit_maybe_upgrade(
                                 VCPKG_LINE_INFO,
                                 msg::format(msgFailedToLoadPort, msg::package_name = port_name, msg::path = ports_spec)
-                                    .append_raw("\n")
+                                    .append_raw('\n')
                                     .append(msgMismatchedNames,
                                             msg::package_name = port_name,
                                             msg::actual = scf->core_paragraph->name));
@@ -364,7 +364,7 @@ namespace vcpkg
                         {
                             print_error_message(maybe_scf.error());
                             Checks::msg_exit_maybe_upgrade(
-                                VCPKG_LINE_INFO, msgFailedToLoadPortFrom, msg::path = ports_dir);
+                                VCPKG_LINE_INFO, msgFailedToLoadUnnamedPortFromPath, msg::path = ports_dir);
                         }
 
                         continue;

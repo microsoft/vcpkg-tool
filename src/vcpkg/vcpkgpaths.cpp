@@ -33,7 +33,7 @@ namespace
     using namespace vcpkg;
 
     static Path process_input_directory_impl(
-        Filesystem& filesystem, const Path& root, std::string* option, StringLiteral name, LineInfo li)
+        Filesystem& filesystem, const Path& root, const std::string* option, StringLiteral name, LineInfo li)
     {
         if (option)
         {
@@ -46,7 +46,7 @@ namespace
     }
 
     static Path process_input_directory(
-        Filesystem& filesystem, const Path& root, std::string* option, StringLiteral name, LineInfo li)
+        Filesystem& filesystem, const Path& root, const std::string* option, StringLiteral name, LineInfo li)
     {
         auto result = process_input_directory_impl(filesystem, root, option, name, li);
         Debug::print("Using ", name, "-root: ", result, '\n');
@@ -128,6 +128,18 @@ namespace vcpkg
         }
 
         return parsed_config_opt;
+    }
+
+    static std::vector<std::string> merge_overlays(const std::vector<std::string>& cli_overlays,
+                                                   const std::vector<std::string>& manifest_overlays,
+                                                   const std::vector<std::string>& env_overlays)
+    {
+        std::vector<std::string> ret = cli_overlays;
+
+        ret.insert(std::end(ret), std::begin(manifest_overlays), std::end(manifest_overlays));
+        ret.insert(std::end(ret), std::begin(env_overlays), std::end(env_overlays));
+
+        return ret;
     }
 
     static ConfigurationAndSource merge_validate_configs(Optional<ManifestConfiguration>&& manifest_data,
@@ -281,9 +293,9 @@ namespace vcpkg
         {
             if (args.manifests_enabled())
             {
-                if (args.manifest_root_dir)
+                if (auto manifest_root_dir = args.manifest_root_dir.get())
                 {
-                    return fs.almost_canonical(*args.manifest_root_dir, VCPKG_LINE_INFO);
+                    return fs.almost_canonical(*manifest_root_dir, VCPKG_LINE_INFO);
                 }
                 else
                 {
@@ -307,10 +319,10 @@ namespace vcpkg
         static Path compute_registries_cache_root(const Filesystem& fs, const VcpkgCmdArguments& args)
         {
             Path ret;
-            if (args.registries_cache_dir)
+            if (auto registries_cache_dir = args.registries_cache_dir.get())
             {
                 LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::X_VcpkgRegistriesCache);
-                ret = *args.registries_cache_dir;
+                ret = *registries_cache_dir;
                 const auto status = get_real_filesystem().status(ret, VCPKG_LINE_INFO);
                 if (!vcpkg::exists(status))
                 {
@@ -353,8 +365,10 @@ namespace vcpkg
                       parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)))
                 , m_builtin_ports(process_output_directory(fs, args.builtin_ports_root_dir.get(), root / "ports"))
                 , m_default_vs_path(args.default_visual_studio_path
-                                        ? fs.almost_canonical(*args.default_visual_studio_path, VCPKG_LINE_INFO)
-                                        : Path{})
+                                        .map([&fs](const std::string& default_visual_studio_path) {
+                                            return fs.almost_canonical(default_visual_studio_path, VCPKG_LINE_INFO);
+                                        })
+                                        .value_or(Path{}))
                 , scripts(process_input_directory(fs, root, args.scripts_root_dir.get(), "scripts", VCPKG_LINE_INFO))
                 , m_registries_cache(compute_registries_cache_root(fs, args))
             {
@@ -408,9 +422,9 @@ namespace vcpkg
                                            const details::BundleSettings& bundle)
         {
             Path ret;
-            if (args.downloads_root_dir)
+            if (auto downloads_root_dir = args.downloads_root_dir.get())
             {
-                ret = *args.downloads_root_dir;
+                ret = *downloads_root_dir;
             }
             else if (bundle.m_readonly)
             {
@@ -461,9 +475,7 @@ namespace vcpkg
                                               args.exact_abi_tools_versions.value_or(false) ? RequireExactVersions::YES
                                                                                             : RequireExactVersions::NO))
                 , m_env_cache(m_ff_settings.compiler_tracking)
-                , triplets_dirs(
-                      Util::fmap(args.overlay_triplets,
-                                 [&fs](const std::string& p) { return fs.almost_canonical(p, VCPKG_LINE_INFO); }))
+                , triplets_dirs()
                 , m_artifacts_dir(downloads / "artifacts")
             {
                 if (auto i = m_installed.get())
@@ -568,9 +580,9 @@ namespace vcpkg
     static Path determine_root(const Filesystem& fs, const Path& original_cwd, const VcpkgCmdArguments& args)
     {
         Path ret;
-        if (args.vcpkg_root_dir)
+        if (auto vcpkg_root_dir_arg = args.vcpkg_root_dir_arg.get())
         {
-            ret = fs.almost_canonical(*args.vcpkg_root_dir, VCPKG_LINE_INFO);
+            ret = fs.almost_canonical(*vcpkg_root_dir_arg, VCPKG_LINE_INFO);
         }
         else
         {
@@ -581,6 +593,20 @@ namespace vcpkg
                     fs.find_file_recursively_up(fs.almost_canonical(get_exe_path_of_current_process(), VCPKG_LINE_INFO),
                                                 ".vcpkg-root",
                                                 VCPKG_LINE_INFO);
+            }
+
+            if (auto vcpkg_root_dir_env = args.vcpkg_root_dir_env.get())
+            {
+                auto canonical_root_dir_env = fs.almost_canonical(*vcpkg_root_dir_env, VCPKG_LINE_INFO);
+                if (ret.empty())
+                {
+                    ret = std::move(canonical_root_dir_env);
+                }
+                else if (ret != canonical_root_dir_env)
+                {
+                    msg::println_warning(
+                        msgIgnoringVcpkgRootEnvironment, msg::path = *vcpkg_root_dir_env, msg::actual = ret);
+                }
             }
         }
 
@@ -624,9 +650,6 @@ namespace vcpkg
         Debug::print("Using builtin-registry: ", builtin_registry_versions, '\n');
         Debug::print("Using downloads-root: ", downloads, '\n');
 
-        m_pimpl->triplets_dirs.emplace_back(triplets);
-        m_pimpl->triplets_dirs.emplace_back(community_triplets);
-
         {
             auto maybe_manifest_config = config_from_manifest(m_pimpl->m_manifest_path, m_pimpl->m_manifest_doc);
             auto maybe_config_json = config_from_json(m_pimpl->m_config_dir / "vcpkg-configuration.json", filesystem);
@@ -637,8 +660,31 @@ namespace vcpkg
                                                        m_pimpl->m_config_dir,
                                                        *this);
 
+            auto resolve_relative_to_config = [&](const std::string& overlay_path) {
+                return (m_pimpl->m_config.directory / overlay_path).native();
+            };
+
+            if (!m_pimpl->m_config.directory.empty())
+            {
+                auto& config = m_pimpl->m_config.config;
+                Util::transform(config.overlay_ports, resolve_relative_to_config);
+                Util::transform(config.overlay_triplets, resolve_relative_to_config);
+            }
+
+            overlay_ports = merge_overlays(
+                args.cli_overlay_ports, get_configuration().config.overlay_ports, args.env_overlay_ports);
+            overlay_triplets = merge_overlays(
+                args.cli_overlay_triplets, get_configuration().config.overlay_triplets, args.env_overlay_triplets);
+
             m_pimpl->m_registry_set = m_pimpl->m_config.instantiate_registry_set(*this);
         }
+
+        for (std::string triplet : this->overlay_triplets)
+        {
+            m_pimpl->triplets_dirs.emplace_back(filesystem.almost_canonical(triplet, VCPKG_LINE_INFO));
+        }
+        m_pimpl->triplets_dirs.emplace_back(triplets);
+        m_pimpl->triplets_dirs.emplace_back(community_triplets);
 
         // metrics from configuration
         {
@@ -952,8 +998,15 @@ namespace vcpkg
         }
         return ret;
     }
+
     std::string VcpkgPaths::get_current_git_sha_baseline_message() const
     {
+        const auto& git_config = git_builtin_config();
+        if (is_shallow_clone(git_config).value_or(false))
+        {
+            return msg::format(msgShallowRepositoryDetected, msg::path = git_config.git_dir).to_string();
+        }
+
         auto maybe_cur_sha = get_current_git_sha();
         if (auto p_sha = maybe_cur_sha.get())
         {
@@ -1060,9 +1113,19 @@ namespace vcpkg
         auto maybe_tar_output = flatten(cmd_execute_and_capture_output(tar_cmd_builder), Tools::TAR);
         if (!maybe_tar_output)
         {
+            auto message =
+                Strings::concat(PRELUDE, "Error: Failed to tar port directory\n", std::move(maybe_tar_output).error());
+
+            const auto& git_config = git_builtin_config();
+            if (is_shallow_clone(git_config).value_or(false))
+            {
+                message.push_back('\n');
+                message.append(msg::format(msgShallowRepositoryDetected, msg::path = git_config.git_dir).to_string());
+            }
             return {
-                Strings::concat(PRELUDE, "Error: Failed to tar port directory\n", std::move(maybe_tar_output).error()),
-                expected_right_tag};
+                std::move(message),
+                expected_right_tag,
+            };
         }
 
         extract_tar_cmake(this->get_tool_exe(Tools::CMAKE, stdout_sink), destination_tar, destination_tmp);

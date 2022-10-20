@@ -182,10 +182,7 @@ namespace vcpkg
 
         for (auto&& ipv : ipv_map)
         {
-            Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
-                                            ipv.second.core != nullptr,
-                                            msgCorruptedDatabaseNoCoreParagraph,
-                                            msg::package_name = ipv.first);
+            Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO, ipv.second.core != nullptr, msgCorruptedDatabase);
         }
 
         return Util::fmap(ipv_map, [](auto&& p) -> InstalledPackageView { return std::move(p.second); });
