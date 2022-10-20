@@ -479,7 +479,6 @@ namespace vcpkg
     REGISTER_MESSAGE(CompressFolderFailed);
     REGISTER_MESSAGE(ComputingInstallPlan);
     REGISTER_MESSAGE(ConflictingFiles);
-    REGISTER_MESSAGE(ConfigWithNoTopLevelObj);
     REGISTER_MESSAGE(CMakeUsingExportedLibs);
     REGISTER_MESSAGE(CommunityTriplets);
     REGISTER_MESSAGE(ComparingUtf8Decoders);
@@ -773,7 +772,6 @@ namespace vcpkg
     REGISTER_MESSAGE(LocalPortfileVersion);
     REGISTER_MESSAGE(ManifestConflict);
     REGISTER_MESSAGE(ManifestFormatCompleted);
-    REGISTER_MESSAGE(ManifestWithNoTopLevelObj);
     REGISTER_MESSAGE(MismatchedFiles);
     REGISTER_MESSAGE(MismatchedNames);
     REGISTER_MESSAGE(Missing7zHeader);
@@ -783,7 +781,6 @@ namespace vcpkg
     REGISTER_MESSAGE(MissingDependency);
     REGISTER_MESSAGE(MissingExtension);
     REGISTER_MESSAGE(MissingOption);
-    REGISTER_MESSAGE(MissingPathToRegistryCache);
     REGISTER_MESSAGE(MissingPortSuggestPullRequest);
     REGISTER_MESSAGE(MissmatchedBinParagraphs);
     REGISTER_MESSAGE(MonoInstructions);
@@ -989,4 +986,5 @@ namespace vcpkg
     REGISTER_MESSAGE(AmbiguousConfigDeleteConfigFile);
     REGISTER_MESSAGE(TripletFileNotFound);
     REGISTER_MESSAGE(VcpkgRegistriesCacheIsNotDirectory);
+    REGISTER_MESSAGE(FailedToParseNoTopLevelObj);
 }

@@ -85,7 +85,7 @@ namespace vcpkg
 
         if (!manifest_value.first.is_object())
         {
-            msg::println_error(msgManifestWithNoTopLevelObj, msg::path = manifest_path);
+            msg::println_error(msgFailedToParseNoTopLevelObj, msg::path = manifest_path);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
         return {std::move(manifest_value.first.object(VCPKG_LINE_INFO)), std::move(manifest_path)};
@@ -111,7 +111,7 @@ namespace vcpkg
         auto parsed_config = Json::parse_file(VCPKG_LINE_INFO, fs, config_path);
         if (!parsed_config.first.is_object())
         {
-            msg::println_error(msgConfigWithNoTopLevelObj, msg::path = config_path);
+            msg::println_error(msgFailedToParseNoTopLevelObj, msg::path = config_path);
             msg::println(Color::error, msg::msgSeeURL, msg::url = docs::registries_url);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -329,11 +329,6 @@ namespace vcpkg
                 LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::X_VcpkgRegistriesCache);
                 ret = *registries_cache_dir;
                 const auto status = get_real_filesystem().status(ret, VCPKG_LINE_INFO);
-                if (!vcpkg::exists(status))
-                {
-                    Checks::msg_exit_with_message(
-                        VCPKG_LINE_INFO, msgMissingPathToRegistryCache, msg::path = ret.native());
-                }
 
                 if (!vcpkg::is_directory(status))
                 {

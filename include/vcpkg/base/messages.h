@@ -776,10 +776,6 @@ namespace vcpkg
                     "",
                     "The following files are already installed in {path} and are in conflict with {spec}");
     DECLARE_MESSAGE(ConflictingValuesForOption, (msg::option), "", "conflicting values specified for '--{option}'.");
-    DECLARE_MESSAGE(ConfigWithNoTopLevelObj,
-                    (msg::path),
-                    "",
-                    "Failed to parse {path}: configuration files must have a top-level object");
     DECLARE_MESSAGE(ConstraintViolation, (), "", "Found a constraint violation:");
     DECLARE_MESSAGE(ContinueCodeUnitInStart, (), "", "found continue code unit in start position");
     DECLARE_MESSAGE(ControlAndManifestFilesPresent,
@@ -1545,10 +1541,6 @@ namespace vcpkg
                     "",
                     "Using local portfile versions. To update the local portfiles, use `git pull`.");
     DECLARE_MESSAGE(ManifestFormatCompleted, (), "", "Succeeded in formatting the manifest files.");
-    DECLARE_MESSAGE(ManifestWithNoTopLevelObj,
-                    (msg::path),
-                    "",
-                    "Failed to parse manifest at {path}: manifest files must have a top-level object");
     DECLARE_MESSAGE(MismatchedFiles, (), "", "file to store does not match hash");
     DECLARE_MESSAGE(ManifestConflict,
                     (msg::path),
@@ -1572,10 +1564,6 @@ namespace vcpkg
                     "Package {spec} is installed, but dependency {package_name} is not.");
     DECLARE_MESSAGE(MissingExtension, (msg::extension), "", "Missing '{extension}' extension.");
     DECLARE_MESSAGE(MissingOption, (msg::option), "", "This command requires --{option}");
-    DECLARE_MESSAGE(MissingPathToRegistryCache,
-                    (msg::path),
-                    "",
-                    "Path to X_VCPKG_REGISTRIES_CACHE does not exist: {path}");
     DECLARE_MESSAGE(MissingPortSuggestPullRequest,
                     (),
                     "",
@@ -2116,5 +2104,9 @@ namespace vcpkg
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}");
+    DECLARE_MESSAGE(FailedToParseNoTopLevelObj,
+                    (msg::path),
+                    "",
+                    "Failed to parse {path}, expected a top-level object.");
 
 }
