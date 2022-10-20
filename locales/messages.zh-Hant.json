@@ -104,7 +104,7 @@
   "CorruptedDatabase": "資料庫已損壞。",
   "CorruptedInstallTree": "Your vcpkg 'installed' tree is corrupted.",
   "CouldNotDeduceNugetIdAndVersion": "無法從檔案名推斷 nuget 識別碼和版本: {path}",
-  "CreateFailureLogsDir": "Creating failure logs output directory {path}.",
+  "CreateFailureLogsDir": "正在建立失敗記錄輸出目錄 {path}。",
   "CreatedNuGetPackage": "Created nupkg: {path}",
   "Creating7ZipArchive": "Creating 7zip archive...",
   "CreatingNugetPackage": "Creating NuGet package...",

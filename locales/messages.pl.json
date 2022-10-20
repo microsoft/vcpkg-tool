@@ -104,7 +104,7 @@
   "CorruptedDatabase": "Baza danych jest uszkodzona.",
   "CorruptedInstallTree": "Your vcpkg 'installed' tree is corrupted.",
   "CouldNotDeduceNugetIdAndVersion": "Nie można wywnioskować identyfikatora NuGet i wersji z nazwy pliku: {path}",
-  "CreateFailureLogsDir": "Creating failure logs output directory {path}.",
+  "CreateFailureLogsDir": "Tworzenie katalogu wyjściowego dzienników błędów {path}.",
   "CreatedNuGetPackage": "Created nupkg: {path}",
   "Creating7ZipArchive": "Creating 7zip archive...",
   "CreatingNugetPackage": "Creating NuGet package...",

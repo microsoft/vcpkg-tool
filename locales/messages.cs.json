@@ -104,7 +104,7 @@
   "CorruptedDatabase": "Databáze je poškozena.",
   "CorruptedInstallTree": "Your vcpkg 'installed' tree is corrupted.",
   "CouldNotDeduceNugetIdAndVersion": "Nepovedlo se odvodit ID a verzi NuGet z názvu souboru: {path}",
-  "CreateFailureLogsDir": "Creating failure logs output directory {path}.",
+  "CreateFailureLogsDir": "Vytváří se výstupní adresář protokolů chyb {path}.",
   "CreatedNuGetPackage": "Created nupkg: {path}",
   "Creating7ZipArchive": "Creating 7zip archive...",
   "CreatingNugetPackage": "Creating NuGet package...",
