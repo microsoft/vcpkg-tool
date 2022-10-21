@@ -262,20 +262,21 @@ namespace vcpkg::msg
     // https://learn.microsoft.com/en-us/visualstudio/ide/reference/lcid-devenv-exe?view=vs-2022
     StringLiteral get_language_tag(int LCID)
     {
-        std::array<std::pair<int, StringLiteral>, 14> languages = {std::pair<int, StringLiteral>(1029, "cs"),       // Czech
-                                                                   std::pair<int, StringLiteral>(1031, "de"),       // German
-                                                                   std::pair<int, StringLiteral>(1033, "en"),       // English
-                                                                   std::pair<int, StringLiteral>(3082, "es"),       // Spanish (Spain)
-                                                                   std::pair<int, StringLiteral>(1036, "fr"),       // French
-                                                                   std::pair<int, StringLiteral>(1040, "it"),       // Italian
-                                                                   std::pair<int, StringLiteral>(1041, "ja"),       // Japanese
-                                                                   std::pair<int, StringLiteral>(1042, "ko"),       // Korean
-                                                                   std::pair<int, StringLiteral>(1045, "pl"),       // Polish
-                                                                   std::pair<int, StringLiteral>(1046, "pt-BR"),    // Portuguese (Brazil)
-                                                                   std::pair<int, StringLiteral>(1049, "ru"),       // Russian
-                                                                   std::pair<int, StringLiteral>(1055, "tr"),       // Turkish
-                                                                   std::pair<int, StringLiteral>(2052, "zh-Hans"),  // Chinese (Simplified)
-                                                                   std::pair<int, StringLiteral>(1028, "zh-Hant")}; // Chinese (Traditional)
+        std::array<std::pair<int, StringLiteral>, 14> languages = {
+            std::pair<int, StringLiteral>(1029, "cs"),       // Czech
+            std::pair<int, StringLiteral>(1031, "de"),       // German
+            std::pair<int, StringLiteral>(1033, "en"),       // English
+            std::pair<int, StringLiteral>(3082, "es"),       // Spanish (Spain)
+            std::pair<int, StringLiteral>(1036, "fr"),       // French
+            std::pair<int, StringLiteral>(1040, "it"),       // Italian
+            std::pair<int, StringLiteral>(1041, "ja"),       // Japanese
+            std::pair<int, StringLiteral>(1042, "ko"),       // Korean
+            std::pair<int, StringLiteral>(1045, "pl"),       // Polish
+            std::pair<int, StringLiteral>(1046, "pt-BR"),    // Portuguese (Brazil)
+            std::pair<int, StringLiteral>(1049, "ru"),       // Russian
+            std::pair<int, StringLiteral>(1055, "tr"),       // Turkish
+            std::pair<int, StringLiteral>(2052, "zh-Hans"),  // Chinese (Simplified)
+            std::pair<int, StringLiteral>(1028, "zh-Hant")}; // Chinese (Traditional)
 
         for (auto l : languages)
         {
