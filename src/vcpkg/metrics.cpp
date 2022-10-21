@@ -115,7 +115,7 @@ namespace vcpkg
 #if defined(_WIN32)
         std::wstring path;
         path.resize(MAX_PATH);
-        const auto n = GetSystemDirectoryW(&path[0], static_cast<UINT>(path.size()));
+        const auto n = GetSystemDirectoryW(path.data(), static_cast<UINT>(path.size()));
         path.resize(n);
         path += L"\\kernel32.dll";
 
@@ -125,11 +125,11 @@ namespace vcpkg
         std::vector<char> verbuf;
         verbuf.resize(versz);
 
-        if (!GetFileVersionInfoW(path.c_str(), 0, static_cast<DWORD>(verbuf.size()), &verbuf[0])) return "";
+        if (!GetFileVersionInfoW(path.c_str(), 0, static_cast<DWORD>(verbuf.size()), verbuf.data())) return "";
 
         void* rootblock;
         UINT rootblocksize;
-        if (!VerQueryValueW(&verbuf[0], L"\\", &rootblock, &rootblocksize)) return "";
+        if (!VerQueryValueW(verbuf.data(), L"\\", &rootblock, &rootblocksize)) return "";
 
         auto rootblock_ffi = static_cast<VS_FIXEDFILEINFO*>(rootblock);
 
@@ -369,7 +369,7 @@ namespace vcpkg
             results = WinHttpSendRequest(request,
                                          hdrs.c_str(),
                                          static_cast<DWORD>(hdrs.size()),
-                                         static_cast<void*>(&p[0]),
+                                         static_cast<void*>(p.data()),
                                          static_cast<DWORD>(payload.size()),
                                          static_cast<DWORD>(payload.size()),
                                          0);
@@ -400,7 +400,7 @@ namespace vcpkg
             {
                 response_buffer.resize(response_buffer.size() + available_data);
 
-                results = WinHttpReadData(request, &response_buffer.data()[total_data], available_data, &read_data);
+                results = WinHttpReadData(request, &response_buffer[total_data], available_data, &read_data);
 
                 if (!results)
                 {

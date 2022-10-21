@@ -590,7 +590,7 @@ namespace vcpkg
                            nullptr,
                            TRUE,
                            IDLE_PRIORITY_CLASS | CREATE_UNICODE_ENVIRONMENT | dwCreationFlags,
-                           env.get().empty() ? nullptr : &environment_block[0],
+                           env.get().empty() ? nullptr : environment_block.data(),
                            working_directory.empty() ? nullptr : working_directory.data(),
                            &startup_info,
                            &process_info.proc_info))
