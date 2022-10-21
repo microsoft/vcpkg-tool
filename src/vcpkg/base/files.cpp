@@ -100,7 +100,7 @@ namespace
     template<class Ty>
     Ty unaligned_load(const void* pv) noexcept
     {
-        static_assert(std::is_trivial<Ty>::value, "Unaligned loads require trivial types");
+        static_assert(std::is_trivial_v<Ty>, "Unaligned loads require trivial types");
         Ty tmp;
         memcpy(&tmp, pv, sizeof(tmp));
         return tmp;
