@@ -58,6 +58,7 @@ namespace vcpkg::Json
                     case VK::String: return internal_assign(VK::String, &ValueImpl::string, other);
                     case VK::Array: return internal_assign(VK::Array, &ValueImpl::array, other);
                     case VK::Object: return internal_assign(VK::Object, &ValueImpl::object, other);
+                    default: Checks::unreachable(VCPKG_LINE_INFO);
                 }
             }
 
