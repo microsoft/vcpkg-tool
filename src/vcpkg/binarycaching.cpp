@@ -105,7 +105,7 @@ namespace
                     Checks::unreachable(VCPKG_LINE_INFO);
                 }
             }
-            segments.emplace_back(std::move(loc), std::move(segment));
+            segments.emplace_back(loc, std::move(segment));
 
             auto ch = cur();
             if (ch == Unicode::end_of_file || ch == ';')
@@ -186,7 +186,7 @@ namespace
             , m_read_dirs(std::move(read_dirs))
             , m_write_dirs(std::move(write_dirs))
             , m_put_url_templates(std::move(put_url_templates))
-            , m_secrets(std::move(secrets))
+            , m_secrets(secrets)
         {
         }
 
