@@ -351,8 +351,8 @@ namespace vcpkg
 
             constexpr static std::pair<StringView, std::vector<std::string> VcpkgCmdArguments::*>
                 cojoined_multivalues[] = {
-                    {OVERLAY_PORTS_ARG, &VcpkgCmdArguments::overlay_ports},
-                    {OVERLAY_TRIPLETS_ARG, &VcpkgCmdArguments::overlay_triplets},
+                    {OVERLAY_PORTS_ARG, &VcpkgCmdArguments::cli_overlay_ports},
+                    {OVERLAY_TRIPLETS_ARG, &VcpkgCmdArguments::cli_overlay_triplets},
                     {BINARY_SOURCES_ARG, &VcpkgCmdArguments::binary_sources},
                     {CMAKE_SCRIPT_ARG, &VcpkgCmdArguments::cmake_args},
                 };
@@ -774,16 +774,14 @@ namespace vcpkg
             const auto vcpkg_overlay_ports_env = get_env(OVERLAY_PORTS_ENV);
             if (const auto unpacked = vcpkg_overlay_ports_env.get())
             {
-                auto overlays = Strings::split_paths(*unpacked);
-                overlay_ports.insert(std::end(overlay_ports), std::begin(overlays), std::end(overlays));
+                env_overlay_ports = Strings::split_paths(*unpacked);
             }
         }
         {
             const auto vcpkg_overlay_triplets_env = get_env(OVERLAY_TRIPLETS_ENV);
             if (const auto unpacked = vcpkg_overlay_triplets_env.get())
             {
-                auto triplets = Strings::split_paths(*unpacked);
-                overlay_triplets.insert(std::end(overlay_triplets), std::begin(triplets), std::end(triplets));
+                env_overlay_triplets = Strings::split_paths(*unpacked);
             }
         }
         {

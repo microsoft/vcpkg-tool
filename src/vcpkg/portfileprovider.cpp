@@ -364,7 +364,7 @@ namespace vcpkg
                         {
                             print_error_message(maybe_scf.error());
                             Checks::msg_exit_maybe_upgrade(
-                                VCPKG_LINE_INFO, msgFailedToLoadPortFrom, msg::path = ports_dir);
+                                VCPKG_LINE_INFO, msgFailedToLoadUnnamedPortFromPath, msg::path = ports_dir);
                         }
 
                         continue;
