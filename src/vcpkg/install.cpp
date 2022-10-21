@@ -1009,7 +1009,7 @@ namespace vcpkg
             }
             if (Util::Sets::contains(options.switches, OPTION_MANIFEST_NO_DEFAULT_FEATURES))
             {
-                features.push_back("core");
+                features.emplace_back("core");
             }
 
             auto core_it = std::remove(features.begin(), features.end(), "core");

@@ -461,7 +461,7 @@ namespace vcpkg::Export::Prefab
 
             if (dependencies_minus_empty_packages.size() > 0)
             {
-                pom_dependencies.push_back("\n<dependencies>");
+                pom_dependencies.emplace_back("\n<dependencies>");
             }
 
             for (const auto& it : dependencies_minus_empty_packages)
@@ -482,7 +482,7 @@ namespace vcpkg::Export::Prefab
 
             if (dependencies_minus_empty_packages.size() > 0)
             {
-                pom_dependencies.push_back("</dependencies>\n");
+                pom_dependencies.emplace_back("</dependencies>\n");
             }
 
             if (prefab_options.enable_debug)
