@@ -698,7 +698,7 @@ namespace vcpkg
             m_pimpl->m_registry_set = m_pimpl->m_config.instantiate_registry_set(*this);
         }
 
-        for (std::string triplet : this->overlay_triplets)
+        for (const std::string& triplet : this->overlay_triplets)
         {
             m_pimpl->triplets_dirs.emplace_back(filesystem.almost_canonical(triplet, VCPKG_LINE_INFO));
         }

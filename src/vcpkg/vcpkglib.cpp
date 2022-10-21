@@ -28,6 +28,7 @@ namespace vcpkg
         auto pghs = Paragraphs::get_paragraphs(fs, vcpkg_dir_status_file).value_or_exit(VCPKG_LINE_INFO);
 
         std::vector<std::unique_ptr<StatusParagraph>> status_pghs;
+        status_pghs.reserve(pghs.size());
         for (auto&& p : pghs)
         {
             status_pghs.push_back(std::make_unique<StatusParagraph>(std::move(p)));

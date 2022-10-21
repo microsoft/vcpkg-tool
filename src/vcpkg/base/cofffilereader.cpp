@@ -180,9 +180,8 @@ namespace vcpkg
     {
         std::vector<MachineType> machine_types; // used as a set because n is tiny
         // Next we have the obj and pseudo-object files
-        for (size_t idx = 0; idx < member_offsets.size(); ++idx)
+        for (unsigned int offset : member_offsets)
         {
-            const auto offset = member_offsets[idx];
             // Skip the header, no need to read it
             Checks::check_exit(VCPKG_LINE_INFO, fs.seek(offset + sizeof(ArchiveMemberHeader), SEEK_SET) == 0);
             uint16_t machine_type_raw;
