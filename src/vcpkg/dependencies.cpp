@@ -235,7 +235,7 @@ namespace vcpkg
                                                 .append_raw(m_scfl.error()));
             }
 
-            Optional<const PlatformExpression::Expr&> get_applicable_supports_expression(const FeatureSpec& spec)
+            Optional<const PlatformExpression::Expr&> get_applicable_supports_expression(const FeatureSpec& spec) const
             {
                 if (spec.feature() == "core")
                 {
@@ -292,7 +292,8 @@ namespace vcpkg
 
             ActionPlan serialize(GraphRandomizer* randomizer) const;
 
-            void mark_for_reinstall(const PackageSpec& spec, std::vector<FeatureSpec>& out_reinstall_requirements);
+            void mark_for_reinstall(const PackageSpec& spec,
+                                    std::vector<FeatureSpec>& out_reinstall_requirements) const;
             const CMakeVars::CMakeVarProvider& m_var_provider;
 
             std::unique_ptr<ClusterGraph> m_graph;
@@ -720,7 +721,7 @@ namespace vcpkg
     }
 
     void PackageGraph::mark_for_reinstall(const PackageSpec& first_remove_spec,
-                                          std::vector<FeatureSpec>& out_reinstall_requirements)
+                                          std::vector<FeatureSpec>& out_reinstall_requirements) const
     {
         std::set<PackageSpec> removed;
         std::vector<PackageSpec> to_remove{first_remove_spec};

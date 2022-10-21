@@ -1253,7 +1253,7 @@ namespace
 
 namespace vcpkg
 {
-    LocalizedString UrlTemplate::valid()
+    LocalizedString UrlTemplate::valid() const
     {
         std::vector<std::string> invalid_keys;
         auto result = api_stable_format(url_template, [&](std::string&, StringView key) {

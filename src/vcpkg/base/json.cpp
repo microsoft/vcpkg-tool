@@ -1153,7 +1153,7 @@ namespace vcpkg::Json
             JsonStyle style;
             std::string& buffer;
 
-            void append_indent(int indent)
+            void append_indent(int indent) const
             {
                 if (style.use_tabs())
                 {
@@ -1165,7 +1165,7 @@ namespace vcpkg::Json
                 }
             };
 
-            void append_unicode_escape(char16_t code_unit)
+            void append_unicode_escape(char16_t code_unit) const
             {
                 buffer.append("\\u");
 
