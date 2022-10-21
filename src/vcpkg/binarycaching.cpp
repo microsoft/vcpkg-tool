@@ -43,7 +43,7 @@ namespace
         {
             if (segment_idx >= segments.size())
             {
-                read.push_back(std::move(t));
+                read.push_back(std::forward<T>(t));
                 return;
             }
 
@@ -51,16 +51,16 @@ namespace
 
             if (mode == "read")
             {
-                read.push_back(std::move(t));
+                read.push_back(std::forward<T>(t));
             }
             else if (mode == "write")
             {
-                write.push_back(std::move(t));
+                write.push_back(std::forward<T>(t));
             }
             else if (mode == "readwrite")
             {
                 read.push_back(t);
-                write.push_back(std::move(t));
+                write.push_back(std::forward<T>(t));
             }
             else
             {
