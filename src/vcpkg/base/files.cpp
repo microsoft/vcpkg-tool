@@ -2371,7 +2371,7 @@ namespace vcpkg
         virtual std::vector<Path> get_files_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            Path out_base = dir;
+            const Path& out_base = dir;
             get_files_recursive_impl(result, dir, out_base, ec, true, true, true);
             return result;
         }
@@ -2386,7 +2386,7 @@ namespace vcpkg
         virtual std::vector<Path> get_directories_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            Path out_base = dir;
+            const Path& out_base = dir;
             get_files_recursive_impl(result, dir, out_base, ec, true, false, false);
 
             return result;
@@ -2416,7 +2416,7 @@ namespace vcpkg
         virtual std::vector<Path> get_regular_files_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            Path out_base = dir;
+            const Path& out_base = dir;
             get_files_recursive_impl(result, dir, out_base, ec, false, true, false);
             return result;
         }
@@ -3337,7 +3337,7 @@ namespace vcpkg
 #endif // ^^^!_WIN32
 
                 static const std::vector<Path> path_bases = calculate_path_bases();
-                for (Path path_base : path_bases)
+                for (const Path& path_base : path_bases)
                 {
                     for (auto&& stem : stems)
                     {

@@ -55,6 +55,7 @@ namespace vcpkg::Export::Prefab
     static std::string jsonify(const std::vector<std::string>& dependencies)
     {
         std::vector<std::string> deps;
+        deps.reserve(dependencies.size());
         for (const auto& dep : dependencies)
         {
             deps.push_back("\"" + dep + "\"");
@@ -497,6 +498,7 @@ namespace vcpkg::Export::Prefab
             utils.write_contents(prefab_path, pm.to_json(), VCPKG_LINE_INFO);
 
             std::vector<std::string> triplet_names;
+            triplet_names.reserve(triplets.size());
             for (auto&& triplet : triplets)
             {
                 triplet_names.push_back(triplet.canonical_name());
@@ -523,6 +525,7 @@ namespace vcpkg::Export::Prefab
 
                 std::vector<Path> modules_shared = find_modules(paths, libs, ".so");
 
+                modules.reserve(modules_shared.size());
                 for (const auto& module : modules_shared)
                 {
                     modules.push_back(module);
