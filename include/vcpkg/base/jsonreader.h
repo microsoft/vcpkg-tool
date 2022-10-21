@@ -312,6 +312,15 @@ namespace vcpkg::Json
         static NaturalNumberDeserializer instance;
     };
 
+    struct Int64Deserializer final : IDeserializer<int64_t>
+    {
+        virtual StringView type_name() const override { return "a 64-bit integer"; }
+
+        virtual Optional<int64_t> visit_integer(Reader&, int64_t value) override { return value; }
+
+        static Int64Deserializer instance;
+    };
+
     struct BooleanDeserializer final : IDeserializer<bool>
     {
         virtual StringView type_name() const override { return "a boolean"; }

@@ -376,6 +376,8 @@ namespace vcpkg
         std::string id;
         std::string version;
         std::string hash;
+        Path c_compiler_path;
+        Path cxx_compiler_path;
     };
 
     struct AbiInfo

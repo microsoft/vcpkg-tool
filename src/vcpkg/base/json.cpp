@@ -1019,6 +1019,7 @@ namespace vcpkg::Json
     }
 
     NaturalNumberDeserializer NaturalNumberDeserializer::instance;
+    Int64Deserializer Int64Deserializer::instance;
     BooleanDeserializer BooleanDeserializer::instance;
     ParagraphDeserializer ParagraphDeserializer::instance;
     IdentifierDeserializer IdentifierDeserializer::instance;
