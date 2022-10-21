@@ -23,7 +23,7 @@ TEST_CASE ("get message_map from LCID", "[messages]")
     StringView msg_name = "AddCommandFirstArg";
 
     // valid lcid; Spanish
-    auto map = msg::get_message_map_from_lcid(1034);
+    auto map = msg::get_message_map_from_lcid(3082);
     auto msg = map.get()->get(msg_name);
     CHECK(msg->string(VCPKG_LINE_INFO) ==
           "El primer par\u00e1metro que se va a agregar debe ser \"artefacto\" o \"puerto\".");
