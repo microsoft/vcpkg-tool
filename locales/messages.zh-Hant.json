@@ -199,7 +199,7 @@
   "FailedToLoadInstalledManifest": "因為發生下列錯誤，無法載入 {spec} 的控制項或資訊清單檔案。請移除 {spec} 並重試。",
   "FailedToLoadPort": "無法從 {path} 載入連接埠 {package_name}",
   "FailedToLoadPortFrom": "無法從 {path} 載入連接埠",
-  "FailedToLoadUnnamedPortFromPath": "Failed to load port from {path}",
+  "FailedToLoadUnnamedPortFromPath": "無法從 {path} 載入連接埠",
   "FailedToLocateSpec": "在圖形中找不到規格: {spec}",
   "FailedToObtainDependencyVersion": "找不到所需的相依性版本。",
   "FailedToObtainLocalPortGitSha": "無法取得本機連接埠的 Git SHA。",

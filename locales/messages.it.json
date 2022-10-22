@@ -199,7 +199,7 @@
   "FailedToLoadInstalledManifest": "Non è possibile caricare il controllo o il file manifesto per {spec} a causa dell'errore seguente. Rimuovere {spec} e riprovare.",
   "FailedToLoadPort": "Non è stato possibile caricare la porta {package_name} da {path}",
   "FailedToLoadPortFrom": "Non è stato possibile caricare la porta da {path}",
-  "FailedToLoadUnnamedPortFromPath": "Failed to load port from {path}",
+  "FailedToLoadUnnamedPortFromPath": "Non è stato possibile caricare la porta da {path}",
   "FailedToLocateSpec": "Non è stato possibile individuare la specifica nel grafico: {spec}",
   "FailedToObtainDependencyVersion": "Non è possibile trovare la versione della dipendenza desiderata.",
   "FailedToObtainLocalPortGitSha": "Non è stato possibile ottenere i valori SHA GIT per le porte locali.",

@@ -199,7 +199,7 @@
   "FailedToLoadInstalledManifest": "Soubor ovládacího prvku nebo manifestu pro {spec} nejde načíst z důvodu následující chyby. Odeberte prosím {spec} a zkuste to znovu.",
   "FailedToLoadPort": "Nepovedlo načíst port {package_name} z {path}.",
   "FailedToLoadPortFrom": "Nepovedlo se načíst port z {path}.",
-  "FailedToLoadUnnamedPortFromPath": "Failed to load port from {path}",
+  "FailedToLoadUnnamedPortFromPath": "Nepovedlo se načíst port z {path}.",
   "FailedToLocateSpec": "Nepovedlo se najít specifikaci v grafu: {spec}",
   "FailedToObtainDependencyVersion": "Požadovaná verze závislosti nebyla nalezena.",
   "FailedToObtainLocalPortGitSha": "Nepovedlo se získat git SHA pro místní porty.",

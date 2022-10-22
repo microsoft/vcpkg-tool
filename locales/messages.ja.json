@@ -199,7 +199,7 @@
   "FailedToLoadInstalledManifest": "次のエラーのため、{spec} の制御ファイルまたはマニフェスト ファイルを読み込めませんでした。{spec} を削除してから、もう一度お試しください。",
   "FailedToLoadPort": "{path} からポート {package_name} を読み込めませんでした",
   "FailedToLoadPortFrom": "{path} からポートを読み込めませんでした",
-  "FailedToLoadUnnamedPortFromPath": "Failed to load port from {path}",
+  "FailedToLoadUnnamedPortFromPath": "{path} からポートを読み込めませんでした",
   "FailedToLocateSpec": "グラフで以下の仕様の検索に失敗しました: {spec}",
   "FailedToObtainDependencyVersion": "目的の依存関係のバージョンが見つかりません。",
   "FailedToObtainLocalPortGitSha": "ローカル ポートの Git SAS を取得できませんでした。",

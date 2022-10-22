@@ -199,7 +199,7 @@
   "FailedToLoadInstalledManifest": "Aşağıdaki hata nedeniyle {spec} için denetim veya bildirim dosyası yüklenemedi. Lütfen {spec} belirtimini kaldırıp yeniden deneyin.",
   "FailedToLoadPort": "{path} yolundan {package_name} bağlantı noktası yüklenemedi",
   "FailedToLoadPortFrom": "{path} yolundan bağlantı noktası yüklenemedi",
-  "FailedToLoadUnnamedPortFromPath": "Failed to load port from {path}",
+  "FailedToLoadUnnamedPortFromPath": "{path} yolundan bağlantı noktası yüklenemedi",
   "FailedToLocateSpec": "Grafikte spec bulunamadı: {spec}",
   "FailedToObtainDependencyVersion": "İstenen bağımlılık sürümü bulunamıyor.",
   "FailedToObtainLocalPortGitSha": "Yerel bağlantı noktaları için git SHA'ları alınamadı.",
