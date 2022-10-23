@@ -223,52 +223,6 @@ int main(const int argc, const char* const* const argv)
     set_environment_variable("CLICOLOR_FORCE", {});
     set_environment_variable("CLICOLOR", "0");
 
-    Checks::register_global_shutdown_handler(
-        [](void* ptimer) {
-            const auto& total_timer = *static_cast<ElapsedTimer*>(ptimer);
-            const auto elapsed_us_inner = total_timer.microseconds();
-
-            bool debugging = Debug::g_debugging;
-
-            get_global_metrics_collector().track_elapsed_us(elapsed_us_inner);
-            Debug::g_debugging = false;
-            flush_global_metrics(get_real_filesystem());
-
-#if defined(_WIN32)
-            if (g_init_console_initialized)
-            {
-                SetConsoleCP(g_init_console_cp);
-                SetConsoleOutputCP(g_init_console_output_cp);
-            }
-#endif
-
-            if (debugging)
-            {
-                msg::write_unlocalized_text_to_stdout(Color::none,
-                                                      Strings::concat("[DEBUG] Time in subprocesses: ",
-                                                                      get_subproccess_stats(),
-                                                                      " us\n",
-                                                                      "[DEBUG] Time in parsing JSON: ",
-                                                                      Json::get_json_parsing_stats(),
-                                                                      " us\n",
-                                                                      "[DEBUG] Time in JSON reader: ",
-                                                                      Json::Reader::get_reader_stats(),
-                                                                      " us\n",
-                                                                      "[DEBUG] Time in filesystem: ",
-                                                                      get_filesystem_stats(),
-                                                                      " us\n",
-                                                                      "[DEBUG] Time in loading ports: ",
-                                                                      Paragraphs::get_load_ports_stats(),
-                                                                      " us\n",
-                                                                      "[DEBUG] Exiting after ",
-                                                                      total_timer.to_string(),
-                                                                      " (",
-                                                                      static_cast<int64_t>(elapsed_us_inner),
-                                                                      " us)\n"));
-            }
-        },
-        static_cast<void*>(&total_timer));
-
     register_console_ctrl_handler();
 
 #if (defined(__aarch64__) || defined(__arm__) || defined(__s390x__) ||                                                 \

@@ -1,7 +1,15 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/chrono.h>
+#include <vcpkg/base/json.h>
+#include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.process.h>
+
+#include <vcpkg/globalstate.h>
+#include <vcpkg/metrics.h>
+#include <vcpkg/paragraphs.h>
 
 #include <stdlib.h>
 
@@ -14,23 +22,11 @@ namespace
         return LocalizedString::from_raw(fmt::format("{}: ", line_info));
     }
 
-    std::atomic<void (*)(void*)> g_shutdown_handler;
-    void* g_shutdown_parameter; // guarded by g_shutdown_handler
+    const ElapsedTimer g_total_time;
 }
 
 namespace vcpkg
 {
-    void Checks::register_global_shutdown_handler(void (*func)(void*), void* shutdown_parameter)
-    {
-        if (g_shutdown_handler.exchange(func))
-        {
-            // Setting the handler twice is a program error. Terminate.
-            std::abort();
-        }
-
-        g_shutdown_parameter = shutdown_parameter;
-    }
-
     [[noreturn]] void Checks::final_cleanup_and_exit(const int exit_code)
     {
         static std::atomic<bool> have_entered{false};
@@ -43,8 +39,45 @@ namespace vcpkg
 #endif
         }
 
-        auto shutdown_handler = g_shutdown_handler.load();
-        if (shutdown_handler) shutdown_handler(g_shutdown_parameter);
+        const auto elapsed_us_inner = g_total_time.microseconds();
+        bool debugging = Debug::g_debugging;
+
+        get_global_metrics_collector().track_elapsed_us(elapsed_us_inner);
+        Debug::g_debugging = false;
+        flush_global_metrics(get_real_filesystem());
+
+#if defined(_WIN32)
+        if (g_init_console_initialized)
+        {
+            SetConsoleCP(g_init_console_cp);
+            SetConsoleOutputCP(g_init_console_output_cp);
+        }
+#endif
+
+        if (debugging)
+        {
+            msg::write_unlocalized_text_to_stdout(Color::none,
+                                                  Strings::concat("[DEBUG] Time in subprocesses: ",
+                                                                  get_subproccess_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Time in parsing JSON: ",
+                                                                  Json::get_json_parsing_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Time in JSON reader: ",
+                                                                  Json::Reader::get_reader_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Time in filesystem: ",
+                                                                  get_filesystem_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Time in loading ports: ",
+                                                                  Paragraphs::get_load_ports_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Exiting after ",
+                                                                  g_total_time.to_string(),
+                                                                  " (",
+                                                                  static_cast<int64_t>(elapsed_us_inner),
+                                                                  " us)\n"));
+        }
 
         fflush(nullptr);
 

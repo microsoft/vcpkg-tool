@@ -6,9 +6,6 @@
 
 namespace vcpkg::Checks
 {
-    void register_global_shutdown_handler(void (*func)(void*), void*);
-
-    // Note: for internal use
     [[noreturn]] void final_cleanup_and_exit(const int exit_code);
 
     // Indicate that an internal error has occurred and exit the tool. This should be used when invariants have been
