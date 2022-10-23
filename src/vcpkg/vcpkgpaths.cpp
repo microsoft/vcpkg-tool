@@ -134,6 +134,18 @@ namespace vcpkg
         return parsed_config_opt;
     }
 
+    static std::vector<std::string> merge_overlays(const std::vector<std::string>& cli_overlays,
+                                                   const std::vector<std::string>& manifest_overlays,
+                                                   const std::vector<std::string>& env_overlays)
+    {
+        std::vector<std::string> ret = cli_overlays;
+
+        ret.insert(std::end(ret), std::begin(manifest_overlays), std::end(manifest_overlays));
+        ret.insert(std::end(ret), std::begin(env_overlays), std::end(env_overlays));
+
+        return ret;
+    }
+
     static ConfigurationAndSource merge_validate_configs(Optional<ManifestConfiguration>&& manifest_data,
                                                          const Path& manifest_dir,
                                                          Optional<Configuration>&& config_data,
@@ -479,9 +491,7 @@ namespace vcpkg
                                               args.exact_abi_tools_versions.value_or(false) ? RequireExactVersions::YES
                                                                                             : RequireExactVersions::NO))
                 , m_env_cache(m_ff_settings.compiler_tracking)
-                , triplets_dirs(
-                      Util::fmap(args.overlay_triplets,
-                                 [&fs](const std::string& p) { return fs.almost_canonical(p, VCPKG_LINE_INFO); }))
+                , triplets_dirs()
                 , m_artifacts_dir(downloads / "artifacts")
             {
                 if (auto i = m_installed.get())
@@ -655,9 +665,6 @@ namespace vcpkg
         Debug::print("Using builtin-registry: ", builtin_registry_versions, '\n');
         Debug::print("Using downloads-root: ", downloads, '\n');
 
-        m_pimpl->triplets_dirs.emplace_back(triplets);
-        m_pimpl->triplets_dirs.emplace_back(community_triplets);
-
         {
             auto maybe_manifest_config = config_from_manifest(m_pimpl->m_manifest_path, m_pimpl->m_manifest_doc);
             auto maybe_config_json = config_from_json(m_pimpl->m_config_dir / "vcpkg-configuration.json", filesystem);
@@ -668,8 +675,31 @@ namespace vcpkg
                                                        m_pimpl->m_config_dir,
                                                        *this);
 
+            auto resolve_relative_to_config = [&](const std::string& overlay_path) {
+                return (m_pimpl->m_config.directory / overlay_path).native();
+            };
+
+            if (!m_pimpl->m_config.directory.empty())
+            {
+                auto& config = m_pimpl->m_config.config;
+                Util::transform(config.overlay_ports, resolve_relative_to_config);
+                Util::transform(config.overlay_triplets, resolve_relative_to_config);
+            }
+
+            overlay_ports = merge_overlays(
+                args.cli_overlay_ports, get_configuration().config.overlay_ports, args.env_overlay_ports);
+            overlay_triplets = merge_overlays(
+                args.cli_overlay_triplets, get_configuration().config.overlay_triplets, args.env_overlay_triplets);
+
             m_pimpl->m_registry_set = m_pimpl->m_config.instantiate_registry_set(*this);
         }
+
+        for (std::string triplet : this->overlay_triplets)
+        {
+            m_pimpl->triplets_dirs.emplace_back(filesystem.almost_canonical(triplet, VCPKG_LINE_INFO));
+        }
+        m_pimpl->triplets_dirs.emplace_back(triplets);
+        m_pimpl->triplets_dirs.emplace_back(community_triplets);
 
         // metrics from configuration
         auto default_registry = m_pimpl->m_registry_set->default_registry();

@@ -110,7 +110,6 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
     };
 
     get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
-    get_global_metrics_collector().track_bool(BoolMetric::OptionOverlayPorts, !args.overlay_ports.empty());
 
     if (const auto command_function = find_command(Commands::get_available_basic_commands()))
     {
@@ -120,6 +119,7 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 
     const VcpkgPaths paths(fs, args);
     get_global_metrics_collector().track_bool(BoolMetric::FeatureFlagManifests, paths.manifest_mode_enabled());
+    get_global_metrics_collector().track_bool(BoolMetric::OptionOverlayPorts, !paths.overlay_ports.empty());
 
     fs.current_path(paths.root, VCPKG_LINE_INFO);
 

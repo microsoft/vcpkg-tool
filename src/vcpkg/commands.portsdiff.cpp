@@ -122,7 +122,7 @@ namespace vcpkg::Commands::PortsDiff
                                cmd_execute_and_capture_output(cmd).value_or_exit(VCPKG_LINE_INFO).output ==
                                    VALID_COMMIT_OUTPUT,
                                msgInvalidCommitId,
-                               msg::value = git_commit_id);
+                               msg::commit_sha = git_commit_id);
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
