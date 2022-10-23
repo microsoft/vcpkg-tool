@@ -589,6 +589,7 @@ namespace vcpkg
          {OPTION_KEEP_GOING, "Continue installing packages on failure"},
          {OPTION_EDITABLE,
           "Disable source re-extraction and binary caching for libraries on the command line (classic mode)"},
+
          {OPTION_USE_ARIA2, "Use aria2 to perform download tasks"},
          {OPTION_CLEAN_AFTER_BUILD, "Clean buildtrees, packages and downloads after building each package"},
          {OPTION_CLEAN_BUILDTREES_AFTER_BUILD, "Clean buildtrees after building each package"},
@@ -1099,7 +1100,6 @@ namespace vcpkg
                                   [&toplevel](auto&& action) { return action.spec == toplevel; });
 
             PathsPortFileProvider provider(paths, std::move(oprovider));
-
             Commands::SetInstalled::perform_and_exit_ex(args,
                                                         paths,
                                                         provider,
