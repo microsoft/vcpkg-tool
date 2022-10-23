@@ -188,7 +188,7 @@ namespace vcpkg::Commands
         if (!enable_json)
         {
             msg::println(msg::format(msgSuggestGitPull)
-                             .append_raw("\n")
+                             .append_raw('\n')
                              .append(msgMissingPortSuggestPullRequest)
                              .append_indent()
                              .append_raw("-  https://github.com/Microsoft/vcpkg/issues"));
@@ -259,7 +259,7 @@ namespace vcpkg::Commands
                 }
             } // unlock metrics
 
-            perform_find_port_and_exit(paths, full_description, enable_json, filter, args.overlay_ports);
+            perform_find_port_and_exit(paths, full_description, enable_json, filter, paths.overlay_ports);
         }
 
         Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgAddCommandFirstArg);

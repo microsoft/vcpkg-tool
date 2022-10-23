@@ -1,11 +1,4 @@
-cmake_minimum_required(VERSION 3.15) # 3.15 for MSVC_RUNTIME_LIBRARY, removing default warning flags
-
-cmake_policy(SET CMP0091 NEW)
-cmake_policy(SET CMP0092 NEW)
-
-if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.24)
-    cmake_policy(SET CMP0135 NEW)
-endif()
+cmake_minimum_required(VERSION 3.15...3.24)
 
 if(NOT CMAKE_MSVC_RUNTIME_LIBRARY)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -234,7 +227,7 @@ if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
                 ${VCPKG_ARTIFACTS_SOURCES}
                 "${CMAKE_CURRENT_SOURCE_DIR}/ce/ce/node_modules"
             COMMENT
-                "Building vcpkg-ce..."
+                "Building vcpkg-artifacts..."
             VERBATIM
             )
 
@@ -256,7 +249,7 @@ if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
                 ${VCPKG_ARTIFACTS_TEST_SOURCES}
                 "${CMAKE_CURRENT_SOURCE_DIR}/ce/test/node_modules"
             COMMENT
-                "Building vcpkg-ce-test..."
+                "Building vcpkg-artifacts-test..."
             VERBATIM
             )
 

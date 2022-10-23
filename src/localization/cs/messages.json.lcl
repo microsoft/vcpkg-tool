@@ -322,6 +322,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AdditionalPackagesToExport" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Additional packages (*) need to be exported to complete this operation.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[K dokončení této operace je potřeba exportovat další balíčky (*).]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AdditionalPackagesToRemove" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Additional packages (*) need to be removed to complete this operation.]]></Val>
@@ -372,6 +381,15 @@
           <Val><![CDATA[{spec} is already installed -- not building from HEAD]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{spec} už je nainstalovaný – nesestavuje se z HEAD.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AndroidHomeDirMissingProps" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[source.properties missing in {env_var} directory: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[V adresáři {env_var} chybí source.properties: {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -444,6 +462,42 @@
           <Val><![CDATA[All MSBuild C++ projects can now #include any installed libraries. Linking will be handled automatically. Installing new libraries will make them instantly available.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Všechny projekty MSBuild C++ teď mohou přes #include zahrnovat všechny nainstalované knihovny. Linkování se zpracuje automaticky. Při instalaci se nové knihovny okamžitě zpřístupní.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AvailableArchitectureTriplets" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Available architecture triplets:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Dostupné rutiny architektury:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AvailableHelpTopics" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Available help topics:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Dostupná témata nápovědy:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BaselineFileNoDefaultField" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The baseline file at commit {commit_sha} was invalid (no "default" field).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Základní soubor při potvrzení {commit_sha} byl neplatný (žádné pole „default“).]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BaselineMissingDefault" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The baseline.json from commit `"{commit_sha}"` in the repo {url} was invalid (did not contain a "default" field).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Soubor baseline.json z potvrzení „{commit_sha}“ v úložišti {url} byl neplatný (neobsahoval pole „default“).]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -676,6 +730,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";BuiltInTriplets" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg built-in triplets:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[integrovaná trojčata vcpkg:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CMakeTargetsUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{package_name} provides CMake targets:]]></Val>
@@ -699,6 +762,15 @@
           <Val><![CDATA[CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE={path}"]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Projekty CMake by měly používat: -DCMAKE_TOOLCHAIN_FILE={path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CMakeUsingExportedLibs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[To use exported libraries in CMake projects, add {value} to your CMake command line.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Pokud chcete v projektech CMake používat exportované knihovny, přidejte do příkazového řádku CMake {value}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -808,6 +880,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CommunityTriplets" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[VCPKG community triplets:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Trojčata komunity VCPKG:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ComparingUtf8Decoders" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Comparing Utf8Decoders with different provenance; this is always an error]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Porovnání kodérů Utf8Decoder s různými původy; toto je vždy chyba]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CompressFolderFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to compress folder "{path}":]]></Val>
@@ -859,11 +949,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ContinueCodeUnitInStart" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[found continue code unit in start position]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[našla se jednotka kódu pro pokračování na počáteční pozici]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ControlAndManifestFilesPresent" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Both a manifest file and a CONTROL file exist in port directory: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[V adresáři portů existuje jak soubor manifestu, tak soubor CONTROL: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ControlCharacterInString" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Control character in string]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Řídicí znak v řetězci]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -886,6 +994,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CorruptedInstallTree" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Your vcpkg 'installed' tree is corrupted.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Strom vcpkg installed je poškozený.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CouldNotDeduceNugetIdAndVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not deduce nuget id and version from filename: {path}]]></Val>
@@ -895,23 +1012,107 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CouldNotFindBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Could not find explicitly specified baseline `"{commit_sha}"` in baseline file {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[V souboru standardní hodnoty {path} se nepovedlo najít explicitně zadanou standardní hodnotu {commit_sha}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CouldNotFindBaselineForRepo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Couldn't find baseline `"{commit_sha}"` for repo {package_name}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nepovedlo se najít standardní hodnotu {commit_sha} pro úložiště {package_name}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CouldNotFindBaselineInCommit" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Couldn't find baseline in commit `"{commit_sha}"` from repo {package_name}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[V potvrzení {commit_sha} z úložiště {package_name} se nepovedlo najít standardní hodnotu:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CouldNotFindGitTreeAtCommit" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[could not find the git tree for `versions` in repo {package_name} at commit {commit_sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nepovedlo se najít strom Git pro „versions“ v úložišti {package_name} při potvrzení {commit_sha}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CreateFailureLogsDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Creating failure logs output directory {path}]]></Val>
+          <Val><![CDATA[Creating failure logs output directory {path}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Vytváří se výstupní adresář protokolů chyb {path}.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Creating failure logs output directory {path}.]]></Val>
+            <Val><![CDATA[Creating failure logs output directory {path}]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CreatedNuGetPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Created nupkg: "{path}"]]></Val>
+          <Val><![CDATA[Created nupkg: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Balíček nupkg byl vytvořen: {path}]]></Val>
+            <Val><![CDATA[Vytvořen nupkg: {path}]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Created nupkg: "{path}"]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";Creating7ZipArchive" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Creating 7zip archive...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Vytváří se archiv 7zip...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CreatingNugetPackage" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Creating NuGet package...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Vytváří se balíček NuGet...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CreatingZipArchive" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Creating zip archive...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Vytváří se archiv zip...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CreationFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Creating {path} failed.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nepovedlo se vytvořit cestu {path}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CurlFailedToExecute" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[curl failed to execute with exit code {exit_code}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Spuštění nástroje curl se nezdařilo s ukončovacím kódem {exit_code}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -925,6 +1126,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[curl has reported unexpected results to vcpkg and vcpkg cannot continue.]A;Please review the following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix this problem!]A;cmd: {command_line}]A;=== curl output ===]A;{actual}]A;=== end curl output ===]A;]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CurlReturnedUnexpectedResponseCodes" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[curl returned a different number of response codes than were expected for the request ({actual} vs expected {expected}).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Curl vrátil jiný počet kódů odpovědí, než se očekávalo pro požadavek ({actual} vs. očekávané {expected}).]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -964,6 +1174,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Based on your system settings, the default path to store binaries is ]A; '{path}'. This consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DeprecatedPrefabDebugOption" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[--prefab-debug is now deprecated.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[--prefab-debug je teď zastaralý.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1072,6 +1291,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DuplicatedKeyInObj" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Duplicated key "{value}" in an object]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Duplicitní klíč „{value}“ v objektu]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ElapsedForPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Elapsed time to handle {spec}: {elapsed}]]></Val>
@@ -1122,6 +1350,15 @@
           <Val><![CDATA[SPDX license expression was empty.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Výraz licence SPDX byl prázdný.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";EndOfStringInCodeUnit" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[found end of string in middle of code point]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Našel se konec řetězce uprostřed bodu kódu.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1333,6 +1570,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ErrorWhileFetchingBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while fetching baseline `"{value}"` from repo {package_name}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[při načítání standardní hodnoty „{value}“ z úložiště {package_name}:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ErrorWhileParsing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Errors occurred while parsing {path}.]]></Val>
@@ -1387,6 +1633,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExpectedAtMostOneSetOfTags" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Found {count} sets of {old_value}.*{new_value} but expected at most 1, in block:]A;{value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Našel se tento počet sad: {count} z {old_value}.*{new_value}, ale očekávala se maximálně 1, v bloku]A;{value}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExpectedCascadeFailure" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected {expected} cascade failure, but there were {actual} cascade failures.]]></Val>
@@ -1405,6 +1660,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExpectedDigitsAfterDecimal" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Expected digits after the decimal point]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Očekávané číslice za desetinnou čárkou]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExpectedFailOrSkip" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[expected 'fail', 'skip', or 'pass' here]]></Val>
@@ -1414,6 +1678,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[expected 'fail' or 'skip' here]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExpectedOneSetOfTags" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Found {count} sets of {old_value}.*{new_value} but expected exactly 1, in block:]A;{value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Našel se tento počet sad: {count} z {old_value}.*{new_value}, ale očekávala se přesně 1, v bloku]A;{value}.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1456,6 +1729,69 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExportArchitectureReq" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Export prefab requires targeting at least one of the following architectures arm64-v8a, armeabi-v7a, x86_64, x86 to be present.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Předfab exportu vyžaduje, aby byla k dispozici alespoň jedna z následujících architektur arm64-v8a, arme gateway-v7a, x86_64, x86.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExportPrefabRequiresAndroidTriplet" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[export prefab requires an Android triplet.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Předběžné ověřování exportu vyžaduje trojnásobek Androidu.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExportUnsupportedInManifest" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg export does not support manifest mode, in order to allow for future design considerations. You may use export in classic mode by running vcpkg outside of a manifest-based project.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Export vcpkg nepodporuje režim manifestu, aby bylo možné zvážit budoucí aspekty návrhu. Export můžete použít v klasickém režimu spuštěním souboru vcpkg mimo projekt založený na manifestu.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";Exported7zipArchive" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[7zip archive exported at: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Archiv 7zip se exportoval v: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExportedZipArchive" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Zip archive exported at: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Archiv ZIP exportovaný v: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExportingAlreadyBuiltPackages" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following packages are already built and will be exported:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Následující balíčky jsou již sestaveny a budou exportovány:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExportingMaintenanceTool" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Exporting maintenance tool...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Exportuje se nástroj pro údržbu...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExportingPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Exporting {package_name}...]]></Val>
@@ -1474,11 +1810,47 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FailedToCheckoutRepo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to check out `versions` from repo {package_name}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nepovedlo se rezervovat „versions“ z úložiště {package_name}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToDownloadFromMirrorSet" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to download from mirror set]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nepovedlo se stáhnout ze zrcadlené sady]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FailedToExtract" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to extract "{path}":]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{path} se nepodařilo extrahovat:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToFetchError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{error_msg}]A;Failed to fetch {package_name}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{error_msg}]A;Nepovedlo se načíst {package_name}:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToFindBaseline" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to find baseline.json]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nepovedlo se najít baseline.json.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1503,12 +1875,12 @@
       </Item>
       <Item ItemId=";FailedToLoadInstalledManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The control or mnaifest file for {spec} could not be loaded due to the following error. Please remove {spec} and try again.]]></Val>
+          <Val><![CDATA[The control or manifest file for {spec} could not be loaded due to the following error. Please remove {spec} and try again.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Soubor ovládacího prvku nebo souboru manifest pro {spec} nejde načíst z důvodu následující chyby. Odeberte prosím {spec} a zkuste to znovu.]]></Val>
+            <Val><![CDATA[Soubor ovládacího prvku nebo manifestu pro {spec} nejde načíst z důvodu následující chyby. Odeberte prosím {spec} a zkuste to znovu.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[The control or mnaifest file for {spec} could not be loaded due to the following error. Please remove {spec} and re-attempt.]]></Val>
+            <Val><![CDATA[The control or mnaifest file for {spec} could not be loaded due to the following error. Please remove {spec} and try again.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -1523,6 +1895,15 @@
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";FailedToLoadPortFrom" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to load port from {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nepovedlo se načíst port z {path}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToLoadUnnamedPortFromPath" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to load port from {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
@@ -1708,6 +2089,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FetchingBaselineInfo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Fetching baseline information from {package_name}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Načítá se informace o směrném plánu z {package_name}...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FetchingRegistryInfo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Fetching registry information from {url} ({value})...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Načítá se informace registru z adresy {url} ({value})...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FileNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{path}: file not found]]></Val>
@@ -1726,11 +2125,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FilesExported" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Files exported at: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Soubory exportované v: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FishCompletion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[vcpkg fish completion is already added at "{path}".]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Dokončení vcpkg fish je už přidáno do {path}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FloatingPointConstTooBig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Floating point constant too big: {count}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Konstanta čísla s plovoucí desetinnou čárkou je příliš velká: {count}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1828,6 +2245,51 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";GeneratedConfiguration" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Generated configuration {path}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Vygenerovaná konfigurace {path}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GeneratedInstaller" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{path} installer generated.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Instalační program {path} se vygeneroval.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GeneratingConfiguration" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Generating configuration {path}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Generuje se konfigurace {path}...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GeneratingInstaller" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Generating installer {path}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Generuje se instalační program {path}...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GeneratingRepo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Generating repository {path}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Generuje se úložiště {path}...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";GetParseFailureInfo" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Use '--debug' to get more information about the parse failures.]]></Val>
@@ -1842,6 +2304,15 @@
           <Val><![CDATA[failed to execute: {command_line}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[spuštění příkazu se nepovedlo: {command_line}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GitRegistryMustHaveBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The git registry entry for "{package_name}" must have a "baseline" field that is a valid git commit SHA (40 hexadecimal characters).]A;The current HEAD of that repo is "{value}".]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Položka registru Git pro {package_name} musí mít pole „standardní hodnoty“, které je platné SHA potvrzení gitu (40 šestnáctkových znaků).]A;Aktuální HEAD tohoto úložiště je {value}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1921,6 +2392,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";HelpBuiltinBase" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The baseline references a commit within the vcpkg repository that establishes a minimum version on every dependency in the graph. For example, if no other constraints are specified (directly or transitively), then the version will resolve to the baseline of the top level manifest. Baselines of transitive dependencies are ignored.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Směrný plán odkazuje na potvrzení v úložišti vcpkg, které určuje minimální verzi každé závislosti v grafu. Pokud například nejsou zadána žádná jiná omezení (přímo nebo přechodně), bude verze přeložena na směrný plán manifestu nejvyšší úrovně. Směrné plány přechodných závislostí se ignorují.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";HelpContactCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Display contact information to send feedback.]]></Val>
@@ -1971,6 +2451,15 @@
           <Val><![CDATA[For more help (including examples) see the accompanying README.md and docs folder.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Další nápovědu (včetně příkladů) najdete v doprovodné složce README.md a docs.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpExampleManifest" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Example manifest:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ukázkový manifest:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2029,11 +2518,56 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";HelpManifestConstraints" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Manifests can place three kinds of constraints upon the versions used]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Manifesty můžou u používaných verzí nastavit tři druhy omezení.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpMinVersion" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Vcpkg will select the minimum version found that matches all applicable constraints, including the version from the baseline specified at top-level as well as any "version>=" constraints in the graph.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Vcpkg vybere minimální zjištěnou verzi, která odpovídá všem použitelným omezením, včetně verze ze směrného plánu zadaného na nejvyšší úrovni, a všech omezení version>= v grafu.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpOverrides" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[When used as the top-level manifest (such as when running `vcpkg install` in the directory), overrides allow a manifest to short-circuit dependency resolution and specify exactly the version to use. These can be used to handle version conflicts, such as with `version-string` dependencies. They will not be considered when transitively depended upon.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Při použití jako manifest nejvyšší úrovně (například při spuštění vcpkg install v adresáři) umožňují přepsání manifestu zkrátit řešení závislostí a přesně určit verzi, která se má použít. Je možné je použít k řešení konfliktů verzí, například u závislostí version-string. Při přechodné závislosti se neberou v úvahu.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";HelpOwnsCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Search for files in installed packages.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Vyhledejte soubory v nainstalovaných balíčcích.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpPackagePublisher" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Additionally, package publishers can use "version>=" constraints to ensure that consumers are using at least a certain minimum version of a given dependency. For example, if a library needs an API added to boost-asio in 1.70, a "version>=" constraint will ensure transitive users use a sufficient version even in the face of individual version overrides or cross-registry references.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Kromě toho mohou vydavatelé balíčků používat omezení version>=, aby zajistili, že uživatelé používají alespoň určitou minimální verzi dané závislosti. Například pokud knihovna potřebuje API přidané do boost-asio ve verzi 1.70, omezení version>= zajistí, že přechodní uživatelé budou používat dostatečnou verzi, a to i vzhledem k přepisům jednotlivých verzí nebo odkazům napříč registry.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpPortVersionScheme" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Each version additionally has a "port-version" which is a nonnegative integer. When rendered as text, the port version (if nonzero) is added as a suffix to the primary version text separated by a hash (#). Port-versions are sorted lexographically after the primary version text, for example:]A;1.0.0 < 1.0.0#1 < 1.0.1 < 1.0.1#5 < 2.0.0]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Každá verze má navíc verzi portu, což je nezáporné celé číslo. Při vykreslování jako text se verze portu (pokud není nula) přidá jako přípona k textu primární verze oddělenému hashem (#). Verze portů jsou seřazené lexograficky podle textu primární verze, například:]A;1.0.0 < 1.0.0#1 < 1.0.1 < 1.0.1#5 < 2.0.0]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2092,6 +2626,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";HelpUpdateBaseline" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The best approach to keep your libraries up to date, the best approach is to update your baseline reference. This will ensure all packages, including transitive ones, are updated. However if you need to update a package independently, you can use a "version>=" constraint.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nejlepším přístupem k udržování knihoven v aktuálním stavu je aktualizace základní referenční hodnoty. Tím zajistíte aktualizaci všech balíčků, včetně přechodných. Pokud však potřebujete aktualizovat balíček nezávisle, můžete použít omezení version>=.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";HelpUpdateCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[List packages that can be updated.]]></Val>
@@ -2115,6 +2658,78 @@
           <Val><![CDATA[Display version information.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Zobrazí informace o verzi.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionDateScheme" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[A date (2021-01-01.5)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Datum (2021-01-01.5)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionGreater" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Within the "dependencies" field, each dependency can have a minimum constraint listed. These minimum constraints will be used when transitively depending upon this library. A minimum port-version can additionally be specified with a '#' suffix.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[V poli závislosti může být u každé závislosti uvedeno minimální omezení. Tato minimální omezení se použijí při přechodné závislosti na této knihovně. Minimální verzi portu je možné navíc zadat pomocí přípony #.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionScheme" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[A dot-separated sequence of numbers (1.2.3.4)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Posloupnost čísel oddělených tečkami (1.2.3.4)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionSchemes" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following versioning schemes are accepted.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Jsou přijata následující schémata správy verzí.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionSemverScheme" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[A Semantic Version 2.0 (2.1.0-rc2)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Sémantická verze 2.0 (2.1.0-rc2)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionStringScheme" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[An exact, incomparable version (Vista)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Přesná, nekompatibilní verze (Vista)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersioning" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Versioning allows you to deterministically control the precise revisions of dependencies used by your project from within your manifest file.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Správa verzí umožňuje deterministicky řídit přesné revize závislostí používaných vaším projektem ze souboru manifest.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IgnoringVcpkgRootEnvironment" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Ignoring VCPKG_ROOT environment variable; use --vcpkg-root "{path}" to use the environment value or unset the VCPKG_ROOT environment variable to suppress this message. Using detected vcpkg root: "{actual}".]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ignoruje se proměnná prostředí VCPKG_ROOT. Pro použití hodnoty prostředí použijte --vcpkg-root {path} nebo zrušte nastavení proměnné prostředí VCPKG_ROOT pro potlačení této zprávy. Používá se zjištěný kořen vcpkg: {actual}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2152,11 +2767,47 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";IncorrectArchiveFileSignature" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Incorrect archive file signature]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nesprávný podpis souboru archivu]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IncorrectLibHeaderEnd" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Incorrect lib header end]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nesprávný konec hlavičky knihovny]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";IncorrectNumberOfArgs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA['{command_name}' requires '{expected}' arguments, but '{actual}' were provided.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{command_name} vyžaduje tento počet argumentů: {expected}, ale zadal se tento počet argumentů: {actual}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IncorrectPESignature" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Incorrect PE signature]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nesprávný podpis PE]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IncrementedUtf8Decoder" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Incremented Utf8Decoder at the end of the string]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Inkrementovaný Utf8Decoder na konci řetězce]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2268,6 +2919,15 @@
           <Val><![CDATA[-- Installing port from location: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[-- Probíhá instalace portu z umístění: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InstallingMavenFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{path} installing maven file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} instalování souboru Maven]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2473,6 +3133,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InvalidCodePoint" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid code point passed to utf8_encoded_code_point_count]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Do utf8_encoded_code_point_count byl předán neplatný bod kódu]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidCodeUnit" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid code unit]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[neplatná jednotka kódu]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InvalidCommandArgSort" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Value of --sort must be one of 'lexicographical', 'topological', 'reverse'.]]></Val>
@@ -2482,12 +3160,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InvalidCommentStyle" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg does not support c-style comments, however most objects allow $-prefixed fields to be used as comments.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg nepodporuje komentáře ve stylu c, ale většina objektů povoluje použití polí s předponou $jako komentářů.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InvalidCommitId" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Invalid commit id {value}]]></Val>
+          <Val><![CDATA[Invalid commit id: {commit_sha}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Neplatné ID potvrzení {value}]]></Val>
+            <Val><![CDATA[Neplatné ID potvrzení: {commit_sha}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Invalid commit id {value}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2509,11 +3199,38 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InvalidFloatingPointConst" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid floating point constant: {count}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neplatná konstanta čísla s plovoucí desetinnou čárkou: {count}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InvalidFormatString" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[invalid format string: {actual}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[neplatný formátovací řetězec: {actual}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidHexDigit" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid hex digit in unicode escape]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neplatná šestnáctková číslice v řídicím znaku Unicode]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidIntegerConst" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid integer constant: {count}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neplatná celočíselná konstanta: {count}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2532,6 +3249,24 @@
           <Val><![CDATA['remove' accepts either libraries or '--outdated']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Příkaz remove přijímá buď knihovny, nebo --outdated.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidPortVersonName" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Found invalid port version file name: `{path}`.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Našel se neplatný název souboru verze portu: {path}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidString" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid utf8 passed to Value::string(std::string)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Do value::string(std::string) se předala neplatná hodnota utf8.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2566,11 +3301,47 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";JsonFileMissingExtension" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the JSON file {path} must have a .json (all lowercase) extension]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Soubor JSON {path} musí mít příponu .json (všechna malá písmena).]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";JsonSwitch" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[(Experimental) Request JSON output.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[(Experimentální) Výstup JSON požadavku.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";JsonValueNotArray" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[json value is not an array]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[hodnota json není pole]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";JsonValueNotObject" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[json value is not an object]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Hodnota json není objekt]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";JsonValueNotString" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[json value is not a string]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Hodnota json není řetězec]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2836,6 +3607,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";MissingAndroidEnv" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[ANDROID_NDK_HOME environment variable missing]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[chybí proměnná prostředí ANDROID_NDK_HOME]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";MissingAndroidHomeDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[ANDROID_NDK_HOME directory does not exist: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ANDROID_NDK_HOME adresář neexistuje: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";MissingArgFormatManifest" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[format-manifest was passed --convert-control without '--all'.]A;This doesn't do anything: control files passed explicitly are converted automatically.]]></Val>
@@ -3013,6 +3802,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";NoError" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[no error]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nedošlo k žádné chybě]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";NoInstalledPackages" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[No packages are installed. Did you mean `search`?]]></Val>
@@ -3111,6 +3909,15 @@
           <Val><![CDATA[Overlay path "{path}" must exist and must be a directory.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Překryvná cesta „{path}“ musí existovat a musí to být adresář.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";OverlayTriplets" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Overlay triplets from {path} :]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Překrytí trojčat z {path} :]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3214,6 +4021,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Packing {vendor} failed.  Use --debug for more information.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PairedSurrogatesAreInvalid" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[trailing surrogate following leading surrogate (paired surrogates are invalid)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[koncová náhrada za úvodní náhradou (párové náhrady jsou neplatné)]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3337,6 +4153,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PrebuiltPackages" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[There are packages that have not been built. To build them run:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Existují balíčky, které nebyly sestaveny. Pokud je chcete sestavit, spusťte:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PreviousIntegrationFileRemains" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Previous integration file was not removed.]]></Val>
@@ -3378,6 +4203,15 @@
           <Val><![CDATA[{tool_name} failed with exit code: ({exit_code}).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Nástroj {tool_name} selhal s ukončovacím kódem {exit_code}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ProvideExportType" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[At least one of the following options are required: --raw --nuget --ifw --zip --7zip --chocolatey --prefab.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Vyžaduje se aspoň jedna z následujících možností: --raw --nuget --ifw --zip --7zip --chocolatey --prefab.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3520,6 +4354,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ShallowRepositoryDetected" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg was cloned as a shallow repository in: {path}]A;Try again with a full vcpkg clone.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Vcpkg se naklonoval jako mělké úložiště v: {path}]A;Zkuste to znovu s úplným klonem vcpkg.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";SkipClearingInvalidDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Skipping clearing contents of {path} because it was not a directory.]]></Val>
@@ -3586,6 +4429,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";StartCodeUnitInContinue" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[found start code unit in continue position]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[našla se jednotka počátečního kódu na pozici pro pokračování]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";StoreOptionMissingSha" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[--store option is invalid without a sha512]]></Val>
@@ -3604,6 +4456,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Stored binary cache: '{path}']]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";SuccessfulyExported" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Exported {package_name} to {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} se exportoval do cesty {path}.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3691,6 +4552,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";TrailingCommaInArray" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Trailing comma in array]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Koncová čárka v poli]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";TrailingCommaInObj" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Trailing comma in an object]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Koncová čárka v objektu]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";TwoFeatureFlagsSpecified" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Both '{value}' and -'{value}' were specified as feature flags.]]></Val>
@@ -3709,11 +4588,209 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UnexpectedByteSize" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Expected {expected} bytes to be written, but {actual} were written.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Očekávalo se, že se zapíše tento počet bajtů: {expected}, ale zapisovaly se {actual}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedCharExpectedCloseBrace" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected character; expected property or close brace]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neočekávaný znak; Očekávaná vlastnost nebo pravá složená závorka]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedCharExpectedColon" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected character; expected colon]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neočekávaný znak; Očekávala se dvojtečka.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedCharExpectedComma" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected character; expected comma or close brace]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neočekávaný znak; Očekávala se čárka nebo pravá složená závorka]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedCharExpectedName" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected character; expected property name]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neočekávaný znak; Očekával se název vlastnosti.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedCharExpectedValue" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected character; expected value]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neočekávaný znak; Očekávaná hodnota]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedCharMidArray" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected character in middle of array]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neočekávaný znak uprostřed pole]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedCharMidKeyword" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected character in middle of keyword]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neočekávaný znak uprostřed klíčového slova]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedDigitsAfterLeadingZero" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected digits after a leading zero]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neočekávané číslice za úvodní nulou]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFAfterEscape" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected EOF after escape character]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neočekávaný EOF za řídicím znakem]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFAfterMinus" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected EOF after minus sign]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neočekávaný EOF po znaménku minus]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFExpectedChar" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected character; expected EOF]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neočekávaný znak; Očekával se EOF.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFExpectedCloseBrace" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected EOF; expected property or close brace]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neočekávaný EOF; Očekávaná vlastnost nebo pravá složená závorka]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFExpectedColon" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected EOF; expected colon]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neočekávaný EOF; Očekávala se dvojtečka]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFExpectedName" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected EOF; expected property name]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neočekávaný EOF; Očekával se název vlastnosti.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFExpectedProp" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected EOF; expected property]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neočekávaný EOF; Očekáva vlastnost]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFExpectedValue" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected EOF; expected value]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neočekávaný EOF; Očekávaná hodnota]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFMidArray" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected EOF in middle of array]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neočekávaný EOF uprostřed pole]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFMidKeyword" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected EOF in middle of keyword]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neočekávaný EOF uprostřed klíčového slova]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFMidString" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected EOF in middle of string]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neočekávaný EOF uprostřed řetězce]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFMidUnicodeEscape" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected end of file in middle of unicode escape]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neočekávaný konec souboru uprostřed řídicího znaku Unicode]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UnexpectedErrorDuringBulkDownload" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[an unexpected error occurred during bulk download.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[při hromadném stahování došlo k neočekávané chybě.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEscapeSequence" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected escape sequence continuation]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neočekávané pokračování řídicí sekvence]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3732,6 +4809,15 @@
           <Val><![CDATA[Expected format is [{expected}]5D;, but was [{actual}]5D;.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Očekávaný formát je [{expected}]5D;, byl ale [{actual}]5D;.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedPortName" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the port {expected} is declared as {actual} in {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Port {expected} je v cestě {path} deklarovaný jako {actual}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3766,6 +4852,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig', 'interactive', and 'files']]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnknownMachineCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unknown machine type code {value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Neznámý kód typu počítače {value}]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3810,6 +4905,15 @@
           <Val><![CDATA[vcpkg does not have a definition of this tool for this platform.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Vcpkg nemá definici tohoto nástroje pro tuto platformu.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnknownTopic" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unknown topic {value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[neznámé téma {value}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3882,6 +4986,15 @@
           <Val><![CDATA[short options are not supported: '{value}']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[krátké možnosti se nepodporují: {value}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnsupportedSyntaxInCDATA" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[]5D;]5D;> is not supported in CDATA block]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[]5D;]5D;> se v bloku CDATA nepodporuje.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4084,6 +5197,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";Utf8ConversionFailed" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to convert to UTF-8]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Převod na UTF-8 se nezdařil]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";VSExaminedInstances" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The following Visual Studio instances were considered:]]></Val>
@@ -4113,10 +5235,13 @@
       </Item>
       <Item ItemId=";VcpkgCeIsExperimental" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[vcpkg-ce ('configure environment') is experimental and may change at any time.]]></Val>
+          <Val><![CDATA[vcpkg-artifacts are experimental and may change at any time.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg-ce ('configure environment') je experimentální a může se kdykoli změnit.]]></Val>
+            <Val><![CDATA[vcpkg-artifacts jsou experimentální a můžou se kdykoli změnit.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[vcpkg-ce ('configure environment') is experimental and may change at any time.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4341,10 +5466,13 @@
       </Item>
       <Item ItemId=";WroteNuGetPkgConfInfo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Wrote NuGet package config information to {path}.]]></Val>
+          <Val><![CDATA[Wrote NuGet package config information to {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Do {path} se zapsaly informace o konfiguraci balíčku NuGet.]]></Val>
+            <Val><![CDATA[Do {path} se zapsaly informace o konfiguraci balíčku NuGet]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Wrote NuGet package config information to {path}.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>

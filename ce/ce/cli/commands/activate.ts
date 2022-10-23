@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { buildRegistryResolver, resolveDependencies } from '../../artifacts/artifact';
+import { buildRegistryResolver, checkDemands, resolveDependencies } from '../../artifacts/artifact';
+import { configurationName } from '../../constants';
 import { i } from '../../i18n';
 import { trackActivation } from '../../insights';
 import { session } from '../../main';
@@ -51,6 +52,10 @@ export class ActivateCommand extends Command {
 
     // track what got installed
     const projectResolver = await buildRegistryResolver(session, projectManifest.metadata.registries);
+    if (!checkDemands(session, (await session.findProjectProfile())?.fsPath ?? configurationName, projectManifest.applicableDemands)) {
+      return false;
+    }
+
     const resolved = await resolveDependencies(session, projectResolver, [projectManifest], 3);
 
     // print the status of what is going to be activated.
