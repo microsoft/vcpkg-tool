@@ -653,8 +653,6 @@
   "_SpecifyHostArch.comment": "An example of {env_var} is VCPKG_DEFAULT_TRIPLET.",
   "SpecifyTargetArch": "Specify the target architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')",
   "_SpecifyTargetArch.comment": "An example of {env_var} is VCPKG_DEFAULT_TRIPLET.",
-  "StampNotChanged": "Installation skipped. Everything seems to be installed. To disable this check, don't pass the option `--{option}` to vcpkg.",
-  "_StampNotChanged.comment": "An example of {option} is editable.",
   "StartCodeUnitInContinue": "found start code unit in continue position",
   "StoreOptionMissingSha": "--store option is invalid without a sha512",
   "StoredBinaryCache": "Stored binary cache: \"{path}\"",

@@ -34,8 +34,6 @@ namespace vcpkg::Hash
         return {};
     }
 
-    void Hasher::add_bytes(StringView data) { add_bytes(data.data(), data.data() + data.size()); }
-
     template<class UIntTy>
     auto top_bits(UIntTy x) -> std::enable_if_t<std::is_unsigned<UIntTy>::value, uchar>
     {

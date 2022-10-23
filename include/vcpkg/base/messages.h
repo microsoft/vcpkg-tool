@@ -1567,11 +1567,6 @@ namespace vcpkg
                     "",
                     "Specify the target architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')");
     DECLARE_MESSAGE(StartCodeUnitInContinue, (), "", "found start code unit in continue position");
-    DECLARE_MESSAGE(StampNotChanged,
-                    (msg::option),
-                    "",
-                    "Installation skipped. Everything seems to be installed. To disable this check, don't "
-                    "pass the option `--{option}` to vcpkg.");
     DECLARE_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: \"{path}\"");
     DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512");
     DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.");

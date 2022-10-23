@@ -20,7 +20,6 @@ namespace vcpkg
         Path vcpkg_dir_info() const { return vcpkg_dir() / "info"; }
         Path vcpkg_dir_updates() const { return vcpkg_dir() / "updates"; }
         Path lockfile_path() const { return vcpkg_dir() / "vcpkg-lock.json"; }
-        Path stampfile_path() const { return vcpkg_dir() / "stampfile"; }
         Path triplet_dir(Triplet t) const { return m_root / t.canonical_name(); }
         Path compiler_info_cache_file(Triplet t) const
         {

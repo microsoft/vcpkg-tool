@@ -408,7 +408,6 @@
   "SpecifyDirectoriesWhenSearching": "Specify directories to be used when searching for ports.\n(also: '{env_var}')",
   "SpecifyHostArch": "Specify the host architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')",
   "SpecifyTargetArch": "Specify the target architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')",
-  "StampNotChanged": "Installation skipped. Everything seems to be installed. To disable this check, don't pass the option `--{option}` to vcpkg.",
   "StartCodeUnitInContinue": "found start code unit in continue position",
   "StoreOptionMissingSha": "--store option is invalid without a sha512",
   "StoredBinaryCache": "Stored binary cache: \"{path}\"",

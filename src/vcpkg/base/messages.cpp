@@ -783,7 +783,6 @@ namespace vcpkg
     REGISTER_MESSAGE(SpecifyHostArch);
     REGISTER_MESSAGE(SpecifyTargetArch);
     REGISTER_MESSAGE(StartCodeUnitInContinue);
-    REGISTER_MESSAGE(StampNotChanged);
     REGISTER_MESSAGE(StoredBinaryCache);
     REGISTER_MESSAGE(StoreOptionMissingSha);
     REGISTER_MESSAGE(SuggestGitPull);

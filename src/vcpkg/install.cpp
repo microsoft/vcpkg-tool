@@ -564,7 +564,6 @@ namespace vcpkg
     static constexpr StringLiteral OPTION_RECURSE = "recurse";
     static constexpr StringLiteral OPTION_KEEP_GOING = "keep-going";
     static constexpr StringLiteral OPTION_EDITABLE = "editable";
-    static constexpr StringLiteral OPTION_CHECK_STAMP = "check-stamp";
     static constexpr StringLiteral OPTION_XUNIT = "x-xunit";
     static constexpr StringLiteral OPTION_USE_ARIA2 = "x-use-aria2";
     static constexpr StringLiteral OPTION_CLEAN_AFTER_BUILD = "clean-after-build";
@@ -579,7 +578,7 @@ namespace vcpkg
     static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
     static constexpr StringLiteral OPTION_NO_PRINT_USAGE = "no-print-usage";
 
-    static constexpr std::array<CommandSwitch, 19> INSTALL_SWITCHES = {
+    static constexpr std::array<CommandSwitch, 18> INSTALL_SWITCHES = {
         {{OPTION_DRY_RUN, "Do not actually build or install"},
          {OPTION_USE_HEAD_VERSION,
           "Install the libraries on the command line using the latest upstream sources (classic mode)"},
@@ -590,9 +589,6 @@ namespace vcpkg
          {OPTION_KEEP_GOING, "Continue installing packages on failure"},
          {OPTION_EDITABLE,
           "Disable source re-extraction and binary caching for libraries on the command line (classic mode)"},
-         {OPTION_CHECK_STAMP,
-          "If the configuration (triplets, manifest file, registries, selected features) is the same as the last time "
-          "install is skipped. Local port modifications are not detected anymore."},
          {OPTION_USE_ARIA2, "Use aria2 to perform download tasks"},
          {OPTION_CLEAN_AFTER_BUILD, "Clean buildtrees, packages and downloads after building each package"},
          {OPTION_CLEAN_BUILDTREES_AFTER_BUILD, "Clean buildtrees after building each package"},
@@ -876,7 +872,6 @@ namespace vcpkg
         const bool no_build_missing = Util::Sets::contains(options.switches, OPTION_ONLY_BINARYCACHING);
         const bool is_recursive = Util::Sets::contains(options.switches, (OPTION_RECURSE));
         const bool is_editable = Util::Sets::contains(options.switches, (OPTION_EDITABLE)) || !args.cmake_args.empty();
-        const bool check_stamp = Util::Sets::contains(options.switches, (OPTION_CHECK_STAMP));
         const bool use_aria2 = Util::Sets::contains(options.switches, (OPTION_USE_ARIA2));
         const bool clean_after_build = Util::Sets::contains(options.switches, (OPTION_CLEAN_AFTER_BUILD));
         const bool clean_buildtrees_after_build =
@@ -938,11 +933,6 @@ namespace vcpkg
             if (Util::Sets::contains(options.switches, OPTION_MANIFEST_NO_DEFAULT_FEATURES))
             {
                 msg::println_error(msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_NO_DEFAULT_FEATURES);
-                failure = true;
-            }
-            if (Util::Sets::contains(options.switches, OPTION_CHECK_STAMP))
-            {
-                msg::println(Color::error, msgErrorInvalidClassicModeOption, msg::option = OPTION_CHECK_STAMP);
                 failure = true;
             }
             if (Util::Sets::contains(options.multisettings, OPTION_MANIFEST_FEATURE))
@@ -1079,79 +1069,6 @@ namespace vcpkg
                 extended_overlay_ports.emplace_back(paths.builtin_ports_directory().native());
             }
 
-            std::string hash;
-            {
-                auto hasher = Hash::get_hasher_for(Hash::Algorithm::Sha256);
-                hasher->add_bytes(default_triplet.to_string());
-                hasher->add_bytes(host_triplet.to_string());
-                for (const auto& feature : features)
-                {
-                    hasher->add_bytes(feature);
-                }
-                if (paths.get_registry_set().is_default_builtin_registry())
-                {
-                    auto maybe_git_sha = paths.get_current_git_sha();
-                    if (maybe_git_sha)
-                    {
-                        hasher->add_bytes(maybe_git_sha.value_or_exit(VCPKG_LINE_INFO));
-                    }
-                }
-                hash = hasher->get_hash();
-
-                auto have_file_change = [&]() {
-                    auto last_install = fs.last_write_time(paths.installed().stampfile_path(), VCPKG_LINE_INFO);
-                    for (auto&& path : args.overlay_ports)
-                    {
-                        if (fs.last_write_time(path, VCPKG_LINE_INFO) > last_install)
-                        {
-                            return true;
-                        }
-                        for (auto&& file : fs.get_files_recursive(path, VCPKG_LINE_INFO))
-                        {
-                            if (fs.last_write_time(file, VCPKG_LINE_INFO) > last_install)
-                            {
-                                return true;
-                            }
-                        }
-                    }
-
-                    if (fs.last_write_time(paths.get_manifest().value_or_exit(VCPKG_LINE_INFO).path, VCPKG_LINE_INFO) >
-                        last_install)
-                    {
-                        return true;
-                    }
-                    auto config_file = paths.get_configuration().directory / "vcpkg-configuration.json";
-                    if (fs.exists(config_file, VCPKG_LINE_INFO))
-                    {
-                        if (fs.last_write_time(config_file, VCPKG_LINE_INFO) > last_install)
-                        {
-                            return true;
-                        }
-                    }
-                    if (fs.last_write_time(paths.get_triplet_file_path(default_triplet), VCPKG_LINE_INFO) >
-                        last_install)
-                    {
-                        return true;
-                    }
-                    if (fs.last_write_time(paths.get_triplet_file_path(host_triplet), VCPKG_LINE_INFO) > last_install)
-                    {
-                        return true;
-                    }
-                    return false;
-                };
-
-                if (check_stamp && fs.exists(paths.installed().stampfile_path(), VCPKG_LINE_INFO))
-                {
-                    if (fs.read_contents(paths.installed().stampfile_path(), VCPKG_LINE_INFO) == hash &&
-                        !have_file_change())
-                    {
-                        msg::println(msgStampNotChanged, msg::option = OPTION_CHECK_STAMP);
-                        Checks::exit_success(VCPKG_LINE_INFO);
-                    }
-                    fs.remove(paths.installed().stampfile_path(), VCPKG_LINE_INFO);
-                }
-            }
-
             auto oprovider =
                 make_manifest_provider(paths, extended_overlay_ports, manifest->path, std::move(manifest_scf));
             PackageSpec toplevel{manifest_core.name, default_triplet};
@@ -1183,20 +1100,18 @@ namespace vcpkg
 
             PathsPortFileProvider provider(paths, std::move(oprovider));
 
-            Commands::SetInstalled::perform_ex(args,
-                                               paths,
-                                               provider,
-                                               binary_cache,
-                                               var_provider,
-                                               std::move(install_plan),
-                                               dry_run ? Commands::DryRun::Yes : Commands::DryRun::No,
-                                               pkgsconfig,
-                                               host_triplet,
-                                               keep_going,
-                                               only_downloads,
-                                               print_cmake_usage);
-            fs.write_contents_and_dirs(paths.installed().stampfile_path(), hash, VCPKG_LINE_INFO);
-            Checks::exit_success(VCPKG_LINE_INFO);
+            Commands::SetInstalled::perform_and_exit_ex(args,
+                                                        paths,
+                                                        provider,
+                                                        binary_cache,
+                                                        var_provider,
+                                                        std::move(install_plan),
+                                                        dry_run ? Commands::DryRun::Yes : Commands::DryRun::No,
+                                                        pkgsconfig,
+                                                        host_triplet,
+                                                        keep_going,
+                                                        only_downloads,
+                                                        print_cmake_usage);
         }
 
         PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
