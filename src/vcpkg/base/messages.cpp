@@ -262,7 +262,7 @@ namespace vcpkg::msg
     // https://learn.microsoft.com/en-us/visualstudio/ide/reference/lcid-devenv-exe?view=vs-2022
     StringLiteral get_language_tag(int LCID)
     {
-        std::array<std::pair<int, StringLiteral>, 14> languages = {
+        static constexpr std::array<std::pair<int, StringLiteral>, 14> languages = {
             std::pair<int, StringLiteral>(1029, "cs"),       // Czech
             std::pair<int, StringLiteral>(1031, "de"),       // German
             std::pair<int, StringLiteral>(1033, "en"),       // English
@@ -278,7 +278,7 @@ namespace vcpkg::msg
             std::pair<int, StringLiteral>(2052, "zh-Hans"),  // Chinese (Simplified)
             std::pair<int, StringLiteral>(1028, "zh-Hant")}; // Chinese (Traditional)
 
-        for (auto l : languages)
+        for (auto&& l : languages)
         {
             if (l.first == LCID)
             {
