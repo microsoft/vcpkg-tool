@@ -109,7 +109,7 @@ namespace vcpkg
             Debug::println("IsWow64Process failed, falling back to compiled architecture.");
         }
 
-#if defined(_M_X86)
+#if defined(_M_IX86)
         return CPUArchitecture::X86;
 #elif defined(_M_ARM)
         return CPUArchitecture::ARM;
