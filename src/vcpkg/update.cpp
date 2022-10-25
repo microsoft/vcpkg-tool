@@ -68,7 +68,7 @@ namespace vcpkg::Update
 
         const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
+        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
 
         const auto outdated_packages = SortedVector<OutdatedPackage, decltype(&OutdatedPackage::compare_by_name)>(
             find_outdated_packages(provider, status_db), &OutdatedPackage::compare_by_name);

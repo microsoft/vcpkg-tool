@@ -54,6 +54,7 @@ namespace vcpkg
         CommandArgs,
         CommandContext,
         CommandName,
+        DetectedCiEnvironment,
         Error,
         InstallPlan_1,
         ListFile,
@@ -77,6 +78,7 @@ namespace vcpkg
 
     enum class BoolMetric
     {
+        DetectedContainer,
         InstallManifestMode,
         OptionOverlayPorts,
         COUNT // always keep COUNT last

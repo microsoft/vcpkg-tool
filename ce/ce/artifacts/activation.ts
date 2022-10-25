@@ -596,7 +596,7 @@ export class Activation {
       variables[undoVariableName] = undoEnvironmentFile.fsPath;
 
       const contents = JSON.stringify(undoContents, (k, v) => this.#session.serializer(k, v), 2);
-      this.#session.channels.verbose(`--------[START UNDO FILE]--------\n${contents}\n--------[END UNDO FILE]---------`);
+      this.#session.channels.debug(`--------[START UNDO FILE]--------\n${contents}\n--------[END UNDO FILE]---------`);
       // create the file on disk
       await undoEnvironmentFile.writeUTF8(contents);
     }
@@ -605,20 +605,20 @@ export class Activation {
     if (this.#session.postscriptFile) {
       const contents = undoDeactivation + generateScriptContent(scriptKind, variables, aliases);
 
-      this.#session.channels.verbose(`--------[START SHELL SCRIPT FILE]--------\n${contents}\n--------[END SHELL SCRIPT FILE]---------`);
+      this.#session.channels.debug(`--------[START SHELL SCRIPT FILE]--------\n${contents}\n--------[END SHELL SCRIPT FILE]---------`);
       await this.#session.postscriptFile.writeUTF8(contents);
     }
 
     // generate msbuild props file if requested
     if (msbuildFile) {
       const contents = await this.generateMSBuild();
-      this.#session.channels.verbose(`--------[START MSBUILD FILE]--------\n${contents}\n--------[END MSBUILD FILE]---------`);
+      this.#session.channels.debug(`--------[START MSBUILD FILE]--------\n${contents}\n--------[END MSBUILD FILE]---------`);
       await msbuildFile.writeUTF8(contents);
     }
 
     if (json) {
       const contents = generateJson(variables, defines, aliases, properties, locations, paths, tools);
-      this.#session.channels.verbose(`--------[START ENV VAR FILE]--------\n${contents}\n--------[END ENV VAR FILE]---------`);
+      this.#session.channels.debug(`--------[START ENV VAR FILE]--------\n${contents}\n--------[END ENV VAR FILE]---------`);
       await json.writeUTF8(contents);
     }
   }

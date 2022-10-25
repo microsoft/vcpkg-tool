@@ -26,7 +26,7 @@ export class Project extends Switch {
   }
 
   async resolveProjectUri() : Promise<ResolvedProjectUri | undefined> {
-    const v = super.value;
+    const v = this.value;
     if (v) {
       const uri = session.fileSystem.file(resolve(v));
       const stat = await uri.stat();
@@ -53,7 +53,7 @@ export class Project extends Switch {
     return undefined;
   }
 
-  override get value(): Promise<Uri | undefined> {
+  get resolvedValue(): Promise<Uri | undefined> {
     return this.resolveProjectUri().then(v => v?.uri);
   }
 

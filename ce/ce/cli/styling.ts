@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { cyan, green, red, yellow } from 'chalk';
+import { cyan, red, yellow } from 'chalk';
 import { argv } from 'process';
 import { Session } from '../session';
 import { CommandLine } from './command-line';
@@ -52,12 +52,6 @@ export function initStyling(commandline: CommandLine, session: Session) {
 
   session.channels.on('debug', (text: string, msec: number) => {
     debug(`${cyan.bold(`[${formatTime(msec)}]`)} ${text}`);
-  });
-
-  session.channels.on('verbose', (text: string, msec: number) => {
-    if (commandline.verbose) {
-      debug(` ${green(text)}`);
-    }
   });
 
   session.channels.on('warning', (text: string, msec: number) => {

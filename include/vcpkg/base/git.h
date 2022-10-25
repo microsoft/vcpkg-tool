@@ -50,4 +50,7 @@ namespace vcpkg
 
     // Returns a list of ports that have uncommitted/unmerged changes
     ExpectedL<std::set<std::string>> git_ports_with_uncommitted_changes(const GitConfig& config);
+
+    // Check whether a repository is a shallow clone
+    ExpectedL<bool> is_shallow_clone(const GitConfig& config);
 }

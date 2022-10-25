@@ -9,6 +9,56 @@
 #include <vcpkg/metrics.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
+namespace
+{
+    using namespace vcpkg;
+
+    constexpr std::pair<StringLiteral, StringLiteral> KNOWN_CI_VARIABLES[]{
+        // Opt-out from CI detection
+        {"VCPKG_NO_CI", "VCPKG_NO_CI"},
+
+        // Azure Pipelines
+        // https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables#system-variables
+        {"TF_BUILD", "Azure_Pipelines"},
+
+        // AppVeyor
+        // https://www.appveyor.com/docs/environment-variables/
+        {"APPVEYOR", "AppVeyor"},
+
+        // AWS Code Build
+        // https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-env-vars.html
+        {"CODEBUILD_BUILD_ID", "AWS_CodeBuild"},
+
+        // CircleCI
+        // https://circleci.com/docs/env-vars#built-in-environment-variables
+        {"CIRCLECI", "Circle_CI"},
+
+        // GitHub Actions
+        // https://docs.github.com/en/actions/learn-github-actions/
+        {"GITHUB_ACTIONS", "GitHub_Actions"},
+
+        // GitLab
+        // https://docs.gitlab.com/ee/ci/variables/predefined_variables.html
+        {"GITLAB_CI", "GitLab_CI"},
+
+        // Heroku
+        // https://devcenter.heroku.com/articles/heroku-ci#immutable-environment-variables
+        {"HEROKU_TEST_RUN_ID", "Heroku_CI"},
+
+        // Jenkins
+        // https://wiki.jenkins.io/display/JENKINS/Building+a+software+project#Buildingasoftwareproject-belowJenkinsSetEnvironmentVariables
+        {"JENKINS_URL", "Jenkins_CI"},
+
+        // Travis CI
+        // https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
+        {"TRAVIS", "Travis_CI"},
+
+        // Generic CI environment variables
+        {"CI", "Generic"},
+        {"BUILD_ID", "Generic"},
+    };
+}
+
 namespace vcpkg
 {
     const std::string* ParsedArguments::read_setting(StringLiteral setting) const noexcept
@@ -72,11 +122,9 @@ namespace vcpkg
         }
     }
 
-    static void parse_cojoined_value(StringView new_value,
-                                     StringView option_name,
-                                     std::unique_ptr<std::string>& option_field)
+    static void parse_cojoined_value(StringView new_value, StringView option_name, Optional<std::string>& option_field)
     {
-        if (nullptr != option_field)
+        if (option_field.has_value())
         {
             msg::println_error(msgDuplicateOptions, msg::value = option_name);
             LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::Error,
@@ -85,7 +133,7 @@ namespace vcpkg
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
-        option_field = std::make_unique<std::string>(new_value.begin(), new_value.end());
+        option_field.emplace(new_value.data(), new_value.size());
     }
 
     static void parse_switch(bool new_setting, StringView option_name, Optional<bool>& option_field)
@@ -285,27 +333,26 @@ namespace vcpkg
             Strings::ascii_to_lowercase(basic_arg.data(), first_eq);
             // basic_arg[0] == '-' && basic_arg[1] == '-'
             StringView arg = StringView(basic_arg).substr(2);
-            constexpr static std::pair<StringView, std::unique_ptr<std::string> VcpkgCmdArguments::*>
-                cojoined_values[] = {
-                    {VCPKG_ROOT_DIR_ARG, &VcpkgCmdArguments::vcpkg_root_dir},
-                    {TRIPLET_ARG, &VcpkgCmdArguments::triplet},
-                    {HOST_TRIPLET_ARG, &VcpkgCmdArguments::host_triplet},
-                    {MANIFEST_ROOT_DIR_ARG, &VcpkgCmdArguments::manifest_root_dir},
-                    {BUILDTREES_ROOT_DIR_ARG, &VcpkgCmdArguments::buildtrees_root_dir},
-                    {DOWNLOADS_ROOT_DIR_ARG, &VcpkgCmdArguments::downloads_root_dir},
-                    {INSTALL_ROOT_DIR_ARG, &VcpkgCmdArguments::install_root_dir},
-                    {PACKAGES_ROOT_DIR_ARG, &VcpkgCmdArguments::packages_root_dir},
-                    {SCRIPTS_ROOT_DIR_ARG, &VcpkgCmdArguments::scripts_root_dir},
-                    {BUILTIN_PORTS_ROOT_DIR_ARG, &VcpkgCmdArguments::builtin_ports_root_dir},
-                    {BUILTIN_REGISTRY_VERSIONS_DIR_ARG, &VcpkgCmdArguments::builtin_registry_versions_dir},
-                    {REGISTRIES_CACHE_DIR_ARG, &VcpkgCmdArguments::registries_cache_dir},
-                    {ASSET_SOURCES_ARG, &VcpkgCmdArguments::asset_sources_template_arg},
-                };
+            constexpr static std::pair<StringView, Optional<std::string> VcpkgCmdArguments::*> cojoined_values[] = {
+                {VCPKG_ROOT_DIR_ARG, &VcpkgCmdArguments::vcpkg_root_dir_arg},
+                {TRIPLET_ARG, &VcpkgCmdArguments::triplet},
+                {HOST_TRIPLET_ARG, &VcpkgCmdArguments::host_triplet},
+                {MANIFEST_ROOT_DIR_ARG, &VcpkgCmdArguments::manifest_root_dir},
+                {BUILDTREES_ROOT_DIR_ARG, &VcpkgCmdArguments::buildtrees_root_dir},
+                {DOWNLOADS_ROOT_DIR_ARG, &VcpkgCmdArguments::downloads_root_dir},
+                {INSTALL_ROOT_DIR_ARG, &VcpkgCmdArguments::install_root_dir},
+                {PACKAGES_ROOT_DIR_ARG, &VcpkgCmdArguments::packages_root_dir},
+                {SCRIPTS_ROOT_DIR_ARG, &VcpkgCmdArguments::scripts_root_dir},
+                {BUILTIN_PORTS_ROOT_DIR_ARG, &VcpkgCmdArguments::builtin_ports_root_dir},
+                {BUILTIN_REGISTRY_VERSIONS_DIR_ARG, &VcpkgCmdArguments::builtin_registry_versions_dir},
+                {REGISTRIES_CACHE_DIR_ARG, &VcpkgCmdArguments::registries_cache_dir},
+                {ASSET_SOURCES_ARG, &VcpkgCmdArguments::asset_sources_template_arg},
+            };
 
             constexpr static std::pair<StringView, std::vector<std::string> VcpkgCmdArguments::*>
                 cojoined_multivalues[] = {
-                    {OVERLAY_PORTS_ARG, &VcpkgCmdArguments::overlay_ports},
-                    {OVERLAY_TRIPLETS_ARG, &VcpkgCmdArguments::overlay_triplets},
+                    {OVERLAY_PORTS_ARG, &VcpkgCmdArguments::cli_overlay_ports},
+                    {OVERLAY_TRIPLETS_ARG, &VcpkgCmdArguments::cli_overlay_triplets},
                     {BINARY_SOURCES_ARG, &VcpkgCmdArguments::binary_sources},
                     {CMAKE_SCRIPT_ARG, &VcpkgCmdArguments::cmake_args},
                 };
@@ -664,18 +711,6 @@ namespace vcpkg
 
     static void from_env(const std::function<Optional<std::string>(ZStringView)>& f,
                          ZStringView var,
-                         std::unique_ptr<std::string>& dst)
-    {
-        if (dst) return;
-
-        auto maybe_val = f(var);
-        if (auto val = maybe_val.get())
-        {
-            dst = std::make_unique<std::string>(std::move(*val));
-        }
-    }
-    static void from_env(const std::function<Optional<std::string>(ZStringView)>& f,
-                         ZStringView var,
                          Optional<std::string>& dst)
     {
         if (dst) return;
@@ -711,11 +746,21 @@ namespace vcpkg
 
         from_env(get_env, TRIPLET_ENV, triplet);
         from_env(get_env, HOST_TRIPLET_ENV, host_triplet);
-        from_env(get_env, VCPKG_ROOT_DIR_ENV, vcpkg_root_dir);
+        vcpkg_root_dir_env = get_environment_variable(VCPKG_ROOT_DIR_ENV);
         from_env(get_env, DOWNLOADS_ROOT_DIR_ENV, downloads_root_dir);
         from_env(get_env, DEFAULT_VISUAL_STUDIO_PATH_ENV, default_visual_studio_path);
         from_env(get_env, ASSET_SOURCES_ENV, asset_sources_template_env);
         from_env(get_env, REGISTRIES_CACHE_DIR_ENV, registries_cache_dir);
+
+        // detect whether we are running in a CI environment
+        for (auto&& ci_env_var : KNOWN_CI_VARIABLES)
+        {
+            if (get_env(ci_env_var.first).has_value())
+            {
+                m_detected_ci_environment = ci_env_var.second;
+                break;
+            }
+        }
 
         {
             const auto vcpkg_disable_lock = get_env(IGNORE_LOCK_FAILURES_ENV);
@@ -729,16 +774,14 @@ namespace vcpkg
             const auto vcpkg_overlay_ports_env = get_env(OVERLAY_PORTS_ENV);
             if (const auto unpacked = vcpkg_overlay_ports_env.get())
             {
-                auto overlays = Strings::split_paths(*unpacked);
-                overlay_ports.insert(std::end(overlay_ports), std::begin(overlays), std::end(overlays));
+                env_overlay_ports = Strings::split_paths(*unpacked);
             }
         }
         {
             const auto vcpkg_overlay_triplets_env = get_env(OVERLAY_TRIPLETS_ENV);
             if (const auto unpacked = vcpkg_overlay_triplets_env.get())
             {
-                auto triplets = Strings::split_paths(*unpacked);
-                overlay_triplets.insert(std::end(overlay_triplets), std::begin(triplets), std::end(triplets));
+                env_overlay_triplets = Strings::split_paths(*unpacked);
             }
         }
         {
@@ -767,19 +810,28 @@ namespace vcpkg
             auto rec_doc = Json::parse(*vcpkg_recursive_data).value_or_exit(VCPKG_LINE_INFO).first;
             const auto& obj = rec_doc.object(VCPKG_LINE_INFO);
 
-            if (auto entry = obj.get(VCPKG_ROOT_DIR_ENV))
+            if (auto entry = obj.get(VCPKG_ROOT_ARG_NAME))
             {
-                args.vcpkg_root_dir = std::make_unique<std::string>(entry->string(VCPKG_LINE_INFO).to_string());
+                auto as_sv = entry->string(VCPKG_LINE_INFO);
+                args.vcpkg_root_dir_arg.emplace(as_sv.data(), as_sv.size());
+            }
+
+            if (auto entry = obj.get(VCPKG_ROOT_ENV_NAME))
+            {
+                auto as_sv = entry->string(VCPKG_LINE_INFO);
+                args.vcpkg_root_dir_env.emplace(as_sv.data(), as_sv.size());
             }
 
             if (auto entry = obj.get(DOWNLOADS_ROOT_DIR_ENV))
             {
-                args.downloads_root_dir = std::make_unique<std::string>(entry->string(VCPKG_LINE_INFO).to_string());
+                auto as_sv = entry->string(VCPKG_LINE_INFO);
+                args.downloads_root_dir.emplace(as_sv.data(), as_sv.size());
             }
 
             if (auto entry = obj.get(ASSET_SOURCES_ENV))
             {
-                args.asset_sources_template_env = entry->string(VCPKG_LINE_INFO).to_string();
+                auto as_sv = entry->string(VCPKG_LINE_INFO);
+                args.asset_sources_template_env.emplace(as_sv.data(), as_sv.size());
             }
 
             if (obj.get(DISABLE_METRICS_ENV))
@@ -794,19 +846,25 @@ namespace vcpkg
         else
         {
             Json::Object obj;
-            if (args.vcpkg_root_dir)
+            if (auto vcpkg_root_dir_arg = args.vcpkg_root_dir_arg.get())
             {
-                obj.insert(VCPKG_ROOT_DIR_ENV, Json::Value::string(*args.vcpkg_root_dir.get()));
+                obj.insert(VCPKG_ROOT_ARG_NAME, Json::Value::string(*vcpkg_root_dir_arg));
             }
 
-            if (args.downloads_root_dir)
+            if (auto vcpkg_root_dir_env = args.vcpkg_root_dir_env.get())
             {
-                obj.insert(DOWNLOADS_ROOT_DIR_ENV, Json::Value::string(*args.downloads_root_dir.get()));
+                obj.insert(VCPKG_ROOT_ENV_NAME, Json::Value::string(*vcpkg_root_dir_env));
             }
 
-            if (auto value = args.asset_sources_template())
+            if (auto downloads_root_dir = args.downloads_root_dir.get())
             {
-                obj.insert(ASSET_SOURCES_ENV, Json::Value::string(value.value_or_exit(VCPKG_LINE_INFO)));
+                obj.insert(DOWNLOADS_ROOT_DIR_ENV, Json::Value::string(*downloads_root_dir));
+            }
+
+            auto maybe_ast = args.asset_sources_template();
+            if (auto ast = maybe_ast.get())
+            {
+                obj.insert(ASSET_SOURCES_ENV, Json::Value::string(*ast));
             }
 
             if (args.disable_metrics)
@@ -860,11 +918,11 @@ namespace vcpkg
         {
             if (auto r = flag.flag.get())
             {
-                Debug::print("Feature flag '", flag.name, "' = ", *r ? "on" : "off", "\n");
+                Debug::println("Feature flag '", flag.name, "' = ", *r ? "on" : "off");
             }
             else
             {
-                Debug::print("Feature flag '", flag.name, "' unset\n");
+                Debug::println("Feature flag '", flag.name, "' unset");
             }
         }
     }
@@ -888,13 +946,22 @@ namespace vcpkg
         }
     }
 
+    void VcpkgCmdArguments::track_environment_metrics() const
+    {
+        if (auto ci_env = m_detected_ci_environment.get())
+        {
+            Debug::println("Detected CI environment: ", *ci_env);
+            LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::DetectedCiEnvironment, *ci_env);
+        }
+    }
+
     Optional<std::string> VcpkgCmdArguments::asset_sources_template() const
     {
         std::string asset_sources_template = asset_sources_template_env.value_or("");
-        if (asset_sources_template_arg)
+        if (auto ast = asset_sources_template_arg.get())
         {
             if (!asset_sources_template.empty()) asset_sources_template += ";";
-            asset_sources_template += *asset_sources_template_arg;
+            asset_sources_template += *ast;
         }
         if (asset_sources_template.empty()) return nullopt;
         return Optional<std::string>(std::move(asset_sources_template));
