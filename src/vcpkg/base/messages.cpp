@@ -817,9 +817,6 @@ namespace vcpkg
     REGISTER_MESSAGE(PortTypeConflict);
     REGISTER_MESSAGE(PrebuiltPackages);
     REGISTER_MESSAGE(PreviousIntegrationFileRemains);
-    REGISTER_MESSAGE(ProcessorArchitectureMalformed);
-    REGISTER_MESSAGE(ProcessorArchitectureMissing);
-    REGISTER_MESSAGE(ProcessorArchitectureW6432Malformed);
     REGISTER_MESSAGE(ProgramReturnedNonzeroExitCode);
     REGISTER_MESSAGE(ProvideExportType);
     REGISTER_MESSAGE(PushingVendorFailed);

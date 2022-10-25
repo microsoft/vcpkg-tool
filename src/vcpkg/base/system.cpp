@@ -29,7 +29,7 @@ namespace vcpkg
         return ::_getpid();
 #else
         return ::getpid();
-#endif
+#endif // ^^^ !_WIN32
     }
 
     Optional<CPUArchitecture> to_cpu_architecture(StringView arch)
@@ -63,44 +63,64 @@ namespace vcpkg
     CPUArchitecture get_host_processor()
     {
 #if defined(_WIN32)
-        auto raw_identifier = get_environment_variable("PROCESSOR_IDENTIFIER");
-        if (const auto id = raw_identifier.get())
+        const HMODULE hKernel32 = ::GetModuleHandleW(L"kernel32.dll");
+        if (hKernel32)
         {
-            // might be either ARMv8 (64-bit) or ARMv9 (64-bit)
-            if (Strings::contains(*id, "ARMv") && Strings::contains(*id, "(64-bit)"))
+            BOOL(__stdcall* const isWow64Process2)
+            (HANDLE /* hProcess */, USHORT* /* pProcessMachine */, USHORT * /*pNativeMachine*/) =
+                reinterpret_cast<decltype(isWow64Process2)>(::GetProcAddress(hKernel32, "IsWow64Process2"));
+            if (isWow64Process2)
             {
-                return CPUArchitecture::ARM64;
+                USHORT processMachine;
+                USHORT nativeMachine;
+                if (isWow64Process2(::GetCurrentProcess(), &processMachine, &nativeMachine))
+                {
+                    Debug::println("Detecting host with IsWow64Process2");
+                    switch (nativeMachine)
+                    {
+                        case 0x014c: // IMAGE_FILE_MACHINE_I386
+                            return CPUArchitecture::X86;
+                        case 0x01c0: // IMAGE_FILE_MACHINE_ARM
+                        case 0x01c2: // IMAGE_FILE_MACHINE_THUMB
+                        case 0x01c4: // IMAGE_FILE_MACHINE_ARMNT
+                            return CPUArchitecture::ARM;
+                        case 0x8664: // IMAGE_FILE_MACHINE_AMD64
+                            return CPUArchitecture::X64;
+                        case 0xAA64: // IMAGE_FILE_MACHINE_ARM64
+                            return CPUArchitecture::ARM64;
+                        default: Checks::unreachable(VCPKG_LINE_INFO);
+                    }
+                }
             }
         }
 
-        auto raw_w6432 = get_environment_variable("PROCESSOR_ARCHITEW6432");
-        if (const auto w6432 = raw_w6432.get())
+        Debug::println("Could not use IsWow64Process2, trying IsWow64Process");
+        BOOL isWow64Legacy;
+        if (::IsWow64Process(::GetCurrentProcess(), &isWow64Legacy))
         {
-            const auto parsed_w6432 = to_cpu_architecture(*w6432);
-            if (const auto parsed = parsed_w6432.get())
+            if (isWow64Legacy)
             {
-                return *parsed;
+                Debug::println("Is WOW64, assuming host is X64");
+                return CPUArchitecture::X64;
             }
-
-            msg::print(Color::warning, msgProcessorArchitectureW6432Malformed, msg::arch = *w6432);
         }
-
-        const auto raw_processor_architecture = get_environment_variable("PROCESSOR_ARCHITECTURE");
-        const auto processor_architecture = raw_processor_architecture.get();
-        if (!processor_architecture)
+        else
         {
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgProcessorArchitectureMissing);
+            Debug::println("IsWow64Process failed, falling back to compiled architecture.");
         }
 
-        const auto raw_parsed_processor_architecture = to_cpu_architecture(*processor_architecture);
-        if (const auto parsed_processor_architecture = raw_parsed_processor_architecture.get())
-        {
-            return *parsed_processor_architecture;
-        }
-
-        Checks::msg_exit_with_message(
-            VCPKG_LINE_INFO, msgProcessorArchitectureMalformed, msg::arch = *processor_architecture);
-#else // ^^^ defined(_WIN32) / !defined(_WIN32) vvv
+#if defined(_M_X86)
+        return CPUArchitecture::X86;
+#elif defined(_M_ARM)
+        return CPUArchitecture::ARM;
+#elif defined(_M_ARM64)
+        return CPUArchitecture::ARM64;
+#elif defined(_M_X64)
+        return CPUArchitecture::X64;
+#else
+#error "Unknown host architecture"
+#endif // architecture
+#else  // ^^^ defined(_WIN32) / !defined(_WIN32) vvv
 #if defined(__x86_64__) || defined(_M_X64)
 #if defined(__APPLE__)
         // check for rosetta 2 emulation
