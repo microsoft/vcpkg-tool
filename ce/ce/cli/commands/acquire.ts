@@ -38,7 +38,7 @@ export class AcquireCommand extends Command {
 
     const versions = this.version.values;
     if (versions.length && this.inputs.length !== versions.length) {
-      error(i`Multiple packages specified, but not an equal number of ${cmdSwitch('version')} switches.`);
+      error(i`Multiple packages specified, but not an equal number of ${cmdSwitch('version')} switches`);
       return false;
     }
 
