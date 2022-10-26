@@ -1350,7 +1350,7 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, m_pimpl->m_registry_set != nullptr);
         return *m_pimpl->m_registry_set;
     }
-    const DownloadManager& VcpkgPaths::get_download_manager() const { return *m_pimpl->m_download_manager.get(); }
+    const DownloadManager& VcpkgPaths::get_download_manager() const { return *m_pimpl->m_download_manager; }
 
 #if defined(_WIN32)
     static const ToolsetsInformation& get_all_toolsets(details::VcpkgPathsImpl& impl, const Filesystem& fs)
