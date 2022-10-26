@@ -257,10 +257,10 @@ namespace vcpkg
                 }
                 else
                 {
-                    msg::println_error(msg::format(msgInvalidBundleDefinition)
-                                           .append_raw('\n')
-                                           .append_raw(maybe_bundle_doc.error()->to_string()));
-                    Checks::exit_fail(VCPKG_LINE_INFO);
+                    Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                                msg::format(msgInvalidBundleDefinition)
+                                                    .append_raw('\n')
+                                                    .append_raw(maybe_bundle_doc.error()->to_string()));
                 }
             }
             return ret;

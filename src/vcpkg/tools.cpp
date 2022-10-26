@@ -711,8 +711,7 @@ namespace vcpkg
 
             if (!fs.exists(exe_path, IgnoreErrors{}))
             {
-                msg::println_error(msgExpectedPathToExist, msg::path = exe_path);
-                Checks::exit_fail(VCPKG_LINE_INFO);
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgExpectedPathToExist, msg::path = exe_path);
             }
 
             return exe_path;
