@@ -101,7 +101,7 @@ namespace vcpkg
             return ptime->to_string();
         }
 
-        return "";
+        return {};
     }
 
     static const std::string& get_session_id()
@@ -120,16 +120,16 @@ namespace vcpkg
         path += L"\\kernel32.dll";
 
         const auto versz = GetFileVersionInfoSizeW(path.c_str(), nullptr);
-        if (versz == 0) return "";
+        if (versz == 0) return {};
 
         std::vector<char> verbuf;
         verbuf.resize(versz);
 
-        if (!GetFileVersionInfoW(path.c_str(), 0, static_cast<DWORD>(verbuf.size()), verbuf.data())) return "";
+        if (!GetFileVersionInfoW(path.c_str(), 0, static_cast<DWORD>(verbuf.size()), verbuf.data())) return {};
 
         void* rootblock;
         UINT rootblocksize;
-        if (!VerQueryValueW(verbuf.data(), L"\\", &rootblock, &rootblocksize)) return "";
+        if (!VerQueryValueW(verbuf.data(), L"\\", &rootblock, &rootblocksize)) return {};
 
         auto rootblock_ffi = static_cast<VS_FIXEDFILEINFO*>(rootblock);
 

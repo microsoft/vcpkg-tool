@@ -63,7 +63,7 @@ namespace vcpkg
 
     std::string mac_bytes_to_string(const Span<char>& bytes)
     {
-        if (bytes.size() != MAC_BYTES_LENGTH) return "";
+        if (bytes.size() != MAC_BYTES_LENGTH) return {};
 
         static constexpr char hexits[] = "0123456789abcdef";
         char mac_address[MAC_STRING_LENGTH];
