@@ -136,3 +136,21 @@ namespace vcpkg::Commands
     }
 }
 ```
+## Selecting a Language
+
+Vcpkg chooses a language through the VSLANG environment variable, which should be set to a valid LCID (locale identifier, 4-byte value representing a language). Users can set VSLANG to any of the following LCIDs:
+
+1029: Czech                 \
+1031: German                \
+1033: English               \
+3082: Spanish (Spain)       \
+1036: French                \
+1040: Italian               \
+1041: Japanese              \
+1042: Korean                \
+1045: Polish                \
+1046: Portuguese (Brazil)   \
+1049: Russian               \
+1055: Turkish               \
+2052: Chinese (Simplified)  \
+1028: Chinese (Traditional)
