@@ -35,8 +35,7 @@ namespace vcpkg
 
         static LocalizedString from_raw(std::string&& s) { return LocalizedString(std::move(s)); }
 
-        template<class StringLike,
-                 std::enable_if_t<std::is_constructible<StringView, const StringLike&>::value, int> = 0>
+        template<class StringLike, std::enable_if_t<std::is_constructible_v<StringView, const StringLike&>, int> = 0>
         static LocalizedString from_raw(const StringLike& s)
         {
             return LocalizedString(StringView(s));
