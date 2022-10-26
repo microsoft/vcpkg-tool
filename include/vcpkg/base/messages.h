@@ -565,7 +565,7 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "Ambiguous vcpkg configuration provided by both manifest and configuration file.\n-- Delete "
-                    "configuration file \"{path}/vcpkg-configuration.json\"");
+                    "configuration file {path}");
     DECLARE_MESSAGE(AndroidHomeDirMissingProps,
                     (msg::env_var, msg::path),
                     "Note: 'source.properties' is code and should not be translated.",
@@ -852,7 +852,7 @@ namespace vcpkg
     DECLARE_MESSAGE(DeleteVcpkgConfigFromManifest,
                     (msg::path),
                     "",
-                    "-- Or remove \"vcpkg-configuration\" from the manifest file \"{path}/vcpkg.json\".");
+                    "-- Or remove \"vcpkg-configuration\" from the manifest file {path}.");
     DECLARE_MESSAGE(DeprecatedPrefabDebugOption, (), "", "--prefab-debug is now deprecated.");
     DECLARE_MESSAGE(DetectCompilerHash, (msg::triplet), "", "Detecting compiler hash for triplet {triplet}...");
     DECLARE_MESSAGE(DocumentedFieldsSuggestUpdate,

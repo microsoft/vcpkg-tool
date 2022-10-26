@@ -170,9 +170,11 @@ namespace vcpkg
 
                 if (config_data.has_value())
                 {
-                    msg::println_error(msg::format(msgAmbiguousConfigDeleteConfigFile, msg::path = config_dir)
-                                           .append_raw('\n')
-                                           .append(msgDeleteVcpkgConfigFromManifest, msg::path = manifest_dir));
+                    msg::println_error(
+                        msg::format(msgAmbiguousConfigDeleteConfigFile,
+                                    msg::path = config_dir / "vcpkg-configuration.json")
+                            .append_raw('\n')
+                            .append(msgDeleteVcpkgConfigFromManifest, msg::path = manifest_dir / "vcpkg.json"));
 
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
