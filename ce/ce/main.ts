@@ -33,7 +33,7 @@ import { Session } from './session';
 const commandline = new CommandLine(argv.slice(2));
 
 // try to set the locale based on the users's settings.
-setLocale(commandline.language, `${__dirname}/i18n/`);
+setLocale(commandline.language);
 
 export let session: Session;
 require('./exports');
