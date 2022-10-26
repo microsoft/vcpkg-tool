@@ -138,7 +138,7 @@ namespace vcpkg::Commands
 ```
 ## Selecting a Language
 
-vcpkg chooses a language through the `VSLANG` environment variable, which should be set to a valid LCID (locale identifier, 4-byte value representing a language). If `VSLANG` is not set or is set to an invalid LCID, we default to English. That said, if you wish to change the language, then set VSLANG to any of the following LCIDs:
+vcpkg chooses a language through the `VSLANG` environment variable, which should be set to a valid LCID (locale identifier, 4-byte value representing a language). If `VSLANG` is not set or is set to an invalid LCID, we default to English. That said, if you wish to change the language, then set `VSLANG` to any of the following LCIDs:
 
 1029: Czech                 \
 1031: German                \
