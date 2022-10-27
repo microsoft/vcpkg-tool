@@ -50,6 +50,10 @@ namespace
         // https://wiki.jenkins.io/display/JENKINS/Building+a+software+project#Buildingasoftwareproject-belowJenkinsSetEnvironmentVariables
         {"JENKINS_URL", "Jenkins_CI"},
 
+        // TeamCity
+        // https://www.jetbrains.com/help/teamcity/predefined-build-parameters.html#Predefined+Server+Build+Parameters
+        {"TEAMCITY_VERSION", "TeamCity_CI"},
+
         // Travis CI
         // https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
         {"TRAVIS", "Travis_CI"},
@@ -57,6 +61,7 @@ namespace
         // Generic CI environment variables
         {"CI", "Generic"},
         {"BUILD_ID", "Generic"},
+        {"BUILD_NUMBER", "Generic"},
     };
 }
 

@@ -101,7 +101,7 @@ namespace
     template<class Ty>
     Ty unaligned_load(const void* pv) noexcept
     {
-        static_assert(std::is_trivial<Ty>::value, "Unaligned loads require trivial types");
+        static_assert(std::is_trivial_v<Ty>, "Unaligned loads require trivial types");
         Ty tmp;
         memcpy(&tmp, pv, sizeof(tmp));
         return tmp;
@@ -1120,7 +1120,7 @@ namespace vcpkg
     // This implementation does collapse slashes because we primarily use it for shiny display purposes.
     void Path::make_preferred()
     {
-        char* first = &m_str[0];
+        char* first = m_str.data();
         char* last = first + m_str.size();
         char* after_root_name = const_cast<char*>(find_root_name_end(first, last));
         char* after_root_directory = std::find_if_not(after_root_name, last, is_slash);

@@ -838,7 +838,7 @@ namespace vcpkg
             if (cur() == Unicode::end_of_file)
             {
                 add_error(msg::format(msgEmptyLicenseExpression));
-                return "";
+                return {};
             }
 
             Expecting expecting = Expecting::License;

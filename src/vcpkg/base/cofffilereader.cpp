@@ -164,7 +164,7 @@ namespace vcpkg
 
         std::vector<uint32_t> offsets(archive_member_count);
         Checks::check_exit(VCPKG_LINE_INFO,
-                           fs.read(&offsets[0], sizeof(uint32_t), archive_member_count) == archive_member_count);
+                           fs.read(offsets.data(), sizeof(uint32_t), archive_member_count) == archive_member_count);
 
         // Ignore offsets that point to offset 0. See vcpkg github #223 #288 #292
         offsets.erase(std::remove(offsets.begin(), offsets.end(), 0u), offsets.end());

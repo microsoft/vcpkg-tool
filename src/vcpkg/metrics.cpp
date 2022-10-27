@@ -58,21 +58,21 @@ namespace
 #if defined(_WIN32)
         std::wstring path;
         path.resize(MAX_PATH);
-        const auto n = GetSystemDirectoryW(&path[0], static_cast<UINT>(path.size()));
+        const auto n = GetSystemDirectoryW(path.data(), static_cast<UINT>(path.size()));
         path.resize(n);
         path += L"\\kernel32.dll";
 
         const auto versz = GetFileVersionInfoSizeW(path.c_str(), nullptr);
-        if (versz == 0) return "";
+        if (versz == 0) return {};
 
         std::vector<char> verbuf;
         verbuf.resize(versz);
 
-        if (!GetFileVersionInfoW(path.c_str(), 0, static_cast<DWORD>(verbuf.size()), &verbuf[0])) return "";
+        if (!GetFileVersionInfoW(path.c_str(), 0, static_cast<DWORD>(verbuf.size()), verbuf.data())) return {};
 
         void* rootblock;
         UINT rootblocksize;
-        if (!VerQueryValueW(&verbuf[0], L"\\", &rootblock, &rootblocksize)) return "";
+        if (!VerQueryValueW(verbuf.data(), L"\\", &rootblock, &rootblocksize)) return {};
 
         auto rootblock_ffi = static_cast<VS_FIXEDFILEINFO*>(rootblock);
 
@@ -511,7 +511,7 @@ namespace vcpkg
             {
                 response_buffer.resize(response_buffer.size() + available_data);
 
-                results = WinHttpReadData(request, &response_buffer.data()[total_data], available_data, &read_data);
+                results = WinHttpReadData(request, &response_buffer[total_data], available_data, &read_data);
 
                 if (!results)
                 {

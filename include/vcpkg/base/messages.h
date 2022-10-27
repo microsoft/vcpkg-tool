@@ -35,8 +35,7 @@ namespace vcpkg
 
         static LocalizedString from_raw(std::string&& s) { return LocalizedString(std::move(s)); }
 
-        template<class StringLike,
-                 std::enable_if_t<std::is_constructible<StringView, const StringLike&>::value, int> = 0>
+        template<class StringLike, std::enable_if_t<std::is_constructible_v<StringView, const StringLike&>, int> = 0>
         static LocalizedString from_raw(const StringLike& s)
         {
             return LocalizedString(StringView(s));
@@ -1626,19 +1625,6 @@ namespace vcpkg
                     "remove {spec} and re-run this command.");
     DECLARE_MESSAGE(PrebuiltPackages, (), "", "There are packages that have not been built. To build them run:");
     DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.");
-    DECLARE_MESSAGE(ProcessorArchitectureMalformed,
-                    (msg::arch),
-                    "",
-                    "Failed to parse %PROCESSOR_ARCHITECTURE% ({arch}) as a valid CPU architecture.");
-    DECLARE_MESSAGE(ProcessorArchitectureMissing,
-                    (),
-                    "",
-                    "The required environment variable %PROCESSOR_ARCHITECTURE% is missing.");
-    DECLARE_MESSAGE(ProcessorArchitectureW6432Malformed,
-                    (msg::arch),
-                    "",
-                    "Failed to parse %PROCESSOR_ARCHITEW6432% ({arch}) as a valid CPU architecture. "
-                    "Falling back to %PROCESSOR_ARCHITECTURE%.");
     DECLARE_MESSAGE(ProgramReturnedNonzeroExitCode,
                     (msg::tool_name, msg::exit_code),
                     "The program's console output is appended after this.",

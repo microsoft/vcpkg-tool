@@ -225,7 +225,7 @@ namespace vcpkg::Commands::DependInfo
             {
                 return create_dgml_as_string(depend_info);
             }
-            return "";
+            return {};
         }
 
         void assign_depth_to_dependencies(const std::string& package,
