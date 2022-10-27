@@ -6,7 +6,6 @@
 
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/lineinfo.h>
-#include <vcpkg/base/stringview.h>
 
 #include <string>
 #include <type_traits>
@@ -213,9 +212,6 @@ namespace vcpkg::msg
         StringView get_localization_comment(::size_t index);
     }
 
-    // load from "locale_base/messages.${language}.json"
-    void threadunsafe_initialize_context(const Filesystem& fs, StringView language, const Path& locale_base);
-    // initialize without any localized messages (use default messages only)
     void threadunsafe_initialize_context();
 
     template<class Message, class... Tags, class... Ts>

@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/json.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/pragmas.h>
 #include <vcpkg/base/strings.h>
@@ -219,23 +220,10 @@ int main(const int argc, const char* const* const argv)
     ElapsedTimer total_timer;
     auto& fs = get_real_filesystem();
     {
-        auto locale = get_environment_variable("VCPKG_LOCALE");
-        auto locale_base = get_environment_variable("VCPKG_LOCALE_BASE");
-
-        if (locale.has_value() && locale_base.has_value())
-        {
-            msg::threadunsafe_initialize_context(fs, *locale.get(), *locale_base.get());
-        }
-        else if (locale.has_value() || locale_base.has_value())
-        {
-            msg::write_unlocalized_text_to_stdout(
-                Color::error, "If either VCPKG_LOCALE or VCPKG_LOCALE_BASE is initialized, then both must be.\n");
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-        else
-        {
-            msg::threadunsafe_initialize_context();
-        }
+        auto vslang = get_environment_variable("VSLANG");
+        auto lcid_opt = Strings::strto<int>(vslang.value_or("1033"));
+        auto map = msg::get_message_map_from_lcid(lcid_opt.value_or(1033));
+        msg::load_from_message_map(*map.get());
     }
 
 #if defined(_WIN32)
