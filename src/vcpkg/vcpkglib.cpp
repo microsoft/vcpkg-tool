@@ -182,10 +182,7 @@ namespace vcpkg
 
         for (auto&& ipv : ipv_map)
         {
-            Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
-                                        ipv.second.core != nullptr,
-                                        "Database is corrupted: package %s has features but no core paragraph.",
-                                        ipv.first);
+            Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO, ipv.second.core != nullptr, msgCorruptedDatabase);
         }
 
         return Util::fmap(ipv_map, [](auto&& p) -> InstalledPackageView { return std::move(p.second); });
