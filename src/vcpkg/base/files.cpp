@@ -2371,8 +2371,7 @@ namespace vcpkg
         virtual std::vector<Path> get_files_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            const Path& out_base = dir;
-            get_files_recursive_impl(result, dir, out_base, ec, true, true, true);
+            get_files_recursive_impl(result, dir, dir, ec, true, true, true);
             return result;
         }
 
