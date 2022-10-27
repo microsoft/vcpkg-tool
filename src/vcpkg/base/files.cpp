@@ -1,5 +1,6 @@
 #include <vcpkg/base/system_headers.h>
 
+#include <vcpkg/base/chrono.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/span.h>

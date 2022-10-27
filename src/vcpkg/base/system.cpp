@@ -362,6 +362,17 @@ namespace vcpkg
 #endif
     }
 
+    const ExpectedS<Path>& get_user_configuration_home() noexcept
+    {
+#if defined(_WIN32)
+        static const ExpectedS<Path> result =
+            get_appdata_local().map([](const Path& appdata_local) { return appdata_local / "vcpkg"; });
+#else
+        static const ExpectedS<Path> result = Path(get_environment_variable("HOME").value_or("/var")) / ".vcpkg";
+#endif
+        return result;
+    }
+
 #if defined(_WIN32)
     static bool is_string_keytype(const DWORD hkey_type)
     {

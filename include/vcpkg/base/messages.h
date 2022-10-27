@@ -1805,7 +1805,7 @@ namespace vcpkg
                     (msg::command_name),
                     "",
                     "To only remove outdated packages, run\n{command_name} remove --outdated");
-    DECLARE_MESSAGE(TotalTime, (msg::elapsed), "", "Total elapsed time: {elapsed}");
+    DECLARE_MESSAGE(TotalInstallTime, (msg::elapsed), "", "Total install time: {elapsed}");
     DECLARE_MESSAGE(ToUpdatePackages,
                     (msg::command_name),
                     "",

@@ -194,10 +194,10 @@ namespace vcpkg
         {
             if (auto p_baseline = manifest->builtin_baseline.get())
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ManifestBaseline);
+                get_global_metrics_collector().track_define(DefineMetric::ManifestBaseline);
                 if (!is_git_commit_sha(*p_baseline))
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::VersioningErrorBaseline);
+                    get_global_metrics_collector().track_define(DefineMetric::VersioningErrorBaseline);
                     Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
                                                    msg::format(msgInvalidBuiltInBaseline, msg::value = *p_baseline)
                                                        .append_raw(paths.get_current_git_sha_baseline_message()));
@@ -298,18 +298,14 @@ namespace vcpkg
 
         static Path compute_manifest_dir(const Filesystem& fs, const VcpkgCmdArguments& args, const Path& original_cwd)
         {
-            if (args.manifests_enabled())
+            if (auto manifest_root_dir = args.manifest_root_dir.get())
             {
-                if (auto manifest_root_dir = args.manifest_root_dir.get())
-                {
-                    return fs.almost_canonical(*manifest_root_dir, VCPKG_LINE_INFO);
-                }
-                else
-                {
-                    return fs.find_file_recursively_up(original_cwd, "vcpkg.json", VCPKG_LINE_INFO);
-                }
+                return fs.almost_canonical(*manifest_root_dir, VCPKG_LINE_INFO);
             }
-            return {};
+            else
+            {
+                return fs.find_file_recursively_up(original_cwd, "vcpkg.json", VCPKG_LINE_INFO);
+            }
         }
 
         // This structure holds members for VcpkgPathsImpl that don't require explicit initialization/destruction
@@ -328,7 +324,7 @@ namespace vcpkg
             Path ret;
             if (auto registries_cache_dir = args.registries_cache_dir.get())
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::X_VcpkgRegistriesCache);
+                get_global_metrics_collector().track_define(DefineMetric::X_VcpkgRegistriesCache);
                 ret = *registries_cache_dir;
                 const auto status = get_real_filesystem().status(ret, VCPKG_LINE_INFO);
 
@@ -690,31 +686,30 @@ namespace vcpkg
         m_pimpl->triplets_dirs.emplace_back(community_triplets);
 
         // metrics from configuration
+        auto default_registry = m_pimpl->m_registry_set->default_registry();
+        auto other_registries = m_pimpl->m_registry_set->registries();
+        MetricsSubmission metrics;
+        if (default_registry)
         {
-            auto default_registry = m_pimpl->m_registry_set->default_registry();
-            auto other_registries = m_pimpl->m_registry_set->registries();
-            LockGuardPtr<Metrics> metrics(g_metrics);
-            if (default_registry)
-            {
-                metrics->track_string_property(StringMetric::RegistriesDefaultRegistryKind,
-                                               default_registry->kind().to_string());
-            }
-            else
-            {
-                metrics->track_string_property(StringMetric::RegistriesDefaultRegistryKind, "disabled");
-            }
-
-            if (other_registries.size() != 0)
-            {
-                std::vector<StringLiteral> registry_kinds;
-                for (const auto& reg : other_registries)
-                {
-                    registry_kinds.push_back(reg.implementation().kind());
-                }
-                Util::sort_unique_erase(registry_kinds);
-                metrics->track_string_property(StringMetric::RegistriesKindsUsed, Strings::join(",", registry_kinds));
-            }
+            metrics.track_string(StringMetric::RegistriesDefaultRegistryKind, default_registry->kind().to_string());
         }
+        else
+        {
+            metrics.track_string(StringMetric::RegistriesDefaultRegistryKind, "disabled");
+        }
+
+        if (other_registries.size() != 0)
+        {
+            std::vector<StringLiteral> registry_kinds;
+            for (const auto& reg : other_registries)
+            {
+                registry_kinds.push_back(reg.implementation().kind());
+            }
+            Util::sort_unique_erase(registry_kinds);
+            metrics.track_string(StringMetric::RegistriesKindsUsed, Strings::join(",", registry_kinds));
+        }
+
+        get_global_metrics_collector().track_submission(std::move(metrics));
     }
 
     Path VcpkgPaths::package_dir(const PackageSpec& spec) const { return this->packages() / spec.dir(); }
@@ -1439,21 +1434,6 @@ namespace vcpkg
     const Path& VcpkgPaths::registries_cache() const { return m_pimpl->m_registries_cache; }
 
     const FeatureFlagSettings& VcpkgPaths::get_feature_flags() const { return m_pimpl->m_ff_settings; }
-
-    void VcpkgPaths::track_feature_flag_metrics() const
-    {
-        struct
-        {
-            StringView flag;
-            bool enabled;
-        } flags[] = {{VcpkgCmdArguments::MANIFEST_MODE_FEATURE, manifest_mode_enabled()}};
-
-        LockGuardPtr<Metrics> metrics(g_metrics);
-        for (const auto& flag : flags)
-        {
-            metrics->track_feature(flag.flag.to_string(), flag.enabled);
-        }
-    }
 
     VcpkgPaths::~VcpkgPaths() = default;
 }

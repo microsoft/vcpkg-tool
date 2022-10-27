@@ -17,6 +17,8 @@ namespace vcpkg
 
     const ExpectedS<Path>& get_platform_cache_home() noexcept;
 
+    const ExpectedS<Path>& get_user_configuration_home() noexcept;
+
 #ifdef _WIN32
     const ExpectedS<Path>& get_appdata_local() noexcept;
 

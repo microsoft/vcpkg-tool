@@ -464,17 +464,15 @@ namespace vcpkg
 
     struct TrackedPackageInstallGuard
     {
-        SpecSummary* current_summary = nullptr;
-        ElapsedTimer build_timer = ElapsedTimer::create_started();
+        SpecSummary& current_summary;
+        const ElapsedTimer build_timer;
 
         TrackedPackageInstallGuard(const size_t action_index,
                                    const size_t action_count,
                                    std::vector<SpecSummary>& results,
                                    const InstallPlanAction& action)
+            : current_summary(results.emplace_back(action)), build_timer()
         {
-            results.emplace_back(action);
-            current_summary = &results.back();
-
             msg::println(msgInstallingPackage,
                          msg::action_index = action_index,
                          msg::count = action_count,
@@ -485,9 +483,8 @@ namespace vcpkg
                                    const size_t action_count,
                                    std::vector<SpecSummary>& results,
                                    const RemovePlanAction& action)
+            : current_summary(results.emplace_back(action)), build_timer()
         {
-            results.emplace_back(action);
-            current_summary = &results.back();
             msg::println(Remove::msgRemovingPackage,
                          msg::action_index = action_index,
                          msg::count = action_count,
@@ -496,9 +493,9 @@ namespace vcpkg
 
         ~TrackedPackageInstallGuard()
         {
-            current_summary->timing = build_timer.elapsed();
+            current_summary.timing = build_timer.elapsed();
             msg::println(
-                msgElapsedForPackage, msg::spec = current_summary->get_spec(), msg::elapsed = current_summary->timing);
+                msgElapsedForPackage, msg::spec = current_summary.get_spec(), msg::elapsed = current_summary.timing);
         }
 
         TrackedPackageInstallGuard(const TrackedPackageInstallGuard&) = delete;
@@ -514,6 +511,7 @@ namespace vcpkg
                                     const IBuildLogsRecorder& build_logs_recorder,
                                     const CMakeVars::CMakeVarProvider& var_provider)
     {
+        const ElapsedTimer timer;
         std::vector<SpecSummary> results;
         const size_t action_count = action_plan.remove_actions.size() + action_plan.install_actions.size();
         size_t action_index = 1;
@@ -550,9 +548,10 @@ namespace vcpkg
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            this_install.current_summary->build_result.emplace(std::move(result));
+            this_install.current_summary.build_result.emplace(std::move(result));
         }
 
+        msg::println(msgTotalInstallTime, msg::elapsed = timer.to_string());
         return InstallSummary{std::move(results)};
     }
 
@@ -893,8 +892,7 @@ namespace vcpkg
         const PrintUsage print_cmake_usage =
             Util::Sets::contains(options.switches, OPTION_NO_PRINT_USAGE) ? PrintUsage::NO : PrintUsage::YES;
 
-        LockGuardPtr<Metrics>(g_metrics)->track_bool_property(BoolMetric::InstallManifestMode,
-                                                              paths.manifest_mode_enabled());
+        get_global_metrics_collector().track_bool(BoolMetric::InstallManifestMode, paths.manifest_mode_enabled());
 
         if (auto p = paths.get_manifest().get())
         {
@@ -983,7 +981,7 @@ namespace vcpkg
             auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
             if (it_pkgsconfig != options.settings.end())
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::X_WriteNugetPackagesConfig);
+                get_global_metrics_collector().track_define(DefineMetric::X_WriteNugetPackagesConfig);
                 pkgsconfig = Path(it_pkgsconfig->second);
             }
             auto maybe_manifest_scf =
@@ -1049,12 +1047,12 @@ namespace vcpkg
                     return dep.constraint.type != VersionConstraintKind::None;
                 }))
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ManifestVersionConstraint);
+                get_global_metrics_collector().track_define(DefineMetric::ManifestVersionConstraint);
             }
 
             if (!manifest_core.overrides.empty())
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ManifestOverrides);
+                get_global_metrics_collector().track_define(DefineMetric::ManifestOverrides);
             }
 
             auto verprovider = make_versioned_portfile_provider(paths);
@@ -1182,7 +1180,7 @@ namespace vcpkg
         auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
         if (it_pkgsconfig != options.settings.end())
         {
-            LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::X_WriteNugetPackagesConfig);
+            get_global_metrics_collector().track_define(DefineMetric::X_WriteNugetPackagesConfig);
             compute_all_abis(paths, action_plan, var_provider, status_db);
 
             auto pkgsconfig_path = paths.original_cwd / it_pkgsconfig->second;
@@ -1202,7 +1200,6 @@ namespace vcpkg
 
         const InstallSummary summary = Install::perform(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), var_provider);
-        msg::println(msg::format(msgElapsedInstallTime, msg::count = GlobalState::timer.to_string()).append_raw('\n'));
 
         if (keep_going == KeepGoing::YES)
         {
@@ -1330,6 +1327,6 @@ namespace vcpkg
                                             Hash::get_string_hash(version_as_string, Hash::Algorithm::Sha256));
         }
 
-        LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::InstallPlan_1, specs_string);
+        get_global_metrics_collector().track_string(StringMetric::InstallPlan_1, specs_string);
     }
 }
