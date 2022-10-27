@@ -560,6 +560,11 @@ namespace vcpkg
                     (msg::spec),
                     "'HEAD' means the most recent version of source code",
                     "{spec} is already installed -- not building from HEAD");
+    DECLARE_MESSAGE(AmbiguousConfigDeleteConfigFile,
+                    (msg::path),
+                    "",
+                    "Ambiguous vcpkg configuration provided by both manifest and configuration file.\n-- Delete "
+                    "configuration file {path}");
     DECLARE_MESSAGE(AndroidHomeDirMissingProps,
                     (msg::env_var, msg::path),
                     "Note: 'source.properties' is code and should not be translated.",
@@ -575,6 +580,11 @@ namespace vcpkg
                     (msg::count, msg::vendor),
                     "",
                     "Attempting to fetch {count} package(s) from {vendor}");
+    DECLARE_MESSAGE(AttemptingToSetBuiltInBaseline,
+                    (),
+                    "",
+                    "attempting to set builtin-baseline in vcpkg.json while overriding the default-registry in "
+                    "vcpkg-configuration.json.\nthe default-registry from vcpkg-configuration.json will be used.");
     DECLARE_MESSAGE(AuthenticationMayRequireManualAction,
                     (msg::vendor),
                     "",
@@ -601,6 +611,11 @@ namespace vcpkg
                     "",
                     "The baseline.json from commit `\"{commit_sha}\"` in the repo {url} was invalid (did not "
                     "contain a \"default\" field).");
+    DECLARE_MESSAGE(BaselineConflict,
+                    (),
+                    "",
+                    "Specifying vcpkg-configuration.default-registry in a manifest file conflicts with built-in "
+                    "baseline.\nPlease remove one of these conflicting settings.");
     DECLARE_MESSAGE(BinarySourcesArg, (), "", "Add sources for binary caching. See 'vcpkg help binarycaching'.");
     DECLARE_MESSAGE(BuildAlreadyInstalled,
                     (msg::spec),
@@ -774,6 +789,11 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "Could not deduce nuget id and version from filename: {path}");
+    DECLARE_MESSAGE(CouldNotFindToolVersion,
+                    (msg::version, msg::path),
+                    "",
+                    "Could not find <tools version=\"{version}\"> in {path}");
+    DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
     DECLARE_MESSAGE(CouldNotFindBaseline,
                     (msg::commit_sha, msg::path),
                     "",
@@ -796,7 +816,6 @@ namespace vcpkg
                     "could not find the git tree for `versions` in repo {package_name} at commit {commit_sha}");
     DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: {path}");
     DECLARE_MESSAGE(CurlFailedToExecute, (msg::exit_code), "", "curl failed to execute with exit code {exit_code}.");
-    DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
     DECLARE_MESSAGE(Creating7ZipArchive, (), "", "Creating 7zip archive...");
     DECLARE_MESSAGE(CreatingNugetPackage, (), "", "Creating NuGet package...");
     DECLARE_MESSAGE(CreatingZipArchive, (), "", "Creating zip archive...");
@@ -814,10 +833,13 @@ namespace vcpkg
                     "=== end curl output ===");
     DECLARE_MESSAGE(CurlReturnedUnexpectedResponseCodes,
                     (msg::actual, msg::expected),
-                    "{actual} and {expected} are integers"
-                    "of response codes.",
+                    "{actual} and {expected} are integers",
                     "curl returned a different number of response codes than were expected for the request ({actual} "
                     "vs expected {expected}).");
+    DECLARE_MESSAGE(CurrentCommitBaseline,
+                    (msg::value),
+                    "{value} is a 40 hexadecimal character commit sha",
+                    "You can use the current commit as a baseline, which is:\n\t\"builtin-baseline\": \"{value}\"");
     DECLARE_MESSAGE(DateTableHeader, (), "", "Date");
     DECLARE_MESSAGE(DefaultBrowserLaunched, (msg::url), "", "Default browser launched to {url}.");
     DECLARE_MESSAGE(DefaultFlag, (msg::option), "", "Defaulting to --{option} being on.");
@@ -826,6 +848,10 @@ namespace vcpkg
                     "",
                     "Based on your system settings, the default path to store binaries is \"{path}\". This consults "
                     "%LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.");
+    DECLARE_MESSAGE(DeleteVcpkgConfigFromManifest,
+                    (msg::path),
+                    "",
+                    "-- Or remove \"vcpkg-configuration\" from the manifest file {path}.");
     DECLARE_MESSAGE(DeprecatedPrefabDebugOption, (), "", "--prefab-debug is now deprecated.");
     DECLARE_MESSAGE(DetectCompilerHash, (msg::triplet), "", "Detecting compiler hash for triplet {triplet}...");
     DECLARE_MESSAGE(DocumentedFieldsSuggestUpdate,
@@ -837,6 +863,15 @@ namespace vcpkg
                     "",
                     "A downloadable copy of this tool is available and can be used by unsetting {env_var}.");
     DECLARE_MESSAGE(DownloadedSources, (msg::spec), "", "Downloaded sources for {spec}");
+    DECLARE_MESSAGE(DownloadingPortableToolVersionX,
+                    (msg::tool_name, msg::version),
+                    "",
+                    "A suitable version of {tool_name} was not found (required v{version}) Downloading "
+                    "portable {tool_name} {version}...");
+    DECLARE_MESSAGE(DownloadingTool,
+                    (msg::tool_name, msg::url, msg::path),
+                    "",
+                    "Downloading {tool_name}...\n{url}->{path}");
     DECLARE_MESSAGE(DownloadingVcpkgCeBundle, (msg::version), "", "Downloading vcpkg-ce bundle {version}...");
     DECLARE_MESSAGE(DownloadingVcpkgCeBundleLatest,
                     (),
@@ -860,6 +895,10 @@ namespace vcpkg
     DECLARE_MESSAGE(ElapsedInstallTime, (msg::count), "", "Total elapsed time: {count}");
     DECLARE_MESSAGE(ElapsedTimeForChecks, (msg::elapsed), "", "Time to determine pass/fail: {elapsed}");
     DECLARE_MESSAGE(EmailVcpkgTeam, (msg::url), "", "Send an email to {url} with any feedback.");
+    DECLARE_MESSAGE(EmbeddingVcpkgConfigInManifest,
+                    (),
+                    "",
+                    "Embedding `vcpkg-configuration` in a manifest file is an EXPERIMENTAL feature.");
     DECLARE_MESSAGE(EmptyArg, (msg::option), "", "The option --{option} must be passed a non-empty argument.");
     DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
     DECLARE_MESSAGE(EndOfStringInCodeUnit, (), "", "found end of string in middle of code point");
@@ -951,8 +990,9 @@ namespace vcpkg
         (msg::expected),
         "{expected} is a locale-invariant delimiter; for example, the ':' or '=' in 'zlib:x64-windows=skip'",
         "expected '{expected}' here");
-    DECLARE_MESSAGE(ExpectedDigitsAfterDecimal, (), "", "Expected digits after the decimal point");
     DECLARE_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' here");
+    DECLARE_MESSAGE(ExpectedPathToExist, (msg::path), "", "Expected {path} to exist after fetching");
+    DECLARE_MESSAGE(ExpectedDigitsAfterDecimal, (), "", "Expected digits after the decimal point");
     DECLARE_MESSAGE(ExpectedOneSetOfTags,
                     (msg::count, msg::old_value, msg::new_value, msg::value),
                     "{old_value} is a left tag and {new_value} is the right tag. {value} is the input.",
@@ -988,6 +1028,8 @@ namespace vcpkg
     DECLARE_MESSAGE(FailedToDownloadFromMirrorSet, (), "", "Failed to download from mirror set");
     DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":");
     DECLARE_MESSAGE(FailedToFindBaseline, (), "", "Failed to find baseline.json");
+    DECLARE_MESSAGE(ExtractingTool, (msg::tool_name), "", "Extracting {tool_name}...");
+    DECLARE_MESSAGE(FailedToDetermineCurrentCommit, (), "", "Failed to determine the current commit:");
     DECLARE_MESSAGE(FailedToFindPortFeature, (msg::feature, msg::spec), "", "Could not find {feature} in {spec}.");
     DECLARE_MESSAGE(FailedToFormatMissingFile,
                     (),
@@ -1007,6 +1049,7 @@ namespace vcpkg
                     "",
                     "Failed to load port {package_name} from {path}");
     DECLARE_MESSAGE(FailedToLoadPortFrom, (msg::path), "", "Failed to load port from {path}");
+    DECLARE_MESSAGE(FailedToLoadManifest, (msg::path), "", "Failed to load manifest from directory {path}");
     DECLARE_MESSAGE(FailedToLoadUnnamedPortFromPath, (msg::path), "", "Failed to load port from {path}");
     DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}");
     DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
@@ -1016,6 +1059,7 @@ namespace vcpkg
                     (),
                     "",
                     "Failed to parse CMake console output to locate block start/end markers.");
+    DECLARE_MESSAGE(FailedToParseConfig, (msg::path), "", "Failed to parse configuration {path}");
     DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse control file: {path}");
     DECLARE_MESSAGE(FailedToParseJson, (msg::path), "", "Failed to parse JSON file: {path}");
     DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: {path}");
@@ -1025,6 +1069,10 @@ namespace vcpkg
                     "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at "
                     "https://github.com/microsoft/vcpkg, "
                     "with the following output:\n{error_msg}\nSerialized Binary Paragraph:");
+    DECLARE_MESSAGE(FailedToParseVersionXML,
+                    (msg::tool_name, msg::version),
+                    "",
+                    "Could not parse version for tool {tool_name}. Version string was: {version}");
     DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
     DECLARE_MESSAGE(FailedToRead, (msg::path, msg::error_msg), "", "Failed to read {path}: {error_msg}");
     DECLARE_MESSAGE(FailedToReadParagraph, (msg::path), "", "Failed to read paragraphs from {path}");
@@ -1036,6 +1084,7 @@ namespace vcpkg
                     "Failed to run \"{path}\" to determine the {tool_name} version.");
     DECLARE_MESSAGE(FailedToStoreBackToMirror, (), "", "failed to store back to mirror:");
     DECLARE_MESSAGE(FailedToStoreBinaryCache, (msg::path), "", "Failed to store binary cache {path}");
+    DECLARE_MESSAGE(FailedToTakeFileSystemLock, (msg::path), "", "Failed to take the filesystem lock on {path}");
     DECLARE_MESSAGE(FailedToWriteManifest, (msg::path), "", "Failed to write manifest file {path}");
     DECLARE_MESSAGE(FailedVendorAuthentication,
                     (msg::vendor, msg::url),
@@ -1339,6 +1388,12 @@ namespace vcpkg
                     "invalid argument: binary config '{binary_source}' requires a SAS token without a "
                     "preceeding '?' as the second argument");
     DECLARE_MESSAGE(InvalidBuildInfo, (msg::error_msg), "", "Invalid BUILD_INFO file for package: {error_msg}");
+    DECLARE_MESSAGE(
+        InvalidBuiltInBaseline,
+        (msg::value),
+        "{value} is a git commit sha",
+        "the top-level builtin-baseline ({value}) was not a valid commit sha: expected 40 hexadecimal characters.");
+    DECLARE_MESSAGE(InvalidBundleDefinition, (), "", "Invalid bundle definition.");
     DECLARE_MESSAGE(InvalidCodePoint, (), "", "Invalid code point passed to utf8_encoded_code_point_count");
     DECLARE_MESSAGE(InvalidCodeUnit, (), "", "invalid code unit");
     DECLARE_MESSAGE(InvalidCommandArgSort,
@@ -1480,12 +1535,16 @@ namespace vcpkg
                     "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
                     "The message named {value} ends with a newline which should be added by formatting "
                     "rather than by localization.");
+    DECLARE_MESSAGE(LocalPortfileVersion,
+                    (),
+                    "",
+                    "Using local portfile versions. To update the local portfiles, use `git pull`.");
+    DECLARE_MESSAGE(ManifestFormatCompleted, (), "", "Succeeded in formatting the manifest files.");
+    DECLARE_MESSAGE(MismatchedFiles, (), "", "file to store does not match hash");
     DECLARE_MESSAGE(ManifestConflict,
                     (msg::path),
                     "",
                     "Found both a manifest and CONTROL files in port \"{path}\"; please rename one or the other");
-    DECLARE_MESSAGE(ManifestFormatCompleted, (), "", "Succeeded in formatting the manifest files.");
-    DECLARE_MESSAGE(MismatchedFiles, (), "", "file to store does not match hash");
     DECLARE_MESSAGE(MismatchedNames,
                     (msg::package_name, msg::actual),
                     "{actual} is the port name found",
@@ -1585,6 +1644,7 @@ namespace vcpkg
         "",
         "If you are sure you want to rebuild the above packages, run the command with the --recurse option.");
     DECLARE_MESSAGE(PackagesToRemove, (), "", "The following packages will be removed:");
+    DECLARE_MESSAGE(PackagesUpToDate, (), "", "No packages need updating.");
     DECLARE_MESSAGE(PackingVendorFailed,
                     (msg::vendor),
                     "",
@@ -1605,6 +1665,10 @@ namespace vcpkg
                     "Error messages are is printed after this.",
                     "while loading {path}:");
     DECLARE_MESSAGE(ParseControlErrorInfoWrongTypeFields, (), "", "The following fields had the wrong types:");
+    DECLARE_MESSAGE(PathMustBeAbsolute,
+                    (msg::path),
+                    "",
+                    "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute: {path}");
     DECLARE_MESSAGE(PortDependencyConflict,
                     (msg::package_name),
                     "",
@@ -1623,6 +1687,7 @@ namespace vcpkg
                     "",
                     "The port type of {spec} differs between the installed and available portfile.\nPlease manually "
                     "remove {spec} and re-run this command.");
+    DECLARE_MESSAGE(PortVersionConflict, (), "", "The following packages differ from their port versions:");
     DECLARE_MESSAGE(PrebuiltPackages, (), "", "There are packages that have not been built. To build them run:");
     DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.");
     DECLARE_MESSAGE(ProgramReturnedNonzeroExitCode,
@@ -1731,7 +1796,21 @@ namespace vcpkg
                     "calling {system_api} failed with {exit_code} ({error_msg})");
     DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
     DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
+    DECLARE_MESSAGE(ToolOfVersionXNotFound,
+                    (msg::tool_name, msg::version),
+                    "",
+                    "A suitable version of {tool_name} was not found (required v{version}) and unable to automatically "
+                    "download a portable one. Please install a newer version of {tool_name}");
+    DECLARE_MESSAGE(ToRemovePackages,
+                    (msg::command_name),
+                    "",
+                    "To only remove outdated packages, run\n{command_name} remove --outdated");
     DECLARE_MESSAGE(TotalInstallTime, (msg::elapsed), "", "Total install time: {elapsed}");
+    DECLARE_MESSAGE(ToUpdatePackages,
+                    (msg::command_name),
+                    "",
+                    "To update these packages and all dependencies, run\n{command_name} upgrade'");
+    DECLARE_MESSAGE(TripletFileNotFound, (msg::triplet), "", "Triplet file {triplet}.cmake not found");
     DECLARE_MESSAGE(TrailingCommaInArray, (), "", "Trailing comma in array");
     DECLARE_MESSAGE(TrailingCommaInObj, (), "", "Trailing comma in an object");
     DECLARE_MESSAGE(TwoFeatureFlagsSpecified,
@@ -1855,6 +1934,11 @@ namespace vcpkg
                     "in triplet {triplet}: Unable to find a valid toolchain for requested target architecture {arch}.\n"
                     "The selected Visual Studio instance is at: {path}\n"
                     "The available toolchain combinations are: {list}");
+    DECLARE_MESSAGE(UnsupportedUpdateCMD,
+                    (),
+                    "",
+                    "the update command does not currently support manifest mode. Instead, modify your vcpkg.json and "
+                    "run install.");
     DECLARE_MESSAGE(
         UpdateBaselineAddBaselineNoManifest,
         (msg::option),
@@ -1917,8 +2001,15 @@ namespace vcpkg
                     "'--' at the beginning must be preserved",
                     "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.");
     DECLARE_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
+    DECLARE_MESSAGE(VcpkgRegistriesCacheIsNotDirectory,
+                    (msg::path),
+                    "",
+                    "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not a directory: {path}");
+    DECLARE_MESSAGE(VcpkgCeIsExperimental,
+                    (),
+                    "",
+                    "vcpkg-ce ('configure environment') is experimental and may change at any time.");
     DECLARE_MESSAGE(Utf8ConversionFailed, (), "", "Failed to convert to UTF-8");
-    DECLARE_MESSAGE(VcpkgCeIsExperimental, (), "", "vcpkg-artifacts are experimental and may change at any time.");
     DECLARE_MESSAGE(VcpkgCommitTableHeader, (), "", "VCPKG Commit");
     DECLARE_MESSAGE(
         VcpkgCompletion,
@@ -1955,6 +2046,11 @@ namespace vcpkg
                     (msg::version),
                     "",
                     "vcpkg package management program version {version}\n\nSee LICENSE.txt for license information.");
+    DECLARE_MESSAGE(
+        VersionConflictXML,
+        (msg::path, msg::expected_version, msg::actual_version),
+        "",
+        "Expected {path} version: [{expected_version}], but was [{actual_version}]. Please re-run bootstrap-vcpkg.");
     DECLARE_MESSAGE(VersionConstraintViolated,
                     (msg::spec, msg::expected_version, msg::actual_version),
                     "",
@@ -1994,5 +2090,9 @@ namespace vcpkg
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}");
+    DECLARE_MESSAGE(FailedToParseNoTopLevelObj,
+                    (msg::path),
+                    "",
+                    "Failed to parse {path}, expected a top-level object.");
 
 }

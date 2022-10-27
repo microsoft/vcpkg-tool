@@ -513,8 +513,10 @@ namespace
             auto maybe_path = git_checkout_baseline(m_paths, m_baseline_identifier);
             if (!maybe_path)
             {
-                Checks::exit_with_message(
-                    VCPKG_LINE_INFO, "%s\n\n%s", maybe_path.error(), m_paths.get_current_git_sha_baseline_message());
+                msg::write_unlocalized_text_to_stdout(
+                    Color::none,
+                    fmt::format("{}\n\n{}", maybe_path.error(), m_paths.get_current_git_sha_baseline_message().data()));
+                Checks::exit_fail(VCPKG_LINE_INFO);
             }
             auto b = load_baseline_versions(m_paths.get_filesystem(), *maybe_path.get()).value_or_exit(VCPKG_LINE_INFO);
             if (auto p = b.get())
