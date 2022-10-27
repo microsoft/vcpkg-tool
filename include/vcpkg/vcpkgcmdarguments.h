@@ -106,7 +106,6 @@ namespace vcpkg
         bool compiler_tracking;
         bool binary_caching;
         bool versions;
-        bool manifests;
     };
 
     struct VcpkgCmdArguments
@@ -212,7 +211,6 @@ namespace vcpkg
         constexpr static StringLiteral COMPILER_TRACKING_FEATURE = "compilertracking";
         Optional<bool> compiler_tracking = nullopt;
         constexpr static StringLiteral MANIFEST_MODE_FEATURE = "manifests";
-        Optional<bool> manifest_mode = nullopt;
         constexpr static StringLiteral REGISTRIES_FEATURE = "registries";
         Optional<bool> registries_feature = nullopt;
         constexpr static StringLiteral VERSIONS_FEATURE = "versions";
@@ -224,7 +222,6 @@ namespace vcpkg
         bool compiler_tracking_enabled() const { return compiler_tracking.value_or(true); }
         bool registries_enabled() const { return registries_feature.value_or(true); }
         bool versions_enabled() const { return versions_feature.value_or(true); }
-        bool manifests_enabled() const { return manifest_mode.value_or(true); }
         FeatureFlagSettings feature_flag_settings() const
         {
             FeatureFlagSettings f;
@@ -232,7 +229,6 @@ namespace vcpkg
             f.compiler_tracking = compiler_tracking_enabled();
             f.registries = registries_enabled();
             f.versions = versions_enabled();
-            f.manifests = manifests_enabled();
             return f;
         }
         const Optional<StringLiteral>& detected_ci_environment() const { return m_detected_ci_environment; }

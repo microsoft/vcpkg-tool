@@ -117,7 +117,7 @@ namespace vcpkg
             cmd_run.string_arg("--debug");
         }
 
-        if (LockGuardPtr<Metrics>(g_metrics)->metrics_enabled())
+        if (g_metrics_enabled.load())
         {
             cmd_run.string_arg("--z-enable-metrics");
         }

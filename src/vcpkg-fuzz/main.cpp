@@ -200,6 +200,11 @@ namespace
     }
 }
 
+namespace vcpkg::Checks
+{
+    void on_final_cleanup_and_exit() { }
+}
+
 int main(int argc, char** argv)
 {
     msg::threadunsafe_initialize_context();

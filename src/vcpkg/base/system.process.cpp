@@ -590,7 +590,7 @@ namespace vcpkg
                            nullptr,
                            TRUE,
                            IDLE_PRIORITY_CLASS | CREATE_UNICODE_ENVIRONMENT | dwCreationFlags,
-                           env.get().empty() ? nullptr : &environment_block[0],
+                           env.get().empty() ? nullptr : environment_block.data(),
                            working_directory.empty() ? nullptr : working_directory.data(),
                            &startup_info,
                            &process_info.proc_info))
@@ -721,8 +721,7 @@ namespace vcpkg
 #if defined(_WIN32)
     void cmd_execute_background(const Command& cmd_line)
     {
-        auto timer = ElapsedTimer::create_started();
-
+        const ElapsedTimer timer;
         auto process_info =
             windows_create_windowless_process(cmd_line.command_line(),
                                               default_working_directory,
@@ -827,7 +826,7 @@ namespace vcpkg
 
     ExpectedL<int> cmd_execute(const Command& cmd_line, const WorkingDirectory& wd, const Environment& env)
     {
-        auto timer = ElapsedTimer::create_started();
+        const ElapsedTimer timer;
         auto maybe_result = cmd_execute_impl(cmd_line, wd, env);
         const auto elapsed = timer.us_64();
         g_subprocess_stats += elapsed;
@@ -863,7 +862,7 @@ namespace vcpkg
                                                const Environment& env,
                                                Encoding encoding)
     {
-        const auto timer = ElapsedTimer::create_started();
+        const ElapsedTimer timer;
 #if defined(_WIN32)
         const auto proc_id = std::to_string(::GetCurrentProcessId());
         using vcpkg::g_ctrl_c_state;

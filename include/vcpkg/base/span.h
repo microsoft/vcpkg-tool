@@ -14,7 +14,7 @@ namespace vcpkg
     struct Span
     {
     public:
-        static_assert(std::is_object<T>::value, "Span<non-object-type> is illegal");
+        static_assert(std::is_object_v<T>, "Span<non-object-type> is illegal");
 
         using value_type = std::decay_t<T>;
         using element_type = T;
@@ -34,10 +34,10 @@ namespace vcpkg
 
         template<class Range,
                  class = decltype(std::declval<Range>().data()),
-                 class = std::enable_if_t<!std::is_same<std::decay_t<Range>, Span>::value>>
+                 class = std::enable_if_t<!std::is_same_v<std::decay_t<Range>, Span>>>
         constexpr Span(Range&& v) noexcept : Span(v.data(), v.size())
         {
-            static_assert(std::is_same<typename std::decay_t<Range>::value_type, value_type>::value,
+            static_assert(std::is_same_v<typename std::decay_t<Range>::value_type, value_type>,
                           "Cannot convert incompatible ranges");
         }
 
