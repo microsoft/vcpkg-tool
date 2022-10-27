@@ -14,9 +14,8 @@ TEST_CASE ("get path to locale from LCID", "[messages]")
     auto res = msg::get_locale_path(2052);
     CHECK(res == "locales/messages.zh-Hans.json");
 
-    // invalid LCID; default to English
-    res = msg::get_locale_path(0000);
-    CHECK(res == "locales/messages.en.json");
+    // invalid LCID
+    CHECK(!msg::get_locale_path(0000).has_value());
 }
 TEST_CASE ("get message_map from LCID", "[messages]")
 {
@@ -24,15 +23,14 @@ TEST_CASE ("get message_map from LCID", "[messages]")
 
     // valid lcid; Spanish
     auto map = msg::get_message_map_from_lcid(3082);
-    auto msg = map.get()->get(msg_name);
+    auto msg = map.value_or_exit(VCPKG_LINE_INFO).get(msg_name);
     CHECK(msg->string(VCPKG_LINE_INFO) ==
           "El primer par\u00e1metro que se va a agregar debe ser \"artefacto\" o \"puerto\".");
 
-    // invalid lcid; default to English
-    map = msg::get_message_map_from_lcid(0000);
-    msg = map.get()->get(msg_name);
-    CHECK(msg->string(VCPKG_LINE_INFO) == "The first parameter to add must be 'artifact' or 'port'.");
+    // invalid lcid
+    CHECK(!msg::get_message_map_from_lcid(0000).has_value());
 }
+
 TEST_CASE ("generate message get_all_format_args", "[messages]")
 {
     LocalizedString err;

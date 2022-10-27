@@ -240,25 +240,31 @@ namespace vcpkg::msg
         threadunsafe_initialize_context();
         auto embedded_filesystem = cmrc::cmakerc::get_filesystem();
 
-        const std::string locale_path = get_locale_path(LCID);
+        const auto maybe_locale_path = get_locale_path(LCID);
+        if (const auto locale_path = maybe_locale_path.get())
+        {
+            auto file = embedded_filesystem.open(*locale_path);
+            return Json::parse_object(StringView{file.begin(), file.end()}, *locale_path);
+        }
 
-        auto file = embedded_filesystem.open(locale_path);
-
-        auto maybe_map = Json::parse_object(StringView{file.begin(), file.end()}, locale_path);
-
-        return maybe_map;
+        return std::string{"Unrecognized LCID"};
     }
 
-    std::string get_locale_path(int LCID) { return fmt::format("locales/messages.{}.json", get_language_tag(LCID)); }
+    Optional<std::string> get_locale_path(int LCID)
+    {
+        return get_language_tag(LCID).map(
+            [](StringLiteral tag) { return fmt::format("locales/messages.{}.json", tag); });
+    }
 
     // LCIDs supported by VS:
     // https://learn.microsoft.com/en-us/visualstudio/ide/reference/lcid-devenv-exe?view=vs-2022
-    StringLiteral get_language_tag(int LCID)
+    Optional<StringLiteral> get_language_tag(int LCID)
     {
-        static constexpr std::array<std::pair<int, StringLiteral>, 14> languages = {
+        static constexpr std::pair<int, StringLiteral> languages[] = {
             std::pair<int, StringLiteral>(1029, "cs"),       // Czech
             std::pair<int, StringLiteral>(1031, "de"),       // German
-            std::pair<int, StringLiteral>(1033, "en"),       // English
+            // Always use default handling for 1033 (English)
+            // std::pair<int, StringLiteral>(1033, "en"),       // English
             std::pair<int, StringLiteral>(3082, "es"),       // Spanish (Spain)
             std::pair<int, StringLiteral>(1036, "fr"),       // French
             std::pair<int, StringLiteral>(1040, "it"),       // Italian
@@ -279,8 +285,7 @@ namespace vcpkg::msg
             }
         }
 
-        // default to english
-        return "en";
+        return nullopt;
     }
 
     ::size_t detail::number_of_messages() { return messages().names.size(); }
