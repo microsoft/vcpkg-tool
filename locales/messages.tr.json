@@ -506,7 +506,7 @@
   "ToolFetchFailed": "{tool_name} getirilemedi.",
   "ToolInWin10": "Bu yardımcı program Windows 10 veya üstü ile birlikte gelir.",
   "ToolOfVersionXNotFound": "A suitable version of {tool_name} was not found (required v{version}) and unable to automatically download a portable one. Please install a newer version of {tool_name}",
-  "TotalTime": "Geçen toplam süre: {elapsed}",
+  "TotalInstallTime": "Total install time: {elapsed}",
   "TrailingCommaInArray": "Dizide sondaki virgül",
   "TrailingCommaInObj": "Bir nesnede sondaki virgül",
   "TripletFileNotFound": "Triplet file {triplet}.cmake not found",

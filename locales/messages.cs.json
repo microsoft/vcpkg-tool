@@ -506,7 +506,7 @@
   "ToolFetchFailed": "Nepovedlo se načíst {tool_name}.",
   "ToolInWin10": "Tento nástroj je součástí sady Windows 10 nebo novější.",
   "ToolOfVersionXNotFound": "A suitable version of {tool_name} was not found (required v{version}) and unable to automatically download a portable one. Please install a newer version of {tool_name}",
-  "TotalTime": "Celkový uplynulý čas: {elapsed}",
+  "TotalInstallTime": "Total install time: {elapsed}",
   "TrailingCommaInArray": "Koncová čárka v poli",
   "TrailingCommaInObj": "Koncová čárka v objektu",
   "TripletFileNotFound": "Triplet file {triplet}.cmake not found",

@@ -506,7 +506,7 @@
   "ToolFetchFailed": "無法擷取 {tool_name}。",
   "ToolInWin10": "此公用程式與 Windows 10 或更新版本配套。",
   "ToolOfVersionXNotFound": "A suitable version of {tool_name} was not found (required v{version}) and unable to automatically download a portable one. Please install a newer version of {tool_name}",
-  "TotalTime": "總經過時間: {elapsed}",
+  "TotalInstallTime": "Total install time: {elapsed}",
   "TrailingCommaInArray": "陣列中的後置逗號",
   "TrailingCommaInObj": "物件中的後置逗號",
   "TripletFileNotFound": "Triplet file {triplet}.cmake not found",

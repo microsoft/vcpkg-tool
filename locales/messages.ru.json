@@ -506,7 +506,7 @@
   "ToolFetchFailed": "Не удалось получить {tool_name}.",
   "ToolInWin10": "Эта служебная программа поставляется в комплекте с Windows 10 и более поздней версии.",
   "ToolOfVersionXNotFound": "A suitable version of {tool_name} was not found (required v{version}) and unable to automatically download a portable one. Please install a newer version of {tool_name}",
-  "TotalTime": "Общее затраченное время: {elapsed}",
+  "TotalInstallTime": "Total install time: {elapsed}",
   "TrailingCommaInArray": "Конечная запятая в массиве",
   "TrailingCommaInObj": "Конечная запятая в объекте",
   "TripletFileNotFound": "Triplet file {triplet}.cmake not found",

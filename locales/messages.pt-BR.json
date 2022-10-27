@@ -506,7 +506,7 @@
   "ToolFetchFailed": "Não foi possível buscar {tool_name}.",
   "ToolInWin10": "Este utilitário é fornecido com o Windows 10 ou posterior.",
   "ToolOfVersionXNotFound": "A suitable version of {tool_name} was not found (required v{version}) and unable to automatically download a portable one. Please install a newer version of {tool_name}",
-  "TotalTime": "Tempo total decorrido: {elapsed}",
+  "TotalInstallTime": "Total install time: {elapsed}",
   "TrailingCommaInArray": "Vírgula à direita na matriz",
   "TrailingCommaInObj": "Vírgula à direita em um objeto",
   "TripletFileNotFound": "Triplet file {triplet}.cmake not found",

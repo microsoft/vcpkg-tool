@@ -506,7 +506,7 @@
   "ToolFetchFailed": "{tool_name} をフェッチできませんでした。",
   "ToolInWin10": "このユーティリティは、Windows 10 以降にバンドルされています。",
   "ToolOfVersionXNotFound": "A suitable version of {tool_name} was not found (required v{version}) and unable to automatically download a portable one. Please install a newer version of {tool_name}",
-  "TotalTime": "経過した総時間: {elapsed}",
+  "TotalInstallTime": "Total install time: {elapsed}",
   "TrailingCommaInArray": "配列の末尾にコンマがあります",
   "TrailingCommaInObj": "オブジェクトの末尾にコンマがあります",
   "TripletFileNotFound": "Triplet file {triplet}.cmake not found",

@@ -506,7 +506,7 @@
   "ToolFetchFailed": "{tool_name}을(를) 가져올 수 없습니다.",
   "ToolInWin10": "이 유틸리티는 Windows 10 이상과 함께 번들로 제공됩니다.",
   "ToolOfVersionXNotFound": "A suitable version of {tool_name} was not found (required v{version}) and unable to automatically download a portable one. Please install a newer version of {tool_name}",
-  "TotalTime": "총 경과 시간: {elapsed}",
+  "TotalInstallTime": "Total install time: {elapsed}",
   "TrailingCommaInArray": "배열의 후행 쉼표",
   "TrailingCommaInObj": "개체의 후행 쉼표",
   "TripletFileNotFound": "Triplet file {triplet}.cmake not found",
