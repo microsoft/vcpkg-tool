@@ -2,6 +2,10 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/setup_messages.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/util.h>
+
+#include <iterator>
+#include <vector>
 
 #include <cmrc/cmrc.hpp>
 
@@ -183,35 +187,24 @@ namespace vcpkg::msg
     void threadunsafe_initialize_context()
     {
         Messages& m = messages();
-
         m.localized_strings.resize(m.names.size());
-
-        std::set<StringLiteral, std::less<>> names_set(m.names.begin(), m.names.end());
-        if (names_set.size() < m.names.size())
+        auto names_sorted = m.names;
+        std::sort(names_sorted.begin(), names_sorted.end());
+        std::vector<StringLiteral> duplicate_names;
+        Util::set_duplicates(names_sorted.begin(), names_sorted.end(), std::back_inserter(duplicate_names));
+        for (auto&& duplicate : duplicate_names)
         {
-            // This will not trigger on any correct code path, so it's fine to use a naive O(n^2)
-            for (size_t i = 0; i < m.names.size() - 1; ++i)
-            {
-                for (size_t j = i + 1; j < m.names.size(); ++j)
-                {
-                    if (msg::detail::get_message_name(i) == msg::detail::get_message_name(j))
-                    {
-                        write_unlocalized_text_to_stdout(
-                            Color::error,
-                            fmt::format("INTERNAL ERROR: localization message '{}' has been declared multiple times\n",
-                                        msg::detail::get_message_name(i)));
-                        write_unlocalized_text_to_stdout(Color::error, "INTERNAL ERROR: first message:\n");
-                        write_unlocalized_text_to_stdout(Color::none, m.default_strings[i]);
-                        write_unlocalized_text_to_stdout(Color::error, "\nINTERNAL ERROR: second message:\n");
-                        write_unlocalized_text_to_stdout(Color::none, m.default_strings[j]);
-                        write_unlocalized_text_to_stdout(Color::none, "\n");
-                        ::abort();
-                    }
-                }
-            }
-            Checks::unreachable(VCPKG_LINE_INFO);
+            write_unlocalized_text_to_stdout(
+                Color::error,
+                fmt::format("INTERNAL ERROR: localization message '{}' has been declared multiple times\n", duplicate));
+        }
+
+        if (!duplicate_names.empty())
+        {
+            ::abort();
         }
     }
+
     void load_from_message_map(const Json::Object& message_map)
     {
         Messages& m = messages();

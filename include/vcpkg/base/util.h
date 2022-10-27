@@ -59,15 +59,8 @@ namespace vcpkg::Util
         // pre: [first, last) is sorted according to cmp
         if (first != last)
         {
-            auto next = first;
-            for (;;)
+            for (auto next = first; ++next != last; first = next)
             {
-                ++next;
-                if (next == last)
-                {
-                    return;
-                }
-
                 if (!(cmp(*first, *next)))
                 {
                     *out = *first;
@@ -81,8 +74,6 @@ namespace vcpkg::Util
                         }
                     } while (!(cmp(*first, *next)));
                 }
-
-                first = next;
             }
         }
     }
