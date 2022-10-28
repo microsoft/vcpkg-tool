@@ -954,7 +954,7 @@ namespace vcpkg::Json
                         add_error(msg::format(msgDuplicatedKeyInObj, msg::value = val.first), keyPairLoc);
                         return Value();
                     }
-                    obj.insert(std::move(val.first), std::move(val.second));
+                    obj.insert(val.first, std::move(val.second));
                 }
             }
 
@@ -1098,7 +1098,7 @@ namespace vcpkg::Json
             return std::unique_ptr<ParseError>();
         }
 
-        return parse(std::move(res), json_file);
+        return parse(res, json_file);
     }
 
     std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo li, const Filesystem& fs, const Path& json_file)

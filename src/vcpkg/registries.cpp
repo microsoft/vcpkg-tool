@@ -894,7 +894,7 @@ namespace
                 "Error: Failed to load the versions database file %s: %s", versions_file_path, ec.message());
         }
 
-        auto maybe_versions_json = Json::parse(std::move(contents));
+        auto maybe_versions_json = Json::parse(contents);
         if (!maybe_versions_json)
         {
             return Strings::format("Error: failed to parse versions file for `%s`: %s",
@@ -984,7 +984,7 @@ namespace
             return Strings::format("Error: failed to read baseline file \"%s\": %s", baseline_path, ec.message());
         }
 
-        return parse_baseline_versions(std::move(contents), baseline, baseline_path);
+        return parse_baseline_versions(contents, baseline, baseline_path);
     }
 }
 

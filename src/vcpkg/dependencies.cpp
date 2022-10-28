@@ -645,8 +645,7 @@ namespace vcpkg
 
         auto installed_ports = get_installed_ports(status_db);
         const std::unordered_set<PackageSpec> specs_as_set(specs.cbegin(), specs.cend());
-        return topological_sort(
-            std::move(specs), RemoveAdjacencyProvider{status_db, installed_ports, specs_as_set}, {});
+        return topological_sort(specs, RemoveAdjacencyProvider{status_db, installed_ports, specs_as_set}, {});
     }
 
     std::vector<ExportPlanAction> create_export_plan(const std::vector<PackageSpec>& specs,
@@ -833,9 +832,8 @@ namespace vcpkg
                             }
                             else
                             {
-                                m_warnings.push_back(msg::format(msg::msgWarningMessage)
-                                                         .append(std::move(localized_msg))
-                                                         .extract_data());
+                                m_warnings.push_back(
+                                    msg::format(msg::msgWarningMessage).append(localized_msg).extract_data());
                             }
                         }
                     }
