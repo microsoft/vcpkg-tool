@@ -261,8 +261,8 @@ namespace vcpkg::msg
     Optional<StringLiteral> get_language_tag(int LCID)
     {
         static constexpr std::pair<int, StringLiteral> languages[] = {
-            std::pair<int, StringLiteral>(1029, "cs"),       // Czech
-            std::pair<int, StringLiteral>(1031, "de"),       // German
+            std::pair<int, StringLiteral>(1029, "cs"), // Czech
+            std::pair<int, StringLiteral>(1031, "de"), // German
             // Always use default handling for 1033 (English)
             // std::pair<int, StringLiteral>(1033, "en"),       // English
             std::pair<int, StringLiteral>(3082, "es"),       // Spanish (Spain)
