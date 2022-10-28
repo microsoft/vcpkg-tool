@@ -305,7 +305,7 @@
   "HelpVersionSemverScheme": "Una versión semántica 2.0 (2.1.0-rc2)",
   "HelpVersionStringScheme": "Una versión exacta e incomparable (Vista)",
   "HelpVersioning": "El control de versiones permite controlar de forma determinista las revisiones precisas de las dependencias que usa el proyecto desde el archivo de manifiesto.",
-  "IgnoringVcpkgRootEnvironment": "Omitiendo variable de entorno VCPKG_ROOT; use --vcpkg-root \"{path}\" para usar el valor de entorno o desactive la variable de entorno VCPKG_ROOT para suprimir este mensaje. Usando la raíz vcpkg detectada: \"{actual}\".",
+  "IgnoringVcpkgRootEnvironment": "The vcpkg {value} is using detected vcpkg root {actual} and ignoring mismatched VCPKG_ROOT environment value {path}. To suppress this message, unset the environment variable or use the --vcpkg-root command line switch.",
   "IllegalFeatures": "No se permite la lista de características en este contexto",
   "IllegalPlatformSpec": "No se permite el calificador de plataforma en este contexto",
   "ImproperShaLength": "Sha512 debe tener 128 caracteres hexadecimales: {value}",
