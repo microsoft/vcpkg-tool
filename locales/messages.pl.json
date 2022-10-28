@@ -582,7 +582,7 @@
   "VSExaminedInstances": "Brano pod uwagę następujące wystąpienia programu Visual Studio:",
   "VSExaminedPaths": "Następujące ścieżki zostały sprawdzone pod kątem wystąpień programu Visual Studio:",
   "VSNoInstances": "Nie można zlokalizować pełnego wystąpienia programu Visual Studio",
-  "VcpkgCeIsExperimental": "vcpkg-ce ('configure environment') is experimental and may change at any time.",
+  "VcpkgCeIsExperimental": "Program vcpkg-ce („konfigurowanie środowiska”) jest eksperymentalny i może ulec zmianie w dowolnym momencie.",
   "VcpkgCommitTableHeader": "Zatwierdzenie VCPKG",
   "VcpkgCompletion": "ukończenie operacji menedżera vcpkg {value} zostało już zaimportowane do pliku \"{path}\".\nZnaleziono następujące wpisy:",
   "VcpkgDisallowedClassicMode": "Nie można zlokalizować manifestu (vcpkg.json) powyżej bieżącego katalogu roboczego.\nTa dystrybucja vcpkg nie ma wystąpienia trybu klasycznego.",

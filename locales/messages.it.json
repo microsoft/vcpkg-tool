@@ -582,7 +582,7 @@
   "VSExaminedInstances": "Sono state considerate le istanze di Visual Studio seguenti:",
   "VSExaminedPaths": "Per le istanze di Visual sono stati esaminati i percorsi seguenti:",
   "VSNoInstances": "Non è stato possibile individuare un'istanza di Visual Studio completa",
-  "VcpkgCeIsExperimental": "vcpkg-ce ('configure environment') is experimental and may change at any time.",
+  "VcpkgCeIsExperimental": "vcpkg-ce ('configure environment') è sperimentale e può cambiare in qualsiasi momento.",
   "VcpkgCommitTableHeader": "VCPKG Commit",
   "VcpkgCompletion": "Il completamento di vcpkg {value} è già stato importato in \"{path}” file.\nLe voci seguenti sono state trovate:",
   "VcpkgDisallowedClassicMode": "Impossibile individuare un manifesto (vcpkg.json) sopra la directory di lavoro corrente.\nQuesta distribuzione vcpkg non dispone di un'istanza in modalità classica.",

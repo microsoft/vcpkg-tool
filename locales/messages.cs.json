@@ -582,7 +582,7 @@
   "VSExaminedInstances": "Zvažovaly se následující instance Visual Studio:",
   "VSExaminedPaths": "Následující cesty byly zkontrolovány pro Visual Studio instance:",
   "VSNoInstances": "Nepovedlo se najít úplnou instanci Visual Studio.",
-  "VcpkgCeIsExperimental": "vcpkg-ce ('configure environment') is experimental and may change at any time.",
+  "VcpkgCeIsExperimental": "vcpkg-ce ('configure environment') je experimentální a může se kdykoli změnit.",
   "VcpkgCommitTableHeader": "Potvrzení VCPKG",
   "VcpkgCompletion": "Dokončení vcpkg {value} je už naimportováno do souboru {path}.\nByly nalezeny následující položky:",
   "VcpkgDisallowedClassicMode": "Nad aktuálním pracovním adresářem se nepovedlo najít manifest (vcpkg.json).\nTato distribuce vcpkg nemá instanci klasického režimu.",
