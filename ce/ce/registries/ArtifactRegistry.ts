@@ -127,8 +127,9 @@ export abstract class ArtifactRegistry implements Registry {
       query.id.contains(criteria.keyword);
     }
 
-    if (criteria?.version) {
-      query.version.rangeMatch(criteria.version);
+    const version = criteria?.version;
+    if (version && version !== '*') {
+      query.version.rangeMatch(version);
     }
 
     return [...(await this.openArtifacts(query.items)).entries()];

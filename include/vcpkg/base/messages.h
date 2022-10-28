@@ -6,7 +6,6 @@
 
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/lineinfo.h>
-#include <vcpkg/base/stringview.h>
 
 #include <string>
 #include <type_traits>
@@ -213,9 +212,6 @@ namespace vcpkg::msg
         StringView get_localization_comment(::size_t index);
     }
 
-    // load from "locale_base/messages.${language}.json"
-    void threadunsafe_initialize_context(const Filesystem& fs, StringView language, const Path& locale_base);
-    // initialize without any localized messages (use default messages only)
     void threadunsafe_initialize_context();
 
     template<class Message, class... Tags, class... Ts>
@@ -1267,10 +1263,11 @@ namespace vcpkg
     DECLARE_MESSAGE(HelpVersionStringScheme, (), "", "An exact, incomparable version (Vista)");
     DECLARE_MESSAGE(
         IgnoringVcpkgRootEnvironment,
-        (msg::path, msg::actual),
-        "{actual} is the path we actually used",
-        "Ignoring VCPKG_ROOT environment variable; use --vcpkg-root \"{path}\" to use the environment value or unset "
-        "the VCPKG_ROOT environment variable to suppress this message. Using detected vcpkg root: \"{actual}\".");
+        (msg::path, msg::actual, msg::value),
+        "{actual} is the path we actually used, {value} is the path to vcpkg's binary",
+        "The vcpkg {value} is using detected vcpkg root {actual} and ignoring mismatched VCPKG_ROOT environment "
+        "value {path}. To suppress this message, unset the environment variable or use the --vcpkg-root command line "
+        "switch.");
     DECLARE_MESSAGE(IllegalFeatures, (), "", "List of features is not allowed in this context");
     DECLARE_MESSAGE(IllegalPlatformSpec, (), "", "Platform qualifier is not allowed in this context");
     DECLARE_MESSAGE(ImproperShaLength,

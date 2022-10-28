@@ -1,5 +1,6 @@
 #include <catch2/catch.hpp>
 
+#include <vcpkg/base/json.h>
 #include <vcpkg/base/messages.h>
 
 #include <vcpkg/commands.generate-message-map.h>
@@ -7,6 +8,31 @@
 using namespace vcpkg;
 using namespace vcpkg::Commands;
 
+TEST_CASE ("get path to locale from LCID", "[messages]")
+{
+    // valid LCID; Chinese
+    auto res = msg::get_locale_path(2052);
+    CHECK(res == "locales/messages.zh-Hans.json");
+
+    // invalid LCID; default to English
+    res = msg::get_locale_path(0000);
+    CHECK(res == "locales/messages.en.json");
+}
+TEST_CASE ("get message_map from LCID", "[messages]")
+{
+    StringView msg_name = "AddCommandFirstArg";
+
+    // valid lcid; Spanish
+    auto map = msg::get_message_map_from_lcid(3082);
+    auto msg = map.get()->get(msg_name);
+    CHECK(msg->string(VCPKG_LINE_INFO) ==
+          "El primer par\u00e1metro que se va a agregar debe ser \"artefacto\" o \"puerto\".");
+
+    // invalid lcid; default to English
+    map = msg::get_message_map_from_lcid(0000);
+    msg = map.get()->get(msg_name);
+    CHECK(msg->string(VCPKG_LINE_INFO) == "The first parameter to add must be 'artifact' or 'port'.");
+}
 TEST_CASE ("generate message get_all_format_args", "[messages]")
 {
     LocalizedString err;
