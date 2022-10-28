@@ -122,6 +122,9 @@ namespace vcpkg
         const Path triplets;
         const Path community_triplets;
 
+        std::vector<std::string> overlay_ports;
+        std::vector<std::string> overlay_triplets;
+
         std::string get_toolver_diagnostics() const;
 
         const ToolCache& get_tool_cache() const;

@@ -1,7 +1,6 @@
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
-#include <vcpkg/base/lockguarded.h>
 #include <vcpkg/base/sortedvector.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
@@ -385,13 +384,13 @@ namespace vcpkg::Commands::CI
         const IBuildLogsRecorder& build_logs_recorder =
             build_logs_recorder_storage ? *(build_logs_recorder_storage.get()) : null_build_logs_recorder();
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
+        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
         XunitWriter xunitTestResults;
 
-        auto timer = ElapsedTimer::create_started();
+        const ElapsedTimer timer;
         std::vector<std::string> all_port_names =
             Util::fmap(provider.load_all_control_files(), Paragraphs::get_name_of_control_file);
         // Install the default features for every package
@@ -531,7 +530,6 @@ namespace vcpkg::Commands::CI
             TripletAndSummary result{target_triplet, std::move(summary)};
 
             msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\nTriplet: {}\n", result.triplet));
-            msg::println(msgTotalTime, msg::elapsed = GlobalState::timer.to_string());
             result.summary.print();
 
             if (baseline_iter != settings.end())

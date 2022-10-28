@@ -1,9 +1,15 @@
 #define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
 
+#include <vcpkg/base/basic_checks.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
+
+namespace vcpkg::Checks
+{
+    void on_final_cleanup_and_exit() { }
+}
 
 int main(int argc, char** argv)
 {

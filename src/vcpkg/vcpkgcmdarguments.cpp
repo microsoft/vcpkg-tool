@@ -2,6 +2,7 @@
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.integrate.h>
@@ -49,6 +50,10 @@ namespace
         // https://wiki.jenkins.io/display/JENKINS/Building+a+software+project#Buildingasoftwareproject-belowJenkinsSetEnvironmentVariables
         {"JENKINS_URL", "Jenkins_CI"},
 
+        // TeamCity
+        // https://www.jetbrains.com/help/teamcity/predefined-build-parameters.html#Predefined+Server+Build+Parameters
+        {"TEAMCITY_VERSION", "TeamCity_CI"},
+
         // Travis CI
         // https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
         {"TRAVIS", "Travis_CI"},
@@ -56,6 +61,7 @@ namespace
         // Generic CI environment variables
         {"CI", "Generic"},
         {"BUILD_ID", "Generic"},
+        {"BUILD_NUMBER", "Generic"},
     };
 }
 
@@ -88,10 +94,7 @@ namespace vcpkg
             {
                 if (place.has_value())
                 {
-                    msg::println_error(msgTwoFeatureFlagsSpecified, msg::value = flag);
-                    LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::Error,
-                                                                            "error feature flag +-" + flag.to_string());
-                    Checks::exit_fail(VCPKG_LINE_INFO);
+                    Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgTwoFeatureFlagsSpecified, msg::value = flag);
                 }
 
                 place = false;
@@ -108,9 +111,11 @@ namespace vcpkg
             Optional<bool>& local_option;
         };
 
+        // Parsed for command line backcompat, but cannot be disabled
+        Optional<bool> manifest_mode;
         const FeatureFlag flag_descriptions[] = {
             {VcpkgCmdArguments::BINARY_CACHING_FEATURE, args.binary_caching},
-            {VcpkgCmdArguments::MANIFEST_MODE_FEATURE, args.manifest_mode},
+            {VcpkgCmdArguments::MANIFEST_MODE_FEATURE, manifest_mode},
             {VcpkgCmdArguments::COMPILER_TRACKING_FEATURE, args.compiler_tracking},
             {VcpkgCmdArguments::REGISTRIES_FEATURE, args.registries_feature},
             {VcpkgCmdArguments::VERSIONS_FEATURE, args.versions_feature},
@@ -127,8 +132,6 @@ namespace vcpkg
         if (option_field.has_value())
         {
             msg::println_error(msgDuplicateOptions, msg::value = option_name);
-            LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::Error,
-                                                                    "error option specified multiple times");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -141,7 +144,6 @@ namespace vcpkg
         if (option_field && option_field != new_setting)
         {
             msg::println_error(msgConflictingValuesForOption, msg::option = option_name);
-            LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::Error, "error conflicting switches");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -155,7 +157,6 @@ namespace vcpkg
         if (new_value.size() == 0)
         {
             msg::println_error(msgExpectedValueForOption, msg::option = option_name);
-            LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::Error, "error option name");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -170,7 +171,6 @@ namespace vcpkg
         if (new_value.size() == 0)
         {
             msg::println_error(msgExpectedValueForOption, msg::option = option_name);
-            LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::Error, "error option name");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -237,7 +237,6 @@ namespace vcpkg
                 }
 
                 msg::println_error(msgExpectedValueForOption, msg::option = option);
-                LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::Error, "error option name");
                 print_usage();
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
@@ -310,8 +309,6 @@ namespace vcpkg
 
             if (basic_arg.size() >= 2 && basic_arg[0] == '-' && basic_arg[1] != '-')
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::Error,
-                                                                        "error short options are not supported");
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgUnsupportedShortOptions, msg::value = basic_arg);
             }
 
@@ -351,8 +348,8 @@ namespace vcpkg
 
             constexpr static std::pair<StringView, std::vector<std::string> VcpkgCmdArguments::*>
                 cojoined_multivalues[] = {
-                    {OVERLAY_PORTS_ARG, &VcpkgCmdArguments::overlay_ports},
-                    {OVERLAY_TRIPLETS_ARG, &VcpkgCmdArguments::overlay_triplets},
+                    {OVERLAY_PORTS_ARG, &VcpkgCmdArguments::cli_overlay_ports},
+                    {OVERLAY_TRIPLETS_ARG, &VcpkgCmdArguments::cli_overlay_triplets},
                     {BINARY_SOURCES_ARG, &VcpkgCmdArguments::binary_sources},
                     {CMAKE_SCRIPT_ARG, &VcpkgCmdArguments::cmake_args},
                 };
@@ -774,16 +771,14 @@ namespace vcpkg
             const auto vcpkg_overlay_ports_env = get_env(OVERLAY_PORTS_ENV);
             if (const auto unpacked = vcpkg_overlay_ports_env.get())
             {
-                auto overlays = Strings::split_paths(*unpacked);
-                overlay_ports.insert(std::end(overlay_ports), std::begin(overlays), std::end(overlays));
+                env_overlay_ports = Strings::split_paths(*unpacked);
             }
         }
         {
             const auto vcpkg_overlay_triplets_env = get_env(OVERLAY_TRIPLETS_ENV);
             if (const auto unpacked = vcpkg_overlay_triplets_env.get())
             {
-                auto triplets = Strings::split_paths(*unpacked);
-                overlay_triplets.insert(std::end(overlay_triplets), std::begin(triplets), std::end(triplets));
+                env_overlay_triplets = Strings::split_paths(*unpacked);
             }
         }
         {
@@ -887,7 +882,6 @@ namespace vcpkg
             bool is_inconsistent;
         } possible_inconsistencies[] = {
             {BINARY_CACHING_FEATURE, BINARY_SOURCES_ARG, !binary_sources.empty() && !binary_caching.value_or(true)},
-            {MANIFEST_MODE_FEATURE, MANIFEST_ROOT_DIR_ARG, manifest_root_dir && !manifest_mode.value_or(true)},
         };
         for (const auto& el : possible_inconsistencies)
         {
@@ -896,7 +890,7 @@ namespace vcpkg
                 msg::println_warning(
                     msgSpecifiedFeatureTurnedOff, msg::command_name = el.flag, msg::option = el.option);
                 msg::println_warning(msgDefaultFlag, msg::option = el.flag);
-                LockGuardPtr<Metrics>(g_metrics)->track_string_property(
+                get_global_metrics_collector().track_string(
                     StringMetric::Warning, Strings::format("warning %s alongside %s", el.flag, el.option));
             }
         }
@@ -910,7 +904,6 @@ namespace vcpkg
             Optional<bool> flag;
         } flags[] = {
             {BINARY_CACHING_FEATURE, binary_caching},
-            {MANIFEST_MODE_FEATURE, manifest_mode},
             {COMPILER_TRACKING_FEATURE, compiler_tracking},
             {REGISTRIES_FEATURE, registries_feature},
             {VERSIONS_FEATURE, versions_feature},
@@ -931,21 +924,12 @@ namespace vcpkg
 
     void VcpkgCmdArguments::track_feature_flag_metrics() const
     {
-        struct
-        {
-            StringView flag;
-            bool enabled;
-        } flags[] = {
-            {BINARY_CACHING_FEATURE, binary_caching_enabled()},
-            {COMPILER_TRACKING_FEATURE, compiler_tracking_enabled()},
-            {REGISTRIES_FEATURE, registries_enabled()},
-            {VERSIONS_FEATURE, versions_enabled()},
-        };
-
-        for (const auto& flag : flags)
-        {
-            LockGuardPtr<Metrics>(g_metrics)->track_feature(flag.flag.to_string(), flag.enabled);
-        }
+        MetricsSubmission submission;
+        submission.track_bool(BoolMetric::FeatureFlagBinaryCaching, binary_caching_enabled());
+        submission.track_bool(BoolMetric::FeatureFlagCompilerTracking, compiler_tracking_enabled());
+        submission.track_bool(BoolMetric::FeatureFlagRegistries, registries_enabled());
+        submission.track_bool(BoolMetric::FeatureFlagVersions, versions_enabled());
+        get_global_metrics_collector().track_submission(std::move(submission));
     }
 
     void VcpkgCmdArguments::track_environment_metrics() const
@@ -953,7 +937,7 @@ namespace vcpkg
         if (auto ci_env = m_detected_ci_environment.get())
         {
             Debug::println("Detected CI environment: ", *ci_env);
-            LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::DetectedCiEnvironment, *ci_env);
+            get_global_metrics_collector().track_string(StringMetric::DetectedCiEnvironment, *ci_env);
         }
     }
 

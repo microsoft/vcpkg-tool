@@ -9,6 +9,8 @@
 
 #include <inttypes.h>
 
+#include <memory>
+
 namespace vcpkg::Json
 {
     static std::atomic<uint64_t> g_json_parsing_stats(0);
@@ -58,6 +60,7 @@ namespace vcpkg::Json
                     case VK::String: return internal_assign(VK::String, &ValueImpl::string, other);
                     case VK::Array: return internal_assign(VK::Array, &ValueImpl::array, other);
                     case VK::Object: return internal_assign(VK::Object, &ValueImpl::object, other);
+                    default: Checks::unreachable(VCPKG_LINE_INFO);
                 }
             }
 
@@ -148,30 +151,30 @@ namespace vcpkg::Json
     }
     StringView Value::string(LineInfo li) const noexcept
     {
-        vcpkg::Checks::check_exit(li, is_string(), "json value is not string");
+        vcpkg::Checks::msg_check_exit(li, is_string(), msgJsonValueNotString);
         return underlying_->string;
     }
 
     const Array& Value::array(LineInfo li) const& noexcept
     {
-        vcpkg::Checks::check_exit(li, is_array(), "json value is not array");
+        vcpkg::Checks::msg_check_exit(li, is_array(), msgJsonValueNotArray);
         return underlying_->array;
     }
     Array& Value::array(LineInfo li) & noexcept
     {
-        vcpkg::Checks::check_exit(li, is_array(), "json value is not array");
+        vcpkg::Checks::msg_check_exit(li, is_array(), msgJsonValueNotArray);
         return underlying_->array;
     }
     Array&& Value::array(LineInfo li) && noexcept { return std::move(this->array(li)); }
 
     const Object& Value::object(LineInfo li) const& noexcept
     {
-        vcpkg::Checks::check_exit(li, is_object(), "json value is not object");
+        vcpkg::Checks::msg_check_exit(li, is_object(), msgJsonValueNotObject);
         return underlying_->object;
     }
     Object& Value::object(LineInfo li) & noexcept
     {
-        vcpkg::Checks::check_exit(li, is_object(), "json value is not object");
+        vcpkg::Checks::msg_check_exit(li, is_object(), msgJsonValueNotObject);
         return underlying_->object;
     }
     Object&& Value::object(LineInfo li) && noexcept { return std::move(this->object(li)); }
@@ -186,22 +189,22 @@ namespace vcpkg::Json
         {
             case ValueKind::Null: return; // default construct underlying_
             case ValueKind::Boolean:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Boolean>(), other.underlying_->boolean));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Boolean>(), other.underlying_->boolean);
                 break;
             case ValueKind::Integer:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Integer>(), other.underlying_->integer));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Integer>(), other.underlying_->integer);
                 break;
             case ValueKind::Number:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Number>(), other.underlying_->number));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Number>(), other.underlying_->number);
                 break;
             case ValueKind::String:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::String>(), other.underlying_->string));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::String>(), other.underlying_->string);
                 break;
             case ValueKind::Array:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Array>(), other.underlying_->array));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Array>(), other.underlying_->array);
                 break;
             case ValueKind::Object:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Object>(), other.underlying_->object));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Object>(), other.underlying_->object);
                 break;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
@@ -213,22 +216,22 @@ namespace vcpkg::Json
         {
             case ValueKind::Null: underlying_.reset(); break;
             case ValueKind::Boolean:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Boolean>(), other.underlying_->boolean));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Boolean>(), other.underlying_->boolean);
                 break;
             case ValueKind::Integer:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Integer>(), other.underlying_->integer));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Integer>(), other.underlying_->integer);
                 break;
             case ValueKind::Number:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Number>(), other.underlying_->number));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Number>(), other.underlying_->number);
                 break;
             case ValueKind::String:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::String>(), other.underlying_->string));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::String>(), other.underlying_->string);
                 break;
             case ValueKind::Array:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Array>(), other.underlying_->array));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Array>(), other.underlying_->array);
                 break;
             case ValueKind::Object:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Object>(), other.underlying_->object));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Object>(), other.underlying_->object);
                 break;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
@@ -263,7 +266,7 @@ namespace vcpkg::Json
         if (!Unicode::utf8_is_valid_string(s.data(), s.data() + s.size()))
         {
             Debug::print("Invalid string: ", s, '\n');
-            vcpkg::Checks::exit_with_message(VCPKG_LINE_INFO, "Invalid utf8 passed to Value::string(std::string)");
+            vcpkg::Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidString);
         }
         Value val;
         val.underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::String>(), std::move(s));
@@ -395,7 +398,7 @@ namespace vcpkg::Json
         }
         else
         {
-            underlying_.emplace_back(key, std::move(value));
+            underlying_.emplace_back(key, value);
             return underlying_.back().second;
         }
     }
@@ -525,7 +528,7 @@ namespace vcpkg::Json
                 }
                 else if (current <= 0x001F)
                 {
-                    add_error("Control character in string");
+                    add_error(msg::format(msgControlCharacterInString));
                     next();
                     return Unicode::end_of_file;
                 }
@@ -538,7 +541,7 @@ namespace vcpkg::Json
                 // cur == '\\'
                 if (at_eof())
                 {
-                    add_error("Unexpected EOF after escape character");
+                    add_error(msg::format(msgUnexpectedEOFAfterEscape));
                     return Unicode::end_of_file;
                 }
                 current = next();
@@ -562,7 +565,7 @@ namespace vcpkg::Json
 
                             if (current == Unicode::end_of_file)
                             {
-                                add_error("Unexpected end of file in middle of unicode escape");
+                                add_error(msg::format(msgUnexpectedEOFMidUnicodeEscape));
                                 return Unicode::end_of_file;
                             }
                             if (is_hex_digit(current))
@@ -572,7 +575,7 @@ namespace vcpkg::Json
                             }
                             else
                             {
-                                add_error("Invalid hex digit in unicode escape");
+                                add_error(msg::format(msgInvalidHexDigit));
                                 return Unicode::end_of_file;
                             }
                         }
@@ -580,7 +583,7 @@ namespace vcpkg::Json
 
                         return code_unit;
                     }
-                    default: add_error("Unexpected escape sequence continuation"); return Unicode::end_of_file;
+                    default: add_error(msg::format(msgUnexpectedEscapeSequence)); return Unicode::end_of_file;
                 }
             }
 
@@ -626,7 +629,7 @@ namespace vcpkg::Json
                     }
                 }
 
-                add_error("Unexpected EOF in middle of string");
+                add_error(msg::format(msgUnexpectedEOFMidString));
                 return res;
             }
 
@@ -646,7 +649,7 @@ namespace vcpkg::Json
                     current = next();
                     if (current == Unicode::end_of_file)
                     {
-                        add_error("Unexpected EOF after minus sign");
+                        add_error(msg::format(msgUnexpectedEOFAfterMinus));
                         return Value();
                     }
                 }
@@ -662,7 +665,7 @@ namespace vcpkg::Json
                     }
                     else if (is_ascii_digit(current))
                     {
-                        add_error("Unexpected digits after a leading zero");
+                        add_error(msg::format(msgUnexpectedDigitsAfterLeadingZero));
                         return Value();
                     }
                     else
@@ -690,7 +693,7 @@ namespace vcpkg::Json
                     current = next();
                     if (!is_ascii_digit(current))
                     {
-                        add_error("Expected digits after the decimal point");
+                        add_error(msg::format(msgExpectedDigitsAfterDecimal));
                         return Value();
                     }
                     while (is_ascii_digit(current))
@@ -711,12 +714,12 @@ namespace vcpkg::Json
                         }
                         else
                         {
-                            add_error(Strings::format("Floating point constant too big: %s", number_to_parse));
+                            add_error(msg::format(msgFloatingPointConstTooBig, msg::count = number_to_parse));
                         }
                     }
                     else
                     {
-                        add_error(Strings::format("Invalid floating point constant: %s", number_to_parse));
+                        add_error(msg::format(msgInvalidFloatingPointConst, msg::count = number_to_parse));
                     }
                 }
                 else
@@ -728,16 +731,12 @@ namespace vcpkg::Json
                     }
                     else
                     {
-                        add_error(Strings::format("Invalid integer constant: %s", number_to_parse));
+                        add_error(msg::format(msgInvalidIntegerConst, msg::count = number_to_parse));
                     }
                 }
 
                 return Value();
             }
-
-#define VCPKG_JSON_NO_COMMENTS_MSG                                                                                     \
-    "\n   vcpkg does not support c-style comments, however most objects allow $-prefixed fields to be used as "        \
-    "comments."
 
             Value parse_keyword() noexcept
             {
@@ -767,12 +766,12 @@ namespace vcpkg::Json
 
                     if (current == Unicode::end_of_file)
                     {
-                        add_error("Unexpected EOF in middle of keyword");
+                        add_error(msg::format(msgUnexpectedEOFMidKeyword));
                         return Value();
                     }
                     if (current != *rest_it)
                     {
-                        add_error("Unexpected character in middle of keyword");
+                        add_error(msg::format(msgUnexpectedCharMidKeyword));
                     }
                 }
                 next();
@@ -794,7 +793,7 @@ namespace vcpkg::Json
                     char32_t current = cur();
                     if (current == Unicode::end_of_file)
                     {
-                        add_error("Unexpected EOF in middle of array");
+                        add_error(msg::format(msgUnexpectedEOFMidArray));
                         return Value();
                     }
                     if (current == ']')
@@ -815,22 +814,25 @@ namespace vcpkg::Json
                         current = cur();
                         if (current == Unicode::end_of_file)
                         {
-                            add_error("Unexpected EOF in middle of array");
+                            add_error(msg::format(msgUnexpectedEOFMidArray));
                             return Value();
                         }
                         if (current == ']')
                         {
-                            add_error("Trailing comma in array", comma_loc);
+                            add_error(msg::format(msgTrailingCommaInArray), comma_loc);
                             return Value::array(std::move(arr));
                         }
                     }
                     else if (current == '/')
                     {
-                        add_error("Unexpected character in middle of array" VCPKG_JSON_NO_COMMENTS_MSG);
+                        add_error(msg::format(msgUnexpectedCharMidArray)
+                                      .append_raw('\n')
+                                      .append(msgInvalidCommentStyle)
+                                      .extract_data());
                     }
                     else
                     {
-                        add_error("Unexpected character in middle of array");
+                        add_error(msg::format(msgUnexpectedCharMidArray));
                         return Value();
                     }
 
@@ -848,12 +850,12 @@ namespace vcpkg::Json
 
                 if (current == Unicode::end_of_file)
                 {
-                    add_error("Unexpected EOF; expected property name");
+                    add_error(msg::format(msgUnexpectedEOFExpectedName));
                     return res;
                 }
                 if (current != '"')
                 {
-                    add_error("Unexpected character; expected property name");
+                    add_error(msg::format(msgUnexpectedCharExpectedName));
                     return res;
                 }
                 res.first = parse_string();
@@ -866,17 +868,20 @@ namespace vcpkg::Json
                 }
                 else if (current == Unicode::end_of_file)
                 {
-                    add_error("Unexpected EOF; expected colon");
+                    add_error(msg::format(msgUnexpectedEOFExpectedColon));
                     return res;
                 }
                 else if (current == '/')
                 {
-                    add_error("Unexpected character; expected colon" VCPKG_JSON_NO_COMMENTS_MSG);
+                    add_error(msg::format(msgUnexpectedCharExpectedColon)
+                                  .append_raw('\n')
+                                  .append(msgInvalidCommentStyle)
+                                  .extract_data());
                     return res;
                 }
                 else
                 {
-                    add_error("Unexpected character; expected colon");
+                    add_error(msg::format(msgUnexpectedCharExpectedColon));
                     return res;
                 }
 
@@ -900,7 +905,7 @@ namespace vcpkg::Json
                     current = cur();
                     if (current == Unicode::end_of_file)
                     {
-                        add_error("Unexpected EOF; expected property or close brace");
+                        add_error(msg::format(msgUnexpectedEOFExpectedCloseBrace));
                         return Value();
                     }
                     else if (current == '}')
@@ -921,29 +926,32 @@ namespace vcpkg::Json
                         current = cur();
                         if (current == Unicode::end_of_file)
                         {
-                            add_error("Unexpected EOF; expected property");
+                            add_error(msg::format(msgUnexpectedEOFExpectedProp));
                             return Value();
                         }
                         else if (current == '}')
                         {
-                            add_error("Trailing comma in an object", comma_loc);
+                            add_error(msg::format(msgTrailingCommaInObj), comma_loc);
                             return Value();
                         }
                     }
                     else if (current == '/')
                     {
-                        add_error("Unexpected character; expected comma or close brace" VCPKG_JSON_NO_COMMENTS_MSG);
+                        add_error(msg::format(msgUnexpectedCharExpectedColon)
+                                      .append_raw('\n')
+                                      .append(msgInvalidCommentStyle)
+                                      .extract_data());
                     }
                     else
                     {
-                        add_error("Unexpected character; expected comma or close brace");
+                        add_error(msg::format(msgUnexpectedCharExpectedCloseBrace));
                     }
 
                     auto keyPairLoc = cur_loc();
                     auto val = parse_kv_pair();
                     if (obj.contains(val.first))
                     {
-                        add_error(Strings::format("Duplicated key \"%s\" in an object", val.first), keyPairLoc);
+                        add_error(msg::format(msgDuplicatedKeyInObj, msg::value = val.first), keyPairLoc);
                         return Value();
                     }
                     obj.insert(std::move(val.first), std::move(val.second));
@@ -956,7 +964,7 @@ namespace vcpkg::Json
                 char32_t current = cur();
                 if (current == Unicode::end_of_file)
                 {
-                    add_error("Unexpected EOF; expected value");
+                    add_error(msg::format(msgUnexpectedEOFExpectedValue));
                     return Value();
                 }
 
@@ -970,7 +978,10 @@ namespace vcpkg::Json
                     case 'f': return parse_keyword();
                     case '/':
                     {
-                        add_error("Unexpected character; expected value" VCPKG_JSON_NO_COMMENTS_MSG);
+                        add_error(msg::format(msgUnexpectedCharExpectedValue)
+                                      .append_raw('\n')
+                                      .append(msgInvalidCommentStyle)
+                                      .extract_data());
                         return Value();
                     }
                     default:
@@ -980,7 +991,7 @@ namespace vcpkg::Json
                         }
                         else
                         {
-                            add_error("Unexpected character; expected value");
+                            add_error(msg::format(msgUnexpectedCharExpectedValue));
                             return Value();
                         }
                 }
@@ -998,7 +1009,7 @@ namespace vcpkg::Json
                 parser.skip_whitespace();
                 if (!parser.at_eof())
                 {
-                    parser.add_error("Unexpected character; expected EOF");
+                    parser.add_error(msg::format(msgUnexpectedEOFExpectedChar));
                     return parser.extract_error();
                 }
                 else if (parser.get_error())

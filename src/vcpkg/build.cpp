@@ -144,7 +144,7 @@ namespace vcpkg::Build
         action->build_options.clean_buildtrees = CleanBuildtrees::NO;
         action->build_options.clean_packages = CleanPackages::NO;
 
-        const auto build_timer = ElapsedTimer::create_started();
+        const ElapsedTimer build_timer;
         const auto result = build_package(args, paths, *action, binary_cache, build_logs_recorder, status_db);
         msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
         if (result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
@@ -189,7 +189,7 @@ namespace vcpkg::Build
         const FullPackageSpec spec = check_and_get_full_package_spec(
             std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
+        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
         return perform_ex(args, spec, host_triplet, provider, binary_cache, null_build_logs_recorder(), paths);
     }
 } // namespace vcpkg::Build
@@ -862,7 +862,7 @@ namespace vcpkg
                                       '-',
                                       generate_random_UUID());
 
-        const auto now = CTime::get_current_date_time().value_or_exit(VCPKG_LINE_INFO).strftime("%Y-%m-%dT%H:%M:%SZ");
+        const auto now = CTime::now_string();
         const auto& abi = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
 
         const auto json_path = paths.package_dir(action.spec) / "share" / action.spec.name() / "vcpkg.spdx.json";
@@ -900,8 +900,7 @@ namespace vcpkg
             msg::println(msgInstallingFromLocation, msg::path = scfl.source_location);
         }
 
-        const auto timer = ElapsedTimer::create_started();
-
+        const ElapsedTimer timer;
         auto command = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, get_cmake_build_args(args, paths, action));
 
         const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
@@ -938,30 +937,33 @@ namespace vcpkg
         const auto buildtimeus = timer.microseconds();
         const auto spec_string = action.spec.to_string();
 
+        MetricsSubmission metrics;
+        metrics.track_buildtime(Hash::get_string_hash(spec_string, Hash::Algorithm::Sha256) + ":[" +
+                                    Strings::join(",",
+                                                  action.feature_list,
+                                                  [](const std::string& feature) {
+                                                      return Hash::get_string_hash(feature, Hash::Algorithm::Sha256);
+                                                  }) +
+                                    "]",
+                                buildtimeus);
+
+        const bool build_failed = !succeeded(return_code);
+        if (build_failed)
         {
-            LockGuardPtr<Metrics> metrics(g_metrics);
-            metrics->track_buildtime(Hash::get_string_hash(spec_string, Hash::Algorithm::Sha256) + ":[" +
-                                         Strings::join(",",
-                                                       action.feature_list,
-                                                       [](const std::string& feature) {
-                                                           return Hash::get_string_hash(feature,
-                                                                                        Hash::Algorithm::Sha256);
-                                                       }) +
-                                         "]",
-                                     buildtimeus);
-            if (!succeeded(return_code))
+            metrics.track_string(StringMetric::BuildError, spec_string);
+        }
+
+        get_global_metrics_collector().track_submission(std::move(metrics));
+        if (build_failed)
+        {
+            const auto logs = buildpath / Strings::concat("error-logs-", action.spec.triplet(), ".txt");
+            std::vector<std::string> error_logs;
+            if (fs.exists(logs, VCPKG_LINE_INFO))
             {
-                metrics->track_string_property(StringMetric::Error, "build failed");
-                metrics->track_string_property(StringMetric::BuildError, spec_string);
-                const auto logs = buildpath / Strings::concat("error-logs-", action.spec.triplet(), ".txt");
-                std::vector<std::string> error_logs;
-                if (fs.exists(logs, VCPKG_LINE_INFO))
-                {
-                    error_logs = fs.read_lines(logs, VCPKG_LINE_INFO);
-                    Util::erase_remove_if(error_logs, [](const auto& line) { return line.empty(); });
-                }
-                return ExtendedBuildResult{BuildResult::BUILD_FAILED, stdoutlog, std::move(error_logs)};
+                error_logs = fs.read_lines(logs, VCPKG_LINE_INFO);
+                Util::erase_remove_if(error_logs, [](const auto& line) { return line.empty(); });
             }
+            return ExtendedBuildResult{BuildResult::BUILD_FAILED, stdoutlog, std::move(error_logs)};
         }
 
         const BuildInfo build_info = read_build_info(fs, paths.build_info_file_path(action.spec));

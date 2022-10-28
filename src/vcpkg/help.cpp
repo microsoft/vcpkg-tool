@@ -172,7 +172,7 @@ namespace vcpkg::Help
         if (topic == "triplets" || topic == "triple")
         {
             help_topic_valid_triplet(paths);
-            LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::CommandContext, topic);
+            get_global_metrics_collector().track_string(StringMetric::CommandContext, topic);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
@@ -180,13 +180,13 @@ namespace vcpkg::Help
         if (it_topic != topics.end())
         {
             it_topic->print(paths);
-            LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::CommandContext, it_topic->name);
+            get_global_metrics_collector().track_string(StringMetric::CommandContext, it_topic->name);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
         msg::println_error(msgUnknownTopic, msg::value = topic);
         help_topics(paths);
-        LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::CommandContext, "unknown");
+        get_global_metrics_collector().track_string(StringMetric::CommandContext, "unknown");
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 

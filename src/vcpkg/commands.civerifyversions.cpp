@@ -116,7 +116,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                     }
 
                     const auto& scf = maybe_scf.value_or_exit(VCPKG_LINE_INFO);
-                    auto&& git_tree_version = scf.get()->to_schemed_version();
+                    auto&& git_tree_version = scf->to_schemed_version();
                     if (version_entry.first.version != git_tree_version.version)
                     {
                         return {
