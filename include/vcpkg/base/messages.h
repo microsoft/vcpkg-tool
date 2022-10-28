@@ -104,7 +104,7 @@ namespace vcpkg
             return lhs.data() >= rhs.data();
         }
 
-        bool empty() { return m_data.empty(); }
+        bool empty() const { return m_data.empty(); }
         void clear() { m_data.clear(); }
 
     private:

@@ -49,7 +49,7 @@ namespace vcpkg
             return ret;
         }
 
-        ExpectedS<int> query_status()
+        ExpectedS<int> query_status() const
         {
             DWORD dwStatusCode = 0;
             DWORD dwSize = sizeof(dwStatusCode);

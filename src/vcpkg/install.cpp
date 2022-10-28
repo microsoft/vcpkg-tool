@@ -213,11 +213,11 @@ namespace vcpkg
             // The VS2015 standard library requires comparison operators of T and U
             // to also support comparison of T and T, and of U and U, due to debug checks.
 #if _MSC_VER <= 1910
-            bool operator()(const std::string& lhs, const std::string& rhs) { return lhs < rhs; }
-            bool operator()(const file_pack& lhs, const file_pack& rhs) { return lhs.first < rhs.first; }
+            bool operator()(const std::string& lhs, const std::string& rhs) const { return lhs < rhs; }
+            bool operator()(const file_pack& lhs, const file_pack& rhs) const { return lhs.first < rhs.first; }
 #endif
-            bool operator()(const std::string& lhs, const file_pack& rhs) { return lhs < rhs.first; }
-            bool operator()(const file_pack& lhs, const std::string& rhs) { return lhs.first < rhs; }
+            bool operator()(const std::string& lhs, const file_pack& rhs) const { return lhs < rhs.first; }
+            bool operator()(const file_pack& lhs, const std::string& rhs) const { return lhs.first < rhs; }
         };
 
         std::vector<file_pack> intersection;
