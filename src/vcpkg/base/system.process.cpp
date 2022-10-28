@@ -12,6 +12,7 @@
 #include <future>
 
 #if defined(__APPLE__)
+extern char** environ;
 #include <mach-o/dyld.h>
 #endif
 
