@@ -585,13 +585,11 @@ namespace vcpkg
         }
         else
         {
+            const auto canonical_current_exe = fs.almost_canonical(get_exe_path_of_current_process(), VCPKG_LINE_INFO);
             ret = fs.find_file_recursively_up(original_cwd, ".vcpkg-root", VCPKG_LINE_INFO);
             if (ret.empty())
             {
-                ret =
-                    fs.find_file_recursively_up(fs.almost_canonical(get_exe_path_of_current_process(), VCPKG_LINE_INFO),
-                                                ".vcpkg-root",
-                                                VCPKG_LINE_INFO);
+                ret = fs.find_file_recursively_up(canonical_current_exe, ".vcpkg-root", VCPKG_LINE_INFO);
             }
 
             if (auto vcpkg_root_dir_env = args.vcpkg_root_dir_env.get())
@@ -603,8 +601,10 @@ namespace vcpkg
                 }
                 else if (ret != canonical_root_dir_env)
                 {
-                    msg::println_warning(
-                        msgIgnoringVcpkgRootEnvironment, msg::path = *vcpkg_root_dir_env, msg::actual = ret);
+                    msg::println_warning(msgIgnoringVcpkgRootEnvironment,
+                                         msg::path = *vcpkg_root_dir_env,
+                                         msg::actual = ret,
+                                         msg::value = canonical_current_exe);
                 }
             }
         }
