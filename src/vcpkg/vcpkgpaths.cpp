@@ -488,27 +488,30 @@ namespace vcpkg
                 if (!m_manifest_dir.empty())
                 {
                     Debug::print("Using manifest-root: ", m_manifest_dir, '\n');
-
-                    std::error_code ec;
-                    const auto vcpkg_root_file = root / ".vcpkg-root";
-                    if (args.wait_for_lock.value_or(false))
+                    if (!args.do_not_take_lock)
                     {
-                        file_lock_handle = fs.take_exclusive_file_lock(vcpkg_root_file, ec);
-                    }
-                    else
-                    {
-                        file_lock_handle = fs.try_take_exclusive_file_lock(vcpkg_root_file, ec);
-                    }
-
-                    if (ec)
-                    {
-                        bool is_already_locked = ec == std::errc::device_or_resource_busy;
-                        bool allow_errors = args.ignore_lock_failures.value_or(false);
-                        if (is_already_locked || !allow_errors)
+                        std::error_code ec;
+                        const auto vcpkg_root_file = root / ".vcpkg-root";
+                        if (args.wait_for_lock.value_or(false))
                         {
-                            msg::println_error(msgFailedToTakeFileSystemLock, msg::path = vcpkg_root_file);
-                            msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("    {}\n", ec.message()));
-                            Checks::exit_fail(VCPKG_LINE_INFO);
+                            file_lock_handle = fs.take_exclusive_file_lock(vcpkg_root_file, ec);
+                        }
+                        else
+                        {
+                            file_lock_handle = fs.try_take_exclusive_file_lock(vcpkg_root_file, ec);
+                        }
+
+                        if (ec)
+                        {
+                            bool is_already_locked = ec == std::errc::device_or_resource_busy;
+                            bool allow_errors = args.ignore_lock_failures.value_or(false);
+                            if (is_already_locked || !allow_errors)
+                            {
+                                msg::println_error(msgFailedToTakeFileSystemLock, msg::path = vcpkg_root_file);
+                                msg::write_unlocalized_text_to_stdout(Color::error,
+                                                                      fmt::format("    {}\n", ec.message()));
+                                Checks::exit_fail(VCPKG_LINE_INFO);
+                            }
                         }
                     }
 
@@ -1323,6 +1326,8 @@ namespace vcpkg
         }
         return nullopt;
     }
+
+    bool VcpkgPaths::manifest_mode_enabled() const { return !m_pimpl->m_manifest_dir.empty(); }
 
     const ConfigurationAndSource& VcpkgPaths::get_configuration() const { return m_pimpl->m_config; }
 
