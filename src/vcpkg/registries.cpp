@@ -1147,15 +1147,79 @@ namespace vcpkg
 
     const RegistryImplementation* RegistrySet::registry_for_port(StringView name) const
     {
-        for (const auto& registry : registries())
+        auto candidates = registries_for_port(name);
+        auto registry = candidates.front();
+        return registry.implementation;
+    }
+
+    int compare_package_prefix(StringView name, StringView prefix)
+    {
+        if (prefix.empty()) return -1;
+
+        size_t idx = 0;
+        for (; idx < prefix.size(); ++idx)
         {
-            const auto& packages = registry.packages();
-            if (std::find(packages.begin(), packages.end(), name) != packages.end())
+            const auto c = prefix[idx];
+
+            if (c == '*')
             {
-                return &registry.implementation();
+                // wildcards (*) should be last in prefix
+                for (auto jdx = idx + 1; jdx < prefix.size(); ++jdx)
+                {
+                    if (prefix[jdx] != '*') return -1;
+                }
+                return static_cast<int>(idx);
+            }
+
+            if (idx >= name.size()) return -1;
+            if (c != name[idx]) return -1;
+        }
+
+        // exact match, increase priority by 1
+        if (idx == name.size()) return name.size() + 1;
+        return static_cast<int>(idx);
+    }
+
+    std::vector<RegistryCandidate> RegistrySet::registries_for_port(StringView name) const
+    {
+        size_t registry_index = 0;
+        std::vector<RegistryCandidate> candidates;
+        for (auto it = registries().begin(); it != registries().end(); ++it, ++registry_index)
+        {
+            int priority = -1;
+            for (auto&& pattern : it->packages())
+            {
+                priority = std::max(priority, compare_package_prefix(name, pattern));
+            }
+
+            if (priority >= 0)
+            {
+                candidates.emplace_back(RegistryCandidate{
+                    &it->implementation(),
+                    priority,
+                    registry_index,
+                });
             }
         }
-        return default_registry();
+
+        if (candidates.empty())
+        {
+            candidates.emplace_back(RegistryCandidate{
+                default_registry(),
+                0,
+                0,
+            });
+        }
+        else
+        {
+            Util::sort(candidates, [](auto&& lhs, auto&& rhs) {
+                if (lhs.priority > rhs.priority) return true;
+                if (lhs.priority == rhs.priority) return lhs.index < rhs.index;
+                return false;
+            });
+        }
+
+        return candidates;
     }
 
     ExpectedL<Version> RegistrySet::baseline_for_port(StringView port_name) const

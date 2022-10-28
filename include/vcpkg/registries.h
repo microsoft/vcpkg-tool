@@ -103,6 +103,13 @@ namespace vcpkg
         std::unique_ptr<RegistryImplementation> implementation_;
     };
 
+    struct RegistryCandidate
+    {
+        const RegistryImplementation* implementation;
+        int priority;
+        size_t index;
+    };
+
     // this type implements the registry fall back logic from the registries RFC:
     // A port name maps to one of the non-default registries if that registry declares
     // that it is the registry for that port name, else it maps to the default registry
@@ -119,6 +126,14 @@ namespace vcpkg
         // finds the correct registry for the port name
         // Returns the null pointer if there is no registry set up for that name
         const RegistryImplementation* registry_for_port(StringView port_name) const;
+
+        // Returns a list of registries that can resolve a given port name
+        // the returned list is sorted by priority.
+        //
+        // It is guaranteed to at least contain one element, the default registry.
+        // NOTE: the default registry implementation can be null.
+        std::vector<RegistryCandidate> registries_for_port(StringView name) const;
+
         ExpectedL<Version> baseline_for_port(StringView port_name) const;
 
         View<Registry> registries() const { return registries_; }
@@ -196,4 +211,7 @@ namespace vcpkg
     private:
         VersionDbEntryDeserializer underlying;
     };
+
+    // exposed for testing
+    int compare_package_prefix(StringView name, StringView pattern);
 }

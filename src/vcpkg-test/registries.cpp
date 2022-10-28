@@ -83,6 +83,103 @@ TEST_CASE ("registry_set_selects_registry", "[registries]")
     }
 }
 
+TEST_CASE ("prefix_matching", "[registries]")
+{
+    CHECK(compare_package_prefix("boost", "*") == 0);
+    CHECK(compare_package_prefix("boost", "b*") == 1);
+    CHECK(compare_package_prefix("boost", "b****") == 1);
+    CHECK(compare_package_prefix("boost", "boost*") == 5);
+    CHECK(compare_package_prefix("boost", "boost") == 6);
+
+    CHECK(compare_package_prefix("boost", "") == -1);
+    CHECK(compare_package_prefix("boost", "c*") == -1);
+    CHECK(compare_package_prefix("boost", "*c") == -1);
+    CHECK(compare_package_prefix("boost", "c**") == -1);
+    CHECK(compare_package_prefix("boost", "c*a") == -1);
+}
+
+TEST_CASE ("registry_set_selects_registry_with_pattern", "[registries]")
+{
+    std::vector<Registry> rs;
+    rs.push_back(make_registry(1, {"b*"}));
+    rs.push_back(make_registry(2, {"boost*"}));
+    rs.push_back(make_registry(3, {"boost", "boost-tuple"}));
+    rs.push_back(make_registry(4, {"boost-*"}));
+    rs.push_back(make_registry(5, {"boo*"}));
+    rs.push_back(make_registry(6, {"boost", "boost-tuple"}));
+    RegistrySet set(std::make_unique<TestRegistryImplementation>(0), std::move(rs));
+
+    auto reg = set.registry_for_port("boost");
+    REQUIRE(reg);
+    CHECK(get_tri_num(*reg) == 3);
+
+    reg = set.registry_for_port("boost-algorithm");
+    REQUIRE(reg);
+    CHECK(get_tri_num(*reg) == 4);
+
+    reg = set.registry_for_port("boost-tuple");
+    REQUIRE(reg);
+    CHECK(get_tri_num(*reg) == 3);
+
+    reg = set.registry_for_port("boomerang");
+    REQUIRE(reg);
+    CHECK(get_tri_num(*reg) == 5);
+
+    reg = set.registry_for_port("bang");
+    REQUIRE(reg);
+    CHECK(get_tri_num(*reg) == 1);
+
+    reg = set.registry_for_port("cpprestsdk");
+    REQUIRE(reg);
+    CHECK(get_tri_num(*reg) == 0);
+}
+
+TEST_CASE ("registry_set_registries_for_port", "[registries]")
+{
+    {
+        std::vector<Registry> rs;
+        rs.push_back(make_registry(1, {"bo*"}));
+        rs.push_back(make_registry(2, {"b*"}));
+        rs.push_back(make_registry(3, {"boost*"}));
+        rs.push_back(make_registry(4, {"boost"}));
+        RegistrySet set(nullptr, std::move(rs));
+
+        auto candidates = set.registries_for_port("boost");
+        REQUIRE(candidates.size() == 4);
+        size_t idx = 0;
+
+        auto reg = candidates[idx++].implementation;
+        REQUIRE(reg);
+        CHECK(get_tri_num(*reg) == 4);
+
+        reg = candidates[idx++].implementation;
+        REQUIRE(reg);
+        CHECK(get_tri_num(*reg) == 3);
+
+        reg = candidates[idx++].implementation;
+        REQUIRE(reg);
+        CHECK(get_tri_num(*reg) == 1);
+
+        reg = candidates[idx++].implementation;
+        REQUIRE(reg);
+        CHECK(get_tri_num(*reg) == 2);
+    }
+
+    {
+        std::vector<Registry> rs;
+        rs.push_back(make_registry(1, {"bo*"}));
+        rs.push_back(make_registry(2, {"b*"}));
+        rs.push_back(make_registry(3, {"boost*"}));
+        rs.push_back(make_registry(4, {"boost"}));
+        RegistrySet set(nullptr, std::move(rs));
+
+        auto candidates = set.registries_for_port("cpprestsdk");
+        REQUIRE(candidates.size() == 1);
+        auto reg = candidates.front().implementation;
+        CHECK_FALSE(reg);
+    }
+}
+
 static vcpkg::Optional<Configuration> visit_default_registry(Json::Reader& r, Json::Value&& reg)
 {
     Json::Object config;
