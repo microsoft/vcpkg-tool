@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/json.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/pragmas.h>
 #include <vcpkg/base/strings.h>
@@ -35,120 +36,164 @@
 
 using namespace vcpkg;
 
-static void invalid_command(const std::string& cmd)
+namespace
 {
-    msg::println(Color::error, msgVcpkgInvalidCommand, msg::command_name = cmd);
-    print_usage();
-    Checks::exit_fail(VCPKG_LINE_INFO);
-}
-
-static bool detect_container(vcpkg::Filesystem& fs)
-{
-    (void)fs;
-#if defined(_WIN32)
-    if (test_registry_key(HKEY_LOCAL_MACHINE, R"(SYSTEM\CurrentControlSet\Services\cexecsvc)"))
+    void invalid_command(const std::string& cmd)
     {
-        Debug::println("Detected Container Execution Service");
-        return true;
-    }
-
-    auto username = get_username();
-    if (username == L"ContainerUser" || username == L"ContainerAdministrator")
-    {
-        Debug::println("Detected container username");
-        return true;
-    }
-#elif defined(__linux__)
-    if (fs.exists("/.dockerenv", IgnoreErrors{}))
-    {
-        Debug::println("Detected /.dockerenv file");
-        return true;
-    }
-
-    // check /proc/1/cgroup, if we're running in a container then the control group for each hierarchy will be:
-    //   /docker/<containerid>, or
-    //   /lxc/<containerid>
-    //
-    // Example of /proc/1/cgroup contents:
-    // 2:memory:/docker/66a5f8000f3f2e2a19c3f7d60d870064d26996bdfe77e40df7e3fc955b811d14
-    // 1:name=systemd:/docker/66a5f8000f3f2e2a19c3f7d60d870064d26996bdfe77e40df7e3fc955b811d14
-    // 0::/docker/66a5f8000f3f2e2a19c3f7d60d870064d26996bdfe77e40df7e3fc955b811d14
-    auto cgroup_contents = fs.read_contents("/proc/1/cgroup", IgnoreErrors{});
-    if (detect_docker_in_cgroup_file(cgroup_contents, "/proc/1/cgroup"))
-    {
-        Debug::println("Detected docker in cgroup");
-        return true;
-    }
-#endif
-    return false;
-}
-
-static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
-{
-    // track version on each invocation
-    LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::VcpkgVersion,
-                                                            Commands::Version::version.to_string());
-
-    if (args.command.empty())
-    {
+        msg::println(Color::error, msgVcpkgInvalidCommand, msg::command_name = cmd);
         print_usage();
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
-    static const auto find_command = [&](auto&& commands) {
-        auto it = Util::find_if(commands, [&](auto&& commandc) {
-            return Strings::case_insensitive_ascii_equals(commandc.name, args.command);
-        });
-        using std::end;
-        if (it != end(commands))
+    bool detect_container(vcpkg::Filesystem& fs)
+    {
+        (void)fs;
+#if defined(_WIN32)
+        if (test_registry_key(HKEY_LOCAL_MACHINE, R"(SYSTEM\CurrentControlSet\Services\cexecsvc)"))
         {
-            return &*it;
+            Debug::println("Detected Container Execution Service");
+            return true;
         }
-        else
+
+        auto username = get_username();
+        if (username == L"ContainerUser" || username == L"ContainerAdministrator")
         {
-            return static_cast<decltype(&*it)>(nullptr);
+            Debug::println("Detected container username");
+            return true;
         }
-    };
-
-    {
-        auto metrics = LockGuardPtr<Metrics>(g_metrics);
-        if (metrics->metrics_enabled())
+#elif defined(__linux__)
+        if (fs.exists("/.dockerenv", IgnoreErrors{}))
         {
-            metrics->track_bool_property(BoolMetric::DetectedContainer, detect_container(fs));
+            Debug::println("Detected /.dockerenv file");
+            return true;
+        }
+
+        // check /proc/1/cgroup, if we're running in a container then the control group for each hierarchy will be:
+        //   /docker/<containerid>, or
+        //   /lxc/<containerid>
+        //
+        // Example of /proc/1/cgroup contents:
+        // 2:memory:/docker/66a5f8000f3f2e2a19c3f7d60d870064d26996bdfe77e40df7e3fc955b811d14
+        // 1:name=systemd:/docker/66a5f8000f3f2e2a19c3f7d60d870064d26996bdfe77e40df7e3fc955b811d14
+        // 0::/docker/66a5f8000f3f2e2a19c3f7d60d870064d26996bdfe77e40df7e3fc955b811d14
+        auto cgroup_contents = fs.read_contents("/proc/1/cgroup", IgnoreErrors{});
+        if (detect_docker_in_cgroup_file(cgroup_contents, "/proc/1/cgroup"))
+        {
+            Debug::println("Detected docker in cgroup");
+            return true;
+        }
+#endif
+        return false;
+    }
+
+    void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
+    {
+        // track version on each invocation
+        get_global_metrics_collector().track_string(StringMetric::VcpkgVersion, Commands::Version::version.to_string());
+
+        if (args.command.empty())
+        {
+            print_usage();
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        static const auto find_command = [&](auto&& commands) {
+            auto it = Util::find_if(commands, [&](auto&& commandc) {
+                return Strings::case_insensitive_ascii_equals(commandc.name, args.command);
+            });
+            using std::end;
+            if (it != end(commands))
+            {
+                return &*it;
+            }
+            else
+            {
+                return static_cast<decltype(&*it)>(nullptr);
+            }
+        };
+
+        get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
+
+        if (const auto command_function = find_command(Commands::get_available_basic_commands()))
+        {
+            get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->name);
+            return command_function->function->perform_and_exit(args, fs);
+        }
+
+        const VcpkgPaths paths(fs, args);
+        get_global_metrics_collector().track_bool(BoolMetric::FeatureFlagManifests, paths.manifest_mode_enabled());
+        get_global_metrics_collector().track_bool(BoolMetric::OptionOverlayPorts, !paths.overlay_ports.empty());
+
+        fs.current_path(paths.root, VCPKG_LINE_INFO);
+
+        if (const auto command_function = find_command(Commands::get_available_paths_commands()))
+        {
+            get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->name);
+            return command_function->function->perform_and_exit(args, paths);
+        }
+
+        Triplet default_triplet = vcpkg::default_triplet(args);
+        check_triplet(default_triplet, paths);
+        Triplet host_triplet = vcpkg::default_host_triplet(args);
+        check_triplet(host_triplet, paths);
+
+        if (const auto command_function = find_command(Commands::get_available_triplet_commands()))
+        {
+            get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->name);
+            return command_function->function->perform_and_exit(args, paths, default_triplet, host_triplet);
+        }
+
+        return invalid_command(args.command);
+    }
+
+    const ElapsedTimer g_total_time;
+}
+
+namespace vcpkg::Checks
+{
+    // Implements link seam from basic_checks.h
+    void on_final_cleanup_and_exit()
+    {
+        const auto elapsed_us_inner = g_total_time.microseconds();
+        bool debugging = Debug::g_debugging;
+
+        get_global_metrics_collector().track_elapsed_us(elapsed_us_inner);
+        Debug::g_debugging = false;
+        flush_global_metrics(get_real_filesystem());
+
+#if defined(_WIN32)
+        if (g_init_console_initialized)
+        {
+            SetConsoleCP(g_init_console_cp);
+            SetConsoleOutputCP(g_init_console_output_cp);
+        }
+#endif
+
+        if (debugging)
+        {
+            msg::write_unlocalized_text_to_stdout(Color::none,
+                                                  Strings::concat("[DEBUG] Time in subprocesses: ",
+                                                                  get_subproccess_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Time in parsing JSON: ",
+                                                                  Json::get_json_parsing_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Time in JSON reader: ",
+                                                                  Json::Reader::get_reader_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Time in filesystem: ",
+                                                                  get_filesystem_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Time in loading ports: ",
+                                                                  Paragraphs::get_load_ports_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Exiting after ",
+                                                                  g_total_time.to_string(),
+                                                                  " (",
+                                                                  static_cast<int64_t>(elapsed_us_inner),
+                                                                  " us)\n"));
         }
     }
-
-    if (const auto command_function = find_command(Commands::get_available_basic_commands()))
-    {
-        LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::CommandName, command_function->name);
-        return command_function->function->perform_and_exit(args, fs);
-    }
-
-    const VcpkgPaths paths(fs, args);
-    paths.track_feature_flag_metrics();
-
-    LockGuardPtr<Metrics>(g_metrics)->track_bool_property(BoolMetric::OptionOverlayPorts, !paths.overlay_ports.empty());
-
-    fs.current_path(paths.root, VCPKG_LINE_INFO);
-
-    if (const auto command_function = find_command(Commands::get_available_paths_commands()))
-    {
-        LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::CommandName, command_function->name);
-        return command_function->function->perform_and_exit(args, paths);
-    }
-
-    Triplet default_triplet = vcpkg::default_triplet(args);
-    check_triplet(default_triplet, paths);
-    Triplet host_triplet = vcpkg::default_host_triplet(args);
-    check_triplet(host_triplet, paths);
-
-    if (const auto command_function = find_command(Commands::get_available_triplet_commands()))
-    {
-        LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::CommandName, command_function->name);
-        return command_function->function->perform_and_exit(args, paths, default_triplet, host_triplet);
-    }
-
-    return invalid_command(args.command);
 }
 
 #if defined(_WIN32)
@@ -172,33 +217,19 @@ int main(const int argc, const char* const* const argv)
 {
     if (argc == 0) std::abort();
 
+    ElapsedTimer total_timer;
     auto& fs = get_real_filesystem();
     {
-        auto locale = get_environment_variable("VCPKG_LOCALE");
-        auto locale_base = get_environment_variable("VCPKG_LOCALE_BASE");
-
-        if (locale.has_value() && locale_base.has_value())
-        {
-            msg::threadunsafe_initialize_context(fs, *locale.get(), *locale_base.get());
-        }
-        else if (locale.has_value() || locale_base.has_value())
-        {
-            msg::write_unlocalized_text_to_stdout(
-                Color::error, "If either VCPKG_LOCALE or VCPKG_LOCALE_BASE is initialized, then both must be.\n");
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-        else
-        {
-            msg::threadunsafe_initialize_context();
-        }
+        auto vslang = get_environment_variable("VSLANG");
+        auto lcid_opt = Strings::strto<int>(vslang.value_or("1033"));
+        auto map = msg::get_message_map_from_lcid(lcid_opt.value_or(1033));
+        msg::load_from_message_map(*map.get());
     }
 
-    GlobalState::timer = ElapsedTimer::create_started();
-
 #if defined(_WIN32)
-    GlobalState::g_init_console_cp = GetConsoleCP();
-    GlobalState::g_init_console_output_cp = GetConsoleOutputCP();
-    GlobalState::g_init_console_initialized = true;
+    g_init_console_cp = GetConsoleCP();
+    g_init_console_output_cp = GetConsoleOutputCP();
+    g_init_console_initialized = true;
 
     SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
@@ -231,50 +262,6 @@ int main(const int argc, const char* const* const argv)
     //
     set_environment_variable("CLICOLOR_FORCE", {});
     set_environment_variable("CLICOLOR", "0");
-
-    Checks::register_global_shutdown_handler([]() {
-        const auto elapsed_us_inner = GlobalState::timer.microseconds();
-
-        bool debugging = Debug::g_debugging;
-
-        LockGuardPtr<Metrics> metrics(g_metrics);
-        metrics->track_metric("elapsed_us", elapsed_us_inner);
-        Debug::g_debugging = false;
-        metrics->flush(get_real_filesystem());
-
-#if defined(_WIN32)
-        if (GlobalState::g_init_console_initialized)
-        {
-            SetConsoleCP(GlobalState::g_init_console_cp);
-            SetConsoleOutputCP(GlobalState::g_init_console_output_cp);
-        }
-#endif
-
-        if (debugging)
-        {
-            msg::write_unlocalized_text_to_stdout(Color::none,
-                                                  Strings::concat("[DEBUG] Time in subprocesses: ",
-                                                                  get_subproccess_stats(),
-                                                                  " us\n",
-                                                                  "[DEBUG] Time in parsing JSON: ",
-                                                                  Json::get_json_parsing_stats(),
-                                                                  " us\n",
-                                                                  "[DEBUG] Time in JSON reader: ",
-                                                                  Json::Reader::get_reader_stats(),
-                                                                  " us\n",
-                                                                  "[DEBUG] Time in filesystem: ",
-                                                                  get_filesystem_stats(),
-                                                                  " us\n",
-                                                                  "[DEBUG] Time in loading ports: ",
-                                                                  Paragraphs::get_load_ports_stats(),
-                                                                  " us\n",
-                                                                  "[DEBUG] Exiting after ",
-                                                                  GlobalState::timer.to_string(),
-                                                                  " (",
-                                                                  static_cast<int64_t>(elapsed_us_inner),
-                                                                  " us)\n"));
-        }
-    });
 
     register_console_ctrl_handler();
 
@@ -322,21 +309,18 @@ int main(const int argc, const char* const* const argv)
 
     if (to_enable_metrics)
     {
-        Metrics::enable();
+        g_metrics_enabled = true;
     }
 
+    if (const auto p = args.print_metrics.get())
     {
-        LockGuardPtr<Metrics> metrics(g_metrics);
-        if (const auto p = args.print_metrics.get())
-        {
-            metrics->set_print_metrics(*p);
-        }
+        g_should_print_metrics = *p;
+    }
 
-        if (const auto p = args.send_metrics.get())
-        {
-            metrics->set_send_metrics(*p);
-        }
-    } // unlock g_metrics
+    if (const auto p = args.send_metrics.get())
+    {
+        g_should_send_metrics = *p;
+    }
 
     if (args.send_metrics.value_or(false) && !to_enable_metrics)
     {
@@ -367,8 +351,6 @@ int main(const int argc, const char* const* const argv)
     {
         exc_msg = "unknown error(...)";
     }
-
-    LockGuardPtr<Metrics>(g_metrics)->track_string_property(StringMetric::Error, exc_msg);
 
     fflush(stdout);
     msg::println(msgVcpkgHasCrashed);

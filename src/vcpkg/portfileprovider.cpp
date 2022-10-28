@@ -176,7 +176,7 @@ namespace vcpkg
                             auto scf_vspec = scf->get()->to_version_spec();
                             if (scf_vspec == version_spec)
                             {
-                                return std::unique_ptr<SourceControlFileAndLocation>(new SourceControlFileAndLocation{
+                                return std::make_unique<SourceControlFileAndLocation>(SourceControlFileAndLocation{
                                     std::move(*scf),
                                     std::move(path->path),
                                     std::move(path->location),
@@ -204,7 +204,7 @@ namespace vcpkg
                     }
                     else
                     {
-                        LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::VersioningErrorVersion);
+                        get_global_metrics_collector().track_define(DefineMetric::VersioningErrorVersion);
                         return maybe_path.error();
                     }
                 }

@@ -58,13 +58,11 @@ namespace vcpkg::Update
     {
         if (paths.manifest_mode_enabled())
         {
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                       "Error: the update command does not currently support manifest mode. Instead, "
-                                       "modify your vcpkg.json and run install.");
+            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgUnsupportedUpdateCMD);
         }
 
         (void)args.parse_arguments(COMMAND_STRUCTURE);
-        print2("Using local portfile versions. To update the local portfiles, use `git pull`.\n");
+        msg::println(msgLocalPortfileVersion);
 
         const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
@@ -75,14 +73,15 @@ namespace vcpkg::Update
 
         if (outdated_packages.empty())
         {
-            print2("No packages need updating.\n");
+            msg::println(msgPackagesUpToDate);
         }
         else
         {
-            print2("The following packages differ from their port versions:\n");
+            msg::println(msgPortVersionConflict);
             for (auto&& package : outdated_packages)
             {
-                vcpkg::printf("    %-32s %s\n", package.spec, package.version_diff.to_string());
+                msg::write_unlocalized_text_to_stdout(
+                    Color::none, fmt::format("\t{:<32} {}\n", package.spec, package.version_diff.to_string()));
             }
 
 #if defined(_WIN32)
@@ -90,15 +89,8 @@ namespace vcpkg::Update
 #else
             auto vcpkg_cmd = "./vcpkg";
 #endif
-            vcpkg::printf("\n"
-                          "To update these packages and all dependencies, run\n"
-                          "    %s upgrade\n"
-                          "\n"
-                          "To only remove outdated packages, run\n"
-                          "    %s remove --outdated\n"
-                          "\n",
-                          vcpkg_cmd,
-                          vcpkg_cmd);
+            msg::println(msgToUpdatePackages, msg::command_name = vcpkg_cmd);
+            msg::println(msgToRemovePackages, msg::command_name = vcpkg_cmd);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

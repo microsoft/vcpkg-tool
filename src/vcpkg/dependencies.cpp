@@ -522,7 +522,7 @@ namespace vcpkg
     }
     const PreBuildInfo& InstallPlanAction::pre_build_info(LineInfo li) const
     {
-        return *abi_info.value_or_exit(li).pre_build_info.get();
+        return *abi_info.value_or_exit(li).pre_build_info;
     }
 
     bool InstallPlanAction::compare_by_name(const InstallPlanAction* left, const InstallPlanAction* right)

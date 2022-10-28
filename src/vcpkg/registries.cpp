@@ -85,8 +85,7 @@ namespace
                     e.commit_id(), registry_versions_dir_name.to_string());
                 if (!maybe_tree)
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_define_property(
-                        DefineMetric::RegistriesErrorNoVersionsAtCommit);
+                    get_global_metrics_collector().track_define(DefineMetric::RegistriesErrorNoVersionsAtCommit);
                     Checks::msg_exit_with_error(VCPKG_LINE_INFO,
                                                 msg::format(msgCouldNotFindGitTreeAtCommit,
                                                             msg::package_name = m_repo,
@@ -514,8 +513,10 @@ namespace
             auto maybe_path = git_checkout_baseline(m_paths, m_baseline_identifier);
             if (!maybe_path)
             {
-                Checks::exit_with_message(
-                    VCPKG_LINE_INFO, "%s\n\n%s", maybe_path.error(), m_paths.get_current_git_sha_baseline_message());
+                msg::write_unlocalized_text_to_stdout(
+                    Color::none,
+                    fmt::format("{}\n\n{}", maybe_path.error(), m_paths.get_current_git_sha_baseline_message().data()));
+                Checks::exit_fail(VCPKG_LINE_INFO);
             }
             auto b = load_baseline_versions(m_paths.get_filesystem(), *maybe_path.get()).value_or_exit(VCPKG_LINE_INFO);
             if (auto p = b.get())
@@ -648,8 +649,7 @@ namespace
                 auto maybe_err = m_paths.git_fetch(m_repo, m_baseline_identifier);
                 if (!maybe_err)
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_define_property(
-                        DefineMetric::RegistriesErrorCouldNotFindBaseline);
+                    get_global_metrics_collector().track_define(DefineMetric::RegistriesErrorCouldNotFindBaseline);
 
                     msg::println_error(msgCouldNotFindBaselineForRepo,
                                        msg::commit_sha = m_baseline_identifier,
@@ -669,8 +669,7 @@ namespace
 
             if (!maybe_contents)
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_define_property(
-                    DefineMetric::RegistriesErrorCouldNotFindBaseline);
+                get_global_metrics_collector().track_define(DefineMetric::RegistriesErrorCouldNotFindBaseline);
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO,
                                               msg::format(msgCouldNotFindBaselineInCommit,
                                                           msg::commit_sha = m_baseline_identifier,
@@ -689,8 +688,7 @@ namespace
                 }
                 else
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_define_property(
-                        DefineMetric::RegistriesErrorCouldNotFindBaseline);
+                    get_global_metrics_collector().track_define(DefineMetric::RegistriesErrorCouldNotFindBaseline);
                     Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
                                                    msgBaselineMissingDefault,
                                                    msg::commit_sha = m_baseline_identifier,

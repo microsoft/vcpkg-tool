@@ -35,7 +35,7 @@ namespace vcpkg::Hash
     }
 
     template<class UIntTy>
-    auto top_bits(UIntTy x) -> std::enable_if_t<std::is_unsigned<UIntTy>::value, uchar>
+    auto top_bits(UIntTy x) -> std::enable_if_t<std::is_unsigned_v<UIntTy>, uchar>
     {
         return static_cast<uchar>(x >> ((sizeof(x) - 1) * 8));
     }
