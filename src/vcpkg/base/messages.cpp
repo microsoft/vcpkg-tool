@@ -187,7 +187,6 @@ namespace vcpkg::msg
     void threadunsafe_initialize_context()
     {
         Messages& m = messages();
-        m.localized_strings.resize(m.names.size());
         auto names_sorted = m.names;
         std::sort(names_sorted.begin(), names_sorted.end());
         std::vector<StringLiteral> duplicate_names;
@@ -208,6 +207,7 @@ namespace vcpkg::msg
     void load_from_message_map(const Json::Object& message_map)
     {
         Messages& m = messages();
+        m.localized_strings.resize(m.names.size());
 
         std::vector<std::string> names_without_localization;
 
