@@ -303,17 +303,18 @@ namespace vcpkg::msg
     StringView detail::get_format_string(::size_t index)
     {
         Messages& m = messages();
-        Checks::check_exit(VCPKG_LINE_INFO, m.localized_strings.size() == m.default_strings.size());
-        Checks::check_exit(VCPKG_LINE_INFO, index < m.default_strings.size());
-        const auto& localized = m.localized_strings[index];
-        if (localized.empty())
+        if (m.localized_strings.empty())
         {
             return m.default_strings[index];
         }
-        else
+
+        if (m.localized_strings.size() != m.default_strings.size() || index >= m.default_strings.size())
         {
-            return localized;
+            // abort is used rather than check_exit to avoid infinite recursion trying to get a format string to print
+            std::abort();
         }
+
+        return m.localized_strings[index];
     }
     StringView detail::get_message_name(::size_t index)
     {
