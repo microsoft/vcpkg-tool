@@ -155,7 +155,7 @@ namespace vcpkg
             return ::_fseeki64(m_fs, static_cast<long long>(offset), origin);
 #else  // ^^^ _WIN32 / !_WIN32 vvv
             Checks::check_exit(VCPKG_LINE_INFO, offset < LLONG_MAX);
-            return ::fseek(m_fs, offset, origin);
+            return ::fseek(m_fs, static_cast<long>(offset), origin);
 #endif // ^^^ !_WIN32
         }
         int seek(long long offset, int origin) const noexcept

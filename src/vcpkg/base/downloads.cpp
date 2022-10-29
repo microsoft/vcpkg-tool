@@ -361,7 +361,7 @@ namespace vcpkg
             auto res = cmd_execute_and_stream_lines(cmd, [out](StringView line) {
                            if (Strings::starts_with(line, guid_marker))
                            {
-                               out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
+                               out->push_back(static_cast<int>(std::strtol(line.data() + guid_marker.size(), nullptr, 10)));
                            }
                        }).value_or_exit(VCPKG_LINE_INFO);
 

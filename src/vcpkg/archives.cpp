@@ -61,7 +61,7 @@ namespace
     {
         // MSI installation sometimes requires a global lock and fails if another installation is concurrent. Loop
         // to enable retries.
-        for (int i = 0;; ++i)
+        for (unsigned int i = 0;; ++i)
         {
             // msiexec is a WIN32/GUI application, not a console application and so needs special attention to wait
             // until it finishes (wrap in cmd /c).
@@ -333,7 +333,7 @@ namespace vcpkg
         auto results =
             cmd_execute_and_capture_output_parallel(jobs, default_working_directory, get_clean_environment());
 #ifdef __APPLE__
-        int i = 0;
+        size_t i = 0;
         for (auto& maybe_result : results)
         {
             if (const auto result = maybe_result.get())

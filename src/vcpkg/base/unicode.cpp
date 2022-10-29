@@ -31,7 +31,7 @@ namespace vcpkg::Unicode
         }
     }
 
-    int utf8_code_unit_count(char code_unit) noexcept { return utf8_code_unit_count(utf8_code_unit_kind(code_unit)); }
+    int utf8_code_unit_count(char code_unit) noexcept { return utf8_code_unit_count(utf8_code_unit_kind(static_cast<unsigned char>(code_unit))); }
 
     static constexpr int utf8_encode_code_unit_count(char32_t code_point) noexcept
     {
@@ -103,7 +103,7 @@ namespace vcpkg::Unicode
         }
 
         auto code_unit = *first;
-        auto kind = utf8_code_unit_kind(code_unit);
+        auto kind = utf8_code_unit_kind(static_cast<unsigned char>(code_unit));
         const int count = utf8_code_unit_count(kind);
 
         const char* it = first + 1;
@@ -137,7 +137,7 @@ namespace vcpkg::Unicode
         constexpr unsigned char continue_mask = 0b0011'1111;
         for (int byte = 1; byte < count; ++byte)
         {
-            code_unit = static_cast<unsigned char>(*it++);
+            code_unit = *it++;
 
             kind = utf8_code_unit_kind(code_unit);
             if (kind == Utf8CodeUnitKind::Invalid)
