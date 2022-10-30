@@ -486,7 +486,7 @@ namespace vcpkg
         });
     }
 
-    const EnvCache::TripletMapEntry& EnvCache::get_triplet_cache(const Filesystem& fs, const Path& p)
+    const EnvCache::TripletMapEntry& EnvCache::get_triplet_cache(const Filesystem& fs, const Path& p) const
     {
         return m_triplet_cache.get_lazy(p, [&]() -> TripletMapEntry {
             return TripletMapEntry{Hash::get_file_hash(fs, p, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO)};
@@ -1229,7 +1229,7 @@ ${CMAKE_CXX_COMPILER}")
         // If there is an unusually large number of files in the port then
         // something suspicious is going on.  Rather than hash all of them
         // just mark the port as no-hash
-        const int max_port_file_count = 100;
+        constexpr int max_port_file_count = 100;
 
         std::string portfile_cmake_contents;
         std::vector<Path> files;

@@ -10,7 +10,7 @@ namespace vcpkg
     static void advance_rowcol(char32_t ch, int& row, int& column)
     {
         if (ch == '\t')
-            column = (column + 7) / 8 * 8 + 1; // round to next 8-width tab stop
+            column = ((column + 7) & ~7) + 1; // round to next 8-width tab stop
         else if (ch == '\n')
         {
             row++;
@@ -72,7 +72,7 @@ namespace vcpkg
         }
         caret_string.push_back('^');
 
-        res.append_indent().append_raw(std::move(caret_string));
+        res.append_indent().append_raw(caret_string);
 
         return res;
     }

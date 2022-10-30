@@ -305,7 +305,7 @@
   "HelpVersionSemverScheme": "의미론적 버전 2.0(2.1.0-rc2)",
   "HelpVersionStringScheme": "비교할 수 없는 정확한 버전(Vista)",
   "HelpVersioning": "버전 관리를 사용하면 매니페스트 파일 내에서 프로젝트에서 사용하는 종속성의 정확한 수정 내용을 결정적으로 제어할 수 있습니다.",
-  "IgnoringVcpkgRootEnvironment": "VCPKG_ROOT 환경 변수를 무시합니다. --vcpkg-root \"{path}\"를 사용하여 환경 값을 사용하거나 VCPKG_ROOT 환경 변수를 설정 해제하여 이 메시지를 표시하지 마세요. 감지된 vcpkg 루트 사용: \"{actual}\".",
+  "IgnoringVcpkgRootEnvironment": "The vcpkg {value} is using detected vcpkg root {actual} and ignoring mismatched VCPKG_ROOT environment value {path}. To suppress this message, unset the environment variable or use the --vcpkg-root command line switch.",
   "IllegalFeatures": "이 컨텍스트에서는 기능 목록이 허용되지 않습니다.",
   "IllegalPlatformSpec": "이 컨텍스트에서는 플랫폼 한정자가 허용되지 않습니다.",
   "ImproperShaLength": "SHA512는 128진수 문자여야 합니다. {value}",

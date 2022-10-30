@@ -2,7 +2,7 @@
 
 $CurrentTest = "VCPKG_ROOT"
 
-$targetMessage = 'Ignoring VCPKG_ROOT environment variable'
+$targetMessage = 'ignoring mismatched VCPKG_ROOT environment value'
 
 $defaultOutput = Run-Vcpkg -TestArgs ($commonArgs + @('install', 'vcpkg-empty-port'))
 Throw-IfFailed

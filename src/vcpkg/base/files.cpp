@@ -509,7 +509,7 @@ namespace
             }
         }
 
-        ec = std::move(err.ec);
+        ec = err.ec;
         failure_point = std::move(err.failure_point);
     }
 

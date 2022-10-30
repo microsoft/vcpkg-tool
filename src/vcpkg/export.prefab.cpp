@@ -35,13 +35,13 @@ namespace vcpkg::Export::Prefab
         return paths;
     }
 
-    std::string NdkVersion::to_string()
+    std::string NdkVersion::to_string() const
     {
         std::string ret;
         this->to_string(ret);
         return ret;
     }
-    void NdkVersion::to_string(std::string& out)
+    void NdkVersion::to_string(std::string& out) const
     {
         out.append("NdkVersion{major=")
             .append(std::to_string(major()))
@@ -90,7 +90,7 @@ namespace vcpkg::Export::Prefab
         return copy;
     }
 
-    std::string ABIMetadata::to_string()
+    std::string ABIMetadata::to_string() const
     {
         std::string TEMPLATE = R"({
     "abi":"@ABI@",
@@ -105,7 +105,7 @@ namespace vcpkg::Export::Prefab
         return json;
     }
 
-    std::string PlatformModuleMetadata::to_json()
+    std::string PlatformModuleMetadata::to_json() const
     {
         std::string TEMPLATE = R"({
     "export_libraries": @LIBRARIES@,
@@ -117,7 +117,7 @@ namespace vcpkg::Export::Prefab
         return json;
     }
 
-    std::string ModuleMetadata::to_json()
+    std::string ModuleMetadata::to_json() const
     {
         std::string TEMPLATE = R"({
     "export_libraries": [@LIBRARIES@],
@@ -131,7 +131,7 @@ namespace vcpkg::Export::Prefab
         return json;
     }
 
-    std::string PackageMetadata::to_json()
+    std::string PackageMetadata::to_json() const
     {
         std::string deps = jsonify(dependencies);
 
