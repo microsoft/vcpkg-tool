@@ -733,14 +733,60 @@ namespace vcpkg
 
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info)
     {
+        static constexpr auto vcpkg_json = R"--(
+{
+  "name": "detect-compiler",
+  "version": "0",
+  "description": "None"
+}
+)--";
+        static constexpr auto portfile_cmake = R"--(
+set(VCPKG_BUILD_TYPE release)
+vcpkg_configure_cmake(
+    SOURCE_PATH "${CMAKE_CURRENT_LIST_DIR}"
+    PREFER_NINJA
+    OPTIONS 
+        "-DPACKAGES_DIR=${CURRENT_PACKAGES_DIR}"
+)
+)--";
+        static constexpr auto cmakelists_txt = R"--(
+cmake_minimum_required(VERSION 3.20)
+project(detect_compiler NONE)
+
+if(CMAKE_GENERATOR STREQUAL "Ninja" AND CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(CMAKE_C_COMPILER_WORKS 1)
+    set(CMAKE_C_COMPILER_FORCED 1)
+    set(CMAKE_CXX_COMPILER_WORKS 1)
+    set(CMAKE_CXX_COMPILER_FORCED 1)
+endif()
+
+enable_language(C)
+enable_language(CXX)
+
+file(SHA1 "${CMAKE_CXX_COMPILER}" CXX_HASH)
+file(SHA1 "${CMAKE_C_COMPILER}" C_HASH)
+string(SHA1 COMPILER_HASH "${C_HASH}${CXX_HASH}")
+
+file(WRITE "${PACKAGES_DIR}/abi_info" "${COMPILER_HASH}
+${CMAKE_CXX_COMPILER_VERSION}
+${CMAKE_CXX_COMPILER_ID}
+${CMAKE_C_COMPILER}
+${CMAKE_CXX_COMPILER}")
+)--";
         auto triplet = abi_info.pre_build_info->triplet;
         msg::println(msgDetectCompilerHash, msg::triplet = triplet);
         auto buildpath = paths.buildtrees() / "detect_compiler";
+        auto portpath = paths.buildtrees() / "detect_compiler-port";
+        auto packagespath = paths.packages() / ("detect_compiler_" + triplet.canonical_name());
+        auto& fs = paths.get_filesystem();
+        fs.write_contents_and_dirs(portpath / "vcpkg.json", vcpkg_json, VCPKG_LINE_INFO);
+        fs.write_contents_and_dirs(portpath / "portfile.cmake", portfile_cmake, VCPKG_LINE_INFO);
+        fs.write_contents_and_dirs(portpath / "CMakeLists.txt", cmakelists_txt, VCPKG_LINE_INFO);
 
         std::vector<CMakeVariable> cmake_args{
-            {"CURRENT_PORT_DIR", paths.scripts / "detect_compiler"},
+            {"CURRENT_PORT_DIR", portpath},
             {"CURRENT_BUILDTREES_DIR", buildpath},
-            {"CURRENT_PACKAGES_DIR", paths.packages() / ("detect_compiler_" + triplet.canonical_name())},
+            {"CURRENT_PACKAGES_DIR", packagespath},
             // The detect_compiler "port" doesn't depend on the host triplet, so always natively compile
             {"_HOST_TRIPLET", triplet.canonical_name()},
         };
@@ -749,57 +795,26 @@ namespace vcpkg
         auto command = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, std::move(cmake_args));
 
         const auto& env = paths.get_action_env(abi_info);
-        auto& fs = paths.get_filesystem();
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
         auto stdoutlog = buildpath / ("stdout-" + triplet.canonical_name() + ".log");
+
+        auto result = flatten_out(cmd_execute_and_capture_output(command, default_working_directory, env),
+                                  command.command_line());
         CompilerInfo compiler_info;
-        std::string buf;
-
-        ExpectedL<int> rc = LocalizedString();
+        if (result.has_value())
         {
-            const auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
-            rc = cmd_execute_and_stream_lines(
-                command,
-                [&](StringView s) {
-                    static const StringLiteral s_hash_marker = "#COMPILER_HASH#";
-                    if (Strings::starts_with(s, s_hash_marker))
-                    {
-                        compiler_info.hash = s.substr(s_hash_marker.size()).to_string();
-                    }
-                    static const StringLiteral s_version_marker = "#COMPILER_CXX_VERSION#";
-                    if (Strings::starts_with(s, s_version_marker))
-                    {
-                        compiler_info.version = s.substr(s_version_marker.size()).to_string();
-                    }
-                    static const StringLiteral s_id_marker = "#COMPILER_CXX_ID#";
-                    if (Strings::starts_with(s, s_id_marker))
-                    {
-                        compiler_info.id = s.substr(s_id_marker.size()).to_string();
-                    }
-                    static const StringLiteral s_c_compiler_marker = "#COMPILER_C_PATH#";
-                    if (Strings::starts_with(s, s_c_compiler_marker))
-                    {
-                        compiler_info.c_compiler_path = s.substr(s_c_compiler_marker.size()).to_string();
-                    }
-                    static const StringLiteral s_cxx_compiler_marker = "#COMPILER_CXX_PATH#";
-                    if (Strings::starts_with(s, s_cxx_compiler_marker))
-                    {
-                        compiler_info.cxx_compiler_path = s.substr(s_cxx_compiler_marker.size()).to_string();
-                    }
-                    Debug::println(s);
-                    const auto old_buf_size = buf.size();
-                    Strings::append(buf, s, '\n');
-                    const auto write_size = buf.size() - old_buf_size;
-                    Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                           out_file.write(buf.c_str() + old_buf_size, 1, write_size) == write_size,
-                                           msgErrorWhileWriting,
-                                           msg::path = stdoutlog);
-                },
-                default_working_directory,
-                env);
-        } // close out_file
+            auto lines = fs.read_lines(packagespath / "abi_info", VCPKG_LINE_INFO);
+            if (lines.size() == 5)
+            {
+                compiler_info.hash = lines[0];
+                compiler_info.version = lines[1];
+                compiler_info.id = lines[2];
+                compiler_info.c_compiler_path = lines[3];
+                compiler_info.cxx_compiler_path = lines[4];
+            }
+        }
 
-        if (compiler_info.hash.empty() || !succeeded(rc))
+        if (compiler_info.hash.empty() || !result.has_value())
         {
             Debug::println("Compiler information tracking can be disabled by passing --",
                            VcpkgCmdArguments::FEATURE_FLAGS_ARG,
@@ -807,7 +822,16 @@ namespace vcpkg
                            VcpkgCmdArguments::COMPILER_TRACKING_FEATURE);
 
             msg::println_error(msgErrorDetectingCompilerInfo, msg::path = stdoutlog);
-            msg::write_unlocalized_text_to_stdout(Color::none, buf);
+            if (result.has_value())
+            {
+                msg::write_unlocalized_text_to_stdout(Color::none, *result.get());
+                msg::write_unlocalized_text_to_stdout(Color::none,
+                                                      fs.read_contents(packagespath / "abi_info", VCPKG_LINE_INFO));
+            }
+            else
+            {
+                msg::println(result.error());
+            }
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorUnableToDetectCompilerInfo);
         }
 
