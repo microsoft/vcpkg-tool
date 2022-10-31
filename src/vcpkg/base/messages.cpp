@@ -2,6 +2,10 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/setup_messages.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/util.h>
+
+#include <iterator>
+#include <vector>
 
 #include <cmrc/cmrc.hpp>
 
@@ -183,38 +187,27 @@ namespace vcpkg::msg
     void threadunsafe_initialize_context()
     {
         Messages& m = messages();
-
-        m.localized_strings.resize(m.names.size());
-
-        std::set<StringLiteral, std::less<>> names_set(m.names.begin(), m.names.end());
-        if (names_set.size() < m.names.size())
+        auto names_sorted = m.names;
+        std::sort(names_sorted.begin(), names_sorted.end());
+        std::vector<StringLiteral> duplicate_names;
+        Util::set_duplicates(names_sorted.begin(), names_sorted.end(), std::back_inserter(duplicate_names));
+        for (auto&& duplicate : duplicate_names)
         {
-            // This will not trigger on any correct code path, so it's fine to use a naive O(n^2)
-            for (size_t i = 0; i < m.names.size() - 1; ++i)
-            {
-                for (size_t j = i + 1; j < m.names.size(); ++j)
-                {
-                    if (msg::detail::get_message_name(i) == msg::detail::get_message_name(j))
-                    {
-                        write_unlocalized_text_to_stdout(
-                            Color::error,
-                            fmt::format("INTERNAL ERROR: localization message '{}' has been declared multiple times\n",
-                                        msg::detail::get_message_name(i)));
-                        write_unlocalized_text_to_stdout(Color::error, "INTERNAL ERROR: first message:\n");
-                        write_unlocalized_text_to_stdout(Color::none, m.default_strings[i]);
-                        write_unlocalized_text_to_stdout(Color::error, "\nINTERNAL ERROR: second message:\n");
-                        write_unlocalized_text_to_stdout(Color::none, m.default_strings[j]);
-                        write_unlocalized_text_to_stdout(Color::none, "\n");
-                        ::abort();
-                    }
-                }
-            }
-            Checks::unreachable(VCPKG_LINE_INFO);
+            write_unlocalized_text_to_stdout(
+                Color::error,
+                fmt::format("INTERNAL ERROR: localization message '{}' has been declared multiple times\n", duplicate));
+        }
+
+        if (!duplicate_names.empty())
+        {
+            ::abort();
         }
     }
+
     void load_from_message_map(const Json::Object& message_map)
     {
         Messages& m = messages();
+        m.localized_strings.resize(m.names.size());
 
         std::vector<std::string> names_without_localization;
 
@@ -247,25 +240,31 @@ namespace vcpkg::msg
         threadunsafe_initialize_context();
         auto embedded_filesystem = cmrc::cmakerc::get_filesystem();
 
-        const std::string locale_path = get_locale_path(LCID);
+        const auto maybe_locale_path = get_locale_path(LCID);
+        if (const auto locale_path = maybe_locale_path.get())
+        {
+            auto file = embedded_filesystem.open(*locale_path);
+            return Json::parse_object(StringView{file.begin(), file.end()}, *locale_path);
+        }
 
-        auto file = embedded_filesystem.open(locale_path);
-
-        auto maybe_map = Json::parse_object(StringView{file.begin(), file.end()}, locale_path);
-
-        return maybe_map;
+        return std::string{"Unrecognized LCID"};
     }
 
-    std::string get_locale_path(int LCID) { return fmt::format("locales/messages.{}.json", get_language_tag(LCID)); }
+    Optional<std::string> get_locale_path(int LCID)
+    {
+        return get_language_tag(LCID).map(
+            [](StringLiteral tag) { return fmt::format("locales/messages.{}.json", tag); });
+    }
 
     // LCIDs supported by VS:
     // https://learn.microsoft.com/en-us/visualstudio/ide/reference/lcid-devenv-exe?view=vs-2022
-    StringLiteral get_language_tag(int LCID)
+    Optional<StringLiteral> get_language_tag(int LCID)
     {
-        static constexpr std::array<std::pair<int, StringLiteral>, 14> languages = {
-            std::pair<int, StringLiteral>(1029, "cs"),       // Czech
-            std::pair<int, StringLiteral>(1031, "de"),       // German
-            std::pair<int, StringLiteral>(1033, "en"),       // English
+        static constexpr std::pair<int, StringLiteral> languages[] = {
+            std::pair<int, StringLiteral>(1029, "cs"), // Czech
+            std::pair<int, StringLiteral>(1031, "de"), // German
+            // Always use default handling for 1033 (English)
+            // std::pair<int, StringLiteral>(1033, "en"),       // English
             std::pair<int, StringLiteral>(3082, "es"),       // Spanish (Spain)
             std::pair<int, StringLiteral>(1036, "fr"),       // French
             std::pair<int, StringLiteral>(1040, "it"),       // Italian
@@ -286,8 +285,7 @@ namespace vcpkg::msg
             }
         }
 
-        // default to english
-        return "en";
+        return nullopt;
     }
 
     ::size_t detail::number_of_messages() { return messages().names.size(); }
@@ -305,17 +303,18 @@ namespace vcpkg::msg
     StringView detail::get_format_string(::size_t index)
     {
         Messages& m = messages();
-        Checks::check_exit(VCPKG_LINE_INFO, m.localized_strings.size() == m.default_strings.size());
-        Checks::check_exit(VCPKG_LINE_INFO, index < m.default_strings.size());
-        const auto& localized = m.localized_strings[index];
-        if (localized.empty())
+        if (m.localized_strings.empty())
         {
             return m.default_strings[index];
         }
-        else
+
+        if (m.localized_strings.size() != m.default_strings.size() || index >= m.default_strings.size())
         {
-            return localized;
+            // abort is used rather than check_exit to avoid infinite recursion trying to get a format string to print
+            std::abort();
         }
+
+        return m.localized_strings[index];
     }
     StringView detail::get_message_name(::size_t index)
     {
