@@ -600,8 +600,8 @@ namespace vcpkg
                     CompilerInfoCache cache = reader.visit(json_object, CompilerInfoCacheDeserializer::instance)
                                                   .value_or_exit(VCPKG_LINE_INFO);
                     auto needs_update = [&](const Path& path, int64_t last_write_time) {
-                        return !(fs.exists(path, VCPKG_LINE_INFO) &&
-                                 fs.last_write_time(path, VCPKG_LINE_INFO) != last_write_time);
+                        return !fs.exists(path, VCPKG_LINE_INFO) ||
+                               fs.last_write_time(path, VCPKG_LINE_INFO) != last_write_time;
                     };
                     if (!needs_update(cache.compiler_info.c_compiler_path, cache.c_compiler_last_write_time) &&
                         !needs_update(cache.compiler_info.cxx_compiler_path, cache.cxx_compiler_last_write_time))
