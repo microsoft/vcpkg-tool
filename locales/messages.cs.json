@@ -114,7 +114,7 @@
   "CouldNotFindBaselineForRepo": "Nepovedlo se najít standardní hodnotu {commit_sha} pro úložiště {package_name}.",
   "CouldNotFindBaselineInCommit": "V potvrzení {commit_sha} z úložiště {package_name} se nepovedlo najít standardní hodnotu:",
   "CouldNotFindGitTreeAtCommit": "Nepovedlo se najít strom Git pro „versions“ v úložišti {package_name} při potvrzení {commit_sha}.",
-  "CouldNotFindToolVersion": "Could not find <tools version=\"{version}\"> in {path}",
+  "CouldNotFindToolVersion": "V {path} se nepovedlo najít <tools version=\"{version}\"> v {path}.",
   "CreateFailureLogsDir": "Vytváří se výstupní adresář protokolů chyb {path}.",
   "CreatedNuGetPackage": "Vytvořen nupkg: {path}",
   "Creating7ZipArchive": "Vytváří se archiv 7zip...",

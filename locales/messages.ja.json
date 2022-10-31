@@ -114,7 +114,7 @@
   "CouldNotFindBaselineForRepo": "リポジトリ {package_name} のベースライン `\"{commit_sha}\"` が見つかりませんでした",
   "CouldNotFindBaselineInCommit": "リポジトリ {package_name} からコミット`\"{commit_sha}\"` にベースラインが見つかりませんでした:",
   "CouldNotFindGitTreeAtCommit": "コミット {commit_sha} でリポジトリ {package_name} に `versions` の Git ツリーが見つかりませんでした",
-  "CouldNotFindToolVersion": "Could not find <tools version=\"{version}\"> in {path}",
+  "CouldNotFindToolVersion": "{path} に <tools version=\"{version}\"> が見つかりませんでした",
   "CreateFailureLogsDir": "エラー ログ出力ディレクトリ {path} を作成しています。",
   "CreatedNuGetPackage": "作成された nupkg: {path}",
   "Creating7ZipArchive": "7zip アーカイブを作成しています...",

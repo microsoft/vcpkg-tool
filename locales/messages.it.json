@@ -114,7 +114,7 @@
   "CouldNotFindBaselineForRepo": "Non è stato possibile trovare la baseline '\"{commit_sha}\"' per il repository {package_name}",
   "CouldNotFindBaselineInCommit": "Non è stato possibile trovare la baseline nel commit '\"{commit_sha}\"' dal repository {package_name}:",
   "CouldNotFindGitTreeAtCommit": "non è stato possibile trovare l'albero GIT per 'versions' nel repository {package_name} nel commit {commit_sha}",
-  "CouldNotFindToolVersion": "Could not find <tools version=\"{version}\"> in {path}",
+  "CouldNotFindToolVersion": "Non è stato possibile trovare <tools version=\"{version}\"> in {path}",
   "CreateFailureLogsDir": "Creazione della directory di output {path} dei log degli errori.",
   "CreatedNuGetPackage": "Nupkg creato: \"{path}”",
   "Creating7ZipArchive": "Creazione dell'archivio 7zip in corso...",

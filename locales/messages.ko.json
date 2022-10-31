@@ -114,7 +114,7 @@
   "CouldNotFindBaselineForRepo": "리포지토리 {package_name}에 대한 기준 '\"{commit_sha}\"'을(를) 찾을 수 없습니다.",
   "CouldNotFindBaselineInCommit": "리포지토리 {package_name}의 커밋 '\"{commit_sha}\"에서 기준을 찾을 수 없습니다.",
   "CouldNotFindGitTreeAtCommit": "{commit_sha} 커밋의 리포지토리 {package_name}에서 '버전'에 대한 git 트리를 찾을 수 없습니다.",
-  "CouldNotFindToolVersion": "Could not find <tools version=\"{version}\"> in {path}",
+  "CouldNotFindToolVersion": "{path}에서 <tools version=\"{version}\">을(를) 찾을 수 없습니다.",
   "CreateFailureLogsDir": "오류 로그 출력 디렉터리 {path}을(를) 만드는 중입니다.",
   "CreatedNuGetPackage": "생성된 nupkg: {path}",
   "Creating7ZipArchive": "7zip 보관함 생성 중...",

@@ -114,7 +114,7 @@
   "CouldNotFindBaselineForRepo": "No fue posible encontrar la línea de base `\"{commit_sha}\"` para el repositorio {package_name}",
   "CouldNotFindBaselineInCommit": "No se pudo encontrar la línea de base en el comando `\"{commit_sha}\"` del repositorio {package_name}:",
   "CouldNotFindGitTreeAtCommit": "no se pudo encontrar el árbol git para \"versiones\" en el repositorio {package_name} en el comando {commit_sha}",
-  "CouldNotFindToolVersion": "Could not find <tools version=\"{version}\"> in {path}",
+  "CouldNotFindToolVersion": "No se encontró <tools version=\"{version}\"> en {path}",
   "CreateFailureLogsDir": "Creando {path} de directorio de salida de registros de errores.",
   "CreatedNuGetPackage": "Nupkg creado: \"{path}\"",
   "Creating7ZipArchive": "Creando archivo 7zip...",

@@ -114,7 +114,7 @@
   "CouldNotFindBaselineForRepo": "Die Baseline \"{commit_sha}\" für das Repository \"{package_name}\" wurde nicht gefunden.",
   "CouldNotFindBaselineInCommit": "Die Baseline wurde im Commit \"{commit_sha}\" aus dem Repository \"{package_name}\" nicht gefunden:",
   "CouldNotFindGitTreeAtCommit": "Die Git-Struktur für \"Versionen\" wurde im Repository \"{package_name}\" beim Commit \"{commit_sha}\" nicht gefunden.",
-  "CouldNotFindToolVersion": "Could not find <tools version=\"{version}\"> in {path}",
+  "CouldNotFindToolVersion": "<tools version=\"{version}\"> in {path} nicht gefunden",
   "CreateFailureLogsDir": "Ausgabeverzeichnis für Fehlerprotokolle wird erstellt: {path}.",
   "CreatedNuGetPackage": "Nupkg wurde erstellt: {path}",
   "Creating7ZipArchive": "7zip-Archiv wird erstellt...",
