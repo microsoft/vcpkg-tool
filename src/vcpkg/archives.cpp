@@ -214,7 +214,7 @@ namespace vcpkg
                                    .append(msgMissing7zHeader));
 
         contents = contents.substr(pos);
-        fs.write_contents(to_path, std::move(contents), VCPKG_LINE_INFO);
+        fs.write_contents(to_path, contents, VCPKG_LINE_INFO);
     }
 
     void win32_extract_bootstrap_zip(

@@ -1024,7 +1024,7 @@ namespace vcpkg
             const vcpkg::Json::Object& obj,
             vcpkg::SourceParagraph& spgh,
             vcpkg::Json::Reader& r,
-            std::unique_ptr<vcpkg::SourceControlFile>& control_file)
+            std::unique_ptr<vcpkg::SourceControlFile>& control_file) const
         {
             for (const auto& el : obj)
             {

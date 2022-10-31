@@ -150,7 +150,7 @@ namespace vcpkg
             return msg::format_error(
                        msgFailedToRunToolToDetermineVersion, msg::tool_name = tool_name, msg::path = exe_path)
                 .append_raw('\n')
-                .append(std::move(output))
+                .append(output)
                 .extract_data();
         });
     }
