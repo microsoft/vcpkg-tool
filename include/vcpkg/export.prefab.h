@@ -8,6 +8,14 @@
 
 #include <vector>
 
+// glibc defines major and minor in sys/types.h, and should not
+#ifdef major
+#undef major
+#endif
+#ifdef minor
+#undef minor
+#endif
+
 namespace vcpkg::Export::Prefab
 {
     constexpr int kFragmentSize = 3;
