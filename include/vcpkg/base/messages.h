@@ -2091,5 +2091,168 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "Failed to parse {path}, expected a top-level object.");
-
+    DECLARE_MESSAGE(FailedToParseSerializedManifest,
+                    (msg::path),
+                    "",
+                    "Failed to parse serialized manifest file of {path} Please open an issue at "
+                    "https://github.com/microsoft/vcpkg, with the following output:");
+    DECLARE_MESSAGE(MismatchedSerializedManifestSCF,
+                    (),
+                    "",
+                    "The serialized manifest SCF was different from the original SCF. Please open an issue at "
+                    "https://github.com/microsoft/vcpkg, with the following output:");
+    DECLARE_MESSAGE(PortBugIncludeDirInCMakeHelperPort,
+                    (),
+                    "",
+                    "The folder /include exists in a cmake helper port; this is incorrect, since only cmake "
+                    "files should be installed");
+    DECLARE_MESSAGE(PortBugMissingIncludeDir,
+                    (),
+                    "",
+                    "The folder /include is empty or not present. This indicates the library was not correctly "
+                    "installed.");
+    DECLARE_MESSAGE(PortBugRestrictedHeaderPaths,
+                    (),
+                    "",
+                    "Restricted headers paths are present. These files can prevent the core C++ runtime and "
+                    "other packages from compiling correctly:");
+    DECLARE_MESSAGE(PortBugAllowRestrictedHeaders,
+                    (msg::env_var),
+                    "",
+                    "In exceptional circumstances, this policy can be disabled via {env_var}");
+    DECLARE_MESSAGE(PortBugDuplicateIncludeFiles,
+                    (),
+                    "'{CURRENT_PACKAGES_DIR}' should not be translated.",
+                    "Include files should not be duplicated into the /debug/include directory. If this cannot "
+                    "be disabled in the project cmake, use\n"
+                    "file(REMOVE_RECURSE \"${CURRENT_PACKAGES_DIR}/debug/include\")");
+    DECLARE_MESSAGE(PortBugDebugShareDir,
+                    (),
+                    "'{CURRENT_PACKAGES_DIR}' should not be translated.",
+                    "/debug/share should not exist. Please reorganize any important files, then use\n"
+                    "file(REMOVE_RECURSE \"${CURRENT_PACKAGES_DIR}/debug/share\")");
+    DECLARE_MESSAGE(PortBugMissingFile,
+                    (msg::path),
+                    "",
+                    "The /{path} file does not exist. This file must exist for CMake helper ports.");
+    DECLARE_MESSAGE(PortBugMergeLibCMakeDir,
+                    (msg::spec),
+                    "",
+                    "The /lib/cmake folder should be merged with /debug/lib/cmake and moved to "
+                    "/share/{spec}/cmake.");
+    DECLARE_MESSAGE(PortBugUseVcpkgCMakeConfigFixup,
+                    (),
+                    "",
+                    "Please use the helper function `vcpkg_cmake_config_fixup()` "
+                    "from the port vcpkg-cmake-config.`");
+    DECLARE_MESSAGE(
+        PortBugMisplacedCMakeFiles,
+        (msg::spec),
+        "",
+        "The following cmake files were found outside /share/{spec}. Please place cmake files in /share/{spec}.");
+    DECLARE_MESSAGE(PortBugDllInLibDir,
+                    (),
+                    "",
+                    "The following dlls were found in /lib or /debug/lib. Please move them to /bin or "
+                    "/debug/bin, respectively.");
+    DECLARE_MESSAGE(PortBugMissingLicense,
+                    (msg::spec),
+                    "'{CURRENT_PACKAGES_DIR}' should not be translated.",
+                    "The software license must be available at ${CURRENT_PACKAGES_DIR}/share/{spec}/copyright");
+    DECLARE_MESSAGE(PortBugFoundCopyrightFiles, (), "", "The following files are potential copyright files:");
+    DECLARE_MESSAGE(PortBugFoundExeInBinDir,
+                    (),
+                    "",
+                    "The following EXEs were found in /bin or /debug/bin. EXEs are not valid distribution targets.");
+    DECLARE_MESSAGE(PortBugDllsWithNoExports, (), "", "The following DLLs have no exports:");
+    DECLARE_MESSAGE(PortBugSetDllsWithoutExports,
+                    (msg::env_var),
+                    "",
+                    "DLLs without any exports are likely a bug in the build script. If this is intended, add the "
+                    "following line in the portfile:\n"
+                    "SET({env_var} enabled)");
+    DECLARE_MESSAGE(RunningCommandFailed, (msg::command_line), "", "Running command:{command_line}\nFailed:");
+    DECLARE_MESSAGE(PortBugDllAppContainerBitNotSet,
+                    (),
+                    "",
+                    "The following DLLs do not have the App Container bit set:");
+    DECLARE_MESSAGE(PortBugRequiredDllAppContainerBit,
+                    (),
+                    "",
+                    "The App Container bit must be set for Windows Store apps.");
+    DECLARE_MESSAGE(BuiltWithIncorrectArchitecture,
+                    (),
+                    "",
+                    "The following files were built for an incorrect architecture:");
+    DECLARE_MESSAGE(BinaryWithInvalidArchitecture,
+                    (msg::path, msg::expected, msg::actual),
+                    "{expected} and {actual} are architectures",
+                    "{path}\n Expected: {expected}, but was {actual}");
+    DECLARE_MESSAGE(ExpectedExtension,
+                    (msg::extension, msg::path),
+                    "",
+                    "The file extension was not {extension}: {path}");
+    DECLARE_MESSAGE(FailedToDetermineArchitecture,
+                    (msg::path, msg::command_line),
+                    "",
+                    "unable to determine the architecture of {path}.\n{command_line}");
+    DECLARE_MESSAGE(PortBugFoundDllInStaticBuild,
+                    (),
+                    "",
+                    "DLLs should not be present in a static build, but the following DLLs were found:");
+    DECLARE_MESSAGE(PortBugMismatchedNumberOfBinaries, (), "", "Mismatching number of debug and release binaries.");
+    DECLARE_MESSAGE(PortBugFoundDebugBinaries, (msg::count), "", "Found {count} debug binaries:");
+    DECLARE_MESSAGE(PortBugFoundReleaseBinaries, (msg::count), "", "Found {count} release binaries:");
+    DECLARE_MESSAGE(PortBugMissingDebugBinaries, (), "", "Debug binaries were not found.");
+    DECLARE_MESSAGE(PortBugMissingReleaseBinaries, (), "", "Release binaries were not found.");
+    DECLARE_MESSAGE(PortBugMissingImportedLibs, (msg::path), "", "Import libs were not present in {path}");
+    DECLARE_MESSAGE(SetDllsWithoutLibs,
+                    (msg::env_var),
+                    "",
+                    "If this is intended, add the following line in the portfile:\nSET({env_var} enabled)");
+    DECLARE_MESSAGE(PortBugBinDirExists,
+                    (msg::path),
+                    "",
+                    "There should be no bin\\ directory in a static build, but {path} is present.");
+    DECLARE_MESSAGE(PortBugDebugBinDirExists,
+                    (msg::path),
+                    "",
+                    "There should be no debug\\bin\\ directory in a static build, but {path} is present.");
+    DECLARE_MESSAGE(
+        PortBugRemoveBinDir,
+        (),
+        "",
+        "If the creation of bin\\ and/or debug\\bin\\ cannot be disabled, use this in the portfile to remove them");
+    DECLARE_MESSAGE(PortBugFoundEmptyDirectories,
+                    (msg::path),
+                    "",
+                    "There should be no empty directories in {path}. The following empty directories were found:");
+    DECLARE_MESSAGE(
+        PortBugRemoveEmptyDirectories,
+        (),
+        "",
+        "If a directory should be populated but is not, this might indicate an error in the portfile.\n"
+        "If the directories are not needed and their creation cannot be disabled, use something like this in "
+        "the portfile to remove them:");
+    DECLARE_MESSAGE(PortBugMisplacedPkgConfigFiles,
+                    (),
+                    "",
+                    "pkgconfig directories should be one of share/pkgconfig (for header only libraries only), "
+                    "lib/pkgconfig, or lib/debug/pkgconfig. The following misplaced pkgconfig files were found:");
+    DECLARE_MESSAGE(PortBugMovePkgConfigFiles, (), "", "You can move the pkgconfig files with commands similar to:");
+    DECLARE_MESSAGE(PortBugRemoveEmptyDirs, (), "", "empty directories left by the above renames)");
+    DECLARE_MESSAGE(PortBugInvalidCrtLinkage,
+                    (msg::expected),
+                    "{expected} is the expected build type",
+                    "Invalid crt linkage. Expected {expected}, but the following libs had:");
+    DECLARE_MESSAGE(PortBugInspectFiles, (msg::extension), "", "To inspect the {extension} files, use:");
+    DECLARE_MESSAGE(PortBugOutdatedCRT, (), "", "Detected outdated dynamic CRT in the following files:");
+    DECLARE_MESSAGE(PortBugMisplacedFiles, (msg::path), "", "The following files are placed in {path}:");
+    DECLARE_MESSAGE(PortBugMisplacedFilesCont, (), "", "Files cannot be present in those directories.");
+    DECLARE_MESSAGE(PerformingPostBuildValidation, (), "", "-- Performing post-build validation");
+    DECLARE_MESSAGE(FailedPostBuildChecks,
+                    (msg::count, msg::path),
+                    "",
+                    "Found {count} post-build check problem(s). To submit these ports to curated catalogs, please "
+                    "first correct the portfile: {path}");
 }

@@ -111,11 +111,7 @@ namespace
         auto check = SourceControlFile::parse_project_manifest_object(StringView{}, res, null_sink);
         if (!check)
         {
-            vcpkg::printf(Color::error,
-                          R"([correctness check] Failed to parse serialized manifest file of %s
-Please open an issue at https://github.com/microsoft/vcpkg, with the following output:
-Error:)",
-                          data.scf.core_paragraph->name);
+            msg::println_error(msgFailedToParseSerializedManifest, msg::path = data.scf.core_paragraph->name);
             print_error_message(check.error());
             Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
                                        R"(
@@ -128,27 +124,15 @@ Error:)",
         auto check_scf = std::move(check).value_or_exit(VCPKG_LINE_INFO);
         if (*check_scf != data.scf)
         {
-            Checks::exit_maybe_upgrade(
+            Checks::msg_exit_maybe_upgrade(
                 VCPKG_LINE_INFO,
-                R"([correctness check] The serialized manifest SCF was different from the original SCF.
-Please open an issue at https://github.com/microsoft/vcpkg, with the following output:
-
-=== Original File ===
-%s
-
-=== Serialized File ===
-%s
-
-=== Original SCF ===
-%s
-
-=== Serialized SCF ===
-%s
-)",
-                data.original_source,
-                Json::stringify(res, {}),
-                Json::stringify(serialize_debug_manifest(data.scf)),
-                Json::stringify(serialize_debug_manifest(*check_scf)));
+                msg::format(msgMismatchedSerializedManifestSCF)
+                    .append_raw(fmt::format("\n=== Original File ===\n{}\n=== Serialized File ===\n{}\n=== Original "
+                                            "SFC ===\n{}\n=== Serialized SFC ===\n{}\n",
+                                            data.original_source,
+                                            Json::stringify(res, {}),
+                                            Json::stringify(serialize_debug_manifest(data.scf)),
+                                            Json::stringify(serialize_debug_manifest(*check_scf)))));
         }
 
         // the manifest scf is correct
