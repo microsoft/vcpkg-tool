@@ -240,9 +240,13 @@ namespace vcpkg::Commands::CI
             auto it_known = known.find(it->spec);
             const auto& abi = it->abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi;
             auto it_parent = std::find(parent_hashes.begin(), parent_hashes.end(), abi);
-            if (it_known == known.end() && it_parent == parent_hashes.end())
+            if (it_parent == parent_hashes.end())
             {
-                to_keep.insert(it->spec);
+                it->request_type = RequestType::USER_REQUESTED;
+                if (it_known == known.end())
+                {
+                    to_keep.insert(it->spec);
+                }
             }
 
             if (Util::Sets::contains(to_keep, it->spec))
