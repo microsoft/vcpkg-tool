@@ -229,11 +229,12 @@ namespace vcpkg::Lint
                     {
                         start_param = start_config_path + StringLiteral("CONFIG_PATH").size();
                         start_param = content.find_first_not_of(" \n\t)", start_param);
-                        const auto end_param = content.find_first_of(" \n\t)", start_param);
-                        const auto config_param = StringView(content).substr(start_param, end_param - start_param);
+                        const auto end_config_param = content.find_first_of(" \n\t)", start_param);
+                        const auto config_param =
+                            StringView(content).substr(start_param, end_config_param - start_param);
                         if (config_param == original_param)
                         {
-                            const auto start_next = content.find_first_not_of(' ', end_param);
+                            const auto start_next = content.find_first_not_of(' ', end_config_param);
                             content.erase(start_config_path, start_next - start_config_path);
                         }
                     }
