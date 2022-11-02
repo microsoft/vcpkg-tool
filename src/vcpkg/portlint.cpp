@@ -227,7 +227,7 @@ namespace vcpkg::Lint
                     const auto start_config_path = content.find("CONFIG_PATH", index);
                     if (start_config_path != std::string::npos && start_config_path < end)
                     {
-                        auto start_param = start_config_path + StringLiteral("CONFIG_PATH").size();
+                        start_param = start_config_path + StringLiteral("CONFIG_PATH").size();
                         start_param = content.find_first_not_of(" \n\t)", start_param);
                         const auto end_param = content.find_first_of(" \n\t)", start_param);
                         const auto config_param = StringView(content).substr(start_param, end_param - start_param);
