@@ -300,7 +300,8 @@ namespace vcpkg::Commands::CI
         return result;
     }
 
-    static void print_baseline_regressions(const std::map<PackageSpec, BuildResult>& results,
+    static void print_baseline_regressions(const std::vector<SpecSummary>& results,
+                                           const std::map<PackageSpec, BuildResult>& known,
                                            const CiBaselineData& cidata,
                                            const std::string& ci_baseline_file_name,
                                            bool allow_unexpected_passing)
@@ -309,6 +310,16 @@ namespace vcpkg::Commands::CI
         LocalizedString output = msg::format(msgCiBaselineRegressionHeader);
         output.append_raw('\n');
         for (auto&& r : results)
+        {
+            auto result = r.build_result.value_or_exit(VCPKG_LINE_INFO).code;
+            auto msg = format_ci_result(r.get_spec(), result, cidata, ci_baseline_file_name, allow_unexpected_passing);
+            if (!msg.empty())
+            {
+                has_error = true;
+                output.append(msg).append_raw('\n');
+            }
+        }
+        for (auto&& r : known)
         {
             auto msg = format_ci_result(r.first, r.second, cidata, ci_baseline_file_name, allow_unexpected_passing);
             if (!msg.empty())
@@ -497,8 +508,6 @@ namespace vcpkg::Commands::CI
             auto summary = Install::perform(
                 args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder, var_provider);
 
-            std::map<PackageSpec, BuildResult> full_results;
-
             // Adding results for ports that were built or pulled from an archive
             for (auto&& result : summary.results)
             {
@@ -508,9 +517,7 @@ namespace vcpkg::Commands::CI
                 auto code = result.build_result.value_or_exit(VCPKG_LINE_INFO).code;
                 xunitTestResults.add_test_results(
                     spec, code, result.timing, result.start_time, split_specs->abi_map.at(spec), port_features);
-                full_results.emplace(spec, code);
             }
-            full_results.insert(split_specs->known.begin(), split_specs->known.end());
 
             // Adding results for ports that were not built because they have known states
             if (Util::Sets::contains(options.switches, OPTION_XUNIT_ALL))
@@ -534,7 +541,7 @@ namespace vcpkg::Commands::CI
 
             if (baseline_iter != settings.end())
             {
-                print_baseline_regressions(full_results, cidata, baseline_iter->second, allow_unexpected_passing);
+                print_baseline_regressions(summary.results, split_specs->known, cidata, baseline_iter->second, allow_unexpected_passing);
             }
 
             auto it_xunit = settings.find(OPTION_XUNIT);
