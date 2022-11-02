@@ -235,7 +235,7 @@ namespace vcpkg
                                                 .append_raw(m_scfl.error()));
             }
 
-            Optional<const PlatformExpression::Expr&> get_applicable_supports_expression(const FeatureSpec& spec)
+            Optional<const PlatformExpression::Expr&> get_applicable_supports_expression(const FeatureSpec& spec) const
             {
                 if (spec.feature() == "core")
                 {
@@ -292,7 +292,8 @@ namespace vcpkg
 
             ActionPlan serialize(GraphRandomizer* randomizer) const;
 
-            void mark_for_reinstall(const PackageSpec& spec, std::vector<FeatureSpec>& out_reinstall_requirements);
+            void mark_for_reinstall(const PackageSpec& spec,
+                                    std::vector<FeatureSpec>& out_reinstall_requirements) const;
             const CMakeVars::CMakeVarProvider& m_var_provider;
 
             std::unique_ptr<ClusterGraph> m_graph;
@@ -522,7 +523,7 @@ namespace vcpkg
     }
     const PreBuildInfo& InstallPlanAction::pre_build_info(LineInfo li) const
     {
-        return *abi_info.value_or_exit(li).pre_build_info.get();
+        return *abi_info.value_or_exit(li).pre_build_info;
     }
 
     bool InstallPlanAction::compare_by_name(const InstallPlanAction* left, const InstallPlanAction* right)
@@ -644,8 +645,7 @@ namespace vcpkg
 
         auto installed_ports = get_installed_ports(status_db);
         const std::unordered_set<PackageSpec> specs_as_set(specs.cbegin(), specs.cend());
-        return topological_sort(
-            std::move(specs), RemoveAdjacencyProvider{status_db, installed_ports, specs_as_set}, {});
+        return topological_sort(specs, RemoveAdjacencyProvider{status_db, installed_ports, specs_as_set}, {});
     }
 
     std::vector<ExportPlanAction> create_export_plan(const std::vector<PackageSpec>& specs,
@@ -720,7 +720,7 @@ namespace vcpkg
     }
 
     void PackageGraph::mark_for_reinstall(const PackageSpec& first_remove_spec,
-                                          std::vector<FeatureSpec>& out_reinstall_requirements)
+                                          std::vector<FeatureSpec>& out_reinstall_requirements) const
     {
         std::set<PackageSpec> removed;
         std::vector<PackageSpec> to_remove{first_remove_spec};
@@ -832,9 +832,8 @@ namespace vcpkg
                             }
                             else
                             {
-                                m_warnings.push_back(msg::format(msg::msgWarningMessage)
-                                                         .append(std::move(localized_msg))
-                                                         .extract_data());
+                                m_warnings.push_back(
+                                    msg::format(msg::msgWarningMessage).append(localized_msg).extract_data());
                             }
                         }
                     }

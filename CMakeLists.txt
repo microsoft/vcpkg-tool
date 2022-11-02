@@ -70,6 +70,8 @@ file(GLOB VCPKG_FUZZ_SOURCES CONFIGURE_DEPENDS "src/vcpkg-fuzz/*.cpp")
 
 set(TLS12_DOWNLOAD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/tls12-download.c")
 
+file(GLOB LOCALE_RESOURCES CMAKE_CONFIGURE_DEPENDS "locales/*.json")
+
 # ========================
 # === System detection ===
 # ========================
@@ -139,10 +141,14 @@ include(GNUInstallDirs)
 # ====================
 
 find_package(fmt REQUIRED)
+find_package(CMakeRC REQUIRED)
 
-# ===============
-# === Targets ===
-# ===============
+
+
+cmrc_add_resource_library(locale-resources ALIAS cmakerc::locales NAMESPACE cmakerc ${LOCALE_RESOURCES})
+
+
+
 
 # === Target: vcpkglib ===
 
@@ -300,6 +306,7 @@ find_package(Threads REQUIRED)
 target_link_libraries(vcpkglib
     PUBLIC
         fmt::fmt
+        cmakerc::locales
     PRIVATE
         Threads::Threads
         ${CPP_ATOMIC_LIBRARY}
@@ -365,7 +372,6 @@ endif()
 
 add_custom_target(generate-message-map
    COMMAND vcpkg x-generate-default-message-map locales/messages.json
-   COMMAND vcpkg x-generate-default-message-map --no-output-comments locales/messages.en.json
    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
    COMMENT "Update locales/messages.json"
    VERBATIM

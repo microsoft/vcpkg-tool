@@ -17,7 +17,7 @@ namespace
         std::size_t moves = 0;
         std::size_t move_assigns = 0;
 
-        void check_no_ops()
+        void check_no_ops() const
         {
             CHECK(copies == 0);
             CHECK(copy_assigns == 0);

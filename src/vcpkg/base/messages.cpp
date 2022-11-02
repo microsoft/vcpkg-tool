@@ -1,6 +1,15 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/setup_messages.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/util.h>
+
+#include <iterator>
+#include <vector>
+
+#include <cmrc/cmrc.hpp>
+
+CMRC_DECLARE(cmakerc);
 
 using namespace vcpkg;
 
@@ -163,7 +172,6 @@ namespace vcpkg::msg
             std::vector<StringLiteral> default_strings;     // const after startup
             std::vector<ZStringView> localization_comments; // const after startup
 
-            bool initialized = false;
             std::vector<std::string> localized_strings;
         };
 
@@ -179,44 +187,28 @@ namespace vcpkg::msg
     void threadunsafe_initialize_context()
     {
         Messages& m = messages();
-        if (m.initialized)
+        auto names_sorted = m.names;
+        std::sort(names_sorted.begin(), names_sorted.end());
+        std::vector<StringLiteral> duplicate_names;
+        Util::set_duplicates(names_sorted.begin(), names_sorted.end(), std::back_inserter(duplicate_names));
+        for (auto&& duplicate : duplicate_names)
         {
             write_unlocalized_text_to_stdout(
-                Color::error, "double-initialized message context; this is a very serious bug in vcpkg\n");
-            Checks::exit_fail(VCPKG_LINE_INFO);
+                Color::error,
+                fmt::format("INTERNAL ERROR: localization message '{}' has been declared multiple times\n", duplicate));
         }
-        m.localized_strings.resize(m.names.size());
-        m.initialized = true;
 
-        std::set<StringLiteral, std::less<>> names_set(m.names.begin(), m.names.end());
-        if (names_set.size() < m.names.size())
+        if (!duplicate_names.empty())
         {
-            // This will not trigger on any correct code path, so it's fine to use a naive O(n^2)
-            for (size_t i = 0; i < m.names.size() - 1; ++i)
-            {
-                for (size_t j = i + 1; j < m.names.size(); ++j)
-                {
-                    if (msg::detail::get_message_name(i) == msg::detail::get_message_name(j))
-                    {
-                        write_unlocalized_text_to_stdout(
-                            Color::error,
-                            fmt::format("INTERNAL ERROR: localization message '{}' has been declared multiple times\n",
-                                        msg::detail::get_message_name(i)));
-                        write_unlocalized_text_to_stdout(Color::error, "INTERNAL ERROR: first message:\n");
-                        write_unlocalized_text_to_stdout(Color::none, m.default_strings[i]);
-                        write_unlocalized_text_to_stdout(Color::error, "\nINTERNAL ERROR: second message:\n");
-                        write_unlocalized_text_to_stdout(Color::none, m.default_strings[j]);
-                        write_unlocalized_text_to_stdout(Color::none, "\n");
-                        ::abort();
-                    }
-                }
-            }
-            Checks::unreachable(VCPKG_LINE_INFO);
+            ::abort();
         }
     }
-    static void load_from_message_map(const Json::Object& message_map)
+
+    void load_from_message_map(const Json::Object& message_map)
     {
         Messages& m = messages();
+        m.localized_strings.resize(m.names.size());
+
         std::vector<std::string> names_without_localization;
 
         for (::size_t index = 0; index < m.names.size(); ++index)
@@ -243,29 +235,57 @@ namespace vcpkg::msg
         }
     }
 
-    static std::string locale_file_name(StringView language)
-    {
-        std::string filename = "messages.";
-        filename.append(language.begin(), language.end()).append(".json");
-        return filename;
-    }
-
-    void threadunsafe_initialize_context(const Filesystem& fs, StringView language, const Path& locale_base)
+    ExpectedS<Json::Object> get_message_map_from_lcid(int LCID)
     {
         threadunsafe_initialize_context();
+        auto embedded_filesystem = cmrc::cmakerc::get_filesystem();
 
-        auto path_to_locale = locale_base / locale_file_name(language);
-
-        auto message_map = Json::parse_file(VCPKG_LINE_INFO, fs, path_to_locale);
-        if (!message_map.first.is_object())
+        const auto maybe_locale_path = get_locale_path(LCID);
+        if (const auto locale_path = maybe_locale_path.get())
         {
-            write_unlocalized_text_to_stdout(
-                Color::error,
-                fmt::format("Invalid locale file '{}' - locale file must be an object.\n", path_to_locale));
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            auto file = embedded_filesystem.open(*locale_path);
+            return Json::parse_object(StringView{file.begin(), file.end()}, *locale_path);
         }
 
-        load_from_message_map(message_map.first.object(VCPKG_LINE_INFO));
+        return std::string{"Unrecognized LCID"};
+    }
+
+    Optional<std::string> get_locale_path(int LCID)
+    {
+        return get_language_tag(LCID).map(
+            [](StringLiteral tag) { return fmt::format("locales/messages.{}.json", tag); });
+    }
+
+    // LCIDs supported by VS:
+    // https://learn.microsoft.com/en-us/visualstudio/ide/reference/lcid-devenv-exe?view=vs-2022
+    Optional<StringLiteral> get_language_tag(int LCID)
+    {
+        static constexpr std::pair<int, StringLiteral> languages[] = {
+            std::pair<int, StringLiteral>(1029, "cs"), // Czech
+            std::pair<int, StringLiteral>(1031, "de"), // German
+            // Always use default handling for 1033 (English)
+            // std::pair<int, StringLiteral>(1033, "en"),       // English
+            std::pair<int, StringLiteral>(3082, "es"),       // Spanish (Spain)
+            std::pair<int, StringLiteral>(1036, "fr"),       // French
+            std::pair<int, StringLiteral>(1040, "it"),       // Italian
+            std::pair<int, StringLiteral>(1041, "ja"),       // Japanese
+            std::pair<int, StringLiteral>(1042, "ko"),       // Korean
+            std::pair<int, StringLiteral>(1045, "pl"),       // Polish
+            std::pair<int, StringLiteral>(1046, "pt-BR"),    // Portuguese (Brazil)
+            std::pair<int, StringLiteral>(1049, "ru"),       // Russian
+            std::pair<int, StringLiteral>(1055, "tr"),       // Turkish
+            std::pair<int, StringLiteral>(2052, "zh-Hans"),  // Chinese (Simplified)
+            std::pair<int, StringLiteral>(1028, "zh-Hant")}; // Chinese (Traditional)
+
+        for (auto&& l : languages)
+        {
+            if (l.first == LCID)
+            {
+                return l.second;
+            }
+        }
+
+        return nullopt;
     }
 
     ::size_t detail::number_of_messages() { return messages().names.size(); }
@@ -283,17 +303,18 @@ namespace vcpkg::msg
     StringView detail::get_format_string(::size_t index)
     {
         Messages& m = messages();
-        Checks::check_exit(VCPKG_LINE_INFO, m.localized_strings.size() == m.default_strings.size());
-        Checks::check_exit(VCPKG_LINE_INFO, index < m.default_strings.size());
-        const auto& localized = m.localized_strings[index];
-        if (localized.empty())
+        if (m.localized_strings.empty())
         {
             return m.default_strings[index];
         }
-        else
+
+        if (m.localized_strings.size() != m.default_strings.size() || index >= m.default_strings.size())
         {
-            return localized;
+            // abort is used rather than check_exit to avoid infinite recursion trying to get a format string to print
+            std::abort();
         }
+
+        return m.localized_strings[index];
     }
     StringView detail::get_message_name(::size_t index)
     {
@@ -425,15 +446,16 @@ namespace vcpkg
     REGISTER_MESSAGE(AllPackagesAreUpdated);
     REGISTER_MESSAGE(AlreadyInstalled);
     REGISTER_MESSAGE(AlreadyInstalledNotHead);
-    REGISTER_MESSAGE(AndroidHomeDirMissingProps);
     REGISTER_MESSAGE(AnotherInstallationInProgress);
     REGISTER_MESSAGE(AppliedUserIntegration);
     REGISTER_MESSAGE(ArtifactsOptionIncompatibility);
     REGISTER_MESSAGE(AssetSourcesArg);
     REGISTER_MESSAGE(AttemptingToFetchPackagesFromVendor);
+    REGISTER_MESSAGE(AttemptingToSetBuiltInBaseline);
     REGISTER_MESSAGE(AuthenticationMayRequireManualAction);
     REGISTER_MESSAGE(AutomaticLinkingForMSBuildProjects);
     REGISTER_MESSAGE(AutoSettingEnvVar);
+    REGISTER_MESSAGE(BaselineConflict);
     REGISTER_MESSAGE(BaselineFileNoDefaultField);
     REGISTER_MESSAGE(BaselineMissingDefault);
     REGISTER_MESSAGE(AvailableArchitectureTriplets);
@@ -475,12 +497,13 @@ namespace vcpkg
     REGISTER_MESSAGE(CMakeTargetsUsage);
     REGISTER_MESSAGE(CMakeTargetsUsageHeuristicMessage);
     REGISTER_MESSAGE(CMakeToolChainFile);
-    REGISTER_MESSAGE(CMakeUsingExportedLibs);
     REGISTER_MESSAGE(CommandFailed);
+    REGISTER_MESSAGE(CompressFolderFailed);
+    REGISTER_MESSAGE(ComputingInstallPlan);
+    REGISTER_MESSAGE(ConflictingFiles);
+    REGISTER_MESSAGE(CMakeUsingExportedLibs);
     REGISTER_MESSAGE(CommunityTriplets);
     REGISTER_MESSAGE(ComparingUtf8Decoders);
-    REGISTER_MESSAGE(CompressFolderFailed);
-    REGISTER_MESSAGE(ConflictingFiles);
     REGISTER_MESSAGE(ConflictingValuesForOption);
     REGISTER_MESSAGE(ConstraintViolation);
     REGISTER_MESSAGE(ContinueCodeUnitInStart);
@@ -488,8 +511,9 @@ namespace vcpkg
     REGISTER_MESSAGE(ControlCharacterInString);
     REGISTER_MESSAGE(CopyrightIsDir);
     REGISTER_MESSAGE(CorruptedDatabase);
-    REGISTER_MESSAGE(CorruptedInstallTree);
     REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion);
+    REGISTER_MESSAGE(CouldNotFindToolVersion);
+    REGISTER_MESSAGE(CorruptedInstallTree);
     REGISTER_MESSAGE(CouldNotFindBaseline);
     REGISTER_MESSAGE(CouldNotFindBaselineForRepo);
     REGISTER_MESSAGE(CouldNotFindBaselineInCommit);
@@ -503,15 +527,19 @@ namespace vcpkg
     REGISTER_MESSAGE(CreatingZipArchive);
     REGISTER_MESSAGE(CreationFailed);
     REGISTER_MESSAGE(CurlReportedUnexpectedResults);
+    REGISTER_MESSAGE(CurrentCommitBaseline);
     REGISTER_MESSAGE(DateTableHeader);
     REGISTER_MESSAGE(DefaultBrowserLaunched);
     REGISTER_MESSAGE(DefaultFlag);
     REGISTER_MESSAGE(DefaultPathToBinaries);
+    REGISTER_MESSAGE(DeleteVcpkgConfigFromManifest);
     REGISTER_MESSAGE(DeprecatedPrefabDebugOption);
     REGISTER_MESSAGE(DetectCompilerHash);
     REGISTER_MESSAGE(DocumentedFieldsSuggestUpdate);
     REGISTER_MESSAGE(DownloadAvailable);
     REGISTER_MESSAGE(DownloadedSources);
+    REGISTER_MESSAGE(DownloadingPortableToolVersionX);
+    REGISTER_MESSAGE(DownloadingTool);
     REGISTER_MESSAGE(DownloadingVcpkgCeBundle);
     REGISTER_MESSAGE(DownloadingVcpkgCeBundleLatest);
     REGISTER_MESSAGE(DownloadingVcpkgStandaloneBundle);
@@ -523,6 +551,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ElapsedInstallTime);
     REGISTER_MESSAGE(ElapsedTimeForChecks);
     REGISTER_MESSAGE(EmailVcpkgTeam);
+    REGISTER_MESSAGE(EmbeddingVcpkgConfigInManifest);
     REGISTER_MESSAGE(EmptyArg);
     REGISTER_MESSAGE(EmptyLicenseExpression);
     REGISTER_MESSAGE(EndOfStringInCodeUnit);
@@ -554,13 +583,18 @@ namespace vcpkg
     REGISTER_MESSAGE(ExpectedAtMostOneSetOfTags);
     REGISTER_MESSAGE(ExpectedCascadeFailure);
     REGISTER_MESSAGE(ExpectedCharacterHere);
-    REGISTER_MESSAGE(ExpectedDigitsAfterDecimal);
     REGISTER_MESSAGE(ExpectedFailOrSkip);
+    REGISTER_MESSAGE(ExpectedPathToExist);
+    REGISTER_MESSAGE(ExpectedDigitsAfterDecimal);
     REGISTER_MESSAGE(ExpectedOneSetOfTags);
     REGISTER_MESSAGE(ExpectedPortName);
     REGISTER_MESSAGE(ExpectedStatusField);
     REGISTER_MESSAGE(ExpectedTripletName);
     REGISTER_MESSAGE(ExpectedValueForOption);
+    REGISTER_MESSAGE(ExtendedDocumentationAtUrl);
+    REGISTER_MESSAGE(ExtractingTool);
+    REGISTER_MESSAGE(FailedToDetermineCurrentCommit);
+    REGISTER_MESSAGE(FailedToExtract);
     REGISTER_MESSAGE(ExportArchitectureReq);
     REGISTER_MESSAGE(Exported7zipArchive);
     REGISTER_MESSAGE(ExportedZipArchive);
@@ -569,14 +603,13 @@ namespace vcpkg
     REGISTER_MESSAGE(ExportingPackage);
     REGISTER_MESSAGE(ExportPrefabRequiresAndroidTriplet);
     REGISTER_MESSAGE(ExportUnsupportedInManifest);
-    REGISTER_MESSAGE(ExtendedDocumentationAtUrl);
     REGISTER_MESSAGE(FailedToCheckoutRepo);
     REGISTER_MESSAGE(FailedToDownloadFromMirrorSet);
-    REGISTER_MESSAGE(FailedToExtract);
     REGISTER_MESSAGE(FailedToFindBaseline);
     REGISTER_MESSAGE(FailedToFindPortFeature);
     REGISTER_MESSAGE(FailedToFormatMissingFile);
     REGISTER_MESSAGE(FailedToLoadInstalledManifest);
+    REGISTER_MESSAGE(FailedToLoadManifest);
     REGISTER_MESSAGE(FailedToLoadPort);
     REGISTER_MESSAGE(FailedToLoadPortFrom);
     REGISTER_MESSAGE(FailedToLocateSpec);
@@ -584,10 +617,12 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedToObtainLocalPortGitSha);
     REGISTER_MESSAGE(FailedToObtainPackageVersion);
     REGISTER_MESSAGE(FailedToParseCMakeConsoleOut);
+    REGISTER_MESSAGE(FailedToParseConfig);
     REGISTER_MESSAGE(FailedToParseControl);
     REGISTER_MESSAGE(FailedToParseJson);
     REGISTER_MESSAGE(FailedToParseManifest);
     REGISTER_MESSAGE(FailedToParseSerializedBinParagraph);
+    REGISTER_MESSAGE(FailedToParseVersionXML);
     REGISTER_MESSAGE(FailedToProvisionCe);
     REGISTER_MESSAGE(FailedToRead);
     REGISTER_MESSAGE(FailedToReadParagraph);
@@ -595,6 +630,7 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedToRunToolToDetermineVersion);
     REGISTER_MESSAGE(FailedToStoreBackToMirror);
     REGISTER_MESSAGE(FailedToStoreBinaryCache);
+    REGISTER_MESSAGE(FailedToTakeFileSystemLock);
     REGISTER_MESSAGE(FailedToWriteManifest);
     REGISTER_MESSAGE(FailedVendorAuthentication);
     REGISTER_MESSAGE(FeedbackAppreciated);
@@ -707,6 +743,8 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidArgumentRequiresTwoOrThreeArguments);
     REGISTER_MESSAGE(InvalidArgumentRequiresValidToken);
     REGISTER_MESSAGE(InvalidBuildInfo);
+    REGISTER_MESSAGE(InvalidBuiltInBaseline);
+    REGISTER_MESSAGE(InvalidBundleDefinition);
     REGISTER_MESSAGE(InvalidCodePoint);
     REGISTER_MESSAGE(InvalidCodeUnit);
     REGISTER_MESSAGE(InvalidCommandArgSort);
@@ -760,6 +798,7 @@ namespace vcpkg
     REGISTER_MESSAGE(LoadingOverlayTriplet);
     REGISTER_MESSAGE(LocalizedMessageMustNotContainIndents);
     REGISTER_MESSAGE(LocalizedMessageMustNotEndWithNewline);
+    REGISTER_MESSAGE(LocalPortfileVersion);
     REGISTER_MESSAGE(ManifestConflict);
     REGISTER_MESSAGE(ManifestFormatCompleted);
     REGISTER_MESSAGE(MismatchedFiles);
@@ -808,6 +847,7 @@ namespace vcpkg
     REGISTER_MESSAGE(PackagesToRebuild);
     REGISTER_MESSAGE(PackagesToRebuildSuggestRecurse);
     REGISTER_MESSAGE(PackagesToRemove);
+    REGISTER_MESSAGE(PackagesUpToDate);
     REGISTER_MESSAGE(PackingVendorFailed);
     REGISTER_MESSAGE(PairedSurrogatesAreInvalid);
     REGISTER_MESSAGE(ParseControlErrorInfoInvalidFields);
@@ -815,6 +855,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ParseControlErrorInfoTypesEntry);
     REGISTER_MESSAGE(ParseControlErrorInfoWhileLoading);
     REGISTER_MESSAGE(ParseControlErrorInfoWrongTypeFields);
+    REGISTER_MESSAGE(PathMustBeAbsolute);
     REGISTER_MESSAGE(PortDependencyConflict);
     REGISTER_MESSAGE(PortNotInBaseline);
     REGISTER_MESSAGE(PortsAdded);
@@ -823,11 +864,7 @@ namespace vcpkg
     REGISTER_MESSAGE(PortsUpdated);
     REGISTER_MESSAGE(PortSupportsField);
     REGISTER_MESSAGE(PortTypeConflict);
-    REGISTER_MESSAGE(PrebuiltPackages);
     REGISTER_MESSAGE(PreviousIntegrationFileRemains);
-    REGISTER_MESSAGE(ProcessorArchitectureMalformed);
-    REGISTER_MESSAGE(ProcessorArchitectureMissing);
-    REGISTER_MESSAGE(ProcessorArchitectureW6432Malformed);
     REGISTER_MESSAGE(ProgramReturnedNonzeroExitCode);
     REGISTER_MESSAGE(ProvideExportType);
     REGISTER_MESSAGE(PushingVendorFailed);
@@ -862,9 +899,9 @@ namespace vcpkg
     REGISTER_MESSAGE(SystemApiErrorMessage);
     REGISTER_MESSAGE(ToolFetchFailed);
     REGISTER_MESSAGE(ToolInWin10);
-    REGISTER_MESSAGE(TotalTime);
-    REGISTER_MESSAGE(TrailingCommaInArray);
-    REGISTER_MESSAGE(TrailingCommaInObj);
+    REGISTER_MESSAGE(ToolOfVersionXNotFound);
+    REGISTER_MESSAGE(ToRemovePackages);
+    REGISTER_MESSAGE(TotalInstallTime);
     REGISTER_MESSAGE(TwoFeatureFlagsSpecified);
     REGISTER_MESSAGE(UndeterminedToolChainForTriplet);
     REGISTER_MESSAGE(UnexpectedCharExpectedCloseBrace);
@@ -913,6 +950,7 @@ namespace vcpkg
     REGISTER_MESSAGE(UnsupportedSyntaxInCDATA);
     REGISTER_MESSAGE(UnsupportedSystemName);
     REGISTER_MESSAGE(UnsupportedToolchain);
+    REGISTER_MESSAGE(UnsupportedUpdateCMD);
     REGISTER_MESSAGE(UpdateBaselineAddBaselineNoManifest);
     REGISTER_MESSAGE(UpdateBaselineLocalGitError);
     REGISTER_MESSAGE(UpdateBaselineNoConfiguration);
@@ -931,7 +969,6 @@ namespace vcpkg
     REGISTER_MESSAGE(UserWideIntegrationRemoved);
     REGISTER_MESSAGE(UsingCommunityTriplet);
     REGISTER_MESSAGE(UsingManifestAt);
-    REGISTER_MESSAGE(Utf8ConversionFailed);
     REGISTER_MESSAGE(VcpkgCeIsExperimental);
     REGISTER_MESSAGE(VcpkgCommitTableHeader);
     REGISTER_MESSAGE(VcpkgCompletion);
@@ -944,6 +981,7 @@ namespace vcpkg
     REGISTER_MESSAGE(VcpkgRootsDir);
     REGISTER_MESSAGE(VcpkgSendMetricsButDisabled);
     REGISTER_MESSAGE(VersionCommandHeader);
+    REGISTER_MESSAGE(VersionConflictXML);
     REGISTER_MESSAGE(VersionConstraintViolated);
     REGISTER_MESSAGE(VersionInvalidDate);
     REGISTER_MESSAGE(VersionInvalidRelaxed);
@@ -963,5 +1001,16 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedToFetchError);
     REGISTER_MESSAGE(UnexpectedPortName);
     REGISTER_MESSAGE(FailedToLoadUnnamedPortFromPath);
-    REGISTER_MESSAGE(ComputingInstallPlan);
+
+    REGISTER_MESSAGE(TrailingCommaInArray);
+    REGISTER_MESSAGE(TrailingCommaInObj);
+    REGISTER_MESSAGE(Utf8ConversionFailed);
+    REGISTER_MESSAGE(PrebuiltPackages);
+    REGISTER_MESSAGE(AndroidHomeDirMissingProps);
+    REGISTER_MESSAGE(PortVersionConflict);
+    REGISTER_MESSAGE(ToUpdatePackages);
+    REGISTER_MESSAGE(AmbiguousConfigDeleteConfigFile);
+    REGISTER_MESSAGE(TripletFileNotFound);
+    REGISTER_MESSAGE(VcpkgRegistriesCacheIsNotDirectory);
+    REGISTER_MESSAGE(FailedToParseNoTopLevelObj);
 }

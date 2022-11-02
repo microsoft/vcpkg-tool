@@ -121,8 +121,7 @@ namespace vcpkg::Json
         static Value integer(int64_t i) noexcept;
         static Value number(double d) noexcept;
         static Value string(std::string&& s) noexcept;
-        template<class StringLike,
-                 std::enable_if_t<std::is_constructible<StringView, const StringLike&>::value, int> = 0>
+        template<class StringLike, std::enable_if_t<std::is_constructible_v<StringView, const StringLike&>, int> = 0>
         static Value string(const StringLike& s) noexcept
         {
             return string(StringView(s).to_string());
@@ -158,8 +157,7 @@ namespace vcpkg::Json
         using const_iterator = underlying_t::const_iterator;
 
         Value& push_back(std::string&& value);
-        template<class StringLike,
-                 std::enable_if_t<std::is_constructible<StringView, const StringLike&>::value, int> = 0>
+        template<class StringLike, std::enable_if_t<std::is_constructible_v<StringView, const StringLike&>, int> = 0>
         Value& push_back(const StringLike& value)
         {
             return this->push_back(StringView(value).to_string());
@@ -217,8 +215,7 @@ namespace vcpkg::Json
         ~Object() = default;
 
         // asserts if the key is found
-        template<class StringLike,
-                 std::enable_if_t<std::is_constructible<StringView, const StringLike&>::value, int> = 0>
+        template<class StringLike, std::enable_if_t<std::is_constructible_v<StringView, const StringLike&>, int> = 0>
         Value& insert(StringView key, const StringLike& value)
         {
             return this->insert(key, StringView(value).to_string());
@@ -234,8 +231,7 @@ namespace vcpkg::Json
         // replaces the value if the key is found, otherwise inserts a new
         // value.
         Value& insert_or_replace(StringView key, std::string&& value);
-        template<class StringLike,
-                 std::enable_if_t<std::is_constructible<StringView, const StringLike&>::value, int> = 0>
+        template<class StringLike, std::enable_if_t<std::is_constructible_v<StringView, const StringLike&>, int> = 0>
         Value& insert_or_replace(StringView key, const StringLike& value)
         {
             return this->insert_or_replace(key, StringView(value).to_string());

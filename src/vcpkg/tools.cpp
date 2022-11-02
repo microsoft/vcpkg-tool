@@ -83,14 +83,17 @@ namespace vcpkg
         static const std::regex XML_VERSION_REGEX{R"###(<tools[\s]+version="([^"]+)">)###"};
         std::cmatch match_xml_version;
         const bool has_xml_version = std::regex_search(XML.begin(), XML.end(), match_xml_version, XML_VERSION_REGEX);
-        Checks::check_exit(
-            VCPKG_LINE_INFO, has_xml_version, R"(Could not find <tools version="%s"> in %s)", XML_VERSION, XML_PATH);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           XML_VERSION == match_xml_version[1],
-                           "Expected %s version: [%s], but was [%s]. Please re-run bootstrap-vcpkg.",
-                           XML_PATH,
-                           XML_VERSION,
-                           match_xml_version[1].str());
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               has_xml_version,
+                               msgCouldNotFindToolVersion,
+                               msg::version = XML_VERSION,
+                               msg::path = XML_PATH);
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               XML_VERSION == match_xml_version[1],
+                               msgVersionConflictXML,
+                               msg::path = XML_PATH,
+                               msg::expected_version = XML_VERSION,
+                               msg::actual_version = match_xml_version[1].str());
 
         const std::regex tool_regex{Strings::format(R"###(<tool[\s]+name="%s"[\s]+os="%s">)###", tool, os)};
         std::cmatch match_tool_entry;
@@ -108,11 +111,11 @@ namespace vcpkg
         auto archive_name = Strings::find_at_most_one_enclosed(tool_data, "<archiveName>", "</archiveName>");
 
         const Optional<std::array<int, 3>> version = parse_tool_version_string(version_as_string);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           version.has_value(),
-                           "Could not parse version for tool %s. Version string was: %s",
-                           tool,
-                           version_as_string);
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               version.has_value(),
+                               msgFailedToParseVersionXML,
+                               msg::tool_name = tool,
+                               msg::version = version_as_string);
 
         Path tool_dir_name = Strings::format("%s-%s-%s", tool, version_as_string, os);
         Path download_subpath;
@@ -147,7 +150,7 @@ namespace vcpkg
             return msg::format_error(
                        msgFailedToRunToolToDetermineVersion, msg::tool_name = tool_name, msg::path = exe_path)
                 .append_raw('\n')
-                .append(std::move(output))
+                .append(output)
                 .extract_data();
         });
     }
@@ -654,34 +657,26 @@ namespace vcpkg
         Path download_tool(const ToolData& tool_data, MessageSink& status_sink) const
         {
             const std::array<int, 3>& version = tool_data.version;
-            const std::string version_as_string = Strings::format("%d.%d.%d", version[0], version[1], version[2]);
-            Checks::check_maybe_upgrade(
-                VCPKG_LINE_INFO,
-                !tool_data.url.empty(),
-                "A suitable version of %s was not found (required v%s) and unable to automatically "
-                "download a portable one. Please install a newer version of %s.",
-                tool_data.name,
-                version_as_string,
-                tool_data.name);
-
-            status_sink.print(Color::none,
-                              Strings::concat("A suitable version of ",
-                                              tool_data.name,
-                                              " was not found (required v",
-                                              version_as_string,
-                                              "). Downloading portable ",
-                                              tool_data.name,
-                                              " v",
-                                              version_as_string,
-                                              "...\n"));
+            const std::string version_as_string = fmt::format("{}.{}.{}", version[0], version[1], version[2]);
+            Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
+                                            !tool_data.url.empty(),
+                                            msgToolOfVersionXNotFound,
+                                            msg::tool_name = tool_data.name,
+                                            msg::version = version_as_string);
+            status_sink.println(Color::none,
+                                msgDownloadingPortableToolVersionX,
+                                msg::tool_name = tool_data.name,
+                                msg::version = version_as_string);
 
             const auto download_path = downloads / tool_data.download_subpath;
             if (!fs.exists(download_path, IgnoreErrors{}))
             {
-                status_sink.print(
-                    Color::none,
-                    Strings::concat(
-                        "Downloading ", tool_data.name, "...\n  ", tool_data.url, " -> ", download_path, "\n"));
+                status_sink.println(Color::none,
+                                    msgDownloadingTool,
+                                    msg::tool_name = tool_data.name,
+                                    msg::url = tool_data.url,
+                                    msg::path = download_path);
+
                 downloader->download_file(fs, tool_data.url, download_path, tool_data.sha512);
             }
             else
@@ -694,7 +689,7 @@ namespace vcpkg
 
             if (tool_data.is_archive)
             {
-                status_sink.print(Color::none, Strings::concat("Extracting ", tool_data.name, "...\n"));
+                status_sink.println(Color::none, msgExtractingTool, msg::tool_name = tool_data.name);
 #if defined(_WIN32)
                 if (tool_data.name == "cmake")
                 {
@@ -714,8 +709,10 @@ namespace vcpkg
                 fs.rename(download_path, exe_path, IgnoreErrors{});
             }
 
-            Checks::check_exit(
-                VCPKG_LINE_INFO, fs.exists(exe_path, IgnoreErrors{}), "Expected %s to exist after fetching", exe_path);
+            if (!fs.exists(exe_path, IgnoreErrors{}))
+            {
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgExpectedPathToExist, msg::path = exe_path);
+            }
 
             return exe_path;
         }

@@ -415,7 +415,7 @@ namespace vcpkg
         Cache<Path, TripletMapEntry> m_triplet_cache;
         Cache<Path, std::string> m_toolchain_cache;
 
-        const TripletMapEntry& get_triplet_cache(const Filesystem& fs, const Path& p);
+        const TripletMapEntry& get_triplet_cache(const Filesystem& fs, const Path& p) const;
 
 #if defined(_WIN32)
         struct EnvMapEntry

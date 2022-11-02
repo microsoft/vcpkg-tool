@@ -144,7 +144,7 @@ namespace vcpkg::Build
         action->build_options.clean_buildtrees = CleanBuildtrees::NO;
         action->build_options.clean_packages = CleanPackages::NO;
 
-        const auto build_timer = ElapsedTimer::create_started();
+        const ElapsedTimer build_timer;
         const auto result = build_package(args, paths, *action, binary_cache, build_logs_recorder, status_db);
         msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
         if (result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
@@ -486,7 +486,7 @@ namespace vcpkg
         });
     }
 
-    const EnvCache::TripletMapEntry& EnvCache::get_triplet_cache(const Filesystem& fs, const Path& p)
+    const EnvCache::TripletMapEntry& EnvCache::get_triplet_cache(const Filesystem& fs, const Path& p) const
     {
         return m_triplet_cache.get_lazy(p, [&]() -> TripletMapEntry {
             return TripletMapEntry{Hash::get_file_hash(fs, p, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO)};
@@ -657,17 +657,17 @@ namespace vcpkg
             rc = cmd_execute_and_stream_lines(
                 command,
                 [&](StringView s) {
-                    static const StringLiteral s_hash_marker = "#COMPILER_HASH#";
+                    static constexpr StringLiteral s_hash_marker = "#COMPILER_HASH#";
                     if (Strings::starts_with(s, s_hash_marker))
                     {
                         compiler_info.hash = s.substr(s_hash_marker.size()).to_string();
                     }
-                    static const StringLiteral s_version_marker = "#COMPILER_CXX_VERSION#";
+                    static constexpr StringLiteral s_version_marker = "#COMPILER_CXX_VERSION#";
                     if (Strings::starts_with(s, s_version_marker))
                     {
                         compiler_info.version = s.substr(s_version_marker.size()).to_string();
                     }
-                    static const StringLiteral s_id_marker = "#COMPILER_CXX_ID#";
+                    static constexpr StringLiteral s_id_marker = "#COMPILER_CXX_ID#";
                     if (Strings::starts_with(s, s_id_marker))
                     {
                         compiler_info.id = s.substr(s_id_marker.size()).to_string();
@@ -859,7 +859,7 @@ namespace vcpkg
                                       '-',
                                       generate_random_UUID());
 
-        const auto now = CTime::get_current_date_time().value_or_exit(VCPKG_LINE_INFO).strftime("%Y-%m-%dT%H:%M:%SZ");
+        const auto now = CTime::now_string();
         const auto& abi = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
 
         const auto json_path = paths.package_dir(action.spec) / "share" / action.spec.name() / "vcpkg.spdx.json";
@@ -897,8 +897,7 @@ namespace vcpkg
             msg::println(msgInstallingFromLocation, msg::path = scfl.source_location);
         }
 
-        const auto timer = ElapsedTimer::create_started();
-
+        const ElapsedTimer timer;
         auto command = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, get_cmake_build_args(args, paths, action));
 
         const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
@@ -935,30 +934,33 @@ namespace vcpkg
         const auto buildtimeus = timer.microseconds();
         const auto spec_string = action.spec.to_string();
 
+        MetricsSubmission metrics;
+        metrics.track_buildtime(Hash::get_string_hash(spec_string, Hash::Algorithm::Sha256) + ":[" +
+                                    Strings::join(",",
+                                                  action.feature_list,
+                                                  [](const std::string& feature) {
+                                                      return Hash::get_string_hash(feature, Hash::Algorithm::Sha256);
+                                                  }) +
+                                    "]",
+                                buildtimeus);
+
+        const bool build_failed = !succeeded(return_code);
+        if (build_failed)
         {
-            LockGuardPtr<Metrics> metrics(g_metrics);
-            metrics->track_buildtime(Hash::get_string_hash(spec_string, Hash::Algorithm::Sha256) + ":[" +
-                                         Strings::join(",",
-                                                       action.feature_list,
-                                                       [](const std::string& feature) {
-                                                           return Hash::get_string_hash(feature,
-                                                                                        Hash::Algorithm::Sha256);
-                                                       }) +
-                                         "]",
-                                     buildtimeus);
-            if (!succeeded(return_code))
+            metrics.track_string(StringMetric::BuildError, spec_string);
+        }
+
+        get_global_metrics_collector().track_submission(std::move(metrics));
+        if (build_failed)
+        {
+            const auto logs = buildpath / Strings::concat("error-logs-", action.spec.triplet(), ".txt");
+            std::vector<std::string> error_logs;
+            if (fs.exists(logs, VCPKG_LINE_INFO))
             {
-                metrics->track_string_property(StringMetric::Error, "build failed");
-                metrics->track_string_property(StringMetric::BuildError, spec_string);
-                const auto logs = buildpath / Strings::concat("error-logs-", action.spec.triplet(), ".txt");
-                std::vector<std::string> error_logs;
-                if (fs.exists(logs, VCPKG_LINE_INFO))
-                {
-                    error_logs = fs.read_lines(logs, VCPKG_LINE_INFO);
-                    Util::erase_remove_if(error_logs, [](const auto& line) { return line.empty(); });
-                }
-                return ExtendedBuildResult{BuildResult::BUILD_FAILED, stdoutlog, std::move(error_logs)};
+                error_logs = fs.read_lines(logs, VCPKG_LINE_INFO);
+                Util::erase_remove_if(error_logs, [](const auto& line) { return line.empty(); });
             }
+            return ExtendedBuildResult{BuildResult::BUILD_FAILED, stdoutlog, std::move(error_logs)};
         }
 
         const BuildInfo build_info = read_build_info(fs, paths.build_info_file_path(action.spec));
@@ -1089,7 +1091,7 @@ namespace vcpkg
         // If there is an unusually large number of files in the port then
         // something suspicious is going on.  Rather than hash all of them
         // just mark the port as no-hash
-        const int max_port_file_count = 100;
+        constexpr int max_port_file_count = 100;
 
         std::string portfile_cmake_contents;
         std::vector<Path> files;

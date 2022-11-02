@@ -105,7 +105,7 @@ namespace
                     Checks::unreachable(VCPKG_LINE_INFO);
                 }
             }
-            segments.emplace_back(std::move(loc), std::move(segment));
+            segments.emplace_back(loc, std::move(segment));
 
             auto ch = cur();
             if (ch == Unicode::end_of_file || ch == ';')
@@ -186,7 +186,7 @@ namespace
             , m_read_dirs(std::move(read_dirs))
             , m_write_dirs(std::move(write_dirs))
             , m_put_url_templates(std::move(put_url_templates))
-            , m_secrets(std::move(secrets))
+            , m_secrets(secrets)
         {
         }
 
@@ -199,7 +199,7 @@ namespace
 
             for (const auto& archives_root_dir : m_read_dirs)
             {
-                const auto timer = ElapsedTimer::create_started();
+                const ElapsedTimer timer;
                 to_try_restore_idxs.clear();
                 to_try_restore.clear();
                 for (size_t idx = 0; idx < cache_status.size(); ++idx)
@@ -430,7 +430,7 @@ namespace
 
         void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
-            const auto timer = ElapsedTimer::create_started();
+            const ElapsedTimer timer;
             auto& fs = paths.get_filesystem();
             size_t this_restore_count = 0;
             std::vector<std::pair<std::string, Path>> url_paths;
@@ -671,8 +671,8 @@ namespace
             {
                 return;
             }
-            const auto timer = ElapsedTimer::create_started();
 
+            const ElapsedTimer timer;
             auto& fs = paths.get_filesystem();
 
             std::vector<NuGetPrefetchAttempt> attempts;
@@ -943,8 +943,7 @@ namespace
         {
             auto& fs = paths.get_filesystem();
 
-            const auto timer = ElapsedTimer::create_started();
-
+            const ElapsedTimer timer;
             size_t restored_count = 0;
             for (const auto& prefix : m_read_prefixes)
             {
@@ -1014,7 +1013,7 @@ namespace
         void push_success(const InstallPlanAction& action) const override
         {
             if (m_write_prefixes.empty()) return;
-            const auto timer = ElapsedTimer::create_started();
+            const ElapsedTimer timer;
             const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
             auto& spec = action.spec;
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
@@ -1254,7 +1253,7 @@ namespace
 
 namespace vcpkg
 {
-    LocalizedString UrlTemplate::valid()
+    LocalizedString UrlTemplate::valid() const
     {
         std::vector<std::string> invalid_keys;
         auto result = api_stable_format(url_template, [&](std::string&, StringView key) {
@@ -1579,7 +1578,7 @@ namespace
             auto maybe_cachepath = get_environment_variable("VCPKG_DEFAULT_BINARY_CACHE");
             if (auto p_str = maybe_cachepath.get())
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::VcpkgDefaultBinaryCache);
+                get_global_metrics_collector().track_define(DefineMetric::VcpkgDefaultBinaryCache);
                 Path path = *p_str;
                 path.make_preferred();
                 if (!get_real_filesystem().is_directory(path))
@@ -2007,15 +2006,18 @@ namespace
                 {"http", DefineMetric::BinaryCachingHttp},
                 {"nuget", DefineMetric::BinaryCachingNuget},
             };
-            auto metrics = LockGuardPtr<Metrics>(g_metrics);
+
+            MetricsSubmission metrics;
             for (const auto& cache_provider : state->binary_cache_providers)
             {
                 auto it = metric_names.find(cache_provider);
                 if (it != metric_names.end())
                 {
-                    metrics->track_define_property(it->second);
+                    metrics.track_define(it->second);
                 }
             }
+
+            get_global_metrics_collector().track_submission(std::move(metrics));
         }
     };
 
@@ -2147,7 +2149,7 @@ ExpectedS<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
 {
     if (!arg || arg.get()->empty()) return DownloadManagerConfig{};
 
-    LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::AssetSource);
+    get_global_metrics_collector().track_define(DefineMetric::AssetSource);
 
     AssetSourcesState s;
     AssetSourcesParser parser(*arg.get(), Strings::concat("$", VcpkgCmdArguments::ASSET_SOURCES_ENV), &s);
@@ -2198,17 +2200,14 @@ ExpectedS<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
 ExpectedS<BinaryConfigParserState> vcpkg::create_binary_providers_from_configs_pure(const std::string& env_string,
                                                                                     View<std::string> args)
 {
+    if (!env_string.empty())
     {
-        LockGuardPtr<Metrics> metrics(g_metrics);
-        if (!env_string.empty())
-        {
-            metrics->track_define_property(DefineMetric::VcpkgBinarySources);
-        }
+        get_global_metrics_collector().track_define(DefineMetric::VcpkgBinarySources);
+    }
 
-        if (args.size() != 0)
-        {
-            metrics->track_define_property(DefineMetric::BinaryCachingSource);
-        }
+    if (args.size() != 0)
+    {
+        get_global_metrics_collector().track_define(DefineMetric::BinaryCachingSource);
     }
 
     BinaryConfigParserState s;
@@ -2346,7 +2345,7 @@ details::NuGetRepoInfo details::get_nuget_repo_info_from_env()
     auto vcpkg_nuget_repository = get_environment_variable("VCPKG_NUGET_REPOSITORY");
     if (auto p = vcpkg_nuget_repository.get())
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::VcpkgNugetRepository);
+        get_global_metrics_collector().track_define(DefineMetric::VcpkgNugetRepository);
         return {std::move(*p)};
     }
 
@@ -2362,7 +2361,7 @@ details::NuGetRepoInfo details::get_nuget_repo_info_from_env()
         return {};
     }
 
-    LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::GitHubRepository);
+    get_global_metrics_collector().track_define(DefineMetric::GitHubRepository);
     return {Strings::concat(gh_server, '/', gh_repo, ".git"),
             get_environment_variable("GITHUB_REF").value_or(""),
             get_environment_variable("GITHUB_SHA").value_or("")};

@@ -16,7 +16,7 @@ namespace vcpkg::Strings::details
 {
     // first looks up to_string on `T` using ADL; then, if that isn't found,
     // uses the above definition which returns t.to_string()
-    template<class T, class = std::enable_if_t<!std::is_arithmetic<T>::value>>
+    template<class T, class = std::enable_if_t<!std::is_arithmetic_v<T>>>
     auto to_printf_arg(const T& t) -> decltype(to_string(t))
     {
         return to_string(t);
@@ -28,7 +28,7 @@ namespace vcpkg::Strings::details
 
     inline const wchar_t* to_printf_arg(const wchar_t* s) { return s; }
 
-    template<class T, class = std::enable_if_t<std::is_arithmetic<T>::value>>
+    template<class T, class = std::enable_if_t<std::is_arithmetic_v<T>>>
     T to_printf_arg(T s)
     {
         return s;
@@ -112,7 +112,7 @@ namespace vcpkg::Strings
         return Strings::concat(args...);
     }
 
-    template<class T, class = std::enable_if_t<std::is_convertible<T, StringView>::value>>
+    template<class T, class = std::enable_if_t<std::is_convertible_v<T, StringView>>>
     StringView concat_or_view(const T& v)
     {
         return v;

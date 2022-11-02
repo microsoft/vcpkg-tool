@@ -3,7 +3,6 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/json.h>
-#include <vcpkg/base/lockguarded.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
@@ -50,7 +49,7 @@ namespace vcpkg
             return ret;
         }
 
-        ExpectedS<int> query_status()
+        ExpectedS<int> query_status() const
         {
             DWORD dwStatusCode = 0;
             DWORD dwSize = sizeof(dwStatusCode);

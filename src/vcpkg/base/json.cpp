@@ -9,6 +9,8 @@
 
 #include <inttypes.h>
 
+#include <memory>
+
 namespace vcpkg::Json
 {
     static std::atomic<uint64_t> g_json_parsing_stats(0);
@@ -58,6 +60,7 @@ namespace vcpkg::Json
                     case VK::String: return internal_assign(VK::String, &ValueImpl::string, other);
                     case VK::Array: return internal_assign(VK::Array, &ValueImpl::array, other);
                     case VK::Object: return internal_assign(VK::Object, &ValueImpl::object, other);
+                    default: Checks::unreachable(VCPKG_LINE_INFO);
                 }
             }
 
@@ -186,22 +189,22 @@ namespace vcpkg::Json
         {
             case ValueKind::Null: return; // default construct underlying_
             case ValueKind::Boolean:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Boolean>(), other.underlying_->boolean));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Boolean>(), other.underlying_->boolean);
                 break;
             case ValueKind::Integer:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Integer>(), other.underlying_->integer));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Integer>(), other.underlying_->integer);
                 break;
             case ValueKind::Number:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Number>(), other.underlying_->number));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Number>(), other.underlying_->number);
                 break;
             case ValueKind::String:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::String>(), other.underlying_->string));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::String>(), other.underlying_->string);
                 break;
             case ValueKind::Array:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Array>(), other.underlying_->array));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Array>(), other.underlying_->array);
                 break;
             case ValueKind::Object:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Object>(), other.underlying_->object));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Object>(), other.underlying_->object);
                 break;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
@@ -213,22 +216,22 @@ namespace vcpkg::Json
         {
             case ValueKind::Null: underlying_.reset(); break;
             case ValueKind::Boolean:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Boolean>(), other.underlying_->boolean));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Boolean>(), other.underlying_->boolean);
                 break;
             case ValueKind::Integer:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Integer>(), other.underlying_->integer));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Integer>(), other.underlying_->integer);
                 break;
             case ValueKind::Number:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Number>(), other.underlying_->number));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Number>(), other.underlying_->number);
                 break;
             case ValueKind::String:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::String>(), other.underlying_->string));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::String>(), other.underlying_->string);
                 break;
             case ValueKind::Array:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Array>(), other.underlying_->array));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Array>(), other.underlying_->array);
                 break;
             case ValueKind::Object:
-                underlying_.reset(new ValueImpl(ValueKindConstant<VK::Object>(), other.underlying_->object));
+                underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Object>(), other.underlying_->object);
                 break;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
@@ -951,7 +954,7 @@ namespace vcpkg::Json
                         add_error(msg::format(msgDuplicatedKeyInObj, msg::value = val.first), keyPairLoc);
                         return Value();
                     }
-                    obj.insert(std::move(val.first), std::move(val.second));
+                    obj.insert(val.first, std::move(val.second));
                 }
             }
 
@@ -1095,7 +1098,7 @@ namespace vcpkg::Json
             return std::unique_ptr<ParseError>();
         }
 
-        return parse(std::move(res), json_file);
+        return parse(res, json_file);
     }
 
     std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo li, const Filesystem& fs, const Path& json_file)
@@ -1150,7 +1153,7 @@ namespace vcpkg::Json
             JsonStyle style;
             std::string& buffer;
 
-            void append_indent(int indent)
+            void append_indent(int indent) const
             {
                 if (style.use_tabs())
                 {
@@ -1162,7 +1165,7 @@ namespace vcpkg::Json
                 }
             };
 
-            void append_unicode_escape(char16_t code_unit)
+            void append_unicode_escape(char16_t code_unit) const
             {
                 buffer.append("\\u");
 
