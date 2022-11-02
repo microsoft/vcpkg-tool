@@ -25,7 +25,7 @@ New-Item -Path $manifestDir -ItemType Directory | Out-Null
 $ports = Get-ChildItem "$env:VCPKG_ROOT/ports"
 
 $ports | % {
-    if (($_ | Split-Path -leaf) -in @("libuvc", "mlpack", "qt5-virtualkeyboard")) {
+    if (($_ | Split-Path -leaf) -in @("libuvc", "mlpack", "qt5-virtualkeyboard", "qtwebengine")) {
         return
     }
     Copy-Item "$_/vcpkg.json" "$manifestDir" | Out-Null
