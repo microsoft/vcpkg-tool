@@ -11,7 +11,7 @@ $testProjects | % {
     Write-Trace "test that format-manifest on $full produces $expectedPath"
     [string]$expected = Get-Content $expectedPath -Raw
     Copy-Item $asItem $tempItemPath
-    Run-Vcpkg format-manifest $tempItemPath
+    Run-Vcpkg format-manifest $tempItemPath | Out-Null
     $actual = Get-Content $tempItemPath -Raw
     if ($expected -ne $actual) {
         throw "Expected formatting $full to produce $expectedPath but was $tempItemPath"
@@ -25,6 +25,9 @@ New-Item -Path $manifestDir -ItemType Directory | Out-Null
 $ports = Get-ChildItem "$env:VCPKG_ROOT/ports"
 
 $ports | % {
+    if (($_ | Split-Path -leaf) -in @("libuvc", "mlpack", "qt5-virtualkeyboard")) {
+        return
+    }
     Copy-Item "$_/vcpkg.json" "$manifestDir" | Out-Null
     $x = Get-Content "$manifestDir/vcpkg.json" -Raw
     Run-Vcpkg -EndToEndTestSilent format-manifest "$manifestDir/vcpkg.json" | Out-Null
