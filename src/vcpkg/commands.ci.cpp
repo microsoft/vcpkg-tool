@@ -510,7 +510,8 @@ namespace vcpkg::Commands::CI
 
             if (baseline_iter != settings.end())
             {
-                print_baseline_regressions(summary.results, split_specs->known, cidata, baseline_iter->second, allow_unexpected_passing);
+                print_baseline_regressions(
+                    summary.results, split_specs->known, cidata, baseline_iter->second, allow_unexpected_passing);
             }
 
             auto it_xunit = settings.find(OPTION_XUNIT);
@@ -524,12 +525,8 @@ namespace vcpkg::Commands::CI
                     const auto& spec = result.get_spec();
                     auto& port_features = split_specs->features.at(spec);
                     auto code = result.build_result.value_or_exit(VCPKG_LINE_INFO).code;
-                    xunitTestResults.add_test_results(spec,
-                                                      code,
-                                                      result.timing,
-                                                      result.start_time,
-                                                      split_specs->abi_map.at(spec),
-                                                      port_features);
+                    xunitTestResults.add_test_results(
+                        spec, code, result.timing, result.start_time, split_specs->abi_map.at(spec), port_features);
                 }
 
                 // Adding results for ports that were not built because they have known states
