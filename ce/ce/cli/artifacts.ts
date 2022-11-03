@@ -4,7 +4,6 @@
 import { MultiBar, SingleBar } from 'cli-progress';
 import { Artifact, ArtifactBase, InstallStatus, ResolvedArtifact, resolveDependencies, Selections } from '../artifacts/artifact';
 import { i } from '../i18n';
-import { trackAcquire } from '../insights';
 import { FileEntry, InstallEvents } from '../interfaces/events';
 import { getArtifact, RegistryDisplayContext, RegistryResolver } from '../registries/registries';
 import { Session } from '../session';
@@ -251,7 +250,7 @@ export async function acquireArtifacts(session: Session, resolved: Array<Resolve
         const installStatus = await artifact.install(artifactDisplayName, progressRenderer, options || {});
         switch (installStatus) {
           case InstallStatus.Installed:
-            trackAcquire(id, artifact.version);
+            session.trackAcquire(artifact.registryUri.toString(), id, artifact.version);
             break;
           case InstallStatus.AlreadyInstalled:
             break;

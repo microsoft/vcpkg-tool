@@ -131,7 +131,7 @@ namespace
             // regular directory
             fs.create_directory(base, ec);
             CHECK_EC_ON_FILE(base, ec);
-            for (int i = 0; i < 5; ++i)
+            for (unsigned int i = 0; i < 5; ++i)
             {
                 create_directory_tree(urbg, fs, base / get_random_filename(urbg), remaining_depth - 1);
             }

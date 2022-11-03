@@ -559,7 +559,7 @@ namespace vcpkg::Json
                     case 'u':
                     {
                         char16_t code_unit = 0;
-                        for (int i = 0; i < 4; ++i)
+                        for (unsigned int i = 0; i < 4; ++i)
                         {
                             current = next();
 

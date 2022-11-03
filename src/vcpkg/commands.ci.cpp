@@ -195,7 +195,7 @@ namespace vcpkg::Commands::CI
 
             if (is_excluded(p->spec))
             {
-                ret->action_state_string.push_back("skip");
+                ret->action_state_string.emplace_back("skip");
                 ret->known.emplace(p->spec, BuildResult::EXCLUDED);
                 will_fail.emplace(p->spec);
             }
@@ -204,26 +204,26 @@ namespace vcpkg::Commands::CI
                 // This treats unsupported ports as if they are excluded
                 // which means the ports dependent on it will be cascaded due to missing dependencies
                 // Should this be changed so instead it is a failure to depend on a unsupported port?
-                ret->action_state_string.push_back("n/a");
+                ret->action_state_string.emplace_back("n/a");
                 ret->known.emplace(p->spec, BuildResult::EXCLUDED);
                 will_fail.emplace(p->spec);
             }
             else if (Util::any_of(p->package_dependencies,
                                   [&](const PackageSpec& spec) { return Util::Sets::contains(will_fail, spec); }))
             {
-                ret->action_state_string.push_back("cascade");
+                ret->action_state_string.emplace_back("cascade");
                 ret->cascade_count++;
                 ret->known.emplace(p->spec, BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES);
                 will_fail.emplace(p->spec);
             }
             else if (precheck_results[action_idx] == CacheAvailability::available)
             {
-                ret->action_state_string.push_back("pass");
+                ret->action_state_string.emplace_back("pass");
                 ret->known.emplace(p->spec, BuildResult::SUCCEEDED);
             }
             else
             {
-                ret->action_state_string.push_back("*");
+                ret->action_state_string.emplace_back("*");
             }
         }
         return ret;
