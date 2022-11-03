@@ -193,6 +193,8 @@ namespace vcpkg
         constexpr static StringLiteral IGNORE_LOCK_FAILURES_ENV = "X_VCPKG_IGNORE_LOCK_FAILURES";
         Optional<bool> ignore_lock_failures = nullopt;
 
+        bool do_not_take_lock = false;
+
         constexpr static StringLiteral JSON_SWITCH = "x-json";
         Optional<bool> json = nullopt;
 
