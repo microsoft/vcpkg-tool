@@ -82,12 +82,6 @@ namespace
 
 namespace vcpkg::Commands::CI
 {
-    struct TripletAndSummary
-    {
-        Triplet triplet;
-        InstallSummary summary;
-    };
-
     static constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
     static constexpr StringLiteral OPTION_EXCLUDE = "exclude";
     static constexpr StringLiteral OPTION_HOST_EXCLUDE = "host-exclude";
@@ -534,10 +528,8 @@ namespace vcpkg::Commands::CI
                 }
             }
 
-            TripletAndSummary result{target_triplet, std::move(summary)};
-
-            msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\nTriplet: {}\n", result.triplet));
-            result.summary.print();
+            msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\nTriplet: {}\n", target_triplet));
+            summary.print();
 
             if (baseline_iter != settings.end())
             {
