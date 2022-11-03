@@ -51,6 +51,39 @@ namespace vcpkg::Util
         }
     }
 
+    // Treats the range [first, last) a range sorted by cmp, and copies any duplicate elements to
+    // the output range out.
+    template<class FwdIt, class OutIt, class Cmp>
+    void set_duplicates(FwdIt first, FwdIt last, OutIt out, Cmp cmp)
+    {
+        // pre: [first, last) is sorted according to cmp
+        if (first != last)
+        {
+            for (auto next = first; ++next != last; first = next)
+            {
+                if (!(cmp(*first, *next)))
+                {
+                    *out = *first;
+                    ++out;
+                    do
+                    {
+                        ++next;
+                        if (next == last)
+                        {
+                            return;
+                        }
+                    } while (!(cmp(*first, *next)));
+                }
+            }
+        }
+    }
+
+    template<class FwdIt, class OutIt>
+    void set_duplicates(FwdIt first, FwdIt last, OutIt out)
+    {
+        return set_duplicates(first, last, out, std::less<>{});
+    }
+
     namespace Maps
     {
         template<class K, class V1, class V2, class Func>

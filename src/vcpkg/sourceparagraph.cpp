@@ -484,7 +484,7 @@ namespace vcpkg
             r.optional_object_field(obj, DEFAULT_FEATURES, default_features, Json::BooleanDeserializer::instance);
             if (!default_features)
             {
-                dep.features.push_back("core");
+                dep.features.emplace_back("core");
             }
             r.optional_object_field(obj, HOST, dep.host, Json::BooleanDeserializer::instance);
 
@@ -1024,7 +1024,7 @@ namespace vcpkg
             const vcpkg::Json::Object& obj,
             vcpkg::SourceParagraph& spgh,
             vcpkg::Json::Reader& r,
-            std::unique_ptr<vcpkg::SourceControlFile>& control_file)
+            std::unique_ptr<vcpkg::SourceControlFile>& control_file) const
         {
             for (const auto& el : obj)
             {

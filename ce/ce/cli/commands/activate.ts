@@ -4,7 +4,6 @@
 import { buildRegistryResolver, checkDemands, resolveDependencies } from '../../artifacts/artifact';
 import { configurationName } from '../../constants';
 import { i } from '../../i18n';
-import { trackActivation } from '../../insights';
 import { session } from '../../main';
 import { showArtifacts } from '../artifacts';
 import { Command } from '../command';
@@ -65,7 +64,6 @@ export class ActivateCommand extends Command {
     }
 
     if (await activate(session, resolved, projectResolver, true, options)) {
-      trackActivation();
       session.channels.message(i`Project ${projectFile(projectManifest.metadata.file.parent)} activated`);
       return true;
     }

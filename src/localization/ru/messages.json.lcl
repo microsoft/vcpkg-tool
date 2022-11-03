@@ -2880,10 +2880,13 @@
       </Item>
       <Item ItemId=";IgnoringVcpkgRootEnvironment" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Ignoring VCPKG_ROOT environment variable; use --vcpkg-root "{path}" to use the environment value or unset the VCPKG_ROOT environment variable to suppress this message. Using detected vcpkg root: "{actual}".]]></Val>
+          <Val><![CDATA[The vcpkg {value} is using detected vcpkg root {actual} and ignoring mismatched VCPKG_ROOT environment value {path}. To suppress this message, unset the environment variable or use the --vcpkg-root command line switch.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Пропуск переменной среды VCPKG_ROOT; используйте --vcpkg-root "{path}", чтобы использовать значение среды, или отключите переменную среды VCPKG_ROOT, чтобы скрыть это сообщение. Использование обнаруженного корня vcpkg: "{actual}".]]></Val>
+            <Val><![CDATA[vcpkg {value} использует обнаруженный корень vcpkg {actual} и пропускает несовпадающее значение среды VCPKG_ROOT {path}. Чтобы скрыть это сообщение, удалите переменную среды или воспользуйтесь переключателем командной строки --vcpkg-root.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Ignoring VCPKG_ROOT environment variable; use --vcpkg-root "{path}" to use the environment value or unset the VCPKG_ROOT environment variable to suppress this message. Using detected vcpkg root: "{actual}".]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>

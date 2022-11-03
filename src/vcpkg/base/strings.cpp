@@ -24,7 +24,7 @@ vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView 
 {
     // Transforms similarly to std::format -- "{xyz}" -> f(xyz), "{{" -> "{", "}}" -> "}"
 
-    static const char s_brackets[] = "{}";
+    static constexpr char s_brackets[] = "{}";
 
     std::string out;
     auto prev = sv.begin();

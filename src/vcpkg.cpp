@@ -219,11 +219,18 @@ int main(const int argc, const char* const* const argv)
 
     ElapsedTimer total_timer;
     auto& fs = get_real_filesystem();
+    auto maybe_vslang = get_environment_variable("VSLANG");
+    if (const auto vslang = maybe_vslang.get())
     {
-        auto vslang = get_environment_variable("VSLANG");
-        auto lcid_opt = Strings::strto<int>(vslang.value_or("1033"));
-        auto map = msg::get_message_map_from_lcid(lcid_opt.value_or(1033));
-        msg::load_from_message_map(*map.get());
+        const auto maybe_lcid_opt = Strings::strto<int>(*vslang);
+        if (const auto lcid_opt = maybe_lcid_opt.get())
+        {
+            const auto maybe_map = msg::get_message_map_from_lcid(*lcid_opt);
+            if (const auto map = maybe_map.get())
+            {
+                msg::load_from_message_map(*map);
+            }
+        }
     }
 
 #if defined(_WIN32)
