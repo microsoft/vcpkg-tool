@@ -52,7 +52,7 @@ export class AddCommand extends Command {
     const selections = new Map(this.inputs.map((v, i) => [v, versions[i] || '*']));
     const projectResolver = await buildRegistryResolver(session, projectManifest.metadata.registries);
     const combinedResolver = session.globalRegistryResolver.with(projectResolver);
-    const selectedArtifacts = await selectArtifacts(session, selections, combinedResolver, 1);
+    const selectedArtifacts = await selectArtifacts(session, selections, combinedResolver, 2);
     if (!selectedArtifacts) {
       return false;
     }
