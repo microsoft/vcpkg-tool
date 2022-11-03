@@ -187,7 +187,7 @@ namespace vcpkg
             }
             return ret;
         }
-        return std::move(maybe_results.error());
+        return std::move(maybe_results).error();
     }
 
     ExpectedL<bool> is_shallow_clone(const GitConfig& config)
