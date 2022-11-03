@@ -393,8 +393,6 @@ namespace vcpkg::Commands::CI
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
-        XunitWriter xunitTestResults;
-
         const ElapsedTimer timer;
         std::vector<std::string> all_port_names =
             Util::fmap(provider.load_all_control_files(), Paragraphs::get_name_of_control_file);
@@ -502,30 +500,9 @@ namespace vcpkg::Commands::CI
             auto summary = Install::perform(
                 args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder, var_provider);
 
-            // Adding results for ports that were built or pulled from an archive
             for (auto&& result : summary.results)
             {
-                const auto& spec = result.get_spec();
-                auto& port_features = split_specs->features.at(spec);
-                split_specs->known.erase(spec);
-                auto code = result.build_result.value_or_exit(VCPKG_LINE_INFO).code;
-                xunitTestResults.add_test_results(
-                    spec, code, result.timing, result.start_time, split_specs->abi_map.at(spec), port_features);
-            }
-
-            // Adding results for ports that were not built because they have known states
-            if (Util::Sets::contains(options.switches, OPTION_XUNIT_ALL))
-            {
-                for (auto&& port : split_specs->known)
-                {
-                    auto& port_features = split_specs->features.at(port.first);
-                    xunitTestResults.add_test_results(port.first,
-                                                      port.second,
-                                                      ElapsedTime{},
-                                                      std::chrono::system_clock::time_point{},
-                                                      split_specs->abi_map.at(port.first),
-                                                      port_features);
-                }
+                split_specs->known.erase(result.get_spec());
             }
 
             msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\nTriplet: {}\n", target_triplet));
@@ -539,6 +516,38 @@ namespace vcpkg::Commands::CI
             auto it_xunit = settings.find(OPTION_XUNIT);
             if (it_xunit != settings.end())
             {
+                XunitWriter xunitTestResults;
+
+                // Adding results for ports that were built or pulled from an archive
+                for (auto&& result : summary.results)
+                {
+                    const auto& spec = result.get_spec();
+                    auto& port_features = split_specs->features.at(spec);
+                    auto code = result.build_result.value_or_exit(VCPKG_LINE_INFO).code;
+                    xunitTestResults.add_test_results(spec,
+                                                      code,
+                                                      result.timing,
+                                                      result.start_time,
+                                                      split_specs->abi_map.at(spec),
+                                                      port_features);
+                }
+
+                // Adding results for ports that were not built because they have known states
+                if (Util::Sets::contains(options.switches, OPTION_XUNIT_ALL))
+                {
+                    for (auto&& port : split_specs->known)
+                    {
+                        const auto& spec = port.first;
+                        auto& port_features = split_specs->features.at(spec);
+                        xunitTestResults.add_test_results(spec,
+                                                          port.second,
+                                                          ElapsedTime{},
+                                                          std::chrono::system_clock::time_point{},
+                                                          split_specs->abi_map.at(spec),
+                                                          port_features);
+                    }
+                }
+
                 filesystem.write_contents(
                     it_xunit->second, xunitTestResults.build_xml(target_triplet), VCPKG_LINE_INFO);
             }
