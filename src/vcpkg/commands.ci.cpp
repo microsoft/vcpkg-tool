@@ -294,11 +294,11 @@ namespace vcpkg::Commands::CI
         return result;
     }
 
-    static void print_baseline_regressions(const std::vector<SpecSummary>& results,
-                                           const std::map<PackageSpec, BuildResult>& known,
-                                           const CiBaselineData& cidata,
-                                           const std::string& ci_baseline_file_name,
-                                           bool allow_unexpected_passing)
+    static void print_regressions(const std::vector<SpecSummary>& results,
+                                  const std::map<PackageSpec, BuildResult>& known,
+                                  const CiBaselineData& cidata,
+                                  const std::string& ci_baseline_file_name,
+                                  bool allow_unexpected_passing)
     {
         bool has_error = false;
         LocalizedString output = msg::format(msgCiBaselineRegressionHeader);
@@ -507,11 +507,7 @@ namespace vcpkg::Commands::CI
 
             msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\nTriplet: {}\n", target_triplet));
             summary.print();
-
-            if (baseline_iter != settings.end())
-            {
-                print_baseline_regressions(summary.results, split_specs->known, cidata, baseline_iter->second, allow_unexpected_passing);
-            }
+            print_regressions(summary.results, split_specs->known, cidata, baseline_iter->second, allow_unexpected_passing);
 
             auto it_xunit = settings.find(OPTION_XUNIT);
             if (it_xunit != settings.end())
