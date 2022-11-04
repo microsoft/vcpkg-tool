@@ -16,8 +16,8 @@
     "watch": "tsc -p . --watch",
     "prepare": "npm run build",
     "test-ci": "npm run build && npm run test",
-    "test": "node --harmony ./node_modules/mocha/bin/mocha --config ./mocha-config.yaml --timeout 200000",
-    "watch-test": "node --harmony ./node_modules/mocha/bin/mocha --config ./mocha-config.yaml --timeout 200000 --watch"
+    "test": "node ./node_modules/mocha/bin/mocha --config ./mocha-config.yaml --timeout 200000",
+    "watch-test": "node ./node_modules/mocha/bin/mocha --config ./mocha-config.yaml --timeout 200000 --watch"
   },
   "repository": {
     "type": "git",
