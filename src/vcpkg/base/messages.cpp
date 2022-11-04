@@ -488,6 +488,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ChecksUpdateVcpkg);
     REGISTER_MESSAGE(CiBaselineAllowUnexpectedPassingRequiresBaseline);
     REGISTER_MESSAGE(CiBaselineDisallowedCascade);
+    REGISTER_MESSAGE(CiBaselineIndependentRegression);
     REGISTER_MESSAGE(CiBaselineRegression);
     REGISTER_MESSAGE(CiBaselineRegressionHeader);
     REGISTER_MESSAGE(CiBaselineUnexpectedPass);

@@ -722,6 +722,10 @@ namespace vcpkg
                     (msg::spec, msg::path),
                     "",
                     "REGRESSION: {spec} cascaded, but it is required to pass. ({path}).");
+    DECLARE_MESSAGE(CiBaselineIndependentRegression,
+                    (msg::spec, msg::build_result),
+                    "",
+                    "REGRESSION: Independent {spec} failed with {build_result}.");
     DECLARE_MESSAGE(CiBaselineRegression,
                     (msg::spec, msg::build_result, msg::path),
                     "",

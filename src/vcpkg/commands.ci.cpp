@@ -310,7 +310,7 @@ namespace vcpkg::Commands::CI
         for (auto&& r : results)
         {
             auto result = r.build_result.value_or_exit(VCPKG_LINE_INFO).code;
-            auto msg = format_ci_result(r.get_spec(), result, cidata, ci_baseline_file_name, allow_unexpected_passing);
+            auto msg = format_ci_result(r.get_spec(), result, cidata, ci_baseline_file_name, allow_unexpected_passing, !r.is_user_requested_install());
             if (!msg.empty())
             {
                 has_error = true;
@@ -319,7 +319,7 @@ namespace vcpkg::Commands::CI
         }
         for (auto&& r : known)
         {
-            auto msg = format_ci_result(r.first, r.second, cidata, ci_baseline_file_name, allow_unexpected_passing);
+            auto msg = format_ci_result(r.first, r.second, cidata, ci_baseline_file_name, allow_unexpected_passing, true);
             if (!msg.empty())
             {
                 has_error = true;
