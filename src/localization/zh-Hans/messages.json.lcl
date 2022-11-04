@@ -58,6 +58,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AddRecurseOption" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[If you are sure you want to remove them, run the command with the --recurse option.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[如果确定要移除它们，请使用 --recurse 选项运行命令。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AddTripletExpressionNotAllowed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[triplet expressions are not allowed here. You may want to change `{package_name}:{triplet}` to `{package_name}` instead.]]></Val>
@@ -313,6 +322,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AdditionalPackagesToExport" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Additional packages (*) need to be exported to complete this operation.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[需要导出其他包(*)才能完成此操作。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AdditionalPackagesToRemove" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Additional packages (*) need to be removed to complete this operation.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[需要移除其他包(*)才能完成此操作。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AllFormatArgsRawArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[format string "{value}" contains a raw format argument]]></Val>
@@ -354,6 +381,24 @@
           <Val><![CDATA[{spec} is already installed -- not building from HEAD]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[已安装 {spec} - 未从 HEAD 生成]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AmbiguousConfigDeleteConfigFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Ambiguous vcpkg configuration provided by both manifest and configuration file.]A;-- Delete configuration file {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[清单和配置文件提供的 vcpkg 配置不明确。]A;-- 请删除配置文件 {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AndroidHomeDirMissingProps" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[source.properties missing in {env_var} directory: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{env_var} 目录中缺少 source.properties: {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -403,6 +448,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AttemptingToSetBuiltInBaseline" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[attempting to set builtin-baseline in vcpkg.json while overriding the default-registry in vcpkg-configuration.json.]A;the default-registry from vcpkg-configuration.json will be used.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[尝试在 vcpkg.json 中设置内置基线，同时重写 vcpkg-configuration.json 中的 default-registry。]A;系统将使用 vcpkg-configuration.json 中的 default-registry。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AuthenticationMayRequireManualAction" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[One or more {vendor} credential providers requested manual action. Add the binary source 'interactive' to allow interactivity.]]></Val>
@@ -426,6 +480,51 @@
           <Val><![CDATA[All MSBuild C++ projects can now #include any installed libraries. Linking will be handled automatically. Installing new libraries will make them instantly available.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[所有 MSBuild C++ 项目现在可以#包含任何已安装的库。系统将自动处理链接。安装新库将使它们立即可用。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AvailableArchitectureTriplets" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Available architecture triplets:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[可用的体系结构三元组:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AvailableHelpTopics" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Available help topics:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[可用的帮助主题:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BaselineConflict" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Specifying vcpkg-configuration.default-registry in a manifest file conflicts with built-in baseline.]A;Please remove one of these conflicting settings.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[在清单文件中指定 vcpkg-configuration.default-registry 的操作与内置基线冲突。]A;请删除其中一个冲突设置。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BaselineFileNoDefaultField" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The baseline file at commit {commit_sha} was invalid (no "default" field).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[提交 {commit_sha} 处的基线文件无效(无“默认”字段)。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BaselineMissingDefault" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The baseline.json from commit `"{commit_sha}"` in the repo {url} was invalid (did not contain a "default" field).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[提交存储库 {url} 中的 `"{commit_sha}"` 中的 baseline.json 无效(不包含“default”字段)。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -612,10 +711,13 @@
       </Item>
       <Item ItemId=";BuildTroubleshootingMessage4" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[You can also use the prefilled template from {path}.]]></Val>
+          <Val><![CDATA[Please use the prefilled template from {path} when reporting your issue.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[你还可以使用来自 {path} 的预填充模板。]]></Val>
+            <Val><![CDATA[报告问题时，请使用 {path} 中的预填充模板。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[You can also use the prefilled template from {path}.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -655,6 +757,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";BuiltInTriplets" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg built-in triplets:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg 内置三元组:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CMakeTargetsUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{package_name} provides CMake targets:]]></Val>
@@ -678,6 +789,15 @@
           <Val><![CDATA[CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE={path}"]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[CMake 项目应使用:“-DCMAKE_TOOLCHAIN_FILE={path}”]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CMakeUsingExportedLibs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[To use exported libraries in CMake projects, add {value} to your CMake command line.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[要在 CMake 项目中使用导出的库，请将 {value} 添加到 CMake 命令行。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -787,6 +907,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CommunityTriplets" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[VCPKG community triplets:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[VCPKG 社区三元组:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ComparingUtf8Decoders" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Comparing Utf8Decoders with different provenance; this is always an error]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[比较具有不同来源的 Utf8Decoder；这始终是一个错误]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CompressFolderFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to compress folder "{path}":]]></Val>
@@ -796,6 +934,24 @@
           <Prev Cat="Text">
             <Val><![CDATA[Failed to compress folder '{path}':]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ComputingInstallPlan" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Computing installation plan...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[正在计算安装计划...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ConflictingFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following files are already installed in {path} and are in conflict with {spec}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[以下文件已安装在 {path} 中，并与 {spec} 发生冲突]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -820,11 +976,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ContinueCodeUnitInStart" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[found continue code unit in start position]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[在“开始”位置找到了继续码位]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ControlAndManifestFilesPresent" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Both a manifest file and a CONTROL file exist in port directory: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[端口目录中同时存在清单文件和 CONTROL 文件: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ControlCharacterInString" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Control character in string]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[字符串中的控件字符]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -847,11 +1021,65 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CorruptedInstallTree" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Your vcpkg 'installed' tree is corrupted.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[你的 vcpkg “installed” 树已损坏。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CouldNotDeduceNugetIdAndVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not deduce nuget id and version from filename: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[无法从文件名推导出 nuget ID 和版本: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CouldNotFindBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Could not find explicitly specified baseline `"{commit_sha}"` in baseline file {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[找不到基线文件 {path} 中显式指定的基线 `"{commit_sha}"`]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CouldNotFindBaselineForRepo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Couldn't find baseline `"{commit_sha}"` for repo {package_name}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[找不到存储库 {package_name} 的基线 `"{commit_sha}"`]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CouldNotFindBaselineInCommit" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Couldn't find baseline in commit `"{commit_sha}"` from repo {package_name}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[在存储库 {package_name} 的提交 `"{commit_sha}"` 中找不到基线:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CouldNotFindGitTreeAtCommit" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[could not find the git tree for `versions` in repo {package_name} at commit {commit_sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[在提交 {commit_sha} 的存储库 {package_name} 中找不到 `versions` 的 git 树]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CouldNotFindToolVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Could not find <tools version="{version}"> in {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[在 {path} 中找不到 <tools version="{version}"> 版]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -862,14 +1090,65 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[正在创建失败日志输出目录 {path}。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Creating failure logs output directory {path}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CreatedNuGetPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Created nupkg: "{path}"]]></Val>
+          <Val><![CDATA[Created nupkg: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[已创建 nupkg:“{path}”]]></Val>
+            <Val><![CDATA[已创建 nupkg: {path}]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Created nupkg: "{path}"]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";Creating7ZipArchive" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Creating 7zip archive...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[正在创建 7zip 存档...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CreatingNugetPackage" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Creating NuGet package...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[正在创建 NuGet 包...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CreatingZipArchive" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Creating zip archive...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[正在创建 zip 存档...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CreationFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Creating {path} failed.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[创建 {path} 失败。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CurlFailedToExecute" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[curl failed to execute with exit code {exit_code}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[curl 无法执行，退出代码为 {exit_code}。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -883,6 +1162,24 @@
           <Prev Cat="Text">
             <Val><![CDATA[curl has reported unexpected results to vcpkg and vcpkg cannot continue.]A;Please review the following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix this problem!]A;cmd: {command_line}]A;=== curl output ===]A;{actual}]A;=== end curl output ===]A;]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CurlReturnedUnexpectedResponseCodes" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[curl returned a different number of response codes than were expected for the request ({actual} vs expected {expected}).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[curl 返回的响应代码数不同于请求的预期数量({actual} 与预期的 {expected})。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CurrentCommitBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[You can use the current commit as a baseline, which is:]A;	"builtin-baseline": "{value}"]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[可以将当前提交用作基线，即:]A;	"builtin-baseline": "{value}"]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -922,6 +1219,24 @@
           <Prev Cat="Text">
             <Val><![CDATA[Based on your system settings, the default path to store binaries is ]A; '{path}'. This consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DeleteVcpkgConfigFromManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[-- Or remove "vcpkg-configuration" from the manifest file {path}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[-- 或从清单文件 {path} 中删除 "vcpkg-configuration"。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DeprecatedPrefabDebugOption" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[--prefab-debug is now deprecated.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[--prefab-debug 现已弃用。]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -972,6 +1287,24 @@
           <Val><![CDATA[Downloaded sources for {spec}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[已下载的 {spec} 源]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadingPortableToolVersionX" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[A suitable version of {tool_name} was not found (required v{version}) Downloading portable {tool_name} {version}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[找不到合适的{tool_name}版本(所需版本为 {version})。正在下载可移植版本 {tool_name} {version}...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadingTool" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading {tool_name}...]A;{url}->{path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[正在下载{tool_name}...]A;{url}->{path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1030,11 +1363,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DuplicatedKeyInObj" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Duplicated key "{value}" in an object]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[重复的密钥 "{value}" 在对象中]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ElapsedForPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Elapsed time to handle {spec}: {elapsed}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[处理 {spec} 所用时间: {elapsed}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ElapsedInstallTime" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Total elapsed time: {count}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[总运行时间: {count}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1057,6 +1408,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";EmbeddingVcpkgConfigInManifest" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Embedding `vcpkg-configuration` in a manifest file is an EXPERIMENTAL feature.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[在清单文件中嵌入 `vcpkg-configuration` 是一项实验性功能。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";EmptyArg" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The option --{option} must be passed a non-empty argument.]]></Val>
@@ -1071,6 +1431,15 @@
           <Val><![CDATA[SPDX license expression was empty.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[SPDX 许可证表达式为空。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";EndOfStringInCodeUnit" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[found end of string in middle of code point]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[在码位中间找到了字符串结尾]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1282,6 +1651,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ErrorWhileFetchingBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while fetching baseline `"{value}"` from repo {package_name}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[从存储库提取基线 `"{value}"` 时 {package_name}:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ErrorWhileParsing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Errors occurred while parsing {path}.]]></Val>
@@ -1336,6 +1714,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExpectedAtMostOneSetOfTags" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Found {count} sets of {old_value}.*{new_value} but expected at most 1, in block:]A;{value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[在 block:]A;{value} 中找到了 {count} 组 {old_value}.*{new_value} 集，但应最多为 1]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExpectedCascadeFailure" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected {expected} cascade failure, but there were {actual} cascade failures.]]></Val>
@@ -1354,6 +1741,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExpectedDigitsAfterDecimal" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Expected digits after the decimal point]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[小数点后的预期数字]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExpectedFailOrSkip" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[expected 'fail', 'skip', or 'pass' here]]></Val>
@@ -1366,11 +1762,38 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExpectedOneSetOfTags" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Found {count} sets of {old_value}.*{new_value} but expected exactly 1, in block:]A;{value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[在 block:]A;{value} 中找到了 {count} 组 {old_value}.*{new_value} 集，但应恰好为 1]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExpectedPathToExist" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Expected {path} to exist after fetching]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[提取后应存在 {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExpectedPortName" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[expected a port name here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[此处需要填写端口名称]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExpectedStatusField" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Expected 'status' field in status paragraph]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[状态段落中应为 “status” 字段]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1396,6 +1819,69 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExportArchitectureReq" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Export prefab requires targeting at least one of the following architectures arm64-v8a, armeabi-v7a, x86_64, x86 to be present.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[导出预制需要至少面向以下当前体系结构之一: arm64-v8a、armeabi-v7a、x86_64、x86。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExportPrefabRequiresAndroidTriplet" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[export prefab requires an Android triplet.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[导出预制需要使用 Android 三件套。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExportUnsupportedInManifest" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg export does not support manifest mode, in order to allow for future design considerations. You may use export in classic mode by running vcpkg outside of a manifest-based project.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[考虑到将来的设计，vcpkg 导出不支持清单模式。可以通过在基于清单的项目外部运行 vcpkg 在经典模式下使用导出。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";Exported7zipArchive" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[7zip archive exported at: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[7zip 存档导出位置: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExportedZipArchive" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Zip archive exported at: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Zip 存档导出位置: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExportingAlreadyBuiltPackages" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following packages are already built and will be exported:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[已生成并将导出以下包:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExportingMaintenanceTool" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Exporting maintenance tool...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[正在导出维护工具...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExportingPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Exporting {package_name}...]]></Val>
@@ -1414,11 +1900,65 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExtractingTool" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Extracting {tool_name}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[正在提取{tool_name}...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToCheckoutRepo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to check out `versions` from repo {package_name}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[未能从存储库 {package_name} 签出“版本”]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToDetermineCurrentCommit" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to determine the current commit:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[无法确定当前提交:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToDownloadFromMirrorSet" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to download from mirror set]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[未能从镜像集下载]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FailedToExtract" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to extract "{path}":]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[无法提取“{path}”:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToFetchError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{error_msg}]A;Failed to fetch {package_name}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{error_msg}]A;无法提取 {package_name}:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToFindBaseline" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to find baseline.json]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[未能找到 baseline.json]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1443,9 +1983,48 @@
       </Item>
       <Item ItemId=";FailedToLoadInstalledManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The control or mnaifest file for {spec} could not be loaded due to the following error. Please remove {spec} and re-attempt.]]></Val>
+          <Val><![CDATA[The control or manifest file for {spec} could not be loaded due to the following error. Please remove {spec} and try again.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[由于以下错误，无法加载 {spec} 的控件或清单文件。请移除 {spec}，然后重新尝试。]]></Val>
+            <Val><![CDATA[由于以下错误，无法加载 {spec} 的控件或清单文件。请移除 {spec}，然后重试。]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The control or mnaifest file for {spec} could not be loaded due to the following error. Please remove {spec} and re-attempt.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToLoadManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to load manifest from directory {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[未能从目录 {path} 加载清单]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToLoadPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to load port {package_name} from {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[未能从 {path} 加载端口 {package_name}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToLoadPortFrom" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to load port from {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[未能从 {path} 加载端口]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToLoadUnnamedPortFromPath" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to load port from {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[未能从 {path} 加载端口]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1495,6 +2074,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FailedToParseConfig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to parse configuration {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[未能分析配置 {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FailedToParseControl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to parse control file: {path}]]></Val>
@@ -1522,11 +2110,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FailedToParseNoTopLevelObj" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to parse {path}, expected a top-level object.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[无法分析 {path}，该路径应为顶级对象。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FailedToParseSerializedBinParagraph" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[[sanity check]5D; Failed to parse a serialized binary paragraph.]A;Please open an issue at https://github.com/microsoft/vcpkg, with the following output:]A;{error_msg}]A;Serialized Binary Paragraph:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[[健全性检查]5D;无法分析序列化二进制段落。]A;请在 https://github.com/microsoft/vcpkg 提出问题，附加以下输出: ]A;{error_msg}]A;序列化二进制段落:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToParseVersionXML" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Could not parse version for tool {tool_name}. Version string was: {version}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[无法分析工具{tool_name}的版本。版本字符串为: {version}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1600,6 +2206,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FailedToTakeFileSystemLock" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to take the filesystem lock on {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[未能在 {path} 上锁定文件系统]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FailedToWriteManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to write manifest file {path}]]></Val>
@@ -1627,11 +2242,65 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FetchingBaselineInfo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Fetching baseline information from {package_name}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[正在从 {package_name} 提取基线信息...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FetchingRegistryInfo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Fetching registry information from {url} ({value})...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[正在从 {url} ({value}) 提取注册表信息...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FileNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{path}: file not found]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path}: 未找到文件]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FileSystemOperationFailed" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Filesystem operation failed:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[文件系统操作失败:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FilesExported" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Files exported at: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[文件导出位置: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FishCompletion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[vcpkg fish completion is already added at "{path}".]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[已在“{path}”下添加 vcpkg fish 完成。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FloatingPointConstTooBig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Floating point constant too big: {count}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[浮点常量太大: {count}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1729,11 +2398,74 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";GeneratedConfiguration" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Generated configuration {path}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[生成的配置 {path}。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GeneratedInstaller" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{path} installer generated.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[已生成 {path} 安装程序。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GeneratingConfiguration" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Generating configuration {path}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[正在生成配置 {path}...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GeneratingInstaller" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Generating installer {path}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[正在生成安装程序 {path}...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GeneratingRepo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Generating repository {path}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[正在生成存储库 {path}...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GetParseFailureInfo" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Use '--debug' to get more information about the parse failures.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[使用 “--debug” 获取有关分析失败的详细信息。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";GitCommandFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[failed to execute: {command_line}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[执行 {command_line} 失败]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GitRegistryMustHaveBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The git registry entry for "{package_name}" must have a "baseline" field that is a valid git commit SHA (40 hexadecimal characters).]A;The current HEAD of that repo is "{value}".]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA["{package_name}"的 GIT 注册表项必须具有“baseline”字段，该字段是有效的 git 提交 SHA (40 个十六进制字符)。]A;该存储库的当前头为 "{value}"。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1813,6 +2545,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";HelpBuiltinBase" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The baseline references a commit within the vcpkg repository that establishes a minimum version on every dependency in the graph. For example, if no other constraints are specified (directly or transitively), then the version will resolve to the baseline of the top level manifest. Baselines of transitive dependencies are ignored.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[基线引用 vcpkg 存储库中针对图中每个依赖项建立最低版本的提交。例如，如果未指定其他约束(直接或以可传递方式)，则版本将解析为顶级清单的基线。将忽略可传递依赖项的基线。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";HelpContactCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Display contact information to send feedback.]]></Val>
@@ -1867,6 +2608,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";HelpExampleManifest" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Example manifest:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[示例清单:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";HelpExportCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Exports a package.]]></Val>
@@ -1890,15 +2640,6 @@
           <Val><![CDATA[Hash a file by specific algorithm, default SHA512.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[按特定算法哈希文件，默认为 SHA512。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";HelpHistoryCommand" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[(Experimental) Show the history of versions of a package.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[(实验性)显示包版本的历史记录。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1930,11 +2671,56 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";HelpManifestConstraints" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Manifests can place three kinds of constraints upon the versions used]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[清单可以对所使用的版本施加三种约束]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpMinVersion" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Vcpkg will select the minimum version found that matches all applicable constraints, including the version from the baseline specified at top-level as well as any "version>=" constraints in the graph.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Vcpkg 将选择找到的与所有适用约束匹配的最低版本，包括在顶级指定的基线中的版本以及图中的任何 “version>=” 约束。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpOverrides" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[When used as the top-level manifest (such as when running `vcpkg install` in the directory), overrides allow a manifest to short-circuit dependency resolution and specify exactly the version to use. These can be used to handle version conflicts, such as with `version-string` dependencies. They will not be considered when transitively depended upon.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[当用作顶级清单(例如在目录中运行 `vcpkg install` 时)，替代允许清单短路依赖项解析，并精确指定要使用的版本。可将这些用于处理版本冲突，例如使用 `version-string` 依赖项。如果以可传递方式以来它们，则将不会考虑它们。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";HelpOwnsCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Search for files in installed packages.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[搜索已安装包中的文件。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpPackagePublisher" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Additionally, package publishers can use "version>=" constraints to ensure that consumers are using at least a certain minimum version of a given dependency. For example, if a library needs an API added to boost-asio in 1.70, a "version>=" constraint will ensure transitive users use a sufficient version even in the face of individual version overrides or cross-registry references.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[此外，包发布者可以使用 “version>=” 约束，以确保使用者至少使用某个特定最低版本的给定依赖项。例如，如果库需要在 1.70 中将 API 添加到 boost-asio，则 “version>=” 约束将确保可传递用户使用足够的版本，即使在单独的版本替代或跨注册表引用的情况下也是如此。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpPortVersionScheme" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Each version additionally has a "port-version" which is a nonnegative integer. When rendered as text, the port version (if nonzero) is added as a suffix to the primary version text separated by a hash (#). Port-versions are sorted lexographically after the primary version text, for example:]A;1.0.0 < 1.0.0#1 < 1.0.1 < 1.0.1#5 < 2.0.0]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[此外，每个版本还有一个非负整数的“端口版本”。在呈现为文本时，端口版本(如果非零)将作为后缀添加到由哈希(#)分隔的主版本文本中。端口版本在主版本文本后按字母顺序排序，例如:]A;1.0.0 < 1.0.0#1 < 1.0.1 < 1.0.1#5 < 2.0.0]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1993,6 +2779,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";HelpUpdateBaseline" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The best approach to keep your libraries up to date, the best approach is to update your baseline reference. This will ensure all packages, including transitive ones, are updated. However if you need to update a package independently, you can use a "version>=" constraint.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[使库保持最新的最佳方法是更新基线引用。这将确保更新所有包(包括可传递包)。但如果需要单独更新包，则可以使用 “version>=” 约束。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";HelpUpdateCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[List packages that can be updated.]]></Val>
@@ -2017,6 +2812,81 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[显示版本信息。]]></Val>
           </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionDateScheme" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[A date (2021-01-01.5)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[日期(2021-01-01.5)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionGreater" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Within the "dependencies" field, each dependency can have a minimum constraint listed. These minimum constraints will be used when transitively depending upon this library. A minimum port-version can additionally be specified with a '#' suffix.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[在“依赖项”字段中，每个依赖项可以列出最小约束。如果这些最小约束以可传递方式依赖于此库，则将使用这些最小约束。此外，还可以使用 “#” 后缀指定最低端口版本。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionScheme" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[A dot-separated sequence of numbers (1.2.3.4)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[以点分隔的数字序列(1.2.3.4)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionSchemes" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following versioning schemes are accepted.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[已接受以下版本控制方案。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionSemverScheme" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[A Semantic Version 2.0 (2.1.0-rc2)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[语义版本 2.0 (2.1.0-rc2)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersionStringScheme" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[An exact, incomparable version (Vista)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[精确、不兼容的版本(Vista)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpVersioning" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Versioning allows you to deterministically control the precise revisions of dependencies used by your project from within your manifest file.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[使用版本控制，可以从清单文件中确定性地控制项目所用依赖项的精确修订。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IgnoringVcpkgRootEnvironment" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The vcpkg {value} is using detected vcpkg root {actual} and ignoring mismatched VCPKG_ROOT environment value {path}. To suppress this message, unset the environment variable or use the --vcpkg-root command line switch.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg {value} 正在使用检测到的 vcpkg 根 {actual} 并忽略不匹配的 VCPKG_ROOT 环境值 {path}。要抑制此消息，请取消设置环境变量或使用 --vcpkg-root 命令行开关。]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Ignoring VCPKG_ROOT environment variable; use --vcpkg-root "{path}" to use the environment value or unset the VCPKG_ROOT environment variable to suppress this message. Using detected vcpkg root: "{actual}".]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2053,11 +2923,47 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";IncorrectArchiveFileSignature" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Incorrect archive file signature]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[存档文件签名不正确]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IncorrectLibHeaderEnd" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Incorrect lib header end]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[lib 标头结尾不正确]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";IncorrectNumberOfArgs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA['{command_name}' requires '{expected}' arguments, but '{actual}' were provided.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[“{command_name}”需要“{expected}”个参数，但提供了“{actual}”个。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IncorrectPESignature" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Incorrect PE signature]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[PE 签名不正确]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IncrementedUtf8Decoder" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Incremented Utf8Decoder at the end of the string]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[字符串末尾的增量 Utf8Decoder]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2079,6 +2985,15 @@
           <Val><![CDATA[Could not create a registry at {path} because this is not a git repository root.]A;Use `git init {command_line}` to create a git repository in this folder.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[无法在 {path} 下创建注册表，因为这不是 git 存储库根路径。]A;请使用“git init {command_line}”在此文件夹中创建 git 存储库。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InstallFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed: {path}: {error_msg}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[失败: {path}: {error_msg}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2128,6 +3043,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InstalledBy" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Installed by {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[已由 {path} 安装]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InstalledPackages" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The following packages are already installed:]]></Val>
@@ -2151,6 +3075,15 @@
           <Val><![CDATA[-- Installing port from location: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[-- 正从以下位置安装端口: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InstallingMavenFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{path} installing maven file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} 正在安装 maven 文件]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2356,6 +3289,42 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InvalidBuiltInBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the top-level builtin-baseline ({value}) was not a valid commit sha: expected 40 hexadecimal characters.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[顶级内置基线({value})不是有效的提交 sha: 应为 40 个十六进制字符。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidBundleDefinition" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid bundle definition.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[捆绑包定义无效。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidCodePoint" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid code point passed to utf8_encoded_code_point_count]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[传递给 utf8_encoded_code_point_count 的码位无效]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidCodeUnit" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid code unit]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[代码单元无效]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InvalidCommandArgSort" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Value of --sort must be one of 'lexicographical', 'topological', 'reverse'.]]></Val>
@@ -2365,11 +3334,32 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InvalidCommentStyle" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg does not support c-style comments, however most objects allow $-prefixed fields to be used as comments.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg 不支持 c 样式注释，但大多数对象允许将 $ 前缀字段用作注释。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InvalidCommitId" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Invalid commit id {value}]]></Val>
+          <Val><![CDATA[Invalid commit id: {commit_sha}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[提交 ID {value} 无效]]></Val>
+            <Val><![CDATA[提交 ID 无效: {commit_sha}]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Invalid commit id {value}]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidFileType" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed: {path} cannot handle file type]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[失败: {path} 无法处理文件类型]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2383,6 +3373,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InvalidFloatingPointConst" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid floating point constant: {count}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[无效的浮点常量: {count}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InvalidFormatString" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[invalid format string: {actual}]]></Val>
@@ -2392,11 +3391,65 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InvalidHexDigit" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid hex digit in unicode escape]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[unicode 转义中的十六进制数字无效]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidIntegerConst" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid integer constant: {count}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[无效的整数常量: {count}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InvalidLinkage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Invalid {system_name} linkage type: [{value}]5D;]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{system_name} 链接类型无效: [{value}]5D;]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidOptionForRemove" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA['remove' accepts either libraries or '--outdated']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[“remove” 接受库或 “--outdated”]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidPortVersonName" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Found invalid port version file name: `{path}`.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[找到无效的端口版本文件名: `{path}`。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidString" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid utf8 passed to Value::string(std::string)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[传递给 Value::string(std::string) 的 utf8 无效]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidTriplet" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid triplet: {triplet}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[三元组 {triplet} 无效]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2422,11 +3475,47 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";JsonFileMissingExtension" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the JSON file {path} must have a .json (all lowercase) extension]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[JSON 文件 {path} 必须具有 .json (全小写)扩展名]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";JsonSwitch" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[(Experimental) Request JSON output.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[(实验性)请求 JSON 输出。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";JsonValueNotArray" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[json value is not an array]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[json 值不是数组]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";JsonValueNotObject" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[json value is not an object]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[json 值不是对象]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";JsonValueNotString" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[json value is not a string]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[json 值不是字符串]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2629,6 +3718,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";LocalPortfileVersion" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Using local portfile versions. To update the local portfiles, use `git pull`.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[使用本地端口文件版本。若要更新本地端口文件，请使用 `git pull`。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";LocalizedMessageMustNotContainIndents" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The message named {value} contains what appears to be indenting which must be changed to use LocalizedString::append_indent instead.]]></Val>
@@ -2643,6 +3741,15 @@
           <Val><![CDATA[The message named {value} ends with a newline which should be added by formatting rather than by localization.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[名为 {value} 的消息以换行符结尾，这应通过格式设置而不是本地化来添加。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ManifestConflict" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Found both a manifest and CONTROL files in port "{path}"; please rename one or the other]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[在端口“{path}”中找到了清单和 CONTROL 文件；请重命名一个或另一个]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2665,11 +3772,38 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";MismatchedNames" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[names did not match: '{package_name}' != '{actual}']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[名称不匹配:“{package_name}”!=“{actual}”]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";Missing7zHeader" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Unable to find 7z header.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[找不到 7z 标头。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";MissingAndroidEnv" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[ANDROID_NDK_HOME environment variable missing]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[缺少 ANDROID_NDK_HOME 环境变量]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";MissingAndroidHomeDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[ANDROID_NDK_HOME directory does not exist: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ANDROID_NDK_HOME 目录不存在: {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2761,6 +3895,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";MutuallyExclusiveOption" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[--{value} can not be used with --{option}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[--{value} 不能与 --{option} 一起使用。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";NavigateToNPS" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Please navigate to {url} in your preferred browser.]]></Val>
@@ -2842,6 +3985,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";NoError" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[no error]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[无错误]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";NoInstalledPackages" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[No packages are installed. Did you mean `search`?]]></Val>
@@ -2860,6 +4012,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[No localization for the following messages:]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";NoOutdatedPackages" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[There are no outdated packages.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[没有过时的包。]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2922,6 +4083,42 @@
           <Val><![CDATA[]A;Original Binary Paragraph]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[]A;原始二进制段落]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";OverlayPatchDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Overlay path "{path}" must exist and must be a directory.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[覆盖路径“{path}”必须存在并且必须为目录。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";OverlayTriplets" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Overlay triplets from {path} :]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[覆盖 {path} 中的三元组:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";OverwritingFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[File {path} was already present and will be overwritten]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[文件 {path} 已存在，并将被覆盖]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackageAlreadyRemoved" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unable to remove package {spec}: already removed]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[无法移除包 {spec}: 已移除]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2998,6 +4195,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PackagesUpToDate" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[No packages need updating.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[没有需要更新的包。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PackingVendorFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Packing {vendor} failed. Use --debug for more information.]]></Val>
@@ -3007,6 +4213,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Packing {vendor} failed.  Use --debug for more information.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PairedSurrogatesAreInvalid" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[trailing surrogate following leading surrogate (paired surrogates are invalid)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[跟随前导代理项的尾随代理项(配对代理项无效)]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3055,6 +4270,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PathMustBeAbsolute" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[环境变量 X_VCPKG_REGISTRIES_CACHE 的值不是绝对值: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PortDependencyConflict" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Port {package_name} has the following unsupported dependencies:]]></Val>
@@ -3090,6 +4314,15 @@
           <Val><![CDATA[The port type of {spec} differs between the installed and available portfile.]A;Please manually remove {spec} and re-run this command.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[已安装和可用的端口文件之间 {spec} 的端口类型不同。]A;请手动删除 {spec} 并重新运行此命令。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortVersionConflict" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following packages differ from their port versions:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[以下包不同于其端口版本:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3130,6 +4363,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PrebuiltPackages" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[There are packages that have not been built. To build them run:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[存在尚未生成的包。如果要生成它们，请运行:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PreviousIntegrationFileRemains" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Previous integration file was not removed.]]></Val>
@@ -3139,38 +4381,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ProcessorArchitectureMalformed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to parse %PROCESSOR_ARCHITECTURE% ({arch}) as a valid CPU architecture.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[无法将 %PROCESSOR_ARCHITECTURE% ({arch})分析为有效的 CPU 体系结构。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ProcessorArchitectureMissing" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The required environment variable %PROCESSOR_ARCHITECTURE% is missing.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[缺少所需的环境变量 %PROCESSOR_ARCHITECTURE%。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ProcessorArchitectureW6432Malformed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to parse %PROCESSOR_ARCHITEW6432% ({arch}) as a valid CPU architecture. Falling back to %PROCESSOR_ARCHITECTURE%.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[无法将 %PROCESSOR_ARCHITEW6432% ({arch}) 分析为有效的 CPU 体系结构。回退到 %PROCESSOR_ARCHITECTURE%。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ProgramReturnedNonzeroExitCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{tool_name} failed with exit code: ({exit_code}).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{tool_name} 失败，退出代码: {exit_code}。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ProvideExportType" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[At least one of the following options are required: --raw --nuget --ifw --zip --7zip --chocolatey --prefab.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[至少需要以下选项之一: --raw --nuget --ifw --zip --7zip --chocolatey --prefab。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3192,6 +4416,24 @@
           <Val><![CDATA[Successfully created registry at {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[已在 {path} 下成功创建注册表]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RemoveDependencies" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[To remove dependencies in manifest mode, edit your manifest (vcpkg.json) and run 'install'.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[要在清单模式下移除依赖项，请编辑清单(vcpkg.json)并运行 “install”。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RemovePackageConflict" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Another installed package matches the name of an unmatched request. Did you mean {spec}?]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[另一个已安装的包与不匹配的请求的名称匹配。你是否指的是 {spec}?]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3295,6 +4537,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ShallowRepositoryDetected" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg was cloned as a shallow repository in: {path}]A;Try again with a full vcpkg clone.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg 已克隆为 {path} 中的浅层存储库]A;请使用完整的 vcpkg 克隆重试。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";SkipClearingInvalidDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Skipping clearing contents of {path} because it was not a directory.]]></Val>
@@ -3361,6 +4612,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";StartCodeUnitInContinue" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[found start code unit in continue position]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[在“继续”位置找到了起始代码单元]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";StoreOptionMissingSha" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[--store option is invalid without a sha512]]></Val>
@@ -3379,6 +4639,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Stored binary cache: '{path}']]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";SuccessfulyExported" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Exported {package_name} to {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[已将 {package_name} 导出到 {path}]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3436,6 +4705,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ToRemovePackages" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[To only remove outdated packages, run]A;{command_name} remove --outdated]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[若要仅删除过时的包，请运行]A;{command_name} remove --outdated]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ToUpdatePackages" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[To update these packages and all dependencies, run]A;{command_name} upgrade']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[若要更新这些包和所有依赖项，请运行]A;{command_name} upgrade']]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ToolFetchFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not fetch {tool_name}.]]></Val>
@@ -3454,15 +4741,48 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";TotalTime" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";ToolOfVersionXNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Total elapsed time: {elapsed}]]></Val>
+          <Val><![CDATA[A suitable version of {tool_name} was not found (required v{version}) and unable to automatically download a portable one. Please install a newer version of {tool_name}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[总运行时间: {elapsed}]]></Val>
+            <Val><![CDATA[找不到合适的{tool_name}版本(所需版本为 {version})，而且无法自动下载可移植版本。请安装较新版本的{tool_name}]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[ Total elapsed time: {count}.]]></Val>
-          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";TotalInstallTime" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Total install time: {elapsed}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[总安装时间: {elapsed}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";TrailingCommaInArray" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Trailing comma in array]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[数组中的尾随逗号]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";TrailingCommaInObj" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Trailing comma in an object]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[对象中的尾随逗号]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";TripletFileNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Triplet file {triplet}.cmake not found]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[找不到三重文件 {triplet}.cmake]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3484,11 +4804,209 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UnexpectedByteSize" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Expected {expected} bytes to be written, but {actual} were written.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[应写入 {expected} 个字节，但已写入 {actual}。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedCharExpectedCloseBrace" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected character; expected property or close brace]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[意外字符；应为属性或右大括号]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedCharExpectedColon" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected character; expected colon]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[意外字符；应为冒号]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedCharExpectedComma" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected character; expected comma or close brace]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[意外字符；应为逗号或右大括号]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedCharExpectedName" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected character; expected property name]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[意外字符；应为属性名称]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedCharExpectedValue" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected character; expected value]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[意外字符；预期值]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedCharMidArray" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected character in middle of array]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[数组中间出现意外字符]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedCharMidKeyword" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected character in middle of keyword]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[关键字中间出现意外字符]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedDigitsAfterLeadingZero" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected digits after a leading zero]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[前导零后出现意外数字]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFAfterEscape" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected EOF after escape character]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[转义字符后出现意外的 EOF]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFAfterMinus" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected EOF after minus sign]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[减号后出现意外的 EOF]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFExpectedChar" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected character; expected EOF]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[意外字符；应为 EOF]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFExpectedCloseBrace" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected EOF; expected property or close brace]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[意外的 EOF；应为属性或右大括号]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFExpectedColon" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected EOF; expected colon]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[意外的 EOF；应为冒号]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFExpectedName" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected EOF; expected property name]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[意外的 EOF；应为属性名称]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFExpectedProp" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected EOF; expected property]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[意外的 EOF；应为属性]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFExpectedValue" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected EOF; expected value]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[意外的 EOF；预期值]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFMidArray" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected EOF in middle of array]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[数组中间出现意外的 EOF]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFMidKeyword" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected EOF in middle of keyword]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[关键字中间出现意外的 EOF]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFMidString" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected EOF in middle of string]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[字符串中间出现意外的 EOF]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFMidUnicodeEscape" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected end of file in middle of unicode escape]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[在 unicode 转义中间出现意外的文件结尾]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UnexpectedErrorDuringBulkDownload" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[an unexpected error occurred during bulk download.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[批量下载期间出现意外错误。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEscapeSequence" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unexpected escape sequence continuation]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[意外的转义序列延续]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3507,6 +5025,15 @@
           <Val><![CDATA[Expected format is [{expected}]5D;, but was [{actual}]5D;.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[预期格式为 [{expected}]5D;，但实际为 [{actual}]5D;。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedPortName" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the port {expected} is declared as {actual} in {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[端口 {expected} 在 {path} 中声明为 {actual}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3541,6 +5068,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig', 'interactive', and 'files']]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnknownMachineCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unknown machine type code {value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[未知的计算机类型代码 {value}]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3589,6 +5125,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UnknownTopic" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unknown topic {value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[未知主题 {value}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UnknownVariablesInTemplate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[invalid argument: url template '{value}' contains unknown variables: {list}]]></Val>
@@ -3603,6 +5148,24 @@
           <Val><![CDATA[configuration contains the following unrecognized fields:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[配置包含以下无法识别的字段:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnrecognizedIdentifier" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Unrecognized identifer name {value}. Add to override list in triplet file.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[标识符名称 {value} 无法识别。添加以覆盖三元组文件中的列表。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnsupportedFeature" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[feature {feature} was passed, but that is not a feature supported by {package_name} supports.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[已传递功能 {feature}，但 {package_name} 支持不支持该功能。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3643,6 +5206,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UnsupportedSyntaxInCDATA" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[]5D;]5D;> is not supported in CDATA block]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[]5D;]5D;> 在 CDATA 块中不受支持]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UnsupportedSystemName" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. Supported system names are '', 'Windows' and 'WindowsStore'.]]></Val>
@@ -3664,6 +5236,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Error: in triplet {triplet}: Unable to find a valid toolchain combination.]A;    The requested target architecture was {arch}]A;    The selected Visual Studio instance is at {path}]A;    The available toolchain combinations are {list}]A;]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnsupportedUpdateCMD" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the update command does not currently support manifest mode. Instead, modify your vcpkg.json and run install.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[更新命令当前不支持清单模式。请改为修改 vcpkg.json 并运行安装命令。]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3841,11 +5422,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";Utf8DecoderDereferencedAtEof" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";Utf8ConversionFailed" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[dereferenced Utf8Decoder at the end of a string.]]></Val>
+          <Val><![CDATA[Failed to convert to UTF-8]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[已在字符串末尾取消引用 Utf8Decoder。]]></Val>
+            <Val><![CDATA[未能转换为 UTF-8]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3883,6 +5464,9 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[vcpkg-ce (“配置环境”)是实验性的，可能会随时更改。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[vcpkg-artifacts are experimental and may change at any time.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3928,11 +5512,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";VcpkgInVsPrompt" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg appears to be in a Visual Studio prompt targeting {value} but installing for {triplet}. Consider using --triplet {value}-windows or --triplet {value}-uwp.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg 似乎位于面向 {value} 的 Visual Studio 提示中，但正在为 {triplet} 安装。请考虑使用 --triplet {value}-windows 或 --triplet {value}-uwp。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";VcpkgInvalidCommand" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[invalid command: {command_name}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[无效命令: {command_name}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VcpkgRegistriesCacheIsNotDirectory" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Value of environment variable X_VCPKG_REGISTRIES_CACHE is not a directory: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[环境变量 X_VCPKG_REGISTRIES_CACHE 的值不是目录: {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3972,6 +5574,15 @@
           <Val><![CDATA[vcpkg package management program version {version}]A;]A;See LICENSE.txt for license information.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[vcpkg 包管理程序版本 {version}]A;]A;查看 LICENSE.txt 获取许可证信息。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionConflictXML" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Expected {path} version: [{expected_version}]5D;, but was [{actual_version}]5D;. Please re-run bootstrap-vcpkg.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} 版本应为 [{expected_version}]5D;，但实际为 [{actual_version}]5D;。请重新运行 bootstrap-vcpkg。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4098,10 +5709,13 @@
       </Item>
       <Item ItemId=";WroteNuGetPkgConfInfo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Wrote NuGet package config information to {path}.]]></Val>
+          <Val><![CDATA[Wrote NuGet package config information to {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[已将 NuGet 包配置信息写入 {path}。]]></Val>
+            <Val><![CDATA[已将 NuGet 包配置信息写入 {path}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Wrote NuGet package config information to {path}.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>

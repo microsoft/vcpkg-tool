@@ -1,15 +1,21 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { resolve } from 'path';
 import { ProjectManifest } from '../../artifacts/artifact';
+import { configurationName } from '../../constants';
 import { FileType } from '../../fs/filesystem';
 import { i } from '../../i18n';
 import { session } from '../../main';
 import { Uri } from '../../util/uri';
-import { resolvePath } from '../command-line';
 import { projectFile } from '../format';
 import { debug, error } from '../styling';
 import { Switch } from '../switch';
+
+interface ResolvedProjectUri {
+  filename: string;
+  uri: Uri;
+}
 
 export class Project extends Switch {
   switch = 'project';
@@ -19,40 +25,47 @@ export class Project extends Switch {
     ];
   }
 
-  async getProjectFolder() {
-    const v = resolvePath(super.value);
+  async resolveProjectUri() : Promise<ResolvedProjectUri | undefined> {
+    const v = this.value;
     if (v) {
-      const uri = session.fileSystem.file(v);
+      const uri = session.fileSystem.file(resolve(v));
       const stat = await uri.stat();
 
       if (stat.type & FileType.File) {
-        return uri;
+        return {'filename': v, uri: uri};
       }
       if (stat.type & FileType.Directory) {
-        const project = await session.findProjectProfile(uri, false);
-        if (project) {
-          return project;
+        const project = uri.join(configurationName);
+        if (await project.exists()) {
+          return {'filename': project.fsPath, uri: project};
         }
       }
+
       error(i`Unable to find project environment ${projectFile(uri)}`);
       return undefined;
     }
-    return session.findProjectProfile();
+
+    const sessionProject = await session.findProjectProfile();
+    if (sessionProject) {
+      return {'filename': sessionProject.fsPath, 'uri': sessionProject};
+    }
+
+    return undefined;
   }
 
-  override get value(): Promise<Uri | undefined> {
-    return this.getProjectFolder();
+  get resolvedValue(): Promise<Uri | undefined> {
+    return this.resolveProjectUri().then(v => v?.uri);
   }
 
   get manifest(): Promise<ProjectManifest | undefined> {
-    return this.value.then(async (project) => {
-      if (!project) {
+    return this.resolveProjectUri().then(async (resolved) => {
+      if (!resolved) {
         debug('No project manifest');
         return undefined;
       }
 
-      debug(`Loading project manifest ${project} `);
-      return await new ProjectManifest(session, await session.openManifest(project)).init(session);
+      debug(`Loading project manifest ${resolved.filename} `);
+      return await new ProjectManifest(session, await session.openManifest(resolved.filename, resolved.uri));
     });
   }
 }

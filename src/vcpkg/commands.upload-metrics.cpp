@@ -22,7 +22,7 @@ namespace vcpkg::Commands::UploadMetrics
         (void)args.parse_arguments(COMMAND_STRUCTURE);
         const auto& payload_path = args.command_arguments[0];
         auto payload = fs.read_contents(payload_path, VCPKG_LINE_INFO);
-        LockGuardPtr<Metrics>(g_metrics)->upload(payload);
+        winhttp_upload_metrics(payload);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 }

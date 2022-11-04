@@ -188,7 +188,7 @@ namespace vcpkg::Commands
         if (!enable_json)
         {
             msg::println(msg::format(msgSuggestGitPull)
-                             .append_raw("\n")
+                             .append_raw('\n')
                              .append(msgMissingPortSuggestPullRequest)
                              .append_indent()
                              .append_raw("-  https://github.com/Microsoft/vcpkg/issues"));
@@ -200,7 +200,7 @@ namespace vcpkg::Commands
     void perform_find_artifact_and_exit(const VcpkgPaths& paths, Optional<StringView> filter)
     {
         std::vector<std::string> ce_args;
-        ce_args.push_back("find");
+        ce_args.emplace_back("find");
         if (auto* filter_str = filter.get())
         {
             ce_args.emplace_back(filter_str->data(), filter_str->size());
@@ -235,31 +235,29 @@ namespace vcpkg::Commands
 
             Optional<std::string> filter_hash = filter.map(Hash::get_string_sha256);
             auto args_hash = Hash::get_string_hash(filter.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256);
+            MetricsSubmission metrics;
+            metrics.track_string(StringMetric::CommandContext, "artifact");
+            if (auto p_filter_hash = filter_hash.get())
             {
-                auto metrics = LockGuardPtr<Metrics>(g_metrics);
-                metrics->track_property("command_context", "artifact");
-                if (auto p_filter_hash = filter_hash.get())
-                {
-                    metrics->track_property("command_args", *p_filter_hash);
-                }
-            } // unlock metrics
+                metrics.track_string(StringMetric::CommandArgs, *p_filter_hash);
+            }
 
+            get_global_metrics_collector().track_submission(std::move(metrics));
             perform_find_artifact_and_exit(paths, filter);
         }
 
         if (selector == "port")
         {
             Optional<std::string> filter_hash = filter.map(Hash::get_string_sha256);
+            MetricsSubmission metrics;
+            metrics.track_string(StringMetric::CommandContext, "port");
+            if (auto p_filter_hash = filter_hash.get())
             {
-                auto metrics = LockGuardPtr<Metrics>(g_metrics);
-                metrics->track_property("command_context", "port");
-                if (auto p_filter_hash = filter_hash.get())
-                {
-                    metrics->track_property("command_args", *p_filter_hash);
-                }
-            } // unlock metrics
+                metrics.track_string(StringMetric::CommandArgs, *p_filter_hash);
+            }
 
-            perform_find_port_and_exit(paths, full_description, enable_json, filter, args.overlay_ports);
+            get_global_metrics_collector().track_submission(std::move(metrics));
+            perform_find_port_and_exit(paths, full_description, enable_json, filter, paths.overlay_ports);
         }
 
         Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgAddCommandFirstArg);

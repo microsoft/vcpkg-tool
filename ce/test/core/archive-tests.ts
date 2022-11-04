@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { TarBzUnpacker, TarGzUnpacker, TarUnpacker } from '@microsoft/vcpkg-ce/dist/archivers/tar';
-import { FileEntry, Unpacker } from '@microsoft/vcpkg-ce/dist/archivers/unpacker';
-import { ZipUnpacker } from '@microsoft/vcpkg-ce/dist/archivers/ZipUnpacker';
+import { unpackTar, unpackTarBz, unpackTarGz } from '@microsoft/vcpkg-ce/dist/archivers/tar';
+import { FileEntry, stripPath } from '@microsoft/vcpkg-ce/dist/archivers/unpacker';
+import { unpackZip } from '@microsoft/vcpkg-ce/dist/archivers/ZipUnpacker';
 import { Uri } from '@microsoft/vcpkg-ce/dist/util/uri';
 import { rejects, strict } from 'assert';
 import { SuiteLocal } from './SuiteLocal';
@@ -18,13 +18,13 @@ describe('Unpacker', () => {
         const cd = prefix + 'charlie/delta' + suffix;
         const bcd = prefix + 'beta/charlie/delta' + suffix;
         const abcd = prefix + 'alpha/beta/charlie/delta' + suffix;
-        strict.equal(Unpacker.stripPath(abcd, 0), abcd);
-        strict.equal(Unpacker.stripPath(abcd, 1), bcd);
-        strict.equal(Unpacker.stripPath(abcd, 2), cd);
-        strict.equal(Unpacker.stripPath(abcd, 3), d);
-        strict.equal(Unpacker.stripPath(abcd, 4), undefined);
+        strict.equal(stripPath(abcd, 0), abcd);
+        strict.equal(stripPath(abcd, 1), bcd);
+        strict.equal(stripPath(abcd, 2), cd);
+        strict.equal(stripPath(abcd, 3), d);
+        strict.equal(stripPath(abcd, 4), undefined);
 
-        strict.equal(Unpacker.stripPath(prefix + 'some///slashes\\\\\\\\here' + suffix, 0), prefix + 'some/slashes/here' + suffix);
+        strict.equal(stripPath(prefix + 'some///slashes\\\\\\\\here' + suffix, 0), prefix + 'some/slashes/here' + suffix);
       });
     });
   });
@@ -67,7 +67,7 @@ class ProgressCheckerEntry {
 
   constructor(public entryPath: string, public entryIdentity: any) { }
 
-  onProgress(entry: any, filePercentage: number) {
+  unpackFileProgress(entry: any, filePercentage: number) {
     strict.equal(this.entryIdentity, entry);
     if (filePercentage === 0) {
       this.seenZero = true;
@@ -76,7 +76,7 @@ class ProgressCheckerEntry {
     this.filePercentage.recordPercent(filePercentage);
   }
 
-  onUnpacked(entry: any) {
+  unpackFileComplete(entry: any) {
     strict.equal(this.entryIdentity, entry);
     this.seenUnpacked = true;
   }
@@ -92,24 +92,24 @@ class ProgressChecker {
   seenEntries = new Map<string, ProgressCheckerEntry>();
   archivePercentage = new PercentageChecker();
 
-  onFileProgress(entry: any, filePercentage: number) {
+  unpackFileProgress(entry: any, filePercentage: number) {
     let checkerEntry = this.seenEntries.get(entry.path);
     if (!checkerEntry) {
       checkerEntry = new ProgressCheckerEntry(entry.path, entry);
       this.seenEntries.set(entry.path, checkerEntry);
     }
 
-    checkerEntry.onProgress(entry, filePercentage);
+    checkerEntry.unpackFileProgress(entry, filePercentage);
   }
 
-  onProgress(archivePercentage: number) {
+  unpackArchiveProgress(archiveUri: Uri, archivePercentage: number) {
     this.archivePercentage.recordPercent(archivePercentage);
   }
 
-  onUnpacked(entry: FileEntry) {
+  unpackFileComplete(entry: FileEntry) {
     const checkerEntry = this.seenEntries.get(entry.path);
     strict.ok(checkerEntry, `Did not find unpack progress entries for ${entry.path}`);
-    checkerEntry.onUnpacked(entry);
+    checkerEntry.unpackFileComplete(entry);
   }
 
   reset() {
@@ -126,19 +126,13 @@ class ProgressChecker {
 
 describe('ZipUnpacker', () => {
   const local = new SuiteLocal();
-  const fs = local.fs;
-
   after(local.after.bind(local));
-  const unpacker = new ZipUnpacker(local.session);
   const progressChecker = new ProgressChecker();
-  unpacker.on('progress', progressChecker.onProgress.bind(progressChecker));
-  unpacker.on('fileProgress', progressChecker.onFileProgress.bind(progressChecker));
-  unpacker.on('unpacked', progressChecker.onUnpacked.bind(progressChecker));
   it('UnpacksLegitimateSmallZips', async () => {
     progressChecker.reset();
     const zipUri = local.resourcesFolderUri.join('example-zip.zip');
     const targetUri = local.tempFolderUri.join('example');
-    await unpacker.unpack(zipUri, targetUri, {}, {});
+    await unpackZip(local.session, zipUri, targetUri, progressChecker, {});
     strict.equal((await targetUri.readFile('a.txt')).toString(), 'The contents of a.txt.\n');
     strict.equal((await targetUri.stat('a.txt')).mtime, Date.parse('2021-03-23T09:31:14.000Z'));
     strict.equal((await targetUri.readFile('b.txt')).toString(), 'The contents of b.txt.\n');
@@ -159,9 +153,9 @@ describe('ZipUnpacker', () => {
     progressChecker.reset();
     const zipUri = local.resourcesFolderUri.join('example-zip.zip');
     const targetUri = local.tempFolderUri.join('example-truncates');
-    await unpacker.unpack(zipUri, targetUri, {}, {});
+    await unpackZip(local.session, zipUri, targetUri, progressChecker, {});
     progressChecker.reset();
-    await unpacker.unpack(zipUri, targetUri, {}, {}); // intentionally doubled
+    await unpackZip(local.session, zipUri, targetUri, progressChecker, {}); // intentionally doubled
     strict.equal((await targetUri.readFile('a.txt')).toString(), 'The contents of a.txt.\n');
     strict.equal((await targetUri.readFile('b.txt')).toString(), 'The contents of b.txt.\n');
     strict.equal((await targetUri.readFile('c.txt')).toString(), 'The contents of c.txt.\n');
@@ -183,7 +177,7 @@ describe('ZipUnpacker', () => {
     progressChecker.reset();
     const zipUri = local.resourcesFolderUri.join('big-compression.zip');
     const targetUri = local.tempFolderUri.join('big-compression');
-    await unpacker.unpack(zipUri, targetUri, {}, {});
+    await unpackZip(local.session, zipUri, targetUri, progressChecker, {});
     const contents = await targetUri.readFile('0x100000');
     strict.equal(contents.length, 0x100000);
     strict.ok(contents.every((value: number) => value === 0x0));
@@ -196,14 +190,14 @@ describe('ZipUnpacker', () => {
     progressChecker.reset();
     const zipUri = local.resourcesFolderUri.join('wrong-entry-sizes.zip');
     const targetUri = local.tempFolderUri.join('wrong-entry-sizes');
-    await rejects(unpacker.unpack(zipUri, targetUri, {}, {}));
+    await rejects(unpackZip(local.session, zipUri, targetUri, progressChecker, {}));
   });
 
   it('Strips1', async () => {
     progressChecker.reset();
     const zipUri = local.resourcesFolderUri.join('example-zip.zip');
     const targetUri = local.tempFolderUri.join('example-strip-1');
-    await unpacker.unpack(zipUri, targetUri, {}, { strip: 1 });
+    await unpackZip(local.session, zipUri, targetUri, progressChecker, { strip: 1 });
     strict.equal((await targetUri.readFile('a.txt')).toString(), 'The contents of a.txt.\n');
     strict.equal((await targetUri.readFile('b.txt')).toString(), 'The contents of b.txt.\n');
     strict.equal((await targetUri.readFile('c.txt')).toString(), 'The contents of c.txt.\n');
@@ -218,7 +212,7 @@ describe('ZipUnpacker', () => {
     progressChecker.reset();
     const zipUri = local.resourcesFolderUri.join('example-zip.zip');
     const targetUri = local.tempFolderUri.join('example-strip-2');
-    await unpacker.unpack(zipUri, targetUri, {}, { strip: 2 });
+    await unpackZip(local.session, zipUri, targetUri, progressChecker, { strip: 2 });
     strict.equal((await targetUri.readFile('only-directory-directory.txt')).toString(),
       'This content is only doubly nested.\n');
     progressChecker.test(1);
@@ -228,7 +222,7 @@ describe('ZipUnpacker', () => {
     progressChecker.reset();
     const zipUri = local.resourcesFolderUri.join('example-zip.zip');
     const targetUri = local.tempFolderUri.join('example-strip-all');
-    await unpacker.unpack(zipUri, targetUri, {}, { strip: 3 });
+    await unpackZip(local.session, zipUri, targetUri, progressChecker, { strip: 3 });
     strict.ok(!await targetUri.exists());
     progressChecker.test(0);
   });
@@ -237,7 +231,7 @@ describe('ZipUnpacker', () => {
     progressChecker.reset();
     const zipUri = local.resourcesFolderUri.join('example-zip.zip');
     const targetUri = local.tempFolderUri.join('example-transform-one');
-    await unpacker.unpack(zipUri, targetUri, {}, { transform: ['s/a\\.txt/ehh.txt/'] });
+    await unpackZip(local.session, zipUri, targetUri, progressChecker, { transform: ['s/a\\.txt/ehh.txt/'] });
     strict.equal((await targetUri.readFile('ehh.txt')).toString(), 'The contents of a.txt.\n');
     strict.equal((await targetUri.readFile('b.txt')).toString(), 'The contents of b.txt.\n');
     strict.equal((await targetUri.readFile('c.txt')).toString(), 'The contents of c.txt.\n');
@@ -257,7 +251,7 @@ describe('ZipUnpacker', () => {
     progressChecker.reset();
     const zipUri = local.resourcesFolderUri.join('example-zip.zip');
     const targetUri = local.tempFolderUri.join('example-transform-array');
-    await unpacker.unpack(zipUri, targetUri, {}, {
+    await unpackZip(local.session, zipUri, targetUri, progressChecker, {
       transform: [
         's/a\\.txt/ehh.txt/',
         's/c\\.txt/see.txt/',
@@ -284,7 +278,7 @@ describe('ZipUnpacker', () => {
     progressChecker.reset();
     const zipUri = local.resourcesFolderUri.join('example-zip.zip');
     const targetUri = local.tempFolderUri.join('example-strip-then-transform');
-    await unpacker.unpack(zipUri, targetUri, {}, { strip: 1, transform: ['s/b/beeee/'] });
+    await unpackZip(local.session, zipUri, targetUri, progressChecker, { strip: 1, transform: ['s/b/beeee/'] });
     strict.equal((await targetUri.readFile('a.txt')).toString(), 'The contents of a.txt.\n');
     strict.equal((await targetUri.readFile('beeee.txt')).toString(), 'The contents of b.txt.\n');
     strict.equal((await targetUri.readFile('c.txt')).toString(), 'The contents of c.txt.\n');
@@ -299,7 +293,7 @@ describe('ZipUnpacker', () => {
     progressChecker.reset();
     const zipUri = local.resourcesFolderUri.join('example-zip.zip');
     const targetUri = local.tempFolderUri.join('example-transform-no-extract');
-    await unpacker.unpack(zipUri, targetUri, {}, { transform: ['s/.+a.txt$//'] });
+    await unpackZip(local.session, zipUri, targetUri, progressChecker, { transform: ['s/.+a.txt$//'] });
     strict.equal((await targetUri.readFile('b.txt')).toString(), 'The contents of b.txt.\n');
     strict.equal((await targetUri.readFile('c.txt')).toString(), 'The contents of c.txt.\n');
     strict.equal((await targetUri.readFile('only-not-directory.txt')).toString(),
@@ -350,26 +344,20 @@ async function checkExtractedTransformedTar(targetUri: Uri): Promise<void> {
 
 describe('TarUnpacker', () => {
   const local = new SuiteLocal();
-  const fs = local.fs;
-
   after(local.after.bind(local));
-  const unpacker = new TarUnpacker(local.session);
   const progressChecker = new ProgressChecker();
-  unpacker.on('progress', progressChecker.onProgress.bind(progressChecker));
-  unpacker.on('fileProgress', progressChecker.onFileProgress.bind(progressChecker));
-  unpacker.on('unpacked', progressChecker.onUnpacked.bind(progressChecker));
   const archiveUri = local.resourcesFolderUri.join('example-tar.tar');
   it('UnpacksLegitimateSmallTar', async () => {
     progressChecker.reset();
     const targetUri = local.tempFolderUri.join('example-tar');
-    await unpacker.unpack(archiveUri, targetUri, {}, {});
+    await unpackTar(local.session, archiveUri, targetUri, progressChecker, {});
     await checkExtractedTar(targetUri);
     progressChecker.test(8);
   });
   it('ImplementsUnpackOptions', async () => {
     progressChecker.reset();
     const targetUri = local.tempFolderUri.join('example-tar-transformed');
-    await unpacker.unpack(archiveUri, targetUri, {}, transformedTarUnpackOptions);
+    await unpackTar(local.session, archiveUri, targetUri, progressChecker, transformedTarUnpackOptions);
     await checkExtractedTransformedTar(targetUri);
     progressChecker.test(4);
   });
@@ -377,26 +365,20 @@ describe('TarUnpacker', () => {
 
 describe('TarBzUnpacker', () => {
   const local = new SuiteLocal();
-  const fs = local.fs;
-
   after(local.after.bind(local));
-  const unpacker = new TarBzUnpacker(local.session);
   const progressChecker = new ProgressChecker();
-  unpacker.on('progress', progressChecker.onProgress.bind(progressChecker));
-  unpacker.on('fileProgress', progressChecker.onFileProgress.bind(progressChecker));
-  unpacker.on('unpacked', progressChecker.onUnpacked.bind(progressChecker));
   const archiveUri = local.resourcesFolderUri.join('example-tar.tar.bz2');
   it('UnpacksLegitimateSmallTarBz', async () => {
     progressChecker.reset();
     const targetUri = local.tempFolderUri.join('example-tar-bz');
-    await unpacker.unpack(archiveUri, targetUri, {}, {});
+    await unpackTarBz(local.session, archiveUri, targetUri, progressChecker, {});
     await checkExtractedTar(targetUri);
     progressChecker.test(8);
   });
   it('ImplementsUnpackOptions', async () => {
     progressChecker.reset();
     const targetUri = local.tempFolderUri.join('example-tar-bz2-transformed');
-    await unpacker.unpack(archiveUri, targetUri, {}, transformedTarUnpackOptions);
+    await unpackTarBz(local.session, archiveUri, targetUri, progressChecker, transformedTarUnpackOptions);
     await checkExtractedTransformedTar(targetUri);
     progressChecker.test(4);
   });
@@ -404,9 +386,7 @@ describe('TarBzUnpacker', () => {
 
 describe('TarStripAuto', () => {
   const local = new SuiteLocal();
-  const fs = local.fs;
   after(local.after.bind(local));
-  const unpacker = new TarGzUnpacker(local.session);
   const archiveUri = local.resourcesFolderUri.join('test.directories.tar.gz');
 
   it('Strips off unnecessary folders off the front', async () => {
@@ -416,8 +396,8 @@ describe('TarStripAuto', () => {
       'test-directories-gz/four/test.txt'
     ];
     const actual = new Array<string>();
-    await unpacker.unpack(archiveUri, targetUri, {
-      unpacked(entry) {
+    await unpackTarGz(local.session, archiveUri, targetUri, {
+      unpackFileComplete(entry) {
         if (entry.destination) {
           actual.push(entry.destination.path);
         }
@@ -433,26 +413,20 @@ describe('TarStripAuto', () => {
 
 describe('TarGzUnpacker', () => {
   const local = new SuiteLocal();
-  const fs = local.fs;
-
   after(local.after.bind(local));
-  const unpacker = new TarGzUnpacker(local.session);
   const progressChecker = new ProgressChecker();
-  unpacker.on('progress', progressChecker.onProgress.bind(progressChecker));
-  unpacker.on('fileProgress', progressChecker.onFileProgress.bind(progressChecker));
-  unpacker.on('unpacked', progressChecker.onUnpacked.bind(progressChecker));
   const archiveUri = local.resourcesFolderUri.join('example-tar.tar.gz');
   it('UnpacksLegitimateSmallTarGz', async () => {
     progressChecker.reset();
     const targetUri = local.tempFolderUri.join('example-tar-gz');
-    await unpacker.unpack(archiveUri, targetUri, {}, {});
+    await unpackTarGz(local.session, archiveUri, targetUri, progressChecker, {});
     await checkExtractedTar(targetUri);
     progressChecker.test(8);
   });
   it('ImplementsUnpackOptions', async () => {
     progressChecker.reset();
     const targetUri = local.tempFolderUri.join('example-tar-gz-transformed');
-    await unpacker.unpack(archiveUri, targetUri, {}, transformedTarUnpackOptions);
+    await unpackTarGz(local.session, archiveUri, targetUri, progressChecker, transformedTarUnpackOptions);
     await checkExtractedTransformedTar(targetUri);
     progressChecker.test(4);
   });

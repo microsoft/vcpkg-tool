@@ -116,7 +116,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                     }
 
                     const auto& scf = maybe_scf.value_or_exit(VCPKG_LINE_INFO);
-                    auto&& git_tree_version = scf.get()->to_schemed_version();
+                    auto&& git_tree_version = scf->to_schemed_version();
                     if (version_entry.first.version != git_tree_version.version)
                     {
                         return {
@@ -297,9 +297,10 @@ namespace vcpkg::Commands::CIVerifyVersions
         auto maybe_port_git_tree_map = paths.git_get_local_port_treeish_map();
         if (!maybe_port_git_tree_map)
         {
-            Checks::msg_exit_with_error(
-                VCPKG_LINE_INFO,
-                msg::format(msgFailedToObtainLocalPortGitSha).append_raw("\n" + maybe_port_git_tree_map.error()));
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                        msg::format(msgFailedToObtainLocalPortGitSha)
+                                            .append_raw('\n')
+                                            .append_raw(maybe_port_git_tree_map.error()));
         }
 
         auto port_git_tree_map = maybe_port_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
@@ -397,10 +398,10 @@ namespace vcpkg::Commands::CIVerifyVersions
             auto message = msg::format(msgErrorsFound);
             for (auto&& error : errors)
             {
-                message.append_raw("\n").append_indent().append_raw(error);
+                message.append_raw('\n').append_indent().append_raw(error);
             }
 
-            message.append_raw("\n").append(
+            message.append_raw('\n').append(
                 msgSuggestResolution, msg::command_name = "x-add-version", msg::option = "all");
 
             msg::println_error(message);

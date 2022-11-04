@@ -1,5 +1,6 @@
 #include <vcpkg/base/basic_checks.h>
 #include <vcpkg/base/downloads.h>
+#include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
@@ -15,6 +16,7 @@
 #if defined(VCPKG_CE_SHA)
 #define VCPKG_CE_SHA_AS_STRING MACRO_TO_STRING(VCPKG_CE_SHA)
 #endif // ^^^ VCPKG_CE_SHA
+#include <vcpkg/base/uuid.h>
 
 namespace
 {
@@ -53,6 +55,42 @@ namespace
         }
     }
 #endif // ^^^ !defined(VCPKG_ARTIFACTS_PATH)
+
+    void track_telemetry(Filesystem& fs, const Path& telemetry_file_path)
+    {
+        std::error_code ec;
+        auto telemetry_file = fs.read_contents(telemetry_file_path, ec);
+        if (ec)
+        {
+            Debug::println("Telemetry file couldn't be read: " + ec.message());
+            return;
+        }
+
+        auto maybe_parsed = Json::parse_object(telemetry_file, telemetry_file_path);
+        auto pparsed = maybe_parsed.get();
+
+        if (!pparsed)
+        {
+            Debug::println("Telemetry file couldn't be parsed: " + maybe_parsed.error());
+            return;
+        }
+
+        auto acquired_artifacts = pparsed->get("acquired_artifacts");
+        if (!acquired_artifacts)
+        {
+            Debug::println("No artifacts acquired.");
+            return;
+        }
+
+        if (!acquired_artifacts->is_string())
+        {
+            Debug::println("Acquired artifacts was not a string.");
+            return;
+        }
+
+        get_global_metrics_collector().track_string(StringMetric::AcquiredArtifacts,
+                                                    acquired_artifacts->string(VCPKG_LINE_INFO));
+    }
 }
 
 namespace vcpkg
@@ -117,9 +155,13 @@ namespace vcpkg
             cmd_run.string_arg("--debug");
         }
 
-        if (LockGuardPtr<Metrics>(g_metrics)->metrics_enabled())
+        Optional<Path> maybe_telemetry_file_path;
+        if (g_metrics_enabled.load())
         {
-            cmd_run.string_arg("--z-enable-metrics");
+            auto& p =
+                maybe_telemetry_file_path.emplace(fs.create_or_get_temp_directory(VCPKG_LINE_INFO) /
+                                                  ("vcpkg_" + generate_random_UUID() + "_artifacts_telemetry.txt"));
+            cmd_run.string_arg("--z-telemetry-file").string_arg(p);
         }
 
         cmd_run.string_arg("--vcpkg-root").string_arg(paths.root);
@@ -131,7 +173,13 @@ namespace vcpkg
 
         Debug::println("Running configure-environment with ", cmd_run.command_line());
 
-        return cmd_execute(cmd_run, WorkingDirectory{paths.original_cwd}).value_or_exit(VCPKG_LINE_INFO);
+        auto result = cmd_execute(cmd_run, WorkingDirectory{paths.original_cwd}).value_or_exit(VCPKG_LINE_INFO);
+        if (auto telemetry_file_path = maybe_telemetry_file_path.get())
+        {
+            track_telemetry(fs, *telemetry_file_path);
+        }
+
+        return result;
     }
 
     int run_configure_environment_command(const VcpkgPaths& paths, StringView arg0, View<std::string> args)

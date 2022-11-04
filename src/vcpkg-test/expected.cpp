@@ -17,7 +17,7 @@ namespace
         std::size_t moves = 0;
         std::size_t move_assigns = 0;
 
-        void check_no_ops()
+        void check_no_ops() const
         {
             CHECK(copies == 0);
             CHECK(copy_assigns == 0);
@@ -378,4 +378,44 @@ TEST_CASE ("map", "[expected]")
     CHECK(error.moves == 1);
     error.moves = 0;
     error.check_nothing();
+}
+
+TEST_CASE ("value_or", "[expected]")
+{
+    std::string value = "hello";
+    std::string fill_in_value = "world";
+    int error;
+
+    SECTION ("with_value")
+    {
+        ExpectedT<std::string, int> with_value(value);
+        auto result = with_value.value_or(fill_in_value);
+        CHECK(result == value);
+        CHECK(with_value.has_value());
+    }
+
+    SECTION ("with_error")
+    {
+        ExpectedT<std::string, int> with_error(error);
+        auto result = with_error.value_or(fill_in_value);
+        CHECK(result == fill_in_value);
+        CHECK(!with_error.has_value());
+    }
+
+    SECTION ("fill pass args")
+    {
+        struct Value
+        {
+            int code;
+            std::string message;
+            Value() = default;
+            Value(int c, const std::string& s) : code(c), message(s) { }
+        };
+
+        ExpectedT<Value, int> with_fill_in_value(error);
+        auto result = with_fill_in_value.value_or(1, "hello world");
+        CHECK(result.code == 1);
+        CHECK(result.message == "hello world");
+        CHECK(!with_fill_in_value.has_value());
+    }
 }

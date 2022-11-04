@@ -4,7 +4,6 @@
 import { compare } from 'semver';
 import { MetadataFile } from '../amf/metadata-file';
 import { Artifact } from '../artifacts/artifact';
-import { Registry, SearchCriteria } from '../artifacts/registry';
 import { FileType } from '../fs/filesystem';
 import { Session } from '../session';
 import { Queue } from '../util/promise';
@@ -12,9 +11,7 @@ import { Uri } from '../util/uri';
 import { serialize } from '../yaml/yaml';
 import { ArtifactIndex } from './artifact-index';
 import { Index } from './indexer';
-import { Registries } from './registries';
-import { THIS_IS_NOT_A_MANIFEST_ITS_AN_INDEX_STRING } from './standard-registry';
-
+import { Registry, SearchCriteria } from './registries';
 
 export abstract class ArtifactRegistry implements Registry {
   constructor(protected session: Session, readonly location: Uri) {
@@ -52,12 +49,7 @@ export abstract class ArtifactRegistry implements Registry {
     const session = this.session;
 
     async function processFile(uri: Uri) {
-
       const content = await uri.readUTF8();
-      // if you see this, it's an index, and we can skip even trying.
-      if (content.startsWith(THIS_IS_NOT_A_MANIFEST_ITS_AN_INDEX_STRING)) {
-        return;
-      }
       try {
         const amf = await MetadataFile.parseConfiguration(uri.fsPath, content, session);
 
@@ -123,7 +115,7 @@ export abstract class ArtifactRegistry implements Registry {
     this.loaded = true;
   }
 
-  async search(parent: Registries, criteria?: SearchCriteria): Promise<Array<[Registry, string, Array<Artifact>]>> {
+  async search(criteria?: SearchCriteria): Promise<Array<[string, Array<Artifact>]>> {
     await this.load();
     const query = this.index.where;
 
@@ -135,31 +127,31 @@ export abstract class ArtifactRegistry implements Registry {
       query.id.contains(criteria.keyword);
     }
 
-    if (criteria?.version) {
-      query.version.rangeMatch(criteria.version);
+    const version = criteria?.version;
+    if (version && version !== '*') {
+      query.version.rangeMatch(version);
     }
 
-    return [...(await this.openArtifacts(query.items, parent)).entries()].map(each => [this, ...each]);
+    return [...(await this.openArtifacts(query.items)).entries()];
   }
 
 
-  private async openArtifact(manifestPath: string, parent: Registries): Promise<Artifact> {
-    const metadata = await MetadataFile.parseMetadata(this.cacheFolder.join(manifestPath), this.session, this);
+  private async openArtifact(manifestPath: string): Promise<Artifact> {
+    const metadataPath = this.cacheFolder.join(manifestPath);
+    const metadata = await MetadataFile.parseMetadata(metadataPath.fsPath, metadataPath, this.session, this.location);
     const id = metadata.id;
     return new Artifact(this.session,
       metadata,
       this.index.indexSchema.id.getShortNameOf(id) || id,
-      this.installationFolder.join(id.replace(/[^\w]+/g, '.'), metadata.version),
-      parent.getRegistryName(this),
-      this.location
-    ).init(this.session);
+      this.installationFolder.join(id.replace(/[^\w]+/g, '.'), metadata.version)
+    );
   }
 
-  private async openArtifacts(manifestPaths: Array<string>, parent: Registries) {
+  private async openArtifacts(manifestPaths: Array<string>) {
     let metadataFiles = new Array<Artifact>();
 
     // load them up async, but throttled via a queue
-    await manifestPaths.forEachAsync(async (manifest) => metadataFiles.push(await this.openArtifact(manifest, parent))).done;
+    await manifestPaths.forEachAsync(async (manifest) => metadataFiles.push(await this.openArtifact(manifest))).done;
 
     // sort the contents by version before grouping. (descending version)
     metadataFiles = metadataFiles.sort((a, b) => compare(b.metadata.version, a.metadata.version));
@@ -169,6 +161,6 @@ export abstract class ArtifactRegistry implements Registry {
   }
 
   async save(): Promise<void> {
-    await this.indexYaml.writeFile(Buffer.from(`${THIS_IS_NOT_A_MANIFEST_ITS_AN_INDEX_STRING}\n${serialize(this.index.serialize()).replace(/\s*(\d*,)\n/g, '$1')}`));
+    await this.indexYaml.writeFile(Buffer.from(serialize(this.index.serialize())));
   }
 }

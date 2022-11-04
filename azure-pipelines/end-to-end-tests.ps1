@@ -33,6 +33,10 @@ Param(
 
 $ErrorActionPreference = "Stop"
 
+if ($PSVersionTable.PSVersion.Major -lt 7) {
+    Write-Error "vcpkg end to end tests must use pwsh rather than Windows PowerShell"
+}
+
 if ($IsLinux) {
     $Triplet = 'x64-linux'
 } elseif ($IsMacOS) {
@@ -65,6 +69,8 @@ if ([string]::IsNullOrEmpty($VcpkgExe))
         $VcpkgExe = Get-Item './vcpkg'
     }
 }
+
+$VcpkgExe = (Get-Item $VcpkgExe).FullName
 
 [Array]$AllTests = Get-ChildItem $PSScriptRoot/end-to-end-tests-dir/*.ps1
 if ($Filter -ne $Null) {

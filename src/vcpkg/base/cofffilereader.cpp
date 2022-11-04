@@ -24,8 +24,8 @@ namespace vcpkg
         char signature[PE_SIGNATURE.size()];
         Checks::check_exit(VCPKG_LINE_INFO,
                            fs.read(signature, sizeof(char), PE_SIGNATURE.size()) == PE_SIGNATURE.size());
-        Checks::check_exit(
-            VCPKG_LINE_INFO, PE_SIGNATURE == StringView{signature, PE_SIGNATURE.size()}, "Incorrect PE signature.");
+        Checks::msg_check_exit(
+            VCPKG_LINE_INFO, PE_SIGNATURE == StringView{signature, PE_SIGNATURE.size()}, msgIncorrectPESignature);
     }
 
     struct CoffFileHeader
@@ -62,9 +62,9 @@ namespace vcpkg
         void check_end_of_header() const
         {
             // The name[0] == '\0' check is for freeglut, see GitHub issue #223
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               name[0] == '\0' || (end_of_header[0] == '`' && end_of_header[1] == '\n'),
-                               "Incorrect lib header end");
+            Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                   name[0] == '\0' || (end_of_header[0] == '`' && end_of_header[1] == '\n'),
+                                   msgIncorrectLibHeaderEnd);
         }
 
         uint64_t decoded_size() const
@@ -111,9 +111,12 @@ namespace vcpkg
 
         char file_start[FILE_START.size()];
         Checks::check_exit(VCPKG_LINE_INFO, fs.read(&file_start, FILE_START.size(), 1) == 1);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           FILE_START == StringView{file_start, FILE_START.size()},
-                           "Incorrect archive file signature");
+
+        if (FILE_START != StringView{file_start, FILE_START.size()})
+        {
+            msg::println_error(msgIncorrectArchiveFileSignature);
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
     }
 
     static void read_and_skip_first_linker_member(const vcpkg::ReadFilePointer& fs)
@@ -121,9 +124,12 @@ namespace vcpkg
         ArchiveMemberHeader first_linker_member_header;
         Checks::check_exit(VCPKG_LINE_INFO,
                            fs.read(&first_linker_member_header, sizeof(first_linker_member_header), 1) == 1);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           memcmp(first_linker_member_header.name, "/ ", 2) == 0,
-                           "Could not find proper first linker member");
+        if (memcmp(first_linker_member_header.name, "/ ", 2) != 0)
+        {
+            Debug::println("Could not find proper first linker member");
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
         Checks::check_exit(VCPKG_LINE_INFO, fs.seek(first_linker_member_header.decoded_size(), SEEK_CUR) == 0);
     }
 
@@ -132,24 +138,33 @@ namespace vcpkg
         ArchiveMemberHeader second_linker_member_header;
         Checks::check_exit(VCPKG_LINE_INFO,
                            fs.read(&second_linker_member_header, sizeof(second_linker_member_header), 1) == 1);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           memcmp(second_linker_member_header.name, "/ ", 2) == 0,
-                           "Could not find proper second linker member");
+        if (memcmp(second_linker_member_header.name, "/ ", 2) != 0)
+        {
+            Debug::println("Could not find proper second linker member");
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
 
         const auto second_size = second_linker_member_header.decoded_size();
         // The first 4 bytes contains the number of archive members
         uint32_t archive_member_count;
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           second_size >= sizeof(archive_member_count),
-                           "Second linker member was too small to contain a single uint32_t");
+
+        if (second_size < sizeof(archive_member_count))
+        {
+            Debug::println("Second linker member was too small to contain a single uint32_t");
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
         Checks::check_exit(VCPKG_LINE_INFO, fs.read(&archive_member_count, sizeof(archive_member_count), 1) == 1);
         const auto maximum_possible_archive_members = (second_size / sizeof(uint32_t)) - 1;
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           archive_member_count <= maximum_possible_archive_members,
-                           "Second linker member was too small to contain the expected number of archive members");
+        if (archive_member_count > maximum_possible_archive_members)
+        {
+            Debug::println("Second linker member was too small to contain the expected number of archive members");
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
         std::vector<uint32_t> offsets(archive_member_count);
         Checks::check_exit(VCPKG_LINE_INFO,
-                           fs.read(&offsets[0], sizeof(uint32_t), archive_member_count) == archive_member_count);
+                           fs.read(offsets.data(), sizeof(uint32_t), archive_member_count) == archive_member_count);
 
         // Ignore offsets that point to offset 0. See vcpkg github #223 #288 #292
         offsets.erase(std::remove(offsets.begin(), offsets.end(), 0u), offsets.end());
@@ -165,13 +180,13 @@ namespace vcpkg
     {
         std::vector<MachineType> machine_types; // used as a set because n is tiny
         // Next we have the obj and pseudo-object files
-        for (size_t idx = 0; idx < member_offsets.size(); ++idx)
+        for (unsigned int offset : member_offsets)
         {
-            const auto offset = member_offsets[idx];
             // Skip the header, no need to read it
             Checks::check_exit(VCPKG_LINE_INFO, fs.seek(offset + sizeof(ArchiveMemberHeader), SEEK_SET) == 0);
             uint16_t machine_type_raw;
             Checks::check_exit(VCPKG_LINE_INFO, fs.read(&machine_type_raw, sizeof(machine_type_raw), 1) == 1);
+
             auto result_machine_type = to_machine_type(machine_type_raw);
             if (result_machine_type == MachineType::UNKNOWN)
             {
@@ -230,7 +245,7 @@ namespace vcpkg
             case MachineType::SH5:
             case MachineType::THUMB:
             case MachineType::WCEMIPSV2: return t;
-            default: Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Unknown machine type code 0x%hx", value);
+            default: Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgUnknownMachineCode, msg::value = value);
         }
     }
 }

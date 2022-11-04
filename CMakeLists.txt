@@ -1,11 +1,4 @@
-cmake_minimum_required(VERSION 3.15) # 3.15 for MSVC_RUNTIME_LIBRARY, removing default warning flags
-
-cmake_policy(SET CMP0091 NEW)
-cmake_policy(SET CMP0092 NEW)
-
-if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.24)
-    cmake_policy(SET CMP0135 NEW)
-endif()
+cmake_minimum_required(VERSION 3.15...3.24)
 
 if(NOT CMAKE_MSVC_RUNTIME_LIBRARY)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -77,6 +70,8 @@ file(GLOB VCPKG_FUZZ_SOURCES CONFIGURE_DEPENDS "src/vcpkg-fuzz/*.cpp")
 
 set(TLS12_DOWNLOAD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/tls12-download.c")
 
+file(GLOB LOCALE_RESOURCES CMAKE_CONFIGURE_DEPENDS "locales/*.json")
+
 # ========================
 # === System detection ===
 # ========================
@@ -146,10 +141,14 @@ include(GNUInstallDirs)
 # ====================
 
 find_package(fmt REQUIRED)
+find_package(CMakeRC REQUIRED)
 
-# ===============
-# === Targets ===
-# ===============
+
+
+cmrc_add_resource_library(locale-resources ALIAS cmakerc::locales NAMESPACE cmakerc ${LOCALE_RESOURCES})
+
+
+
 
 # === Target: vcpkglib ===
 
@@ -234,7 +233,7 @@ if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
                 ${VCPKG_ARTIFACTS_SOURCES}
                 "${CMAKE_CURRENT_SOURCE_DIR}/ce/ce/node_modules"
             COMMENT
-                "Building vcpkg-ce..."
+                "Building vcpkg-artifacts..."
             VERBATIM
             )
 
@@ -256,7 +255,7 @@ if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
                 ${VCPKG_ARTIFACTS_TEST_SOURCES}
                 "${CMAKE_CURRENT_SOURCE_DIR}/ce/test/node_modules"
             COMMENT
-                "Building vcpkg-ce-test..."
+                "Building vcpkg-artifacts-test..."
             VERBATIM
             )
 
@@ -307,6 +306,7 @@ find_package(Threads REQUIRED)
 target_link_libraries(vcpkglib
     PUBLIC
         fmt::fmt
+        cmakerc::locales
     PRIVATE
         Threads::Threads
         ${CPP_ATOMIC_LIBRARY}
@@ -372,7 +372,6 @@ endif()
 
 add_custom_target(generate-message-map
    COMMAND vcpkg x-generate-default-message-map locales/messages.json
-   COMMAND vcpkg x-generate-default-message-map --no-output-comments locales/messages.en.json
    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
    COMMENT "Update locales/messages.json"
    VERBATIM

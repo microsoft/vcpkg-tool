@@ -22,7 +22,6 @@ static constexpr StringLiteral CE_ERROR = "error";
 static constexpr StringLiteral CE_SETTINGS = "settings";
 static constexpr StringLiteral CE_APPLY = "apply";
 static constexpr StringLiteral CE_REQUIRES = "requires";
-static constexpr StringLiteral CE_SEE_ALSO = "see-also";
 static constexpr StringLiteral CE_DEMANDS = "demands";
 
 static void CHECK_LINES(const std::string& a, const std::string& b)
@@ -339,15 +338,11 @@ TEST_CASE ("metadata dictionaries", "[ce-metadata]")
     "requires": {
         "fruits/a/apple": "1.0.0",
         "fruits/a/avocado": "2.0.0"
-    },
-    "see-also": {
-        "vegetables/b/beet": "3.0.0",
-        "vegetables/b/broccoli": "4.0.0"
     }
 })json";
 
         auto valid_config = parse_test_configuration(valid_raw);
-        CHECK(valid_config.ce_metadata.size() == 3);
+        CHECK(valid_config.ce_metadata.size() == 2);
 
         auto requires_val = valid_config.ce_metadata.get(CE_REQUIRES);
         REQUIRE(requires_val);
@@ -355,13 +350,6 @@ TEST_CASE ("metadata dictionaries", "[ce-metadata]")
         const auto& requires_ = requires_val->object(VCPKG_LINE_INFO);
         check_string(requires_, "fruits/a/apple", "1.0.0");
         check_string(requires_, "fruits/a/avocado", "2.0.0");
-
-        auto see_also_val = valid_config.ce_metadata.get(CE_SEE_ALSO);
-        REQUIRE(see_also_val);
-        REQUIRE(see_also_val->is_object());
-        const auto& see_also = see_also_val->object(VCPKG_LINE_INFO);
-        check_string(see_also, "vegetables/b/beet", "3.0.0");
-        check_string(see_also, "vegetables/b/broccoli", "4.0.0");
 
         auto settings_val = valid_config.ce_metadata.get(CE_SETTINGS);
         REQUIRE(settings_val);
@@ -382,20 +370,12 @@ TEST_CASE ("metadata dictionaries", "[ce-metadata]")
         "fruits/a/apple": null,
         "fruits/a/avocado": 1
     },
-    "see-also": {
-        "vegetables/b/beet": { "version": "3.0.0" },
-        "vegetables/b/broccoli": []
-    },
     "demands": {
         "nested": {
             "settings": [],
             "requires": {
                 "fruits/a/apple": null,
                 "fruits/a/avocado": 1
-            },
-            "see-also": {
-                "vegetables/b/beet": { "version": "3.0.0" },
-                "vegetables/b/broccoli": []
             }
         }
     }
@@ -404,13 +384,9 @@ TEST_CASE ("metadata dictionaries", "[ce-metadata]")
 $ (settings): expected an object
 $.requires (a `string: string` dictionary): value of ["fruits/a/apple"] must be a string
 $.requires (a `string: string` dictionary): value of ["fruits/a/avocado"] must be a string
-$.see-also (a `string: string` dictionary): value of ["vegetables/b/beet"] must be a string
-$.see-also (a `string: string` dictionary): value of ["vegetables/b/broccoli"] must be a string
 $.demands (settings): expected an object
 $.demands.requires (a `string: string` dictionary): value of ["fruits/a/apple"] must be a string
 $.demands.requires (a `string: string` dictionary): value of ["fruits/a/avocado"] must be a string
-$.demands.see-also (a `string: string` dictionary): value of ["vegetables/b/beet"] must be a string
-$.demands.see-also (a `string: string` dictionary): value of ["vegetables/b/broccoli"] must be a string
 )");
     }
 }
@@ -466,14 +442,14 @@ TEST_CASE ("metadata demands", "[ce-metadata]")
          "c": "string",
          "d": 12345,
          "e": false,
-         "f": { 
-            "demands": { 
-                "f.1": { 
-                    "message": { 
-                        "causes-error": true 
-                    } 
-                } 
-            } 
+         "f": {
+            "demands": {
+                "f.1": {
+                    "message": {
+                        "causes-error": true
+                    }
+                }
+            }
         }
     }
 })json";
@@ -490,6 +466,105 @@ $.demands (a demand object): $.demands.["f"] contains a `demands` object (nested
 
 TEST_CASE ("serialize configuration", "[ce-metadata]")
 {
+    SECTION ("only overlay ports")
+    {
+        std::string raw = R"json({
+    "overlay-ports": [
+		"./my-ports/fmt",
+		"/custom-ports",
+		"../share/team-ports",
+        "my-ports/fmt"
+	]
+})json";
+        // parsing of configuration is tested elsewhere
+        auto config = parse_test_configuration(raw);
+        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+    }
+
+    SECTION ("invalid overlay ports")
+    {
+        std::string raw = R"json({
+    "overlay-ports": [
+		"./my-ports/fmt" ,
+		"/custom-ports",
+		123
+	]
+})json";
+        check_errors(raw, R"(
+$.overlay-ports[2]: mismatched type: expected an overlay path
+)");
+    }
+
+    SECTION ("only overlay triplets")
+    {
+        std::string raw = R"json({
+    "overlay-triplets": [
+		"./team-triplets"
+	]
+})json";
+        // parsing of configuration is tested elsewhere
+        auto config = parse_test_configuration(raw);
+        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+    }
+
+    SECTION ("invalid overlay triplets")
+    {
+        std::string raw = R"json({
+    "overlay-triplets": [
+		123
+	]
+})json";
+        check_errors(raw, R"(
+$.overlay-triplets[0]: mismatched type: expected a triplet path
+)");
+    }
+
+    SECTION ("both overlay ports and overlay triplets")
+    {
+        std::string raw = R"json({
+    "overlay-ports": [
+		"./my-ports/fmt" ,
+		"/custom-ports",
+		"../share/team-ports"
+	],
+    "overlay-triplets": [
+		"./team-triplets"
+	]
+})json";
+        // parsing of configuration is tested elsewhere
+        auto config = parse_test_configuration(raw);
+        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+    }
+
+    SECTION ("overriden default registry, registries and overlays")
+    {
+        std::string raw = R"json({
+    "default-registry": {
+        "kind": "builtin",
+        "baseline": "843e0ba0d8f9c9c572e45564263eedfc7745e74f"
+    },
+    "registries": [
+        {
+            "kind": "git",
+            "repository": "https://github.com/microsoft/vcpkg",
+            "baseline": "843e0ba0d8f9c9c572e45564263eedfc7745e74f",
+            "packages": [ "zlib" ]
+        }
+    ],
+    "overlay-ports": [
+		"./my-ports/fmt" ,
+		"/custom-ports",
+		"../share/team-ports"
+	],
+    "overlay-triplets": [
+		"./team-triplets"
+	]
+})json";
+        // parsing of configuration is tested elsewhere
+        auto config = parse_test_configuration(raw);
+        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+    }
+
     SECTION ("null default registry")
     {
         std::string raw = R"json({
@@ -588,7 +663,7 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
             "kind": "git",
             "packages": [ "zlib" ]
         }
-    ], 
+    ],
     "default-registry": null,
     "error": "this is an error",
     "message": "this is a message",
@@ -605,11 +680,8 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
         }
     },
     "apply": {},
-    "requires": { 
-        "b": "banana" 
-    },
-    "see-also": { 
-        "c": "cantaloupe" 
+    "requires": {
+        "b": "banana"
     },
     "settings": {
         "a": "apple"
@@ -625,11 +697,11 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
             "kind": "git",
             "repository": "https://github.com/microsoft/vcpkg",
             "baseline": "843e0ba0d8f9c9c572e45564263eedfc7745e74f",
-            "packages": [ 
-                "zlib" 
+            "packages": [
+                "zlib"
             ]
         }
-    ], 
+    ],
     "unexpected": "this is an unexpected field",
     "message": "this is a message",
     "warning": "this is a warning",
@@ -638,11 +710,8 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
         "a": "apple"
     },
     "apply": {},
-    "requires": { 
-        "b": "banana" 
-    },
-    "see-also": { 
-        "c": "cantaloupe" 
+    "requires": {
+        "b": "banana"
     },
     "demands": {
         "a": {
@@ -665,7 +734,6 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
         //   settings,
         //   apply,
         //   requires,
-        //   see-also,
         //   demands
         // Object values in `demands` are also sorted recursively.
         auto config = parse_test_configuration(raw);
@@ -690,9 +758,6 @@ TEST_CASE ("config with ce metadata full example", "[ce-metadata]")
     },
     "requires": {
         "tools/kitware/cmake": ">=3.21.0"
-    },
-    "see-also": {
-        "tools/ninja-build/ninja": "1.10.2"
     },
     "demands": {
         "windows and target:arm": {
@@ -821,18 +886,6 @@ TEST_CASE ("config with ce metadata full example", "[ce-metadata]")
     const auto& requires_ = requires_val->object(VCPKG_LINE_INFO);
     REQUIRE(requires_.size() == 1);
     check_string(requires_, "tools/kitware/cmake", ">=3.21.0");
-
-    /*
-    "see-also": {
-      "tools/ninja-build/ninja": "1.10.2"
-    }
-    */
-    REQUIRE(ce_metadata.contains(CE_SEE_ALSO));
-    auto see_also_val = ce_metadata.get(CE_SEE_ALSO);
-    REQUIRE(see_also_val->is_object());
-    const auto& see_also = see_also_val->object(VCPKG_LINE_INFO);
-    REQUIRE(see_also.size() == 1);
-    check_string(see_also, "tools/ninja-build/ninja", "1.10.2");
 
     /*
     "demands": {

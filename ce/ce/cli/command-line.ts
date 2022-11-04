@@ -69,10 +69,6 @@ class Ctx {
   }
 }
 
-export function resolvePath(v: string | undefined) {
-  return v?.startsWith('.') ? resolve(v) : v;
-}
-
 export class CommandLine {
   readonly commands = new Array<Command>();
   readonly inputs = new Array<string>();
@@ -89,7 +85,7 @@ export class CommandLine {
 
     // note, this does not create the folder, that would happen when the session is initialized.
 
-    return this.#home || (this.#home = resolvePath(
+    return this.#home || (this.#home = resolve(
       this.switches['vcpkg-root']?.[0] ||
       process.env['VCPKG_ROOT'] ||
       join(process.env['HOME'] || process.env['USERPROFILE'] || tmpdir(), '.vcpkg')));
@@ -107,10 +103,6 @@ export class CommandLine {
     return !!this.switches['debug'];
   }
 
-  get verbose() {
-    return !!this.switches['verbose'];
-  }
-
   get vcpkgArtifactsRoot() {
     return this.switches['z-vcpkg-artifacts-root']?.[0];
   }
@@ -123,8 +115,8 @@ export class CommandLine {
     return this.switches['z-vcpkg-registries-cache']?.[0];
   }
 
-  get telemetryEnabled() {
-    return !!this.switches['z-enable-metrics'];
+  get telemetryFile() {
+    return this.switches['z-telemetry-file']?.[0];
   }
 
   get language() {

@@ -28,6 +28,7 @@ namespace vcpkg
         auto pghs = Paragraphs::get_paragraphs(fs, vcpkg_dir_status_file).value_or_exit(VCPKG_LINE_INFO);
 
         std::vector<std::unique_ptr<StatusParagraph>> status_pghs;
+        status_pghs.reserve(pghs.size());
         for (auto&& p : pghs)
         {
             status_pghs.push_back(std::make_unique<StatusParagraph>(std::move(p)));
@@ -111,7 +112,7 @@ namespace vcpkg
         if (!was_tracked)
         {
             was_tracked = true;
-            LockGuardPtr<Metrics>(g_metrics)->track_property("listfile", "update to new format");
+            get_global_metrics_collector().track_string(StringMetric::ListFile, "update to new format");
         }
 
         // The files are sorted such that directories are placed just before the files they contain
@@ -182,10 +183,7 @@ namespace vcpkg
 
         for (auto&& ipv : ipv_map)
         {
-            Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
-                                        ipv.second.core != nullptr,
-                                        "Database is corrupted: package %s has features but no core paragraph.",
-                                        ipv.first);
+            Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO, ipv.second.core != nullptr, msgCorruptedDatabase);
         }
 
         return Util::fmap(ipv_map, [](auto&& p) -> InstalledPackageView { return std::move(p.second); });
