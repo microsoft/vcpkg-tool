@@ -1154,21 +1154,17 @@ namespace vcpkg
 
     int compare_package_prefix(StringView name, StringView prefix)
     {
-        if (prefix.empty()) return -1;
+        if (prefix.empty() || name.empty()) return -1;
 
         size_t idx = 0;
-        for (; idx < prefix.size(); ++idx)
+        auto cur = prefix.begin();
+        auto last = prefix.end();
+        for (; cur != last; ++idx, ++cur)
         {
-            const auto c = prefix[idx];
-
+            const auto c = *cur;
             if (c == '*')
             {
-                // wildcards (*) should be last in prefix
-                for (auto jdx = idx + 1; jdx < prefix.size(); ++jdx)
-                {
-                    if (prefix[jdx] != '*') return -1;
-                }
-                return static_cast<int>(idx);
+                return (++cur == last) ? static_cast<int>(idx) : -1;
             }
 
             if (idx >= name.size()) return -1;

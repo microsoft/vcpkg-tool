@@ -83,7 +83,7 @@ TEST_CASE ("registry_set_selects_registry", "[registries]")
     }
 }
 
-TEST_CASE ("package_pattern_parsing", "[registries]")
+TEST_CASE ("check valid package patterns", "[registries]")
 {
     using PD = Json::PackagePatternDeserializer;
 
@@ -116,14 +116,16 @@ TEST_CASE ("package_pattern_parsing", "[registries]")
     CHECK(!PD::is_package_pattern("a?"));
 }
 
-TEST_CASE ("prefix_matching", "[registries]")
+TEST_CASE ("calculate prefix priority", "[registries]")
 {
     CHECK(compare_package_prefix("boost", "*") == 0);
     CHECK(compare_package_prefix("boost", "b*") == 1);
-    CHECK(compare_package_prefix("boost", "b****") == 1);
     CHECK(compare_package_prefix("boost", "boost*") == 5);
     CHECK(compare_package_prefix("boost", "boost") == 6);
 
+    CHECK(compare_package_prefix("", "") == -1);
+    CHECK(compare_package_prefix("", "*") == -1);
+    CHECK(compare_package_prefix("", "a") == -1);
     CHECK(compare_package_prefix("boost", "") == -1);
     CHECK(compare_package_prefix("boost", "c*") == -1);
     CHECK(compare_package_prefix("boost", "*c") == -1);
@@ -131,7 +133,7 @@ TEST_CASE ("prefix_matching", "[registries]")
     CHECK(compare_package_prefix("boost", "c*a") == -1);
 }
 
-TEST_CASE ("registry_set_selects_registry_with_pattern", "[registries]")
+TEST_CASE ("select highest priority registry", "[registries]")
 {
     std::vector<Registry> rs;
     rs.push_back(make_registry(1, {"b*"}));
@@ -167,7 +169,7 @@ TEST_CASE ("registry_set_selects_registry_with_pattern", "[registries]")
     CHECK(get_tri_num(*reg) == 0);
 }
 
-TEST_CASE ("registry_set_registries_for_port", "[registries]")
+TEST_CASE ("sort candidate registries by priority", "[registries]")
 {
     {
         std::vector<Registry> rs;
