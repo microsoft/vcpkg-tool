@@ -1035,6 +1035,7 @@ namespace vcpkg::Json
     IdentifierDeserializer IdentifierDeserializer::instance;
     IdentifierArrayDeserializer IdentifierArrayDeserializer::instance;
     PackageNameDeserializer PackageNameDeserializer::instance;
+    PackagePatternDeserializer PackagePatternDeserializer::instance;
     PathDeserializer PathDeserializer::instance;
 
     static constexpr bool is_lower_digit(char ch)
@@ -1500,6 +1501,50 @@ namespace vcpkg::Json
         {
             return nullopt;
         }
+        return sv.to_string();
+    }
+
+    bool PackagePatternDeserializer::is_package_pattern(StringView sv)
+    {
+        if (PackageNameDeserializer::is_package_name(sv))
+        {
+            return true;
+        }
+
+        if (sv == "*")
+        {
+            return true;
+        }
+
+        // ([a-z0-9]+(-[a-z0-9]+)*)(\*?)
+        auto cur = sv.begin();
+        const auto last = sv.end();
+        for (;;)
+        {
+            if (cur == last || (!is_lower_digit(*cur))) return false;
+            ++cur;
+            while (cur != last && is_lower_digit(*cur))
+                ++cur;
+
+            if (cur == last) break;
+            if (*cur == '*')
+            {
+                ++cur;
+                return (cur == last);
+            }
+            if (*cur != '-') return false;
+            ++cur;
+        }
+        return true;
+    }
+
+    Optional<std::string> PackagePatternDeserializer::visit_string(Json::Reader&, StringView sv)
+    {
+        if (!is_package_pattern(sv))
+        {
+            return nullopt;
+        }
+
         return sv.to_string();
     }
 }

@@ -196,8 +196,8 @@ namespace
 
         if (auto config = impl.get())
         {
-            static Json::ArrayDeserializer<Json::PackageNameDeserializer> package_names_deserializer{
-                "an array of package names"};
+            static Json::ArrayDeserializer<Json::PackagePatternDeserializer> package_names_deserializer{
+                "an array of package patterns"};
 
             if (config->kind && *config->kind.get() != RegistryConfigDeserializer::KIND_ARTIFACT)
             {

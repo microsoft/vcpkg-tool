@@ -384,4 +384,15 @@ namespace vcpkg::Json
 
         static PackageNameDeserializer instance;
     };
+
+    struct PackagePatternDeserializer final : Json::IDeserializer<std::string>
+    {
+        virtual StringView type_name() const override { return "a package pattern"; }
+
+        static bool is_package_pattern(StringView sv);
+
+        virtual Optional<std::string> visit_string(Json::Reader&, StringView sv) override;
+
+        static PackagePatternDeserializer instance;
+    };
 }

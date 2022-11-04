@@ -83,6 +83,39 @@ TEST_CASE ("registry_set_selects_registry", "[registries]")
     }
 }
 
+TEST_CASE ("package_pattern_parsing", "[registries]")
+{
+    using PD = Json::PackagePatternDeserializer;
+
+    CHECK(PD::is_package_pattern("co"));
+    CHECK(PD::is_package_pattern("rapidjson"));
+    CHECK(PD::is_package_pattern("boost-tuple"));
+    CHECK(PD::is_package_pattern("vcpkg-boost-helper"));
+
+    CHECK(PD::is_package_pattern("*"));
+    CHECK(PD::is_package_pattern("b*"));
+    CHECK(PD::is_package_pattern("boost*"));
+
+    // invalid segments -
+    CHECK(!PD::is_package_pattern(""));
+    CHECK(!PD::is_package_pattern("-a"));
+    CHECK(!PD::is_package_pattern("a-"));
+    CHECK(!PD::is_package_pattern("a--"));
+    CHECK(!PD::is_package_pattern("---"));
+
+    // invalid characters
+    CHECK(!PD::is_package_pattern("vcpkg@microsoft"));
+    CHECK(!PD::is_package_pattern("boost#1.0.0"));
+    CHECK(!PD::is_package_pattern("boost:x64-windows#1.0.0"));
+
+    // invalid patterns
+    CHECK(!PD::is_package_pattern("*a"));
+    CHECK(!PD::is_package_pattern("a*a"));
+    CHECK(!PD::is_package_pattern("a**"));
+    CHECK(!PD::is_package_pattern("a+"));
+    CHECK(!PD::is_package_pattern("a?"));
+}
+
 TEST_CASE ("prefix_matching", "[registries]")
 {
     CHECK(compare_package_prefix("boost", "*") == 0);
