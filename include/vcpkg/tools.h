@@ -31,6 +31,8 @@ namespace vcpkg
         static constexpr StringLiteral ARIA2 = "aria2";
         static constexpr StringLiteral NODE = "node";
         static constexpr StringLiteral IFW_INSTALLER_BASE = "ifw_installerbase";
+        // This duplicate of CMake should only be used as a fallback to unpack
+        static constexpr StringLiteral CMAKE_SYSTEM = "cmake_system";
         // This duplicate of 7zip uses msiexec to unpack, which is a fallback for Windows 7.
         static constexpr StringLiteral SEVEN_ZIP_MSI = "7zip_msi";
         static constexpr StringLiteral PYTHON3 = "python3";
@@ -51,6 +53,7 @@ namespace vcpkg
                                                           const Path& exe_path);
 
     ExpectedL<Path> find_system_tar(const Filesystem& fs);
+    ExpectedL<Path> find_system_cmake(const Filesystem& fs);
 
     std::unique_ptr<ToolCache> get_tool_cache(Filesystem& fs,
                                               std::shared_ptr<const DownloadManager> downloader,

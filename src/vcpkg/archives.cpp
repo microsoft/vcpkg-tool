@@ -236,12 +236,20 @@ namespace vcpkg
         }
         else
         {
-            // On Windows <10, we attempt to use msiexec to unpack 7zip.
-
-            // Example:
-            // msiexec unpacks 7zip_msi unpacks cmake unpacks 7zip unpacks git
-            win32_extract_with_seven_zip(
-                tools.get_tool_path(Tools::SEVEN_ZIP_MSI, status_sink), archive, to_path_partial);
+            auto maybe_cmake_tool = find_system_cmake(fs);
+            if (maybe_cmake_tool)
+            {
+                // If the user has a CMake version installed we can use that to unpack.
+                extract_tar_cmake(maybe_cmake_tool.value_or_exit(VCPKG_LINE_INFO), archive, to_path_partial);
+            }
+            else
+            {
+                // On Windows <10, we attempt to use msiexec to unpack 7zip.
+                // Example:
+                // msiexec unpacks 7zip_msi unpacks cmake unpacks 7zip unpacks git
+                win32_extract_with_seven_zip(
+                    tools.get_tool_path(Tools::SEVEN_ZIP_MSI, status_sink), archive, to_path_partial);
+            }
         }
         fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
     }
