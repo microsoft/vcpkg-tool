@@ -892,14 +892,14 @@ namespace vcpkg
                     (msg::package_name),
                     "",
                     "Package \"{package_name}\" is already defined by another registry.\n"
-                    "Duplicated entries will be ignored.\n"
-                    "Remove this duplicated entry to dismiss this warning.");
+                    "\tDuplicated entries will be ignored.\n"
+                    "\tRemove any duplicate entries to dismiss this warning.");
     DECLARE_MESSAGE(DuplicatePackagePattern,
                     (msg::package_name),
                     "",
                     "Pattern \"{package_name}\" is already defined by another registry.\n"
-                    "Duplicated entries will be ignored.\n"
-                    "Remove this duplicated entry to dismiss this warning.");
+                    "\tDuplicated entries will be ignored.\n"
+                    "\tRemove any duplicate entries to dismiss this warning.");
     DECLARE_MESSAGE(ElapsedInstallTime, (msg::count), "", "Total elapsed time: {count}");
     DECLARE_MESSAGE(ElapsedTimeForChecks, (msg::elapsed), "", "Time to determine pass/fail: {elapsed}");
     DECLARE_MESSAGE(EmailVcpkgTeam, (msg::url), "", "Send an email to {url} with any feedback.");

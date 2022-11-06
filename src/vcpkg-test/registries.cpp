@@ -391,17 +391,17 @@ TEST_CASE ("registries ignored patterns warning", "[registries]")
     CHECK(
         warnings[0] ==
         "$.registries[1].packages[0] (a package pattern): Package \"beicode\" is already defined by another registry.\n"
-        "Duplicated entries will be ignored.\nRemove this duplicated entry to dismiss this warning.");
+        "\tDuplicated entries will be ignored.\n\tRemove any duplicate entries to dismiss this warning.");
     CHECK(warnings[1] ==
           "$.registries[1].packages[1] (a package pattern): Pattern \"bei*\" is already defined by another registry.\n"
-          "Duplicated entries will be ignored.\nRemove this duplicated entry to dismiss this warning.");
+          "\tDuplicated entries will be ignored.\n\tRemove any duplicate entries to dismiss this warning.");
     CHECK(
         warnings[2] ==
         "$.registries[2].packages[0] (a package pattern): Package \"beison\" is already defined by another registry.\n"
-        "Duplicated entries will be ignored.\nRemove this duplicated entry to dismiss this warning.");
+        "\tDuplicated entries will be ignored.\n\tRemove any duplicate entries to dismiss this warning.");
     CHECK(warnings[3] ==
           "$.registries[2].packages[1] (a package pattern): Package \"fmt\" is already defined by another registry.\n"
-          "Duplicated entries will be ignored.\nRemove this duplicated entry to dismiss this warning.");
+          "\tDuplicated entries will be ignored.\n\tRemove any duplicate entries to dismiss this warning.");
 }
 
 TEST_CASE ("git_version_db_parsing", "[registries]")

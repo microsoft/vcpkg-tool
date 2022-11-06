@@ -692,7 +692,6 @@ namespace vcpkg
     {
         if (!fs.exists(path, IgnoreErrors{}))
         {
-            messageSink.println(Color::error, msgFileNotFound, msg::path = path);
             return nullopt;
         }
 

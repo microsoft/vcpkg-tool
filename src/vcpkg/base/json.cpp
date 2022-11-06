@@ -1550,14 +1550,14 @@ namespace vcpkg::Json
             if (it != m_patterns->end())
             {
                 // TODO: Localize
-                auto type = (sv.back() == '*') ? "Pattern" : "Package";
-                r.add_warning(
-                    type_name(),
-                    fmt::format(
-                        "{} \"{}\" is already defined by another registry.\n"
-                        "Duplicated entries will be ignored.\nRemove this duplicated entry to dismiss this warning.",
-                        type,
-                        sv));
+                if (sv.back() == '*')
+                {
+                    r.add_warning(type_name(), msg::format(msgDuplicatePackagePattern, msg::package_name = sv));
+                }
+                else
+                {
+                    r.add_warning(type_name(), msg::format(msgDuplicatePackageName, msg::package_name = sv));
+                }
             }
             else
             {
