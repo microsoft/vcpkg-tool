@@ -888,6 +888,18 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is a command line option.",
                     "'--{value}' specified multiple times.");
+    DECLARE_MESSAGE(DuplicatePackageName,
+                    (msg::package_name),
+                    "",
+                    "Package \"{package_name}\" is already defined by another registry.\n"
+                    "Duplicated entries will be ignored.\n"
+                    "Remove this duplicated entry to dismiss this warning.");
+    DECLARE_MESSAGE(DuplicatePackagePattern,
+                    (msg::package_name),
+                    "",
+                    "Pattern \"{package_name}\" is already defined by another registry.\n"
+                    "Duplicated entries will be ignored.\n"
+                    "Remove this duplicated entry to dismiss this warning.");
     DECLARE_MESSAGE(ElapsedInstallTime, (msg::count), "", "Total elapsed time: {count}");
     DECLARE_MESSAGE(ElapsedTimeForChecks, (msg::elapsed), "", "Time to determine pass/fail: {elapsed}");
     DECLARE_MESSAGE(EmailVcpkgTeam, (msg::url), "", "Send an email to {url} with any feedback.");
@@ -2084,6 +2096,7 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
+    DECLARE_MESSAGE(WarnOnParseConfig, (msg::path), "", "Found the following problems in configuration {path}:");
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}");

@@ -91,48 +91,14 @@ namespace vcpkg
         return {std::move(manifest_value.first.object(VCPKG_LINE_INFO)), std::move(manifest_path)};
     }
 
-    static Optional<ManifestConfiguration> config_from_manifest(const Path& manifest_path,
-                                                                const Optional<ManifestAndPath>& manifest_doc)
+    static Optional<ManifestConfiguration> config_from_manifest(const Optional<ManifestAndPath>& manifest_doc)
     {
         if (auto manifest = manifest_doc.get())
         {
-            return parse_manifest_configuration(manifest_path, manifest->manifest).value_or_exit(VCPKG_LINE_INFO);
+            return parse_manifest_configuration(manifest->manifest, manifest->path, stdout_sink)
+                .value_or_exit(VCPKG_LINE_INFO);
         }
         return nullopt;
-    }
-
-    static Optional<Configuration> config_from_json(const Path& config_path, const Filesystem& fs)
-    {
-        if (!fs.exists(config_path, VCPKG_LINE_INFO))
-        {
-            return nullopt;
-        }
-
-        auto parsed_config = Json::parse_file(VCPKG_LINE_INFO, fs, config_path);
-        if (!parsed_config.first.is_object())
-        {
-            msg::println_error(msgFailedToParseNoTopLevelObj, msg::path = config_path);
-            msg::println(Color::error, msg::msgSeeURL, msg::url = docs::registries_url);
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-        const auto& obj = parsed_config.first.object(VCPKG_LINE_INFO);
-
-        Json::Reader reader;
-        auto parsed_config_opt = reader.visit(obj, get_configuration_deserializer());
-        if (!reader.errors().empty())
-        {
-            msg::println_error(msgFailedToParseConfig, msg::path = config_path);
-
-            for (auto&& msg : reader.errors())
-            {
-                msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("    {}\n", msg));
-            }
-
-            msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-
-        return parsed_config_opt;
     }
 
     static std::vector<std::string> merge_overlays(const std::vector<std::string>& cli_overlays,
@@ -650,8 +616,9 @@ namespace vcpkg
         Debug::print("Using downloads-root: ", downloads, '\n');
 
         {
-            auto maybe_manifest_config = config_from_manifest(m_pimpl->m_manifest_path, m_pimpl->m_manifest_doc);
-            auto maybe_config_json = config_from_json(m_pimpl->m_config_dir / "vcpkg-configuration.json", filesystem);
+            auto maybe_manifest_config = config_from_manifest(m_pimpl->m_manifest_doc);
+            auto maybe_config_json =
+                parse_configuration(filesystem, m_pimpl->m_config_dir / "vcpkg-configuration.json", stdout_sink);
 
             m_pimpl->m_config = merge_validate_configs(std::move(maybe_manifest_config),
                                                        m_pimpl->m_manifest_dir,

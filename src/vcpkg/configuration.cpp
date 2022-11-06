@@ -2,6 +2,7 @@
 #include <vcpkg/base/system.print.h>
 
 #include <vcpkg/configuration.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -686,6 +687,72 @@ namespace vcpkg
     }
 
     Json::IDeserializer<Configuration>& get_configuration_deserializer() { return ConfigurationDeserializer::instance; }
+
+    Optional<Configuration> parse_configuration(const Filesystem& fs, const Path& path, MessageSink& messageSink)
+    {
+        if (!fs.exists(path, IgnoreErrors{}))
+        {
+            messageSink.println(Color::error, msgFileNotFound, msg::path = path);
+            return nullopt;
+        }
+
+        std::error_code ec;
+        auto conf = Json::parse_file(fs, path, ec);
+        if (ec)
+        {
+            messageSink.println(Color::error, msgFailedToRead, msg::path = path, msg::error_msg = ec);
+            return nullopt;
+        }
+        else if (!conf)
+        {
+            messageSink.println(msgFailedToParseConfig, msg::path = path);
+            messageSink.println(Color::error, LocalizedString::from_raw(conf.error()->to_string()));
+            return nullopt;
+        }
+
+        auto conf_value = std::move(conf.value_or_exit(VCPKG_LINE_INFO));
+        if (!conf_value.first.is_object())
+        {
+            messageSink.println(msgFailedToParseNoTopLevelObj, msg::path = path);
+            return nullopt;
+        }
+
+        return parse_configuration(std::move(conf_value.first.object(VCPKG_LINE_INFO)), path, messageSink);
+    }
+
+    Optional<Configuration> parse_configuration(const Json::Object& obj, StringView origin, MessageSink& messageSink)
+    {
+        Json::Reader reader;
+        auto maybe_configuration = reader.visit(obj, get_configuration_deserializer());
+        bool has_warnings = !reader.warnings().empty();
+        bool has_errors = !reader.errors().empty();
+        if (has_warnings || has_errors)
+        {
+            if (has_errors)
+            {
+                messageSink.println(Color::error, msgFailedToParseConfig, msg::path = origin);
+            }
+            else
+            {
+                messageSink.println(Color::warning, msgWarnOnParseConfig, msg::path = origin);
+            }
+
+            for (auto&& msg : reader.warnings())
+            {
+                auto warning = fmt::format("    {}\n", msg);
+                messageSink.println(Color::warning, LocalizedString::from_raw(warning));
+            }
+
+            for (auto&& msg : reader.errors())
+            {
+                auto error = fmt::format("    {}\n", msg);
+                messageSink.println(Color::error, LocalizedString::from_raw(error));
+            }
+
+            msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
+        }
+        return maybe_configuration;
+    }
 
     static std::unique_ptr<RegistryImplementation> instantiate_rconfig(const VcpkgPaths& paths,
                                                                        const RegistryConfig& config,
