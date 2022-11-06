@@ -1035,7 +1035,6 @@ namespace vcpkg::Json
     IdentifierDeserializer IdentifierDeserializer::instance;
     IdentifierArrayDeserializer IdentifierArrayDeserializer::instance;
     PackageNameDeserializer PackageNameDeserializer::instance;
-    PackagePatternDeserializer PackagePatternDeserializer::instance;
     PathDeserializer PathDeserializer::instance;
 
     static constexpr bool is_lower_digit(char ch)
@@ -1538,11 +1537,32 @@ namespace vcpkg::Json
         return true;
     }
 
-    Optional<std::string> PackagePatternDeserializer::visit_string(Json::Reader&, StringView sv)
+    Optional<std::string> PackagePatternDeserializer::visit_string(Json::Reader& r, StringView sv)
     {
         if (!is_package_pattern(sv))
         {
             return nullopt;
+        }
+
+        if (m_patterns)
+        {
+            auto it = m_patterns->find(sv.to_string());
+            if (it != m_patterns->end())
+            {
+                // TODO: Localize
+                auto type = (sv.back() == '*') ? "Pattern" : "Package";
+                r.add_warning(
+                    type_name(),
+                    fmt::format(
+                        "{} \"{}\" is already defined by another registry.\n"
+                        "Duplicated entries will be ignored.\nRemove this duplicated entry to dismiss this warning.",
+                        type,
+                        sv));
+            }
+            else
+            {
+                m_patterns->emplace(sv.to_string());
+            }
         }
 
         return sv.to_string();

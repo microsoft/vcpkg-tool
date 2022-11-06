@@ -9,6 +9,8 @@
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/view.h>
 
+#include <set>
+
 namespace vcpkg::Json
 {
     struct Reader;
@@ -338,6 +340,8 @@ namespace vcpkg::Json
             return r.array_elements(arr, m_underlying_visitor);
         }
 
+        Underlying& visitor() { return m_underlying_visitor; }
+
     private:
         StringLiteral m_type_name;
         Underlying m_underlying_visitor;
@@ -393,6 +397,9 @@ namespace vcpkg::Json
 
         virtual Optional<std::string> visit_string(Json::Reader&, StringView sv) override;
 
-        static PackagePatternDeserializer instance;
+        void set_used_patterns(std::set<std::string>* patterns) { m_patterns = patterns; }
+
+    private:
+        std::set<std::string>* m_patterns = nullptr;
     };
 }

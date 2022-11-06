@@ -357,6 +357,53 @@ TEST_CASE ("registry_parsing", "[registries]")
     CHECK(r.errors().empty());
 }
 
+TEST_CASE ("registries ignored patterns warning", "[registries]")
+{
+    auto test_json = parse_json(R"json({
+    "registries": [
+        {
+            "kind": "git",
+            "repository": "0",
+            "baseline": "abcdef0",
+            "packages": [ "beicode", "beison", "bei*" ]
+        },
+        {
+            "kind": "git",
+            "repository": "1",
+            "baseline": "abcdef0",
+            "packages": [ "beicode", "bei*", "fmt" ]
+        },
+        {
+            "kind": "git",
+            "repository": "2",
+            "baseline": "abcdef0",
+            "packages": [ "beison", "fmt", "*" ]
+        }
+    ]
+})json");
+
+    Json::Reader r;
+    auto maybe_conf = r.visit(test_json, get_configuration_deserializer());
+    auto conf = maybe_conf.get();
+    REQUIRE(conf);
+    const auto& warnings = r.warnings();
+    CHECK(warnings.size() == 4);
+    CHECK(
+        warnings[0] ==
+        "$.registries[1].packages[0] (a package pattern): Package \"beicode\" is already defined by another registry.\n"
+        "Duplicated entries will be ignored.\nRemove this duplicated entry to dismiss this warning.");
+    CHECK(warnings[1] ==
+          "$.registries[1].packages[1] (a package pattern): Pattern \"bei*\" is already defined by another registry.\n"
+          "Duplicated entries will be ignored.\nRemove this duplicated entry to dismiss this warning.");
+    CHECK(
+        warnings[2] ==
+        "$.registries[2].packages[0] (a package pattern): Package \"beison\" is already defined by another registry.\n"
+        "Duplicated entries will be ignored.\nRemove this duplicated entry to dismiss this warning.");
+    CHECK(warnings[3] ==
+          "$.registries[2].packages[1] (a package pattern): Package \"fmt\" is already defined by another registry.\n"
+          "Duplicated entries will be ignored.\nRemove this duplicated entry to dismiss this warning.");
+}
+
 TEST_CASE ("git_version_db_parsing", "[registries]")
 {
     VersionDbEntryArrayDeserializer filesystem_version_db{VersionDbType::Git, "a/b"};

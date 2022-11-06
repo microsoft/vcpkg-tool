@@ -56,6 +56,11 @@ namespace
         virtual Optional<RegistryConfig> visit_object(Json::Reader&, const Json::Object&) override;
 
         static RegistryDeserializer instance;
+
+        void set_used_patterns(std::set<std::string>* patterns) { m_patterns = patterns; }
+
+    private:
+        std::set<std::string>* m_patterns = nullptr;
     };
     RegistryDeserializer RegistryDeserializer::instance;
     constexpr StringLiteral RegistryDeserializer::PACKAGES;
@@ -201,6 +206,7 @@ namespace
 
             if (config->kind && *config->kind.get() != RegistryConfigDeserializer::KIND_ARTIFACT)
             {
+                package_names_deserializer.visitor().set_used_patterns(m_patterns);
                 r.required_object_field(
                     type_name(), obj, PACKAGES, config->packages.emplace(), package_names_deserializer);
             }
@@ -418,6 +424,8 @@ namespace
         }
 
         static Json::ArrayDeserializer<RegistryDeserializer> regs_des("an array of registries");
+        std::set<std::string> names;
+        regs_des.visitor().set_used_patterns(&names);
         r.optional_object_field(obj, REGISTRIES, ret.registries, regs_des);
 
         Json::Object& ce_metadata_obj = ret.ce_metadata;
