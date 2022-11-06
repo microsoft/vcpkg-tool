@@ -10,7 +10,7 @@
     "doc": "docs"
   },
   "engines": {
-    "node": ">=14.17.0"
+    "node": ">=16.0.0"
   },
   "scripts": {
     "postinstall": "node ./create-links create && node ./wrapper-scripts create",

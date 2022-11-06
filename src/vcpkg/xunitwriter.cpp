@@ -110,7 +110,7 @@ void XunitWriter::add_test_results(const PackageSpec& spec,
          features});
 }
 
-std::string XunitWriter::build_xml(Triplet controlling_triplet)
+std::string XunitWriter::build_xml(Triplet controlling_triplet) const
 {
     XmlSerializer xml;
     xml.emit_declaration();

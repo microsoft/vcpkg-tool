@@ -97,8 +97,8 @@ TEST_CASE ("optional.map", "[optional]")
 
     struct MoveTest
     {
-        int operator()(int&&) { return 1; }
-        int operator()(const int&) { return -1; }
+        int operator()(int&&) const { return 1; }
+        int operator()(const int&) const { return -1; }
     } move_test;
 
     Optional<int> dst = std::move(five).map(move_test);

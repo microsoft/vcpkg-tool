@@ -176,8 +176,8 @@ function bootstrap-node {
   $ProgressPreference = 'SilentlyContinue'
   ce-debug "Downloading Node: ${NODE_URI}"
   download $NODE_URI $NODE_ARCHIVE
-  $shh = new-item -type directory -ea 0 $NODE_FOLDER 
-  
+  $shh = new-item -type directory -ea 0 $NODE_FOLDER
+
   switch($NODE_OS){
     'win' {
       if( get-command -ea 0 tar.exe ) {
@@ -227,7 +227,7 @@ function bootstrap-vcpkg-ce {
   write-host "Installing vcpkg-ce to ${VCPKG_ROOT}"
 
   if( $ENV:USE_LOCAL_VCPKG_PKG )  {
-    $USE_LOCAL_VCPKG_PKG=$ENV:USE_LOCAL_VCPKG_PKG 
+    $USE_LOCAL_VCPKG_PKG=$ENV:USE_LOCAL_VCPKG_PKG
   }
 
   $PKG = $USE_LOCAL_VCPKG_PKG
@@ -239,7 +239,7 @@ function bootstrap-vcpkg-ce {
   $PATH = $ENV:PATH
   $N_DIR=(resolve "$VCPKG_NODE/..")
   $ENV:PATH="$N_DIR;$PATH"
-  
+
   &$VCPKG_NODE $YARN add $PKG --no-lockfile --force --scripts-prepend-node-path=true --modules-folder=$MODULES 2>&1 >> $VCPKG_ROOT/log.txt
   $ENV:PATH = $PATH
 
@@ -319,7 +319,7 @@ $shh = New-Module -name vcpkg-ce -ArgumentList @($VCPKG_NODE,$CE_MODULE,$VCPKG_R
     # Generate 31 bits of randomness, to avoid clashing with concurrent executions.
     $env:Z_VCPKG_POSTSCRIPT = resolve "${VCPKG_ROOT}/VCPKG_tmp_$(Get-Random -SetSeed $PID).ps1"
 
-    & $VCPKG_NODE --harmony $CE_MODULE @args
+    & $VCPKG_NODE $CE_MODULE @args
 
     # dot-source the postscript file to modify the environment
     if ($env:Z_VCPKG_POSTSCRIPT -and (Test-Path $env:Z_VCPKG_POSTSCRIPT)) {
@@ -400,7 +400,7 @@ if "%VCPKG_NODE%" EQU "" (
 if "%VCPKG_NODE%" EQU "" goto OHNONONODE:
 
 :: call the program
-"%VCPKG_NODE%" --harmony "%VCPKG_MODULE%" %*
+"%VCPKG_NODE%" "%VCPKG_MODULE%" %*
 set VCPKG_EXITCODE=%ERRORLEVEL%
 doskey ce="%VCPKG_CMD%" $*
 

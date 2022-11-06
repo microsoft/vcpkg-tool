@@ -486,7 +486,7 @@ namespace vcpkg
         });
     }
 
-    const EnvCache::TripletMapEntry& EnvCache::get_triplet_cache(const Filesystem& fs, const Path& p)
+    const EnvCache::TripletMapEntry& EnvCache::get_triplet_cache(const Filesystem& fs, const Path& p) const
     {
         return m_triplet_cache.get_lazy(p, [&]() -> TripletMapEntry {
             return TripletMapEntry{Hash::get_file_hash(fs, p, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO)};
@@ -624,7 +624,7 @@ namespace vcpkg
                               });
         // Make sure GIT could be found
         const Path& git_exe_path = paths.get_tool_exe(Tools::GIT, stdout_sink);
-        out_vars.push_back({"GIT", git_exe_path});
+        out_vars.emplace_back("GIT", git_exe_path);
     }
 
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info)
@@ -657,17 +657,17 @@ namespace vcpkg
             rc = cmd_execute_and_stream_lines(
                 command,
                 [&](StringView s) {
-                    static const StringLiteral s_hash_marker = "#COMPILER_HASH#";
+                    static constexpr StringLiteral s_hash_marker = "#COMPILER_HASH#";
                     if (Strings::starts_with(s, s_hash_marker))
                     {
                         compiler_info.hash = s.substr(s_hash_marker.size()).to_string();
                     }
-                    static const StringLiteral s_version_marker = "#COMPILER_CXX_VERSION#";
+                    static constexpr StringLiteral s_version_marker = "#COMPILER_CXX_VERSION#";
                     if (Strings::starts_with(s, s_version_marker))
                     {
                         compiler_info.version = s.substr(s_version_marker.size()).to_string();
                     }
-                    static const StringLiteral s_id_marker = "#COMPILER_CXX_ID#";
+                    static constexpr StringLiteral s_id_marker = "#COMPILER_CXX_ID#";
                     if (Strings::starts_with(s, s_id_marker))
                     {
                         compiler_info.id = s.substr(s_id_marker.size()).to_string();
@@ -730,12 +730,12 @@ namespace vcpkg
 
         if (action.build_options.download_tool == DownloadTool::ARIA2)
         {
-            variables.push_back({"ARIA2", paths.get_tool_exe(Tools::ARIA2, stdout_sink)});
+            variables.emplace_back("ARIA2", paths.get_tool_exe(Tools::ARIA2, stdout_sink));
         }
 
         for (const auto& cmake_arg : args.cmake_args)
         {
-            variables.push_back(CMakeVariable{cmake_arg});
+            variables.emplace_back(cmake_arg);
         }
 
         if (action.build_options.backcompat_features == BackcompatFeatures::PROHIBIT)
@@ -751,7 +751,7 @@ namespace vcpkg
 
         if (Util::Enum::to_bool(action.build_options.only_downloads))
         {
-            variables.push_back({"VCPKG_DOWNLOAD_MODE", "true"});
+            variables.emplace_back("VCPKG_DOWNLOAD_MODE", "true");
         }
 
         const Filesystem& fs = paths.get_filesystem();
@@ -1091,7 +1091,7 @@ namespace vcpkg
         // If there is an unusually large number of files in the port then
         // something suspicious is going on.  Rather than hash all of them
         // just mark the port as no-hash
-        const int max_port_file_count = 100;
+        constexpr int max_port_file_count = 100;
 
         std::string portfile_cmake_contents;
         std::vector<Path> files;

@@ -38,7 +38,7 @@ namespace vcpkg
         std::vector<std::string> overlay_triplets;
 
         Json::Object serialize() const;
-        void validate_as_active();
+        void validate_as_active() const;
 
         std::unique_ptr<RegistrySet> instantiate_registry_set(const VcpkgPaths& paths, const Path& config_dir) const;
 

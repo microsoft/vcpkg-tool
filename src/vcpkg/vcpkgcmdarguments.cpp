@@ -836,6 +836,8 @@ namespace vcpkg
                 args.disable_metrics = true;
             }
 
+            args.do_not_take_lock = true;
+
             // Setting the recursive data to 'poison' prevents more than one level of recursion because
             // Json::parse() will fail.
             set_environment_variable(RECURSIVE_DATA_ENV, "poison");

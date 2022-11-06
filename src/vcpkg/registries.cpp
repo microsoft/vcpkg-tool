@@ -894,7 +894,7 @@ namespace
                 "Error: Failed to load the versions database file %s: %s", versions_file_path, ec.message());
         }
 
-        auto maybe_versions_json = Json::parse(std::move(contents));
+        auto maybe_versions_json = Json::parse(contents);
         if (!maybe_versions_json)
         {
             return Strings::format("Error: failed to parse versions file for `%s`: %s",
@@ -984,7 +984,7 @@ namespace
             return Strings::format("Error: failed to read baseline file \"%s\": %s", baseline_path, ec.message());
         }
 
-        return parse_baseline_versions(std::move(contents), baseline, baseline_path);
+        return parse_baseline_versions(contents, baseline, baseline_path);
     }
 }
 
@@ -1264,7 +1264,7 @@ namespace vcpkg
     {
         static constexpr struct
         {
-            bool operator()(char ch) { return ('0' <= ch && ch <= '9') || ('a' <= ch && ch <= 'f'); }
+            bool operator()(char ch) const { return ('0' <= ch && ch <= '9') || ('a' <= ch && ch <= 'f'); }
         } is_lcase_ascii_hex;
 
         return sv.size() == 40 && std::all_of(sv.begin(), sv.end(), is_lcase_ascii_hex);

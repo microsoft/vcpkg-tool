@@ -305,7 +305,7 @@
   "HelpVersionSemverScheme": "Anlamsal Sürüm 2.0 (2.1.0-rc2)",
   "HelpVersionStringScheme": "Kesin, eşsiz bir versiyon (Vista)",
   "HelpVersioning": "Sürüm oluşturma, projeniz tarafından kullanılan bağımlılıkların kesin revizyonlarını bildirim dosyanızdan belirleyici bir şekilde kontrol etmenize olanak tanır.",
-  "IgnoringVcpkgRootEnvironment": "VCPKG_ROOT ortam değişkeni yoksayılıyor; ortam değerini kullanmak için --vcpkg-root \"{path}\" kullanın veya bu mesajı bastırmak için VCPKG_ROOT ortam değişkeninin ayarını kaldırın. Algılanan vcpkg kökü kullanılıyor: \"{actual}\".",
+  "IgnoringVcpkgRootEnvironment": "Vcpkg {value}, algılanan vcpkg kökünü {actual} kullanıyor ve eşleşmeyen VCPKG_ROOT ortam değeri {path} yoksayılıyor. Bu iletiyi durdurmak için ortam değişkeni ayarını kaldırın veya --vcpkg-root komut satırı anahtarını kullanın.",
   "IllegalFeatures": "Bu bağlamda özellik listesine izin verilmiyor",
   "IllegalPlatformSpec": "Platform niteleyicisine bu bağlamda izin verilmiyor",
   "ImproperShaLength": "SHA512'ler 128 onaltılık karakter olmalıdır: {value}",

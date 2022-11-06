@@ -641,7 +641,7 @@ namespace vcpkg
         return known_fields;
     }
 
-    void Configuration::validate_as_active()
+    void Configuration::validate_as_active() const
     {
         if (!ce_metadata.is_empty())
         {
