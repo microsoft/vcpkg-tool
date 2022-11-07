@@ -364,19 +364,19 @@ TEST_CASE ("registries ignored patterns warning", "[registries]")
         {
             "kind": "git",
             "repository": "0",
-            "baseline": "abcdef0",
+            "baseline": "ffff0000",
             "packages": [ "beicode", "beison", "bei*" ]
         },
         {
             "kind": "git",
             "repository": "1",
-            "baseline": "abcdef0",
+            "baseline": "aaaa0000",
             "packages": [ "beicode", "bei*", "fmt" ]
         },
         {
             "kind": "git",
             "repository": "2",
-            "baseline": "abcdef0",
+            "baseline": "bbbb0000",
             "packages": [ "beison", "fmt", "*" ]
         }
     ]
@@ -384,8 +384,43 @@ TEST_CASE ("registries ignored patterns warning", "[registries]")
 
     Json::Reader r;
     auto maybe_conf = r.visit(test_json, get_configuration_deserializer());
+
     auto conf = maybe_conf.get();
     REQUIRE(conf);
+
+    auto& regs = conf->registries;
+    REQUIRE(regs.size() == 3);
+
+    auto reg = regs[0];
+    reg.kind = "git";
+    reg.repo = "0";
+    reg.baseline = "ffff0000";
+    auto pkgs = reg.packages.get();
+    REQUIRE(pkgs);
+    CHECK((*pkgs)[0] == "beicode");
+    CHECK((*pkgs)[1] == "beison");
+    CHECK((*pkgs)[2] == "bei*");
+
+    reg = regs[1];
+    reg.kind = "git";
+    reg.repo = "1";
+    reg.baseline = "aaaa0000";
+    pkgs = reg.packages.get();
+    REQUIRE(pkgs);
+    CHECK((*pkgs)[0] == "beicode");
+    CHECK((*pkgs)[1] == "bei*");
+    CHECK((*pkgs)[2] == "fmt");
+
+    reg = regs[2];
+    reg.kind = "git";
+    reg.repo = "2";
+    reg.baseline = "bbbb0000";
+    pkgs = reg.packages.get();
+    REQUIRE(pkgs);
+    CHECK((*pkgs)[0] == "beison");
+    CHECK((*pkgs)[1] == "fmt");
+    CHECK((*pkgs)[2] == "*");
+
     const auto& warnings = r.warnings();
     CHECK(warnings.size() == 4);
     CHECK(warnings[0] ==
