@@ -1520,21 +1520,33 @@ namespace vcpkg::Json
         const auto last = sv.end();
         for (;;)
         {
-            if (cur == last || (!is_lower_digit(*cur))) return false;
-            ++cur;
-            while (cur != last && is_lower_digit(*cur))
-                ++cur;
-
-            if (cur == last) break;
-            if (*cur == '*')
+            // [a-z0-9]+
+            if (cur == last || !is_lower_digit(*cur))
+            {
+                return false;
+            }
+            do
             {
                 ++cur;
-                return (cur == last);
+                if (cur == last)
+                {
+                    return true;
+                }
+            } while (is_lower_digit(*cur));
+
+            switch (*cur)
+            {
+                case '-':
+                    // repeat outer [a-z0-9]+ again to match -[a-z0-9]+
+                    ++cur;
+                    continue;
+                case '*':
+                    // match last optional *
+                    ++cur;
+                    return cur == last;
+                default: return false;
             }
-            if (*cur != '-') return false;
-            ++cur;
         }
-        return true;
     }
 
     Optional<std::string> PackagePatternDeserializer::visit_string(Json::Reader& r, StringView sv)

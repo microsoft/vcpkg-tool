@@ -690,11 +690,6 @@ namespace vcpkg
 
     Optional<Configuration> parse_configuration(const Filesystem& fs, const Path& path, MessageSink& messageSink)
     {
-        if (!fs.exists(path, IgnoreErrors{}))
-        {
-            return nullopt;
-        }
-
         std::error_code ec;
         auto conf = Json::parse_file(fs, path, ec);
         if (ec)
@@ -738,8 +733,7 @@ namespace vcpkg
 
             for (auto&& msg : reader.warnings())
             {
-                auto warning = fmt::format("    {}\n", msg);
-                messageSink.println(Color::warning, LocalizedString::from_raw(warning));
+                messageSink.println(Color::warning, LocalizedString().append_indent().append_raw(msg));
             }
 
             for (auto&& msg : reader.errors())
