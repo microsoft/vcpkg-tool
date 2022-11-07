@@ -1148,74 +1148,71 @@ namespace vcpkg
     const RegistryImplementation* RegistrySet::registry_for_port(StringView name) const
     {
         auto candidates = registries_for_port(name);
-        auto registry = candidates.front();
-        return registry.implementation;
-    }
-
-    int compare_package_prefix(StringView name, StringView prefix)
-    {
-        if (prefix.empty() || name.empty()) return -1;
-
-        size_t idx = 0;
-        auto cur = prefix.begin();
-        auto last = prefix.end();
-        for (; cur != last; ++idx, ++cur)
+        if (candidates.empty())
         {
-            const auto c = *cur;
-            if (c == '*')
-            {
-                return (++cur == last) ? static_cast<int>(idx) : -1;
-            }
-
-            if (idx >= name.size()) return -1;
-            if (c != name[idx]) return -1;
+            return default_registry();
         }
 
-        // exact match, increase priority by 1
-        if (idx == name.size()) return name.size() + 1;
-        return static_cast<int>(idx);
+        return candidates[0];
     }
 
-    std::vector<RegistryCandidate> RegistrySet::registries_for_port(StringView name) const
+    size_t package_match_prefix(StringView name, StringView prefix)
     {
-        size_t registry_index = 0;
-        std::vector<RegistryCandidate> candidates;
-        for (auto it = registries().begin(); it != registries().end(); ++it, ++registry_index)
+        if (name == prefix)
         {
-            int priority = -1;
-            for (auto&& pattern : it->packages())
+            // exact match is like matching "infinity" prefix
+            return SIZE_MAX;
+        }
+
+        // Note that the * is included in the match so that 0 means no match
+        const auto prefix_size = prefix.size();
+        if (prefix_size != 0)
+        {
+            const auto star_index = prefix_size - 1;
+            if (prefix[star_index] == '*' && name.size() >= star_index &&
+                name.substr(0, star_index) == prefix.substr(0, star_index))
             {
-                priority = std::max(priority, compare_package_prefix(name, pattern));
+                return prefix_size;
+            }
+        }
+
+        return 0;
+    }
+
+    std::vector<const RegistryImplementation*> RegistrySet::registries_for_port(StringView name) const
+    {
+        struct RegistryCandidate
+        {
+            const RegistryImplementation* impl;
+            std::size_t matched_prefix;
+        };
+
+        std::vector<RegistryCandidate> candidates;
+        for (auto&& registry : registries())
+        {
+            std::size_t longest_prefix = 0;
+            for (auto&& package : registry.packages())
+            {
+                longest_prefix = std::max(longest_prefix, package_match_prefix(name, package));
             }
 
-            if (priority >= 0)
+            if (longest_prefix != 0)
             {
-                candidates.emplace_back(RegistryCandidate{
-                    &it->implementation(),
-                    priority,
-                    registry_index,
-                });
+                candidates.push_back({&registry.implementation(), longest_prefix});
             }
         }
 
         if (candidates.empty())
         {
-            candidates.emplace_back(RegistryCandidate{
-                default_registry(),
-                0,
-                0,
-            });
-        }
-        else
-        {
-            Util::sort(candidates, [](auto&& lhs, auto&& rhs) {
-                if (lhs.priority > rhs.priority) return true;
-                if (lhs.priority == rhs.priority) return lhs.index < rhs.index;
-                return false;
-            });
+            return std::vector<const RegistryImplementation*>();
         }
 
-        return candidates;
+        std::stable_sort(
+            candidates.begin(), candidates.end(), [](const RegistryCandidate& lhs, const RegistryCandidate& rhs) {
+                return lhs.matched_prefix > rhs.matched_prefix;
+            });
+
+        return Util::fmap(std::move(candidates), [](const RegistryCandidate& target) { return target.impl; });
     }
 
     ExpectedL<Version> RegistrySet::baseline_for_port(StringView port_name) const

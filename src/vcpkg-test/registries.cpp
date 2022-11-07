@@ -118,19 +118,19 @@ TEST_CASE ("check valid package patterns", "[registries]")
 
 TEST_CASE ("calculate prefix priority", "[registries]")
 {
-    CHECK(compare_package_prefix("boost", "*") == 0);
-    CHECK(compare_package_prefix("boost", "b*") == 1);
-    CHECK(compare_package_prefix("boost", "boost*") == 5);
-    CHECK(compare_package_prefix("boost", "boost") == 6);
+    CHECK(package_match_prefix("boost", "*") == 1);
+    CHECK(package_match_prefix("boost", "b*") == 2);
+    CHECK(package_match_prefix("boost", "boost*") == 6);
+    CHECK(package_match_prefix("boost", "boost") == SIZE_MAX);
 
-    CHECK(compare_package_prefix("", "") == -1);
-    CHECK(compare_package_prefix("", "*") == -1);
-    CHECK(compare_package_prefix("", "a") == -1);
-    CHECK(compare_package_prefix("boost", "") == -1);
-    CHECK(compare_package_prefix("boost", "c*") == -1);
-    CHECK(compare_package_prefix("boost", "*c") == -1);
-    CHECK(compare_package_prefix("boost", "c**") == -1);
-    CHECK(compare_package_prefix("boost", "c*a") == -1);
+    CHECK(package_match_prefix("", "") == SIZE_MAX);
+    CHECK(package_match_prefix("", "*") == 1);
+    CHECK(package_match_prefix("", "a") == 0);
+    CHECK(package_match_prefix("boost", "") == 0);
+    CHECK(package_match_prefix("boost", "c*") == 0);
+    CHECK(package_match_prefix("boost", "*c") == 0);
+    CHECK(package_match_prefix("boost", "c**") == 0);
+    CHECK(package_match_prefix("boost", "c*a") == 0);
 }
 
 TEST_CASE ("select highest priority registry", "[registries]")
@@ -183,19 +183,19 @@ TEST_CASE ("sort candidate registries by priority", "[registries]")
         REQUIRE(candidates.size() == 4);
         size_t idx = 0;
 
-        auto reg = candidates[idx++].implementation;
+        auto reg = candidates[idx++];
         REQUIRE(reg);
         CHECK(get_tri_num(*reg) == 4);
 
-        reg = candidates[idx++].implementation;
+        reg = candidates[idx++];
         REQUIRE(reg);
         CHECK(get_tri_num(*reg) == 3);
 
-        reg = candidates[idx++].implementation;
+        reg = candidates[idx++];
         REQUIRE(reg);
         CHECK(get_tri_num(*reg) == 1);
 
-        reg = candidates[idx++].implementation;
+        reg = candidates[idx++];
         REQUIRE(reg);
         CHECK(get_tri_num(*reg) == 2);
     }
@@ -209,9 +209,7 @@ TEST_CASE ("sort candidate registries by priority", "[registries]")
         RegistrySet set(nullptr, std::move(rs));
 
         auto candidates = set.registries_for_port("cpprestsdk");
-        REQUIRE(candidates.size() == 1);
-        auto reg = candidates.front().implementation;
-        CHECK_FALSE(reg);
+        REQUIRE(candidates.empty());
     }
 }
 
