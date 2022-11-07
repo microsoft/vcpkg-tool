@@ -504,10 +504,9 @@ namespace vcpkg
 
         const auto& fs = paths.get_filesystem();
 
-        const auto triplet_file_path = paths.get_triplet_file_path(abi_info.pre_build_info->triplet);
-
         auto&& toolchain_hash = get_toolchain_cache(m_toolchain_cache, abi_info.pre_build_info->toolchain_file(), fs);
 
+        const auto triplet_file_path = paths.get_triplet_file_path(abi_info.pre_build_info->triplet);
         auto&& triplet_entry = get_triplet_cache(fs, triplet_file_path);
 
         return triplet_entry.compiler_info.get_lazy(toolchain_hash, [&]() -> CompilerInfo {
@@ -1037,6 +1036,12 @@ namespace vcpkg
                     "ENV:" + env_var, Hash::get_string_hash(e.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256));
             }
         }
+
+        //for (const auto& add_file : abi_info.additional_files)
+        //{
+        //    abi_tag_entries.emplace_back(
+        //            "ENV:" + env_var, Hash::get_string_hash(e.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256));
+        //}
     }
 
     struct AbiTagAndFiles
@@ -1096,6 +1101,12 @@ namespace vcpkg
         std::string portfile_cmake_contents;
         std::vector<Path> files;
         std::vector<std::string> hashes;
+
+        for(const auto& file : abi_info.additional_files) {
+            files.push_back(file);
+            hashes.push_back(vcpkg::Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO));
+        }
+
         auto&& port_dir = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_location;
         size_t port_file_count = 0;
         Path abs_port_file;
@@ -1247,6 +1258,17 @@ namespace vcpkg
             abi_info.pre_build_info = std::make_unique<PreBuildInfo>(
                 paths, action.spec.triplet(), var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO));
             abi_info.toolset = paths.get_toolset(*abi_info.pre_build_info);
+
+            //if(!abi_info.pre_build_info->hash_additional_files.empty()) {
+            //    const auto& fs = paths.get_filesystem();
+            //    const auto file_count = abi_info.pre_build_info->hash_additional_files.size();
+            //    abi_info.additional_files.reserve(file_count);
+            //    abi_info.additional_files_hashes.reserve(file_count);
+            //    for(auto hash_additional_file : abi_info.pre_build_info->hash_additional_files) {
+            //        abi_info.additional_files.emplace_back(hash_additional_file);
+            //        abi_info.additional_files_hashes.emplace_back(Hash::get_file_hash(fs, hash_additional_file, Hash::Algorithm::Sha256));
+            //    };
+            //}
 
             auto maybe_abi_tag_and_file = compute_abi_tag(paths, action, dependency_abis);
             if (auto p = maybe_abi_tag_and_file.get())
@@ -1639,6 +1661,7 @@ namespace vcpkg
             PUBLIC_ABI_OVERRIDE,
             LOAD_VCVARS_ENV,
             DISABLE_COMPILER_TRACKING,
+            HASH_ADDITIONAL_FILES
         };
 
         static const std::vector<std::pair<std::string, VcpkgTripletVar>> VCPKG_OPTIONS = {
@@ -1656,6 +1679,7 @@ namespace vcpkg
             // Note: this value must come after VCPKG_CHAINLOAD_TOOLCHAIN_FILE because its default depends upon it.
             {"VCPKG_LOAD_VCVARS_ENV", VcpkgTripletVar::LOAD_VCVARS_ENV},
             {"VCPKG_DISABLE_COMPILER_TRACKING", VcpkgTripletVar::DISABLE_COMPILER_TRACKING},
+            {"VCPKG_HASH_ADDITIONAL_FILES", VcpkgTripletVar::HASH_ADDITIONAL_FILES}
         };
 
         std::string empty;
@@ -1710,6 +1734,9 @@ namespace vcpkg
                     break;
                 case VcpkgTripletVar::PUBLIC_ABI_OVERRIDE:
                     public_abi_override = variable_value.empty() ? nullopt : Optional<std::string>{variable_value};
+                    break;
+                case VcpkgTripletVar::HASH_ADDITIONAL_FILES:
+                    Util::Vectors::append(&hash_additional_files, Strings::split(variable_value, ';'));
                     break;
                 case VcpkgTripletVar::LOAD_VCVARS_ENV:
                     if (variable_value.empty())

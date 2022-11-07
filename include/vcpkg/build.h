@@ -259,6 +259,7 @@ namespace vcpkg
         Optional<std::string> public_abi_override;
         std::vector<std::string> passthrough_env_vars;
         std::vector<std::string> passthrough_env_vars_tracked;
+        std::vector<std::string> hash_additional_files;
 
         Path toolchain_file() const;
         bool using_vcvars() const;
@@ -386,6 +387,8 @@ namespace vcpkg
         std::string package_abi;
         Optional<Path> abi_tag_file;
         Optional<const CompilerInfo&> compiler_info;
+        std::vector<Path> additional_files;
+        //std::vector<std::string> additional_files_hashes;
         std::vector<Path> relative_port_files;
         std::vector<std::string> relative_port_hashes;
         std::vector<Json::Value> heuristic_resources;
