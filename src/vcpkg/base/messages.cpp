@@ -549,6 +549,7 @@ namespace vcpkg
     REGISTER_MESSAGE(DuplicateOptions);
     REGISTER_MESSAGE(DuplicatePackageName);
     REGISTER_MESSAGE(DuplicatePackagePattern);
+    REGISTER_MESSAGE(DuplicatePackagePatternSuggestion);
     REGISTER_MESSAGE(ElapsedInstallTime);
     REGISTER_MESSAGE(ElapsedTimeForChecks);
     REGISTER_MESSAGE(EmailVcpkgTeam);

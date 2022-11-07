@@ -388,20 +388,20 @@ TEST_CASE ("registries ignored patterns warning", "[registries]")
     REQUIRE(conf);
     const auto& warnings = r.warnings();
     CHECK(warnings.size() == 4);
-    CHECK(
-        warnings[0] ==
-        "$.registries[1].packages[0] (a package pattern): Package \"beicode\" is already defined by another registry.\n"
-        "\tDuplicated entries will be ignored.\n\tRemove any duplicate entries to dismiss this warning.");
+    CHECK(warnings[0] ==
+          "$.registries[1].packages[0] (a package pattern): Package \"beicode\" is already declared by another "
+          "registry.\n"
+          "\tDuplicate entries will be ignored.\n\tRemove any duplicate entries to dismiss this warning.");
     CHECK(warnings[1] ==
-          "$.registries[1].packages[1] (a package pattern): Pattern \"bei*\" is already defined by another registry.\n"
-          "\tDuplicated entries will be ignored.\n\tRemove any duplicate entries to dismiss this warning.");
+          "$.registries[1].packages[1] (a package pattern): Pattern \"bei*\" is already declared by another registry.\n"
+          "\tDuplicate entries will be ignored.\n\tRemove any duplicate entries to dismiss this warning.");
     CHECK(
         warnings[2] ==
-        "$.registries[2].packages[0] (a package pattern): Package \"beison\" is already defined by another registry.\n"
-        "\tDuplicated entries will be ignored.\n\tRemove any duplicate entries to dismiss this warning.");
+        "$.registries[2].packages[0] (a package pattern): Package \"beison\" is already declared by another registry.\n"
+        "\tDuplicate entries will be ignored.\n\tRemove any duplicate entries to dismiss this warning.");
     CHECK(warnings[3] ==
-          "$.registries[2].packages[1] (a package pattern): Package \"fmt\" is already defined by another registry.\n"
-          "\tDuplicated entries will be ignored.\n\tRemove any duplicate entries to dismiss this warning.");
+          "$.registries[2].packages[1] (a package pattern): Package \"fmt\" is already declared by another registry.\n"
+          "\tDuplicate entries will be ignored.\n\tRemove any duplicate entries to dismiss this warning.");
 }
 
 TEST_CASE ("git_version_db_parsing", "[registries]")

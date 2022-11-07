@@ -1549,14 +1549,19 @@ namespace vcpkg::Json
             auto it = m_patterns->find(sv.to_string());
             if (it != m_patterns->end())
             {
-                // TODO: Localize
                 if (sv.back() == '*')
                 {
-                    r.add_warning(type_name(), msg::format(msgDuplicatePackagePattern, msg::package_name = sv));
+                    r.add_warning(type_name(),
+                                  msg::format(msgDuplicatePackagePattern, msg::package_name = sv)
+                                      .append_raw("\n")
+                                      .append(msgDuplicatePackagePatternSuggestion));
                 }
                 else
                 {
-                    r.add_warning(type_name(), msg::format(msgDuplicatePackageName, msg::package_name = sv));
+                    r.add_warning(type_name(),
+                                  msg::format(msgDuplicatePackageName, msg::package_name = sv)
+                                      .append_raw("\n")
+                                      .append(msgDuplicatePackagePatternSuggestion));
                 }
             }
             else
