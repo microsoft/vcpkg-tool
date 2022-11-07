@@ -738,8 +738,7 @@ namespace vcpkg
 
             for (auto&& msg : reader.errors())
             {
-                auto error = fmt::format("    {}\n", msg);
-                messageSink.println(Color::error, LocalizedString::from_raw(error));
+                messageSink.println(Color::error, LocalizedString().append_indent().append_raw(msg));
             }
 
             msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
