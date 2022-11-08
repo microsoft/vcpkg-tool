@@ -454,7 +454,8 @@ namespace vcpkg
     {
         for (const auto& result : this->results)
         {
-            if (result.build_result.value_or_exit(VCPKG_LINE_INFO).code != BuildResult::SUCCEEDED)
+            const auto result_code = result.build_result.value_or_exit(VCPKG_LINE_INFO).code;
+            if (result_code != BuildResult::SUCCEEDED && result_code != BuildResult::REMOVED)
             {
                 return true;
             }
