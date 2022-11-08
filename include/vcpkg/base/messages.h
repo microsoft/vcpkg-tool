@@ -888,19 +888,14 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is a command line option.",
                     "'--{value}' specified multiple times.");
-    DECLARE_MESSAGE(DuplicatePackageName,
-                    (msg::package_name),
-                    "",
-                    "Package \"{package_name}\" is declared in multiple locations:");
     DECLARE_MESSAGE(DuplicatePackagePattern,
-                    (msg::package_name),
+                    (msg::count, msg::package_name),
                     "",
-                    "Pattern \"{package_name}\" is declared in multiple locations:");
-    DECLARE_MESSAGE(DuplicatePackagePatternSuggestion,
-                    (),
-                    "",
-                    "Duplicate entries will be ignored.\n"
-                    "Remove any duplicate entries to dismiss this warning.");
+                    "[{count}] Package \"{package_name}\" is declared first in:");
+    DECLARE_MESSAGE(DuplicatePackagePatternIgnoredLocations, (), "", "The following redeclarations will be ignored:");
+    DECLARE_MESSAGE(DuplicatePackagePatternLocation, (msg::path), "", "location: {path}");
+    DECLARE_MESSAGE(DuplicatePackagePatternSuggestion, (), "", "Remove any duplicate entries to dismiss this warning.");
+    DECLARE_MESSAGE(DuplicatePackagePatternRegistry, (msg::url), "", "registry: {url}");
     DECLARE_MESSAGE(ElapsedInstallTime, (msg::count), "", "Total elapsed time: {count}");
     DECLARE_MESSAGE(ElapsedTimeForChecks, (msg::elapsed), "", "Time to determine pass/fail: {elapsed}");
     DECLARE_MESSAGE(EmailVcpkgTeam, (msg::url), "", "Send an email to {url} with any feedback.");
@@ -2097,7 +2092,7 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
-    DECLARE_MESSAGE(WarnOnParseConfig, (msg::path), "", "Found the following problems in configuration {path}:");
+    DECLARE_MESSAGE(WarnOnParseConfig, (msg::path), "", "Found the following warnings in configuration {path}:");
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}");

@@ -361,21 +361,21 @@ TEST_CASE ("registries ignored patterns warning", "[registries]")
     "registries": [
         {
             "kind": "git",
-            "repository": "https://github.com/northwindtraders/vcpkg-registry",
-            "baseline": "ffff0000",
-            "packages": [ "beicode", "beison", "bei*" ]
-        },
-        {
-            "kind": "git",
-            "repository": "git@github.com:northwindtraders/vcpkg-registry",
-            "baseline": "aaaa0000",
-            "packages": [ "beicode", "bei*", "fmt" ]
-        },
-        {
-            "kind": "git",
             "repository": "https://github.com/Microsoft/vcpkg",
+            "baseline": "ffff0000",
+            "packages": [ "*", "rapidjson", "zlib" ]
+        },
+        {
+            "kind": "git",
+            "repository": "https://github.com/northwindtraders/vcpkg-registry",
+            "baseline": "aaaa0000",
+            "packages": [ "bei*", "zlib" ]
+        },
+        {
+            "kind": "git",
+            "repository": "https://github.com/another-remote/another-vcpkg-registry",
             "baseline": "bbbb0000",
-            "packages": [ "beison", "fmt", "*" ]
+            "packages": [ "*", "bei*", "zlib" ]
         }
     ]
 })json");
@@ -390,50 +390,69 @@ TEST_CASE ("registries ignored patterns warning", "[registries]")
     REQUIRE(regs.size() == 3);
 
     auto reg = regs[0];
-    reg.kind = "git";
-    reg.repo = "0";
-    reg.baseline = "ffff0000";
+    CHECK(reg.kind == "git");
+    CHECK(reg.repo == "https://github.com/Microsoft/vcpkg");
+    CHECK(reg.baseline == "ffff0000");
     auto pkgs = reg.packages.get();
     REQUIRE(pkgs);
-    CHECK((*pkgs)[0] == "beicode");
-    CHECK((*pkgs)[1] == "beison");
-    CHECK((*pkgs)[2] == "bei*");
+    REQUIRE(pkgs->size() == 3);
+    CHECK((*pkgs)[0] == "*");
+    CHECK((*pkgs)[1] == "rapidjson");
+    CHECK((*pkgs)[2] == "zlib");
 
     reg = regs[1];
-    reg.kind = "git";
-    reg.repo = "1";
-    reg.baseline = "aaaa0000";
+    CHECK(reg.kind == "git");
+    CHECK(reg.repo == "https://github.com/northwindtraders/vcpkg-registry");
+    CHECK(reg.baseline == "aaaa0000");
     pkgs = reg.packages.get();
     REQUIRE(pkgs);
-    CHECK((*pkgs)[0] == "beicode");
-    CHECK((*pkgs)[1] == "bei*");
-    CHECK((*pkgs)[2] == "fmt");
+    REQUIRE(pkgs->size() == 2);
+    CHECK((*pkgs)[0] == "bei*");
+    CHECK((*pkgs)[1] == "zlib");
 
     reg = regs[2];
-    reg.kind = "git";
-    reg.repo = "2";
-    reg.baseline = "bbbb0000";
+    CHECK(reg.kind == "git");
+    CHECK(reg.repo == "https://github.com/another-remote/another-vcpkg-registry");
+    CHECK(reg.baseline == "bbbb0000");
     pkgs = reg.packages.get();
     REQUIRE(pkgs);
-    CHECK((*pkgs)[0] == "beison");
-    CHECK((*pkgs)[1] == "fmt");
-    CHECK((*pkgs)[2] == "*");
+    REQUIRE(pkgs->size() == 3);
+    CHECK((*pkgs)[0] == "*");
+    CHECK((*pkgs)[1] == "bei*");
+    CHECK((*pkgs)[2] == "zlib");
 
     const auto& warnings = r.warnings();
     REQUIRE(warnings.size() == 1);
-    CHECK(warnings[0] == R"($ (an array of registries): Pattern "bei*" is declared in multiple locations:
-    $.registries[0].packages[2] (registry: https://github.com/northwindtraders/vcpkg-registry)
-    $.registries[1].packages[1] (registry: git@github.com:northwindtraders/vcpkg-registry)
-Package "beicode" is declared in multiple locations:
-    $.registries[0].packages[0] (registry: https://github.com/northwindtraders/vcpkg-registry)
-    $.registries[1].packages[0] (registry: git@github.com:northwindtraders/vcpkg-registry)
-Package "beison" is declared in multiple locations:
-    $.registries[0].packages[1] (registry: https://github.com/northwindtraders/vcpkg-registry)
-    $.registries[2].packages[0] (registry: https://github.com/Microsoft/vcpkg)
-Package "fmt" is declared in multiple locations:
-    $.registries[1].packages[2] (registry: git@github.com:northwindtraders/vcpkg-registry)
-    $.registries[2].packages[1] (registry: https://github.com/Microsoft/vcpkg)
-Duplicate entries will be ignored.
+    CHECK(warnings[0] == R"($ (a configuration object): 
+[1] Package "*" is declared first in:
+    location: $.registries[0].packages[0]
+    registry: https://github.com/Microsoft/vcpkg
+
+    The following redeclarations will be ignored:
+        location: $.registries[2].packages[0]
+        registry: https://github.com/another-remote/another-vcpkg-registry
+
+
+[2] Package "bei*" is declared first in:
+    location: $.registries[1].packages[0]
+    registry: https://github.com/northwindtraders/vcpkg-registry
+
+    The following redeclarations will be ignored:
+        location: $.registries[2].packages[1]
+        registry: https://github.com/another-remote/another-vcpkg-registry
+
+
+[3] Package "zlib" is declared first in:
+    location: $.registries[0].packages[2]
+    registry: https://github.com/Microsoft/vcpkg
+
+    The following redeclarations will be ignored:
+        location: $.registries[1].packages[1]
+        registry: https://github.com/northwindtraders/vcpkg-registry
+
+        location: $.registries[2].packages[2]
+        registry: https://github.com/another-remote/another-vcpkg-registry
+
 Remove any duplicate entries to dismiss this warning.)");
 }
 

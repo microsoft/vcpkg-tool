@@ -412,24 +412,35 @@ namespace
         }
 
         LocalizedString ret;
-        for (auto kvpair : patterns)
+        size_t warnings_count = 1;
+        for (auto&& kvpair : patterns)
         {
             const auto& pattern = kvpair.first;
             const auto& locations = kvpair.second;
             if (locations.size() > 1)
             {
-                if (pattern.back() == '*')
+                auto first = locations.begin();
+                ret.append_raw("\n")
+                    .append(msgDuplicatePackagePattern, msg::count = warnings_count++, msg::package_name = pattern)
+                    .append_raw("\n")
+                    .append_indent()
+                    .append(msgDuplicatePackagePatternLocation, msg::path = first->location)
+                    .append_raw("\n")
+                    .append_indent()
+                    .append(msgDuplicatePackagePatternRegistry, msg::url = first->registry)
+                    .append_raw("\n\n")
+                    .append_indent()
+                    .append(msgDuplicatePackagePatternIgnoredLocations)
+                    .append_raw("\n");
+
+                for (auto cur = first + 1; cur != locations.end(); ++cur)
                 {
-                    ret.append(msgDuplicatePackagePattern, msg::package_name = pattern);
-                }
-                else
-                {
-                    ret.append(msgDuplicatePackageName, msg::package_name = pattern);
-                }
-                ret.append_raw("\n");
-                for (auto&& loc : locations)
-                {
-                    ret.append_indent().append_fmt_raw("{} (registry: {})\n", loc.location, loc.registry);
+                    ret.append_indent(2)
+                        .append(msgDuplicatePackagePatternLocation, msg::path = cur->location)
+                        .append_raw("\n")
+                        .append_indent(2)
+                        .append(msgDuplicatePackagePatternRegistry, msg::url = cur->registry)
+                        .append_raw("\n\n");
                 }
             }
         }
@@ -485,7 +496,7 @@ namespace
         auto maybe_warning = collect_package_pattern_warnings(ret.registries);
         if (auto warning = maybe_warning.get())
         {
-            r.add_warning(regs_des.type_name(), *warning);
+            r.add_warning(type_name(), *warning);
         }
 
         Json::Object& ce_metadata_obj = ret.ce_metadata;
@@ -747,17 +758,12 @@ namespace vcpkg
 
     Json::IDeserializer<Configuration>& get_configuration_deserializer() { return ConfigurationDeserializer::instance; }
 
-    Optional<Configuration> parse_configuration(const Filesystem& fs, const Path& path, MessageSink& messageSink)
+    Optional<Configuration> parse_configuration(StringView contents, StringView origin, MessageSink& messageSink)
     {
-        std::error_code ec;
-        auto conf = Json::parse_file(fs, path, ec);
-        if (ec)
+        auto conf = Json::parse(contents, origin);
+        if (!conf)
         {
-            return nullopt;
-        }
-        else if (!conf)
-        {
-            messageSink.println(msgFailedToParseConfig, msg::path = path);
+            messageSink.println(msgFailedToParseConfig, msg::path = origin);
             messageSink.println(Color::error, LocalizedString::from_raw(conf.error()->to_string()));
             return nullopt;
         }
@@ -765,11 +771,11 @@ namespace vcpkg
         auto conf_value = std::move(conf.value_or_exit(VCPKG_LINE_INFO));
         if (!conf_value.first.is_object())
         {
-            messageSink.println(msgFailedToParseNoTopLevelObj, msg::path = path);
+            messageSink.println(msgFailedToParseNoTopLevelObj, msg::path = origin);
             return nullopt;
         }
 
-        return parse_configuration(std::move(conf_value.first.object(VCPKG_LINE_INFO)), path, messageSink);
+        return parse_configuration(std::move(conf_value.first.object(VCPKG_LINE_INFO)), origin, messageSink);
     }
 
     Optional<Configuration> parse_configuration(const Json::Object& obj, StringView origin, MessageSink& messageSink)
@@ -784,14 +790,9 @@ namespace vcpkg
             {
                 messageSink.println(Color::error, msgFailedToParseConfig, msg::path = origin);
             }
-            else
+            else if (has_warnings)
             {
                 messageSink.println(Color::warning, msgWarnOnParseConfig, msg::path = origin);
-            }
-
-            for (auto&& msg : reader.warnings())
-            {
-                messageSink.println(Color::warning, LocalizedString().append_indent().append_raw(msg));
             }
 
             for (auto&& msg : reader.errors())
@@ -799,7 +800,14 @@ namespace vcpkg
                 messageSink.println(Color::error, LocalizedString().append_indent().append_raw(msg));
             }
 
+            for (auto&& msg : reader.warnings())
+            {
+                messageSink.println(Color::warning, LocalizedString().append_indent().append_raw(msg));
+            }
+
             msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
+
+            if (has_errors) return nullopt;
         }
         return maybe_configuration;
     }

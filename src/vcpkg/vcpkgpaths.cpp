@@ -619,13 +619,14 @@ namespace vcpkg
         Debug::print("Using downloads-root: ", downloads, '\n');
 
         {
+            auto config_path = m_pimpl->m_config_dir / "configuration.json";
             auto maybe_manifest_config = config_from_manifest(m_pimpl->m_manifest_doc);
-            auto maybe_config_json =
-                parse_configuration(filesystem, m_pimpl->m_config_dir / "vcpkg-configuration.json", stdout_sink);
+            auto maybe_json_config =
+                parse_configuration(filesystem.read_contents(config_path, IgnoreErrors{}), config_path, stdout_sink);
 
             m_pimpl->m_config = merge_validate_configs(std::move(maybe_manifest_config),
                                                        m_pimpl->m_manifest_dir,
-                                                       std::move(maybe_config_json),
+                                                       std::move(maybe_json_config),
                                                        m_pimpl->m_config_dir,
                                                        *this);
 

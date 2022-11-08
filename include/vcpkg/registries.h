@@ -122,9 +122,6 @@ namespace vcpkg
 
         // Returns a list of registries that can resolve a given port name
         // the returned list is sorted by priority.
-        //
-        // It is guaranteed to at least contain one element, the default registry.
-        // NOTE: the default registry implementation can be null.
         std::vector<const RegistryImplementation*> registries_for_port(StringView name) const;
 
         ExpectedL<Version> baseline_for_port(StringView port_name) const;

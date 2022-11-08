@@ -9,8 +9,6 @@
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/view.h>
 
-#include <set>
-
 namespace vcpkg::Json
 {
     struct Reader;
