@@ -1102,9 +1102,10 @@ namespace vcpkg
         std::vector<Path> files;
         std::vector<std::string> hashes;
 
-        for(const auto& file : abi_info.additional_files) {
-            files.push_back(file);
-            hashes.push_back(vcpkg::Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO));
+        for (auto& file : abi_info.pre_build_info->hash_additional_files)
+        {
+            const auto hash = vcpkg::Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO);
+            abi_tag_entries.emplace_back(Path(file).filename(), hash);
         }
 
         auto&& port_dir = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_location;
@@ -1258,17 +1259,6 @@ namespace vcpkg
             abi_info.pre_build_info = std::make_unique<PreBuildInfo>(
                 paths, action.spec.triplet(), var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO));
             abi_info.toolset = paths.get_toolset(*abi_info.pre_build_info);
-
-            //if(!abi_info.pre_build_info->hash_additional_files.empty()) {
-            //    const auto& fs = paths.get_filesystem();
-            //    const auto file_count = abi_info.pre_build_info->hash_additional_files.size();
-            //    abi_info.additional_files.reserve(file_count);
-            //    abi_info.additional_files_hashes.reserve(file_count);
-            //    for(auto hash_additional_file : abi_info.pre_build_info->hash_additional_files) {
-            //        abi_info.additional_files.emplace_back(hash_additional_file);
-            //        abi_info.additional_files_hashes.emplace_back(Hash::get_file_hash(fs, hash_additional_file, Hash::Algorithm::Sha256));
-            //    };
-            //}
 
             auto maybe_abi_tag_and_file = compute_abi_tag(paths, action, dependency_abis);
             if (auto p = maybe_abi_tag_and_file.get())
