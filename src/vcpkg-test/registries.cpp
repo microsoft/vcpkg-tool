@@ -422,29 +422,29 @@ TEST_CASE ("registries ignored patterns warning", "[registries]")
     CHECK((*pkgs)[2] == "zlib");
 
     const auto& warnings = r.warnings();
-    REQUIRE(warnings.size() == 1);
-    CHECK(warnings[0] == R"($ (a configuration object): 
-[1] Package "*" is declared first in:
-    location: $.registries[0].packages[0]
-    registry: https://github.com/Microsoft/vcpkg
+    REQUIRE(warnings.size() == 3);
+    CHECK(warnings[0] == R"($ (a configuration object): Package "*" is duplicated.
+    First declared in:
+        location: $.registries[0].packages[0]
+        registry: https://github.com/Microsoft/vcpkg
 
     The following redeclarations will be ignored:
         location: $.registries[2].packages[0]
         registry: https://github.com/another-remote/another-vcpkg-registry
-
-
-[2] Package "bei*" is declared first in:
-    location: $.registries[1].packages[0]
-    registry: https://github.com/northwindtraders/vcpkg-registry
+)");
+    CHECK(warnings[1] == R"($ (a configuration object): Package "bei*" is duplicated.
+    First declared in:
+        location: $.registries[1].packages[0]
+        registry: https://github.com/northwindtraders/vcpkg-registry
 
     The following redeclarations will be ignored:
         location: $.registries[2].packages[1]
         registry: https://github.com/another-remote/another-vcpkg-registry
-
-
-[3] Package "zlib" is declared first in:
-    location: $.registries[0].packages[2]
-    registry: https://github.com/Microsoft/vcpkg
+)");
+    CHECK(warnings[2] == R"($ (a configuration object): Package "zlib" is duplicated.
+    First declared in:
+        location: $.registries[0].packages[2]
+        registry: https://github.com/Microsoft/vcpkg
 
     The following redeclarations will be ignored:
         location: $.registries[1].packages[1]
@@ -452,8 +452,7 @@ TEST_CASE ("registries ignored patterns warning", "[registries]")
 
         location: $.registries[2].packages[2]
         registry: https://github.com/another-remote/another-vcpkg-registry
-
-Remove any duplicate entries to dismiss this warning.)");
+)");
 }
 
 TEST_CASE ("git_version_db_parsing", "[registries]")

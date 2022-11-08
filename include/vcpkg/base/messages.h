@@ -888,13 +888,10 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is a command line option.",
                     "'--{value}' specified multiple times.");
-    DECLARE_MESSAGE(DuplicatePackagePattern,
-                    (msg::count, msg::package_name),
-                    "",
-                    "[{count}] Package \"{package_name}\" is declared first in:");
+    DECLARE_MESSAGE(DuplicatePackagePattern, (msg::package_name), "", "Package \"{package_name}\" is duplicated.");
+    DECLARE_MESSAGE(DuplicatePackagePatternFirstOcurrence, (), "", "First declared in:");
     DECLARE_MESSAGE(DuplicatePackagePatternIgnoredLocations, (), "", "The following redeclarations will be ignored:");
     DECLARE_MESSAGE(DuplicatePackagePatternLocation, (msg::path), "", "location: {path}");
-    DECLARE_MESSAGE(DuplicatePackagePatternSuggestion, (), "", "Remove any duplicate entries to dismiss this warning.");
     DECLARE_MESSAGE(DuplicatePackagePatternRegistry, (msg::url), "", "registry: {url}");
     DECLARE_MESSAGE(ElapsedInstallTime, (msg::count), "", "Total elapsed time: {count}");
     DECLARE_MESSAGE(ElapsedTimeForChecks, (msg::elapsed), "", "Time to determine pass/fail: {elapsed}");

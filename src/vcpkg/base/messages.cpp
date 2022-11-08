@@ -548,9 +548,9 @@ namespace vcpkg
     REGISTER_MESSAGE(DuplicatedKeyInObj);
     REGISTER_MESSAGE(DuplicateOptions);
     REGISTER_MESSAGE(DuplicatePackagePattern);
+    REGISTER_MESSAGE(DuplicatePackagePatternFirstOcurrence);
     REGISTER_MESSAGE(DuplicatePackagePatternIgnoredLocations);
     REGISTER_MESSAGE(DuplicatePackagePatternLocation);
-    REGISTER_MESSAGE(DuplicatePackagePatternSuggestion);
     REGISTER_MESSAGE(DuplicatePackagePatternRegistry);
     REGISTER_MESSAGE(ElapsedInstallTime);
     REGISTER_MESSAGE(ElapsedTimeForChecks);

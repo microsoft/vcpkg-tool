@@ -382,7 +382,7 @@ namespace
         return ret;
     }
 
-    Optional<LocalizedString> collect_package_pattern_warnings(const std::vector<RegistryConfig>& registries)
+    std::vector<LocalizedString> collect_package_pattern_warnings(const std::vector<RegistryConfig>& registries)
     {
         struct LocationAndRegistry
         {
@@ -411,8 +411,19 @@ namespace
             }
         }
 
-        LocalizedString ret;
-        size_t warnings_count = 1;
+        auto append_declaration_warning = [](LocalizedString& msg,
+                                             const StringView& location,
+                                             const StringView& registry,
+                                             size_t indent_level) -> void {
+            msg.append_indent(indent_level)
+                .append(msgDuplicatePackagePatternLocation, msg::path = location)
+                .append_raw("\n")
+                .append_indent(indent_level)
+                .append(msgDuplicatePackagePatternRegistry, msg::url = registry)
+                .append_raw("\n");
+        };
+
+        std::vector<LocalizedString> warnings;
         for (auto&& kvpair : patterns)
         {
             const auto& pattern = kvpair.first;
@@ -420,37 +431,31 @@ namespace
             if (locations.size() > 1)
             {
                 auto first = locations.begin();
-                ret.append_raw("\n")
-                    .append(msgDuplicatePackagePattern, msg::count = warnings_count++, msg::package_name = pattern)
-                    .append_raw("\n")
-                    .append_indent()
-                    .append(msgDuplicatePackagePatternLocation, msg::path = first->location)
-                    .append_raw("\n")
-                    .append_indent()
-                    .append(msgDuplicatePackagePatternRegistry, msg::url = first->registry)
-                    .append_raw("\n\n")
+                auto warning = LocalizedString()
+                                   .append(msgDuplicatePackagePattern, msg::package_name = pattern)
+                                   .append_raw("\n")
+                                   .append_indent()
+                                   .append(msgDuplicatePackagePatternFirstOcurrence)
+                                   .append_raw("\n");
+                append_declaration_warning(warning, first->location, first->registry, 2);
+                warning.append_raw("\n")
                     .append_indent()
                     .append(msgDuplicatePackagePatternIgnoredLocations)
                     .append_raw("\n");
 
-                for (auto cur = first + 1; cur != locations.end(); ++cur)
+                auto last = locations.end();
+                for (auto cur = first + 1; cur != last; ++cur)
                 {
-                    ret.append_indent(2)
-                        .append(msgDuplicatePackagePatternLocation, msg::path = cur->location)
-                        .append_raw("\n")
-                        .append_indent(2)
-                        .append(msgDuplicatePackagePatternRegistry, msg::url = cur->registry)
-                        .append_raw("\n\n");
+                    append_declaration_warning(warning, cur->location, cur->registry, 2);
+                    if (cur + 1 != last)
+                    {
+                        warning.append_raw("\n");
+                    }
                 }
+                warnings.emplace_back(warning);
             }
         }
-
-        if (ret.empty())
-        {
-            return nullopt;
-        }
-
-        return std::move(ret.append(msgDuplicatePackagePatternSuggestion));
+        return warnings;
     }
 
     Optional<Configuration> ConfigurationDeserializer::visit_object(Json::Reader& r, const Json::Object& obj)
@@ -493,10 +498,9 @@ namespace
         static Json::ArrayDeserializer<RegistryDeserializer> regs_des("an array of registries");
         r.optional_object_field(obj, REGISTRIES, ret.registries, regs_des);
 
-        auto maybe_warning = collect_package_pattern_warnings(ret.registries);
-        if (auto warning = maybe_warning.get())
+        for (auto&& warning : collect_package_pattern_warnings(ret.registries))
         {
-            r.add_warning(type_name(), *warning);
+            r.add_warning(type_name(), warning);
         }
 
         Json::Object& ce_metadata_obj = ret.ce_metadata;

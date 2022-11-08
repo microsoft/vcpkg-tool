@@ -621,8 +621,11 @@ namespace vcpkg
         {
             auto config_path = m_pimpl->m_config_dir / "configuration.json";
             auto maybe_manifest_config = config_from_manifest(m_pimpl->m_manifest_doc);
-            auto maybe_json_config =
-                parse_configuration(filesystem.read_contents(config_path, IgnoreErrors{}), config_path, stdout_sink);
+            auto maybe_json_config = !filesystem.exists(config_path, IgnoreErrors{})
+                                         ? nullopt
+                                         : parse_configuration(filesystem.read_contents(config_path, IgnoreErrors{}),
+                                                               config_path,
+                                                               stdout_sink);
 
             m_pimpl->m_config = merge_validate_configs(std::move(maybe_manifest_config),
                                                        m_pimpl->m_manifest_dir,
