@@ -4,6 +4,7 @@
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
+#include <vcpkg/base/jsonreader.h>
 
 #include <vcpkg/buildenvironment.h>
 #include <vcpkg/cmakevars.h>
@@ -267,26 +268,63 @@ endfunction()
         return dep_info_path;
     }
 
+    struct CMakeTraceVersion
+    {
+        int major;
+        int minor;
+    };
     struct CMakeTraceLine
     {
         std::vector<std::string> args;
         std::string cmd;
-        std::string file;
-        std::size_t frame;
-        std::size_t global_frame;
-        std::size_t line;
+        Path file;
+        int frame;
+        int global_frame;
+        int line;
+        Optional<int> line_end;
         double time;
     };
 
-    struct CMakeTraceDeserializer : Json::IDeserializer<CMakeTraceLine>
+    struct CMakeTraceOutput {
+        CMakeTraceVersion version;
+        std::vector<CMakeTraceLine> traces;
+    };
+
+    struct CMakeTraceVersionDeserializer : Json::IDeserializer<CMakeTraceVersion>
     {
-        virtual StringView type_name() const override { return "a line of cmake trace"; }
+        virtual StringView type_name() const override { return "a line of a cmake trace"; }
+
+        virtual Optional<CMakeTraceVersion> visit_object(Json::Reader& r, const Json::Object& obj) override
+        {
+            Optional<CMakeTraceVersion> x;
+            CMakeTraceVersion& ret = x.emplace();
+            r.required_object_field("the major version", obj, "major", ret.major, Json::NaturalNumberDeserializer::instance);
+            r.required_object_field("the minor version", obj, "minor", ret.minor, Json::NaturalNumberDeserializer::instance);
+
+            return x;
+        }
+    };
+    struct CMakeTraceLineDeserializer : Json::IDeserializer<CMakeTraceLine>
+    {
+        virtual StringView type_name() const override { return "a line of a cmake trace"; }
 
         virtual Optional<CMakeTraceLine> visit_object(Json::Reader& r, const Json::Object& obj) override
         {
             Optional<CMakeTraceLine> x;
             CMakeTraceLine& ret = x.emplace();
-
+            //TODO: figure out what goes in here
+            static Json::ArrayDeserializer<Json::StringDeserializer> args_des("an array of arguments",
+                                                                    Json::StringDeserializer{"an argument"});
+            static Json::StringDeserializer cmd_deserializer("the cmake command");
+            static Json::StringDeserializer file_deserializer("the file executing the command");
+            r.required_object_field("the arguments", obj, "args", ret.args, args_des);
+            r.required_object_field("the command", obj, "cmd", ret.cmd, cmd_deserializer);
+            r.required_object_field("the file name", obj, "file", ret.file, Json::PathDeserializer::instance);
+            r.required_object_field("the internal execution frame", obj, "frame", ret.frame, Json::NaturalNumberDeserializer::instance);
+            r.required_object_field("the global execution frame", obj, "global_frame", ret.global_frame, Json::NaturalNumberDeserializer::instance);
+            r.required_object_field("the line number", obj, "line", ret.line, Json::NaturalNumberDeserializer::instance);
+            r.optional_object_field(obj, "line_end", ret.line_end.emplace(), Json::NaturalNumberDeserializer::instance);
+            r.required_object_field("the execution time", obj, "time", ret.time, Json::RealNumberDeserializer::instance);
             return x;
         }
     };
@@ -319,16 +357,37 @@ endfunction()
                     .append_raw(Strings::join(", ", lines)));
         }
 
+        // TODO: Move JSON parsing of trace into its own function. 
         const auto& fs = paths.get_filesystem(); // paths is used here but not passed down via a parameter from the caller. 
         const auto trace_lines = fs.read_lines(trace_output, VCPKG_LINE_INFO);
-        //TODO: Parse trace lines
-        for (auto& trace_line : trace_lines)
+
+        CMakeTraceOutput cmake_trace;
+        cmake_trace.traces.reserve(trace_lines.size()-1);
+
+        Json::Reader reader;
         {
-            auto parsed_json_opt = Json::parse(trace_line);
-            const auto& parsed_json = parsed_json_opt.value_or_exit(VCPKG_LINE_INFO).first;
-            auto parsed_json_obj = parsed_json.object(VCPKG_LINE_INFO);
+            CMakeTraceVersionDeserializer trace_version_des;
+            const auto parsed_json_cmake_version_opt = Json::parse(*trace_lines.begin());
+            const auto& parsed_json_cmake_version = parsed_json_cmake_version_opt.value_or_exit(VCPKG_LINE_INFO).first;
+            const auto parsed_json_cmake_version_obj = parsed_json_cmake_version.object(VCPKG_LINE_INFO);
+            auto cmake_ver_opt =
+                reader.visit(*parsed_json_cmake_version_obj.get("version"), trace_version_des);
+            cmake_trace.version = std::move(cmake_ver_opt.value_or_exit(VCPKG_LINE_INFO));
         }
 
+
+        {
+            CMakeTraceLineDeserializer trace_line_des;
+            for (auto trace_line_it = std::next(trace_lines.begin()); trace_line_it != trace_lines.end()-1; ++trace_line_it)
+            {
+                const auto parsed_json_cmake_trace_line_opt = Json::parse(*trace_line_it);
+                const auto& parsed_json_cmake_trace_line = parsed_json_cmake_trace_line_opt.value_or_exit(VCPKG_LINE_INFO).first;
+                const auto parsed_json_cmake_trace_line_obj = parsed_json_cmake_trace_line.object(VCPKG_LINE_INFO);
+                const auto cmake_trace_opt = reader.visit(parsed_json_cmake_trace_line_obj, trace_line_des);
+                cmake_trace.traces.emplace_back(std::move(cmake_trace_opt.value_or_exit(VCPKG_LINE_INFO)));
+            }
+        }
+        //TODO: Filter results; Define ABI for triplets vars; Inject into ABI tag somehow. 
         const auto end = lines.cend();
 
         auto port_start = std::find(lines.cbegin(), end, PORT_START_GUID);
