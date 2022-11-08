@@ -361,19 +361,19 @@ TEST_CASE ("registries ignored patterns warning", "[registries]")
     "registries": [
         {
             "kind": "git",
-            "repository": "0",
+            "repository": "https://github.com/northwindtraders/vcpkg-registry",
             "baseline": "ffff0000",
             "packages": [ "beicode", "beison", "bei*" ]
         },
         {
             "kind": "git",
-            "repository": "1",
+            "repository": "git@github.com:northwindtraders/vcpkg-registry",
             "baseline": "aaaa0000",
             "packages": [ "beicode", "bei*", "fmt" ]
         },
         {
             "kind": "git",
-            "repository": "2",
+            "repository": "https://github.com/Microsoft/vcpkg",
             "baseline": "bbbb0000",
             "packages": [ "beison", "fmt", "*" ]
         }
@@ -420,21 +420,21 @@ TEST_CASE ("registries ignored patterns warning", "[registries]")
     CHECK((*pkgs)[2] == "*");
 
     const auto& warnings = r.warnings();
-    CHECK(warnings.size() == 4);
-    CHECK(warnings[0] ==
-          "$.registries[1].packages[0] (a package pattern): Package \"beicode\" is already declared by another "
-          "registry.\n"
-          "\tDuplicate entries will be ignored.\n\tRemove any duplicate entries to dismiss this warning.");
-    CHECK(warnings[1] ==
-          "$.registries[1].packages[1] (a package pattern): Pattern \"bei*\" is already declared by another registry.\n"
-          "\tDuplicate entries will be ignored.\n\tRemove any duplicate entries to dismiss this warning.");
-    CHECK(
-        warnings[2] ==
-        "$.registries[2].packages[0] (a package pattern): Package \"beison\" is already declared by another registry.\n"
-        "\tDuplicate entries will be ignored.\n\tRemove any duplicate entries to dismiss this warning.");
-    CHECK(warnings[3] ==
-          "$.registries[2].packages[1] (a package pattern): Package \"fmt\" is already declared by another registry.\n"
-          "\tDuplicate entries will be ignored.\n\tRemove any duplicate entries to dismiss this warning.");
+    REQUIRE(warnings.size() == 1);
+    CHECK(warnings[0] == R"($ (an array of registries): Pattern "bei*" is declared in multiple locations:
+    $.registries[0].packages[2] (registry: https://github.com/northwindtraders/vcpkg-registry)
+    $.registries[1].packages[1] (registry: git@github.com:northwindtraders/vcpkg-registry)
+Package "beicode" is declared in multiple locations:
+    $.registries[0].packages[0] (registry: https://github.com/northwindtraders/vcpkg-registry)
+    $.registries[1].packages[0] (registry: git@github.com:northwindtraders/vcpkg-registry)
+Package "beison" is declared in multiple locations:
+    $.registries[0].packages[1] (registry: https://github.com/northwindtraders/vcpkg-registry)
+    $.registries[2].packages[0] (registry: https://github.com/Microsoft/vcpkg)
+Package "fmt" is declared in multiple locations:
+    $.registries[1].packages[2] (registry: git@github.com:northwindtraders/vcpkg-registry)
+    $.registries[2].packages[1] (registry: https://github.com/Microsoft/vcpkg)
+Duplicate entries will be ignored.
+Remove any duplicate entries to dismiss this warning.)");
 }
 
 TEST_CASE ("git_version_db_parsing", "[registries]")

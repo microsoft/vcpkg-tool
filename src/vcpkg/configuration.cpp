@@ -57,11 +57,6 @@ namespace
         virtual Optional<RegistryConfig> visit_object(Json::Reader&, const Json::Object&) override;
 
         static RegistryDeserializer instance;
-
-        void set_used_patterns(std::set<std::string>* patterns) { m_patterns = patterns; }
-
-    private:
-        std::set<std::string>* m_patterns = nullptr;
     };
     RegistryDeserializer RegistryDeserializer::instance;
     constexpr StringLiteral RegistryDeserializer::PACKAGES;
@@ -207,9 +202,9 @@ namespace
 
             if (config->kind && *config->kind.get() != RegistryConfigDeserializer::KIND_ARTIFACT)
             {
-                package_names_deserializer.visitor().set_used_patterns(m_patterns);
-                r.required_object_field(
-                    type_name(), obj, PACKAGES, config->packages.emplace(), package_names_deserializer);
+                auto& declarations = config->package_declarations.emplace();
+                r.required_object_field(type_name(), obj, PACKAGES, declarations, package_names_deserializer);
+                config->packages.emplace(Util::fmap(declarations, [](auto&& decl) { return decl.pattern; }));
             }
         }
         return impl;
@@ -387,6 +382,66 @@ namespace
         return ret;
     }
 
+    Optional<LocalizedString> collect_package_pattern_warnings(const std::vector<RegistryConfig>& registries)
+    {
+        struct LocationAndRegistry
+        {
+            StringView location;
+            StringView registry;
+        };
+
+        // handle warnings from package pattern declarations
+        std::map<StringView, std::vector<LocationAndRegistry>> patterns;
+        for (auto&& reg : registries)
+        {
+            if (auto packages = reg.package_declarations.get())
+            {
+                for (auto&& pkg : *packages)
+                {
+                    auto it = patterns.find(pkg.pattern);
+                    if (it == patterns.end())
+                    {
+                        it = patterns.emplace(pkg.pattern, std::vector<LocationAndRegistry>{}).first;
+                    }
+                    it->second.emplace_back(LocationAndRegistry{
+                        pkg.location,
+                        reg.pretty_location(),
+                    });
+                }
+            }
+        }
+
+        LocalizedString ret;
+        for (auto kvpair : patterns)
+        {
+            const auto& pattern = kvpair.first;
+            const auto& locations = kvpair.second;
+            if (locations.size() > 1)
+            {
+                if (pattern.back() == '*')
+                {
+                    ret.append(msgDuplicatePackagePattern, msg::package_name = pattern);
+                }
+                else
+                {
+                    ret.append(msgDuplicatePackageName, msg::package_name = pattern);
+                }
+                ret.append_raw("\n");
+                for (auto&& loc : locations)
+                {
+                    ret.append_indent().append_fmt_raw("{} (registry: {})\n", loc.location, loc.registry);
+                }
+            }
+        }
+
+        if (ret.empty())
+        {
+            return nullopt;
+        }
+
+        return std::move(ret.append(msgDuplicatePackagePatternSuggestion));
+    }
+
     Optional<Configuration> ConfigurationDeserializer::visit_object(Json::Reader& r, const Json::Object& obj)
     {
         Configuration ret;
@@ -425,9 +480,13 @@ namespace
         }
 
         static Json::ArrayDeserializer<RegistryDeserializer> regs_des("an array of registries");
-        std::set<std::string> names;
-        regs_des.visitor().set_used_patterns(&names);
         r.optional_object_field(obj, REGISTRIES, ret.registries, regs_des);
+
+        auto maybe_warning = collect_package_pattern_warnings(ret.registries);
+        if (auto warning = maybe_warning.get())
+        {
+            r.add_warning(regs_des.type_name(), *warning);
+        }
 
         Json::Object& ce_metadata_obj = ret.ce_metadata;
         auto maybe_ce_metadata = r.visit(obj, CeMetadataDeserializer::instance);
@@ -694,7 +753,6 @@ namespace vcpkg
         auto conf = Json::parse_file(fs, path, ec);
         if (ec)
         {
-            messageSink.println(Color::error, msgFailedToRead, msg::path = path, msg::error_msg = ec);
             return nullopt;
         }
         else if (!conf)

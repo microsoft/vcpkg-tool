@@ -340,8 +340,6 @@ namespace vcpkg::Json
             return r.array_elements(arr, m_underlying_visitor);
         }
 
-        Underlying& visitor() { return m_underlying_visitor; }
-
     private:
         StringLiteral m_type_name;
         Underlying m_underlying_visitor;
@@ -389,17 +387,19 @@ namespace vcpkg::Json
         static PackageNameDeserializer instance;
     };
 
-    struct PackagePatternDeserializer final : Json::IDeserializer<std::string>
+    struct PackagePatternDeclaration
+    {
+        std::string pattern;
+        std::string location;
+    };
+    struct PackagePatternDeserializer final : Json::IDeserializer<PackagePatternDeclaration>
     {
         virtual StringView type_name() const override { return "a package pattern"; }
 
         static bool is_package_pattern(StringView sv);
 
-        virtual Optional<std::string> visit_string(Json::Reader&, StringView sv) override;
+        virtual Optional<PackagePatternDeclaration> visit_string(Json::Reader&, StringView sv) override;
 
-        void set_used_patterns(std::set<std::string>* patterns) { m_patterns = patterns; }
-
-    private:
-        std::set<std::string>* m_patterns = nullptr;
+        static PackagePatternDeserializer instance;
     };
 }

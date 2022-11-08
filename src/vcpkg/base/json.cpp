@@ -1035,6 +1035,7 @@ namespace vcpkg::Json
     IdentifierDeserializer IdentifierDeserializer::instance;
     IdentifierArrayDeserializer IdentifierArrayDeserializer::instance;
     PackageNameDeserializer PackageNameDeserializer::instance;
+    PackagePatternDeserializer PackagePatternDeserializer::instance;
     PathDeserializer PathDeserializer::instance;
 
     static constexpr bool is_lower_digit(char ch)
@@ -1549,39 +1550,16 @@ namespace vcpkg::Json
         }
     }
 
-    Optional<std::string> PackagePatternDeserializer::visit_string(Json::Reader& r, StringView sv)
+    Optional<PackagePatternDeclaration> PackagePatternDeserializer::visit_string(Json::Reader& r, StringView sv)
     {
-        if (!is_package_pattern(sv))
+        if (is_package_pattern(sv))
         {
-            return nullopt;
+            return PackagePatternDeclaration{
+                sv.to_string(),
+                r.path(),
+            };
         }
 
-        if (m_patterns)
-        {
-            auto it = m_patterns->find(sv.to_string());
-            if (it != m_patterns->end())
-            {
-                if (sv.back() == '*')
-                {
-                    r.add_warning(type_name(),
-                                  msg::format(msgDuplicatePackagePattern, msg::package_name = sv)
-                                      .append_raw("\n")
-                                      .append(msgDuplicatePackagePatternSuggestion));
-                }
-                else
-                {
-                    r.add_warning(type_name(),
-                                  msg::format(msgDuplicatePackageName, msg::package_name = sv)
-                                      .append_raw("\n")
-                                      .append(msgDuplicatePackagePatternSuggestion));
-                }
-            }
-            else
-            {
-                m_patterns->emplace(sv.to_string());
-            }
-        }
-
-        return sv.to_string();
+        return nullopt;
     }
 }

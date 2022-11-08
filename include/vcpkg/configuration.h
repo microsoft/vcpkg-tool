@@ -21,6 +21,7 @@ namespace vcpkg
         Optional<std::string> reference;
         Optional<std::string> repo;
         Optional<std::vector<std::string>> packages;
+        Optional<std::vector<Json::PackagePatternDeclaration>> package_declarations;
 
         Json::Value serialize() const;
 

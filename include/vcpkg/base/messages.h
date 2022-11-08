@@ -891,16 +891,16 @@ namespace vcpkg
     DECLARE_MESSAGE(DuplicatePackageName,
                     (msg::package_name),
                     "",
-                    "Package \"{package_name}\" is already declared by another registry.");
+                    "Package \"{package_name}\" is declared in multiple locations:");
     DECLARE_MESSAGE(DuplicatePackagePattern,
                     (msg::package_name),
                     "",
-                    "Pattern \"{package_name}\" is already declared by another registry.");
+                    "Pattern \"{package_name}\" is declared in multiple locations:");
     DECLARE_MESSAGE(DuplicatePackagePatternSuggestion,
                     (),
                     "",
-                    "\tDuplicate entries will be ignored.\n"
-                    "\tRemove any duplicate entries to dismiss this warning.");
+                    "Duplicate entries will be ignored.\n"
+                    "Remove any duplicate entries to dismiss this warning.");
     DECLARE_MESSAGE(ElapsedInstallTime, (msg::count), "", "Total elapsed time: {count}");
     DECLARE_MESSAGE(ElapsedTimeForChecks, (msg::elapsed), "", "Time to determine pass/fail: {elapsed}");
     DECLARE_MESSAGE(EmailVcpkgTeam, (msg::url), "", "Send an email to {url} with any feedback.");
