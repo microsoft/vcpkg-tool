@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 
+#include <string>
 #include <vector>
 
 namespace vcpkg
@@ -41,6 +42,7 @@ namespace vcpkg
     MachineType to_machine_type(const uint16_t value);
 
     MachineType read_dll_machine_type(const ReadFilePointer& fs);
+    std::vector<std::string> read_dll_imported_dll_names(const ReadFilePointer& fs);
 
     std::vector<MachineType> read_lib_machine_types(const ReadFilePointer& fs);
 }
