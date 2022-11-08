@@ -1036,12 +1036,6 @@ namespace vcpkg
                     "ENV:" + env_var, Hash::get_string_hash(e.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256));
             }
         }
-
-        //for (const auto& add_file : abi_info.additional_files)
-        //{
-        //    abi_tag_entries.emplace_back(
-        //            "ENV:" + env_var, Hash::get_string_hash(e.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256));
-        //}
     }
 
     struct AbiTagAndFiles
