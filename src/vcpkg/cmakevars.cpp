@@ -106,7 +106,9 @@ namespace vcpkg::CMakeVars
             Strings::append(
                 extraction_file,
                 "get_filename_component(CMAKE_CURRENT_LIST_DIR \"${CMAKE_CURRENT_LIST_FILE}\" DIRECTORY)\n");
+            Strings::append(extraction_file, "set(z_triplet_contents_start 5b1g5d1a6-4fgd-415b-aa5d-81de854ef8ea)\n");
             Strings::append(extraction_file, fs.read_contents(path_to_triplet, VCPKG_LINE_INFO));
+            Strings::append(extraction_file, "set(z_triplet_contents_end 5b1g5d1a6-4fgd-415b-aa5d-81de854ef8ez)\n");
             Strings::append(extraction_file, "\nendif()\n");
         }
         Strings::append(extraction_file,
@@ -265,6 +267,30 @@ endfunction()
         return dep_info_path;
     }
 
+    struct CMakeTraceLine
+    {
+        std::vector<std::string> args;
+        std::string cmd;
+        std::string file;
+        std::size_t frame;
+        std::size_t global_frame;
+        std::size_t line;
+        double time;
+    };
+
+    struct CMakeTraceDeserializer : Json::IDeserializer<CMakeTraceLine>
+    {
+        virtual StringView type_name() const override { return "a line of cmake trace"; }
+
+        virtual Optional<CMakeTraceLine> visit_object(Json::Reader& r, const Json::Object& obj) override
+        {
+            Optional<CMakeTraceLine> x;
+            CMakeTraceLine& ret = x.emplace();
+
+            return x;
+        }
+    };
+
     void TripletCMakeVarProvider::launch_and_split(
         const Path& script_path, std::vector<std::vector<std::pair<std::string, std::string>>>& vars) const
     {
@@ -273,7 +299,9 @@ endfunction()
         static constexpr StringLiteral BLOCK_START_GUID = "c35112b6-d1ba-415b-aa5d-81de856ef8eb";
         static constexpr StringLiteral BLOCK_END_GUID = "e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f";
 
-        const auto cmd_launch_cmake = vcpkg::make_cmake_cmd(paths, script_path, {});
+        const auto trace_output = Path(script_path.parent_path())/"0.vcpkg_tags.trace";
+        const auto trace_redirect = std::string("--trace-redirect=") + trace_output.c_str();
+        const auto cmd_launch_cmake = vcpkg::make_cmake_cmd(paths, script_path, {}, {{"--trace-format=json-v1"}, {trace_redirect}});
 
         std::vector<std::string> lines;
         auto const exit_code = cmd_execute_and_stream_lines(
@@ -289,6 +317,16 @@ endfunction()
                 msg::format(msgCommandFailed, msg::command_line = cmd_launch_cmake.command_line())
                     .append_raw('\n')
                     .append_raw(Strings::join(", ", lines)));
+        }
+
+        const auto& fs = paths.get_filesystem(); // paths is used here but not passed down via a parameter from the caller. 
+        const auto trace_lines = fs.read_lines(trace_output, VCPKG_LINE_INFO);
+        //TODO: Parse trace lines
+        for (auto& trace_line : trace_lines)
+        {
+            auto parsed_json_opt = Json::parse(trace_line);
+            const auto& parsed_json = parsed_json_opt.value_or_exit(VCPKG_LINE_INFO).first;
+            auto parsed_json_obj = parsed_json.object(VCPKG_LINE_INFO);
         }
 
         const auto end = lines.cend();

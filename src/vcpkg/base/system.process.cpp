@@ -259,9 +259,14 @@ namespace vcpkg
 
     Command make_basic_cmake_cmd(const Path& cmake_tool_path,
                                  const Path& cmake_script,
-                                 const std::vector<CMakeVariable>& pass_variables)
+                                 const std::vector<CMakeVariable>& pass_variables,
+                                 const std::vector<std::string>& additional_args)
     {
         Command cmd{cmake_tool_path};
+        for (auto&& var : additional_args)
+        {
+            cmd.string_arg(var);
+        }
         for (auto&& var : pass_variables)
         {
             cmd.string_arg(var.s);
