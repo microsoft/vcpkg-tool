@@ -1098,7 +1098,8 @@ namespace vcpkg
 
         for (auto& file : abi_info.pre_build_info->hash_additional_files)
         {
-            const auto hash = vcpkg::Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO);
+            const auto hash =
+                vcpkg::Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO);
             abi_tag_entries.emplace_back(Path(file).filename(), hash);
         }
 
@@ -1663,8 +1664,7 @@ namespace vcpkg
             // Note: this value must come after VCPKG_CHAINLOAD_TOOLCHAIN_FILE because its default depends upon it.
             {"VCPKG_LOAD_VCVARS_ENV", VcpkgTripletVar::LOAD_VCVARS_ENV},
             {"VCPKG_DISABLE_COMPILER_TRACKING", VcpkgTripletVar::DISABLE_COMPILER_TRACKING},
-            {"VCPKG_HASH_ADDITIONAL_FILES", VcpkgTripletVar::HASH_ADDITIONAL_FILES}
-        };
+            {"VCPKG_HASH_ADDITIONAL_FILES", VcpkgTripletVar::HASH_ADDITIONAL_FILES}};
 
         std::string empty;
         for (auto&& kv : VCPKG_OPTIONS)
