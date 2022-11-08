@@ -1475,29 +1475,11 @@ namespace vcpkg::Json
         return r.array_elements(arr, IdentifierDeserializer::instance);
     }
 
-    bool PackageNameDeserializer::is_package_name(StringView sv)
-    {
-        if (sv.size() == 0)
-        {
-            return false;
-        }
-
-        for (const auto& ident : Strings::split(sv, '.'))
-        {
-            if (!IdentifierDeserializer::is_ident(ident))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     uint64_t get_json_parsing_stats() { return g_json_parsing_stats.load(); }
 
     Optional<std::string> PackageNameDeserializer::visit_string(Json::Reader&, StringView sv)
     {
-        if (!is_package_name(sv))
+        if (!IdentifierDeserializer::is_ident(sv))
         {
             return nullopt;
         }
@@ -1506,7 +1488,7 @@ namespace vcpkg::Json
 
     bool PackagePatternDeserializer::is_package_pattern(StringView sv)
     {
-        if (PackageNameDeserializer::is_package_name(sv))
+        if (IdentifierDeserializer::is_ident(sv))
         {
             return true;
         }

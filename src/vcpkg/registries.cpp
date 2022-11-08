@@ -357,7 +357,7 @@ namespace
                 }
 
                 auto port_name = filename.substr(0, filename.size() - 5);
-                if (!Json::PackageNameDeserializer::is_package_name(port_name))
+                if (!Json::IdentifierDeserializer::is_ident(port_name))
                 {
                     Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgInvalidPortVersonName, msg::path = file);
                 }

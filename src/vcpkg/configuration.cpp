@@ -431,8 +431,7 @@ namespace
             if (locations.size() > 1)
             {
                 auto first = locations.begin();
-                auto warning = LocalizedString()
-                                   .append(msgDuplicatePackagePattern, msg::package_name = pattern)
+                auto warning = msg::format_warning(msgDuplicatePackagePattern, msg::package_name = pattern)
                                    .append_raw("\n")
                                    .append_indent()
                                    .append(msgDuplicatePackagePatternFirstOcurrence)
@@ -764,6 +763,8 @@ namespace vcpkg
 
     Optional<Configuration> parse_configuration(StringView contents, StringView origin, MessageSink& messageSink)
     {
+        if (contents.empty()) return nullopt;
+
         auto conf = Json::parse(contents, origin);
         if (!conf)
         {
@@ -794,7 +795,7 @@ namespace vcpkg
             {
                 messageSink.println(Color::error, msgFailedToParseConfig, msg::path = origin);
             }
-            else if (has_warnings)
+            else
             {
                 messageSink.println(Color::warning, msgWarnOnParseConfig, msg::path = origin);
             }
@@ -806,7 +807,7 @@ namespace vcpkg
 
             for (auto&& msg : reader.warnings())
             {
-                messageSink.println(Color::warning, LocalizedString().append_indent().append_raw(msg));
+                messageSink.println(Color::warning, LocalizedString().append_indent().append(msg));
             }
 
             msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);

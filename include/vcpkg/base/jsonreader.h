@@ -378,8 +378,6 @@ namespace vcpkg::Json
     {
         virtual StringView type_name() const override { return "a package name"; }
 
-        static bool is_package_name(StringView sv);
-
         virtual Optional<std::string> visit_string(Json::Reader&, StringView sv) override;
 
         static PackageNameDeserializer instance;

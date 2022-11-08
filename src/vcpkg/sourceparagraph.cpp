@@ -452,10 +452,9 @@ namespace vcpkg
 
         virtual Optional<Dependency> visit_string(Json::Reader& r, StringView sv) override
         {
-            if (!Json::PackageNameDeserializer::is_package_name(sv))
+            if (!Json::IdentifierDeserializer::is_ident(sv))
             {
-                r.add_generic_error(type_name(),
-                                    "must be lowercase alphanumeric+hyphens, split with periods, and not reserved");
+                r.add_generic_error(type_name(), "must be lowercase alphanumeric+hyphens and not reserved");
             }
 
             Dependency dep;

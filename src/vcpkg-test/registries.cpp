@@ -423,7 +423,7 @@ TEST_CASE ("registries ignored patterns warning", "[registries]")
 
     const auto& warnings = r.warnings();
     REQUIRE(warnings.size() == 3);
-    CHECK(warnings[0] == R"($ (a configuration object): Package "*" is duplicated.
+    CHECK(warnings[0] == R"($ (a configuration object): warning: Package "*" is duplicated.
     First declared in:
         location: $.registries[0].packages[0]
         registry: https://github.com/Microsoft/vcpkg
@@ -432,7 +432,7 @@ TEST_CASE ("registries ignored patterns warning", "[registries]")
         location: $.registries[2].packages[0]
         registry: https://github.com/another-remote/another-vcpkg-registry
 )");
-    CHECK(warnings[1] == R"($ (a configuration object): Package "bei*" is duplicated.
+    CHECK(warnings[1] == R"($ (a configuration object): warning: Package "bei*" is duplicated.
     First declared in:
         location: $.registries[1].packages[0]
         registry: https://github.com/northwindtraders/vcpkg-registry
@@ -441,7 +441,7 @@ TEST_CASE ("registries ignored patterns warning", "[registries]")
         location: $.registries[2].packages[1]
         registry: https://github.com/another-remote/another-vcpkg-registry
 )");
-    CHECK(warnings[2] == R"($ (a configuration object): Package "zlib" is duplicated.
+    CHECK(warnings[2] == R"($ (a configuration object): warning: Package "zlib" is duplicated.
     First declared in:
         location: $.registries[0].packages[2]
         registry: https://github.com/Microsoft/vcpkg
