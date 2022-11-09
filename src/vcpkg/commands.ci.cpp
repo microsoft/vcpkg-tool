@@ -102,26 +102,38 @@ namespace vcpkg::Commands::CI
     static constexpr StringLiteral OPTION_OUTPUT_HASHES = "output-hashes";
     static constexpr StringLiteral OPTION_PARENT_HASHES = "parent-hashes";
     static constexpr StringLiteral OPTION_SKIPPED_CASCADE_COUNT = "x-skipped-cascade-count";
+    static constexpr StringLiteral OPTION_TEST_CORE_FEATURE = "test-core-feature";
+    static constexpr StringLiteral OPTION_TEST_COMBINED_FEATURES = "test-combined-features";
+    static constexpr StringLiteral OPTION_TEST_FEATURES_SEPERATLY = "test-features-seperatly";
+    static constexpr StringLiteral OPTION_TEST_FEATURES_PORTS = "test-features-of-ports";
+    static constexpr StringLiteral OPTION_TEST_FEATURES_ALL_PORTS = "test-features-of-all-ports";
 
-    static constexpr std::array<CommandSetting, 8> CI_SETTINGS = {
-        {{OPTION_EXCLUDE, "Comma separated list of ports to skip"},
-         {OPTION_HOST_EXCLUDE, "Comma separated list of ports to skip for the host triplet"},
-         {OPTION_XUNIT, "File to output results in XUnit format (internal)"},
-         {OPTION_CI_BASELINE, "Path to the ci.baseline.txt file. Used to skip ports and detect regressions."},
-         {OPTION_FAILURE_LOGS, "Directory to which failure logs will be copied"},
-         {OPTION_OUTPUT_HASHES, "File to output all determined package hashes"},
-         {OPTION_PARENT_HASHES,
-          "File to read package hashes for a parent CI state, to reduce the set of changed packages"},
-         {OPTION_SKIPPED_CASCADE_COUNT,
-          "Asserts that the number of --exclude and supports skips exactly equal this number"}}};
+    static constexpr std::array<CommandSetting, 9> CI_SETTINGS = {{
+        {OPTION_EXCLUDE, "Comma separated list of ports to skip"},
+        {OPTION_HOST_EXCLUDE, "Comma separated list of ports to skip for the host triplet"},
+        {OPTION_XUNIT, "File to output results in XUnit format (internal)"},
+        {OPTION_CI_BASELINE, "Path to the ci.baseline.txt file. Used to skip ports and detect regressions."},
+        {OPTION_FAILURE_LOGS, "Directory to which failure logs will be copied"},
+        {OPTION_OUTPUT_HASHES, "File to output all determined package hashes"},
+        {OPTION_PARENT_HASHES,
+         "File to read package hashes for a parent CI state, to reduce the set of changed packages"},
+        {OPTION_SKIPPED_CASCADE_COUNT,
+         "Asserts that the number of --exclude and supports skips exactly equal this number"},
+        {OPTION_TEST_FEATURES_PORTS,
+         "A comma seperated list of ports for which the specified feature tests should be run"},
+    }};
 
-    static constexpr std::array<CommandSwitch, 5> CI_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 9> CI_SWITCHES = {{
         {OPTION_DRY_RUN, "Print out plan without execution"},
         {OPTION_RANDOMIZE, "Randomize the install order"},
         {OPTION_ALLOW_UNEXPECTED_PASSING,
          "Indicates that 'Passing, remove from fail list' results should not be emitted."},
         {OPTION_SKIP_FAILURES, "Indicates that ports marked `=fail` in ci.baseline.txt should be skipped."},
         {OPTION_XUNIT_ALL, "Report also unchanged ports to the XUnit output (internal)"},
+        {OPTION_TEST_FEATURES_ALL_PORTS, "Runs the specified tests for all ports"},
+        {OPTION_TEST_CORE_FEATURE, "Tests the 'core' feature for every specified port"},
+        {OPTION_TEST_FEATURES_SEPERATLY, "Tests every feature of a port seperatly for every specified port"},
+        {OPTION_TEST_COMBINED_FEATURES, "Tests the combination of every feature of a port for every specified port"},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -271,23 +283,28 @@ namespace vcpkg::Commands::CI
         });
     }
 
-    static auto get_changed_ports_with_features(ActionPlan& action_plan,
-                                                std::unordered_map<std::string, Version> parent_versions)
+    static auto get_ports_to_test_with_features(const ParsedArguments& args, ActionPlan& action_plan)
     {
-        std::vector<SourceControlFile*> ports_to_test;
-        for (const auto& action : action_plan.install_actions)
+        const auto all_ports = Util::Sets::contains(args.switches, OPTION_TEST_FEATURES_ALL_PORTS);
+        std::vector<std::string> ports;
+        auto iter = args.settings.find(OPTION_TEST_FEATURES_PORTS);
+        if (iter != args.settings.end())
         {
-            const auto& source_control_file =
-                action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
-            if (source_control_file->feature_paragraphs.empty())
+            ports = Strings::split(iter->second, ',');
+        }
+        std::vector<SourceControlFile*> ports_to_test;
+        if (all_ports || !ports.empty())
+        {
+            for (const auto& action : action_plan.install_actions)
             {
-                continue;
-            }
-            auto iter = parent_versions.find(source_control_file->core_paragraph->name);
-            if (iter == parent_versions.end() || iter->second != source_control_file->to_version())
-            {
-                ports_to_test.push_back(
-                    action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file.get());
+                const auto& source_control_file =
+                    action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
+
+                if (all_ports || Util::Vectors::contains(ports, source_control_file->core_paragraph->name))
+                {
+                    ports_to_test.push_back(action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
+                                                .source_control_file.get());
+                }
             }
         }
         return ports_to_test;
@@ -474,10 +491,6 @@ namespace vcpkg::Commands::CI
                     obj.insert("triplet", Json::Value::string(action.spec.triplet().canonical_name()));
                     obj.insert("state", Json::Value::string(split_specs->action_state_string[i]));
                     obj.insert("abi", Json::Value::string(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi));
-                    const auto& core_paragraph = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
-                                                     .source_control_file->core_paragraph;
-                    obj.insert("version", Json::Value::string(core_paragraph->raw_version));
-                    obj.insert("port-version", Json::Value::integer(core_paragraph->port_version));
                     arr.push_back(std::move(obj));
                 }
                 filesystem.write_contents(output_hash_json, Json::stringify(arr), VCPKG_LINE_INFO);
@@ -485,7 +498,6 @@ namespace vcpkg::Commands::CI
         }
 
         std::vector<std::string> parent_hashes;
-        std::unordered_map<std::string, Version> parent_versions;
 
         auto it_parent_hashes = settings.find(OPTION_PARENT_HASHES);
         if (it_parent_hashes != settings.end())
@@ -500,19 +512,6 @@ namespace vcpkg::Commands::CI
 #endif
                 return abi->string(VCPKG_LINE_INFO).to_string();
             });
-            for (const auto& entry : parsed_json.first.array(VCPKG_LINE_INFO))
-            {
-                const auto& object = entry.object(VCPKG_LINE_INFO);
-                auto name = object.get("name");
-                Checks::check_exit(VCPKG_LINE_INFO, name);
-                auto version = object.get("version");
-                Checks::check_exit(VCPKG_LINE_INFO, version);
-                auto port_version = object.get("port-version");
-                Checks::check_exit(VCPKG_LINE_INFO, port_version);
-                parent_versions.emplace(name->string(VCPKG_LINE_INFO),
-                                        Version(version->string(VCPKG_LINE_INFO).to_string(),
-                                                static_cast<int>(port_version->integer(VCPKG_LINE_INFO))));
-            }
         }
         reduce_action_plan(action_plan, split_specs->known, parent_hashes);
 
@@ -536,23 +535,40 @@ namespace vcpkg::Commands::CI
             StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
             // test port features
-            for (const auto port : get_changed_ports_with_features(action_plan, parent_versions))
+            const auto test_core = Util::Sets::contains(options.switches, OPTION_TEST_CORE_FEATURE);
+            const auto test_combined = Util::Sets::contains(options.switches, OPTION_TEST_COMBINED_FEATURES);
+            const auto test_seperatly = Util::Sets::contains(options.switches, OPTION_TEST_FEATURES_SEPERATLY);
+
+            auto ports_to_test = get_ports_to_test_with_features(options, action_plan);
+            Checks::check_exit(VCPKG_LINE_INFO,
+                               !((test_core || test_combined || test_seperatly) && ports_to_test.empty()),
+                               "You specify a flag to test features, but not which port should be checked");
+            Checks::check_exit(VCPKG_LINE_INFO,
+                               !(!(test_core || test_combined || test_seperatly) && !ports_to_test.empty()),
+                               "You specify which port should be checked for features, but not which checks");
+            for (const auto port : ports_to_test)
             {
                 PackageSpec package_spec(port->core_paragraph->name, target_triplet);
                 var_provider.load_dep_info_vars(Span<PackageSpec>(&package_spec, 1), host_triplet);
                 const auto dep_info_vars = var_provider.get_dep_info_vars(package_spec).value_or_exit(VCPKG_LINE_INFO);
                 std::vector<FullPackageSpec> specs_to_test;
-                specs_to_test.emplace_back(package_spec, InternalFeatureSet{{"core"}});
+                if (test_core)
+                {
+                    specs_to_test.emplace_back(package_spec, InternalFeatureSet{{"core"}});
+                }
                 InternalFeatureSet all_features{{"core"}};
                 for (const auto& feature : port->feature_paragraphs)
                 {
                     if (feature->supports_expression.evaluate(dep_info_vars))
                     {
                         all_features.push_back(feature->name);
-                        specs_to_test.emplace_back(package_spec, InternalFeatureSet{{"core", feature->name}});
+                        if (test_seperatly)
+                        {
+                            specs_to_test.emplace_back(package_spec, InternalFeatureSet{{"core", feature->name}});
+                        }
                     }
                 }
-                if (all_features.size() > 2)
+                if (test_combined && all_features.size() > 2)
                 {
                     specs_to_test.emplace_back(package_spec, all_features);
                 }
