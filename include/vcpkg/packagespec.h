@@ -114,6 +114,9 @@ namespace vcpkg
         {
         }
 
+        std::string to_string() const;
+        void to_string(std::string& s) const;
+
         /// Splats into individual FeatureSpec's
         void expand_fspecs_to(std::vector<FeatureSpec>& oFut) const;
 

@@ -454,9 +454,11 @@ namespace vcpkg
     {
         for (const auto& result : this->results)
         {
-            if (result.build_result.value_or_exit(VCPKG_LINE_INFO).code != BuildResult::SUCCEEDED)
+            switch (result.build_result.value_or_exit(VCPKG_LINE_INFO).code)
             {
-                return true;
+                case BuildResult::SUCCEEDED:
+                case BuildResult::REMOVED: continue;
+                default: return true;
             }
         }
         return false;

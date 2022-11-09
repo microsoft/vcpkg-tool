@@ -30,6 +30,7 @@ namespace vcpkg
         void mark_unavailable(const IBinaryProvider* sender);
         void mark_available(const IBinaryProvider* sender) noexcept;
         void mark_restored() noexcept;
+        void mark_unrestored() noexcept;
 
     private:
         CacheStatusState m_status = CacheStatusState::unknown;
@@ -141,6 +142,8 @@ namespace vcpkg
         /// missing packages.
         /// Returns a vector where each index corresponds to the matching index in `actions`.
         std::vector<CacheAvailability> precheck(View<InstallPlanAction> actions);
+
+        void clear_cache();
 
     private:
         std::unordered_map<std::string, CacheStatus> m_status;

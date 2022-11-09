@@ -1458,6 +1458,14 @@ namespace vcpkg
         return results;
     }
 
+    void BinaryCache::clear_cache()
+    {
+        for (auto& entry : m_status)
+        {
+            entry.second.mark_unrestored();
+        }
+    }
+
     bool CacheStatus::should_attempt_precheck(const IBinaryProvider* sender) const noexcept
     {
         switch (m_status)
@@ -1533,6 +1541,8 @@ namespace vcpkg
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
+
+    void CacheStatus::mark_unrestored() noexcept { m_status = CacheStatusState::available; }
 
     const IBinaryProvider* CacheStatus::get_available_provider() const noexcept
     {

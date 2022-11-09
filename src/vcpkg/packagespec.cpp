@@ -20,6 +20,23 @@ namespace vcpkg
         Strings::append(out, port(), '[', feature(), "]:", triplet());
     }
 
+    std::string FullPackageSpec::to_string() const
+    {
+        std::string ret;
+        this->to_string(ret);
+        return ret;
+    }
+
+    void FullPackageSpec::to_string(std::string& out) const
+    {
+        out += package_spec.name();
+        if (!features.empty())
+        {
+            Strings::append(out, '[', Strings::join(",", features), ']');
+        }
+        Strings::append(out, ':', package_spec.triplet());
+    }
+
     void FullPackageSpec::expand_fspecs_to(std::vector<FeatureSpec>& out) const
     {
         for (auto&& feature : features)

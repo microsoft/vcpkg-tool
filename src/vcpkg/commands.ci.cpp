@@ -15,6 +15,7 @@
 #include <vcpkg/ci-baseline.h>
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.ci.h>
+#include <vcpkg/commands.setinstalled.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/globalstate.h>
 #include <vcpkg/help.h>
@@ -270,6 +271,28 @@ namespace vcpkg::Commands::CI
         });
     }
 
+    static auto get_changed_ports_with_features(ActionPlan& action_plan,
+                                                std::unordered_map<std::string, Version> parent_versions)
+    {
+        std::vector<SourceControlFile*> ports_to_test;
+        for (const auto& action : action_plan.install_actions)
+        {
+            const auto& source_control_file =
+                action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
+            if (source_control_file->feature_paragraphs.empty())
+            {
+                continue;
+            }
+            auto iter = parent_versions.find(source_control_file->core_paragraph->name);
+            if (iter == parent_versions.end() || iter->second != source_control_file->to_version())
+            {
+                ports_to_test.push_back(
+                    action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file.get());
+            }
+        }
+        return ports_to_test;
+    }
+
     static void parse_exclusions(const std::map<std::string, std::string, std::less<>>& settings,
                                  StringLiteral opt,
                                  Triplet triplet,
@@ -451,6 +474,10 @@ namespace vcpkg::Commands::CI
                     obj.insert("triplet", Json::Value::string(action.spec.triplet().canonical_name()));
                     obj.insert("state", Json::Value::string(split_specs->action_state_string[i]));
                     obj.insert("abi", Json::Value::string(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi));
+                    const auto& core_paragraph = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
+                                                     .source_control_file->core_paragraph;
+                    obj.insert("version", Json::Value::string(core_paragraph->raw_version));
+                    obj.insert("port-version", Json::Value::integer(core_paragraph->port_version));
                     arr.push_back(std::move(obj));
                 }
                 filesystem.write_contents(output_hash_json, Json::stringify(arr), VCPKG_LINE_INFO);
@@ -458,6 +485,7 @@ namespace vcpkg::Commands::CI
         }
 
         std::vector<std::string> parent_hashes;
+        std::unordered_map<std::string, Version> parent_versions;
 
         auto it_parent_hashes = settings.find(OPTION_PARENT_HASHES);
         if (it_parent_hashes != settings.end())
@@ -472,8 +500,20 @@ namespace vcpkg::Commands::CI
 #endif
                 return abi->string(VCPKG_LINE_INFO).to_string();
             });
+            for (const auto& entry : parsed_json.first.array(VCPKG_LINE_INFO))
+            {
+                const auto& object = entry.object(VCPKG_LINE_INFO);
+                auto name = object.get("name");
+                Checks::check_exit(VCPKG_LINE_INFO, name);
+                auto version = object.get("version");
+                Checks::check_exit(VCPKG_LINE_INFO, version);
+                auto port_version = object.get("port-version");
+                Checks::check_exit(VCPKG_LINE_INFO, port_version);
+                parent_versions.emplace(name->string(VCPKG_LINE_INFO),
+                                        Version(version->string(VCPKG_LINE_INFO).to_string(),
+                                                static_cast<int>(port_version->integer(VCPKG_LINE_INFO))));
+            }
         }
-
         reduce_action_plan(action_plan, split_specs->known, parent_hashes);
 
         msg::println(msgElapsedTimeForChecks, msg::elapsed = timer.elapsed());
@@ -494,6 +534,83 @@ namespace vcpkg::Commands::CI
         else
         {
             StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+
+            // test port features
+            for (const auto port : get_changed_ports_with_features(action_plan, parent_versions))
+            {
+                PackageSpec package_spec(port->core_paragraph->name, target_triplet);
+                var_provider.load_dep_info_vars(Span<PackageSpec>(&package_spec, 1), host_triplet);
+                const auto dep_info_vars = var_provider.get_dep_info_vars(package_spec).value_or_exit(VCPKG_LINE_INFO);
+                std::vector<FullPackageSpec> specs_to_test;
+                specs_to_test.emplace_back(package_spec, InternalFeatureSet{{"core"}});
+                InternalFeatureSet all_features{{"core"}};
+                for (const auto& feature : port->feature_paragraphs)
+                {
+                    if (feature->supports_expression.evaluate(dep_info_vars))
+                    {
+                        all_features.push_back(feature->name);
+                        specs_to_test.emplace_back(package_spec, InternalFeatureSet{{"core", feature->name}});
+                    }
+                }
+                if (all_features.size() > 2)
+                {
+                    specs_to_test.emplace_back(package_spec, all_features);
+                }
+
+                for (auto& spec : specs_to_test)
+                {
+                    auto install_plan = create_feature_install_plan(provider,
+                                                                    var_provider,
+                                                                    Span<FullPackageSpec>(&spec, 1),
+                                                                    {},
+                                                                    {host_triplet, UnsupportedPortAction::Warn});
+                    if (!install_plan.warnings.empty())
+                    {
+                        Debug::println("Skipping testing of ",
+                                       install_plan.install_actions.back().displayname(),
+                                       " because of the following warnings: \n",
+                                       Strings::join("\n", install_plan.warnings));
+                        continue;
+                    }
+                    print2("Test feature ", spec, '\n');
+                    compute_all_abis(paths, install_plan, var_provider, status_db);
+                    // only install the absolute minimum
+                    SetInstalled::adjust_action_plan_to_status_db(install_plan, status_db);
+                    for (auto&& action : install_plan.install_actions)
+                    {
+                        action.build_options = default_build_package_options;
+                    }
+                    if (install_plan.install_actions.empty())
+                    {
+                        print2("Test feature already installed \n");
+                        continue;
+                    }
+
+                    compute_all_abis(paths, install_plan, var_provider, status_db);
+                    if (binary_cache.precheck({&install_plan.install_actions.back(), 1}).front() ==
+                        CacheAvailability::available)
+                        continue;
+                    binary_cache.clear_cache();
+                    const auto summary = Install::perform(args,
+                                                          install_plan,
+                                                          KeepGoing::YES,
+                                                          paths,
+                                                          status_db,
+                                                          binary_cache,
+                                                          null_build_logs_recorder(),
+                                                          var_provider);
+                    if (summary.failed())
+                    {
+                        print2("Feature ", spec, " failed with:\n");
+                        summary.print_failed();
+                    }
+                    else
+                    {
+                        print2("Feature ", spec, " works \n");
+                    }
+                }
+            }
+
             auto summary = Install::perform(
                 args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder, var_provider);
 
