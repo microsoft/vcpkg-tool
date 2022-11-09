@@ -110,7 +110,7 @@ namespace vcpkg::CMakeVars
             const VcpkgPaths& paths;
             mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>> dep_resolution_vars;
             mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>> tag_vars;
-            mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::vector<std::string>>> triplet_vars;
+            mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::vector<std::string>>> triplet_vars; // I feel like I could also add --x-cmake-args into this variable
             mutable std::unordered_map<Triplet, std::unordered_map<std::string, std::string>> generic_triplet_vars;
         };
     }
