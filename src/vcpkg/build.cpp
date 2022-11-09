@@ -1057,6 +1057,7 @@ namespace vcpkg
     {
         auto& fs = paths.get_filesystem();
         Triplet triplet = action.spec.triplet();
+        const auto triplet_vars = var_provider.get_triplet_vars(action.spec);
 
         if (action.build_options.use_head_version == UseHeadVersion::YES)
         {

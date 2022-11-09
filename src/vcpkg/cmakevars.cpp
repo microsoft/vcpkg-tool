@@ -438,11 +438,12 @@ endfunction()
             // Find first call block
             auto tags_or_deps_iter_begin =
                 std::find_if(cmake_trace.traces.begin(), trace_end, is_vcpkg_get_tags_or_dep_info);
-            auto tags_or_deps_iter_end =
-                std::find_if(std::next(tags_or_deps_iter_begin), trace_end, is_vcpkg_get_tags_or_dep_info);
 
             while (tags_or_deps_iter_begin != trace_end)
             {
+                auto tags_or_deps_iter_end =
+                    std::find_if(std::next(tags_or_deps_iter_begin), trace_end, is_vcpkg_get_tags_or_dep_info);
+
                 // Find triplet block
                 auto triplet_start_iter =
                     std::find_if(tags_or_deps_iter_begin, tags_or_deps_iter_end, is_message_triplet_start);
@@ -462,8 +463,6 @@ endfunction()
                 }; // needs concat 1-end
 
                 tags_or_deps_iter_begin = tags_or_deps_iter_end;
-                tags_or_deps_iter_end =
-                    std::find_if(std::next(tags_or_deps_iter_end), trace_end, is_vcpkg_get_tags_or_dep_info);
                 
                 triplet_vars->emplace_back(std::move(port_triplet_vars));
             }
