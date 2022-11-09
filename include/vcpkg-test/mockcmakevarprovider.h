@@ -18,7 +18,7 @@ namespace vcpkg::Test
                 dep_info_vars.emplace(spec, SMap{});
         }
 
-        void load_tag_vars(Span<const FullPackageSpec> specs,
+        void load_tag_and_triplet_vars(Span<const FullPackageSpec> specs,
                            const PortFileProvider& port_provider,
                            Triplet host_triplet) const override
         {
@@ -37,8 +37,12 @@ namespace vcpkg::Test
         Optional<const std::unordered_map<std::string, std::string>&> get_tag_vars(
             const PackageSpec& spec) const override;
 
+        Optional<const std::unordered_map<std::string, std::vector<std::string>>&> get_triplet_vars(
+            const PackageSpec& spec) const override;
+
         mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>> dep_info_vars;
         mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>> tag_vars;
+        mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::vector<std::string>>> triplet_vars;
         mutable std::unordered_map<Triplet, std::unordered_map<std::string, std::string>> generic_triplet_vars;
     };
 }
