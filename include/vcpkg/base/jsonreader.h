@@ -395,7 +395,5 @@ namespace vcpkg::Json
         static bool is_package_pattern(StringView sv);
 
         virtual Optional<PackagePatternDeclaration> visit_string(Json::Reader&, StringView sv) override;
-
-        static PackagePatternDeserializer instance;
     };
 }

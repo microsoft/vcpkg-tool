@@ -1035,7 +1035,6 @@ namespace vcpkg::Json
     IdentifierDeserializer IdentifierDeserializer::instance;
     IdentifierArrayDeserializer IdentifierArrayDeserializer::instance;
     PackageNameDeserializer PackageNameDeserializer::instance;
-    PackagePatternDeserializer PackagePatternDeserializer::instance;
     PathDeserializer PathDeserializer::instance;
 
     static constexpr bool is_lower_digit(char ch)
@@ -1352,6 +1351,8 @@ namespace vcpkg::Json
     }
     // } auto stringify()
 
+    uint64_t get_json_parsing_stats() { return g_json_parsing_stats.load(); }
+
     static std::vector<std::string> invalid_json_fields(const Json::Object& obj,
                                                         Span<const StringView> known_fields) noexcept
     {
@@ -1473,8 +1474,6 @@ namespace vcpkg::Json
         return r.array_elements(arr, IdentifierDeserializer::instance);
     }
 
-    uint64_t get_json_parsing_stats() { return g_json_parsing_stats.load(); }
-
     Optional<std::string> PackageNameDeserializer::visit_string(Json::Reader& r, StringView sv)
     {
         if (!IdentifierDeserializer::is_ident(sv))
@@ -1482,7 +1481,6 @@ namespace vcpkg::Json
             r.add_generic_error(
                 type_name(),
                 msg::format(msgParsePackageNameError, msg::package_name = sv, msg::url = docs::manifests_url));
-            return nullopt;
         }
         return sv.to_string();
     }

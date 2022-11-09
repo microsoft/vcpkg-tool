@@ -619,7 +619,7 @@ namespace vcpkg
         Debug::print("Using downloads-root: ", downloads, '\n');
 
         {
-            auto config_path = m_pimpl->m_config_dir / "configuration.json";
+            auto config_path = m_pimpl->m_config_dir / "vcpkg-configuration.json";
             auto maybe_manifest_config = config_from_manifest(m_pimpl->m_manifest_doc);
             auto maybe_json_config = !filesystem.exists(config_path, IgnoreErrors{})
                                          ? nullopt
