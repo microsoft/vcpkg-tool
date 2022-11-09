@@ -11,6 +11,28 @@
 
 namespace vcpkg::CMakeVars
 {
+    struct CMakeTraceVersion
+    {
+        int major;
+        int minor;
+    };
+    struct CMakeTraceLine
+    {
+        std::vector<std::string> args;
+        std::string cmd;
+        Path file;
+        int frame;
+        int global_frame;
+        int line;
+        Optional<int> line_end;
+        double time;
+    };
+    struct CMakeTraceOutput
+    {
+        CMakeTraceVersion version;
+        std::vector<CMakeTraceLine> traces;
+    };
+
     struct CMakeVarProvider
     {
         virtual ~CMakeVarProvider() = default;
@@ -27,7 +49,7 @@ namespace vcpkg::CMakeVars
         virtual Optional<const std::unordered_map<std::string, std::string>&> get_tag_vars(
             const PackageSpec& spec) const = 0;
 
-        virtual Optional < const std::unordered_map<std::string, std::vector<std::string>>&> get_triplet_vars(
+        virtual Optional < const std::unordered_map<std::string, std::string>&> get_triplet_vars(
                                const PackageSpec& spec) const = 0;
 
 

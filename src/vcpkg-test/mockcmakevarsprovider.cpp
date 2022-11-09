@@ -26,7 +26,7 @@ namespace vcpkg::Test
         return it->second;
     }
 
-    Optional<const std::unordered_map<std::string, std::vector<std::string>>&> MockCMakeVarProvider::
+    Optional<const std::unordered_map<std::string, std::string>&> MockCMakeVarProvider::
         get_triplet_vars(const PackageSpec& spec) const
     {
         auto find_itr = triplet_vars.find(spec);

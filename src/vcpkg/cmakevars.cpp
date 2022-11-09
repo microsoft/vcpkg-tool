@@ -44,28 +44,6 @@ namespace vcpkg::CMakeVars
 
     namespace
     {
-        struct CMakeTraceVersion
-        {
-            int major;
-            int minor;
-        };
-        struct CMakeTraceLine
-        {
-            std::vector<std::string> args;
-            std::string cmd;
-            Path file;
-            int frame;
-            int global_frame;
-            int line;
-            Optional<int> line_end;
-            double time;
-        };
-        struct CMakeTraceOutput
-        {
-            CMakeTraceVersion version;
-            std::vector<CMakeTraceLine> traces;
-        };
-
         struct TripletCMakeVarProvider : CMakeVarProvider
         {
             explicit TripletCMakeVarProvider(const vcpkg::VcpkgPaths& paths) : paths(paths) { }
@@ -88,13 +66,13 @@ namespace vcpkg::CMakeVars
 
             Optional<const std::unordered_map<std::string, std::string>&> get_tag_vars(
                 const PackageSpec& spec) const override;
-            Optional < const std::unordered_map<std::string, std::vector<std::string>>&> get_triplet_vars(
+            Optional < const std::unordered_map<std::string, std::string>&> get_triplet_vars(
                            const PackageSpec& spec) const override;
 
             CMakeTraceOutput parse_cmake_trace(const std::vector<std::string>& trace_lines) const;
 
             void analyze_cmake_trace(const CMakeTraceOutput& trace,
-                                     std::vector<std::unordered_map<std::string, std::vector<std::string>>>& result) const;
+                                     std::vector<std::unordered_map<std::string, std::string>>& result) const;
 
         public:
             Path create_tag_extraction_file(
@@ -104,13 +82,13 @@ namespace vcpkg::CMakeVars
 
             void launch_and_split(const Path& script_path,
                                   std::vector<std::vector<std::pair<std::string, std::string>>>& vars,
-                                  Optional<std::vector<std::unordered_map<std::string, std::vector<std::string>>>&>
+                                  Optional<std::vector<std::unordered_map<std::string, std::string>>&>
                                       opt_triplet_hashes = nullopt) const;
 
             const VcpkgPaths& paths;
             mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>> dep_resolution_vars;
             mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>> tag_vars;
-            mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::vector<std::string>>> triplet_vars; // I feel like I could also add --x-cmake-args into this variable
+            mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>> triplet_vars; // I feel like I could also add --x-cmake-args into this variable
             mutable std::unordered_map<Triplet, std::unordered_map<std::string, std::string>> generic_triplet_vars;
         };
     }
@@ -374,7 +352,7 @@ endfunction()
 
      void TripletCMakeVarProvider::analyze_cmake_trace(
         const CMakeTraceOutput& cmake_trace,
-            std::vector<std::unordered_map<std::string, std::vector<std::string>>>& result) const
+            std::vector<std::unordered_map<std::string, std::string>>& result) const
     {
          // Basic trace order:
         //  cmd: vcpkg_get_tags or vcpkg_get_dep_info
@@ -406,10 +384,34 @@ endfunction()
         auto is_message_triplet_end = [&](const CMakeTraceLine& t) {
             return (is_message(t) && (t.args.at(0).compare("end-triplet-contents-3210") == 0));
         };
-        auto is_cmd_set = [](const CMakeTraceLine& t) { return (t.cmd.compare("set") == 0); };
-        auto is_cmd_unset = [](const CMakeTraceLine& t) { return (t.cmd.compare("unset") == 0); };
-        auto is_set_or_unset = [&](const CMakeTraceLine& t) { return (is_cmd_set(t) || is_cmd_unset(t)); };
+        auto is_relevant_command = [](const CMakeTraceLine& t) {
+            static std::vector<std::string> cmake_commands{"set",
+                                                             "unset",
+                                                             "cmake_path",
+                                                             "execute_process",
+                                                             "file",
+                                                             "find_file",
+                                                             "find_library",
+                                                             "find_path",
+                                                             "find_program",
+                                                             "get_cmake_property",
+                                                             "get_directory_property",
+                                                             "get_filename_component",
+                                                             "get_property",
+                                                             "list",
+                                                             "math",
+                                                             "option",
+                                                             "separate_arguments",
+                                                             "string",
+                                                             "site_name" 
+            };
+            for (const auto& to_compare : cmake_commands)
+                if (t.cmd.compare(to_compare) == 0) return true;
 
+            return false;
+        };
+        auto is_cmd_unset = [](const CMakeTraceLine& t) { return (t.cmd.compare("unset") == 0); };
+        
         const auto trace_end = cmake_trace.traces.end();
         // Find first call block
         auto tags_or_deps_iter_begin =
@@ -427,28 +429,208 @@ endfunction()
                 std::find_if(tags_or_deps_iter_begin, tags_or_deps_iter_end, is_message_triplet_end);
 
             // Find all sets and unset in the triplet block:
-            std::unordered_map<std::string, std::vector<std::string>> port_triplet_vars;
-            for (auto var_set_searcher = std::find_if(triplet_start_iter, triplet_end_iter, is_cmd_set);
+            std::unordered_map<std::string, std::string> port_triplet_vars;
+            for (auto var_set_searcher = std::find_if(triplet_start_iter, triplet_end_iter, is_relevant_command);
                  var_set_searcher != triplet_end_iter;
-                 var_set_searcher = std::find_if(std::next(var_set_searcher), triplet_end_iter, is_set_or_unset))
+                 var_set_searcher = std::find_if(std::next(var_set_searcher), triplet_end_iter, is_relevant_command))
             {
-                const auto trace_set_or_unset = *var_set_searcher;
-                const auto var_name = trace_set_or_unset.args[0];
-                if (is_cmd_set(trace_set_or_unset))
+                const auto trace_relevant = *var_set_searcher;
+
+                if (is_cmd_unset(trace_relevant))
                 {
-                    const auto var_value =
-                        std::vector<std::string>(++trace_set_or_unset.args.begin(), trace_set_or_unset.args.end());
-                    port_triplet_vars.insert_or_assign(var_name, std::move(var_value));
-                }
-                else // is_cmd_unset
-                {
+                    const auto var_name = trace_relevant.args[0];
                     if (port_triplet_vars.find(var_name) != port_triplet_vars.end()) // contains is c++20
                     {
                         [[maybe_unused]] const auto throw_away = port_triplet_vars.extract(var_name);
                     }
                     else if (var_name.substr(0, 4).compare("ENV{"))
                     {
-                        port_triplet_vars.insert_or_assign(var_name, std::vector<std::string>{"unset"});
+                        port_triplet_vars.insert_or_assign(var_name, "unset");
+                    }
+
+                }
+                else // is_cmd_unset
+                {
+                    std::vector<std::string> var_names;
+                    if ((trace_relevant.cmd.compare("set") == 0) ||
+                        (trace_relevant.cmd.compare("option") == 0) ||
+                        (trace_relevant.cmd.compare("separate_arguments") == 0) ||
+                        (trace_relevant.cmd.compare("site_name") == 0) ||
+                        // get_cmake_property, get_directory_property, get_filename_component, get_property
+                        (trace_relevant.cmd.substr(0, 4).compare("get_") ==  0) ||  
+                        // find_file, find_library, find_path, find_program
+                        (trace_relevant.cmd.substr(0, 5).compare("find_") == 0) 
+                       ) 
+                    {
+                        var_names.emplace_back(trace_relevant.args[0]);
+                    }
+                    else if (trace_relevant.cmd.compare("cmake_path") == 0)
+                    {
+                        if (trace_relevant.args[0].compare("SET") == 0)
+                        {
+                            var_names.emplace_back(trace_relevant.args[1]);
+                        }
+                        else if (trace_relevant.args[0].compare("GET") == 0)
+                        {
+                            var_names.emplace_back(*trace_relevant.args.end());
+                        }
+                        else if (trace_relevant.args[0].compare("COMPARE") == 0 || 
+                                 trace_relevant.args[0].compare("HASH") == 0 ||
+                                 trace_relevant.args[0].compare("NATIVE_PATH") == 0 || 
+                                 trace_relevant.args[0].substr(0, 3).compare("IS_") == 0 || 
+                                 trace_relevant.args[0].substr(0, 4).compare("HAS_") == 0)
+                        {
+                            var_names.emplace_back(*trace_relevant.args.end());
+                        }
+                        else if (trace_relevant.args[0].compare("CONVERT") == 0)
+                        {
+                            var_names.emplace_back(trace_relevant.args[3]);
+                        }
+                        else if (trace_relevant.args[0].compare("NORMAL_PATH") == 0 ||
+                                 trace_relevant.args[0].compare("CONVERT") == 0 ||
+                                 trace_relevant.args[0].compare("APPEND") == 0 ||
+                                 trace_relevant.args[0].compare("APPEND_STRING") == 0 ||
+                                 trace_relevant.args[0].compare("REMOVE_FILENAME") == 0 ||
+                                 trace_relevant.args[0].compare("REPLACE_FILENAME") == 0 ||
+                                 trace_relevant.args[0].compare("REMOVE_EXTENSION") == 0 ||
+                                 trace_relevant.args[0].compare("REPLACE_EXTENSION") == 0 
+                                )
+                        {
+                            auto output_var =
+                                std::find(trace_relevant.args.begin(), trace_relevant.args.end(), "OUTPUT_VARIABLE");
+                            if (output_var != trace_relevant.args.end())
+                            {
+                                var_names.emplace_back(*(++output_var));
+                            }
+                            else
+                            {
+                                var_names.emplace_back(trace_relevant.args[1]);
+                            }
+                        }
+                    }
+                    else if (trace_relevant.cmd.compare("execute_process") == 0)
+                    {
+                        auto output_var =
+                            std::find(trace_relevant.args.begin(), trace_relevant.args.end(), "OUTPUT_VARIABLE");
+                        if (output_var != trace_relevant.args.end())
+                        {
+                            var_names.emplace_back(*(++ output_var));
+                        }
+                        output_var =
+                            std::find(trace_relevant.args.begin(), trace_relevant.args.end(), "RESULT_VARIABLE");
+                        if (output_var != trace_relevant.args.end())
+                        {
+                            var_names.emplace_back(*(++output_var));
+                        }
+                        output_var =
+                            std::find(trace_relevant.args.begin(), trace_relevant.args.end(), "RESULTS_VARIABLE");
+                        if (output_var != trace_relevant.args.end())
+                        {
+                            var_names.emplace_back(*(++output_var));
+                        }
+                        output_var =
+                            std::find(trace_relevant.args.begin(), trace_relevant.args.end(), "ERROR_VARIABLE");
+                        if (output_var != trace_relevant.args.end())
+                        {
+                            var_names.emplace_back(*(++output_var));
+                        }
+                    }
+                    else if (trace_relevant.cmd.compare("file") == 0)
+                    {
+                        if (trace_relevant.args[0].compare("READ") == 0 ||
+                            trace_relevant.args[0].compare("STRINGS") == 0 ||
+                            trace_relevant.args[0].compare("MD5") == 0 ||
+                            trace_relevant.args[0].compare("SHA1") == 0 ||
+                            trace_relevant.args[0].compare("SHA224") == 0 ||
+                            trace_relevant.args[0].compare("SHA256") == 0 ||
+                            trace_relevant.args[0].compare("SHA384") == 0 ||
+                            trace_relevant.args[0].compare("SHA512") == 0 ||
+                            trace_relevant.args[0].compare("SHA3_224") == 0 ||
+                            trace_relevant.args[0].compare("SHA3_256") == 0 ||
+                            trace_relevant.args[0].compare("SHA3_384") == 0 ||
+                            trace_relevant.args[0].compare("SHA3_512") == 0 ||
+                            trace_relevant.args[0].compare("TIMESTAMP") == 0 ||
+                            trace_relevant.args[0].compare("SIZE") == 0 || 
+                            trace_relevant.args[0].compare("READ_SYMLINK") == 0 ||
+                            trace_relevant.args[0].compare("REAL_PATH") == 0 ||
+                            trace_relevant.args[0].compare("TO_CMAKE_PATH") == 0 ||
+                            trace_relevant.args[0].compare("TO_NATIVE_PATH") == 0
+                            )
+                        {
+                            var_names.emplace_back(trace_relevant.args[2]);
+                        }
+                        else if (trace_relevant.args[0].compare("GLOB") == 0 ||
+                                 trace_relevant.args[0].compare("GLOB_RECURSE") == 0 ||
+                                 trace_relevant.args[0].compare("RELATIVE_PATH") == 0 
+                            )
+                        {
+                            var_names.emplace_back(trace_relevant.args[1]);
+                        }
+                    }
+                    else if (trace_relevant.cmd.compare("list") == 0)
+                    {
+                        var_names.emplace_back(trace_relevant.args[1]);
+                        if (trace_relevant.args[0].substr(0, 4).compare("POP_") && trace_relevant.args.size() >= 3)
+                        {
+                            // POP_FRONT|BACK
+                            for (auto out_vars_iter = (trace_relevant.args.begin() + 2);
+                                 out_vars_iter != trace_relevant.args.end();
+                                 ++out_vars_iter)
+                            {
+                                var_names.emplace_back(*out_vars_iter);
+                            }
+                        }
+                            
+                    }
+                    else if (trace_relevant.cmd.compare("math") == 0)
+                    {
+                        var_names.emplace_back(trace_relevant.args[1]);
+                    }
+                    else if (trace_relevant.cmd.compare("string") == 0)
+                    {
+                        if (trace_relevant.args[0].compare("FIND") == 0 ||
+                            trace_relevant.args[0].compare("REPLACE") == 0 ||
+                            trace_relevant.args[0].compare("REPEAT") == 0
+                            )
+                        {
+                            var_names.emplace_back(trace_relevant.args[3]);
+                        }
+                        else if (trace_relevant.args[0].compare("JSON") == 0)
+                        {
+                            var_names.emplace_back(trace_relevant.args[1]);
+                            auto output_var =
+                                std::find(trace_relevant.args.begin(), trace_relevant.args.end(), "ERROR_VARIABLE");
+                            if (output_var != trace_relevant.args.end())
+                            {
+                                var_names.emplace_back(*(++output_var));
+                            }
+                        }
+                        else if (trace_relevant.args[0].compare("MD5") == 0 ||
+                            trace_relevant.args[0].compare("SHA1") == 0 ||
+                            trace_relevant.args[0].compare("SHA224") == 0 ||
+                            trace_relevant.args[0].compare("SHA256") == 0 ||
+                            trace_relevant.args[0].compare("SHA384") == 0 ||
+                            trace_relevant.args[0].compare("SHA512") == 0 ||
+                            trace_relevant.args[0].compare("SHA3_224") == 0 ||
+                            trace_relevant.args[0].compare("SHA3_256") == 0 ||
+                            trace_relevant.args[0].compare("SHA3_384") == 0 ||
+                            trace_relevant.args[0].compare("SHA3_512") == 0 ||
+                            trace_relevant.args[0].compare("TIMESTAMP") == 0 ||
+                            trace_relevant.args[0].compare("CONCAT")
+                            )
+                        {
+                            var_names.emplace_back(trace_relevant.args[1]);
+                        }
+                        //TODO: a lot of extra cases
+                    }
+                    else
+                    {
+                        assert(0);
+                    }
+                    auto args_concat = Strings::join(";", trace_relevant.args);
+                    for (auto& var_name : var_names)
+                    {
+                        port_triplet_vars.insert_or_assign(var_name, Strings::concat(trace_relevant.cmd,"(",std::move(args_concat),")"));
                     }
                 }
             };
@@ -460,7 +642,7 @@ endfunction()
 
     void TripletCMakeVarProvider::launch_and_split(const Path& script_path,
                                                    std::vector<std::vector<std::pair<std::string, std::string>>>& vars,
-        Optional<std::vector<std::unordered_map<std::string, std::vector<std::string>>>&> opt_triplet_vars) const
+        Optional<std::vector<std::unordered_map<std::string, std::string>>&> opt_triplet_vars) const
     {
         const auto& fs = paths.get_filesystem();
 
@@ -585,7 +767,7 @@ endfunction()
         if (specs.size() == 0) return;
         std::vector<std::pair<const FullPackageSpec*, std::string>> spec_abi_settings;
         spec_abi_settings.reserve(specs.size());
-        std::vector<std::unordered_map<std::string,std::vector<std::string>>> triplet_vars_vec;
+        std::vector<std::unordered_map<std::string,std::string>> triplet_vars_vec;
         triplet_vars_vec.reserve(specs.size());
 
         for (const FullPackageSpec& spec : specs)
@@ -655,7 +837,7 @@ endfunction()
         return nullopt;
     }
 
-    Optional <const std::unordered_map<std::string,std::vector<std::string>>&> TripletCMakeVarProvider::get_triplet_vars(const PackageSpec& spec) const
+    Optional <const std::unordered_map<std::string, std::string>&> TripletCMakeVarProvider::get_triplet_vars(const PackageSpec& spec) const
     {
         auto find_itr = triplet_vars.find(spec);
         if (find_itr != triplet_vars.end())

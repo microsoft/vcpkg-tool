@@ -37,12 +37,12 @@ namespace vcpkg::Test
         Optional<const std::unordered_map<std::string, std::string>&> get_tag_vars(
             const PackageSpec& spec) const override;
 
-        Optional<const std::unordered_map<std::string, std::vector<std::string>>&> get_triplet_vars(
+        Optional<const std::unordered_map<std::string, std::string>&> get_triplet_vars(
             const PackageSpec& spec) const override;
 
         mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>> dep_info_vars;
         mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>> tag_vars;
-        mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::vector<std::string>>> triplet_vars;
+        mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>> triplet_vars;
         mutable std::unordered_map<Triplet, std::unordered_map<std::string, std::string>> generic_triplet_vars;
     };
 }
