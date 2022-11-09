@@ -166,7 +166,7 @@ namespace vcpkg
         Filesystem& get_filesystem() const;
 
         const Environment& get_action_env(const AbiInfo& abi_info) const;
-        const std::string& get_triplet_info(const AbiInfo& abi_info) const;
+        const std::string& get_toolchain_abi(const AbiInfo& abi_info) const;
         const CompilerInfo& get_compiler_info(const AbiInfo& abi_info) const;
 
         const FeatureFlagSettings& get_feature_flags() const;

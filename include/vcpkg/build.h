@@ -401,7 +401,7 @@ namespace vcpkg
         explicit EnvCache(bool compiler_tracking) : m_compiler_tracking(compiler_tracking) { }
 
         const Environment& get_action_env(const VcpkgPaths& paths, const AbiInfo& abi_info);
-        const std::string& get_triplet_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
+        const std::string& get_toolchain_abi(const VcpkgPaths& paths, const AbiInfo& abi_info);
         const CompilerInfo& get_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
 
     private:
@@ -415,7 +415,7 @@ namespace vcpkg
         Cache<Path, TripletMapEntry> m_triplet_cache;
         Cache<Path, std::string> m_toolchain_cache;
 
-        const TripletMapEntry& get_triplet_cache(const Filesystem& fs, const Path& p) const;
+        const TripletMapEntry& get_triplet_cache(const Path& p) const;
 
 #if defined(_WIN32)
         struct EnvMapEntry
