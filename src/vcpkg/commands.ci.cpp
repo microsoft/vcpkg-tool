@@ -582,31 +582,31 @@ namespace vcpkg::Commands::CI
                                                                     {host_triplet, UnsupportedPortAction::Warn});
                     if (!install_plan.warnings.empty())
                     {
-                        Debug::println("Skipping testing of ",
-                                       install_plan.install_actions.back().displayname(),
-                                       " because of the following warnings: \n",
-                                       Strings::join("\n", install_plan.warnings));
-                        continue;
-                    }
-                    print2("Test feature ", spec, '\n');
-                    compute_all_abis(paths, install_plan, var_provider, status_db);
-                    // only install the absolute minimum
-                    SetInstalled::adjust_action_plan_to_status_db(install_plan, status_db);
-                    for (auto&& action : install_plan.install_actions)
-                    {
-                        action.build_options = default_build_package_options;
-                    }
-                    if (install_plan.install_actions.empty())
-                    {
-                        print2("Test feature already installed \n");
+                        print2("Skipping testing of ",
+                               install_plan.install_actions.back().displayname(),
+                               " because of the following warnings: \n",
+                               Strings::join("\n", install_plan.warnings),
+                               '\n');
                         continue;
                     }
 
                     compute_all_abis(paths, install_plan, var_provider, status_db);
+                    // only install the absolute minimum
+                    SetInstalled::adjust_action_plan_to_status_db(install_plan, status_db);
+                    if (install_plan.install_actions.empty()) // already installed
+                    {
+                        continue;
+                    }
+
                     if (binary_cache.precheck({&install_plan.install_actions.back(), 1}).front() ==
                         CacheAvailability::available)
                         continue;
+                    print2("Test feature ", spec, '\n');
                     binary_cache.clear_cache();
+                    for (auto&& action : install_plan.install_actions)
+                    {
+                        action.build_options = backcompat_prohibiting_package_options;
+                    }
                     const auto summary = Install::perform(args,
                                                           install_plan,
                                                           KeepGoing::YES,
@@ -615,14 +615,13 @@ namespace vcpkg::Commands::CI
                                                           binary_cache,
                                                           null_build_logs_recorder(),
                                                           var_provider);
-                    if (summary.failed())
+                    switch (summary.results.back().build_result.value_or_exit(VCPKG_LINE_INFO).code)
                     {
-                        print2("Feature ", spec, " failed with:\n");
-                        summary.print_failed();
-                    }
-                    else
-                    {
-                        print2("Feature ", spec, " works \n");
+                        case vcpkg::BuildResult::SUCCEEDED:
+                        case vcpkg::BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
+                            print2("Feature ", spec, " works \n");
+                            break;
+                        default: print2("Feature ", spec, " failed with \n");
                     }
                 }
             }
