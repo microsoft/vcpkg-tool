@@ -59,6 +59,7 @@ namespace vcpkg
 
         std::string&& extract() && { return std::move(buf); }
         StringView command_line() const { return buf; }
+        const char* c_str() const { return buf.c_str(); }
 
         void clear() { buf.clear(); }
         bool empty() const { return buf.empty(); }
@@ -121,9 +122,9 @@ namespace vcpkg
 #if defined(_WIN32)
     Environment cmd_execute_and_capture_environment(const Command& cmd_line,
                                                     const Environment& env = default_environment);
+#endif
 
     void cmd_execute_background(const Command& cmd_line);
-#endif
 
     ExpectedL<ExitCodeAndOutput> cmd_execute_and_capture_output(const Command& cmd_line,
                                                                 const WorkingDirectory& wd = default_working_directory,

@@ -156,6 +156,7 @@ namespace vcpkg
         ExpectedS<Path> git_checkout_object_from_remote_registry(StringView tree) const;
 
         Optional<const ManifestAndPath&> get_manifest() const;
+        bool manifest_mode_enabled() const;
         const ConfigurationAndSource& get_configuration() const;
         const RegistrySet& get_registry_set() const;
 
@@ -167,10 +168,8 @@ namespace vcpkg
         const Environment& get_action_env(const AbiInfo& abi_info) const;
         const std::string& get_triplet_info(const AbiInfo& abi_info) const;
         const CompilerInfo& get_compiler_info(const AbiInfo& abi_info) const;
-        bool manifest_mode_enabled() const { return get_manifest().has_value(); }
 
         const FeatureFlagSettings& get_feature_flags() const;
-        void track_feature_flag_metrics() const;
 
         // the directory of the builtin ports
         // this should be used only for helper commands, not core commands like `install`.

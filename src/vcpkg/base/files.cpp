@@ -1598,6 +1598,18 @@ namespace vcpkg
         return result;
     }
 
+    Path Filesystem::create_or_get_temp_directory(LineInfo li)
+    {
+        std::error_code ec;
+        Path result = this->create_or_get_temp_directory(ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {});
+        }
+
+        return result;
+    }
+
     void Filesystem::create_symlink(const Path& to, const Path& from, LineInfo li)
     {
         std::error_code ec;
@@ -2371,8 +2383,7 @@ namespace vcpkg
         virtual std::vector<Path> get_files_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            Path out_base = dir;
-            get_files_recursive_impl(result, dir, out_base, ec, true, true, true);
+            get_files_recursive_impl(result, dir, dir, ec, true, true, true);
             return result;
         }
 
@@ -2386,8 +2397,7 @@ namespace vcpkg
         virtual std::vector<Path> get_directories_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            Path out_base = dir;
-            get_files_recursive_impl(result, dir, out_base, ec, true, false, false);
+            get_files_recursive_impl(result, dir, dir, ec, true, false, false);
 
             return result;
         }
@@ -2416,8 +2426,7 @@ namespace vcpkg
         virtual std::vector<Path> get_regular_files_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            Path out_base = dir;
-            get_files_recursive_impl(result, dir, out_base, ec, false, true, false);
+            get_files_recursive_impl(result, dir, dir, ec, false, true, false);
             return result;
         }
 
@@ -2715,6 +2724,20 @@ namespace vcpkg
             }
 
 #endif // _WIN32
+        }
+
+        virtual Path create_or_get_temp_directory(std::error_code& ec) override
+        {
+#if defined(_WIN32)
+            wchar_t temp_folder[MAX_PATH + 1];
+            DWORD length_without_null = GetTempPathW(MAX_PATH + 1, temp_folder);
+            Path temp_folder_path = Path(Strings::to_utf8(temp_folder, length_without_null)) / "vcpkg";
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            const Path temp_folder_path = "/tmp/vcpkg";
+#endif // ^^^ !_WIN32
+
+            this->create_directories(temp_folder_path, ec);
+            return temp_folder_path;
         }
 
 #if !defined(_WIN32)
@@ -3346,7 +3369,7 @@ namespace vcpkg
 #endif // ^^^!_WIN32
 
                 static const std::vector<Path> path_bases = calculate_path_bases();
-                for (Path path_base : path_bases)
+                for (const Path& path_base : path_bases)
                 {
                     for (auto&& stem : stems)
                     {
