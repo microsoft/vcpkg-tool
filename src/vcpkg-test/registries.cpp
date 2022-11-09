@@ -85,30 +85,48 @@ TEST_CASE ("registry_set_selects_registry", "[registries]")
 
 TEST_CASE ("check valid package patterns", "[registries]")
 {
+    using ID = Json::IdentifierDeserializer;
     using PD = Json::PackagePatternDeserializer;
 
-    CHECK(PD::is_package_pattern("co"));
-    CHECK(PD::is_package_pattern("rapidjson"));
-    CHECK(PD::is_package_pattern("boost-tuple"));
-    CHECK(PD::is_package_pattern("vcpkg-boost-helper"));
+    // test identifiers
+    CHECK(ID::is_ident("co"));
+    CHECK(ID::is_ident("rapidjson"));
+    CHECK(ID::is_ident("boost-tuple"));
+    CHECK(ID::is_ident("vcpkg-boost-helper"));
 
+    // reject invalid characters
+    CHECK(!ID::is_ident(""));
+    CHECK(!ID::is_ident("boost_tuple"));
+    CHECK(!ID::is_ident("boost.tuple"));
+    CHECK(!ID::is_ident("boost@1"));
+    CHECK(!ID::is_ident("boost#1"));
+    CHECK(!ID::is_ident("boost:x64-windows"));
+
+    // accept legacy
+    CHECK(ID::is_ident("all_modules"));
+
+    // reject reserved keywords
+    CHECK(!ID::is_ident("prn"));
+    CHECK(!ID::is_ident("aux"));
+    CHECK(!ID::is_ident("nul"));
+    CHECK(!ID::is_ident("con"));
+    CHECK(!ID::is_ident("core"));
+    CHECK(!ID::is_ident("default"));
+    CHECK(!ID::is_ident("lpt1"));
+    CHECK(!ID::is_ident("com1"));
+
+    // reject incomplete segments
+    CHECK(!ID::is_ident("-a"));
+    CHECK(!ID::is_ident("a-"));
+    CHECK(!ID::is_ident("a--"));
+    CHECK(!ID::is_ident("---"));
+
+    // accept prefixes
     CHECK(PD::is_package_pattern("*"));
     CHECK(PD::is_package_pattern("b*"));
     CHECK(PD::is_package_pattern("boost*"));
 
-    // invalid segments -
-    CHECK(!PD::is_package_pattern(""));
-    CHECK(!PD::is_package_pattern("-a"));
-    CHECK(!PD::is_package_pattern("a-"));
-    CHECK(!PD::is_package_pattern("a--"));
-    CHECK(!PD::is_package_pattern("---"));
-
-    // invalid characters
-    CHECK(!PD::is_package_pattern("vcpkg@microsoft"));
-    CHECK(!PD::is_package_pattern("boost#1.0.0"));
-    CHECK(!PD::is_package_pattern("boost:x64-windows#1.0.0"));
-
-    // invalid patterns
+    // reject invalid patterns
     CHECK(!PD::is_package_pattern("*a"));
     CHECK(!PD::is_package_pattern("a*a"));
     CHECK(!PD::is_package_pattern("a**"));
@@ -353,6 +371,38 @@ TEST_CASE ("registry_parsing", "[registries]")
     REQUIRE(registry_impl);
     INFO(Strings::join("\n", r.errors()));
     CHECK(r.errors().empty());
+}
+
+TEST_CASE ("registries report pattern errors", "[registries]")
+{
+    auto test_json = parse_json(R"json({
+    "registries": [
+        {
+            "kind": "git",
+            "repository": "https://github.com/Microsoft/vcpkg",
+            "baseline": "ffff0000",
+            "packages": [ "*", "", "a*a", "*a" ]
+        }
+    ]
+})json");
+
+    Json::Reader r;
+    auto maybe_conf = r.visit(test_json, get_configuration_deserializer());
+    const auto& errors = r.errors();
+    CHECK(!errors.empty());
+    REQUIRE(errors.size() == 3);
+    CHECK(errors[0] ==
+          "$.registries[0].packages[1] (a package pattern): \"\" is not a valid package pattern. Package patterns must "
+          "use only one wildcard character (*) and it must be the last character in the pattern (see "
+          "https://github.com/Microsoft/vcpkg/tree/master/docs/users/registries.md for more information)");
+    CHECK(errors[1] ==
+          "$.registries[0].packages[2] (a package pattern): \"a*a\" is not a valid package pattern. Package patterns "
+          "must use only one wildcard character (*) and it must be the last character in the pattern (see "
+          "https://github.com/Microsoft/vcpkg/tree/master/docs/users/registries.md for more information)");
+    CHECK(errors[2] ==
+          "$.registries[0].packages[3] (a package pattern): \"*a\" is not a valid package pattern. Package patterns "
+          "must use only one wildcard character (*) and it must be the last character in the pattern (see "
+          "https://github.com/Microsoft/vcpkg/tree/master/docs/users/registries.md for more information)");
 }
 
 TEST_CASE ("registries ignored patterns warning", "[registries]")

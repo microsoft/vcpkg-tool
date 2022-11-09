@@ -1463,9 +1463,7 @@ namespace vcpkg::Json
         if (!is_ident(sv))
         {
             r.add_generic_error(type_name(),
-                                Strings::concat("must be lowercase alphanumeric+hyphens and not reserved (see ",
-                                                vcpkg::docs::manifests_url,
-                                                " for more information)"));
+                                msg::format(msgParseIdentifierError, msg::value = sv, msg::url = docs::manifests_url));
         }
         return sv.to_string();
     }
@@ -1477,10 +1475,13 @@ namespace vcpkg::Json
 
     uint64_t get_json_parsing_stats() { return g_json_parsing_stats.load(); }
 
-    Optional<std::string> PackageNameDeserializer::visit_string(Json::Reader&, StringView sv)
+    Optional<std::string> PackageNameDeserializer::visit_string(Json::Reader& r, StringView sv)
     {
         if (!IdentifierDeserializer::is_ident(sv))
         {
+            r.add_generic_error(
+                type_name(),
+                msg::format(msgParsePackageNameError, msg::package_name = sv, msg::url = docs::manifests_url));
             return nullopt;
         }
         return sv.to_string();
@@ -1534,14 +1535,16 @@ namespace vcpkg::Json
 
     Optional<PackagePatternDeclaration> PackagePatternDeserializer::visit_string(Json::Reader& r, StringView sv)
     {
-        if (is_package_pattern(sv))
+        if (!is_package_pattern(sv))
         {
-            return PackagePatternDeclaration{
-                sv.to_string(),
-                r.path(),
-            };
+            r.add_generic_error(
+                type_name(),
+                msg::format(msgParsePackagePatternError, msg::package_name = sv, msg::url = docs::registries_url));
         }
 
-        return nullopt;
+        return PackagePatternDeclaration{
+            sv.to_string(),
+            r.path(),
+        };
     }
 }

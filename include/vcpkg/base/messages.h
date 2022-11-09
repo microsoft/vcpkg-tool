@@ -1667,6 +1667,24 @@ namespace vcpkg
                     "Error messages are is printed after this.",
                     "while loading {path}:");
     DECLARE_MESSAGE(ParseControlErrorInfoWrongTypeFields, (), "", "The following fields had the wrong types:");
+    DECLARE_MESSAGE(
+        ParseIdentifierError,
+        (msg::value, msg::url),
+        "{value} is a lowercase identifier like 'boost'",
+        "\"{value}\" is not a valid identifier. "
+        "Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)");
+    DECLARE_MESSAGE(
+        ParsePackageNameError,
+        (msg::package_name, msg::url),
+        "",
+        "\"{package_name}\" is not a valid package name. "
+        "Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)");
+    DECLARE_MESSAGE(ParsePackagePatternError,
+                    (msg::package_name, msg::url),
+                    "",
+                    "\"{package_name}\" is not a valid package pattern. "
+                    "Package patterns must use only one wildcard character (*) and it must be the last character in "
+                    "the pattern (see {url} for more information)");
     DECLARE_MESSAGE(PathMustBeAbsolute,
                     (msg::path),
                     "",

@@ -852,6 +852,9 @@ namespace vcpkg
     REGISTER_MESSAGE(ParseControlErrorInfoTypesEntry);
     REGISTER_MESSAGE(ParseControlErrorInfoWhileLoading);
     REGISTER_MESSAGE(ParseControlErrorInfoWrongTypeFields);
+    REGISTER_MESSAGE(ParseIdentifierError);
+    REGISTER_MESSAGE(ParsePackageNameError);
+    REGISTER_MESSAGE(ParsePackagePatternError);
     REGISTER_MESSAGE(PathMustBeAbsolute);
     REGISTER_MESSAGE(PortDependencyConflict);
     REGISTER_MESSAGE(PortNotInBaseline);
