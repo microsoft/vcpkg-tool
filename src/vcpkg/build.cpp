@@ -1,3 +1,4 @@
+#include <numeric>
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
@@ -1057,7 +1058,6 @@ namespace vcpkg
     {
         auto& fs = paths.get_filesystem();
         Triplet triplet = action.spec.triplet();
-        const auto triplet_vars = var_provider.get_triplet_vars(action.spec);
 
         if (action.build_options.use_head_version == UseHeadVersion::YES)
         {
@@ -1083,6 +1083,13 @@ namespace vcpkg
         }
 
         std::vector<AbiEntry> abi_tag_entries(dependency_abis.begin(), dependency_abis.end());
+        const auto& triplet_vars = var_provider.get_triplet_vars(action.spec).value_or_exit(VCPKG_LINE_INFO);
+        for (const auto& triplet_var : triplet_vars)
+        {
+            const auto var_value = triplet_var.second;
+            abi_tag_entries.emplace_back(triplet_var.first,
+                                         std::accumulate(var_value.begin(), var_value.end(), std::string("")));
+        }
 
         const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
         const auto& triplet_abi = paths.get_triplet_info(abi_info);

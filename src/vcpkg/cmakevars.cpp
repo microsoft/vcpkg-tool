@@ -1,3 +1,4 @@
+#include <numeric>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
