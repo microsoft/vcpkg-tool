@@ -373,7 +373,7 @@ endfunction()
         CMakeTraceOutput cmake_trace;
         cmake_trace.traces.reserve(trace_lines.size()-1);
 
-        if (auto triplet_vars = opt_triplet_vars.get())
+        if (auto triplet_vars_out = opt_triplet_vars.get())
         {
             Json::Reader reader;
             {
@@ -465,7 +465,7 @@ endfunction()
 
                 tags_or_deps_iter_begin = tags_or_deps_iter_end;
                 
-                triplet_vars->emplace_back(std::move(port_triplet_vars));
+                triplet_vars_out->emplace_back(std::move(port_triplet_vars));
             }
         }
         // Parse cmake message output (expanded)
