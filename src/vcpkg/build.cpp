@@ -1052,6 +1052,7 @@ namespace vcpkg
 
     static Optional<AbiTagAndFiles> compute_abi_tag(const VcpkgPaths& paths,
                                                     const InstallPlanAction& action,
+                                                    const CMakeVars::CMakeVarProvider& var_provider,
                                                     Span<const AbiEntry> dependency_abis)
     {
         auto& fs = paths.get_filesystem();
@@ -1248,7 +1249,7 @@ namespace vcpkg
                 paths, action.spec.triplet(), var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO));
             abi_info.toolset = paths.get_toolset(*abi_info.pre_build_info);
 
-            auto maybe_abi_tag_and_file = compute_abi_tag(paths, action, dependency_abis);
+            auto maybe_abi_tag_and_file = compute_abi_tag(paths, action, var_provider, dependency_abis);
             if (auto p = maybe_abi_tag_and_file.get())
             {
                 abi_info.compiler_info = paths.get_compiler_info(abi_info);
