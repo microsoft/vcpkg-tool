@@ -18,12 +18,11 @@ $manifestdir = Join-Path $TestingRoot "manifest"
 New-Item -ItemType Directory -Force $bundle | Out-Null
 New-Item -ItemType File -Force $bundle/.vcpkg-root | Out-Null
 
-$a = Run-Vcpkg z-print-config `
+$a = Run-VcpkgAndCaptureOutput z-print-config `
     --vcpkg-root=$bundle `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
     --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
     --x-scripts-root=$env:VCPKG_ROOT/scripts
-$a
 Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
 $b = @{
@@ -50,12 +49,11 @@ New-Item -ItemType File -Force $bundle/.vcpkg-root | Out-Null
     readonly = $True
 } | ConvertTo-JSON | out-file -enc ascii $bundle/vcpkg-bundle.json | Out-Null
 
-$a = Run-Vcpkg z-print-config `
+$a = Run-VcpkgAndCaptureOutput z-print-config `
     --vcpkg-root=$bundle `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
     --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
     --x-scripts-root=$env:VCPKG_ROOT/scripts
-$a
 Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
 
@@ -88,13 +86,12 @@ New-Item -ItemType File -Force $bundle/.vcpkg-root | Out-Null
     version = "0"
 } | ConvertTo-JSON | out-file -enc ascii $manifestdir/vcpkg.json | Out-Null
 
-$a = Run-Vcpkg z-print-config `
+$a = Run-VcpkgAndCaptureOutput z-print-config `
     --vcpkg-root=$bundle `
     --x-manifest-root=$manifestdir `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
     --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
     --x-scripts-root=$env:VCPKG_ROOT/scripts
-$a
 Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
 
@@ -131,7 +128,7 @@ New-Item -ItemType File -Force $bundle/.vcpkg-root | Out-Null
     dependencies = @("rapidjson")
 } | ConvertTo-JSON | out-file -enc ascii $manifestdir/vcpkg.json | Out-Null
 
-$a = Run-Vcpkg z-print-config `
+$a = Run-VcpkgAndCaptureOutput z-print-config `
     --vcpkg-root=$bundle `
     --x-manifest-root=$manifestdir `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
@@ -140,7 +137,6 @@ $a = Run-Vcpkg z-print-config `
     --x-install-root=$installRoot `
     --x-packages-root=$packagesRoot `
     --x-scripts-root=$env:VCPKG_ROOT/scripts
-$a
 Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
 
@@ -245,11 +241,10 @@ $env:VCPKG_NO_CI="1"
 $env:TF_BUILD="1"
 $env:CI="1"
 
-$a = Run-Vcpkg z-print-config `
+$a = Run-VcpkgAndCaptureOutput z-print-config `
     --vcpkg-root=$bundle `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
     --x-scripts-root=$env:VCPKG_ROOT/scripts
-$a
 Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
 if ($a[$detected_ci_key] -ne 'VCPKG_NO_CI') {
@@ -257,11 +252,10 @@ if ($a[$detected_ci_key] -ne 'VCPKG_NO_CI') {
 }
 
 Remove-Item env:VCPKG_NO_CI
-$a = Run-Vcpkg z-print-config `
+$a = Run-VcpkgAndCaptureOutput z-print-config `
     --vcpkg-root=$bundle `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
     --x-scripts-root=$env:VCPKG_ROOT/scripts
-$a
 Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
 if ($a[$detected_ci_key] -ne 'Azure_Pipelines') {
@@ -269,11 +263,10 @@ if ($a[$detected_ci_key] -ne 'Azure_Pipelines') {
 }
 
 Remove-Item env:TF_BUILD
-$a = Run-Vcpkg z-print-config `
+$a = Run-VcpkgAndCaptureOutput z-print-config `
     --vcpkg-root=$bundle `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
     --x-scripts-root=$env:VCPKG_ROOT/scripts
-$a
 Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
 if ($a[$detected_ci_key] -ne 'Generic') {
@@ -281,11 +274,10 @@ if ($a[$detected_ci_key] -ne 'Generic') {
 }
 
 Remove-Item env:CI
-$a = Run-Vcpkg z-print-config `
+$a = Run-VcpkgAndCaptureOutput z-print-config `
     --vcpkg-root=$bundle `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
     --x-scripts-root=$env:VCPKG_ROOT/scripts
-$a
 Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
 if ($a[$detected_ci_key] -ne $null) {
