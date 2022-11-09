@@ -447,9 +447,8 @@ endfunction()
                     {
                         port_triplet_vars.insert_or_assign(var_name, "unset");
                     }
-
                 }
-                else // is_cmd_unset
+                else
                 {
                     std::vector<std::string> var_names;
                     if ((trace_relevant.cmd.compare("set") == 0) ||
