@@ -65,7 +65,8 @@ namespace vcpkg::CMakeVars
 
             Optional<const std::unordered_map<std::string, std::string>&> get_tag_vars(
                 const PackageSpec& spec) const override;
-            Optional<std::string> get_triplet_vars(const PackageSpec& spec) const override;
+            Optional < const std::unordered_map<std::string, std::vector<std::string>>&> get_triplet_vars(
+                           const PackageSpec& spec) const override;
 
         public:
             Path create_tag_extraction_file(
@@ -420,9 +421,10 @@ endfunction()
                 return (is_vcpkg_get_tags(t) || is_vcpkg_get_dep_info(t));
             };
 
-            auto is_vcpkg_triplet_file = [](const CMakeTraceLine& t) {
-                return (t.cmd.compare("vcpkg_triplet_file") == 0);
-            };
+            // Could be used to minimize the search space
+            //auto is_vcpkg_triplet_file = [](const CMakeTraceLine& t) {
+            //    return (t.cmd.compare("vcpkg_triplet_file") == 0);
+            //};
             auto is_message = [](const CMakeTraceLine& t) { return (t.cmd.compare("message") == 0); };
             auto is_message_triplet_start = [&](const CMakeTraceLine& t) {
                 return (is_message(t) && (t.args.at(0).compare("start-triplet-contents-0123") == 0));
@@ -622,7 +624,7 @@ endfunction()
         return nullopt;
     }
 
-    Optional<std::string> TripletCMakeVarProvider::get_triplet_vars(const PackageSpec& spec) const
+    Optional <const std::unordered_map<std::string,std::vector<std::string>>&> TripletCMakeVarProvider::get_triplet_vars(const PackageSpec& spec) const
     {
         auto find_itr = triplet_vars.find(spec);
         if (find_itr != triplet_vars.end())
