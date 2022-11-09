@@ -27,11 +27,14 @@ namespace vcpkg::CMakeVars
         virtual Optional<const std::unordered_map<std::string, std::string>&> get_tag_vars(
             const PackageSpec& spec) const = 0;
 
+        virtual Optional<std::string> get_triplet_vars(const PackageSpec& spec) const = 0;
+
+
         virtual void load_generic_triplet_vars(Triplet triplet) const = 0;
 
         virtual void load_dep_info_vars(Span<const PackageSpec> specs, Triplet host_triplet) const = 0;
 
-        virtual void load_tag_vars(Span<const FullPackageSpec> specs,
+        virtual void load_tag_and_triplet_vars(Span<const FullPackageSpec> specs,
                                    const PortFileProvider& port_provider,
                                    Triplet host_triplet) const = 0;
 

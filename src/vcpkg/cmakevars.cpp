@@ -26,7 +26,7 @@ namespace vcpkg::CMakeVars
             install_package_specs.emplace_back(FullPackageSpec{action.spec, action.feature_list});
         }
 
-        load_tag_vars(install_package_specs, port_provider, host_triplet);
+        load_tag_and_triplet_vars(install_package_specs, port_provider, host_triplet);
     }
 
     const std::unordered_map<std::string, std::string>& CMakeVarProvider::get_or_load_dep_info_vars(
@@ -53,7 +53,7 @@ namespace vcpkg::CMakeVars
 
             void load_dep_info_vars(View<PackageSpec> specs, Triplet host_triplet) const override;
 
-            void load_tag_vars(View<FullPackageSpec> specs,
+            void load_tag_and_triplet_vars(View<FullPackageSpec> specs,
                                const PortFileProvider& port_provider,
                                Triplet host_triplet) const override;
 
@@ -65,6 +65,7 @@ namespace vcpkg::CMakeVars
 
             Optional<const std::unordered_map<std::string, std::string>&> get_tag_vars(
                 const PackageSpec& spec) const override;
+            Optional<std::string> get_triplet_vars(const PackageSpec& spec) const override;
 
         public:
             Path create_tag_extraction_file(
@@ -73,11 +74,13 @@ namespace vcpkg::CMakeVars
             Path create_dep_info_extraction_file(const View<PackageSpec> specs) const;
 
             void launch_and_split(const Path& script_path,
-                                  std::vector<std::vector<std::pair<std::string, std::string>>>& vars) const;
+                                  std::vector<std::vector<std::pair<std::string, std::string>>>& vars,
+                                  Optional<std::vector<std::string>&> opt_triplet_hashes = nullopt) const;
 
             const VcpkgPaths& paths;
             mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>> dep_resolution_vars;
             mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>> tag_vars;
+            mutable std::unordered_map<PackageSpec, std::string> triplet_vars;
             mutable std::unordered_map<Triplet, std::unordered_map<std::string, std::string>> generic_triplet_vars;
         };
     }
@@ -107,14 +110,15 @@ namespace vcpkg::CMakeVars
             Strings::append(
                 extraction_file,
                 "get_filename_component(CMAKE_CURRENT_LIST_DIR \"${CMAKE_CURRENT_LIST_FILE}\" DIRECTORY)\n");
-            Strings::append(extraction_file, "set(z_triplet_contents_start 5b1g5d1a6-4fgd-415b-aa5d-81de854ef8ea)\n");
+            Strings::append(extraction_file, "message(\"start-triplet-contents-0123\")\n");
             Strings::append(extraction_file, fs.read_contents(path_to_triplet, VCPKG_LINE_INFO));
-            Strings::append(extraction_file, "set(z_triplet_contents_end 5b1g5d1a6-4fgd-415b-aa5d-81de854ef8ez)\n");
+            Strings::append(extraction_file, "message(\"end-triplet-contents-3210\")");
             Strings::append(extraction_file, "\nendif()\n");
         }
         Strings::append(extraction_file,
                         R"(
 set(CMAKE_CURRENT_LIST_FILE "${_vcpkg_triplet_file_BACKUP_CURRENT_LIST_FILE}")
+unset(_vcpkg_triplet_file_BACKUP_CURRENT_LIST_FILE)
 get_filename_component(CMAKE_CURRENT_LIST_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 endmacro()
 )");
@@ -329,8 +333,9 @@ endfunction()
         }
     };
 
-    void TripletCMakeVarProvider::launch_and_split(
-        const Path& script_path, std::vector<std::vector<std::pair<std::string, std::string>>>& vars) const
+    void TripletCMakeVarProvider::launch_and_split(const Path& script_path,
+                                                   std::vector<std::vector<std::pair<std::string, std::string>>>& vars,
+                                                   Optional<std::vector<std::string>&> opt_triplet_hashes) const
     {
         static constexpr StringLiteral PORT_START_GUID = "d8187afd-ea4a-4fc3-9aa4-a6782e1ed9af";
         static constexpr StringLiteral PORT_END_GUID = "8c504940-be29-4cba-9f8f-6cd83e9d87b7";
@@ -379,6 +384,7 @@ endfunction()
         {
             CMakeTraceLineDeserializer trace_line_des;
             for (auto trace_line_it = std::next(trace_lines.begin()); trace_line_it != trace_lines.end()-1; ++trace_line_it)
+                // trace_lines.end()-1 : since trace always ends with a blank line which cannot be parsed.
             {
                 const auto parsed_json_cmake_trace_line_opt = Json::parse(*trace_line_it);
                 const auto& parsed_json_cmake_trace_line = parsed_json_cmake_trace_line_opt.value_or_exit(VCPKG_LINE_INFO).first;
@@ -388,6 +394,55 @@ endfunction()
             }
         }
         //TODO: Filter results; Define ABI for triplets vars; Inject into ABI tag somehow. 
+        // cmd: vcpkg_get_tags
+        // cmd: vcpkg_get_dep_info
+        // cmd message: (triplet start) d8187afd-ea4a-4fc3-9aa4-a6782e1ed9af PORT_START_GUID - single argument
+        // cmd: vcpkg_triplet_file
+        // cmd: message(\"start-triplet-contents-0123\")
+        // <triplet>
+        // cmd: message(\"end-triplet-contents-3210\")
+        // cmd: message: (triplet end) c35112b6-d1ba-415b-aa5d-81de856ef8eb BLOCK_START_GUID - first argument
+        // BLOCK_END_GUID
+        // PORT_END_GUID - last argument
+
+        // Parse (unexpanded) trace output
+        auto is_vcpkg_get_tags = [](const CMakeTraceLine& t) { return (t.cmd.compare("vcpkg_get_tags") == 0);};
+        auto is_vcpkg_get_dep_info = [](const CMakeTraceLine& t) { return (t.cmd.compare("vcpkg_get_dep_info") == 0);};
+
+        auto is_vcpkg_get_tags_or_dep_info = [&](const CMakeTraceLine& t) { return (is_vcpkg_get_tags(t) || is_vcpkg_get_dep_info(t));};
+
+        auto is_vcpkg_triplet_file = [](const CMakeTraceLine& t) { return (t.cmd.compare("vcpkg_triplet_file") == 0);};
+        auto is_message = [](const CMakeTraceLine& t) { return (t.cmd.compare("message") == 0);};
+        auto is_message_triplet_start = [&](const CMakeTraceLine& t) { return (is_message(t) && (t.args.at(0).compare("start-triplet-contents-0123")==0));};
+        auto is_message_triplet_end = [&](const CMakeTraceLine& t) { return (is_message(t) && (t.args.at(0).compare("end-triplet-contents-3210")==0));};
+        auto is_cmd_set = [](const CMakeTraceLine& t) { return (t.cmd.compare("set") == 0);};
+
+        const auto trace_end = cmake_trace.traces.end();
+        // Find first call block
+        auto tags_or_deps_iter_begin =
+            std::find_if(cmake_trace.traces.begin(), trace_end, is_vcpkg_get_tags_or_dep_info);
+        auto tags_or_deps_iter_end =
+            std::find_if(std::next(tags_or_deps_iter_begin), trace_end, is_vcpkg_get_tags_or_dep_info);
+
+        // Find triplet block
+        auto triplet_start_iter =
+            std::find_if(tags_or_deps_iter_begin, tags_or_deps_iter_end, is_message_triplet_start);
+        auto triplet_end_iter = std::find_if(tags_or_deps_iter_begin, tags_or_deps_iter_end, is_message_triplet_end);
+
+        // Find all sets in the triplet block:
+        std::vector<std::pair<std::string,std::string>> triplet_vars;
+        auto var_set_searcher = std::find_if(triplet_start_iter, triplet_end_iter, is_cmd_set);
+        for (; var_set_searcher != triplet_end_iter;
+             var_set_searcher = std::find_if(std::next(var_set_searcher), triplet_end_iter, is_cmd_set))
+        {
+            const auto set_trace = *var_set_searcher;
+            std::pair<std::string,std::string> value{set_trace.args.at(0),set_trace.args.at(1)}; // needs concat 1-end
+            triplet_vars.emplace_back(std::move(value));
+        }
+
+        // TODO loop over call blocks;
+
+        // Parse cmake message output (expanded)
         const auto end = lines.cend();
 
         auto port_start = std::find(lines.cbegin(), end, PORT_START_GUID);
@@ -466,13 +521,15 @@ endfunction()
         }
     }
 
-    void TripletCMakeVarProvider::load_tag_vars(View<FullPackageSpec> specs,
+    void TripletCMakeVarProvider::load_tag_and_triplet_vars(View<FullPackageSpec> specs,
                                                 const PortFileProvider& port_provider,
                                                 Triplet host_triplet) const
     {
         if (specs.size() == 0) return;
         std::vector<std::pair<const FullPackageSpec*, std::string>> spec_abi_settings;
         spec_abi_settings.reserve(specs.size());
+        std::vector<std::string> triplet_vars_vec;
+        triplet_vars_vec.reserve(specs.size());
 
         for (const FullPackageSpec& spec : specs)
         {
@@ -483,10 +540,11 @@ endfunction()
 
         std::vector<std::vector<std::pair<std::string, std::string>>> vars(spec_abi_settings.size());
         const auto file_path = create_tag_extraction_file(spec_abi_settings);
-        launch_and_split(file_path, vars);
+        launch_and_split(file_path, vars, triplet_vars_vec);
         paths.get_filesystem().remove(file_path, VCPKG_LINE_INFO);
 
         auto var_list_itr = vars.begin();
+        // auto triplet_vars_iter = triplet_vars_vec.begin();
         for (const auto& spec_abi_setting : spec_abi_settings)
         {
             const FullPackageSpec& spec = *spec_abi_setting.first;
@@ -497,9 +555,13 @@ endfunction()
             ctxt.emplace("Z_VCPKG_IS_NATIVE", host_triplet == spec.package_spec.triplet() ? "1" : "0");
 
             tag_vars.emplace(spec.package_spec, std::move(ctxt));
+            //triplet_vars.emplace(spec.package_spec, std::move(*triplet_vars_iter));
+            //++triplet_vars_iter;
         }
     }
 
+
+    // All those function below do the same....
     Optional<const std::unordered_map<std::string, std::string>&> TripletCMakeVarProvider::get_generic_triplet_vars(
         Triplet triplet) const
     {
@@ -529,6 +591,17 @@ endfunction()
     {
         auto find_itr = tag_vars.find(spec);
         if (find_itr != tag_vars.end())
+        {
+            return find_itr->second;
+        }
+
+        return nullopt;
+    }
+
+    Optional<std::string> TripletCMakeVarProvider::get_triplet_vars(const PackageSpec& spec) const
+    {
+        auto find_itr = triplet_vars.find(spec);
+        if (find_itr != triplet_vars.end())
         {
             return find_itr->second;
         }
