@@ -182,6 +182,24 @@ namespace vcpkg
             }
         }
 
+        const auto& final_config = ret.config;
+        if (!final_config.registries.empty())
+        {
+            const auto default_registry = final_config.default_reg.get();
+            const bool is_null_default = (default_registry) ? !default_registry->kind.has_value() : false;
+            const bool has_baseline = (default_registry) ? default_registry->baseline.has_value() : false;
+            if (!is_null_default && !has_baseline)
+            {
+                auto origin =
+                    ret.directory /
+                    ((ret.source == ConfigurationSource::ManifestFile) ? "vcpkg.json" : "vcpkg-configuration.json");
+                msg::println_error(msgConfigurationErrorRegistriesWithoutBaseline,
+                                   msg::path = origin,
+                                   msg::url = vcpkg::docs::registries_url);
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
+
         return ret;
     }
 
@@ -619,7 +637,7 @@ namespace vcpkg
         Debug::print("Using downloads-root: ", downloads, '\n');
 
         {
-            auto config_path = m_pimpl->m_config_dir / "vcpkg-configuration.json";
+            const auto config_path = m_pimpl->m_config_dir / "vcpkg-configuration.json";
             auto maybe_manifest_config = config_from_manifest(m_pimpl->m_manifest_doc);
             auto maybe_json_config = !filesystem.exists(config_path, IgnoreErrors{})
                                          ? nullopt

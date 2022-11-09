@@ -170,6 +170,8 @@
   "CompressFolderFailed": "Failed to compress folder \"{path}\":",
   "_CompressFolderFailed.comment": "An example of {path} is /foo/bar.",
   "ComputingInstallPlan": "Computing installation plan...",
+  "ConfigurationErrorRegistriesWithoutBaseline": "The configuration defined in {path} is invalid.\n\nUsing registries requires that a baseline is set for the default registry or that the default registry is null.\n\nSee {url} for more details.",
+  "_ConfigurationErrorRegistriesWithoutBaseline.comment": "An example of {path} is /foo/bar. An example of {url} is https://github.com/microsoft/vcpkg.",
   "ConflictingFiles": "The following files are already installed in {path} and are in conflict with {spec}",
   "_ConflictingFiles.comment": "An example of {path} is /foo/bar. An example of {spec} is zlib:x64-windows.",
   "ConflictingValuesForOption": "conflicting values specified for '--{option}'.",

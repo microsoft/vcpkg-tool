@@ -766,6 +766,13 @@ namespace vcpkg
                     "Comparing Utf8Decoders with different provenance; this is always an error");
     DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":");
     DECLARE_MESSAGE(ComputingInstallPlan, (), "", "Computing installation plan...");
+    DECLARE_MESSAGE(ConfigurationErrorRegistriesWithoutBaseline,
+                    (msg::path, msg::url),
+                    "",
+                    "The configuration defined in {path} is invalid.\n\n"
+                    "Using registries requires that a baseline is set for the default registry or that the default "
+                    "registry is null.\n\n"
+                    "See {url} for more details.");
     DECLARE_MESSAGE(ConflictingFiles,
                     (msg::path, msg::spec),
                     "",

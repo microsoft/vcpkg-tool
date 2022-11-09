@@ -499,6 +499,7 @@ namespace vcpkg
     REGISTER_MESSAGE(CommandFailed);
     REGISTER_MESSAGE(CompressFolderFailed);
     REGISTER_MESSAGE(ComputingInstallPlan);
+    REGISTER_MESSAGE(ConfigurationErrorRegistriesWithoutBaseline);
     REGISTER_MESSAGE(ConflictingFiles);
     REGISTER_MESSAGE(CMakeUsingExportedLibs);
     REGISTER_MESSAGE(CommunityTriplets);
