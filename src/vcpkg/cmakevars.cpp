@@ -120,8 +120,8 @@ namespace vcpkg::CMakeVars
                 "get_filename_component(CMAKE_CURRENT_LIST_DIR \"${CMAKE_CURRENT_LIST_FILE}\" DIRECTORY)\n");
             Strings::append(extraction_file, "message(\"start-triplet-contents-0123\")\n");
             Strings::append(extraction_file, fs.read_contents(path_to_triplet, VCPKG_LINE_INFO));
-            Strings::append(extraction_file, "message(\"end-triplet-contents-3210\")");
-            Strings::append(extraction_file, "\nendif()\n");
+            Strings::append(extraction_file, "\nmessage(\"end-triplet-contents-3210\")\n");
+            Strings::append(extraction_file, "endif()\n");
         }
         Strings::append(extraction_file,
                         R"(
