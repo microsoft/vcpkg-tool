@@ -330,13 +330,17 @@ jobs:
       condition: and(eq(variables.SignType, 'test'), succeeded())
       inputs:
         SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
-        SigningCert: 8003
+        SigningCert: '8005'
+        SigningPluginSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
+        SigningPluginVersion: 'latest'
     - task: MicroBuildSignMacFiles@1
       displayName: 'Sign and Harden Mac Binaries'
       condition: and(eq(variables.SignType, 'real'), succeeded())
       inputs:
         SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
-        SigningCert: 8023
+        SigningCert: '8025'
+        SigningPluginSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
+        SigningPluginVersion: 'latest'
     - task: MicroBuildSignMacFiles@1
       displayName: 'Notarize Mac Binaries'
       condition: and(eq(variables.SignType, 'real'), succeeded())
@@ -344,6 +348,8 @@ jobs:
         SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
         SigningCert: '8020'
         MacAppName: 'vcpkg'
+        SigningPluginSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
+        SigningPluginVersion: 'latest'
     - task: Powershell@2
       displayName: 'Mint VS Insertion standalone bundle'
       inputs:
