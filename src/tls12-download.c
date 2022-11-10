@@ -1,8 +1,8 @@
 #pragma warning(push)
 // warning C28251: Inconsistent annotation for '_setjmp': this instance has no annotations. See <no file>(0).
-#pragma warning(disable: 28251)
+#pragma warning(disable : 28251)
 // warning C28301: No annotations for first declaration of '__fastfail'. See <no file>(0).
-#pragma warning(disable: 28301)
+#pragma warning(disable : 28301)
 #include <Windows.h>
 #include <process.h>
 #include <winhttp.h>
