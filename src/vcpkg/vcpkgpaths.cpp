@@ -183,7 +183,9 @@ namespace vcpkg
         }
 
         const auto& final_config = ret.config;
-        if (!final_config.registries.empty())
+        const bool has_ports_registries =
+            Util::any_of(final_config.registries, [](auto&& reg) { return reg.kind != "artifact"; });
+        if (has_ports_registries)
         {
             const auto default_registry = final_config.default_reg.get();
             const bool is_null_default = (default_registry) ? !default_registry->kind.has_value() : false;
