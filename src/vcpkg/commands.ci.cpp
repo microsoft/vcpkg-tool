@@ -602,10 +602,10 @@ namespace vcpkg::Commands::CI
                         CacheAvailability::available)
                         continue;
                     print2("Test feature ", spec, '\n');
-                    binary_cache.clear_cache();
                     for (auto&& action : install_plan.install_actions)
                     {
                         action.build_options = backcompat_prohibiting_package_options;
+                        action.build_options.clean_packages = CleanPackages::NO; // The binary cache assumes this
                     }
                     const auto summary = Install::perform(args,
                                                           install_plan,
@@ -625,6 +625,7 @@ namespace vcpkg::Commands::CI
                     }
                 }
             }
+            SetInstalled::adjust_action_plan_to_status_db(action_plan, status_db);
 
             auto summary = Install::perform(
                 args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder, var_provider);
