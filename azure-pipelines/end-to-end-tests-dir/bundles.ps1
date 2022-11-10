@@ -13,16 +13,18 @@ if ($IsWindows) {
 }
 $bundle = Join-Path $TestingRoot "bundle"
 $manifestdir = Join-Path $TestingRoot "manifest"
+$commonArgs = @(
+    "--vcpkg-root=$bundle",
+    "--overlay-triplets=$env:VCPKG_ROOT/triplets",
+    "--overlay-triplets=$env:VCPKG_ROOT/triplets/community",
+    "--x-scripts-root=$env:VCPKG_ROOT/scripts"
+)
 
 # Test classic bundle
 New-Item -ItemType Directory -Force $bundle | Out-Null
 New-Item -ItemType File -Force $bundle/.vcpkg-root | Out-Null
 
-$a = Run-Vcpkg z-print-config `
-    --vcpkg-root=$bundle `
-    --overlay-triplets=$env:VCPKG_ROOT/triplets `
-    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
-    --x-scripts-root=$env:VCPKG_ROOT/scripts
+$a = Run-Vcpkg z-print-config @commonArgs
 $a
 Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
@@ -50,11 +52,7 @@ New-Item -ItemType File -Force $bundle/.vcpkg-root | Out-Null
     readonly = $True
 } | ConvertTo-JSON | out-file -enc ascii $bundle/vcpkg-bundle.json | Out-Null
 
-$a = Run-Vcpkg z-print-config `
-    --vcpkg-root=$bundle `
-    --overlay-triplets=$env:VCPKG_ROOT/triplets `
-    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
-    --x-scripts-root=$env:VCPKG_ROOT/scripts
+$a = Run-Vcpkg z-print-config @commonArgs
 $a
 Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
@@ -88,12 +86,7 @@ New-Item -ItemType File -Force $bundle/.vcpkg-root | Out-Null
     version = "0"
 } | ConvertTo-JSON | out-file -enc ascii $manifestdir/vcpkg.json | Out-Null
 
-$a = Run-Vcpkg z-print-config `
-    --vcpkg-root=$bundle `
-    --x-manifest-root=$manifestdir `
-    --overlay-triplets=$env:VCPKG_ROOT/triplets `
-    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
-    --x-scripts-root=$env:VCPKG_ROOT/scripts
+$a = Run-Vcpkg z-print-config --x-manifest-root=$manifestdir @commonArgs
 $a
 Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
@@ -132,14 +125,11 @@ New-Item -ItemType File -Force $bundle/.vcpkg-root | Out-Null
 } | ConvertTo-JSON | out-file -enc ascii $manifestdir/vcpkg.json | Out-Null
 
 $a = Run-Vcpkg z-print-config `
-    --vcpkg-root=$bundle `
+    @commonArgs `
     --x-manifest-root=$manifestdir `
-    --overlay-triplets=$env:VCPKG_ROOT/triplets `
-    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
     --x-buildtrees-root=$buildtreesRoot `
     --x-install-root=$installRoot `
-    --x-packages-root=$packagesRoot `
-    --x-scripts-root=$env:VCPKG_ROOT/scripts
+    --x-packages-root=$packagesRoot
 $a
 Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
@@ -160,14 +150,11 @@ foreach ($k in $b.keys) {
     }
 }
 
-Run-Vcpkg install zlib --dry-run --vcpkg-root=$bundle `
-    --overlay-triplets=$env:VCPKG_ROOT/triplets `
-    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
+Run-Vcpkg install zlib --dry-run @commonArgs `
     --x-buildtrees-root=$buildtreesRoot `
     --x-builtin-ports-root=$env:VCPKG_ROOT/ports `
     --x-install-root=$installRoot `
-    --x-packages-root=$packagesRoot `
-    --x-scripts-root=$env:VCPKG_ROOT/scripts
+    --x-packages-root=$packagesRoot
 Throw-IfNotFailed
 
 # Testing "usegitregistry"
@@ -176,15 +163,12 @@ $CurrentTest = "Testing bundle.usegitregistry"
     readonly = $True
     usegitregistry = $True
 } | ConvertTo-JSON | out-file -enc ascii $bundle/vcpkg-bundle.json | Out-Null
-Run-Vcpkg install --dry-run --vcpkg-root=$bundle `
+Run-Vcpkg install --dry-run @commonArgs `
     --x-manifest-root=$manifestdir `
-    --overlay-triplets=$env:VCPKG_ROOT/triplets `
-    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
     --x-buildtrees-root=$buildtreesRoot `
     --x-builtin-ports-root=$env:VCPKG_ROOT/ports `
     --x-install-root=$installRoot `
-    --x-packages-root=$packagesRoot `
-    --x-scripts-root=$env:VCPKG_ROOT/scripts
+    --x-packages-root=$packagesRoot
 Throw-IfNotFailed
 
 $manifestdir2 = Join-Path $TestingRoot "manifest2"
@@ -196,26 +180,20 @@ New-Item -ItemType Directory -Force $manifestdir2 | Out-Null
     "builtin-baseline" = "897ff9372f15c032f1e6cd1b97a59b57d66ee5b2"
 } | ConvertTo-JSON | out-file -enc ascii $manifestdir2/vcpkg.json | Out-Null
 
-Run-Vcpkg install --vcpkg-root=$bundle `
+Run-Vcpkg install @commonArgs `
     --x-manifest-root=$manifestdir2 `
-    --overlay-triplets=$env:VCPKG_ROOT/triplets `
-    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
     --x-buildtrees-root=$buildtreesRoot `
     --x-builtin-ports-root=$env:VCPKG_ROOT/ports `
     --x-install-root=$installRoot `
-    --x-packages-root=$packagesRoot `
-    --x-scripts-root=$env:VCPKG_ROOT/scripts
+    --x-packages-root=$packagesRoot
 Throw-IfFailed
 
-Run-Vcpkg search zlib --vcpkg-root=$bundle `
+Run-Vcpkg search zlib @commonArgs `
     --x-manifest-root=$manifestdir2 `
-    --overlay-triplets=$env:VCPKG_ROOT/triplets `
-    --overlay-triplets=$env:VCPKG_ROOT/triplets/community `
     --x-buildtrees-root=$buildtreesRoot `
     --x-builtin-ports-root=$env:VCPKG_ROOT/ports `
     --x-install-root=$installRoot `
-    --x-packages-root=$packagesRoot `
-    --x-scripts-root=$env:VCPKG_ROOT/scripts
+    --x-packages-root=$packagesRoot
 Throw-IfFailed
 
 # Test CI environment detection
@@ -245,10 +223,7 @@ $env:VCPKG_NO_CI="1"
 $env:TF_BUILD="1"
 $env:CI="1"
 
-$a = Run-Vcpkg z-print-config `
-    --vcpkg-root=$bundle `
-    --overlay-triplets=$env:VCPKG_ROOT/triplets `
-    --x-scripts-root=$env:VCPKG_ROOT/scripts
+$a = Run-Vcpkg z-print-config @commonArgs
 $a
 Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
@@ -257,10 +232,7 @@ if ($a[$detected_ci_key] -ne 'VCPKG_NO_CI') {
 }
 
 Remove-Item env:VCPKG_NO_CI
-$a = Run-Vcpkg z-print-config `
-    --vcpkg-root=$bundle `
-    --overlay-triplets=$env:VCPKG_ROOT/triplets `
-    --x-scripts-root=$env:VCPKG_ROOT/scripts
+$a = Run-Vcpkg z-print-config @commonArgs
 $a
 Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
@@ -269,10 +241,7 @@ if ($a[$detected_ci_key] -ne 'Azure_Pipelines') {
 }
 
 Remove-Item env:TF_BUILD
-$a = Run-Vcpkg z-print-config `
-    --vcpkg-root=$bundle `
-    --overlay-triplets=$env:VCPKG_ROOT/triplets `
-    --x-scripts-root=$env:VCPKG_ROOT/scripts
+$a = Run-Vcpkg z-print-config @commonArgs
 $a
 Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
@@ -281,10 +250,7 @@ if ($a[$detected_ci_key] -ne 'Generic') {
 }
 
 Remove-Item env:CI
-$a = Run-Vcpkg z-print-config `
-    --vcpkg-root=$bundle `
-    --overlay-triplets=$env:VCPKG_ROOT/triplets `
-    --x-scripts-root=$env:VCPKG_ROOT/scripts
+$a = Run-Vcpkg z-print-config @commonArgs
 $a
 Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)

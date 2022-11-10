@@ -103,7 +103,10 @@ namespace vcpkg
         return Strings::format("%.4g ns", nanos_as_double);
     }
 
-    ElapsedTimer::ElapsedTimer() noexcept : m_start_tick(std::chrono::high_resolution_clock::now()) { }
+    ElapsedTimer::ElapsedTimer() noexcept
+        : m_start_tick(std::chrono::high_resolution_clock::now().time_since_epoch().count())
+    {
+    }
 
     std::string ElapsedTime::to_string() const { return format_time_userfriendly(as<std::chrono::nanoseconds>()); }
     void ElapsedTime::to_string(std::string& into) const

@@ -41,7 +41,7 @@ jobs:
       displayName: 'Rush install, build and test vcpkg-artifacts'
     - bash: |
         export CXXFLAGS="-fprofile-arcs -ftest-coverage -fPIC -O0"
-        cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -B build.amd64.debug
+        cmake '-DCMAKE_CXX_FLAGS=-fsanitize=undefined -fsanitize=address' -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -B build.amd64.debug
         make -j 2 -C build.amd64.debug
       displayName: "Build vcpkg with CMake"
       failOnStderr: true
@@ -89,7 +89,7 @@ jobs:
         git -C "$VCPKG_ROOT" checkout `cat vcpkg-init/vcpkg-scripts-sha.txt`
       displayName: "Clone vcpkg repo to serve as root"
     - bash: |
-        cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -B build.amd64.debug
+        cmake '-DCMAKE_CXX_FLAGS=-fsanitize=undefined -fsanitize=address' -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -B build.amd64.debug
         make -j 2 -C build.amd64.debug
       displayName: "Build vcpkg with CMake"
       failOnStderr: true

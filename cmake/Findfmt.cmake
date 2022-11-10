@@ -4,7 +4,13 @@ option(VCPKG_DEPENDENCY_EXTERNAL_FMT "Use an external version of the fmt library
 # builds which have restricted internet access; see azure-pipelines/signing.yml
 # Note that the SHA512 is the same, so vcpkg-tool contributors need not be concerned that we built
 # with different content.
-set(VCPKG_FMT_URL "https://github.com/fmtlib/fmt/archive/refs/tags/9.1.0.tar.gz" CACHE STRING "URL to the fmt release tarball to use.")
+# A cache variable cannot be used it here because it will break contributors' builds on fmt update.
+if("$CACHE{VCPKG_FMT_URL}" MATCHES "^https://github.com/fmtlib/fmt/archive/refs/tags")
+    unset(VCPKG_FMT_URL CACHE) # Fix upgrade
+endif()
+if(NOT VCPKG_FMT_URL)
+    set(VCPKG_FMT_URL "https://github.com/fmtlib/fmt/archive/refs/tags/9.1.0.tar.gz")
+endif()
 
 include(FetchContent)
 FetchContent_Declare(
