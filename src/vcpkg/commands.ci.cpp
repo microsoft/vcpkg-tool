@@ -614,7 +614,8 @@ namespace vcpkg::Commands::CI
                                                           status_db,
                                                           binary_cache,
                                                           null_build_logs_recorder(),
-                                                          var_provider);
+                                                          var_provider,
+                                                          Remove::Purge::NO); // The binary cache assumes this
                     switch (summary.results.back().build_result.value_or_exit(VCPKG_LINE_INFO).code)
                     {
                         case vcpkg::BuildResult::SUCCEEDED:

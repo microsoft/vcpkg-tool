@@ -511,7 +511,8 @@ namespace vcpkg
                                     StatusParagraphs& status_db,
                                     BinaryCache& binary_cache,
                                     const IBuildLogsRecorder& build_logs_recorder,
-                                    const CMakeVars::CMakeVarProvider& var_provider)
+                                    const CMakeVars::CMakeVarProvider& var_provider,
+                                    Remove::Purge purge)
     {
         const ElapsedTimer timer;
         std::vector<SpecSummary> results;
@@ -521,7 +522,7 @@ namespace vcpkg
         for (auto&& action : action_plan.remove_actions)
         {
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
-            Remove::perform_remove_plan_action(paths, action, Remove::Purge::YES, &status_db);
+            Remove::perform_remove_plan_action(paths, action, purge, &status_db);
             results.back().build_result.emplace(BuildResult::REMOVED);
         }
 

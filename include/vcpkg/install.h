@@ -9,6 +9,7 @@
 #include <vcpkg/binaryparagraph.h>
 #include <vcpkg/build.h>
 #include <vcpkg/dependencies.h>
+#include <vcpkg/remove.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
@@ -115,7 +116,8 @@ namespace vcpkg
                                StatusParagraphs& status_db,
                                BinaryCache& binary_cache,
                                const IBuildLogsRecorder& build_logs_recorder,
-                               const CMakeVars::CMakeVarProvider& var_provider);
+                               const CMakeVars::CMakeVarProvider& var_provider,
+                               Remove::Purge purge = Remove::Purge::YES);
 
         void perform_and_exit(const VcpkgCmdArguments& args,
                               const VcpkgPaths& paths,
