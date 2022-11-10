@@ -35,6 +35,8 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#include <numeric>
+
 using namespace vcpkg;
 
 namespace
