@@ -546,6 +546,7 @@ namespace vcpkg::Commands::CI
             Checks::check_exit(VCPKG_LINE_INFO,
                                !(!(test_core || test_combined || test_seperatly) && !ports_to_test.empty()),
                                "You specify which port should be checked for features, but not which checks");
+            std::unordered_set<std::string> known_failures;
             for (const auto port : ports_to_test)
             {
                 PackageSpec package_spec(port->core_paragraph->name, target_triplet);
@@ -591,6 +592,15 @@ namespace vcpkg::Commands::CI
                     }
 
                     compute_all_abis(paths, install_plan, var_provider, status_db);
+                    if (Util::any_of(install_plan.install_actions, [&known_failures](const auto& install_action) {
+                            return Util::Sets::contains(known_failures,
+                                                        install_action.package_abi().value_or_exit(VCPKG_LINE_INFO));
+                        }))
+                    {
+                        print2(spec, " will fail tested\n");
+                        continue;
+                    }
+
                     // only install the absolute minimum
                     SetInstalled::adjust_action_plan_to_status_db(install_plan, status_db);
                     if (install_plan.install_actions.empty()) // already installed
@@ -615,6 +625,18 @@ namespace vcpkg::Commands::CI
                                                           null_build_logs_recorder(),
                                                           var_provider);
                     binary_cache.clear_cache();
+                    for (const auto& result : summary.results)
+                    {
+                        switch (result.build_result.value_or_exit(VCPKG_LINE_INFO).code)
+                        {
+                            case BuildResult::BUILD_FAILED:
+                            case BuildResult::POST_BUILD_CHECKS_FAILED:
+                            case BuildResult::FILE_CONFLICTS:
+                                known_failures.insert(result.get_abi().value_or_exit(VCPKG_LINE_INFO));
+                                break;
+                            default: break;
+                        }
+                    }
                     switch (summary.results.back().build_result.value_or_exit(VCPKG_LINE_INFO).code)
                     {
                         case vcpkg::BuildResult::SUCCEEDED:
@@ -624,6 +646,33 @@ namespace vcpkg::Commands::CI
                         default: print2("Feature ", spec, " failed with \n");
                     }
                 }
+            }
+
+            if (!known_failures.empty())
+            {
+                // remove known failures from the action_plan.install_actions
+                std::set<PackageSpec> known_failure_specs;
+                for (const auto& install_action : action_plan.install_actions)
+                {
+                    if (Util::Sets::contains(known_failures,
+                                             install_action.package_abi().value_or_exit(VCPKG_LINE_INFO)))
+                    {
+                        split_specs->known.emplace(install_action.spec, BuildResult::BUILD_FAILED);
+                        known_failure_specs.emplace(install_action.spec);
+                    }
+                    else if (Util::any_of(install_action.package_dependencies, [&](const PackageSpec& spec) {
+                                 return Util::Sets::contains(known_failure_specs, spec);
+                             }))
+                    {
+                        split_specs->known.emplace(install_action.spec,
+                                                   BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES);
+                        known_failure_specs.emplace(install_action.spec);
+                    }
+                }
+                Util::erase_remove_if(action_plan.install_actions,
+                                      [&known_failure_specs](const InstallPlanAction& action) {
+                                          return Util::Sets::contains(known_failure_specs, action.spec);
+                                      });
             }
             SetInstalled::adjust_action_plan_to_status_db(action_plan, status_db);
 
