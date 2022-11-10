@@ -151,7 +151,7 @@ namespace vcpkg
         Path source_location;
         /// Should model SPDX PackageDownloadLocation. Empty implies NOASSERTION.
         /// See https://spdx.github.io/spdx-spec/package-information/#77-package-download-location-field
-        std::string registry_location;
+        Optional<RegistryLocation> registry_location;
     };
 
     void print_error_message(Span<const std::unique_ptr<ParseControlErrorInfo>> error_info_list);

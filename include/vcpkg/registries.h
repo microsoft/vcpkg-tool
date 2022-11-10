@@ -50,14 +50,13 @@ namespace vcpkg
         LockDataType lockdata;
         bool modified = false;
     };
-
     struct PathAndLocation
     {
         Path path;
 
         /// Should model SPDX PackageDownloadLocation. Empty implies NOASSERTION.
         /// See https://spdx.github.io/spdx-spec/package-information/#77-package-download-location-field
-        std::string location;
+        Optional<RegistryLocation> registry_location;
     };
 
     struct RegistryEntry

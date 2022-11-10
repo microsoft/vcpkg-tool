@@ -7,6 +7,14 @@
 
 namespace vcpkg
 {
+    struct RegistryLocation
+    {
+        std::string kind;
+        std::string location;
+        std::string baseline;
+        std::string spdx_location;
+    };
+
     struct Version
     {
         Version() noexcept;

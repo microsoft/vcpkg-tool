@@ -532,7 +532,7 @@ namespace vcpkg::Paragraphs
                 ret.paragraphs.push_back({
                     std::move(*spgh),
                     std::move(port_location.get()->path),
-                    std::move(port_location.get()->location),
+                    std::move(port_location.get()->registry_location),
                 });
             }
             else

@@ -160,7 +160,15 @@ namespace
         {
             if (v == version)
             {
-                return PathAndLocation{root, "git+https://github.com/Microsoft/vcpkg#ports/" + name};
+                return PathAndLocation{
+                    root,
+                    RegistryLocation{
+                        "git",
+                        "https://github.com/Microsoft/vcpkg",
+                        "",
+                        "git+https://github.com/Microsoft/vcpkg#ports/" + name,
+                    },
+                };
             }
 
             return {Strings::format("Error: no version entry for %s at version %s.\n"
@@ -742,7 +750,8 @@ namespace
                     "pull`.\nAvailable versions:\n",
                     Strings::join("", port_versions, [](const Version& v) { return Strings::concat("    ", v, "\n"); }),
                     "\nSee `vcpkg help versioning` for more information."),
-                expected_right_tag};
+                expected_right_tag,
+            };
         }
 
         const auto& git_tree = git_trees[it - port_versions.begin()];
@@ -750,7 +759,12 @@ namespace
             .map([&git_tree](Path&& p) -> PathAndLocation {
                 return {
                     std::move(p),
-                    "git+https://github.com/Microsoft/vcpkg@" + git_tree,
+                    RegistryLocation{
+                        "git",
+                        "https://github.com/Microsoft/vcpkg",
+                        git_tree,
+                        "git+https://github.com/Microsoft/vcpkg@" + git_tree,
+                    },
                 };
             });
     }
@@ -766,7 +780,7 @@ namespace
         }
         return PathAndLocation{
             version_paths[it - port_versions.begin()],
-            "",
+            nullopt,
         };
     }
     // } FilesystemRegistryEntry::RegistryEntry
@@ -802,7 +816,8 @@ namespace
                     ".\nAvailable versions:\n",
                     Strings::join("", port_versions, [](const Version& v) { return Strings::concat("    ", v, "\n"); }),
                     "\nSee `vcpkg help versioning` for more information."),
-                expected_right_tag};
+                expected_right_tag,
+            };
         }
 
         const auto& git_tree = git_trees[it - port_versions.begin()];
@@ -810,7 +825,12 @@ namespace
             [this, &git_tree](Path&& p) -> PathAndLocation {
                 return {
                     std::move(p),
-                    Strings::concat("git+", parent.m_repo, "@", git_tree),
+                    RegistryLocation{
+                        "git",
+                        parent.m_repo,
+                        git_tree,
+                        Strings::concat("git+", parent.m_repo, "@", git_tree),
+                    },
                 };
             });
     }
@@ -826,10 +846,7 @@ namespace
             git_trees.push_back(version_entry.git_tree);
         }
     }
-
     // } GitRegistryEntry::RegistryEntry
-
-    // } RegistryEntry
 }
 
 // deserializers

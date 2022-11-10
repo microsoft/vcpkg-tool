@@ -413,8 +413,21 @@ namespace vcpkg
         }
         if (scfl)
         {
-            if (!builtin_ports_dir.empty() &&
-                !Strings::case_insensitive_ascii_starts_with(scfl->source_location, builtin_ports_dir))
+            if (auto registry_location = scfl->registry_location.get())
+            {
+                // if the port comes from a registry print the registry location instead
+                if (!registry_location->location.empty())
+                {
+                    Strings::append(ret, "\n    -- from: ", registry_location->location);
+
+                    if (!registry_location->baseline.empty())
+                    {
+                        Strings::append(ret, " @ ", registry_location->baseline);
+                    }
+                }
+            }
+            else if (!builtin_ports_dir.empty() &&
+                     !Strings::case_insensitive_ascii_starts_with(scfl->source_location, builtin_ports_dir))
             {
                 Strings::append(ret, " -- ", scfl->source_location);
             }

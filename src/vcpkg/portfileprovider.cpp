@@ -25,7 +25,10 @@ namespace
         {
             if (v == version)
             {
-                return PathAndLocation{root, ""};
+                return PathAndLocation{
+                    root,
+                    nullopt,
+                };
             }
             return Strings::format("Version %s not found; only %s is available.", v.to_string(), version.to_string());
         }
@@ -179,7 +182,7 @@ namespace vcpkg
                                 return std::make_unique<SourceControlFileAndLocation>(SourceControlFileAndLocation{
                                     std::move(*scf),
                                     std::move(path->path),
-                                    std::move(path->location),
+                                    std::move(path->registry_location),
                                 });
                             }
                             else

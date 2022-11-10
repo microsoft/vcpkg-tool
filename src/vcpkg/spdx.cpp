@@ -155,11 +155,15 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
     auto& rels = doc.insert("relationships", Json::Array());
     auto& packages = doc.insert("packages", Json::Array());
     {
+        auto spdx_location =
+            scfl.registry_location.map([](const auto& location) { return location.spdx_location; })
+                .value_or(noassert);
+
         auto& obj = packages.push_back(Json::Object());
         obj.insert("name", action.spec.name());
         obj.insert("SPDXID", "SPDXRef-port");
         obj.insert("versionInfo", cpgh.to_version().to_string());
-        obj.insert("downloadLocation", scfl.registry_location.empty() ? noassert : scfl.registry_location);
+        obj.insert("downloadLocation", spdx_location);
         if (!cpgh.homepage.empty())
         {
             obj.insert("homepage", cpgh.homepage);
