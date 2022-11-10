@@ -35,56 +35,6 @@ On CentOS try the following:
     endif()
 endfunction()
 
-function(vcpkg_target_add_warning_options TARGET)
-    if(MSVC)
-        # either MSVC, or clang-cl
-        target_compile_options(${TARGET} PRIVATE -FC -permissive- -utf-8)
-
-        if(VCPKG_DEVELOPMENT_WARNINGS)
-            target_compile_options(${TARGET} PRIVATE -W4)
-            if(VCPKG_COMPILER STREQUAL "clang")
-                target_compile_options(${TARGET} PRIVATE
-                    -Wmissing-prototypes
-                    -Wno-missing-field-initializers
-                    )
-            else()
-                # -wd6553 is to workaround a violation in the Windows SDK
-                # c:\program files (x86)\windows kits\10\include\10.0.22000.0\um\winreg.h(780) : warning C6553: The annotation for function 'RegOpenKeyExW' on _Param_(3) does not apply to a value type.
-                target_compile_options(${TARGET} PRIVATE -analyze -analyze:stacksize 39000 -wd6553)
-            endif()
-        endif()
-
-        if(VCPKG_WARNINGS_AS_ERRORS)
-            target_compile_options(${TARGET} PRIVATE -WX)
-        endif()
-    else()
-        if(VCPKG_DEVELOPMENT_WARNINGS)
-            target_compile_options(${TARGET} PRIVATE
-                -Wall -Wextra -Wpedantic
-                -Wno-unknown-pragmas
-                -Wno-missing-field-initializers
-                -Wno-redundant-move
-                )
-
-            # GCC and clang have different names for the same warning
-            if(VCPKG_COMPILER STREQUAL "gcc")
-                target_compile_options(${TARGET} PRIVATE
-                    -Wmissing-declarations
-                    )
-            elseif(VCPKG_COMPILER STREQUAL "clang")
-                target_compile_options(${TARGET} PRIVATE
-                    -Wmissing-prototypes
-                    -Wno-range-loop-analysis
-                    )
-            endif()
-        endif()
-
-        if(VCPKG_WARNINGS_AS_ERRORS)
-            target_compile_options(${TARGET} PRIVATE -Werror)
-        endif()
-    endif()
-endfunction()
-
 function(vcpkg_target_add_sourcelink target)
     cmake_parse_arguments(PARSE_ARGV 1 "arg" "" "REPO;REF" "")
     if(DEFINED arg_UNPARSED_ARGUMENTS)
