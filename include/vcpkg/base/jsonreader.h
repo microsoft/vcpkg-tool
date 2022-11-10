@@ -8,6 +8,7 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/view.h>
+
 #include <type_traits>
 
 namespace vcpkg::Json
@@ -319,7 +320,7 @@ namespace vcpkg::Json
 
         virtual Optional<double> visit_number(Reader&, double value) override
         {
-            if(!std::isfinite(value)) return nullopt;
+            if (!std::isfinite(value)) return nullopt;
             return value;
         }
 

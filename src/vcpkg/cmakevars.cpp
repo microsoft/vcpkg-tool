@@ -1,17 +1,18 @@
-#include <numeric>
 #include <vcpkg/base/hash.h>
+#include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
-#include <vcpkg/base/jsonreader.h>
 
 #include <vcpkg/buildenvironment.h>
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/vcpkgpaths.h>
+
+#include <numeric>
 
 using namespace vcpkg;
 namespace vcpkg::CMakeVars
@@ -55,8 +56,8 @@ namespace vcpkg::CMakeVars
             void load_dep_info_vars(View<PackageSpec> specs, Triplet host_triplet) const override;
 
             void load_tag_and_triplet_vars(View<FullPackageSpec> specs,
-                               const PortFileProvider& port_provider,
-                               Triplet host_triplet) const override;
+                                           const PortFileProvider& port_provider,
+                                           Triplet host_triplet) const override;
 
             Optional<const std::unordered_map<std::string, std::string>&> get_generic_triplet_vars(
                 Triplet triplet) const override;
@@ -66,8 +67,8 @@ namespace vcpkg::CMakeVars
 
             Optional<const std::unordered_map<std::string, std::string>&> get_tag_vars(
                 const PackageSpec& spec) const override;
-            Optional < const std::unordered_map<std::string, std::string>&> get_triplet_vars(
-                           const PackageSpec& spec) const override;
+            Optional<const std::unordered_map<std::string, std::string>&> get_triplet_vars(
+                const PackageSpec& spec) const override;
 
             CMakeTraceOutput parse_cmake_trace(const std::vector<std::string>& trace_lines) const;
 
@@ -88,7 +89,8 @@ namespace vcpkg::CMakeVars
             const VcpkgPaths& paths;
             mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>> dep_resolution_vars;
             mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>> tag_vars;
-            mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>> triplet_vars; // I feel like I could also add --x-cmake-args into this variable
+            mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>>
+                triplet_vars; // I feel like I could also add --x-cmake-args into this variable
             mutable std::unordered_map<Triplet, std::unordered_map<std::string, std::string>> generic_triplet_vars;
         };
     }
@@ -288,8 +290,10 @@ endfunction()
         {
             Optional<CMakeTraceVersion> x;
             CMakeTraceVersion& ret = x.emplace();
-            r.required_object_field("the major version", obj, "major", ret.major, Json::NaturalNumberDeserializer::instance);
-            r.required_object_field("the minor version", obj, "minor", ret.minor, Json::NaturalNumberDeserializer::instance);
+            r.required_object_field(
+                "the major version", obj, "major", ret.major, Json::NaturalNumberDeserializer::instance);
+            r.required_object_field(
+                "the minor version", obj, "minor", ret.minor, Json::NaturalNumberDeserializer::instance);
 
             return x;
         }
@@ -302,19 +306,26 @@ endfunction()
         {
             Optional<CMakeTraceLine> x;
             CMakeTraceLine& ret = x.emplace();
-            //TODO: figure out what goes in here
+            // TODO: figure out what goes in here
             static Json::ArrayDeserializer<Json::StringDeserializer> args_des("an array of arguments",
-                                                                    Json::StringDeserializer{"an argument"});
+                                                                              Json::StringDeserializer{"an argument"});
             static Json::StringDeserializer cmd_deserializer("the cmake command");
             static Json::StringDeserializer file_deserializer("the file executing the command");
             r.required_object_field("the arguments", obj, "args", ret.args, args_des);
             r.required_object_field("the command", obj, "cmd", ret.cmd, cmd_deserializer);
             r.required_object_field("the file name", obj, "file", ret.file, Json::PathDeserializer::instance);
-            r.required_object_field("the internal execution frame", obj, "frame", ret.frame, Json::NaturalNumberDeserializer::instance);
-            r.required_object_field("the global execution frame", obj, "global_frame", ret.global_frame, Json::NaturalNumberDeserializer::instance);
-            r.required_object_field("the line number", obj, "line", ret.line, Json::NaturalNumberDeserializer::instance);
+            r.required_object_field(
+                "the internal execution frame", obj, "frame", ret.frame, Json::NaturalNumberDeserializer::instance);
+            r.required_object_field("the global execution frame",
+                                    obj,
+                                    "global_frame",
+                                    ret.global_frame,
+                                    Json::NaturalNumberDeserializer::instance);
+            r.required_object_field(
+                "the line number", obj, "line", ret.line, Json::NaturalNumberDeserializer::instance);
             r.optional_object_field(obj, "line_end", ret.line_end.emplace(), Json::NaturalNumberDeserializer::instance);
-            r.required_object_field("the execution time", obj, "time", ret.time, Json::RealNumberDeserializer::instance);
+            r.required_object_field(
+                "the execution time", obj, "time", ret.time, Json::RealNumberDeserializer::instance);
             return x;
         }
     };
@@ -350,11 +361,10 @@ endfunction()
         return cmake_trace;
     }
 
-     void TripletCMakeVarProvider::analyze_cmake_trace(
-        const CMakeTraceOutput& cmake_trace,
-            std::vector<std::unordered_map<std::string, std::string>>& result) const
+    void TripletCMakeVarProvider::analyze_cmake_trace(
+        const CMakeTraceOutput& cmake_trace, std::vector<std::unordered_map<std::string, std::string>>& result) const
     {
-         // Basic trace order:
+        // Basic trace order:
         //  cmd: vcpkg_get_tags or vcpkg_get_dep_info
         //  cmd message: (triplet start) d8187afd-ea4a-4fc3-9aa4-a6782e1ed9af PORT_START_GUID - single argument
         //  cmd: vcpkg_triplet_file
@@ -386,32 +396,31 @@ endfunction()
         };
         auto is_relevant_command = [](const CMakeTraceLine& t) {
             static std::vector<std::string> cmake_commands{"set",
-                                                             "unset",
-                                                             "cmake_path",
-                                                             "execute_process",
-                                                             "file",
-                                                             "find_file",
-                                                             "find_library",
-                                                             "find_path",
-                                                             "find_program",
-                                                             "get_cmake_property",
-                                                             "get_directory_property",
-                                                             "get_filename_component",
-                                                             "get_property",
-                                                             "list",
-                                                             "math",
-                                                             "option",
-                                                             "separate_arguments",
-                                                             "string",
-                                                             "site_name" 
-            };
+                                                           "unset",
+                                                           "cmake_path",
+                                                           "execute_process",
+                                                           "file",
+                                                           "find_file",
+                                                           "find_library",
+                                                           "find_path",
+                                                           "find_program",
+                                                           "get_cmake_property",
+                                                           "get_directory_property",
+                                                           "get_filename_component",
+                                                           "get_property",
+                                                           "list",
+                                                           "math",
+                                                           "option",
+                                                           "separate_arguments",
+                                                           "string",
+                                                           "site_name"};
             for (const auto& to_compare : cmake_commands)
                 if (t.cmd.compare(to_compare) == 0) return true;
 
             return false;
         };
         auto is_cmd_unset = [](const CMakeTraceLine& t) { return (t.cmd.compare("unset") == 0); };
-        
+
         const auto trace_end = cmake_trace.traces.end();
         // Find first call block
         auto tags_or_deps_iter_begin =
@@ -451,15 +460,13 @@ endfunction()
                 else
                 {
                     std::vector<std::string> var_names;
-                    if ((trace_relevant.cmd.compare("set") == 0) ||
-                        (trace_relevant.cmd.compare("option") == 0) ||
+                    if ((trace_relevant.cmd.compare("set") == 0) || (trace_relevant.cmd.compare("option") == 0) ||
                         (trace_relevant.cmd.compare("separate_arguments") == 0) ||
                         (trace_relevant.cmd.compare("site_name") == 0) ||
                         // get_cmake_property, get_directory_property, get_filename_component, get_property
-                        (trace_relevant.cmd.substr(0, 4).compare("get_") ==  0) ||  
+                        (trace_relevant.cmd.substr(0, 4).compare("get_") == 0) ||
                         // find_file, find_library, find_path, find_program
-                        (trace_relevant.cmd.substr(0, 5).compare("find_") == 0) 
-                       ) 
+                        (trace_relevant.cmd.substr(0, 5).compare("find_") == 0))
                     {
                         var_names.emplace_back(trace_relevant.args[0]);
                     }
@@ -473,10 +480,10 @@ endfunction()
                         {
                             var_names.emplace_back(*trace_relevant.args.end());
                         }
-                        else if (trace_relevant.args[0].compare("COMPARE") == 0 || 
+                        else if (trace_relevant.args[0].compare("COMPARE") == 0 ||
                                  trace_relevant.args[0].compare("HASH") == 0 ||
-                                 trace_relevant.args[0].compare("NATIVE_PATH") == 0 || 
-                                 trace_relevant.args[0].substr(0, 3).compare("IS_") == 0 || 
+                                 trace_relevant.args[0].compare("NATIVE_PATH") == 0 ||
+                                 trace_relevant.args[0].substr(0, 3).compare("IS_") == 0 ||
                                  trace_relevant.args[0].substr(0, 4).compare("HAS_") == 0)
                         {
                             var_names.emplace_back(*trace_relevant.args.end());
@@ -492,8 +499,7 @@ endfunction()
                                  trace_relevant.args[0].compare("REMOVE_FILENAME") == 0 ||
                                  trace_relevant.args[0].compare("REPLACE_FILENAME") == 0 ||
                                  trace_relevant.args[0].compare("REMOVE_EXTENSION") == 0 ||
-                                 trace_relevant.args[0].compare("REPLACE_EXTENSION") == 0 
-                                )
+                                 trace_relevant.args[0].compare("REPLACE_EXTENSION") == 0)
                         {
                             auto output_var =
                                 std::find(trace_relevant.args.begin(), trace_relevant.args.end(), "OUTPUT_VARIABLE");
@@ -513,7 +519,7 @@ endfunction()
                             std::find(trace_relevant.args.begin(), trace_relevant.args.end(), "OUTPUT_VARIABLE");
                         if (output_var != trace_relevant.args.end())
                         {
-                            var_names.emplace_back(*(++ output_var));
+                            var_names.emplace_back(*(++output_var));
                         }
                         output_var =
                             std::find(trace_relevant.args.begin(), trace_relevant.args.end(), "RESULT_VARIABLE");
@@ -538,8 +544,7 @@ endfunction()
                     {
                         if (trace_relevant.args[0].compare("READ") == 0 ||
                             trace_relevant.args[0].compare("STRINGS") == 0 ||
-                            trace_relevant.args[0].compare("MD5") == 0 ||
-                            trace_relevant.args[0].compare("SHA1") == 0 ||
+                            trace_relevant.args[0].compare("MD5") == 0 || trace_relevant.args[0].compare("SHA1") == 0 ||
                             trace_relevant.args[0].compare("SHA224") == 0 ||
                             trace_relevant.args[0].compare("SHA256") == 0 ||
                             trace_relevant.args[0].compare("SHA384") == 0 ||
@@ -549,19 +554,17 @@ endfunction()
                             trace_relevant.args[0].compare("SHA3_384") == 0 ||
                             trace_relevant.args[0].compare("SHA3_512") == 0 ||
                             trace_relevant.args[0].compare("TIMESTAMP") == 0 ||
-                            trace_relevant.args[0].compare("SIZE") == 0 || 
+                            trace_relevant.args[0].compare("SIZE") == 0 ||
                             trace_relevant.args[0].compare("READ_SYMLINK") == 0 ||
                             trace_relevant.args[0].compare("REAL_PATH") == 0 ||
                             trace_relevant.args[0].compare("TO_CMAKE_PATH") == 0 ||
-                            trace_relevant.args[0].compare("TO_NATIVE_PATH") == 0
-                            )
+                            trace_relevant.args[0].compare("TO_NATIVE_PATH") == 0)
                         {
                             var_names.emplace_back(trace_relevant.args[2]);
                         }
                         else if (trace_relevant.args[0].compare("GLOB") == 0 ||
                                  trace_relevant.args[0].compare("GLOB_RECURSE") == 0 ||
-                                 trace_relevant.args[0].compare("RELATIVE_PATH") == 0 
-                            )
+                                 trace_relevant.args[0].compare("RELATIVE_PATH") == 0)
                         {
                             var_names.emplace_back(trace_relevant.args[1]);
                         }
@@ -579,7 +582,6 @@ endfunction()
                                 var_names.emplace_back(*out_vars_iter);
                             }
                         }
-                            
                     }
                     else if (trace_relevant.cmd.compare("math") == 0)
                     {
@@ -589,8 +591,7 @@ endfunction()
                     {
                         if (trace_relevant.args[0].compare("FIND") == 0 ||
                             trace_relevant.args[0].compare("REPLACE") == 0 ||
-                            trace_relevant.args[0].compare("REPEAT") == 0
-                            )
+                            trace_relevant.args[0].compare("REPEAT") == 0)
                         {
                             var_names.emplace_back(trace_relevant.args[3]);
                         }
@@ -605,22 +606,21 @@ endfunction()
                             }
                         }
                         else if (trace_relevant.args[0].compare("MD5") == 0 ||
-                            trace_relevant.args[0].compare("SHA1") == 0 ||
-                            trace_relevant.args[0].compare("SHA224") == 0 ||
-                            trace_relevant.args[0].compare("SHA256") == 0 ||
-                            trace_relevant.args[0].compare("SHA384") == 0 ||
-                            trace_relevant.args[0].compare("SHA512") == 0 ||
-                            trace_relevant.args[0].compare("SHA3_224") == 0 ||
-                            trace_relevant.args[0].compare("SHA3_256") == 0 ||
-                            trace_relevant.args[0].compare("SHA3_384") == 0 ||
-                            trace_relevant.args[0].compare("SHA3_512") == 0 ||
-                            trace_relevant.args[0].compare("TIMESTAMP") == 0 ||
-                            trace_relevant.args[0].compare("CONCAT")
-                            )
+                                 trace_relevant.args[0].compare("SHA1") == 0 ||
+                                 trace_relevant.args[0].compare("SHA224") == 0 ||
+                                 trace_relevant.args[0].compare("SHA256") == 0 ||
+                                 trace_relevant.args[0].compare("SHA384") == 0 ||
+                                 trace_relevant.args[0].compare("SHA512") == 0 ||
+                                 trace_relevant.args[0].compare("SHA3_224") == 0 ||
+                                 trace_relevant.args[0].compare("SHA3_256") == 0 ||
+                                 trace_relevant.args[0].compare("SHA3_384") == 0 ||
+                                 trace_relevant.args[0].compare("SHA3_512") == 0 ||
+                                 trace_relevant.args[0].compare("TIMESTAMP") == 0 ||
+                                 trace_relevant.args[0].compare("CONCAT"))
                         {
                             var_names.emplace_back(trace_relevant.args[1]);
                         }
-                        //TODO: a lot of extra cases
+                        // TODO: a lot of extra cases
                     }
                     else
                     {
@@ -629,18 +629,19 @@ endfunction()
                     auto args_concat = Strings::join(";", trace_relevant.args);
                     for (auto& var_name : var_names)
                     {
-                        port_triplet_vars.insert_or_assign(var_name, Strings::concat(trace_relevant.cmd,"(",std::move(args_concat),")"));
+                        port_triplet_vars.insert_or_assign(
+                            var_name, Strings::concat(trace_relevant.cmd, "(", std::move(args_concat), ")"));
                     }
                 }
             };
             tags_or_deps_iter_begin = tags_or_deps_iter_end;
             result.emplace_back(std::move(port_triplet_vars));
         }
-
     }
 
-    void TripletCMakeVarProvider::launch_and_split(const Path& script_path,
-                                                   std::vector<std::vector<std::pair<std::string, std::string>>>& vars,
+    void TripletCMakeVarProvider::launch_and_split(
+        const Path& script_path,
+        std::vector<std::vector<std::pair<std::string, std::string>>>& vars,
         Optional<std::vector<std::unordered_map<std::string, std::string>>&> opt_triplet_vars) const
     {
         const auto& fs = paths.get_filesystem();
@@ -650,10 +651,11 @@ endfunction()
         static constexpr StringLiteral BLOCK_START_GUID = "c35112b6-d1ba-415b-aa5d-81de856ef8eb";
         static constexpr StringLiteral BLOCK_END_GUID = "e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f";
 
-        const auto trace_output = Path(script_path.parent_path())/"0.vcpkg_tags.trace";
+        const auto trace_output = Path(script_path.parent_path()) / "0.vcpkg_tags.trace";
         const auto trace_redirect = std::string("--trace-redirect=") + trace_output.c_str();
-        const auto cmd_launch_cmake = vcpkg::make_cmake_cmd(paths, script_path, {}, {{"--trace-format=json-v1"}, {trace_redirect}});
-        //TODO: delete trace file after read!
+        const auto cmd_launch_cmake =
+            vcpkg::make_cmake_cmd(paths, script_path, {}, {{"--trace-format=json-v1"}, {trace_redirect}});
+        // TODO: delete trace file after read!
 
         std::vector<std::string> lines;
         auto const exit_code = cmd_execute_and_stream_lines(
@@ -661,7 +663,7 @@ endfunction()
                                    [&](StringView sv) { lines.emplace_back(sv.begin(), sv.end()); },
                                    default_working_directory)
                                    .value_or_exit(VCPKG_LINE_INFO);
-                
+
         if (exit_code != 0)
         {
             Checks::msg_exit_with_message(
@@ -677,7 +679,7 @@ endfunction()
 
             CMakeTraceOutput cmake_trace = parse_cmake_trace(trace_lines);
             // Parse (unexpanded) trace output
-            analyze_cmake_trace(cmake_trace, *triplet_vars_out); 
+            analyze_cmake_trace(cmake_trace, *triplet_vars_out);
         }
         // Parse cmake message output (expanded)
         const auto end = lines.cend();
@@ -760,13 +762,13 @@ endfunction()
     }
 
     void TripletCMakeVarProvider::load_tag_and_triplet_vars(View<FullPackageSpec> specs,
-                                                const PortFileProvider& port_provider,
-                                                Triplet host_triplet) const
+                                                            const PortFileProvider& port_provider,
+                                                            Triplet host_triplet) const
     {
         if (specs.size() == 0) return;
         std::vector<std::pair<const FullPackageSpec*, std::string>> spec_abi_settings;
         spec_abi_settings.reserve(specs.size());
-        std::vector<std::unordered_map<std::string,std::string>> triplet_vars_vec;
+        std::vector<std::unordered_map<std::string, std::string>> triplet_vars_vec;
         triplet_vars_vec.reserve(specs.size());
 
         for (const FullPackageSpec& spec : specs)
@@ -780,7 +782,7 @@ endfunction()
         const auto file_path = create_tag_extraction_file(spec_abi_settings);
         launch_and_split(file_path, vars, triplet_vars_vec);
         paths.get_filesystem().remove(file_path, VCPKG_LINE_INFO);
-        
+
         auto var_list_itr = vars.begin();
         auto triplet_vars_iter = triplet_vars_vec.begin();
         for (const auto& spec_abi_setting : spec_abi_settings)
@@ -797,7 +799,6 @@ endfunction()
             ++triplet_vars_iter;
         }
     }
-
 
     // All those function below do the same....
     Optional<const std::unordered_map<std::string, std::string>&> TripletCMakeVarProvider::get_generic_triplet_vars(
@@ -836,7 +837,8 @@ endfunction()
         return nullopt;
     }
 
-    Optional <const std::unordered_map<std::string, std::string>&> TripletCMakeVarProvider::get_triplet_vars(const PackageSpec& spec) const
+    Optional<const std::unordered_map<std::string, std::string>&> TripletCMakeVarProvider::get_triplet_vars(
+        const PackageSpec& spec) const
     {
         auto find_itr = triplet_vars.find(spec);
         if (find_itr != triplet_vars.end())

@@ -1,4 +1,3 @@
-#include <numeric>
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
@@ -540,9 +539,8 @@ namespace vcpkg
         }
         else
         {
-            return triplet_entry.triplet_infos_without_compiler.get_lazy(toolchain_hash, [&]() -> std::string {
-                return toolchain_hash;
-            });
+            return triplet_entry.triplet_infos_without_compiler.get_lazy(
+                toolchain_hash, [&]() -> std::string { return toolchain_hash; });
         }
     }
 
