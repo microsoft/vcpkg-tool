@@ -12,6 +12,10 @@ if(NOT VCPKG_FMT_URL)
     set(VCPKG_FMT_URL "https://github.com/fmtlib/fmt/archive/refs/tags/9.1.0.tar.gz")
 endif()
 
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
 include(FetchContent)
 FetchContent_Declare(
     fmt
