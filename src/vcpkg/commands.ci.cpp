@@ -605,7 +605,6 @@ namespace vcpkg::Commands::CI
                     for (auto&& action : install_plan.install_actions)
                     {
                         action.build_options = backcompat_prohibiting_package_options;
-                        action.build_options.clean_packages = CleanPackages::NO; // The binary cache assumes this
                     }
                     const auto summary = Install::perform(args,
                                                           install_plan,
@@ -614,8 +613,8 @@ namespace vcpkg::Commands::CI
                                                           status_db,
                                                           binary_cache,
                                                           null_build_logs_recorder(),
-                                                          var_provider,
-                                                          Remove::Purge::NO); // The binary cache assumes this
+                                                          var_provider);
+                    binary_cache.clear_cache();
                     switch (summary.results.back().build_result.value_or_exit(VCPKG_LINE_INFO).code)
                     {
                         case vcpkg::BuildResult::SUCCEEDED:
