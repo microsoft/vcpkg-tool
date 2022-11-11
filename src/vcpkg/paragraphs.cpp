@@ -586,7 +586,16 @@ namespace vcpkg::Paragraphs
             auto maybe_spgh = try_load_port(fs, path);
             if (const auto spgh = maybe_spgh.get())
             {
-                ret.paragraphs.push_back({std::move(*spgh), std::move(path)});
+                ret.paragraphs.push_back({
+                    std::move(*spgh),
+                    std::move(path),
+                    RegistryLocation{
+                        "overlay",
+                        "", // no baseline
+                        "", // path is most likely PII so we don't need it
+                        nullopt,
+                    },
+                });
             }
             else
             {

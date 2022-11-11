@@ -380,7 +380,16 @@ namespace vcpkg
                         auto maybe_scf = Paragraphs::try_load_port(m_fs, ports_dir);
                         if (auto scfp = maybe_scf.get())
                         {
-                            SourceControlFileAndLocation scfl{std::move(*scfp), ports_dir};
+                            SourceControlFileAndLocation scfl{
+                                std::move(*scfp),
+                                ports_dir,
+                                RegistryLocation{
+                                    "overlay",
+                                    "", // no baseline
+                                    "", // path is most likely PII so we don't need it
+                                    nullopt,
+                                },
+                            };
                             auto name = scfl.source_control_file->core_paragraph->name;
                             auto it = m_overlay_cache.emplace(std::move(name), std::move(scfl)).first;
                             Checks::check_exit(VCPKG_LINE_INFO, it->second.get());
