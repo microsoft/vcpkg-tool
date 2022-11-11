@@ -1308,46 +1308,30 @@ namespace vcpkg
 
     void track_install_plan(ActionPlan& plan)
     {
-        struct TelemetryAction
-        {
-            enum Action
-            {
-                Install,
-                Remove
-            };
-
-            Action action;
-            std::string port_sha;
-            std::string triplet_sha;
-            std::string version_sha;
-            std::string kind;
-            std::string origin;
-
-            std::string serialize() const
-            {
-                if (action == TelemetryAction::Remove)
-                {
-                    // installplan_1 uses a $R prefix to distinguish remove actions
-                    return fmt::format("$R{}:{}", port_sha, triplet_sha);
-                }
-                return fmt::format("{}:{}:{}", port_sha, triplet_sha, version_sha);
-            }
-        };
-
         Cache<Triplet, std::string> triplet_hashes;
         auto hash_triplet = [&triplet_hashes](Triplet t) -> const std::string& {
             return triplet_hashes.get_lazy(
                 t, [t]() { return Hash::get_string_hash(t.canonical_name(), Hash::Algorithm::Sha256); });
         };
 
-        std::vector<TelemetryAction> telemetry_plan_actions;
+        std::vector<std::string> installplan_1;
+        std::vector<std::string> actions;
+        std::vector<std::string> ports;
+        std::vector<std::string> triplets;
+        std::vector<std::string> versions;
+        std::vector<std::string> origins;
+
         for (auto&& action : plan.remove_actions)
         {
-            telemetry_plan_actions.emplace_back(TelemetryAction{
-                TelemetryAction::Remove,
-                Hash::get_string_sha256(action.spec.name()),
-                hash_triplet(action.spec.triplet()),
-            });
+            const auto port_sha = Hash::get_string_sha256(action.spec.name());
+            const auto triplet_sha = hash_triplet(action.spec.triplet());
+
+            actions.push_back("r");
+            ports.push_back(port_sha);
+            triplets.push_back(triplet_sha);
+            versions.push_back("");
+            origins.push_back("");
+            installplan_1.push_back(fmt::format("R${}:{}", port_sha, triplet_sha));
         }
 
         for (auto&& action : plan.install_actions)
@@ -1355,49 +1339,25 @@ namespace vcpkg
             const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
             const auto& location = scfl.registry_location;
 
-            const auto& version = scfl.to_version().to_string();
-            const auto& kind = location.kind;
-            const auto& origin = location.location;
+            const auto port_sha = Hash::get_string_sha256(action.spec.name());
+            const auto triplet_sha = hash_triplet(action.spec.triplet());
+            const auto version_sha = Hash::get_string_sha256(scfl.to_version().to_string());
+            const auto& origin = location.kind;
 
-            telemetry_plan_actions.emplace_back(TelemetryAction{
-                TelemetryAction::Install,
-                Hash::get_string_sha256(action.spec.name()),
-                hash_triplet(action.spec.triplet()),
-                Hash::get_string_sha256(version),
-                kind,
-                Hash::get_string_sha256(origin),
-            });
+            actions.push_back("i");
+            ports.push_back(port_sha);
+            triplets.push_back(triplet_sha);
+            versions.push_back(version_sha);
+            origins.push_back(origin);
+            installplan_1.push_back(fmt::format("{}:{}:{}", port_sha, triplet_sha, version_sha));
         }
 
-        std::vector<std::string> installplan_1;
-        std::vector<StringView> actions;
-        std::vector<StringView> ports;
-        std::vector<StringView> triplets;
-        std::vector<StringView> versions;
-        std::vector<StringView> origins;
-        std::vector<StringView> registries;
-        for (auto&& action : telemetry_plan_actions)
-        {
-            ports.push_back(action.port_sha);
-            triplets.push_back(action.triplet_sha);
-
-            if (action.action == TelemetryAction::Remove)
-            {
-                actions.push_back("r");
-                versions.push_back({});
-                origins.push_back({});
-                registries.push_back({});
-            }
-            else
-            {
-                actions.push_back("i");
-                versions.push_back(action.version_sha);
-                origins.push_back(action.kind);
-                registries.push_back(action.origin);
-            }
-
-            installplan_1.push_back(action.serialize());
-        }
+        // all arrays should have the same number of elements
+        Checks::check_exit(VCPKG_LINE_INFO, actions.size() == ports.size());
+        Checks::check_exit(VCPKG_LINE_INFO, actions.size() == triplets.size());
+        Checks::check_exit(VCPKG_LINE_INFO, actions.size() == versions.size());
+        Checks::check_exit(VCPKG_LINE_INFO, actions.size() == origins.size());
+        Checks::check_exit(VCPKG_LINE_INFO, actions.size() == installplan_1.size());
 
         MetricsSubmission metrics;
         metrics.track_string(StringMetric::InstallPlan_1, Strings::join(",", installplan_1));
