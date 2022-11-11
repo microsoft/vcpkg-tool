@@ -1721,7 +1721,11 @@ namespace vcpkg
                 case VcpkgTripletVar::LOAD_VCVARS_ENV:
                     if (variable_value.empty())
                     {
+                        #ifdef WIN32
                         load_vcvars_env = !external_toolchain_file.has_value();
+                        #else
+                        load_vcvars_env = false;
+                        #endif
                     }
                     else
                     {
