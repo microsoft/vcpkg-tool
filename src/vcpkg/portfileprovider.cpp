@@ -291,7 +291,16 @@ namespace vcpkg
                             auto& scf = *scfp;
                             if (scf->core_paragraph->name == port_name)
                             {
-                                return SourceControlFileAndLocation{std::move(scf), ports_dir};
+                                return SourceControlFileAndLocation{
+                                    std::move(scf),
+                                    ports_dir,
+                                    RegistryLocation{
+                                        "overlay",
+                                        "", // no baseline
+                                        "", // path is most likely PII so we don't need it
+                                        nullopt,
+                                    },
+                                };
                             }
                         }
                         else
@@ -315,7 +324,16 @@ namespace vcpkg
                             auto& scf = *scfp;
                             if (scf->core_paragraph->name == port_name)
                             {
-                                return SourceControlFileAndLocation{std::move(scf), std::move(ports_spec)};
+                                return SourceControlFileAndLocation{
+                                    std::move(scf),
+                                    std::move(ports_spec),
+                                    RegistryLocation{
+                                        "overlay",
+                                        "", // no baseline
+                                        "", // path is most likely PII so we don't need it
+                                        nullopt,
+                                    },
+                                };
                             }
                             Checks::msg_exit_maybe_upgrade(
                                 VCPKG_LINE_INFO,

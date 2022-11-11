@@ -1121,7 +1121,9 @@ namespace vcpkg
                                                         only_downloads,
                                                         print_cmake_usage);
         }
+        // endif (manifest_mode)
 
+        // if (classic mode)
         PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
@@ -1326,12 +1328,32 @@ namespace vcpkg
             const auto port_sha = Hash::get_string_sha256(action.spec.name());
             const auto triplet_sha = hash_triplet(action.spec.triplet());
 
+            // remove
             actions.push_back("r");
             ports.push_back(port_sha);
             triplets.push_back(triplet_sha);
             versions.push_back("");
             origins.push_back("");
             installplan_1.push_back(fmt::format("R${}:{}", port_sha, triplet_sha));
+        }
+
+        for (auto&& action : plan.already_installed)
+        {
+            const auto port_sha = Hash::get_string_sha256(action.spec.name());
+            const auto triplet_sha = hash_triplet(action.spec.triplet());
+
+            const auto& installed = action.installed_package.value_or_exit(VCPKG_LINE_INFO);
+            const auto& version = installed.core->package.get_version();
+            const auto full_version_sha = Hash::get_string_sha256(version.to_string());
+            const auto version_sha = Hash::get_string_sha256(version.text());
+
+            // skip
+            actions.push_back("s");
+            ports.push_back(port_sha);
+            triplets.push_back(triplet_sha);
+            versions.push_back(version_sha);
+            origins.push_back("already_installed");
+            installplan_1.push_back(fmt::format("{}:{}:{}", port_sha, triplet_sha, full_version_sha));
         }
 
         for (auto&& action : plan.install_actions)
@@ -1341,15 +1363,16 @@ namespace vcpkg
 
             const auto port_sha = Hash::get_string_sha256(action.spec.name());
             const auto triplet_sha = hash_triplet(action.spec.triplet());
-            const auto version_sha = Hash::get_string_sha256(scfl.to_version().to_string());
-            const auto& origin = location.kind;
+            const auto full_version_sha = Hash::get_string_sha256(scfl.to_version().to_string());
+            const auto version_sha = Hash::get_string_sha256(scfl.to_version().text());
 
+            // install
             actions.push_back("i");
             ports.push_back(port_sha);
             triplets.push_back(triplet_sha);
             versions.push_back(version_sha);
-            origins.push_back(origin);
-            installplan_1.push_back(fmt::format("{}:{}:{}", port_sha, triplet_sha, version_sha));
+            origins.push_back(location.kind);
+            installplan_1.push_back(fmt::format("{}:{}:{}", port_sha, triplet_sha, full_version_sha));
         }
 
         // all arrays should have the same number of elements
