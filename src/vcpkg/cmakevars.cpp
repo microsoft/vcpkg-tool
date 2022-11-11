@@ -152,7 +152,7 @@ endmacro()
         Strings::append(extraction_file, R"(
 
 function(vcpkg_get_tags PORT FEATURES VCPKG_TRIPLET_ID VCPKG_ABI_SETTINGS_FILE)
-    message("d8187afd-ea4a-4fc3-9aa4-a6782e1ed9af")
+    message("\nd8187afd-ea4a-4fc3-9aa4-a6782e1ed9af\n")
     vcpkg_triplet_file(${VCPKG_TRIPLET_ID})
 
     # GUID used as a flag - "cut here line"
@@ -233,7 +233,7 @@ endfunction()
         Strings::append(extraction_file, R"(
 
 function(vcpkg_get_dep_info PORT VCPKG_TRIPLET_ID)
-    message("d8187afd-ea4a-4fc3-9aa4-a6782e1ed9af")
+    message("\nd8187afd-ea4a-4fc3-9aa4-a6782e1ed9af\n")
     vcpkg_triplet_file(${VCPKG_TRIPLET_ID})
 
     # GUID used as a flag - "cut here line"
