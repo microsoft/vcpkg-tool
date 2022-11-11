@@ -163,8 +163,8 @@ namespace
                 return PathAndLocation{
                     root,
                     RegistryLocation{
-                        "git",
-                        "https://github.com/Microsoft/vcpkg",
+                        "builtin-filesystem",
+                        root.generic_u8string(),
                         "",
                         "git+https://github.com/Microsoft/vcpkg#ports/" + name,
                     },
@@ -760,7 +760,7 @@ namespace
                 return {
                     std::move(p),
                     RegistryLocation{
-                        "git",
+                        "builtin-git",
                         "https://github.com/Microsoft/vcpkg",
                         git_tree,
                         "git+https://github.com/Microsoft/vcpkg@" + git_tree,
@@ -778,9 +778,16 @@ namespace
         {
             return Strings::concat("Error: No version entry for ", port_name, " at version ", version, ".");
         }
+
+        const auto& path = version_paths[it - port_versions.begin()];
         return PathAndLocation{
-            version_paths[it - port_versions.begin()],
-            nullopt,
+            path,
+            RegistryLocation{
+                "filesystem",
+                path.generic_u8string(),
+                "",
+                nullopt,
+            },
         };
     }
     // } FilesystemRegistryEntry::RegistryEntry

@@ -134,6 +134,11 @@ namespace vcpkg
         {StringMetric::DetectedCiEnvironment, "detected_ci_environment", "Generic"},
         // spec:triplet:version,...
         {StringMetric::InstallPlan_1, "installplan_1", plan_example},
+        {StringMetric::InstallPlan_2_Actions, "installplan_2_actions", plan_example},
+        {StringMetric::InstallPlan_2_Origins, "installplan_2_origins", plan_example},
+        {StringMetric::InstallPlan_2_Ports, "installplan_2_ports", plan_example},
+        {StringMetric::InstallPlan_2_Triplets, "installplan_2_triplets", plan_example},
+        {StringMetric::InstallPlan_2_Versions, "installplan_2_versions", plan_example},
         {StringMetric::ListFile, "listfile", "update to new format"},
         {StringMetric::RegistriesDefaultRegistryKind, "registries-default-registry-kind", "builtin-files"},
         {StringMetric::RegistriesKindsUsed, "registries-kinds-used", "git,filesystem"},

@@ -27,7 +27,12 @@ namespace
             {
                 return PathAndLocation{
                     root,
-                    nullopt,
+                    RegistryLocation{
+                        "overlay",
+                        root.generic_u8string(),
+                        "",
+                        nullopt,
+                    },
                 };
             }
             return Strings::format("Version %s not found; only %s is available.", v.to_string(), version.to_string());

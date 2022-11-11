@@ -56,7 +56,7 @@ namespace vcpkg
 
         /// Should model SPDX PackageDownloadLocation. Empty implies NOASSERTION.
         /// See https://spdx.github.io/spdx-spec/package-information/#77-package-download-location-field
-        Optional<RegistryLocation> registry_location;
+        RegistryLocation registry_location;
     };
 
     struct RegistryEntry

@@ -12,7 +12,7 @@ namespace vcpkg
         std::string kind;
         std::string location;
         std::string baseline;
-        std::string spdx_location;
+        Optional<std::string> spdx_location;
     };
 
     struct Version
@@ -21,7 +21,16 @@ namespace vcpkg
         Version(std::string&& value, int port_version);
         Version(const std::string& value, int port_version);
 
+        // Returns a version string in the form of "{version}#{port version}"
+        //
+        // If port version is 0, the "#{port version}" is not included.
+        // If you need only the version part without the port version suffix use Version::text() instead.
         std::string to_string() const;
+
+        // Sets `out` to a version string in the form of "{m_text}#{m_port_version}"
+        //
+        // If port version is 0, the "#{port version}" is not included.
+        // If you need only the version part without the port version suffix use Version::text() instead.
         void to_string(std::string& out) const;
 
         friend bool operator==(const Version& left, const Version& right);
