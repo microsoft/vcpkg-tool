@@ -6,6 +6,10 @@ option(VCPKG_DEPENDENCY_CMAKERC "CMake-based C++ resource compiler" OFF)
 # with different content.
 set(VCPKG_CMAKERC_URL "https://github.com/vector-of-bool/cmrc/archive/refs/tags/2.0.1.tar.gz" CACHE STRING "URL to the cmrc release tarball to use.")
 
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
 include(FetchContent)
 FetchContent_Declare(
     CMakeRC

@@ -895,8 +895,9 @@ namespace vcpkg
                                                Encoding encoding)
     {
         const ElapsedTimer timer;
+        static std::atomic_int32_t id_counter{1000};
+        const auto id = Strings::format("%4i", id_counter.fetch_add(1, std::memory_order_relaxed));
 #if defined(_WIN32)
-        const auto proc_id = std::to_string(::GetCurrentProcessId());
         using vcpkg::g_ctrl_c_state;
 
         g_ctrl_c_state.transition_to_spawn_process();
@@ -907,7 +908,6 @@ namespace vcpkg
         g_ctrl_c_state.transition_from_spawn_process();
 #else  // ^^^ _WIN32 // !_WIN32 vvv
         Checks::check_exit(VCPKG_LINE_INFO, encoding == Encoding::Utf8);
-        const auto proc_id = std::to_string(::getpid());
 
         std::string actual_cmd_line;
         if (wd.working_directory.empty())
@@ -925,7 +925,7 @@ namespace vcpkg
                                   .extract();
         }
 
-        Debug::print(proc_id, ": popen(", actual_cmd_line, ")\n");
+        Debug::print(id, ": popen(", actual_cmd_line, ")\n");
         // Flush stdout before launching external process
         fflush(stdout);
 
@@ -968,7 +968,7 @@ namespace vcpkg
         g_subprocess_stats += elapsed;
         if (const auto pec = exit_code.get())
         {
-            Debug::print(proc_id,
+            Debug::print(id,
                          ": cmd_execute_and_stream_data() returned ",
                          *pec,
                          " after ",
