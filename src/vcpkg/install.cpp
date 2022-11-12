@@ -457,10 +457,18 @@ namespace vcpkg
             switch (result.build_result.value_or_exit(VCPKG_LINE_INFO).code)
             {
                 case BuildResult::SUCCEEDED:
-                case BuildResult::REMOVED: continue;
-                default: return true;
+                case BuildResult::REMOVED:
+                case BuildResult::DOWNLOADED:
+                case BuildResult::EXCLUDED: continue;
+                case BuildResult::BUILD_FAILED:
+                case BuildResult::POST_BUILD_CHECKS_FAILED:
+                case BuildResult::FILE_CONFLICTS:
+                case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
+                case BuildResult::CACHE_MISSING: return true;
+                default: Checks::unreachable(VCPKG_LINE_INFO);
             }
         }
+
         return false;
     }
 
