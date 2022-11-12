@@ -21,7 +21,7 @@ $testProjects | % {
 Write-Trace "test re-serializing every manifest"
 $manifestDir = "$TestingRoot/manifest-dir"
 Copy-Item -Path "$env:VCPKG_ROOT/ports" -Destination $manifestDir -recurse -Force -Filter vcpkg.json
-& git init $manifestDir && git -C $manifestDir add . && git -C $manifestDir commit -m "baseline"
+& git init $manifestDir && git -C $manifestDir add . && git -C $manifestDir -c user.name='vcpkg-test' -c user.email='my@example.com' commit -m "baseline"
 Throw-IfFailed
 Run-Vcpkg format-manifest --all --x-builtin-ports-root=$manifestDir/ports
 Throw-IfFailed
