@@ -600,6 +600,13 @@ namespace vcpkg
     REGISTER_MESSAGE(ExportingAlreadyBuiltPackages);
     REGISTER_MESSAGE(ExportingMaintenanceTool);
     REGISTER_MESSAGE(ExportingPackage);
+    REGISTER_MESSAGE(ExportPortFilesMissing);
+    REGISTER_MESSAGE(ExportPortIgnoreSuffixNoSubdir);
+    REGISTER_MESSAGE(ExportPortIgnoreSuffixNoVersion);
+    REGISTER_MESSAGE(ExportPortPathExistsAndNotEmpty);
+    REGISTER_MESSAGE(ExportPortVersionNotFound);
+    REGISTER_MESSAGE(ExportPortVersionsDbFileMissing);
+    REGISTER_MESSAGE(ExportPortSuccess);
     REGISTER_MESSAGE(ExportPrefabRequiresAndroidTriplet);
     REGISTER_MESSAGE(ExportUnsupportedInManifest);
     REGISTER_MESSAGE(FailedToCheckoutRepo);

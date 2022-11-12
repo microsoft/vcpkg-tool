@@ -1010,6 +1010,33 @@ namespace vcpkg
                     "The following packages are already built and will be exported:");
     DECLARE_MESSAGE(ExportingMaintenanceTool, (), "", "Exporting maintenance tool...");
     DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
+    DECLARE_MESSAGE(ExportPortFilesMissing,
+                    (msg::package_name, msg::path),
+                    "",
+                    "Missing port files for {package_name}\n"
+                    "Expected {path} to contain the port files.\n"
+                    "Make sure that the port name is correct.");
+    DECLARE_MESSAGE(ExportPortIgnoreSuffixNoSubdir,
+                    (),
+                    "'-add-version-suffix' and '--no-subdir' are command-line options and should be left untranslated",
+                    "Ignoring option --add-version-suffix because option --no-subdir was passed.");
+    DECLARE_MESSAGE(ExportPortIgnoreSuffixNoVersion,
+                    (),
+                    "'--add-version-suffix' is a command-line option and should be left untranslated",
+                    "Ignoring option --add-version-suffix because no version argument was passed.");
+    DECLARE_MESSAGE(ExportPortPathExistsAndNotEmpty,
+                    (msg::path),
+                    "'--force' is a command-line option and should be left untranslated",
+                    "Export path {path} is not empty.\n"
+                    "Use option --force to overwrite existing files.");
+    DECLARE_MESSAGE(ExportPortVersionNotFound, (msg::version), "", "Version {version} not found");
+    DECLARE_MESSAGE(ExportPortVersionsDbFileMissing,
+                    (msg::package_name, msg::path),
+                    "",
+                    "Versions database file for {package_name} is missing.\n"
+                    "Expected file {path} to exist.\n"
+                    "Make sure that the port name is correct.");
+    DECLARE_MESSAGE(ExportPortSuccess, (msg::path), "", "Port files have been exported to {path}");
     DECLARE_MESSAGE(ExportPrefabRequiresAndroidTriplet, (), "", "export prefab requires an Android triplet.");
     DECLARE_MESSAGE(ExportUnsupportedInManifest,
                     (),
