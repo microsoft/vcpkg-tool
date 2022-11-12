@@ -1,0 +1,5 @@
+{
+    "name": "vcpkg-test-hash-additional",
+    "version": "0",
+    "description": "A port that inspects the abi",
+}
