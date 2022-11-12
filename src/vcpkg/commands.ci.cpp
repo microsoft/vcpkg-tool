@@ -572,7 +572,7 @@ namespace vcpkg::Commands::CI
                         }
                     }
                 }
-                if (test_features_combined && all_features.size() > test_features_seperatly ? size_t{2} : size_t{1})
+                if (test_features_combined && all_features.size() > (test_features_seperatly ? size_t{2} : size_t{1}))
                 {
                     specs_to_test.emplace_back(package_spec, all_features);
                 }
