@@ -102,11 +102,11 @@ namespace vcpkg::Commands::CI
     static constexpr StringLiteral OPTION_OUTPUT_HASHES = "output-hashes";
     static constexpr StringLiteral OPTION_PARENT_HASHES = "parent-hashes";
     static constexpr StringLiteral OPTION_SKIPPED_CASCADE_COUNT = "x-skipped-cascade-count";
-    static constexpr StringLiteral OPTION_TEST_CORE_FEATURE = "test-core-feature";
-    static constexpr StringLiteral OPTION_TEST_COMBINED_FEATURES = "test-combined-features";
+    static constexpr StringLiteral OPTION_TEST_FEATURE_CORE = "test-feature-core";
+    static constexpr StringLiteral OPTION_TEST_FEATURES_COMBINED = "test-features-combined";
     static constexpr StringLiteral OPTION_TEST_FEATURES_SEPERATLY = "test-features-seperatly";
-    static constexpr StringLiteral OPTION_TEST_FEATURES_PORTS = "test-features-of-ports";
-    static constexpr StringLiteral OPTION_TEST_FEATURES_ALL_PORTS = "test-features-of-all-ports";
+    static constexpr StringLiteral OPTION_RUN_FEATURE_TESTS_PORTS = "run-feature-tests-for-ports";
+    static constexpr StringLiteral OPTION_RUN_FEATURE_TESTS_ALL_PORTS = "run-feature-tests-for-all-ports";
 
     static constexpr std::array<CommandSetting, 9> CI_SETTINGS = {{
         {OPTION_EXCLUDE, "Comma separated list of ports to skip"},
@@ -119,7 +119,7 @@ namespace vcpkg::Commands::CI
          "File to read package hashes for a parent CI state, to reduce the set of changed packages"},
         {OPTION_SKIPPED_CASCADE_COUNT,
          "Asserts that the number of --exclude and supports skips exactly equal this number"},
-        {OPTION_TEST_FEATURES_PORTS,
+        {OPTION_RUN_FEATURE_TESTS_PORTS,
          "A comma seperated list of ports for which the specified feature tests should be run"},
     }};
 
@@ -130,10 +130,10 @@ namespace vcpkg::Commands::CI
          "Indicates that 'Passing, remove from fail list' results should not be emitted."},
         {OPTION_SKIP_FAILURES, "Indicates that ports marked `=fail` in ci.baseline.txt should be skipped."},
         {OPTION_XUNIT_ALL, "Report also unchanged ports to the XUnit output (internal)"},
-        {OPTION_TEST_FEATURES_ALL_PORTS, "Runs the specified tests for all ports"},
-        {OPTION_TEST_CORE_FEATURE, "Tests the 'core' feature for every specified port"},
+        {OPTION_RUN_FEATURE_TESTS_ALL_PORTS, "Runs the specified tests for all ports"},
+        {OPTION_TEST_FEATURE_CORE, "Tests the 'core' feature for every specified port"},
         {OPTION_TEST_FEATURES_SEPERATLY, "Tests every feature of a port seperatly for every specified port"},
-        {OPTION_TEST_COMBINED_FEATURES, "Tests the combination of every feature of a port for every specified port"},
+        {OPTION_TEST_FEATURES_COMBINED, "Tests the combination of every feature of a port for every specified port"},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -285,9 +285,9 @@ namespace vcpkg::Commands::CI
 
     static auto get_ports_to_test_with_features(const ParsedArguments& args, ActionPlan& action_plan)
     {
-        const auto all_ports = Util::Sets::contains(args.switches, OPTION_TEST_FEATURES_ALL_PORTS);
+        const auto all_ports = Util::Sets::contains(args.switches, OPTION_RUN_FEATURE_TESTS_ALL_PORTS);
         std::vector<std::string> ports;
-        auto iter = args.settings.find(OPTION_TEST_FEATURES_PORTS);
+        auto iter = args.settings.find(OPTION_RUN_FEATURE_TESTS_PORTS);
         if (iter != args.settings.end())
         {
             ports = Strings::split(iter->second, ',');
@@ -375,6 +375,20 @@ namespace vcpkg::Commands::CI
 
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         const auto& settings = options.settings;
+
+        const auto test_feature_core = Util::Sets::contains(options.switches, OPTION_TEST_FEATURE_CORE);
+        const auto test_features_combined = Util::Sets::contains(options.switches, OPTION_TEST_FEATURES_COMBINED);
+        const auto test_features_seperatly = Util::Sets::contains(options.switches, OPTION_TEST_FEATURES_SEPERATLY);
+
+        const auto run_tests_all_ports = Util::Sets::contains(options.switches, OPTION_RUN_FEATURE_TESTS_ALL_PORTS);
+        const auto run_tests_ports_list = Util::Sets::contains(options.settings, OPTION_RUN_FEATURE_TESTS_PORTS);
+        {
+            const auto tests_selected = test_feature_core || test_features_combined || test_features_seperatly;
+            const auto ports_selected = run_tests_all_ports || run_tests_ports_list;
+            Checks::check_exit(VCPKG_LINE_INFO,
+                               (tests_selected && ports_selected) || (!tests_selected && !ports_selected),
+                               "You specify a flag to test features, but not which port should be checked");
+        }
 
         BinaryCache binary_cache{args, paths};
 
@@ -535,25 +549,14 @@ namespace vcpkg::Commands::CI
             StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
             // test port features
-            const auto test_core = Util::Sets::contains(options.switches, OPTION_TEST_CORE_FEATURE);
-            const auto test_combined = Util::Sets::contains(options.switches, OPTION_TEST_COMBINED_FEATURES);
-            const auto test_seperatly = Util::Sets::contains(options.switches, OPTION_TEST_FEATURES_SEPERATLY);
-
-            auto ports_to_test = get_ports_to_test_with_features(options, action_plan);
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               !((test_core || test_combined || test_seperatly) && ports_to_test.empty()),
-                               "You specify a flag to test features, but not which port should be checked");
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               !(!(test_core || test_combined || test_seperatly) && !ports_to_test.empty()),
-                               "You specify which port should be checked for features, but not which checks");
             std::unordered_set<std::string> known_failures;
-            for (const auto port : ports_to_test)
+            for (const auto port : get_ports_to_test_with_features(options, action_plan))
             {
                 PackageSpec package_spec(port->core_paragraph->name, target_triplet);
                 var_provider.load_dep_info_vars(Span<PackageSpec>(&package_spec, 1), host_triplet);
                 const auto dep_info_vars = var_provider.get_dep_info_vars(package_spec).value_or_exit(VCPKG_LINE_INFO);
                 std::vector<FullPackageSpec> specs_to_test;
-                if (test_core)
+                if (test_feature_core)
                 {
                     specs_to_test.emplace_back(package_spec, InternalFeatureSet{{"core"}});
                 }
@@ -563,13 +566,13 @@ namespace vcpkg::Commands::CI
                     if (feature->supports_expression.evaluate(dep_info_vars))
                     {
                         all_features.push_back(feature->name);
-                        if (test_seperatly)
+                        if (test_features_seperatly)
                         {
                             specs_to_test.emplace_back(package_spec, InternalFeatureSet{{"core", feature->name}});
                         }
                     }
                 }
-                if (test_combined && all_features.size() > 2)
+                if (test_features_combined && all_features.size() > (test_features_seperatly ? 2 : 1))
                 {
                     specs_to_test.emplace_back(package_spec, all_features);
                 }
