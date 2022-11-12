@@ -67,7 +67,7 @@ if(-Not $IsLinux -and -Not $IsMacOS) {
     if ($IsLinux -or $IsMacOS) {
         mono $(Run-Vcpkg @fetchNuGetArgs) restore $TestingRoot/packages.config -OutputDirectory "$NuGetRoot2" -Source "$NuGetRoot"
     } else {
-        & $(Run-Vcpkg @fetchNuGetArgs) restore $TestingRoot/packages.config -OutputDirectory "$NuGetRoot2" -Source "$NuGetRoot"
+        & $(Run-VcpkgAndCaptureOutput @fetchNuGetArgs) restore $TestingRoot/packages.config -OutputDirectory "$NuGetRoot2" -Source "$NuGetRoot"
     }
     Throw-IfFailed
     Remove-Item -Recurse -Force $NuGetRoot -ErrorAction SilentlyContinue
