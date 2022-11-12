@@ -53,4 +53,7 @@ namespace vcpkg
 
     // Check whether a repository is a shallow clone
     ExpectedL<bool> is_shallow_clone(const GitConfig& config);
+
+    // Exports a tar archive of git-tree into destination.
+    ExpectedL<Path> git_export_archive(const GitConfig& config, StringView git_tree, const Path& destination);
 }

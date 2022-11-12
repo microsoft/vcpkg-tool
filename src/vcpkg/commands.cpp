@@ -18,6 +18,7 @@
 #include <vcpkg/commands.deactivate.h>
 #include <vcpkg/commands.dependinfo.h>
 #include <vcpkg/commands.edit.h>
+#include <vcpkg/commands.export-port.h>
 #include <vcpkg/commands.env.h>
 #include <vcpkg/commands.fetch.h>
 #include <vcpkg/commands.find.h>
@@ -99,6 +100,7 @@ namespace vcpkg::Commands
         static const Create::CreateCommand create{};
         static const DeactivateCommand deactivate{};
         static const Edit::EditCommand edit{};
+        static const ExportPort::ExportPortCommand export_port{};
         static const Fetch::FetchCommand fetch{};
         static const FindCommand find_{};
         static const FormatManifest::FormatManifestCommand format_manifest{};
@@ -146,6 +148,7 @@ namespace vcpkg::Commands
             {"x-add-version", &add_version},
             {"x-ci-clean", &ciclean},
             {"x-ci-verify-versions", &ci_verify_versions},
+            {"x-export-port", &export_port},
             {"x-package-info", &info},
             {"x-regenerate", &regenerate},
             {"x-vsinstances", &vsinstances},

@@ -4,6 +4,7 @@
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.process.h>
 
 #include <vcpkg/tools.h>
@@ -195,6 +196,15 @@ namespace vcpkg
         auto cmd = git_cmd_builder(config).string_arg("rev-parse").string_arg("--is-shallow-repository");
         return flatten_out(cmd_execute_and_capture_output(cmd), Tools::GIT).map([](std::string&& output) {
             return "true" == Strings::trim(std::move(output));
+        });
+    }
+
+    ExpectedL<Path> git_export_archive(const GitConfig& config, StringView git_tree, const Path& destination)
+    {
+        const auto cmd =
+            git_cmd_builder(config).string_arg("archive").string_arg(git_tree).string_arg("-o").string_arg(destination);
+        return flatten(cmd_execute_and_capture_output(cmd), Tools::GIT).map([&destination](auto&&) {
+            return destination;
         });
     }
 }

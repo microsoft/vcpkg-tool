@@ -1,7 +1,5 @@
 #pragma once
 
-#include <vcpkg/base/fwd/json.h>
-
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>

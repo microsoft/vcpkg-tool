@@ -990,6 +990,29 @@ namespace
 
 namespace vcpkg
 {
+    // struct GitVersionDbDeserializer final : Json::IDeserializer<std::vector<VersionDbEntry>> {
+    constexpr StringLiteral GitVersionDbDeserializer::VERSIONS;
+
+    View<StringView> GitVersionDbDeserializer::valid_fields() const
+    {
+        static const StringView t[] = {
+            GitVersionDbDeserializer::VERSIONS,
+        };
+        return t;
+    }
+
+    Optional<std::vector<VersionDbEntry>> GitVersionDbDeserializer::visit_object(Json::Reader& r,
+                                                                                 const Json::Object& obj)
+    {
+        static VersionDbEntryArrayDeserializer deserializer(VersionDbType::Git, "");
+
+        std::vector<VersionDbEntry> versions;
+        r.required_object_field(type_name(), obj, GitVersionDbDeserializer::VERSIONS, versions, deserializer);
+        return versions;
+    }
+    GitVersionDbDeserializer GitVersionDbDeserializer::instance;
+    // } GitVersionDbDeserializer : Json::IDeserializer<std::vector<VersionDbEntry>
+
     constexpr StringLiteral VersionDbEntryDeserializer::GIT_TREE;
     constexpr StringLiteral VersionDbEntryDeserializer::PATH;
     StringView VersionDbEntryDeserializer::type_name() const { return "a version database entry"; }

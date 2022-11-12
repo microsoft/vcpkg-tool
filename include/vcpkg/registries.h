@@ -172,6 +172,19 @@ namespace vcpkg
         Filesystem,
     };
 
+    struct GitVersionDbDeserializer final : Json::IDeserializer<std::vector<VersionDbEntry>>
+    {
+        static constexpr StringLiteral VERSIONS = "versions";
+
+        virtual StringView type_name() const override { return "a versions database file"; }
+
+        virtual View<StringView> valid_fields() const override;
+
+        Optional<std::vector<VersionDbEntry>> visit_object(Json::Reader& r, const Json::Object& obj) override;
+
+        static GitVersionDbDeserializer instance;
+    };
+
     struct VersionDbEntryDeserializer final : Json::IDeserializer<VersionDbEntry>
     {
         static constexpr StringLiteral GIT_TREE = "git-tree";
