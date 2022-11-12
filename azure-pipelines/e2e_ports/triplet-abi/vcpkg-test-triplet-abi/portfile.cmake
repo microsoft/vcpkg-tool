@@ -1,6 +1,6 @@
 set(VCPKG_POLICY_EMPTY_PACKAGE enabled)
 
-file(STRINGS "${CURRENT_BUILDTREES_DIR}/vcpkg-test-triplet-abi.vcpkg_abi_info.txt" actual_abi_lines)
+file(STRINGS "${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}.vcpkg_abi_info.txt" actual_abi_lines)
 file(STRINGS "${CMAKE_CURRENT_LIST_DIR}/expected-abi.txt" expected_abi_lines)
 file(STRINGS "${CMAKE_CURRENT_LIST_DIR}/unexpected-abi.txt" unexpected_abi_lines)
 
