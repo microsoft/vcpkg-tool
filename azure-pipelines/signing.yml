@@ -27,6 +27,8 @@ parameters:
 variables:
   - name: TeamName
     value: vcpkg
+  - name: Codeql.Enabled
+    value: true
   - group: vcpkg-dependency-source-blobs
   - name: FMT_TARBALL_URL
     value: "$(fmt-tarball-url)"
@@ -59,9 +61,13 @@ jobs:
     - ${{ if ne(parameters.VcpkgBaseVersionOverride, 'default') }}:
       - name: VCPKG_INITIAL_BASE_VERSION
         value: ${{parameters.VcpkgBaseVersionOverride}}
+    - name: Codeql.BuildIdentifier
+      value: vcpkg_ECMAScript
     pool:
       name: 'VSEngSS-MicroBuild2022-1ES'
     steps:
+    - task: CodeQL3000Init@0
+      displayName: 'CodeQL Initialize'
     - task: Powershell@2
       displayName: 'Lock VCPKG_BASE_VERSION'
       name: versions
@@ -184,6 +190,8 @@ jobs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)\staging'
         ArtifactName: 'staging'
         publishLocation: 'Container'
+    - task: CodeQL3000Finalize@0
+      displayName: 'CodeQL Finalize'
   - job: macos_build
     displayName: 'MacOS Build'
     dependsOn:
@@ -272,7 +280,10 @@ jobs:
       VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
       VCPKG_CE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_CE_SHA'] ]
       VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
+      Codeql.BuildIdentifier: vcpkg_cpp
     steps:
+    - task: CodeQL3000Init@0
+      displayName: 'CodeQL Initialize'
     - task: CmdLine@2
       displayName: "Build vcpkg x86 with CMake"
       inputs:
@@ -330,13 +341,17 @@ jobs:
       condition: and(eq(variables.SignType, 'test'), succeeded())
       inputs:
         SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
-        SigningCert: 8003
+        SigningCert: '8005'
+        SigningPluginSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
+        SigningPluginVersion: 'latest'
     - task: MicroBuildSignMacFiles@1
       displayName: 'Sign and Harden Mac Binaries'
       condition: and(eq(variables.SignType, 'real'), succeeded())
       inputs:
         SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
-        SigningCert: 8023
+        SigningCert: '8025'
+        SigningPluginSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
+        SigningPluginVersion: 'latest'
     - task: MicroBuildSignMacFiles@1
       displayName: 'Notarize Mac Binaries'
       condition: and(eq(variables.SignType, 'real'), succeeded())
@@ -344,6 +359,8 @@ jobs:
         SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
         SigningCert: '8020'
         MacAppName: 'vcpkg'
+        SigningPluginSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
+        SigningPluginVersion: 'latest'
     - task: Powershell@2
       displayName: 'Mint VS Insertion standalone bundle'
       inputs:
@@ -450,6 +467,8 @@ jobs:
         uploadRoslyn: false
         uploadTSLint: false
       condition: eq(variables['Build.SourceBranchName'], 'main')
+    - task: CodeQL3000Finalize@0
+      displayName: 'CodeQL Finalize'
     # Publish everything to a Drop
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Drop'
