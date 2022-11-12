@@ -47,8 +47,8 @@ namespace
         return std::move(maybe_versions.value_or_exit(VCPKG_LINE_INFO));
     }
 
-    void export_classic_mode_port_to_path(
-        const VcpkgPaths& paths, StringView port_name, StringView version, int port_version, Path output_path)
+    void export_classic_mode_port_version(
+        const VcpkgPaths& paths, StringView port_name, StringView version, int port_version, const Path& destination)
     {
         const auto db_file =
             paths.builtin_registry_versions / fmt::format("{}-", port_name[0]) / fmt::format("{}.json", port_name);
@@ -78,9 +78,9 @@ namespace
             if (entry.version == requested_version)
             {
                 const auto archive_path =
-                    output_path /
+                    destination /
                     fmt::format("{}-{}-{}.tar", port_name, requested_version.text(), requested_version.port_version());
-                const auto final_path = output_path / port_name;
+                const auto final_path = destination / port_name;
                 fs.create_directories(final_path, VCPKG_LINE_INFO);
 
                 auto maybe_export = git_export_archive(paths.git_builtin_config(), entry.git_tree, archive_path);
@@ -94,19 +94,49 @@ namespace
                 fs.remove(archive_path, VCPKG_LINE_INFO);
                 // TODO: print success message
                 msg::write_unlocalized_text_to_stdout(Color::none,
-                                                      fmt::format("Port files have been exported to {}", final_path));
+                                                      fmt::format("Port files have been exported to {}\n", final_path));
                 Checks::exit_success(VCPKG_LINE_INFO);
             }
         }
 
         // TODO: Print version not found and list of available versions
         msg::write_unlocalized_text_to_stdout(Color::none,
-                                              fmt::format("Version {} not found", requested_version.to_string()));
+                                              fmt::format("Version {} not found.\n", requested_version.to_string()));
         for (auto&& entry : db)
         {
             msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("{}\n", entry.version.to_string()));
         }
         Checks::exit_fail(VCPKG_LINE_INFO);
+    }
+
+    void export_classic_mode_port(const VcpkgPaths& paths, StringView port_name, const Path& destination)
+    {
+        auto& fs = paths.get_filesystem();
+
+        const auto port_dir = paths.builtin_ports_directory() / port_name;
+
+        std::error_code ec;
+        auto port_files = fs.get_regular_files_recursive(port_dir, ec);
+        if (ec)
+        {
+            msg::write_unlocalized_text_to_stderr(Color::error,
+                                                  fmt::format("Failed to get files for port {}\n", port_name));
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        const auto final_path = destination / port_name;
+        for (const auto& file : Util::fmap(port_files, [&port_dir](StringView&& str) -> Path {
+                 return str.substr(port_dir.generic_u8string().size() + 1);
+             }))
+        {
+            const auto src_path = port_dir / file;
+            const auto dst_path = final_path / file;
+            fs.create_directories(dst_path.parent_path(), IgnoreErrors{});
+            fs.copy_file(src_path, dst_path, CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
+        }
+        msg::write_unlocalized_text_to_stdout(Color::none,
+                                              fmt::format("Port files have been exported to {}\n", final_path));
+        Checks::exit_success(VCPKG_LINE_INFO);
     }
 }
 
@@ -114,7 +144,7 @@ namespace vcpkg::Commands::ExportPort
 {
     const CommandStructure COMMAND_STRUCTURE = {
         create_example_string("x-export-port fmt 8.11.0#0 ../my-overlay-ports"),
-        3,
+        2,
         3,
         {{}, {}, {}},
         nullptr,
@@ -126,8 +156,12 @@ namespace vcpkg::Commands::ExportPort
         args.parse_arguments(COMMAND_STRUCTURE);
 
         const auto& port_name = args.command_arguments[0];
-        const auto& raw_version = args.command_arguments[1];
-        const auto& output_path = args.command_arguments[2];
+        const auto& output_path = args.command_arguments.back();
+        Optional<std::string> maybe_raw_version;
+        if (args.command_arguments.size() == 3)
+        {
+            maybe_raw_version = args.command_arguments[1];
+        }
 
         auto& fs = paths.get_filesystem();
         const auto final_path = Path(output_path) / port_name;
@@ -136,16 +170,33 @@ namespace vcpkg::Commands::ExportPort
             msg::write_unlocalized_text_to_stdout(
                 Color::error,
                 fmt::format("Export path {} already exists and is not empty.\n", final_path.lexically_normal()));
-        }
-
-        auto version_segments = Strings::split(raw_version, '#');
-        if (version_segments.size() > 2)
-        {
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
-        const auto& version = version_segments[0];
-        auto port_version = version_segments.size() == 1 ? 0 : Strings::strto<int>(version_segments[1]).value_or(0);
-        export_classic_mode_port_to_path(paths, port_name, version, port_version, output_path);
+
+        if (paths.manifest_mode_enabled())
+        {
+            msg::write_unlocalized_text_to_stdout(Color::error, "This command doesn't work on manifest mode.\n");
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        // classic mode
+        if (auto raw_version = maybe_raw_version.get())
+        {
+            // user requested a specific version
+            auto version_segments = Strings::split(*raw_version, '#');
+            if (version_segments.size() > 2)
+            {
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+            const auto& version = version_segments[0];
+            auto port_version = version_segments.size() == 1 ? 0 : Strings::strto<int>(version_segments[1]).value_or(0);
+            export_classic_mode_port_version(paths, port_name, version, port_version, output_path);
+        }
+        else
+        {
+            // just copy local files
+            export_classic_mode_port(paths, port_name, output_path);
+        }
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 }
