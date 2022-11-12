@@ -1269,4 +1269,40 @@ namespace vcpkg
     {
         return std::make_unique<FilesystemRegistry>(fs, std::move(path), std::move(baseline));
     }
+
+    ExpectedL<std::vector<VersionDbEntry>> parse_git_versions_file(StringView contents, StringView origin)
+    {
+        auto maybe_db = Json::parse(contents, origin);
+        if (!maybe_db)
+        {
+            return msg::format_error(msgAddVersionUnableToParseVersionsFile, msg::path = origin)
+                .append_raw("\n")
+                .append_indent()
+                .append_raw(maybe_db.error()->to_string());
+        }
+
+        auto db = std::move(maybe_db.value_or_exit(VCPKG_LINE_INFO));
+        if (!db.first.is_object())
+        {
+            return msg::format_error(msgAddVersionUnableToParseVersionsFile, msg::path = origin)
+                .append_raw("\n")
+                .append_indent()
+                .append(msgJsonValueNotObject);
+        }
+
+        Json::Reader r;
+        auto maybe_versions = r.visit(std::move(db.first.object(VCPKG_LINE_INFO)), GitVersionDbDeserializer::instance);
+        if (!r.errors().empty())
+        {
+            auto error_msg =
+                msg::format_error(msgAddVersionUnableToParseVersionsFile, msg::path = origin).append_raw("\n");
+            for (auto&& error : r.errors())
+            {
+                error_msg.append_indent().append_raw(error).append_raw("\n");
+            }
+            return error_msg;
+        }
+
+        return std::move(maybe_versions.value_or_exit(VCPKG_LINE_INFO));
+    }
 }
