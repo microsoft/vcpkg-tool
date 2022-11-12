@@ -452,9 +452,9 @@ endfunction()
                     {
                         [[maybe_unused]] const auto throw_away = port_triplet_vars.extract(var_name);
                     }
-                    else if (var_name.substr(0, 4).compare("ENV{"))
+                    else if (var_name.substr(0, 4).compare("ENV{") == 0)
                     {
-                        port_triplet_vars.insert_or_assign(var_name, "unset");
+                        port_triplet_vars.insert_or_assign(var_name, Strings::concat("unset(",var_name,")"));
                     }
                 }
                 else
@@ -478,7 +478,7 @@ endfunction()
                         }
                         else if (trace_relevant.args[0].compare("GET") == 0)
                         {
-                            var_names.emplace_back(*trace_relevant.args.end());
+                            var_names.emplace_back(trace_relevant.args.back());
                         }
                         else if (trace_relevant.args[0].compare("COMPARE") == 0 ||
                                  trace_relevant.args[0].compare("HASH") == 0 ||
@@ -486,7 +486,7 @@ endfunction()
                                  trace_relevant.args[0].substr(0, 3).compare("IS_") == 0 ||
                                  trace_relevant.args[0].substr(0, 4).compare("HAS_") == 0)
                         {
-                            var_names.emplace_back(*trace_relevant.args.end());
+                            var_names.emplace_back(trace_relevant.args.back());
                         }
                         else if (trace_relevant.args[0].compare("CONVERT") == 0)
                         {
@@ -544,21 +544,14 @@ endfunction()
                     {
                         if (trace_relevant.args[0].compare("READ") == 0 ||
                             trace_relevant.args[0].compare("STRINGS") == 0 ||
-                            trace_relevant.args[0].compare("MD5") == 0 || trace_relevant.args[0].compare("SHA1") == 0 ||
-                            trace_relevant.args[0].compare("SHA224") == 0 ||
-                            trace_relevant.args[0].compare("SHA256") == 0 ||
-                            trace_relevant.args[0].compare("SHA384") == 0 ||
-                            trace_relevant.args[0].compare("SHA512") == 0 ||
-                            trace_relevant.args[0].compare("SHA3_224") == 0 ||
-                            trace_relevant.args[0].compare("SHA3_256") == 0 ||
-                            trace_relevant.args[0].compare("SHA3_384") == 0 ||
-                            trace_relevant.args[0].compare("SHA3_512") == 0 ||
                             trace_relevant.args[0].compare("TIMESTAMP") == 0 ||
                             trace_relevant.args[0].compare("SIZE") == 0 ||
                             trace_relevant.args[0].compare("READ_SYMLINK") == 0 ||
                             trace_relevant.args[0].compare("REAL_PATH") == 0 ||
                             trace_relevant.args[0].compare("TO_CMAKE_PATH") == 0 ||
-                            trace_relevant.args[0].compare("TO_NATIVE_PATH") == 0)
+                            trace_relevant.args[0].compare("TO_NATIVE_PATH") == 0 ||
+                            trace_relevant.args[0].compare("MD5") == 0 || 
+                            trace_relevant.args[0].substr(0, 3).compare("SHA") == 0)
                         {
                             var_names.emplace_back(trace_relevant.args[2]);
                         }
@@ -572,7 +565,7 @@ endfunction()
                     else if (trace_relevant.cmd.compare("list") == 0)
                     {
                         var_names.emplace_back(trace_relevant.args[1]);
-                        if (trace_relevant.args[0].substr(0, 4).compare("POP_") && trace_relevant.args.size() >= 3)
+                        if (trace_relevant.args[0].substr(0, 4).compare("POP_") == 0 && trace_relevant.args.size() >= 3)
                         {
                             // POP_FRONT|BACK
                             for (auto out_vars_iter = (trace_relevant.args.begin() + 2);
@@ -605,22 +598,48 @@ endfunction()
                                 var_names.emplace_back(*(++output_var));
                             }
                         }
-                        else if (trace_relevant.args[0].compare("MD5") == 0 ||
-                                 trace_relevant.args[0].compare("SHA1") == 0 ||
-                                 trace_relevant.args[0].compare("SHA224") == 0 ||
-                                 trace_relevant.args[0].compare("SHA256") == 0 ||
-                                 trace_relevant.args[0].compare("SHA384") == 0 ||
-                                 trace_relevant.args[0].compare("SHA512") == 0 ||
-                                 trace_relevant.args[0].compare("SHA3_224") == 0 ||
-                                 trace_relevant.args[0].compare("SHA3_256") == 0 ||
-                                 trace_relevant.args[0].compare("SHA3_384") == 0 ||
-                                 trace_relevant.args[0].compare("SHA3_512") == 0 ||
+                        else if (trace_relevant.args[0].compare("APPEND") == 0 ||
+                                 trace_relevant.args[0].compare("PREPEND") == 0 ||
                                  trace_relevant.args[0].compare("TIMESTAMP") == 0 ||
-                                 trace_relevant.args[0].compare("CONCAT"))
+                                 trace_relevant.args[0].compare("UUID") == 0 ||
+                                 trace_relevant.args[0].compare("CONCAT") == 0 ||
+                                 trace_relevant.args[0].compare("MD5") == 0 ||    
+                                 trace_relevant.args[0].substr(0, 3).compare("SHA") == 0) 
                         {
                             var_names.emplace_back(trace_relevant.args[1]);
                         }
-                        // TODO: a lot of extra cases
+                        else if (trace_relevant.args[0].compare("JOIN") == 0 ||
+                                 trace_relevant.args[0].compare("TOLOWER") == 0 ||
+                                 trace_relevant.args[0].compare("TOUPPER") == 0 ||
+                                 trace_relevant.args[0].compare("LENGTH") == 0 ||
+                                 trace_relevant.args[0].compare("STRIP") == 0 ||
+                                 trace_relevant.args[0].compare("HEX") == 0 ||
+                                 trace_relevant.args[0].compare("CONFIGURE") == 0 ||
+                                 trace_relevant.args[0].compare("MAKE_C_IDENTIFIER") == 0 ||
+                                 trace_relevant.args[0].compare("GENEX_STRIP") == 0)
+                        {
+                            var_names.emplace_back(trace_relevant.args[2]);
+                        }
+                        else if (trace_relevant.args[0].compare("REGEX") == 0) 
+                        {
+                            if (trace_relevant.args[1].compare("REPLACE") == 0)
+                            {
+                                var_names.emplace_back(trace_relevant.args[4]);
+                            } else {
+                                var_names.emplace_back(trace_relevant.args[3]);
+                            }
+                        }
+                        else if (trace_relevant.args[0].compare("SUBSTRING") == 0 ||
+                                 trace_relevant.args[0].compare("ASCII") == 0 ||
+                                 trace_relevant.args[0].compare("RANDOM") == 0 ||
+                                 trace_relevant.args[0].compare("COMPARE") == 0)
+                        {
+                             var_names.emplace_back(trace_relevant.args.back());
+                        }
+                        else
+                        {
+                             Checks::unreachable(VCPKG_LINE_INFO);
+                        }
                     }
                     else
                     {
