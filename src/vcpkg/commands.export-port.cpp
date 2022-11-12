@@ -110,7 +110,7 @@ namespace vcpkg::Commands::ExportPort
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("x-export-port fmt 8.11.0#2 ../my-overlay-ports"),
+        create_example_string("x-export-port fmt 8.11.0#2git ../my-overlay-ports"),
         2,
         3,
         {{SWITCHES}, {/*settings*/}, {/*multisettings*/}},

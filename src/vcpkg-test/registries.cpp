@@ -260,6 +260,69 @@ TEST_CASE ("git_version_db_parsing", "[registries]")
     CHECK(r.errors().empty());
 }
 
+TEST_CASE ("parse git registry versions db", "[registries]")
+{
+    auto test_json = R"json(
+{
+    "versions": [
+        {
+            "git-tree": "9b07f8a38bbc4d13f8411921e6734753e15f8d50",
+            "version-date": "2021-06-26",
+            "port-version": 0
+        },
+        {
+            "git-tree": "12b84a31469a78dd4b42dcf58a27d4600f6b2d48",
+            "version-date": "2021-01-14",
+            "port-version": 1
+        },
+        {
+            "git-tree": "bd4565e8ab55bc5e098a1750fa5ff0bc4406ca9b",
+            "version-string": "2021-01-14"
+        }
+    ]
+}
+)json";
+
+    {
+        auto maybe_db = parse_git_versions_file(test_json, "test");
+        REQUIRE(maybe_db.has_value());
+        auto db = std::move(maybe_db.value_or_exit(VCPKG_LINE_INFO));
+        REQUIRE(db.size() == 3);
+
+        auto entry = db[0];
+        CHECK(entry.git_tree == "9b07f8a38bbc4d13f8411921e6734753e15f8d50");
+        CHECK(entry.version.text() == "2021-06-26");
+        CHECK(entry.version.port_version() == 0);
+
+        entry = db[1];
+        CHECK(entry.git_tree == "12b84a31469a78dd4b42dcf58a27d4600f6b2d48");
+        CHECK(entry.version.text() == "2021-01-14");
+        CHECK(entry.version.port_version() == 1);
+
+        entry = db[2];
+        CHECK(entry.git_tree == "bd4565e8ab55bc5e098a1750fa5ff0bc4406ca9b");
+        CHECK(entry.version.text() == "2021-01-14");
+        CHECK(entry.version.port_version() == 0);
+    }
+
+    auto invalid_json = R"json(
+{
+    "versions": [
+        {
+            "git-tree": "9b07f8a38bbc4d13f8411921e6734753e15f8d50",
+            "version-semver": "2021-06-26",
+            "port-version": 0
+        }
+    ]
+}
+)json";
+
+    {
+        auto maybe_db = parse_git_versions_file(invalid_json, "test");
+        REQUIRE(!maybe_db);
+    }
+}
+
 TEST_CASE ("filesystem_version_db_parsing", "[registries]")
 {
     VersionDbEntryArrayDeserializer filesystem_version_db{VersionDbType::Filesystem, "a/b"};
