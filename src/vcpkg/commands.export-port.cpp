@@ -1,9 +1,11 @@
 #include <vcpkg/base/git.h>
+#include <vcpkg/base/hash.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
 
 #include <vcpkg/archives.h> // for extract_tar_cmake
 #include <vcpkg/commands.export-port.h>
+#include <vcpkg/metrics.h>
 #include <vcpkg/registries.h> // for versions db parsing
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -181,8 +183,11 @@ namespace vcpkg::Commands::ExportPort
         }
 
         // classic mode
+        get_global_metrics_collector().track_string(StringMetric::ExportedPort, Hash::get_string_sha256(port_name));
         if (auto version = maybe_version.get())
         {
+            get_global_metrics_collector().track_string(StringMetric::ExportedVersion,
+                                                        Hash::get_string_sha256(*version));
             export_classic_mode_port_version(paths, port_name, *version, final_path);
         }
         else

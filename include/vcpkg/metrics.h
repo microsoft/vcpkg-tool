@@ -58,6 +58,8 @@ namespace vcpkg
         CommandContext,
         CommandName,
         DetectedCiEnvironment,
+        ExportedPort,
+        ExportedVersion,
         InstallPlan_1,
         ListFile,
         RegistriesDefaultRegistryKind,
