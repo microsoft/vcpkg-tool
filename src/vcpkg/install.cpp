@@ -1078,20 +1078,21 @@ namespace vcpkg
                 extended_overlay_ports.emplace_back(paths.builtin_ports_directory().native());
             }
 
+            DependDefaults depend_defaults =
+                Util::Enum::to_enum<DependDefaults>(manifest_scf->core_paragraph->depend_defaults);
             auto oprovider =
                 make_manifest_provider(paths, extended_overlay_ports, manifest->path, std::move(manifest_scf));
             PackageSpec toplevel{manifest_core.name, default_triplet};
-            auto install_plan = create_versioned_install_plan(
-                                    *verprovider,
-                                    *baseprovider,
-                                    *oprovider,
-                                    var_provider,
-                                    dependencies,
-                                    manifest_core.overrides,
-                                    toplevel,
-                                    host_triplet,
-                                    unsupported_port_action,
-                                    Util::Enum::to_enum<DependDefaults>(manifest_scf->core_paragraph->depend_defaults))
+            auto install_plan = create_versioned_install_plan(*verprovider,
+                                                              *baseprovider,
+                                                              *oprovider,
+                                                              var_provider,
+                                                              dependencies,
+                                                              manifest_core.overrides,
+                                                              toplevel,
+                                                              host_triplet,
+                                                              unsupported_port_action,
+                                                              depend_defaults)
                                     .value_or_exit(VCPKG_LINE_INFO);
 
             for (const auto& warning : install_plan.warnings)
