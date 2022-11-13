@@ -45,7 +45,7 @@ if ($IsLinux) {
     $Triplet = 'x86-windows'
 }
 
-New-Item -Path $WorkingRoot -ItemType Directory -Force
+New-Item -Path $WorkingRoot -ItemType Directory -Force | Out-Null
 $WorkingRoot = (Get-Item $WorkingRoot).FullName
 if ([string]::IsNullOrWhitespace($VcpkgRoot)) {
     $VcpkgRoot = $env:VCPKG_ROOT
