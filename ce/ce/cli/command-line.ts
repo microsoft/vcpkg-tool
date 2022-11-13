@@ -103,10 +103,6 @@ export class CommandLine {
     return !!this.switches['debug'];
   }
 
-  get verbose() {
-    return !!this.switches['verbose'];
-  }
-
   get vcpkgArtifactsRoot() {
     return this.switches['z-vcpkg-artifacts-root']?.[0];
   }
@@ -119,8 +115,8 @@ export class CommandLine {
     return this.switches['z-vcpkg-registries-cache']?.[0];
   }
 
-  get telemetryEnabled() {
-    return !!this.switches['z-enable-metrics'];
+  get telemetryFile() {
+    return this.switches['z-telemetry-file']?.[0];
   }
 
   get language() {

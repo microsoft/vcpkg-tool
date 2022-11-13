@@ -31,7 +31,10 @@ namespace vcpkg::Unicode
         }
     }
 
-    int utf8_code_unit_count(char code_unit) noexcept { return utf8_code_unit_count(utf8_code_unit_kind(code_unit)); }
+    int utf8_code_unit_count(char code_unit) noexcept
+    {
+        return utf8_code_unit_count(utf8_code_unit_kind(static_cast<unsigned char>(code_unit)));
+    }
 
     static constexpr int utf8_encode_code_unit_count(char32_t code_point) noexcept
     {
@@ -53,8 +56,9 @@ namespace vcpkg::Unicode
         }
         else
         {
-            vcpkg::Checks::exit_with_message(
-                VCPKG_LINE_INFO, "Invalid code point passed to utf8_encoded_code_point_count (%x)", code_point);
+            vcpkg::Checks::msg_exit_with_message(
+                VCPKG_LINE_INFO,
+                msg::format(msgInvalidCodePoint).append_raw(fmt::format("({:x})", static_cast<uint32_t>(code_point))));
         }
     }
 
@@ -102,7 +106,7 @@ namespace vcpkg::Unicode
         }
 
         auto code_unit = *first;
-        auto kind = utf8_code_unit_kind(code_unit);
+        auto kind = utf8_code_unit_kind(static_cast<unsigned char>(code_unit));
         const int count = utf8_code_unit_count(kind);
 
         const char* it = first + 1;
@@ -136,7 +140,7 @@ namespace vcpkg::Unicode
         constexpr unsigned char continue_mask = 0b0011'1111;
         for (int byte = 1; byte < count; ++byte)
         {
-            code_unit = static_cast<unsigned char>(*it++);
+            code_unit = *it++;
 
             kind = utf8_code_unit_kind(code_unit);
             if (kind == Utf8CodeUnitKind::Invalid)
@@ -190,15 +194,15 @@ namespace vcpkg::Unicode
         {
             switch (static_cast<utf8_errc>(condition))
             {
-                case utf8_errc::NoError: return "no error";
-                case utf8_errc::InvalidCodeUnit: return "invalid code unit";
-                case utf8_errc::InvalidCodePoint: return "invalid code point (>0x10FFFF)";
-                case utf8_errc::PairedSurrogates:
-                    return "trailing surrogate following leading surrogate (paired surrogates are invalid)";
-                case utf8_errc::UnexpectedContinue: return "found continue code unit in start position";
-                case utf8_errc::UnexpectedStart: return "found start code unit in continue position";
-                case utf8_errc::UnexpectedEof: return "found end of string in middle of code point";
-                default: return "error code out of range";
+                case utf8_errc::NoError: return msg::format(msgNoError).extract_data();
+                case utf8_errc::InvalidCodeUnit: return msg::format(msgInvalidCodeUnit).extract_data();
+                case utf8_errc::InvalidCodePoint:
+                    return msg::format(msgInvalidCodePoint).append_raw(" (>0x10FFFF)").extract_data();
+                case utf8_errc::PairedSurrogates: return msg::format(msgPairedSurrogatesAreInvalid).extract_data();
+                case utf8_errc::UnexpectedContinue: return msg::format(msgContinueCodeUnitInStart).extract_data();
+                case utf8_errc::UnexpectedStart: return msg::format(msgStartCodeUnitInContinue).extract_data();
+                case utf8_errc::UnexpectedEof: return msg::format(msgEndOfStringInCodeUnit).extract_data();
+                default: Checks::unreachable(VCPKG_LINE_INFO);
             }
         }
     };
@@ -224,7 +228,7 @@ namespace vcpkg::Unicode
     {
         if (is_eof())
         {
-            vcpkg::Checks::exit_with_message(VCPKG_LINE_INFO, "Incremented Utf8Decoder at the end of the string");
+            vcpkg::Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgIncrementedUtf8Decoder);
         }
 
         if (next_ == last_)
@@ -274,8 +278,7 @@ namespace vcpkg::Unicode
     {
         if (lhs.last_ != rhs.last_)
         {
-            Checks::exit_with_message(VCPKG_LINE_INFO,
-                                      "Comparing Utf8Decoders with different provenance; this is always an error");
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgComparingUtf8Decoders);
         }
 
         return lhs.next_ == rhs.next_;

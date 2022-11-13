@@ -98,7 +98,7 @@ namespace
 
         // returns {arg, ""} when there isn't an `=`
         // skips preceding `-`s
-        std::pair<StringView, StringView> split_arg(StringView arg)
+        std::pair<StringView, StringView> split_arg(StringView arg) const
         {
             auto first = std::find_if(arg.begin(), arg.end(), [](char c) { return c != '-'; });
             auto division = std::find(first, arg.end(), '=');
@@ -112,7 +112,7 @@ namespace
             }
         }
 
-        [[noreturn]] void print_help_and_exit(bool invalid = false)
+        [[noreturn]] void print_help_and_exit(bool invalid = false) const
         {
             auto color = invalid ? Color::error : Color::none;
 
@@ -198,6 +198,11 @@ namespace
 
         Checks::exit_success(VCPKG_LINE_INFO);
     }
+}
+
+namespace vcpkg::Checks
+{
+    void on_final_cleanup_and_exit() { }
 }
 
 int main(int argc, char** argv)

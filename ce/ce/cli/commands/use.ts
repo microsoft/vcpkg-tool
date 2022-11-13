@@ -12,7 +12,6 @@ import { error, log, warning } from '../styling';
 import { MSBuildProps } from '../switches/msbuild-props';
 import { Project } from '../switches/project';
 import { Version } from '../switches/version';
-import { WhatIf } from '../switches/whatIf';
 
 export class UseCommand extends Command {
   readonly command = 'use';
@@ -20,7 +19,6 @@ export class UseCommand extends Command {
   seeAlso = [];
   argumentsHelp = [];
   version = new Version(this);
-  whatIf = new WhatIf(this);
   project = new Project(this);
   msbuildProps = new MSBuildProps(this);
 
@@ -49,7 +47,7 @@ export class UseCommand extends Command {
     }
 
     const selections = new Map(this.inputs.map((v, i) => [v, versions[i] || '*']));
-    const artifacts = await selectArtifacts(session, selections, resolver, 1);
+    const artifacts = await selectArtifacts(session, selections, resolver, 2);
     if (!artifacts) {
       return false;
     }

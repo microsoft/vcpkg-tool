@@ -10,7 +10,6 @@ import { Command } from '../command';
 import { cli } from '../constants';
 import { error, log } from '../styling';
 import { Normalize } from '../switches/normalize';
-import { WhatIf } from '../switches/whatIf';
 
 export class RegenerateCommand extends Command {
   readonly command = 'regenerate';
@@ -18,7 +17,6 @@ export class RegenerateCommand extends Command {
   readonly normalize = new Normalize(this);
   seeAlso = [];
   argumentsHelp = [];
-  whatIf = new WhatIf(this);
 
   get summary() {
     return i`regenerate the index for a registry`;

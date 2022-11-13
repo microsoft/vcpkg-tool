@@ -11,7 +11,6 @@ import { CommandLine } from '../command-line';
 import { count } from '../format';
 import { error, log, writeException } from '../styling';
 import { Project } from '../switches/project';
-import { WhatIf } from '../switches/whatIf';
 
 export class UpdateCommand extends Command {
   readonly command = 'update';
@@ -19,7 +18,6 @@ export class UpdateCommand extends Command {
   seeAlso = [];
   argumentsHelp = [];
   project: Project = new Project(this);
-  whatIf = new WhatIf(this);
 
   get summary() {
     return i`update the registry from the remote`;

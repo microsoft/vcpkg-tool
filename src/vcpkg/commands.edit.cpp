@@ -63,8 +63,8 @@ namespace
                 Checks::exit_fail(VCPKG_LINE_INFO); // integer overflow
             }
 
-            const auto required_size =
-                ExpandEnvironmentStringsW(widened.c_str(), &result[0], static_cast<unsigned long>(result.size() + 1));
+            const auto required_size = ExpandEnvironmentStringsW(
+                widened.c_str(), result.data(), static_cast<unsigned long>(result.size() + 1));
             if (required_size == 0)
             {
                 msg::println_error(

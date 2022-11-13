@@ -19,6 +19,7 @@ namespace vcpkg::CMakeVars
                                          Triplet host_triplet) const
     {
         std::vector<FullPackageSpec> install_package_specs;
+        install_package_specs.reserve(action_plan.install_actions.size());
         for (auto&& action : action_plan.install_actions)
         {
             install_package_specs.emplace_back(FullPackageSpec{action.spec, action.feature_list});

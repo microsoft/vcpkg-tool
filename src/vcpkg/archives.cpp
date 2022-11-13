@@ -53,7 +53,7 @@ namespace
         {
             Checks::msg_exit_with_message(
                 VCPKG_LINE_INFO,
-                msg::format(msgFailedToExtract, msg::path = archive).append_raw("\n").append(result.error()));
+                msg::format(msgFailedToExtract, msg::path = archive).append_raw('\n').append(result.error()));
         }
     }
 
@@ -61,7 +61,7 @@ namespace
     {
         // MSI installation sometimes requires a global lock and fails if another installation is concurrent. Loop
         // to enable retries.
-        for (int i = 0;; ++i)
+        for (unsigned int i = 0;; ++i)
         {
             // msiexec is a WIN32/GUI application, not a console application and so needs special attention to wait
             // until it finishes (wrap in cmd /c).
@@ -119,7 +119,7 @@ namespace
             Checks::msg_exit_with_message(
                 VCPKG_LINE_INFO,
                 msg::format(msgPackageFailedtWhileExtracting, msg::value = "7zip", msg::path = archive)
-                    .append_raw("\n")
+                    .append_raw('\n')
                     .append(maybe_output.error()));
         }
 
@@ -214,9 +214,20 @@ namespace vcpkg
                                    .append(msgMissing7zHeader));
 
         contents = contents.substr(pos);
-        fs.write_contents(to_path, std::move(contents), VCPKG_LINE_INFO);
+        fs.write_contents(to_path, contents, VCPKG_LINE_INFO);
     }
 
+    // We are trying to bootstrap vcpkg's copy of CMake which comes in a zipped file.
+    // If this is successful, we'll use the downloaded CMake for most extractions.
+    // We will also extract a portable 7z (using the bootstrapped CMake) to use when performance is required.
+    //
+    // We use the following methods to attempt this bootstrap, in order:
+    // 1) Search for a System32/tar.exe (available on Windows 10+)
+    //     tar.exe unpacks cmake.zip -> cmake.exe unpacks 7z.7z
+    // 2) Search for a user installed CMake on PATH and Program Files [(x86)]
+    //     (user) cmake.exe unpacks cmake.zip -> (vcpkg) cmake.exe unpacks 7z.7z
+    // 3) As a last resource, install 7zip using a MSI installer
+    //     msiexec installs 7zip.msi -> 7zip unpacks cmake.zip -> cmake.exe unpacks 7z.7z
     void win32_extract_bootstrap_zip(
         Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
     {
@@ -229,19 +240,22 @@ namespace vcpkg
         if (fs.exists(tar_path, IgnoreErrors{}))
         {
             // On Windows 10, tar.exe is in the box.
-
-            // Example:
-            // tar unpacks cmake unpacks 7zip unpacks git
             extract_tar(tar_path, archive, to_path_partial);
         }
         else
         {
-            // On Windows <10, we attempt to use msiexec to unpack 7zip.
-
-            // Example:
-            // msiexec unpacks 7zip_msi unpacks cmake unpacks 7zip unpacks git
-            win32_extract_with_seven_zip(
-                tools.get_tool_path(Tools::SEVEN_ZIP_MSI, status_sink), archive, to_path_partial);
+            auto maybe_cmake_tool = find_system_cmake(fs);
+            if (maybe_cmake_tool)
+            {
+                // If the user has a CMake version installed we can use that to unpack.
+                extract_tar_cmake(maybe_cmake_tool.value_or_exit(VCPKG_LINE_INFO), archive, to_path_partial);
+            }
+            else
+            {
+                // On Windows <10, we attempt to use msiexec to unpack 7zip.
+                win32_extract_with_seven_zip(
+                    tools.get_tool_path(Tools::SEVEN_ZIP_MSI, status_sink), archive, to_path_partial);
+            }
         }
         fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
     }
@@ -333,7 +347,7 @@ namespace vcpkg
         auto results =
             cmd_execute_and_capture_output_parallel(jobs, default_working_directory, get_clean_environment());
 #ifdef __APPLE__
-        int i = 0;
+        size_t i = 0;
         for (auto& maybe_result : results)
         {
             if (const auto result = maybe_result.get())

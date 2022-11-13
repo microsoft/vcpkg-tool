@@ -10,7 +10,6 @@ import { cmdSwitch } from '../format';
 import { error } from '../styling';
 import { Project } from '../switches/project';
 import { Version } from '../switches/version';
-import { WhatIf } from '../switches/whatIf';
 
 export class AddCommand extends Command {
   readonly command = 'add';
@@ -20,7 +19,6 @@ export class AddCommand extends Command {
 
   version = new Version(this);
   project: Project = new Project(this);
-  whatIf = new WhatIf(this);
 
   get summary() {
     return i`Adds an artifact to the project`;
@@ -54,7 +52,7 @@ export class AddCommand extends Command {
     const selections = new Map(this.inputs.map((v, i) => [v, versions[i] || '*']));
     const projectResolver = await buildRegistryResolver(session, projectManifest.metadata.registries);
     const combinedResolver = session.globalRegistryResolver.with(projectResolver);
-    const selectedArtifacts = await selectArtifacts(session, selections, combinedResolver, 1);
+    const selectedArtifacts = await selectArtifacts(session, selections, combinedResolver, 2);
     if (!selectedArtifacts) {
       return false;
     }

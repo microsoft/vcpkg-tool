@@ -25,8 +25,8 @@ namespace
 
     Optional<ToWrite> read_manifest(Filesystem& fs, Path&& manifest_path)
     {
-        auto path_string = manifest_path.native();
-        Debug::print("Reading ", path_string, "\n");
+        const auto& path_string = manifest_path.native();
+        Debug::println("Reading ", path_string);
         auto contents = fs.read_contents(manifest_path, VCPKG_LINE_INFO);
         auto parsed_json_opt = Json::parse(contents, manifest_path);
         if (!parsed_json_opt)
@@ -64,7 +64,7 @@ namespace
 
     Optional<ToWrite> read_control_file(Filesystem& fs, Path&& control_path)
     {
-        Debug::print("Reading ", control_path, "\n");
+        Debug::println("Reading ", control_path);
 
         auto manifest_path = Path(control_path.parent_path()) / "vcpkg.json";
         auto contents = fs.read_contents(control_path, VCPKG_LINE_INFO);
@@ -100,11 +100,11 @@ namespace
         const auto& file_to_write_string = data.file_to_write.native();
         if (data.file_to_write == data.original_path)
         {
-            Debug::print("Formatting ", file_to_write_string, "\n");
+            Debug::println("Formatting ", file_to_write_string);
         }
         else
         {
-            Debug::print("Converting ", file_to_write_string, " -> ", original_path_string, "\n");
+            Debug::println("Converting ", file_to_write_string, " -> ", original_path_string);
         }
         auto res = serialize_manifest(data.scf);
 

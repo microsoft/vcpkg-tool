@@ -6,14 +6,12 @@ import { session } from '../../main';
 import { Command } from '../command';
 import { error, log } from '../styling';
 import { Project } from '../switches/project';
-import { WhatIf } from '../switches/whatIf';
 
 export class RemoveCommand extends Command {
   readonly command = 'remove';
   readonly aliases = [];
   seeAlso = [];
   argumentsHelp = [];
-  whatIf = new WhatIf(this);
   project: Project = new Project(this);
 
   get summary() {

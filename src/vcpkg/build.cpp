@@ -144,7 +144,7 @@ namespace vcpkg::Build
         action->build_options.clean_buildtrees = CleanBuildtrees::NO;
         action->build_options.clean_packages = CleanPackages::NO;
 
-        const auto build_timer = ElapsedTimer::create_started();
+        const ElapsedTimer build_timer;
         const auto result = build_package(args, paths, *action, binary_cache, build_logs_recorder, status_db);
         msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
         if (result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
@@ -189,7 +189,7 @@ namespace vcpkg::Build
         const FullPackageSpec spec = check_and_get_full_package_spec(
             std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
+        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
         return perform_ex(args, spec, host_triplet, provider, binary_cache, null_build_logs_recorder(), paths);
     }
 } // namespace vcpkg::Build
@@ -486,7 +486,7 @@ namespace vcpkg
         });
     }
 
-    const EnvCache::TripletMapEntry& EnvCache::get_triplet_cache(const Filesystem& fs, const Path& p)
+    const EnvCache::TripletMapEntry& EnvCache::get_triplet_cache(const Filesystem& fs, const Path& p) const
     {
         return m_triplet_cache.get_lazy(p, [&]() -> TripletMapEntry {
             return TripletMapEntry{Hash::get_file_hash(fs, p, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO)};
@@ -600,7 +600,8 @@ namespace vcpkg
         std::string start = Strings::serialize(bcf.core_paragraph);
         for (auto&& feature : bcf.features)
         {
-            start += "\n" + Strings::serialize(feature);
+            start.push_back('\n');
+            start += Strings::serialize(feature);
         }
         const auto binary_control_file = paths.package_dir(bcf.core_paragraph.spec) / "CONTROL";
         paths.get_filesystem().write_contents(binary_control_file, start, VCPKG_LINE_INFO);
@@ -623,7 +624,7 @@ namespace vcpkg
                               });
         // Make sure GIT could be found
         const Path& git_exe_path = paths.get_tool_exe(Tools::GIT, stdout_sink);
-        out_vars.push_back({"GIT", git_exe_path});
+        out_vars.emplace_back("GIT", git_exe_path);
     }
 
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info)
@@ -656,22 +657,22 @@ namespace vcpkg
             rc = cmd_execute_and_stream_lines(
                 command,
                 [&](StringView s) {
-                    static const StringLiteral s_hash_marker = "#COMPILER_HASH#";
+                    static constexpr StringLiteral s_hash_marker = "#COMPILER_HASH#";
                     if (Strings::starts_with(s, s_hash_marker))
                     {
                         compiler_info.hash = s.substr(s_hash_marker.size()).to_string();
                     }
-                    static const StringLiteral s_version_marker = "#COMPILER_CXX_VERSION#";
+                    static constexpr StringLiteral s_version_marker = "#COMPILER_CXX_VERSION#";
                     if (Strings::starts_with(s, s_version_marker))
                     {
                         compiler_info.version = s.substr(s_version_marker.size()).to_string();
                     }
-                    static const StringLiteral s_id_marker = "#COMPILER_CXX_ID#";
+                    static constexpr StringLiteral s_id_marker = "#COMPILER_CXX_ID#";
                     if (Strings::starts_with(s, s_id_marker))
                     {
                         compiler_info.id = s.substr(s_id_marker.size()).to_string();
                     }
-                    Debug::print(s, '\n');
+                    Debug::println(s);
                     const auto old_buf_size = buf.size();
                     Strings::append(buf, s, '\n');
                     const auto write_size = buf.size() - old_buf_size;
@@ -686,18 +687,17 @@ namespace vcpkg
 
         if (compiler_info.hash.empty() || !succeeded(rc))
         {
-            Debug::print("Compiler information tracking can be disabled by passing --",
-                         VcpkgCmdArguments::FEATURE_FLAGS_ARG,
-                         "=-",
-                         VcpkgCmdArguments::COMPILER_TRACKING_FEATURE,
-                         "\n");
+            Debug::println("Compiler information tracking can be disabled by passing --",
+                           VcpkgCmdArguments::FEATURE_FLAGS_ARG,
+                           "=-",
+                           VcpkgCmdArguments::COMPILER_TRACKING_FEATURE);
 
             msg::println_error(msgErrorDetectingCompilerInfo, msg::path = stdoutlog);
             msg::write_unlocalized_text_to_stdout(Color::none, buf);
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorUnableToDetectCompilerInfo);
         }
 
-        Debug::print("Detected compiler hash for triplet ", triplet, ": ", compiler_info.hash, "\n");
+        Debug::println("Detected compiler hash for triplet ", triplet, ": ", compiler_info.hash);
         return compiler_info;
     }
 
@@ -720,6 +720,7 @@ namespace vcpkg
             {"_HOST_TRIPLET", action.host_triplet.canonical_name()},
             {"FEATURES", Strings::join(";", action.feature_list)},
             {"PORT", scf.core_paragraph->name},
+            {"VERSION", scf.core_paragraph->raw_version},
             {"VCPKG_USE_HEAD_VERSION", Util::Enum::to_bool(action.build_options.use_head_version) ? "1" : "0"},
             {"_VCPKG_DOWNLOAD_TOOL", to_string(action.build_options.download_tool)},
             {"_VCPKG_EDITABLE", Util::Enum::to_bool(action.build_options.editable) ? "1" : "0"},
@@ -729,12 +730,12 @@ namespace vcpkg
 
         if (action.build_options.download_tool == DownloadTool::ARIA2)
         {
-            variables.push_back({"ARIA2", paths.get_tool_exe(Tools::ARIA2, stdout_sink)});
+            variables.emplace_back("ARIA2", paths.get_tool_exe(Tools::ARIA2, stdout_sink));
         }
 
         for (const auto& cmake_arg : args.cmake_args)
         {
-            variables.push_back(CMakeVariable{cmake_arg});
+            variables.emplace_back(cmake_arg);
         }
 
         if (action.build_options.backcompat_features == BackcompatFeatures::PROHIBIT)
@@ -750,7 +751,7 @@ namespace vcpkg
 
         if (Util::Enum::to_bool(action.build_options.only_downloads))
         {
-            variables.push_back({"VCPKG_DOWNLOAD_MODE", "true"});
+            variables.emplace_back("VCPKG_DOWNLOAD_MODE", "true");
         }
 
         const Filesystem& fs = paths.get_filesystem();
@@ -858,7 +859,7 @@ namespace vcpkg
                                       '-',
                                       generate_random_UUID());
 
-        const auto now = CTime::get_current_date_time().value_or_exit(VCPKG_LINE_INFO).strftime("%Y-%m-%dT%H:%M:%SZ");
+        const auto now = CTime::now_string();
         const auto& abi = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
 
         const auto json_path = paths.package_dir(action.spec) / "share" / action.spec.name() / "vcpkg.spdx.json";
@@ -896,8 +897,7 @@ namespace vcpkg
             msg::println(msgInstallingFromLocation, msg::path = scfl.source_location);
         }
 
-        const auto timer = ElapsedTimer::create_started();
-
+        const ElapsedTimer timer;
         auto command = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, get_cmake_build_args(args, paths, action));
 
         const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
@@ -934,30 +934,33 @@ namespace vcpkg
         const auto buildtimeus = timer.microseconds();
         const auto spec_string = action.spec.to_string();
 
+        MetricsSubmission metrics;
+        metrics.track_buildtime(Hash::get_string_hash(spec_string, Hash::Algorithm::Sha256) + ":[" +
+                                    Strings::join(",",
+                                                  action.feature_list,
+                                                  [](const std::string& feature) {
+                                                      return Hash::get_string_hash(feature, Hash::Algorithm::Sha256);
+                                                  }) +
+                                    "]",
+                                buildtimeus);
+
+        const bool build_failed = !succeeded(return_code);
+        if (build_failed)
         {
-            LockGuardPtr<Metrics> metrics(g_metrics);
-            metrics->track_buildtime(Hash::get_string_hash(spec_string, Hash::Algorithm::Sha256) + ":[" +
-                                         Strings::join(",",
-                                                       action.feature_list,
-                                                       [](const std::string& feature) {
-                                                           return Hash::get_string_hash(feature,
-                                                                                        Hash::Algorithm::Sha256);
-                                                       }) +
-                                         "]",
-                                     buildtimeus);
-            if (!succeeded(return_code))
+            metrics.track_string(StringMetric::BuildError, spec_string);
+        }
+
+        get_global_metrics_collector().track_submission(std::move(metrics));
+        if (build_failed)
+        {
+            const auto logs = buildpath / Strings::concat("error-logs-", action.spec.triplet(), ".txt");
+            std::vector<std::string> error_logs;
+            if (fs.exists(logs, VCPKG_LINE_INFO))
             {
-                metrics->track_string_property(StringMetric::Error, "build failed");
-                metrics->track_string_property(StringMetric::BuildError, spec_string);
-                const auto logs = buildpath / Strings::concat("error-logs-", action.spec.triplet(), ".txt");
-                std::vector<std::string> error_logs;
-                if (fs.exists(logs, VCPKG_LINE_INFO))
-                {
-                    error_logs = fs.read_lines(logs, VCPKG_LINE_INFO);
-                    Util::erase_remove_if(error_logs, [](const auto& line) { return line.empty(); });
-                }
-                return ExtendedBuildResult{BuildResult::BUILD_FAILED, stdoutlog, std::move(error_logs)};
+                error_logs = fs.read_lines(logs, VCPKG_LINE_INFO);
+                Util::erase_remove_if(error_logs, [](const auto& line) { return line.empty(); });
             }
+            return ExtendedBuildResult{BuildResult::BUILD_FAILED, stdoutlog, std::move(error_logs)};
         }
 
         const BuildInfo build_info = read_build_info(fs, paths.build_info_file_path(action.spec));
@@ -1088,7 +1091,7 @@ namespace vcpkg
         // If there is an unusually large number of files in the port then
         // something suspicious is going on.  Rather than hash all of them
         // just mark the port as no-hash
-        const int max_port_file_count = 100;
+        constexpr int max_port_file_count = 100;
 
         std::string portfile_cmake_contents;
         std::vector<Path> files;
@@ -1193,10 +1196,9 @@ namespace vcpkg
                 run_resource_heuristics(portfile_cmake_contents)};
         }
 
-        Debug::print(
+        Debug::println(
             "Warning: abi keys are missing values:\n",
-            Strings::join("", abi_tag_entries_missing, [](const AbiEntry& e) { return "    " + e.key + "\n"; }),
-            "\n");
+            Strings::join("", abi_tag_entries_missing, [](const AbiEntry& e) { return "    " + e.key + '\n'; }));
 
         return nullopt;
     }
@@ -1488,7 +1490,7 @@ namespace vcpkg
                                                  VCPKG_LINE_INFO),
             "\n```\n",
             Strings::join("\n", Util::fmap(build_result.error_logs, create_log_details)),
-            "\n**Additional context**\n\n",
+            "\n\n**Additional context**\n\n",
             manifest);
     }
 

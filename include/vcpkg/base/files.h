@@ -4,12 +4,16 @@
 #include <vcpkg/base/fwd/span.h>
 
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/lineinfo.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/pragmas.h>
+#include <vcpkg/base/setup_messages.h>
 #include <vcpkg/base/stringview.h>
 
 #include <stdio.h>
 #include <string.h>
 
+#include <initializer_list>
 #include <memory>
 #include <system_error>
 
@@ -21,6 +25,13 @@
 
 namespace vcpkg
 {
+    LocalizedString format_filesystem_call_error(const std::error_code& ec,
+                                                 StringView call_name,
+                                                 std::initializer_list<StringView> args);
+    [[noreturn]] void exit_filesystem_call_error(LineInfo li,
+                                                 const std::error_code& ec,
+                                                 StringView call_name,
+                                                 std::initializer_list<StringView> args);
     struct IgnoreErrors
     {
         operator std::error_code&() { return ec; }
@@ -117,10 +128,7 @@ namespace vcpkg
     inline bool is_regular_file(FileType s) { return s == FileType::regular; }
     inline bool is_directory(FileType s) { return s == FileType::directory; }
     inline bool exists(FileType s) { return s != FileType::not_found && s != FileType::none; }
-}
 
-namespace vcpkg
-{
     struct FilePointer
     {
     protected:
@@ -147,7 +155,7 @@ namespace vcpkg
             return ::_fseeki64(m_fs, static_cast<long long>(offset), origin);
 #else  // ^^^ _WIN32 / !_WIN32 vvv
             Checks::check_exit(VCPKG_LINE_INFO, offset < LLONG_MAX);
-            return ::fseek(m_fs, offset, origin);
+            return ::fseek(m_fs, static_cast<long>(offset), origin);
 #endif // ^^^ !_WIN32
         }
         int seek(long long offset, int origin) const noexcept
@@ -287,6 +295,9 @@ namespace vcpkg
 
         virtual bool create_directories(const Path& new_directory, std::error_code& ec) = 0;
         bool create_directories(const Path& new_directory, LineInfo);
+
+        virtual Path create_or_get_temp_directory(std::error_code& ec) = 0;
+        Path create_or_get_temp_directory(LineInfo);
 
         virtual void create_symlink(const Path& to, const Path& from, std::error_code& ec) = 0;
         void create_symlink(const Path& to, const Path& from, LineInfo);

@@ -4,7 +4,6 @@
 import { MultiBar, SingleBar } from 'cli-progress';
 import { Artifact, ArtifactBase, InstallStatus, ResolvedArtifact, resolveDependencies, Selections } from '../artifacts/artifact';
 import { i } from '../i18n';
-import { trackAcquire } from '../insights';
 import { FileEntry, InstallEvents } from '../interfaces/events';
 import { getArtifact, RegistryDisplayContext, RegistryResolver } from '../registries/registries';
 import { Session } from '../session';
@@ -236,9 +235,8 @@ class NoTtyProgressRenderer implements Partial<ProgressRenderer> {
   }
 }
 
-export async function installArtifacts(session: Session, resolved: Array<ResolvedArtifact>, registries: RegistryDisplayContext, options?: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<[boolean, Map<Artifact, boolean>]> {
+export async function acquireArtifacts(session: Session, resolved: Array<ResolvedArtifact>, registries: RegistryDisplayContext, options?: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<boolean> {
   // resolve the full set of artifacts to install.
-  const installed = new Map<Artifact, boolean>();
   const isTty = process.stdout.isTTY === true;
   const progressRenderer : Partial<ProgressRenderer> = isTty ? new TtyProgressRenderer(resolved.length) : new NoTtyProgressRenderer(session.channels, resolved.length);
   for (let idx = 0; idx < resolved.length; ++idx) {
@@ -252,26 +250,24 @@ export async function installArtifacts(session: Session, resolved: Array<Resolve
         const installStatus = await artifact.install(artifactDisplayName, progressRenderer, options || {});
         switch (installStatus) {
           case InstallStatus.Installed:
-            installed.set(artifact, true);
-            trackAcquire(id, artifact.version);
+            session.trackAcquire(artifact.registryUri.toString(), id, artifact.version);
             break;
           case InstallStatus.AlreadyInstalled:
-            installed.set(artifact, false);
             break;
           case InstallStatus.Failed:
             progressRenderer.stop?.();
-            return [false, installed];
+            return false;
         }
       } catch (e: any) {
         progressRenderer.stop?.();
         debug(e);
         debug(e.stack);
         error(i`Error installing ${artifactDisplayName} - ${e}`);
-        return [false, installed];
+        return false;
       }
     }
   }
 
   progressRenderer.stop?.();
-  return [true, installed];
+  return true;
 }

@@ -31,7 +31,7 @@ namespace vcpkg
     Triplet Triplet::from_canonical_name(std::string triplet_as_string)
     {
         static std::unordered_set<TripletInstance> g_triplet_instances;
-        Strings::ascii_to_lowercase(&triplet_as_string[0], &triplet_as_string[0] + triplet_as_string.size());
+        Strings::ascii_to_lowercase(triplet_as_string.data(), triplet_as_string.data() + triplet_as_string.size());
         const auto p = g_triplet_instances.emplace(std::move(triplet_as_string));
         return &*p.first;
     }
@@ -85,9 +85,9 @@ namespace vcpkg
 
     Triplet default_triplet(const VcpkgCmdArguments& args)
     {
-        if (args.triplet != nullptr)
+        if (auto triplet = args.triplet.get())
         {
-            return Triplet::from_canonical_name(std::string(*args.triplet));
+            return Triplet::from_canonical_name(*triplet);
         }
 #if defined(_WIN32)
         return Triplet::from_canonical_name("x86-windows");
@@ -98,9 +98,9 @@ namespace vcpkg
 
     Triplet default_host_triplet(const VcpkgCmdArguments& args)
     {
-        if (args.host_triplet != nullptr)
+        if (auto host_triplet = args.host_triplet.get())
         {
-            return Triplet::from_canonical_name(std::string(*args.host_triplet));
+            return Triplet::from_canonical_name(*host_triplet);
         }
         return system_triplet();
     }

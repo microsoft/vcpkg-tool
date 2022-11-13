@@ -100,8 +100,10 @@ function Run-Vcpkg {
         [string[]]$TestArgs
     )
     $Script:CurrentTest = "$VcpkgExe $($testArgs -join ' ')"
-    if (!$EndToEndTestSilent) { Write-Host $Script:CurrentTest }
-    & $VcpkgExe @testArgs
+    if (!$EndToEndTestSilent) { Write-Host -ForegroundColor red $Script:CurrentTest }
+    $result = (& $VcpkgExe @testArgs) | Out-String
+    if (!$EndToEndTestSilent) { Write-Host -ForegroundColor Gray $result }
+    $result
 }
 
 Refresh-TestRoot

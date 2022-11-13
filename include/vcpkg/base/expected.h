@@ -172,6 +172,18 @@ namespace vcpkg
         explicit constexpr operator bool() const noexcept { return !value_is_error; }
         constexpr bool has_value() const noexcept { return !value_is_error; }
 
+        template<class... Args>
+        T value_or(Args&&... or_args) &&
+        {
+            return !value_is_error ? std::move(*m_t.get()) : T(std::forward<Args>(or_args)...);
+        }
+
+        template<class... Args>
+        T value_or(Args&&... or_args) const&
+        {
+            return !value_is_error ? *m_t.get() : T(std::forward<Args>(or_args)...);
+        }
+
         const T&& value_or_exit(const LineInfo& line_info) const&&
         {
             exit_if_error(line_info);

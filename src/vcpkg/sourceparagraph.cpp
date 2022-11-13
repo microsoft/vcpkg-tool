@@ -833,7 +833,7 @@ namespace vcpkg
             if (cur() == Unicode::end_of_file)
             {
                 add_error(msg::format(msgEmptyLicenseExpression));
-                return "";
+                return {};
             }
 
             Expecting expecting = Expecting::License;
@@ -1021,7 +1021,7 @@ namespace vcpkg
             const vcpkg::Json::Object& obj,
             vcpkg::SourceParagraph& spgh,
             vcpkg::Json::Reader& r,
-            std::unique_ptr<vcpkg::SourceControlFile>& control_file)
+            std::unique_ptr<vcpkg::SourceControlFile>& control_file) const
         {
             for (const auto& el : obj)
             {
@@ -1313,7 +1313,7 @@ namespace vcpkg
                 {
                     if (dep.constraint.type != VersionConstraintKind::None)
                     {
-                        LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ErrorVersioningDisabled);
+                        get_global_metrics_collector().track_define(DefineMetric::ErrorVersioningDisabled);
                         return Strings::concat(
                             origin,
                             " was rejected because it uses constraints and the `",
@@ -1334,7 +1334,7 @@ namespace vcpkg
 
             if (core_paragraph->overrides.size() != 0)
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ErrorVersioningDisabled);
+                get_global_metrics_collector().track_define(DefineMetric::ErrorVersioningDisabled);
                 return Strings::concat(
                     origin,
                     format_error_message(ManifestDeserializer::OVERRIDES, VcpkgCmdArguments::VERSIONS_FEATURE),
@@ -1343,7 +1343,7 @@ namespace vcpkg
 
             if (core_paragraph->builtin_baseline.has_value())
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ErrorVersioningDisabled);
+                get_global_metrics_collector().track_define(DefineMetric::ErrorVersioningDisabled);
                 return Strings::concat(
                     origin,
                     format_error_message(ManifestDeserializer::BUILTIN_BASELINE, VcpkgCmdArguments::VERSIONS_FEATURE),
@@ -1360,7 +1360,7 @@ namespace vcpkg
                                     return dependency.constraint.type != VersionConstraintKind::None;
                                 }))
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ErrorVersioningNoBaseline);
+                    get_global_metrics_collector().track_define(DefineMetric::ErrorVersioningNoBaseline);
                     return Strings::concat(
                         origin,
                         " was rejected because it uses \"version>=\" and does not have a \"builtin-baseline\".\n",
@@ -1369,7 +1369,7 @@ namespace vcpkg
 
                 if (!core_paragraph->overrides.empty())
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::ErrorVersioningNoBaseline);
+                    get_global_metrics_collector().track_define(DefineMetric::ErrorVersioningNoBaseline);
                     return Strings::concat(
                         origin,
                         " was rejected because it uses \"overrides\" and does not have a \"builtin-baseline\".\n",

@@ -32,7 +32,7 @@ namespace vcpkg::Commands::Autocomplete
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        LockGuardPtr<Metrics>(g_metrics)->set_send_metrics(false);
+        g_should_send_metrics = false;
 
         // Handles vcpkg <command>
         if (args.command_arguments.size() <= 1)

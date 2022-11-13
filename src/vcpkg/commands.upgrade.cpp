@@ -1,4 +1,3 @@
-#include <vcpkg/base/lockguarded.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
@@ -86,7 +85,7 @@ namespace vcpkg::Commands::Upgrade
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
         // Load ports from ports dirs
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
+        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
@@ -218,8 +217,6 @@ namespace vcpkg::Commands::Upgrade
 
         const InstallSummary summary = Install::perform(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), var_provider);
-
-        msg::println(msgTotalTime, msg::elapsed = GlobalState::timer.to_string());
 
         if (keep_going == KeepGoing::YES)
         {

@@ -124,8 +124,6 @@ namespace vcpkg::Commands::SetInstalled
 
         const auto summary = Install::perform(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), cmake_vars);
-        msg::println();
-        msg::println(msgTotalTime, msg::elapsed = GlobalState::timer.to_string());
 
         if (keep_going == KeepGoing::YES && summary.failed())
         {
@@ -175,14 +173,14 @@ namespace vcpkg::Commands::SetInstalled
         const PrintUsage print_cmake_usage =
             Util::Sets::contains(options.switches, OPTION_NO_PRINT_USAGE) ? PrintUsage::NO : PrintUsage::YES;
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
+        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
 
         Optional<Path> pkgsconfig;
         auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
         if (it_pkgsconfig != options.settings.end())
         {
-            LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::X_WriteNugetPackagesConfig);
+            get_global_metrics_collector().track_define(DefineMetric::X_WriteNugetPackagesConfig);
             pkgsconfig = it_pkgsconfig->second;
         }
 

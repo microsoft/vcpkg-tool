@@ -1,3 +1,4 @@
+#include <vcpkg/base/checks.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/xmlserializer.h>
 
@@ -93,8 +94,7 @@ namespace vcpkg
     XmlSerializer& XmlSerializer::cdata(StringView sv)
     {
         emit_pending_indent();
-        Checks::check_exit(
-            VCPKG_LINE_INFO, Strings::search(sv, "]]>") == sv.end(), "]]> is not supported in a CDATA block");
+        Checks::msg_check_exit(VCPKG_LINE_INFO, Strings::search(sv, "]]>") == sv.end(), msgUnsupportedSyntaxInCDATA);
         buf.append("<![CDATA[");
         buf.append(sv.begin(), sv.size());
         buf.append("]]>");
