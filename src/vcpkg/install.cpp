@@ -1201,14 +1201,14 @@ namespace vcpkg
             msg::println(msgWroteNuGetPkgConfInfo, msg::path = pkgsconfig_path);
         }
 
+        track_install_plan(action_plan);
+
         if (dry_run)
         {
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
         paths.flush_lockfile();
-
-        track_install_plan(action_plan);
 
         const InstallSummary summary = Install::perform(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), var_provider);
@@ -1316,12 +1316,20 @@ namespace vcpkg
                 t, [t]() { return Hash::get_string_hash(t.canonical_name(), Hash::Algorithm::Sha256); });
         };
 
+        const size_t total_actions =
+            plan.already_installed.size() + plan.install_actions.size() + plan.remove_actions.size();
         std::vector<std::string> installplan_1;
         std::vector<std::string> actions;
         std::vector<std::string> ports;
         std::vector<std::string> triplets;
         std::vector<std::string> versions;
         std::vector<std::string> origins;
+        installplan_1.reserve(total_actions);
+        actions.reserve(total_actions);
+        ports.reserve(total_actions);
+        triplets.reserve(total_actions);
+        versions.reserve(total_actions);
+        origins.reserve(total_actions);
 
         for (auto&& action : plan.remove_actions)
         {
@@ -1376,11 +1384,12 @@ namespace vcpkg
         }
 
         // all arrays should have the same number of elements
-        Checks::check_exit(VCPKG_LINE_INFO, actions.size() == ports.size());
-        Checks::check_exit(VCPKG_LINE_INFO, actions.size() == triplets.size());
-        Checks::check_exit(VCPKG_LINE_INFO, actions.size() == versions.size());
-        Checks::check_exit(VCPKG_LINE_INFO, actions.size() == origins.size());
-        Checks::check_exit(VCPKG_LINE_INFO, actions.size() == installplan_1.size());
+        Checks::check_exit(VCPKG_LINE_INFO, total_actions == actions.size());
+        Checks::check_exit(VCPKG_LINE_INFO, total_actions == ports.size());
+        Checks::check_exit(VCPKG_LINE_INFO, total_actions == triplets.size());
+        Checks::check_exit(VCPKG_LINE_INFO, total_actions == versions.size());
+        Checks::check_exit(VCPKG_LINE_INFO, total_actions == origins.size());
+        Checks::check_exit(VCPKG_LINE_INFO, total_actions == installplan_1.size());
 
         MetricsSubmission metrics;
         metrics.track_string(StringMetric::InstallPlan_1, Strings::join(",", installplan_1));
