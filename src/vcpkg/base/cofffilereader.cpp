@@ -267,24 +267,27 @@ namespace vcpkg
             {
                 if (remaining_size < sizeof(ImageLoadConfigDirectory32))
                 {
-                    Debug::print("No Load Config Table");
+                    Debug::print("Older LOAD_CONFIG");
                     return false;
                 }
                 ImageLoadConfigDirectory32 entry;
                 Checks::check_exit(VCPKG_LINE_INFO, fs.read(&entry, sizeof(entry), 1) == 1);
                 return entry.CHPEMetadataPointer != 0;
             }
-            else if (common_optional_headers.magic == 0x20b)
+
+            if (common_optional_headers.magic == 0x20b)
             {
                 if (remaining_size < sizeof(ImageLoadConfigDirectory64))
                 {
-                    Debug::print("No Load Config Table");
+                    Debug::print("Older LOAD_CONFIG");
                     return false;
                 }
                 ImageLoadConfigDirectory64 entry;
                 Checks::check_exit(VCPKG_LINE_INFO, fs.read(&entry, sizeof(entry), 1) == 1);
                 return entry.CHPEMetadataPointer != 0;
             }
+
+            Checks::unreachable(VCPKG_LINE_INFO);
         }
 
         std::vector<std::string> read_imported_dlls(const ReadFilePointer& fs) const

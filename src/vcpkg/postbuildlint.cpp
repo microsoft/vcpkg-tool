@@ -550,16 +550,9 @@ namespace vcpkg::PostBuildLint
             const std::string actual_architecture = get_actual_architecture(machine_type);
             if (expected_architecture == "arm64ec")
             {
-                if (actual_architecture != "x64")
+                if (actual_architecture != "x64" || !is_arm64ec_dll(fs.open_for_read(file, VCPKG_LINE_INFO)))
                 {
                     binaries_with_invalid_architecture.push_back({file, actual_architecture});
-                }
-                else
-                {
-                    if (!is_arm64ec_dll(fs.open_for_read(file, VCPKG_LINE_INFO)))
-                    {
-                        binaries_with_invalid_architecture.push_back({file, actual_architecture});
-                    }
                 }
             }
             else if (expected_architecture != actual_architecture)
