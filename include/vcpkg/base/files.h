@@ -16,6 +16,7 @@
 #include <initializer_list>
 #include <memory>
 #include <system_error>
+#include <utility>
 
 #if defined(_WIN32)
 #define VCPKG_PREFERRED_SEPARATOR "\\"
@@ -186,18 +187,36 @@ namespace vcpkg
     struct ReadFilePointer : FilePointer
     {
         ReadFilePointer() = default;
+        ReadFilePointer(ReadFilePointer&&) = default;
         explicit ReadFilePointer(const Path& file_path, std::error_code& ec) noexcept;
+
+        ReadFilePointer& operator=(ReadFilePointer&& other) noexcept
+        {
+            ReadFilePointer fp{std::move(other)};
+            std::swap(m_fs, fp.m_fs);
+            return *this;
+        }
 
         size_t read(void* buffer, size_t element_size, size_t element_count) const noexcept
         {
             return ::fread(buffer, element_size, element_count, m_fs);
         }
+
+        int getc() const noexcept { return ::fgetc(m_fs); }
     };
 
     struct WriteFilePointer : FilePointer
     {
         WriteFilePointer() = default;
+        WriteFilePointer(WriteFilePointer&&) = default;
         explicit WriteFilePointer(const Path& file_path, std::error_code& ec) noexcept;
+
+        WriteFilePointer& operator=(WriteFilePointer&& other) noexcept
+        {
+            WriteFilePointer fp{std::move(other)};
+            std::swap(m_fs, fp.m_fs);
+            return *this;
+        }
 
         size_t write(const void* buffer, size_t element_size, size_t element_count) const noexcept
         {

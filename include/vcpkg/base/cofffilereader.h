@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 
+#include <string>
 #include <vector>
 
 namespace vcpkg
@@ -16,6 +17,7 @@ namespace vcpkg
         ARM = 0x1c0,       // ARM little endian
         ARM64 = 0xaa64,    // ARM64 little endian
         ARM64EC = 0xa641,  // ARM64 "emulation compatible"
+        ARM64X = 0xa64e,   // ARM64X
         ARMNT = 0x1c4,     // ARM Thumb-2 little endian
         EBC = 0xebc,       // EFI byte code
         I386 = 0x14c,      // Intel 386 or later processors and compatible processors
@@ -41,6 +43,8 @@ namespace vcpkg
     MachineType to_machine_type(const uint16_t value);
 
     MachineType read_dll_machine_type(const ReadFilePointer& fs);
+    std::vector<std::string> read_dll_imported_dll_names(const ReadFilePointer& fs);
 
     std::vector<MachineType> read_lib_machine_types(const ReadFilePointer& fs);
+    bool is_arm64ec_dll(const ReadFilePointer& fs);
 }
