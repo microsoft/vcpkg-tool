@@ -59,11 +59,6 @@ namespace vcpkg
         CommandName,
         DetectedCiEnvironment,
         InstallPlan_1,
-        InstallPlan_2_Actions,
-        InstallPlan_2_Origins,
-        InstallPlan_2_Ports,
-        InstallPlan_2_Triplets,
-        InstallPlan_2_Versions,
         ListFile,
         RegistriesDefaultRegistryKind,
         RegistriesKindsUsed,
@@ -104,6 +99,25 @@ namespace vcpkg
 
     extern const std::array<BoolMetricEntry, static_cast<size_t>(BoolMetric::COUNT)> all_bool_metrics;
 
+    enum ArrayMetric
+    {
+        InstallPlanActions,
+        InstallPlanOrigins,
+        InstallPlanPorts,
+        InstallPlanTriplets,
+        InstallPlanVersions,
+        COUNT // always keep COUNT last
+    };
+
+    struct ArrayMetricEntry
+    {
+        ArrayMetric metric;
+        StringLiteral name;
+        StringLiteral preregister_value;
+    };
+
+    extern const std::array<ArrayMetricEntry, static_cast<size_t>(ArrayMetric::COUNT)> all_array_metrics;
+
     // Batches metrics changes so they can be submitted under a single lock acquisition or
     // in a single JSON payload.
     struct MetricsSubmission
@@ -113,6 +127,7 @@ namespace vcpkg
         void track_define(DefineMetric metric);
         void track_string(StringMetric metric, StringView value);
         void track_bool(BoolMetric metric, bool value);
+        void track_array(ArrayMetric metric, std::vector<std::string>&& values);
         void merge(MetricsSubmission&& other);
 
         double elapsed_us = 0.0;
@@ -120,6 +135,7 @@ namespace vcpkg
         std::set<DefineMetric> defines;
         std::map<StringMetric, std::string> strings;
         std::map<BoolMetric, bool> bools;
+        std::map<ArrayMetric, std::vector<std::string>> arrays;
     };
 
     // Collects metrics, potentially from multiple threads.
@@ -138,6 +154,7 @@ namespace vcpkg
         void track_define(DefineMetric metric);
         void track_string(StringMetric metric, StringView value);
         void track_bool(BoolMetric metric, bool value);
+        void track_array(ArrayMetric metric, std::vector<std::string>&& values);
         void track_submission(MetricsSubmission&& submission_);
 
         // Consume

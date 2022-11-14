@@ -1392,12 +1392,12 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, total_actions == installplan_1.size());
 
         MetricsSubmission metrics;
-        metrics.track_string(StringMetric::InstallPlan_1, Strings::join(",", installplan_1));
-        metrics.track_string(StringMetric::InstallPlan_2_Actions, Strings::join(",", actions));
-        metrics.track_string(StringMetric::InstallPlan_2_Ports, Strings::join(",", ports));
-        metrics.track_string(StringMetric::InstallPlan_2_Triplets, Strings::join(",", triplets));
-        metrics.track_string(StringMetric::InstallPlan_2_Versions, Strings::join(",", versions));
-        metrics.track_string(StringMetric::InstallPlan_2_Origins, Strings::join(",", origins));
+        //metrics.track_string(StringMetric::InstallPlan_1, Strings::join(",", installplan_1));
+        metrics.track_array(ArrayMetric::InstallPlanActions, std::move(actions));
+        metrics.track_array(ArrayMetric::InstallPlanPorts, std::move(ports));
+        metrics.track_array(ArrayMetric::InstallPlanTriplets, std::move(triplets));
+        metrics.track_array(ArrayMetric::InstallPlanVersions, std::move(versions));
+        metrics.track_array(ArrayMetric::InstallPlanOrigins, std::move(origins));
         get_global_metrics_collector().track_submission(std::move(metrics));
     }
 }

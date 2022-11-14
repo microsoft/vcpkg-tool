@@ -30,6 +30,14 @@ namespace
         }
     }
 
+    static void set_array_metrics(MetricsSubmission& metrics)
+    {
+        for (auto&& metric : all_array_metrics)
+        {
+            metrics.track_array(metric.metric, Strings::split(metric.preregister_value, ','));
+        }
+    }
+
     const CommandStructure COMMAND_STRUCTURE = {
         create_example_string("z-preregister-telemetry"),
         0,
@@ -56,6 +64,7 @@ namespace vcpkg::Commands
             set_define_metrics(metrics);
             set_bool_metrics(metrics);
             set_string_metrics(metrics);
+            set_array_metrics(metrics);
             get_global_metrics_collector().track_submission(std::move(metrics));
         }
         else

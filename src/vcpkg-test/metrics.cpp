@@ -46,14 +46,24 @@ TEST_CASE ("Check metric enum types", "[metrics]")
     {
         validate_enum_values_and_names(all_bool_metrics);
     }
+
+    SECTION ("array metrics")
+    {
+        validate_enum_values_and_names(all_array_metrics);
+    }
 }
 
-TEST_CASE ("Check string metrics initialization values", "[metrics]")
+TEST_CASE ("Check metrics initialization values", "[metrics]")
 {
     // check that all init values are complete
     for (auto&& string_metric : all_string_metrics)
     {
         REQUIRE(!string_metric.preregister_value.empty());
+    }
+
+    for (auto&& array_metric : all_array_metrics)
+    {
+        REQUIRE(!array_metric.preregister_value.empty());
     }
 }
 

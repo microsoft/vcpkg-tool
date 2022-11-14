@@ -134,11 +134,6 @@ namespace vcpkg
         {StringMetric::DetectedCiEnvironment, "detected_ci_environment", "Generic"},
         // spec:triplet:version,...
         {StringMetric::InstallPlan_1, "installplan_1", plan_example},
-        {StringMetric::InstallPlan_2_Actions, "installplan_2_actions", plan_example},
-        {StringMetric::InstallPlan_2_Origins, "installplan_2_origins", plan_example},
-        {StringMetric::InstallPlan_2_Ports, "installplan_2_ports", plan_example},
-        {StringMetric::InstallPlan_2_Triplets, "installplan_2_triplets", plan_example},
-        {StringMetric::InstallPlan_2_Versions, "installplan_2_versions", plan_example},
         {StringMetric::ListFile, "listfile", "update to new format"},
         {StringMetric::RegistriesDefaultRegistryKind, "registries-default-registry-kind", "builtin-files"},
         {StringMetric::RegistriesKindsUsed, "registries-kinds-used", "git,filesystem"},
@@ -157,6 +152,20 @@ namespace vcpkg
         {BoolMetric::FeatureFlagVersions, "feature-flag-versions"},
         {BoolMetric::InstallManifestMode, "install_manifest_mode"},
         {BoolMetric::OptionOverlayPorts, "option_overlay_ports"},
+    }};
+
+    const constexpr std::array<ArrayMetricEntry, static_cast<size_t>(ArrayMetric::COUNT)> all_array_metrics{{
+        {ArrayMetric::InstallPlanActions, "installplan_actions_tmp", "i"},
+        {ArrayMetric::InstallPlanOrigins, "installplan_origins_tmp", "builtin-filesystem"},
+        {ArrayMetric::InstallPlanPorts,
+         "installplan_ports_tmp",
+         "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff"},
+        {ArrayMetric::InstallPlanTriplets,
+         "installplan_triplets_tmp",
+         "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff"},
+        {ArrayMetric::InstallPlanVersions,
+         "installplan_versions_tmp",
+         "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff"},
     }};
 
     void MetricsSubmission::track_elapsed_us(double value)
@@ -205,6 +214,11 @@ namespace vcpkg
 
     void MetricsSubmission::track_bool(BoolMetric metric, bool value) { bools.insert_or_assign(metric, value); }
 
+    void MetricsSubmission::track_array(ArrayMetric metric, std::vector<std::string>&& values)
+    {
+        arrays.insert_or_assign(metric, values);
+    }
+
     void MetricsSubmission::merge(MetricsSubmission&& other)
     {
         if (other.elapsed_us != 0.0)
@@ -216,6 +230,7 @@ namespace vcpkg
         defines.merge(other.defines);
         strings.merge(other.strings);
         bools.merge(other.bools);
+        arrays.merge(other.arrays);
     }
 
     void MetricsCollector::track_elapsed_us(double value)
@@ -246,6 +261,12 @@ namespace vcpkg
     {
         std::lock_guard<std::mutex> lock{mtx};
         submission.track_bool(metric, value);
+    }
+
+    void MetricsCollector::track_array(ArrayMetric metric, std::vector<std::string>&& values)
+    {
+        std::lock_guard<std::mutex> lock{mtx};
+        submission.track_array(metric, std::move(values));
     }
 
     void MetricsCollector::track_submission(MetricsSubmission&& submission_)
@@ -425,6 +446,17 @@ namespace vcpkg
         {
             properties.insert_or_replace(get_metric_name(bool_property.first, all_bool_metrics),
                                          Json::Value::boolean(bool_property.second));
+        }
+
+        for (auto&& array_property : submission.arrays)
+        {
+            Json::Array value;
+            for (auto&& v : array_property.second)
+            {
+                value.push_back(v);
+            }
+
+            properties.insert_or_replace(get_metric_name(array_property.first, all_array_metrics), value);
         }
 
         if (!submission.buildtimes.empty())
