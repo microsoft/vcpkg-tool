@@ -251,7 +251,6 @@ namespace vcpkg
 
         bool check_load_config_dll_arm64ec(const ReadFilePointer& fs) const
         {
-            bool chpe_metadata_ptr = false;
             if (data_directories.size() < 11)
             {
                 Debug::print("No load config data directory");
