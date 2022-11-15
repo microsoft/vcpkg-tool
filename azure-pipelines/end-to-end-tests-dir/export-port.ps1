@@ -61,7 +61,7 @@ if ($diff) {
 
 # [x-export-port] Export version port files
 Refresh-TestRoot
-Run-Vcpkg -EndToEndTestSilent x-export-port duck mallard "$testOutput" `
+Run-Vcpkg -EndToEndTestSilent x-export-port duck --version=mallard "$testOutput" `
     --x-builtin-ports-root="$testPorts" `
     --x-builtin-registry-versions-dir="$testVersionsDb" `
     | Out-Null
@@ -77,7 +77,7 @@ if ($diff) {
 
 # [x-export-port] Add version suffix to destination
 Refresh-TestRoot
-Run-Vcpkg -EndToEndTestSilent x-export-port duck mallard "$testOutput" --add-version-suffix `
+Run-Vcpkg -EndToEndTestSilent x-export-port duck --version=mallard "$testOutput" --add-version-suffix `
     --x-builtin-ports-root="$testPorts" `
     --x-builtin-registry-versions-dir="$testVersionsDb" `
     | Out-Null
@@ -90,5 +90,21 @@ if ($diff) {
     $diff
     throw "exported files don't match the source"
 }
+
+# [x-export-port] Fail if no destination and no overlays
+Refresh-TestRoot
+Run-Vcpkg -EndToEndTestSilent x-export-port duck --version=mallard `
+    --x-builtin-ports-root="$testPorts" `
+    --x-builtin-registry-versions-dir="$testVersionsDb" `
+    | Out-Null
+Throw-IfNotFailed
+
+# [x-export-port] Fail if no destination and no overlays
+Refresh-TestRoot
+Run-Vcpkg -EndToEndTestSilent x-export-port duck --version=mallard --overlay-ports="$testOutput" `
+    --x-builtin-ports-root="$testPorts" `
+    --x-builtin-registry-versions-dir="$testVersionsDb" `
+    | Out-Null
+Throw-IfFailed
 
 Refresh-TestRoot

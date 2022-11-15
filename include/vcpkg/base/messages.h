@@ -1018,12 +1018,19 @@ namespace vcpkg
                     "Make sure that the port name is correct.");
     DECLARE_MESSAGE(ExportPortIgnoreSuffixNoSubdir,
                     (),
-                    "'-add-version-suffix' and '--no-subdir' are command-line options and should be left untranslated",
+                    "'-add-version-suffix' and '--subdir' are command-line options and should be left untranslated",
                     "Ignoring option --add-version-suffix because option --no-subdir was passed.");
     DECLARE_MESSAGE(ExportPortIgnoreSuffixNoVersion,
                     (),
                     "'--add-version-suffix' is a command-line option and should be left untranslated",
                     "Ignoring option --add-version-suffix because no version argument was passed.");
+    DECLARE_MESSAGE(ExportPortNoDestination,
+                    (),
+                    "",
+                    "Missing destination argument.\n"
+                    "No destination argument was passed and no overlay port locations are configured.\n"
+                    "Add a destination argument or review your configuration if you expected vcpkg to export to an "
+                    "overlay ports location.");
     DECLARE_MESSAGE(ExportPortPathExistsAndNotEmpty,
                     (msg::path),
                     "'--force' is a command-line option and should be left untranslated",
@@ -1690,9 +1697,9 @@ namespace vcpkg
                     "while loading {path}:");
     DECLARE_MESSAGE(ParseControlErrorInfoWrongTypeFields, (), "", "The following fields had the wrong types:");
     DECLARE_MESSAGE(PathMustBeAbsolute,
-                    (msg::path),
+                    (msg::env_var, msg::path),
                     "",
-                    "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute: {path}");
+                    "Value of environment variable {env_var} is not absolute: {path}");
     DECLARE_MESSAGE(PortDependencyConflict,
                     (msg::package_name),
                     "",

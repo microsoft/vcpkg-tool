@@ -772,6 +772,20 @@ namespace vcpkg
             if (const auto unpacked = vcpkg_overlay_ports_env.get())
             {
                 env_overlay_ports = Strings::split_paths(*unpacked);
+
+                // we need to validate that all overlay ports from environment are absolute paths
+                bool has_errors = false;
+                for (Path&& overlay_path : env_overlay_ports)
+                {
+                    if (!overlay_path.is_absolute())
+                    {
+                        msg::println_error(msgPathMustBeAbsolute,
+                                           msg::env_var = VcpkgCmdArguments::OVERLAY_PORTS_ENV,
+                                           msg::path = overlay_path);
+                        has_errors = true;
+                    }
+                }
+                if (has_errors) Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
         {

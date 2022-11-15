@@ -603,6 +603,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ExportPortFilesMissing);
     REGISTER_MESSAGE(ExportPortIgnoreSuffixNoSubdir);
     REGISTER_MESSAGE(ExportPortIgnoreSuffixNoVersion);
+    REGISTER_MESSAGE(ExportPortNoDestination);
     REGISTER_MESSAGE(ExportPortPathExistsAndNotEmpty);
     REGISTER_MESSAGE(ExportPortVersionNotFound);
     REGISTER_MESSAGE(ExportPortVersionsDbFileMissing);
