@@ -590,6 +590,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ExpectedStatusField);
     REGISTER_MESSAGE(ExpectedTripletName);
     REGISTER_MESSAGE(ExpectedValueForOption);
+    REGISTER_MESSAGE(ExpectedRegistryToContainPort);
     REGISTER_MESSAGE(ExtendedDocumentationAtUrl);
     REGISTER_MESSAGE(ExtractingTool);
     REGISTER_MESSAGE(FailedToDetermineCurrentCommit);
@@ -605,6 +606,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ExportPortIgnoreSuffixNoVersion);
     REGISTER_MESSAGE(ExportPortNoDestination);
     REGISTER_MESSAGE(ExportPortPathExistsAndNotEmpty);
+    REGISTER_MESSAGE(ExportPortVersionArgumentInvalid);
     REGISTER_MESSAGE(ExportPortVersionNotFound);
     REGISTER_MESSAGE(ExportPortVersionsDbFileMissing);
     REGISTER_MESSAGE(ExportPortSuccess);
@@ -983,6 +985,7 @@ namespace vcpkg
     REGISTER_MESSAGE(VersionCommandHeader);
     REGISTER_MESSAGE(VersionConflictXML);
     REGISTER_MESSAGE(VersionConstraintViolated);
+    REGISTER_MESSAGE(VersionInvalid);
     REGISTER_MESSAGE(VersionInvalidDate);
     REGISTER_MESSAGE(VersionInvalidRelaxed);
     REGISTER_MESSAGE(VersionInvalidSemver);

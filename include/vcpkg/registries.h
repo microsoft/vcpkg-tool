@@ -73,6 +73,8 @@ namespace vcpkg
     {
         virtual StringLiteral kind() const = 0;
 
+        virtual StringView friendly_identifier() const = 0;
+
         // returns nullptr if the port doesn't exist
         virtual std::unique_ptr<RegistryEntry> get_port_entry(StringView port_name) const = 0;
 
@@ -116,6 +118,8 @@ namespace vcpkg
         {
         }
 
+        ExpectedL<PathAndLocation> fetch_port_files(StringView port_name, const Version& version) const;
+
         // finds the correct registry for the port name
         // Returns the null pointer if there is no registry set up for that name
         const RegistryImplementation* registry_for_port(StringView port_name) const;
@@ -138,14 +142,18 @@ namespace vcpkg
     };
 
     std::unique_ptr<RegistryImplementation> make_builtin_registry(const VcpkgPaths& paths);
-    std::unique_ptr<RegistryImplementation> make_builtin_registry(const VcpkgPaths& paths, std::string baseline);
+    std::unique_ptr<RegistryImplementation> make_builtin_registry(const VcpkgPaths& paths,
+                                                                  std::string baseline,
+                                                                  std::string friendly_identifier);
     std::unique_ptr<RegistryImplementation> make_git_registry(const VcpkgPaths& paths,
                                                               std::string repo,
                                                               std::string reference,
-                                                              std::string baseline);
+                                                              std::string baseline,
+                                                              std::string friendly_identifier);
     std::unique_ptr<RegistryImplementation> make_filesystem_registry(const Filesystem& fs,
                                                                      Path path,
-                                                                     std::string baseline);
+                                                                     std::string baseline,
+                                                                     std::string friendly_identifier);
 
     ExpectedS<std::vector<std::pair<SchemedVersion, std::string>>> get_builtin_versions(const VcpkgPaths& paths,
                                                                                         StringView port_name);

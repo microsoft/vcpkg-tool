@@ -4,7 +4,7 @@ $testOutput = "$TestingRoot/exported-ports"
 $testPorts = "$PSScriptRoot/../e2e_ports/version-files/ports"
 $testVersionsDb = "$PSScriptRoot/../e2e_ports/version-files/versions"
 
-#[x-export-port] Export local port files
+# [x-export-port] Export local port files
 Run-Vcpkg -EndToEndTestSilent x-export-port cat "$testOutput" `
     --x-builtin-ports-root="$testPorts" `
     | Out-Null
@@ -17,6 +17,12 @@ if ($diff) {
     $diff
     throw "exported files don't match the source"
 }
+
+# [x-export-port] Fail local port file not exists
+Run-Vcpkg -EndToEndTestSilent x-export-port unicorn "${testOutput}" `
+    --x-builtin-ports-root="$testPorts" `
+    | Out-Null
+Throw-IfNotFailed
 
 # [x-export-port] Refuse to export to non-empty directory
 Refresh-TestRoot

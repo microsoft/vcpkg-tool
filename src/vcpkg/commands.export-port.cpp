@@ -2,11 +2,13 @@
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/archives.h> // for extract_tar_cmake
 #include <vcpkg/commands.export-port.h>
+#include <vcpkg/configuration.h>
 #include <vcpkg/metrics.h>
-#include <vcpkg/registries.h> // for versions db parsing
+#include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
@@ -14,9 +16,55 @@ namespace
 {
     using namespace vcpkg;
 
+    void copy_port_files(Filesystem& fs, StringView port_name, const Path& source, const Path& destination)
+    {
+        std::error_code ec;
+        if (!fs.exists(source, VCPKG_LINE_INFO))
+        {
+            msg::println_error(msgExportPortFilesMissing, msg::package_name = port_name, msg::path = source);
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        auto port_files = fs.get_regular_files_recursive(source, ec);
+        if (ec)
+        {
+            msg::println_error(msgExportPortFilesMissing, msg::package_name = port_name, msg::path = source);
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        for (const auto& file : Util::fmap(port_files, [&source](StringView&& str) -> Path {
+                 return str.substr(source.generic_u8string().size() + 1);
+             }))
+        {
+            const auto src_path = source / file;
+            const auto dst_path = destination / file;
+            fs.create_directories(dst_path.parent_path(), IgnoreErrors{});
+            fs.copy_file(src_path, dst_path, CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
+        }
+    }
+
+    void export_registry_port_version(const VcpkgPaths& paths,
+                                      StringView port_name,
+                                      const Version& version,
+                                      const Path& destination)
+    {
+        // Registry configuration
+        const auto& config = paths.get_configuration();
+        auto registries = config.instantiate_registry_set(paths);
+        auto source = registries->fetch_port_files(port_name, version);
+        if (!source)
+        {
+            msg::println_error(source.error());
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+        copy_port_files(paths.get_filesystem(), port_name, source.value_or_exit(VCPKG_LINE_INFO).path, destination);
+        msg::println(msgExportPortSuccess, msg::path = destination);
+        Checks::exit_success(VCPKG_LINE_INFO);
+    }
+
     void export_classic_mode_port_version(const VcpkgPaths& paths,
                                           StringView port_name,
-                                          StringView version,
+                                          const Version& version,
                                           const Path& destination)
     {
         const auto db_file = paths.builtin_registry_versions / fmt::format("{}-/{}.json", port_name[0], port_name);
@@ -39,7 +87,7 @@ namespace
         auto db = std::move(maybe_db.value_or_exit(VCPKG_LINE_INFO));
         for (auto&& entry : db)
         {
-            if (entry.version.to_string() == version)
+            if (entry.version == version)
             {
                 const Path parent_dir = destination.parent_path();
                 fs.create_directories(parent_dir, VCPKG_LINE_INFO);
@@ -74,26 +122,9 @@ namespace
     void export_classic_mode_port(const VcpkgPaths& paths, StringView port_name, const Path& destination)
     {
         auto& fs = paths.get_filesystem();
-
         const auto port_dir = paths.builtin_ports_directory() / port_name;
-
-        std::error_code ec;
-        auto port_files = fs.get_regular_files_recursive(port_dir, ec);
-        if (ec)
-        {
-            msg::println_error(msgExportPortFilesMissing, msg::package_name = port_name, msg::path = port_dir);
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-
-        for (const auto& file : Util::fmap(port_files, [&port_dir](StringView&& str) -> Path {
-                 return str.substr(port_dir.generic_u8string().size() + 1);
-             }))
-        {
-            const auto src_path = port_dir / file;
-            const auto dst_path = destination / file;
-            fs.create_directories(dst_path.parent_path(), IgnoreErrors{});
-            fs.copy_file(src_path, dst_path, CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
-        }
+        copy_port_files(fs, port_name, port_dir, destination);
+        msg::println(msgExportPortSuccess, msg::path = destination);
         msg::println(msgExportPortSuccess, msg::path = destination);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
@@ -103,12 +134,14 @@ namespace vcpkg::Commands::ExportPort
 {
     constexpr static StringLiteral OPTION_ADD_VERSION_SUFFIX = "add-version-suffix";
     constexpr static StringLiteral OPTION_FORCE = "force";
-    constexpr static StringLiteral OPTION_NO_SUBDIR = "no-subdir";
     constexpr static StringLiteral OPTION_VERSION = "version";
+    constexpr static StringLiteral OPTION_NO_REGISTRIES = "no-registries";
+    constexpr static StringLiteral OPTION_NO_SUBDIR = "no-subdir";
 
     constexpr static CommandSwitch SWITCHES[]{
         {OPTION_ADD_VERSION_SUFFIX, "adds the port version as a suffix to the output subdirectory"},
         {OPTION_FORCE, "overwrite existing files in destination"},
+        {OPTION_NO_REGISTRIES, "ignore configured registries when resolving port"},
         {OPTION_NO_SUBDIR, "don't create a subdirectory for the port"},
     };
 
@@ -130,12 +163,35 @@ namespace vcpkg::Commands::ExportPort
         bool add_suffix = Util::Sets::contains(options.switches, OPTION_ADD_VERSION_SUFFIX);
         bool force = Util::Sets::contains(options.switches, OPTION_FORCE);
         bool no_subdir = Util::Sets::contains(options.switches, OPTION_NO_SUBDIR);
+        bool include_registries = !Util::Sets::contains(options.switches, OPTION_NO_REGISTRIES);
+        const auto& config = paths.get_configuration().config;
+        const bool has_registries = Util::any_of(config.registries, [](const auto& reg) { return reg.kind != "artifact"; });
 
-        Optional<std::string> maybe_version;
+        Optional<Version> maybe_version;
         auto it = options.settings.find(OPTION_VERSION);
         if (it != options.settings.end())
         {
-            maybe_version.emplace(it->second);
+            const auto& version_arg = it->second;
+            auto version_segments = Strings::split(version_arg, '#');
+            if (version_segments.size() > 2)
+            {
+                msg::println_error(msgExportPortVersionArgumentInvalid, msg::version = version_arg);
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+
+            int port_version = 0;
+            if (version_segments.size() == 2)
+            {
+                auto maybe_port_version = Strings::strto<int>(version_segments[1]);
+                if (!maybe_port_version)
+                {
+                    msg::println_error(msgExportPortVersionArgumentInvalid, msg::version = version_arg);
+                    Checks::exit_fail(VCPKG_LINE_INFO);
+                }
+                port_version = maybe_port_version.value_or_exit(VCPKG_LINE_INFO);
+            }
+
+            maybe_version.emplace(version_segments[0], port_version);
         }
 
         if (add_suffix)
@@ -180,8 +236,8 @@ namespace vcpkg::Commands::ExportPort
             auto subdir = port_name;
             if (add_suffix)
             {
-                subdir +=
-                    fmt::format("-{}", Strings::replace_all(maybe_version.value_or_exit(VCPKG_LINE_INFO), "#", "-"));
+                subdir += fmt::format(
+                    "-{}", Strings::replace_all(maybe_version.value_or_exit(VCPKG_LINE_INFO).to_string(), "#", "-"));
             }
             final_path /= subdir;
         }
@@ -196,25 +252,27 @@ namespace vcpkg::Commands::ExportPort
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
-        if (paths.manifest_mode_enabled())
-        {
-            // TODO: spec out how this command works in manifest mode and
-            // when using registries.
-            Debug::println("This command doesn't work on manifest mode");
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-
-        // classic mode
         get_global_metrics_collector().track_string(StringMetric::ExportedPort, Hash::get_string_sha256(port_name));
         if (auto version = maybe_version.get())
         {
             get_global_metrics_collector().track_string(StringMetric::ExportedVersion,
-                                                        Hash::get_string_sha256(*version));
-            export_classic_mode_port_version(paths, port_name, *version, final_path);
+                                                        Hash::get_string_sha256(version->to_string()));
+            if (include_registries && has_registries)
+            {
+                export_registry_port_version(paths, port_name, *version, final_path);
+            }
+            else
+            {
+                export_classic_mode_port_version(paths, port_name, *version, final_path);
+            }
         }
         else
         {
-            // just copy local files
+            if (include_registries)
+            {
+
+            }
+
             export_classic_mode_port(paths, port_name, final_path);
         }
         Checks::exit_success(VCPKG_LINE_INFO);

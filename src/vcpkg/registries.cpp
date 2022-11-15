@@ -5,6 +5,7 @@
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 
+#include <vcpkg/documentation.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/registries.h>
@@ -51,15 +52,22 @@ namespace
 
     struct GitRegistry final : RegistryImplementation
     {
-        GitRegistry(const VcpkgPaths& paths, std::string&& repo, std::string&& reference, std::string&& baseline)
+        GitRegistry(const VcpkgPaths& paths,
+                    std::string&& repo,
+                    std::string&& reference,
+                    std::string&& baseline,
+                    std::string&& friendly_identifier)
             : m_paths(paths)
             , m_repo(std::move(repo))
             , m_reference(std::move(reference))
             , m_baseline_identifier(std::move(baseline))
+            , m_friendly_identifier(std::move(friendly_identifier))
         {
         }
 
         StringLiteral kind() const override { return "git"; }
+
+        StringView friendly_identifier() const override { return m_friendly_identifier; }
 
         std::unique_ptr<RegistryEntry> get_port_entry(StringView) const override;
 
@@ -142,6 +150,7 @@ namespace
         std::string m_repo;
         std::string m_reference;
         std::string m_baseline_identifier;
+        std::string m_friendly_identifier;
         DelayedInit<LockFile::Entry> m_lock_entry;
         mutable Optional<Path> m_stale_versions_tree;
         DelayedInit<Path> m_versions_tree;
@@ -221,6 +230,8 @@ namespace
 
         StringLiteral kind() const override { return s_kind; }
 
+        StringView friendly_identifier() const override { return s_kind; }
+
         std::unique_ptr<RegistryEntry> get_port_entry(StringView port_name) const override;
 
         void get_all_port_names(std::vector<std::string>&) const override;
@@ -249,14 +260,17 @@ namespace
     {
         static constexpr StringLiteral s_kind = "builtin-git";
 
-        BuiltinGitRegistry(const VcpkgPaths& paths, std::string&& baseline)
+        BuiltinGitRegistry(const VcpkgPaths& paths, std::string&& baseline, std::string&& friendly_identifier)
             : m_baseline_identifier(std::move(baseline))
             , m_files_impl(std::make_unique<BuiltinFilesRegistry>(paths))
             , m_paths(paths)
+            , m_friendly_identifier(friendly_identifier)
         {
         }
 
         StringLiteral kind() const override { return s_kind; }
+
+        StringView friendly_identifier() const override { return m_friendly_identifier; }
 
         std::unique_ptr<RegistryEntry> get_port_entry(StringView port_name) const override;
 
@@ -273,6 +287,7 @@ namespace
         std::unique_ptr<BuiltinFilesRegistry> m_files_impl;
 
         const VcpkgPaths& m_paths;
+        std::string m_friendly_identifier;
     };
     constexpr StringLiteral BuiltinGitRegistry::s_kind;
 
@@ -283,6 +298,8 @@ namespace
         static constexpr StringLiteral s_kind = "builtin-error";
 
         StringLiteral kind() const override { return s_kind; }
+
+        StringView friendly_identifier() const override { return s_kind; }
 
         std::unique_ptr<RegistryEntry> get_port_entry(StringView) const override
         {
@@ -305,12 +322,17 @@ namespace
 
     struct FilesystemRegistry final : RegistryImplementation
     {
-        FilesystemRegistry(const Filesystem& fs, Path&& path, std::string&& baseline)
-            : m_fs(fs), m_path(std::move(path)), m_baseline_identifier(std::move(baseline))
+        FilesystemRegistry(const Filesystem& fs, Path&& path, std::string&& baseline, std::string&& friendly_identifier)
+            : m_fs(fs)
+            , m_path(std::move(path))
+            , m_baseline_identifier(std::move(baseline))
+            , m_friendly_identifier(friendly_identifier)
         {
         }
 
         StringLiteral kind() const override { return "filesystem"; }
+
+        StringView friendly_identifier() const override { return m_friendly_identifier; }
 
         std::unique_ptr<RegistryEntry> get_port_entry(StringView) const override;
 
@@ -323,6 +345,7 @@ namespace
 
         Path m_path;
         std::string m_baseline_identifier;
+        std::string m_friendly_identifier;
         DelayedInit<Baseline> m_baseline;
     };
 
@@ -1168,6 +1191,24 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, implementation_ != nullptr);
     }
 
+    ExpectedL<PathAndLocation> RegistrySet::fetch_port_files(StringView port_name, const Version& version) const
+    {
+        auto impl = registry_for_port(port_name);
+        if (!impl) return msg::format(msgNoRegistryForPort, msg::package_name = port_name);
+
+        auto entry = impl->get_port_entry(port_name);
+        if (!entry)
+        {
+            // TODO: This should print impl->friendly_identifier() as part of the message.
+            return msg::format(msgExpectedRegistryToContainPort,
+                               msg::package_name = port_name,
+                               msg::path = impl->friendly_identifier(),
+                               msg::url = docs::registries_url);
+        }
+
+        return entry->get_version(version).map_error([](auto&& e) { return LocalizedString::from_raw(e); });
+    }
+
     const RegistryImplementation* RegistrySet::registry_for_port(StringView name) const
     {
         for (const auto& registry : registries())
@@ -1244,30 +1285,39 @@ namespace vcpkg
             return std::make_unique<BuiltinFilesRegistry>(paths);
         }
     }
-    std::unique_ptr<RegistryImplementation> make_builtin_registry(const VcpkgPaths& paths, std::string baseline)
+    std::unique_ptr<RegistryImplementation> make_builtin_registry(const VcpkgPaths& paths,
+                                                                  std::string baseline,
+                                                                  std::string friendly_identifier)
     {
         if (paths.use_git_default_registry())
         {
-            return std::make_unique<GitRegistry>(
-                paths, builtin_registry_git_url.to_string(), "HEAD", std::move(baseline));
+            return std::make_unique<GitRegistry>(paths,
+                                                 builtin_registry_git_url.to_string(),
+                                                 "HEAD",
+                                                 std::move(baseline),
+                                                 std::move(friendly_identifier));
         }
         else
         {
-            return std::make_unique<BuiltinGitRegistry>(paths, std::move(baseline));
+            return std::make_unique<BuiltinGitRegistry>(paths, std::move(baseline), std::move(friendly_identifier));
         }
     }
     std::unique_ptr<RegistryImplementation> make_git_registry(const VcpkgPaths& paths,
                                                               std::string repo,
                                                               std::string reference,
-                                                              std::string baseline)
+                                                              std::string baseline,
+                                                              std::string friendly_identifier)
     {
-        return std::make_unique<GitRegistry>(paths, std::move(repo), std::move(reference), std::move(baseline));
+        return std::make_unique<GitRegistry>(
+            paths, std::move(repo), std::move(reference), std::move(baseline), std::move(friendly_identifier));
     }
     std::unique_ptr<RegistryImplementation> make_filesystem_registry(const Filesystem& fs,
                                                                      Path path,
-                                                                     std::string baseline)
+                                                                     std::string baseline,
+                                                                     std::string friendly_identifier)
     {
-        return std::make_unique<FilesystemRegistry>(fs, std::move(path), std::move(baseline));
+        return std::make_unique<FilesystemRegistry>(
+            fs, std::move(path), std::move(baseline), std::move(friendly_identifier));
     }
 
     ExpectedL<std::vector<VersionDbEntry>> parse_git_versions_file(StringView contents, StringView origin)

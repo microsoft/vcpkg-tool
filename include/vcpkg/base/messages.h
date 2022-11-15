@@ -997,6 +997,16 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedStatusField, (), "", "Expected 'status' field in status paragraph");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
     DECLARE_MESSAGE(ExpectedValueForOption, (msg::option), "", "expected value after --{option}.");
+    DECLARE_MESSAGE(
+        ExpectedRegistryToContainPort,
+        (msg::package_name, msg::path, msg::url),
+        "",
+        "A registry declares port {package_name} but the port definition was not found in the registry.\n"
+        "\n\tRegistry: {path}\n\n"
+        "If the port is expected to exist in the registry review that the baseline and versions database files are "
+        "correct.\n"
+        "If you expected the port name to resolve to a different registry adjust your registry configuration.\n"
+        "See {url} for more details.");
     DECLARE_MESSAGE(ExportArchitectureReq,
                     (),
                     "",
@@ -1036,6 +1046,10 @@ namespace vcpkg
                     "'--force' is a command-line option and should be left untranslated",
                     "Export path {path} is not empty.\n"
                     "Use option --force to overwrite existing files.");
+    DECLARE_MESSAGE(ExportPortVersionArgumentInvalid,
+                    (msg::version),
+                    "'--version' is a command-line option and should be left untranslated",
+                    "The value of --version={version} is not a valid version.");
     DECLARE_MESSAGE(ExportPortVersionNotFound, (msg::version), "", "Version {version} not found");
     DECLARE_MESSAGE(ExportPortVersionsDbFileMissing,
                     (msg::package_name, msg::path),
@@ -2087,6 +2101,7 @@ namespace vcpkg
                     "",
                     "dependency {spec} was expected to be at least version "
                     "{expected_version}, but is currently {actual_version}.");
+    DECLARE_MESSAGE(VersionInvalid, (msg::version), "", "'{version}' is not a valid version.");
     DECLARE_MESSAGE(
         VersionInvalidDate,
         (msg::version),

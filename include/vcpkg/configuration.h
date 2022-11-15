@@ -22,6 +22,9 @@ namespace vcpkg
         Optional<std::string> repo;
         Optional<std::vector<std::string>> packages;
 
+        // Needed to identify registry on error messages
+        std::string json_document_path;
+
         Json::Value serialize() const;
 
         ExpectedL<Optional<std::string>> get_latest_baseline(const VcpkgPaths& paths) const;
