@@ -262,7 +262,20 @@ namespace vcpkg
         };
     }
 
-    FullPackageSpec Dependency::to_full_spec(Triplet target, Triplet host_triplet, ImplicitDefault id) const
+    bool Dependency::default_features() const
+    {
+        return Util::find_if(features, [](const auto& f) { return f.name == "core"; }) == features.end();
+    }
+
+    bool Dependency::has_platform_expressions() const
+    {
+        return !platform.is_empty() || Util::any_of(features, [](const auto f) { return !f.platform.is_empty(); });
+    }
+
+    FullPackageSpec Dependency::to_full_spec(View<std::string> features,
+                                             Triplet target,
+                                             Triplet host_triplet,
+                                             ImplicitDefault id) const
     {
         return FullPackageSpec{{name, host ? host_triplet : target}, normalize_feature_list(features, id)};
     }

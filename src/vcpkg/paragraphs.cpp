@@ -193,7 +193,12 @@ namespace vcpkg
                     parser.add_error("triplet specifier not allowed in this context", loc);
                     return nullopt;
                 }
-                return Dependency{pqs.name, pqs.features.value_or({}), pqs.platform.value_or({})};
+                return Dependency{pqs.name,
+                                  Util::fmap(pqs.features.value_or({}),
+                                             [](const auto& f) {
+                                                 return Dependency::Feature{f, PlatformExpression::Expr::Empty()};
+                                             }),
+                                  pqs.platform.value_or({})};
             });
         });
         if (!opt) return {parser.get_error()->to_string(), expected_right_tag};

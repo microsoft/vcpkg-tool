@@ -8,6 +8,7 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#include "vcpkg/base/system.print.h"
 #include <vcpkg-test/util.h>
 
 using namespace vcpkg;
@@ -900,7 +901,7 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
 
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].name == "order.white-lotus");
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features.size() == 1);
-    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features[0] == "the-ancient-ways");
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features[0].name == "the-ancient-ways");
     REQUIRE_FALSE(pgh.feature_paragraphs[0]->dependencies[1].platform.evaluate(
         {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].platform.evaluate(

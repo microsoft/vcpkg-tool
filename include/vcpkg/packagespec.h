@@ -147,16 +147,41 @@ namespace vcpkg
 
     struct Dependency
     {
+        struct Feature
+        {
+            std::string name;
+            PlatformExpression::Expr platform;
+            Feature() = default;
+            Feature(std::string name) : name(std::move(name)) { }
+            Feature(std::string name, PlatformExpression::Expr platform)
+                : name(std::move(name)), platform(std::move(platform))
+            {
+            }
+            friend bool operator==(const Feature& lhs, const Feature& rhs)
+            {
+                if (lhs.name != rhs.name) return false;
+                if (!structurally_equal(lhs.platform, rhs.platform)) return false;
+
+                return true;
+            }
+            friend bool operator!=(const Feature& lhs, const Feature& rhs) { return !(lhs == rhs); }
+        };
         std::string name;
-        std::vector<std::string> features;
+        std::vector<Feature> features;
         PlatformExpression::Expr platform;
         DependencyConstraint constraint;
         bool host = false;
 
+        bool default_features() const;
+        bool has_platform_expressions() const;
+
         Json::Object extra_info;
 
         /// @param id adds "default" if "core" not present.
-        FullPackageSpec to_full_spec(Triplet target, Triplet host, ImplicitDefault id) const;
+        FullPackageSpec to_full_spec(View<std::string> features,
+                                     Triplet target,
+                                     Triplet host,
+                                     ImplicitDefault id) const;
 
         friend bool operator==(const Dependency& lhs, const Dependency& rhs);
         friend bool operator!=(const Dependency& lhs, const Dependency& rhs) { return !(lhs == rhs); }

@@ -130,7 +130,17 @@ namespace vcpkg
                     {
                         if (dep.platform.evaluate(*vars))
                         {
-                            auto fullspec = dep.to_full_spec(m_spec.triplet(), host_triplet, ImplicitDefault::YES);
+                            std::vector<std::string> features;
+                            features.reserve(dep.features.size());
+                            for (const auto& f : dep.features)
+                            {
+                                if (f.platform.evaluate(*vars))
+                                {
+                                    features.push_back(f.name);
+                                }
+                            }
+                            auto fullspec =
+                                dep.to_full_spec(features, m_spec.triplet(), host_triplet, ImplicitDefault::YES);
                             fullspec.expand_fspecs_to(dep_list);
                             if (auto opt = dep.constraint.try_get_minimum_version())
                             {
@@ -148,9 +158,13 @@ namespace vcpkg
                     bool requires_qualified_resolution = false;
                     for (const Dependency& dep : *qualified_deps)
                     {
-                        if (dep.platform.is_empty())
+                        if (!dep.has_platform_expressions())
                         {
-                            auto fullspec = dep.to_full_spec(m_spec.triplet(), host_triplet, ImplicitDefault::YES);
+                            auto fullspec =
+                                dep.to_full_spec(Util::fmap(dep.features, [](const auto& f) { return f.name; }),
+                                                 m_spec.triplet(),
+                                                 host_triplet,
+                                                 ImplicitDefault::YES);
                             fullspec.expand_fspecs_to(dep_list);
                             if (auto opt = dep.constraint.try_get_minimum_version())
                             {
@@ -1263,7 +1277,7 @@ namespace vcpkg
             {
                 PackageSpec spec;
                 Version ver;
-                std::vector<std::string> features;
+                std::vector<Dependency::Feature> features;
             };
 
             // This object contains the current version within a given version scheme (except for the "string" scheme,
@@ -1365,6 +1379,7 @@ namespace vcpkg
                                 const std::string& feature);
 
             ExpectedL<Version> dep_to_version(const std::string& name, const DependencyConstraint& dc);
+            bool evaluate(const PackageSpec& spec, const PlatformExpression::Expr& platform_expr);
 
             static std::string format_incomparable_versions_message(const PackageSpec& on,
                                                                     StringView from,
@@ -1478,7 +1493,10 @@ namespace vcpkg
                     // this is a feature dependency for oneself
                     for (auto&& f : dep.features)
                     {
-                        require_port_feature(ref, f, ref.first.name());
+                        if (evaluate(ref.first, f.platform))
+                        {
+                            require_port_feature(ref, f.name, ref.first.name());
+                        }
                     }
                 }
                 else
@@ -1489,7 +1507,10 @@ namespace vcpkg
                 p.first->second.emplace_back(dep_spec, "core");
                 for (auto&& f : dep.features)
                 {
-                    p.first->second.emplace_back(dep_spec, f);
+                    if (evaluate(ref.first, f.platform))
+                    {
+                        p.first->second.emplace_back(dep_spec, f.name);
+                    }
                 }
             }
         }
@@ -1526,10 +1547,13 @@ namespace vcpkg
 
             for (auto&& f : dep.features)
             {
-                require_port_feature(ref, f, origin);
+                if (evaluate(ref.first, f.platform))
+                {
+                    require_port_feature(ref, f.name, origin);
+                }
             }
 
-            if (Util::find(dep.features, StringView{"core"}) == dep.features.end())
+            if (dep.default_features())
             {
                 require_port_defaults(ref, origin);
             }
@@ -1678,6 +1702,18 @@ namespace vcpkg
             return m_base_provider.get_baseline_version(name);
         }
 
+        bool VersionedPackageGraph::evaluate(const PackageSpec& spec, const PlatformExpression::Expr& platform_expr)
+        {
+            auto maybe_vars = m_var_provider.get_dep_info_vars(spec);
+            if (!maybe_vars)
+            {
+                m_var_provider.load_dep_info_vars({&spec, 1}, m_host_triplet);
+                maybe_vars = m_var_provider.get_dep_info_vars(spec);
+            }
+
+            return platform_expr.evaluate(maybe_vars.value_or_exit(VCPKG_LINE_INFO));
+        }
+
         void VersionedPackageGraph::add_override(const std::string& name, const Version& v)
         {
             m_overrides.emplace(name, v);
@@ -1722,7 +1758,7 @@ namespace vcpkg
 
                 // Disable default features for deps with [core] as a dependency
                 // Note: x[core], x[y] will still eventually depend on defaults due to the second x[y]
-                if (Util::find(dep.features, "core") != dep.features.end())
+                if (!dep.default_features())
                 {
                     auto& node = emplace_package(dep_to_spec(dep));
                     node.second.default_features = false;
@@ -1804,7 +1840,10 @@ namespace vcpkg
 
                 for (auto&& f : dep.features)
                 {
-                    require_port_feature(node, f, toplevel.name());
+                    if (evaluate(toplevel, f.platform))
+                    {
+                        require_port_feature(node, f.name, toplevel.name());
+                    }
                 }
             }
         }
@@ -2025,7 +2064,8 @@ namespace vcpkg
 
             for (auto&& root : m_roots)
             {
-                if (auto err = push(root.spec, root.ver, toplevel, root.features))
+                if (auto err = push(
+                        root.spec, root.ver, toplevel, Util::fmap(root.features, [](const auto& f) { return f.name; })))
                 {
                     return std::move(*err.get());
                 }
@@ -2046,7 +2086,10 @@ namespace vcpkg
                     {
                         auto dep = std::move(back.deps.back());
                         back.deps.pop_back();
-                        if (auto err = push(dep.spec, dep.ver, back.ipa.spec, dep.features))
+                        if (auto err =
+                                push(dep.spec, dep.ver, back.ipa.spec, Util::fmap(dep.features, [](const auto& f) {
+                                         return f.name;
+                                     })))
                         {
                             return std::move(*err.get());
                         }

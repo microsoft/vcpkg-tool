@@ -163,6 +163,19 @@ namespace vcpkg
                 }
             };
 
+            struct DependencyFeatureLess
+            {
+                bool operator()(const Dependency::Feature& lhs, const Dependency::Feature& rhs) const
+                {
+                    if (lhs.name == rhs.name)
+                    {
+                        auto platform_cmp = compare(lhs.platform, rhs.platform);
+                        return platform_cmp < 0;
+                    }
+                    return lhs.name < rhs.name;
+                }
+            };
+
             // assume canonicalized feature list
             struct DependencyLess
             {
@@ -189,8 +202,11 @@ namespace vcpkg
                     if (rhs.features.size() < lhs.features.size()) return false;
 
                     // then finally order by feature list
-                    if (std::lexicographical_compare(
-                            lhs.features.begin(), lhs.features.end(), rhs.features.begin(), rhs.features.end()))
+                    if (std::lexicographical_compare(lhs.features.begin(),
+                                                     lhs.features.end(),
+                                                     rhs.features.begin(),
+                                                     rhs.features.end(),
+                                                     DependencyFeatureLess{}))
                     {
                         return true;
                     }
@@ -206,7 +222,7 @@ namespace vcpkg
 
             void operator()(Dependency& dep) const
             {
-                std::sort(dep.features.begin(), dep.features.end());
+                std::sort(dep.features.begin(), dep.features.end(), DependencyFeatureLess{});
                 dep.extra_info.sort_keys();
             }
             void operator()(SourceParagraph& spgh) const
@@ -425,6 +441,40 @@ namespace vcpkg
     };
     PlatformExprDeserializer PlatformExprDeserializer::instance;
 
+    struct DependencyFeatureDeserializer : Json::IDeserializer<Dependency::Feature>
+    {
+        virtual StringView type_name() const override { return "a feature in a dependency"; }
+
+        constexpr static StringLiteral NAME = "name";
+        constexpr static StringLiteral PLATFORM = "platform";
+
+        virtual Span<const StringView> valid_fields() const override
+        {
+            static const StringView t[] = {
+                NAME,
+                PLATFORM,
+            };
+            return t;
+        }
+
+        Optional<Dependency::Feature> visit_string(Json::Reader& r, StringView sv) override
+        {
+            return Json::IdentifierDeserializer::instance.visit_string(r, sv).map(
+                [](const std::string&& name) { return std::move(name); });
+        }
+
+        Optional<Dependency::Feature> visit_object(Json::Reader& r, const Json::Object& obj) override
+        {
+            Dependency::Feature feature;
+            r.required_object_field(type_name(), obj, NAME, feature.name, Json::IdentifierDeserializer::instance);
+            r.optional_object_field(obj, PLATFORM, feature.platform, PlatformExprDeserializer::instance);
+            return feature;
+        }
+
+        static DependencyFeatureDeserializer instance;
+    };
+    DependencyFeatureDeserializer DependencyFeatureDeserializer::instance;
+
     struct DependencyDeserializer : Json::IDeserializer<Dependency>
     {
         virtual StringView type_name() const override { return "a dependency"; }
@@ -475,10 +525,10 @@ namespace vcpkg
                 }
             }
 
-            static Json::ArrayDeserializer<Json::IdentifierDeserializer> arr_id_d{"an array of identifiers"};
+            static Json::ArrayDeserializer<DependencyFeatureDeserializer> arr_features_d{"an array of features"};
 
             r.required_object_field(type_name(), obj, NAME, dep.name, Json::PackageNameDeserializer::instance);
-            r.optional_object_field(obj, FEATURES, dep.features, arr_id_d);
+            r.optional_object_field(obj, FEATURES, dep.features, arr_features_d);
 
             bool default_features = true;
             r.optional_object_field(obj, DEFAULT_FEATURES, default_features, Json::BooleanDeserializer::instance);
@@ -1488,7 +1538,13 @@ namespace vcpkg
         {
             if (dep.platform.evaluate(cmake_vars))
             {
-                ret.emplace_back(dep.to_full_spec(target, host, id));
+                std::vector<std::string> features;
+                features.reserve(dep.features.size());
+                for (const auto& f : dep.features)
+                {
+                    if (f.platform.evaluate(cmake_vars)) features.push_back(f.name);
+                }
+                ret.emplace_back(dep.to_full_spec(features, target, host, id));
             }
         }
         return ret;
@@ -1559,15 +1615,29 @@ namespace vcpkg
                 dep_obj.insert(DependencyDeserializer::NAME, dep.name);
                 if (dep.host) dep_obj.insert(DependencyDeserializer::HOST, Json::Value::boolean(true));
 
-                auto features_copy = dep.features;
-                auto core_it = std::find(features_copy.begin(), features_copy.end(), "core");
-                if (core_it != features_copy.end())
+                if (!dep.default_features())
                 {
                     dep_obj.insert(DependencyDeserializer::DEFAULT_FEATURES, Json::Value::boolean(false));
-                    features_copy.erase(core_it);
                 }
-
-                serialize_optional_array(dep_obj, DependencyDeserializer::FEATURES, features_copy);
+                if (debug || dep.features.size() > static_cast<size_t>(!dep.default_features()))
+                {
+                    auto& arr = dep_obj.insert(DependencyDeserializer::FEATURES, Json::Array());
+                    for (const auto& f : dep.features)
+                    {
+                        if (f.name == "core") continue;
+                        if (f.platform.is_empty() && !debug)
+                        {
+                            arr.push_back(Json::Value::string(f.name));
+                        }
+                        else
+                        {
+                            Json::Object entry;
+                            entry.insert(DependencyFeatureDeserializer::NAME, f.name);
+                            entry.insert(DependencyFeatureDeserializer::PLATFORM, to_string(f.platform));
+                            arr.push_back(std::move(entry));
+                        }
+                    }
+                }
                 serialize_optional_string(dep_obj, DependencyDeserializer::PLATFORM, to_string(dep.platform));
                 if (dep.constraint.type == VersionConstraintKind::Minimum)
                 {
