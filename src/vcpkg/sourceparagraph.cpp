@@ -1621,20 +1621,20 @@ namespace vcpkg
                 }
                 if (debug || dep.features.size() > static_cast<size_t>(!dep.default_features()))
                 {
-                    auto& arr = dep_obj.insert(DependencyDeserializer::FEATURES, Json::Array());
+                    auto& features = dep_obj.insert(DependencyDeserializer::FEATURES, Json::Array());
                     for (const auto& f : dep.features)
                     {
                         if (f.name == "core") continue;
                         if (f.platform.is_empty() && !debug)
                         {
-                            arr.push_back(Json::Value::string(f.name));
+                            features.push_back(Json::Value::string(f.name));
                         }
                         else
                         {
                             Json::Object entry;
                             entry.insert(DependencyFeatureDeserializer::NAME, f.name);
                             entry.insert(DependencyFeatureDeserializer::PLATFORM, to_string(f.platform));
-                            arr.push_back(std::move(entry));
+                            features.push_back(std::move(entry));
                         }
                     }
                 }
