@@ -842,13 +842,19 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
                     "firebending",
                     {
                         "name": "order.white-lotus",
-                        "features": [ "the-ancient-ways" ],
+                        "features": [
+                            "the-ancient-ways",
+                            {
+                                "name": "windows-tests",
+                                "platform": "windows"
+                            }
+                        ],
                         "platform": "!(windows & arm)"
-                },
-                {
-                    "$extra": [],
-                    "$my": [],
-                    "name": "tea"
+                    },
+                    {
+                        "$extra": [],
+                        "$my": [],
+                        "name": "tea"
                     }
                 ]
             },
@@ -900,8 +906,16 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[0].name == "firebending");
 
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].name == "order.white-lotus");
-    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features.size() == 1);
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features.size() == 2);
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features[0].name == "the-ancient-ways");
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features[0].platform.is_empty());
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features[1].name == "windows-tests");
+    REQUIRE_FALSE(pgh.feature_paragraphs[0]->dependencies[1].features[1].platform.is_empty());
+    REQUIRE(
+        pgh.feature_paragraphs[0]->dependencies[1].features[1].platform.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}}));
+    REQUIRE_FALSE(pgh.feature_paragraphs[0]->dependencies[1].features[1].platform.evaluate(
+        {{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
+
     REQUIRE_FALSE(pgh.feature_paragraphs[0]->dependencies[1].platform.evaluate(
         {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].platform.evaluate(
