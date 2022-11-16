@@ -188,9 +188,9 @@ VCPKG_verify_node() {
   if [ "${VCPKG_OS}" = "win" ]; then
     NODE_EXE="node.exe"
   fi
-  
+
   local N=$(which $1/$NODE_EXE)
-  
+
     if [ ! -z "$N" ]; then
       if [ -f $N ]; then
         if [ $($N -e "[major, minor, patch ] = process.versions.node.split('.'); console.log( !!(major>16 || major == 16 & minor >= 12) )") = "true" ]; then
@@ -206,8 +206,8 @@ VCPKG_verify_node() {
 
 VCPKG_find_node() {
   local NODES=$(find $1 | grep -i /bin/node)
-  
-  for each in $NODES; do 
+
+  for each in $NODES; do
     local d=$(dirname "$each")
     VCPKG_verify_node $d
     if [ $? -eq 0 ]; then
@@ -272,7 +272,7 @@ VCPKG_bootstrap_node() {
   else
     tar $TAR_FLAGS "${VCPKG_ARCHIVE}" -C "${VCPKG_DOWNLOADS}" >> $VCPKG_ROOT/log.txt 2>&1
   fi
-  
+
   # OK, we good?
   VCPKG_find_node $VCPKG_DOWNLOADS
   if [ $? -eq 0 ]; then
@@ -455,7 +455,7 @@ ce() {
 
   # call ce.js
   # it picks up the Z_VCPKG_POSTSCRIPT environment variable to know where to dump the postscript
-  $VCPKG_NODE --harmony $VCPKG_MAIN ${VCPKG_ARGS[@]}
+  $VCPKG_NODE $VCPKG_MAIN ${VCPKG_ARGS[@]}
 
   VCPKG_debug called ce.js
   # modify the environment

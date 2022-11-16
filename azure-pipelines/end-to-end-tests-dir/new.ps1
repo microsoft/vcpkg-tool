@@ -9,7 +9,7 @@ Push-Location $manifestDir
 $result = Run-Vcpkg new
 Pop-Location
 Throw-IfNotFailed
-if (-not $result -contains '--application') {
+if (-not $result.Contains('--application')) {
     throw "New without --name or --version didn't require setting --application"
 }
 
@@ -34,7 +34,7 @@ Push-Location $manifestDir
 $result = Run-Vcpkg new --application
 Pop-Location
 Throw-IfNotFailed
-if (-not $result -contains 'A manifest is already present at') {
+if (-not $result.Contains('A manifest is already present at')) {
     throw "New didn't detect existing manifest correctly"
 }
 
@@ -43,7 +43,7 @@ Push-Location $manifestDir
 $result = Run-Vcpkg new --application
 Pop-Location
 Throw-IfNotFailed
-if (-not $result -contains 'Creating a manifest would overwrite a vcpkg-configuration.json') {
+if (-not $result.Contains('Creating a manifest would overwrite a vcpkg-configuration.json')) {
     throw "New didn't detect existing configuration correctly"
 }
 

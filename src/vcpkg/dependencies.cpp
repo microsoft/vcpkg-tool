@@ -235,7 +235,7 @@ namespace vcpkg
                                                 .append_raw(m_scfl.error()));
             }
 
-            Optional<const PlatformExpression::Expr&> get_applicable_supports_expression(const FeatureSpec& spec)
+            Optional<const PlatformExpression::Expr&> get_applicable_supports_expression(const FeatureSpec& spec) const
             {
                 if (spec.feature() == "core")
                 {
@@ -292,7 +292,8 @@ namespace vcpkg
 
             ActionPlan serialize(GraphRandomizer* randomizer) const;
 
-            void mark_for_reinstall(const PackageSpec& spec, std::vector<FeatureSpec>& out_reinstall_requirements);
+            void mark_for_reinstall(const PackageSpec& spec,
+                                    std::vector<FeatureSpec>& out_reinstall_requirements) const;
             const CMakeVars::CMakeVarProvider& m_var_provider;
 
             std::unique_ptr<ClusterGraph> m_graph;
@@ -335,7 +336,8 @@ namespace vcpkg
                     {
                         Checks::msg_exit_with_error(VCPKG_LINE_INFO,
                                                     msg::format(msgWhileLookingForSpec, msg::spec = spec)
-                                                        .append_raw("\n" + maybe_scfl.error()));
+                                                        .append_raw('\n')
+                                                        .append_raw(maybe_scfl.error()));
                     }
                 }
 
@@ -521,7 +523,7 @@ namespace vcpkg
     }
     const PreBuildInfo& InstallPlanAction::pre_build_info(LineInfo li) const
     {
-        return *abi_info.value_or_exit(li).pre_build_info.get();
+        return *abi_info.value_or_exit(li).pre_build_info;
     }
 
     bool InstallPlanAction::compare_by_name(const InstallPlanAction* left, const InstallPlanAction* right)
@@ -643,8 +645,7 @@ namespace vcpkg
 
         auto installed_ports = get_installed_ports(status_db);
         const std::unordered_set<PackageSpec> specs_as_set(specs.cbegin(), specs.cend());
-        return topological_sort(
-            std::move(specs), RemoveAdjacencyProvider{status_db, installed_ports, specs_as_set}, {});
+        return topological_sort(specs, RemoveAdjacencyProvider{status_db, installed_ports, specs_as_set}, {});
     }
 
     std::vector<ExportPlanAction> create_export_plan(const std::vector<PackageSpec>& specs,
@@ -719,7 +720,7 @@ namespace vcpkg
     }
 
     void PackageGraph::mark_for_reinstall(const PackageSpec& first_remove_spec,
-                                          std::vector<FeatureSpec>& out_reinstall_requirements)
+                                          std::vector<FeatureSpec>& out_reinstall_requirements) const
     {
         std::set<PackageSpec> removed;
         std::vector<PackageSpec> to_remove{first_remove_spec};
@@ -831,9 +832,8 @@ namespace vcpkg
                             }
                             else
                             {
-                                m_warnings.push_back(msg::format(msg::msgWarningMessage)
-                                                         .append(std::move(localized_msg))
-                                                         .extract_data());
+                                m_warnings.push_back(
+                                    msg::format(msg::msgWarningMessage).append(localized_msg).extract_data());
                             }
                         }
                     }
@@ -1015,7 +1015,7 @@ namespace vcpkg
                                                                             msg::expected_version = constraint,
                                                                             msg::actual_version = *v));
                                 msg::println(msg::format(msgConstraintViolation)
-                                                 .append_raw("\n")
+                                                 .append_raw('\n')
                                                  .append_indent()
                                                  .append(constraint_violations.back()));
                             }
@@ -1089,7 +1089,7 @@ namespace vcpkg
                     Checks::msg_exit_with_error(
                         VCPKG_LINE_INFO,
                         msg::format(msgCorruptedDatabase)
-                            .append_raw("\n")
+                            .append_raw('\n')
                             .append(msgMissingDependency, msg::spec = ipv.spec(), msg::package_name = dep));
                 }
 
@@ -1176,13 +1176,13 @@ namespace vcpkg
         if (!excluded.empty())
         {
             msg::println(
-                msg::format(msgExcludedPackages).append_raw("\n").append_raw(actions_to_output_string(excluded)));
+                msg::format(msgExcludedPackages).append_raw('\n').append_raw(actions_to_output_string(excluded)));
         }
 
         if (!already_installed_plans.empty())
         {
             msg::println(msg::format(msgInstalledPackages)
-                             .append_raw("\n")
+                             .append_raw('\n')
                              .append_raw(actions_to_output_string(already_installed_plans)));
         }
 
@@ -1191,7 +1191,7 @@ namespace vcpkg
             auto message = msg::format(msgPackagesToRemove);
             for (auto&& spec : remove_specs)
             {
-                message.append_raw("\n" + to_output_string(RequestType::USER_REQUESTED, spec.to_string()));
+                message.append_raw('\n').append_raw(to_output_string(RequestType::USER_REQUESTED, spec.to_string()));
             }
             msg::println(message);
         }
@@ -1199,19 +1199,19 @@ namespace vcpkg
         if (!rebuilt_plans.empty())
         {
             msg::println(
-                msg::format(msgPackagesToRebuild).append_raw("\n").append_raw(actions_to_output_string(rebuilt_plans)));
+                msg::format(msgPackagesToRebuild).append_raw('\n').append_raw(actions_to_output_string(rebuilt_plans)));
         }
 
         if (!new_plans.empty())
         {
             msg::println(
-                msg::format(msgPackagesToInstall).append_raw("\n").append_raw(actions_to_output_string(new_plans)));
+                msg::format(msgPackagesToInstall).append_raw('\n').append_raw(actions_to_output_string(new_plans)));
         }
 
         if (!only_install_plans.empty())
         {
             msg::println(msg::format(msgPackagesToInstallDirectly)
-                             .append_raw("\n")
+                             .append_raw('\n')
                              .append_raw(actions_to_output_string(only_install_plans)));
         }
 

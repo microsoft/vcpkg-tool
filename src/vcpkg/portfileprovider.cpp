@@ -176,7 +176,7 @@ namespace vcpkg
                             auto scf_vspec = scf->get()->to_version_spec();
                             if (scf_vspec == version_spec)
                             {
-                                return std::unique_ptr<SourceControlFileAndLocation>(new SourceControlFileAndLocation{
+                                return std::make_unique<SourceControlFileAndLocation>(SourceControlFileAndLocation{
                                     std::move(*scf),
                                     std::move(path->path),
                                     std::move(path->location),
@@ -204,7 +204,7 @@ namespace vcpkg
                     }
                     else
                     {
-                        LockGuardPtr<Metrics>(g_metrics)->track_define_property(DefineMetric::VersioningErrorVersion);
+                        get_global_metrics_collector().track_define(DefineMetric::VersioningErrorVersion);
                         return maybe_path.error();
                     }
                 }
@@ -231,7 +231,7 @@ namespace vcpkg
                     auto port_name = scfl.source_control_file->core_paragraph->name;
                     auto version = scfl.source_control_file->core_paragraph->to_version();
                     auto it = m_control_cache
-                                  .emplace(VersionSpec{std::move(port_name), std::move(version)},
+                                  .emplace(VersionSpec{port_name, version},
                                            std::make_unique<SourceControlFileAndLocation>(std::move(scfl)))
                                   .first;
                     out.emplace(it->first.port_name, it->second.value_or_exit(VCPKG_LINE_INFO).get());
@@ -256,7 +256,7 @@ namespace vcpkg
             {
                 for (auto&& overlay : m_overlay_ports)
                 {
-                    Debug::print("Using overlay: ", overlay, "\n");
+                    Debug::println("Using overlay: ", overlay);
 
                     Checks::msg_check_exit(VCPKG_LINE_INFO,
                                            vcpkg::is_directory(m_fs.status(overlay, VCPKG_LINE_INFO)),
@@ -312,7 +312,7 @@ namespace vcpkg
                             Checks::msg_exit_maybe_upgrade(
                                 VCPKG_LINE_INFO,
                                 msg::format(msgFailedToLoadPort, msg::package_name = port_name, msg::path = ports_spec)
-                                    .append_raw("\n")
+                                    .append_raw('\n')
                                     .append(msgMismatchedNames,
                                             msg::package_name = port_name,
                                             msg::actual = scf->core_paragraph->name));
@@ -364,7 +364,7 @@ namespace vcpkg
                         {
                             print_error_message(maybe_scf.error());
                             Checks::msg_exit_maybe_upgrade(
-                                VCPKG_LINE_INFO, msgFailedToLoadPortFrom, msg::path = ports_dir);
+                                VCPKG_LINE_INFO, msgFailedToLoadUnnamedPortFromPath, msg::path = ports_dir);
                         }
 
                         continue;
@@ -437,7 +437,7 @@ namespace vcpkg
     std::unique_ptr<IOverlayProvider> make_overlay_provider(const vcpkg::VcpkgPaths& paths,
                                                             View<std::string> overlay_ports)
     {
-        return std::make_unique<OverlayProviderImpl>(paths, std::move(overlay_ports));
+        return std::make_unique<OverlayProviderImpl>(paths, overlay_ports);
     }
 
     std::unique_ptr<IOverlayProvider> make_manifest_provider(const vcpkg::VcpkgPaths& paths,

@@ -38,23 +38,23 @@ namespace vcpkg
     void RegenerateCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
     {
         std::vector<std::string> forwarded_args;
-        forwarded_args.push_back("regenerate");
+        forwarded_args.emplace_back("regenerate");
         const auto parsed = args.parse_arguments(command_structure);
         forwarded_args.push_back(args.command_arguments[0]);
 
         if (Util::Sets::contains(parsed.switches, FORCE))
         {
-            forwarded_args.push_back("--force");
+            forwarded_args.emplace_back("--force");
         }
 
         if (Util::Sets::contains(parsed.switches, DRY_RUN))
         {
-            forwarded_args.push_back("--what-if");
+            forwarded_args.emplace_back("--what-if");
         }
 
         if (Util::Sets::contains(parsed.switches, NORMALIZE))
         {
-            forwarded_args.push_back("--normalize");
+            forwarded_args.emplace_back("--normalize");
         }
 
         Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, forwarded_args));

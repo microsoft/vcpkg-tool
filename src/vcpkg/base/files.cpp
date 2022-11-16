@@ -1,5 +1,6 @@
 #include <vcpkg/base/system_headers.h>
 
+#include <vcpkg/base/chrono.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/span.h>
@@ -68,14 +69,6 @@ namespace
     }
 #endif
 
-    [[noreturn]] void exit_filesystem_call_error(LineInfo li,
-                                                 const std::error_code& ec,
-                                                 StringView call_name,
-                                                 std::initializer_list<StringView> args)
-    {
-        Checks::msg_exit_with_message(li, format_filesystem_call_error(ec, call_name, args));
-    }
-
 #if defined(_WIN32)
     FileType convert_file_type(stdfs::file_type type) noexcept
     {
@@ -108,7 +101,7 @@ namespace
     template<class Ty>
     Ty unaligned_load(const void* pv) noexcept
     {
-        static_assert(std::is_trivial<Ty>::value, "Unaligned loads require trivial types");
+        static_assert(std::is_trivial_v<Ty>, "Unaligned loads require trivial types");
         Ty tmp;
         memcpy(&tmp, pv, sizeof(tmp));
         return tmp;
@@ -516,7 +509,7 @@ namespace
             }
         }
 
-        ec = std::move(err.ec);
+        ec = err.ec;
         failure_point = std::move(err.failure_point);
     }
 
@@ -966,6 +959,14 @@ namespace vcpkg
         return LocalizedString::from_raw(Strings::concat(call_name, arguments, ": ", ec.message()));
     }
 
+    [[noreturn]] void exit_filesystem_call_error(LineInfo li,
+                                                 const std::error_code& ec,
+                                                 StringView call_name,
+                                                 std::initializer_list<StringView> args)
+    {
+        Checks::msg_exit_with_message(li, format_filesystem_call_error(ec, call_name, args));
+    }
+
     std::string Path::generic_u8string() const
     {
 #if defined(_WIN32)
@@ -1119,7 +1120,7 @@ namespace vcpkg
     // This implementation does collapse slashes because we primarily use it for shiny display purposes.
     void Path::make_preferred()
     {
-        char* first = &m_str[0];
+        char* first = m_str.data();
         char* last = first + m_str.size();
         char* after_root_name = const_cast<char*>(find_root_name_end(first, last));
         char* after_root_directory = std::find_if_not(after_root_name, last, is_slash);
@@ -1592,6 +1593,18 @@ namespace vcpkg
         if (ec)
         {
             exit_filesystem_call_error(li, ec, __func__, {new_directory});
+        }
+
+        return result;
+    }
+
+    Path Filesystem::create_or_get_temp_directory(LineInfo li)
+    {
+        std::error_code ec;
+        Path result = this->create_or_get_temp_directory(ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {});
         }
 
         return result;
@@ -2358,8 +2371,7 @@ namespace vcpkg
         virtual std::vector<Path> get_files_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            Path out_base = dir;
-            get_files_recursive_impl(result, dir, out_base, ec, true, true, true);
+            get_files_recursive_impl(result, dir, dir, ec, true, true, true);
             return result;
         }
 
@@ -2373,8 +2385,7 @@ namespace vcpkg
         virtual std::vector<Path> get_directories_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            Path out_base = dir;
-            get_files_recursive_impl(result, dir, out_base, ec, true, false, false);
+            get_files_recursive_impl(result, dir, dir, ec, true, false, false);
 
             return result;
         }
@@ -2403,8 +2414,7 @@ namespace vcpkg
         virtual std::vector<Path> get_regular_files_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            Path out_base = dir;
-            get_files_recursive_impl(result, dir, out_base, ec, false, true, false);
+            get_files_recursive_impl(result, dir, dir, ec, false, true, false);
             return result;
         }
 
@@ -2702,6 +2712,20 @@ namespace vcpkg
             }
 
 #endif // _WIN32
+        }
+
+        virtual Path create_or_get_temp_directory(std::error_code& ec) override
+        {
+#if defined(_WIN32)
+            wchar_t temp_folder[MAX_PATH + 1];
+            DWORD length_without_null = GetTempPathW(MAX_PATH + 1, temp_folder);
+            Path temp_folder_path = Path(Strings::to_utf8(temp_folder, length_without_null)) / "vcpkg";
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            const Path temp_folder_path = "/tmp/vcpkg";
+#endif // ^^^ !_WIN32
+
+            this->create_directories(temp_folder_path, ec);
+            return temp_folder_path;
         }
 
 #if !defined(_WIN32)
@@ -3310,7 +3334,7 @@ namespace vcpkg
 #endif // ^^^!_WIN32
 
                 static const std::vector<Path> path_bases = calculate_path_bases();
-                for (Path path_base : path_bases)
+                for (const Path& path_base : path_bases)
                 {
                     for (auto&& stem : stems)
                     {

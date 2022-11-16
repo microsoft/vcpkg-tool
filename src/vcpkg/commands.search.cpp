@@ -5,6 +5,7 @@
 #include <vcpkg/commands.search.h>
 #include <vcpkg/help.h>
 #include <vcpkg/vcpkgcmdarguments.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg::Commands
 {
@@ -32,6 +33,6 @@ namespace vcpkg::Commands
             filter = StringView{args.command_arguments[0]};
         }
 
-        perform_find_port_and_exit(paths, full_description, args.json.value_or(false), filter, args.overlay_ports);
+        perform_find_port_and_exit(paths, full_description, args.json.value_or(false), filter, paths.overlay_ports);
     }
 }

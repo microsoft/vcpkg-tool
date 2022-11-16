@@ -33,6 +33,10 @@ Param(
 
 $ErrorActionPreference = "Stop"
 
+if ($PSVersionTable.PSVersion.Major -lt 7) {
+    Write-Error "vcpkg end to end tests must use pwsh rather than Windows PowerShell"
+}
+
 if ($IsLinux) {
     $Triplet = 'x64-linux'
 } elseif ($IsMacOS) {
@@ -66,6 +70,8 @@ if ([string]::IsNullOrEmpty($VcpkgExe))
     }
 }
 
+$VcpkgExe = (Get-Item $VcpkgExe).FullName
+
 [Array]$AllTests = Get-ChildItem $PSScriptRoot/end-to-end-tests-dir/*.ps1
 if ($Filter -ne $Null) {
     $AllTests = $AllTests | ? { $_.Name -match $Filter }
@@ -90,7 +96,7 @@ $envvars = $envvars_clear + @("VCPKG_DOWNLOADS", "X_VCPKG_REGISTRIES_CACHE", "PA
 
 foreach ($Test in $AllTests)
 {
-    Write-Host "[end-to-end-tests.ps1] [$n/$m] Running suite $Test"
+    Write-Host -ForegroundColor Green "[end-to-end-tests.ps1] [$n/$m] Running suite $Test"
 
     $envbackup = @{}
     foreach ($var in $envvars)
@@ -130,5 +136,5 @@ foreach ($Test in $AllTests)
     $n += 1
 }
 
-Write-Host "[end-to-end-tests.ps1] All tests passed."
+Write-Host -ForegroundColor Green "[end-to-end-tests.ps1] All tests passed."
 $LASTEXITCODE = 0

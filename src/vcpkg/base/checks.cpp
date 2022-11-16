@@ -13,19 +13,10 @@ namespace
     {
         return LocalizedString::from_raw(fmt::format("{}: ", line_info));
     }
-    void (*g_shutdown_handler)() = nullptr;
 }
 
 namespace vcpkg
 {
-    void Checks::register_global_shutdown_handler(void (*func)())
-    {
-        if (g_shutdown_handler)
-            // Setting the handler twice is a program error. Terminate.
-            std::abort();
-        g_shutdown_handler = func;
-    }
-
     [[noreturn]] void Checks::final_cleanup_and_exit(const int exit_code)
     {
         static std::atomic<bool> have_entered{false};
@@ -38,7 +29,7 @@ namespace vcpkg
 #endif
         }
 
-        if (g_shutdown_handler) g_shutdown_handler();
+        on_final_cleanup_and_exit();
 
         fflush(nullptr);
 

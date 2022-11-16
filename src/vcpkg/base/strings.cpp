@@ -24,7 +24,7 @@ vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView 
 {
     // Transforms similarly to std::format -- "{xyz}" -> f(xyz), "{{" -> "{", "}}" -> "}"
 
-    static const char s_brackets[] = "{}";
+    static constexpr char s_brackets[] = "{}";
 
     std::string out;
     auto prev = sv.begin();
@@ -159,7 +159,7 @@ void Strings::to_utf8(std::string& output, const wchar_t* w, size_t size_in_char
         Checks::msg_exit_with_message(VCPKG_LINE_INFO,
                                       msg::format(msgUtf8ConversionFailed)
                                           .append_raw(std::system_category().message(static_cast<int>(last_error)))
-                                          .append_raw("\n")
+                                          .append_raw('\n')
                                           .append_raw(std::system_category().message(static_cast<int>(last_error))));
     }
 

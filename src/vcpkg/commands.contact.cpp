@@ -5,7 +5,7 @@
 
 #include <vcpkg/commands.contact.h>
 #include <vcpkg/help.h>
-#include <vcpkg/userconfig.h>
+#include <vcpkg/metrics.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
 namespace vcpkg::Commands::Contact
@@ -30,12 +30,12 @@ namespace vcpkg::Commands::Contact
 
         if (Util::Sets::contains(parsed_args.switches, SWITCHES[0].name))
         {
-            auto maybe_now = CTime::get_current_date_time();
+            auto maybe_now = CTime::now();
             if (const auto p_now = maybe_now.get())
             {
-                auto config = UserConfig::try_read_data(fs);
+                auto config = try_read_metrics_user(fs);
                 config.last_completed_survey = p_now->to_string();
-                config.try_write_data(fs);
+                config.try_write(fs);
             }
 
 #if defined(_WIN32)

@@ -1,7 +1,6 @@
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
-#include <vcpkg/base/lockguarded.h>
 #include <vcpkg/base/sortedvector.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
@@ -202,7 +201,7 @@ namespace vcpkg::Commands::CI
 
             if (is_excluded(p->spec))
             {
-                ret->action_state_string.push_back("skip");
+                ret->action_state_string.emplace_back("skip");
                 ret->known.emplace(p->spec, BuildResult::EXCLUDED);
                 will_fail.emplace(p->spec);
             }
@@ -211,26 +210,26 @@ namespace vcpkg::Commands::CI
                 // This treats unsupported ports as if they are excluded
                 // which means the ports dependent on it will be cascaded due to missing dependencies
                 // Should this be changed so instead it is a failure to depend on a unsupported port?
-                ret->action_state_string.push_back("n/a");
+                ret->action_state_string.emplace_back("n/a");
                 ret->known.emplace(p->spec, BuildResult::EXCLUDED);
                 will_fail.emplace(p->spec);
             }
             else if (Util::any_of(p->package_dependencies,
                                   [&](const PackageSpec& spec) { return Util::Sets::contains(will_fail, spec); }))
             {
-                ret->action_state_string.push_back("cascade");
+                ret->action_state_string.emplace_back("cascade");
                 ret->cascade_count++;
                 ret->known.emplace(p->spec, BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES);
                 will_fail.emplace(p->spec);
             }
             else if (precheck_results[action_idx] == CacheAvailability::available)
             {
-                ret->action_state_string.push_back("pass");
+                ret->action_state_string.emplace_back("pass");
                 ret->known.emplace(p->spec, BuildResult::SUCCEEDED);
             }
             else
             {
-                ret->action_state_string.push_back("*");
+                ret->action_state_string.emplace_back("*");
             }
         }
         return ret;
@@ -315,7 +314,7 @@ namespace vcpkg::Commands::CI
             if (!msg.empty())
             {
                 has_error = true;
-                output.append(msg).append_raw("\n");
+                output.append(msg).append_raw('\n');
             }
         }
 
@@ -385,13 +384,13 @@ namespace vcpkg::Commands::CI
         const IBuildLogsRecorder& build_logs_recorder =
             build_logs_recorder_storage ? *(build_logs_recorder_storage.get()) : null_build_logs_recorder();
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
+        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
         XunitWriter xunitTestResults;
 
-        auto timer = ElapsedTimer::create_started();
+        const ElapsedTimer timer;
         std::vector<std::string> all_port_names =
             Util::fmap(provider.load_all_control_files(), Paragraphs::get_name_of_control_file);
         // Install the default features for every package
@@ -531,7 +530,6 @@ namespace vcpkg::Commands::CI
             TripletAndSummary result{target_triplet, std::move(summary)};
 
             msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\nTriplet: {}\n", result.triplet));
-            msg::println(msgTotalTime, msg::elapsed = GlobalState::timer.to_string());
             result.summary.print();
 
             if (baseline_iter != settings.end())

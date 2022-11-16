@@ -9,7 +9,6 @@
 #include <vcpkg/commands.integrate.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/tools.h>
-#include <vcpkg/userconfig.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
@@ -260,7 +259,12 @@ namespace vcpkg::Commands::Integrate
     }
 #endif
 
-    static Path get_path_txt_path() { return get_user_dir() / "vcpkg.path.txt"; }
+    static const ExpectedS<Path>& get_path_txt_path() noexcept
+    {
+        static const ExpectedS<Path> result = get_user_configuration_home().map(
+            [](const Path& user_configuration_home) { return user_configuration_home / "vcpkg.path.txt"; });
+        return result;
+    }
 
 #if defined(_WIN32)
     static void integrate_install_msbuild14(Filesystem& fs, const Path& tmp_dir)
@@ -361,8 +365,8 @@ namespace vcpkg::Commands::Integrate
         }
 #endif
 
-        const auto pathtxt = get_path_txt_path();
-        fs.write_contents(pathtxt, paths.root.generic_u8string(), VCPKG_LINE_INFO);
+        fs.write_contents(
+            get_path_txt_path().value_or_exit(VCPKG_LINE_INFO), paths.root.generic_u8string(), VCPKG_LINE_INFO);
         msg::println(Color::success, msgAppliedUserIntegration);
         const auto cmake_toolchain = paths.buildsystems / "vcpkg.cmake";
 
@@ -385,7 +389,12 @@ namespace vcpkg::Commands::Integrate
         was_deleted |= fs.remove(get_appdata_props_path(), VCPKG_LINE_INFO);
 #endif
 
-        was_deleted |= fs.remove(get_path_txt_path(), VCPKG_LINE_INFO);
+        const auto& maybe_pathtxt = get_path_txt_path();
+        if (auto pathtxt = maybe_pathtxt.get())
+        {
+            was_deleted |= fs.remove(*pathtxt, VCPKG_LINE_INFO);
+        }
+
         if (was_deleted)
         {
             msg::println(msgUserWideIntegrationRemoved);
@@ -434,7 +443,7 @@ namespace vcpkg::Commands::Integrate
         if (!maybe_nuget_output)
         {
             msg::println_error(msg::format(msgCommandFailed, msg::command_line = cmd_line.command_line())
-                                   .append_raw("\n")
+                                   .append_raw('\n')
                                    .append(maybe_nuget_output.error()));
             Checks::unreachable(VCPKG_LINE_INFO);
         }
@@ -470,12 +479,9 @@ namespace vcpkg::Commands::Integrate
         if (rc)
         {
             msg::println_error(msg::format(msgCommandFailed, msg::command_line = TITLE)
-                                   .append_raw("\n" + script_path.generic_u8string()));
-            {
-                auto locked_metrics = LockGuardPtr<Metrics>(g_metrics);
-                locked_metrics->track_string_property(StringMetric::Error, "powershell script failed");
-                locked_metrics->track_string_property(StringMetric::Title, TITLE.to_string());
-            }
+                                   .append_raw('\n')
+                                   .append_raw(script_path.generic_u8string()));
+            get_global_metrics_collector().track_string(StringMetric::Title, TITLE.to_string());
         }
 
         Checks::exit_with_code(VCPKG_LINE_INFO, rc);
@@ -500,7 +506,7 @@ namespace vcpkg::Commands::Integrate
         {
             msg::println(msg::format(msgVcpkgCompletion, msg::value = "bash", msg::path = bashrc_path)
                              .append_raw(Strings::join("\n   ", matches))
-                             .append_raw("\n")
+                             .append_raw('\n')
                              .append(msgSuggestStartingBashShell));
             Checks::exit_success(VCPKG_LINE_INFO);
         }
@@ -529,7 +535,7 @@ namespace vcpkg::Commands::Integrate
         {
             msg::println(msg::format(msgVcpkgCompletion, msg::value = "zsh", msg::path = zshrc_path)
                              .append_raw(Strings::join("\n   ", data.source_completion_lines))
-                             .append_raw("\n")
+                             .append_raw('\n')
                              .append(msgSuggestStartingBashShell));
             Checks::exit_success(VCPKG_LINE_INFO);
         }

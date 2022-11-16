@@ -10,7 +10,7 @@ TEST_CASE ("parse time", "[chrono]")
     auto maybe_time = CTime::parse(timestring);
 
     REQUIRE(maybe_time.has_value());
-    REQUIRE(maybe_time.get()->to_string() == timestring);
+    REQUIRE(maybe_time.get()->to_string() == "1990-02-03T04:05:06Z"); // note dropped .0
 }
 
 TEST_CASE ("parse blank time", "[chrono]")
@@ -22,8 +22,8 @@ TEST_CASE ("parse blank time", "[chrono]")
 
 TEST_CASE ("difference of times", "[chrono]")
 {
-    auto maybe_time1 = CTime::parse("1990-02-03T04:05:06.0Z");
-    auto maybe_time2 = CTime::parse("1990-02-10T04:05:06.0Z");
+    auto maybe_time1 = CTime::parse("1990-02-03T04:05:06Z");
+    auto maybe_time2 = CTime::parse("1990-02-10T04:05:06Z");
 
     REQUIRE(maybe_time1.has_value());
     REQUIRE(maybe_time2.has_value());

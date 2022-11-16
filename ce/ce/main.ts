@@ -26,7 +26,6 @@ import { cli } from './cli/constants';
 import { command as formatCommand, hint } from './cli/format';
 import { debug, error, initStyling, log } from './cli/styling';
 import { i, setLocale } from './i18n';
-import { flushTelemetry, trackEvent } from './insights';
 import { Session } from './session';
 
 // parse the command line
@@ -37,8 +36,6 @@ setLocale(commandline.language, `${__dirname}/i18n/`);
 
 export let session: Session;
 require('./exports');
-
-trackEvent; // ensure it's loaded asap.
 
 async function main() {
 
@@ -54,10 +51,6 @@ async function main() {
 
   // start up the session and init the channel listeners.
   await session.init();
-
-  const telemetryEnabled = await session.telemetryEnabled;
-  debug(`Anonymous Telemetry Enabled: ${telemetryEnabled}`);
-  // find a project profile.
 
   const help = new HelpCommand(commandline);
 
@@ -122,14 +115,10 @@ async function main() {
 
     error(e);
 
-    if (session.telemetryEnabled) {
-      flushTelemetry();
-    }
+    await session.writeTelemetry();
     return process.exit(result ? 0 : 1);
   } finally {
-    if (session.telemetryEnabled) {
-      flushTelemetry();
-    }
+    await session.writeTelemetry();
   }
 
   return process.exit(result ? 0 : 1);

@@ -260,6 +260,8 @@ namespace
 
         constexpr static StringLiteral DEFAULT_REGISTRY = "default-registry";
         constexpr static StringLiteral REGISTRIES = "registries";
+        constexpr static StringLiteral OVERLAY_PORTS = "overlay-ports";
+        constexpr static StringLiteral OVERLAY_TRIPLETS = "overlay-triplets";
 
         virtual Optional<Configuration> visit_object(Json::Reader& r, const Json::Object& obj) override;
 
@@ -268,6 +270,8 @@ namespace
     ConfigurationDeserializer ConfigurationDeserializer::instance;
     constexpr StringLiteral ConfigurationDeserializer::DEFAULT_REGISTRY;
     constexpr StringLiteral ConfigurationDeserializer::REGISTRIES;
+    constexpr StringLiteral ConfigurationDeserializer::OVERLAY_PORTS;
+    constexpr StringLiteral ConfigurationDeserializer::OVERLAY_TRIPLETS;
 
     Optional<Json::Object> DictionaryDeserializer::visit_object(Json::Reader& r, const Json::Object& obj)
     {
@@ -390,6 +394,14 @@ namespace
                 comment_keys.emplace_back(el.first);
             }
         }
+
+        static Json::ArrayDeserializer<Json::StringDeserializer> op_des("an array of overlay ports paths",
+                                                                        Json::StringDeserializer{"an overlay path"});
+        r.optional_object_field(obj, OVERLAY_PORTS, ret.overlay_ports, op_des);
+
+        static Json::ArrayDeserializer<Json::StringDeserializer> ot_des("an array of overlay triplets paths",
+                                                                        Json::StringDeserializer{"a triplet path"});
+        r.optional_object_field(obj, OVERLAY_TRIPLETS, ret.overlay_triplets, ot_des);
 
         RegistryConfig default_registry;
         if (r.optional_object_field(obj, DEFAULT_REGISTRY, default_registry, RegistryConfigDeserializer::instance))
@@ -607,6 +619,8 @@ namespace vcpkg
         static constexpr StringView known_fields[]{
             ConfigurationDeserializer::DEFAULT_REGISTRY,
             ConfigurationDeserializer::REGISTRIES,
+            ConfigurationDeserializer::OVERLAY_PORTS,
+            ConfigurationDeserializer::OVERLAY_TRIPLETS,
             CeMetadataDeserializer::CE_MESSAGE,
             CeMetadataDeserializer::CE_WARNING,
             CeMetadataDeserializer::CE_ERROR,
@@ -618,7 +632,7 @@ namespace vcpkg
         return known_fields;
     }
 
-    void Configuration::validate_as_active()
+    void Configuration::validate_as_active() const
     {
         if (!ce_metadata.is_empty())
         {
@@ -736,6 +750,24 @@ namespace vcpkg
             for (const auto& reg : registries)
             {
                 reg_arr.push_back(reg.serialize());
+            }
+        }
+
+        if (!overlay_ports.empty())
+        {
+            auto& op_arr = obj.insert(ConfigurationDeserializer::OVERLAY_PORTS, Json::Array());
+            for (const auto& port : overlay_ports)
+            {
+                op_arr.push_back(port);
+            }
+        }
+
+        if (!overlay_triplets.empty())
+        {
+            auto& ot_arr = obj.insert(ConfigurationDeserializer::OVERLAY_TRIPLETS, Json::Array());
+            for (const auto& triplet : overlay_triplets)
+            {
+                ot_arr.push_back(triplet);
             }
         }
 

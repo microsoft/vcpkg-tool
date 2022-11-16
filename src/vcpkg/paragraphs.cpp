@@ -96,7 +96,7 @@ namespace vcpkg
         if (const auto field = maybe_field.get())
             out = std::move(*field);
         else
-            missing_fields.push_back(fieldname.data());
+            missing_fields.emplace_back(fieldname.data());
     }
     void ParagraphParser::optional_field(StringView fieldname, std::pair<std::string&, TextRowCol&> out)
     {
@@ -276,19 +276,39 @@ namespace vcpkg::Paragraphs
         }
     };
 
+    ExpectedS<Paragraph> parse_single_merged_paragraph(StringView str, StringView origin)
+    {
+        return PghParser(str, origin).get_paragraphs().map([](std::vector<Paragraph>&& paragraphs) {
+            if (paragraphs.empty())
+            {
+                return Paragraph{};
+            }
+
+            auto& front = paragraphs.front();
+            for (size_t x = 1; x < paragraphs.size(); ++x)
+            {
+                for (auto&& extra_line : paragraphs[x])
+                {
+                    front.insert(extra_line);
+                }
+            }
+
+            return std::move(front);
+        });
+    }
+
     ExpectedS<Paragraph> parse_single_paragraph(StringView str, StringView origin)
     {
-        auto pghs = PghParser(str, origin).get_paragraphs();
-
-        if (auto p = pghs.get())
-        {
-            if (p->size() != 1) return {"There should be exactly one paragraph", expected_right_tag};
-            return std::move(p->front());
-        }
-        else
-        {
-            return pghs.error();
-        }
+        return PghParser(str, origin).get_paragraphs().then([](std::vector<Paragraph>&& paragraphs) {
+            if (paragraphs.size() == 1)
+            {
+                return ExpectedS<Paragraph>{std::move(paragraphs.front())};
+            }
+            else
+            {
+                return ExpectedS<Paragraph>{"There should be exactly one paragraph"};
+            }
+        });
     }
 
     ExpectedS<Paragraph> get_single_paragraph(const Filesystem& fs, const Path& control_path)
