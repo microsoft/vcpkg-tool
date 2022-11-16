@@ -272,12 +272,12 @@ namespace vcpkg
         return !platform.is_empty() || Util::any_of(features, [](const auto f) { return !f.platform.is_empty(); });
     }
 
-    FullPackageSpec Dependency::to_full_spec(View<std::string> features,
+    FullPackageSpec Dependency::to_full_spec(View<std::string> feature_list,
                                              Triplet target,
                                              Triplet host_triplet,
                                              ImplicitDefault id) const
     {
-        return FullPackageSpec{{name, host ? host_triplet : target}, normalize_feature_list(features, id)};
+        return FullPackageSpec{{name, host ? host_triplet : target}, normalize_feature_list(feature_list, id)};
     }
 
     bool operator==(const Dependency& lhs, const Dependency& rhs)
