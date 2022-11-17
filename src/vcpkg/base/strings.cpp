@@ -432,7 +432,7 @@ bool vcpkg::Strings::contains_any_ignoring_c_comments(const std::string& source,
                     no_comment_offset = start + 1;
                     continue;
                 }
-                auto d_char_sequence = source.substr(start, end - start);
+                auto d_char_sequence = ')' + source.substr(start + 1, end - start - 1);
                 d_char_sequence.push_back('\"');
                 no_comment_offset = source.find(d_char_sequence, end);
                 if (no_comment_offset != std::string::npos) no_comment_offset += d_char_sequence.size();

@@ -64,9 +64,47 @@ TEST_CASE ("contains_any_ignoring_c_comments", "[strings]")
     REQUIRE(contains_any_ignoring_c_comments(R"("abc")", to_find));
     REQUIRE_FALSE(contains_any_ignoring_c_comments(R"("" //abc)", to_find));
     REQUIRE_FALSE(contains_any_ignoring_c_comments(R"(/*abc*/ "")", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"(/**abc*/ "")", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"(/**abc**/ "")", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"(/*abc)", to_find));
+    // note that the line end is escaped making the single line comment include the abc
     REQUIRE_FALSE(contains_any_ignoring_c_comments("// test \\\nabc", to_find));
-    REQUIRE(contains_any_ignoring_c_comments("\"//\" test \\\nabc", to_find));
+    // note that the comment start is in a string literal so it isn't a comment
+    REQUIRE(contains_any_ignoring_c_comments("\"//\" test abc", to_find));
+    // note that the comment is in a raw string literal so it isn't a comment
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"( // abc )")-", to_find));
+    // found after the raw string literal
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"( // )" abc)-", to_find));
+    // comment after the raw string literal
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R"( // )" // abc)-", to_find));
+    // the above, but with a d_char_sequence for the raw literal
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"hello( // abc )hello")-", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"hello( // )hello" abc)-", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R"hello( // )hello" // abc)-", to_find));
+    // the above, but with a d_char_sequence that is a needle
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"abc( // abc )abc")-", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"abc( // )abc" abc)-", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"abc( // )abc" // abc)-", to_find));
+    // raw literal termination edge cases
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R")-", to_find));    // ends input
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R"h)-", to_find));   // ends input d_char
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R"()-", to_find));   // ends input paren
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R"h()-", to_find));  // ends input paren d_char
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R"())-", to_find));  // ends input close paren
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R"()")-", to_find)); // ends input exactly
+    // raw literal termination edge cases (success)
+    REQUIRE(contains_any_ignoring_c_comments(R"-(abcR")-", to_find));    // ends input
+    REQUIRE(contains_any_ignoring_c_comments(R"-(abcR"h)-", to_find));   // ends input d_char
+    REQUIRE(contains_any_ignoring_c_comments(R"-(abcR"()-", to_find));   // ends input paren
+    REQUIRE(contains_any_ignoring_c_comments(R"-(abcR"h()-", to_find));  // ends input paren d_char
+    REQUIRE(contains_any_ignoring_c_comments(R"-(abcR"())-", to_find));  // ends input close paren
+    REQUIRE(contains_any_ignoring_c_comments(R"-(abcR"()")-", to_find)); // ends input exactly
+
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"()"abc)-", to_find));
+
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"hello( hello" // abc )")-", to_find));
     REQUIRE(contains_any_ignoring_c_comments(R"(R"-( // abc )-")", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"(R"-( // hello )-" // abc)", to_find));
     REQUIRE(contains_any_ignoring_c_comments(R"(R"-( /* abc */ )-")", to_find));
     REQUIRE(contains_any_ignoring_c_comments(R"(R"-()- /* abc */ )-")", to_find));
     REQUIRE(contains_any_ignoring_c_comments(R"(qwer )", to_find));
