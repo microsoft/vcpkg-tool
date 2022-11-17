@@ -1051,10 +1051,12 @@ namespace vcpkg::PostBuildLint
         for (const auto& path : absolute_paths)
         {
 #if defined(_WIN32)
+            // As supplied, all /s, and all \s
+            string_paths.push_back(path.native());
             auto path_preferred = path;
             path_preferred.make_preferred();
-            string_paths.push_back(path_preferred.generic_u8string());
-            string_paths.push_back(std::move(path).native());
+            string_paths.push_back(path_preferred.native());
+            string_paths.push_back(path.generic_u8string());
 #else
             string_paths.push_back(path.native());
 #endif
