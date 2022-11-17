@@ -868,6 +868,10 @@ namespace vcpkg
                 {
                     return {find_system_tar(fs).value_or_exit(VCPKG_LINE_INFO), {}};
                 }
+                if (tool == Tools::CMAKE_SYSTEM)
+                {
+                    return {find_system_cmake(fs).value_or_exit(VCPKG_LINE_INFO), {}};
+                }
                 GenericToolProvider provider{tool};
                 return get_path(provider, status_sink);
             });
@@ -897,6 +901,39 @@ namespace vcpkg
         {
             return tools[0];
         }
+    }
+
+    ExpectedL<Path> find_system_cmake(const Filesystem& fs)
+    {
+        auto tools = fs.find_from_PATH(Tools::CMAKE);
+        if (!tools.empty())
+        {
+            return std::move(tools[0]);
+        }
+
+#if defined(_WIN32)
+        std::vector<Path> candidate_paths;
+        const auto& program_files = get_program_files_platform_bitness();
+        if (const auto pf = program_files.get())
+        {
+            auto path = *pf / "CMake" / "bin" / "cmake.exe";
+            if (fs.exists(path, IgnoreErrors{})) return path;
+        }
+
+        const auto& program_files_32_bit = get_program_files_32_bit();
+        if (const auto pf = program_files_32_bit.get())
+        {
+            auto path = *pf / "CMake" / "bin" / "cmake.exe";
+            if (fs.exists(path, IgnoreErrors{})) return path;
+        }
+#endif
+
+        return msg::format(msg::msgErrorMessage)
+            .append(msgToolFetchFailed, msg::tool_name = Tools::CMAKE)
+#if !defined(_WIN32)
+            .append(msgInstallWithSystemManager)
+#endif
+            ;
     }
 
     std::unique_ptr<ToolCache> get_tool_cache(Filesystem& fs,
