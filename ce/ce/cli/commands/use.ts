@@ -47,7 +47,7 @@ export class UseCommand extends Command {
     }
 
     const selections = new Map(this.inputs.map((v, i) => [v, versions[i] || '*']));
-    const artifacts = await selectArtifacts(session, selections, resolver, 1);
+    const artifacts = await selectArtifacts(session, selections, resolver, 2);
     if (!artifacts) {
       return false;
     }
