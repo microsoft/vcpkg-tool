@@ -1069,12 +1069,7 @@ namespace vcpkg::PostBuildLint
             bool found_absolute = false;
             if (is_header)
             {
-                found_absolute = Util::any_of(string_paths, [&path_and_contents](const std::string& path) {
-                    StringView sv(path);
-                    bool contains = path_and_contents.second.find(path) != std::string::npos;
-                    // First do a cheap search and then a complicated one
-                    return contains && Strings::contains_any_ignoring_c_comments(path_and_contents.second, {&sv, 1});
-                });
+                found_absolute = Strings::contains_any_ignoring_c_comments(path_and_contents.second, stringview_paths);
             }
             else
             {
