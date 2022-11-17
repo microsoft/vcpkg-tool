@@ -310,7 +310,12 @@ namespace vcpkg::Commands::CI
         for (auto&& r : results)
         {
             auto result = r.build_result.value_or_exit(VCPKG_LINE_INFO).code;
-            auto msg = format_ci_result(r.get_spec(), result, cidata, ci_baseline_file_name, allow_unexpected_passing, !r.is_user_requested_install());
+            auto msg = format_ci_result(r.get_spec(),
+                                        result,
+                                        cidata,
+                                        ci_baseline_file_name,
+                                        allow_unexpected_passing,
+                                        !r.is_user_requested_install());
             if (!msg.empty())
             {
                 has_error = true;
@@ -319,7 +324,8 @@ namespace vcpkg::Commands::CI
         }
         for (auto&& r : known)
         {
-            auto msg = format_ci_result(r.first, r.second, cidata, ci_baseline_file_name, allow_unexpected_passing, true);
+            auto msg =
+                format_ci_result(r.first, r.second, cidata, ci_baseline_file_name, allow_unexpected_passing, true);
             if (!msg.empty())
             {
                 has_error = true;
@@ -511,7 +517,8 @@ namespace vcpkg::Commands::CI
 
             msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\nTriplet: {}\n", target_triplet));
             summary.print();
-            print_regressions(summary.results, split_specs->known, cidata, baseline_iter->second, allow_unexpected_passing);
+            print_regressions(
+                summary.results, split_specs->known, cidata, baseline_iter->second, allow_unexpected_passing);
 
             auto it_xunit = settings.find(OPTION_XUNIT);
             if (it_xunit != settings.end())
@@ -524,12 +531,8 @@ namespace vcpkg::Commands::CI
                     const auto& spec = result.get_spec();
                     auto& port_features = split_specs->features.at(spec);
                     auto code = result.build_result.value_or_exit(VCPKG_LINE_INFO).code;
-                    xunitTestResults.add_test_results(spec,
-                                                      code,
-                                                      result.timing,
-                                                      result.start_time,
-                                                      split_specs->abi_map.at(spec),
-                                                      port_features);
+                    xunitTestResults.add_test_results(
+                        spec, code, result.timing, result.start_time, split_specs->abi_map.at(spec), port_features);
                 }
 
                 // Adding results for ports that were not built because they have known states
