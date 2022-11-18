@@ -10,6 +10,7 @@
 
 #include <functional>
 #include <map>
+#include <regex>
 #include <string>
 
 namespace
@@ -52,15 +53,324 @@ namespace
             Debug::print("Imported DLLs of %s were %s", binary, Strings::join("\n", imported_names));
             for (auto&& imported_name : imported_names)
             {
-                deploy_binary(imported_name);
+                deploy_binary(m_deployment_dir, m_installed_bin_dir, imported_name);
             }
+
+            // hardcoded for testing
+            // deployAzureKinectSensorSDK(m_deployment_dir, m_installed_bin_parent, "k4a.dll");
+            // deployOpenNI2(m_deployment_dir, m_installed_bin_parent, "OpenNI2.dll");
+            deployQt(m_deployment_dir, m_installed_bin_parent / "plugins", "Qt5Guid.dll");
+            /*
+            bool g_is_debug = m_installed_bin_parent.stem() == "debug";
+            if (g_is_debug)
+            {
+                deployMagnum(m_deployment_dir, m_installed_bin_parent / "bin\\magnum-d\\", "MagnumAudio-d.dll");
+            }
+            else
+            {
+                deployMagnum(m_deployment_dir, m_installed_bin_parent / "bin\\magnum\\", "MagnumAudio-d.dll");
+            }
+            */
         }
 
     private:
-        bool deploy_binary(const std::string& target_binary_name)
+        // AZURE KINECT SENSOR SDK PLUGIN - MOVE
+        void deployAzureKinectSensorSDK(const Path& target_binary_dir,
+                                        const Path& installed_dir,
+                                        const std::string& target_binary_name)
         {
-            const auto source = m_installed_bin_dir / target_binary_name;
-            const auto target = m_deployment_dir / target_binary_name;
+            if (target_binary_name == "k4a.dll")
+            {
+                std::string binary_name = "depthengine_2_0.dll";
+                Path inst_dir = installed_dir / "tools\\azure-kinect-sensor-sdk\\";
+
+                Debug::print("  Deploying Azure Kinect Sensor SDK Initialization");
+                deploy_binary(target_binary_dir, inst_dir, binary_name);
+            }
+        }
+
+        // OPENNI2 PLUGIN - MOVE
+        void deployOpenNI2(const Path& target_binary_dir,
+                           const Path& installed_dir,
+                           const std::string& target_binary_name)
+        {
+            if (target_binary_name == "OpenNI2.dll")
+            {
+                Debug::print("  Deploying OpenNI2 Initialization");
+                deploy_binary(target_binary_dir, installed_dir / "bin\\OpenNI2\\", "OpenNI.ini");
+
+                Debug::print("  Deploying OpenNI2 Drivers");
+                Path drivers = target_binary_dir / "OpenNI2\\Drivers\\";
+                std::error_code ec;
+                m_fs.create_directories(drivers, ec);
+
+                std::vector<Path> children =
+                    m_fs.get_files_non_recursive(installed_dir / "bin\\OpenNI2\\Drivers\\", ec);
+
+                for (auto c : children)
+                {
+                    deploy_binary(drivers, installed_dir / "bin\\OpenNI2\\Drivers\\", c.filename().to_string());
+                }
+            }
+        }
+
+        // MAGNUM PLUGINS - MOVE
+        // HELPER FUNCTION FOR MAGNUM PLUGINS
+        void deployPluginsMagnum(const std::string& plugins_subdir_name,
+                                 const Path& target_binary_dir,
+                                 const Path& magnum_plugins_dir)
+        {
+            Path plugins_base = magnum_plugins_dir.stem();
+
+            std::error_code ec;
+            if (m_fs.exists(magnum_plugins_dir / plugins_subdir_name, ec))
+            {
+                Debug::print("  Deploying plugins directory %s", plugins_subdir_name);
+
+                Path new_dir = target_binary_dir / plugins_base / plugins_subdir_name;
+                m_fs.create_directories(new_dir, ec);
+
+                std::vector<Path> children = m_fs.get_files_non_recursive(magnum_plugins_dir / plugins_subdir_name, ec);
+                for (auto c : children)
+                {
+                    deploy_binary(new_dir, magnum_plugins_dir / plugins_subdir_name, c.filename().to_string());
+                    resolve(c);
+                }
+            }
+            else
+            {
+                Debug::print("  Skipping plugins directory %s: doesn't exist", plugins_subdir_name);
+            }
+        }
+
+        void deployMagnum(const Path& target_binary_dir,
+                          const Path& magnum_plugins_dir,
+                          const std::string& target_binary_name)
+        {
+            Debug::print("Deploying magnum plugins");
+
+            if (target_binary_name == "MagnumAudio.dll" || target_binary_name == "MagnumAudio-d.dll")
+            {
+                deployPluginsMagnum("audioimporters", target_binary_dir, magnum_plugins_dir);
+            }
+            else if (target_binary_name == "MagnumText.dll" || target_binary_name == "MagnumText-d.dll")
+            {
+                deployPluginsMagnum("fonts", target_binary_dir, magnum_plugins_dir);
+                deployPluginsMagnum("fontconverters", target_binary_dir, magnum_plugins_dir);
+            }
+            else if (target_binary_name == "MagnumTrade.dll" || target_binary_name == "MagnumTrade-d.dll")
+            {
+                deployPluginsMagnum("importers", target_binary_dir, magnum_plugins_dir);
+                deployPluginsMagnum("imageconverters", target_binary_dir, magnum_plugins_dir);
+                deployPluginsMagnum("sceneconverters", target_binary_dir, magnum_plugins_dir);
+            }
+            else if (target_binary_name == "MagnumShaderTools.dll" || target_binary_name == "MagnumShaderTools-d.dll")
+            {
+                deployPluginsMagnum("shaderconverters", target_binary_dir, magnum_plugins_dir);
+            }
+        }
+
+        // QT PLUGINS - WILL BE MOVED FROM HERE
+        // HELPER FUNCTION FOR QT
+        void deployPluginsQt(const std::string& plugins_subdir_name,
+                             const Path& target_binary_dir,
+                             const Path& qt_plugins_dir)
+        {
+            std::error_code ec;
+            if (m_fs.exists(qt_plugins_dir / plugins_subdir_name, ec))
+            {
+                Debug::print("  Deploying plugins directory %s", plugins_subdir_name);
+
+                Path new_dir = target_binary_dir / "plugins" / plugins_subdir_name;
+                m_fs.create_directories(new_dir, ec);
+
+                std::vector<Path> children = m_fs.get_files_non_recursive(qt_plugins_dir / plugins_subdir_name, ec);
+
+                for (auto c : children)
+                {
+                    deploy_binary(new_dir, qt_plugins_dir / plugins_subdir_name, c.filename().to_string());
+                    resolve(c);
+                }
+            }
+            else
+            {
+                Debug::print("  Skipping plugins directory %s : doesn't exist", plugins_subdir_name);
+            }
+        }
+
+        void deployQt(const Path& target_binary_dir, const Path& qt_plugins_dir, const std::string& target_binary_name)
+        {
+            Path bin_dir = Path(qt_plugins_dir.parent_path()) / "bin";
+
+            if (target_binary_name == "Qt5Cored.dll" || target_binary_name == "Qt5Core.dll")
+            {
+                std::error_code ec;
+                if (!m_fs.exists(target_binary_dir / "qt.conf", ec))
+                {
+                    m_fs.write_contents(target_binary_dir / "qt.conf", "[Paths]", ec);
+                }
+            }
+            else if (target_binary_dir == "Qt5Guid.dll" || target_binary_name == "Qt5Gui.dll")
+            {
+                Debug::print("  Deploying platforms");
+
+                std::error_code ec;
+                Path new_dir = target_binary_dir / "plugins" / "platforms";
+                m_fs.create_directories(new_dir, ec);
+
+                std::vector<Path> children = m_fs.get_files_non_recursive(qt_plugins_dir / "platforms", ec);
+                for (auto c : children)
+                {
+                    std::regex re("qwindows.*.dll");
+                    if (std::regex_match(c.filename().to_string(), re))
+                    {
+                        deploy_binary(new_dir, qt_plugins_dir / "platforms", c.filename().to_string());
+                    }
+                }
+                deployPluginsQt("accessible", target_binary_dir, qt_plugins_dir);
+                deployPluginsQt("imageformats", target_binary_dir, qt_plugins_dir);
+                deployPluginsQt("iconengines", target_binary_dir, qt_plugins_dir);
+                deployPluginsQt("platforminputcontexts", target_binary_dir, qt_plugins_dir);
+                deployPluginsQt("styles", target_binary_dir, qt_plugins_dir);
+            }
+            else if (target_binary_name == "Qt5Networkd.dll" || target_binary_name == "Qt5Network.dll")
+            {
+                deployPluginsQt("bearer", target_binary_dir, qt_plugins_dir);
+
+                std::error_code ec;
+                std::vector<Path> children = m_fs.get_files_non_recursive(bin_dir, ec);
+                for (auto c : children)
+                {
+                    std::regex lc_re("libcrypto-.*.dll");
+                    if (std::regex_match(c.filename().to_string(), lc_re))
+                    {
+                        deploy_binary(target_binary_dir, bin_dir, c.filename().to_string());
+                    }
+
+                    std::regex ls_re("libssl-.*.dll");
+                    if (std::regex_match(c.filename().to_string(), ls_re))
+                    {
+                        deploy_binary(target_binary_dir, bin_dir, c.filename().to_string());
+                    }
+                }
+            }
+            else if (target_binary_name == "Qt5Sqld.dll" || target_binary_name == "Qt5Sql.dll")
+            {
+                deployPluginsQt("sqldrivers", target_binary_dir, qt_plugins_dir);
+            }
+            else if (target_binary_name == "Qt5Multimediad.dll" || target_binary_name == "Qt5Multimedia.dll")
+            {
+                deployPluginsQt("audio", target_binary_dir, qt_plugins_dir);
+                deployPluginsQt("mediaservice", target_binary_dir, qt_plugins_dir);
+                deployPluginsQt("playlistformats", target_binary_dir, qt_plugins_dir);
+            }
+            else if (target_binary_name == "Qt5PrintSupportd.dll" || target_binary_name == "Qt5PrintSupport.dll")
+            {
+                deployPluginsQt("printsupport", target_binary_dir, qt_plugins_dir);
+            }
+            else if (target_binary_name == "Qt5Qmld.dll" || target_binary_name == "Qt5Qml.dll")
+            {
+                std::error_code ec;
+                if (!m_fs.exists(target_binary_dir / "qml", ec))
+                {
+                    if (m_fs.exists(bin_dir / "..\\qml", ec))
+                    {
+                        m_fs.copy_regular_recursive(bin_dir / "..\\qml", target_binary_dir, VCPKG_LINE_INFO);
+                    }
+                    else if (m_fs.exists(bin_dir / "..\\..\\qml", ec))
+                    {
+                        m_fs.copy_regular_recursive(bin_dir / "..\\..\\qml", target_binary_dir, VCPKG_LINE_INFO);
+                    }
+                    else
+                    {
+                        Checks::exit_with_message(VCPKG_LINE_INFO, "FAILED", ec.message());
+                    }
+                }
+            }
+            else if (target_binary_name == "Qt5Quickd.dll" || target_binary_name == "Qt5Quick.dll")
+            {
+                std::vector<std::string> libs = {"Qt5QuickControls2.dll",
+                                                 "Qt5QuickControls2d.dll",
+                                                 "Qt5QuickShapes.dll",
+                                                 "Qt5QuickShapesd.dll",
+                                                 "Qt5QuickTemplates2.dll",
+                                                 "Qt5QuickTemplates2d.dll",
+                                                 "Qt5QmlWorkerScript.dll",
+                                                 "Qt5QmlWorkerScriptd.dll",
+                                                 "Qt5QuickParticles.dll",
+                                                 "Qt5QuickParticlesd.dll",
+                                                 "Qt5QuickWidgets.dll",
+                                                 "Qt5QuickWidgetsd.dll"};
+                for (std::string lib : libs)
+                {
+                    deploy_binary(target_binary_dir, bin_dir, lib);
+                }
+
+                deployPluginsQt("scenegraph", target_binary_dir, qt_plugins_dir);
+                deployPluginsQt("qmltooling", target_binary_dir, qt_plugins_dir);
+            }
+
+            std::error_code ec;
+            std::vector<Path> children = m_fs.get_files_non_recursive(target_binary_name, ec);
+            for (auto c : children)
+            {
+                std::regex dec_re("Qt5Declarative.*.dll");
+                if (std::regex_match(c.filename().to_string(), dec_re))
+                {
+                    deployPluginsQt("qml1tooling", target_binary_dir, qt_plugins_dir);
+                }
+
+                std::regex pos_re("Qt5Positioning.*.dll");
+                if (std::regex_match(c.filename().to_string(), pos_re))
+                {
+                    deployPluginsQt("position", target_binary_dir, qt_plugins_dir);
+                }
+
+                std::regex loc_re("Qt5Location.*.dll");
+                if (std::regex_match(c.filename().to_string(), loc_re))
+                {
+                    deployPluginsQt("geoservices", target_binary_dir, qt_plugins_dir);
+                }
+
+                std::regex sen_re("Qt5Sensors.*.dll");
+                if (std::regex_match(c.filename().to_string(), sen_re))
+                {
+                    deployPluginsQt("sensors", target_binary_dir, qt_plugins_dir);
+                    deployPluginsQt("sensorgestures", target_binary_dir, qt_plugins_dir);
+                }
+
+                std::regex weben_re("Qt5WebEngineCore.*.dll");
+                if (std::regex_match(c.filename().to_string(), weben_re))
+                {
+                    deployPluginsQt("qtwebengine", target_binary_dir, qt_plugins_dir);
+                }
+
+                std::regex ren3d_re("Qt53DRenderer.*.dll");
+                if (std::regex_match(c.filename().to_string(), ren3d_re))
+                {
+                    deployPluginsQt("sceneparsers", target_binary_dir, qt_plugins_dir);
+                }
+
+                std::regex tex_re("Qt5TextToSpeech.*.dll");
+                if (std::regex_match(c.filename().to_string(), tex_re))
+                {
+                    deployPluginsQt("texttospeech", target_binary_dir, qt_plugins_dir);
+                }
+
+                std::regex ser_re("Qt5SerialBus.*.dll");
+                if (std::regex_match(c.filename().to_string(), ser_re))
+                {
+                    deployPluginsQt("canbus", target_binary_dir, qt_plugins_dir);
+                }
+            }
+        }
+
+        bool deploy_binary(const Path& target_binary_dir,
+                           const Path& installed_dir,
+                           const std::string& target_binary_name)
+        {
+            const auto source = installed_dir / target_binary_name;
+            const auto target = target_binary_dir / target_binary_name;
             // FIXME This should use an NT Mutant (what comes out of CreateMutex) to ensure that different vcpkg.exes
             // running at the same time don't try to deploy the same file at the same time.
             std::error_code ec;
