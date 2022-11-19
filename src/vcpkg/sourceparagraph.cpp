@@ -443,12 +443,12 @@ namespace vcpkg
 
     struct DependencyFeatureDeserializer : Json::IDeserializer<Dependency::Feature>
     {
-        virtual StringView type_name() const override { return "a feature in a dependency"; }
+        StringView type_name() const override { return "a feature in a dependency"; }
 
         constexpr static StringLiteral NAME = "name";
         constexpr static StringLiteral PLATFORM = "platform";
 
-        virtual Span<const StringView> valid_fields() const override
+        Span<const StringView> valid_fields() const override
         {
             static const StringView t[] = {
                 NAME,
@@ -460,7 +460,7 @@ namespace vcpkg
         Optional<Dependency::Feature> visit_string(Json::Reader& r, StringView sv) override
         {
             return Json::IdentifierDeserializer::instance.visit_string(r, sv).map(
-                [](const std::string&& name) { return std::move(name); });
+                [](std::string&& name) { return std::move(name); });
         }
 
         Optional<Dependency::Feature> visit_object(Json::Reader& r, const Json::Object& obj) override
