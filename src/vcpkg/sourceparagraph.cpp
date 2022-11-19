@@ -465,10 +465,11 @@ namespace vcpkg
 
         Optional<Dependency::Feature> visit_object(Json::Reader& r, const Json::Object& obj) override
         {
-            Dependency::Feature feature;
-            r.required_object_field(type_name(), obj, NAME, feature.name, Json::IdentifierDeserializer::instance);
-            r.optional_object_field(obj, PLATFORM, feature.platform, PlatformExprDeserializer::instance);
-            return feature;
+            std::string name;
+            PlatformExpression::Expr platform;
+            r.required_object_field(type_name(), obj, NAME, name, Json::IdentifierDeserializer::instance);
+            r.optional_object_field(obj, PLATFORM, platform, PlatformExprDeserializer::instance);
+            return Dependency::Feature{std::move(name), std::move(platform)};
         }
 
         static DependencyFeatureDeserializer instance;
@@ -530,12 +531,7 @@ namespace vcpkg
             r.required_object_field(type_name(), obj, NAME, dep.name, Json::PackageNameDeserializer::instance);
             r.optional_object_field(obj, FEATURES, dep.features, arr_features_d);
 
-            bool default_features = true;
-            r.optional_object_field(obj, DEFAULT_FEATURES, default_features, Json::BooleanDeserializer::instance);
-            if (!default_features)
-            {
-                dep.features.emplace_back("core");
-            }
+            r.optional_object_field(obj, DEFAULT_FEATURES, dep.default_features, Json::BooleanDeserializer::instance);
             r.optional_object_field(obj, HOST, dep.host, Json::BooleanDeserializer::instance);
 
             r.optional_object_field(obj, PLATFORM, dep.platform, PlatformExprDeserializer::instance);
@@ -1530,8 +1526,7 @@ namespace vcpkg
     std::vector<FullPackageSpec> filter_dependencies(const std::vector<vcpkg::Dependency>& deps,
                                                      Triplet target,
                                                      Triplet host,
-                                                     const std::unordered_map<std::string, std::string>& cmake_vars,
-                                                     ImplicitDefault id)
+                                                     const std::unordered_map<std::string, std::string>& cmake_vars)
     {
         std::vector<FullPackageSpec> ret;
         for (auto&& dep : deps)
@@ -1544,7 +1539,7 @@ namespace vcpkg
                 {
                     if (f.platform.evaluate(cmake_vars)) features.push_back(f.name);
                 }
-                ret.emplace_back(dep.to_full_spec(features, target, host, id));
+                ret.emplace_back(dep.to_full_spec(features, target, host));
             }
         }
         return ret;
@@ -1615,16 +1610,15 @@ namespace vcpkg
                 dep_obj.insert(DependencyDeserializer::NAME, dep.name);
                 if (dep.host) dep_obj.insert(DependencyDeserializer::HOST, Json::Value::boolean(true));
 
-                if (!dep.default_features())
+                if (!dep.default_features)
                 {
                     dep_obj.insert(DependencyDeserializer::DEFAULT_FEATURES, Json::Value::boolean(false));
                 }
-                if (debug || dep.features.size() > static_cast<size_t>(!dep.default_features()))
+                if (debug || !dep.features.empty())
                 {
                     auto& features = dep_obj.insert(DependencyDeserializer::FEATURES, Json::Array());
                     for (const auto& f : dep.features)
                     {
-                        if (f.name == "core") continue;
                         if (f.platform.is_empty() && !debug)
                         {
                             features.push_back(Json::Value::string(f.name));

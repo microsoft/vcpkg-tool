@@ -151,11 +151,12 @@ namespace vcpkg
         {
             std::string name;
             PlatformExpression::Expr platform;
-            Feature() = default;
-            Feature(std::string name) : name(std::move(name)) { }
+            Feature(std::string name) : Feature(std::move(name), PlatformExpression::Expr::Empty()) { }
             Feature(std::string name, PlatformExpression::Expr platform)
                 : name(std::move(name)), platform(std::move(platform))
             {
+                Checks::check_exit(VCPKG_LINE_INFO,
+                                   !this->name.empty() && this->name != "core" && this->name != "default");
             }
             friend bool operator==(const Feature& lhs, const Feature& rhs)
             {
@@ -167,21 +168,19 @@ namespace vcpkg
             friend bool operator!=(const Feature& lhs, const Feature& rhs) { return !(lhs == rhs); }
         };
         std::string name;
+        // a list of "real" features without "core" or "default". Use member default_features instead.
         std::vector<Feature> features;
         PlatformExpression::Expr platform;
         DependencyConstraint constraint;
         bool host = false;
 
-        bool default_features() const;
+        bool default_features = true;
         bool has_platform_expressions() const;
 
         Json::Object extra_info;
 
-        /// @param id adds "default" if "core" not present.
-        FullPackageSpec to_full_spec(View<std::string> features,
-                                     Triplet target,
-                                     Triplet host,
-                                     ImplicitDefault id) const;
+        /// @param id adds "default" if `default_features` is false.
+        FullPackageSpec to_full_spec(View<std::string> features, Triplet target, Triplet host) const;
 
         friend bool operator==(const Dependency& lhs, const Dependency& rhs);
         friend bool operator!=(const Dependency& lhs, const Dependency& rhs) { return !(lhs == rhs); }

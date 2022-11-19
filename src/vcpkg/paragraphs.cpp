@@ -182,10 +182,11 @@ namespace vcpkg
     }
     ExpectedS<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
                                                                StringView origin,
-                                                               TextRowCol textrowcol)
+                                                               TextRowCol textrowcol,
+                                                               ImplicitDefault implicit_defaults)
     {
         auto parser = ParserBase(str, origin, textrowcol);
-        auto opt = parse_list_until_eof<Dependency>("dependencies", parser, [](ParserBase& parser) {
+        auto opt = parse_list_until_eof<Dependency>("dependencies", parser, [implicit_defaults](ParserBase& parser) {
             auto loc = parser.cur_loc();
             return parse_qualified_specifier(parser).then([&](ParsedQualifiedSpecifier&& pqs) -> Optional<Dependency> {
                 if (pqs.triplet)
@@ -193,12 +194,20 @@ namespace vcpkg
                     parser.add_error("triplet specifier not allowed in this context", loc);
                     return nullopt;
                 }
-                return Dependency{pqs.name,
-                                  Util::fmap(pqs.features.value_or({}),
-                                             [](const auto& f) {
-                                                 return Dependency::Feature{f, PlatformExpression::Expr::Empty()};
-                                             }),
-                                  pqs.platform.value_or({})};
+                Dependency dependency{pqs.name, {}, pqs.platform.value_or({})};
+                dependency.default_features = (implicit_defaults == ImplicitDefault::YES);
+                for (const auto& feature : pqs.features.value_or({}))
+                {
+                    if (feature == "core")
+                    {
+                        dependency.default_features = false;
+                    }
+                    else
+                    {
+                        dependency.features.emplace_back(feature);
+                    }
+                }
+                return dependency;
             });
         });
         if (!opt) return {parser.get_error()->to_string(), expected_right_tag};

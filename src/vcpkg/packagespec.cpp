@@ -262,22 +262,20 @@ namespace vcpkg
         };
     }
 
-    bool Dependency::default_features() const
-    {
-        return Util::find_if(features, [](const auto& f) { return f.name == "core"; }) == features.end();
-    }
-
     bool Dependency::has_platform_expressions() const
     {
         return !platform.is_empty() || Util::any_of(features, [](const auto f) { return !f.platform.is_empty(); });
     }
 
-    FullPackageSpec Dependency::to_full_spec(View<std::string> feature_list,
-                                             Triplet target,
-                                             Triplet host_triplet,
-                                             ImplicitDefault id) const
+    FullPackageSpec Dependency::to_full_spec(View<std::string> feature_list, Triplet target, Triplet host_triplet) const
     {
-        return FullPackageSpec{{name, host ? host_triplet : target}, normalize_feature_list(feature_list, id)};
+        InternalFeatureSet internal_feature_list(feature_list.begin(), feature_list.end());
+        internal_feature_list.push_back("core");
+        if (default_features)
+        {
+            internal_feature_list.push_back("default");
+        }
+        return FullPackageSpec{{name, host ? host_triplet : target}, std::move(internal_feature_list)};
     }
 
     bool operator==(const Dependency& lhs, const Dependency& rhs)

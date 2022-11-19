@@ -139,8 +139,7 @@ namespace vcpkg
                                     features.push_back(f.name);
                                 }
                             }
-                            auto fullspec =
-                                dep.to_full_spec(features, m_spec.triplet(), host_triplet, ImplicitDefault::YES);
+                            auto fullspec = dep.to_full_spec(features, m_spec.triplet(), host_triplet);
                             fullspec.expand_fspecs_to(dep_list);
                             if (auto opt = dep.constraint.try_get_minimum_version())
                             {
@@ -163,8 +162,7 @@ namespace vcpkg
                             auto fullspec =
                                 dep.to_full_spec(Util::fmap(dep.features, [](const auto& f) { return f.name; }),
                                                  m_spec.triplet(),
-                                                 host_triplet,
-                                                 ImplicitDefault::YES);
+                                                 host_triplet);
                             fullspec.expand_fspecs_to(dep_list);
                             if (auto opt = dep.constraint.try_get_minimum_version())
                             {
@@ -1553,7 +1551,7 @@ namespace vcpkg
                 }
             }
 
-            if (dep.default_features())
+            if (dep.default_features)
             {
                 require_port_defaults(ref, origin);
             }
@@ -1758,7 +1756,7 @@ namespace vcpkg
 
                 // Disable default features for deps with [core] as a dependency
                 // Note: x[core], x[y] will still eventually depend on defaults due to the second x[y]
-                if (!dep.default_features())
+                if (!dep.default_features)
                 {
                     auto& node = emplace_package(dep_to_spec(dep));
                     node.second.default_features = false;
