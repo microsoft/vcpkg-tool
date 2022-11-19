@@ -928,7 +928,6 @@ namespace vcpkg
         FILE* pipe = nullptr;
 #if defined(__APPLE__)
         static std::mutex mtx;
-        Debug::print("Mutex enabled");
 #endif
 
         // Scope for lock guard
@@ -960,7 +959,15 @@ namespace vcpkg
             return format_system_error_message("feof", errno);
         }
 
-        int ec = pclose(pipe);
+        int ec;
+        // Scope for lock guard
+        {
+#if defined(__APPLE__)
+            // See the comment above at the call to `popen`.
+            std::lock_guard guard(mtx);
+#endif
+            ec = pclose(pipe);
+        }
         if (WIFEXITED(ec))
         {
             ec = WEXITSTATUS(ec);
