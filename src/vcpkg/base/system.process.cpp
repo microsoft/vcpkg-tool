@@ -928,6 +928,7 @@ namespace vcpkg
         FILE* pipe = nullptr;
 #if defined(__APPLE__)
         static std::mutex mtx;
+        Debug::print("Mutex enabled");
 #endif
 
         // Scope for lock guard
