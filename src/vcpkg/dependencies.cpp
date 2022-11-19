@@ -141,18 +141,18 @@ namespace vcpkg
                                 }
                             }
 
-                            for (const std::string& feature : defaults_set)
+                            for (const std::string& default_feature : defaults_set)
                             {
                                 // Instead of dealing with adding default features to each of our dependencies right
                                 // away we just defer to the next pass of the loop.
-                                out_new_dependencies.emplace_back(m_spec, feature);
+                                out_new_dependencies.emplace_back(m_spec, default_feature);
                             }
                         }
                         else
                         {
-                            for (auto&& feature : std::move(info.default_features))
+                            for (auto&& default_feature : std::move(info.default_features))
                             {
-                                out_new_dependencies.emplace_back(m_spec, std::move(feature));
+                                out_new_dependencies.emplace_back(m_spec, std::move(default_feature));
                             }
                         }
                     }
