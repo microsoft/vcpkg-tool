@@ -102,6 +102,7 @@ namespace vcpkg
     }
 
     BinaryParagraph::BinaryParagraph(const SourceParagraph& spgh,
+                                     const std::vector<std::string>& default_features,
                                      Triplet triplet,
                                      const std::string& abi_tag,
                                      const std::vector<FeatureSpec>& deps)
@@ -111,7 +112,7 @@ namespace vcpkg
         , description(spgh.description)
         , maintainers(spgh.maintainers)
         , feature()
-        , default_features(spgh.default_features)
+        , default_features(default_features)
         , dependencies()
         , abi(abi_tag)
         , type(spgh.type)

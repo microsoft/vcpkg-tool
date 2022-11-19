@@ -256,6 +256,7 @@ Build-Depends: bzip
                           RequestType::USER_REQUESTED,
                           Test::ARM_UWP,
                           {{"a", {}}, {"b", {}}},
+                          {},
                           {});
 
     ipa.abi_info = AbiInfo{};
@@ -387,7 +388,8 @@ Description:
                               RequestType::USER_REQUESTED,
                               Test::ARM_UWP,
                               std::map<std::string, std::vector<FeatureSpec>>{},
-                              std::vector<LocalizedString>{});
+                              std::vector<LocalizedString>{},
+                              std::vector<std::string>{});
     InstallPlanAction& ipa_without_abi = install_plan.back();
 
     // test that the binary cache does the right thing. See also CHECKs etc. in KnowNothingBinaryProvider

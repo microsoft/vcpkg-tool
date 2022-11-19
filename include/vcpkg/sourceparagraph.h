@@ -70,7 +70,7 @@ namespace vcpkg
         std::string documentation;
         std::vector<Dependency> dependencies;
         std::vector<DependencyOverride> overrides;
-        std::vector<std::string> default_features;
+        std::vector<Dependency::Feature> default_features;
 
         // there are two distinct "empty" states here
         // "user did not provide a license" -> nullopt

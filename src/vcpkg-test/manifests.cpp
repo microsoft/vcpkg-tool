@@ -831,7 +831,13 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         "description": "d",
         "builtin-baseline": "123",
         "dependencies": ["bd"],
-        "default-features": ["df"],
+        "default-features": [
+            "df",
+            {
+                "name": "zuko",
+                "platform": "windows & arm"
+            }
+        ],
         "features": {
             "$feature-level-comment": "hi",
             "$feature-level-comment2": "123456",
@@ -892,8 +898,11 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(pgh.core_paragraph->description[0] == "d");
     REQUIRE(pgh.core_paragraph->dependencies.size() == 1);
     REQUIRE(pgh.core_paragraph->dependencies[0].name == "bd");
-    REQUIRE(pgh.core_paragraph->default_features.size() == 1);
-    REQUIRE(pgh.core_paragraph->default_features[0] == "df");
+    REQUIRE(pgh.core_paragraph->default_features.size() == 2);
+    REQUIRE(pgh.core_paragraph->default_features[0].name == "df");
+    REQUIRE(pgh.core_paragraph->default_features[0].platform.is_empty());
+    REQUIRE(pgh.core_paragraph->default_features[1].name == "zuko");
+    REQUIRE(to_string(pgh.core_paragraph->default_features[1].platform) == "windows & arm");
     REQUIRE(pgh.core_paragraph->supports_expression.is_empty());
     REQUIRE(pgh.core_paragraph->builtin_baseline == "123");
 
@@ -1042,7 +1051,8 @@ TEST_CASE ("SourceParagraph manifest default features", "[manifests]")
     auto& pgh = **m_pgh.get();
 
     REQUIRE(pgh.core_paragraph->default_features.size() == 1);
-    REQUIRE(pgh.core_paragraph->default_features[0] == "a1");
+    REQUIRE(pgh.core_paragraph->default_features[0].name == "a1");
+    REQUIRE(pgh.core_paragraph->default_features[0].platform.is_empty());
 }
 
 TEST_CASE ("SourceParagraph manifest description paragraph", "[manifests]")

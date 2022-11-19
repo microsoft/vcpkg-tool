@@ -230,7 +230,7 @@ namespace vcpkg
                 std::for_each(spgh.dependencies.begin(), spgh.dependencies.end(), *this);
                 std::sort(spgh.dependencies.begin(), spgh.dependencies.end(), DependencyLess{});
 
-                std::sort(spgh.default_features.begin(), spgh.default_features.end());
+                std::sort(spgh.default_features.begin(), spgh.default_features.end(), DependencyFeatureLess{});
 
                 spgh.extra_info.sort_keys();
             }
@@ -317,7 +317,8 @@ namespace vcpkg
         auto maybe_default_features = parse_default_features_list(buf, origin, textrowcol);
         if (const auto default_features = maybe_default_features.get())
         {
-            spgh->default_features = *default_features;
+            spgh->default_features =
+                Util::fmap(*default_features, [](const auto& name) { return Dependency::Feature{name}; });
         }
         else
         {
@@ -1106,9 +1107,9 @@ namespace vcpkg
             }
 
             r.optional_object_field(obj, SUPPORTS, spgh.supports_expression, PlatformExprDeserializer::instance);
-
-            r.optional_object_field(
-                obj, DEFAULT_FEATURES, spgh.default_features, Json::IdentifierArrayDeserializer::instance);
+            static Json::ArrayDeserializer<DependencyFeatureDeserializer> arr_features_d{
+                "an array of default features"};
+            r.optional_object_field(obj, DEFAULT_FEATURES, spgh.default_features, arr_features_d);
 
             FeaturesObject features_tmp;
             r.optional_object_field(obj, FEATURES, features_tmp, FeaturesFieldDeserializer::instance);
@@ -1594,6 +1595,26 @@ namespace vcpkg
                 obj.insert(name, s);
             }
         };
+        auto serialize_dependency_features = [&](Json::Object& obj, StringLiteral name, const auto& features) {
+            if (debug || !features.empty())
+            {
+                auto& features_array = obj.insert(name, Json::Array());
+                for (const auto& f : features)
+                {
+                    if (f.platform.is_empty() && !debug)
+                    {
+                        features_array.push_back(Json::Value::string(f.name));
+                    }
+                    else
+                    {
+                        Json::Object entry;
+                        entry.insert(DependencyFeatureDeserializer::NAME, f.name);
+                        entry.insert(DependencyFeatureDeserializer::PLATFORM, to_string(f.platform));
+                        features_array.push_back(std::move(entry));
+                    }
+                }
+            }
+        };
         auto serialize_dependency = [&](Json::Array& arr, const Dependency& dep) {
             if (is_dependency_trivial(dep))
             {
@@ -1614,24 +1635,7 @@ namespace vcpkg
                 {
                     dep_obj.insert(DependencyDeserializer::DEFAULT_FEATURES, Json::Value::boolean(false));
                 }
-                if (debug || !dep.features.empty())
-                {
-                    auto& features = dep_obj.insert(DependencyDeserializer::FEATURES, Json::Array());
-                    for (const auto& f : dep.features)
-                    {
-                        if (f.platform.is_empty() && !debug)
-                        {
-                            features.push_back(Json::Value::string(f.name));
-                        }
-                        else
-                        {
-                            Json::Object entry;
-                            entry.insert(DependencyFeatureDeserializer::NAME, f.name);
-                            entry.insert(DependencyFeatureDeserializer::PLATFORM, to_string(f.platform));
-                            features.push_back(std::move(entry));
-                        }
-                    }
-                }
+                serialize_dependency_features(dep_obj, DependencyDeserializer::FEATURES, dep.features);
                 serialize_optional_string(dep_obj, DependencyDeserializer::PLATFORM, to_string(dep.platform));
                 if (dep.constraint.type == VersionConstraintKind::Minimum)
                 {
@@ -1736,7 +1740,8 @@ namespace vcpkg
             }
         }
 
-        serialize_optional_array(obj, ManifestDeserializer::DEFAULT_FEATURES, scf.core_paragraph->default_features);
+        serialize_dependency_features(
+            obj, ManifestDeserializer::DEFAULT_FEATURES, scf.core_paragraph->default_features);
 
         if (debug || !scf.feature_paragraphs.empty() || !scf.extra_features_info.is_empty())
         {

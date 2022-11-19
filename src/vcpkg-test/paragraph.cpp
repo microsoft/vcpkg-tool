@@ -117,7 +117,8 @@ TEST_CASE ("SourceParagraph construct maximum", "[paragraph]")
     REQUIRE(pgh.core_paragraph->dependencies.size() == 1);
     REQUIRE(pgh.core_paragraph->dependencies[0].name == "bd");
     REQUIRE(pgh.core_paragraph->default_features.size() == 1);
-    REQUIRE(pgh.core_paragraph->default_features[0] == "df");
+    REQUIRE(pgh.core_paragraph->default_features[0].name == "df");
+    REQUIRE(pgh.core_paragraph->default_features[0].platform.is_empty());
 }
 
 TEST_CASE ("SourceParagraph construct feature", "[paragraph]")
@@ -203,7 +204,8 @@ TEST_CASE ("SourceParagraph default features", "[paragraph]")
     auto& pgh = **m_pgh.get();
 
     REQUIRE(pgh.core_paragraph->default_features.size() == 1);
-    REQUIRE(pgh.core_paragraph->default_features[0] == "a1");
+    REQUIRE(pgh.core_paragraph->default_features[0].name == "a1");
+    REQUIRE(pgh.core_paragraph->default_features[0].platform.is_empty());
 }
 
 TEST_CASE ("BinaryParagraph construct minimum", "[paragraph]")

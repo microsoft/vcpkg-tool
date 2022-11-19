@@ -2257,3 +2257,44 @@ TEST_CASE ("respect platform expressions in Dependency::Feature", "[versionplan]
         CHECK(install_plan.install_actions[0].feature_list.size() == 2);
     }
 }
+
+TEST_CASE ("respect platform expressions in default features", "[versionplan]")
+{
+    using namespace PlatformExpression;
+    MockBaselineProvider bp;
+    bp.v["a"] = {"1", 0};
+
+    MockVersionedPortfileProvider vp;
+    {
+        // port with a feature x that is default on "linux"
+        auto a_x = std::make_unique<FeatureParagraph>();
+        a_x->name = "x";
+        auto& scf = vp.emplace("a", {"1", 0}).source_control_file;
+        scf->feature_paragraphs.push_back(std::move(a_x));
+        scf->core_paragraph->default_features.emplace_back(
+            "x", parse_platform_expression("linux", MultipleBinaryOperators::Deny).value_or_exit(VCPKG_LINE_INFO));
+    }
+
+    MockCMakeVarProvider var_provider;
+    Dependency dep{"a"};
+    PackageSpec spec{"a", toplevel_spec().triplet()};
+    SECTION ("on windows")
+    {
+        var_provider.dep_info_vars[spec]["VCPKG_CMAKE_SYSTEM_NAME"] = "";
+        auto maybe_install_plan = create_versioned_install_plan(vp, bp, {dep}, var_provider);
+        CHECK(maybe_install_plan.has_value());
+        auto& install_plan = maybe_install_plan.value_or_exit(VCPKG_LINE_INFO);
+        CHECK(install_plan.install_actions.size() == 1);
+        CHECK(install_plan.install_actions[0].feature_list.size() == 1);
+    }
+
+    SECTION ("on linux")
+    {
+        var_provider.dep_info_vars[spec]["VCPKG_CMAKE_SYSTEM_NAME"] = "Linux";
+        auto maybe_install_plan = create_versioned_install_plan(vp, bp, {dep}, var_provider);
+        CHECK(maybe_install_plan.has_value());
+        auto& install_plan = maybe_install_plan.value_or_exit(VCPKG_LINE_INFO);
+        CHECK(install_plan.install_actions.size() == 1);
+        CHECK(install_plan.install_actions[0].feature_list.size() == 2);
+    }
+}

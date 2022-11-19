@@ -579,13 +579,14 @@ namespace vcpkg
 
     static std::unique_ptr<BinaryControlFile> create_binary_control_file(
         const SourceParagraph& source_paragraph,
+        const std::vector<std::string>& default_features,
         Triplet triplet,
         const BuildInfo& build_info,
         const std::string& abi_tag,
         const std::vector<FeatureSpec>& core_dependencies)
     {
         auto bcf = std::make_unique<BinaryControlFile>();
-        BinaryParagraph bpgh(source_paragraph, triplet, abi_tag, core_dependencies);
+        BinaryParagraph bpgh(source_paragraph, default_features, triplet, abi_tag, core_dependencies);
         if (const auto p_ver = build_info.version.get())
         {
             bpgh.version = *p_ver;
@@ -970,8 +971,13 @@ namespace vcpkg
         auto find_itr = action.feature_dependencies.find("core");
         Checks::check_exit(VCPKG_LINE_INFO, find_itr != action.feature_dependencies.end());
 
-        std::unique_ptr<BinaryControlFile> bcf = create_binary_control_file(
-            *scfl.source_control_file->core_paragraph, triplet, build_info, action.public_abi(), find_itr->second);
+        std::unique_ptr<BinaryControlFile> bcf =
+            create_binary_control_file(*scfl.source_control_file->core_paragraph,
+                                       action.default_features.value_or_exit(VCPKG_LINE_INFO),
+                                       triplet,
+                                       build_info,
+                                       action.public_abi(),
+                                       find_itr->second);
 
         if (error_count != 0 && action.build_options.backcompat_features == BackcompatFeatures::PROHIBIT)
         {
