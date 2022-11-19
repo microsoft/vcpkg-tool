@@ -392,17 +392,14 @@ bool vcpkg::Strings::contains_any_ignoring_c_comments(const std::string& source,
         auto start = source.find_first_of("/\"", no_comment_offset);
         if (start == std::string::npos || start + 1 == source.size() || no_comment_offset == std::string::npos)
         {
-            return Util::any_of(to_find,
-                                [&](StringView s) { return Strings::contains(StringView(source).substr(offset), s); });
+            return Strings::contains_any(StringView(source).substr(offset), to_find);
         }
 
         if (source[start] == '/')
         {
             if (source[start + 1] == '/' || source[start + 1] == '*')
             {
-                if (Util::any_of(to_find, [&](StringView s) {
-                        return Strings::contains(StringView(source).substr(offset, start - offset), s);
-                    }))
+                if (Strings::contains_any(StringView(source).substr(offset, start - offset), to_find))
                 {
                     return true;
                 }
@@ -447,6 +444,38 @@ bool vcpkg::Strings::contains_any_ignoring_c_comments(const std::string& source,
         no_comment_offset = start + 1;
     }
     return false;
+}
+
+bool Strings::contains_any_ignoring_hash_comments(StringView source, View<StringView> to_find)
+{
+    auto first = source.data();
+    auto block_start = first;
+    const auto last = first + source.size();
+    for (; first != last; ++first)
+    {
+        if (*first == '#')
+        {
+            if (Strings::contains_any(StringView{block_start, first}, to_find))
+            {
+                return true;
+            }
+
+            first = std::find(first, last, '\n'); // skip comment
+            if (first == last)
+            {
+                return false;
+            }
+
+            block_start = first;
+        }
+    }
+
+    return Strings::contains_any(StringView{block_start, last}, to_find);
+}
+
+bool Strings::contains_any(StringView source, View<StringView> to_find)
+{
+    return Util::any_of(to_find, [=](StringView s) { return Strings::contains(source, s); });
 }
 
 bool Strings::equals(StringView a, StringView b)

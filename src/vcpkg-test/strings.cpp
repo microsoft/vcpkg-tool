@@ -111,6 +111,20 @@ TEST_CASE ("contains_any_ignoring_c_comments", "[strings]")
     REQUIRE(contains_any_ignoring_c_comments("\"a\" \"g\" // er \n abc)", to_find));
 }
 
+TEST_CASE ("contains_any_ignoring_hash_comments", "[strings]")
+{
+    using vcpkg::Strings::contains_any_ignoring_hash_comments;
+    vcpkg::StringView to_find[] = {"abc", "wer"};
+    REQUIRE(contains_any_ignoring_hash_comments("abc", to_find));
+    REQUIRE(contains_any_ignoring_hash_comments("wer", to_find));
+    REQUIRE(contains_any_ignoring_hash_comments("wer # test", to_find));
+    REQUIRE(contains_any_ignoring_hash_comments("\n wer # \n test", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_hash_comments("# wer", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_hash_comments("\n# wer", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_hash_comments("\n  # wer\n", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_hash_comments("\n test # wer", to_find));
+}
+
 TEST_CASE ("edit distance", "[strings]")
 {
     using vcpkg::Strings::byte_edit_distance;

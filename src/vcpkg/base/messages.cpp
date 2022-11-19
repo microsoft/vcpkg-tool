@@ -640,7 +640,8 @@ namespace vcpkg
     REGISTER_MESSAGE(FilesExported);
     REGISTER_MESSAGE(FileSystemOperationFailed);
     REGISTER_MESSAGE(FishCompletion);
-    REGISTER_MESSAGE(FilesContainAbsolutePath);
+    REGISTER_MESSAGE(FilesContainAbsolutePath1);
+    REGISTER_MESSAGE(FilesContainAbsolutePath2);
     REGISTER_MESSAGE(FollowingPackagesMissingControl);
     REGISTER_MESSAGE(FollowingPackagesNotInstalled);
     REGISTER_MESSAGE(FollowingPackagesUpgraded);

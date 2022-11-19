@@ -222,6 +222,10 @@ namespace vcpkg::Strings
 
     bool contains_any_ignoring_c_comments(const std::string& source, View<StringView> to_find);
 
+    bool contains_any_ignoring_hash_comments(StringView source, View<StringView> to_find);
+
+    bool contains_any(StringView source, View<StringView> to_find);
+
     bool equals(StringView a, StringView b);
 
     template<class T>

@@ -309,8 +309,6 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(option, "editable");
     DECLARE_MSG_ARG(package_name, "zlib");
     DECLARE_MSG_ARG(path, "/foo/bar");
-    DECLARE_MSG_ARG(paths, "/foo/bar, /foo/bar2");
-    DECLARE_MSG_ARG(absolute_paths, "/foo/bar, /foo/bar2");
     DECLARE_MSG_ARG(row, "42");
     DECLARE_MSG_ARG(spec, "zlib:x64-windows");
     DECLARE_MSG_ARG(system_api, "CreateProcessW");
@@ -1090,11 +1088,13 @@ namespace vcpkg
                     "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details "
                     "on how to provide credentials.");
     DECLARE_MESSAGE(FeedbackAppreciated, (), "", "Thank you for your feedback!");
-    DECLARE_MESSAGE(FilesContainAbsolutePath,
-                    (msg::absolute_paths, msg::paths),
-                    "The ('{absolute_paths}') part should remain unchanged, as a list of paths",
-                    "The following files contain an absolute path ('{absolute_paths}'): {paths}\n"
-                    "There should be no absolute paths in the installed package, only relative ones.");
+    DECLARE_MESSAGE(
+        FilesContainAbsolutePath1,
+        (),
+        "This message is printed before a list of found absolute paths, followed by FilesContainAbsolutePath2, "
+        "followed by a list of found files.",
+        "There should be no absolute paths, such as the following, in an installed package:");
+    DECLARE_MESSAGE(FilesContainAbsolutePath2, (), "", "Absolute paths were found in the following files:");
     DECLARE_MESSAGE(FetchingBaselineInfo,
                     (msg::package_name),
                     "",

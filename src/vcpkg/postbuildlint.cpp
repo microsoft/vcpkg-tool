@@ -1027,26 +1027,48 @@ namespace vcpkg::PostBuildLint
         return LintStatus::SUCCESS;
     }
 
+    static bool file_contains_absolute_paths(const Filesystem& fs,
+                                             const Path& file,
+                                             const std::vector<StringView> stringview_paths)
+    {
+        const auto extension = file.extension();
+        if (extension == ".h" || extension == ".hpp" || extension == ".hxx")
+        {
+            return Strings::contains_any_ignoring_c_comments(fs.read_contents(file, IgnoreErrors{}), stringview_paths);
+        }
+
+        if (extension == ".cfg" || extension == ".conf" || extension == ".ini" || file.filename() == "usage")
+        {
+            const auto contents = fs.read_contents(file, IgnoreErrors{});
+            return Strings::contains_any(contents, stringview_paths);
+        }
+
+        if (extension == ".py" || extension == ".sh" || extension == ".cmake" || extension == ".pc")
+        {
+            const auto contents = fs.read_contents(file, IgnoreErrors{});
+            return Strings::contains_any_ignoring_hash_comments(contents, stringview_paths);
+        }
+
+        if (extension.empty())
+        {
+            std::error_code ec;
+            ReadFilePointer read_file(file, ec);
+            if (ec) return false;
+            char buffer[5];
+            if (read_file.read(buffer, 1, sizeof(buffer)) < sizeof(buffer)) return false;
+            if (Strings::starts_with(buffer, "#!") ||
+                Strings::starts_with(buffer, "\xEF\xBB\xBF#!") /* ignore byte-order mark */)
+            {
+                const auto contents = fs.read_contents(file, IgnoreErrors{});
+                return Strings::contains_any_ignoring_hash_comments(contents, stringview_paths);
+            }
+            return false;
+        }
+        return false;
+    }
+
     static LintStatus check_no_absolute_paths_in(const Filesystem& fs, const Path& dir, Span<Path> absolute_paths)
     {
-        static constexpr StringLiteral extensions[] = {"h", "hpp", "hxx", "py", "sh", "cmake", "pc", "cfg", "conf"};
-        std::vector<std::pair<Path, std::string>> files_and_contents;
-        for (auto& path : fs.get_regular_files_recursive(dir, IgnoreErrors{}))
-        {
-            if (path.extension().empty())
-            {
-                auto contents = fs.read_contents(path, VCPKG_LINE_INFO);
-                if (Strings::starts_with(contents, "#!"))
-                {
-                    files_and_contents.emplace_back(std::move(path), std::move(contents));
-                }
-            }
-            else if (Util::contains(extensions, path.extension().substr(1 /* ignore dot */)))
-            {
-                auto contents = fs.read_contents(path, VCPKG_LINE_INFO);
-                files_and_contents.emplace_back(std::move(path), std::move(contents));
-            }
-        }
         std::vector<std::string> string_paths;
         for (const auto& path : absolute_paths)
         {
@@ -1061,55 +1083,38 @@ namespace vcpkg::PostBuildLint
             string_paths.push_back(path.native());
 #endif
         }
+
+        Util::sort_unique_erase(string_paths);
+
         const auto stringview_paths = Util::fmap(string_paths, [](std::string& s) { return StringView(s); });
 
-        std::string result;
-        for (const auto& path_and_contents : files_and_contents)
+        std::vector<Path> failing_files;
+        for (auto&& file : fs.get_regular_files_recursive(dir, IgnoreErrors{}))
         {
-            const auto extension = path_and_contents.first.extension().substr(1 /* ignore dot */);
-            const bool is_header = extension == "h" || extension == "hpp" || extension == "hxx";
-            bool found_absolute = false;
-            if (is_header)
+            if (file_contains_absolute_paths(fs, file, stringview_paths))
             {
-                found_absolute = Strings::contains_any_ignoring_c_comments(path_and_contents.second, stringview_paths);
-            }
-            else
-            {
-                found_absolute = Util::any_of(string_paths, [&path_and_contents, extension](const std::string& path) {
-                    if (extension == "cfg" || extension == "conf")
-                    {
-                        return Strings::contains(path_and_contents.second, path);
-                    }
-                    for (size_t offset = 0;;)
-                    {
-                        const auto index = path_and_contents.second.find(path, offset);
-                        if (index == std::string::npos) return false;
-                        { // .py, .sh, .cmake or .pc file
-                            const auto before = path_and_contents.second.find_last_of("\n#", index);
-                            if (before == std::string::npos) return true;
-                            if (path_and_contents.second[before] == '\n') return true; // not a comment
-                        }
-                        offset = index + path.size();
-                    }
-                });
-            }
-            if (found_absolute)
-            {
-                result += "\n    ";
-                result += path_and_contents.first.native();
+                failing_files.push_back(file);
             }
         }
 
-        if (result.empty())
+        if (failing_files.empty())
         {
             return LintStatus::SUCCESS;
         }
 
-        msg::print(Color::warning,
-                   msg::format(msgFilesContainAbsolutePath,
-                               msg::absolute_paths = Strings::join("', '", absolute_paths),
-                               msg::paths = result)
-                       .append_raw("\n\n"));
+        auto error_message = msg::format(msgFilesContainAbsolutePath1);
+        for (auto&& absolute_path : absolute_paths)
+        {
+            error_message.append_raw('\n').append_indent().append_raw(absolute_path);
+        }
+
+        error_message.append_raw('\n').append(msgFilesContainAbsolutePath2);
+        for (auto&& failure : failing_files)
+        {
+            error_message.append_raw('\n').append_indent().append_raw(failure);
+        }
+
+        msg::println_warning(error_message);
         return LintStatus::PROBLEM_DETECTED;
     }
 
@@ -1244,7 +1249,9 @@ namespace vcpkg::PostBuildLint
         if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ABSOLUTE_PATHS_CHECK))
         {
             error_count += check_no_absolute_paths_in(
-                fs, package_dir, std::vector<Path>{package_dir, paths.installed().root(), paths.build_dir(spec)});
+                fs,
+                package_dir,
+                std::vector<Path>{package_dir, paths.installed().root(), paths.build_dir(spec), paths.downloads});
         }
 
         return error_count;
