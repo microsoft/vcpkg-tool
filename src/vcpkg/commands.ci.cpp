@@ -98,7 +98,7 @@ namespace vcpkg::Commands::CI
     static constexpr StringLiteral OPTION_SKIPPED_CASCADE_COUNT = "x-skipped-cascade-count";
     static constexpr StringLiteral OPTION_TEST_FEATURE_CORE = "test-feature-core";
     static constexpr StringLiteral OPTION_TEST_FEATURES_COMBINED = "test-features-combined";
-    static constexpr StringLiteral OPTION_TEST_FEATURES_SEPERATLY = "test-features-seperatly";
+    static constexpr StringLiteral OPTION_TEST_FEATURES_SEPARATELY = "test-features-separately";
     static constexpr StringLiteral OPTION_RUN_FEATURE_TESTS_PORTS = "run-feature-tests-for-ports";
     static constexpr StringLiteral OPTION_RUN_FEATURE_TESTS_ALL_PORTS = "run-feature-tests-for-all-ports";
 
@@ -126,7 +126,7 @@ namespace vcpkg::Commands::CI
         {OPTION_XUNIT_ALL, "Report also unchanged ports to the XUnit output (internal)"},
         {OPTION_RUN_FEATURE_TESTS_ALL_PORTS, "Runs the specified tests for all ports"},
         {OPTION_TEST_FEATURE_CORE, "Tests the 'core' feature for every specified port"},
-        {OPTION_TEST_FEATURES_SEPERATLY, "Tests every feature of a port seperatly for every specified port"},
+        {OPTION_TEST_FEATURES_SEPARATELY, "Tests every feature of a port seperatly for every specified port"},
         {OPTION_TEST_FEATURES_COMBINED, "Tests the combination of every feature of a port for every specified port"},
     }};
 
@@ -383,7 +383,7 @@ namespace vcpkg::Commands::CI
 
         const auto test_feature_core = Util::Sets::contains(options.switches, OPTION_TEST_FEATURE_CORE);
         const auto test_features_combined = Util::Sets::contains(options.switches, OPTION_TEST_FEATURES_COMBINED);
-        const auto test_features_seperatly = Util::Sets::contains(options.switches, OPTION_TEST_FEATURES_SEPERATLY);
+        const auto test_features_seperatly = Util::Sets::contains(options.switches, OPTION_TEST_FEATURES_SEPARATELY);
 
         const auto run_tests_all_ports = Util::Sets::contains(options.switches, OPTION_RUN_FEATURE_TESTS_ALL_PORTS);
         const auto run_tests_ports_list = Util::Sets::contains(options.settings, OPTION_RUN_FEATURE_TESTS_PORTS);
