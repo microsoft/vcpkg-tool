@@ -1162,6 +1162,14 @@ namespace vcpkg
 
         abi_tag_entries.emplace_back("features", Strings::join(";", sorted_feature_list));
 
+        abi_tag_entries = Util::filter(abi_tag_entries, [&](const AbiEntry& p) {
+            return !Util::Sets::contains(abi_info.pre_build_info->ignored_abi_keys, p.key);
+        });
+        for (auto&& entry : abi_info.pre_build_info->additional_abi_entries)
+        {
+            abi_tag_entries.emplace_back(entry.first, entry.second);
+        }
+
         Util::sort(abi_tag_entries);
 
         const std::string full_abi_info =
@@ -1639,6 +1647,8 @@ namespace vcpkg
             PUBLIC_ABI_OVERRIDE,
             LOAD_VCVARS_ENV,
             DISABLE_COMPILER_TRACKING,
+            IGNORED_ABI_KEYS,
+            ADDITIONAL_ABI_ENTRIES,
         };
 
         static const std::vector<std::pair<std::string, VcpkgTripletVar>> VCPKG_OPTIONS = {
@@ -1656,6 +1666,8 @@ namespace vcpkg
             // Note: this value must come after VCPKG_CHAINLOAD_TOOLCHAIN_FILE because its default depends upon it.
             {"VCPKG_LOAD_VCVARS_ENV", VcpkgTripletVar::LOAD_VCVARS_ENV},
             {"VCPKG_DISABLE_COMPILER_TRACKING", VcpkgTripletVar::DISABLE_COMPILER_TRACKING},
+            {"VCPKG_IGNORED_ABI_KEYS", VcpkgTripletVar::IGNORED_ABI_KEYS},
+            {"VCPKG_ADDITIONAL_ABI_ENTRIES", VcpkgTripletVar::ADDITIONAL_ABI_ENTRIES},
         };
 
         std::string empty;
@@ -1730,6 +1742,21 @@ namespace vcpkg
                     {
                         disable_compiler_tracking =
                             from_cmake_bool(variable_value, kv.first).value_or_exit(VCPKG_LINE_INFO);
+                    }
+                    break;
+                case VcpkgTripletVar::IGNORED_ABI_KEYS:
+                    for (auto&& abi_key : Strings::split(variable_value, ';'))
+                        ignored_abi_keys.emplace(std::move(abi_key));
+                    break;
+                case VcpkgTripletVar::ADDITIONAL_ABI_ENTRIES:
+                    for (auto&& abi_entry_str : Strings::split(variable_value, ';'))
+                    {
+                        auto const sep_pos = abi_entry_str.find_first_of(' ');
+                        if (sep_pos != std::string::npos)
+                        {
+                            additional_abi_entries.emplace(abi_entry_str.substr(0, sep_pos),
+                                                           abi_entry_str.substr(sep_pos + 1));
+                        }
                     }
                     break;
             }

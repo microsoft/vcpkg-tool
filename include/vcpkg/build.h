@@ -18,8 +18,8 @@
 #include <vcpkg/vcpkgpaths.h>
 
 #include <array>
-#include <map>
-#include <set>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace vcpkg
@@ -259,6 +259,8 @@ namespace vcpkg
         Optional<std::string> public_abi_override;
         std::vector<std::string> passthrough_env_vars;
         std::vector<std::string> passthrough_env_vars_tracked;
+        std::unordered_set<std::string> ignored_abi_keys;
+        std::unordered_map<std::string, std::string> additional_abi_entries;
 
         Path toolchain_file() const;
         bool using_vcvars() const;
