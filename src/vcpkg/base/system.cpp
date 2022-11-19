@@ -474,23 +474,25 @@ namespace vcpkg
             auto user_defined_concurrency = get_environment_variable("VCPKG_MAX_CONCURRENCY");
             if (user_defined_concurrency)
             {
+                int res = -1;
                 try
                 {
-                    int res = std::stoi(user_defined_concurrency.value_or_exit(VCPKG_LINE_INFO));
-                    if (!(res > 0))
-                    {
-                        Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                                      msgEnvInvalidMaxConcurrency,
-                                                      msg::env_var = "VCPKG_MAX_CONCURRENCY",
-                                                      msg::value = res);
-                    }
-                    return static_cast<unsigned int>(res);
+                    res = std::stoi(user_defined_concurrency.value_or_exit(VCPKG_LINE_INFO));
                 }
                 catch (std::exception&)
                 {
                     Checks::msg_exit_with_message(
                         VCPKG_LINE_INFO, msgOptionMustBeInteger, msg::option = "VCPKG_MAX_CONCURRENCY");
                 }
+
+                if (!(res > 0))
+                {
+                    Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                                  msgEnvInvalidMaxConcurrency,
+                                                  msg::env_var = "VCPKG_MAX_CONCURRENCY",
+                                                  msg::value = res);
+                }
+                return static_cast<unsigned int>(res);
             }
             else
             {
