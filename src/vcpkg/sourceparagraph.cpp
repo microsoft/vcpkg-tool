@@ -1579,16 +1579,6 @@ namespace vcpkg
                     arr.push_back(Json::Value::string(s));
                 }
             };
-        auto serialize_optional_array =
-            [&](Json::Object& obj, StringLiteral name, const std::vector<std::string>& pgh) {
-                if (pgh.empty() && !debug) return;
-
-                auto& arr = obj.insert(name, Json::Array());
-                for (const auto& s : pgh)
-                {
-                    arr.push_back(Json::Value::string(s));
-                }
-            };
         auto serialize_optional_string = [&](Json::Object& obj, StringLiteral name, const std::string& s) {
             if (!s.empty() || debug)
             {
