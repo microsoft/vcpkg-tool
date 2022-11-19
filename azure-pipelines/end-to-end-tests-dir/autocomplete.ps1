@@ -66,7 +66,7 @@ $privatePrefixesToTest = @(
 function testPrefixes($toTest, $commands) {
     $toTest | % {
         $expected = getOptionsForPrefix $_ $commands
-        $found = Run-Vcpkg autocomplete $_
+        $found = Run-VcpkgAndCaptureOutput autocomplete $_
         Throw-IfFailed
         if (-not $expected -eq $found) {
             Write-Host "unexpected result from vcpkg autocomplete:
