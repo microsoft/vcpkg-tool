@@ -53,10 +53,9 @@ namespace
 
         void resolve(const Path& binary)
         {
-            // if (binary.filename().to_string() == "icudtd71.dll") return;
             vcpkg::printf("vcpkg applocal processing: %s\n", binary);
             const auto imported_names = vcpkg::read_dll_imported_dll_names(m_fs.open_for_read(binary, VCPKG_LINE_INFO));
-            Debug::print("Imported DLLs of %s were %s", binary, Strings::join("\n", imported_names));
+            Debug::print("Imported DLLs of ", binary, " were ", Strings::join("\n", imported_names), "\n");
 
             bool openni2_installed = m_fs.exists(m_installed_bin_parent / "bin\\OpenNI2", VCPKG_LINE_INFO);
             bool azurekinectsdk_installed =
