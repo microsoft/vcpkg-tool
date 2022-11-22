@@ -966,8 +966,7 @@ namespace vcpkg
     {
         m_f = std::move(other.m_f);
         m_path = std::move(other.m_path);
-        m_offset = other.m_offset;
-        other.m_offset = 0;
+        m_offset = std::exchange(other.m_offset, 0);
         return *this;
     }
 
