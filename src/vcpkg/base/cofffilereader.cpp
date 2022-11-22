@@ -174,11 +174,17 @@ namespace vcpkg
             std::vector<std::string> results;
             if (data_directories.size() < 2)
             {
-                Debug::print("No import directory");
+                Debug::print("No import directory\n");
                 return results;
             }
 
-            const auto import_data_directory = data_directories[1];
+            const auto& import_data_directory = data_directories[1];
+            if (import_data_directory.virtual_address == 0)
+            {
+                Debug::print("null import directory\n");
+                return results;
+            }
+
             auto remaining_size = seek_to_rva(fs, import_data_directory.virtual_address);
             Checks::check_exit(VCPKG_LINE_INFO,
                                remaining_size >= import_data_directory.size,
@@ -186,7 +192,7 @@ namespace vcpkg
             remaining_size = import_data_directory.size;
             if (remaining_size < sizeof(ImportDirectoryTableEntry))
             {
-                Debug::print("No import directory table entries");
+                Debug::print("No import directory table entries\n");
                 return results;
             }
 
