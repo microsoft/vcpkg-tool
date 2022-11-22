@@ -452,11 +452,17 @@ namespace vcpkg
     {
         if (dll.data_directories.size() < 2)
         {
-            Debug::print("No import directory");
+            Debug::print("No import directory\n");
             return std::vector<std::string>{};
         }
 
         const auto& import_data_directory = dll.data_directories[1];
+        if (import_data_directory.virtual_address == 0)
+        {
+            Debug::print("Null import directory\n");
+            return std::vector<std::string>{};
+        }
+
         return try_seek_to_rva(dll, f, import_data_directory.virtual_address)
             .then([&](size_t remaining_size) -> ExpectedL<std::vector<std::string>> {
                 if (remaining_size < import_data_directory.size)
