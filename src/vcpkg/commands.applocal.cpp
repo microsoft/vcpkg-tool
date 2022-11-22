@@ -8,10 +8,15 @@
 #include <vcpkg/commands.applocal.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
+#include <Windows.h>
+
 #include <functional>
 #include <map>
 #include <regex>
+#include <set>
 #include <string>
+
+HANDLE ghMutex;
 
 namespace
 {
@@ -48,29 +53,78 @@ namespace
 
         void resolve(const Path& binary)
         {
+            // if (binary.filename().to_string() == "icudtd71.dll") return;
             vcpkg::printf("vcpkg applocal processing: %s\n", binary);
             const auto imported_names = vcpkg::read_dll_imported_dll_names(m_fs.open_for_read(binary, VCPKG_LINE_INFO));
             Debug::print("Imported DLLs of %s were %s", binary, Strings::join("\n", imported_names));
+
+            bool openni2_installed = m_fs.exists(m_installed_bin_parent / "bin\\OpenNI2", VCPKG_LINE_INFO);
+            bool azurekinectsdk_installed =
+                m_fs.exists(m_installed_bin_parent / "tools\\azure-kinect-sensor-sdk", VCPKG_LINE_INFO);
+            bool magnum_installed = m_fs.exists(m_installed_bin_parent / "bin\\magnum", VCPKG_LINE_INFO) ||
+                                    m_fs.exists(m_installed_bin_parent / "bin\\magnum-d", VCPKG_LINE_INFO);
+            bool qt_installed = m_fs.exists(m_installed_bin_parent / "plugins", VCPKG_LINE_INFO);
+
             for (auto&& imported_name : imported_names)
             {
-                deploy_binary(m_deployment_dir, m_installed_bin_dir, imported_name);
-            }
+                if (m_searched.count(imported_name))
+                {
+                    Debug::print("  %s: previously searched - Skip", imported_name);
+                    continue;
+                }
+                m_searched.insert(imported_name);
 
-            // hardcoded for testing
-            // deployAzureKinectSensorSDK(m_deployment_dir, m_installed_bin_parent, "k4a.dll");
-            // deployOpenNI2(m_deployment_dir, m_installed_bin_parent, "OpenNI2.dll");
-            deployQt(m_deployment_dir, m_installed_bin_parent / "plugins", "Qt5Guid.dll");
-            /*
-            bool g_is_debug = m_installed_bin_parent.stem() == "debug";
-            if (g_is_debug)
-            {
-                deployMagnum(m_deployment_dir, m_installed_bin_parent / "bin\\magnum-d\\", "MagnumAudio-d.dll");
+                Path target_binary_dir = binary.parent_path();
+                Path installed_item_file_path = m_installed_bin_dir / imported_name;
+                Path target_item_file_path = Path(target_binary_dir) / imported_name;
+
+                if (m_fs.exists(installed_item_file_path, VCPKG_LINE_INFO))
+                {
+                    deploy_binary(m_deployment_dir, m_installed_bin_dir, imported_name);
+
+                    if (openni2_installed)
+                    {
+                        deployOpenNI2(target_binary_dir, m_installed_bin_parent, imported_name);
+                    }
+
+                    if (azurekinectsdk_installed)
+                    {
+                        deployAzureKinectSensorSDK(target_binary_dir, m_installed_bin_parent, imported_name);
+                    }
+
+                    if (magnum_installed)
+                    {
+                        bool g_is_debug = m_installed_bin_parent.stem() == "debug";
+                        if (g_is_debug)
+                        {
+                            deployMagnum(target_binary_dir, m_installed_bin_parent / "bin\\magnum-d\\", imported_name);
+                        }
+                        else
+                        {
+                            deployMagnum(target_binary_dir, m_installed_bin_parent / "bin\\magnum\\", imported_name);
+                        }
+                    }
+
+                    if (qt_installed)
+                    {
+                        deployQt(m_deployment_dir, m_installed_bin_parent / "plugins", imported_name);
+                    }
+
+                    resolve(m_deployment_dir / imported_name);
+                }
+                else if (m_fs.exists(target_item_file_path, VCPKG_LINE_INFO))
+                {
+                    Debug::print("  %s: %s not found in %s; locally deployed",
+                                 imported_name,
+                                 imported_name,
+                                 m_installed_bin_parent.c_str());
+                    resolve(installed_item_file_path);
+                }
+                else
+                {
+                    Debug::print("  %s: %s not found", imported_name, installed_item_file_path.c_str());
+                }
             }
-            else
-            {
-                deployMagnum(m_deployment_dir, m_installed_bin_parent / "bin\\magnum\\", "MagnumAudio-d.dll");
-            }
-            */
         }
 
     private:
@@ -188,8 +242,12 @@ namespace
 
                 for (auto c : children)
                 {
-                    deploy_binary(new_dir, qt_plugins_dir / plugins_subdir_name, c.filename().to_string());
-                    resolve(c);
+                    std::regex re(".*.dll");
+                    if (std::regex_match(c.filename().to_string(), re))
+                    {
+                        deploy_binary(new_dir, qt_plugins_dir / plugins_subdir_name, c.filename().to_string());
+                        resolve(c);
+                    }
                 }
             }
             else
@@ -210,7 +268,7 @@ namespace
                     m_fs.write_contents(target_binary_dir / "qt.conf", "[Paths]", ec);
                 }
             }
-            else if (target_binary_dir == "Qt5Guid.dll" || target_binary_name == "Qt5Gui.dll")
+            else if (target_binary_name == "Qt5Guid.dll" || target_binary_name == "Qt5Gui.dll")
             {
                 Debug::print("  Deploying platforms");
 
@@ -373,8 +431,11 @@ namespace
             const auto target = target_binary_dir / target_binary_name;
             // FIXME This should use an NT Mutant (what comes out of CreateMutex) to ensure that different vcpkg.exes
             // running at the same time don't try to deploy the same file at the same time.
+            // ghMutex = CreateMutex(NULL,  // default security attributes
+            //                      FALSE, // initially not owned
+            //                      NULL); // unnamed mutex
             std::error_code ec;
-            // FIXME Should this check for last_write_time and choose latest?
+            // FIXME Should this check for last_write_time and choose latest? -> no?
             const bool did_deploy = m_fs.copy_file(source, target, CopyOptions::overwrite_existing, ec);
             if (did_deploy)
             {
@@ -423,6 +484,7 @@ namespace
         Path m_installed_bin_parent;
         WriteFilePointer m_tlog_file;
         WriteFilePointer m_copied_files_log;
+        std::unordered_set<std::string> m_searched;
     };
 }
 
