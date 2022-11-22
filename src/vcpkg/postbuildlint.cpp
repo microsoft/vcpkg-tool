@@ -533,7 +533,6 @@ namespace vcpkg::PostBuildLint
     }
 
 #if defined(_WIN32)
-
     static LintStatus check_dll_architecture(const std::string& expected_architecture,
                                              const std::vector<Path>& files,
                                              const Filesystem& fs)
@@ -542,22 +541,32 @@ namespace vcpkg::PostBuildLint
 
         for (const Path& file : files)
         {
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               Strings::case_insensitive_ascii_equals(file.extension(), ".dll"),
-                               "The file extension was not .dll: %s",
-                               file);
-            const auto machine_type = read_dll_machine_type(fs.open_for_read(file, VCPKG_LINE_INFO));
-            const std::string actual_architecture = get_actual_architecture(machine_type);
-            if (expected_architecture == "arm64ec")
+            if (!Strings::case_insensitive_ascii_equals(file.extension(), ".dll"))
             {
-                if (actual_architecture != "x64" || !is_arm64ec_dll(fs.open_for_read(file, VCPKG_LINE_INFO)))
-                {
-                    binaries_with_invalid_architecture.push_back({file, actual_architecture});
-                }
+                continue;
             }
-            else if (expected_architecture != actual_architecture)
+
+            auto maybe_opened = fs.try_open_for_read(file);
+            if (const auto opened = maybe_opened.get())
             {
-                binaries_with_invalid_architecture.push_back({file, actual_architecture});
+                PositionedReadPointerU32 positioned{std::move(*opened), file};
+                auto maybe_metadata = try_read_dll_metadata(positioned);
+                if (auto* metadata = maybe_metadata.get())
+                {
+                    const auto machine_type = metadata->get_machine_type();
+                    const std::string actual_architecture = get_actual_architecture(machine_type);
+                    if (expected_architecture == "arm64ec")
+                    {
+                        if (actual_architecture != "x64" || !metadata->is_arm64_ec())
+                        {
+                            binaries_with_invalid_architecture.push_back({file, actual_architecture});
+                        }
+                    }
+                    else if (expected_architecture != actual_architecture)
+                    {
+                        binaries_with_invalid_architecture.push_back({file, actual_architecture});
+                    }
+                }
             }
         }
 

@@ -951,6 +951,60 @@ namespace
 
 namespace vcpkg
 {
+    PositionedReadPointerU32::PositionedReadPointerU32() : m_f(), m_path(), m_offset() { }
+    PositionedReadPointerU32::PositionedReadPointerU32(ReadFilePointer&& f, const Path& f_path)
+        : m_f(std::move(f)), m_path(f_path), m_offset()
+    {
+    }
+    PositionedReadPointerU32::PositionedReadPointerU32(PositionedReadPointerU32&& other)
+        : m_f(std::move(other.m_f)), m_path(std::move(other.m_path)), m_offset(other.m_offset)
+    {
+        other.m_offset = 0;
+    }
+
+    PositionedReadPointerU32& PositionedReadPointerU32::operator=(PositionedReadPointerU32&& other)
+    {
+        m_f = std::move(other.m_f);
+        m_path = std::move(other.m_path);
+        m_offset = other.m_offset;
+        other.m_offset = 0;
+        return *this;
+    }
+
+    ExpectedL<Unit> PositionedReadPointerU32::try_seek_to(std::uint32_t offset)
+    {
+        if (m_f.seek(offset, SEEK_SET))
+        {
+            return msg::format(msgFileSeekFailed, msg::path = m_path, msg::byte_offset = offset);
+        }
+
+        return Unit{};
+    }
+
+    ExpectedL<Unit> PositionedReadPointerU32::try_read_all(void* buffer, std::uint32_t size)
+    {
+        const auto result = m_f.read(buffer, 1, size);
+        if (result != size)
+        {
+            return msg::format(msgFileReadFailed, msg::path = m_path, msg::byte_offset = m_offset, msg::count = size);
+        }
+
+        m_offset += static_cast<std::uint32_t>(result);
+        return Unit{};
+    }
+
+    ExpectedL<char> PositionedReadPointerU32::getc()
+    {
+        auto result = m_f.getc();
+        if (result == EOF)
+        {
+            return msg::format(msgFileReadFailed, msg::path = m_path, msg::byte_offset = m_offset, msg::count = 1);
+        }
+
+        ++m_offset;
+        return static_cast<char>(result);
+    }
+
     LocalizedString format_filesystem_call_error(const std::error_code& ec,
                                                  StringView call_name,
                                                  std::initializer_list<StringView> args)
@@ -1877,6 +1931,18 @@ namespace vcpkg
         }
 
         return ret;
+    }
+
+    ExpectedL<ReadFilePointer> Filesystem::try_open_for_read(const Path& file_path) const
+    {
+        std::error_code ec;
+        auto ret = this->open_for_read(file_path, ec);
+        if (ec)
+        {
+            return format_filesystem_call_error(ec, __func__, {file_path});
+        }
+
+        return ExpectedL<ReadFilePointer>{std::move(ret)};
     }
 
     WriteFilePointer Filesystem::open_for_write(const Path& file_path, LineInfo li)

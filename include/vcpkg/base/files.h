@@ -4,6 +4,7 @@
 #include <vcpkg/base/fwd/span.h>
 
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/expected.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/pragmas.h>
@@ -205,6 +206,25 @@ namespace vcpkg
         int getc() const noexcept { return ::fgetc(m_fs); }
     };
 
+    struct PositionedReadPointerU32
+    {
+        PositionedReadPointerU32();
+        PositionedReadPointerU32(ReadFilePointer&& f, const Path& f_path);
+        PositionedReadPointerU32(PositionedReadPointerU32&& other);
+        PositionedReadPointerU32& operator=(PositionedReadPointerU32&& other);
+
+        ExpectedL<Unit> try_seek_to(std::uint32_t offset);
+        ExpectedL<Unit> try_read_all(void* buffer, std::uint32_t size);
+        ExpectedL<char> getc();
+
+        const Path& path() const { return m_path; }
+
+    private:
+        ReadFilePointer m_f;
+        Path m_path;
+        std::uint32_t m_offset;
+    };
+
     struct WriteFilePointer : FilePointer
     {
         WriteFilePointer() = default;
@@ -389,6 +409,7 @@ namespace vcpkg
 
         virtual ReadFilePointer open_for_read(const Path& file_path, std::error_code& ec) const = 0;
         ReadFilePointer open_for_read(const Path& file_path, LineInfo li) const;
+        ExpectedL<ReadFilePointer> try_open_for_read(const Path& file_path) const;
 
         virtual WriteFilePointer open_for_write(const Path& file_path, std::error_code& ec) = 0;
         WriteFilePointer open_for_write(const Path& file_path, LineInfo li);
