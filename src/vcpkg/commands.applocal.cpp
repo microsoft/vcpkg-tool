@@ -12,7 +12,6 @@
 
 #include <functional>
 #include <map>
-#include <regex>
 #include <set>
 #include <string>
 
@@ -48,6 +47,12 @@ namespace
             , m_installed_bin_parent(m_installed_bin_dir.parent_path())
             , m_tlog_file(std::move(tlog_file))
             , m_copied_files_log(std::move(copied_files_log))
+            , openni2_installed(m_fs.exists(m_installed_bin_parent / "bin/OpenNI2/openni2deploy.ps1", VCPKG_LINE_INFO))
+            , azurekinectsdk_installed(
+                  m_fs.exists(m_installed_bin_parent / "tools/azure-kinect-sensor-sdk/k4adeploy.ps1", VCPKG_LINE_INFO))
+            , magnum_installed(m_fs.exists(m_installed_bin_parent / "bin/magnum/magnumdeploy.ps1", VCPKG_LINE_INFO) ||
+                               m_fs.exists(m_installed_bin_parent / "bin/magnum-d/magnumdeploy.ps1", VCPKG_LINE_INFO))
+            , qt_installed(m_fs.exists(m_installed_bin_parent / "plugins/qtdeploy.ps1", VCPKG_LINE_INFO))
         {
         }
 
@@ -57,16 +62,9 @@ namespace
             const auto imported_names = vcpkg::read_dll_imported_dll_names(m_fs.open_for_read(binary, VCPKG_LINE_INFO));
             Debug::print("Imported DLLs of ", binary, " were ", Strings::join("\n", imported_names), "\n");
 
-            bool openni2_installed = m_fs.exists(m_installed_bin_parent / "bin\\OpenNI2", VCPKG_LINE_INFO);
-            bool azurekinectsdk_installed =
-                m_fs.exists(m_installed_bin_parent / "tools\\azure-kinect-sensor-sdk", VCPKG_LINE_INFO);
-            bool magnum_installed = m_fs.exists(m_installed_bin_parent / "bin\\magnum", VCPKG_LINE_INFO) ||
-                                    m_fs.exists(m_installed_bin_parent / "bin\\magnum-d", VCPKG_LINE_INFO);
-            bool qt_installed = m_fs.exists(m_installed_bin_parent / "plugins", VCPKG_LINE_INFO);
-
             for (auto&& imported_name : imported_names)
             {
-                if (m_searched.count(imported_name))
+                if (m_searched.find(imported_name) != m_searched.end())
                 {
                     Debug::print("  %s: previously searched - Skip", imported_name);
                     continue;
@@ -96,11 +94,11 @@ namespace
                         bool g_is_debug = m_installed_bin_parent.stem() == "debug";
                         if (g_is_debug)
                         {
-                            deployMagnum(target_binary_dir, m_installed_bin_parent / "bin\\magnum-d\\", imported_name);
+                            deployMagnum(target_binary_dir, m_installed_bin_parent / "bin/magnum-d", imported_name);
                         }
                         else
                         {
-                            deployMagnum(target_binary_dir, m_installed_bin_parent / "bin\\magnum\\", imported_name);
+                            deployMagnum(target_binary_dir, m_installed_bin_parent / "bin/magnum", imported_name);
                         }
                     }
 
@@ -135,7 +133,7 @@ namespace
             if (target_binary_name == "k4a.dll")
             {
                 std::string binary_name = "depthengine_2_0.dll";
-                Path inst_dir = installed_dir / "tools\\azure-kinect-sensor-sdk\\";
+                Path inst_dir = installed_dir / "tools/azure-kinect-sensor-sdk";
 
                 Debug::print("  Deploying Azure Kinect Sensor SDK Initialization");
                 deploy_binary(target_binary_dir, inst_dir, binary_name);
@@ -150,19 +148,19 @@ namespace
             if (target_binary_name == "OpenNI2.dll")
             {
                 Debug::print("  Deploying OpenNI2 Initialization");
-                deploy_binary(target_binary_dir, installed_dir / "bin\\OpenNI2\\", "OpenNI.ini");
+                deploy_binary(target_binary_dir, installed_dir / "bin/OpenNI2", "OpenNI.ini");
 
                 Debug::print("  Deploying OpenNI2 Drivers");
-                Path drivers = target_binary_dir / "OpenNI2\\Drivers\\";
+                Path drivers = target_binary_dir / "OpenNI2/Drivers";
                 std::error_code ec;
                 m_fs.create_directories(drivers, ec);
 
                 std::vector<Path> children =
-                    m_fs.get_files_non_recursive(installed_dir / "bin\\OpenNI2\\Drivers\\", ec);
+                    m_fs.get_files_non_recursive(installed_dir / "bin/OpenNI2/Drivers", ec);
 
-                for (auto c : children)
+                for (auto&& c : children)
                 {
-                    deploy_binary(drivers, installed_dir / "bin\\OpenNI2\\Drivers\\", c.filename().to_string());
+                    deploy_binary(drivers, installed_dir / "bin/OpenNI2/Drivers", c.filename().to_string());
                 }
             }
         }
@@ -239,12 +237,11 @@ namespace
 
                 std::vector<Path> children = m_fs.get_files_non_recursive(qt_plugins_dir / plugins_subdir_name, ec);
 
-                for (auto c : children)
+                for (auto&& c : children)
                 {
-                    std::regex re(".*.dll");
-                    if (std::regex_match(c.filename().to_string(), re))
-                    {
-                        deploy_binary(new_dir, qt_plugins_dir / plugins_subdir_name, c.filename().to_string());
+                    const std::string& c_filename = c.filename().to_string();
+                    if (Strings::ends_with(c_filename, ".dll")) {
+                        deploy_binary(new_dir, qt_plugins_dir / plugins_subdir_name, c_filename);
                         resolve(c);
                     }
                 }
@@ -276,12 +273,13 @@ namespace
                 m_fs.create_directories(new_dir, ec);
 
                 std::vector<Path> children = m_fs.get_files_non_recursive(qt_plugins_dir / "platforms", ec);
-                for (auto c : children)
+                for (auto&& c : children)
                 {
-                    std::regex re("qwindows.*.dll");
-                    if (std::regex_match(c.filename().to_string(), re))
+                    // std::regex re("qwindows.*.dll");
+                    const std::string& c_filename = c.filename().to_string();
+                    if (Strings::starts_with(c_filename, "qwindows") && Strings::ends_with(c_filename, ".dll"))
                     {
-                        deploy_binary(new_dir, qt_plugins_dir / "platforms", c.filename().to_string());
+                        deploy_binary(new_dir, qt_plugins_dir / "platforms", c_filename);
                     }
                 }
                 deployPluginsQt("accessible", target_binary_dir, qt_plugins_dir);
@@ -296,18 +294,17 @@ namespace
 
                 std::error_code ec;
                 std::vector<Path> children = m_fs.get_files_non_recursive(bin_dir, ec);
-                for (auto c : children)
+                for (auto&& c : children)
                 {
-                    std::regex lc_re("libcrypto-.*.dll");
-                    if (std::regex_match(c.filename().to_string(), lc_re))
+                    const std::string& c_filename = c.filename().to_string();
+                    if (Strings::starts_with(c_filename, "libcrypto-") && Strings::ends_with(c_filename, ".dll"))
                     {
-                        deploy_binary(target_binary_dir, bin_dir, c.filename().to_string());
+                        deploy_binary(target_binary_dir, bin_dir, c_filename);
                     }
 
-                    std::regex ls_re("libssl-.*.dll");
-                    if (std::regex_match(c.filename().to_string(), ls_re))
+                    if (Strings::starts_with(c_filename, "libssl-") && Strings::ends_with(c_filename, ".dll"))
                     {
-                        deploy_binary(target_binary_dir, bin_dir, c.filename().to_string());
+                        deploy_binary(target_binary_dir, bin_dir, c_filename);
                     }
                 }
             }
@@ -330,13 +327,13 @@ namespace
                 std::error_code ec;
                 if (!m_fs.exists(target_binary_dir / "qml", ec))
                 {
-                    if (m_fs.exists(bin_dir / "..\\qml", ec))
+                    if (m_fs.exists(bin_dir / "../qml", ec))
                     {
-                        m_fs.copy_regular_recursive(bin_dir / "..\\qml", target_binary_dir, VCPKG_LINE_INFO);
+                        m_fs.copy_regular_recursive(bin_dir / "../qml", target_binary_dir, VCPKG_LINE_INFO);
                     }
-                    else if (m_fs.exists(bin_dir / "..\\..\\qml", ec))
+                    else if (m_fs.exists(bin_dir / "../../qml", ec))
                     {
-                        m_fs.copy_regular_recursive(bin_dir / "..\\..\\qml", target_binary_dir, VCPKG_LINE_INFO);
+                        m_fs.copy_regular_recursive(bin_dir / "../../qml", target_binary_dir, VCPKG_LINE_INFO);
                     }
                     else
                     {
@@ -369,53 +366,46 @@ namespace
 
             std::error_code ec;
             std::vector<Path> children = m_fs.get_files_non_recursive(target_binary_name, ec);
-            for (auto c : children)
+            for (auto&& c : children)
             {
-                std::regex dec_re("Qt5Declarative.*.dll");
-                if (std::regex_match(c.filename().to_string(), dec_re))
+                const std::string& c_filename = c.filename().to_string();
+                if (c == "Qt5Declarative.dll" || c == "Qt5Declaratived.dll")
                 {
                     deployPluginsQt("qml1tooling", target_binary_dir, qt_plugins_dir);
                 }
 
-                std::regex pos_re("Qt5Positioning.*.dll");
-                if (std::regex_match(c.filename().to_string(), pos_re))
+                if (c == "Qt5Positioning.dll" || c == "Qt5Positioningd.dll")
                 {
                     deployPluginsQt("position", target_binary_dir, qt_plugins_dir);
                 }
 
-                std::regex loc_re("Qt5Location.*.dll");
-                if (std::regex_match(c.filename().to_string(), loc_re))
+                if (c == "Qt5Location.dll" || c == "Qt5Locationd.dll")
                 {
                     deployPluginsQt("geoservices", target_binary_dir, qt_plugins_dir);
                 }
 
-                std::regex sen_re("Qt5Sensors.*.dll");
-                if (std::regex_match(c.filename().to_string(), sen_re))
+                if (c == "Qt5Sensors.dll" || c == "Qt5Sensorsd.dll")
                 {
                     deployPluginsQt("sensors", target_binary_dir, qt_plugins_dir);
                     deployPluginsQt("sensorgestures", target_binary_dir, qt_plugins_dir);
                 }
 
-                std::regex weben_re("Qt5WebEngineCore.*.dll");
-                if (std::regex_match(c.filename().to_string(), weben_re))
+                if (c == "Qt5WebEngineCore.dll" || c == "Qt5WebEngineCored.dll")
                 {
                     deployPluginsQt("qtwebengine", target_binary_dir, qt_plugins_dir);
                 }
 
-                std::regex ren3d_re("Qt53DRenderer.*.dll");
-                if (std::regex_match(c.filename().to_string(), ren3d_re))
+                if (c == "Qt53DRenderer.dll" || c == "Qt53DRendererd.dll")
                 {
                     deployPluginsQt("sceneparsers", target_binary_dir, qt_plugins_dir);
                 }
 
-                std::regex tex_re("Qt5TextToSpeech.*.dll");
-                if (std::regex_match(c.filename().to_string(), tex_re))
+                if (c == "Qt5TextToSpeech.dll" || c == "Qt5TextToSpeechd.dll")
                 {
                     deployPluginsQt("texttospeech", target_binary_dir, qt_plugins_dir);
                 }
 
-                std::regex ser_re("Qt5SerialBus.*.dll");
-                if (std::regex_match(c.filename().to_string(), ser_re))
+                if (c == "Qt5SerialBus.dll" || c == "Qt5SerialBusd.dll")
                 {
                     deployPluginsQt("canbus", target_binary_dir, qt_plugins_dir);
                 }
@@ -434,7 +424,7 @@ namespace
             //                      FALSE, // initially not owned
             //                      NULL); // unnamed mutex
             std::error_code ec;
-            // FIXME Should this check for last_write_time and choose latest? -> no?
+            // FIXME Should this check for last_write_time and choose latest? -> si 
             const bool did_deploy = m_fs.copy_file(source, target, CopyOptions::overwrite_existing, ec);
             if (did_deploy)
             {
@@ -484,6 +474,10 @@ namespace
         WriteFilePointer m_tlog_file;
         WriteFilePointer m_copied_files_log;
         std::unordered_set<std::string> m_searched;
+        bool openni2_installed;
+        bool azurekinectsdk_installed;
+        bool magnum_installed;
+        bool qt_installed;        
     };
 }
 
@@ -504,8 +498,8 @@ namespace vcpkg::Commands
         };
 
         const CommandStructure COMMAND_STRUCTURE = {
-            "--target-binary=\"Path\\to\\binary\" --installed-bin-dir=\"Path\\to\\installed\\bin\" --tlog-file="
-            "\"Path\\to\\tlog.tlog\" --copied-files-log=\"Path\\to\\copiedFilesLog.log\"",
+            "--target-binary=\"Path/to/binary\" --installed-bin-dir=\"Path/to/installed/bin\" --tlog-file="
+            "\"Path/to/tlog.tlog\" --copied-files-log=\"Path/to/copiedFilesLog.log\"",
             0,
             0,
             {{}, SETTINGS, {}},
