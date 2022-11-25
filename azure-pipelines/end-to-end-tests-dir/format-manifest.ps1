@@ -20,20 +20,14 @@ $testProjects | % {
 
 Write-Trace "test re-serializing every manifest"
 $manifestDir = "$TestingRoot/manifest-dir"
-New-Item -Path $manifestDir -ItemType Directory | Out-Null
 
-$ports = Get-ChildItem "$env:VCPKG_ROOT/ports"
-
-$ports | % {
-    if (($_ | Split-Path -leaf) -in @("libuvc", "mlpack", "qt5-virtualkeyboard", "qtwebengine", "vamp-sdk")) {
-        return
-    }
-    Copy-Item "$_/vcpkg.json" "$manifestDir" | Out-Null
-    $x = Get-Content "$manifestDir/vcpkg.json" -Raw
-    Run-Vcpkg -EndToEndTestSilent format-manifest "$manifestDir/vcpkg.json" | Out-Null
-    Throw-IfFailed "$_/vcpkg.json"
-    $y = Get-Content "$manifestDir/vcpkg.json" -Raw
-    if ($x -ne $y) {
-        throw "Expected formatting manifest $_/vcpkg.json to cause no modifications"
-    }
+Copy-Item -Path "$env:VCPKG_ROOT/ports" -Destination $manifestDir -recurse -Force -Filter vcpkg.json
+@("libuvc", "mlpack", "qt5-virtualkeyboard", "qtwebengine", "vamp-sdk") | % { Remove-Item -Recurse "$manifestDir/$_" }
+& git init $manifestDir && git -C $manifestDir add . && git -C $manifestDir -c user.name='vcpkg-test' -c user.email='my@example.com' commit -m "baseline"
+Throw-IfFailed
+Run-Vcpkg format-manifest --all --x-builtin-ports-root=$manifestDir
+Throw-IfFailed
+$diff = (& git -C $manifestDir diff) | Out-String
+if ($diff.length -gt 0) {
+    throw "Expected formatting of manifests vcpkg.json to cause no modifications: \n$diff"
 }
