@@ -27,6 +27,10 @@ namespace vcpkg::Lint
         YES     // The problem is fixed in place (SourceControlFile) and no message is printed
     };
 
+    std::string get_recommended_license_expression(std::string original_license);
+
+    VersionScheme get_recommended_version_scheme(StringView raw_version, VersionScheme original_scheme);
+
     Status check_used_version_scheme(SourceControlFile& scf, Fix fix);
 
     Status check_license_expression(SourceControlFile& scf, Fix fix);

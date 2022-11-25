@@ -14,20 +14,19 @@ namespace vcpkg::Lint
     constexpr StringLiteral VERSION_DATE = "version-date";
     constexpr StringLiteral VERSION_STRING = "version-string";
 
+    VersionScheme get_recommended_version_scheme(StringView raw_version, VersionScheme original_scheme)
+    {
+        if (DateVersion::try_parse(raw_version)) return VersionScheme::Date;
+        if (DotVersion::try_parse_relaxed(raw_version)) return VersionScheme::Relaxed;
+        return original_scheme;
+    }
+
     Status check_used_version_scheme(SourceControlFile& scf, Fix fix)
     {
         auto scheme = scf.core_paragraph->version_scheme;
-        auto new_scheme = scheme;
         if (scheme == VersionScheme::String)
         {
-            if (DateVersion::try_parse(scf.core_paragraph->raw_version))
-            {
-                new_scheme = VersionScheme::Date;
-            }
-            else if (DotVersion::try_parse_relaxed(scf.core_paragraph->raw_version))
-            {
-                new_scheme = VersionScheme::Relaxed;
-            }
+            auto new_scheme = get_recommended_version_scheme(scf.core_paragraph->raw_version, scheme);
             if (scheme != new_scheme)
             {
                 if (fix == Fix::YES)
@@ -46,19 +45,32 @@ namespace vcpkg::Lint
         return Status::Ok;
     }
 
-    Status check_license_expression(SourceControlFile& scf, Fix fix)
+    namespace
     {
-        if (!scf.core_paragraph->license.has_value())
+        std::string::size_type find_license(const std::string& license_expression,
+                                            StringView license_identifier,
+                                            std::string::size_type offset = 0)
         {
-            msg::println_warning(msgLintMissingLicenseExpression, msg::package_name = scf.core_paragraph->name);
-            return Status::Problem;
+            std::string::size_type index;
+            while ((index = license_expression.find(license_identifier.data(), offset, license_identifier.size())) !=
+                   std::string::npos)
+            {
+                const auto end_index = index + license_identifier.size();
+                if (end_index >= license_expression.size() || license_expression[end_index] == ' ')
+                {
+                    return index;
+                }
+                offset = end_index;
+            }
+            return std::string::npos;
         }
+    }
+
+    std::string get_recommended_license_expression(std::string original_license)
+    {
         static constexpr std::pair<StringLiteral, StringLiteral> deprecated_licenses[] = {
             {"AGPL-1.0", "AGPL-1.0-only"},
             {"AGPL-3.0", "AGPL-3.0-only"},
-            {"eCos-2.0",
-             "DEPRECATED: Use license expression including main license, \"WITH\" operator, and identifier: "
-             "eCos-exception-2.0"},
             {"GFDL-1.1", "GFDL-1.1-or-later"},
             {"GFDL-1.2", "GFDL-1.2-or-later"},
             {"GFDL-1.3", "GFDL-1.3-or-later"},
@@ -68,12 +80,6 @@ namespace vcpkg::Lint
             {"GPL-2.0+", "GPL-2.0-or-later"},
             {"GPL-2.0-with-autoconf-exception", "GPL-2.0-only WITH Autoconf-exception-2.0"},
             {"GPL-2.0-with-bison-exception", "GPL-2.0-or-later WITH Bison-exception-2.2"},
-            {"GPL-2.0-with-classpath-exception",
-             "DEPRECATED: Use license expression including main license, \"WITH\" operator, and identifier: "
-             "Classpath-exception-2.0"},
-            {"GPL-2.0-with-font-exception",
-             "DEPRECATED: Use license expression including main license, \"WITH\" operator, and identifier: "
-             "Font-exception-2.0"},
             {"GPL-2.0-with-GCC-exception", "GPL-2.0-or-later WITH GCC-exception-2.0"},
             {"GPL-3.0", "GPL-3.0-only"},
             {"GPL-3.0+", "GPL-3.0-or-later"},
@@ -85,51 +91,61 @@ namespace vcpkg::Lint
             {"LGPL-2.1+", "LGPL-2.1-or-later"},
             {"LGPL-3.0", "LGPL-3.0-only"},
             {"LGPL-3.0+", "LGPL-3.0-or-later"},
-            {"Nunit",
-             "DEPRECATED: This license is based on the MIT license, except with an \"acknowledgement\" clause. That "
-             "clause makes it functionally equivalent to MIT with advertising (Free, but GPLv2/v3 incompatible)"},
-            {"StandardML-NJ", "SMLNJ"},
-            {"wxWindows",
-             "DEPRECATED: Use license expression including main license, \"WITH\" operator, and identifier: "
-             "WxWindows-exception-3.1"}};
-        Status status = Status::Ok;
-        auto& license = scf.core_paragraph->license.value_or_exit(VCPKG_LINE_INFO);
+            {"StandardML-NJ", "SMLNJ"}};
         for (const auto dep_license : deprecated_licenses)
         {
-            const auto index = license.find(dep_license.first.c_str());
-            if (index == std::string::npos)
+            std::string::size_type index = 0;
+            while ((index = find_license(original_license, dep_license.first, index)) != std::string::npos)
             {
-                continue;
+                original_license.replace(index, dep_license.first.size(), dep_license.second.c_str());
             }
-            const auto end_index = index + dep_license.first.size();
-            if (end_index < license.size() && license[end_index] != ' ')
-            {
-                continue;
-            }
-            if (Strings::starts_with(dep_license.second, "DEPRECATED"))
-            {
-                msg::println_warning(msg::format(msgLintDeprecatedLicenseExpressionWithoutReplacement,
-                                                 msg::package_name = scf.core_paragraph->name,
-                                                 msg::actual = dep_license.first)
-                                         .append_raw(dep_license.second.substr(StringLiteral("DEPRECATED:").size())));
+        }
+        return original_license;
+    }
 
-                status |= Status::Problem;
+    Status check_license_expression(SourceControlFile& scf, Fix fix)
+    {
+        if (!scf.core_paragraph->license.has_value())
+        {
+            msg::println_warning(msgLintMissingLicenseExpression, msg::package_name = scf.core_paragraph->name);
+            return Status::Problem;
+        }
+
+        Status status = Status::Ok;
+        auto& license = scf.core_paragraph->license.value_or_exit(VCPKG_LINE_INFO);
+        auto new_expr = get_recommended_license_expression(license);
+        if (new_expr != license)
+        {
+            if (fix == Fix::YES)
+            {
+                license = new_expr;
             }
-            else if (fix == Fix::NO)
+            else
             {
                 msg::println_warning(msgLintDeprecatedLicenseExpressionWithReplacement,
+                                     msg::package_name = scf.core_paragraph->name,
+                                     msg::actual = license,
+                                     msg::new_value = new_expr);
+                status |= Status::Problem;
+            }
+        }
+        static constexpr std::pair<StringLiteral, StringLiteral> deprecated_licenses_WITH[] = {
+            {"eCos-2.0", "eCos-exception-2.0"},
+            {"GPL-2.0-with-classpath-exception", "Classpath-exception-2.0"},
+            {"GPL-2.0-with-font-exception", "Font-exception-2.0"},
+            {"wxWindows", "WxWindows-exception-3.1"},
+        };
+        for (const auto dep_license : deprecated_licenses_WITH)
+        {
+            if (find_license(license, dep_license.first) != std::string::npos)
+            {
+                msg::println_warning(msgLintDeprecatedLicenseExpressionWithoutReplacement,
                                      msg::package_name = scf.core_paragraph->name,
                                      msg::actual = dep_license.first,
                                      msg::new_value = dep_license.second);
                 status |= Status::Problem;
             }
-            else
-            {
-                license.replace(index, dep_license.first.size(), dep_license.second.c_str());
-                status |= Status::Fixed;
-            }
         }
-
         return status;
     }
 

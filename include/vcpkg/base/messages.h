@@ -539,13 +539,16 @@ namespace vcpkg
     DECLARE_MESSAGE(
         LintDeprecatedLicenseExpressionWithReplacement,
         (msg::package_name, msg::actual, msg::new_value),
-        "{actual} is the currently used license and {new_value} is the license expression that should be used",
+        "{actual} is the currently used license expression and {new_value} is the license expression that should be "
+        "used",
         "The port \"{package_name}\" uses the deprecated license expression \"{actual}\". You shoud use the non "
         "deprecated version \"{new_value}\".");
-    DECLARE_MESSAGE(LintDeprecatedLicenseExpressionWithoutReplacement,
-                    (msg::package_name, msg::actual),
-                    "{actual} is the currently used license",
-                    "The port \"{package_name}\" uses the deprecated license expression \"{actual}\".");
+    DECLARE_MESSAGE(
+        LintDeprecatedLicenseExpressionWithoutReplacement,
+        (msg::package_name, msg::actual, msg::new_value),
+        "{actual} is the currently used license, {new_value} is the suggested WITH expression",
+        "The port \"{package_name}\" uses the deprecated license expression \"{actual}\". "
+        "Use license expression including main license, \"WITH\" operator, and identifier: \"{new_value}\"");
     DECLARE_MESSAGE(LintMissingLicenseExpression,
                     (msg::package_name),
                     "",
