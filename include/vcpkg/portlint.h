@@ -9,6 +9,8 @@
 
 #include <vcpkg/sourceparagraph.h>
 
+#include <set>
+
 namespace vcpkg::Lint
 {
     enum class Status : int
@@ -34,6 +36,18 @@ namespace vcpkg::Lint
     Status check_used_version_scheme(SourceControlFile& scf, Fix fix);
 
     Status check_license_expression(SourceControlFile& scf, Fix fix);
+
+    struct FixedPortfile
+    {
+        Status status;
+        std::string new_portfile_content;        // empty if Fix::NO
+        std::set<StringLiteral> added_host_deps; // host-dependencies that need to be added, empty if Fix::NO
+    };
+
+    FixedPortfile check_portfile_deprecated_functions(std::string&& portfile_content,
+                                                      StringView origin,
+                                                      Fix fix,
+                                                      MessageSink& warningsSink);
 
     Status check_portfile_deprecated_functions(Filesystem& fs, SourceControlFileAndLocation& scf, Fix fix);
 }

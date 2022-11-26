@@ -151,124 +151,152 @@ namespace vcpkg::Lint
 
     Status check_portfile_deprecated_functions(Filesystem& fs, SourceControlFileAndLocation& scf, Fix fix)
     {
+        auto contents = fs.read_contents(scf.source_location / "portfile.cmake", VCPKG_LINE_INFO);
+        auto lint_result = check_portfile_deprecated_functions(
+            std::move(contents), scf.source_control_file->core_paragraph->name, fix, stdout_sink);
+
+        if (lint_result.status == Status::Fixed || lint_result.status == Status::PartiallyFixed)
+        {
+            fs.write_contents(
+                scf.source_location / "portfile.cmake", lint_result.new_portfile_content, VCPKG_LINE_INFO);
+
+            for (StringView name : lint_result.added_host_deps)
+            {
+                if (!Util::any_of(scf.source_control_file->core_paragraph->dependencies,
+                                  [&](const Dependency& d) { return d.name == name; }))
+                {
+                    scf.source_control_file->core_paragraph->dependencies.push_back(
+                        Dependency{name.to_string(), {}, {}, {}, true});
+                }
+            }
+        }
+        return lint_result.status;
+    }
+
+    FixedPortfile check_portfile_deprecated_functions(std::string&& portfile_content,
+                                                      StringView origin,
+                                                      Fix fix,
+                                                      MessageSink& warningsSink)
+    {
+        FixedPortfile fixedPortfile;
         Status status = Status::Ok;
-        auto content = fs.read_contents(scf.source_location / "portfile.cmake", VCPKG_LINE_INFO);
         const auto handle_warning = [&](StringLiteral deprecated, StringLiteral new_func, bool can_fix = true) {
             if (fix == Fix::NO || !can_fix)
             {
                 status |= Status::Problem;
-                msg::println_warning(msgLintDeprecatedFunction,
-                                     msg::package_name = scf.source_control_file->core_paragraph->name,
-                                     msg::actual = deprecated,
-                                     msg::expected = new_func);
+                warningsSink.println_warning(msgLintDeprecatedFunction,
+                                             msg::package_name = origin,
+                                             msg::actual = deprecated,
+                                             msg::expected = new_func);
             }
             else
             {
                 status = Status::Fixed;
             }
         };
-        const auto add_host_dep = [&](std::string name) {
-            if (!Util::any_of(scf.source_control_file->core_paragraph->dependencies,
-                              [&](const Dependency& d) { return d.name == name; }))
-            {
-                scf.source_control_file->core_paragraph->dependencies.push_back(Dependency{name, {}, {}, {}, true});
-            }
-        };
-        if (Strings::contains(content, "vcpkg_build_msbuild"))
+        if (Strings::contains(portfile_content, "vcpkg_build_msbuild"))
         {
             handle_warning("vcpkg_build_msbuild", "vcpkg_install_msbuild", false);
         }
         std::string::size_type index = 0;
-        while ((index = content.find("vcpkg_configure_cmake", index)) != std::string::npos)
+        while ((index = portfile_content.find("vcpkg_configure_cmake", index)) != std::string::npos)
         {
             handle_warning("vcpkg_configure_cmake", "vcpkg_cmake_configure");
             if (fix == Fix::NO)
             {
                 break;
             }
-            const auto end = content.find(')', index);
-            const auto ninja = content.find("PREFER_NINJA", index);
+            const auto end = portfile_content.find(')', index);
+            const auto ninja = portfile_content.find("PREFER_NINJA", index);
             if (ninja != std::string::npos && ninja < end)
             {
-                const auto start = content.find_last_not_of(" \n\t\r", ninja - 1) + 1;
-                content.erase(start, (ninja - start) + StringLiteral("PREFER_NINJA").size());
+                const auto start = portfile_content.find_last_not_of(" \n\t\r", ninja - 1) + 1;
+                portfile_content.erase(start, (ninja - start) + StringLiteral("PREFER_NINJA").size());
             }
-            content.replace(index, StringLiteral("vcpkg_configure_cmake").size(), "vcpkg_cmake_configure");
-            add_host_dep("vcpkg-cmake");
+            portfile_content.replace(index, StringLiteral("vcpkg_configure_cmake").size(), "vcpkg_cmake_configure");
+            fixedPortfile.added_host_deps.insert("vcpkg-cmake");
         }
-        if (Strings::contains(content, "vcpkg_build_cmake"))
+        if (Strings::contains(portfile_content, "vcpkg_build_cmake"))
         {
             handle_warning("vcpkg_build_cmake", "vcpkg_cmake_build");
-            Strings::inplace_replace_all(content, "vcpkg_build_cmake", "vcpkg_cmake_build");
-            add_host_dep("vcpkg-cmake");
+            if (fix == Fix::YES)
+            {
+                Strings::inplace_replace_all(portfile_content, "vcpkg_build_cmake", "vcpkg_cmake_build");
+                fixedPortfile.added_host_deps.insert("vcpkg-cmake");
+            }
         }
-        if (Strings::contains(content, "vcpkg_install_cmake"))
+        if (Strings::contains(portfile_content, "vcpkg_install_cmake"))
         {
             handle_warning("vcpkg_install_cmake", "vcpkg_cmake_install");
-            Strings::inplace_replace_all(content, "vcpkg_install_cmake", "vcpkg_cmake_install");
+            if (fix == Fix::YES)
+            {
+                Strings::inplace_replace_all(portfile_content, "vcpkg_install_cmake", "vcpkg_cmake_install");
+                fixedPortfile.added_host_deps.insert("vcpkg-cmake");
+            }
         }
         index = 0;
-        while ((index = content.find("vcpkg_fixup_cmake_targets", index)) != std::string::npos)
+        while ((index = portfile_content.find("vcpkg_fixup_cmake_targets", index)) != std::string::npos)
         {
             handle_warning("vcpkg_fixup_cmake_targets", "vcpkg_fixup_cmake_targets");
             if (fix == Fix::NO)
             {
                 break;
             }
-            const auto end = content.find(')', index);
-            const auto target = content.find("TARGET_PATH");
+            const auto end = portfile_content.find(')', index);
+            const auto target = portfile_content.find("TARGET_PATH");
             if (target != std::string::npos && target < end)
             {
                 auto start_param = target + StringLiteral("TARGET_PATH").size();
-                start_param = content.find_first_not_of(" \n\t)", start_param);
-                const auto end_param = content.find_first_of(" \n\t)", start_param);
+                start_param = portfile_content.find_first_not_of(" \n\t)", start_param);
+                const auto end_param = portfile_content.find_first_of(" \n\t)", start_param);
                 if (end_param != std::string::npos && end_param <= end)
                 {
-                    const auto original_param = content.substr(start_param, end_param - start_param);
+                    const auto original_param = portfile_content.substr(start_param, end_param - start_param);
                     auto param = StringView(original_param);
                     if (Strings::starts_with(param, "share/"))
                     {
                         param = param.substr(StringLiteral("share/").size());
                     }
-                    if (param == "${PORT}" ||
-                        Strings::case_insensitive_ascii_equals(param, scf.source_control_file->core_paragraph->name))
+                    if (param == "${PORT}" || Strings::case_insensitive_ascii_equals(param, origin))
                     {
-                        content.erase(target, end_param - target);
+                        portfile_content.erase(target, end_param - target);
                     }
                     else
                     {
-                        content.replace(target, (end_param - target) - param.size(), "PACKAGE_NAME ");
+                        portfile_content.replace(target, (end_param - target) - param.size(), "PACKAGE_NAME ");
                     }
                     // remove the CONFIG_PATH part if it uses the same param
-                    const auto start_config_path = content.find("CONFIG_PATH", index);
+                    const auto start_config_path = portfile_content.find("CONFIG_PATH", index);
                     if (start_config_path != std::string::npos && start_config_path < end)
                     {
                         start_param = start_config_path + StringLiteral("CONFIG_PATH").size();
-                        start_param = content.find_first_not_of(" \n\t)", start_param);
-                        const auto end_config_param = content.find_first_of(" \n\t)", start_param);
+                        start_param = portfile_content.find_first_not_of(" \n\t)", start_param);
+                        const auto end_config_param = portfile_content.find_first_of(" \n\t)", start_param);
                         const auto config_param =
-                            StringView(content).substr(start_param, end_config_param - start_param);
+                            StringView(portfile_content).substr(start_param, end_config_param - start_param);
                         if (config_param == original_param)
                         {
-                            const auto start_next = content.find_first_not_of(' ', end_config_param);
-                            content.erase(start_config_path, start_next - start_config_path);
+                            const auto start_next = portfile_content.find_first_not_of(' ', end_config_param);
+                            portfile_content.erase(start_config_path, start_next - start_config_path);
                         }
                     }
                 }
                 else
                 {
-                    const auto start = content.find_last_not_of(" \n\t\r", target - 1) + 1;
-                    content.erase(start, StringLiteral("TARGET_PATH").size() + (target - start));
+                    const auto start = portfile_content.find_last_not_of(" \n\t\r", target - 1) + 1;
+                    portfile_content.erase(start, StringLiteral("TARGET_PATH").size() + (target - start));
                 }
             }
-            content.replace(index, StringLiteral("vcpkg_fixup_cmake_targets").size(), "vcpkg_cmake_config_fixup");
-            add_host_dep("vcpkg-cmake-config");
+            portfile_content.replace(
+                index, StringLiteral("vcpkg_fixup_cmake_targets").size(), "vcpkg_cmake_config_fixup");
+            fixedPortfile.added_host_deps.insert("vcpkg-cmake-config");
         }
-        if (status == Status::Fixed || status == Status::PartiallyFixed)
+        fixedPortfile.status = status;
+        if (fix == Fix::YES)
         {
-            fs.write_contents(scf.source_location / "portfile.cmake", content, VCPKG_LINE_INFO);
+            fixedPortfile.new_portfile_content = std::move(portfile_content);
         }
-        return status;
+        return fixedPortfile;
     }
 
     Status& operator|=(Status& self, Status s)
@@ -277,4 +305,5 @@ namespace vcpkg::Lint
                                    static_cast<std::underlying_type_t<Status>>(s));
         return self;
     }
+
 }
