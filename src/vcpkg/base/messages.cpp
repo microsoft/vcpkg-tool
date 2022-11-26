@@ -373,6 +373,20 @@ namespace vcpkg::msg
     }
 }
 
+namespace vcpkg
+{
+
+    void MessageSink::println_warning(const LocalizedString& s)
+    {
+        print(Color::warning, format(msg::msgWarningMessage).append(s).append_raw('\n'));
+    }
+
+    void MessageSink::println_error(const LocalizedString& s)
+    {
+        print(Color::error, format(msg::msgErrorMessage).append(s).append_raw('\n'));
+    }
+}
+
 namespace
 {
     struct NullMessageSink : MessageSink

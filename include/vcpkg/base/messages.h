@@ -438,6 +438,32 @@ namespace vcpkg
             this->print(c, msg::format(m, args...).append_raw('\n'));
         }
 
+        void println_warning(const LocalizedString& s);
+        template<class Message, class... Ts>
+        typename Message::is_message_type println_warning(Message m, Ts... args)
+        {
+            println_warning(format(m, args...));
+        }
+
+        void println_error(const LocalizedString& s);
+        template<class Message, class... Ts>
+        typename Message::is_message_type println_error(Message m, Ts... args)
+        {
+            println_error(format(m, args...));
+        }
+
+        template<class Message, class... Ts, class = typename Message::is_message_type>
+        LocalizedString format_warning(Message m, Ts... args)
+        {
+            return format(msg::msgWarningMessage).append(m, args...);
+        }
+
+        template<class Message, class... Ts, class = typename Message::is_message_type>
+        LocalizedString format_error(Message m, Ts... args)
+        {
+            return format(msg::msgErrorMessage).append(m, args...);
+        }
+
         MessageSink(const MessageSink&) = delete;
         MessageSink& operator=(const MessageSink&) = delete;
 
