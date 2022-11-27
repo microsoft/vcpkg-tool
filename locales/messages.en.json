@@ -394,7 +394,7 @@
   "LicenseExpressionUnknownLicense": "Unknown license identifier '{value}'. Known values are listed at https://spdx.org/licenses/",
   "LintDeprecatedFunction": "The deprecated function \"{actual}\" is used inside the port \"{package_name}\". Use the function \"{expected}\" instead.",
   "LintDeprecatedLicenseExpressionWithReplacement": "The port \"{package_name}\" uses the deprecated license expression \"{actual}\". You shoud use the non deprecated version \"{new_value}\".",
-  "LintDeprecatedLicenseExpressionWithoutReplacement": "The port \"{package_name}\" uses the deprecated license expression \"{actual}\".",
+  "LintDeprecatedLicenseExpressionWithoutReplacement": "The port \"{package_name}\" uses the deprecated license expression \"{actual}\". Use license expression including main license, \"WITH\" operator, and identifier: \"{new_value}\"",
   "LintMissingLicenseExpression": "There is no license expression in port \"{package_name}\". You could use https://tools.spdx.org/app/check_license/ to determine the right license expression.",
   "LintPortErrors": "The port \"{package_name}\" should be fixed. See warning(s) above.",
   "LintPortErrorsFixed": "Problems in the port \"{package_name}\" have been fixed.",
