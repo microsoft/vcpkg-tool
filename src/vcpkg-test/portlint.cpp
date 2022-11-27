@@ -35,8 +35,15 @@ namespace
         REQUIRE(result.status == Status::Fixed);
         REQUIRE(msg_sink.counter == 0);
         REQUIRE(result.new_portfile_content == new_content);
-        REQUIRE(result.added_host_deps.size() == 1);
-        REQUIRE(*result.added_host_deps.begin() == new_host_dependency);
+        if (new_host_dependency.empty())
+        {
+            REQUIRE(result.added_host_deps.empty());
+        }
+        else
+        {
+            REQUIRE(result.added_host_deps.size() == 1);
+            REQUIRE(*result.added_host_deps.begin() == new_host_dependency);
+        }
 
         result = check_portfile_deprecated_functions(old_content.to_string(), "test", Fix::NO, msg_sink);
         REQUIRE(result.status == Status::Problem);
@@ -125,5 +132,46 @@ vcpkg_cmake_config_fixup(PACKAGE_NAME unofficial-cfitsio)
 vcpkg_cmake_config_fixup(CONFIG_PATH cmake PACKAGE_NAME async++)
 )-";
         check_replacement(content, new_content, "vcpkg-cmake-config");
+    }
+
+    SECTION ("vcpkg_extract_source_archive_ex -> vcpkg_extract_source_archive")
+    {
+        std::string content = R"-(
+vcpkg_extract_source_archive_ex(
+    OUT_SOURCE_PATH SOURCE_PATH
+    ARCHIVE ${ARCHIVE}
+    PATCHES
+        remove_stdint_headers.patch
+        no-pragma-warning.patch
+)
+vcpkg_extract_source_archive_ex(
+    ARCHIVE ${ARCHIVE}
+    OUT_SOURCE_PATH SOURCE_PATH
+    PATCHES
+        remove_stdint_headers.patch
+        no-pragma-warning.patch
+)
+vcpkg_extract_source_archive_ex(OUT_SOURCE_PATH SOURCE_PATH ARCHIVE ${ARCHIVE})
+)-";
+        std::string new_content = R"-(
+vcpkg_extract_source_archive(
+    SOURCE_PATH
+    ARCHIVE ${ARCHIVE}
+    PATCHES
+        remove_stdint_headers.patch
+        no-pragma-warning.patch
+)
+vcpkg_extract_source_archive(
+    SOURCE_PATH
+    ARCHIVE ${ARCHIVE}
+    PATCHES
+        remove_stdint_headers.patch
+        no-pragma-warning.patch
+)
+vcpkg_extract_source_archive(SOURCE_PATH ARCHIVE ${ARCHIVE})
+)-";
+        check_replacement(content, new_content, "");
+        check_replacement(
+            Strings::replace_all(content, "\n", "\r\n"), Strings::replace_all(new_content, "\n", "\r\n"), "");
     }
 }

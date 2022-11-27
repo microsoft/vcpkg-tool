@@ -5,6 +5,7 @@
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/versions.h>
 
+#include "vcpkg/base/system.print.h"
 #include "vcpkg/base/util.h"
 
 namespace vcpkg::Lint
@@ -290,6 +291,62 @@ namespace vcpkg::Lint
             portfile_content.replace(
                 index, StringLiteral("vcpkg_fixup_cmake_targets").size(), "vcpkg_cmake_config_fixup");
             fixedPortfile.added_host_deps.insert("vcpkg-cmake-config");
+        }
+        index = 0;
+        while ((index = portfile_content.find("vcpkg_extract_source_archive_ex", index)) != std::string::npos)
+        {
+            handle_warning("vcpkg_extract_source_archive_ex", "vcpkg_extract_source_archive");
+            if (fix == Fix::NO)
+            {
+                break;
+            }
+            const auto end = portfile_content.find(')', index);
+            const auto target = portfile_content.find("OUT_SOURCE_PATH");
+            if (target != std::string::npos && target < end)
+            {
+                const auto before_out_source_path = portfile_content.find_last_not_of(' ', target - 1);
+                auto start_param = target + StringLiteral("OUT_SOURCE_PATH").size();
+                start_param = portfile_content.find_first_not_of(" \n\r\t)", start_param);
+                const auto end_param = portfile_content.find_first_of(" \n\r\t)", start_param);
+                if (end_param != std::string::npos && end_param <= end)
+                {
+                    const auto out_source_path_param = portfile_content.substr(start_param, end_param - start_param);
+                    const auto after_param = portfile_content.find_first_not_of(' ', end_param);
+                    auto erase_lenth = after_param - before_out_source_path;
+                    bool was_crlf = false;
+                    if (portfile_content[after_param] != '\n' && portfile_content[after_param] != '\r')
+                    {
+                        erase_lenth -= 1; // if OUT_SOURCE_PATH is not on its own line, don't remove new line character
+                    }
+                    if (portfile_content[after_param] == '\r')
+                    {
+                        erase_lenth += 1; // \r\n is used as line ending
+                        was_crlf = true;
+                    }
+                    // remove '   OUT_SOURCE_PATH FOOBAR  ' line
+                    portfile_content.erase(before_out_source_path + 1, erase_lenth);
+                    // insert 'FOOBAR' or // '\n   FOOBAR' after '('
+                    auto open_bracket = portfile_content.find('(', index);
+                    if (open_bracket != std::string::npos && open_bracket < end)
+                    {
+                        char c = portfile_content[before_out_source_path];
+                        if (c == '\n')
+                        {
+                            // if the OUT_SOURCE_PATH was in a new line, insert the param in a new line
+                            portfile_content.insert(open_bracket + 1,
+                                                    (was_crlf ? "\r\n" : "\n") +
+                                                        std::string(target - before_out_source_path - 1, ' ') +
+                                                        out_source_path_param);
+                        }
+                        else
+                        {
+                            portfile_content.insert(open_bracket + 1, out_source_path_param + ' ');
+                        }
+                    }
+                }
+            }
+            portfile_content.replace(
+                index, StringLiteral("vcpkg_extract_source_archive_ex").size(), "vcpkg_extract_source_archive");
         }
         fixedPortfile.status = status;
         if (fix == Fix::YES)
