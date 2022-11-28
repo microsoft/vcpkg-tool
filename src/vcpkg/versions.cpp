@@ -5,29 +5,6 @@
 
 #include <vcpkg/versions.h>
 
-namespace
-{
-    using namespace vcpkg;
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        VersionInvalidRelaxed,
-        (msg::version),
-        "",
-        "`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).");
-
-    DECLARE_AND_REGISTER_MESSAGE(VersionInvalidSemver,
-                                 (msg::version),
-                                 "",
-                                 "`{version}` is not a valid semantic version, consult <https://semver.org>.");
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        VersionInvalidDate,
-        (msg::version),
-        "",
-        "`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be "
-        "dot-separated positive integer values without leading zeroes.");
-}
-
 namespace vcpkg
 {
     Version::Version() noexcept : m_text("0.0.0"), m_port_version(0) { }
@@ -254,7 +231,7 @@ namespace vcpkg
 
     ExpectedL<DotVersion> DotVersion::try_parse_relaxed(StringView str)
     {
-        return try_parse_dot_version(str).replace_error([&] {
+        return try_parse_dot_version(str).map_error([&](LocalizedString&&) {
             return msg::format(msg::msgErrorMessage).append(msg::format(msgVersionInvalidRelaxed, msg::version = str));
         });
     }
@@ -357,7 +334,11 @@ namespace vcpkg
 
     void to_string(std::string& out, VersionScheme scheme)
     {
-        if (scheme == VersionScheme::String)
+        if (scheme == VersionScheme::Missing)
+        {
+            out.append("missing");
+        }
+        else if (scheme == VersionScheme::String)
         {
             out.append("string");
         }

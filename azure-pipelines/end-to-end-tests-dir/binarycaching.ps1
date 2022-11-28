@@ -14,7 +14,7 @@ Run-Vcpkg -TestArgs ($commonArgs + @("remove", "rapidjson", "vcpkg-cmake", "vcpk
 Throw-IfFailed
 Require-FileNotExists "$installRoot/$Triplet/include"
 
-if(-Not $IsLinux) {
+if(-Not $IsLinux -and -Not $IsMacOS) {
     # Test simple nuget installation
     Run-Vcpkg -TestArgs ($commonArgs + @("install", "rapidjson", "vcpkg-cmake", "vcpkg-cmake-config", "--binarycaching", "--x-binarysource=clear;nuget,$NuGetRoot,readwrite"))
     Throw-IfFailed
@@ -47,7 +47,7 @@ Require-FileExists "$installRoot/$Triplet/include/rapidjson/rapidjson.h"
 Require-FileExists "$buildtreesRoot/rapidjson/src"
 Require-FileNotExists "$buildtreesRoot/detect_compiler"
 
-if(-Not $IsLinux) {
+if(-Not $IsLinux -and -Not $IsMacOS) {
     # Test restoring from nuget
     Remove-Item -Recurse -Force $installRoot
     Remove-Item -Recurse -Force $buildtreesRoot
@@ -67,7 +67,7 @@ if(-Not $IsLinux) {
     if ($IsLinux -or $IsMacOS) {
         mono $(Run-Vcpkg @fetchNuGetArgs) restore $TestingRoot/packages.config -OutputDirectory "$NuGetRoot2" -Source "$NuGetRoot"
     } else {
-        & $(Run-Vcpkg @fetchNuGetArgs) restore $TestingRoot/packages.config -OutputDirectory "$NuGetRoot2" -Source "$NuGetRoot"
+        & $(Run-VcpkgAndCaptureOutput @fetchNuGetArgs) restore $TestingRoot/packages.config -OutputDirectory "$NuGetRoot2" -Source "$NuGetRoot"
     }
     Throw-IfFailed
     Remove-Item -Recurse -Force $NuGetRoot -ErrorAction SilentlyContinue

@@ -23,6 +23,13 @@ if (-not $IsMacOS -and -not $IsLinux) {
         <sha512>6004140d92e86afbb17b49c49037ccd0786ce238f340f7d0e62b4b0c29ed0d6ad0bab11feda2094ae849c387d70d63504393714ed0a1f4d3a1f155af7a4f1ba3</sha512>
         <archiveName>ninja-win-1.10.2.zip</archiveName>
     </tool>
+    <tool name="ninja" os="windows">
+        <version>1.10.2</version>
+        <exeRelativePath>ninja.exe</exeRelativePath>
+        <url>https://github.com/ninja-build/ninja/releases/download/v1.10.2/ninja-win.zip</url>
+        <sha512>6004140d92e86afbb17b49c49037ccd0786ce238f340f7d0e62b4b0c29ed0d6ad0bab11feda2094ae849c387d70d63504393714ed0a1f4d3a1f155af7a4f1ba3</sha512>
+        <archiveName>ninja-win-1.10.2.zip</archiveName>
+    </tool>
     <tool name="cmake" os="windows">
         <version>3.22.2</version>
         <exeRelativePath>cmake-3.22.2-windows-i386\bin\cmake.exe</exeRelativePath>
@@ -62,4 +69,33 @@ if (-not $IsMacOS -and -not $IsLinux) {
     Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "ninja-testing", "--vcpkg-root=$TestingRoot"))
     Throw-IfFailed
     Require-FileExists "$TestingRoot/down loads/tools/ninja-testing-1.10.2-windows/ninja.exe"
+
+    $path = $env:PATH
+
+    $env:PATH = "$path;$TestingRoot/down loads/tools/ninja-testing-1.10.2-windows"
+    Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "ninja", "--vcpkg-root=$TestingRoot"))
+    Throw-IfFailed
+    Require-FileNotExists "$TestingRoot/down loads/tools/ninja-1.10.2-windows/ninja.exe"
+
+    $env:VCPKG_FORCE_DOWNLOADED_BINARIES = "1"
+    Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "ninja", "--vcpkg-root=$TestingRoot"))
+    Throw-IfFailed
+    Require-FileExists "$TestingRoot/down loads/tools/ninja-1.10.2-windows/ninja.exe"
+
+    Remove-Item -Recurse -Force "$TestingRoot/down loads/tools/ninja-1.10.2-windows" -ErrorAction SilentlyContinue
+    Remove-Item env:VCPKG_FORCE_DOWNLOADED_BINARIES
+
+    $env:VCPKG_FORCE_SYSTEM_BINARIES = "1"
+    $env:PATH = "$PSScriptRoot\..\e2e_assets\fetch;$path"
+    Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "ninja", "--vcpkg-root=$TestingRoot"))
+    Throw-IfFailed
+    Require-FileNotExists "$TestingRoot/down loads/tools/ninja-1.10.2-windows/ninja.exe"
+
+    Remove-Item env:VCPKG_FORCE_SYSTEM_BINARIES
+    $out = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("fetch", "ninja", "--vcpkg-root=$TestingRoot", "--x-stderr-status"))
+    Throw-IfFailed
+    & $out --version
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Couldn''t run resulting ninja'
+    }
 }

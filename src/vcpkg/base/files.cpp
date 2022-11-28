@@ -1,7 +1,9 @@
 #include <vcpkg/base/system_headers.h>
 
+#include <vcpkg/base/chrono.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/span.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
@@ -25,9 +27,11 @@
 #endif // ^^^ defined(__APPLE__)
 
 #include <algorithm>
+#include <iterator>
 #include <list>
 #include <string>
 #include <thread>
+#include <vector>
 
 #if defined(_WIN32)
 #include <share.h>
@@ -39,11 +43,6 @@ namespace stdfs = std::filesystem;
 namespace
 {
     using namespace vcpkg;
-
-    DECLARE_AND_REGISTER_MESSAGE(WaitingToTakeFilesystemLock,
-                                 (msg::path),
-                                 "",
-                                 "waiting to take filesystem lock on {path}...");
 
     std::atomic<uint64_t> g_us_filesystem_stats(0);
 
@@ -69,15 +68,6 @@ namespace
         return ntbs[0] == '.' && (ntbs[1] == '\0' || (ntbs[1] == '.' && ntbs[2] == '\0'));
     }
 #endif
-
-    [[noreturn]] void exit_filesystem_call_error(LineInfo li,
-                                                 const std::error_code& ec,
-                                                 StringView call_name,
-                                                 std::initializer_list<StringView> args)
-    {
-        auto arguments = args.size() == 0 ? "()" : "(\"" + Strings::join("\", \"", args.begin(), args.end()) + "\")";
-        Checks::exit_with_message_and_line(li, Strings::concat(call_name, arguments, ": ", ec.message()));
-    }
 
 #if defined(_WIN32)
     FileType convert_file_type(stdfs::file_type type) noexcept
@@ -111,7 +101,7 @@ namespace
     template<class Ty>
     Ty unaligned_load(const void* pv) noexcept
     {
-        static_assert(std::is_trivial<Ty>::value, "Unaligned loads require trivial types");
+        static_assert(std::is_trivial_v<Ty>, "Unaligned loads require trivial types");
         Ty tmp;
         memcpy(&tmp, pv, sizeof(tmp));
         return tmp;
@@ -354,6 +344,13 @@ namespace
         }
     }
 
+    std::vector<Path> calculate_path_bases()
+    {
+        auto path_base_strings = Strings::split_paths(get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO));
+        return std::vector<Path>{std::make_move_iterator(path_base_strings.begin()),
+                                 std::make_move_iterator(path_base_strings.end())};
+    }
+
 #if defined(_WIN32)
     struct FileHandle
     {
@@ -512,7 +509,7 @@ namespace
             }
         }
 
-        ec = std::move(err.ec);
+        ec = err.ec;
         failure_point = std::move(err.failure_point);
     }
 
@@ -915,7 +912,7 @@ namespace
         }
     }
 #endif // ^^^ !_WIN32
-}
+} // unnamed namespace
 
 #if defined(_WIN32)
 namespace
@@ -954,6 +951,22 @@ namespace
 
 namespace vcpkg
 {
+    LocalizedString format_filesystem_call_error(const std::error_code& ec,
+                                                 StringView call_name,
+                                                 std::initializer_list<StringView> args)
+    {
+        auto arguments = args.size() == 0 ? "()" : "(\"" + Strings::join("\", \"", args.begin(), args.end()) + "\")";
+        return LocalizedString::from_raw(Strings::concat(call_name, arguments, ": ", ec.message()));
+    }
+
+    [[noreturn]] void exit_filesystem_call_error(LineInfo li,
+                                                 const std::error_code& ec,
+                                                 StringView call_name,
+                                                 std::initializer_list<StringView> args)
+    {
+        Checks::msg_exit_with_message(li, format_filesystem_call_error(ec, call_name, args));
+    }
+
     std::string Path::generic_u8string() const
     {
 #if defined(_WIN32)
@@ -1107,7 +1120,7 @@ namespace vcpkg
     // This implementation does collapse slashes because we primarily use it for shiny display purposes.
     void Path::make_preferred()
     {
-        char* first = &m_str[0];
+        char* first = m_str.data();
         char* last = first + m_str.size();
         char* after_root_name = const_cast<char*>(find_root_name_end(first, last));
         char* after_root_directory = std::find_if_not(after_root_name, last, is_slash);
@@ -1508,7 +1521,7 @@ namespace vcpkg
     {
         this->rename(old_path, new_path, ec);
         using namespace std::chrono_literals;
-        for (const auto& delay : {10ms, 100ms, 1000ms})
+        for (const auto& delay : {10ms, 100ms, 1000ms, 10000ms})
         {
             if (!ec)
             {
@@ -1580,6 +1593,18 @@ namespace vcpkg
         if (ec)
         {
             exit_filesystem_call_error(li, ec, __func__, {new_directory});
+        }
+
+        return result;
+    }
+
+    Path Filesystem::create_or_get_temp_directory(LineInfo li)
+    {
+        std::error_code ec;
+        Path result = this->create_or_get_temp_directory(ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {});
         }
 
         return result;
@@ -1835,6 +1860,11 @@ namespace vcpkg
         }
 
         return sh;
+    }
+
+    std::vector<Path> Filesystem::find_from_PATH(StringView stem) const
+    {
+        return this->find_from_PATH(View<StringView>{&stem, 1});
     }
 
     ReadFilePointer Filesystem::open_for_read(const Path& file_path, LineInfo li) const
@@ -2341,8 +2371,7 @@ namespace vcpkg
         virtual std::vector<Path> get_files_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            Path out_base = dir;
-            get_files_recursive_impl(result, dir, out_base, ec, true, true, true);
+            get_files_recursive_impl(result, dir, dir, ec, true, true, true);
             return result;
         }
 
@@ -2356,8 +2385,7 @@ namespace vcpkg
         virtual std::vector<Path> get_directories_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            Path out_base = dir;
-            get_files_recursive_impl(result, dir, out_base, ec, true, false, false);
+            get_files_recursive_impl(result, dir, dir, ec, true, false, false);
 
             return result;
         }
@@ -2386,8 +2414,7 @@ namespace vcpkg
         virtual std::vector<Path> get_regular_files_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            Path out_base = dir;
-            get_files_recursive_impl(result, dir, out_base, ec, false, true, false);
+            get_files_recursive_impl(result, dir, dir, ec, false, true, false);
             return result;
         }
 
@@ -2687,6 +2714,20 @@ namespace vcpkg
 #endif // _WIN32
         }
 
+        virtual Path create_or_get_temp_directory(std::error_code& ec) override
+        {
+#if defined(_WIN32)
+            wchar_t temp_folder[MAX_PATH + 1];
+            DWORD length_without_null = GetTempPathW(MAX_PATH + 1, temp_folder);
+            Path temp_folder_path = Path(Strings::to_utf8(temp_folder, length_without_null)) / "vcpkg";
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            const Path temp_folder_path = "/tmp/vcpkg";
+#endif // ^^^ !_WIN32
+
+            this->create_directories(temp_folder_path, ec);
+            return temp_folder_path;
+        }
+
 #if !defined(_WIN32)
         static void posix_create_symlink(const Path& to, const Path& from, std::error_code& ec)
         {
@@ -2887,6 +2928,20 @@ namespace vcpkg
                 if (ec) return false;
             }
 
+#if defined(__APPLE__)
+            if (fcopyfile(source_fd.get(), destination_fd.get(), 0, COPYFILE_ALL) == -1)
+            {
+                ec.assign(errno, std::generic_category());
+                return false;
+            }
+
+            // fcopyfile copies the mode so no need to fchmod here
+            return true;
+#else // ^^^ (defined(__APPLE__) // !defined(__APPLE__) vvv
+
+            destination_fd.fchmod(source_stat.st_mode, ec);
+            if (ec) return false;
+
 #if defined(__linux__)
             // https://man7.org/linux/man-pages/man2/sendfile.2.html#NOTES
             // sendfile() will transfer at most 0x7ffff000 (2,147,479,552)
@@ -2901,24 +2956,24 @@ namespace vcpkg
                 if (this_send_actual == -1)
                 {
                     ec.assign(errno, std::generic_category());
+                    // https://man7.org/linux/man-pages/man2/sendfile.2.html#NOTES
+                    // recommends fallback to read/write if sendfile returns EINVAL or ENOSYS
+                    if (errno == EINVAL || errno == ENOSYS)
+                    {
+                        lseek(source_fd.get(), offset, SEEK_SET);
+                        break;
+                    }
                     return false;
                 }
 
                 remaining_size -= this_send_actual;
             }
 
-            destination_fd.fchmod(source_stat.st_mode, ec);
-            return !ec;
-#elif defined(__APPLE__)
-            if (fcopyfile(source_fd.get(), destination_fd.get(), 0, COPYFILE_ALL) == -1)
-            {
-                ec.assign(errno, std::generic_category());
-                return false;
-            }
+            if (!ec) return true;
+            // Else fall back to read/write
+            ec.clear();
+#endif // ^^^ defined(__linux__)
 
-            // fcopyfile copies the mode so no need to fchmod here
-            return true;
-#else  // ^^^ defined(__APPLE__) // !(defined(__APPLE__) || defined(__linux__)) vvv
             constexpr std::size_t buffer_length = 4096;
             unsigned char buffer[buffer_length];
             while (auto read_bytes = source_fd.read(buffer, buffer_length))
@@ -2943,9 +2998,8 @@ namespace vcpkg
                 }
             }
 
-            destination_fd.fchmod(source_stat.st_mode, ec);
             return !ec;
-#endif // ^^^ !(defined(__APPLE__) || defined(__linux__))
+#endif // ^^^ !(defined(__APPLE__)
 #endif // ^^^ !_WIN32
         }
 
@@ -3267,27 +3321,34 @@ namespace vcpkg
             return std::move(result);
         }
 
-        virtual std::vector<Path> find_from_PATH(StringView name) const override
+        virtual std::vector<Path> find_from_PATH(View<StringView> stems) const override
         {
-#if defined(_WIN32)
-            static constexpr StringLiteral EXTS[] = {".cmd", ".exe", ".bat"};
-#else  // ^^^ _WIN32 // !_WIN32 vvv
-            static constexpr StringLiteral EXTS[] = {""};
-#endif // ^^^!_WIN32
-            const Path pname = name;
-            auto path_bases = Strings::split_paths(get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO));
-
             std::vector<Path> ret;
-            for (auto&& path_base : path_bases)
+
+            if (!stems.empty())
             {
-                auto path_base_name = Path(path_base) / pname;
-                for (auto&& ext : EXTS)
+#if defined(_WIN32)
+                static constexpr StringLiteral extensions[] = {".cmd", ".exe", ".bat"};
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+                static constexpr StringLiteral extensions[] = {""};
+#endif // ^^^!_WIN32
+
+                static const std::vector<Path> path_bases = calculate_path_bases();
+                for (const Path& path_base : path_bases)
                 {
-                    auto with_extension = path_base_name + ext;
-                    if (Util::find(ret, with_extension) == ret.end() && this->exists(with_extension, IgnoreErrors{}))
+                    for (auto&& stem : stems)
                     {
-                        Debug::print("Found path: ", with_extension, '\n');
-                        ret.push_back(std::move(with_extension));
+                        auto base_name = path_base / stem;
+                        for (auto&& extension : extensions)
+                        {
+                            auto with_extension = base_name + extension;
+                            if (!Util::Vectors::contains(ret, with_extension) &&
+                                this->exists(with_extension, IgnoreErrors{}))
+                            {
+                                Debug::print("Found path: ", with_extension, '\n');
+                                ret.push_back(std::move(with_extension));
+                            }
+                        }
                     }
                 }
             }

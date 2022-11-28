@@ -29,7 +29,7 @@ namespace vcpkg
     {
         template<class KeyIsh,
                  class F,
-                 std::enable_if_t<std::is_constructible<Key, const KeyIsh&>::value &&
+                 std::enable_if_t<std::is_constructible_v<Key, const KeyIsh&> &&
                                       detail::is_callable<Compare&, const Key&, const KeyIsh&>::value,
                                   int> = 0>
         const Value& get_lazy(const KeyIsh& k, F&& f) const

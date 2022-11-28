@@ -14,14 +14,15 @@
 #if defined(_WIN32)
 namespace
 {
-    std::vector<vcpkg::Path> find_from_registry()
+    using namespace vcpkg;
+    std::vector<Path> find_from_registry()
     {
-        std::vector<vcpkg::Path> output;
+        std::vector<Path> output;
 
         struct RegKey
         {
             HKEY root;
-            vcpkg::StringLiteral subkey;
+            StringLiteral subkey;
         } REGKEYS[] = {
             {HKEY_LOCAL_MACHINE,
              R"(SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{C26E74D1-022E-4238-8B9D-1E7564A36CC9}_is1)"},
@@ -37,11 +38,11 @@ namespace
 
         for (auto&& keypath : REGKEYS)
         {
-            const vcpkg::Optional<std::string> code_installpath =
-                vcpkg::get_registry_string(keypath.root, keypath.subkey, "InstallLocation");
+            const Optional<std::string> code_installpath =
+                get_registry_string(keypath.root, keypath.subkey, "InstallLocation");
             if (const auto c = code_installpath.get())
             {
-                const vcpkg::Path install_path = *c;
+                const Path install_path = *c;
                 output.push_back(install_path / "Code - Insiders.exe");
                 output.push_back(install_path / "Code.exe");
             }
@@ -51,7 +52,7 @@ namespace
 
     std::string expand_environment_strings(const std::string& input)
     {
-        const auto widened = vcpkg::Strings::to_utf16(input);
+        const auto widened = Strings::to_utf16(input);
         std::wstring result;
         result.resize(result.capacity());
         bool done;
@@ -59,22 +60,22 @@ namespace
         {
             if (result.size() == ULONG_MAX)
             {
-                vcpkg::Checks::exit_fail(VCPKG_LINE_INFO); // integer overflow
+                Checks::exit_fail(VCPKG_LINE_INFO); // integer overflow
             }
 
-            const auto required_size =
-                ExpandEnvironmentStringsW(widened.c_str(), &result[0], static_cast<unsigned long>(result.size() + 1));
+            const auto required_size = ExpandEnvironmentStringsW(
+                widened.c_str(), result.data(), static_cast<unsigned long>(result.size() + 1));
             if (required_size == 0)
             {
-                vcpkg::print2(vcpkg::Color::error, "Error: could not expand the environment string:\n");
-                vcpkg::print2(vcpkg::Color::error, input);
-                vcpkg::Checks::exit_fail(VCPKG_LINE_INFO);
+                msg::println_error(
+                    msg::format(msgEnvStrFailedToExtract).append_raw('\n').append(LocalizedString::from_raw(input)));
+                Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
             done = required_size <= result.size() + 1;
             result.resize(required_size - 1);
         } while (!done);
-        return vcpkg::Strings::to_utf8(result);
+        return Strings::to_utf8(result);
     }
 }
 #endif
@@ -217,21 +218,20 @@ namespace vcpkg::Commands::Edit
         candidate_paths.emplace_back("/usr/share/code/bin/code");
         candidate_paths.emplace_back("/usr/bin/code");
 
-        if (cmd_execute(Command("command").string_arg("-v").string_arg("xdg-mime")) == 0)
+        if (succeeded(cmd_execute(Command("command").string_arg("-v").string_arg("xdg-mime"))))
         {
             auto mime_qry = Command("xdg-mime").string_arg("query").string_arg("default").string_arg("text/plain");
-            auto execute_result = cmd_execute_and_capture_output(mime_qry);
-            if (execute_result.exit_code == 0 && !execute_result.output.empty())
+            auto maybe_output = flatten_out(cmd_execute_and_capture_output(mime_qry), "xdg-mime");
+            const auto output = maybe_output.get();
+            if (output && !output->empty())
             {
-                mime_qry = Command("command").string_arg("-v").string_arg(
-                    execute_result.output.substr(0, execute_result.output.find('.')));
-                execute_result = cmd_execute_and_capture_output(mime_qry);
-                if (execute_result.exit_code == 0 && !execute_result.output.empty())
+                mime_qry = Command("command").string_arg("-v").string_arg(output->substr(0, output->find('.')));
+                auto maybe_output2 = flatten_out(cmd_execute_and_capture_output(mime_qry), "xdg-mime");
+                const auto output2 = maybe_output2.get();
+                if (output2 && !output2->empty())
                 {
-                    execute_result.output.erase(
-                        std::remove(std::begin(execute_result.output), std::end(execute_result.output), '\n'),
-                        std::end(execute_result.output));
-                    candidate_paths.emplace_back(execute_result.output);
+                    output2->erase(std::remove(output2->begin(), output2->end(), '\n'), output2->end());
+                    candidate_paths.emplace_back(std::move(*output2));
                 }
             }
         }
@@ -240,12 +240,11 @@ namespace vcpkg::Commands::Edit
         const auto it = Util::find_if(candidate_paths, [&](const Path& p) { return fs.exists(p, IgnoreErrors{}); });
         if (it == candidate_paths.cend())
         {
-            print2(
-                Color::error,
-                "Error: Visual Studio Code was not found and the environment variable EDITOR is not set or invalid.\n");
-            print2("The following paths were examined:\n");
+            msg::println_error(msg::format(msgErrorVsCodeNotFound, msg::env_var = "EDITOR")
+                                   .append_raw('\n')
+                                   .append(msgErrorVsCodeNotFoundPathExamined));
             print_paths(candidate_paths);
-            print2("You can also set the environmental variable EDITOR to your editor of choice.\n");
+            msg::println(msgInfoSetEnvVar, msg::env_var = "EDITOR");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
@@ -264,7 +263,7 @@ namespace vcpkg::Commands::Edit
         }
 #endif // ^^^ _WIN32
 
-        Checks::exit_with_code(VCPKG_LINE_INFO, cmd_execute(cmd_line));
+        Checks::exit_with_code(VCPKG_LINE_INFO, cmd_execute(cmd_line).value_or_exit(VCPKG_LINE_INFO));
     }
 
     void EditCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const

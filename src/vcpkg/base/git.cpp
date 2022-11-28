@@ -6,19 +6,11 @@
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.process.h>
 
+#include <vcpkg/tools.h>
+
 namespace
 {
     using namespace vcpkg;
-
-    DECLARE_AND_REGISTER_MESSAGE(GitCommandFailed, (msg::command_line), "", "failed to execute: {command_line}");
-    DECLARE_AND_REGISTER_MESSAGE(GitUnexpectedCommandOutput, (), "", "unexpected git output");
-    DECLARE_AND_REGISTER_MESSAGE(GitStatusUnknownFileStatus,
-                                 (msg::value),
-                                 "{value} is a single character indicating file status, for example: A, U, M, D",
-                                 "unknown file status: {value}");
-    DECLARE_AND_REGISTER_MESSAGE(GitStatusOutputExpectedNewLine, (), "", "expected new line");
-    DECLARE_AND_REGISTER_MESSAGE(GitStatusOutputExpectedFileName, (), "", "expected a file name");
-    DECLARE_AND_REGISTER_MESSAGE(GitStatusOutputExpectedRenameOrNewline, (), "", "expected renamed file or new lines");
 
     Command git_cmd_builder(const GitConfig& config)
     {
@@ -147,7 +139,7 @@ namespace vcpkg
 
         if (auto error = parser.get_error())
         {
-            return msg::format(msgGitUnexpectedCommandOutput).append_raw(error->format());
+            return msg::format(msgGitUnexpectedCommandOutput).append_raw('\n').append_raw(error->to_string());
         }
 
         return results;
@@ -160,14 +152,23 @@ namespace vcpkg
         {
             cmd.string_arg("--").string_arg(path);
         }
-        auto output = cmd_execute_and_capture_output(cmd);
-        if (output.exit_code != 0)
+
+        auto maybe_output = cmd_execute_and_capture_output(cmd);
+        if (auto output = maybe_output.get())
         {
-            return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
-                .appendnl()
-                .append_raw(output.output);
+            if (output->exit_code != 0)
+            {
+                return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
+                    .append_raw('\n')
+                    .append_raw(output->output);
+            }
+
+            return parse_git_status_output(output->output);
         }
-        return parse_git_status_output(output.output);
+
+        return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
+            .append_raw('\n')
+            .append_raw(maybe_output.error().to_string());
     }
 
     ExpectedL<std::set<std::string>> git_ports_with_uncommitted_changes(const GitConfig& config)
@@ -186,6 +187,14 @@ namespace vcpkg
             }
             return ret;
         }
-        return std::move(maybe_results.error());
+        return std::move(maybe_results).error();
+    }
+
+    ExpectedL<bool> is_shallow_clone(const GitConfig& config)
+    {
+        auto cmd = git_cmd_builder(config).string_arg("rev-parse").string_arg("--is-shallow-repository");
+        return flatten_out(cmd_execute_and_capture_output(cmd), Tools::GIT).map([](std::string&& output) {
+            return "true" == Strings::trim(std::move(output));
+        });
     }
 }

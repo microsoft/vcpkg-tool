@@ -4,7 +4,7 @@
 import { i } from '../../i18n';
 import { Argument } from '../argument';
 import { Command } from '../command';
-import { blank, cli } from '../constants';
+import { cli } from '../constants';
 import { command as formatCommand, heading, hint } from '../format';
 import { error, indent, log } from '../styling';
 
@@ -36,7 +36,6 @@ export class HelpCommand extends Command {
   get description() {
     return [
       i`Gets detailed help on ${cli}, or one of the commands`,
-      blank,
       i`Arguments:`
     ];
   }
@@ -49,7 +48,6 @@ export class HelpCommand extends Command {
       const target = this.commandLine.commands.find(each => each.command === cmd);
       if (target) {
         log(target.help.join('\n'));
-        log(blank);
         return true;
       }
 
@@ -62,12 +60,9 @@ export class HelpCommand extends Command {
     // general help. return the general help info
 
     log(heading(i`Usage`, 2));
-    log(blank);
     log(indent(i`${cli} COMMAND <arguments> [--switches]`));
-    log(blank);
 
     log(heading(i`Available ${cli} commands:`, 2));
-    log(blank);
     const max = Math.max(...this.commandLine.commands.map(each => each.command.length));
     for (const command of this.commandLine.commands) {
       if (command.command.startsWith('z-')) {
@@ -76,8 +71,6 @@ export class HelpCommand extends Command {
       }
       log(indent(i`${formatCommand(command.command.padEnd(max))} : ${command.summary}`));
     }
-
-    log(blank);
 
     return true;
   }

@@ -8,13 +8,14 @@ and `locales/messages.json` -- everything else will be generated and modified by
 ## Declaring a Message
 
 The process of writing a user-visible message starts with declaring it.
-Most user-facing messages can be declared and registered at the same time in a source file with:
+Most user-facing messages can be declared in [`messages.h`] and registered in [`messages.cpp`]:
 
-```cxx
-DECLARE_AND_REGISTER_MESSAGE(<message-name>, <parameters>, <comment>, <english-message>);
+```messages.h
+DECLARE_MESSAGE(<message-name>, <parameters>, <comment>, <english-message>);
 ```
-
-for example, in [`sourceparagraph.cpp`].
+```messages.cpp
+REGISTER_MESSAGE(<message-name>);
+```
 
 If you need to declare a message in a header file
 (for example, if a templated function uses it),
@@ -67,7 +68,6 @@ Messages in vcpkg are written in American English. They should not contain:
 * formatting:
   - indentation should be added with the `append_indent()` function;
     if you need to add more than one indentation, you can use `append_indent(N)`
-  - newlines should be added with the `appendnl()` function
   - Any other interesting characters (like `- ` for lists, for example) should use `append_raw(...)`
 * or for the prefixes:
   - `"warning: "`, instead use `msg::format(msg::msgWarningMessage).append(msgMyWarning)`
@@ -105,11 +105,11 @@ namespace
     };
 
     // note that we add additional context in the comment here
-    DECLARE_AND_REGISTER_MESSAGE(World, (), "We will say hello to 'world' if no name is given", "world");
+    DECLARE_MESSAGE(World, (), "We will say hello to 'world' if no name is given", "world");
     // here, `{value}` is a placeholder that doesn't have example text, so we need to give it ourselves
-    DECLARE_AND_REGISTER_MESSAGE(Hello, (msg::value), "example for {value} is 'world'", "Hello, {value}!");
+    DECLARE_MESSAGE(Hello, (msg::value), "example for {value} is 'world'", "Hello, {value}!");
     // here, `{triplet}` _already has_ example text, so it's fine to not give a comment
-    DECLARE_AND_REGISTER_MESSAGE(MyTripletIs, (msg::triplet), "", "My triplet is {triplet}.");
+    DECLARE_MESSAGE(MyTripletIs, (msg::triplet), "", "My triplet is {triplet}.");
 }
 
 namespace vcpkg::Commands
@@ -136,3 +136,21 @@ namespace vcpkg::Commands
     }
 }
 ```
+## Selecting a Language
+
+vcpkg chooses a language through the `VSLANG` environment variable, which should be set to a valid LCID (locale identifier, 4-byte value representing a language). If `VSLANG` is not set or is set to an invalid LCID, we default to English. That said, if you wish to change the language, then set `VSLANG` to any of the following LCIDs:
+
+1029: Czech                 \
+1031: German                \
+1033: English               \
+3082: Spanish (Spain)       \
+1036: French                \
+1040: Italian               \
+1041: Japanese              \
+1042: Korean                \
+1045: Polish                \
+1046: Portuguese (Brazil)   \
+1049: Russian               \
+1055: Turkish               \
+2052: Chinese (Simplified)  \
+1028: Chinese (Traditional)

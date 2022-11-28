@@ -18,7 +18,11 @@ if ($hash.count -gt 0) {
 $args=[System.Collections.ArrayList][System.Array]$args
 
 # GLOBALS
-$VCPKG_START_TIME=get-date
+$VCPKG_START_TIME=Get-Date
+# Workaround for $IsWindows not existing in Windows PowerShell
+if (-not (Test-Path variable:IsWindows)) {
+  $IsWindows = $true
+}
 
 function z-vcpkg-resolve([string]$name) {
   $name = Resolve-Path $name -ErrorAction 0 -ErrorVariable _err
@@ -58,6 +62,10 @@ function download($url, $path) {
   if( (get-item $path).Length -ne $wc.ResponseHeaders['Content-Length'] ) {
     throw "Download of '$url' failed.  Check your internet connection."
   }
+  if (-not $IsWindows) {
+    chmod +x $path
+  }
+
   z-vcpkg-debug "Completed Download of $url"
   return $path
 }
@@ -71,7 +79,11 @@ if( $ENV:VCPKG_ROOT ) {
   $ENV:VCPKG_ROOT=$VCPKG_ROOT
 }
 
-$VCPKG = "${VCPKG_ROOT}/vcpkg.exe"
+$VCPKG = "${VCPKG_ROOT}/vcpkg"
+if ($IsWindows) {
+  $VCPKG += '.exe'
+}
+
 $SCRIPT:VCPKG_SCRIPT = "${VCPKG_ROOT}/vcpkg-init.ps1"
 $SCRIPT:VCPKG_VERSION_MARKER = "${VCPKG_ROOT}/vcpkg-one-liner-version.txt"
 $SCRIPT:VCPKG_INIT_VERSION = 'latest'
@@ -103,7 +115,16 @@ function bootstrap-vcpkg {
       mkdir $VCPKG_ROOT
   }
 
-  download https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg.exe $VCPKG
+  if ($IsWindows) {
+    download https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg.exe $VCPKG
+  } elseif ($IsMacOS) {
+    download https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-macos $VCPKG
+  } elseif (Test-Path '/etc/alpine-release') {
+    download https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-muslc $VCPKG
+  } else {
+    download https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-glibc $VCPKG
+  }
+
   & $VCPKG z-bootstrap-standalone
 
   $PATH = $ENV:PATH
@@ -204,7 +225,7 @@ if "%1" EQU "--remove-vcpkg" (
 :: do we even have it installed?
 if NOT exist "%Z_VCPKG_CMD%" goto BOOTSTRAP
 
-:: if this is the actual installed vcpkg-ce, let's get to the invocation
+:: if this is the actual installed vcpkg, let's get to the invocation
 if "%~dfp0" == "%Z_VCPKG_CMD%" goto INVOKE
 
 :: this is not the 'right' vcpkg cmd, let's forward this on to that one.

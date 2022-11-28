@@ -12,7 +12,8 @@ namespace vcpkg
 {
     struct ElapsedTime
     {
-        using duration = std::chrono::high_resolution_clock::time_point::duration;
+        using clock = std::chrono::high_resolution_clock;
+        using duration = clock::duration;
 
         constexpr ElapsedTime() noexcept : m_duration() { }
         constexpr ElapsedTime(duration d) noexcept : m_duration(d) { }
@@ -36,15 +37,19 @@ namespace vcpkg
         duration m_duration;
     };
 
+    // This type is safe to access from multiple threads.
     struct ElapsedTimer
     {
-        static ElapsedTimer create_started();
+        using clock = std::chrono::high_resolution_clock;
+        using duration = clock::duration;
+        using time_point = clock::time_point;
+        using rep = clock::rep;
 
-        constexpr ElapsedTimer() noexcept : m_start_tick() { }
+        ElapsedTimer() noexcept;
 
         ElapsedTime elapsed() const
         {
-            return ElapsedTime(std::chrono::high_resolution_clock::now() - this->m_start_tick);
+            return ElapsedTime(clock::now() - time_point(duration(this->m_start_tick.load())));
         }
 
         double microseconds() const { return elapsed().as<std::chrono::duration<double, std::micro>>().count(); }
@@ -54,12 +59,13 @@ namespace vcpkg
         void to_string(std::string& into) const;
 
     private:
-        std::chrono::high_resolution_clock::time_point m_start_tick;
+        // This atomic stores rep rather than time_point to support older compilers
+        std::atomic<rep> m_start_tick;
     };
 
     struct StatsTimer
     {
-        StatsTimer(std::atomic<uint64_t>& stat) : m_stat(&stat), m_timer(ElapsedTimer::create_started()) { }
+        StatsTimer(std::atomic<uint64_t>& stat) : m_stat(&stat), m_timer() { }
         ~StatsTimer() { m_stat->fetch_add(m_timer.us_64()); }
 
     private:
@@ -69,7 +75,8 @@ namespace vcpkg
 
     struct CTime
     {
-        static Optional<CTime> get_current_date_time();
+        static Optional<CTime> now();
+        static std::string now_string();
         static Optional<CTime> parse(ZStringView str);
 
         constexpr CTime() noexcept : m_tm{} { }
@@ -88,8 +95,6 @@ namespace vcpkg
     };
 
     Optional<tm> to_utc_time(const std::time_t& t);
-
-    tm get_current_date_time();
 
     tm get_current_date_time_local();
 }

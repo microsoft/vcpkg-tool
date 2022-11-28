@@ -6,7 +6,6 @@ import { session } from '../../main';
 import { Command } from '../command';
 import { debug, log } from '../styling';
 import { Switch } from '../switch';
-import { WhatIf } from '../switches/whatIf';
 
 export class All extends Switch {
   switch = 'all';
@@ -17,11 +16,11 @@ export class All extends Switch {
   }
 }
 
-export class Cache extends Switch {
-  switch = 'cache';
+export class Downloads extends Switch {
+  switch = 'downloads';
   get help() {
     return [
-      i`cleans out the cache`
+      i`cleans out the downloads cache`
     ];
   }
 }
@@ -42,8 +41,7 @@ export class CleanCommand extends Command {
   argumentsHelp = [];
   all = new All(this);
   artifacts = new Artifacts(this);
-  cache = new Cache(this);
-  whatIf = new WhatIf(this);
+  downloads = new Downloads(this);
 
   get summary() {
     return i`cleans up`;
@@ -67,10 +65,10 @@ export class CleanCommand extends Command {
       log(i`Installed Artifact folder cleared (${session.installFolder.fsPath}) `);
     }
 
-    if (this.all.active || this.cache.active) {
-      await session.cache.delete({ recursive: true });
-      await session.cache.createDirectory();
-      log(i`Cache folder cleared (${session.cache.fsPath}) `);
+    if (this.all.active || this.downloads.active) {
+      await session.downloads.delete({ recursive: true });
+      await session.downloads.createDirectory();
+      log(i`Cache folder cleared (${session.downloads.fsPath}) `);
     }
 
     return true;

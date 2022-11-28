@@ -26,15 +26,14 @@ namespace vcpkg::Commands::BuildExternal
 
         BinaryCache binary_cache{args, paths};
 
-        const FullPackageSpec spec = Input::check_and_get_full_package_spec(
+        const FullPackageSpec spec = check_and_get_full_package_spec(
             std::string(args.command_arguments.at(0)), default_triplet, COMMAND_STRUCTURE.example_text, paths);
 
-        auto overlays = args.overlay_ports;
+        auto overlays = paths.overlay_ports;
         overlays.insert(overlays.begin(), args.command_arguments.at(1));
 
-        PortFileProvider::PathsPortFileProvider provider(paths, overlays);
-        Build::Command::perform_and_exit_ex(
-            args, spec, host_triplet, provider, binary_cache, Build::null_build_logs_recorder(), paths);
+        PathsPortFileProvider provider(paths, make_overlay_provider(paths, overlays));
+        Build::perform_and_exit_ex(args, spec, host_triplet, provider, binary_cache, null_build_logs_recorder(), paths);
     }
 
     void BuildExternalCommand::perform_and_exit(const VcpkgCmdArguments& args,

@@ -16,18 +16,19 @@ using namespace vcpkg;
 
 namespace
 {
-    DECLARE_AND_REGISTER_MESSAGE(FuzzInvalidKind, (msg::value), "example of {value} is 'utf-8'", "invalid kind: {}");
     DECLARE_AND_REGISTER_MESSAGE(FuzzExpectedOneOf,
                                  (),
                                  "the list after the colon should stay the same, they're literal values",
                                  "expected one of: utf-8, json, platform-expr");
-    DECLARE_AND_REGISTER_MESSAGE(FuzzUnknownOption, (msg::option), "", "unknown option: --{option}");
-
-    DECLARE_AND_REGISTER_MESSAGE(FuzzHelpUsage, (), "", "usage: vcpkg-fuzz --kind=<kind>");
     DECLARE_AND_REGISTER_MESSAGE(FuzzHelpInput, (), "", "accepts input on stdin.");
-    DECLARE_AND_REGISTER_MESSAGE(FuzzHelpOptions, (), "", "options:");
     DECLARE_AND_REGISTER_MESSAGE(FuzzHelpOptionKind, (), "", "one of {{utf-8, json, platform-expr}}");
-
+    DECLARE_AND_REGISTER_MESSAGE(FuzzHelpOptions, (), "", "options:");
+    DECLARE_AND_REGISTER_MESSAGE(FuzzHelpUsage, (), "", "usage: vcpkg-fuzz --kind=<kind>");
+    DECLARE_AND_REGISTER_MESSAGE(FuzzInvalidKind,
+                                 (msg::value),
+                                 "example of {value} is 'utf-8'",
+                                 "invalid kind: '{value}'");
+    DECLARE_AND_REGISTER_MESSAGE(FuzzUnknownOption, (msg::option), "", "unknown option: --{option}");
     enum class FuzzKind
     {
         None,
@@ -80,16 +81,16 @@ namespace
                     }
                     else
                     {
-                        msg::print_error(msg::format(msgFuzzInvalidKind, msg::value = value)
-                                             .appendnl()
-                                             .append_indent()
-                                             .append(msgFuzzExpectedOneOf));
+                        msg::println_error(msg::format(msgFuzzInvalidKind, msg::value = value)
+                                               .append_raw('\n')
+                                               .append_indent()
+                                               .append(msgFuzzExpectedOneOf));
                         print_help_and_exit(true);
                     }
                 }
                 else
                 {
-                    msg::print_error(msgFuzzUnknownOption, msg::option = key);
+                    msg::println_error(msgFuzzUnknownOption, msg::option = key);
                     print_help_and_exit(true);
                 }
             }
@@ -97,7 +98,7 @@ namespace
 
         // returns {arg, ""} when there isn't an `=`
         // skips preceding `-`s
-        std::pair<StringView, StringView> split_arg(StringView arg)
+        std::pair<StringView, StringView> split_arg(StringView arg) const
         {
             auto first = std::find_if(arg.begin(), arg.end(), [](char c) { return c != '-'; });
             auto division = std::find(first, arg.end(), '=');
@@ -111,13 +112,13 @@ namespace
             }
         }
 
-        [[noreturn]] void print_help_and_exit(bool invalid = false)
+        [[noreturn]] void print_help_and_exit(bool invalid = false) const
         {
             auto color = invalid ? Color::error : Color::none;
 
-            auto message = msg::format(msgFuzzHelpUsage).appendnl().appendnl();
-            message.append(msgFuzzHelpInput).appendnl().appendnl();
-            message.append(msgFuzzHelpOptions).appendnl();
+            auto message = msg::format(msgFuzzHelpUsage).append_raw("\n\n");
+            message.append(msgFuzzHelpInput).append_raw("\n\n");
+            message.append(msgFuzzHelpOptions).append_raw('\n');
 
             struct
             {
@@ -133,7 +134,7 @@ namespace
                 message.append_raw(start_option)
                     .append_raw(std::string(30 - start_option.size(), ' '))
                     .append(option.help)
-                    .appendnl();
+                    .append_raw('\n');
             }
 
             msg::print(color, message);
@@ -147,7 +148,7 @@ namespace
             }
         }
 
-        FuzzKind kind;
+        FuzzKind kind = FuzzKind::None;
     };
 
     std::string read_all_of_stdin()
@@ -162,7 +163,7 @@ namespace
         auto res = Json::parse(text);
         if (!res)
         {
-            Checks::exit_with_message(VCPKG_LINE_INFO, res.error()->format());
+            Checks::exit_with_message(VCPKG_LINE_INFO, res.error()->to_string());
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
@@ -197,6 +198,11 @@ namespace
 
         Checks::exit_success(VCPKG_LINE_INFO);
     }
+}
+
+namespace vcpkg::Checks
+{
+    void on_final_cleanup_and_exit() { }
 }
 
 int main(int argc, char** argv)

@@ -1,31 +1,21 @@
-#include <vcpkg/base/checks.h>
+#include <vcpkg/base/parse.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/archives.h>
 #include <vcpkg/commands.h>
 #include <vcpkg/tools.h>
-#include <vcpkg/vcpkgpaths.h>
 
 namespace
 {
     using namespace vcpkg;
 
-    DECLARE_AND_REGISTER_MESSAGE(
-        MsiexecFailedToExtract,
-        (msg::path, msg::exit_code),
-        "",
-        "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:");
-    DECLARE_AND_REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion,
-                                 (msg::path),
-                                 "",
-                                 "Could not deduce nuget id and version from filename: {path}");
-
 #if defined(_WIN32)
-    void win32_extract_nupkg(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
+    void win32_extract_nupkg(const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
     {
-        const auto nuget_exe = paths.get_tool_exe(Tools::NUGET);
+        const auto nuget_exe = tools.get_tool_path(Tools::NUGET, status_sink);
 
         const auto stem = archive.stem();
 
@@ -50,31 +40,32 @@ namespace
             .string_arg("-OutputDirectory")
             .string_arg(to_path)
             .string_arg("-Source")
-            .string_arg(paths.downloads)
+            .string_arg(archive.parent_path())
             .string_arg("-nocache")
             .string_arg("-DirectDownload")
             .string_arg("-NonInteractive")
             .string_arg("-ForceEnglishOutput")
             .string_arg("-PackageSaveMode")
             .string_arg("nuspec");
-        const auto code_and_output = cmd_execute_and_capture_output(nuget_command);
 
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           code_and_output.exit_code == 0,
-                           "Failed to extract '%s' with message:\n%s",
-                           archive,
-                           code_and_output.output);
+        const auto result = flatten(cmd_execute_and_capture_output(nuget_command), Tools::NUGET);
+        if (!result)
+        {
+            Checks::msg_exit_with_message(
+                VCPKG_LINE_INFO,
+                msg::format(msgFailedToExtract, msg::path = archive).append_raw('\n').append(result.error()));
+        }
     }
 
     void win32_extract_msi(const Path& archive, const Path& to_path)
     {
         // MSI installation sometimes requires a global lock and fails if another installation is concurrent. Loop
         // to enable retries.
-        for (int i = 0;; ++i)
+        for (unsigned int i = 0;; ++i)
         {
             // msiexec is a WIN32/GUI application, not a console application and so needs special attention to wait
             // until it finishes (wrap in cmd /c).
-            const auto code_and_output = cmd_execute_and_capture_output(
+            const auto maybe_code_and_output = cmd_execute_and_capture_output(
                 Command{"cmd"}
                     .string_arg("/c")
                     .string_arg("msiexec")
@@ -89,28 +80,24 @@ namespace
                 default_environment,
                 Encoding::Utf16);
 
-            if (code_and_output.exit_code == 0)
+            if (auto code_and_output = maybe_code_and_output.get())
             {
-                // Success
-                break;
-            }
+                if (code_and_output->exit_code == 0)
+                {
+                    // Success
+                    break;
+                }
 
-            // Retry up to 20 times
-            if (i < 19)
-            {
-                if (code_and_output.exit_code == 1618)
+                if (i < 19 && code_and_output->exit_code == 1618)
                 {
                     // ERROR_INSTALL_ALREADY_RUNNING
-                    print2("Another installation is in progress on the machine, sleeping 6s before retrying.\n");
+                    msg::println(msgAnotherInstallationInProgress);
                     std::this_thread::sleep_for(std::chrono::seconds(6));
                     continue;
                 }
             }
-            Checks::msg_exit_with_message(
-                VCPKG_LINE_INFO,
-                msg::format(msgMsiexecFailedToExtract, msg::path = archive, msg::exit_code = code_and_output.exit_code)
-                    .appendnl()
-                    .append_raw(code_and_output.output));
+
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, flatten(maybe_code_and_output, "msiexec").error());
         }
     }
 
@@ -119,27 +106,35 @@ namespace
         static bool recursion_limiter_sevenzip = false;
         Checks::check_exit(VCPKG_LINE_INFO, !recursion_limiter_sevenzip);
         recursion_limiter_sevenzip = true;
-        const auto code_and_output = cmd_execute_and_capture_output(Command{seven_zip}
-                                                                        .string_arg("x")
-                                                                        .string_arg(archive)
-                                                                        .string_arg(Strings::format("-o%s", to_path))
-                                                                        .string_arg("-y"));
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           code_and_output.exit_code == 0,
-                           "7zip failed while extracting '%s' with message:\n%s",
-                           archive,
-                           code_and_output.output);
+        const auto maybe_output =
+            flatten(cmd_execute_and_capture_output(Command{seven_zip}
+                                                       .string_arg("x")
+                                                       .string_arg(archive)
+                                                       .string_arg(Strings::format("-o%s", to_path))
+                                                       .string_arg("-y")),
+                    Tools::SEVEN_ZIP);
+
+        if (!maybe_output)
+        {
+            Checks::msg_exit_with_message(
+                VCPKG_LINE_INFO,
+                msg::format(msgPackageFailedtWhileExtracting, msg::value = "7zip", msg::path = archive)
+                    .append_raw('\n')
+                    .append(maybe_output.error()));
+        }
+
         recursion_limiter_sevenzip = false;
     }
 #endif // ^^^ _WIN32
 
-    void extract_archive_to_empty(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
+    void extract_archive_to_empty(
+        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
     {
         const auto ext = archive.extension();
 #if defined(_WIN32)
         if (Strings::case_insensitive_ascii_equals(ext, ".nupkg"))
         {
-            win32_extract_nupkg(paths, archive, to_path);
+            win32_extract_nupkg(tools, status_sink, archive, to_path);
         }
         else if (Strings::case_insensitive_ascii_equals(ext, ".msi"))
         {
@@ -148,37 +143,43 @@ namespace
         else if (Strings::case_insensitive_ascii_equals(ext, ".zip") ||
                  Strings::case_insensitive_ascii_equals(ext, ".7z"))
         {
-            extract_tar_cmake(paths.get_tool_exe(Tools::CMAKE), archive, to_path);
+            extract_tar_cmake(tools.get_tool_path(Tools::CMAKE, status_sink), archive, to_path);
         }
         else if (Strings::case_insensitive_ascii_equals(ext, ".exe"))
         {
             const Path filename = archive.filename();
             const Path stem = filename.stem();
             const Path to_archive = Path(archive.parent_path()) / stem;
-            win32_extract_self_extracting_7z(paths, archive, to_archive);
-            extract_archive_to_empty(paths, to_archive, to_path);
+            win32_extract_self_extracting_7z(fs, archive, to_archive);
+            extract_archive_to_empty(fs, tools, status_sink, to_archive, to_path);
         }
 #else
+        (void)fs;
         if (ext == ".zip")
         {
             const auto code =
-                cmd_execute(Command{"unzip"}.string_arg("-qqo").string_arg(archive), WorkingDirectory{to_path});
-            Checks::check_exit(VCPKG_LINE_INFO, code == 0, "unzip failed while extracting %s", archive);
+                cmd_execute(Command{"unzip"}.string_arg("-qqo").string_arg(archive), WorkingDirectory{to_path})
+                    .value_or_exit(VCPKG_LINE_INFO);
+            Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                   code == 0,
+                                   msgPackageFailedtWhileExtracting,
+                                   msg::value = "unzip",
+                                   msg::path = archive);
         }
 #endif
         else if (ext == ".gz" || ext == ".bz2" || ext == ".tgz")
         {
-            vcpkg::extract_tar(paths.get_tool_exe(Tools::TAR), archive, to_path);
+            vcpkg::extract_tar(tools.get_tool_path(Tools::TAR, status_sink), archive, to_path);
         }
         else
         {
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Unexpected archive extension: %s", ext);
+            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgUnexpectedExtension, msg::extension = ext);
         }
     }
 
-    Path extract_archive_to_temp_subdirectory(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
+    Path extract_archive_to_temp_subdirectory(
+        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
     {
-        Filesystem& fs = paths.get_filesystem();
         Path to_path_partial = to_path + ".partial";
 #if defined(_WIN32)
         to_path_partial += "." + std::to_string(GetCurrentProcessId());
@@ -186,7 +187,7 @@ namespace
 
         fs.remove_all(to_path_partial, VCPKG_LINE_INFO);
         fs.create_directories(to_path_partial, VCPKG_LINE_INFO);
-        extract_archive_to_empty(paths, archive, to_path_partial);
+        extract_archive_to_empty(fs, tools, status_sink, archive, to_path_partial);
         return to_path_partial;
     }
 }
@@ -194,31 +195,42 @@ namespace
 namespace vcpkg
 {
 #ifdef _WIN32
-    void win32_extract_self_extracting_7z(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
+    void win32_extract_self_extracting_7z(Filesystem& fs, const Path& archive, const Path& to_path)
     {
         constexpr static const char header_7z[] = "7z\xBC\xAF\x27\x1C";
 
         const Path stem = archive.stem();
         const auto subext = stem.extension();
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           Strings::case_insensitive_ascii_equals(subext, ".7z"),
-                           "Unable to extract 7z archive from Installer %s. Missing '.7z.exe' extension.",
-                           archive);
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               Strings::case_insensitive_ascii_equals(subext, ".7z"),
+                               msg::format(msgPackageFailedtWhileExtracting, msg::value = "7zip", msg::path = archive)
+                                   .append(msgMissingExtension, msg::extension = ".7.exe"));
 
-        Filesystem& fs = paths.get_filesystem();
         auto contents = fs.read_contents(archive, VCPKG_LINE_INFO);
         const auto pos = contents.find(header_7z);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           pos != std::string::npos,
-                           "Unable to extract 7z archive from Installer %s. Unable to find 7z header.",
-                           archive);
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               pos != std::string::npos,
+                               msg::format(msgPackageFailedtWhileExtracting, msg::value = "7zip", msg::path = archive)
+                                   .append(msgMissing7zHeader));
+
         contents = contents.substr(pos);
-        fs.write_contents(to_path, std::move(contents), VCPKG_LINE_INFO);
+        fs.write_contents(to_path, contents, VCPKG_LINE_INFO);
     }
 
-    void win32_extract_bootstrap_zip(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
+    // We are trying to bootstrap vcpkg's copy of CMake which comes in a zipped file.
+    // If this is successful, we'll use the downloaded CMake for most extractions.
+    // We will also extract a portable 7z (using the bootstrapped CMake) to use when performance is required.
+    //
+    // We use the following methods to attempt this bootstrap, in order:
+    // 1) Search for a System32/tar.exe (available on Windows 10+)
+    //     tar.exe unpacks cmake.zip -> cmake.exe unpacks 7z.7z
+    // 2) Search for a user installed CMake on PATH and Program Files [(x86)]
+    //     (user) cmake.exe unpacks cmake.zip -> (vcpkg) cmake.exe unpacks 7z.7z
+    // 3) As a last resource, install 7zip using a MSI installer
+    //     msiexec installs 7zip.msi -> 7zip unpacks cmake.zip -> cmake.exe unpacks 7z.7z
+    void win32_extract_bootstrap_zip(
+        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
     {
-        Filesystem& fs = paths.get_filesystem();
         fs.remove_all(to_path, VCPKG_LINE_INFO);
         Path to_path_partial = to_path + ".partial." + std::to_string(GetCurrentProcessId());
 
@@ -228,18 +240,22 @@ namespace vcpkg
         if (fs.exists(tar_path, IgnoreErrors{}))
         {
             // On Windows 10, tar.exe is in the box.
-
-            // Example:
-            // tar unpacks cmake unpacks 7zip unpacks git
             extract_tar(tar_path, archive, to_path_partial);
         }
         else
         {
-            // On Windows <10, we attempt to use msiexec to unpack 7zip.
-
-            // Example:
-            // msiexec unpacks 7zip_msi unpacks cmake unpacks 7zip unpacks git
-            win32_extract_with_seven_zip(paths.get_tool_exe(Tools::SEVEN_ZIP_MSI), archive, to_path_partial);
+            auto maybe_cmake_tool = find_system_cmake(fs);
+            if (maybe_cmake_tool)
+            {
+                // If the user has a CMake version installed we can use that to unpack.
+                extract_tar_cmake(maybe_cmake_tool.value_or_exit(VCPKG_LINE_INFO), archive, to_path_partial);
+            }
+            else
+            {
+                // On Windows <10, we attempt to use msiexec to unpack 7zip.
+                win32_extract_with_seven_zip(
+                    tools.get_tool_path(Tools::SEVEN_ZIP_MSI, status_sink), archive, to_path_partial);
+            }
         }
         fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
     }
@@ -249,7 +265,11 @@ namespace vcpkg
     {
         const auto code =
             cmd_execute(Command{tar_tool}.string_arg("xzf").string_arg(archive), WorkingDirectory{to_path});
-        Checks::check_exit(VCPKG_LINE_INFO, code == 0, "tar failed while extracting %s", archive);
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               succeeded(code),
+                               msgPackageFailedtWhileExtracting,
+                               msg::value = "tar",
+                               msg::path = archive);
     }
 
     void extract_tar_cmake(const Path& cmake_tool, const Path& archive, const Path& to_path)
@@ -258,14 +278,18 @@ namespace vcpkg
         const auto code =
             cmd_execute(Command{cmake_tool}.string_arg("-E").string_arg("tar").string_arg("xzf").string_arg(archive),
                         WorkingDirectory{to_path});
-        Checks::check_exit(VCPKG_LINE_INFO, code == 0, "tar failed while extracting %s", archive);
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               succeeded(code),
+                               msgPackageFailedtWhileExtracting,
+                               msg::value = "CMake",
+                               msg::path = archive);
     }
 
-    void extract_archive(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
+    void extract_archive(
+        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
     {
-        Filesystem& fs = paths.get_filesystem();
         fs.remove_all(to_path, VCPKG_LINE_INFO);
-        Path to_path_partial = extract_archive_to_temp_subdirectory(paths, archive, to_path);
+        Path to_path_partial = extract_archive_to_temp_subdirectory(fs, tools, status_sink, archive, to_path);
         fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
     }
 
@@ -295,83 +319,92 @@ namespace vcpkg
 #endif
     }
 
-    int compress_directory_to_zip(const VcpkgPaths& paths, const Path& source, const Path& destination)
+    ExpectedL<Unit> compress_directory_to_zip(
+        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& source, const Path& destination)
     {
-        auto& fs = paths.get_filesystem();
         fs.remove(destination, VCPKG_LINE_INFO);
 #if defined(_WIN32)
-        auto&& seven_zip_exe = paths.get_tool_exe(Tools::SEVEN_ZIP);
+        auto&& seven_zip_exe = tools.get_tool_path(Tools::SEVEN_ZIP, status_sink);
 
-        return cmd_execute_and_capture_output(
-                   Command{seven_zip_exe}.string_arg("a").string_arg(destination).string_arg(source / "*"),
-                   default_working_directory,
-                   get_clean_environment())
-            .exit_code;
-
+        return flatten(cmd_execute_and_capture_output(
+                           Command{seven_zip_exe}.string_arg("a").string_arg(destination).string_arg(source / "*"),
+                           default_working_directory,
+                           get_clean_environment()),
+                       Tools::SEVEN_ZIP);
 #else
-        return cmd_execute_clean(Command{"zip"}
-                                     .string_arg("--quiet")
-                                     .string_arg("-y")
-                                     .string_arg("-r")
-                                     .string_arg(destination)
-                                     .string_arg("*")
-                                     .string_arg("--exclude")
-                                     .string_arg(".DS_Store"),
-                                 WorkingDirectory{source});
+        (void)tools;
+        (void)status_sink;
+        return flatten(cmd_execute_and_capture_output(Command{"zip"}
+                                                          .string_arg("--quiet")
+                                                          .string_arg("-y")
+                                                          .string_arg("-r")
+                                                          .string_arg(destination)
+                                                          .string_arg("*")
+                                                          .string_arg("--exclude")
+                                                          .string_arg(".DS_Store"),
+                                                      WorkingDirectory{source}),
+                       "zip");
 #endif
     }
 
-    Command decompress_zip_archive_cmd(const VcpkgPaths& paths, const Path& dst, const Path& archive_path)
+    Command decompress_zip_archive_cmd(const ToolCache& tools,
+                                       MessageSink& status_sink,
+                                       const Path& dst,
+                                       const Path& archive_path)
     {
         Command cmd;
 #if defined(_WIN32)
-        auto&& seven_zip_exe = paths.get_tool_exe(Tools::SEVEN_ZIP);
+        auto&& seven_zip_exe = tools.get_tool_path(Tools::SEVEN_ZIP, status_sink);
         cmd.string_arg(seven_zip_exe)
             .string_arg("x")
             .string_arg(archive_path)
             .string_arg("-o" + dst.native())
             .string_arg("-y");
 #else
-        (void)paths;
+        (void)tools;
+        (void)status_sink;
         cmd.string_arg("unzip").string_arg("-qq").string_arg(archive_path).string_arg("-d" + dst.native());
 #endif
         return cmd;
     }
 
-    std::vector<ExitCodeAndOutput> decompress_in_parallel(View<Command> jobs)
+    std::vector<ExpectedL<Unit>> decompress_in_parallel(View<Command> jobs)
     {
         auto results =
             cmd_execute_and_capture_output_parallel(jobs, default_working_directory, get_clean_environment());
 #ifdef __APPLE__
-        int i = 0;
-        for (auto& result : results)
+        size_t i = 0;
+        for (auto& maybe_result : results)
         {
-            if (result.exit_code == 127 && result.output.empty())
+            if (const auto result = maybe_result.get())
             {
-                Debug::print(jobs[i].command_line(), ": pclose returned 127, try again \n");
-                result = cmd_execute_and_capture_output(jobs[i], default_working_directory, get_clean_environment());
+                if (result->exit_code == 127 && result->output.empty())
+                {
+                    Debug::print(jobs[i].command_line(), ": pclose returned 127, try again \n");
+                    maybe_result =
+                        cmd_execute_and_capture_output(jobs[i], default_working_directory, get_clean_environment());
+                }
             }
             ++i;
         }
 #endif
-        return results;
+
+        std::vector<ExpectedL<Unit>> filtered_results;
+        filtered_results.reserve(jobs.size());
+        for (std::size_t idx = 0; idx < jobs.size(); ++idx)
+        {
+            filtered_results.push_back(flatten(results[idx], jobs[idx].command_line()));
+        }
+
+        return filtered_results;
     }
 
     void decompress_in_parallel(LineInfo li, View<Command> jobs)
     {
         auto results = decompress_in_parallel(jobs);
-        int i = 0;
-        for (auto& result : results)
+        for (const auto& result : results)
         {
-            if (result.exit_code != 0)
-            {
-                Checks::exit_with_message(li,
-                                          Strings::concat("Failed to unzip file with command `",
-                                                          jobs[i].command_line(),
-                                                          "` exit code: ",
-                                                          result.exit_code));
-            }
-            ++i;
+            result.value_or_exit(li);
         }
     }
 

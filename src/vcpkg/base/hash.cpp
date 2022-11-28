@@ -18,12 +18,6 @@
 
 namespace vcpkg::Hash
 {
-    DECLARE_AND_REGISTER_MESSAGE(
-        HashFileFailureToRead,
-        (msg::path),
-        "Printed after ErrorMessage and before the specific failing filesystem operation (like file not found)",
-        "failed to read file '{path}' for hashing: ");
-
     using uchar = unsigned char;
 
     Optional<Algorithm> algorithm_from_string(StringView sv) noexcept
@@ -41,7 +35,7 @@ namespace vcpkg::Hash
     }
 
     template<class UIntTy>
-    auto top_bits(UIntTy x) -> std::enable_if_t<std::is_unsigned<UIntTy>::value, uchar>
+    auto top_bits(UIntTy x) -> std::enable_if_t<std::is_unsigned_v<UIntTy>, uchar>
     {
         return static_cast<uchar>(x >> ((sizeof(x) - 1) * 8));
     }

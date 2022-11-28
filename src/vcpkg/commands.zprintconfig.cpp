@@ -27,7 +27,7 @@ namespace vcpkg::Commands::Z_PrintConfig
         }
     }
 
-    void PrintConfigCommand::perform_and_exit(const VcpkgCmdArguments&,
+    void PrintConfigCommand::perform_and_exit(const VcpkgCmdArguments& args,
                                               const VcpkgPaths& paths,
                                               Triplet default_triplet,
                                               Triplet host_triplet) const
@@ -38,6 +38,10 @@ namespace vcpkg::Commands::Z_PrintConfig
         obj.insert("host_triplet", host_triplet.canonical_name());
         obj.insert("vcpkg_root", paths.root.native());
         obj.insert("tools", paths.tools.native());
+        if (auto ci_env = args.detected_ci_environment().get())
+        {
+            obj.insert("detected_ci_environment", *ci_env);
+        }
         if (auto i = paths.maybe_installed().get())
         {
             obj.insert("installed", i->root().native());
@@ -50,7 +54,7 @@ namespace vcpkg::Commands::Z_PrintConfig
             obj.insert("manifest_mode_enabled", Json::Value::boolean(paths.manifest_mode_enabled()));
         }
         obj.sort_keys();
-        print2(Json::stringify(obj, {}), '\n');
+        msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(obj) + "\n");
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 }

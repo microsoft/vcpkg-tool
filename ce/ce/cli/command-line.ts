@@ -69,10 +69,6 @@ class Ctx {
   }
 }
 
-export function resolvePath(v: string | undefined) {
-  return v?.startsWith('.') ? resolve(v) : v;
-}
-
 export class CommandLine {
   readonly commands = new Array<Command>();
   readonly inputs = new Array<string>();
@@ -82,18 +78,21 @@ export class CommandLine {
   #home?: string;
   get homeFolder() {
     // home folder is determined by
-    // command line (--vcpkg_root, --vcpkg-root )
+    // command line ( --vcpkg-root )
     // environment (VCPKG_ROOT)
     // default 1 $HOME/.vcpkg
     // default 2 <tmpdir>/.vcpkg
 
     // note, this does not create the folder, that would happen when the session is initialized.
 
-    return this.#home || (this.#home = resolvePath(
+    return this.#home || (this.#home = resolve(
       this.switches['vcpkg-root']?.[0] ||
-      this.switches['vcpkg_root']?.[0] ||
       process.env['VCPKG_ROOT'] ||
       join(process.env['HOME'] || process.env['USERPROFILE'] || tmpdir(), '.vcpkg')));
+  }
+
+  get vcpkgCommand() {
+    return this.switches['z-vcpkg-command']?.[0];
   }
 
   get force() {
@@ -104,12 +103,20 @@ export class CommandLine {
     return !!this.switches['debug'];
   }
 
-  get verbose() {
-    return !!this.switches['verbose'];
+  get vcpkgArtifactsRoot() {
+    return this.switches['z-vcpkg-artifacts-root']?.[0];
   }
 
-  get fromVCPKG() {
-    return !!this.switches['from-vcpkg'];
+  get vcpkgDownloads() {
+    return this.switches['z-vcpkg-downloads']?.[0];
+  }
+
+  get vcpkgRegistriesCache() {
+    return this.switches['z-vcpkg-registries-cache']?.[0];
+  }
+
+  get telemetryFile() {
+    return this.switches['z-telemetry-file']?.[0];
   }
 
   get language() {

@@ -3,6 +3,7 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
+#include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
 #include <ctime>
@@ -12,31 +13,13 @@
 #endif
 
 #if defined(_WIN32)
+#include <lmcons.h>
+#include <winbase.h>
 // needed for mingw
 #include <processenv.h>
 #else
 extern char** environ;
 #endif
-
-namespace
-{
-    namespace msg = vcpkg::msg;
-    DECLARE_AND_REGISTER_MESSAGE(ProcessorArchitectureW6432Malformed,
-                                 (msg::arch),
-                                 "",
-                                 "Failed to parse %PROCESSOR_ARCHITEW6432% ({arch}) as a valid CPU architecture. "
-                                 "Falling back to %PROCESSOR_ARCHITECTURE%.");
-
-    DECLARE_AND_REGISTER_MESSAGE(ProcessorArchitectureMissing,
-                                 (),
-                                 "",
-                                 "The required environment variable %PROCESSOR_ARCHITECTURE% is missing.");
-
-    DECLARE_AND_REGISTER_MESSAGE(ProcessorArchitectureMalformed,
-                                 (msg::arch),
-                                 "",
-                                 "Failed to parse %PROCESSOR_ARCHITECTURE% ({arch}) as a valid CPU architecture.");
-}
 
 namespace vcpkg
 {
@@ -46,7 +29,7 @@ namespace vcpkg
         return ::_getpid();
 #else
         return ::getpid();
-#endif
+#endif // ^^^ !_WIN32
     }
 
     Optional<CPUArchitecture> to_cpu_architecture(StringView arch)
@@ -80,44 +63,64 @@ namespace vcpkg
     CPUArchitecture get_host_processor()
     {
 #if defined(_WIN32)
-        auto raw_identifier = get_environment_variable("PROCESSOR_IDENTIFIER");
-        if (const auto id = raw_identifier.get())
+        const HMODULE hKernel32 = ::GetModuleHandleW(L"kernel32.dll");
+        if (hKernel32)
         {
-            // might be either ARMv8 (64-bit) or ARMv9 (64-bit)
-            if (Strings::contains(*id, "ARMv") && Strings::contains(*id, "(64-bit)"))
+            BOOL(__stdcall* const isWow64Process2)
+            (HANDLE /* hProcess */, USHORT* /* pProcessMachine */, USHORT * /*pNativeMachine*/) =
+                reinterpret_cast<decltype(isWow64Process2)>(::GetProcAddress(hKernel32, "IsWow64Process2"));
+            if (isWow64Process2)
             {
-                return CPUArchitecture::ARM64;
+                USHORT processMachine;
+                USHORT nativeMachine;
+                if (isWow64Process2(::GetCurrentProcess(), &processMachine, &nativeMachine))
+                {
+                    Debug::println("Detecting host with IsWow64Process2");
+                    switch (nativeMachine)
+                    {
+                        case 0x014c: // IMAGE_FILE_MACHINE_I386
+                            return CPUArchitecture::X86;
+                        case 0x01c0: // IMAGE_FILE_MACHINE_ARM
+                        case 0x01c2: // IMAGE_FILE_MACHINE_THUMB
+                        case 0x01c4: // IMAGE_FILE_MACHINE_ARMNT
+                            return CPUArchitecture::ARM;
+                        case 0x8664: // IMAGE_FILE_MACHINE_AMD64
+                            return CPUArchitecture::X64;
+                        case 0xAA64: // IMAGE_FILE_MACHINE_ARM64
+                            return CPUArchitecture::ARM64;
+                        default: Checks::unreachable(VCPKG_LINE_INFO);
+                    }
+                }
             }
         }
 
-        auto raw_w6432 = get_environment_variable("PROCESSOR_ARCHITEW6432");
-        if (const auto w6432 = raw_w6432.get())
+        Debug::println("Could not use IsWow64Process2, trying IsWow64Process");
+        BOOL isWow64Legacy;
+        if (::IsWow64Process(::GetCurrentProcess(), &isWow64Legacy))
         {
-            const auto parsed_w6432 = to_cpu_architecture(*w6432);
-            if (const auto parsed = parsed_w6432.get())
+            if (isWow64Legacy)
             {
-                return *parsed;
+                Debug::println("Is WOW64, assuming host is X64");
+                return CPUArchitecture::X64;
             }
-
-            msg::print(Color::warning, msgProcessorArchitectureW6432Malformed, msg::arch = *w6432);
         }
-
-        const auto raw_processor_architecture = get_environment_variable("PROCESSOR_ARCHITECTURE");
-        const auto processor_architecture = raw_processor_architecture.get();
-        if (!processor_architecture)
+        else
         {
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgProcessorArchitectureMissing);
+            Debug::println("IsWow64Process failed, falling back to compiled architecture.");
         }
 
-        const auto raw_parsed_processor_architecture = to_cpu_architecture(*processor_architecture);
-        if (const auto parsed_processor_architecture = raw_parsed_processor_architecture.get())
-        {
-            return *parsed_processor_architecture;
-        }
-
-        Checks::msg_exit_with_message(
-            VCPKG_LINE_INFO, msgProcessorArchitectureMalformed, msg::arch = *processor_architecture);
-#else // ^^^ defined(_WIN32) / !defined(_WIN32) vvv
+#if defined(_M_IX86)
+        return CPUArchitecture::X86;
+#elif defined(_M_ARM)
+        return CPUArchitecture::ARM;
+#elif defined(_M_ARM64)
+        return CPUArchitecture::ARM64;
+#elif defined(_M_X64)
+        return CPUArchitecture::X64;
+#else
+#error "Unknown host architecture"
+#endif // architecture
+#else  // ^^^ defined(_WIN32) / !defined(_WIN32) vvv
 #if defined(__x86_64__) || defined(_M_X64)
 #if defined(__APPLE__)
         // check for rosetta 2 emulation
@@ -359,10 +362,39 @@ namespace vcpkg
 #endif
     }
 
+    const ExpectedS<Path>& get_user_configuration_home() noexcept
+    {
+#if defined(_WIN32)
+        static const ExpectedS<Path> result =
+            get_appdata_local().map([](const Path& appdata_local) { return appdata_local / "vcpkg"; });
+#else
+        static const ExpectedS<Path> result = Path(get_environment_variable("HOME").value_or("/var")) / ".vcpkg";
+#endif
+        return result;
+    }
+
 #if defined(_WIN32)
     static bool is_string_keytype(const DWORD hkey_type)
     {
         return hkey_type == REG_SZ || hkey_type == REG_MULTI_SZ || hkey_type == REG_EXPAND_SZ;
+    }
+
+    std::wstring get_username()
+    {
+        DWORD buffer_size = UNLEN + 1;
+        std::wstring buffer;
+        buffer.resize(static_cast<size_t>(buffer_size));
+        GetUserNameW(buffer.data(), &buffer_size);
+        buffer.resize(buffer_size);
+        return buffer;
+    }
+
+    bool test_registry_key(void* base_hkey, StringView sub_key)
+    {
+        HKEY k = nullptr;
+        const LSTATUS ec =
+            RegOpenKeyExW(reinterpret_cast<HKEY>(base_hkey), Strings::to_utf16(sub_key).c_str(), 0, KEY_READ, &k);
+        return (ERROR_SUCCESS == ec);
     }
 
     Optional<std::string> get_registry_string(void* base_hkey, StringView sub_key, StringView valuename)
@@ -477,6 +509,23 @@ namespace vcpkg
         }
 
         return nullopt;
+    }
+
+    std::string get_host_os_name()
+    {
+#if defined(_WIN32)
+        return "windows";
+#elif defined(__APPLE__)
+        return "osx";
+#elif defined(__FreeBSD__)
+        return "freebsd";
+#elif defined(__OpenBSD__)
+        return "openbsd";
+#elif defined(__linux__)
+        return "linux";
+#else
+        return "unknown"
+#endif
     }
 }
 

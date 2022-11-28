@@ -3,12 +3,9 @@
 #include <vcpkg-test/util.h>
 
 using namespace vcpkg;
-using Test::unwrap;
 
 TEST_CASE ("spdx maximum serialization", "[spdx]")
 {
-    using namespace Dependencies;
-
     PackageSpec spec{"zlib", Test::ARM_UWP};
     SourceControlFileAndLocation scfl;
     scfl.registry_location = "git://some-vcs-url";
@@ -24,7 +21,7 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
     cpgh.version_scheme = VersionScheme::Relaxed;
 
     InstallPlanAction ipa(spec, scfl, RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {});
-    auto& abi = *(ipa.abi_info = Build::AbiInfo{}).get();
+    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "ABIHASH";
 
     const auto sbom =
@@ -35,7 +32,7 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
                          "https://test-document-namespace",
                          {});
 
-    auto expected = unwrap(Json::parse(R"json(
+    auto expected = Json::parse(R"json(
 {
   "$schema": "https://raw.githubusercontent.com/spdx/spdx-spec/v2.2.1/schemas/spdx-schema.json",
   "spdxVersion": "SPDX-2.2",
@@ -159,16 +156,15 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
       "copyrightText": "NOASSERTION"
     }
   ]
-})json"));
+})json")
+                        .value_or_exit(VCPKG_LINE_INFO);
 
-    auto doc = unwrap(Json::parse(sbom));
+    auto doc = Json::parse(sbom).value_or_exit(VCPKG_LINE_INFO);
     Test::check_json_eq(expected.first, doc.first);
 }
 
 TEST_CASE ("spdx minimum serialization", "[spdx]")
 {
-    using namespace Dependencies;
-
     PackageSpec spec{"zlib", Test::ARM_UWP};
     SourceControlFileAndLocation scfl;
     auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
@@ -179,7 +175,7 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
     cpgh.version_scheme = VersionScheme::String;
 
     InstallPlanAction ipa(spec, scfl, RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {});
-    auto& abi = *(ipa.abi_info = Build::AbiInfo{}).get();
+    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "deadbeef";
 
     const auto sbom = create_spdx_sbom(ipa,
@@ -189,7 +185,7 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
                                        "https://test-document-namespace-2",
                                        {});
 
-    auto expected = unwrap(Json::parse(R"json(
+    auto expected = Json::parse(R"json(
 {
   "$schema": "https://raw.githubusercontent.com/spdx/spdx-spec/v2.2.1/schemas/spdx-schema.json",
   "spdxVersion": "SPDX-2.2",
@@ -288,16 +284,15 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
       "copyrightText": "NOASSERTION"
     }
   ]
-})json"));
+})json")
+                        .value_or_exit(VCPKG_LINE_INFO);
 
-    auto doc = unwrap(Json::parse(sbom));
+    auto doc = Json::parse(sbom).value_or_exit(VCPKG_LINE_INFO);
     Test::check_json_eq(expected.first, doc.first);
 }
 
 TEST_CASE ("spdx concat resources", "[spdx]")
 {
-    using namespace Dependencies;
-
     PackageSpec spec{"zlib", Test::ARM_UWP};
     SourceControlFileAndLocation scfl;
     auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
@@ -308,7 +303,7 @@ TEST_CASE ("spdx concat resources", "[spdx]")
     cpgh.version_scheme = VersionScheme::String;
 
     InstallPlanAction ipa(spec, scfl, RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {});
-    auto& abi = *(ipa.abi_info = Build::AbiInfo{}).get();
+    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "deadbeef";
 
     auto doc1 = Json::parse(R"json(
@@ -328,7 +323,7 @@ TEST_CASE ("spdx concat resources", "[spdx]")
 
     const auto sbom = create_spdx_sbom(ipa, {}, {}, "now+1", "ns", {std::move(doc1), std::move(doc2)});
 
-    auto expected = unwrap(Json::parse(R"json(
+    auto expected = Json::parse(R"json(
 {
   "$schema": "https://raw.githubusercontent.com/spdx/spdx-spec/v2.2.1/schemas/spdx-schema.json",
   "spdxVersion": "SPDX-2.2",
@@ -389,8 +384,9 @@ TEST_CASE ("spdx concat resources", "[spdx]")
     "f4",
     "f5"
   ]
-})json"));
+})json")
+                        .value_or_exit(VCPKG_LINE_INFO);
 
-    auto doc = unwrap(Json::parse(sbom));
+    auto doc = Json::parse(sbom).value_or_exit(VCPKG_LINE_INFO);
     Test::check_json_eq(expected.first, doc.first);
 }

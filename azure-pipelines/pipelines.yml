@@ -1,6 +1,9 @@
+variables:
+- name: Codeql.Enabled
+  value: true
 jobs:
 - job: linux_gcc_9
-  displayName: 'Ubuntu 20.04 with GCC 9, plus vcpkg-ce'
+  displayName: 'Ubuntu 20.04 with GCC 9, plus vcpkg-artifacts'
   pool:
     vmImage: 'ubuntu-20.04'
   variables:
@@ -38,10 +41,10 @@ jobs:
           git status
           exit 1
         fi
-      displayName: 'Rush install, build and test vcpkg-ce'
+      displayName: 'Rush install, build and test vcpkg-artifacts'
     - bash: |
         export CXXFLAGS="-fprofile-arcs -ftest-coverage -fPIC -O0"
-        cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=ON -B build.amd64.debug
+        cmake '-DCMAKE_CXX_FLAGS=-fsanitize=undefined -fsanitize=address' -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -B build.amd64.debug
         make -j 2 -C build.amd64.debug
       displayName: "Build vcpkg with CMake"
       failOnStderr: true
@@ -89,7 +92,7 @@ jobs:
         git -C "$VCPKG_ROOT" checkout `cat vcpkg-init/vcpkg-scripts-sha.txt`
       displayName: "Clone vcpkg repo to serve as root"
     - bash: |
-        cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -B build.amd64.debug
+        cmake '-DCMAKE_CXX_FLAGS=-fsanitize=undefined -fsanitize=address' -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -B build.amd64.debug
         make -j 2 -C build.amd64.debug
       displayName: "Build vcpkg with CMake"
       failOnStderr: true
@@ -110,6 +113,8 @@ jobs:
     value: $(Build.ArtifactStagingDirectory)\format.diff
   - name: 'VCPKG_ROOT'
     value: $(Build.SourcesDirectory)\vcpkg-root
+  - name: Codeql.BuildIdentifier
+    value: vcpkg_cpp
   steps:
     - task: Powershell@2
       displayName: "Clone vcpkg repo to serve as root"
@@ -120,13 +125,15 @@ jobs:
           $sha = (Get-Content vcpkg-init/vcpkg-scripts-sha.txt -Raw).Trim()
           git clone https://github.com/microsoft/vcpkg $env:VCPKG_ROOT -n
           git -C "$env:VCPKG_ROOT" checkout $sha
+    - task: CodeQL3000Init@0
+      displayName: 'CodeQL Initialize'
     - task: CmdLine@2
       displayName: "Build vcpkg with CMake"
       inputs:
         script: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x86 -host_arch=x86
           rmdir /s /q build.x86.debug > nul 2> nul
-          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=ON -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -B build.x86.debug
+          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -B build.x86.debug
           ninja.exe -C build.x86.debug
         failOnStderr: true
     - script: build.x86.debug\vcpkg-test.exe
@@ -149,7 +156,7 @@ jobs:
       displayName: 'Generate the Messages File'
       inputs:
         script: |
-          build.x86.debug\vcpkg.exe x-generate-default-message-map --no-allow-incorrect-comments locales/messages.json
+          build.x86.debug\vcpkg.exe x-generate-default-message-map locales/messages.json
           build.x86.debug\vcpkg.exe x-generate-default-message-map --no-output-comments locales/messages.en.json
     - task: Powershell@2
       displayName: 'Create Diff'
@@ -163,3 +170,5 @@ jobs:
       inputs:
         PathtoPublish: '$(DiffFile)'
         ArtifactName: 'format.diff'
+    - task: CodeQL3000Finalize@0
+      displayName: 'CodeQL Finalize'

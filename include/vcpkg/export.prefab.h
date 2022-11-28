@@ -8,6 +8,14 @@
 
 #include <vector>
 
+// glibc defines major and minor in sys/types.h, and should not
+#ifdef major
+#undef major
+#endif
+#ifdef minor
+#undef minor
+#endif
+
 namespace vcpkg::Export::Prefab
 {
     constexpr int kFragmentSize = 3;
@@ -25,11 +33,11 @@ namespace vcpkg::Export::Prefab
     struct NdkVersion
     {
         NdkVersion(int _major, int _minor, int _patch) : m_major{_major}, m_minor{_minor}, m_patch{_patch} { }
-        int major() { return this->m_major; }
-        int minor() { return this->m_minor; }
-        int patch() { return this->m_patch; }
-        std::string to_string();
-        void to_string(std::string& out);
+        int major() const { return this->m_major; }
+        int minor() const { return this->m_minor; }
+        int patch() const { return this->m_patch; }
+        std::string to_string() const;
+        void to_string(std::string& out) const;
 
         friend bool operator==(const NdkVersion& lhs, const NdkVersion& rhs)
         {
@@ -49,14 +57,14 @@ namespace vcpkg::Export::Prefab
         int api;
         int ndk;
         std::string stl;
-        std::string to_string();
+        std::string to_string() const;
     };
 
     struct PlatformModuleMetadata
     {
         std::vector<std::string> export_libraries;
         std::string library_name;
-        std::string to_json();
+        std::string to_json() const;
     };
 
     struct ModuleMetadata
@@ -64,7 +72,7 @@ namespace vcpkg::Export::Prefab
         std::vector<std::string> export_libraries;
         std::string library_name;
         PlatformModuleMetadata android;
-        std::string to_json();
+        std::string to_json() const;
     };
 
     struct PackageMetadata
@@ -73,10 +81,10 @@ namespace vcpkg::Export::Prefab
         int schema;
         std::vector<std::string> dependencies;
         std::string version;
-        std::string to_json();
+        std::string to_json() const;
     };
 
-    void do_export(const std::vector<Dependencies::ExportPlanAction>& export_plan,
+    void do_export(const std::vector<ExportPlanAction>& export_plan,
                    const VcpkgPaths& paths,
                    const Options& prefab_options,
                    const Triplet& triplet);

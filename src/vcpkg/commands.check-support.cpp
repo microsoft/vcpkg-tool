@@ -66,34 +66,37 @@ namespace vcpkg::Commands
                 if (is_top_level_supported)
                 {
                     // supported!
-                    vcpkg::printf("port %s is supported\n", full_port_name(p));
+                    msg::println(msgSupportedPort, msg::package_name = full_port_name(p));
                 }
                 else
                 {
-                    vcpkg::printf("port %s is not supported (supports: \"%s\")\n", full_port_name(p), p.supports_expr);
+                    msg::println(msg::format(msgUnsupportedPort, msg::package_name = full_port_name(p))
+                                     .append_raw('\n')
+                                     .append(msgPortSupportsField, msg::supports_expression = p.supports_expr));
                 }
 
                 return;
             }
-
+            auto message = msg::format(msgUnsupportedPort, msg::package_name = full_port_name(p)).append_raw('\n');
             if (is_top_level_supported)
             {
-                vcpkg::printf("port %s is not supported due to the following dependencies:\n", full_port_name(p));
+                message.append(msgPortDependencyConflict, msg::package_name = full_port_name(p));
             }
             else
             {
-                vcpkg::printf(
-                    "port %s is not supported (supports: \"%s\"), and has the following unsupported dependencies:\n",
-                    full_port_name(p),
-                    p.supports_expr);
+                message.append(msgPortSupportsField, msg::supports_expression = p.supports_expr)
+                    .append_raw('\n')
+                    .append(msgPortDependencyConflict, msg::package_name = full_port_name(p));
             }
 
             for (const Port& reason : reasons)
             {
-                vcpkg::printf("  - dependency %s is not supported (supports: \"%s\")\n",
-                              full_port_name(reason),
-                              reason.supports_expr);
+                message.append_raw('\n')
+                    .append_indent()
+                    .append(msgUnsupportedPortDependency, msg::value = full_port_name(p))
+                    .append(msgPortSupportsField, msg::supports_expression = reason.supports_expr);
             }
+            msg::println(message);
         }
     }
 
@@ -107,18 +110,17 @@ namespace vcpkg::Commands
         Json::Array json_to_print; // only used when `use_json`
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
-            return Input::check_and_get_full_package_spec(
+            return check_and_get_full_package_spec(
                 std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
 
-        PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
+        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
 
         // for each spec in the user-requested specs, check all dependencies
         for (const auto& user_spec : specs)
         {
-            auto action_plan =
-                Dependencies::create_feature_install_plan(provider, *cmake_vars, {&user_spec, 1}, {}, {host_triplet});
+            auto action_plan = create_feature_install_plan(provider, *cmake_vars, {&user_spec, 1}, {}, {host_triplet});
 
             cmake_vars->load_tag_vars(action_plan, provider, host_triplet);
 
@@ -184,7 +186,7 @@ namespace vcpkg::Commands
 
         if (use_json)
         {
-            print2(Json::stringify(json_to_print, {}));
+            print2(Json::stringify(json_to_print));
         }
     }
 

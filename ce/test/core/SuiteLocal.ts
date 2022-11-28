@@ -41,7 +41,11 @@ export class SuiteLocal {
   constructor() {
     this.tempFolder = uniqueTempFolder();
     this.session = new Session(this.tempFolder, <any>{}, {
+      vcpkgCommand: undefined,
       homeFolder: join(this.tempFolder, 'vcpkg_root'),
+      vcpkgArtifactsRoot: join(this.tempFolder, 'artifacts'),
+      vcpkgDownloads: join(this.tempFolder, 'downloads'),
+      vcpkgRegistriesCache: join(this.tempFolder, 'registries'),
     }, {});
 
     this.fs = new LocalFileSystem(this.session);
@@ -50,7 +54,7 @@ export class SuiteLocal {
     this.resourcesFolderUri = this.fs.file(this.resourcesFolder);
     // set the debug=1 in the environment to have the debug messages dumped during testing
     if (process.env['DEBUG'] || process.env['debug']) {
-      this.session.channels.on('debug', (text, context, msec) => {
+      this.session.channels.on('debug', (text, msec) => {
         SuiteLocal.log(`[${msec}msec] ${text}`);
       });
     }

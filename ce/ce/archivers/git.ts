@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { InstallEvents } from '../interfaces/events';
-import { Session } from '../session';
+import { UnpackEvents } from '../interfaces/events';
 import { Credentials } from '../util/credentials';
 import { execute } from '../util/exec-cmd';
 import { isFilePath, Uri } from '../util/uri';
@@ -14,16 +13,12 @@ export interface CloneOptions {
 
 /** @internal */
 export class Git {
-  #session: Session;
   #toolPath: string;
-  #targetFolder: string;
-  #environment: NodeJS.ProcessEnv;
+  #targetFolder: Uri;
 
-  constructor(session: Session, toolPath: string, environment: NodeJS.ProcessEnv, targetFolder: Uri) {
-    this.#session = session;
+  constructor(toolPath: string, targetFolder: Uri) {
     this.#toolPath = toolPath;
-    this.#targetFolder = targetFolder.fsPath;
-    this.#environment = environment;
+    this.#targetFolder = targetFolder;
   }
 
   /**
@@ -32,38 +27,24 @@ export class Git {
    * @param events The events that may need to be updated in order to track progress.
    * @param options The options that will modify how the clone will be called.
    * @returns Boolean representing whether the execution was completed without error, this is not necessarily
-   *  a gaurantee that the clone did what we expected.
+   *  a guarantee that the clone did what we expected.
    */
-  async clone(repo: Uri, events: Partial<InstallEvents>, options: { recursive?: boolean, depth?: number } = {}) {
+  async clone(repo: Uri, events: Partial<UnpackEvents>, options: { recursive?: boolean, depth?: number } = {}) {
     const remote = await isFilePath(repo) ? repo.fsPath : repo.toString();
 
     const result = await execute(this.#toolPath, [
       'clone',
       remote,
-      this.#targetFolder,
+      this.#targetFolder.fsPath,
       options.recursive ? '--recursive' : '',
       options.depth ? `--depth=${options.depth}` : '',
       '--progress'
     ], {
-      env: this.#environment,
-      onStdErrData: (chunk) => {
-        // generate progress events
-        // this.#session.channels.debug(chunk.toString());
-        const regex = /\s([0-9]*?)%/;
-        chunk.toString().split(/^/gim).map((x: string) => x.trim()).filter((each: any) => each).forEach((line: string) => {
-          const match_array = line.match(regex);
-          if (match_array !== null) {
-            events.heartbeat?.(line.trim());
-          }
-        });
-      }
+      onStdErrData: chunkToHeartbeat(events),
+      onStdOutData: chunkToHeartbeat(events)
     });
 
-    if (result.code) {
-      return false;
-    }
-
-    return true;
+    return result.code === 0 ? true : false;
   }
 
   /**
@@ -72,26 +53,21 @@ export class Git {
    * @param events Events that may be called in order to present progress.
    * @param options Options to modify how fetch is called.
    * @returns Boolean representing whether the execution was completed without error, this is not necessarily
-   *  a gaurantee that the fetch did what we expected.
+   *  a guarantee that the fetch did what we expected.
    */
-  async fetch(remoteName: string, events: Partial<InstallEvents>, options: { commit?: string, recursive?: boolean, depth?: number } = {}) {
+  async fetch(remoteName: string, events: Partial<UnpackEvents>, options: { commit?: string, depth?: number } = {}) {
     const result = await execute(this.#toolPath, [
       '-C',
-      this.#targetFolder,
+      this.#targetFolder.fsPath,
       'fetch',
       remoteName,
       options.commit ? options.commit : '',
-      options.recursive ? '--recurse-submodules' : '',
       options.depth ? `--depth=${options.depth}` : ''
     ], {
-      env: this.#environment
+      cwd: this.#targetFolder.fsPath
     });
 
-    if (result.code) {
-      return false;
-    }
-
-    return true;
+    return result.code === 0 ? true : false;
   }
 
   /**
@@ -100,48 +76,141 @@ export class Git {
    * @param events Events to possibly track progress.
    * @param options Passing along a commit or branch to checkout, optionally.
    * @returns Boolean representing whether the execution was completed without error, this is not necessarily
-   *  a gaurantee that the checkout did what we expected.
+   *  a guarantee that the checkout did what we expected.
    */
-  async checkout(events: Partial<InstallEvents>, options: { commit?: string } = {}) {
+  async checkout(events: Partial<UnpackEvents>, options: { commit?: string } = {}) {
     const result = await execute(this.#toolPath, [
       '-C',
-      this.#targetFolder,
+      this.#targetFolder.fsPath,
       'checkout',
       options.commit ? options.commit : ''
     ], {
-      env: this.#environment
+      cwd: this.#targetFolder.fsPath,
+      onStdErrData: chunkToHeartbeat(events),
+      onStdOutData: chunkToHeartbeat(events)
     });
-
-    if (result.code) {
-      return false;
-    }
-
-    return true;
+    return result.code === 0 ? true : false;
   }
+
 
   /**
    * Performs a reset on the git repo.
    * @param events Events to possibly track progress.
    * @param options Options to control how the reset is called.
    * @returns Boolean representing whether the execution was completed without error, this is not necessarily
-   *  a gaurantee that the reset did what we expected.
+   *  a guarantee that the reset did what we expected.
    */
-  async reset(events: Partial<InstallEvents>, options: { commit?: string, recurse?: boolean, hard?: boolean } = {}) {
+  async reset(events: Partial<UnpackEvents>, options: { commit?: string, recurse?: boolean, hard?: boolean } = {}) {
     const result = await execute(this.#toolPath, [
       '-C',
-      this.#targetFolder,
+      this.#targetFolder.fsPath,
       'reset',
       options.commit ? options.commit : '',
       options.recurse ? '--recurse-submodules' : '',
       options.hard ? '--hard' : ''
     ], {
-      env: this.#environment
+      cwd: this.#targetFolder.fsPath,
+      onStdErrData: chunkToHeartbeat(events),
+      onStdOutData: chunkToHeartbeat(events)
     });
+    return result.code === 0 ? true : false;
+  }
 
-    if (result.code) {
-      return false;
+
+  /**
+   * Initializes a folder on disk to be a git repository
+   * @returns true if the initialization was successful, false otherwise.
+   */
+  async init() {
+    if (! await this.#targetFolder.exists()) {
+      await this.#targetFolder.createDirectory();
     }
 
-    return true;
+    if (! await this.#targetFolder.isDirectory()) {
+      throw new Error(`${this.#targetFolder.fsPath} is not a directory.`);
+    }
+
+    const result = await execute(this.#toolPath, ['init'], {
+      cwd: this.#targetFolder.fsPath
+    });
+
+    return result.code === 0 ? true : false;
   }
+
+  /**
+   * Adds a remote location to the git repo.
+   * @param name the name of the remote to add.
+   * @param location the location of the remote to add.
+   * @returns true if the addition was successful, false otherwise.
+   */
+  async addRemote(name: string, location: Uri) {
+    const result = await execute(this.#toolPath, [
+      '-C',
+      this.#targetFolder.fsPath,
+      'remote',
+      'add',
+      name,
+      location.toString()
+    ], {
+      cwd: this.#targetFolder.fsPath
+    });
+
+    return result.code === 0;
+  }
+
+  /**
+   * updates submodules in a git repository
+   * @param events Events to possibly track progress.
+   * @param options Options to control how the submodule update is called.
+   * @returns true if the update was successful, false otherwise.
+   */
+  async updateSubmodules(events: Partial<UnpackEvents>, options: { init?: boolean, recursive?: boolean, depth?: number } = {}) {
+    const result = await execute(this.#toolPath, [
+      '-C',
+      this.#targetFolder.fsPath,
+      'submodule',
+      'update',
+      '--progress',
+      options.init ? '--init' : '',
+      options.depth ? `--depth=${options.depth}` : '',
+      options.recursive ? '--recursive' : '',
+    ], {
+      cwd: this.#targetFolder.fsPath,
+      onStdErrData: chunkToHeartbeat(events),
+      onStdOutData: chunkToHeartbeat(events)
+    });
+
+    return result.code === 0;
+  }
+
+  /**
+   * sets a git configuration value in the repo.
+   * @param configFile the relative path to the config file inside the repo on disk
+   * @param key the key to set in the config file
+   * @param value the value to set in the config file
+   * @returns true if the config file was updated, false otherwise
+   */
+  async config(configFile: string, key: string, value: string) {
+    const result = await execute(this.#toolPath, [
+      'config',
+      '-f',
+      this.#targetFolder.join(configFile).fsPath,
+      key,
+      value
+    ], {
+      cwd: this.#targetFolder.fsPath
+    });
+    return result.code === 0;
+  }
+}
+function chunkToHeartbeat(events: Partial<UnpackEvents>): (chunk: any) => void {
+  return (chunk: any) => {
+    const regex = /\s([0-9]*?)%/;
+    chunk.toString().split(/^/gim).map((x: string) => x.trim()).filter((each: any) => each).forEach((line: string) => {
+      const match_array = line.match(regex);
+      if (match_array !== null) {
+        events.unpackArchiveHeartbeat?.(line.trim());
+      }
+    });
+  };
 }

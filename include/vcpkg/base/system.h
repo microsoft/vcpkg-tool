@@ -17,12 +17,18 @@ namespace vcpkg
 
     const ExpectedS<Path>& get_platform_cache_home() noexcept;
 
+    const ExpectedS<Path>& get_user_configuration_home() noexcept;
+
 #ifdef _WIN32
     const ExpectedS<Path>& get_appdata_local() noexcept;
 
     const ExpectedS<Path>& get_system_root() noexcept;
 
     const ExpectedS<Path>& get_system32() noexcept;
+
+    std::wstring get_username();
+
+    bool test_registry_key(void* base_hkey, StringView sub_key);
 #endif
 
     Optional<std::string> get_registry_string(void* base_hkey, StringView subkey, StringView valuename);
@@ -45,6 +51,8 @@ namespace vcpkg
     ZStringView to_zstring_view(CPUArchitecture arch) noexcept;
 
     CPUArchitecture get_host_processor();
+
+    std::string get_host_os_name();
 
     std::vector<CPUArchitecture> get_supported_host_architectures();
 

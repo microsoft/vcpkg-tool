@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { Document, Node, Pair, parseDocument, Scalar, stringify, visit, YAMLMap, YAMLSeq } from 'yaml';
-import { StringOrStrings } from '../interfaces/metadata/metadata-format';
+import { Document, Node, Pair, parseDocument, Scalar, visit, YAMLMap, YAMLSeq } from 'yaml';
 
 /** @internal */
 export const createNode = (v: any, b = true) => parseDocument('', { prettyErrors: false }).createNode(v, {});
@@ -31,6 +30,9 @@ export function getStrings(node: Document.Parsed | YAMLMap, name: string): Array
   return [];
 }
 
+/** values that can be either a single string, or an array of strings */
+export type StringOrStrings = string | Array<string>;
+
 export function setStrings(node: Document.Parsed | YAMLMap, name: string, value: StringOrStrings) {
   if (Array.isArray(value)) {
     switch (value.length) {
@@ -57,22 +59,4 @@ export function serialize(value: any) {
     }
   });
   return document.toString();
-}
-
-export function isYAML(path: string) {
-  path = path.toLowerCase();
-  return path.endsWith('.yml') || path.endsWith('.yaml') || path.endsWith('.json');
-}
-
-export function toYAML(content: string) {
-  if (content.charAt(0) === '{') {
-    // the content is in JSON format.
-    // let's force it to YAML
-    try {
-      return stringify(JSON.parse(content)).toString();
-    } catch (e: any) {
-      // no worries.
-    }
-  }
-  return content;
 }

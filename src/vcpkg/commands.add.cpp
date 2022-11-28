@@ -26,33 +26,13 @@ namespace
         {{}, {}},
         nullptr,
     };
-
-    DECLARE_AND_REGISTER_MESSAGE(AddTripletExpressionNotAllowed,
-                                 (msg::package_name, msg::triplet),
-                                 "",
-                                 "Error: triplet expressions are not allowed here. You may want to change "
-                                 "`{package_name}:{triplet}` to `{package_name}` instead.");
-    DECLARE_AND_REGISTER_MESSAGE(AddFirstArgument,
-                                 (msg::command_line),
-                                 "",
-                                 "The first argument to '{command_line}' must be 'artifact' or 'port'.\n");
-
-    DECLARE_AND_REGISTER_MESSAGE(AddPortSucceded, (), "", "Succeeded in adding ports to vcpkg.json file.");
-    DECLARE_AND_REGISTER_MESSAGE(AddPortRequiresManifest,
-                                 (msg::command_line),
-                                 "",
-                                 "'{command_line}' requires an active manifest file.");
-
-    DECLARE_AND_REGISTER_MESSAGE(AddArtifactOnlyOne,
-                                 (msg::command_line),
-                                 "",
-                                 "'{command_line}' can only add one artifact at a time.");
 }
 
 namespace vcpkg::Commands
 {
     void AddCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
     {
+        MetricsSubmission metrics;
         (void)args.parse_arguments(AddCommandStructure);
         auto&& selector = args.command_arguments[0];
 
@@ -65,11 +45,9 @@ namespace vcpkg::Commands
 
             auto artifact_name = args.command_arguments[1];
             auto artifact_hash = Hash::get_string_hash(artifact_name, Hash::Algorithm::Sha256);
-            {
-                auto metrics = LockGuardPtr<Metrics>(g_metrics);
-                metrics->track_property("command_context", "artifact");
-                metrics->track_property("command_args", artifact_hash);
-            } // unlock g_metrics
+            metrics.track_string(StringMetric::CommandContext, "artifact");
+            metrics.track_string(StringMetric::CommandArgs, artifact_hash);
+            get_global_metrics_collector().track_submission(std::move(metrics));
 
             std::string ce_args[] = {"add", artifact_name};
             Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, ce_args));
@@ -92,16 +70,17 @@ namespace vcpkg::Commands
                     parse_qualified_specifier(args.command_arguments[idx]).value_or_exit(VCPKG_LINE_INFO);
                 if (const auto t = value.triplet.get())
                 {
-                    Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                                  msgAddTripletExpressionNotAllowed,
-                                                  msg::package_name = value.name,
-                                                  msg::triplet = *t);
+                    Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                                msgAddTripletExpressionNotAllowed,
+                                                msg::package_name = value.name,
+                                                msg::triplet = *t);
                 }
 
                 specs.push_back(std::move(value));
             }
 
-            auto maybe_manifest_scf = SourceControlFile::parse_manifest_object(manifest->path, manifest->manifest);
+            auto maybe_manifest_scf =
+                SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest, stdout_sink);
             if (!maybe_manifest_scf)
             {
                 print_error_message(maybe_manifest_scf.error());
@@ -134,17 +113,15 @@ namespace vcpkg::Commands
             }
 
             paths.get_filesystem().write_contents(
-                manifest->path, Json::stringify(serialize_manifest(manifest_scf), {}), VCPKG_LINE_INFO);
-            msg::println(msgAddPortSucceded);
+                manifest->path, Json::stringify(serialize_manifest(manifest_scf)), VCPKG_LINE_INFO);
+            msg::println(msgAddPortSucceeded);
 
             auto command_args_hash = Strings::join(" ", Util::fmap(specs, [](auto&& spec) -> std::string {
                                                        return Hash::get_string_hash(spec.name, Hash::Algorithm::Sha256);
                                                    }));
-            {
-                auto metrics = LockGuardPtr<Metrics>(g_metrics);
-                metrics->track_property("command_context", "port");
-                metrics->track_property("command_args", command_args_hash);
-            } // unlock metrics
+            metrics.track_string(StringMetric::CommandContext, "port");
+            metrics.track_string(StringMetric::CommandArgs, command_args_hash);
+            get_global_metrics_collector().track_submission(std::move(metrics));
 
             Checks::exit_success(VCPKG_LINE_INFO);
         }

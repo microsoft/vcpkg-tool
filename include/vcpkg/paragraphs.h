@@ -11,6 +11,7 @@ namespace vcpkg::Paragraphs
 {
     uint64_t get_load_ports_stats();
 
+    ExpectedS<Paragraph> parse_single_merged_paragraph(StringView str, StringView origin);
     ExpectedS<Paragraph> parse_single_paragraph(StringView str, StringView origin);
     ExpectedS<Paragraph> get_single_paragraph(const Filesystem& fs, const Path& control_path);
 
@@ -21,7 +22,10 @@ namespace vcpkg::Paragraphs
     bool is_port_directory(const Filesystem& fs, const Path& maybe_directory);
 
     ParseExpected<SourceControlFile> try_load_port(const Filesystem& fs, const Path& port_directory);
-    ParseExpected<SourceControlFile> try_load_port_text(const std::string& text, StringView origin, bool is_manifest);
+    ParseExpected<SourceControlFile> try_load_port_text(const std::string& text,
+                                                        StringView origin,
+                                                        bool is_manifest,
+                                                        MessageSink& warning_sink);
 
     ExpectedS<BinaryControlFile> try_load_cached_package(const Filesystem& fs,
                                                          const Path& package_dir,

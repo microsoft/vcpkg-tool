@@ -16,4 +16,20 @@
   ],
   "mochaExplorer.monkeyPatch": true,
   "mochaExplorer.debuggerConfig": "MochaTest",
+  "eslint.workingDirectories": [
+    {
+      "changeProcessCWD": true,
+      "directory": "./ce/ce",
+    },
+    {
+      "changeProcessCWD": true,
+      "directory": "./ce/test",
+    }
+  ],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true,
+    "source.organizeImports": true
+  },
+  "eslint.format.enable": true,
+  "files.eol": "\n"
 }

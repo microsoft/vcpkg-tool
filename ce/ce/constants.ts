@@ -2,12 +2,12 @@
 // Licensed under the MIT License.
 
 export const undo = 'Z_VCPKG_UNDO';
-export const postscriptVarible = 'Z_VCPKG_POSTSCRIPT';
-export const blank = '\n';
+export const postscriptVariable = 'Z_VCPKG_POSTSCRIPT';
 export const latestVersion = '*';
-export const vcpkgDownloadFolder = 'VCPKG_DOWNLOADS';
-export const globalConfigurationFile = 'vcpkg-configuration.global.json';
-export const profileNames = ['vcpkg-configuration.json', 'vcpkg-configuration.yaml', 'environment.yaml', 'environment.yml', 'environment.json'];
+export const vcpkgDownloadVariable = 'VCPKG_DOWNLOADS';
+export const globalConfigurationFile = 'vcpkg-configuration.json';
+export const manifestName = 'vcpkg.json';
+export const configurationName = 'vcpkg-configuration.json';
 export const registryIndexFile = 'index.yaml';
 
 export const defaultConfig =

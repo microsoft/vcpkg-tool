@@ -13,27 +13,10 @@ namespace
     {
         return LocalizedString::from_raw(fmt::format("{}: ", line_info));
     }
-
-    DECLARE_AND_REGISTER_MESSAGE(ChecksUnreachableCode, (), "", "unreachable code was reached");
-    DECLARE_AND_REGISTER_MESSAGE(ChecksFailedCheck, (), "", "vcpkg has crashed; no additional details are available.");
-    DECLARE_AND_REGISTER_MESSAGE(ChecksUpdateVcpkg,
-                                 (),
-                                 "",
-                                 "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.");
-
-    void (*g_shutdown_handler)() = nullptr;
 }
 
 namespace vcpkg
 {
-    void Checks::register_global_shutdown_handler(void (*func)())
-    {
-        if (g_shutdown_handler)
-            // Setting the handler twice is a program error. Terminate.
-            std::abort();
-        g_shutdown_handler = func;
-    }
-
     [[noreturn]] void Checks::final_cleanup_and_exit(const int exit_code)
     {
         static std::atomic<bool> have_entered{false};
@@ -46,7 +29,7 @@ namespace vcpkg
 #endif
         }
 
-        if (g_shutdown_handler) g_shutdown_handler();
+        on_final_cleanup_and_exit();
 
         fflush(nullptr);
 
@@ -59,6 +42,16 @@ namespace vcpkg
     [[noreturn]] void Checks::unreachable(const LineInfo& line_info)
     {
         msg::println(Color::error, locale_invariant_lineinfo(line_info).append(msgChecksUnreachableCode));
+#ifndef NDEBUG
+        std::abort();
+#else
+        final_cleanup_and_exit(EXIT_FAILURE);
+#endif
+    }
+
+    [[noreturn]] void Checks::unreachable(const LineInfo& line_info, StringView message)
+    {
+        msg::write_unlocalized_text_to_stdout(Color::error, locale_invariant_lineinfo(line_info).append_raw(message));
 #ifndef NDEBUG
         std::abort();
 #else
@@ -102,7 +95,7 @@ namespace vcpkg
                          msg::format(msg::msgInternalErrorMessage)
                              .append(locale_invariant_lineinfo(line_info))
                              .append(msgChecksFailedCheck)
-                             .appendnl()
+                             .append_raw('\n')
                              .append(msg::msgInternalErrorMessageContact));
             exit_fail(line_info);
         }

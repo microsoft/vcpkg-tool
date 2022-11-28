@@ -17,18 +17,6 @@
 
 #include <vcpkg/base/messages.h>
 
-namespace
-{
-    DECLARE_AND_REGISTER_MESSAGE(VSExaminedPaths,
-                                 (),
-                                 "",
-                                 "The following paths were examined for Visual Studio instances:");
-
-    DECLARE_AND_REGISTER_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance");
-
-    DECLARE_AND_REGISTER_MESSAGE(VSExaminedInstances, (), "", "The following Visual Studio instances were considered:");
-}
-
 #if defined(_WIN32)
 
 namespace vcpkg::VisualStudio
@@ -106,21 +94,17 @@ namespace vcpkg::VisualStudio
         const Path vswhere_exe = program_files_32_bit / "Microsoft Visual Studio" / "Installer" / "vswhere.exe";
         if (fs.exists(vswhere_exe, IgnoreErrors{}))
         {
-            const auto code_and_output = cmd_execute_and_capture_output(Command(vswhere_exe)
-                                                                            .string_arg("-all")
-                                                                            .string_arg("-prerelease")
-                                                                            .string_arg("-legacy")
-                                                                            .string_arg("-products")
-                                                                            .string_arg("*")
-                                                                            .string_arg("-format")
-                                                                            .string_arg("xml"));
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               code_and_output.exit_code == 0,
-                               "Running vswhere.exe failed with message:\n%s",
-                               code_and_output.output);
-
-            const auto instance_entries =
-                Strings::find_all_enclosed(code_and_output.output, "<instance>", "</instance>");
+            auto output = flatten_out(cmd_execute_and_capture_output(Command(vswhere_exe)
+                                                                         .string_arg("-all")
+                                                                         .string_arg("-prerelease")
+                                                                         .string_arg("-legacy")
+                                                                         .string_arg("-products")
+                                                                         .string_arg("*")
+                                                                         .string_arg("-format")
+                                                                         .string_arg("xml")),
+                                      "vswhere")
+                              .value_or_exit(VCPKG_LINE_INFO);
+            const auto instance_entries = Strings::find_all_enclosed(output, "<instance>", "</instance>");
             for (const StringView& instance : instance_entries)
             {
                 auto maybe_is_prerelease =
@@ -236,18 +220,27 @@ namespace vcpkg::VisualStudio
                     supported_architectures.push_back({"x86", CPU::X86, CPU::X86});
                 if (fs.exists(vcvarsall_dir / "vcvars64.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"amd64", CPU::X64, CPU::X64});
+                // Host x86
                 if (fs.exists(vcvarsall_dir / "vcvarsx86_amd64.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"x86_amd64", CPU::X86, CPU::X64});
                 if (fs.exists(vcvarsall_dir / "vcvarsx86_arm.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"x86_arm", CPU::X86, CPU::ARM});
                 if (fs.exists(vcvarsall_dir / "vcvarsx86_arm64.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"x86_arm64", CPU::X86, CPU::ARM64});
+                // Host x64
                 if (fs.exists(vcvarsall_dir / "vcvarsamd64_x86.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"amd64_x86", CPU::X64, CPU::X86});
                 if (fs.exists(vcvarsall_dir / "vcvarsamd64_arm.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"amd64_arm", CPU::X64, CPU::ARM});
                 if (fs.exists(vcvarsall_dir / "vcvarsamd64_arm64.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"amd64_arm64", CPU::X64, CPU::ARM64});
+                // Host arm64
+                if (fs.exists(vcvarsall_dir / "vcvarsarm64.bat", IgnoreErrors{}))
+                    supported_architectures.push_back({"arm64", CPU::ARM64, CPU::ARM64});
+                if (fs.exists(vcvarsall_dir / "vcvarsarm64_x86.bat", IgnoreErrors{}))
+                    supported_architectures.push_back({"arm64_x86", CPU::ARM64, CPU::X86});
+                if (fs.exists(vcvarsall_dir / "vcvarsarm64_amd64.bat", IgnoreErrors{}))
+                    supported_architectures.push_back({"arm64_amd64", CPU::ARM64, CPU::X64});
 
                 // Locate the "best" MSVC toolchain version
                 const auto msvc_path = vc_dir / "Tools/MSVC";
@@ -371,23 +364,23 @@ namespace vcpkg
 
         if (toolsets.empty())
         {
-            ret.append(msgVSNoInstances).appendnl();
+            ret.append(msgVSNoInstances).append_raw('\n');
         }
         else
         {
-            ret.append(msgVSExaminedInstances).appendnl();
+            ret.append(msgVSExaminedInstances).append_raw('\n');
             for (const Toolset& toolset : toolsets)
             {
-                ret.append_indent().append_raw(toolset.visual_studio_root_path).appendnl();
+                ret.append_indent().append_raw(toolset.visual_studio_root_path).append_raw('\n');
             }
         }
 
         if (!paths_examined.empty())
         {
-            ret.append(msgVSExaminedPaths).appendnl();
+            ret.append(msgVSExaminedPaths).append_raw('\n');
             for (const Path& examinee : paths_examined)
             {
-                ret.append_indent().append_raw(examinee).appendnl();
+                ret.append_indent().append_raw(examinee).append_raw('\n');
             }
         }
 

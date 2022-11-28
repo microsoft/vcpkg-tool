@@ -11,10 +11,6 @@
 
 namespace vcpkg::Export::Chocolatey
 {
-    using Dependencies::ExportPlanAction;
-    using Dependencies::ExportPlanType;
-    using Install::InstallDir;
-
     static std::string create_nuspec_dependencies(const BinaryParagraph& binary_paragraph,
                                                   const std::map<PackageSpec, std::string>& packages_version)
     {
@@ -26,7 +22,7 @@ namespace vcpkg::Export::Chocolatey
             auto found = packages_version.find(depend);
             if (found == packages_version.end())
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO, "Cannot find desired dependency version.");
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgFailedToObtainDependencyVersion);
             }
             std::string nuspec_dependency = Strings::replace_all(CONTENT_TEMPLATE, "@PACKAGE_ID@", depend.name());
             Strings::inplace_replace_all(nuspec_dependency, "@PACKAGE_VERSION@", found->second);
@@ -62,7 +58,7 @@ namespace vcpkg::Export::Chocolatey
         auto package_version = packages_version.find(binary_paragraph.spec);
         if (package_version == packages_version.end())
         {
-            Checks::exit_with_message(VCPKG_LINE_INFO, "Cannot find desired package version.");
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgFailedToObtainPackageVersion);
         }
 
         std::string nuspec_file_content =
@@ -153,14 +149,16 @@ if (Test-Path $installedDir)
                    const VcpkgPaths& paths,
                    const Options& chocolatey_options)
     {
-        Checks::check_exit(
-            VCPKG_LINE_INFO, chocolatey_options.maybe_maintainer.has_value(), "--x-maintainer option is required.");
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               chocolatey_options.maybe_maintainer.has_value(),
+                               msgOptionRequired,
+                               msg::option = "x-maintainer");
 
         Filesystem& fs = paths.get_filesystem();
         const auto vcpkg_root_path = paths.root;
         const auto raw_exported_dir_path = vcpkg_root_path / "chocolatey";
         const auto exported_dir_path = vcpkg_root_path / "chocolatey_exports";
-        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET);
+        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET, stdout_sink);
 
         fs.remove_all(raw_exported_dir_path, VCPKG_LINE_INFO);
         fs.create_directory(raw_exported_dir_path, VCPKG_LINE_INFO);
@@ -189,7 +187,7 @@ if (Test-Path $installedDir)
         for (const ExportPlanAction& action : export_plan)
         {
             const std::string display_name = action.spec.to_string();
-            print2("Exporting package ", display_name, "...\n");
+            msg::println(msgExportingPackage, msg::package_name = display_name);
 
             const auto per_package_dir_path = raw_exported_dir_path / action.spec.name();
 
@@ -200,7 +198,7 @@ if (Test-Path $installedDir)
             const InstallDir dirs =
                 InstallDir::from_destination_root(installed, action.spec.triplet(), binary_paragraph);
 
-            Install::install_package_and_write_listfile(fs, paths.package_dir(action.spec), dirs);
+            install_package_and_write_listfile(fs, paths.package_dir(action.spec), dirs);
 
             const std::string nuspec_file_content = create_nuspec_file_contents(
                 per_package_dir_path, binary_paragraph, packages_version, chocolatey_options);
@@ -225,9 +223,9 @@ if (Test-Path $installedDir)
                                 .string_arg(nuspec_file_path)
                                 .string_arg("-NoDefaultExcludes");
 
-            const int exit_code =
-                cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()).exit_code;
-            Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: NuGet package creation failed");
+            flatten(cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()),
+                    Tools::NUGET)
+                .value_or_exit(VCPKG_LINE_INFO);
         }
     }
 }
