@@ -1057,8 +1057,8 @@ namespace vcpkg::PostBuildLint
             if (ec) return false;
             char buffer[5];
             if (read_file.read(buffer, 1, sizeof(buffer)) < sizeof(buffer)) return false;
-            if (Strings::starts_with(buffer, "#!") ||
-                Strings::starts_with(buffer, "\xEF\xBB\xBF#!") /* ignore byte-order mark */)
+            if (Strings::starts_with(StringView(buffer, sizeof(buffer)), "#!") ||
+                Strings::starts_with(StringView(buffer, sizeof(buffer)), "\xEF\xBB\xBF#!") /* ignore byte-order mark */)
             {
                 const auto contents = fs.read_contents(file, IgnoreErrors{});
                 return Strings::contains_any_ignoring_hash_comments(contents, stringview_paths);
