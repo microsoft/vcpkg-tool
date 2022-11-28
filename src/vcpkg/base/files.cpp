@@ -3151,10 +3151,6 @@ namespace vcpkg
 
         Path posix_lexically_relative(const Path& abs_file, const Path& base) const override
         {
-            if (abs_file.is_relative() || base.is_relative())
-            {
-                return {};
-            }
             Path abs_base = base;
             if (abs_base.native().back() != '/')
             {
