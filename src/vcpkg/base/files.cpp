@@ -3173,7 +3173,7 @@ namespace vcpkg
                 if (*mismatch.second == '/') relative += "../";
             }
             // from common base to abs_file
-            relative += StringView(&*(mismatch.first), &*abs_file.native().end());
+            relative += StringView(&*(mismatch.first));
             return relative;
         }
 
