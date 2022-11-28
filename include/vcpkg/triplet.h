@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/fwd/format.h>
 
+#include <vcpkg/fwd/triplet.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
 #include <vcpkg/base/optional.h>

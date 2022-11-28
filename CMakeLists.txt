@@ -1,9 +1,11 @@
-cmake_minimum_required(VERSION 3.15) # 3.15 for MSVC_RUNTIME_LIBRARY, removing default warning flags
+cmake_minimum_required(VERSION 3.15...3.24)
 
-cmake_policy(SET CMP0091 NEW)
-cmake_policy(SET CMP0092 NEW)
 if(NOT CMAKE_MSVC_RUNTIME_LIBRARY)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
 endif()
 
 # ===============
@@ -19,6 +21,7 @@ option(VCPKG_BUILD_TLS12_DOWNLOADER "Enable building the tls12-downloader" OFF)
 option(VCPKG_BUILD_FUZZING "Option for enabling vcpkg-fuzz support" OFF)
 option(VCPKG_EMBED_GIT_SHA "Option for to fill in the Git SHA version; off by default to avoid privacy concerns out of official builds" OFF)
 option(VCPKG_ADD_SOURCELINK "Option for enabling SourceLink in debug information on Windows/MSVC builds" "${VCPKG_EMBED_GIT_SHA}")
+option(VCPKG_ARTIFACTS_DEVELOPMENT "Hard code path to artifacts TypeScript. Requires node.js and global install of @microsoft/rush." OFF)
 option(VCPKG_OFFICIAL_BUILD "Option to cause immediate failure if variables required for official builds are unset." OFF)
 set(VCPKG_PDB_SUFFIX "" CACHE STRING "Append this string to the name of the PDB for shipping vcpkg binaries.")
 
@@ -35,8 +38,9 @@ if(VCPKG_BUILD_TLS12_DOWNLOADER)
     list(APPEND LANGUAGES "C")
 endif()
 
-if(VCPKG_DEVELOPMENT_WARNINGS)
-    set(FMT_PEDANTIC ON CACHE BOOL "")
+if (VCPKG_ARTIFACTS_DEVELOPMENT)
+    # https://gitlab.kitware.com/cmake/cmake/-/issues/20245
+    cmake_minimum_required(VERSION 3.17)
 endif()
 
 project(vcpkg
@@ -65,6 +69,8 @@ file(GLOB VCPKG_TEST_INCLUDES CONFIGURE_DEPENDS "include/vcpkg-test/*.h")
 file(GLOB VCPKG_FUZZ_SOURCES CONFIGURE_DEPENDS "src/vcpkg-fuzz/*.cpp")
 
 set(TLS12_DOWNLOAD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/tls12-download.c")
+
+file(GLOB LOCALE_RESOURCES CMAKE_CONFIGURE_DEPENDS "locales/*.json")
 
 # ========================
 # === System detection ===
@@ -110,10 +116,54 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 17)
 if(MSVC)
-    string(APPEND CMAKE_CXX_FLAGS " /EHsc")
-    if(CMAKE_BUILD_TYPE STREQUAL "Release")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zi /guard:cf")
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /DEBUG /debugtype:cv,fixup /guard:cf")
+    # either MSVC, or clang-cl
+    string(APPEND CMAKE_C_FLAGS " -FC -permissive- -utf-8 /guard:cf")
+    string(APPEND CMAKE_CXX_FLAGS " /EHsc -FC -permissive- -utf-8 /guard:cf")
+    string(APPEND CMAKE_C_FLAGS_RELEASE " /Zi")
+    string(APPEND CMAKE_CXX_FLAGS_RELEASE " /Zi")
+
+    string(APPEND CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO " /DEBUG /INCREMENTAL:NO /debugtype:cv,fixup /guard:cf")
+    string(APPEND CMAKE_EXE_LINKER_FLAGS_RELEASE " /DEBUG /INCREMENTAL:NO /debugtype:cv,fixup /guard:cf")
+    if (MSVC_CXX_ARCHITECTURE_ID STREQUAL "x64")
+        string(APPEND CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO " /CETCOMPAT")
+        string(APPEND CMAKE_EXE_LINKER_FLAGS_RELEASE " /CETCOMPAT")
+    endif()
+
+    if(VCPKG_DEVELOPMENT_WARNINGS)
+        string(APPEND CMAKE_C_FLAGS " /W4 /sdl")
+        string(APPEND CMAKE_CXX_FLAGS " /W4 /sdl")
+        if(VCPKG_COMPILER STREQUAL "clang")
+            string(APPEND CMAKE_C_FLAGS " -Wmissing-prototypes -Wno-missing-field-initializers")
+            string(APPEND CMAKE_CXX_FLAGS " -Wmissing-prototypes -Wno-missing-field-initializers")
+        else()
+            # -wd6553 is to workaround a violation in the Windows SDK
+            # c:\program files (x86)\windows kits\10\include\10.0.22000.0\um\winreg.h(780) : warning C6553: The annotation for function 'RegOpenKeyExW' on _Param_(3) does not apply to a value type.
+            string(APPEND CMAKE_C_FLAGS " -analyze -analyze:stacksize 39000 -wd6553")
+            string(APPEND CMAKE_CXX_FLAGS " -analyze -analyze:stacksize 39000 -wd6553")
+        endif()
+    endif()
+
+    if(VCPKG_WARNINGS_AS_ERRORS)
+        string(APPEND CMAKE_C_FLAGS " /WX")
+        string(APPEND CMAKE_CXX_FLAGS " /WX")
+    endif()
+else()
+    # Neither MSVC nor clang-cl
+    if(VCPKG_DEVELOPMENT_WARNINGS)
+        # GCC and clang have different names for the same warning
+        if(VCPKG_COMPILER STREQUAL "gcc")
+            set(DECL_WARNING "-Wmissing-declarations")
+        elseif(VCPKG_COMPILER STREQUAL "clang")
+            set(DECL_WARNING "-Wmissing-prototypes -Wno-range-loop-analysis")
+        endif()
+
+        string(APPEND CMAKE_C_FLAGS " -Wall -Wextra -Wpedantic -Wno-unknown-pragmas -Wno-missing-field-initializers ${DECL_WARNING}")
+        string(APPEND CMAKE_CXX_FLAGS " -Wall -Wextra -Wpedantic -Wno-unknown-pragmas -Wno-missing-field-initializers -Wno-redundant-move ${DECL_WARNING}")
+    endif()
+
+    if(VCPKG_WARNINGS_AS_ERRORS)
+        string(APPEND CMAKE_C_FLAGS " -Werror")
+        string(APPEND CMAKE_CXX_FLAGS " -Werror")
     endif()
 endif()
 
@@ -135,10 +185,21 @@ include(GNUInstallDirs)
 # ====================
 
 find_package(fmt REQUIRED)
+find_package(CMakeRC REQUIRED)
 
-# ===============
-# === Targets ===
-# ===============
+# === Target: locale-resources ===
+cmrc_add_resource_library(locale-resources ALIAS cmakerc::locales NAMESPACE cmakerc ${LOCALE_RESOURCES})
+if(NOT MSVC)
+    if(VCPKG_COMPILER STREQUAL "gcc")
+        target_compile_options(locale-resources PRIVATE
+            -Wno-missing-declarations
+            )
+    elseif(VCPKG_COMPILER STREQUAL "clang")
+        target_compile_options(locale-resources PRIVATE
+            -Wno-missing-prototypes
+            )
+    endif()
+endif()
 
 # === Target: vcpkglib ===
 
@@ -150,7 +211,6 @@ add_library(vcpkglib OBJECT
 )
 target_include_directories(vcpkglib PUBLIC include)
 
-vcpkg_target_add_warning_options(vcpkglib)
 target_compile_definitions(vcpkglib PUBLIC
     VCPKG_VERSION=${VCPKG_VERSION}
     VCPKG_BASE_VERSION=${VCPKG_BASE_VERSION}
@@ -170,7 +230,95 @@ if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
     if(VCPKG_OFFICIAL_BUILD)
         message(FATAL_ERROR "VCPKG_CE_SHA is required for official builds.")
     endif()
+    if (VCPKG_ARTIFACTS_DEVELOPMENT)
+        file(TO_CMAKE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/ce/ce" VCPKG_ARTIFACTS_PATH)
+        target_compile_definitions(vcpkglib PUBLIC "VCPKG_ARTIFACTS_PATH=${VCPKG_ARTIFACTS_PATH}")
+        mark_as_advanced(VCPKG_ARTIFACTS_PATH)
+
+        if (WIN32)
+            set(RUSH_SUFFIX ".cmd")
+        else()
+            set(RUSH_SUFFIX "")
+        endif()
+
+        find_program(NODEJS "node")
+        if (NOT NODEJS)
+            message(FATAL_ERROR "node.js and @microsoft/rush must be installed when VCPKG_ARTIFACTS_DEVELOPMENT is set")
+        endif()
+
+        find_program(RUSH "rush${RUSH_SUFFIX}")
+        if (NOT RUSH)
+            message(FATAL_ERROR "@microsoft/rush is required when VCPKG_ARTIFACTS_DEVELOPMENT is set; use `npm install -g @microsoft/rush`")
+        endif()
+
+        add_custom_command(
+            OUTPUT
+                "${CMAKE_CURRENT_SOURCE_DIR}/ce/ce/node_modules"
+                "${CMAKE_CURRENT_SOURCE_DIR}/ce/test/node_modules"
+            COMMAND "${RUSH}" ARGS "update"
+            COMMAND "${RUSH}" ARGS "rebuild"
+            WORKING_DIRECTORY
+                "${CMAKE_CURRENT_SOURCE_DIR}/ce"
+            COMMENT
+                "Running rush update..."
+            VERBATIM
+            )
+
+        add_custom_target(rush-update
+            ALL
+            DEPENDS
+                "${CMAKE_CURRENT_SOURCE_DIR}/ce/ce/node_modules"
+                "${CMAKE_CURRENT_SOURCE_DIR}/ce/test/node_modules"
+                )
+
+# === Target: vcpkg-artifacts ===
+        file(GLOB_RECURSE VCPKG_ARTIFACTS_SOURCES CONFIGURE_DEPENDS "ce/ce/*.ts")
+        add_custom_command(
+            OUTPUT
+                "${CMAKE_CURRENT_LIST_DIR}/ce/ce/dist/tsconfig.tsbuildinfo"
+            COMMAND
+                "${NODEJS}" "${CMAKE_CURRENT_LIST_DIR}/ce/ce/node_modules/typescript/bin/tsc"
+                    -p "${CMAKE_CURRENT_LIST_DIR}/ce/ce"
+            DEPENDS
+                ${VCPKG_ARTIFACTS_SOURCES}
+                "${CMAKE_CURRENT_SOURCE_DIR}/ce/ce/node_modules"
+            COMMENT
+                "Building vcpkg-artifacts..."
+            VERBATIM
+            )
+
+        add_custom_target(vcpkg-artifacts
+            ALL
+            DEPENDS
+                "${CMAKE_CURRENT_LIST_DIR}/ce/ce/dist/tsconfig.tsbuildinfo"
+            )
+
+# === Target: vcpkg-artifacts-test ===
+        file(GLOB_RECURSE VCPKG_ARTIFACTS_TEST_SOURCES CONFIGURE_DEPENDS "ce/test/*.ts")
+        add_custom_command(
+            OUTPUT
+                "${CMAKE_CURRENT_LIST_DIR}/ce/test/dist/tsconfig.tsbuildinfo"
+            COMMAND
+                "${NODEJS}" "${CMAKE_CURRENT_LIST_DIR}/ce/test/node_modules/typescript/bin/tsc"
+                    -p "${CMAKE_CURRENT_LIST_DIR}/ce/test"
+            DEPENDS
+                ${VCPKG_ARTIFACTS_TEST_SOURCES}
+                "${CMAKE_CURRENT_SOURCE_DIR}/ce/test/node_modules"
+            COMMENT
+                "Building vcpkg-artifacts-test..."
+            VERBATIM
+            )
+
+        add_custom_target(vcpkg-artifacts-test
+            ALL
+            DEPENDS
+                "${CMAKE_CURRENT_LIST_DIR}/ce/test/dist/tsconfig.tsbuildinfo"
+            )
+    endif()
 else()
+    if (VCPKG_ARTIFACTS_DEVELOPMENT)
+        message(WARNING "VCPKG_CE_SHA overrides VCPKG_ARTIFACTS_DEVELOPMENT")
+    endif()
     target_compile_definitions(vcpkglib PUBLIC
         VCPKG_CE_SHA=${VCPKG_CE_SHA}
     )
@@ -208,6 +356,7 @@ find_package(Threads REQUIRED)
 target_link_libraries(vcpkglib
     PUBLIC
         fmt::fmt
+        cmakerc::locales
     PRIVATE
         Threads::Threads
         ${CPP_ATOMIC_LIBRARY}
@@ -240,10 +389,21 @@ if(MINGW)
 endif()
 
 # === Target: vcpkg ===
+add_custom_command(
+    OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/vcpkg.ps1"
+    COMMAND
+        "${CMAKE_COMMAND}" ARGS -E copy "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-in-development.ps1" "${CMAKE_CURRENT_BINARY_DIR}/vcpkg.ps1"
+    DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-in-development.ps1"
+    VERBATIM
+    )
 
-add_executable(vcpkg ${VCPKG_SOURCES})
+add_custom_target(vcpkg-ps1 ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/vcpkg.ps1")
+
+add_executable(vcpkg ${VCPKG_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
 target_link_libraries(vcpkg PRIVATE vcpkglib)
-vcpkg_target_add_warning_options(vcpkg)
+
 if(VCPKG_ADD_SOURCELINK)
     if(VCPKG_VERSION STREQUAL "unknownhash")
         message(FATAL_ERROR "Attempted to add source link information, but there was no git SHA defined. VCPKG_ADD_SOURCELINK only works if VCPKG_EMBED_GIT_SHA is set.")
@@ -260,8 +420,7 @@ endif()
 # === Target: generate-message-map ===
 
 add_custom_target(generate-message-map
-   COMMAND vcpkg x-generate-default-message-map --no-allow-incorrect-comments locales/messages.json
-   COMMAND vcpkg x-generate-default-message-map --no-output-comments locales/messages.en.json
+   COMMAND vcpkg x-generate-default-message-map locales/messages.json
    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
    COMMENT "Update locales/messages.json"
    VERBATIM
@@ -275,12 +434,12 @@ if (BUILD_TESTING)
     add_executable(vcpkg-test
         ${VCPKG_TEST_SOURCES}
         ${VCPKG_TEST_INCLUDES}
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest"
     )
     target_link_libraries(vcpkg-test PRIVATE vcpkglib)
     if(ANDROID)
         target_link_libraries(vcpkg-test PRIVATE log)
     endif()
-    vcpkg_target_add_warning_options(vcpkg-test)
 
     add_test(NAME default COMMAND vcpkg-test --order rand --rng-seed time)
 
@@ -292,16 +451,15 @@ endif()
 # === Target: vcpkg-fuzz ===
 
 if(VCPKG_BUILD_FUZZING)
-    add_executable(vcpkg-fuzz ${VCPKG_FUZZ_SOURCES})
+    add_executable(vcpkg-fuzz ${VCPKG_FUZZ_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
     target_link_libraries(vcpkg-fuzz PRIVATE vcpkglib)
-    vcpkg_target_add_warning_options(vcpkg-fuzz)
 endif()
 
 
 # === Target: tls12-download ===
 
 if(VCPKG_BUILD_TLS12_DOWNLOADER)
-    add_executable(tls12-download ${TLS12_DOWNLOAD_SOURCES})
+    add_executable(tls12-download ${TLS12_DOWNLOAD_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
     set_property(TARGET tls12-download PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
     set_property(TARGET tls12-download APPEND PROPERTY LINK_OPTIONS "$<IF:$<CONFIG:Debug>,,/ENTRY:entry>")
     target_link_libraries(tls12-download winhttp wintrust shell32)
@@ -313,7 +471,7 @@ endif()
 
 # === Target: format ===
 
-find_program(CLANG_FORMAT clang-format)
+find_program(CLANG_FORMAT clang-format PATHS "$ENV{PROGRAMFILES}/LLVM/bin")
 if(CLANG_FORMAT)
     # doing all of these formats in one line has a tendency to overflow the command line length
     add_custom_target(format

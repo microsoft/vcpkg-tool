@@ -5,17 +5,11 @@
 
 #include <vcpkg/commands.contact.h>
 #include <vcpkg/help.h>
-#include <vcpkg/userconfig.h>
+#include <vcpkg/metrics.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
 namespace vcpkg::Commands::Contact
 {
-    const std::string& email()
-    {
-        static const std::string S_EMAIL = R"(vcpkg@microsoft.com)";
-        return S_EMAIL;
-    }
-
     static constexpr StringLiteral OPTION_SURVEY = "survey";
 
     static constexpr std::array<CommandSwitch, 1> SWITCHES = {{
@@ -36,25 +30,26 @@ namespace vcpkg::Commands::Contact
 
         if (Util::Sets::contains(parsed_args.switches, SWITCHES[0].name))
         {
-            auto maybe_now = CTime::get_current_date_time();
+            auto maybe_now = CTime::now();
             if (const auto p_now = maybe_now.get())
             {
-                auto config = UserConfig::try_read_data(fs);
+                auto config = try_read_metrics_user(fs);
                 config.last_completed_survey = p_now->to_string();
-                config.try_write_data(fs);
+                config.try_write(fs);
             }
 
 #if defined(_WIN32)
             cmd_execute(Command("start").string_arg("https://aka.ms/NPS_vcpkg"));
-            print2("Default browser launched to https://aka.ms/NPS_vcpkg; thank you for your feedback!\n");
+            msg::println(msgDefaultBrowserLaunched, msg::url = "https://aka.ms/NPS_vcpkg");
+            msg::println(msgFeedbackAppreciated);
 #else
-            print2("Please navigate to https://aka.ms/NPS_vcpkg in your preferred browser. Thank you for your "
-                   "feedback!\n");
+            msg::println(msgNavigateToNPS, msg::url = "https://aka.ms/NPS_vcpkg");
+            msg::println(msgFeedbackAppreciated);
 #endif
         }
         else
         {
-            print2("Send an email to ", email(), " with any feedback.\n");
+            msg::println(msgEmailVcpkgTeam, msg::url = "vcpkg@microsoft.com");
         }
         Checks::exit_success(VCPKG_LINE_INFO);
     }

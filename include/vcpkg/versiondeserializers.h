@@ -17,6 +17,11 @@ namespace vcpkg
         Version version;
     };
 
+    Optional<SchemedVersion> visit_optional_schemed_deserializer(StringView parent_type,
+                                                                 Json::Reader& r,
+                                                                 const Json::Object& obj,
+                                                                 bool allow_hash_portversion);
+
     SchemedVersion visit_required_schemed_deserializer(StringView parent_type,
                                                        Json::Reader& r,
                                                        const Json::Object& obj,
@@ -25,7 +30,7 @@ namespace vcpkg
 
     void serialize_schemed_version(Json::Object& out_obj,
                                    VersionScheme scheme,
-                                   const std::string& version,
+                                   StringView version,
                                    int port_version,
                                    bool always_emit_port_version = false);
 }

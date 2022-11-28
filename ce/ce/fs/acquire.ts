@@ -5,10 +5,9 @@ import { strict } from 'assert';
 import { pipeline as origPipeline } from 'stream';
 import { promisify } from 'util';
 import { i } from '../i18n';
-import { AcquireEvents } from '../interfaces/events';
+import { DownloadEvents } from '../interfaces/events';
 import { Session } from '../session';
 import { Credentials } from '../util/credentials';
-import { ExtendedEmitter } from '../util/events';
 import { RemoteFileUnavailable } from '../util/exceptions';
 import { Algorithm, Hash } from '../util/hash';
 import { Uri } from '../util/uri';
@@ -26,9 +25,9 @@ export interface AcquireOptions extends Hash {
   credentials?: Credentials;
 }
 
-export async function acquireArtifactFile(session: Session, uris: Array<Uri>, outputFilename: string, events: Partial<AcquireEvents>, options?: AcquireOptions) {
-  await session.cache.createDirectory();
-  const outputFile = session.cache.join(outputFilename);
+export async function acquireArtifactFile(session: Session, uris: Array<Uri>, outputFilename: string, events: Partial<DownloadEvents>, options?: AcquireOptions) {
+  await session.downloads.createDirectory();
+  const outputFile = session.downloads.join(outputFilename);
   session.channels.debug(`Acquire file '${outputFilename}' from [${uris.map(each => each.toString()).join(',')}]`);
 
   if (options?.algorithm && options?.value) {
@@ -79,14 +78,12 @@ export async function acquireArtifactFile(session: Session, uris: Array<Uri>, ou
 }
 
 /** */
-async function https(session: Session, uris: Array<Uri>, outputFilename: string, events: Partial<AcquireEvents>, options?: AcquireOptions) {
-  const ee = new ExtendedEmitter<AcquireEvents>();
-  ee.subscribe(events);
+async function https(session: Session, uris: Array<Uri>, outputFilename: string, events: Partial<DownloadEvents>, options?: AcquireOptions) {
   session.channels.debug(`Attempting to download file '${outputFilename}' from [${uris.map(each => each.toString()).join(',')}]`);
 
   let resumeAtOffset = 0;
-  await session.cache.createDirectory();
-  const outputFile = session.cache.join(outputFilename);
+  await session.downloads.createDirectory();
+  const outputFile = session.downloads.join(outputFilename);
 
   if (options?.force) {
     session.channels.debug(`Acquire '${outputFilename}': force specified, forcing download`);
@@ -96,6 +93,7 @@ async function https(session: Session, uris: Array<Uri>, outputFilename: string,
 
   // start this peeking at the target uris.
   session.channels.debug(`Acquire '${outputFilename}': checking remote connections`);
+  events.downloadStart?.(uris, outputFile.fsPath);
   const locations = new RemoteFile(uris, { credentials: options?.credentials });
   let url: Uri | undefined;
 
@@ -141,7 +139,7 @@ async function https(session: Session, uris: Array<Uri>, outputFilename: string,
           const algorithm = <Algorithm>(await locations.algorithm);
           const value = await locations.hash;
           session.channels.debug(`Acquire '${outputFilename}': remote alg/hash: '${algorithm}'/'${value}`);
-          if (algorithm && value && outputFile.hashValid(events, { algorithm, value, ...options })) {
+          if (algorithm && value && await outputFile.hashValid(events, { algorithm, value, ...options })) {
             session.channels.debug(`Acquire '${outputFilename}': on disk file hash matches the server hash`);
             // so *we* don't have the hash, but ... if the server has a hash, we could see if what we have is what they have?
             // it does match what the server has.
@@ -202,11 +200,10 @@ async function https(session: Session, uris: Array<Uri>, outputFilename: string,
   let progressStream;
   if (length > 0) {
     progressStream = new ProgressTrackingStream(resumeAtOffset, length);
-    progressStream.on('progress', (filePercentage) => ee.emit('download', outputFilename, filePercentage));
+    progressStream.on('progress', (filePercentage) => events.downloadProgress?.(url!, outputFile.fsPath, filePercentage));
   }
-  const outputStream = await outputFile.writeStream({ append: true });
-  ee.emit('download', outputFilename, 0);
 
+  const outputStream = await outputFile.writeStream({ append: true });
   // whoooosh. write out the file
   if (progressStream) {
     await pipeline(inputStream, progressStream, outputStream);
@@ -214,6 +211,7 @@ async function https(session: Session, uris: Array<Uri>, outputFilename: string,
     await pipeline(inputStream, outputStream);
   }
 
+  events.downloadComplete?.();
   // we've downloaded the file, let's see if it matches the hash we have.
   if (options?.algorithm) {
     session.channels.debug(`Acquire '${outputFilename}': checking downloaded file hash`);
@@ -226,8 +224,6 @@ async function https(session: Session, uris: Array<Uri>, outputFilename: string,
   }
 
   session.channels.debug(`Acquire '${outputFilename}': downloading file successful`);
-  ee.emit('download', outputFilename, 1000);
-  ee.emit('complete');
   return outputFile;
 }
 
@@ -237,13 +233,12 @@ export async function resolveNugetUrl(session: Session, pkg: string) {
 
   // let's resolve the redirect first, since nuget servers don't like us getting HEAD data on the targets via a redirect.
   // even if this wasn't the case, this is lower cost now rather than later.
-  const url = await resolveRedirect(session.parseUri(`https://www.nuget.org/api/v2/package/${name}/${version}`));
+  const url = await resolveRedirect(session.fileSystem.parseUri(`https://www.nuget.org/api/v2/package/${name}/${version}`));
 
   session.channels.debug(`Resolving nuget package for '${pkg}' to '${url}'`);
   return url;
 }
 
-export async function acquireNugetFile(session: Session, pkg: string, outputFilename: string, events: Partial<AcquireEvents>, options?: AcquireOptions): Promise<Uri> {
+export async function acquireNugetFile(session: Session, pkg: string, outputFilename: string, events: Partial<DownloadEvents>, options?: AcquireOptions): Promise<Uri> {
   return https(session, [await resolveNugetUrl(session, pkg)], outputFilename, events, options);
 }
-

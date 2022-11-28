@@ -1,4 +1,3 @@
-#include <vcpkg/base/lockguarded.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
@@ -19,7 +18,6 @@
 #include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
-using Install::KeepGoing;
 
 namespace vcpkg::Commands::Upgrade
 {
@@ -70,9 +68,8 @@ namespace vcpkg::Commands::Upgrade
     {
         if (paths.manifest_mode_enabled())
         {
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                       "Error: the upgrade command does not currently support manifest mode. Instead, "
-                                       "modify your vcpkg.json and run install.");
+            msg::println_error(msgUpgradeInManifest);
+            Checks::unreachable(VCPKG_LINE_INFO);
         }
 
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
@@ -81,24 +78,23 @@ namespace vcpkg::Commands::Upgrade
         const KeepGoing keep_going = determine_keep_going(Util::Sets::contains(options.switches, OPTION_KEEP_GOING),
                                                           Util::Sets::contains(options.switches, OPTION_NO_KEEP_GOING));
         const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
-                                                 ? Dependencies::UnsupportedPortAction::Warn
-                                                 : Dependencies::UnsupportedPortAction::Error;
+                                                 ? UnsupportedPortAction::Warn
+                                                 : UnsupportedPortAction::Error;
 
         BinaryCache binary_cache{args, paths};
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
         // Load ports from ports dirs
-        PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
+        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
         // input sanitization
         const std::vector<PackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
-            return Input::check_and_get_package_spec(
-                std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+            return check_and_get_package_spec(std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
 
-        Dependencies::ActionPlan action_plan;
+        ActionPlan action_plan;
         if (specs.empty())
         {
             // If no packages specified, upgrade all outdated packages.
@@ -106,11 +102,11 @@ namespace vcpkg::Commands::Upgrade
 
             if (outdated_packages.empty())
             {
-                print2("All installed packages are up-to-date with the local portfiles.\n");
+                msg::println(msgAllPackagesAreUpdated);
                 Checks::exit_success(VCPKG_LINE_INFO);
             }
 
-            action_plan = Dependencies::create_upgrade_plan(
+            action_plan = create_upgrade_plan(
                 provider,
                 var_provider,
                 Util::fmap(outdated_packages, [](const Update::OutdatedPackage& package) { return package.spec; }),
@@ -135,7 +131,7 @@ namespace vcpkg::Commands::Upgrade
                 }
 
                 auto maybe_control_file = provider.get_control_file(spec.name());
-                if (!maybe_control_file.has_value())
+                if (!maybe_control_file)
                 {
                     no_control_file.push_back(spec);
                     skip_version_check = true;
@@ -165,70 +161,62 @@ namespace vcpkg::Commands::Upgrade
 
             if (!up_to_date.empty())
             {
-                print2(Color::success, "The following packages are up-to-date:\n");
-                print2(Strings::join(
-                           "", up_to_date, [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
-                       '\n');
+                msg::println(Color::success, msgFollowingPackagesUpgraded);
+                for (const PackageSpec& spec : up_to_date)
+                {
+                    msg::println(Color::none, LocalizedString().append_indent().append_raw(spec.to_string()));
+                }
             }
 
             if (!not_installed.empty())
             {
-                print2(Color::error, "The following packages are not installed:\n");
-                print2(Strings::join(
-                           "", not_installed, [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
-                       '\n');
+                msg::println_error(msgFollowingPackagesNotInstalled);
+                for (const PackageSpec& spec : not_installed)
+                {
+                    msg::println(Color::none, LocalizedString().append_indent().append_raw(spec.to_string()));
+                }
             }
 
             if (!no_control_file.empty())
             {
-                print2(Color::error, "The following packages do not have a valid CONTROL or vcpkg.json:\n");
-                print2(Strings::join("",
-                                     no_control_file,
-                                     [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
-                       '\n');
+                msg::println_error(msgFollowingPackagesMissingControl);
+                for (const PackageSpec& spec : no_control_file)
+                {
+                    msg::println(Color::none, LocalizedString().append_indent().append_raw(spec.to_string()));
+                }
             }
 
             Checks::check_exit(VCPKG_LINE_INFO, not_installed.empty() && no_control_file.empty());
 
             if (to_upgrade.empty()) Checks::exit_success(VCPKG_LINE_INFO);
 
-            action_plan = Dependencies::create_upgrade_plan(
+            action_plan = create_upgrade_plan(
                 provider, var_provider, to_upgrade, status_db, {host_triplet, unsupported_port_action});
         }
 
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty());
         for (const auto& warning : action_plan.warnings)
         {
-            print2(Color::warning, warning, '\n');
+            msg::write_unlocalized_text_to_stdout(Color::warning, warning + "\n");
         }
         // Set build settings for all install actions
         for (auto&& action : action_plan.install_actions)
         {
-            action.build_options = vcpkg::Build::default_build_package_options;
+            action.build_options = default_build_package_options;
         }
 
-        Dependencies::print_plan(action_plan, true, paths.builtin_ports_directory());
+        print_plan(action_plan, true, paths.builtin_ports_directory());
 
         if (!no_dry_run)
         {
-            print2(Color::warning,
-                   "If you are sure you want to rebuild the above packages, run this command with the "
-                   "--no-dry-run option.\n");
+            msg::println(Color::warning, msgUpgradeRunWithNoDryRun);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
         var_provider.load_tag_vars(action_plan, provider, host_triplet);
 
-        const Install::InstallSummary summary = Install::perform(args,
-                                                                 action_plan,
-                                                                 keep_going,
-                                                                 paths,
-                                                                 status_db,
-                                                                 binary_cache,
-                                                                 Build::null_build_logs_recorder(),
-                                                                 var_provider);
-
-        print2("\nTotal elapsed time: ", GlobalState::timer.to_string(), "\n\n");
+        const InstallSummary summary = Install::perform(
+            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), var_provider);
 
         if (keep_going == KeepGoing::YES)
         {

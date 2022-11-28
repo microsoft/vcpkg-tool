@@ -60,7 +60,7 @@ using vcpkg::StringView;
 
 TEST_CASE ("SHA256: basic tests", "[hash][sha256]")
 {
-    const auto algorithm = Hash::Algorithm::Sha256;
+    constexpr auto algorithm = Hash::Algorithm::Sha256;
 
     CHECK_HASH_STRING("", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
     CHECK_HASH_STRING(";", "41b805ea7ac014e23556e98bb374702a08344268f92489a02f0880849394a1e4");
@@ -72,11 +72,11 @@ TEST_CASE ("SHA256: basic tests", "[hash][sha256]")
 
 TEST_CASE ("SHA256: NIST test cases (small)", "[hash][sha256]")
 {
-    const auto algorithm = Hash::Algorithm::Sha256;
+    constexpr auto algorithm = Hash::Algorithm::Sha256;
 
     CHECK_HASH(1, 0xbd, "68325720aabd7c82f30f554b313d0570c95accbb7dc4b5aae11204c08ffe732b");
     {
-        const unsigned char data[] = {0xc9, 0x8c, 0x8e, 0x55};
+        constexpr unsigned char data[] = {0xc9, 0x8c, 0x8e, 0x55};
         CHECK_HASH_OF(data, "7abc22c0ae5af26ce93dbb94433a0e0b2e119d014f8e7f65bd56c61ccccd9504");
     }
     CHECK_HASH(55, 0, "02779466cdec163811d078815c633f21901413081449002f24aa3e80f0b88ef7");
@@ -90,7 +90,7 @@ TEST_CASE ("SHA256: NIST test cases (small)", "[hash][sha256]")
 
 TEST_CASE ("SHA512: NIST test cases (small)", "[hash][sha512]")
 {
-    const auto algorithm = Hash::Algorithm::Sha512;
+    constexpr auto algorithm = Hash::Algorithm::Sha512;
 
     CHECK_HASH_STRING("",
                       "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f"
@@ -158,7 +158,7 @@ TEST_CASE ("SHA512: NIST test cases (large)", "[.][hash-expensive][sha512-expens
 
 #if defined(CATCH_CONFIG_ENABLE_BENCHMARKING)
 using Catch::Benchmark::Chronometer;
-void benchmark_hasher(Chronometer& meter, Hash::Hasher& hasher, std::uint64_t size, unsigned char byte) noexcept
+static void benchmark_hasher(Chronometer& meter, Hash::Hasher& hasher, std::uint64_t size, unsigned char byte) noexcept
 {
     unsigned char buffer[1024];
     std::fill(std::begin(buffer), std::end(buffer), byte);

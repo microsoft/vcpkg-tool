@@ -65,7 +65,7 @@ namespace
 
         void get_all_port_names(std::vector<std::string>&) const override;
 
-        Optional<Version> get_baseline_version(StringView) const override;
+        ExpectedL<Version> get_baseline_version(StringView) const override;
 
     private:
         friend struct GitRegistryEntry;
@@ -85,22 +85,20 @@ namespace
                     e.commit_id(), registry_versions_dir_name.to_string());
                 if (!maybe_tree)
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-no-versions-at-commit",
-                                                                     "defined");
-                    Checks::exit_with_message(
-                        VCPKG_LINE_INFO,
-                        "Error: could not find the git tree for `versions` in repo `%s` at commit `%s`: %s",
-                        m_repo,
-                        e.commit_id(),
-                        maybe_tree.error());
+                    get_global_metrics_collector().track_define(DefineMetric::RegistriesErrorNoVersionsAtCommit);
+                    Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                                msg::format(msgCouldNotFindGitTreeAtCommit,
+                                                            msg::package_name = m_repo,
+                                                            msg::commit_sha = e.commit_id())
+                                                    .append_raw('\n')
+                                                    .append_raw(maybe_tree.error()));
                 }
                 auto maybe_path = m_paths.git_checkout_object_from_remote_registry(*maybe_tree.get());
                 if (!maybe_path)
                 {
-                    Checks::exit_with_message(VCPKG_LINE_INFO,
-                                              "Error: failed to check out `versions` from repo %s: %s",
-                                              m_repo,
-                                              maybe_path.error());
+                    msg::println_error(msgFailedToCheckoutRepo, msg::package_name = m_repo);
+                    msg::println_error(LocalizedString::from_raw(maybe_path.error()));
+                    Checks::exit_fail(VCPKG_LINE_INFO);
                 }
                 return std::move(*maybe_path.get());
             });
@@ -210,13 +208,6 @@ namespace
         std::vector<Path> version_paths;
     };
 
-    DECLARE_AND_REGISTER_MESSAGE(ErrorRequireBaseline,
-                                 (),
-                                 "",
-                                 "Error: this vcpkg instance requires a manifest with a specified baseline in order to "
-                                 "interact with ports. Please add 'builtin-baseline' to the manifest or add a "
-                                 "'vcpkg-configuration.json' that redefines the default registry.\n");
-
     // This registry implementation is the builtin registry without a baseline
     // that will only consult files in ports
     struct BuiltinFilesRegistry final : RegistryImplementation
@@ -234,19 +225,13 @@ namespace
 
         void get_all_port_names(std::vector<std::string>&) const override;
 
-        Optional<Version> get_baseline_version(StringView port_name) const override;
+        ExpectedL<Version> get_baseline_version(StringView port_name) const override;
 
         ~BuiltinFilesRegistry() = default;
 
         DelayedInit<Baseline> m_baseline;
 
     private:
-        [[noreturn]] static void fail_require_baseline(LineInfo li)
-        {
-            msg::println(Color::error, msgErrorRequireBaseline);
-            Checks::exit_fail(li);
-        }
-
         const ParseExpected<SourceControlFile>& get_scf(const Path& path) const
         {
             return m_scfs.get_lazy(path, [this, &path]() { return Paragraphs::try_load_port(m_fs, path); });
@@ -277,7 +262,7 @@ namespace
 
         void get_all_port_names(std::vector<std::string>&) const override;
 
-        Optional<Version> get_baseline_version(StringView port_name) const override;
+        ExpectedL<Version> get_baseline_version(StringView port_name) const override;
 
         ~BuiltinGitRegistry() = default;
 
@@ -301,21 +286,20 @@ namespace
 
         std::unique_ptr<RegistryEntry> get_port_entry(StringView) const override
         {
-            fail_require_baseline(VCPKG_LINE_INFO);
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorRequireBaseline);
         }
 
-        void get_all_port_names(std::vector<std::string>&) const override { fail_require_baseline(VCPKG_LINE_INFO); }
+        void get_all_port_names(std::vector<std::string>&) const override
+        {
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorRequireBaseline);
+        }
 
-        Optional<Version> get_baseline_version(StringView) const override { fail_require_baseline(VCPKG_LINE_INFO); }
+        ExpectedL<Version> get_baseline_version(StringView) const override
+        {
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorRequireBaseline);
+        }
 
         ~BuiltinErrorRegistry() = default;
-
-    private:
-        [[noreturn]] static void fail_require_baseline(LineInfo li)
-        {
-            msg::println(Color::error, msgErrorRequireBaseline);
-            Checks::exit_fail(li);
-        }
     };
     constexpr StringLiteral BuiltinErrorRegistry::s_kind;
 
@@ -332,7 +316,7 @@ namespace
 
         void get_all_port_names(std::vector<std::string>&) const override;
 
-        Optional<Version> get_baseline_version(StringView) const override;
+        ExpectedL<Version> get_baseline_version(StringView) const override;
 
     private:
         const Filesystem& m_fs;
@@ -369,15 +353,13 @@ namespace
 
                 if (!Strings::ends_with(filename, ".json"))
                 {
-                    Checks::exit_with_message(
-                        VCPKG_LINE_INFO, "Error: the JSON file %s must have a .json (all lowercase) extension.", file);
+                    Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgJsonFileMissingExtension, msg::path = file);
                 }
 
                 auto port_name = filename.substr(0, filename.size() - 5);
                 if (!Json::PackageNameDeserializer::is_package_name(port_name))
                 {
-                    Checks::exit_maybe_upgrade(
-                        VCPKG_LINE_INFO, "Error: found invalid port version file name: `%s`.", file);
+                    Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgInvalidPortVersonName, msg::path = file);
                 }
 
                 out.push_back(port_name.to_string());
@@ -459,19 +441,18 @@ namespace
                     return std::make_unique<BuiltinPortTreeRegistryEntry>(
                         scf->core_paragraph->name, port_directory, scf->to_version());
                 }
-
-                Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                           "Error: Failed to load port from %s: names did not match: '%s' != '%s'",
-                                           port_directory,
-                                           port_name,
-                                           scf->core_paragraph->name);
+                msg::println_error(msgUnexpectedPortName,
+                                   msg::expected = scf->core_paragraph->name,
+                                   msg::actual = port_name,
+                                   msg::path = port_directory);
+                Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
 
         return nullptr;
     }
 
-    Optional<Version> BuiltinFilesRegistry::get_baseline_version(StringView port_name) const
+    ExpectedL<Version> BuiltinFilesRegistry::get_baseline_version(StringView port_name) const
     {
         // if a baseline is not specified, use the ports directory version
         auto port_path = m_builtin_ports_directory / port_name;
@@ -480,19 +461,14 @@ namespace
         {
             return (*pscf)->to_version();
         }
-        print_error_message(maybe_scf.error());
-        Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Error: failed to load port from %s", port_path);
+        return LocalizedString::from_raw(ParseControlErrorInfo::format_errors({&maybe_scf.error(), 1}));
     }
 
     void BuiltinFilesRegistry::get_all_port_names(std::vector<std::string>& out) const
     {
         std::error_code ec;
-        auto port_directories = m_fs.get_directories_non_recursive(m_builtin_ports_directory, ec);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           !ec,
-                           "Error: failed while enumerating the builtin ports directory %s: %s",
-                           m_builtin_ports_directory,
-                           ec.message());
+        auto port_directories = m_fs.get_directories_non_recursive(m_builtin_ports_directory, VCPKG_LINE_INFO);
+
         for (auto&& port_directory : port_directories)
         {
             auto filename = port_directory.filename();
@@ -512,10 +488,12 @@ namespace
         {
             auto maybe_version_entries =
                 load_versions_file(fs, VersionDbType::Git, m_paths.builtin_registry_versions, port_name);
-            Checks::check_maybe_upgrade(
-                VCPKG_LINE_INFO, maybe_version_entries.has_value(), "Error: " + maybe_version_entries.error());
-            auto version_entries = std::move(maybe_version_entries).value_or_exit(VCPKG_LINE_INFO);
+            if (!maybe_version_entries)
+            {
+                Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Error: " + maybe_version_entries.error());
+            }
 
+            auto version_entries = std::move(maybe_version_entries).value_or_exit(VCPKG_LINE_INFO);
             auto res = std::make_unique<BuiltinGitRegistryEntry>(m_paths);
             res->port_name = port_name.to_string();
             for (auto&& version_entry : version_entries)
@@ -529,23 +507,24 @@ namespace
         return m_files_impl->get_port_entry(port_name);
     }
 
-    Optional<Version> BuiltinGitRegistry::get_baseline_version(StringView port_name) const
+    ExpectedL<Version> BuiltinGitRegistry::get_baseline_version(StringView port_name) const
     {
         const auto& baseline = m_baseline.get([this]() -> Baseline {
             auto maybe_path = git_checkout_baseline(m_paths, m_baseline_identifier);
-            if (!maybe_path.has_value())
+            if (!maybe_path)
             {
-                Checks::exit_with_message(
-                    VCPKG_LINE_INFO, "%s\n\n%s", maybe_path.error(), m_paths.get_current_git_sha_baseline_message());
+                msg::write_unlocalized_text_to_stdout(
+                    Color::none,
+                    fmt::format("{}\n\n{}", maybe_path.error(), m_paths.get_current_git_sha_baseline_message().data()));
+                Checks::exit_fail(VCPKG_LINE_INFO);
             }
             auto b = load_baseline_versions(m_paths.get_filesystem(), *maybe_path.get()).value_or_exit(VCPKG_LINE_INFO);
             if (auto p = b.get())
             {
                 return std::move(*p);
             }
-            Checks::exit_with_message(VCPKG_LINE_INFO,
-                                      "Error: The baseline file at commit %s was invalid (no \"default\" field)",
-                                      m_baseline_identifier);
+            Checks::msg_exit_with_message(
+                VCPKG_LINE_INFO, msgBaselineFileNoDefaultField, msg::commit_sha = m_baseline_identifier);
         });
 
         auto it = baseline.find(port_name);
@@ -553,7 +532,7 @@ namespace
         {
             return it->second;
         }
-        return nullopt;
+        return msg::format(msg::msgErrorMessage).append(msgPortNotInBaseline, msg::package_name = port_name);
     }
 
     void BuiltinGitRegistry::get_all_port_names(std::vector<std::string>& out) const
@@ -570,7 +549,7 @@ namespace
     // } BuiltinGitRegistry::RegistryImplementation
 
     // { FilesystemRegistry::RegistryImplementation
-    Optional<Version> FilesystemRegistry::get_baseline_version(StringView port_name) const
+    ExpectedL<Version> FilesystemRegistry::get_baseline_version(StringView port_name) const
     {
         const auto& baseline = m_baseline.get([this]() -> Baseline {
             auto path_to_baseline = m_path / registry_versions_dir_name / "baseline.json";
@@ -587,11 +566,10 @@ namespace
                     return {};
                 }
 
-                Checks::exit_maybe_upgrade(
-                    VCPKG_LINE_INFO,
-                    "Error: could not find explicitly specified baseline `\"%s\"` in baseline file `%s`.",
-                    m_baseline_identifier,
-                    path_to_baseline);
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                            msgCouldNotFindBaseline,
+                                            msg::commit_sha = m_baseline_identifier,
+                                            msg::path = path_to_baseline);
             }
 
             Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, res_baseline.error());
@@ -604,7 +582,7 @@ namespace
         }
         else
         {
-            return nullopt;
+            return msg::format(msg::msgErrorMessage).append(msgPortNotInBaseline, msg::package_name = port_name);
         }
     }
 
@@ -612,8 +590,7 @@ namespace
     {
         auto maybe_version_entries =
             load_versions_file(m_fs, VersionDbType::Filesystem, m_path / registry_versions_dir_name, port_name, m_path);
-        Checks::check_maybe_upgrade(
-            VCPKG_LINE_INFO, maybe_version_entries.has_value(), "Error: %s", maybe_version_entries.error());
+
         auto version_entries = std::move(maybe_version_entries).value_or_exit(VCPKG_LINE_INFO);
 
         auto res = std::make_unique<FilesystemRegistryEntry>(port_name.to_string());
@@ -645,7 +622,7 @@ namespace
         fill_data_from_path(parent.m_paths.get_filesystem(), vtp.p);
     }
 
-    Optional<Version> GitRegistry::get_baseline_version(StringView port_name) const
+    ExpectedL<Version> GitRegistry::get_baseline_version(StringView port_name) const
     {
         const auto& baseline = m_baseline.get([this]() -> Baseline {
             // We delay baseline validation until here to give better error messages and suggestions
@@ -653,49 +630,52 @@ namespace
             {
                 auto e = get_lock_entry();
                 e.ensure_up_to_date(m_paths);
-                Checks::exit_maybe_upgrade(
-                    VCPKG_LINE_INFO,
-                    "Error: the git registry entry for \"%s\" must have a \"baseline\" field that is a valid git "
-                    "commit SHA (40 lowercase hexadecimal characters).\n"
-                    "The current HEAD of that repo is \"%s\".\n",
-                    m_repo,
-                    e.commit_id());
+                Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                               msgGitRegistryMustHaveBaseline,
+                                               msg::package_name = m_repo,
+                                               msg::value = e.commit_id());
             }
 
             auto path_to_baseline = Path(registry_versions_dir_name.to_string()) / "baseline.json";
             auto maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
-            if (!maybe_contents.has_value())
+            if (!maybe_contents)
             {
                 get_lock_entry().ensure_up_to_date(m_paths);
                 maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
             }
-            if (!maybe_contents.has_value())
+            if (!maybe_contents)
             {
-                print2("Fetching baseline information from ", m_repo, "...\n");
-                if (auto err = m_paths.git_fetch(m_repo, m_baseline_identifier))
+                msg::println(msgFetchingBaselineInfo, msg::package_name = m_repo);
+                auto maybe_err = m_paths.git_fetch(m_repo, m_baseline_identifier);
+                if (!maybe_err)
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-could-not-find-baseline",
-                                                                     "defined");
-                    Checks::exit_with_message(
-                        VCPKG_LINE_INFO,
-                        "Error: Couldn't find baseline `\"%s\"` for repo %s:\n%s\nError: Failed to fetch %s:\n%s",
-                        m_baseline_identifier,
-                        m_repo,
-                        maybe_contents.error(),
-                        m_repo,
-                        *err.get());
+                    get_global_metrics_collector().track_define(DefineMetric::RegistriesErrorCouldNotFindBaseline);
+
+                    msg::println_error(msgCouldNotFindBaselineForRepo,
+                                       msg::commit_sha = m_baseline_identifier,
+                                       msg::package_name = m_repo);
+
+                    msg::println_error(msg::format(msgFailedToFetchError,
+                                                   msg::error_msg = maybe_contents.error(),
+                                                   msg::package_name = m_repo)
+                                           .append_raw('\n')
+                                           .append_raw(maybe_err.error()));
+
+                    Checks::exit_fail(VCPKG_LINE_INFO);
                 }
+
                 maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
             }
 
-            if (!maybe_contents.has_value())
+            if (!maybe_contents)
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-could-not-find-baseline", "defined");
-                Checks::exit_with_message(VCPKG_LINE_INFO,
-                                          "Error: Couldn't find baseline in commit `\"%s\"` from repo %s:\n%s\n",
-                                          m_baseline_identifier,
-                                          m_repo,
-                                          maybe_contents.error());
+                get_global_metrics_collector().track_define(DefineMetric::RegistriesErrorCouldNotFindBaseline);
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                              msg::format(msgCouldNotFindBaselineInCommit,
+                                                          msg::commit_sha = m_baseline_identifier,
+                                                          msg::package_name = m_repo)
+                                                  .append_raw('\n')
+                                                  .append_raw(maybe_contents.error()));
             }
 
             auto contents = maybe_contents.get();
@@ -708,22 +688,21 @@ namespace
                 }
                 else
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-could-not-find-baseline",
-                                                                     "defined");
-                    Checks::exit_maybe_upgrade(
-                        VCPKG_LINE_INFO,
-                        "The baseline.json from commit `\"%s\"` in the repo %s did not contain a \"default\" field.",
-                        m_baseline_identifier,
-                        m_repo);
+                    get_global_metrics_collector().track_define(DefineMetric::RegistriesErrorCouldNotFindBaseline);
+                    Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                                   msgBaselineMissingDefault,
+                                                   msg::commit_sha = m_baseline_identifier,
+                                                   msg::url = m_repo);
                 }
             }
             else
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO,
-                                          "Error while fetching baseline `\"%s\"` from repo %s:\n%s",
-                                          m_baseline_identifier,
-                                          m_repo,
-                                          res_baseline.error());
+                msg::println_error(msg::format(msgErrorWhileFetchingBaseline,
+                                               msg::value = m_baseline_identifier,
+                                               msg::package_name = m_repo)
+                                       .append_raw('\n')
+                                       .append(LocalizedString::from_raw(res_baseline.error())));
+                Checks::exit_fail(VCPKG_LINE_INFO);
             }
         });
 
@@ -733,7 +712,7 @@ namespace
             return it->second;
         }
 
-        return nullopt;
+        return msg::format(msg::msgErrorMessage).append(msgPortNotInBaseline, msg::package_name = port_name);
     }
 
     void GitRegistry::get_all_port_names(std::vector<std::string>& out) const
@@ -839,8 +818,6 @@ namespace
     void GitRegistryEntry::fill_data_from_path(const Filesystem& fs, const Path& port_versions_path) const
     {
         auto maybe_version_entries = load_versions_file(fs, VersionDbType::Git, port_versions_path, port_name);
-        Checks::check_maybe_upgrade(
-            VCPKG_LINE_INFO, maybe_version_entries.has_value(), "Error: " + maybe_version_entries.error());
         auto version_entries = std::move(maybe_version_entries).value_or_exit(VCPKG_LINE_INFO);
 
         for (auto&& version_entry : version_entries)
@@ -896,9 +873,11 @@ namespace
                                                               StringView port_name,
                                                               const Path& registry_root)
     {
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           !(type == VersionDbType::Filesystem && registry_root.empty()),
-                           "Bug in vcpkg; type should never = Filesystem when registry_root is empty.");
+        if (type == VersionDbType::Filesystem && registry_root.empty())
+        {
+            Debug::print("Bug in vcpkg; type should never = Filesystem when registry_root is empty.");
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
 
         auto versions_file_path = registry_versions / relative_path_to_versions(port_name);
 
@@ -915,18 +894,19 @@ namespace
                 "Error: Failed to load the versions database file %s: %s", versions_file_path, ec.message());
         }
 
-        auto maybe_versions_json = Json::parse(std::move(contents));
-        if (!maybe_versions_json.has_value())
+        auto maybe_versions_json = Json::parse(contents);
+        if (!maybe_versions_json)
         {
-            return Strings::format(
-                "Error: failed to parse versions file for `%s`: %s", port_name, maybe_versions_json.error()->format());
+            return Strings::format("Error: failed to parse versions file for `%s`: %s",
+                                   port_name,
+                                   maybe_versions_json.error()->to_string());
         }
         if (!maybe_versions_json.get()->first.is_object())
         {
             return Strings::format("Error: versions file for `%s` does not have a top level object.", port_name);
         }
 
-        const auto& versions_object = maybe_versions_json.get()->first.object();
+        const auto& versions_object = maybe_versions_json.get()->first.object(VCPKG_LINE_INFO);
         auto maybe_versions_array = versions_object.get("versions");
         if (!maybe_versions_array || !maybe_versions_array->is_array())
         {
@@ -952,10 +932,10 @@ namespace
     ExpectedS<Optional<Baseline>> parse_baseline_versions(StringView contents, StringView baseline, StringView origin)
     {
         auto maybe_value = Json::parse(contents, origin);
-        if (!maybe_value.has_value())
+        if (!maybe_value)
         {
             return Strings::format(
-                "Error: failed to parse baseline file: %s\n%s", origin, maybe_value.error()->format());
+                "Error: failed to parse baseline file: %s\n%s", origin, maybe_value.error()->to_string());
         }
 
         auto& value = *maybe_value.get();
@@ -967,7 +947,7 @@ namespace
 
         auto real_baseline = baseline.size() == 0 ? "default" : baseline;
 
-        const auto& obj = value.first.object();
+        const auto& obj = value.first.object(VCPKG_LINE_INFO);
         auto baseline_value = obj.get(real_baseline);
         if (!baseline_value)
         {
@@ -997,14 +977,14 @@ namespace
         {
             if (ec == std::errc::no_such_file_or_directory)
             {
-                Debug::print("Failed to find baseline.json\n");
+                msg::println(msgFailedToFindBaseline);
                 return {nullopt, expected_left_tag};
             }
 
             return Strings::format("Error: failed to read baseline file \"%s\": %s", baseline_path, ec.message());
         }
 
-        return parse_baseline_versions(std::move(contents), baseline, baseline_path);
+        return parse_baseline_versions(contents, baseline, baseline_path);
     }
 }
 
@@ -1134,7 +1114,7 @@ namespace vcpkg
 
         if (it == range.second)
         {
-            print2("Fetching registry information from ", repo, " (", reference, ")...\n");
+            msg::println(msgFetchingRegistryInfo, msg::url = repo, msg::value = reference);
             auto x = paths.git_fetch_from_remote_registry(repo, reference);
             it = lockdata.emplace(repo.to_string(),
                                   EntryData{reference.to_string(), x.value_or_exit(VCPKG_LINE_INFO), false});
@@ -1149,7 +1129,7 @@ namespace vcpkg
         {
             StringView repo(data->first);
             StringView reference(data->second.reference);
-            print2("Fetching registry information from ", repo, " (", reference, ")...\n");
+            msg::println(msgFetchingRegistryInfo, msg::url = repo, msg::value = reference);
 
             data->second.commit_id =
                 paths.git_fetch_from_remote_registry(repo, reference).value_or_exit(VCPKG_LINE_INFO);
@@ -1178,10 +1158,10 @@ namespace vcpkg
         return default_registry();
     }
 
-    Optional<Version> RegistrySet::baseline_for_port(StringView port_name) const
+    ExpectedL<Version> RegistrySet::baseline_for_port(StringView port_name) const
     {
         auto impl = registry_for_port(port_name);
-        if (!impl) return nullopt;
+        if (!impl) return msg::format(msg::msgErrorMessage).append(msgNoRegistryForPort, msg::package_name = port_name);
         return impl->get_baseline_version(port_name);
     }
 
@@ -1199,7 +1179,7 @@ namespace vcpkg
         if (auto pversions = maybe_versions.get())
         {
             return Util::fmap(
-                *pversions, [](auto&& entry) -> auto {
+                *pversions, [](auto&& entry) -> auto{
                     return std::make_pair(SchemedVersion{entry.scheme, entry.version}, entry.git_tree);
                 });
         }
@@ -1224,7 +1204,7 @@ namespace vcpkg
     {
         static constexpr struct
         {
-            bool operator()(char ch) { return ('0' <= ch && ch <= '9') || ('a' <= ch && ch <= 'f'); }
+            bool operator()(char ch) const { return ('0' <= ch && ch <= '9') || ('a' <= ch && ch <= 'f'); }
         } is_lcase_ascii_hex;
 
         return sv.size() == 40 && std::all_of(sv.begin(), sv.end(), is_lcase_ascii_hex);
@@ -1246,7 +1226,7 @@ namespace vcpkg
         if (paths.use_git_default_registry())
         {
             return std::make_unique<GitRegistry>(
-                paths, builtin_registry_git_url().to_string(), "HEAD", std::move(baseline));
+                paths, builtin_registry_git_url.to_string(), "HEAD", std::move(baseline));
         }
         else
         {

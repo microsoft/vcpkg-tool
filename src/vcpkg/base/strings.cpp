@@ -1,11 +1,13 @@
 #include <vcpkg/base/api_stable_format.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/unicode.h>
 #include <vcpkg/base/util.h>
 
+#include <ctype.h>
 #include <locale.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -14,13 +16,15 @@
 #include <string>
 #include <vector>
 
-vcpkg::ExpectedS<std::string> vcpkg::details::api_stable_format_impl(StringView sv,
+using namespace vcpkg;
+
+vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView sv,
                                                                      void (*cb)(void*, std::string&, StringView),
                                                                      void* user)
 {
     // Transforms similarly to std::format -- "{xyz}" -> f(xyz), "{{" -> "{", "}}" -> "}"
 
-    static const char s_brackets[] = "{}";
+    static constexpr char s_brackets[] = "{}";
 
     std::string out;
     auto prev = sv.begin();
@@ -36,7 +40,7 @@ vcpkg::ExpectedS<std::string> vcpkg::details::api_stable_format_impl(StringView 
         {
             if (p == last)
             {
-                return {Strings::concat("Error: invalid format string: ", sv), expected_right_tag};
+                return msg::format(msgInvalidFormatString, msg::actual = sv);
             }
             else if (*p == '{')
             {
@@ -50,7 +54,7 @@ vcpkg::ExpectedS<std::string> vcpkg::details::api_stable_format_impl(StringView 
                 p = std::find_first_of(p, last, s_brackets, s_brackets + 2);
                 if (p == last || p[0] != '}')
                 {
-                    return {Strings::concat("Error: invalid format string: ", sv), expected_right_tag};
+                    return msg::format(msgInvalidFormatString, msg::actual = sv);
                 }
                 // p[0] == '}'
                 cb(user, out, {seq_start, p});
@@ -61,7 +65,7 @@ vcpkg::ExpectedS<std::string> vcpkg::details::api_stable_format_impl(StringView 
         {
             if (p == last || p[0] != '}')
             {
-                return {Strings::concat("Error: invalid format string: ", sv), expected_right_tag};
+                return msg::format(msgInvalidFormatString, msg::actual = sv);
             }
             out.push_back('}');
             prev = ++p;
@@ -152,10 +156,11 @@ void Strings::to_utf8(std::string& output, const wchar_t* w, size_t size_in_char
     if (size <= 0)
     {
         unsigned long last_error = ::GetLastError();
-        Checks::exit_with_message(VCPKG_LINE_INFO,
-                                  "Failed to convert to UTF-8. %08lX %s",
-                                  last_error,
-                                  std::system_category().message(static_cast<int>(last_error)));
+        Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                      msg::format(msgUtf8ConversionFailed)
+                                          .append_raw(std::system_category().message(static_cast<int>(last_error)))
+                                          .append_raw('\n')
+                                          .append_raw(std::system_category().message(static_cast<int>(last_error))));
     }
 
     output.resize(size);
@@ -348,26 +353,26 @@ std::vector<StringView> Strings::find_all_enclosed(StringView input, StringView 
 StringView Strings::find_exactly_one_enclosed(StringView input, StringView left_tag, StringView right_tag)
 {
     std::vector<StringView> result = find_all_enclosed(input, left_tag, right_tag);
-    Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
-                                result.size() == 1,
-                                "Found %d sets of %s.*%s but expected exactly 1, in block:\n%s",
-                                result.size(),
-                                left_tag,
-                                right_tag,
-                                input);
+    Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
+                                    result.size() == 1,
+                                    msgExpectedOneSetOfTags,
+                                    msg::count = result.size(),
+                                    msg::old_value = left_tag,
+                                    msg::new_value = right_tag,
+                                    msg::value = input);
     return result.front();
 }
 
 Optional<StringView> Strings::find_at_most_one_enclosed(StringView input, StringView left_tag, StringView right_tag)
 {
     std::vector<StringView> result = find_all_enclosed(input, left_tag, right_tag);
-    Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
-                                result.size() <= 1,
-                                "Found %d sets of %s.*%s but expected at most 1, in block:\n%s",
-                                result.size(),
-                                left_tag,
-                                right_tag,
-                                input);
+    Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
+                                    result.size() <= 1,
+                                    msgExpectedAtMostOneSetOfTags,
+                                    msg::count = result.size(),
+                                    msg::old_value = left_tag,
+                                    msg::new_value = right_tag,
+                                    msg::value = input);
 
     if (result.empty())
     {

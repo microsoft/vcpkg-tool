@@ -31,7 +31,7 @@ namespace vcpkg
     Triplet Triplet::from_canonical_name(std::string triplet_as_string)
     {
         static std::unordered_set<TripletInstance> g_triplet_instances;
-        Strings::ascii_to_lowercase(&triplet_as_string[0], &triplet_as_string[0] + triplet_as_string.size());
+        Strings::ascii_to_lowercase(triplet_as_string.data(), triplet_as_string.data() + triplet_as_string.size());
         const auto p = g_triplet_instances.emplace(std::move(triplet_as_string));
         return &*p.first;
     }
@@ -78,28 +78,16 @@ namespace vcpkg
 
     static Triplet system_triplet()
     {
-#if defined(_WIN32)
-        StringLiteral operating_system = "windows";
-#elif defined(__APPLE__)
-        StringLiteral operating_system = "osx";
-#elif defined(__FreeBSD__)
-        StringLiteral operating_system = "freebsd";
-#elif defined(__OpenBSD__)
-        StringLiteral operating_system = "openbsd";
-#else
-        StringLiteral operating_system = "linux";
-#endif
-
         auto host_proc = get_host_processor();
-        auto canonical_name = Strings::format("%s-%s", to_zstring_view(host_proc), operating_system);
+        auto canonical_name = Strings::format("%s-%s", to_zstring_view(host_proc), get_host_os_name());
         return Triplet::from_canonical_name(std::move(canonical_name));
     }
 
     Triplet default_triplet(const VcpkgCmdArguments& args)
     {
-        if (args.triplet != nullptr)
+        if (auto triplet = args.triplet.get())
         {
-            return Triplet::from_canonical_name(std::string(*args.triplet));
+            return Triplet::from_canonical_name(*triplet);
         }
 #if defined(_WIN32)
         return Triplet::from_canonical_name("x86-windows");
@@ -110,9 +98,9 @@ namespace vcpkg
 
     Triplet default_host_triplet(const VcpkgCmdArguments& args)
     {
-        if (args.host_triplet != nullptr)
+        if (auto host_triplet = args.host_triplet.get())
         {
-            return Triplet::from_canonical_name(std::string(*args.host_triplet));
+            return Triplet::from_canonical_name(*host_triplet);
         }
         return system_triplet();
     }

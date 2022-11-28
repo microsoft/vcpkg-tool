@@ -124,7 +124,11 @@ namespace vcpkg
 
     StatusParagraphs::iterator StatusParagraphs::insert(std::unique_ptr<StatusParagraph> pgh)
     {
-        Checks::check_exit(VCPKG_LINE_INFO, pgh != nullptr, "Inserted null paragraph");
+        if (pgh == nullptr)
+        {
+            Checks::unreachable(VCPKG_LINE_INFO, "Inserted null paragraph");
+        }
+
         const PackageSpec& spec = pgh->package.spec;
         const auto ptr = find(spec.name(), spec.triplet(), pgh->package.feature);
         if (ptr == end())
@@ -170,7 +174,7 @@ namespace vcpkg
         {
             iobj.insert("features", std::move(features));
         }
-        auto usage = Install::get_cmake_usage(fs, installed, ipv.core->package);
+        auto usage = get_cmake_usage(fs, installed, ipv.core->package);
         if (!usage.message.empty())
         {
             iobj.insert("usage", Json::Value::string(std::move(usage.message)));

@@ -31,5 +31,6 @@ namespace vcpkg::Hash
 
     std::string get_bytes_hash(const void* first, const void* last, Algorithm algo);
     std::string get_string_hash(StringView s, Algorithm algo);
+    std::string get_string_sha256(StringView s);
     ExpectedL<std::string> get_file_hash(const Filesystem& fs, const Path& target, Algorithm algo);
 }

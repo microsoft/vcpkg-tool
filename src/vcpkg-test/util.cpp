@@ -17,11 +17,17 @@
 
 namespace vcpkg::Test
 {
+    const Triplet ARM64_WINDOWS = Triplet::from_canonical_name("arm64-windows");
     const Triplet X86_WINDOWS = Triplet::from_canonical_name("x86-windows");
     const Triplet X64_WINDOWS = Triplet::from_canonical_name("x64-windows");
+    const Triplet X64_WINDOWS_STATIC = Triplet::from_canonical_name("x64-windows-static");
+    const Triplet X64_WINDOWS_STATIC_MD = Triplet::from_canonical_name("x64-windows-static-md");
+    const Triplet X64_UWP = Triplet::from_canonical_name("x64-uwp");
     const Triplet X86_UWP = Triplet::from_canonical_name("x86-uwp");
     const Triplet ARM_UWP = Triplet::from_canonical_name("arm-uwp");
     const Triplet X64_ANDROID = Triplet::from_canonical_name("x64-android");
+    const Triplet X64_OSX = Triplet::from_canonical_name("x64-osx");
+    const Triplet X64_LINUX = Triplet::from_canonical_name("x64-linux");
 
     std::unique_ptr<SourceControlFile> make_control_file(
         const char* name,
@@ -182,17 +188,17 @@ namespace vcpkg::Test
     {
         if (l.is_object() && r.is_object())
         {
-            check_json_eq(l.object(), r.object(), path, ordered);
+            check_json_eq(l.object(VCPKG_LINE_INFO), r.object(VCPKG_LINE_INFO), path, ordered);
         }
         else if (l.is_array() && r.is_array())
         {
-            check_json_eq(l.array(), r.array(), path, ordered);
+            check_json_eq(l.array(VCPKG_LINE_INFO), r.array(VCPKG_LINE_INFO), path, ordered);
         }
         else if (l != r)
         {
             INFO(path);
-            INFO("l = " << Json::stringify(l, {}));
-            INFO("r = " << Json::stringify(r, {}));
+            INFO("l = " << Json::stringify(l));
+            INFO("r = " << Json::stringify(r));
             CHECK(false);
         }
     }

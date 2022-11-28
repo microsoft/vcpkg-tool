@@ -103,26 +103,25 @@ namespace vcpkg::Json
         bool is_object() const noexcept;
 
         // a.x() asserts when !a.is_x()
-        bool boolean() const noexcept;
-        int64_t integer() const noexcept;
-        double number() const noexcept;
-        StringView string() const noexcept;
+        bool boolean(LineInfo li) const noexcept;
+        int64_t integer(LineInfo li) const noexcept;
+        double number(LineInfo li) const noexcept;
+        StringView string(LineInfo li) const noexcept;
 
-        const Array& array() const& noexcept;
-        Array& array() & noexcept;
-        Array&& array() && noexcept;
+        const Array& array(LineInfo li) const& noexcept;
+        Array& array(LineInfo li) & noexcept;
+        Array&& array(LineInfo li) && noexcept;
 
-        const Object& object() const& noexcept;
-        Object& object() & noexcept;
-        Object&& object() && noexcept;
+        const Object& object(LineInfo li) const& noexcept;
+        Object& object(LineInfo li) & noexcept;
+        Object&& object(LineInfo li) && noexcept;
 
         static Value null(std::nullptr_t) noexcept;
         static Value boolean(bool) noexcept;
         static Value integer(int64_t i) noexcept;
         static Value number(double d) noexcept;
         static Value string(std::string&& s) noexcept;
-        template<class StringLike,
-                 std::enable_if_t<std::is_constructible<StringView, const StringLike&>::value, int> = 0>
+        template<class StringLike, std::enable_if_t<std::is_constructible_v<StringView, const StringLike&>, int> = 0>
         static Value string(const StringLike& s) noexcept
         {
             return string(StringView(s).to_string());
@@ -158,8 +157,7 @@ namespace vcpkg::Json
         using const_iterator = underlying_t::const_iterator;
 
         Value& push_back(std::string&& value);
-        template<class StringLike,
-                 std::enable_if_t<std::is_constructible<StringView, const StringLike&>::value, int> = 0>
+        template<class StringLike, std::enable_if_t<std::is_constructible_v<StringView, const StringLike&>, int> = 0>
         Value& push_back(const StringLike& value)
         {
             return this->push_back(StringView(value).to_string());
@@ -217,8 +215,7 @@ namespace vcpkg::Json
         ~Object() = default;
 
         // asserts if the key is found
-        template<class StringLike,
-                 std::enable_if_t<std::is_constructible<StringView, const StringLike&>::value, int> = 0>
+        template<class StringLike, std::enable_if_t<std::is_constructible_v<StringView, const StringLike&>, int> = 0>
         Value& insert(StringView key, const StringLike& value)
         {
             return this->insert(key, StringView(value).to_string());
@@ -234,8 +231,7 @@ namespace vcpkg::Json
         // replaces the value if the key is found, otherwise inserts a new
         // value.
         Value& insert_or_replace(StringView key, std::string&& value);
-        template<class StringLike,
-                 std::enable_if_t<std::is_constructible<StringView, const StringLike&>::value, int> = 0>
+        template<class StringLike, std::enable_if_t<std::is_constructible_v<StringView, const StringLike&>, int> = 0>
         Value& insert_or_replace(StringView key, const StringLike& value)
         {
             return this->insert_or_replace(key, StringView(value).to_string());
@@ -318,13 +314,16 @@ namespace vcpkg::Json
 
     ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse_file(const Filesystem&,
                                                                                    const Path&,
-                                                                                   std::error_code& ec) noexcept;
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse(StringView text,
-                                                                              StringView origin = {}) noexcept;
-    std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo li, const Filesystem&, const Path&) noexcept;
+                                                                                   std::error_code& ec);
+    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse(StringView text, StringView origin = {});
+    std::pair<Value, JsonStyle> parse_file(LineInfo li, const Filesystem&, const Path&);
+    ExpectedS<Json::Object> parse_object(StringView text, StringView origin = {});
 
+    std::string stringify(const Value&);
     std::string stringify(const Value&, JsonStyle style);
+    std::string stringify(const Object&);
     std::string stringify(const Object&, JsonStyle style);
+    std::string stringify(const Array&);
     std::string stringify(const Array&, JsonStyle style);
 
     uint64_t get_json_parsing_stats();

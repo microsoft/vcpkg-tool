@@ -3,6 +3,7 @@
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
+#include <vcpkg/base/to_string.h>
 
 #include <errno.h>
 #include <inttypes.h>
@@ -13,15 +14,9 @@
 
 namespace vcpkg::Strings::details
 {
-    template<class T>
-    auto to_string(const T& t) -> decltype(t.to_string())
-    {
-        return t.to_string();
-    }
-
     // first looks up to_string on `T` using ADL; then, if that isn't found,
     // uses the above definition which returns t.to_string()
-    template<class T, class = std::enable_if_t<!std::is_arithmetic<T>::value>>
+    template<class T, class = std::enable_if_t<!std::is_arithmetic_v<T>>>
     auto to_printf_arg(const T& t) -> decltype(to_string(t))
     {
         return to_string(t);
@@ -33,7 +28,7 @@ namespace vcpkg::Strings::details
 
     inline const wchar_t* to_printf_arg(const wchar_t* s) { return s; }
 
-    template<class T, class = std::enable_if_t<std::is_arithmetic<T>::value>>
+    template<class T, class = std::enable_if_t<std::is_arithmetic_v<T>>>
     T to_printf_arg(T s)
     {
         return s;
@@ -117,7 +112,7 @@ namespace vcpkg::Strings
         return Strings::concat(args...);
     }
 
-    template<class T, class = std::enable_if_t<std::is_convertible<T, StringView>::value>>
+    template<class T, class = std::enable_if_t<std::is_convertible_v<T, StringView>>>
     StringView concat_or_view(const T& v)
     {
         return v;
@@ -156,7 +151,7 @@ namespace vcpkg::Strings
     bool starts_with(StringView s, StringView pattern);
 
     template<class InputIterator, class Transformer>
-    std::string join(const char* delimiter, InputIterator begin, InputIterator end, Transformer transformer)
+    std::string join(StringLiteral delimiter, InputIterator begin, InputIterator end, Transformer transformer)
     {
         if (begin == end)
         {
@@ -167,7 +162,7 @@ namespace vcpkg::Strings
         append(output, transformer(*begin));
         for (auto it = std::next(begin); it != end; ++it)
         {
-            output.append(delimiter);
+            output.append(delimiter.data(), delimiter.size());
             append(output, transformer(*it));
         }
 
@@ -175,7 +170,7 @@ namespace vcpkg::Strings
     }
 
     template<class Container, class Transformer>
-    std::string join(const char* delimiter, const Container& v, Transformer transformer)
+    std::string join(StringLiteral delimiter, const Container& v, Transformer transformer)
     {
         const auto begin = std::begin(v);
         const auto end = std::end(v);
@@ -184,14 +179,14 @@ namespace vcpkg::Strings
     }
 
     template<class InputIterator>
-    std::string join(const char* delimiter, InputIterator begin, InputIterator end)
+    std::string join(StringLiteral delimiter, InputIterator begin, InputIterator end)
     {
         using Element = decltype(*begin);
         return join(delimiter, begin, end, [](const Element& x) -> const Element& { return x; });
     }
 
     template<class Container>
-    std::string join(const char* delimiter, const Container& v)
+    std::string join(StringLiteral delimiter, const Container& v)
     {
         using Element = decltype(*std::begin(v));
         return join(delimiter, v, [](const Element& x) -> const Element& { return x; });

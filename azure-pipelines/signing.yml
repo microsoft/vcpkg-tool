@@ -27,9 +27,16 @@ parameters:
 variables:
   - name: TeamName
     value: vcpkg
+  - name: Codeql.Enabled
+    value: true
   - group: vcpkg-dependency-source-blobs
   - name: FMT_TARBALL_URL
     value: "$(fmt-tarball-url)"
+  - group: vcpkgdockercontainers-secrets
+  - name: AZURE_CONTAINER_REGISTRY_USERNAME
+    value: "$(vcpkgdockercontainers-pull-username)"
+  - name: AZURE_CONTAINER_REGISTRY_PASSWORD
+    value: "$(vcpkgdockercontainers-pull-password)"
   # If the user didn't override the signing type, then only real-sign on main.
   - ${{ if ne(parameters.SignTypeOverride, 'default') }}:
     - name: SignType
@@ -42,7 +49,7 @@ variables:
       value: test
 jobs:
   - job: arch_independent
-    displayName: 'Build and Sign Arch-Independent Scripts and vcpkg-ce'
+    displayName: 'Build and Sign Arch-Independent Scripts and vcpkg-artifacts'
     # The first job records VCPKG_INITIAL_BASE_VERSION as VCPKG_BASE_VERSION so that all subsequent stages agree
     # on the value; AzureDevOps appears to repeat evaluation of variables such that crossing UTC's day start
     # would make subsequent pipeline stages use a different day producing a broken build.
@@ -54,9 +61,13 @@ jobs:
     - ${{ if ne(parameters.VcpkgBaseVersionOverride, 'default') }}:
       - name: VCPKG_INITIAL_BASE_VERSION
         value: ${{parameters.VcpkgBaseVersionOverride}}
+    - name: Codeql.BuildIdentifier
+      value: vcpkg_ECMAScript
     pool:
       name: 'VSEngSS-MicroBuild2022-1ES'
     steps:
+    - task: CodeQL3000Init@0
+      displayName: 'CodeQL Initialize'
     - task: Powershell@2
       displayName: 'Lock VCPKG_BASE_VERSION'
       name: versions
@@ -71,7 +82,7 @@ jobs:
         pwsh: true
         filePath: vcpkg-init/lock-versions.ps1
         arguments: '-Destination "$(Build.BinariesDirectory)" -VcpkgBaseVersion $(VCPKG_INITIAL_BASE_VERSION)'
-    # Build and test vcpkg-ce
+    # Build and test vcpkg-artifacts
     - task: UseNode@1
       displayName: Use Node 16 or later
       inputs:
@@ -86,24 +97,24 @@ jobs:
       displayName: Install Rush
       workingDirectory: ce\common\config\rush
     - script: rush update
-      displayName: Install vcpkg-ce Dependencies
+      displayName: Install vcpkg-artifacts Dependencies
       workingDirectory: ce
     - script: rush lint
-      displayName: Check vcpkg-ce for Linting Errors
+      displayName: Check vcpkg-artifacts for Linting Errors
       workingDirectory: ce
     - script: rush rebuild
-      displayName: Build vcpkg-ce Packages
+      displayName: Build vcpkg-artifacts Packages
       workingDirectory: ce
     - script: rush test
-      displayName: Run vcpkg-ce Tests
+      displayName: Run vcpkg-artifacts Tests
       workingDirectory: ce
     - script: |
         rush set-versions
         node -e "const c = require('./ce/package.json'); p = require('./assets/package.json') ; p.version = c.version; require('fs').writeFileSync('./assets/package.json', JSON.stringify(p,undefined,2)); console.log(``set asset version to `${p.version}``);"
-      displayName: Set vcpkg-ce Package Versions
+      displayName: Set vcpkg-artifacts Package Versions
       workingDirectory: ce
     - script: mkdir "$(Build.BinariesDirectory)\ce" && rush deploy -t "$(Build.BinariesDirectory)\ce"
-      displayName: Collect vcpkg-ce Dependencies
+      displayName: Collect vcpkg-artifacts Dependencies
       workingDirectory: ce
     - script: |
         xcopy /F "$(Build.SourcesDirectory)/scripts" "$(Build.BinariesDirectory)"
@@ -149,7 +160,7 @@ jobs:
         filePath: vcpkg-init/mint-standalone-bundle.ps1
         arguments: '-DestinationTarball "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" -TempDir standalone-temp -SignedFilesRoot "$(Build.BinariesDirectory)"'
     - script: npm pack
-      displayName: Create vcpkg-ce Pack
+      displayName: Create vcpkg-artifacts Pack
       workingDirectory: $(Build.BinariesDirectory)/ce
     - script: |
         mkdir "$(Build.ArtifactStagingDirectory)\staging"
@@ -179,6 +190,8 @@ jobs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)\staging'
         ArtifactName: 'staging'
         publishLocation: 'Container'
+    - task: CodeQL3000Finalize@0
+      displayName: 'CodeQL Finalize'
   - job: macos_build
     displayName: 'MacOS Build'
     dependsOn:
@@ -241,13 +254,14 @@ jobs:
     - task: CmdLine@2
       displayName: "Build vcpkg in Alpine"
       inputs:
-        failOnStderr: true
+        failOnStderr: false
         script: |
-          docker build --build-arg "VCPKG_FMT_URL=$FMT_TARBALL_URL" -t vcpkg-muslc-image -f azure-pipelines/vcpkg-alpine/Dockerfile .
-          docker create -ti --name vcpkg-muslc-container vcpkg-muslc-image sh
-          docker cp vcpkg-muslc-container:/build/vcpkg "$(Build.ArtifactStagingDirectory)/vcpkg-muslc"
-          docker container rm vcpkg-muslc-container
-          docker image rm vcpkg-muslc-image
+          docker login vcpkgdockercontainers.azurecr.io -u $(AZURE_CONTAINER_REGISTRY_USERNAME) -p $(AZURE_CONTAINER_REGISTRY_PASSWORD) || exit 1
+          docker build --build-arg "VCPKG_FMT_URL=$FMT_TARBALL_URL" -t vcpkg-muslc-image -f azure-pipelines/vcpkg-alpine/Dockerfile . || exit 1
+          docker create -ti --name vcpkg-muslc-container vcpkg-muslc-image sh || exit 1
+          docker cp vcpkg-muslc-container:/build/vcpkg "$(Build.ArtifactStagingDirectory)/vcpkg-muslc" || exit 1
+          docker container rm vcpkg-muslc-container || exit 1
+          docker image rm vcpkg-muslc-image || exit 1
     - task: PublishBuildArtifacts@1
       displayName: "Publish Unsigned muslc Binary"
       inputs:
@@ -266,7 +280,10 @@ jobs:
       VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
       VCPKG_CE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_CE_SHA'] ]
       VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
+      Codeql.BuildIdentifier: vcpkg_cpp
     steps:
+    - task: CodeQL3000Init@0
+      displayName: 'CodeQL Initialize'
     - task: CmdLine@2
       displayName: "Build vcpkg x86 with CMake"
       inputs:
@@ -324,13 +341,17 @@ jobs:
       condition: and(eq(variables.SignType, 'test'), succeeded())
       inputs:
         SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
-        SigningCert: 8003
+        SigningCert: '8005'
+        SigningPluginSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
+        SigningPluginVersion: 'latest'
     - task: MicroBuildSignMacFiles@1
       displayName: 'Sign and Harden Mac Binaries'
       condition: and(eq(variables.SignType, 'real'), succeeded())
       inputs:
         SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
-        SigningCert: 8023
+        SigningCert: '8025'
+        SigningPluginSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
+        SigningPluginVersion: 'latest'
     - task: MicroBuildSignMacFiles@1
       displayName: 'Notarize Mac Binaries'
       condition: and(eq(variables.SignType, 'real'), succeeded())
@@ -338,6 +359,8 @@ jobs:
         SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
         SigningCert: '8020'
         MacAppName: 'vcpkg'
+        SigningPluginSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
+        SigningPluginVersion: 'latest'
     - task: Powershell@2
       displayName: 'Mint VS Insertion standalone bundle'
       inputs:
@@ -444,6 +467,8 @@ jobs:
         uploadRoslyn: false
         uploadTSLint: false
       condition: eq(variables['Build.SourceBranchName'], 'main')
+    - task: CodeQL3000Finalize@0
+      displayName: 'CodeQL Finalize'
     # Publish everything to a Drop
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Drop'
@@ -493,7 +518,7 @@ jobs:
           tagSource: manual
           tag: $(VCPKG_BASE_VERSION)
           assets: "$(Build.ArtifactStagingDirectory)\\drop\\*"
-          addChangeLog: true
+          addChangeLog: false
           compareWith: 'lastFullRelease'
     - task: MicroBuildCleanup@1
       condition: succeededOrFailed()

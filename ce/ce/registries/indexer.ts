@@ -1,12 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { strict } from 'assert';
 import { Range, SemVer } from 'semver';
 import BTree from 'sorted-btree';
+import { i } from '../i18n';
 import { isIterable } from '../util/checks';
-import { intersect } from '../util/intersect';
-import { entries, keys, ManyMap, Record } from '../util/linq';
+import { entries, ManyMap } from '../util/linq';
 
 /* eslint-disable @typescript-eslint/ban-types */
 
@@ -89,26 +88,6 @@ export class Index<TGraph extends Object, TIndexSchema extends IndexSchema<TGrap
   }
 }
 
-/** deconstructs a function declaration so that we can figure out the most logical path  */
-function deconstruct(accessor: string) {
-  const params = /\(?([^(=)]+)\)?=>/g.exec(accessor);
-  let names = ['i'];
-  if (params) {
-    names = params[1].split(',').map(each => each.trim());
-  }
-
-  // find the part that looks for the value
-  let path = names.slice(1);
-  const expression = /=>.*i\.(.*?)(;| |\n|$)/g.exec(accessor);
-  if (expression) {
-    path = expression[1].replace(/\[.*?\]/g, '').replace(/[^\w.]/g, '').replace(/\.+/g, '.').split('.');
-  }
-
-  strict.ok(path.length, 'Unable to deconstruct the path to the element');
-
-  return path;
-}
-
 /**
  * A Key is a means to creating a searchable, sortable index
  */
@@ -124,20 +103,8 @@ abstract class Key<TGraph extends Object, TKey extends HasToString, TIndexSchema
   protected values = new BTree<TKey, Set<number>>(undefined, this.compare);
   protected words = new BTree<string, Set<number>>();
   protected indexSchema: TIndexSchema;
-  protected path: Array<string>;
-
-  /** attaches a nested key in the index. */
-  with<TNestedKey extends Record<string, Key<TGraph, any, TIndexSchema>>>(nestedKey: TNestedKey): Key<TGraph, TKey, TIndexSchema> & TNestedKey {
-    for (const child of keys(nestedKey)) {
-      this.nestedKeys.push(nestedKey[child]);
-    }
-    return intersect(this, nestedKey);
-  }
-
-  /** returns the textual 'identity' of this key */
-  get identity() {
-    return `${this.constructor.name}/${this.path.join('.')}`;
-  }
+  readonly identity: string;
+  readonly alternativeIdentities: Array<string>;
 
   /** persists the key to an object graph */
   serialize() {
@@ -234,9 +201,16 @@ abstract class Key<TGraph extends Object, TKey extends HasToString, TIndexSchema
   }
 
   /** construct a Key */
-  constructor(indexSchema: IndexSchema<TGraph, TIndexSchema>, public accessor: (value: TGraph, ...args: Array<any>) => TKey | undefined | Array<TKey> | Iterable<TKey>) {
-    this.path = deconstruct(accessor.toString());
+  constructor(indexSchema: IndexSchema<TGraph, TIndexSchema>, public accessor: (value: TGraph, ...args: Array<any>) => TKey | undefined | Array<TKey> | Iterable<TKey>, protoIdentity: Array<string> | string) {
     this.indexSchema = <TIndexSchema><unknown>indexSchema;
+    if (typeof protoIdentity === 'string') {
+      this.identity = protoIdentity;
+      this.alternativeIdentities = [protoIdentity];
+    } else {
+      this.identity = protoIdentity[0];
+      this.alternativeIdentities = protoIdentity;
+    }
+
     this.indexSchema.mapOfKeyObjects.set(this.identity, this);
   }
 
@@ -519,7 +493,7 @@ export abstract class IndexSchema<TGraph, TSelf extends IndexSchema<TGraph, any>
   selectedElements?: Set<number>;
 
   /**
-   * filter the selected elements down to an intersetction of the {selectedelements} ∩ {idsToKeep}
+   * filter the selected elements down to an intersection of the {selectedelements} ∩ {idsToKeep}
    *
    * @param idsToKeep the element ids to intersect with.
    */
@@ -557,7 +531,19 @@ export abstract class IndexSchema<TGraph, TSelf extends IndexSchema<TGraph, any>
    */
   deserialize(content: any) {
     for (const [key, impl] of this.mapOfKeyObjects.entries()) {
-      impl.deserialize(content[key]);
+      let anyMatches = false;
+      for (const maybeIdentity of impl.alternativeIdentities) {
+        const maybeKey = content[maybeIdentity];
+        if (maybeKey) {
+          impl.deserialize(maybeKey);
+          anyMatches = true;
+          break;
+        }
+      }
+
+      if (!anyMatches) {
+        throw new Error(i`Failed to deserialize index ${key}`);
+      }
     }
   }
 
@@ -572,4 +558,3 @@ export abstract class IndexSchema<TGraph, TSelf extends IndexSchema<TGraph, any>
   constructor(public index: Index<TGraph, TSelf>) {
   }
 }
-

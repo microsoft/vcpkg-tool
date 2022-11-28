@@ -42,12 +42,6 @@ namespace vcpkg
         return left.name() == right.name() && left.triplet() == right.triplet();
     }
 
-    DECLARE_AND_REGISTER_MESSAGE(IllegalPlatformSpec,
-                                 (),
-                                 "",
-                                 "error: Platform qualifier is not allowed in this context");
-    DECLARE_AND_REGISTER_MESSAGE(IllegalFeatures, (), "", "error: List of features is not allowed in this contect");
-
     static InternalFeatureSet normalize_feature_list(View<std::string> fs, ImplicitDefault id)
     {
         InternalFeatureSet ret;
@@ -76,7 +70,7 @@ namespace vcpkg
     {
         if (platform)
         {
-            return {msg::format(msgIllegalPlatformSpec).data(), expected_right_tag};
+            return {msg::format(msg::msgErrorMessage).append(msgIllegalPlatformSpec).data(), expected_right_tag};
         }
 
         const Triplet t = triplet ? Triplet::from_canonical_name(*triplet.get()) : default_triplet;
@@ -88,11 +82,11 @@ namespace vcpkg
     {
         if (platform)
         {
-            return {msg::format(msgIllegalPlatformSpec).data(), expected_right_tag};
+            return {msg::format(msg::msgErrorMessage).append(msgIllegalPlatformSpec).data(), expected_right_tag};
         }
         if (features)
         {
-            return {msg::format(msgIllegalFeatures).data(), expected_right_tag};
+            return {msg::format(msg::msgErrorMessage).append(msgIllegalFeatures).data(), expected_right_tag};
         }
 
         const Triplet t = triplet ? Triplet::from_canonical_name(*triplet.get()) : default_triplet;
@@ -104,7 +98,7 @@ namespace vcpkg
         auto parser = ParserBase(input, "<unknown>");
         auto maybe_pqs = parse_qualified_specifier(parser);
         if (!parser.at_eof()) parser.add_error("expected eof");
-        if (auto e = parser.get_error()) return e->format();
+        if (auto e = parser.get_error()) return e->to_string();
         return std::move(maybe_pqs).value_or_exit(VCPKG_LINE_INFO);
     }
 
@@ -169,7 +163,7 @@ namespace vcpkg
                 parser.skip_tabs_spaces();
                 if (parser.cur() == '*')
                 {
-                    features.push_back("*");
+                    features.emplace_back("*");
                     parser.next();
                 }
                 else

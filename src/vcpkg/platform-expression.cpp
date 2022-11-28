@@ -519,10 +519,7 @@ namespace vcpkg::PlatformExpression
                             // Point out in the diagnostic that they should add to the override list because that is
                             // what most users should do, however it is also valid to update the built in identifiers to
                             // recognize the name.
-                            vcpkg::printf(
-                                Color::error,
-                                "Error: Unrecognized identifer name %s. Add to override list in triplet file.\n",
-                                expr.identifier);
+                            msg::println_error(msgUnrecognizedIdentifier, msg::value = expr.identifier);
                             return false;
                         case Identifier::x64: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "x64");
                         case Identifier::x86: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "x86");
@@ -632,7 +629,7 @@ namespace vcpkg::PlatformExpression
 
         if (auto p = parser.extract_error())
         {
-            return p->format();
+            return p->to_string();
         }
         else
         {
@@ -708,14 +705,14 @@ namespace vcpkg::PlatformExpression
             }
             std::string operator()(const detail::ExprImpl& expr, bool outer) const
             {
-                const char* join = nullptr;
+                StringLiteral join = "bug";
                 switch (expr.kind)
                 {
                     case ExprKind::identifier: return expr.identifier;
                     case ExprKind::op_and: join = " & "; break;
                     case ExprKind::op_or: join = " | "; break;
                     case ExprKind::op_list: join = ", "; break;
-                    case ExprKind::op_not: return Strings::format("!%s", (*this)(expr.exprs.at(0)));
+                    case ExprKind::op_not: return Strings::concat('!', (*this)(expr.exprs.at(0)));
                     case ExprKind::op_empty: join = ""; break;
                     case ExprKind::op_invalid: join = " invalid "; break;
                     default: Checks::unreachable(VCPKG_LINE_INFO);
@@ -727,7 +724,7 @@ namespace vcpkg::PlatformExpression
                 }
                 else
                 {
-                    return Strings::format("(%s)", Strings::join(join, expr.exprs, *this));
+                    return Strings::concat('(', Strings::join(join, expr.exprs, *this), ')');
                 }
             }
         };

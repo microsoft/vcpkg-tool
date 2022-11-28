@@ -22,7 +22,6 @@ static constexpr StringLiteral CE_ERROR = "error";
 static constexpr StringLiteral CE_SETTINGS = "settings";
 static constexpr StringLiteral CE_APPLY = "apply";
 static constexpr StringLiteral CE_REQUIRES = "requires";
-static constexpr StringLiteral CE_SEE_ALSO = "see-also";
 static constexpr StringLiteral CE_DEMANDS = "demands";
 
 static void CHECK_LINES(const std::string& a, const std::string& b)
@@ -37,23 +36,9 @@ static void CHECK_LINES(const std::string& a, const std::string& b)
     CHECK(as.size() == bs.size());
 }
 
-static Json::Object parse_json_object(StringView sv)
-{
-    auto json = Json::parse(sv);
-    // we're not testing json parsing here, so just fail on errors
-    if (auto r = json.get())
-    {
-        return std::move(r->first.object());
-    }
-    else
-    {
-        Checks::exit_with_message(VCPKG_LINE_INFO, json.error()->format());
-    }
-}
-
 static Configuration parse_test_configuration(StringView text)
 {
-    auto object = parse_json_object(text);
+    auto object = Json::parse_object(text).value_or_exit(VCPKG_LINE_INFO);
 
     Json::Reader reader;
     auto parsed_config_opt = reader.visit(object, get_configuration_deserializer());
@@ -67,12 +52,12 @@ static void check_string(const Json::Object& obj, StringView key, StringView exp
     REQUIRE(obj.contains(key));
     auto value = obj.get(key);
     REQUIRE(value->is_string());
-    REQUIRE(value->string() == expected);
+    REQUIRE(value->string(VCPKG_LINE_INFO) == expected);
 }
 
 static void check_errors(const std::string& config_text, const std::string& expected_errors)
 {
-    auto object = parse_json_object(config_text);
+    auto object = Json::parse_object(config_text).value_or_exit(VCPKG_LINE_INFO);
 
     Json::Reader reader;
     auto parsed_config_opt = reader.visit(object, get_configuration_deserializer());
@@ -121,14 +106,14 @@ TEST_CASE ("config registries only", "[ce-metadata]")
 
         REQUIRE(config.default_reg.has_value());
 
-        auto default_registry = config.default_reg.get()->serialize().object();
+        auto default_registry = config.default_reg.get()->serialize().object(VCPKG_LINE_INFO);
         check_string(default_registry, KIND, "builtin");
         check_string(default_registry, BASELINE, "843e0ba0d8f9c9c572e45564263eedfc7745e74f");
 
         REQUIRE(config.registries.size() == 4);
 
         const auto& git_registry = config.registries[0];
-        auto serialized_git_registry = git_registry.serialize().object();
+        auto serialized_git_registry = git_registry.serialize().object(VCPKG_LINE_INFO);
         check_string(serialized_git_registry, KIND, "git");
         check_string(serialized_git_registry, REPOSITORY, "https://github.com/northwindtraders/vcpkg-registry");
         check_string(serialized_git_registry, BASELINE, "dacf4de488094a384ca2c202b923ccc097956e0c");
@@ -139,7 +124,7 @@ TEST_CASE ("config registries only", "[ce-metadata]")
         REQUIRE(p[1] == "beison");
 
         const auto& fs_registry = config.registries[1];
-        auto serialized_fs_registry = fs_registry.serialize().object();
+        auto serialized_fs_registry = fs_registry.serialize().object(VCPKG_LINE_INFO);
         check_string(serialized_fs_registry, KIND, "filesystem");
         check_string(serialized_fs_registry, PATH, "path/to/registry");
         REQUIRE(fs_registry.packages);
@@ -147,7 +132,7 @@ TEST_CASE ("config registries only", "[ce-metadata]")
         REQUIRE((*fs_registry.packages.get())[0] == "zlib");
 
         const auto& artifact_registry = config.registries[2];
-        auto serialized_art_registry = artifact_registry.serialize().object();
+        auto serialized_art_registry = artifact_registry.serialize().object(VCPKG_LINE_INFO);
         check_string(serialized_art_registry, KIND, "artifact");
         check_string(serialized_art_registry, NAME, "vcpkg-artifacts");
         check_string(serialized_art_registry, LOCATION, "https://github.com/microsoft/vcpkg-artifacts");
@@ -155,7 +140,7 @@ TEST_CASE ("config registries only", "[ce-metadata]")
 
         REQUIRE(config.registries[3].packages);
 
-        auto raw_obj = parse_json_object(raw_config);
+        auto raw_obj = Json::parse_object(raw_config).value_or_exit(VCPKG_LINE_INFO);
         auto serialized_obj = config.serialize();
         Test::check_json_eq(raw_obj, serialized_obj);
     }
@@ -288,19 +273,19 @@ TEST_CASE ("config ce metadata only", "[ce-metadata]")
     REQUIRE(ce_metadata.contains(CE_DEMANDS));
     auto demands_val = ce_metadata.get(CE_DEMANDS);
     REQUIRE(demands_val->is_object());
-    const auto& demands = demands_val->object();
+    const auto& demands = demands_val->object(VCPKG_LINE_INFO);
     REQUIRE(demands.size() == 1);
     REQUIRE(demands.contains("nested"));
     auto nested_val = demands.get("nested");
     REQUIRE(nested_val->is_object());
-    const auto& nested = nested_val->object();
+    const auto& nested = nested_val->object(VCPKG_LINE_INFO);
     check_string(nested, CE_MESSAGE, "this is a message too");
     check_string(nested, CE_WARNING, "this is a warning too");
     check_string(nested, CE_ERROR, "this is an error too");
     REQUIRE(nested.contains("$comment"));
     REQUIRE(nested.contains("unexpected"));
 
-    auto raw_obj = parse_json_object(raw_config);
+    auto raw_obj = Json::parse_object(raw_config).value_or_exit(VCPKG_LINE_INFO);
     auto serialized_obj = config.serialize();
     Test::check_json_eq(raw_obj, serialized_obj);
 }
@@ -321,7 +306,7 @@ TEST_CASE ("metadata strings", "[ce-metadata]")
         check_string(valid_config.ce_metadata, CE_WARNING, "this is a valid warning");
         check_string(valid_config.ce_metadata, CE_ERROR, "this is a valid error");
 
-        auto raw_obj = parse_json_object(valid_raw);
+        auto raw_obj = Json::parse_object(valid_raw).value_or_exit(VCPKG_LINE_INFO);
         Test::check_json_eq(raw_obj, valid_config.serialize());
     }
 
@@ -353,38 +338,27 @@ TEST_CASE ("metadata dictionaries", "[ce-metadata]")
     "requires": {
         "fruits/a/apple": "1.0.0",
         "fruits/a/avocado": "2.0.0"
-    },
-    "see-also": {
-        "vegetables/b/beet": "3.0.0",
-        "vegetables/b/broccoli": "4.0.0"
     }
 })json";
 
         auto valid_config = parse_test_configuration(valid_raw);
-        CHECK(valid_config.ce_metadata.size() == 3);
+        CHECK(valid_config.ce_metadata.size() == 2);
 
         auto requires_val = valid_config.ce_metadata.get(CE_REQUIRES);
         REQUIRE(requires_val);
         REQUIRE(requires_val->is_object());
-        const auto& requires_ = requires_val->object();
+        const auto& requires_ = requires_val->object(VCPKG_LINE_INFO);
         check_string(requires_, "fruits/a/apple", "1.0.0");
         check_string(requires_, "fruits/a/avocado", "2.0.0");
-
-        auto see_also_val = valid_config.ce_metadata.get(CE_SEE_ALSO);
-        REQUIRE(see_also_val);
-        REQUIRE(see_also_val->is_object());
-        const auto& see_also = see_also_val->object();
-        check_string(see_also, "vegetables/b/beet", "3.0.0");
-        check_string(see_also, "vegetables/b/broccoli", "4.0.0");
 
         auto settings_val = valid_config.ce_metadata.get(CE_SETTINGS);
         REQUIRE(settings_val);
         REQUIRE(settings_val->is_object());
-        const auto& settings = settings_val->object();
+        const auto& settings = settings_val->object(VCPKG_LINE_INFO);
         check_string(settings, "SETTING_1", "value1");
         check_string(settings, "SETTING_2", "value2");
 
-        auto raw_obj = parse_json_object(valid_raw);
+        auto raw_obj = Json::parse_object(valid_raw).value_or_exit(VCPKG_LINE_INFO);
         Test::check_json_eq(raw_obj, valid_config.serialize());
     }
 
@@ -396,20 +370,12 @@ TEST_CASE ("metadata dictionaries", "[ce-metadata]")
         "fruits/a/apple": null,
         "fruits/a/avocado": 1
     },
-    "see-also": {
-        "vegetables/b/beet": { "version": "3.0.0" },
-        "vegetables/b/broccoli": []
-    },
     "demands": {
         "nested": {
             "settings": [],
             "requires": {
                 "fruits/a/apple": null,
                 "fruits/a/avocado": 1
-            },
-            "see-also": {
-                "vegetables/b/beet": { "version": "3.0.0" },
-                "vegetables/b/broccoli": []
             }
         }
     }
@@ -418,13 +384,9 @@ TEST_CASE ("metadata dictionaries", "[ce-metadata]")
 $ (settings): expected an object
 $.requires (a `string: string` dictionary): value of ["fruits/a/apple"] must be a string
 $.requires (a `string: string` dictionary): value of ["fruits/a/avocado"] must be a string
-$.see-also (a `string: string` dictionary): value of ["vegetables/b/beet"] must be a string
-$.see-also (a `string: string` dictionary): value of ["vegetables/b/broccoli"] must be a string
 $.demands (settings): expected an object
 $.demands.requires (a `string: string` dictionary): value of ["fruits/a/apple"] must be a string
 $.demands.requires (a `string: string` dictionary): value of ["fruits/a/avocado"] must be a string
-$.demands.see-also (a `string: string` dictionary): value of ["vegetables/b/beet"] must be a string
-$.demands.see-also (a `string: string` dictionary): value of ["vegetables/b/broccoli"] must be a string
 )");
     }
 }
@@ -450,24 +412,24 @@ TEST_CASE ("metadata demands", "[ce-metadata]")
         auto demands_val = config.ce_metadata.get(CE_DEMANDS);
         REQUIRE(demands_val);
         REQUIRE(demands_val->is_object());
-        const auto& demands = demands_val->object();
+        const auto& demands = demands_val->object(VCPKG_LINE_INFO);
         CHECK(demands.size() == 2);
 
         auto level0_val = demands.get("level0");
         REQUIRE(level0_val);
         REQUIRE(level0_val->is_object());
-        const auto& level0 = level0_val->object();
+        const auto& level0 = level0_val->object(VCPKG_LINE_INFO);
         CHECK(level0.size() == 1);
         check_string(level0, CE_MESSAGE, "this is level 0");
 
         auto level1_val = demands.get("level1");
         REQUIRE(level1_val);
         REQUIRE(level1_val->is_object());
-        const auto& level1 = level1_val->object();
+        const auto& level1 = level1_val->object(VCPKG_LINE_INFO);
         CHECK(level1.size() == 1);
         check_string(level1, CE_MESSAGE, "this is level 1");
 
-        auto raw_obj = parse_json_object(simple_raw);
+        auto raw_obj = Json::parse_object(simple_raw).value_or_exit(VCPKG_LINE_INFO);
         Test::check_json_eq(raw_obj, config.serialize());
     }
 
@@ -480,14 +442,14 @@ TEST_CASE ("metadata demands", "[ce-metadata]")
          "c": "string",
          "d": 12345,
          "e": false,
-         "f": { 
-            "demands": { 
-                "f.1": { 
-                    "message": { 
-                        "causes-error": true 
-                    } 
-                } 
-            } 
+         "f": {
+            "demands": {
+                "f.1": {
+                    "message": {
+                        "causes-error": true
+                    }
+                }
+            }
         }
     }
 })json";
@@ -504,6 +466,105 @@ $.demands (a demand object): $.demands.["f"] contains a `demands` object (nested
 
 TEST_CASE ("serialize configuration", "[ce-metadata]")
 {
+    SECTION ("only overlay ports")
+    {
+        std::string raw = R"json({
+    "overlay-ports": [
+		"./my-ports/fmt",
+		"/custom-ports",
+		"../share/team-ports",
+        "my-ports/fmt"
+	]
+})json";
+        // parsing of configuration is tested elsewhere
+        auto config = parse_test_configuration(raw);
+        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+    }
+
+    SECTION ("invalid overlay ports")
+    {
+        std::string raw = R"json({
+    "overlay-ports": [
+		"./my-ports/fmt" ,
+		"/custom-ports",
+		123
+	]
+})json";
+        check_errors(raw, R"(
+$.overlay-ports[2]: mismatched type: expected an overlay path
+)");
+    }
+
+    SECTION ("only overlay triplets")
+    {
+        std::string raw = R"json({
+    "overlay-triplets": [
+		"./team-triplets"
+	]
+})json";
+        // parsing of configuration is tested elsewhere
+        auto config = parse_test_configuration(raw);
+        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+    }
+
+    SECTION ("invalid overlay triplets")
+    {
+        std::string raw = R"json({
+    "overlay-triplets": [
+		123
+	]
+})json";
+        check_errors(raw, R"(
+$.overlay-triplets[0]: mismatched type: expected a triplet path
+)");
+    }
+
+    SECTION ("both overlay ports and overlay triplets")
+    {
+        std::string raw = R"json({
+    "overlay-ports": [
+		"./my-ports/fmt" ,
+		"/custom-ports",
+		"../share/team-ports"
+	],
+    "overlay-triplets": [
+		"./team-triplets"
+	]
+})json";
+        // parsing of configuration is tested elsewhere
+        auto config = parse_test_configuration(raw);
+        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+    }
+
+    SECTION ("overriden default registry, registries and overlays")
+    {
+        std::string raw = R"json({
+    "default-registry": {
+        "kind": "builtin",
+        "baseline": "843e0ba0d8f9c9c572e45564263eedfc7745e74f"
+    },
+    "registries": [
+        {
+            "kind": "git",
+            "repository": "https://github.com/microsoft/vcpkg",
+            "baseline": "843e0ba0d8f9c9c572e45564263eedfc7745e74f",
+            "packages": [ "zlib" ]
+        }
+    ],
+    "overlay-ports": [
+		"./my-ports/fmt" ,
+		"/custom-ports",
+		"../share/team-ports"
+	],
+    "overlay-triplets": [
+		"./team-triplets"
+	]
+})json";
+        // parsing of configuration is tested elsewhere
+        auto config = parse_test_configuration(raw);
+        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+    }
+
     SECTION ("null default registry")
     {
         std::string raw = R"json({
@@ -519,7 +580,7 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
 })json";
         // parsing of configuration is tested elsewhere
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(parse_json_object(raw), config.serialize());
+        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
     }
 
     SECTION ("overriden default registry and registries")
@@ -540,7 +601,7 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
 })json";
         // parsing of configuration is tested elsewhere
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(parse_json_object(raw), config.serialize());
+        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
     }
 
     SECTION ("only registries")
@@ -557,7 +618,7 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
 })json";
         // parsing of configuration is tested elsewhere
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(parse_json_object(raw), config.serialize());
+        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
     }
 
     SECTION ("preserve comments and unexpected fields")
@@ -582,7 +643,7 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
 })json";
 
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(parse_json_object(raw), config.serialize());
+        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
 
         auto extra_fields = find_unknown_fields(config);
         CHECK(extra_fields.size() == 4);
@@ -602,7 +663,7 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
             "kind": "git",
             "packages": [ "zlib" ]
         }
-    ], 
+    ],
     "default-registry": null,
     "error": "this is an error",
     "message": "this is a message",
@@ -619,11 +680,8 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
         }
     },
     "apply": {},
-    "requires": { 
-        "b": "banana" 
-    },
-    "see-also": { 
-        "c": "cantaloupe" 
+    "requires": {
+        "b": "banana"
     },
     "settings": {
         "a": "apple"
@@ -639,11 +697,11 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
             "kind": "git",
             "repository": "https://github.com/microsoft/vcpkg",
             "baseline": "843e0ba0d8f9c9c572e45564263eedfc7745e74f",
-            "packages": [ 
-                "zlib" 
+            "packages": [
+                "zlib"
             ]
         }
-    ], 
+    ],
     "unexpected": "this is an unexpected field",
     "message": "this is a message",
     "warning": "this is a warning",
@@ -652,11 +710,8 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
         "a": "apple"
     },
     "apply": {},
-    "requires": { 
-        "b": "banana" 
-    },
-    "see-also": { 
-        "c": "cantaloupe" 
+    "requires": {
+        "b": "banana"
     },
     "demands": {
         "a": {
@@ -679,11 +734,10 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
         //   settings,
         //   apply,
         //   requires,
-        //   see-also,
         //   demands
         // Object values in `demands` are also sorted recursively.
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(parse_json_object(formatted), config.serialize());
+        Test::check_json_eq(Json::parse_object(formatted).value_or_exit(VCPKG_LINE_INFO), config.serialize());
     }
 }
 
@@ -704,9 +758,6 @@ TEST_CASE ("config with ce metadata full example", "[ce-metadata]")
     },
     "requires": {
         "tools/kitware/cmake": ">=3.21.0"
-    },
-    "see-also": {
-        "tools/ninja-build/ninja": "1.10.2"
     },
     "demands": {
         "windows and target:arm": {
@@ -753,13 +804,13 @@ TEST_CASE ("config with ce metadata full example", "[ce-metadata]")
     auto config = parse_test_configuration(raw_config);
     REQUIRE(config.default_reg.has_value());
 
-    auto default_registry = config.default_reg.get()->serialize().object();
+    auto default_registry = config.default_reg.get()->serialize().object(VCPKG_LINE_INFO);
     check_string(default_registry, KIND, "builtin");
     check_string(default_registry, BASELINE, "843e0ba0d8f9c9c572e45564263eedfc7745e74f");
 
     REQUIRE(config.registries.size() == 1);
     const auto& registry = *config.registries.begin();
-    auto serialized_registry = registry.serialize().object();
+    auto serialized_registry = registry.serialize().object(VCPKG_LINE_INFO);
     check_string(serialized_registry, KIND, "git");
     check_string(serialized_registry, REPOSITORY, "https://github.com/northwindtraders/vcpkg-registry");
     check_string(serialized_registry, BASELINE, "dacf4de488094a384ca2c202b923ccc097956e0c");
@@ -800,7 +851,7 @@ TEST_CASE ("config with ce metadata full example", "[ce-metadata]")
     REQUIRE(ce_metadata.contains(CE_SETTINGS));
     auto settings_val = ce_metadata.get(CE_SETTINGS);
     REQUIRE(settings_val->is_object());
-    const auto& settings = settings_val->object();
+    const auto& settings = settings_val->object(VCPKG_LINE_INFO);
     REQUIRE(settings.size() == 2);
     check_string(settings, "VCPKG_ROOT", "C:/Users/viromer/work/vcpkg");
     check_string(settings, "VCPKG_TARGET_TRIPLET", "arm-windows");
@@ -814,12 +865,12 @@ TEST_CASE ("config with ce metadata full example", "[ce-metadata]")
     REQUIRE(ce_metadata.contains(CE_APPLY));
     auto apply_val = ce_metadata.get(CE_APPLY);
     REQUIRE(apply_val->is_object());
-    const auto& apply = apply_val->object();
+    const auto& apply = apply_val->object(VCPKG_LINE_INFO);
     REQUIRE(apply.size() == 2);
     check_string(apply, "key", "value");
     auto apply_complex_key_val = apply.get("complex-key");
     REQUIRE(apply_complex_key_val->is_object());
-    const auto& apply_complex_key = apply_complex_key_val->object();
+    const auto& apply_complex_key = apply_complex_key_val->object(VCPKG_LINE_INFO);
     REQUIRE(apply_complex_key.size() == 2);
     check_string(apply_complex_key, "a", "apple");
     check_string(apply_complex_key, "b", "banana");
@@ -832,21 +883,9 @@ TEST_CASE ("config with ce metadata full example", "[ce-metadata]")
     REQUIRE(ce_metadata.contains(CE_REQUIRES));
     auto requires_val = ce_metadata.get(CE_REQUIRES);
     REQUIRE(requires_val->is_object());
-    const auto& requires_ = requires_val->object();
+    const auto& requires_ = requires_val->object(VCPKG_LINE_INFO);
     REQUIRE(requires_.size() == 1);
     check_string(requires_, "tools/kitware/cmake", ">=3.21.0");
-
-    /*
-    "see-also": {
-      "tools/ninja-build/ninja": "1.10.2"
-    }
-    */
-    REQUIRE(ce_metadata.contains(CE_SEE_ALSO));
-    auto see_also_val = ce_metadata.get(CE_SEE_ALSO);
-    REQUIRE(see_also_val->is_object());
-    const auto& see_also = see_also_val->object();
-    REQUIRE(see_also.size() == 1);
-    check_string(see_also, "tools/ninja-build/ninja", "1.10.2");
 
     /*
     "demands": {
@@ -864,25 +903,25 @@ TEST_CASE ("config with ce metadata full example", "[ce-metadata]")
     REQUIRE(ce_metadata.contains(CE_DEMANDS));
     auto demands_val = ce_metadata.get(CE_DEMANDS);
     REQUIRE(demands_val->is_object());
-    const auto& demands = demands_val->object();
+    const auto& demands = demands_val->object(VCPKG_LINE_INFO);
     REQUIRE(demands.size() == 2);
 
     REQUIRE(demands.contains("windows and target:arm"));
     auto demand1_val = demands.get("windows and target:arm");
     REQUIRE(demand1_val->is_object());
-    const auto& demand1 = demand1_val->object();
+    const auto& demand1 = demand1_val->object(VCPKG_LINE_INFO);
     REQUIRE(demand1.size() == 8);
     check_string(demand1, "$comment", "this is a comment");
     check_string(demand1, "unexpected", "this field does nothing");
     REQUIRE(demand1.get("null")->is_null());
-    REQUIRE(demand1.get("number")->number() == 2);
+    REQUIRE(demand1.get("number")->number(VCPKG_LINE_INFO) == 2);
     check_string(demand1, "message", "this is a nested message");
     check_string(demand1, "warning", "this is a nested warning");
     check_string(demand1, "error", "this is a nested error");
     REQUIRE(demand1.contains(CE_REQUIRES));
     auto demand1_requires_val = demand1.get(CE_REQUIRES);
     REQUIRE(demand1_requires_val->is_object());
-    const auto& demand1_requires = demand1_requires_val->object();
+    const auto& demand1_requires = demand1_requires_val->object(VCPKG_LINE_INFO);
     REQUIRE(demand1_requires.size() == 1);
     check_string(demand1_requires, "compilers/microsoft/msvc/arm", "~17.0.0");
 
@@ -898,12 +937,12 @@ TEST_CASE ("config with ce metadata full example", "[ce-metadata]")
     REQUIRE(demands.contains("$ignore-errors"));
     auto demand2_val = demands.get("$ignore-errors");
     REQUIRE(demand2_val->is_object());
-    const auto& demand2 = demand2_val->object();
+    const auto& demand2 = demand2_val->object(VCPKG_LINE_INFO);
     REQUIRE(demand2.size() == 5);
     REQUIRE(demand2.contains(CE_ERROR));
     auto demand2_error_val = demand2.get(CE_ERROR);
     REQUIRE(demand2_error_val->is_object());
-    const auto& demand2_error = demand2_error_val->object();
+    const auto& demand2_error = demand2_error_val->object(VCPKG_LINE_INFO);
     REQUIRE(demand2_error.contains("this would have caused a parser error"));
     REQUIRE(demand2_error.get("this would have caused a parser error")->is_null());
     check_string(demand2, "message", "this would have been ok");
@@ -915,7 +954,7 @@ TEST_CASE ("config with ce metadata full example", "[ce-metadata]")
     check_string(demand2, "$comment", "this fields won't be reordered at all");
 
     // finally test serialization is OK
-    auto raw_obj = parse_json_object(raw_config);
+    auto raw_obj = Json::parse_object(raw_config).value_or_exit(VCPKG_LINE_INFO);
     auto serialized_obj = config.serialize();
     Test::check_json_eq(raw_obj, serialized_obj);
 }

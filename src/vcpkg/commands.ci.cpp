@@ -1,7 +1,6 @@
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
-#include <vcpkg/base/lockguarded.h>
 #include <vcpkg/base/sortedvector.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
@@ -28,6 +27,7 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
+#include <vcpkg/xunitwriter.h>
 
 #include <stdio.h>
 
@@ -35,8 +35,6 @@ using namespace vcpkg;
 
 namespace
 {
-    using namespace vcpkg::Build;
-
     const Path readme_dot_log = "readme.log";
 
     struct CiBuildLogsRecorder final : IBuildLogsRecorder
@@ -80,48 +78,16 @@ namespace
     private:
         Path base_path;
     };
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        CiBaselineRegressionHeader,
-        (),
-        "Printed before a series of CiBaselineRegression and/or CiBaselineUnexpectedPass messages.",
-        "REGRESSIONS:");
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        CiBaselineRegression,
-        (msg::spec, msg::build_result, msg::path),
-        "",
-        "REGRESSION: {spec} failed with {build_result}. If expected, add {spec}=fail to {path}.");
-
-    DECLARE_AND_REGISTER_MESSAGE(CiBaselineUnexpectedPass,
-                                 (msg::spec, msg::path),
-                                 "",
-                                 "PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).");
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        CiBaselineAllowUnexpectedPassingRequiresBaseline,
-        (),
-        "",
-        "--allow-unexpected-passing can only be used if a baseline is provided via --ci-baseline.");
 }
 
 namespace vcpkg::Commands::CI
 {
-    using Build::BuildResult;
-    using Dependencies::InstallPlanAction;
-    using Dependencies::InstallPlanType;
-
-    struct TripletAndSummary
-    {
-        Triplet triplet;
-        Install::InstallSummary summary;
-    };
-
     static constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
     static constexpr StringLiteral OPTION_EXCLUDE = "exclude";
     static constexpr StringLiteral OPTION_HOST_EXCLUDE = "host-exclude";
     static constexpr StringLiteral OPTION_FAILURE_LOGS = "failure-logs";
     static constexpr StringLiteral OPTION_XUNIT = "x-xunit";
+    static constexpr StringLiteral OPTION_XUNIT_ALL = "x-xunit-all";
     static constexpr StringLiteral OPTION_CI_BASELINE = "ci-baseline";
     static constexpr StringLiteral OPTION_ALLOW_UNEXPECTED_PASSING = "allow-unexpected-passing";
     static constexpr StringLiteral OPTION_SKIP_FAILURES = "skip-failures";
@@ -142,12 +108,13 @@ namespace vcpkg::Commands::CI
          {OPTION_SKIPPED_CASCADE_COUNT,
           "Asserts that the number of --exclude and supports skips exactly equal this number"}}};
 
-    static constexpr std::array<CommandSwitch, 4> CI_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 5> CI_SWITCHES = {{
         {OPTION_DRY_RUN, "Print out plan without execution"},
         {OPTION_RANDOMIZE, "Randomize the install order"},
         {OPTION_ALLOW_UNEXPECTED_PASSING,
          "Indicates that 'Passing, remove from fail list' results should not be emitted."},
         {OPTION_SKIP_FAILURES, "Indicates that ports marked `=fail` in ci.baseline.txt should be skipped."},
+        {OPTION_XUNIT_ALL, "Report also unchanged ports to the XUnit output (internal)"},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -158,171 +125,9 @@ namespace vcpkg::Commands::CI
         nullptr,
     };
 
-    // https://xunit.net/docs/format-xml-v2
-    struct XunitTestResults
-    {
-    public:
-        void add_test_results(const PackageSpec& spec,
-                              Build::BuildResult build_result,
-                              const ElapsedTime& elapsed_time,
-                              const std::chrono::system_clock::time_point& start_time,
-                              const std::string& abi_tag,
-                              const std::vector<std::string>& features)
-        {
-            m_tests[spec.name()].push_back(
-                {spec.to_string(),
-                 Strings::concat(spec.name(), '[', Strings::join(",", features), "]:", spec.triplet()),
-                 spec.triplet().to_string(),
-                 build_result,
-                 elapsed_time,
-                 start_time,
-                 abi_tag,
-                 features});
-        }
-
-        std::string build_xml(Triplet controlling_triplet)
-        {
-            XmlSerializer xml;
-            xml.emit_declaration();
-            xml.open_tag("assemblies").line_break();
-            for (const auto& test_group : m_tests)
-            {
-                const auto& port_name = test_group.first;
-                const auto& port_results = test_group.second;
-
-                ElapsedTime elapsed_sum{};
-                for (auto&& port_result : port_results)
-                {
-                    elapsed_sum += port_result.time;
-                }
-
-                const auto elapsed_seconds = elapsed_sum.as<std::chrono::seconds>().count();
-
-                auto earliest_start_time = std::min_element(port_results.begin(),
-                                                            port_results.end(),
-                                                            [](const XunitTest& lhs, const XunitTest& rhs) {
-                                                                return lhs.start_time < rhs.start_time;
-                                                            })
-                                               ->start_time;
-
-                const auto as_time_t = std::chrono::system_clock::to_time_t(earliest_start_time);
-                const auto as_tm = to_utc_time(as_time_t).value_or_exit(VCPKG_LINE_INFO);
-                char run_date_time[80];
-                strftime(run_date_time, sizeof(run_date_time), "%Y-%m-%d%H:%M:%S", &as_tm);
-
-                StringView run_date{run_date_time, 10};
-                StringView run_time{run_date_time + 10, 8};
-
-                xml.start_complex_open_tag("assembly")
-                    .attr("name", port_name)
-                    .attr("run-date", run_date)
-                    .attr("run-time", run_time)
-                    .attr("time", elapsed_seconds)
-                    .finish_complex_open_tag()
-                    .line_break();
-                xml.start_complex_open_tag("collection")
-                    .attr("name", controlling_triplet)
-                    .attr("time", elapsed_seconds)
-                    .finish_complex_open_tag()
-                    .line_break();
-                for (const auto& port_result : port_results)
-                {
-                    xml_test(xml, port_result);
-                }
-                xml.close_tag("collection").line_break();
-                xml.close_tag("assembly").line_break();
-            }
-
-            xml.close_tag("assemblies").line_break();
-            return std::move(xml.buf);
-        }
-
-    private:
-        struct XunitTest
-        {
-            std::string name;
-            std::string method;
-            std::string owner;
-            vcpkg::Build::BuildResult result;
-            vcpkg::ElapsedTime time;
-            std::chrono::system_clock::time_point start_time;
-            std::string abi_tag;
-            std::vector<std::string> features;
-        };
-
-        static void xml_test(XmlSerializer& xml, const XunitTest& test)
-        {
-            StringLiteral result_string = "";
-            switch (test.result)
-            {
-                case BuildResult::POST_BUILD_CHECKS_FAILED:
-                case BuildResult::FILE_CONFLICTS:
-                case BuildResult::BUILD_FAILED: result_string = "Fail"; break;
-                case BuildResult::EXCLUDED:
-                case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES: result_string = "Skip"; break;
-                case BuildResult::SUCCEEDED: result_string = "Pass"; break;
-                default: Checks::unreachable(VCPKG_LINE_INFO);
-            }
-
-            xml.start_complex_open_tag("test")
-                .attr("name", test.name)
-                .attr("method", test.method)
-                .attr("time", test.time.as<std::chrono::seconds>().count())
-                .attr("method", result_string)
-                .finish_complex_open_tag()
-                .line_break();
-            xml.open_tag("traits").line_break();
-            if (!test.abi_tag.empty())
-            {
-                xml.start_complex_open_tag("trait")
-                    .attr("name", "abi_tag")
-                    .attr("value", test.abi_tag)
-                    .finish_self_closing_complex_tag()
-                    .line_break();
-            }
-
-            if (!test.features.empty())
-            {
-                xml.start_complex_open_tag("trait")
-                    .attr("name", "features")
-                    .attr("value", Strings::join(", ", test.features))
-                    .finish_self_closing_complex_tag()
-                    .line_break();
-            }
-
-            xml.start_complex_open_tag("trait")
-                .attr("name", "owner")
-                .attr("value", test.owner)
-                .finish_self_closing_complex_tag()
-                .line_break();
-            xml.close_tag("traits").line_break();
-
-            if (result_string == "Fail")
-            {
-                xml.open_tag("failure")
-                    .open_tag("message")
-                    .cdata(to_string_locale_invariant(test.result))
-                    .close_tag("failure")
-                    .close_tag("message")
-                    .line_break();
-            }
-            else if (result_string == "Skip")
-            {
-                xml.open_tag("reason").cdata(to_string_locale_invariant(test.result)).close_tag("reason").line_break();
-            }
-            else
-            {
-                Checks::check_exit(VCPKG_LINE_INFO, result_string == "Pass");
-            }
-            xml.close_tag("test").line_break();
-        }
-
-        std::map<std::string, std::vector<XunitTest>> m_tests;
-    };
-
     struct UnknownCIPortsResults
     {
-        std::map<PackageSpec, Build::BuildResult> known;
+        std::map<PackageSpec, BuildResult> known;
         std::map<PackageSpec, std::vector<std::string>> features;
         std::map<PackageSpec, std::string> abi_map;
         // action_state_string.size() will equal install_actions.size()
@@ -341,11 +146,11 @@ namespace vcpkg::Commands::CI
         return supports_expression.evaluate(context);
     }
 
-    static Dependencies::ActionPlan compute_full_plan(const VcpkgPaths& paths,
-                                                      const PortFileProvider::PortFileProvider& provider,
-                                                      const CMakeVars::CMakeVarProvider& var_provider,
-                                                      const std::vector<FullPackageSpec>& specs,
-                                                      const Dependencies::CreateInstallPlanOptions& serialize_options)
+    static ActionPlan compute_full_plan(const VcpkgPaths& paths,
+                                        const PortFileProvider& provider,
+                                        const CMakeVars::CMakeVarProvider& var_provider,
+                                        const std::vector<FullPackageSpec>& specs,
+                                        const CreateInstallPlanOptions& serialize_options)
     {
         std::vector<PackageSpec> packages_with_qualified_deps;
         for (auto&& spec : specs)
@@ -358,15 +163,14 @@ namespace vcpkg::Commands::CI
         }
 
         var_provider.load_dep_info_vars(packages_with_qualified_deps, serialize_options.host_triplet);
-        auto action_plan =
-            Dependencies::create_feature_install_plan(provider, var_provider, specs, {}, serialize_options);
+        auto action_plan = create_feature_install_plan(provider, var_provider, specs, {}, serialize_options);
 
         var_provider.load_tag_vars(action_plan, provider, serialize_options.host_triplet);
 
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.already_installed.empty());
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.remove_actions.empty());
 
-        Build::compute_all_abis(paths, action_plan, var_provider, {});
+        compute_all_abis(paths, action_plan, var_provider, {});
         return action_plan;
     }
 
@@ -374,7 +178,7 @@ namespace vcpkg::Commands::CI
         ExclusionPredicate is_excluded,
         const CMakeVars::CMakeVarProvider& var_provider,
         const std::vector<CacheAvailability>& precheck_results,
-        const Dependencies::ActionPlan& action_plan)
+        const ActionPlan& action_plan)
     {
         auto ret = std::make_unique<UnknownCIPortsResults>();
 
@@ -391,7 +195,7 @@ namespace vcpkg::Commands::CI
 
             if (is_excluded(p->spec))
             {
-                ret->action_state_string.push_back("skip");
+                ret->action_state_string.emplace_back("skip");
                 ret->known.emplace(p->spec, BuildResult::EXCLUDED);
                 will_fail.emplace(p->spec);
             }
@@ -400,34 +204,34 @@ namespace vcpkg::Commands::CI
                 // This treats unsupported ports as if they are excluded
                 // which means the ports dependent on it will be cascaded due to missing dependencies
                 // Should this be changed so instead it is a failure to depend on a unsupported port?
-                ret->action_state_string.push_back("n/a");
+                ret->action_state_string.emplace_back("n/a");
                 ret->known.emplace(p->spec, BuildResult::EXCLUDED);
                 will_fail.emplace(p->spec);
             }
             else if (Util::any_of(p->package_dependencies,
                                   [&](const PackageSpec& spec) { return Util::Sets::contains(will_fail, spec); }))
             {
-                ret->action_state_string.push_back("cascade");
+                ret->action_state_string.emplace_back("cascade");
                 ret->cascade_count++;
                 ret->known.emplace(p->spec, BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES);
                 will_fail.emplace(p->spec);
             }
             else if (precheck_results[action_idx] == CacheAvailability::available)
             {
-                ret->action_state_string.push_back("pass");
+                ret->action_state_string.emplace_back("pass");
                 ret->known.emplace(p->spec, BuildResult::SUCCEEDED);
             }
             else
             {
-                ret->action_state_string.push_back("*");
+                ret->action_state_string.emplace_back("*");
             }
         }
         return ret;
     }
 
     // This algorithm reduces an action plan to only unknown actions and their dependencies
-    static void reduce_action_plan(Dependencies::ActionPlan& action_plan,
-                                   const std::map<PackageSpec, Build::BuildResult>& known,
+    static void reduce_action_plan(ActionPlan& action_plan,
+                                   const std::map<PackageSpec, BuildResult>& known,
                                    View<std::string> parent_hashes)
     {
         std::set<PackageSpec> to_keep;
@@ -449,7 +253,7 @@ namespace vcpkg::Commands::CI
                 }
                 else
                 {
-                    it->build_options = vcpkg::Build::backcompat_prohibiting_package_options;
+                    it->build_options = backcompat_prohibiting_package_options;
                     to_keep.insert(it->package_dependencies.begin(), it->package_dependencies.end());
                 }
             }
@@ -481,60 +285,49 @@ namespace vcpkg::Commands::CI
         }
 
         auto result = Strings::strto<int>(opt->second);
-        Checks::check_exit(VCPKG_LINE_INFO, result.has_value(), "%s must be an integer", OPTION_SKIPPED_CASCADE_COUNT);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           result.value_or_exit(VCPKG_LINE_INFO) >= 0,
-                           "%s must be non-negative",
-                           OPTION_SKIPPED_CASCADE_COUNT);
+        Checks::msg_check_exit(
+            VCPKG_LINE_INFO, result.has_value(), msgInvalidArgMustBeAnInt, msg::option = OPTION_SKIPPED_CASCADE_COUNT);
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               result.value_or_exit(VCPKG_LINE_INFO) >= 0,
+                               msgInvalidArgMustBePositive,
+                               msg::option = OPTION_SKIPPED_CASCADE_COUNT);
         return result;
     }
 
-    static void print_baseline_regressions(const TripletAndSummary& result,
-                                           const SortedVector<PackageSpec>& expected_failures,
+    static void print_baseline_regressions(const std::vector<SpecSummary>& results,
+                                           const std::map<PackageSpec, BuildResult>& known,
+                                           const CiBaselineData& cidata,
                                            const std::string& ci_baseline_file_name,
                                            bool allow_unexpected_passing)
     {
-        LocalizedString output;
-        for (auto&& port_result : result.summary.results)
+        bool has_error = false;
+        LocalizedString output = msg::format(msgCiBaselineRegressionHeader);
+        output.append_raw('\n');
+        for (auto&& r : results)
         {
-            auto& build_result = port_result.build_result.value_or_exit(VCPKG_LINE_INFO);
-            switch (build_result.code)
+            auto result = r.build_result.value_or_exit(VCPKG_LINE_INFO).code;
+            auto msg = format_ci_result(r.get_spec(), result, cidata, ci_baseline_file_name, allow_unexpected_passing);
+            if (!msg.empty())
             {
-                case Build::BuildResult::BUILD_FAILED:
-                case Build::BuildResult::POST_BUILD_CHECKS_FAILED:
-                case Build::BuildResult::FILE_CONFLICTS:
-                    if (!expected_failures.contains(port_result.get_spec()))
-                    {
-                        output.append(msg::format(msgCiBaselineRegression,
-                                                  msg::spec = port_result.get_spec().to_string(),
-                                                  msg::build_result =
-                                                      Build::to_string_locale_invariant(build_result.code).to_string(),
-                                                  msg::path = ci_baseline_file_name));
-                        output.appendnl();
-                    }
-                    break;
-                case Build::BuildResult::SUCCEEDED:
-                    if (!allow_unexpected_passing && expected_failures.contains(port_result.get_spec()))
-                    {
-                        output.append(msg::format(msgCiBaselineUnexpectedPass,
-                                                  msg::spec = port_result.get_spec().to_string(),
-                                                  msg::path = ci_baseline_file_name));
-                        output.appendnl();
-                    }
-                    break;
-                default: break;
+                has_error = true;
+                output.append(msg).append_raw('\n');
+            }
+        }
+        for (auto&& r : known)
+        {
+            auto msg = format_ci_result(r.first, r.second, cidata, ci_baseline_file_name, allow_unexpected_passing);
+            if (!msg.empty())
+            {
+                has_error = true;
+                output.append(msg).append_raw('\n');
             }
         }
 
-        auto output_data = output.extract_data();
-        if (output_data.empty())
+        if (!has_error)
         {
             return;
         }
-
-        LocalizedString header = msg::format(msgCiBaselineRegressionHeader);
-        header.appendnl();
-        output_data.insert(0, header.extract_data());
+        auto output_data = output.extract_data();
         fwrite(output_data.data(), 1, output_data.size(), stderr);
     }
 
@@ -543,8 +336,7 @@ namespace vcpkg::Commands::CI
                           Triplet target_triplet,
                           Triplet host_triplet)
     {
-        vcpkg::print2(Color::warning,
-                      "'vcpkg ci' is an internal command which will change incompatibly or be removed at any time.\n");
+        msg::println_warning(msgInternalCICommand);
 
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         const auto& settings = options.settings;
@@ -556,7 +348,7 @@ namespace vcpkg::Commands::CI
         parse_exclusions(settings, OPTION_HOST_EXCLUDE, host_triplet, exclusions_map);
         auto baseline_iter = settings.find(OPTION_CI_BASELINE);
         const bool allow_unexpected_passing = Util::Sets::contains(options.switches, OPTION_ALLOW_UNEXPECTED_PASSING);
-        SortedVector<PackageSpec> expected_failures;
+        CiBaselineData cidata;
         if (baseline_iter == settings.end())
         {
             if (allow_unexpected_passing)
@@ -574,7 +366,7 @@ namespace vcpkg::Commands::CI
             ParseMessages ci_parse_messages;
             const auto lines = parse_ci_baseline(ci_baseline_file_contents, ci_baseline_file_name, ci_parse_messages);
             ci_parse_messages.exit_if_errors_or_warnings(ci_baseline_file_name);
-            expected_failures = parse_and_apply_ci_baseline(lines, exclusions_map, skip_failures);
+            cidata = parse_and_apply_ci_baseline(lines, exclusions_map, skip_failures);
         }
 
         auto skipped_cascade_count = parse_skipped_cascade_count(settings);
@@ -587,7 +379,7 @@ namespace vcpkg::Commands::CI
             auto it_failure_logs = settings.find(OPTION_FAILURE_LOGS);
             if (it_failure_logs != settings.end())
             {
-                vcpkg::printf("Creating failure logs output directory %s\n", it_failure_logs->second);
+                msg::println(msgCreateFailureLogsDir, msg::path = it_failure_logs->second);
                 Path raw_path = it_failure_logs->second;
                 filesystem.create_directories(raw_path, VCPKG_LINE_INFO);
                 build_logs_recorder_storage = filesystem.almost_canonical(raw_path, VCPKG_LINE_INFO);
@@ -597,16 +389,11 @@ namespace vcpkg::Commands::CI
         const IBuildLogsRecorder& build_logs_recorder =
             build_logs_recorder_storage ? *(build_logs_recorder_storage.get()) : null_build_logs_recorder();
 
-        PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
+        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
-        std::vector<std::map<PackageSpec, BuildResult>> all_known_results;
-
-        XunitTestResults xunitTestResults;
-
-        std::vector<TripletAndSummary> results;
-        auto timer = ElapsedTimer::create_started();
+        const ElapsedTimer timer;
         std::vector<std::string> all_port_names =
             Util::fmap(provider.load_all_control_files(), Paragraphs::get_name_of_control_file);
         // Install the default features for every package
@@ -618,10 +405,9 @@ namespace vcpkg::Commands::CI
                                                 InternalFeatureSet{"core", "default"});
         }
 
-        Dependencies::CreateInstallPlanOptions serialize_options(host_triplet,
-                                                                 Dependencies::UnsupportedPortAction::Warn);
+        CreateInstallPlanOptions serialize_options(host_triplet, UnsupportedPortAction::Warn);
 
-        struct RandomizerInstance : Graphs::Randomizer
+        struct RandomizerInstance : GraphRandomizer
         {
             virtual int random(int i) override
             {
@@ -670,7 +456,7 @@ namespace vcpkg::Commands::CI
                     obj.insert("abi", Json::Value::string(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi));
                     arr.push_back(std::move(obj));
                 }
-                filesystem.write_contents(output_hash_json, Json::stringify(arr, Json::JsonStyle{}), VCPKG_LINE_INFO);
+                filesystem.write_contents(output_hash_json, Json::stringify(arr), VCPKG_LINE_INFO);
             }
         }
 
@@ -681,91 +467,87 @@ namespace vcpkg::Commands::CI
         {
             const Path parent_hashes_path = paths.original_cwd / it_parent_hashes->second;
             auto parsed_json = Json::parse_file(VCPKG_LINE_INFO, filesystem, parent_hashes_path);
-            parent_hashes = Util::fmap(parsed_json.first.array(), [](const auto& json_object) {
-                auto abi = json_object.object().get("abi");
+            parent_hashes = Util::fmap(parsed_json.first.array(VCPKG_LINE_INFO), [](const auto& json_object) {
+                auto abi = json_object.object(VCPKG_LINE_INFO).get("abi");
                 Checks::check_exit(VCPKG_LINE_INFO, abi);
 #ifdef _MSC_VER
                 _Analysis_assume_(abi);
 #endif
-                return abi->string().to_string();
+                return abi->string(VCPKG_LINE_INFO).to_string();
             });
         }
 
         reduce_action_plan(action_plan, split_specs->known, parent_hashes);
 
-        vcpkg::printf("Time to determine pass/fail: %s\n", timer.elapsed());
+        msg::println(msgElapsedTimeForChecks, msg::elapsed = timer.elapsed());
 
         if (auto skipped_cascade_count_ptr = skipped_cascade_count.get())
         {
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               *skipped_cascade_count_ptr == split_specs->cascade_count,
-                               "Expected %d cascaded failures, but there were %d cascaded failures.",
-                               *skipped_cascade_count_ptr,
-                               split_specs->cascade_count);
+            Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                   *skipped_cascade_count_ptr == split_specs->cascade_count,
+                                   msgExpectedCascadeFailure,
+                                   msg::expected = *skipped_cascade_count_ptr,
+                                   msg::actual = split_specs->cascade_count);
         }
 
         if (is_dry_run)
         {
-            Dependencies::print_plan(action_plan, true, paths.builtin_ports_directory());
+            print_plan(action_plan, true, paths.builtin_ports_directory());
         }
         else
         {
             StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
-            auto summary = Install::perform(args,
-                                            action_plan,
-                                            Install::KeepGoing::YES,
-                                            paths,
-                                            status_db,
-                                            binary_cache,
-                                            build_logs_recorder,
-                                            var_provider);
+            auto summary = Install::perform(
+                args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder, var_provider);
 
-            // Adding results for ports that were built or pulled from an archive
             for (auto&& result : summary.results)
             {
-                auto& port_features = split_specs->features.at(result.get_spec());
                 split_specs->known.erase(result.get_spec());
-                xunitTestResults.add_test_results(result.get_spec(),
-                                                  result.build_result.value_or_exit(VCPKG_LINE_INFO).code,
-                                                  result.timing,
-                                                  result.start_time,
-                                                  split_specs->abi_map.at(result.get_spec()),
-                                                  port_features);
             }
 
-            // Adding results for ports that were not built because they have known states
-            for (auto&& port : split_specs->known)
-            {
-                auto& port_features = split_specs->features.at(port.first);
-                xunitTestResults.add_test_results(port.first,
-                                                  port.second,
-                                                  ElapsedTime{},
-                                                  std::chrono::system_clock::time_point{},
-                                                  split_specs->abi_map.at(port.first),
-                                                  port_features);
-            }
-
-            all_known_results.emplace_back(std::move(split_specs->known));
-
-            results.push_back({target_triplet, std::move(summary)});
-        }
-
-        for (auto&& result : results)
-        {
-            print2("\nTriplet: ", result.triplet, "\n");
-            print2("Total elapsed time: ", GlobalState::timer.to_string(), "\n");
-            result.summary.print();
+            msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\nTriplet: {}\n", target_triplet));
+            summary.print();
 
             if (baseline_iter != settings.end())
             {
-                print_baseline_regressions(result, expected_failures, baseline_iter->second, allow_unexpected_passing);
+                print_baseline_regressions(
+                    summary.results, split_specs->known, cidata, baseline_iter->second, allow_unexpected_passing);
             }
-        }
 
-        auto it_xunit = settings.find(OPTION_XUNIT);
-        if (it_xunit != settings.end())
-        {
-            filesystem.write_contents(it_xunit->second, xunitTestResults.build_xml(target_triplet), VCPKG_LINE_INFO);
+            auto it_xunit = settings.find(OPTION_XUNIT);
+            if (it_xunit != settings.end())
+            {
+                XunitWriter xunitTestResults;
+
+                // Adding results for ports that were built or pulled from an archive
+                for (auto&& result : summary.results)
+                {
+                    const auto& spec = result.get_spec();
+                    auto& port_features = split_specs->features.at(spec);
+                    auto code = result.build_result.value_or_exit(VCPKG_LINE_INFO).code;
+                    xunitTestResults.add_test_results(
+                        spec, code, result.timing, result.start_time, split_specs->abi_map.at(spec), port_features);
+                }
+
+                // Adding results for ports that were not built because they have known states
+                if (Util::Sets::contains(options.switches, OPTION_XUNIT_ALL))
+                {
+                    for (auto&& port : split_specs->known)
+                    {
+                        const auto& spec = port.first;
+                        auto& port_features = split_specs->features.at(spec);
+                        xunitTestResults.add_test_results(spec,
+                                                          port.second,
+                                                          ElapsedTime{},
+                                                          std::chrono::system_clock::time_point{},
+                                                          split_specs->abi_map.at(spec),
+                                                          port_features);
+                    }
+                }
+
+                filesystem.write_contents(
+                    it_xunit->second, xunitTestResults.build_xml(target_triplet), VCPKG_LINE_INFO);
+            }
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
