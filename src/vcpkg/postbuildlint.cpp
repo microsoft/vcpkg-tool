@@ -1037,13 +1037,14 @@ namespace vcpkg::PostBuildLint
             return Strings::contains_any_ignoring_c_comments(fs.read_contents(file, IgnoreErrors{}), stringview_paths);
         }
 
-        if (extension == ".cfg" || extension == ".conf" || extension == ".ini" || file.filename() == "usage")
+        if (extension == ".cfg" || extension == ".ini" || file.filename() == "usage")
         {
             const auto contents = fs.read_contents(file, IgnoreErrors{});
             return Strings::contains_any(contents, stringview_paths);
         }
 
-        if (extension == ".py" || extension == ".sh" || extension == ".cmake" || extension == ".pc")
+        if (extension == ".py" || extension == ".sh" || extension == ".cmake" || extension == ".pc" ||
+            extension == ".conf")
         {
             const auto contents = fs.read_contents(file, IgnoreErrors{});
             return Strings::contains_any_ignoring_hash_comments(contents, stringview_paths);
