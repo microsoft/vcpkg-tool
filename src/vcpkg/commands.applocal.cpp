@@ -15,8 +15,6 @@
 #include <set>
 #include <string>
 
-HANDLE ghMutex;
-
 namespace
 {
     using namespace vcpkg;
@@ -418,11 +416,18 @@ namespace
         {
             const auto source = installed_dir / target_binary_name;
             const auto target = target_binary_dir / target_binary_name;
-            // FIXME This should use an NT Mutant (what comes out of CreateMutex) to ensure that different vcpkg.exes
-            // running at the same time don't try to deploy the same file at the same time.
-            // ghMutex = CreateMutex(NULL,  // default security attributes
-            //                      FALSE, // initially not owned
-            //                      NULL); // unnamed mutex
+            const auto mutant_name = Strings::to_utf16("vcpkg-applocal-" + Hash::get_string_sha256(target_binary_dir));
+
+            HANDLE the_mutant = ::CreateMutexW(nullptr, FALSE, mutant_name.c_str());
+
+            if (the_mutant == NULL)
+            {
+                Checks::exit_with_message(
+                    VCPKG_LINE_INFO, "Failed\n");
+            }
+
+            WaitForSingleObject(the_mutant, INFINITE);
+
             std::error_code ec;
             // FIXME Should this check for last_write_time and choose latest? -> si 
             const bool did_deploy = m_fs.copy_file(source, target, CopyOptions::overwrite_existing, ec);
@@ -432,12 +437,15 @@ namespace
             }
             else if (!ec)
             {
-                // note that we still print this as "copied" in tlog etc. because it's still a dependency
                 vcpkg::printf("%s -> %s skipped, up to date\n", source, target);
             }
             else if (ec == std::errc::no_such_file_or_directory)
             {
                 Debug::print("Attempted to deploy %s, but it didn't exist", source);
+
+                ReleaseMutex(the_mutant);
+                CloseHandle(the_mutant);
+
                 return false;
             }
             else
@@ -463,6 +471,9 @@ namespace
                                    m_copied_files_log.write(native.c_str(), 1, native.size()) == native.size());
                 Checks::check_exit(VCPKG_LINE_INFO, m_copied_files_log.put('\n') == '\n');
             }
+
+            ReleaseMutex(the_mutant);
+            CloseHandle(the_mutant);
 
             return did_deploy;
         }
