@@ -516,15 +516,15 @@ TEST_CASE ("Path::make_parent_path and Path::parent_path", "[filesystem][files]"
 #endif // ^^^ !_WIN32
 }
 
-TEST_CASE ("Path::lexically_relative", "[filesystem][files]")
+TEST_CASE ("Path::posix_lexically_relative", "[filesystem][files]")
 {
     auto& fs = setup();
-    CHECK(fs.lexically_relative("/test/test", "/test").native() == "test");
-    CHECK(fs.lexically_relative("/test/test", "/").native() == "test/test");
-    CHECK(fs.lexically_relative("/test/test", "/test4").native() == "../test/test");
-    CHECK(fs.lexically_relative("/test4", "/test").native() == "../test4");
-    CHECK(fs.lexically_relative("/test4", "/test/test").native() == "../../test4");
-    CHECK(fs.lexically_relative("/teet/tt", "/test/tt").native() == "../../teet/tt");
+    CHECK(fs.posix_lexically_relative("/test/test", "/test").native() == "test");
+    CHECK(fs.posix_lexically_relative("/test/test", "/").native() == "test/test");
+    CHECK(fs.posix_lexically_relative("/test/test", "/test4").native() == "../test/test");
+    CHECK(fs.posix_lexically_relative("/test4", "/test").native() == "../test4");
+    CHECK(fs.posix_lexically_relative("/test4", "/test/test").native() == "../../test4");
+    CHECK(fs.posix_lexically_relative("/teet/tt", "/test/tt").native() == "../../teet/tt");
 }
 
 static void test_path_decomposition(

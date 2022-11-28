@@ -3149,7 +3149,7 @@ namespace vcpkg
 #endif // ^^^ !_WIN32
         }
 
-        virtual Path lexically_relative(const Path& abs_file, const Path& base) const override
+        Path posix_lexically_relative(const Path& abs_file, const Path& base) const override
         {
             if (abs_file.is_relative() || base.is_relative())
             {
@@ -3190,7 +3190,7 @@ namespace vcpkg
             if (ec) return {};
             Path abs_base = almost_canonical(base, ec);
             if (ec) return {};
-            return lexically_relative(abs_file, abs_base);
+            return posix_lexically_relative(abs_file, abs_base);
 #endif // ^^^ !_WIN32
         }
 
