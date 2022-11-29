@@ -142,3 +142,37 @@ TEST_CASE ("cmdlinebuilder", "[system]")
     REQUIRE(cmd.command_line() == "\"trailing\\\\slash\\\\\" \"inner\\\"quotes\"");
 #endif
 }
+
+TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
+{
+    std::vector<vcpkg::Command> vec;
+    for (size_t i = 0; i < 50; i++)
+    {
+#if defined(_WIN32)
+        vcpkg::Command cmd("cmd.exe");
+        cmd.string_arg("/c");
+        const auto cmd_str = "echo " + std::to_string(i);
+        cmd.string_arg(cmd_str);
+#else
+        vcpkg::Command cmd("echo");
+        const auto cmd_str = std::string(i, 'a');
+        cmd.string_arg(cmd_str);
+#endif
+        vec.emplace_back(std::move(cmd));
+    }
+
+    auto res = vcpkg::cmd_execute_and_capture_output_parallel(vcpkg::View<vcpkg::Command>(vec));
+
+    for (size_t i = 0; i < res.size(); ++i)
+    {
+        auto out = res[i].get();
+        REQUIRE(out != nullptr);
+        REQUIRE(out->exit_code == 0);
+
+#if defined(_WIN32)
+        REQUIRE(out->output == (std::to_string(i) + "\r\n"));
+#else
+        REQUIRE(out->output == (std::string(i, 'a') + "\n"));
+#endif
+    }
+}
