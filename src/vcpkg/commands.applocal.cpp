@@ -1,12 +1,15 @@
 #include <vcpkg/base/cofffilereader.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.applocal.h>
 #include <vcpkg/vcpkgcmdarguments.h>
+
+#include <synchapi.h>
 
 #include <functional>
 #include <map>
@@ -364,7 +367,6 @@ namespace
             std::vector<Path> children = m_fs.get_files_non_recursive(target_binary_name, ec);
             for (auto&& c : children)
             {
-                const std::string& c_filename = c.filename().to_string();
                 if (c == "Qt5Declarative.dll" || c == "Qt5Declaratived.dll")
                 {
                     deployPluginsQt("qml1tooling", target_binary_dir, qt_plugins_dir);
