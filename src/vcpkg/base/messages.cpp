@@ -554,6 +554,7 @@ namespace vcpkg
     REGISTER_MESSAGE(EmptyArg);
     REGISTER_MESSAGE(EmptyLicenseExpression);
     REGISTER_MESSAGE(EndOfStringInCodeUnit);
+    REGISTER_MESSAGE(EnvInvalidMaxConcurrency);
     REGISTER_MESSAGE(EnvStrFailedToExtract);
     REGISTER_MESSAGE(ErrorDetectingCompilerInfo);
     REGISTER_MESSAGE(ErrorIndividualPackagesUnsupported);

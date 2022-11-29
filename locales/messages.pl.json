@@ -153,6 +153,7 @@
   "EmptyArg": "Do opcji --{option} należy przekazać niepusty argument.",
   "EmptyLicenseExpression": "Wyrażenie licencji SPDX było puste.",
   "EndOfStringInCodeUnit": "znaleziono koniec ciągu w środku punktu kodu",
+  "EnvInvalidMaxConcurrency": "{env_var} is {value}, must be > 0",
   "EnvStrFailedToExtract": "Nie można rozwinąć ciągu środowiska:",
   "ErrorDetectingCompilerInfo": "podczas wykrywania informacji o kompilatorze:\nZawartość pliku dziennika w lokalizacji „{path}” to:",
   "ErrorIndividualPackagesUnsupported": "W trybie manifestu polecenie „vcpkg install” nie obsługuje poszczególnych argumentów pakietu.\nAby zainstalować dodatkowe pakiety, edytuj plik vcpkg.json, a następnie uruchom polecenie „vcpkg install” bez żadnych argumentów pakietu.",

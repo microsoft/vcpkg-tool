@@ -153,6 +153,7 @@
   "EmptyArg": "A opção --{option} deve ser passada para um argumento não vazio.",
   "EmptyLicenseExpression": "A expressão da licença SPDX estava vazia.",
   "EndOfStringInCodeUnit": "encontrou o final da cadeia de caracteres no meio do ponto de código",
+  "EnvInvalidMaxConcurrency": "{env_var} is {value}, must be > 0",
   "EnvStrFailedToExtract": "não foi possível expandir a cadeia de caracteres do ambiente:",
   "ErrorDetectingCompilerInfo": "ao detectar informações do compilador:\nO conteúdo do arquivo de log em \"{path}\" é:",
   "ErrorIndividualPackagesUnsupported": "No modo de manifesto, `vcpkg install` não dá suporte a argumentos de pacotes individuais.\nPara instalar pacotes adicionais, edite o vcpkg.json e execute `vcpkg install` sem nenhum argumento de pacote.",
