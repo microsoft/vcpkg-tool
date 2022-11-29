@@ -2864,7 +2864,8 @@ namespace vcpkg
                 if (GetFileAttributesExW(wide_destination.c_str(), GetFileExInfoStandard, &attributes_destination))
                 {
                     // Do not copy if destination file is equal or more recent than source file
-                    if (CompareFileTime(&attributes_destination.ftLastWriteTime, &attributes_source.ftLastWriteTime) >= 0)
+                    if (CompareFileTime(&attributes_destination.ftLastWriteTime, &attributes_source.ftLastWriteTime) >=
+                        0)
                     {
                         return false;
                     }

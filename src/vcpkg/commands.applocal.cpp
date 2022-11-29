@@ -153,8 +153,7 @@ namespace
                 std::error_code ec;
                 m_fs.create_directories(drivers, ec);
 
-                std::vector<Path> children =
-                    m_fs.get_files_non_recursive(installed_dir / "bin/OpenNI2/Drivers", ec);
+                std::vector<Path> children = m_fs.get_files_non_recursive(installed_dir / "bin/OpenNI2/Drivers", ec);
 
                 for (auto&& c : children)
                 {
@@ -238,7 +237,8 @@ namespace
                 for (auto&& c : children)
                 {
                     const std::string& c_filename = c.filename().to_string();
-                    if (Strings::ends_with(c_filename, ".dll")) {
+                    if (Strings::ends_with(c_filename, ".dll"))
+                    {
                         deploy_binary(new_dir, qt_plugins_dir / plugins_subdir_name, c_filename);
                         resolve(c);
                     }
@@ -422,14 +422,13 @@ namespace
 
             if (the_mutant == NULL)
             {
-                Checks::exit_with_message(
-                    VCPKG_LINE_INFO, "Failed\n");
+                Checks::exit_with_message(VCPKG_LINE_INFO, "Failed\n");
             }
 
             WaitForSingleObject(the_mutant, INFINITE);
 
             std::error_code ec;
-            // FIXME Should this check for last_write_time and choose latest? -> si 
+            // FIXME Should this check for last_write_time and choose latest? -> si
             const bool did_deploy = m_fs.copy_file(source, target, CopyOptions::update_existing, ec);
             if (did_deploy)
             {
@@ -488,7 +487,7 @@ namespace
         bool openni2_installed;
         bool azurekinectsdk_installed;
         bool magnum_installed;
-        bool qt_installed;        
+        bool qt_installed;
     };
 }
 

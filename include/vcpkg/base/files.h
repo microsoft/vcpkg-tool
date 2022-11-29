@@ -12,11 +12,11 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <utility>
 
 #include <initializer_list>
 #include <memory>
 #include <system_error>
+#include <utility>
 
 #if defined(_WIN32)
 #define VCPKG_PREFERRED_SEPARATOR "\\"
