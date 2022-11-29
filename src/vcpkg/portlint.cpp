@@ -325,9 +325,27 @@ namespace vcpkg::Lint
                     }
                     // remove '   OUT_SOURCE_PATH FOOBAR  ' line
                     portfile_content.erase(before_out_source_path + 1, erase_lenth);
+
+                    // Replace 'REF' by 'SOURCE_BASE'
+                    auto ref_index = index;
+                    while ((ref_index = portfile_content.find("REF", ref_index)) != std::string::npos)
+                    {
+                        if (ref_index > end) break;
+                        if (!isspace(portfile_content[ref_index - 1]) ||
+                            !isspace(portfile_content[ref_index + StringLiteral("REF").size()]))
+                        { // 'REF' must be not included in another word
+                            ref_index += 3;
+                        }
+                        else
+                        {
+                            portfile_content.replace(ref_index, StringLiteral("REF").size(), "SOURCE_BASE");
+                            break;
+                        }
+                    }
+
                     // insert 'FOOBAR' or // '\n   FOOBAR' after '('
                     auto open_bracket = portfile_content.find('(', index);
-                    if (open_bracket != std::string::npos && open_bracket < end)
+                    if (open_bracket != std::string::npos && open_bracket < target)
                     {
                         char c = portfile_content[before_out_source_path];
                         if (c == '\n')

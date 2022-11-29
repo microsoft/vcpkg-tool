@@ -140,6 +140,7 @@ vcpkg_cmake_config_fixup(CONFIG_PATH cmake PACKAGE_NAME async++)
 vcpkg_extract_source_archive_ex(
     OUT_SOURCE_PATH SOURCE_PATH
     ARCHIVE ${ARCHIVE}
+    REF lib1.0.0
     PATCHES
         remove_stdint_headers.patch
         no-pragma-warning.patch
@@ -147,6 +148,8 @@ vcpkg_extract_source_archive_ex(
 vcpkg_extract_source_archive_ex(
     ARCHIVE ${ARCHIVE}
     OUT_SOURCE_PATH SOURCE_PATH
+REF
+lib1.0.0
     PATCHES
         remove_stdint_headers.patch
         no-pragma-warning.patch
@@ -157,6 +160,7 @@ vcpkg_extract_source_archive_ex(OUT_SOURCE_PATH SOURCE_PATH ARCHIVE ${ARCHIVE})
 vcpkg_extract_source_archive(
     SOURCE_PATH
     ARCHIVE ${ARCHIVE}
+    SOURCE_BASE lib1.0.0
     PATCHES
         remove_stdint_headers.patch
         no-pragma-warning.patch
@@ -164,6 +168,8 @@ vcpkg_extract_source_archive(
 vcpkg_extract_source_archive(
     SOURCE_PATH
     ARCHIVE ${ARCHIVE}
+SOURCE_BASE
+lib1.0.0
     PATCHES
         remove_stdint_headers.patch
         no-pragma-warning.patch
