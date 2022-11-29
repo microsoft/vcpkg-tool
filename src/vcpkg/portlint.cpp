@@ -301,7 +301,7 @@ namespace vcpkg::Lint
                 break;
             }
             const auto end = portfile_content.find(')', index);
-            const auto target = portfile_content.find("OUT_SOURCE_PATH");
+            const auto target = portfile_content.find("OUT_SOURCE_PATH", index);
             if (target != std::string::npos && target < end)
             {
                 const auto before_out_source_path = portfile_content.find_last_not_of(' ', target - 1);

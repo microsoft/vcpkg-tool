@@ -137,6 +137,9 @@ vcpkg_cmake_config_fixup(CONFIG_PATH cmake PACKAGE_NAME async++)
     SECTION ("vcpkg_extract_source_archive_ex -> vcpkg_extract_source_archive")
     {
         std::string content = R"-(
+vcpkg_from_github(
+    OUT_SOURCE_PATH SOURCE_PATH
+)
 vcpkg_extract_source_archive_ex(
     OUT_SOURCE_PATH SOURCE_PATH
     ARCHIVE ${ARCHIVE}
@@ -157,6 +160,9 @@ lib1.0.0
 vcpkg_extract_source_archive_ex(OUT_SOURCE_PATH SOURCE_PATH ARCHIVE ${ARCHIVE})
 )-";
         std::string new_content = R"-(
+vcpkg_from_github(
+    OUT_SOURCE_PATH SOURCE_PATH
+)
 vcpkg_extract_source_archive(
     SOURCE_PATH
     ARCHIVE ${ARCHIVE}
