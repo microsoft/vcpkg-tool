@@ -8,8 +8,6 @@
 #include <vcpkg/commands.applocal.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
-#include <Windows.h>
-
 #include <functional>
 #include <map>
 #include <set>
