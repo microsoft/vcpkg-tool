@@ -9,8 +9,6 @@
 #include <vcpkg/commands.applocal.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
-#include <synchapi.h>
-
 #include <functional>
 #include <map>
 #include <set>
