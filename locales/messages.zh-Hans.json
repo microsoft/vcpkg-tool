@@ -153,6 +153,7 @@
   "EmptyArg": "选项 --{option} 必须传递非空参数。",
   "EmptyLicenseExpression": "SPDX 许可证表达式为空。",
   "EndOfStringInCodeUnit": "在码位中间找到了字符串结尾",
+  "EnvInvalidMaxConcurrency": "{env_var} is {value}, must be > 0",
   "EnvStrFailedToExtract": "无法展开环境字符串:",
   "ErrorDetectingCompilerInfo": "检测编译器信息时: \n“{path}”下的日志文件内容为:",
   "ErrorIndividualPackagesUnsupported": "在清单模式下，`vcpkg install` 不支持单个包参数。\n要安装其他包，请编辑 vcpkg.json，然后在没有任何包参数的情况下运行 `vcpkg install`。",
