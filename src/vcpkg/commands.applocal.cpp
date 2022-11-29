@@ -430,7 +430,7 @@ namespace
 
             std::error_code ec;
             // FIXME Should this check for last_write_time and choose latest? -> si 
-            const bool did_deploy = m_fs.copy_file(source, target, CopyOptions::overwrite_existing, ec);
+            const bool did_deploy = m_fs.copy_file(source, target, CopyOptions::update_existing, ec);
             if (did_deploy)
             {
                 vcpkg::printf("%s -> %s done\n", source, target);

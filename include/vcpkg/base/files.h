@@ -46,6 +46,7 @@ namespace vcpkg
         none = 0,
         skip_existing = 0x1,
         overwrite_existing = 0x2,
+        update_existing = 0x3,
     };
 
     struct Path

@@ -2826,7 +2826,7 @@ namespace vcpkg
             DWORD last_error;
             auto wide_source = Strings::to_utf16(source.native());
             auto wide_destination = Strings::to_utf16(destination.native());
-            if (options != CopyOptions::overwrite_existing)
+            if (options != CopyOptions::overwrite_existing && options != CopyOptions::update_existing)
             {
                 if (::CopyFileW(wide_source.c_str(), wide_destination.c_str(), TRUE))
                 {
@@ -2849,6 +2849,26 @@ namespace vcpkg
                 }
                 FileHandle destination_handle(wide_destination.c_str(), FILE_WRITE_DATA, 0, OPEN_EXISTING, 0, ec);
                 return false;
+            }
+
+            if (options == CopyOptions::update_existing)
+            {
+                WIN32_FILE_ATTRIBUTE_DATA attributes_source;
+                if (!GetFileAttributesExW(wide_source.c_str(), GetFileExInfoStandard, &attributes_source))
+                {
+                    ec.assign(GetLastError(), std::system_category());
+                    return false;
+                }
+
+                WIN32_FILE_ATTRIBUTE_DATA attributes_destination;
+                if (GetFileAttributesExW(wide_destination.c_str(), GetFileExInfoStandard, &attributes_destination))
+                {
+                    // Do not copy if destination file is equal or more recent than source file
+                    if (CompareFileTime(&attributes_destination.ftLastWriteTime, &attributes_source.ftLastWriteTime) >= 0)
+                    {
+                        return false;
+                    }
+                }
             }
 
             if (::CopyFileW(wide_source.c_str(), wide_destination.c_str(), FALSE))
@@ -2883,7 +2903,7 @@ namespace vcpkg
             }
 
             int open_options = O_WRONLY | O_CREAT;
-            if (options != CopyOptions::overwrite_existing)
+            if (options != CopyOptions::overwrite_existing && options != CopyOptions::update_existing)
             {
                 // the standard wording suggests that we should create a file through a broken symlink which would
                 // forbid use of O_EXCL. However, implementations like boost::copy_file don't do this and doing it
@@ -2922,10 +2942,15 @@ namespace vcpkg
                 return false;
             }
 
-            if (options == CopyOptions::overwrite_existing)
+            if (options == CopyOptions::overwrite_existing || options == CopyOptions::update_existing)
             {
                 destination_fd.ftruncate(0, ec);
                 if (ec) return false;
+            }
+
+            if (difftime(destination_stat.st_mtime, source_stat.st_mtime) >= 0.0)
+            {
+                return false;
             }
 
 #if defined(__APPLE__)
