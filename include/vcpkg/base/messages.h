@@ -2094,7 +2094,7 @@ namespace vcpkg
     DECLARE_MESSAGE(FailedToParseSerializedManifest,
                     (msg::path),
                     "",
-                    "Failed to parse serialized manifest file of {path} Please open an issue at "
+                    "Failed to parse serialized manifest file of {path}. Please open an issue at "
                     "https://github.com/microsoft/vcpkg, with the following output:");
     DECLARE_MESSAGE(MismatchedSerializedManifestSCF,
                     (),
