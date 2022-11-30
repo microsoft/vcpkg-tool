@@ -179,9 +179,10 @@ namespace vcpkg::PostBuildLint
 
         if (!violations.empty())
         {
-            msg::println_warning(msgPortBugRestrictedHeaderPaths);
+            msg::println_warning(msgPortBugRestrictedHeaderPaths,
+                                 msg::env_var = to_cmake_variable(BuildPolicy::ALLOW_RESTRICTED_HEADERS));
             print_paths(violations);
-            msg::println(msgPortBugAllowRestrictedHeaders,
+            msg::println(msgPortBugRestrictedHeaderPaths,
                          msg::env_var = to_cmake_variable(BuildPolicy::ALLOW_RESTRICTED_HEADERS));
             return LintStatus::PROBLEM_DETECTED;
         }
@@ -242,9 +243,7 @@ namespace vcpkg::PostBuildLint
         const auto lib_cmake = package_dir / "lib" / "cmake";
         if (fs.exists(lib_cmake, IgnoreErrors{}))
         {
-            msg::println_warning(msg::format(msgPortBugMergeLibCMakeDir, msg::spec = spec.name())
-                                     .append_raw('\n')
-                                     .append(msgPortBugUseVcpkgCMakeConfigFixup));
+            msg::println_warning(msgPortBugMergeLibCMakeDir, msg::spec = spec.name());
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -405,11 +404,10 @@ namespace vcpkg::PostBuildLint
             }
             else
             {
-                Checks::msg_exit_with_message(
-                    VCPKG_LINE_INFO,
-                    msg::format(msgRunningCommandFailed, msg::command_line = cmd_line.command_line())
-                        .append_raw('\n')
-                        .append(maybe_output.error()));
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                              msg::format(msgCommandFailed, msg::command_line = cmd_line.command_line())
+                                                  .append_raw('\n')
+                                                  .append(maybe_output.error()));
             }
         }
 
@@ -448,11 +446,10 @@ namespace vcpkg::PostBuildLint
             }
             else
             {
-                Checks::msg_exit_with_message(
-                    VCPKG_LINE_INFO,
-                    msg::format(msgRunningCommandFailed, msg::command_line = cmd_line.command_line())
-                        .append_raw('\n')
-                        .append(maybe_output.error()));
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                              msg::format(msgCommandFailed, msg::command_line = cmd_line.command_line())
+                                                  .append_raw('\n')
+                                                  .append(maybe_output.error()));
             }
         }
 
@@ -460,7 +457,7 @@ namespace vcpkg::PostBuildLint
         {
             msg::println_warning(msgPortBugDllAppContainerBitNotSet);
             print_paths(dlls_with_improper_uwp_bit);
-            msg::println_warning(msgPortBugRequiredDllAppContainerBit);
+            msg::println_warning(msgPortBugDllAppContainerBitNotSet);
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -865,11 +862,10 @@ namespace vcpkg::PostBuildLint
             }
             else
             {
-                Checks::msg_exit_with_message(
-                    VCPKG_LINE_INFO,
-                    msg::format(msgRunningCommandFailed, msg::command_line = cmd_line.command_line())
-                        .append_raw('\n')
-                        .append_raw(maybe_output.error()));
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                              msg::format(msgCommandFailed, msg::command_line = cmd_line.command_line())
+                                                  .append_raw('\n')
+                                                  .append_raw(maybe_output.error()));
             }
         }
 
@@ -924,11 +920,10 @@ namespace vcpkg::PostBuildLint
             }
             else
             {
-                Checks::msg_exit_with_message(
-                    VCPKG_LINE_INFO,
-                    msg::format(msgRunningCommandFailed, msg::command_line = cmd_line.command_line())
-                        .append_raw('\n')
-                        .append_raw(maybe_output.error()));
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                              msg::format(msgCommandFailed, msg::command_line = cmd_line.command_line())
+                                                  .append_raw('\n')
+                                                  .append_raw(maybe_output.error()));
             }
         }
 

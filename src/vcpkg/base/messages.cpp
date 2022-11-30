@@ -993,7 +993,6 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedToFetchError);
     REGISTER_MESSAGE(UnexpectedPortName);
     REGISTER_MESSAGE(FailedToLoadUnnamedPortFromPath);
-
     REGISTER_MESSAGE(TrailingCommaInArray);
     REGISTER_MESSAGE(TrailingCommaInObj);
     REGISTER_MESSAGE(Utf8ConversionFailed);
@@ -1022,10 +1021,7 @@ namespace vcpkg
     REGISTER_MESSAGE(PortBugFoundExeInBinDir);
     REGISTER_MESSAGE(PortBugDllsWithNoExports);
     REGISTER_MESSAGE(PortBugSetDllsWithoutExports);
-    REGISTER_MESSAGE(RunningCommandFailed);
-    REGISTER_MESSAGE(PortBugUseVcpkgCMakeConfigFixup);
     REGISTER_MESSAGE(PortBugDllAppContainerBitNotSet);
-    REGISTER_MESSAGE(PortBugRequiredDllAppContainerBit);
     REGISTER_MESSAGE(BuiltWithIncorrectArchitecture);
     REGISTER_MESSAGE(BinaryWithInvalidArchitecture);
     REGISTER_MESSAGE(ExpectedExtension);

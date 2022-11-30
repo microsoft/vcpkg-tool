@@ -2099,7 +2099,7 @@ namespace vcpkg
     DECLARE_MESSAGE(MismatchedSerializedManifestSCF,
                     (),
                     "",
-                    "The serialized manifest SCF was different from the original SCF. Please open an issue at "
+                    "The serialized manifest was different from the original SCF. Please open an issue at "
                     "https://github.com/microsoft/vcpkg, with the following output:");
     DECLARE_MESSAGE(PortBugIncludeDirInCMakeHelperPort,
                     (),
@@ -2112,25 +2112,25 @@ namespace vcpkg
                     "The folder /include is empty or not present. This indicates the library was not correctly "
                     "installed.");
     DECLARE_MESSAGE(PortBugRestrictedHeaderPaths,
-                    (),
-                    "",
-                    "Restricted headers paths are present. These files can prevent the core C++ runtime and "
-                    "other packages from compiling correctly:");
+                    (msg::env_var),
+                    "A list of restricted headers is printed after this message, one per line.",
+                    "The following restricted headers can prevent the core C++ runtime and other packages from "
+                    "compiling correctly. In exceptional circumstances, this policy can be disabled via {env_var}.");
     DECLARE_MESSAGE(PortBugAllowRestrictedHeaders,
                     (msg::env_var),
                     "",
                     "In exceptional circumstances, this policy can be disabled via {env_var}");
     DECLARE_MESSAGE(PortBugDuplicateIncludeFiles,
                     (),
-                    "'{CURRENT_PACKAGES_DIR}' should not be translated.",
+                    "",
                     "Include files should not be duplicated into the /debug/include directory. If this cannot "
                     "be disabled in the project cmake, use\n"
-                    "file(REMOVE_RECURSE \"${CURRENT_PACKAGES_DIR}/debug/include\")");
+                    "file(REMOVE_RECURSE \"${{CURRENT_PACKAGES_DIR}}/debug/include\")");
     DECLARE_MESSAGE(PortBugDebugShareDir,
                     (),
-                    "'{CURRENT_PACKAGES_DIR}' should not be translated.",
+                    "",
                     "/debug/share should not exist. Please reorganize any important files, then use\n"
-                    "file(REMOVE_RECURSE \"${CURRENT_PACKAGES_DIR}/debug/share\")");
+                    "file(REMOVE_RECURSE \"${{CURRENT_PACKAGES_DIR}}/debug/share\")");
     DECLARE_MESSAGE(PortBugMissingFile,
                     (msg::path),
                     "",
@@ -2138,13 +2138,8 @@ namespace vcpkg
     DECLARE_MESSAGE(PortBugMergeLibCMakeDir,
                     (msg::spec),
                     "",
-                    "The /lib/cmake folder should be merged with /debug/lib/cmake and moved to "
-                    "/share/{spec}/cmake.");
-    DECLARE_MESSAGE(PortBugUseVcpkgCMakeConfigFixup,
-                    (),
-                    "",
-                    "Please use the helper function `vcpkg_cmake_config_fixup()` "
-                    "from the port vcpkg-cmake-config.`");
+                    "The /lib/cmake folder should be merged with /debug/lib/cmake and moved to /share/{spec}/cmake. "
+                    "Please use the helper function `vcpkg_cmake_config_fixup()` from the port vcpkg-cmake-config.`");
     DECLARE_MESSAGE(
         PortBugMisplacedCMakeFiles,
         (msg::spec),
@@ -2164,22 +2159,21 @@ namespace vcpkg
                     (),
                     "",
                     "The following EXEs were found in /bin or /debug/bin. EXEs are not valid distribution targets.");
-    DECLARE_MESSAGE(PortBugDllsWithNoExports, (), "", "The following DLLs have no exports:");
+    DECLARE_MESSAGE(PortBugDllsWithNoExports,
+                    (),
+                    "exports' means an entry in a DLL's export table",
+                    "The following DLLs have no exports:");
     DECLARE_MESSAGE(PortBugSetDllsWithoutExports,
                     (msg::env_var),
                     "",
                     "DLLs without any exports are likely a bug in the build script. If this is intended, add the "
                     "following line in the portfile:\n"
                     "SET({env_var} enabled)");
-    DECLARE_MESSAGE(RunningCommandFailed, (msg::command_line), "", "Running command:{command_line}\nFailed:");
     DECLARE_MESSAGE(PortBugDllAppContainerBitNotSet,
                     (),
                     "",
-                    "The following DLLs do not have the App Container bit set:");
-    DECLARE_MESSAGE(PortBugRequiredDllAppContainerBit,
-                    (),
-                    "",
-                    "The App Container bit must be set for Windows Store apps.");
+                    "The App Container bit must be set for Windows Store apps. The following DLLs do not have the App "
+                    "Container bit set:");
     DECLARE_MESSAGE(BuiltWithIncorrectArchitecture,
                     (),
                     "",
@@ -2205,7 +2199,7 @@ namespace vcpkg
     DECLARE_MESSAGE(PortBugFoundReleaseBinaries, (msg::count), "", "Found {count} release binaries:");
     DECLARE_MESSAGE(PortBugMissingDebugBinaries, (), "", "Debug binaries were not found.");
     DECLARE_MESSAGE(PortBugMissingReleaseBinaries, (), "", "Release binaries were not found.");
-    DECLARE_MESSAGE(PortBugMissingImportedLibs, (msg::path), "", "Import libs were not present in {path}");
+    DECLARE_MESSAGE(PortBugMissingImportedLibs, (msg::path), "", "Import libraries were not present in {path}");
     DECLARE_MESSAGE(SetDllsWithoutLibs,
                     (msg::env_var),
                     "",
@@ -2240,7 +2234,10 @@ namespace vcpkg
                     "pkgconfig directories should be one of share/pkgconfig (for header only libraries only), "
                     "lib/pkgconfig, or lib/debug/pkgconfig. The following misplaced pkgconfig files were found:");
     DECLARE_MESSAGE(PortBugMovePkgConfigFiles, (), "", "You can move the pkgconfig files with commands similar to:");
-    DECLARE_MESSAGE(PortBugRemoveEmptyDirs, (), "", "empty directories left by the above renames)");
+    DECLARE_MESSAGE(PortBugRemoveEmptyDirs,
+                    (),
+                    "Only the 'empty directories left by the above renames' part should be translated",
+                    "vcpkg_fixup_pkgconfig()\nfile(REMOVE_RECURSE empty directories left by the above renames)");
     DECLARE_MESSAGE(PortBugInvalidCrtLinkage,
                     (msg::expected),
                     "{expected} is the expected build type",
