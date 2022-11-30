@@ -2949,7 +2949,8 @@ namespace vcpkg
                 if (ec) return false;
             }
 
-            if (difftime(destination_stat.st_mtime, source_stat.st_mtime) >= 0.0)
+            if (options == CopyOptions::update_existing &&
+                difftime(destination_stat.st_mtime, source_stat.st_mtime) >= 0.0)
             {
                 return false;
             }
