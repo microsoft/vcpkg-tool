@@ -1,3 +1,4 @@
+#if defined(_WIN32)
 #include <vcpkg/base/cofffilereader.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
@@ -414,7 +415,6 @@ namespace
             const auto source = installed_dir / target_binary_name;
             const auto target = target_binary_dir / target_binary_name;
 
-#if defined(_WIN32)
             const auto mutant_name = Strings::to_utf16("vcpkg-applocal-" + Hash::get_string_sha256(target_binary_dir));
 
             HANDLE the_mutant = ::CreateMutexW(nullptr, FALSE, mutant_name.c_str());
@@ -425,7 +425,6 @@ namespace
             }
 
             WaitForSingleObject(the_mutant, INFINITE);
-#endif
 
             std::error_code ec;
             // FIXME Should this check for last_write_time and choose latest? -> si
@@ -442,10 +441,8 @@ namespace
             {
                 Debug::print("Attempted to deploy %s, but it didn't exist", source);
 
-#if defined(_WIN32)
                 ReleaseMutex(the_mutant);
                 CloseHandle(the_mutant);
-#endif
 
                 return false;
             }
@@ -473,10 +470,8 @@ namespace
                 Checks::check_exit(VCPKG_LINE_INFO, m_copied_files_log.put('\n') == '\n');
             }
 
-#if defined(_WIN32)
             ReleaseMutex(the_mutant);
             CloseHandle(the_mutant);
-#endif
 
             return did_deploy;
         }
@@ -540,3 +535,4 @@ namespace vcpkg::Commands
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 }
+#endif
