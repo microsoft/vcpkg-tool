@@ -139,12 +139,6 @@ namespace vcpkg
         Optional<Version> try_get_minimum_version() const;
     };
 
-    enum class ImplicitDefault : bool
-    {
-        NO,
-        YES,
-    };
-
     struct Dependency
     {
         std::string name;
