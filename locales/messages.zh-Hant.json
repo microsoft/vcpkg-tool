@@ -153,6 +153,7 @@
   "EmptyArg": "選項 --{option} 必須傳遞非空白引數。",
   "EmptyLicenseExpression": "SPDX 授權運算式是空的。",
   "EndOfStringInCodeUnit": "在字碼元素中間找到字串結尾",
+  "EnvInvalidMaxConcurrency": "{env_var} is {value}, must be > 0",
   "EnvStrFailedToExtract": "無法展開環境字串:",
   "ErrorDetectingCompilerInfo": "偵測編譯器資訊時: \n位於 \"{path}\" 的記錄檔內容為:",
   "ErrorIndividualPackagesUnsupported": "在資訊清單模式中，'vcpkg install' 不支援個別套件引數。\n若要安裝其他套件，請編輯 vcpkg.json，然後執行不含任何套件引數的 'vcpkg install'。",
