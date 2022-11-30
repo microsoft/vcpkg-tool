@@ -442,7 +442,6 @@ namespace vcpkg
             VcpkgPathsImpl(Filesystem& fs, const VcpkgCmdArguments& args, const Path& root, const Path& original_cwd)
                 : VcpkgPathsImplStage1(fs, args, root, original_cwd)
                 , m_config_dir(m_manifest_dir.empty() ? root : m_manifest_dir)
-                , m_has_configuration_file(fs.exists(m_config_dir / "vcpkg-configuration.json", VCPKG_LINE_INFO))
                 , m_manifest_path(m_manifest_dir.empty() ? Path{} : m_manifest_dir / "vcpkg.json")
                 , m_registries_work_tree_dir(m_registries_cache / "git")
                 , m_registries_dot_git_dir(m_registries_cache / "git" / ".git")
@@ -520,7 +519,6 @@ namespace vcpkg
             }
 
             const Path m_config_dir;
-            const bool m_has_configuration_file;
             const Path m_manifest_path;
             const Path m_registries_work_tree_dir;
             const Path m_registries_dot_git_dir;
@@ -539,7 +537,6 @@ namespace vcpkg
 
             Optional<ManifestAndPath> m_manifest_doc;
             ConfigurationAndSource m_config;
-            std::unique_ptr<RegistrySet> m_registry_set;
         };
     }
 
@@ -673,12 +670,10 @@ namespace vcpkg
                 Util::transform(config.overlay_triplets, resolve_relative_to_config);
             }
 
-            overlay_ports = merge_overlays(
-                args.cli_overlay_ports, get_configuration().config.overlay_ports, args.env_overlay_ports);
+            overlay_ports =
+                merge_overlays(args.cli_overlay_ports, m_pimpl->m_config.config.overlay_ports, args.env_overlay_ports);
             overlay_triplets = merge_overlays(
-                args.cli_overlay_triplets, get_configuration().config.overlay_triplets, args.env_overlay_triplets);
-
-            m_pimpl->m_registry_set = m_pimpl->m_config.instantiate_registry_set(*this);
+                args.cli_overlay_triplets, m_pimpl->m_config.config.overlay_triplets, args.env_overlay_triplets);
         }
 
         for (const std::string& triplet : this->overlay_triplets)
@@ -687,32 +682,6 @@ namespace vcpkg
         }
         m_pimpl->triplets_dirs.emplace_back(triplets);
         m_pimpl->triplets_dirs.emplace_back(community_triplets);
-
-        // metrics from configuration
-        auto default_registry = m_pimpl->m_registry_set->default_registry();
-        auto other_registries = m_pimpl->m_registry_set->registries();
-        MetricsSubmission metrics;
-        if (default_registry)
-        {
-            metrics.track_string(StringMetric::RegistriesDefaultRegistryKind, default_registry->kind().to_string());
-        }
-        else
-        {
-            metrics.track_string(StringMetric::RegistriesDefaultRegistryKind, "disabled");
-        }
-
-        if (other_registries.size() != 0)
-        {
-            std::vector<StringLiteral> registry_kinds;
-            for (const auto& reg : other_registries)
-            {
-                registry_kinds.push_back(reg.implementation().kind());
-            }
-            Util::sort_unique_erase(registry_kinds);
-            metrics.track_string(StringMetric::RegistriesKindsUsed, Strings::join(",", registry_kinds));
-        }
-
-        get_global_metrics_collector().track_submission(std::move(metrics));
     }
 
     Path VcpkgPaths::package_dir(const PackageSpec& spec) const { return this->packages() / spec.dir(); }
@@ -1331,11 +1300,37 @@ namespace vcpkg
 
     const ConfigurationAndSource& VcpkgPaths::get_configuration() const { return m_pimpl->m_config; }
 
-    const RegistrySet& VcpkgPaths::get_registry_set() const
+    std::unique_ptr<RegistrySet> VcpkgPaths::make_registry_set() const
     {
-        Checks::check_exit(VCPKG_LINE_INFO, m_pimpl->m_registry_set != nullptr);
-        return *m_pimpl->m_registry_set;
+        auto registry_set = m_pimpl->m_config.instantiate_registry_set(*this);
+        // metrics from configuration
+        auto default_registry = registry_set->default_registry();
+        auto other_registries = registry_set->registries();
+        MetricsSubmission metrics;
+        if (default_registry)
+        {
+            metrics.track_string(StringMetric::RegistriesDefaultRegistryKind, default_registry->kind().to_string());
+        }
+        else
+        {
+            metrics.track_string(StringMetric::RegistriesDefaultRegistryKind, "disabled");
+        }
+
+        if (other_registries.size() != 0)
+        {
+            std::vector<StringLiteral> registry_kinds;
+            for (const auto& reg : other_registries)
+            {
+                registry_kinds.push_back(reg.implementation().kind());
+            }
+            Util::sort_unique_erase(registry_kinds);
+            metrics.track_string(StringMetric::RegistriesKindsUsed, Strings::join(",", registry_kinds));
+        }
+
+        get_global_metrics_collector().track_submission(std::move(metrics));
+        return registry_set;
     }
+
     const DownloadManager& VcpkgPaths::get_download_manager() const { return *m_pimpl->m_download_manager; }
 
 #if defined(_WIN32)

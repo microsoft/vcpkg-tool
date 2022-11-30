@@ -625,15 +625,15 @@ namespace vcpkg
 
     static std::vector<std::string> get_all_port_names(const VcpkgPaths& paths)
     {
-        const auto& registries = paths.get_registry_set();
+        const auto registries = paths.make_registry_set();
 
         std::vector<std::string> ret;
-        for (const auto& registry : registries.registries())
+        for (const auto& registry : registries->registries())
         {
             const auto packages = registry.packages();
             ret.insert(ret.end(), packages.begin(), packages.end());
         }
-        if (auto registry = registries.default_registry())
+        if (auto registry = registries->default_registry())
         {
             registry->get_all_port_names(ret);
         }
@@ -1005,8 +1005,9 @@ namespace vcpkg
 
             auto manifest_scf = std::move(maybe_manifest_scf).value_or_exit(VCPKG_LINE_INFO);
             const auto& manifest_core = *manifest_scf->core_paragraph;
+            auto registry_set = paths.make_registry_set();
             if (auto maybe_error = manifest_scf->check_against_feature_flags(
-                    manifest->path, paths.get_feature_flags(), paths.get_registry_set().is_default_builtin_registry()))
+                    manifest->path, paths.get_feature_flags(), registry_set->is_default_builtin_registry()))
             {
                 Checks::exit_with_message(VCPKG_LINE_INFO, maybe_error.value_or_exit(VCPKG_LINE_INFO));
             }
@@ -1065,12 +1066,12 @@ namespace vcpkg
                 get_global_metrics_collector().track_define(DefineMetric::ManifestOverrides);
             }
 
-            auto verprovider = make_versioned_portfile_provider(paths);
-            auto baseprovider = make_baseline_provider(paths);
+            const bool add_builtin_ports_directory_as_overlay =
+                registry_set->is_default_builtin_registry() && !paths.use_git_default_registry();
+            auto verprovider = make_versioned_portfile_provider(fs, *registry_set);
+            auto baseprovider = make_baseline_provider(*registry_set);
 
             std::vector<std::string> extended_overlay_ports;
-            const bool add_builtin_ports_directory_as_overlay =
-                paths.get_registry_set().is_default_builtin_registry() && !paths.use_git_default_registry();
             extended_overlay_ports.reserve(paths.overlay_ports.size() + add_builtin_ports_directory_as_overlay);
             extended_overlay_ports = paths.overlay_ports;
             if (add_builtin_ports_directory_as_overlay)
@@ -1078,8 +1079,8 @@ namespace vcpkg
                 extended_overlay_ports.emplace_back(paths.builtin_ports_directory().native());
             }
 
-            auto oprovider =
-                make_manifest_provider(paths, extended_overlay_ports, manifest->path, std::move(manifest_scf));
+            auto oprovider = make_manifest_provider(
+                fs, paths.original_cwd, extended_overlay_ports, manifest->path, std::move(manifest_scf));
             PackageSpec toplevel{manifest_core.name, default_triplet};
             auto install_plan = create_versioned_install_plan(*verprovider,
                                                               *baseprovider,
@@ -1107,7 +1108,7 @@ namespace vcpkg
             Util::erase_remove_if(install_plan.install_actions,
                                   [&toplevel](auto&& action) { return action.spec == toplevel; });
 
-            PathsPortFileProvider provider(paths, std::move(oprovider));
+            PathsPortFileProvider provider(fs, *registry_set, std::move(oprovider));
             Commands::SetInstalled::perform_and_exit_ex(args,
                                                         paths,
                                                         provider,
@@ -1122,7 +1123,9 @@ namespace vcpkg
                                                         print_cmake_usage);
         }
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(
+            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(

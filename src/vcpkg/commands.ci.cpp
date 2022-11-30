@@ -389,7 +389,9 @@ namespace vcpkg::Commands::CI
         const IBuildLogsRecorder& build_logs_recorder =
             build_logs_recorder_storage ? *(build_logs_recorder_storage.get()) : null_build_logs_recorder();
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(
+            filesystem, *registry_set, make_overlay_provider(filesystem, paths.original_cwd, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 

@@ -189,7 +189,10 @@ namespace vcpkg::Build
         const FullPackageSpec spec = check_and_get_full_package_spec(
             std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
+        auto& fs = paths.get_filesystem();
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(
+            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
         return perform_ex(args, spec, host_triplet, provider, binary_cache, null_build_logs_recorder(), paths);
     }
 } // namespace vcpkg::Build

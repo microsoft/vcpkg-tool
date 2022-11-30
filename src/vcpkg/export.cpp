@@ -592,7 +592,10 @@ namespace vcpkg::Export
         const auto opts = handle_export_command_arguments(paths, args, default_triplet, status_db);
 
         // Load ports from ports dirs
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
+        auto& fs = paths.get_filesystem();
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(
+            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
 
         // create the plan
         std::vector<ExportPlanAction> export_plan = create_export_plan(opts.specs, status_db);

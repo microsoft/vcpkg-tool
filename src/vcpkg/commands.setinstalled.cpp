@@ -173,7 +173,10 @@ namespace vcpkg::Commands::SetInstalled
         const PrintUsage print_cmake_usage =
             Util::Sets::contains(options.switches, OPTION_NO_PRINT_USAGE) ? PrintUsage::NO : PrintUsage::YES;
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
+        auto& fs = paths.get_filesystem();
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(
+            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
 
         Optional<Path> pkgsconfig;
