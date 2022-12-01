@@ -335,6 +335,10 @@ namespace vcpkg
         virtual Path absolute(const Path& target, std::error_code& ec) const = 0;
         Path absolute(const Path& target, LineInfo li) const;
 
+        virtual Path posix_lexically_relative(const Path& abs_posix_path, const Path& abs_posix_base) const = 0;
+
+        virtual Path relative(const Path& file, const Path& base, std::error_code& ec) const = 0;
+        Path relative(const Path& file, const Path& base, LineInfo li) const;
         // absolute/system_complete + lexically_normal + fixup_win32_path_case
         // we don't use real canonical due to issues like:
         // https://github.com/microsoft/vcpkg/issues/16614 (canonical breaking on some older Windows Server containers)

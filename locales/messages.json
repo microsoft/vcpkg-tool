@@ -78,6 +78,8 @@
   "ArtifactsOptionIncompatibility": "--{option} has no effect on find artifact.",
   "_ArtifactsOptionIncompatibility.comment": "An example of {option} is editable.",
   "AssetSourcesArg": "Add sources for asset caching. See 'vcpkg help assetcaching'.",
+  "AssumeParam": "`--{param1}` or `{param2}` was specified, assuming `--{param3}`",
+  "_AssumeParam.comment": "{param1}, {param2} and {param3} are options that are passed to vcpkg",
   "AttemptingToFetchPackagesFromVendor": "Attempting to fetch {count} package(s) from {vendor}",
   "_AttemptingToFetchPackagesFromVendor.comment": "An example of {count} is 42. An example of {vendor} is Azure.",
   "AttemptingToSetBuiltInBaseline": "attempting to set builtin-baseline in vcpkg.json while overriding the default-registry in vcpkg-configuration.json.\nthe default-registry from vcpkg-configuration.json will be used.",

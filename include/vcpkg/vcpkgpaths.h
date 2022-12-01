@@ -17,6 +17,7 @@
 #include <vcpkg/base/lazy.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/system.h>
+#include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/packagespec.h>
@@ -139,6 +140,13 @@ namespace vcpkg
         std::string get_current_git_sha_baseline_message() const;
         ExpectedS<Path> git_checkout_port(StringView port_name, StringView git_tree, const Path& dot_git_dir) const;
         ExpectedL<std::string> git_show(StringView treeish, const Path& dot_git_dir) const;
+
+        ExpectedL<std::string> git_commit(const Path& dot_git_dir,
+                                          std::vector<Path>&& files,
+                                          const std::string& message,
+                                          bool amend) const;
+
+        ExpectedL<bool> git_port_has_local_changes(StringView port_name) const;
 
         const DownloadManager& get_download_manager() const;
 

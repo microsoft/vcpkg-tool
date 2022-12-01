@@ -449,6 +449,7 @@ namespace vcpkg
     REGISTER_MESSAGE(AppliedUserIntegration);
     REGISTER_MESSAGE(ArtifactsOptionIncompatibility);
     REGISTER_MESSAGE(AssetSourcesArg);
+    REGISTER_MESSAGE(AssumeParam);
     REGISTER_MESSAGE(AttemptingToFetchPackagesFromVendor);
     REGISTER_MESSAGE(AttemptingToSetBuiltInBaseline);
     REGISTER_MESSAGE(AuthenticationMayRequireManualAction);

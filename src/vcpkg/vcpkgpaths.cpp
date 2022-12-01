@@ -1027,7 +1027,56 @@ namespace vcpkg
         // All git commands are run with: --git-dir={dot_git_dir} --work-tree={work_tree_temp}
         // git clone --no-checkout --local {vcpkg_root} {dot_git_dir}
         Command showcmd = git_cmd_builder(dot_git_dir, dot_git_dir).string_arg("show").string_arg(treeish);
+
         return flatten_out(cmd_execute_and_capture_output(showcmd), Tools::GIT);
+    }
+
+    ExpectedL<std::string> VcpkgPaths::git_commit(const Path& dot_git_dir,
+                                                  std::vector<Path>&& files,
+                                                  const std::string& message,
+                                                  bool amend) const
+    {
+        for (auto& path : files)
+            path = get_filesystem().relative(path, dot_git_dir.parent_path(), VCPKG_LINE_INFO);
+        Command add_cmd = git_cmd_builder(dot_git_dir, dot_git_dir.parent_path())
+                              .string_arg("add")
+                              .string_arg("--force")
+                              .string_arg("--");
+        for (const auto& path : files)
+            add_cmd.string_arg(path);
+        const auto result = flatten_out(cmd_execute_and_capture_output(add_cmd), add_cmd.command_line());
+        if (!result) return result;
+
+        Command commit_cmd = git_cmd_builder(dot_git_dir, dot_git_dir.parent_path()).string_arg("commit");
+        if (amend)
+        {
+            commit_cmd.string_arg("--amend");
+        }
+        if (!message.empty())
+        {
+            commit_cmd.string_arg("-m").string_arg(message);
+        }
+        else if (amend)
+        {
+            commit_cmd.string_arg("--no-edit");
+        }
+        commit_cmd.string_arg("--");
+        for (const auto& path : files)
+            commit_cmd.string_arg(path);
+
+        return flatten_out(cmd_execute_and_capture_output(commit_cmd), commit_cmd.command_line());
+    }
+
+    ExpectedL<bool> VcpkgPaths::git_port_has_local_changes(StringView port_name) const
+    {
+        const auto cmd = git_cmd_builder({}, {})
+                             .string_arg("status")
+                             .string_arg("--porcelain=v1")
+                             .string_arg("--")
+                             .string_arg(Strings::concat("ports/", port_name));
+        return flatten_out(cmd_execute_and_capture_output(cmd), cmd.command_line()).map([](const auto& output) {
+            return !output.empty();
+        });
     }
 
     ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const

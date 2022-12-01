@@ -290,6 +290,9 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(list, "");
     DECLARE_MSG_ARG(old_value, "");
     DECLARE_MSG_ARG(new_value, "");
+    DECLARE_MSG_ARG(param1, "");
+    DECLARE_MSG_ARG(param2, "");
+    DECLARE_MSG_ARG(param3, "");
 
     DECLARE_MSG_ARG(actual_version, "1.3.8");
     DECLARE_MSG_ARG(arch, "x64");
@@ -572,6 +575,10 @@ namespace vcpkg
     DECLARE_MESSAGE(AppliedUserIntegration, (), "", "Applied user-wide integration for this vcpkg root.");
     DECLARE_MESSAGE(ArtifactsOptionIncompatibility, (msg::option), "", "--{option} has no effect on find artifact.");
     DECLARE_MESSAGE(AssetSourcesArg, (), "", "Add sources for asset caching. See 'vcpkg help assetcaching'.");
+    DECLARE_MESSAGE(AssumeParam,
+                    (msg::param1, msg::param2, msg::param3),
+                    "{param1}, {param2} and {param3} are options that are passed to vcpkg",
+                    "`--{param1}` or `{param2}` was specified, assuming `--{param3}`");
     DECLARE_MESSAGE(AttemptingToFetchPackagesFromVendor,
                     (msg::count, msg::vendor),
                     "",
