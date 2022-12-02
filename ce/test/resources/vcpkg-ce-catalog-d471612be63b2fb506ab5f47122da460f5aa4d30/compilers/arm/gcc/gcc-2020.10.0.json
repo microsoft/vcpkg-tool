@@ -1,0 +1,57 @@
+{
+  "id": "compilers/arm/gcc",
+  "version": "2020.10.0",
+  "description": "The GNU Arm Embedded Toolchain is a ready-to-use, open-source suite of tools for C, C++ and assembly programming.  The GNU Arm Embedded Toolchain targets the 32-bit Arm Cortex-A, Arm Cortex-M, and Arm Cortex-R processor families.  The GNU Arm Embedded Toolchain includes the GNU Compiler (GCC) and is available free of charge directly from Arm  for embedded software development on Windows, Linux, and Mac OS X operating systems.",
+  "summary": "GCC compiler for ARM CPUs.",
+  "contacts": {
+    "Garrett Serack": {
+      "email": "garretts@microsoft.com",
+      "role": "publisher"
+    }
+  },
+  "demands": {
+    "windows": {
+      "install": {
+        "unzip": "https://developer.arm.com/-/media/Files/downloads/gnu-rm/10-2020q4/gcc-arm-none-eabi-10-2020-q4-major-win32.zip",
+        "sha256": "90057B8737B888C53CA5AEE332F1F73C401D6D3873124D2C2906DF4347EBEF9E",
+        "strip": 1
+      },
+      "exports": {
+        "paths": {
+          "PATH": "bin"
+        }
+      }
+    },
+    "linux and arm64": {
+      "install": {
+        "untar": "https://developer.arm.com/-/media/Files/downloads/gnu-rm/10-2020q4/gcc-arm-none-eabi-10-2020-q4-major-aarch64-linux.tar.bz2",
+        "sha256": "343D8C812934FE5A904C73583A91EDD812B1AC20636EB52DE04135BB0F5CF36A",
+        "strip": 1
+      }
+    },
+    "linux and x64": {
+      "install": {
+        "untar": "https://developer.arm.com/-/media/Files/downloads/gnu-rm/10-2020q4/gcc-arm-none-eabi-10-2020-q4-major-x86_64-linux.tar.bz2",
+        "sha256": "21134CAA478BBF5352E239FBC6E2DA3038F8D2207E089EFC96C3B55F1EDCD618",
+        "strip": 1
+      }
+    },
+    "osx and x64": {
+      "install": {
+        "untar": "https://developer.arm.com/-/media/Files/downloads/gnu-rm/10-2020q4/gcc-arm-none-eabi-10-2020-q4-major-mac.tar.bz2",
+        "sha256": "BED12DE3565D4EB02E7B58BE945376EACA79A8AE3EBB785EC7344E7E2DB0BDC0",
+        "strip": 1
+      }
+    },
+    "not windows": {
+      "exports": {
+        "paths": {
+          "PATH": "bin"
+        }
+      }
+    },
+    "linux": {
+      "warning": "Ensure libncurses5 is installed with your system package manager before running arm-none-eabi-gdb."
+    }
+  }
+}
