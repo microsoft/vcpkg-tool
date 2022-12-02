@@ -38,8 +38,8 @@ export function vcpkgFetch(session: Session, fetchKey: string): Promise<string> 
   });
 }
 
-export function vcpkgDownload(session: Session, destination: string, sha512: string | undefined, uris: Array<Uri>) : Promise<string> {
-  const args = ['x-download', destination];
+export function vcpkgDownload(session: Session, destination: Uri, sha512: string | undefined, uris: Array<Uri>) : Promise<string> {
+  const args = ['x-download', destination.fsPath];
   if (sha512) {
     args.push(`--sha512=${sha512}`);
   } else {

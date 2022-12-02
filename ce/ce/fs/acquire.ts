@@ -17,22 +17,7 @@ export interface AcquireOptions extends Hash {
 
 export async function acquireArtifactFile(session: Session, uris: Array<Uri>, outputFilename: string, events: Partial<DownloadEvents>, options?: AcquireOptions) {
   await session.downloads.createDirectory();
-  const outputFile = session.downloads.join(outputFilename);
   session.channels.debug(`Acquire file '${outputFilename}' from [${uris.map(each => each.toString()).join(',')}]`);
-
-  if (options?.algorithm && options?.value) {
-    session.channels.debug(`We have a hash: ${options.algorithm}/${options.value}`);
-
-    // if we have hash data, check to see if the output file is good.
-    if (await outputFile.isFile()) {
-      session.channels.debug(`There is an output file already, verifying: ${outputFile.fsPath}`);
-
-      if (await outputFile.hashValid(events, options)) {
-        session.channels.debug(`Cached file matched hash: ${outputFile.fsPath}`);
-        return outputFile;
-      }
-    }
-  }
 
   // is the file present on a local filesystem?
   for (const uri of uris) {
@@ -100,7 +85,7 @@ async function https(session: Session, uris: Array<Uri>, outputFilename: string,
     sha512 = options?.value;
   }
 
-  const vcpkgOutput = await vcpkgDownload(session, outputFilename, sha512, uris);
+  const vcpkgOutput = await vcpkgDownload(session, outputFile, sha512, uris);
   session.channels.debug(`vcpkg said: ${vcpkgOutput}`);
 
   events.downloadComplete?.();
