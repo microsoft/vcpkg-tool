@@ -757,7 +757,7 @@ namespace vcpkg
                 {
                     if (Strings::case_insensitive_ascii_equals(path.extension(), ".cmake"))
                     {
-                        output.emplace_back(TripletFile(path.stem(), triplets_dir));
+                        output.emplace_back(path.stem(), triplets_dir);
                     }
                 }
             }
