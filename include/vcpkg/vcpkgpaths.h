@@ -4,6 +4,8 @@
 #include <vcpkg/base/fwd/json.h>
 #include <vcpkg/base/fwd/system.process.h>
 
+#include <vcpkg/fwd/binaryparagraph.h>
+#include <vcpkg/fwd/build.h>
 #include <vcpkg/fwd/configuration.h>
 #include <vcpkg/fwd/installedpaths.h>
 #include <vcpkg/fwd/registries.h>
@@ -42,36 +44,22 @@ namespace vcpkg
         std::vector<ToolsetArchOption> supported_architectures;
     };
 
-    struct PreBuildInfo;
-    struct AbiInfo;
-    struct CompilerInfo;
-
-    namespace details
-    {
-        struct VcpkgPathsImpl;
-    }
-
-    struct BinaryParagraph;
-    struct Environment;
-    struct PackageSpec;
-    struct Triplet;
-
     struct ManifestAndPath
     {
         Json::Object manifest;
         Path path;
     };
 
+    struct TripletFile
+    {
+        std::string name;
+        Path location;
+
+        TripletFile(StringView name, StringView location) : name(name.data(), name.size()), location(location) { }
+    };
+
     struct VcpkgPaths
     {
-        struct TripletFile
-        {
-            std::string name;
-            Path location;
-
-            TripletFile(StringView name, StringView location) : name(name.data(), name.size()), location(location) { }
-        };
-
         VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args);
         VcpkgPaths(const VcpkgPaths&) = delete;
         VcpkgPaths& operator=(const VcpkgPaths&) = delete;
@@ -107,7 +95,7 @@ namespace vcpkg
         const Path root;
 
     private:
-        const std::unique_ptr<details::VcpkgPathsImpl> m_pimpl;
+        const std::unique_ptr<VcpkgPathsImpl> m_pimpl;
 
     public:
         const Path& scripts;
@@ -127,6 +115,8 @@ namespace vcpkg
 
         std::string get_toolver_diagnostics() const;
 
+        Filesystem& get_filesystem() const;
+        const DownloadManager& get_download_manager() const;
         const ToolCache& get_tool_cache() const;
         const Path& get_tool_exe(StringView tool, MessageSink& status_messages) const;
         const std::string& get_tool_version(StringView tool, MessageSink& status_messages) const;
@@ -139,8 +129,6 @@ namespace vcpkg
         std::string get_current_git_sha_baseline_message() const;
         ExpectedS<Path> git_checkout_port(StringView port_name, StringView git_tree, const Path& dot_git_dir) const;
         ExpectedL<std::string> git_show(StringView treeish, const Path& dot_git_dir) const;
-
-        const DownloadManager& get_download_manager() const;
 
         ExpectedS<std::map<std::string, std::string, std::less<>>> git_get_local_port_treeish_map() const;
 
@@ -162,8 +150,6 @@ namespace vcpkg
 
         // Retrieve a toolset matching the requirements in prebuildinfo
         const Toolset& get_toolset(const PreBuildInfo& prebuildinfo) const;
-
-        Filesystem& get_filesystem() const;
 
         const Environment& get_action_env(const AbiInfo& abi_info) const;
         const std::string& get_triplet_info(const AbiInfo& abi_info) const;

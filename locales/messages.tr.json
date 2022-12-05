@@ -153,6 +153,7 @@
   "EmptyArg": "--{option} seçeneğine boş olmayan bir bağımsız değişken geçirilmeli.",
   "EmptyLicenseExpression": "SPDX lisans ifadesi boştu.",
   "EndOfStringInCodeUnit": "kod noktasının ortasında dizenin sonu bulundu",
+  "EnvInvalidMaxConcurrency": "{env_var} değeri {value}, bu değer > 0 olmalıdır",
   "EnvStrFailedToExtract": "ortam dizesi genişletilemedi:",
   "ErrorDetectingCompilerInfo": "derleyici bilgileri algılanırken:\n \"{path}\" konumundaki günlük dosyası içeriği şu şekildedir:",
   "ErrorIndividualPackagesUnsupported": "Bildirim modunda `vcpkg install`, paket bağımsız değişkenlerini tek tek desteklemez.\nEk paketleri yüklemek için vcpkg.json dosyasını düzenleyin ve paket bağımsız değişkenleri olmadan `vcpkg install` komutunu çalıştırın.",

@@ -153,6 +153,7 @@
   "EmptyArg": "L’option --{option} doit être passée à un argument non vide.",
   "EmptyLicenseExpression": "L’expression de licence SPDX était vide.",
   "EndOfStringInCodeUnit": "fin de chaîne trouvée au milieu du point de code",
+  "EnvInvalidMaxConcurrency": "{env_var} est {value}, doit être > 0.",
   "EnvStrFailedToExtract": "impossible de développer la chaîne d’environnement :",
   "ErrorDetectingCompilerInfo": "lors de la détection des informations du compilateur :\nle contenu du fichier journal sur « {path} » est :",
   "ErrorIndividualPackagesUnsupported": "En mode manifeste, `vcpkg install` ne supporte pas les arguments individuels des paquets. \nPour installer des paquets supplémentaires, éditez vcpkg.json et exécutez ensuite `vcpkg install` sans aucun argument de paquet.",

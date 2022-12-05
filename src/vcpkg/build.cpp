@@ -1235,11 +1235,11 @@ namespace vcpkg
                             Checks::unreachable(VCPKG_LINE_INFO);
                         }
 
-                        dependency_abis.emplace_back(AbiEntry{pspec.name(), status_it->get()->package.abi});
+                        dependency_abis.emplace_back(pspec.name(), status_it->get()->package.abi);
                     }
                     else
                     {
-                        dependency_abis.emplace_back(AbiEntry{pspec.name(), it2->public_abi()});
+                        dependency_abis.emplace_back(pspec.name(), it2->public_abi());
                     }
                 }
             }

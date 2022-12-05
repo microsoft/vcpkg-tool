@@ -259,7 +259,7 @@ namespace vcpkg::Export::Prefab
                 VCPKG_LINE_INFO, is_supported(*build_info), msgExportPrefabRequiresAndroidTriplet);
         }
 
-        std::vector<VcpkgPaths::TripletFile> available_triplets = paths.get_available_triplets();
+        std::vector<TripletFile> available_triplets = paths.get_available_triplets();
 
         std::unordered_map<CPUArchitecture, std::string> required_archs = {{CPUArchitecture::ARM, "armeabi-v7a"},
                                                                            {CPUArchitecture::ARM64, "arm64-v8a"},
