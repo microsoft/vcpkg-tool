@@ -2215,5 +2215,6 @@ namespace vcpkg
         "When generating the message map, exclude comments (useful for generating the english localization file)");
     DECLARE_MESSAGE(CmdInfoOptInstalled, (), "", "(experimental) Report on installed packages instead of available");
     DECLARE_MESSAGE(CmdInfoOptTransitive, (), "", "(experimental) Also report on dependencies of installed packages");
+    DECLARE_MESSAGE(CmdListOptFullDesc, (), "", "Do not truncate long text");
 
 }

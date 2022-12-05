@@ -202,6 +202,7 @@
   "CmdGenerateMessageMapOptOutputComments": "When generating the message map, include comments (the default)",
   "CmdInfoOptInstalled": "(experimental) Report on installed packages instead of available",
   "CmdInfoOptTransitive": "(experimental) Also report on dependencies of installed packages",
+  "CmdListOptFullDesc": "Do not truncate long text",
   "CommandFailed": "command:\n{command_line}\nfailed with the following results:",
   "_CommandFailed.comment": "An example of {command_line} is vcpkg install zlib.",
   "CommunityTriplets": "VCPKG community triplets:",

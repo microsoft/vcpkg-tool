@@ -1063,4 +1063,5 @@ namespace vcpkg
     REGISTER_MESSAGE(CmdGenerateMessageMapOptNoOutputComments);
     REGISTER_MESSAGE(CmdInfoOptInstalled);
     REGISTER_MESSAGE(CmdInfoOptTransitive);
+    REGISTER_MESSAGE(CmdListOptFullDesc);
 }

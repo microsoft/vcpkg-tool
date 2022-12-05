@@ -77,7 +77,7 @@ namespace vcpkg::Commands::List
     }
 
     static constexpr std::array<CommandSwitch, 1> LIST_SWITCHES = {{
-        {OPTION_FULLDESC, "Do not truncate long text"},
+        {OPTION_FULLDESC, []() { return msg::format(msgCmdListOptFullDesc); }},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
