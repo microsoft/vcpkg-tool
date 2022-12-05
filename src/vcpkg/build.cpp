@@ -624,7 +624,7 @@ namespace vcpkg
                               });
         // Make sure GIT could be found
         const Path& git_exe_path = paths.get_tool_exe(Tools::GIT, stdout_sink);
-        out_vars.push_back({"GIT", git_exe_path});
+        out_vars.emplace_back("GIT", git_exe_path);
     }
 
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info)
@@ -730,12 +730,12 @@ namespace vcpkg
 
         if (action.build_options.download_tool == DownloadTool::ARIA2)
         {
-            variables.push_back({"ARIA2", paths.get_tool_exe(Tools::ARIA2, stdout_sink)});
+            variables.emplace_back("ARIA2", paths.get_tool_exe(Tools::ARIA2, stdout_sink));
         }
 
         for (const auto& cmake_arg : args.cmake_args)
         {
-            variables.push_back(CMakeVariable{cmake_arg});
+            variables.emplace_back(cmake_arg);
         }
 
         if (action.build_options.backcompat_features == BackcompatFeatures::PROHIBIT)
@@ -751,7 +751,7 @@ namespace vcpkg
 
         if (Util::Enum::to_bool(action.build_options.only_downloads))
         {
-            variables.push_back({"VCPKG_DOWNLOAD_MODE", "true"});
+            variables.emplace_back("VCPKG_DOWNLOAD_MODE", "true");
         }
 
         const Filesystem& fs = paths.get_filesystem();
@@ -1232,11 +1232,11 @@ namespace vcpkg
                             Checks::unreachable(VCPKG_LINE_INFO);
                         }
 
-                        dependency_abis.emplace_back(AbiEntry{pspec.name(), status_it->get()->package.abi});
+                        dependency_abis.emplace_back(pspec.name(), status_it->get()->package.abi);
                     }
                     else
                     {
-                        dependency_abis.emplace_back(AbiEntry{pspec.name(), it2->public_abi()});
+                        dependency_abis.emplace_back(pspec.name(), it2->public_abi());
                     }
                 }
             }

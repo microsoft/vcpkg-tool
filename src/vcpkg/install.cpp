@@ -454,11 +454,21 @@ namespace vcpkg
     {
         for (const auto& result : this->results)
         {
-            if (result.build_result.value_or_exit(VCPKG_LINE_INFO).code != BuildResult::SUCCEEDED)
+            switch (result.build_result.value_or_exit(VCPKG_LINE_INFO).code)
             {
-                return true;
+                case BuildResult::SUCCEEDED:
+                case BuildResult::REMOVED:
+                case BuildResult::DOWNLOADED:
+                case BuildResult::EXCLUDED: continue;
+                case BuildResult::BUILD_FAILED:
+                case BuildResult::POST_BUILD_CHECKS_FAILED:
+                case BuildResult::FILE_CONFLICTS:
+                case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
+                case BuildResult::CACHE_MISSING: return true;
+                default: Checks::unreachable(VCPKG_LINE_INFO);
             }
         }
+
         return false;
     }
 
@@ -1009,7 +1019,7 @@ namespace vcpkg
             }
             if (Util::Sets::contains(options.switches, OPTION_MANIFEST_NO_DEFAULT_FEATURES))
             {
-                features.push_back("core");
+                features.emplace_back("core");
             }
 
             auto core_it = std::remove(features.begin(), features.end(), "core");

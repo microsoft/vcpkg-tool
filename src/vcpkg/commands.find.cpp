@@ -200,7 +200,7 @@ namespace vcpkg::Commands
     void perform_find_artifact_and_exit(const VcpkgPaths& paths, Optional<StringView> filter)
     {
         std::vector<std::string> ce_args;
-        ce_args.push_back("find");
+        ce_args.emplace_back("find");
         if (auto* filter_str = filter.get())
         {
             ce_args.emplace_back(filter_str->data(), filter_str->size());

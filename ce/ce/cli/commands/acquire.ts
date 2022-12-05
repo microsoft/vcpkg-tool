@@ -44,7 +44,7 @@ export class AcquireCommand extends Command {
 
     const resolver = session.globalRegistryResolver.with(
       await buildRegistryResolver(session, (await this.project.manifest)?.metadata.registries));
-    const resolved = await selectArtifacts(session, new Map(this.inputs.map((v, i) => [v, versions[i] || '*'])), resolver, 1);
+    const resolved = await selectArtifacts(session, new Map(this.inputs.map((v, i) => [v, versions[i] || '*'])), resolver, 2);
     if (!resolved) {
       debug('No artifacts selected - stopping');
       return false;

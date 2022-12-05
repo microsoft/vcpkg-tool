@@ -28,5 +28,4 @@ namespace vcpkg
     private:
         Path m_root;
     };
-
 }

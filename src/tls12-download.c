@@ -1,8 +1,14 @@
+#pragma warning(push)
+// warning C28251: Inconsistent annotation for '_setjmp': this instance has no annotations. See <no file>(0).
+#pragma warning(disable : 28251)
+// warning C28301: No annotations for first declaration of '__fastfail'. See <no file>(0).
+#pragma warning(disable : 28301)
 #include <Windows.h>
 #include <process.h>
 #include <winhttp.h>
 
 #include <Softpub.h>
+#pragma warning(pop)
 
 /*
  * This program must be as small as possible, because it is committed in binary form to the
@@ -47,7 +53,7 @@ static void write_message(const HANDLE std_out, const wchar_t* msg)
         win32_abort();
     }
 
-    if (WriteConsoleW(std_out, msg, wchars_to_write, 0, 0))
+    if (WriteConsoleW(std_out, msg, (DWORD)wchars_to_write, 0, 0))
     {
         return;
     }
@@ -149,7 +155,7 @@ static void __declspec(noreturn) abort_api_failure(const HANDLE std_out, const w
     win32_abort();
 }
 
-static void set_delete_on_close_flag(const HANDLE std_out, const HANDLE target, BOOL setting)
+static void set_delete_on_close_flag(const HANDLE std_out, const HANDLE target, BOOLEAN setting)
 {
     FILE_DISPOSITION_INFO fdi = {0};
     fdi.DeleteFile = setting;
@@ -158,6 +164,11 @@ static void set_delete_on_close_flag(const HANDLE std_out, const HANDLE target, 
         abort_api_failure(std_out, L"SetFileInformationByHandle");
     }
 }
+
+// these are sucked out to avoid
+// warning C6262: Function uses '98624' bytes of stack.  Consider moving some data to heap.
+static wchar_t https_proxy_env[32767];
+static char buffer[32768];
 
 #ifndef NDEBUG
 int main()
@@ -197,7 +208,6 @@ int __stdcall entry()
     write_message(std_out, L" -> ");
     write_message(std_out, out_file_path);
 
-    wchar_t https_proxy_env[32767];
     DWORD access_type;
     const wchar_t* proxy_setting;
     const wchar_t* proxy_bypass_setting;
@@ -238,7 +248,6 @@ int __stdcall entry()
     // Setting delete on close before we do anything means the file will get deleted for us if we crash
     set_delete_on_close_flag(std_out, out_file, TRUE);
 
-    BOOL results = FALSE;
     const HINTERNET session = WinHttpOpen(L"tls12-download/1.0", access_type, proxy_setting, proxy_bypass_setting, 0);
     if (!session)
     {
@@ -320,7 +329,6 @@ int __stdcall entry()
         TerminateProcess(GetCurrentProcess(), 2);
     }
 
-    char buffer[32768];
     for (;;)
     {
         DWORD received_bytes;
