@@ -13,7 +13,7 @@ namespace vcpkg::Commands::Contact
     static constexpr StringLiteral OPTION_SURVEY = "survey";
 
     static constexpr std::array<CommandSwitch, 1> SWITCHES = {{
-        {OPTION_SURVEY, []() { return msg::format(msgCmdSwitchContact); }},
+        {OPTION_SURVEY, []() { return msg::format(msgCmdContactOptSurvey); }},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {

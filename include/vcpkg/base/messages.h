@@ -2173,6 +2173,12 @@ namespace vcpkg
                     "",
                     "Indicates that ports marked `=fail` in ci.baseline.txt should be skipped.");
     DECLARE_MESSAGE(CISwitchOptXUnitAll, (), "", "Report also unchanged ports to the XUnit output (internal)");
-    DECLARE_MESSAGE(CmdSwitchContact, (), "", "Launch default browser to the current vcpkg survey");
+    DECLARE_MESSAGE(CmdContactOptSurvey, (), "", "Launch default browser to the current vcpkg survey");
+    DECLARE_MESSAGE(CISettingsVerifyVersion, (), "", "Print result for each port instead of just errors.");
+    DECLARE_MESSAGE(CISettingsVerifyGitTree,
+                    (),
+                    "",
+                    "Verify that each git tree object matches its declared version (this is very slow)");
+    DECLARE_MESSAGE(CISettingsExclude, (), "", "Comma-separated list of ports to skip");
 
 }

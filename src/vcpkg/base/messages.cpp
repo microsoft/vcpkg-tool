@@ -1043,5 +1043,8 @@ namespace vcpkg
     REGISTER_MESSAGE(CISwitchOptAllowUnexpectedPassing);
     REGISTER_MESSAGE(CISwitchOptSkipFailures);
     REGISTER_MESSAGE(CISwitchOptXUnitAll);
-    REGISTER_MESSAGE(CmdSwitchContact);
+    REGISTER_MESSAGE(CmdContactOptSurvey);
+    REGISTER_MESSAGE(CISettingsVerifyVersion);
+    REGISTER_MESSAGE(CISettingsVerifyGitTree);
+    REGISTER_MESSAGE(CISettingsExclude);
 }
