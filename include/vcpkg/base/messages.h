@@ -2140,5 +2140,10 @@ namespace vcpkg
                     (),
                     "",
                     "Additional feature from the top-level manifest to install (manifest mode).");
+    DECLARE_MESSAGE(CmdAddVersionOptAll, (), "", "Process versions for all ports.");
+    DECLARE_MESSAGE(CmdAddVersionOptOverwriteVersion, (), "", "Overwrite `git-tree` of an existing version.");
+    DECLARE_MESSAGE(CmdAddVersionOptSkipFormatChk, (), "", "Skips the formatting check of vcpkg.json files.");
+    DECLARE_MESSAGE(CmdAddVersionOptSkipVersionFormatChk, (), "", "Skips the version format check.");
+    DECLARE_MESSAGE(CmdAddVersionOptVerbose, (), "", "Print success messages instead of just errors.");
 
 }

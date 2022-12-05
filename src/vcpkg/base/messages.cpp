@@ -1025,4 +1025,9 @@ namespace vcpkg
     REGISTER_MESSAGE(HelpTxtOptNoUsage);
     REGISTER_MESSAGE(HelpTxtOptWritePkgConfig);
     REGISTER_MESSAGE(HelpTxtOptManifestFeature);
+    REGISTER_MESSAGE(CmdAddVersionOptAll);
+    REGISTER_MESSAGE(CmdAddVersionOptOverwriteVersion);
+    REGISTER_MESSAGE(CmdAddVersionOptSkipFormatChk);
+    REGISTER_MESSAGE(CmdAddVersionOptSkipVersionFormatChk);
+    REGISTER_MESSAGE(CmdAddVersionOptVerbose);
 }
