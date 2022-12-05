@@ -1059,4 +1059,8 @@ namespace vcpkg
     REGISTER_MESSAGE(CmdFindOptFullDesc);
     REGISTER_MESSAGE(CmdFormatManifestOptAll);
     REGISTER_MESSAGE(CmdFormatManifestOptConvertControl);
+    REGISTER_MESSAGE(CmdGenerateMessageMapOptOutputComments);
+    REGISTER_MESSAGE(CmdGenerateMessageMapOptNoOutputComments);
+    REGISTER_MESSAGE(CmdInfoOptInstalled);
+    REGISTER_MESSAGE(CmdInfoOptTransitive);
 }
