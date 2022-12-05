@@ -214,6 +214,8 @@
   "CmdSetInstalledOptDryRun": "Do not actually build or install",
   "CmdSetInstalledOptNoUsage": "Don't print cmake usage information after install.",
   "CmdSetInstalledOptWritePkgConfig": "Writes out a NuGet packages.config-formatted file for use with external binary caching.\nSee `vcpkg help binarycaching` for more information.",
+  "CmdUpdateBaselineOptDryRun": "Print out plan without execution",
+  "CmdUpdateBaselineOptInitial": "add a `builtin-baseline` to a vcpkg.json that doesn't already have it",
   "CommandFailed": "command:\n{command_line}\nfailed with the following results:",
   "_CommandFailed.comment": "An example of {command_line} is vcpkg install zlib.",
   "CommunityTriplets": "VCPKG community triplets:",

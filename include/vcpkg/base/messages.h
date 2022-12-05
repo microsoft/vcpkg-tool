@@ -2241,4 +2241,9 @@ namespace vcpkg
                     "",
                     "Writes out a NuGet packages.config-formatted file for use with external binary caching.\n"
                     "See `vcpkg help binarycaching` for more information.");
+    DECLARE_MESSAGE(CmdUpdateBaselineOptInitial,
+                    (),
+                    "",
+                    "add a `builtin-baseline` to a vcpkg.json that doesn't already have it");
+    DECLARE_MESSAGE(CmdUpdateBaselineOptDryRun, (), "", "Print out plan without execution");
 }

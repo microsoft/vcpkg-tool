@@ -1076,4 +1076,6 @@ namespace vcpkg
     REGISTER_MESSAGE(CmdSetInstalledOptDryRun);
     REGISTER_MESSAGE(CmdSetInstalledOptNoUsage);
     REGISTER_MESSAGE(CmdSetInstalledOptWritePkgConfig);
+    REGISTER_MESSAGE(CmdUpdateBaselineOptInitial);
+    REGISTER_MESSAGE(CmdUpdateBaselineOptDryRun);
 }
