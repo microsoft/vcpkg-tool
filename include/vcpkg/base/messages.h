@@ -2257,4 +2257,53 @@ namespace vcpkg
     DECLARE_MESSAGE(CmdXDownloadOptSha, (), "", "The hash of the file to be downloaded");
     DECLARE_MESSAGE(CmdXDownloadOptUrl, (), "", "URL to download and store if missing from cache");
     DECLARE_MESSAGE(CmdXDownloadOptHeader, (), "", "Additional header to use when fetching from URLs");
+    DECLARE_MESSAGE(CmdExportOptDryRun, (), "", "Do not actually export.");
+    DECLARE_MESSAGE(CmdExportOptRaw, (), "", "Export to an uncompressed directory");
+    DECLARE_MESSAGE(CmdExportOptNuget, (), "", "Export a NuGet package");
+    DECLARE_MESSAGE(CmdExportOptIFW, (), "", "Export to an IFW-based installer");
+    DECLARE_MESSAGE(CmdExportOptZip, (), "", "Export to a zip file");
+    DECLARE_MESSAGE(CmdExportOpt7Zip, (), "", "Export to a 7zip (.7z) file");
+    DECLARE_MESSAGE(CmdExportOptChocolatey, (), "", "Export a Chocolatey package (experimental feature)");
+    DECLARE_MESSAGE(CmdExportOptPrefab, (), "", "Export to Prefab format");
+    DECLARE_MESSAGE(CmdExportOptMaven, (), "", "Enable maven");
+    DECLARE_MESSAGE(CmdExportOptDebug, (), "", "Enable prefab debug");
+    DECLARE_MESSAGE(CmdExportOptInstalled, (), "", "Export all installed packages");
+    DECLARE_MESSAGE(CmdExportSettingOutput, (), "", "Specify the output name (used to construct filename)");
+    DECLARE_MESSAGE(CmdExportSettingOutputDir, (), "", "Specify the output directory for produced artifacts");
+    DECLARE_MESSAGE(CmdExportSettingNugetID,
+                    (),
+                    "",
+                    "Specify the id for the exported NuGet package (overrides --output)");
+    DECLARE_MESSAGE(CmdExportSettingNugetDesc, (), "", "Specify a description for the exported NuGet package");
+    DECLARE_MESSAGE(CmdExportSettingNugetVersion, (), "", "Specify the version for the exported NuGet package");
+    DECLARE_MESSAGE(CmdExportSettingRepoURL, (), "", "Specify the remote repository URL for the online installer");
+    DECLARE_MESSAGE(CmdExportSettingPkgDir, (), "", "Specify the temporary directory path for the repacked packages");
+    DECLARE_MESSAGE(CmdExportSettingRepoDir, (), "", "Specify the directory path for the exported repository");
+    DECLARE_MESSAGE(CmdExportSettingConfigFile,
+                    (),
+                    "",
+                    "Specify the temporary file path for the installer configuration");
+    DECLARE_MESSAGE(CmdExportSettingInstallerPath, (), "", "Specify the file path for the exported installer");
+    DECLARE_MESSAGE(CmdExportSettingChocolateyMaint,
+                    (),
+                    "",
+                    "Specify the maintainer for the exported Chocolatey package (experimental feature)");
+    DECLARE_MESSAGE(CmdExportSettingChocolateyVersion,
+                    (),
+                    "",
+                    "Specify the version suffix to add for the exported Chocolatey package (experimental feature)");
+    DECLARE_MESSAGE(CmdExportSettingPrefabGroupID,
+                    (),
+                    "",
+                    "GroupId uniquely identifies your project according maven specifications");
+    DECLARE_MESSAGE(CmdExportSettingPrefabArtifactID,
+                    (),
+                    "",
+                    "Artifact Id is the name of the project according maven specifications");
+    DECLARE_MESSAGE(CmdExportSettingPrefabVersion,
+                    (),
+                    "",
+                    "Version is the name of the project according maven specifications");
+    DECLARE_MESSAGE(CmdExportSettingSDKMinVersion, (), "", "Android minimum supported sdk version");
+    DECLARE_MESSAGE(CmdExportSettingSDKTargetVersion, (), "", "Android target sdk version");
 }
