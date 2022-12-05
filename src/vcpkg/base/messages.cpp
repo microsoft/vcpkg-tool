@@ -1047,4 +1047,9 @@ namespace vcpkg
     REGISTER_MESSAGE(CISettingsVerifyVersion);
     REGISTER_MESSAGE(CISettingsVerifyGitTree);
     REGISTER_MESSAGE(CISettingsExclude);
+    REGISTER_MESSAGE(CmdDependInfoOptDot);
+    REGISTER_MESSAGE(CmdDependInfoOptDGML);
+    REGISTER_MESSAGE(CmdDependInfoOptDepth);
+    REGISTER_MESSAGE(CmdDependInfoOptMaxRecurse);
+    REGISTER_MESSAGE(CmdDependInfoOptSort);
 }

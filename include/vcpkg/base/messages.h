@@ -2180,5 +2180,15 @@ namespace vcpkg
                     "",
                     "Verify that each git tree object matches its declared version (this is very slow)");
     DECLARE_MESSAGE(CISettingsExclude, (), "", "Comma-separated list of ports to skip");
+    DECLARE_MESSAGE(CmdDependInfoOptDot, (), "", "Creates graph on basis of dot");
+    DECLARE_MESSAGE(CmdDependInfoOptDGML, (), "", "Creates graph on basis of dgml");
+    DECLARE_MESSAGE(CmdDependInfoOptDepth, (), "", "Show recursion depth in output");
+    DECLARE_MESSAGE(CmdDependInfoOptMaxRecurse, (), "", "Set max recursion depth, a value of -1 indicates no limit");
+    DECLARE_MESSAGE(CmdDependInfoOptSort,
+                    (),
+                    "",
+                    "Set sort order for the list of dependencies, accepted values are: lexicographical, topological "
+                    "(default), x-tree, "
+                    "reverse");
 
 }

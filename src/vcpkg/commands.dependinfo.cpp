@@ -92,16 +92,13 @@ namespace vcpkg::Commands::DependInfo
         constexpr int NO_RECURSE_LIMIT_VALUE = -1;
 
         constexpr std::array<CommandSwitch, 3> DEPEND_SWITCHES = {
-            {{OPTION_DOT, "Creates graph on basis of dot"},
-             {OPTION_DGML, "Creates graph on basis of dgml"},
-             {OPTION_SHOW_DEPTH, "Show recursion depth in output"}}};
+            {{OPTION_DOT, []() { return msg::format(msgCmdDependInfoOptDot); }},
+             {OPTION_DGML, []() { return msg::format(msgCmdDependInfoOptDGML); }},
+             {OPTION_SHOW_DEPTH, []() { return msg::format(msgCmdDependInfoOptDepth); }}}};
 
         constexpr std::array<CommandSetting, 2> DEPEND_SETTINGS = {
-            {{OPTION_MAX_RECURSE, "Set max recursion depth, a value of -1 indicates no limit"},
-             {OPTION_SORT,
-              "Set sort order for the list of dependencies, accepted values are: lexicographical, topological "
-              "(default), x-tree, "
-              "reverse"}}};
+            {{OPTION_MAX_RECURSE, []() { return msg::format(msgCmdDependInfoOptMaxRecurse); }},
+             {OPTION_SORT, []() { return msg::format(msgCmdDependInfoOptSort); }}}};
 
         enum SortMode
         {
