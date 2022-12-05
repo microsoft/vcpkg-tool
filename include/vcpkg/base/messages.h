@@ -2306,4 +2306,10 @@ namespace vcpkg
                     "Version is the name of the project according maven specifications");
     DECLARE_MESSAGE(CmdExportSettingSDKMinVersion, (), "", "Android minimum supported sdk version");
     DECLARE_MESSAGE(CmdExportSettingSDKTargetVersion, (), "", "Android target sdk version");
+    DECLARE_MESSAGE(CmdRemoveOptRecurse,
+                    (),
+                    "",
+                    "Allow removal of packages not explicitly specified on the command line");
+    DECLARE_MESSAGE(CmdRemoveOptDryRun, (), "", "Print the packages to be removed, but do not remove them");
+    DECLARE_MESSAGE(CmdRemoveOptOutdated, (), "", "Select all packages with versions that do not match the portfiles");
 }

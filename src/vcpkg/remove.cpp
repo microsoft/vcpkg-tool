@@ -165,9 +165,9 @@ namespace vcpkg::Remove
     static constexpr std::array<CommandSwitch, 5> SWITCHES = {{
         {OPTION_PURGE, ""},
         {OPTION_NO_PURGE, ""},
-        {OPTION_RECURSE, "Allow removal of packages not explicitly specified on the command line"},
-        {OPTION_DRY_RUN, "Print the packages to be removed, but do not remove them"},
-        {OPTION_OUTDATED, "Select all packages with versions that do not match the portfiles"},
+        {OPTION_RECURSE, []() { return msg::format(msgCmdRemoveOptRecurse); }},
+        {OPTION_DRY_RUN, []() { return msg::format(msgCmdRemoveOptDryRun); }},
+        {OPTION_OUTDATED, []() { return msg::format(msgCmdRemoveOptOutdated); }},
     }};
 
     static std::vector<std::string> valid_arguments(const VcpkgPaths& paths)

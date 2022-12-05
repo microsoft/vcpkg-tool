@@ -1114,4 +1114,7 @@ namespace vcpkg
     REGISTER_MESSAGE(CmdExportSettingPrefabVersion);
     REGISTER_MESSAGE(CmdExportSettingSDKMinVersion);
     REGISTER_MESSAGE(CmdExportSettingSDKTargetVersion);
+    REGISTER_MESSAGE(CmdRemoveOptRecurse);
+    REGISTER_MESSAGE(CmdRemoveOptDryRun);
+    REGISTER_MESSAGE(CmdRemoveOptOutdated);
 }
