@@ -382,16 +382,31 @@ namespace
         return ret;
     }
 
+    LocalizedString& append_declaration_warning(LocalizedString& msg,
+                                                StringView location,
+                                                StringView registry,
+                                                size_t indent_level)
+    {
+        return msg.append_indent(indent_level)
+            .append(msgDuplicatePackagePatternLocation, msg::path = location)
+            .append_raw("\n")
+            .append_indent(indent_level)
+            .append(msgDuplicatePackagePatternRegistry, msg::url = registry)
+            .append_raw("\n");
+    }
+
     std::vector<LocalizedString> collect_package_pattern_warnings(const std::vector<RegistryConfig>& registries)
     {
         struct LocationAndRegistry
         {
             StringView location;
             StringView registry;
+
+            LocationAndRegistry() = default;
         };
 
         // handle warnings from package pattern declarations
-        std::map<StringView, std::vector<LocationAndRegistry>> patterns;
+        std::map<std::string, std::vector<LocationAndRegistry>> patterns;
         for (auto&& reg : registries)
         {
             if (auto packages = reg.package_declarations.get())
@@ -411,45 +426,31 @@ namespace
             }
         }
 
-        auto append_declaration_warning = [](LocalizedString& msg,
-                                             const StringView& location,
-                                             const StringView& registry,
-                                             size_t indent_level) -> void {
-            msg.append_indent(indent_level)
-                .append(msgDuplicatePackagePatternLocation, msg::path = location)
-                .append_raw("\n")
-                .append_indent(indent_level)
-                .append(msgDuplicatePackagePatternRegistry, msg::url = registry)
-                .append_raw("\n");
-        };
-
         std::vector<LocalizedString> warnings;
-        for (auto&& kvpair : patterns)
+        for (auto&& key_value_pair : patterns)
         {
-            const auto& pattern = kvpair.first;
-            const auto& locations = kvpair.second;
+            const auto& pattern = key_value_pair.first;
+            const auto& locations = key_value_pair.second;
             if (locations.size() > 1)
             {
                 auto first = locations.begin();
+                const auto last = locations.end();
                 auto warning = msg::format_warning(msgDuplicatePackagePattern, msg::package_name = pattern)
                                    .append_raw("\n")
                                    .append_indent()
                                    .append(msgDuplicatePackagePatternFirstOcurrence)
                                    .append_raw("\n");
-                append_declaration_warning(warning, first->location, first->registry, 2);
-                warning.append_raw("\n")
+                append_declaration_warning(warning, first->location, first->registry, 2)
+                    .append_raw("\n")
                     .append_indent()
                     .append(msgDuplicatePackagePatternIgnoredLocations)
                     .append_raw("\n");
-
-                auto last = locations.end();
-                for (auto cur = first + 1; cur != last; ++cur)
+                ++first;
+                append_declaration_warning(warning, first->location, first->registry, 2);
+                while (++first != last)
                 {
-                    append_declaration_warning(warning, cur->location, cur->registry, 2);
-                    if (cur + 1 != last)
-                    {
-                        warning.append_raw("\n");
-                    }
+                    warning.append_raw("\n");
+                    append_declaration_warning(warning, first->location, first->registry, 2);
                 }
                 warnings.emplace_back(warning);
             }
