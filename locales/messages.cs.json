@@ -153,6 +153,7 @@
   "EmptyArg": "Možnosti --{option} musí být předán neprázdný argument.",
   "EmptyLicenseExpression": "Výraz licence SPDX byl prázdný.",
   "EndOfStringInCodeUnit": "Našel se konec řetězce uprostřed bodu kódu.",
+  "EnvInvalidMaxConcurrency": "{env_var} je {value}, musí být > 0.",
   "EnvStrFailedToExtract": "nepovedlo se rozbalit řetězec prostředí:",
   "ErrorDetectingCompilerInfo": "při zjišťování informací o kompilátoru:\nObsah souboru protokolu v { path} je:",
   "ErrorIndividualPackagesUnsupported": "V režimu manifestu nástroj vcpkg install nepodporuje jednotlivé argumenty balíčku.\nPokud chcete nainstalovat další balíčky, upravte soubor vcpkg.json a pak spusťte příkaz vcpkg install bez argumentů balíčku.",

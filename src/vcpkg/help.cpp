@@ -128,11 +128,10 @@ namespace vcpkg::Help
 
     void help_topic_valid_triplet(const VcpkgPaths& paths)
     {
-        std::map<StringView, std::vector<const VcpkgPaths::TripletFile*>> triplets_per_location;
-        vcpkg::Util::group_by(
-            paths.get_available_triplets(),
-            &triplets_per_location,
-            [](const VcpkgPaths::TripletFile& triplet_file) -> StringView { return triplet_file.location; });
+        std::map<StringView, std::vector<const TripletFile*>> triplets_per_location;
+        vcpkg::Util::group_by(paths.get_available_triplets(),
+                              &triplets_per_location,
+                              [](const TripletFile& triplet_file) -> StringView { return triplet_file.location; });
 
         msg::println(msgAvailableArchitectureTriplets);
         msg::println(msgBuiltInTriplets);

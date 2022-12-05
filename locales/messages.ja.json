@@ -153,6 +153,7 @@
   "EmptyArg": "オプション --{option} には、空でない引数を渡す必要があります。",
   "EmptyLicenseExpression": "SPDX ライセンス式が空でした。",
   "EndOfStringInCodeUnit": "コード ポイントの中央で文字列の終端が見つかりました",
+  "EnvInvalidMaxConcurrency": "{env_var} は {value}であり、> 0 にする必要があります",
   "EnvStrFailedToExtract": "次の環境文字列を展開できませんでした:",
   "ErrorDetectingCompilerInfo": "コンパイラ情報の検出中:\n\"{path}\"のログ ファイルの内容は次のとおりです:",
   "ErrorIndividualPackagesUnsupported": "マニフェスト モードでは、「vcpkg install」は個々のパッケージ引数をサポートしていません。\n追加のパッケージをインストールするには、vcpkg.json を編集し、パッケージ引数を指定せずに「vcpkg install」を実行してください。",

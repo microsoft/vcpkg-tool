@@ -271,6 +271,8 @@
   "_EmptyArg.comment": "An example of {option} is editable.",
   "EmptyLicenseExpression": "SPDX license expression was empty.",
   "EndOfStringInCodeUnit": "found end of string in middle of code point",
+  "EnvInvalidMaxConcurrency": "{env_var} is {value}, must be > 0",
+  "_EnvInvalidMaxConcurrency.comment": "{value} is the invalid value of an environment variable An example of {env_var} is VCPKG_DEFAULT_TRIPLET.",
   "EnvStrFailedToExtract": "could not expand the environment string:",
   "ErrorDetectingCompilerInfo": "while detecting compiler information:\nThe log file content at \"{path}\" is:",
   "_ErrorDetectingCompilerInfo.comment": "An example of {path} is /foo/bar.",

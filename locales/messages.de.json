@@ -153,6 +153,7 @@
   "EmptyArg": "An die Option --{option} muss ein nicht leeres Argument übergeben werden.",
   "EmptyLicenseExpression": "Der SPDX-Lizenzausdruck war leer.",
   "EndOfStringInCodeUnit": "Ende der Zeichenfolge in der Mitte des Codepunkts gefunden",
+  "EnvInvalidMaxConcurrency": "{env_var} ist {value}, muss > 0 sein",
   "EnvStrFailedToExtract": "Die Umgebungszeichenfolge konnte nicht erweitert werden:",
   "ErrorDetectingCompilerInfo": "beim Erfassen von Compiler-Informationen:\nDer Inhalt der Protokolldatei unter „{Pfad}“ lautet:",
   "ErrorIndividualPackagesUnsupported": "Im Manifestmodus unterstützt „vcpkg install“ keine einzelnen Paketargumente.\nUm zusätzliche Pakete zu installieren, bearbeiten Sie „vcpkg.json“, und führen Sie dann „vcpkg install“ ohne Paketargumente aus.",

@@ -153,6 +153,7 @@
   "EmptyArg": "--{option} 옵션은 비어 있지 않은 인수로 전달되어야 합니다.",
   "EmptyLicenseExpression": "SPDX 라이선스 식이 비어 있습니다.",
   "EndOfStringInCodeUnit": "코드 포인트 중간에서 문자열의 끝을 찾았습니다.",
+  "EnvInvalidMaxConcurrency": "{env_var}이(가) {value}입니다. 0보다 커야 합니다.",
   "EnvStrFailedToExtract": "환경 문자열을 확장할 수 없습니다.",
   "ErrorDetectingCompilerInfo": "컴파일러 정보를 감지하는 동안:\n\"{path}\"의 로그 파일 콘텐츠는 다음과 같습니다.",
   "ErrorIndividualPackagesUnsupported": "매니페스트 모드에서 `vcpkg install`은 개별 패키지 인수를 지원하지 않습니다.\n추가 패키지를 설치하려면 vcpkg.json을 편집한 다음 패키지 인수 없이 `vcpkg install`을 실행하세요.",
