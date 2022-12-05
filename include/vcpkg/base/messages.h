@@ -2130,5 +2130,15 @@ namespace vcpkg
                     "",
                     "Instead of erroring on an unsupported port, continue with a warning.");
     DECLARE_MESSAGE(HelpTxtOptNoUsage, (), "", "Don't print cmake usage information after install.");
+    DECLARE_MESSAGE(
+        HelpTxtOptWritePkgConfig,
+        (),
+        "",
+        "Writes out a NuGet packages.config-formatted file for use with external binary caching.\nSee `vcpkg help "
+        "binarycaching` for more information.");
+    DECLARE_MESSAGE(HelpTxtOptManifestFeature,
+                    (),
+                    "",
+                    "Additional feature from the top-level manifest to install (manifest mode).");
 
 }

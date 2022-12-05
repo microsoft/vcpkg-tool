@@ -1023,4 +1023,6 @@ namespace vcpkg
     REGISTER_MESSAGE(HelpTxtOptEnforcePortChecks);
     REGISTER_MESSAGE(HelpTxtOptAllowUnsupportedPort);
     REGISTER_MESSAGE(HelpTxtOptNoUsage);
+    REGISTER_MESSAGE(HelpTxtOptWritePkgConfig);
+    REGISTER_MESSAGE(HelpTxtOptManifestFeature);
 }

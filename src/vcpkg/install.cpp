@@ -609,13 +609,11 @@ namespace vcpkg
 
     static constexpr std::array<CommandSetting, 2> INSTALL_SETTINGS = {{
         {OPTION_XUNIT, ""}, // internal use
-        {OPTION_WRITE_PACKAGES_CONFIG,
-         "Writes out a NuGet packages.config-formatted file for use with external binary caching.\nSee `vcpkg help "
-         "binarycaching` for more information."},
+        {OPTION_WRITE_PACKAGES_CONFIG, []() { return msg::format(msgHelpTxtOptWritePkgConfig); }},
     }};
 
     static constexpr std::array<CommandMultiSetting, 1> INSTALL_MULTISETTINGS = {{
-        {OPTION_MANIFEST_FEATURE, "Additional feature from the top-level manifest to install (manifest mode)."},
+        {OPTION_MANIFEST_FEATURE, []() { return msg::format(msgHelpTxtOptManifestFeature); }},
     }};
 
     static std::vector<std::string> get_all_port_names(const VcpkgPaths& paths)
