@@ -2201,5 +2201,6 @@ namespace vcpkg
         (),
         "",
         "Direct status/downloading messages to stderr rather than stdout. (Errors/failures still go to stdout)");
+    DECLARE_MESSAGE(CmdFindOptFullDesc, (), "", "Do not truncate long text");
 
 }
