@@ -1073,4 +1073,7 @@ namespace vcpkg
     REGISTER_MESSAGE(CmdRegenerateOptDryRun);
     REGISTER_MESSAGE(CmdRegenerateOptNormalize);
     REGISTER_MESSAGE(HelpTextOptFullDesc);
+    REGISTER_MESSAGE(CmdSetInstalledOptDryRun);
+    REGISTER_MESSAGE(CmdSetInstalledOptNoUsage);
+    REGISTER_MESSAGE(CmdSetInstalledOptWritePkgConfig);
 }

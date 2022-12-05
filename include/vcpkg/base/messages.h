@@ -2234,4 +2234,11 @@ namespace vcpkg
                     "does not actually perform the action, shows only what would be done");
     DECLARE_MESSAGE(CmdRegenerateOptNormalize, (), "", "apply any deprecation fixups");
     DECLARE_MESSAGE(HelpTextOptFullDesc, (), "", "Do not truncate long text");
+    DECLARE_MESSAGE(CmdSetInstalledOptDryRun, (), "", "Do not actually build or install");
+    DECLARE_MESSAGE(CmdSetInstalledOptNoUsage, (), "", "Don't print cmake usage information after install.");
+    DECLARE_MESSAGE(CmdSetInstalledOptWritePkgConfig,
+                    (),
+                    "",
+                    "Writes out a NuGet packages.config-formatted file for use with external binary caching.\n"
+                    "See `vcpkg help binarycaching` for more information.");
 }
