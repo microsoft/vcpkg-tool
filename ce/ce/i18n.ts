@@ -91,7 +91,7 @@ function indexOf(literals: TemplateStringsArray) {
  * @translator
  */
 export function i(literals: TemplateStringsArray, ...values: Array<string | number | boolean | undefined | Date>): string {
-  const key = indexOf(literals);
+/*  const key = indexOf(literals);
   if (key) {
     const str = currentLocale[key];
     if (str) {
@@ -100,7 +100,7 @@ export function i(literals: TemplateStringsArray, ...values: Array<string | numb
     }
     // console.log({ literals, str });
   }
-  //console.log(key);
+  //console.log(key);*/
 
   // if the translation isn't available, just resolve the string template normally.
   return String.raw(literals, ...values);

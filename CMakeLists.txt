@@ -369,7 +369,9 @@ if(VCPKG_PDB_SUFFIX)
 endif()
 
 # === Target: generate-message-map ===
-
+# if artifacts is set then this target needs to do ecmascript stuff
+# translate the message
+# staple
 add_custom_target(generate-message-map
    COMMAND vcpkg x-generate-default-message-map locales/messages.json
    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
