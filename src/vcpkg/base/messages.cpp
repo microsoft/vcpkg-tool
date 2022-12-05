@@ -1057,4 +1057,6 @@ namespace vcpkg
     REGISTER_MESSAGE(CmdEnvOptions);
     REGISTER_MESSAGE(CmdFetchOptXStderrStatus);
     REGISTER_MESSAGE(CmdFindOptFullDesc);
+    REGISTER_MESSAGE(CmdFormatManifestOptAll);
+    REGISTER_MESSAGE(CmdFormatManifestOptConvertControl);
 }

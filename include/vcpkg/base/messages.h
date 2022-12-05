@@ -2202,5 +2202,7 @@ namespace vcpkg
         "",
         "Direct status/downloading messages to stderr rather than stdout. (Errors/failures still go to stdout)");
     DECLARE_MESSAGE(CmdFindOptFullDesc, (), "", "Do not truncate long text");
+    DECLARE_MESSAGE(CmdFormatManifestOptAll, (), "", "Format all ports' manifest files.");
+    DECLARE_MESSAGE(CmdFormatManifestOptConvertControl, (), "", "Convert CONTROL files to manifest files.");
 
 }
