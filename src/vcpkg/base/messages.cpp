@@ -1055,4 +1055,5 @@ namespace vcpkg
     REGISTER_MESSAGE(CmdEditOptBuildTrees);
     REGISTER_MESSAGE(CmdEditOptAll);
     REGISTER_MESSAGE(CmdEnvOptions);
+    REGISTER_MESSAGE(CmdFetchOptXStderrStatus);
 }

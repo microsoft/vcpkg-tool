@@ -194,6 +194,7 @@
   "CmdEditOptBuildTrees": "Open editor into the port-specific buildtree subfolder",
   "CmdEnvOptions": "Add installed {path} to {env_var}",
   "_CmdEnvOptions.comment": "An example of {path} is /foo/bar. An example of {env_var} is VCPKG_DEFAULT_TRIPLET.",
+  "CmdFetchOptXStderrStatus": "Direct status/downloading messages to stderr rather than stdout. (Errors/failures still go to stdout)",
   "CommandFailed": "command:\n{command_line}\nfailed with the following results:",
   "_CommandFailed.comment": "An example of {command_line} is vcpkg install zlib.",
   "CommunityTriplets": "VCPKG community triplets:",
