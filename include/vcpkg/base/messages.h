@@ -2216,5 +2216,15 @@ namespace vcpkg
     DECLARE_MESSAGE(CmdInfoOptInstalled, (), "", "(experimental) Report on installed packages instead of available");
     DECLARE_MESSAGE(CmdInfoOptTransitive, (), "", "(experimental) Also report on dependencies of installed packages");
     DECLARE_MESSAGE(CmdListOptFullDesc, (), "", "Do not truncate long text");
+    DECLARE_MESSAGE(CmdNewOptApplication, (), "", "Create an application manifest (don't require name or version).");
+    DECLARE_MESSAGE(CmdNewOptSingleFile, (), "", "Embed vcpkg-configuration.json into vcpkg.json.");
+    DECLARE_MESSAGE(CmdNewOptVersionRelaxed,
+                    (),
+                    "",
+                    "Interpret --version as a relaxed-numeric version. (Nonnegative numbers separated by dots)");
+    DECLARE_MESSAGE(CmdNewOptVersionDate, (), "", "Interpret --version as an ISO 8601 date. (YYYY-MM-DD)");
+    DECLARE_MESSAGE(CmdNewOptVersionString, (), "", "Interpret --version as a string with no ordering behavior.");
+    DECLARE_MESSAGE(CmdNewSettingName, (), "", "Name for the new manifest.");
+    DECLARE_MESSAGE(CmdNewSettingVersion, (), "", "Version for the new manifest.");
 
 }

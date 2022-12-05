@@ -1064,4 +1064,11 @@ namespace vcpkg
     REGISTER_MESSAGE(CmdInfoOptInstalled);
     REGISTER_MESSAGE(CmdInfoOptTransitive);
     REGISTER_MESSAGE(CmdListOptFullDesc);
+    REGISTER_MESSAGE(CmdNewOptApplication);
+    REGISTER_MESSAGE(CmdNewOptSingleFile);
+    REGISTER_MESSAGE(CmdNewOptVersionRelaxed);
+    REGISTER_MESSAGE(CmdNewOptVersionDate);
+    REGISTER_MESSAGE(CmdNewOptVersionString);
+    REGISTER_MESSAGE(CmdNewSettingName);
+    REGISTER_MESSAGE(CmdNewSettingVersion);
 }
