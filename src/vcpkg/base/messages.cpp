@@ -1071,4 +1071,7 @@ namespace vcpkg
     REGISTER_MESSAGE(CmdNewOptVersionString);
     REGISTER_MESSAGE(CmdNewSettingName);
     REGISTER_MESSAGE(CmdNewSettingVersion);
+    REGISTER_MESSAGE(CmdRegenerateOptForce);
+    REGISTER_MESSAGE(CmdRegenerateOptDryRun);
+    REGISTER_MESSAGE(CmdRegenerateOptNormalize);
 }

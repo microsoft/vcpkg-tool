@@ -2226,5 +2226,13 @@ namespace vcpkg
     DECLARE_MESSAGE(CmdNewOptVersionString, (), "", "Interpret --version as a string with no ordering behavior.");
     DECLARE_MESSAGE(CmdNewSettingName, (), "", "Name for the new manifest.");
     DECLARE_MESSAGE(CmdNewSettingVersion, (), "", "Version for the new manifest.");
-
+    DECLARE_MESSAGE(CmdRegenerateOptForce,
+                    (),
+                    "",
+                    "proceeds with the (potentially dangerous) action without confirmation");
+    DECLARE_MESSAGE(CmdRegenerateOptDryRun,
+                    (),
+                    "",
+                    "does not actually perform the action, shows only what would be done");
+    DECLARE_MESSAGE(CmdRegenerateOptNormalize, (), "", "apply any deprecation fixups");
 }
