@@ -2201,7 +2201,6 @@ namespace vcpkg
         (),
         "",
         "Direct status/downloading messages to stderr rather than stdout. (Errors/failures still go to stdout)");
-    DECLARE_MESSAGE(CmdFindOptFullDesc, (), "", "Do not truncate long text");
     DECLARE_MESSAGE(CmdFormatManifestOptAll, (), "", "Format all ports' manifest files.");
     DECLARE_MESSAGE(CmdFormatManifestOptConvertControl, (), "", "Convert CONTROL files to manifest files.");
     DECLARE_MESSAGE(CmdGenerateMessageMapOptOutputComments,
@@ -2215,7 +2214,6 @@ namespace vcpkg
         "When generating the message map, exclude comments (useful for generating the english localization file)");
     DECLARE_MESSAGE(CmdInfoOptInstalled, (), "", "(experimental) Report on installed packages instead of available");
     DECLARE_MESSAGE(CmdInfoOptTransitive, (), "", "(experimental) Also report on dependencies of installed packages");
-    DECLARE_MESSAGE(CmdListOptFullDesc, (), "", "Do not truncate long text");
     DECLARE_MESSAGE(CmdNewOptApplication, (), "", "Create an application manifest (don't require name or version).");
     DECLARE_MESSAGE(CmdNewOptSingleFile, (), "", "Embed vcpkg-configuration.json into vcpkg.json.");
     DECLARE_MESSAGE(CmdNewOptVersionRelaxed,
@@ -2235,4 +2233,5 @@ namespace vcpkg
                     "",
                     "does not actually perform the action, shows only what would be done");
     DECLARE_MESSAGE(CmdRegenerateOptNormalize, (), "", "apply any deprecation fixups");
+    DECLARE_MESSAGE(HelpTextOptFullDesc, (), "", "Do not truncate long text");
 }

@@ -1056,14 +1056,12 @@ namespace vcpkg
     REGISTER_MESSAGE(CmdEditOptAll);
     REGISTER_MESSAGE(CmdEnvOptions);
     REGISTER_MESSAGE(CmdFetchOptXStderrStatus);
-    REGISTER_MESSAGE(CmdFindOptFullDesc);
     REGISTER_MESSAGE(CmdFormatManifestOptAll);
     REGISTER_MESSAGE(CmdFormatManifestOptConvertControl);
     REGISTER_MESSAGE(CmdGenerateMessageMapOptOutputComments);
     REGISTER_MESSAGE(CmdGenerateMessageMapOptNoOutputComments);
     REGISTER_MESSAGE(CmdInfoOptInstalled);
     REGISTER_MESSAGE(CmdInfoOptTransitive);
-    REGISTER_MESSAGE(CmdListOptFullDesc);
     REGISTER_MESSAGE(CmdNewOptApplication);
     REGISTER_MESSAGE(CmdNewOptSingleFile);
     REGISTER_MESSAGE(CmdNewOptVersionRelaxed);
@@ -1074,4 +1072,5 @@ namespace vcpkg
     REGISTER_MESSAGE(CmdRegenerateOptForce);
     REGISTER_MESSAGE(CmdRegenerateOptDryRun);
     REGISTER_MESSAGE(CmdRegenerateOptNormalize);
+    REGISTER_MESSAGE(HelpTextOptFullDesc);
 }

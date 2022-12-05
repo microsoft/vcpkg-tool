@@ -77,7 +77,7 @@ namespace vcpkg::Commands::List
     }
 
     static constexpr std::array<CommandSwitch, 1> LIST_SWITCHES = {{
-        {OPTION_FULLDESC, []() { return msg::format(msgCmdListOptFullDesc); }},
+        {OPTION_FULLDESC, []() { return msg::format(msgHelpTextOptFullDesc); }},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {

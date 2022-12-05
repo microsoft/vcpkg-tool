@@ -100,7 +100,7 @@ namespace
     constexpr StringLiteral OPTION_FULLDESC = "x-full-desc"; // TODO: This should find a better home, eventually
 
     constexpr std::array<CommandSwitch, 1> FindSwitches = {
-        {{OPTION_FULLDESC, []() { return msg::format(msgCmdFindOptFullDesc); }}}};
+        {{OPTION_FULLDESC, []() { return msg::format(msgHelpTextOptFullDesc); }}}};
 
     const CommandStructure FindCommandStructure = {
         Strings::format("Searches for the indicated artifact or port. With no parameter after 'artifact' or 'port', "
