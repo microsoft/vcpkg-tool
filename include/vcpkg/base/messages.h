@@ -2195,5 +2195,6 @@ namespace vcpkg
                     (),
                     "",
                     "Open editor into the port as well as the port-specific buildtree subfolder");
+    DECLARE_MESSAGE(CmdEnvOptions, (msg::path, msg::env_var), "", "Add installed {path} to {env_var}");
 
 }

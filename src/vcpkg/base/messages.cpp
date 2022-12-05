@@ -1054,4 +1054,5 @@ namespace vcpkg
     REGISTER_MESSAGE(CmdDependInfoOptSort);
     REGISTER_MESSAGE(CmdEditOptBuildTrees);
     REGISTER_MESSAGE(CmdEditOptAll);
+    REGISTER_MESSAGE(CmdEnvOptions);
 }
