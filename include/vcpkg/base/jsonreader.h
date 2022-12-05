@@ -383,11 +383,18 @@ namespace vcpkg::Json
         static PackageNameDeserializer instance;
     };
 
+    /// <summary>
+    /// A registry package pattern (e.g.: boost*) and the in-file location where it was declared.
+    /// </summary>
     struct PackagePatternDeclaration
     {
         std::string pattern;
         std::string location;
     };
+
+    /// <summary>
+    /// Deserializes a list of package names and patterns along with their respective in-file declaration locations.
+    /// </summary>
     struct PackagePatternDeserializer final : Json::IDeserializer<PackagePatternDeclaration>
     {
         virtual StringView type_name() const override { return "a package pattern"; }
