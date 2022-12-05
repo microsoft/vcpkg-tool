@@ -2190,5 +2190,10 @@ namespace vcpkg
                     "Set sort order for the list of dependencies, accepted values are: lexicographical, topological "
                     "(default), x-tree, "
                     "reverse");
+    DECLARE_MESSAGE(CmdEditOptBuildTrees, (), "", "Open editor into the port-specific buildtree subfolder");
+    DECLARE_MESSAGE(CmdEditOptAll,
+                    (),
+                    "",
+                    "Open editor into the port as well as the port-specific buildtree subfolder");
 
 }

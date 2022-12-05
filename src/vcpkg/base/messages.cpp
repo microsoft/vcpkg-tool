@@ -1052,4 +1052,6 @@ namespace vcpkg
     REGISTER_MESSAGE(CmdDependInfoOptDepth);
     REGISTER_MESSAGE(CmdDependInfoOptMaxRecurse);
     REGISTER_MESSAGE(CmdDependInfoOptSort);
+    REGISTER_MESSAGE(CmdEditOptBuildTrees);
+    REGISTER_MESSAGE(CmdEditOptAll);
 }
