@@ -181,6 +181,7 @@
   "CmdAddVersionOptSkipFormatChk": "Skips the formatting check of vcpkg.json files.",
   "CmdAddVersionOptSkipVersionFormatChk": "Skips the version format check.",
   "CmdAddVersionOptVerbose": "Print success messages instead of just errors.",
+  "CmdSwitchContact": "Launch default browser to the current vcpkg survey",
   "CommandFailed": "command:\n{command_line}\nfailed with the following results:",
   "_CommandFailed.comment": "An example of {command_line} is vcpkg install zlib.",
   "CommunityTriplets": "VCPKG community triplets:",

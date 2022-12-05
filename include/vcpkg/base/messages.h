@@ -2173,5 +2173,6 @@ namespace vcpkg
                     "",
                     "Indicates that ports marked `=fail` in ci.baseline.txt should be skipped.");
     DECLARE_MESSAGE(CISwitchOptXUnitAll, (), "", "Report also unchanged ports to the XUnit output (internal)");
+    DECLARE_MESSAGE(CmdSwitchContact, (), "", "Launch default browser to the current vcpkg survey");
 
 }

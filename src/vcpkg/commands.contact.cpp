@@ -13,7 +13,7 @@ namespace vcpkg::Commands::Contact
     static constexpr StringLiteral OPTION_SURVEY = "survey";
 
     static constexpr std::array<CommandSwitch, 1> SWITCHES = {{
-        {OPTION_SURVEY, "Launch default browser to the current vcpkg survey"},
+        {OPTION_SURVEY, []() { return msg::format(msgCmdSwitchContact); }},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
