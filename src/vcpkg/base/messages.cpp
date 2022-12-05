@@ -1081,4 +1081,9 @@ namespace vcpkg
     REGISTER_MESSAGE(CmdUpgradeOptNoDryRun);
     REGISTER_MESSAGE(CmdUpgradeOptNoKeepGoing);
     REGISTER_MESSAGE(CmdUpgradeOptAllowUnsupported);
+    REGISTER_MESSAGE(CmdXDownloadOptStore);
+    REGISTER_MESSAGE(CmdXDownloadOptSkipSha);
+    REGISTER_MESSAGE(CmdXDownloadOptSha);
+    REGISTER_MESSAGE(CmdXDownloadOptUrl);
+    REGISTER_MESSAGE(CmdXDownloadOptHeader);
 }

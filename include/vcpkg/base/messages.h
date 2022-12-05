@@ -2252,4 +2252,9 @@ namespace vcpkg
                     (),
                     "",
                     "Instead of erroring on an unsupported port, continue with a warning.");
+    DECLARE_MESSAGE(CmdXDownloadOptStore, (), "", "Indicates the file should be stored instead of fetched");
+    DECLARE_MESSAGE(CmdXDownloadOptSkipSha, (), "", "Do not check the SHA512 of the downloaded file");
+    DECLARE_MESSAGE(CmdXDownloadOptSha, (), "", "The hash of the file to be downloaded");
+    DECLARE_MESSAGE(CmdXDownloadOptUrl, (), "", "URL to download and store if missing from cache");
+    DECLARE_MESSAGE(CmdXDownloadOptHeader, (), "", "Additional header to use when fetching from URLs");
 }
