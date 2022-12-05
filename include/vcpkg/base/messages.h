@@ -2246,4 +2246,10 @@ namespace vcpkg
                     "",
                     "add a `builtin-baseline` to a vcpkg.json that doesn't already have it");
     DECLARE_MESSAGE(CmdUpdateBaselineOptDryRun, (), "", "Print out plan without execution");
+    DECLARE_MESSAGE(CmdUpgradeOptNoDryRun, (), "", "Actually upgrade");
+    DECLARE_MESSAGE(CmdUpgradeOptNoKeepGoing, (), "", "Stop installing packages on failure");
+    DECLARE_MESSAGE(CmdUpgradeOptAllowUnsupported,
+                    (),
+                    "",
+                    "Instead of erroring on an unsupported port, continue with a warning.");
 }

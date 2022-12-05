@@ -1078,4 +1078,7 @@ namespace vcpkg
     REGISTER_MESSAGE(CmdSetInstalledOptWritePkgConfig);
     REGISTER_MESSAGE(CmdUpdateBaselineOptInitial);
     REGISTER_MESSAGE(CmdUpdateBaselineOptDryRun);
+    REGISTER_MESSAGE(CmdUpgradeOptNoDryRun);
+    REGISTER_MESSAGE(CmdUpgradeOptNoKeepGoing);
+    REGISTER_MESSAGE(CmdUpgradeOptAllowUnsupported);
 }
