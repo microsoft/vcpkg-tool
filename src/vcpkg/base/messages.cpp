@@ -1006,4 +1006,21 @@ namespace vcpkg
     REGISTER_MESSAGE(TripletFileNotFound);
     REGISTER_MESSAGE(VcpkgRegistriesCacheIsNotDirectory);
     REGISTER_MESSAGE(FailedToParseNoTopLevelObj);
+    REGISTER_MESSAGE(HelpTxtOptDryRun);
+    REGISTER_MESSAGE(HelpTxtOptUseHeadVersion);
+    REGISTER_MESSAGE(HelpTxtOptNoDownloads);
+    REGISTER_MESSAGE(HelpTxtOptOnlyDownloads);
+    REGISTER_MESSAGE(HelpTxtOptOnlyBinCache);
+    REGISTER_MESSAGE(HelpTxtOptRecurse);
+    REGISTER_MESSAGE(HelpTxtOptKeepGoing);
+    REGISTER_MESSAGE(HelpTxtOptEditable);
+    REGISTER_MESSAGE(HelpTxtOptUseAria2);
+    REGISTER_MESSAGE(HelpTxtOptCleanAfterBuild);
+    REGISTER_MESSAGE(HelpTxtOptCleanBuildTreesAfterBuild);
+    REGISTER_MESSAGE(HelpTxtOptCleanPkgAfterBuild);
+    REGISTER_MESSAGE(HelpTxtOptCleanDownloadsAfterBuild);
+    REGISTER_MESSAGE(HelpTxtOptManifestNoDefault);
+    REGISTER_MESSAGE(HelpTxtOptEnforcePortChecks);
+    REGISTER_MESSAGE(HelpTxtOptAllowUnsupportedPort);
+    REGISTER_MESSAGE(HelpTxtOptNoUsage);
 }

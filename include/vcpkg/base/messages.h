@@ -2095,5 +2095,40 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "Failed to parse {path}, expected a top-level object.");
+    DECLARE_MESSAGE(HelpTxtOptDryRun, (), "", "Do not actually build or install.");
+    DECLARE_MESSAGE(HelpTxtOptUseHeadVersion,
+                    (),
+                    "",
+                    "Install the libraries on the command line using the latest upstream sources (classic mode)");
+    DECLARE_MESSAGE(HelpTxtOptNoDownloads, (), "", "Do not download new sources");
+    DECLARE_MESSAGE(HelpTxtOptOnlyDownloads, (), "", "Download sources but don't build packages");
+    DECLARE_MESSAGE(HelpTxtOptOnlyBinCache, (), "", "Fail if cached binaries are not available");
+    DECLARE_MESSAGE(HelpTxtOptRecurse, (), "", "Allow removal of packages as part of installation");
+    DECLARE_MESSAGE(HelpTxtOptKeepGoing, (), "", "Continue installing packages on failure");
+    DECLARE_MESSAGE(HelpTxtOptEditable,
+                    (),
+                    "",
+                    "Disable source re-extraction and binary caching for libraries on the command line (classic mode)");
+    DECLARE_MESSAGE(HelpTxtOptUseAria2, (), "", "Use aria2 to perform download tasks");
+    DECLARE_MESSAGE(HelpTxtOptCleanAfterBuild,
+                    (),
+                    "",
+                    "Clean buildtrees, packages and downloads after building each package");
+    DECLARE_MESSAGE(HelpTxtOptCleanBuildTreesAfterBuild, (), "", "Clean buildtrees after building each package");
+    DECLARE_MESSAGE(HelpTxtOptCleanPkgAfterBuild, (), "", "Clean packages after building each package");
+    DECLARE_MESSAGE(HelpTxtOptCleanDownloadsAfterBuild, (), "", "Clean downloads after building each package");
+    DECLARE_MESSAGE(HelpTxtOptManifestNoDefault,
+                    (),
+                    "",
+                    "Don't install the default features from the top-level manifest (manifest mode).");
+    DECLARE_MESSAGE(HelpTxtOptEnforcePortChecks,
+                    (),
+                    "",
+                    "Fail install if a port has detected problems or attempts to use a deprecated feature");
+    DECLARE_MESSAGE(HelpTxtOptAllowUnsupportedPort,
+                    (),
+                    "",
+                    "Instead of erroring on an unsupported port, continue with a warning.");
+    DECLARE_MESSAGE(HelpTxtOptNoUsage, (), "", "Don't print cmake usage information after install.");
 
 }
