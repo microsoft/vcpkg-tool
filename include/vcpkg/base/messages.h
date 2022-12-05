@@ -2145,5 +2145,33 @@ namespace vcpkg
     DECLARE_MESSAGE(CmdAddVersionOptSkipFormatChk, (), "", "Skips the formatting check of vcpkg.json files.");
     DECLARE_MESSAGE(CmdAddVersionOptSkipVersionFormatChk, (), "", "Skips the version format check.");
     DECLARE_MESSAGE(CmdAddVersionOptVerbose, (), "", "Print success messages instead of just errors.");
+    DECLARE_MESSAGE(CISettingsOptExclude, (), "", "Comma separated list of ports to skip");
+    DECLARE_MESSAGE(CISettingsOptHostExclude, (), "", "Comma separated list of ports to skip for the host triplet");
+    DECLARE_MESSAGE(CISettingsOptXUnit, (), "", "File to output results in XUnit format (internal)");
+    DECLARE_MESSAGE(CISettingsOptCIBase,
+                    (),
+                    "",
+                    "Path to the ci.baseline.txt file. Used to skip ports and detect regressions.");
+    DECLARE_MESSAGE(CISettingsOptFailureLogs, (), "", "Directory to which failure logs will be copied");
+    DECLARE_MESSAGE(CISettingsOptOutputHashes, (), "", "File to output all determined package hashes");
+    DECLARE_MESSAGE(CISettingsOptParentHashes,
+                    (),
+                    "",
+                    "File to read package hashes for a parent CI state, to reduce the set of changed packages");
+    DECLARE_MESSAGE(CISettingsOptSkippedCascadeCount,
+                    (),
+                    "",
+                    "Asserts that the number of --exclude and supports skips exactly equal this number");
+    DECLARE_MESSAGE(CISwitchOptDryRun, (), "", "Print out plan without execution");
+    DECLARE_MESSAGE(CISwitchOptRandomize, (), "", "Randomize the install order");
+    DECLARE_MESSAGE(CISwitchOptAllowUnexpectedPassing,
+                    (),
+                    "",
+                    "Indicates that 'Passing, remove from fail list' results should not be emitted.");
+    DECLARE_MESSAGE(CISwitchOptSkipFailures,
+                    (),
+                    "",
+                    "Indicates that ports marked `=fail` in ci.baseline.txt should be skipped.");
+    DECLARE_MESSAGE(CISwitchOptXUnitAll, (), "", "Report also unchanged ports to the XUnit output (internal)");
 
 }

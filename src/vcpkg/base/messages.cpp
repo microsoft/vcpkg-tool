@@ -1030,4 +1030,17 @@ namespace vcpkg
     REGISTER_MESSAGE(CmdAddVersionOptSkipFormatChk);
     REGISTER_MESSAGE(CmdAddVersionOptSkipVersionFormatChk);
     REGISTER_MESSAGE(CmdAddVersionOptVerbose);
+    REGISTER_MESSAGE(CISettingsOptExclude);
+    REGISTER_MESSAGE(CISettingsOptHostExclude);
+    REGISTER_MESSAGE(CISettingsOptXUnit);
+    REGISTER_MESSAGE(CISettingsOptCIBase);
+    REGISTER_MESSAGE(CISettingsOptFailureLogs);
+    REGISTER_MESSAGE(CISettingsOptOutputHashes);
+    REGISTER_MESSAGE(CISettingsOptParentHashes);
+    REGISTER_MESSAGE(CISettingsOptSkippedCascadeCount);
+    REGISTER_MESSAGE(CISwitchOptDryRun);
+    REGISTER_MESSAGE(CISwitchOptRandomize);
+    REGISTER_MESSAGE(CISwitchOptAllowUnexpectedPassing);
+    REGISTER_MESSAGE(CISwitchOptSkipFailures);
+    REGISTER_MESSAGE(CISwitchOptXUnitAll);
 }
