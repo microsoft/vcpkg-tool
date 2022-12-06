@@ -21,7 +21,7 @@ namespace vcpkg
     };
 
     // e.g. {"https","//example.org", "/index.html"}
-    ExpectedS<SplitURIView> split_uri_view(StringView uri);
+    ExpectedL<SplitURIView> split_uri_view(StringView uri);
 
     void verify_downloaded_file_hash(const Filesystem& fs,
                                      StringView sanitized_url,
@@ -33,7 +33,7 @@ namespace vcpkg
     std::vector<int> download_files(Filesystem& fs,
                                     View<std::pair<std::string, Path>> url_pairs,
                                     View<std::string> headers);
-    ExpectedS<int> put_file(const Filesystem&, StringView url, View<std::string> headers, const Path& file);
+    ExpectedL<int> put_file(const Filesystem&, StringView url, View<std::string> headers, const Path& file);
     std::vector<int> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets);
     std::string replace_secrets(std::string input, View<std::string> secrets);
 
@@ -70,7 +70,7 @@ namespace vcpkg
                                   const Optional<std::string>& sha512,
                                   MessageSink& progress_sink) const;
 
-        ExpectedS<int> put_file_to_mirror(const Filesystem& fs, const Path& file_to_put, StringView sha512) const;
+        ExpectedL<int> put_file_to_mirror(const Filesystem& fs, const Path& file_to_put, StringView sha512) const;
 
     private:
         DownloadManagerConfig m_config;

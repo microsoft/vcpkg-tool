@@ -60,6 +60,7 @@ export async function vcpkgDownload(session: Session, destination: string, sha51
         const match = /(\d+)%\s*$/.exec(chunk);
         if (!match) { return; }
         const number = parseInt(match[1]);
+        // throwing out 100s avoids displaying temporarily full progress bars resulting from redirects getting resolved
         if (number && number < 100) {
           events.downloadProgress?.(uri, destination, number);
         }

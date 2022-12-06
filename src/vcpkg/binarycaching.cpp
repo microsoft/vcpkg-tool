@@ -332,7 +332,7 @@ namespace
                     continue;
                 }
 
-                auto errors = replace_secrets(std::move(maybe_success).error(), m_secrets);
+                auto errors = replace_secrets(std::move(maybe_success).error().extract_data(), m_secrets);
                 msg::println(Color::warning, msgReplaceSecretsError, msg::error_msg = errors);
             }
 
