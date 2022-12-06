@@ -85,8 +85,7 @@ async function https(session: Session, uris: Array<Uri>, outputFilename: string,
     sha512 = options?.value;
   }
 
-  const vcpkgOutput = await vcpkgDownload(session, outputFile, sha512, uris);
-  session.channels.debug(`vcpkg said: ${vcpkgOutput}`);
+  await vcpkgDownload(session, outputFile.fsPath, sha512, uris, events);
 
   events.downloadComplete?.();
   // we've downloaded the file, let's see if it matches the hash we have.

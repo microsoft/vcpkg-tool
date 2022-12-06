@@ -3,10 +3,11 @@
 
 import { spawn } from 'child_process';
 import { i } from './i18n';
+import { DownloadEvents } from './interfaces/events';
 import { Session } from './session';
 import { Uri } from './util/uri';
 
-function runVcpkg(vcpkgCommand: string | undefined, args: Array<string>): Promise<string> {
+function streamVcpkg(vcpkgCommand: string | undefined, args: Array<string>, listener: (chunk: any) => void): Promise<void> {
   return new Promise((accept, reject) => {
     if (!vcpkgCommand) {
       reject(i`VCPKG_COMMAND was not set`);
@@ -14,20 +15,25 @@ function runVcpkg(vcpkgCommand: string | undefined, args: Array<string>): Promis
     }
 
     const subproc = spawn(vcpkgCommand, args, { stdio: ['ignore', 'pipe', 'pipe'] });
-    let result = '';
-    subproc.stdout.on('data', (chunk) => { result += chunk; });
+    subproc.stdout.on('data', listener);
     subproc.stderr.pipe(process.stdout);
     subproc.on('error', (err) => { reject(err); });
     subproc.on('close', (code: number, signal) => {
-      if (code === 0) { accept(result); }
+      if (code === 0) { accept(); }
       reject(i`Running vcpkg internally returned a nonzero exit code: ${code}`);
     });
   });
 }
 
+async function runVcpkg(vcpkgCommand: string | undefined, args: Array<string>): Promise<string> {
+  let result = '';
+  await streamVcpkg(vcpkgCommand, args, (chunk) => { result += chunk; });
+  return result.trimEnd();
+}
+
 export function vcpkgFetch(session: Session, fetchKey: string): Promise<string> {
   return runVcpkg(session.vcpkgCommand, ['fetch', fetchKey, '--x-stderr-status']).then((output) => {
-    return output.trimEnd();
+    return output;
   }, (error) => {
     if (fetchKey === 'git') {
       session.channels.warning('failed to fetch git, falling back to attempting to use git from the PATH');
@@ -38,8 +44,8 @@ export function vcpkgFetch(session: Session, fetchKey: string): Promise<string> 
   });
 }
 
-export function vcpkgDownload(session: Session, destination: Uri, sha512: string | undefined, uris: Array<Uri>) : Promise<string> {
-  const args = ['x-download', destination.fsPath];
+export async function vcpkgDownload(session: Session, destination: string, sha512: string | undefined, uris: Array<Uri>, events: Partial<DownloadEvents>) : Promise<void> {
+  const args = ['x-download', destination, '--z-machine-readable-progress'];
   if (sha512) {
     args.push(`--sha512=${sha512}`);
   } else {
@@ -47,10 +53,23 @@ export function vcpkgDownload(session: Session, destination: Uri, sha512: string
   }
 
   for (const uri of uris) {
-    args.push(`--url=${uri.toString()}`);
+    events.downloadProgress?.(uri, destination, 0);
+    const uriArgs = [...args, `--url=${uri.toString()}`];
+    try {
+      await streamVcpkg(session.vcpkgCommand, uriArgs, (chunk) => {
+        const match = /(\d+)%\s*$/.exec(chunk);
+        if (!match) { return; }
+        const number = parseInt(match[1]);
+        if (number && number < 100) {
+          events.downloadProgress?.(uri, destination, number);
+        }
+      });
+
+      return;
+    } catch {
+      session.channels.warning(i`failed to download from ${uri.toString()}`);
+    }
   }
 
-  return runVcpkg(session.vcpkgCommand, args).then((output) => {
-    return output.trimEnd();
-  });
+  throw new Error(i`failed to download ${destination} from any source`);
 }

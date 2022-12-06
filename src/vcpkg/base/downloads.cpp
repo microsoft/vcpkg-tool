@@ -3,6 +3,7 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/parse.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
@@ -171,7 +172,7 @@ namespace vcpkg
     };
 #endif
 
-    ExpectedS<details::SplitURIView> details::split_uri_view(StringView uri)
+    ExpectedS<SplitURIView> split_uri_view(StringView uri)
     {
         auto sep = std::find(uri.begin(), uri.end(), ':');
         if (sep == uri.end()) return Strings::concat("Error: unable to parse uri: '", uri, "'");
@@ -180,10 +181,10 @@ namespace vcpkg
         if (Strings::starts_with({sep + 1, uri.end()}, "//"))
         {
             auto path_start = std::find(sep + 3, uri.end(), '/');
-            return details::SplitURIView{scheme, StringView{sep + 1, path_start}, {path_start, uri.end()}};
+            return SplitURIView{scheme, StringView{sep + 1, path_start}, {path_start, uri.end()}};
         }
         // no authority
-        return details::SplitURIView{scheme, {}, {sep + 1, uri.end()}};
+        return SplitURIView{scheme, {}, {sep + 1, uri.end()}};
     }
 
     static std::string format_hash_mismatch(StringView url,
@@ -476,7 +477,7 @@ namespace vcpkg
         /// </summary>
         static bool download_winhttp(Filesystem& fs,
                                      const Path& download_path_part_path,
-                                     details::SplitURIView split_uri,
+                                     SplitURIView split_uri,
                                      const std::string& url,
                                      const std::vector<std::string>& secrets,
                                      std::string& errors)
@@ -564,7 +565,8 @@ namespace vcpkg
                                   const Path& download_path,
                                   const Optional<std::string>& sha512,
                                   const std::vector<std::string>& secrets,
-                                  std::string& errors)
+                                  std::string& errors,
+                                  MessageSink& progress_sink)
     {
         auto download_path_part_path = download_path;
         download_path_part_path += ".";
@@ -575,7 +577,7 @@ namespace vcpkg
 #endif
         download_path_part_path += ".part";
 
-#if defined(_WIN32)
+#if defined(_WIN32) && 0
         if (headers.size() == 0)
         {
             auto split_uri = details::split_uri_view(url).value_or_exit(VCPKG_LINE_INFO);
@@ -610,13 +612,32 @@ namespace vcpkg
         {
             cmd.string_arg("-H").string_arg(header);
         }
-        const auto maybe_out = cmd_execute_and_capture_output(cmd);
+
+        std::string non_progress_lines;
+        const auto maybe_exit_code = cmd_execute_and_stream_lines(
+            cmd,
+            [&](StringView line) {
+                const auto maybe_parsed = try_parse_curl_progress_data(line);
+                if (const auto parsed = maybe_parsed.get())
+                {
+                    progress_sink.print(Color::none, fmt::format("{}%\n", parsed->total_percent));
+                }
+                else
+                {
+                    non_progress_lines.append(line.data(), line.size());
+                    non_progress_lines.push_back('\n');
+                }
+            },
+            default_working_directory,
+            default_environment,
+            Encoding::Utf8);
+
         const auto sanitized_url = replace_secrets(url, secrets);
-        if (const auto out = maybe_out.get())
+        if (const auto exit_code = maybe_exit_code.get())
         {
-            if (out->exit_code != 0)
+            if (*exit_code != 0)
             {
-                Strings::append(errors, sanitized_url, ": ", out->output, '\n');
+                Strings::append(errors, sanitized_url, ": ", non_progress_lines, '\n');
                 return false;
             }
 
@@ -628,23 +649,24 @@ namespace vcpkg
         }
         else
         {
-            Strings::append(errors, sanitized_url, ": ", maybe_out.error(), '\n');
+            Strings::append(errors, sanitized_url, ": ", maybe_exit_code.error(), '\n');
         }
 
         return false;
     }
 
-    static Optional<const std::string&> try_download_files(vcpkg::Filesystem& fs,
-                                                           View<std::string> urls,
-                                                           View<std::string> headers,
-                                                           const Path& download_path,
-                                                           const Optional<std::string>& sha512,
-                                                           const std::vector<std::string>& secrets,
-                                                           std::string& errors)
+    static Optional<const std::string&> try_download_file(vcpkg::Filesystem& fs,
+                                                          View<std::string> urls,
+                                                          View<std::string> headers,
+                                                          const Path& download_path,
+                                                          const Optional<std::string>& sha512,
+                                                          const std::vector<std::string>& secrets,
+                                                          std::string& errors,
+                                                          MessageSink& progress_sink)
     {
         for (auto&& url : urls)
         {
-            if (try_download_file(fs, url, headers, download_path, sha512, secrets, errors)) return url;
+            if (try_download_file(fs, url, headers, download_path, sha512, secrets, errors, progress_sink)) return url;
         }
         return nullopt;
     }
@@ -659,16 +681,18 @@ namespace vcpkg
                                         const std::string& url,
                                         View<std::string> headers,
                                         const Path& download_path,
-                                        const Optional<std::string>& sha512) const
+                                        const Optional<std::string>& sha512,
+                                        MessageSink& progress_sink) const
     {
-        this->download_file(fs, View<std::string>(&url, 1), headers, download_path, sha512);
+        this->download_file(fs, View<std::string>(&url, 1), headers, download_path, sha512, progress_sink);
     }
 
     std::string DownloadManager::download_file(Filesystem& fs,
                                                View<std::string> urls,
                                                View<std::string> headers,
                                                const Path& download_path,
-                                               const Optional<std::string>& sha512) const
+                                               const Optional<std::string>& sha512,
+                                               MessageSink& progress_sink) const
     {
         std::string errors;
         if (urls.size() == 0)
@@ -687,8 +711,14 @@ namespace vcpkg
             if (auto read_template = m_config.m_read_url_template.get())
             {
                 auto read_url = Strings::replace_all(*read_template, "<SHA>", *hash);
-                if (try_download_file(
-                        fs, read_url, m_config.m_read_headers, download_path, sha512, m_config.m_secrets, errors))
+                if (try_download_file(fs,
+                                      read_url,
+                                      m_config.m_read_headers,
+                                      download_path,
+                                      sha512,
+                                      m_config.m_secrets,
+                                      errors,
+                                      progress_sink))
                 {
                     return read_url;
                 }
@@ -752,8 +782,8 @@ namespace vcpkg
         {
             if (urls.size() != 0)
             {
-                auto maybe_url =
-                    try_download_files(fs, urls, headers, download_path, sha512, m_config.m_secrets, errors);
+                auto maybe_url = try_download_file(
+                    fs, urls, headers, download_path, sha512, m_config.m_secrets, errors, progress_sink);
                 if (auto url = maybe_url.get())
                 {
                     if (auto hash = sha512.get())
@@ -784,5 +814,133 @@ namespace vcpkg
             return put_file(fs, maybe_mirror_url, m_config.m_write_headers, file_to_put);
         }
         return 0;
+    }
+
+    Optional<unsigned long long> try_parse_curl_max5_size(StringView sv)
+    {
+        // \d+(\.\d{1, 2})?[kMGTP]?
+        std::size_t idx = 0;
+        while (idx < sv.size() && ParserBase::is_ascii_digit(sv[idx]))
+        {
+            ++idx;
+        }
+
+        if (idx == 0)
+        {
+            return nullopt;
+        }
+
+        unsigned long long accumulator;
+        {
+            const auto maybe_first_digits = Strings::strto<unsigned long long>(sv.substr(0, idx));
+            if (auto p = maybe_first_digits.get())
+            {
+                accumulator = *p;
+            }
+            else
+            {
+                return nullopt;
+            }
+        }
+
+        unsigned long long after_digits = 0;
+        if (idx < sv.size() && sv[idx] == '.')
+        {
+            ++idx;
+            if (idx >= sv.size() || !ParserBase::is_ascii_digit(sv[idx]))
+            {
+                return nullopt;
+            }
+
+            after_digits = (sv[idx] - '0') * 10u;
+            ++idx;
+            if (idx < sv.size() && ParserBase::is_ascii_digit(sv[idx]))
+            {
+                after_digits += sv[idx] - '0';
+                ++idx;
+            }
+        }
+
+        if (idx == sv.size())
+        {
+            return accumulator;
+        }
+
+        if (idx + 1 != sv.size())
+        {
+            return nullopt;
+        }
+
+        switch (sv[idx])
+        {
+            case 'k': return (accumulator << 10) + (after_digits << 10) / 100;
+            case 'M': return (accumulator << 20) + (after_digits << 20) / 100;
+            case 'G': return (accumulator << 30) + (after_digits << 30) / 100;
+            case 'T': return (accumulator << 40) + (after_digits << 40) / 100;
+            case 'P': return (accumulator << 50) + (after_digits << 50) / 100;
+            default: return nullopt;
+        }
+    }
+
+    static bool parse_curl_uint_impl(unsigned int& target, const char*& first, const char* const last)
+    {
+        first = std::find_if_not(first, last, ParserBase::is_whitespace);
+        const auto start = first;
+        first = std::find_if(first, last, ParserBase::is_whitespace);
+        const auto maybe_parsed = Strings::strto<unsigned int>(StringView{start, first});
+        if (const auto parsed = maybe_parsed.get())
+        {
+            target = *parsed;
+            return false;
+        }
+
+        return true;
+    }
+
+    static bool parse_curl_max5_impl(unsigned long long& target, const char*& first, const char* const last)
+    {
+        first = std::find_if_not(first, last, ParserBase::is_whitespace);
+        const auto start = first;
+        first = std::find_if(first, last, ParserBase::is_whitespace);
+        const auto maybe_parsed = try_parse_curl_max5_size(StringView{start, first});
+        if (const auto parsed = maybe_parsed.get())
+        {
+            target = *parsed;
+            return false;
+        }
+
+        return true;
+    }
+
+    static bool skip_curl_time_impl(const char*& first, const char* const last)
+    {
+        first = std::find_if_not(first, last, ParserBase::is_whitespace);
+        first = std::find_if(first, last, ParserBase::is_whitespace);
+        return false;
+    }
+
+    Optional<CurlProgressData> try_parse_curl_progress_data(StringView curl_progress_line)
+    {
+        //  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+        //                                 Dload  Upload   Total   Spent    Left  Speed
+        // https://github.com/curl/curl/blob/5ccddf64398c1186deb5769dac086d738e150e09/lib/progress.c#L546
+        CurlProgressData result;
+        auto first = curl_progress_line.begin();
+        const auto last = curl_progress_line.end();
+        if (parse_curl_uint_impl(result.total_percent, first, last) ||
+            parse_curl_max5_impl(result.total_size, first, last) ||
+            parse_curl_uint_impl(result.recieved_percent, first, last) ||
+            parse_curl_max5_impl(result.recieved_size, first, last) ||
+            parse_curl_uint_impl(result.transfer_percent, first, last) ||
+            parse_curl_max5_impl(result.transfer_size, first, last) ||
+            parse_curl_max5_impl(result.average_download_speed, first, last) ||
+            parse_curl_max5_impl(result.average_upload_speed, first, last) || skip_curl_time_impl(first, last) ||
+            skip_curl_time_impl(first, last) || skip_curl_time_impl(first, last) ||
+            parse_curl_max5_impl(result.current_speed, first, last))
+        {
+            return nullopt;
+        }
+
+        return result;
     }
 }
