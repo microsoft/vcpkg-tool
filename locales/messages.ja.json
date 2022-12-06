@@ -475,7 +475,6 @@
   "RemoveDependencies": "マニフェスト モードで依存関係を削除するには、マニフェスト (vcpkg.json) を編集して 'インストール' を実行します。",
   "RemovePackageConflict": "インストールされている別のパッケージが、一致しない要求の名前と一致します。{spec} のことですか?",
   "RemovingPackage": "{action_index}/{count} {spec} を削除しています",
-  "ReplaceSecretsError": "シークレットの置換で次のエラーが発生しました: '{error_msg}'",
   "RestoredPackage": "\"{path}\" からパッケージを復元しました",
   "RestoredPackagesFromVendor": "{elapsed} の {value} から {count} パッケージを復元しました。--debug を使用して詳細を表示します。",
   "ResultsHeader": "結果",

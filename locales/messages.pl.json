@@ -475,7 +475,6 @@
   "RemoveDependencies": "Aby usunąć zależności w trybie manifestu, edytuj manifest (vcpkg.json) i uruchom polecenie „instaluj”.",
   "RemovePackageConflict": "Inny zainstalowany pakiet jest zgodny z nazwą niedopasowanego żądania. Czy chodziło Ci o {spec}?",
   "RemovingPackage": "Usuwanie {action_index}/{count} {spec}",
-  "ReplaceSecretsError": "Zastępowanie wpisów tajnych spowodowało wystąpienie następującego błędu: „{error_msg}”",
   "RestoredPackage": "Przywrócono pakiet z lokalizacji \"{path}\"",
   "RestoredPackagesFromVendor": "Przywrócono następującą liczbę pakietów: {count} z {value} w lokalizacji {elapsed}. Użyj opcji --debug, aby wyświetlić więcej szczegółów.",
   "ResultsHeader": "WYNIKI",

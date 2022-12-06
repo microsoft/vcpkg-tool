@@ -475,7 +475,6 @@
   "RemoveDependencies": "Pour supprimer les dépendances en mode manifeste, modifiez votre manifeste (vcpkg.json) et exécutez 'install'.",
   "RemovePackageConflict": "Un autre package installé correspond au nom d’une demande sans correspondance. Vouliez-vous dire {spec} ?",
   "RemovingPackage": "Suppression de {action_index}/{count} {spec}",
-  "ReplaceSecretsError": "Le remplacement des secrets a produit l’erreur suivante : '{error_msg}'",
   "RestoredPackage": "Package restauré à partir de '{path}'",
   "RestoredPackagesFromVendor": "Package(s) {count} restauré(s) à partir de {value} dans {elapsed}. Utilisez --déboguer pour afficher plus de détails.",
   "ResultsHeader": "Résultats",

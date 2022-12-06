@@ -475,7 +475,6 @@
   "RemoveDependencies": "Чтобы удалить зависимости в режиме манифеста, измените манифест (vcpkg.json) и выполните команду \"install\".",
   "RemovePackageConflict": "Другой установленный пакет совпадает с именем несоответствующего запроса. Вы имели в виду {spec}?",
   "RemovingPackage": "Выполняется удаление {action_index}/{count} {spec}",
-  "ReplaceSecretsError": "Замена секретов привела к следующей ошибке: '{error_msg}'",
   "RestoredPackage": "Восстановлен пакет из \"{path}\"",
   "RestoredPackagesFromVendor": "Восстановлено {count} пакетов из {value} за {elapsed}. Используйте --debug, чтобы увидеть больше деталей.",
   "ResultsHeader": "РЕЗУЛЬТАТЫ",

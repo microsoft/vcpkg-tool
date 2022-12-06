@@ -475,7 +475,6 @@
   "RemoveDependencies": "Bildirim modunda bağımlılıkları kaldırmak için bildiriminizi (vcpkg.json) düzenleyip 'install' komutunu çalıştırın.",
   "RemovePackageConflict": "Başka bir yüklü paket eşleşmeyen bir isteğin adıyla eşleşiyor. {spec} mi demek istediniz?",
   "RemovingPackage": "{action_index}/{count} {spec} kaldırılıyor",
-  "ReplaceSecretsError": "Gizli dizileri değiştirme işlemi şu hataya neden oldu: '{error_msg}'",
   "RestoredPackage": "Paket \"{path}\" kaynağından geri yüklendi",
   "RestoredPackagesFromVendor": "{elapsed} içinde süresi dolan {value} kaynağından {count} paket geri yüklendi. Daha fazla ayrıntı için --debug kullanın.",
   "ResultsHeader": "SONUÇLAR",

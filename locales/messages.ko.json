@@ -475,7 +475,6 @@
   "RemoveDependencies": "매니페스트 모드에서 종속성을 제거하려면 매니페스트(vcpkg.json)을(를) 편집하고 'install'을 실행합니다.",
   "RemovePackageConflict": "설치된 다른 패키지는 일치하지 않는 요청의 이름과 일치합니다. {spec}을(를) 의미했나요?",
   "RemovingPackage": "{action_index}/{count} {spec}을(를) 제거하는 중",
-  "ReplaceSecretsError": "비밀을 바꾸면 다음 오류가 발생합니다. '{error_msg}'",
   "RestoredPackage": "\"{path}\"에서 복원된 패키지",
   "RestoredPackagesFromVendor": "{elapsed}의 {value}에서 {count} 패키지를 복원했습니다. 자세한 내용을 보려면 --debug를 사용하세요.",
   "ResultsHeader": "결과",
