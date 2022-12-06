@@ -519,13 +519,13 @@ namespace vcpkg
     REGISTER_MESSAGE(CouldNotFindGitTreeAtCommit);
     REGISTER_MESSAGE(CreatedNuGetPackage);
     REGISTER_MESSAGE(CreateFailureLogsDir);
-    REGISTER_MESSAGE(CurlFailedToExecute);
-    REGISTER_MESSAGE(CurlReturnedUnexpectedResponseCodes);
     REGISTER_MESSAGE(Creating7ZipArchive);
     REGISTER_MESSAGE(CreatingNugetPackage);
     REGISTER_MESSAGE(CreatingZipArchive);
     REGISTER_MESSAGE(CreationFailed);
+    REGISTER_MESSAGE(CurlFailedToExecute);
     REGISTER_MESSAGE(CurlReportedUnexpectedResults);
+    REGISTER_MESSAGE(CurlReturnedUnexpectedResponseCodes);
     REGISTER_MESSAGE(CurrentCommitBaseline);
     REGISTER_MESSAGE(DateTableHeader);
     REGISTER_MESSAGE(DefaultBrowserLaunched);
@@ -864,7 +864,6 @@ namespace vcpkg
     REGISTER_MESSAGE(RegistryCreated);
     REGISTER_MESSAGE(RemoveDependencies);
     REGISTER_MESSAGE(RemovePackageConflict);
-    REGISTER_MESSAGE(ReplaceSecretsError);
     REGISTER_MESSAGE(RestoredPackage);
     REGISTER_MESSAGE(RestoredPackagesFromVendor);
     REGISTER_MESSAGE(ResultsHeader);
