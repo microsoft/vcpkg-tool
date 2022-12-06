@@ -171,7 +171,12 @@ namespace vcpkg
         cmd_run.string_arg("--z-vcpkg-downloads").string_arg(paths.downloads);
         cmd_run.string_arg("--z-vcpkg-registries-cache").string_arg(paths.registries_cache());
 
-        cmd_run.string_arg("--language").string_arg("en"); //needs to be updated to use LCID
+        auto maybe_vslang = get_environment_variable("VSLANG");
+        auto vslang = maybe_vslang.get();
+        auto maybe_lcid = Strings::strto<int>(*vslang);
+        auto lcid = maybe_lcid.get();
+        auto lang_tag = msg::get_language_tag(*lcid);
+        cmd_run.string_arg("--language").string_arg(*lang_tag.get());
 
         Debug::println("Running configure-environment with ", cmd_run.command_line());
 

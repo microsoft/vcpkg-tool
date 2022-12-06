@@ -93,7 +93,7 @@ function indexOf(literals: TemplateStringsArray) {
 export function i(literals: TemplateStringsArray, ...values: Array<string | number | boolean | undefined | Date>): string {
   const key = indexOf(literals);
   if (key) {
-    const str = currentLocale[key];
+      const str = currentLocale[key]; // get localized string
     if (str) {
       // fill out the template string.
       return safeEval(`\`${str}\``, values.reduce((p, c, i) => { p[`p${i}`] = c; return p; }, <any>{}));
