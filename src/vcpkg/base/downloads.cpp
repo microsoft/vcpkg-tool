@@ -1073,6 +1073,8 @@ namespace vcpkg
 
     Optional<CurlProgressData> try_parse_curl_progress_data(StringView curl_progress_line)
     {
+        // Curl's maintainer Daniel Stenberg clarified that this output is semi-contractual
+        // here: https://twitter.com/bagder/status/1600615752725307400
         //  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
         //                                 Dload  Upload   Total   Spent    Left  Speed
         // https://github.com/curl/curl/blob/5ccddf64398c1186deb5769dac086d738e150e09/lib/progress.c#L546
