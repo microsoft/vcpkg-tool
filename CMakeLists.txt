@@ -423,10 +423,21 @@ endif()
 # staple
 add_custom_target(generate-message-map
    COMMAND vcpkg x-generate-default-message-map locales/messages.json
+   DEPENDS "/locales/messages.json"
    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
    COMMENT "Update locales/messages.json"
    VERBATIM
 )
+
+add_custom_command(
+    OUTPUT "/locales/messages.json"
+    COMMAND npm run translate
+    WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/ce/ce"
+    COMMENT "Running translate-strings..."
+    VERBATIM
+)
+
+
 
 # === Target: vcpkg-test ===
 

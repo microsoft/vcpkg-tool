@@ -18,7 +18,7 @@
     "watch": "tsc -p . --watch",
     "prepare": "npm run build",
     "watch-test": "mocha dist/test --timeout 200000 --watch",
-    "translate": "translate-strings .  --json --add-language:fr --add-language:cs --add-language:de --add-language:es --add-language:en --add-language:fr --add-language:it --add-language:ja --add-language:ko --add-language:pl --add-language:pt-BR --add-language:ru --add-language:tr --add-language:zh-Hans --add-language:zh-Hant"
+    "translate": "translate-strings .  --json"
   },
   "repository": {
     "type": "git",
