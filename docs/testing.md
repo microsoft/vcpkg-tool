@@ -5,6 +5,17 @@ writing new tests and keeping them up to date is also very important. If one's
 code is subtly broken, we'd rather find it out right away than a few weeks down
 the line when someone complains!
 
+## Running end to end (e2e) tests
+
+To run the e2e test run the following command:  
+`pwsh azure-pipelines/end-to-end-tests.ps1`  
+**Parameters**:  
+`WorkingRoot`: The dir in which the tests are executed and temporary files are created. Default `work`  
+`VcpkgRoot`: The path to the vcpkg root. Default `$VCPKG_ROOT`  
+`VCPKGExe`: The path to the vcpkg executable. Default `./vcpkg`  
+`Filter`: The name of the tests. The names are the filenames in the folder `azure-pipelines/end-to-end-tests-dir`.
+
+
 ## Environment Variables
 
 You will need to set the environment variable `VCPKG_ROOT` to the location

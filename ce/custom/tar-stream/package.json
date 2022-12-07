@@ -16,8 +16,8 @@
     "clean": "",
     "eslint-fix": "",
     "eslint": "",
-    "test": "tape test/extract.js test/pack.js",
-    "test-all": "tape test/*.js"
+    "test": "",
+    "test-all": ""
   },
   "keywords": [
     "tar",

@@ -19,9 +19,10 @@ namespace vcpkg::CMakeVars
                                          Triplet host_triplet) const
     {
         std::vector<FullPackageSpec> install_package_specs;
+        install_package_specs.reserve(action_plan.install_actions.size());
         for (auto&& action : action_plan.install_actions)
         {
-            install_package_specs.emplace_back(FullPackageSpec{action.spec, action.feature_list});
+            install_package_specs.emplace_back(action.spec, action.feature_list);
         }
 
         load_tag_vars(install_package_specs, port_provider, host_triplet);

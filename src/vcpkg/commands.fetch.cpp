@@ -23,7 +23,7 @@ namespace vcpkg::Commands::Fetch
         const auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
         const bool stderr_status = Util::Sets::contains(parsed.switches, STDERR_STATUS.name);
         const std::string tool = args.command_arguments[0];
-        const Path tool_path = paths.get_tool_exe(tool, stderr_status ? stderr_sink : stdout_sink);
+        const Path& tool_path = paths.get_tool_exe(tool, stderr_status ? stderr_sink : stdout_sink);
         msg::write_unlocalized_text_to_stdout(Color::none, tool_path.native() + '\n');
         Checks::exit_success(VCPKG_LINE_INFO);
     }

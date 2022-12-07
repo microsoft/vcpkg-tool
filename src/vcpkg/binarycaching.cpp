@@ -332,8 +332,8 @@ namespace
                     continue;
                 }
 
-                auto errors = replace_secrets(std::move(maybe_success).error(), m_secrets);
-                msg::println(Color::warning, msgReplaceSecretsError, msg::error_msg = errors);
+                msg::println(Color::warning,
+                             LocalizedString::from_raw(replace_secrets(std::move(maybe_success).error(), m_secrets)));
             }
 
             if (!m_put_url_templates.empty())
@@ -2152,7 +2152,8 @@ ExpectedS<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
     get_global_metrics_collector().track_define(DefineMetric::AssetSource);
 
     AssetSourcesState s;
-    AssetSourcesParser parser(*arg.get(), Strings::concat("$", VcpkgCmdArguments::ASSET_SOURCES_ENV), &s);
+    const auto source = Strings::concat("$", VcpkgCmdArguments::ASSET_SOURCES_ENV);
+    AssetSourcesParser parser(*arg.get(), source, &s);
     parser.parse();
     if (auto err = parser.get_error())
     {

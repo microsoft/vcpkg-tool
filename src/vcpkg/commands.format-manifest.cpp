@@ -25,7 +25,7 @@ namespace
 
     Optional<ToWrite> read_manifest(Filesystem& fs, Path&& manifest_path)
     {
-        auto path_string = manifest_path.native();
+        const auto& path_string = manifest_path.native();
         Debug::println("Reading ", path_string);
         auto contents = fs.read_contents(manifest_path, VCPKG_LINE_INFO);
         auto parsed_json_opt = Json::parse(contents, manifest_path);

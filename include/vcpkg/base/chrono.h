@@ -12,7 +12,8 @@ namespace vcpkg
 {
     struct ElapsedTime
     {
-        using duration = std::chrono::high_resolution_clock::time_point::duration;
+        using clock = std::chrono::high_resolution_clock;
+        using duration = clock::duration;
 
         constexpr ElapsedTime() noexcept : m_duration() { }
         constexpr ElapsedTime(duration d) noexcept : m_duration(d) { }
@@ -39,11 +40,16 @@ namespace vcpkg
     // This type is safe to access from multiple threads.
     struct ElapsedTimer
     {
+        using clock = std::chrono::high_resolution_clock;
+        using duration = clock::duration;
+        using time_point = clock::time_point;
+        using rep = clock::rep;
+
         ElapsedTimer() noexcept;
 
         ElapsedTime elapsed() const
         {
-            return ElapsedTime(std::chrono::high_resolution_clock::now() - this->m_start_tick.load());
+            return ElapsedTime(clock::now() - time_point(duration(this->m_start_tick.load())));
         }
 
         double microseconds() const { return elapsed().as<std::chrono::duration<double, std::micro>>().count(); }
@@ -53,7 +59,8 @@ namespace vcpkg
         void to_string(std::string& into) const;
 
     private:
-        std::atomic<std::chrono::high_resolution_clock::time_point> m_start_tick;
+        // This atomic stores rep rather than time_point to support older compilers
+        std::atomic<rep> m_start_tick;
     };
 
     struct StatsTimer

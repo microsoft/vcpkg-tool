@@ -811,11 +811,11 @@ namespace vcpkg
                     "",
                     "could not find the git tree for `versions` in repo {package_name} at commit {commit_sha}");
     DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: {path}");
-    DECLARE_MESSAGE(CurlFailedToExecute, (msg::exit_code), "", "curl failed to execute with exit code {exit_code}.");
     DECLARE_MESSAGE(Creating7ZipArchive, (), "", "Creating 7zip archive...");
     DECLARE_MESSAGE(CreatingNugetPackage, (), "", "Creating NuGet package...");
     DECLARE_MESSAGE(CreatingZipArchive, (), "", "Creating zip archive...");
     DECLARE_MESSAGE(CreationFailed, (msg::path), "", "Creating {path} failed.");
+    DECLARE_MESSAGE(CurlFailedToExecute, (msg::exit_code), "", "curl failed to execute with exit code {exit_code}.");
     DECLARE_MESSAGE(CurlReportedUnexpectedResults,
                     (msg::command_line, msg::actual),
                     "{command_line} is the command line to call curl.exe, {actual} is the console output "
@@ -897,6 +897,10 @@ namespace vcpkg
                     "Embedding `vcpkg-configuration` in a manifest file is an EXPERIMENTAL feature.");
     DECLARE_MESSAGE(EmptyArg, (msg::option), "", "The option --{option} must be passed a non-empty argument.");
     DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
+    DECLARE_MESSAGE(EnvInvalidMaxConcurrency,
+                    (msg::env_var, msg::value),
+                    "{value} is the invalid value of an environment variable",
+                    "{env_var} is {value}, must be > 0");
     DECLARE_MESSAGE(EndOfStringInCodeUnit, (), "", "found end of string in middle of code point");
     DECLARE_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:");
     DECLARE_MESSAGE(ErrorDetectingCompilerInfo,
@@ -1709,10 +1713,6 @@ namespace vcpkg
                     (msg::spec),
                     "",
                     "Another installed package matches the name of an unmatched request. Did you mean {spec}?");
-    DECLARE_MESSAGE(ReplaceSecretsError,
-                    (msg::error_msg),
-                    "",
-                    "Replace secretes produced the following error: '{error_msg}'");
     DECLARE_MESSAGE(RestoredPackage, (msg::path), "", "Restored package from \"{path}\"");
     DECLARE_MESSAGE(
         RestoredPackagesFromVendor,
