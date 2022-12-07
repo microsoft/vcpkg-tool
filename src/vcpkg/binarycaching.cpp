@@ -332,8 +332,8 @@ namespace
                     continue;
                 }
 
-                auto errors = replace_secrets(std::move(maybe_success).error().extract_data(), m_secrets);
-                msg::println(Color::warning, msgReplaceSecretsError, msg::error_msg = errors);
+                msg::println(Color::warning,
+                             LocalizedString::from_raw(replace_secrets(std::move(maybe_success).error(), m_secrets)));
             }
 
             if (!m_put_url_templates.empty())

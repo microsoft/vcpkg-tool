@@ -475,7 +475,6 @@
   "RemoveDependencies": "要在清单模式下移除依赖项，请编辑清单(vcpkg.json)并运行 “install”。",
   "RemovePackageConflict": "另一个已安装的包与不匹配的请求的名称匹配。你是否指的是 {spec}?",
   "RemovingPackage": "正在删除 {action_index}/{count} 个 {spec}",
-  "ReplaceSecretsError": "替换机密生成了以下错误:“{error_msg}”",
   "RestoredPackage": "从“{path}”还原的包",
   "RestoredPackagesFromVendor": "已从 {elapsed} 中的 {value} 还原 {count} 个包。使用 --debug 查看更多详细信息。",
   "ResultsHeader": "结果",

@@ -475,7 +475,6 @@
   "RemoveDependencies": "Para remover dependências no modo manifesto, edite seu manifesto (vcpkg.json) e execute 'install'.",
   "RemovePackageConflict": "Outro pacote instalado corresponde ao nome de uma solicitação sem correspondência. Você quis dizer {spec}?",
   "RemovingPackage": "Removendo {action_index}/{count} {spec}",
-  "ReplaceSecretsError": "A substituição de segredos produziu o seguinte erro: '{error_msg}'",
   "RestoredPackage": "Pacote restaurado de \"{path}\"",
   "RestoredPackagesFromVendor": "{count} pacote(s) restaurado(s) de {value} em {elapsed}. Utilize --debug para ver mais detalhes.",
   "ResultsHeader": "RESULTADOS",

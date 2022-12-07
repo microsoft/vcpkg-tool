@@ -475,7 +475,6 @@
   "RemoveDependencies": "Pokud chcete odebrat závislosti v režimu manifestu, upravte manifest (vcpkg.json) a spusťte install.",
   "RemovePackageConflict": "Jiný nainstalovaný balíček odpovídá názvu nespárované žádosti. Měli jste na mysli {spec}?",
   "RemovingPackage": "Odebírá se {action_index}/{count} {spec}",
-  "ReplaceSecretsError": "Nahrazovat tajné kódy vygenerované následující chybou: {error_msg}",
   "RestoredPackage": "Byl obnoven balíček z cesty {path}.",
   "RestoredPackagesFromVendor": "Za {elapsed} se obnovil tento počet balíčků: {count} z {value}. Pokud si chcete zobrazit další podrobnosti, použijte --debug.",
   "ResultsHeader": "VÝSLEDKY",

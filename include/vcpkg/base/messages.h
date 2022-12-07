@@ -1754,10 +1754,6 @@ namespace vcpkg
                     (msg::spec),
                     "",
                     "Another installed package matches the name of an unmatched request. Did you mean {spec}?");
-    DECLARE_MESSAGE(ReplaceSecretsError,
-                    (msg::error_msg),
-                    "",
-                    "Replace secretes produced the following error: '{error_msg}'");
     DECLARE_MESSAGE(RestoredPackage, (msg::path), "", "Restored package from \"{path}\"");
     DECLARE_MESSAGE(
         RestoredPackagesFromVendor,

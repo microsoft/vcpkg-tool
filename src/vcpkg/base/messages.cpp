@@ -874,7 +874,6 @@ namespace vcpkg
     REGISTER_MESSAGE(RegistryCreated);
     REGISTER_MESSAGE(RemoveDependencies);
     REGISTER_MESSAGE(RemovePackageConflict);
-    REGISTER_MESSAGE(ReplaceSecretsError);
     REGISTER_MESSAGE(RestoredPackage);
     REGISTER_MESSAGE(RestoredPackagesFromVendor);
     REGISTER_MESSAGE(ResultsHeader);

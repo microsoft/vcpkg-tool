@@ -475,7 +475,6 @@
   "RemoveDependencies": "Para quitar dependencias en modo de manifiesto, edite el manifiesto (vcpkg.json) y ejecute 'install'.",
   "RemovePackageConflict": "Otro paquete instalado coincide con el nombre de una solicitud no coincidente. ¿Quería decir {spec}?",
   "RemovingPackage": "Quitando {action_index}/{count} {spec}",
-  "ReplaceSecretsError": "Al reemplazar secretos se produjo el siguiente error: \"{error_msg}\"",
   "RestoredPackage": "Paquete restaurado desde \"{path}\"",
   "RestoredPackagesFromVendor": "Se restauraron {count} paquetes de {value} en {elapsed}. Use --debug para ver más detalles.",
   "ResultsHeader": "RESULTADOS",

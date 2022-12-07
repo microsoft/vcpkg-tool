@@ -475,7 +475,6 @@
   "RemoveDependencies": "若要在資訊清單模式中移除相依性，請編輯您的資訊清單 (vcpkg.json) 並執行 'install'。",
   "RemovePackageConflict": "另一個已安裝的套件符合不符合要求的名稱。您的意思是 {spec}?",
   "RemovingPackage": "正在移除 {action_index}/{count} {spec}",
-  "ReplaceSecretsError": "取代密碼產生了下列錯誤: '{error_msg}'",
   "RestoredPackage": "已從 \"{path}\" 還原封裝",
   "RestoredPackagesFromVendor": "已從 {elapsed} 中的 {value} 還原 ({count}) 個封裝。使用 --debug 以查看更多詳細資料。",
   "ResultsHeader": "結果",

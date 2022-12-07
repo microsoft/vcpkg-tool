@@ -475,7 +475,6 @@
   "RemoveDependencies": "Um Abhängigkeiten im Manifestmodus zu entfernen, bearbeiten Sie Ihr Manifest (vcpkg.json), und führen Sie „install“ aus.",
   "RemovePackageConflict": "Ein anderes installiertes Paket stimmt mit dem Namen einer Anforderung ohne Übereinstimmung überein. Meinten Sie {spec}?",
   "RemovingPackage": "{action_index}/{count} {spec} wird entfernt.",
-  "ReplaceSecretsError": "Ersetzen von Geheimnissen führte zu folgendem Fehler: \"{error_msg}\"",
   "RestoredPackage": "Das Paket wurde aus „{path}“ wiederhergestellt.",
   "RestoredPackagesFromVendor": "{count} Paket(e) wurde(n) von {value} in {elapsed} wiederhergestellt. Verwenden Sie \"--debug\", um weitere Details anzuzeigen.",
   "ResultsHeader": "ERGEBNISSE",
