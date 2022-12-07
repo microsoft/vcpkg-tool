@@ -50,7 +50,7 @@
   "AttemptingToSetBuiltInBaseline": "vcpkg-configuration.json içindeki varsayılan kayıt defteri geçersiz kılınırken vcpkg.json içinde yerleşik taban çizgisi ayarlanmaya çalışılıyor.\nvcpkg-configuration.json dosyasındaki varsayılan kayıt defteri kullanılacak.",
   "AuthenticationMayRequireManualAction": "Bir veya daha {vendor} kimlik bilgisi sağlayıcısı el ile eylem isteğinde bulundu. Etkileşime izin vermek için 'interactive' ikili kaynağı ekleyin.",
   "AutoSettingEnvVar": "-- {env_var} ortam değişkenlerini otomatik olarak \"{url}\" olarak ayarlama.",
-  "AutomaticLinkingForMSBuildProjects": "Tüm MSBuild C++ projeleri artık tüm yüklü kitaplıkları #içerebilir. Bağlama otomatik olarak gerçekleştirilecektir. Yeni kitaplıklar kurmak, onları anında kullanılabilir hale getirecektir.",
+  "AutomaticLinkingForMSBuildProjects": "Tüm MSBuild C++ projeleri artık tüm yüklü kitaplıkları içerebilir (#include). Bağlama otomatik olarak gerçekleştirilecektir. Yeni kitaplıklar kurmak, onları anında kullanılabilir hale getirecektir.",
   "AvailableArchitectureTriplets": "Mevcut mimari üçlüler:",
   "AvailableHelpTopics": "Mevcut yardım konuları:",
   "BaselineConflict": "Bildirim dosyasında vcpkg-configuration.default-registry belirtilmesi, yerleşik taban çizgisiyle çakışıyor.\nLütfen bu çakışan ayarlardan birini kaldırın.",

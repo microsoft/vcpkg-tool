@@ -50,7 +50,7 @@
   "AttemptingToSetBuiltInBaseline": "尝试在 vcpkg.json 中设置内置基线，同时重写 vcpkg-configuration.json 中的 default-registry。\n系统将使用 vcpkg-configuration.json 中的 default-registry。",
   "AuthenticationMayRequireManualAction": "一个或多个 {vendor} 凭据提供程序请求手动操作。添加二进制源 “interactive” 以允许交互。",
   "AutoSettingEnvVar": "-- 正在将 {env_var} 环境变量自动设置为“{url}”。",
-  "AutomaticLinkingForMSBuildProjects": "所有 MSBuild C++ 项目现在可以#包含任何已安装的库。系统将自动处理链接。安装新库将使它们立即可用。",
+  "AutomaticLinkingForMSBuildProjects": "所有 MSBuild C++ 项目现在可以包含(#include)任何已安装的库。系统将自动处理链接。安装新库将使它们立即可用。",
   "AvailableArchitectureTriplets": "可用的体系结构三元组:",
   "AvailableHelpTopics": "可用的帮助主题:",
   "BaselineConflict": "在清单文件中指定 vcpkg-configuration.default-registry 的操作与内置基线冲突。\n请删除其中一个冲突设置。",

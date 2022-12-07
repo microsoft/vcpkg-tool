@@ -50,7 +50,7 @@
   "AttemptingToSetBuiltInBaseline": "intentando establecer builtin-baseline en vcpkg.json al invalidar default-registry en vcpkg-configuration.json.\nse usará default-registry de vcpkg-configuration.json.",
   "AuthenticationMayRequireManualAction": "Uno o más proveedores de credenciales de {vendor} solicitaron una acción manual. Agregue el origen binario \"interactivo\" para permitir la interactividad.",
   "AutoSettingEnvVar": "-- Estableciendo automáticamente variables de entorno {env_var} en {url}.",
-  "AutomaticLinkingForMSBuildProjects": "Todos los proyectos de MSBuild C++ ahora pueden #incluir cualquier biblioteca instalada. La vinculación se controlará automáticamente. La instalación de nuevas bibliotecas hará que estén disponibles al instante.",
+  "AutomaticLinkingForMSBuildProjects": "Todos los proyectos de MSBuild C++ ahora pueden #include cualquier biblioteca instalada. La vinculación se controlará automáticamente. La instalación de nuevas bibliotecas hará que estén disponibles al instante.",
   "AvailableArchitectureTriplets": "Tripletes de arquitectura disponibles:",
   "AvailableHelpTopics": "Temas de ayuda disponibles:",
   "BaselineConflict": "La especificación de vcpkg-configuration.default-registry en un archivo de manifiesto entra en conflicto con la línea base.\nQuite una de estas configuraciones en conflicto.",

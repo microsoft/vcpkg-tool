@@ -50,7 +50,7 @@
   "AttemptingToSetBuiltInBaseline": "próba ustawienia wbudowanego punktu odniesienia w pliku vcpkg.json podczas zastępowania rejestru domyślnego w pliku vcpkg-configuration.json.\n zostanie użyty rejestr domyślny z pliku vcpkg-configuration.json.",
   "AuthenticationMayRequireManualAction": "Co najmniej jeden dostawca poświadczeń {vendor} zażądał wykonania akcji ręcznej. Dodaj źródło binarne „interactive”, aby zezwolić na interakcyjność.",
   "AutoSettingEnvVar": "-- Automatyczne ustawianie zmiennych środowiskowych {env_var} na stronie „{url}”.",
-  "AutomaticLinkingForMSBuildProjects": "Wszystkie projekty platformy MSBuild w języku C++ mogą teraz #zawierać każdą zainstalowaną bibliotekę. Łączenie będzie obsługiwane automatycznie. Zainstalowanie nowych bibliotek spowoduje ich natychmiastowe udostępnienie.",
+  "AutomaticLinkingForMSBuildProjects": "Wszystkie projekty platformy MSBuild w języku C++ mogą teraz #include każdą zainstalowaną bibliotekę. Łączenie będzie obsługiwane automatycznie. Zainstalowanie nowych bibliotek spowoduje ich natychmiastowe udostępnienie.",
   "AvailableArchitectureTriplets": "Dostępne tryplety architektury:",
   "AvailableHelpTopics": "Dostępne tematy pomocy:",
   "BaselineConflict": "Określenie pliku vcpkg-configuration.default-registry w pliku manifestu powoduje konflikt z wbudowanym punkt odniesienia.\nUsuń jedno z tych ustawień powodujących konflikt.",

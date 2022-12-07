@@ -50,7 +50,7 @@
   "AttemptingToSetBuiltInBaseline": "Es wird versucht, die integrierte Baseline in \"vcpkg.json\" festzulegen, während die Standardregistrierung in \"vcpkg-configuration.json\" überschrieben wird.\ndie Standardregistrierung aus \"vcpkg-configuration.json\" wird verwendet.",
   "AuthenticationMayRequireManualAction": "Mindestens ein {vendor}-Anmeldeinformationsanbieter hat eine manuelle Aktion angefordert. Fügen Sie die binäre Quelle \"interactive\" hinzu, um Interaktivität zuzulassen.",
   "AutoSettingEnvVar": "-- Automatisches Setzen von {env_var} Umgebungsvariablen auf \"{url}\".",
-  "AutomaticLinkingForMSBuildProjects": "Alle MSBuild C++-Projekte können jetzt alle installierten Bibliotheken #enthalten. Die Verknüpfung wird automatisch verarbeitet. Durch die Installation neuer Bibliotheken werden diese sofort verfügbar.",
+  "AutomaticLinkingForMSBuildProjects": "Es ist jetzt möglich, dass alle MSBuild C++-Projekte #include alle installierten Bibliotheken. Die Verknüpfung wird automatisch verarbeitet. Durch die Installation neuer Bibliotheken werden diese sofort verfügbar.",
   "AvailableArchitectureTriplets": "Verfügbare Architekturtriplets:",
   "AvailableHelpTopics": "Verfügbare Hilfethemen:",
   "BaselineConflict": "Die Angabe von \"vcpkg-configuration.default-registry\" in einer Manifestdatei verursacht einen Konflikt mit der integrierten Baseline.\nEntfernen Sie eine dieser widersprüchlichen Einstellungen.",

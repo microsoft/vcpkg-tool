@@ -50,7 +50,7 @@
   "AttemptingToSetBuiltInBaseline": "tentativa de definir a linha de base interna em vcpkg.json ao substituir o registro padrão em vcpkg-configuration.json.\no registro padrão de vcpkg-configuration.json será usado.",
   "AuthenticationMayRequireManualAction": "Um ou mais provedores de credenciais do {vendor} solicitaram ação manual. Adicione a fonte binária 'interativa' para permitir a interatividade.",
   "AutoSettingEnvVar": "-- Definindo automaticamente {env_var} variáveis de ambiente para \"{url}\".",
-  "AutomaticLinkingForMSBuildProjects": "Todos os projetos do MSBuild C++ agora podem #incluir bibliotecas instaladas. A vinculação será tratada automaticamente. A instalação de novas bibliotecas as disponibilizará instantaneamente.",
+  "AutomaticLinkingForMSBuildProjects": "Todos os projetos do MSBuild C++ agora podem utilizar #include bibliotecas instaladas. A vinculação será tratada automaticamente. A instalação de novas bibliotecas as disponibilizará instantaneamente.",
   "AvailableArchitectureTriplets": "Tripletos de arquitetura disponíveis:",
   "AvailableHelpTopics": "Tópicos de ajuda disponíveis:",
   "BaselineConflict": "Especificar vcpkg-configuration.default-registry em um arquivo de manifesto entra em conflito com a linha de base interna.\nRemova uma dessas configurações conflitantes.",
