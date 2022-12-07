@@ -72,7 +72,7 @@ if ([string]::IsNullOrEmpty($VcpkgExe))
 
 $VcpkgExe = (Get-Item $VcpkgExe).FullName
 
-[Array]$AllTests = Get-ChildItem $PSScriptRoot/end-to-end-tests-dir/z-applocalcpp.ps1
+[Array]$AllTests = Get-ChildItem $PSScriptRoot/end-to-end-tests-dir/*.ps1
 if ($Filter -ne $Null) {
     $AllTests = $AllTests | ? { $_.Name -match $Filter }
 }
