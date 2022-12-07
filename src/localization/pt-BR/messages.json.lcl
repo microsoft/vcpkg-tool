@@ -479,7 +479,7 @@
         <Str Cat="Text">
           <Val><![CDATA[All MSBuild C++ projects can now #include any installed libraries. Linking will be handled automatically. Installing new libraries will make them instantly available.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Todos os projetos do MSBuild C++ agora podem #incluir bibliotecas instaladas. A vinculação será tratada automaticamente. A instalação de novas bibliotecas as disponibilizará instantaneamente.]]></Val>
+            <Val><![CDATA[Todos os projetos do MSBuild C++ agora podem utilizar #include bibliotecas instaladas. A vinculação será tratada automaticamente. A instalação de novas bibliotecas as disponibilizará instantaneamente.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
