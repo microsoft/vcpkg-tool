@@ -122,7 +122,7 @@ namespace
         }
 
     private:
-        // AZURE KINECT SENSOR SDK PLUGIN - MOVE
+        // Azure kinect sensor SDK plugins
         void deployAzureKinectSensorSDK(const Path& target_binary_dir,
                                         const Path& installed_dir,
                                         const std::string& target_binary_name)
@@ -137,7 +137,7 @@ namespace
             }
         }
 
-        // OPENNI2 PLUGIN - MOVE
+        // OpenNi plugins
         void deployOpenNI2(const Path& target_binary_dir,
                            const Path& installed_dir,
                            const std::string& target_binary_name)
@@ -161,8 +161,8 @@ namespace
             }
         }
 
-        // MAGNUM PLUGINS - MOVE
-        // HELPER FUNCTION FOR MAGNUM PLUGINS
+        // Magnum plugins
+        // Helper function for magnum plugins
         void deployPluginsMagnum(const std::string& plugins_subdir_name,
                                  const Path& target_binary_dir,
                                  const Path& magnum_plugins_dir)
@@ -217,8 +217,8 @@ namespace
             }
         }
 
-        // QT PLUGINS - WILL BE MOVED FROM HERE
-        // HELPER FUNCTION FOR QT
+        // Qt plugins
+        // Helper function for Qt
         void deployPluginsQt(const std::string& plugins_subdir_name,
                              const Path& target_binary_dir,
                              const Path& qt_plugins_dir)
@@ -272,7 +272,6 @@ namespace
                 std::vector<Path> children = m_fs.get_files_non_recursive(qt_plugins_dir / "platforms", ec);
                 for (auto&& c : children)
                 {
-                    // std::regex re("qwindows.*.dll");
                     const std::string& c_filename = c.filename().to_string();
                     if (Strings::starts_with(c_filename, "qwindows") && Strings::ends_with(c_filename, ".dll"))
                     {
@@ -427,7 +426,6 @@ namespace
             WaitForSingleObject(the_mutant, INFINITE);
 
             std::error_code ec;
-            // FIXME Should this check for last_write_time and choose latest? -> si
             const bool did_deploy = m_fs.copy_file(source, target, CopyOptions::update_existing, ec);
             if (did_deploy)
             {
