@@ -12,6 +12,17 @@
 
 namespace vcpkg
 {
+    static std::string replace_secrets(std::string input, View<std::string> secrets)
+    {
+        const auto replacement = msg::format(msgSecretBanner);
+        for (const auto& secret : secrets)
+        {
+            Strings::inplace_replace_all(input, secret, replacement);
+        }
+
+        return input;
+    }
+
 #if defined(_WIN32)
     struct WinHttpHandleDeleter
     {
@@ -88,9 +99,9 @@ namespace vcpkg
             return format_winhttp_last_error_message("WinHttpQueryHeaders", m_sanitized_url);
         }
 
-        template<class F>
-        ExpectedL<int> forall_data(F f)
+        ExpectedL<int> write_response_body(WriteFilePointer& file, MessageSink& progress_sink)
         {
+            (void)progress_sink;
             std::vector<char> buf;
 
             size_t total_downloaded_size = 0;
@@ -115,7 +126,10 @@ namespace vcpkg
                     return format_winhttp_last_error_message("WinHttpReadData", m_sanitized_url);
                 }
 
-                f(Span<char>(buf.data(), downloaded_size));
+                if (file.write(buf.data(), 1, downloaded_size) != downloaded_size)
+                {
+                    return format_winhttp_last_error_message("fwrite", m_sanitized_url);
+                }
 
                 total_downloaded_size += downloaded_size;
             } while (dwSize > 0);
@@ -354,17 +368,6 @@ namespace vcpkg
         return ret;
     }
 
-    std::string replace_secrets(std::string input, View<std::string> secrets)
-    {
-        const auto replacement = msg::format(msgSecretBanner);
-        for (const auto& secret : secrets)
-        {
-            Strings::inplace_replace_all(input, secret, replacement);
-        }
-
-        return input;
-    }
-
     static void download_files_inner(Filesystem&,
                                      View<std::pair<std::string, Path>> url_pairs,
                                      View<std::string> headers,
@@ -439,7 +442,11 @@ namespace vcpkg
         return ret;
     }
 
-    ExpectedL<int> put_file(const Filesystem&, StringView url, View<std::string> headers, const Path& file)
+    ExpectedL<int> put_file(const Filesystem&,
+                            StringView url,
+                            const std::vector<std::string>& secrets,
+                            View<std::string> headers,
+                            const Path& file)
     {
         static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
 
@@ -459,7 +466,7 @@ namespace vcpkg
                 }
 
                 Debug::print(res->output, '\n');
-                return msg::format_error(msgCurlFailedToPut, msg::exit_code = res->exit_code, msg::url = url);
+                return msg::format_error(msgCurlFailedToPut, msg::exit_code = res->exit_code, msg::url = replace_secrets(url.to_string(), secrets));
             }
 
             return std::move(maybe_res).error();
@@ -495,96 +502,121 @@ namespace vcpkg
     }
 
 #if defined(_WIN32)
-    namespace
+    enum class WinHttpTrialResult
     {
-        /// <summary>
-        /// Download a file using WinHTTP -- only supports HTTP and HTTPS
-        /// </summary>
-        static bool download_winhttp(Filesystem& fs,
-                                     const Path& download_path_part_path,
-                                     SplitURIView split_uri,
-                                     const std::string& url,
-                                     const std::vector<std::string>& secrets,
-                                     std::vector<LocalizedString>& errors,
-                                     MessageSink& progress_sink)
+        failed,
+        succeeded,
+        retry
+    };
+
+    static WinHttpTrialResult download_winhttp_trial(Filesystem& fs,
+                                                     WinHttpSession& s,
+                                                     const Path& download_path_part_path,
+                                                     SplitURIView split_uri,
+                                                     StringView hostname,
+                                                     INTERNET_PORT port,
+                                                     StringView sanitized_url,
+                                                     std::vector<LocalizedString>& errors,
+                                                     MessageSink& progress_sink)
+    {
+        auto maybe_conn = WinHttpConnection::make(s.m_hSession.get(), hostname, port, sanitized_url);
+        const auto conn = maybe_conn.get();
+        if (!conn)
         {
-            // `download_winhttp` does not support user or port syntax in authorities
-            auto hostname = split_uri.authority.value_or_exit(VCPKG_LINE_INFO).substr(2);
-            INTERNET_PORT port;
-            if (split_uri.scheme == "https")
-            {
-                port = INTERNET_DEFAULT_HTTPS_PORT;
-            }
-            else if (split_uri.scheme == "http")
-            {
-                port = INTERNET_DEFAULT_HTTP_PORT;
-            }
-            else
-            {
-                Checks::unreachable(VCPKG_LINE_INFO);
-            }
-
-            // Make sure the directories are present, otherwise fopen_s fails
-            const auto dir = download_path_part_path.parent_path();
-            fs.create_directories(dir, VCPKG_LINE_INFO);
-
-            const auto sanitized_url = replace_secrets(url, secrets);
-            msg::println(msgDownloadingUrl, msg::url = sanitized_url);
-            static auto s = WinHttpSession::make(sanitized_url).value_or_exit(VCPKG_LINE_INFO);
-            for (size_t trials = 0; trials < 4; ++trials)
-            {
-                if (trials > 0)
-                {
-                    // 1s, 2s, 4s
-                    const auto trialMs = 500 << trials;
-                    msg::println_warning(msgDownloadFailedRetrying, msg::value = trialMs);
-                    std::this_thread::sleep_for(std::chrono::milliseconds(trialMs));
-                }
-                auto conn = WinHttpConnection::make(s.m_hSession.get(), hostname, port, sanitized_url);
-                if (!conn)
-                {
-                    errors.push_back(std::move(conn).error());
-                    continue;
-                }
-                auto req = WinHttpRequest::make(conn.get()->m_hConnect.get(),
-                                                split_uri.path_query_fragment,
-                                                sanitized_url,
-                                                split_uri.scheme == "https");
-                if (!req)
-                {
-                    errors.push_back(std::move(req).error());
-                    continue;
-                }
-
-                auto maybe_status = req.get()->query_status();
-                if (auto status = maybe_status.get())
-                {
-                    if (*status < 200 || *status >= 300)
-                    {
-                        errors.push_back(msg::format_error(
-                            msgDownloadFailedStatusCode, msg::url = sanitized_url, msg::value = *status));
-                        return false;
-                    }
-                }
-                else
-                {
-                    errors.push_back(std::move(maybe_status).error());
-                    continue;
-                }
-
-                const auto f = fs.open_for_write(download_path_part_path, VCPKG_LINE_INFO);
-
-                auto forall_data =
-                    req.get()->forall_data([&f](Span<char> span) { f.write(span.data(), 1, span.size()); });
-                if (!forall_data)
-                {
-                    errors.push_back(std::move(forall_data).error());
-                    continue;
-                }
-                return true;
-            }
-            return false;
+            errors.push_back(std::move(maybe_conn).error());
+            return WinHttpTrialResult::retry;
         }
+
+        auto maybe_req = WinHttpRequest::make(
+            conn->m_hConnect.get(), split_uri.path_query_fragment, sanitized_url, split_uri.scheme == "https");
+        const auto req = maybe_req.get();
+        if (!req)
+        {
+            errors.push_back(std::move(maybe_req).error());
+            return WinHttpTrialResult::retry;
+        }
+
+        auto maybe_status = req->query_status();
+        const auto status = maybe_status.get();
+        if (!status)
+        {
+            errors.push_back(std::move(maybe_status).error());
+            return WinHttpTrialResult::retry;
+        }
+
+        if (*status < 200 || *status >= 300)
+        {
+            errors.push_back(
+                msg::format_error(msgDownloadFailedStatusCode, msg::url = sanitized_url, msg::value = *status));
+            return WinHttpTrialResult::failed;
+        }
+
+        auto f = fs.open_for_write(download_path_part_path, VCPKG_LINE_INFO);
+        auto maybe_write = req->write_response_body(f, progress_sink);
+        const auto write = maybe_write.get();
+        if (!write)
+        {
+            errors.push_back(std::move(maybe_write).error());
+            return WinHttpTrialResult::retry;
+        }
+
+        return WinHttpTrialResult::succeeded;
+    }
+
+    /// <summary>
+    /// Download a file using WinHTTP -- only supports HTTP and HTTPS
+    /// </summary>
+    static bool download_winhttp(Filesystem& fs,
+                                 const Path& download_path_part_path,
+                                 SplitURIView split_uri,
+                                 const std::string& url,
+                                 const std::vector<std::string>& secrets,
+                                 std::vector<LocalizedString>& errors,
+                                 MessageSink& progress_sink)
+    {
+        // `download_winhttp` does not support user or port syntax in authorities
+        auto hostname = split_uri.authority.value_or_exit(VCPKG_LINE_INFO).substr(2);
+        INTERNET_PORT port;
+        if (split_uri.scheme == "https")
+        {
+            port = INTERNET_DEFAULT_HTTPS_PORT;
+        }
+        else if (split_uri.scheme == "http")
+        {
+            port = INTERNET_DEFAULT_HTTP_PORT;
+        }
+        else
+        {
+            Checks::unreachable(VCPKG_LINE_INFO);
+        }
+
+        // Make sure the directories are present, otherwise fopen_s fails
+        const auto dir = download_path_part_path.parent_path();
+        fs.create_directories(dir, VCPKG_LINE_INFO);
+
+        const auto sanitized_url = replace_secrets(url, secrets);
+        msg::println(msgDownloadingUrl, msg::url = sanitized_url);
+        static auto s = WinHttpSession::make(sanitized_url).value_or_exit(VCPKG_LINE_INFO);
+        for (size_t trials = 0; trials < 4; ++trials)
+        {
+            if (trials > 0)
+            {
+                // 1s, 2s, 4s
+                const auto trialMs = 500 << trials;
+                msg::println_warning(msgDownloadFailedRetrying, msg::value = trialMs);
+                std::this_thread::sleep_for(std::chrono::milliseconds(trialMs));
+            }
+
+            switch (download_winhttp_trial(
+                fs, s, download_path_part_path, split_uri, hostname, port, sanitized_url, errors, progress_sink))
+            {
+                case WinHttpTrialResult::failed: return false;
+                case WinHttpTrialResult::succeeded: return true;
+                case WinHttpTrialResult::retry: break;
+            }
+        }
+
+        return false;
     }
 #endif
 
@@ -849,7 +881,7 @@ namespace vcpkg
         auto maybe_mirror_url = Strings::replace_all(m_config.m_write_url_template.value_or(""), "<SHA>", sha512);
         if (!maybe_mirror_url.empty())
         {
-            return put_file(fs, maybe_mirror_url, m_config.m_write_headers, file_to_put);
+            return put_file(fs, maybe_mirror_url, m_config.m_secrets, m_config.m_write_headers, file_to_put);
         }
         return 0;
     }

@@ -33,9 +33,12 @@ namespace vcpkg
     std::vector<int> download_files(Filesystem& fs,
                                     View<std::pair<std::string, Path>> url_pairs,
                                     View<std::string> headers);
-    ExpectedL<int> put_file(const Filesystem&, StringView url, View<std::string> headers, const Path& file);
+    ExpectedL<int> put_file(const Filesystem&,
+                            StringView url,
+                            const std::vector<std::string>& secrets,
+                            View<std::string> headers,
+                            const Path& file);
     std::vector<int> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets);
-    std::string replace_secrets(std::string input, View<std::string> secrets);
 
     struct DownloadManagerConfig
     {
