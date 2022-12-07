@@ -1004,8 +1004,7 @@ namespace vcpkg
     REGISTER_MESSAGE(TripletFileNotFound);
     REGISTER_MESSAGE(VcpkgRegistriesCacheIsNotDirectory);
     REGISTER_MESSAGE(FailedToParseNoTopLevelObj);
-    REGISTER_MESSAGE(FailedToParseSerializedManifest);
-    REGISTER_MESSAGE(MismatchedSerializedManifestSCF);
+    REGISTER_MESSAGE(MismatchedManifestAfterReserialize);
     REGISTER_MESSAGE(PortBugIncludeDirInCMakeHelperPort);
     REGISTER_MESSAGE(PortBugMissingIncludeDir);
     REGISTER_MESSAGE(PortBugRestrictedHeaderPaths);

@@ -2091,15 +2091,12 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "Failed to parse {path}, expected a top-level object.");
-    DECLARE_MESSAGE(FailedToParseSerializedManifest,
-                    (msg::path),
-                    "",
-                    "Failed to parse serialized manifest file of {path}. Please open an issue at "
-                    "https://github.com/microsoft/vcpkg, with the following output:");
-    DECLARE_MESSAGE(MismatchedSerializedManifestSCF,
+    DECLARE_MESSAGE(MismatchedManifestAfterReserialize,
                     (),
-                    "",
-                    "The serialized manifest was different from the original SCF. Please open an issue at "
+                    "The original file output and generated output are printed after this line, in English as it's "
+                    "intended to be used in the issue submission and read by devs. This message indicates an internal "
+                    "error in vcpkg.",
+                    "The serialized manifest was different from the original manifest. Please open an issue at "
                     "https://github.com/microsoft/vcpkg, with the following output:");
     DECLARE_MESSAGE(PortBugIncludeDirInCMakeHelperPort,
                     (),

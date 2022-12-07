@@ -1500,25 +1500,22 @@ namespace vcpkg
                dep.constraint.type == VersionConstraintKind::None && !dep.host;
     }
 
-    static Json::Object serialize_manifest_impl(const SourceControlFile& scf, bool debug)
+    Json::Object serialize_manifest(const SourceControlFile& scf)
     {
         auto serialize_paragraph =
             [&](Json::Object& obj, StringLiteral name, const std::vector<std::string>& pgh, bool always = false) {
-                if (!debug)
+                if (pgh.empty())
                 {
-                    if (pgh.empty())
+                    if (always)
                     {
-                        if (always)
-                        {
-                            obj.insert(name, Json::Array());
-                        }
-                        return;
+                        obj.insert(name, Json::Array());
                     }
-                    if (pgh.size() == 1)
-                    {
-                        obj.insert(name, pgh.front());
-                        return;
-                    }
+                    return;
+                }
+                if (pgh.size() == 1)
+                {
+                    obj.insert(name, pgh.front());
+                    return;
                 }
 
                 auto& arr = obj.insert(name, Json::Array());
@@ -1529,7 +1526,7 @@ namespace vcpkg
             };
         auto serialize_optional_array =
             [&](Json::Object& obj, StringLiteral name, const std::vector<std::string>& pgh) {
-                if (pgh.empty() && !debug) return;
+                if (pgh.empty()) return;
 
                 auto& arr = obj.insert(name, Json::Array());
                 for (const auto& s : pgh)
@@ -1538,7 +1535,7 @@ namespace vcpkg
                 }
             };
         auto serialize_optional_string = [&](Json::Object& obj, StringLiteral name, const std::string& s) {
-            if (!s.empty() || debug)
+            if (!s.empty())
             {
                 obj.insert(name, s);
             }
@@ -1625,8 +1622,7 @@ namespace vcpkg
             serialize_schemed_version(obj,
                                       scf.core_paragraph->version_scheme,
                                       scf.core_paragraph->raw_version,
-                                      scf.core_paragraph->port_version,
-                                      debug);
+                                      scf.core_paragraph->port_version);
         }
 
         serialize_paragraph(obj, ManifestDeserializer::MAINTAINERS, scf.core_paragraph->maintainers);
@@ -1650,10 +1646,7 @@ namespace vcpkg
                 obj.insert(ManifestDeserializer::LICENSE, Json::Value::string(*license));
             }
         }
-        else if (debug)
-        {
-            obj.insert(ManifestDeserializer::LICENSE, Json::Value::string(""));
-        }
+
         serialize_optional_string(
             obj, ManifestDeserializer::SUPPORTS, to_string(scf.core_paragraph->supports_expression));
         if (scf.core_paragraph->builtin_baseline.has_value())
@@ -1662,7 +1655,7 @@ namespace vcpkg
                        Json::Value::string(scf.core_paragraph->builtin_baseline.value_or_exit(VCPKG_LINE_INFO)));
         }
 
-        if (!scf.core_paragraph->dependencies.empty() || debug)
+        if (!scf.core_paragraph->dependencies.empty())
         {
             auto& deps = obj.insert(ManifestDeserializer::DEPENDENCIES, Json::Array());
 
@@ -1674,7 +1667,7 @@ namespace vcpkg
 
         serialize_optional_array(obj, ManifestDeserializer::DEFAULT_FEATURES, scf.core_paragraph->default_features);
 
-        if (debug || !scf.feature_paragraphs.empty() || !scf.extra_features_info.is_empty())
+        if (!scf.feature_paragraphs.empty() || !scf.extra_features_info.is_empty())
         {
             auto& map = obj.insert(ManifestDeserializer::FEATURES, Json::Object());
             for (const auto& pr : scf.extra_features_info)
@@ -1693,7 +1686,7 @@ namespace vcpkg
                 serialize_optional_string(
                     feature_obj, FeatureDeserializer::SUPPORTS, to_string(feature->supports_expression));
 
-                if (!feature->dependencies.empty() || debug)
+                if (!feature->dependencies.empty())
                 {
                     auto& deps = feature_obj.insert(FeatureDeserializer::DEPENDENCIES, Json::Array());
                     for (const auto& dep : feature->dependencies)
@@ -1704,7 +1697,7 @@ namespace vcpkg
             }
         }
 
-        if (!scf.core_paragraph->overrides.empty() || debug)
+        if (!scf.core_paragraph->overrides.empty())
         {
             auto& overrides = obj.insert(ManifestDeserializer::OVERRIDES, Json::Array());
 
@@ -1716,8 +1709,4 @@ namespace vcpkg
 
         return obj;
     }
-
-    Json::Object serialize_debug_manifest(const SourceControlFile& scf) { return serialize_manifest_impl(scf, true); }
-
-    Json::Object serialize_manifest(const SourceControlFile& scf) { return serialize_manifest_impl(scf, false); }
 }
