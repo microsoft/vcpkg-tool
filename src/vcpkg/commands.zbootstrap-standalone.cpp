@@ -38,7 +38,7 @@ namespace vcpkg::Commands
             "https://github.com/microsoft/vcpkg-tool/releases/download/" VCPKG_BASE_VERSION_AS_STRING
             "/vcpkg-standalone-bundle.tar.gz";
         download_manager.download_file(
-            fs, bundle_uri, {}, bundle_tarball, std::string(MACRO_TO_STRING(VCPKG_STANDALONE_BUNDLE_SHA)));
+            fs, bundle_uri, {}, bundle_tarball, MACRO_TO_STRING(VCPKG_STANDALONE_BUNDLE_SHA), null_sink);
 #else  // ^^^ VCPKG_STANDALONE_BUNDLE_SHA / !VCPKG_STANDALONE_BUNDLE_SHA vvv
         msg::println(Color::warning, msgDownloadingVcpkgStandaloneBundleLatest);
         const auto bundle_uri =
