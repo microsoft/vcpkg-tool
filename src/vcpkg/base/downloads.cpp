@@ -29,11 +29,33 @@ namespace vcpkg
         void operator()(HINTERNET h) const { WinHttpCloseHandle(h); }
     };
 
-    static LocalizedString format_winhttp_last_error_message(StringLiteral api_name, StringView url)
+    static LocalizedString format_winhttp_last_error_message(StringLiteral api_name, StringView url, DWORD last_error)
     {
-        DWORD last_error = GetLastError();
         return msg::format_error(
             msgDownloadWinHttpError, msg::system_api = api_name, msg::exit_code = last_error, msg::url = url);
+    }
+
+    static LocalizedString format_winhttp_last_error_message(StringLiteral api_name, StringView url)
+    {
+        return format_winhttp_last_error_message(api_name, url, GetLastError());
+    }
+
+    static void maybe_emit_winhttp_progress(const Optional<unsigned long long>& maybe_content_length,
+        std::chrono::steady_clock::time_point& last_write,
+        unsigned long long total_downloaded_size,
+        MessageSink& progress_sink)
+    {
+        if (const auto content_length = maybe_content_length.get())
+        {
+            const auto now = std::chrono::steady_clock::now();
+            if ((now - last_write) >= std::chrono::milliseconds(100))
+            {
+                const double percent =
+                    (static_cast<double>(total_downloaded_size) / static_cast<double>(*content_length)) * 100;
+                progress_sink.print(Color::none, fmt::format("{:.2f}%\n", percent));
+                last_write = now;
+            }
+        }
     }
 
     struct WinHttpRequest
@@ -82,58 +104,108 @@ namespace vcpkg
 
         ExpectedL<int> query_status() const
         {
-            DWORD dwStatusCode = 0;
-            DWORD dwSize = sizeof(dwStatusCode);
+            DWORD status_code;
+            DWORD size = sizeof(status_code);
 
-            auto bResults = WinHttpQueryHeaders(m_hRequest.get(),
-                                                WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
-                                                WINHTTP_HEADER_NAME_BY_INDEX,
-                                                &dwStatusCode,
-                                                &dwSize,
-                                                WINHTTP_NO_HEADER_INDEX);
-            if (bResults)
+            auto succeeded = WinHttpQueryHeaders(m_hRequest.get(),
+                                                 WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+                                                 WINHTTP_HEADER_NAME_BY_INDEX,
+                                                 &status_code,
+                                                 &size,
+                                                 WINHTTP_NO_HEADER_INDEX);
+            if (succeeded)
             {
-                return dwStatusCode;
+                return status_code;
             }
 
             return format_winhttp_last_error_message("WinHttpQueryHeaders", m_sanitized_url);
         }
 
-        ExpectedL<int> write_response_body(WriteFilePointer& file, MessageSink& progress_sink)
+        ExpectedL<Optional<unsigned long long>> query_content_length() const
         {
-            (void)progress_sink;
-            std::vector<char> buf;
-
-            size_t total_downloaded_size = 0;
-            DWORD dwSize = 0;
-            do
+            static constexpr DWORD buff_characters = 21; // 18446744073709551615
+            wchar_t buff[buff_characters];
+            DWORD size = sizeof(buff);
+            auto succeeded = WinHttpQueryHeaders(m_hRequest.get(),
+                                                  WINHTTP_QUERY_CONTENT_LENGTH,
+                                                  WINHTTP_HEADER_NAME_BY_INDEX,
+                                                  buff,
+                                                  &size,
+                                                  WINHTTP_NO_HEADER_INDEX);
+            if (succeeded)
             {
-                DWORD downloaded_size = 0;
-                auto bResults = WinHttpQueryDataAvailable(m_hRequest.get(), &dwSize);
+                return Strings::strto<unsigned long long>(Strings::to_utf8(buff, size >> 1));
+            }
+
+            const DWORD last_error = GetLastError();
+            if (last_error == ERROR_WINHTTP_HEADER_NOT_FOUND)
+            {
+                return Optional<unsigned long long>{nullopt};
+            }
+
+            return format_winhttp_last_error_message("WinHttpQueryHeaders", m_sanitized_url, last_error);
+        }
+
+        ExpectedL<Unit> write_response_body(WriteFilePointer& file, MessageSink& progress_sink)
+        {
+            static constexpr DWORD buff_size = 16768;
+            char buff[buff_size];
+
+            Optional<unsigned long long> maybe_content_length;
+            auto last_write = std::chrono::steady_clock::now();
+
+            {
+                auto maybe_maybe_content_length = query_content_length();
+                if (const auto p = maybe_maybe_content_length.get())
+                {
+                    maybe_content_length = *p;
+                }
+                else
+                {
+                    return std::move(maybe_maybe_content_length).error();
+                }
+            }
+
+            unsigned long long total_downloaded_size = 0;
+            for (;;)
+            {
+                DWORD available_size;
+                auto bResults = WinHttpQueryDataAvailable(m_hRequest.get(), &available_size);
                 if (!bResults)
                 {
                     return format_winhttp_last_error_message("WinHttpQueryDataAvailable", m_sanitized_url);
                 }
 
-                if (buf.size() < dwSize)
+                if (available_size == 0)
                 {
-                    buf.resize(static_cast<size_t>(dwSize) * 2u);
+                    return Unit{};
                 }
 
-                bResults = WinHttpReadData(m_hRequest.get(), (LPVOID)buf.data(), dwSize, &downloaded_size);
-                if (!bResults)
+                do
                 {
-                    return format_winhttp_last_error_message("WinHttpReadData", m_sanitized_url);
-                }
+                    DWORD this_read;
+                    bResults = WinHttpReadData(m_hRequest.get(), buff, buff_size, &this_read);
+                    if (!bResults || this_read == 0)
+                    {
+                        return format_winhttp_last_error_message("WinHttpReadData", m_sanitized_url);
+                    }
 
-                if (file.write(buf.data(), 1, downloaded_size) != downloaded_size)
-                {
-                    return format_winhttp_last_error_message("fwrite", m_sanitized_url);
-                }
+                    do
+                    {
+                        const auto this_write = static_cast<DWORD>(file.write(buff, 1, this_read));
+                        if (this_write == 0)
+                        {
+                            return format_winhttp_last_error_message("fwrite", m_sanitized_url);
+                        }
 
-                total_downloaded_size += downloaded_size;
-            } while (dwSize > 0);
-            return 1;
+                        maybe_emit_winhttp_progress(
+                            maybe_content_length, last_write, total_downloaded_size, progress_sink);
+                        this_read -= this_write;
+                        available_size -= this_write;
+                        total_downloaded_size += this_write;
+                    } while (this_read > 0);
+                } while (available_size > 0);
+            }
         }
 
         std::unique_ptr<void, WinHttpHandleDeleter> m_hRequest;
@@ -466,7 +538,9 @@ namespace vcpkg
                 }
 
                 Debug::print(res->output, '\n');
-                return msg::format_error(msgCurlFailedToPut, msg::exit_code = res->exit_code, msg::url = replace_secrets(url.to_string(), secrets));
+                return msg::format_error(msgCurlFailedToPut,
+                                         msg::exit_code = res->exit_code,
+                                         msg::url = replace_secrets(url.to_string(), secrets));
             }
 
             return std::move(maybe_res).error();
