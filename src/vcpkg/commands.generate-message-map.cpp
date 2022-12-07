@@ -159,7 +159,7 @@ namespace vcpkg::Commands
             msg.comment = msg::detail::get_localization_comment(index).to_string();
         }
         std::sort(messages.begin(), messages.end(), MessageSorter{});
-
+        
         bool has_errors = false;
         LocalizedString format_string_parsing_error;
         Json::Object obj;
@@ -222,6 +222,18 @@ namespace vcpkg::Commands
         if (has_errors)
         {
             Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        // get the path to artifacts messages.json
+        Path path_to_artifact_messages = args.command_arguments[1];
+
+        // parse file to get json obj
+        auto artifact_messages = Json::parse_file(VCPKG_LINE_INFO, fs, path_to_artifact_messages).first;
+        auto artifact_obj = artifact_messages.object(VCPKG_LINE_INFO);
+        
+        for (auto&& it : artifact_obj)
+        {
+            obj.insert(it.first, it.second);
         }
 
         auto stringified = Json::stringify(obj);

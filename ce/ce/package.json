@@ -17,8 +17,7 @@
     "build": "tsc -p .",
     "watch": "tsc -p . --watch",
     "prepare": "npm run build",
-    "watch-test": "mocha dist/test --timeout 200000 --watch",
-    "translate": "translate-strings .  --json"
+    "watch-test": "mocha dist/test --timeout 200000 --watch"
   },
   "repository": {
     "type": "git",
