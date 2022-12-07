@@ -125,7 +125,7 @@ namespace vcpkg
                 "https://github.com/microsoft/vcpkg-tool/releases/download/" VCPKG_BASE_VERSION_AS_STRING
                 "/vcpkg-ce.tgz";
             const auto ce_tarball = paths.downloads / "vcpkg-ce-" VCPKG_BASE_VERSION_AS_STRING ".tgz";
-            download_manager.download_file(fs, ce_uri, ce_tarball, VCPKG_CE_SHA_AS_STRING);
+            download_manager.download_file(fs, ce_uri, {}, ce_tarball, VCPKG_CE_SHA_AS_STRING, null_sink);
             extract_ce_tarball(paths, ce_tarball, node_path, node_modules);
             fs.write_contents(ce_sha_path, VCPKG_CE_SHA_AS_STRING, VCPKG_LINE_INFO);
         }
