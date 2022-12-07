@@ -17,8 +17,8 @@ namespace vcpkg::Commands
 
     const CommandStructure COMMAND_STRUCTURE = {
         create_example_string(R"###(x-generate-default-message-map locales/messages.json)###"),
-        1,
-        1,
+        2,
+        2,
         {GENERATE_MESSAGE_MAP_SWITCHES, {}, {}},
         nullptr,
     };
