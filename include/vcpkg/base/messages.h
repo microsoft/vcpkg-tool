@@ -827,7 +827,7 @@ namespace vcpkg
     DECLARE_MESSAGE(CurlFailedToPutHttp,
                     (msg::exit_code, msg::url, msg::value),
                     "curl is the name of a program, see curl.se. {value} is an HTTP status code",
-                    "curl failed to put file to {url} with exit code {exit_code}.");
+                    "curl failed to put file to {url} with exit code {exit_code} and http code {value}.");
     DECLARE_MESSAGE(CurlReportedUnexpectedResults,
                     (msg::command_line, msg::actual),
                     "{command_line} is the command line to call curl.exe, {actual} is the console output "
@@ -873,18 +873,16 @@ namespace vcpkg
     DECLARE_MESSAGE(DownloadedSources, (msg::spec), "", "Downloaded sources for {spec}");
     DECLARE_MESSAGE(DownloadFailedCurl,
                     (msg::url, msg::exit_code),
-                    "{value} is an HTTP status code",
+                    "",
                     "{url}: curl failed to download with exit code {exit_code}");
-    DECLARE_MESSAGE(
-        DownloadFailedHashMismatch,
-        (msg::url, msg::path, msg::expected, msg::actual),
-        "{expected} and {actual} are SHA512 hashes in hex format. If possible, alignment of the expected and actual "
-        "hashes should be maintained so that it's easy for users to see the differences if they are close.",
-        "File does not have the expected hash:\n"
-        "             url : [ {url} ]\n"
-        "       File path : [ {path} ]\n"
-        "   Expected hash : [ {expected} ]\n"
-        "     Actual hash : [ {actual} ]");
+    DECLARE_MESSAGE(DownloadFailedHashMismatch,
+                    (msg::url, msg::path, msg::expected, msg::actual),
+                    "{expected} and {actual} are SHA512 hashes in hex format.",
+                    "File does not have the expected hash:\n"
+                    "url: {url}\n"
+                    "File: {path}\n"
+                    "Expected hash: {expected}\n"
+                    "Actual hash: {actual}");
     DECLARE_MESSAGE(DownloadFailedRetrying,
                     (msg::value),
                     "{value} is a number of milliseconds",
