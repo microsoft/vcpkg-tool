@@ -2156,16 +2156,14 @@ namespace vcpkg
                     (),
                     "",
                     "The following EXEs were found in /bin or /debug/bin. EXEs are not valid distribution targets.");
-    DECLARE_MESSAGE(PortBugDllsWithNoExports,
-                    (),
-                    "exports' means an entry in a DLL's export table",
-                    "The following DLLs have no exports:");
     DECLARE_MESSAGE(PortBugSetDllsWithoutExports,
-                    (msg::env_var),
-                    "",
+                    (),
+                    "'exports' means an entry in a DLL's export table. After this message, one file path per line is "
+                    "printed listing each DLL with an empty export table.",
                     "DLLs without any exports are likely a bug in the build script. If this is intended, add the "
                     "following line in the portfile:\n"
-                    "SET({env_var} enabled)");
+                    "set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)\n"
+                    "The following DLLs have no exports:");
     DECLARE_MESSAGE(PortBugDllAppContainerBitNotSet,
                     (),
                     "",
@@ -2196,11 +2194,11 @@ namespace vcpkg
     DECLARE_MESSAGE(PortBugFoundReleaseBinaries, (msg::count), "", "Found {count} release binaries:");
     DECLARE_MESSAGE(PortBugMissingDebugBinaries, (), "", "Debug binaries were not found.");
     DECLARE_MESSAGE(PortBugMissingReleaseBinaries, (), "", "Release binaries were not found.");
-    DECLARE_MESSAGE(PortBugMissingImportedLibs, (msg::path), "", "Import libraries were not present in {path}");
-    DECLARE_MESSAGE(SetDllsWithoutLibs,
-                    (msg::env_var),
+    DECLARE_MESSAGE(PortBugMissingImportedLibs,
+                    (msg::path),
                     "",
-                    "If this is intended, add the following line in the portfile:\nSET({env_var} enabled)");
+                    "Import libraries were not present in {path}.\nIf this is intended, add the following line in the "
+                    "portfile:\nset(VCPKG_POLICY_DLLS_WITHOUT_LIBS enabled)");
     DECLARE_MESSAGE(PortBugBinDirExists,
                     (msg::path),
                     "",

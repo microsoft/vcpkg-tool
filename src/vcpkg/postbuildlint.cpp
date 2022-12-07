@@ -413,10 +413,8 @@ namespace vcpkg::PostBuildLint
 
         if (!dlls_with_no_exports.empty())
         {
-            msg::println_warning(msgPortBugDllsWithNoExports);
+            msg::println_warning(msgPortBugSetDllsWithoutExports);
             print_paths(dlls_with_no_exports);
-            msg::println_warning(msgPortBugSetDllsWithoutExports,
-                                 msg::env_var = to_cmake_variable(BuildPolicy::DLLS_WITHOUT_EXPORTS));
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -641,8 +639,6 @@ namespace vcpkg::PostBuildLint
         if (lib_count == 0 && dll_count != 0)
         {
             msg::println_warning(msgPortBugMissingImportedLibs, msg::path = lib_dir);
-            msg::println_warning(msgSetDllsWithoutLibs,
-                                 msg::env_var = to_cmake_variable(BuildPolicy::DLLS_WITHOUT_LIBS));
             return LintStatus::PROBLEM_DETECTED;
         }
 

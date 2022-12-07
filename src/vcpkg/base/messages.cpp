@@ -1018,7 +1018,6 @@ namespace vcpkg
     REGISTER_MESSAGE(PortBugMissingLicense);
     REGISTER_MESSAGE(PortBugFoundCopyrightFiles);
     REGISTER_MESSAGE(PortBugFoundExeInBinDir);
-    REGISTER_MESSAGE(PortBugDllsWithNoExports);
     REGISTER_MESSAGE(PortBugSetDllsWithoutExports);
     REGISTER_MESSAGE(PortBugDllAppContainerBitNotSet);
     REGISTER_MESSAGE(BuiltWithIncorrectArchitecture);
@@ -1032,7 +1031,6 @@ namespace vcpkg
     REGISTER_MESSAGE(PortBugMissingDebugBinaries);
     REGISTER_MESSAGE(PortBugMissingReleaseBinaries);
     REGISTER_MESSAGE(PortBugMissingImportedLibs);
-    REGISTER_MESSAGE(SetDllsWithoutLibs);
     REGISTER_MESSAGE(PortBugBinDirExists);
     REGISTER_MESSAGE(PortBugDebugBinDirExists);
     REGISTER_MESSAGE(PortBugRemoveBinDir);
