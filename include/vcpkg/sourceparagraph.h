@@ -136,7 +136,6 @@ namespace vcpkg
     };
 
     Json::Object serialize_manifest(const SourceControlFile& scf);
-    Json::Object serialize_debug_manifest(const SourceControlFile& scf);
 
     ExpectedS<ManifestConfiguration> parse_manifest_configuration(StringView origin, const Json::Object& manifest);
 
