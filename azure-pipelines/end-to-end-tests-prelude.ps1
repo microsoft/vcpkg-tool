@@ -91,7 +91,7 @@ function Write-Trace ([string]$text) {
     Write-Host (@($MyInvocation.ScriptName, ":", $MyInvocation.ScriptLineNumber, ": ", $text) -join "")
 }
 
-function Run-Vcpkg {
+function Run-VcpkgAndCaptureOutput {
     Param(
         [Parameter(Mandatory = $false)]
         [Switch]$EndToEndTestSilent,
@@ -104,6 +104,17 @@ function Run-Vcpkg {
     $result = (& $VcpkgExe @testArgs) | Out-String
     if (!$EndToEndTestSilent) { Write-Host -ForegroundColor Gray $result }
     $result
+}
+
+function Run-Vcpkg {
+    Param(
+        [Parameter(Mandatory = $false)]
+        [Switch]$EndToEndTestSilent,
+
+        [Parameter(ValueFromRemainingArguments)]
+        [string[]]$TestArgs
+    )
+    Run-VcpkgAndCaptureOutput -EndToEndTestSilent:$EndToEndTestSilent @TestArgs | Out-Null
 }
 
 Refresh-TestRoot

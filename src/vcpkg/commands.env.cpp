@@ -19,11 +19,14 @@ namespace vcpkg::Commands::Env
     static constexpr StringLiteral OPTION_PYTHON = "python";
 
     static constexpr std::array<CommandSwitch, 5> SWITCHES = {{
-        {OPTION_BIN, "Add installed bin/ to PATH"},
-        {OPTION_INCLUDE, "Add installed include/ to INCLUDE"},
-        {OPTION_DEBUG_BIN, "Add installed debug/bin/ to PATH"},
-        {OPTION_TOOLS, "Add installed tools/*/ to PATH"},
-        {OPTION_PYTHON, "Add installed python/ to PYTHONPATH"},
+        {OPTION_BIN, []() { return msg::format(msgCmdEnvOptions, msg::path = "bin/", msg::env_var = "PATH"); }},
+        {OPTION_INCLUDE,
+         []() { return msg::format(msgCmdEnvOptions, msg::path = "include/", msg::env_var = "INCLUDE"); }},
+        {OPTION_DEBUG_BIN,
+         []() { return msg::format(msgCmdEnvOptions, msg::path = "debug/bin/", msg::env_var = "PATH"); }},
+        {OPTION_TOOLS, []() { return msg::format(msgCmdEnvOptions, msg::path = "tools/*/", msg::env_var = "PATH"); }},
+        {OPTION_PYTHON,
+         []() { return msg::format(msgCmdEnvOptions, msg::path = "python/", msg::env_var = "PYTHONPATH"); }},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -44,7 +47,9 @@ namespace vcpkg::Commands::Env
 
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(
+            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 

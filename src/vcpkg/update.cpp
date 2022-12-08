@@ -64,9 +64,12 @@ namespace vcpkg::Update
         (void)args.parse_arguments(COMMAND_STRUCTURE);
         msg::println(msgLocalPortfileVersion);
 
-        const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+        auto& fs = paths.get_filesystem();
+        const StatusParagraphs status_db = database_load_check(fs, paths.installed());
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(
+            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
 
         const auto outdated_packages = SortedVector<OutdatedPackage, decltype(&OutdatedPackage::compare_by_name)>(
             find_outdated_packages(provider, status_db), &OutdatedPackage::compare_by_name);
