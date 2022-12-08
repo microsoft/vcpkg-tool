@@ -953,61 +953,6 @@ namespace
 
 namespace vcpkg
 {
-    PositionedReadPointerU32::PositionedReadPointerU32() : m_f(), m_path(), m_offset() { }
-    PositionedReadPointerU32::PositionedReadPointerU32(ReadFilePointer&& f, const Path& f_path)
-        : m_f(std::move(f)), m_path(f_path), m_offset()
-    {
-    }
-    PositionedReadPointerU32::PositionedReadPointerU32(PositionedReadPointerU32&& other)
-        : m_f(std::move(other.m_f)), m_path(std::move(other.m_path)), m_offset(other.m_offset)
-    {
-        other.m_offset = 0;
-    }
-
-    PositionedReadPointerU32& PositionedReadPointerU32::operator=(PositionedReadPointerU32&& other)
-    {
-        m_f = std::move(other.m_f);
-        m_path = std::move(other.m_path);
-        m_offset = std::exchange(other.m_offset, 0);
-        return *this;
-    }
-
-    ExpectedL<Unit> PositionedReadPointerU32::try_seek_to(std::uint32_t offset)
-    {
-        if (m_f.seek(offset, SEEK_SET))
-        {
-            return msg::format(msgFileSeekFailed, msg::path = m_path, msg::byte_offset = offset);
-        }
-
-        return Unit{};
-    }
-
-    ExpectedL<Unit> PositionedReadPointerU32::try_read_all(void* buffer, std::uint32_t size)
-    {
-        const auto result = m_f.read(buffer, 1, size);
-        if (result != size)
-        {
-            return msg::format(msgFileReadFailed, msg::path = m_path, msg::byte_offset = m_offset, msg::count = size);
-        }
-
-        m_offset += static_cast<std::uint32_t>(result);
-        return Unit{};
-    }
-
-    ExpectedL<char> PositionedReadPointerU32::getc()
-    {
-        auto result = m_f.getc();
-        if (result == EOF)
-        {
-            return msg::format(msgFileReadFailed, msg::path = m_path, msg::byte_offset = m_offset, msg::count = 1);
-        }
-
-        ++m_offset;
-        return static_cast<char>(result);
-    }
-
-    const Path& PositionedReadPointerU32::path() const { return m_path; }
-
     LocalizedString format_filesystem_call_error(const std::error_code& ec,
                                                  StringView call_name,
                                                  std::initializer_list<StringView> args)
@@ -1431,8 +1376,7 @@ namespace vcpkg
 #if defined(_WIN32)
         return ::_fseeki64(m_fs, static_cast<long long>(offset), origin);
 #else  // ^^^ _WIN32 / !_WIN32 vvv
-        Checks::check_exit(VCPKG_LINE_INFO, offset < LLONG_MAX);
-        return ::fseek(m_fs, static_cast<long>(offset), origin);
+        return ::fseeko(m_fs, static_cast<long long>(offset), origin);
 #endif // ^^^ !_WIN32
     }
     int FilePointer::seek(long long offset, int origin) const noexcept
@@ -1440,7 +1384,7 @@ namespace vcpkg
 #if defined(_WIN32)
         return ::_fseeki64(m_fs, offset, origin);
 #else  // ^^^ _WIN32 / !_WIN32 vvv
-        return ::fseek(m_fs, offset, origin);
+        return ::fseeko(m_fs, offset, origin);
 #endif // ^^^ !_WIN32
     }
     int FilePointer::seek(unsigned long long offset, int origin) const noexcept
@@ -1448,10 +1392,82 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, offset < LLONG_MAX);
         return this->seek(static_cast<long long>(offset), origin);
     }
+
+    unsigned long long FilePointer::tell() const noexcept
+    {
+#if defined(_WIN32)
+        return ::_ftelli64(m_fs);
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+        return ::ftello(m_fs);
+#endif // ^^^ !_WIN32
+    }
+
     int FilePointer::eof() const noexcept { return ::feof(m_fs); }
     std::error_code FilePointer::error() const noexcept
     {
         return std::error_code(::ferror(m_fs), std::generic_category());
+    }
+
+    const Path& FilePointer::path() const { return m_path; }
+
+    ExpectedL<Unit> FilePointer::try_seek_to(int offset)
+    {
+        if (this->seek(offset, SEEK_SET))
+        {
+            return msg::format(msgFileSeekFailed, msg::path = m_path, msg::byte_offset = offset);
+        }
+
+        return Unit{};
+    }
+
+    ExpectedL<Unit> FilePointer::try_seek_to(unsigned int offset)
+    {
+        if (this->seek(offset, SEEK_SET))
+        {
+            return msg::format(msgFileSeekFailed, msg::path = m_path, msg::byte_offset = offset);
+        }
+
+        return Unit{};
+    }
+
+    ExpectedL<Unit> FilePointer::try_seek_to(long offset)
+    {
+        if (this->seek(offset, SEEK_SET))
+        {
+            return msg::format(msgFileSeekFailed, msg::path = m_path, msg::byte_offset = offset);
+        }
+
+        return Unit{};
+    }
+
+    ExpectedL<Unit> FilePointer::try_seek_to(unsigned long offset)
+    {
+        if (this->seek(offset, SEEK_SET))
+        {
+            return msg::format(msgFileSeekFailed, msg::path = m_path, msg::byte_offset = offset);
+        }
+
+        return Unit{};
+    }
+
+    ExpectedL<Unit> FilePointer::try_seek_to(long long offset)
+    {
+        if (this->seek(offset, SEEK_SET))
+        {
+            return msg::format(msgFileSeekFailed, msg::path = m_path, msg::byte_offset = offset);
+        }
+
+        return Unit{};
+    }
+
+    ExpectedL<Unit> FilePointer::try_seek_to(unsigned long long offset)
+    {
+        if (this->seek(offset, SEEK_SET))
+        {
+            return msg::format(msgFileSeekFailed, msg::path = m_path, msg::byte_offset = offset);
+        }
+
+        return Unit{};
     }
 
     FilePointer::~FilePointer()
@@ -1495,7 +1511,28 @@ namespace vcpkg
         return ::fread(buffer, element_size, element_count, m_fs);
     }
 
-    int ReadFilePointer::getc() const noexcept { return ::fgetc(m_fs); }
+    ExpectedL<Unit> ReadFilePointer::try_read_all(void* buffer, std::uint32_t size)
+    {
+        const auto result = this->read(buffer, 1, size);
+        if (result != size)
+        {
+            return msg::format(
+                msgFileReadFailed, msg::path = m_path, msg::byte_offset = this->tell(), msg::count = size);
+        }
+
+        return Unit{};
+    }
+
+    ExpectedL<char> ReadFilePointer::try_getc()
+    {
+        auto result = ::fgetc(m_fs);
+        if (result == EOF)
+        {
+            return msg::format(msgFileReadFailed, msg::path = m_path, msg::byte_offset = this->tell(), msg::count = 1);
+        }
+
+        return static_cast<char>(result);
+    }
 
     WriteFilePointer::WriteFilePointer() noexcept = default;
 
@@ -1520,7 +1557,7 @@ namespace vcpkg
 #endif // ^^^ !_WIN32
     }
 
-    WriteFilePointer& WriteFilePointer::operator=(WriteFilePointer&& other)
+    WriteFilePointer& WriteFilePointer::operator=(WriteFilePointer&& other) noexcept
     {
         WriteFilePointer fp{std::move(other)};
         std::swap(m_fs, fp.m_fs);

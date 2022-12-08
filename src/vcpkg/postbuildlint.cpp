@@ -513,8 +513,7 @@ namespace vcpkg::PostBuildLint
             auto maybe_opened = fs.try_open_for_read(file);
             if (const auto opened = maybe_opened.get())
             {
-                PositionedReadPointerU32 positioned{std::move(*opened), file};
-                auto maybe_metadata = try_read_dll_metadata(positioned);
+                auto maybe_metadata = try_read_dll_metadata(*opened);
                 if (auto* metadata = maybe_metadata.get())
                 {
                     const auto machine_type = metadata->get_machine_type();

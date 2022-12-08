@@ -21,7 +21,7 @@ namespace
     static_assert(sizeof(SectionTableHeader) == 40,
                   "The SectionTableHeader struct must match its on-disk representation.");
 
-    ExpectedL<Unit> read_pe_signature_and_get_coff_header_offset(PositionedReadPointerU32& f)
+    ExpectedL<Unit> read_pe_signature_and_get_coff_header_offset(ReadFilePointer& f)
     {
         static constexpr long OFFSET_TO_PE_SIGNATURE_OFFSET = 0x3c;
         static constexpr StringLiteral PE_SIGNATURE = "PE\0\0";
@@ -68,7 +68,7 @@ namespace
         return Unit{};
     }
 
-    ExpectedL<Unit> try_read_optional_header(DllMetadata& metadata, PositionedReadPointerU32& f)
+    ExpectedL<Unit> try_read_optional_header(DllMetadata& metadata, ReadFilePointer& f)
     {
         // pre: metadata.coff_header has been loaded
         const auto size_of_optional_header = metadata.coff_header.size_of_optional_header;
@@ -119,7 +119,7 @@ namespace
         return Unit{};
     }
 
-    ExpectedL<Unit> try_read_section_headers(DllMetadata& metadata, PositionedReadPointerU32& f)
+    ExpectedL<Unit> try_read_section_headers(DllMetadata& metadata, ReadFilePointer& f)
     {
         // pre: f is positioned directly after the optional header
         const auto number_of_sections = metadata.coff_header.number_of_sections;
@@ -129,7 +129,7 @@ namespace
 
     // seeks the file `f` to the location in the file denoted by `rva`;
     // returns the remaining size of data in the section
-    ExpectedL<size_t> try_seek_to_rva(const DllMetadata& metadata, PositionedReadPointerU32& f, uint32_t rva)
+    ExpectedL<size_t> try_seek_to_rva(const DllMetadata& metadata, ReadFilePointer& f, uint32_t rva)
     {
         // The PE spec says that the sections have to be sorted by virtual_address and
         // contiguous, but this does not assume that for paranoia reasons.
@@ -150,7 +150,7 @@ namespace
         return msg::format(msgPERvaNotFound, msg::path = f.path(), msg::value = rva);
     }
 
-    ExpectedL<Unit> try_read_image_config_directory(DllMetadata& metadata, PositionedReadPointerU32& f)
+    ExpectedL<Unit> try_read_image_config_directory(DllMetadata& metadata, ReadFilePointer& f)
     {
         // pre: try_read_section_headers succeeded on `metadata`
         if (metadata.data_directories.size() < 11)
@@ -204,9 +204,7 @@ namespace
         return std::move(maybe_remaining_size).error();
     }
 
-    ExpectedL<std::string> try_read_ntbs_from_rva(const DllMetadata& metadata,
-                                                  PositionedReadPointerU32& f,
-                                                  uint32_t rva)
+    ExpectedL<std::string> try_read_ntbs_from_rva(const DllMetadata& metadata, ReadFilePointer& f, uint32_t rva)
     {
         // Note that maximum_size handles the case that size_of_raw_data < virtual_size, where the loader
         // inserts the null(s).
@@ -219,7 +217,7 @@ namespace
                     break;
                 }
 
-                auto maybe_ch = f.getc();
+                auto maybe_ch = f.try_getc();
                 if (auto ch = maybe_ch.get())
                 {
                     if (*ch == '\0')
@@ -400,7 +398,7 @@ namespace vcpkg
         return value;
     }
 
-    ExpectedL<DllMetadata> try_read_dll_metadata(PositionedReadPointerU32& f)
+    ExpectedL<DllMetadata> try_read_dll_metadata(ReadFilePointer& f)
     {
         {
             auto signature = read_pe_signature_and_get_coff_header_offset(f);
@@ -447,8 +445,7 @@ namespace vcpkg
         return result;
     }
 
-    ExpectedL<std::vector<std::string>> try_read_dll_imported_dll_names(const DllMetadata& dll,
-                                                                        PositionedReadPointerU32& f)
+    ExpectedL<std::vector<std::string>> try_read_dll_imported_dll_names(const DllMetadata& dll, ReadFilePointer& f)
     {
         if (dll.data_directories.size() < 2)
         {

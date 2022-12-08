@@ -124,8 +124,17 @@ namespace vcpkg
         int seek(unsigned long offset, int origin) const noexcept;
         int seek(long long offset, int origin) const noexcept;
         int seek(unsigned long long offset, int origin) const noexcept;
+        unsigned long long tell() const noexcept;
         int eof() const noexcept;
         std::error_code error() const noexcept;
+
+        const Path& path() const;
+        ExpectedL<Unit> try_seek_to(int offset);
+        ExpectedL<Unit> try_seek_to(unsigned int offset);
+        ExpectedL<Unit> try_seek_to(long offset);
+        ExpectedL<Unit> try_seek_to(unsigned long offset);
+        ExpectedL<Unit> try_seek_to(long long offset);
+        ExpectedL<Unit> try_seek_to(unsigned long long offset);
 
         ~FilePointer();
     };
@@ -137,26 +146,8 @@ namespace vcpkg
         explicit ReadFilePointer(const Path& file_path, std::error_code& ec);
         ReadFilePointer& operator=(ReadFilePointer&& other) noexcept;
         size_t read(void* buffer, size_t element_size, size_t element_count) const noexcept;
-        int getc() const noexcept;
-    };
-
-    struct PositionedReadPointerU32
-    {
-        PositionedReadPointerU32();
-        PositionedReadPointerU32(ReadFilePointer&& f, const Path& f_path);
-        PositionedReadPointerU32(PositionedReadPointerU32&& other);
-        PositionedReadPointerU32& operator=(PositionedReadPointerU32&& other);
-
-        ExpectedL<Unit> try_seek_to(std::uint32_t offset);
         ExpectedL<Unit> try_read_all(void* buffer, std::uint32_t size);
-        ExpectedL<char> getc();
-
-        const Path& path() const;
-
-    private:
-        ReadFilePointer m_f;
-        Path m_path;
-        std::uint32_t m_offset;
+        ExpectedL<char> try_getc();
     };
 
     struct WriteFilePointer : FilePointer
@@ -164,8 +155,7 @@ namespace vcpkg
         WriteFilePointer() noexcept;
         WriteFilePointer(WriteFilePointer&&) noexcept;
         explicit WriteFilePointer(const Path& file_path, std::error_code& ec);
-
-        WriteFilePointer& operator=(WriteFilePointer&& other);
+        WriteFilePointer& operator=(WriteFilePointer&& other) noexcept;
         size_t write(const void* buffer, size_t element_size, size_t element_count) const noexcept;
         int put(int c) const noexcept;
     };

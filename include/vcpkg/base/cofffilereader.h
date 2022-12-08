@@ -283,8 +283,7 @@ namespace vcpkg
         uint64_t decoded_size() const;
     };
 
-    ExpectedL<DllMetadata> try_read_dll_metadata(PositionedReadPointerU32& f);
-    ExpectedL<std::vector<std::string>> try_read_dll_imported_dll_names(const DllMetadata& dll,
-                                                                        PositionedReadPointerU32& f);
+    ExpectedL<DllMetadata> try_read_dll_metadata(ReadFilePointer& f);
+    ExpectedL<std::vector<std::string>> try_read_dll_imported_dll_names(const DllMetadata& dll, ReadFilePointer& f);
     std::vector<MachineType> read_lib_machine_types(const ReadFilePointer& f);
 }
