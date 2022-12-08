@@ -261,11 +261,6 @@ namespace vcpkg::msg
 
     Optional<std::string> get_locale_path(int LCID)
     {
-        if (LCID == 0)
-        {
-            return "locales/messages.json";
-        }
-
         return get_language_tag(LCID).map(
             [](StringLiteral tag) { return fmt::format("locales/messages.{}.json", tag); });
     }

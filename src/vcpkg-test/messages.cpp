@@ -26,9 +26,6 @@ TEST_CASE ("get message_map from LCID", "[messages]")
     auto msg = map.value_or_exit(VCPKG_LINE_INFO).map.get(msg_name);
     CHECK(msg->string(VCPKG_LINE_INFO) ==
           "El primer par\u00e1metro que se va a agregar debe ser \"artefacto\" o \"puerto\".");
-
-    // invalid lcid
-    CHECK(!msg::get_message_map_from_lcid(0000).has_value());
 }
 
 TEST_CASE ("generate message get_all_format_args", "[messages]")
