@@ -29,7 +29,7 @@ namespace vcpkg::Commands::Upgrade
 
     static constexpr std::array<CommandSwitch, 4> INSTALL_SWITCHES = {{
         {OPTION_NO_DRY_RUN, []() { return msg::format(msgCmdUpgradeOptNoDryRun); }},
-        {OPTION_KEEP_GOING, ""},
+        {OPTION_KEEP_GOING, nullptr},
         {OPTION_NO_KEEP_GOING, []() { return msg::format(msgCmdUpgradeOptNoKeepGoing); }},
         {OPTION_ALLOW_UNSUPPORTED_PORT, []() { return msg::format(msgCmdUpgradeOptAllowUnsupported); }},
     }};
