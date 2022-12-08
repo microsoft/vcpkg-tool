@@ -598,6 +598,11 @@ namespace vcpkg
                     "-- Automatically setting {env_var} environment variables to \"{url}\".");
     DECLARE_MESSAGE(AvailableArchitectureTriplets, (), "", "Available architecture triplets:");
     DECLARE_MESSAGE(AvailableHelpTopics, (), "", "Available help topics:");
+    DECLARE_MESSAGE(BaselineConflict,
+                    (),
+                    "",
+                    "Specifying vcpkg-configuration.default-registry in a manifest file conflicts with built-in "
+                    "baseline.\nPlease remove one of these conflicting settings.");
     DECLARE_MESSAGE(BaselineFileNoDefaultField,
                     (msg::commit_sha),
                     "",
@@ -607,12 +612,11 @@ namespace vcpkg
                     "",
                     "The baseline.json from commit `\"{commit_sha}\"` in the repo {url} was invalid (did not "
                     "contain a \"default\" field).");
-    DECLARE_MESSAGE(BaselineConflict,
-                    (),
-                    "",
-                    "Specifying vcpkg-configuration.default-registry in a manifest file conflicts with built-in "
-                    "baseline.\nPlease remove one of these conflicting settings.");
     DECLARE_MESSAGE(BinarySourcesArg, (), "", "Add sources for binary caching. See 'vcpkg help binarycaching'.");
+    DECLARE_MESSAGE(BinaryWithInvalidArchitecture,
+                    (msg::path, msg::expected, msg::actual),
+                    "{expected} and {actual} are architectures",
+                    "{path}\n Expected: {expected}, but was {actual}");
     DECLARE_MESSAGE(BuildAlreadyInstalled,
                     (msg::spec),
                     "",
@@ -711,6 +715,10 @@ namespace vcpkg
                     "information about vcpkg itself.",
                     "Please use the prefilled template from {path} when reporting your issue.");
     DECLARE_MESSAGE(BuiltInTriplets, (), "", "vcpkg built-in triplets:");
+    DECLARE_MESSAGE(BuiltWithIncorrectArchitecture,
+                    (),
+                    "",
+                    "The following files were built for an incorrect architecture:");
     DECLARE_MESSAGE(ChecksFailedCheck, (), "", "vcpkg has crashed; no additional details are available.");
     DECLARE_MESSAGE(ChecksUnreachableCode, (), "", "unreachable code was reached");
     DECLARE_MESSAGE(ChecksUpdateVcpkg, (), "", "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.");
@@ -734,6 +742,40 @@ namespace vcpkg
                     (msg::spec, msg::path),
                     "",
                     "PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).");
+    DECLARE_MESSAGE(CISettingsExclude, (), "", "Comma-separated list of ports to skip");
+    DECLARE_MESSAGE(CISettingsOptCIBase,
+                    (),
+                    "",
+                    "Path to the ci.baseline.txt file. Used to skip ports and detect regressions.");
+    DECLARE_MESSAGE(CISettingsOptExclude, (), "", "Comma separated list of ports to skip");
+    DECLARE_MESSAGE(CISettingsOptFailureLogs, (), "", "Directory to which failure logs will be copied");
+    DECLARE_MESSAGE(CISettingsOptHostExclude, (), "", "Comma separated list of ports to skip for the host triplet");
+    DECLARE_MESSAGE(CISettingsOptOutputHashes, (), "", "File to output all determined package hashes");
+    DECLARE_MESSAGE(CISettingsOptParentHashes,
+                    (),
+                    "",
+                    "File to read package hashes for a parent CI state, to reduce the set of changed packages");
+    DECLARE_MESSAGE(CISettingsOptSkippedCascadeCount,
+                    (),
+                    "",
+                    "Asserts that the number of --exclude and supports skips exactly equal this number");
+    DECLARE_MESSAGE(CISettingsOptXUnit, (), "", "File to output results in XUnit format (internal)");
+    DECLARE_MESSAGE(CISettingsVerifyGitTree,
+                    (),
+                    "",
+                    "Verify that each git tree object matches its declared version (this is very slow)");
+    DECLARE_MESSAGE(CISettingsVerifyVersion, (), "", "Print result for each port instead of just errors.");
+    DECLARE_MESSAGE(CISwitchOptAllowUnexpectedPassing,
+                    (),
+                    "",
+                    "Indicates that 'Passing, remove from fail list' results should not be emitted.");
+    DECLARE_MESSAGE(CISwitchOptDryRun, (), "", "Print out plan without execution");
+    DECLARE_MESSAGE(CISwitchOptRandomize, (), "", "Randomize the install order");
+    DECLARE_MESSAGE(CISwitchOptSkipFailures,
+                    (),
+                    "",
+                    "Indicates that ports marked `=fail` in ci.baseline.txt should be skipped.");
+    DECLARE_MESSAGE(CISwitchOptXUnitAll, (), "", "Report also unchanged ports to the XUnit output (internal)");
     DECLARE_MESSAGE(ClearingContents, (msg::path), "", "Clearing contents of {path}");
     DECLARE_MESSAGE(CmakeTargetsExcluded, (msg::count), "", "note: {count} additional targets are not displayed.");
     DECLARE_MESSAGE(CMakeTargetsUsage,
@@ -753,6 +795,143 @@ namespace vcpkg
                     (msg::value),
                     "{value} is a CMake command line switch of the form -DFOO=BAR",
                     "To use exported libraries in CMake projects, add {value} to your CMake command line.");
+    DECLARE_MESSAGE(CmdAddVersionOptAll, (), "", "Process versions for all ports.");
+    DECLARE_MESSAGE(CmdAddVersionOptOverwriteVersion, (), "", "Overwrite `git-tree` of an existing version.");
+    DECLARE_MESSAGE(CmdAddVersionOptSkipFormatChk, (), "", "Skips the formatting check of vcpkg.json files.");
+    DECLARE_MESSAGE(CmdAddVersionOptSkipVersionFormatChk, (), "", "Skips the version format check.");
+    DECLARE_MESSAGE(CmdAddVersionOptVerbose, (), "", "Print success messages instead of just errors.");
+    DECLARE_MESSAGE(CmdContactOptSurvey, (), "", "Launch default browser to the current vcpkg survey");
+    DECLARE_MESSAGE(CmdDependInfoOptDepth, (), "", "Show recursion depth in output");
+    DECLARE_MESSAGE(CmdDependInfoOptDGML, (), "", "Creates graph on basis of dgml");
+    DECLARE_MESSAGE(CmdDependInfoOptDot, (), "", "Creates graph on basis of dot");
+    DECLARE_MESSAGE(CmdDependInfoOptMaxRecurse, (), "", "Set max recursion depth, a value of -1 indicates no limit");
+    DECLARE_MESSAGE(CmdDependInfoOptSort,
+                    (),
+                    "",
+                    "Set sort order for the list of dependencies, accepted values are: lexicographical, topological "
+                    "(default), x-tree, "
+                    "reverse");
+    DECLARE_MESSAGE(CmdEditOptAll,
+                    (),
+                    "",
+                    "Open editor into the port as well as the port-specific buildtree subfolder");
+    DECLARE_MESSAGE(CmdEditOptBuildTrees, (), "", "Open editor into the port-specific buildtree subfolder");
+    DECLARE_MESSAGE(CmdEnvOptions, (msg::path, msg::env_var), "", "Add installed {path} to {env_var}");
+    DECLARE_MESSAGE(CmdExportOpt7Zip, (), "", "Export to a 7zip (.7z) file");
+    DECLARE_MESSAGE(CmdExportOptChocolatey, (), "", "Export a Chocolatey package (experimental feature)");
+    DECLARE_MESSAGE(CmdExportOptDebug, (), "", "Enable prefab debug");
+    DECLARE_MESSAGE(CmdExportOptDryRun, (), "", "Do not actually export.");
+    DECLARE_MESSAGE(CmdExportOptIFW, (), "", "Export to an IFW-based installer");
+    DECLARE_MESSAGE(CmdExportOptInstalled, (), "", "Export all installed packages");
+    DECLARE_MESSAGE(CmdExportOptMaven, (), "", "Enable Maven");
+    DECLARE_MESSAGE(CmdExportOptNuget, (), "", "Export a NuGet package");
+    DECLARE_MESSAGE(CmdExportOptPrefab, (), "", "Export to Prefab format");
+    DECLARE_MESSAGE(CmdExportOptRaw, (), "", "Export to an uncompressed directory");
+    DECLARE_MESSAGE(CmdExportOptZip, (), "", "Export to a zip file");
+    DECLARE_MESSAGE(CmdExportSettingChocolateyMaint,
+                    (),
+                    "",
+                    "Specify the maintainer for the exported Chocolatey package (experimental feature)");
+    DECLARE_MESSAGE(CmdExportSettingChocolateyVersion,
+                    (),
+                    "",
+                    "Specify the version suffix to add for the exported Chocolatey package (experimental feature)");
+    DECLARE_MESSAGE(CmdExportSettingConfigFile,
+                    (),
+                    "",
+                    "Specify the temporary file path for the installer configuration");
+    DECLARE_MESSAGE(CmdExportSettingInstallerPath, (), "", "Specify the file path for the exported installer");
+    DECLARE_MESSAGE(CmdExportSettingNugetDesc, (), "", "Specify a description for the exported NuGet package");
+    DECLARE_MESSAGE(CmdExportSettingNugetID,
+                    (),
+                    "",
+                    "Specify the id for the exported NuGet package (overrides --output)");
+    DECLARE_MESSAGE(CmdExportSettingNugetVersion, (), "", "Specify the version for the exported NuGet package");
+    DECLARE_MESSAGE(CmdExportSettingOutput, (), "", "Specify the output name (used to construct filename)");
+    DECLARE_MESSAGE(CmdExportSettingOutputDir, (), "", "Specify the output directory for produced artifacts");
+    DECLARE_MESSAGE(CmdExportSettingPkgDir, (), "", "Specify the temporary directory path for the repacked packages");
+    DECLARE_MESSAGE(CmdExportSettingPrefabArtifactID,
+                    (),
+                    "",
+                    "Artifact Id is the name of the project according Maven specifications");
+    DECLARE_MESSAGE(CmdExportSettingPrefabGroupID,
+                    (),
+                    "",
+                    "GroupId uniquely identifies your project according Maven specifications");
+    DECLARE_MESSAGE(CmdExportSettingPrefabVersion,
+                    (),
+                    "",
+                    "Version is the name of the project according Maven specifications");
+    DECLARE_MESSAGE(CmdExportSettingRepoDir, (), "", "Specify the directory path for the exported repository");
+    DECLARE_MESSAGE(CmdExportSettingRepoURL, (), "", "Specify the remote repository URL for the online installer");
+    DECLARE_MESSAGE(CmdExportSettingSDKMinVersion, (), "", "Android minimum supported SDK version");
+    DECLARE_MESSAGE(CmdExportSettingSDKTargetVersion, (), "", "Android target sdk version");
+    DECLARE_MESSAGE(
+        CmdFetchOptXStderrStatus,
+        (),
+        "",
+        "Direct status/downloading messages to stderr rather than stdout. (Errors/failures still go to stdout)");
+    DECLARE_MESSAGE(CmdFormatManifestOptAll, (), "", "Format all ports' manifest files.");
+    DECLARE_MESSAGE(CmdFormatManifestOptConvertControl, (), "", "Convert CONTROL files to manifest files.");
+    DECLARE_MESSAGE(
+        CmdGenerateMessageMapOptNoOutputComments,
+        (),
+        "",
+        "When generating the message map, exclude comments (useful for generating the English localization file)");
+    DECLARE_MESSAGE(CmdGenerateMessageMapOptOutputComments,
+                    (),
+                    "",
+                    "When generating the message map, include comments (the default)");
+    DECLARE_MESSAGE(CmdInfoOptInstalled, (), "", "(experimental) Report on installed packages instead of available");
+    DECLARE_MESSAGE(CmdInfoOptTransitive, (), "", "(experimental) Also report on dependencies of installed packages");
+    DECLARE_MESSAGE(CmdNewOptApplication, (), "", "Create an application manifest (don't require name or version).");
+    DECLARE_MESSAGE(CmdNewOptSingleFile, (), "", "Embed vcpkg-configuration.json into vcpkg.json.");
+    DECLARE_MESSAGE(CmdNewOptVersionDate, (), "", "Interpret --version as an ISO 8601 date. (YYYY-MM-DD)");
+    DECLARE_MESSAGE(CmdNewOptVersionRelaxed,
+                    (),
+                    "",
+                    "Interpret --version as a relaxed-numeric version. (Nonnegative numbers separated by dots)");
+    DECLARE_MESSAGE(CmdNewOptVersionString, (), "", "Interpret --version as a string with no ordering behavior.");
+    DECLARE_MESSAGE(CmdNewSettingName, (), "", "Name for the new manifest.");
+    DECLARE_MESSAGE(CmdNewSettingVersion, (), "", "Version for the new manifest.");
+    DECLARE_MESSAGE(CmdRegenerateOptDryRun,
+                    (),
+                    "",
+                    "does not actually perform the action, shows only what would be done");
+    DECLARE_MESSAGE(CmdRegenerateOptForce,
+                    (),
+                    "",
+                    "proceeds with the (potentially dangerous) action without confirmation");
+    DECLARE_MESSAGE(CmdRegenerateOptNormalize, (), "", "apply any deprecation fixups");
+    DECLARE_MESSAGE(CmdRemoveOptDryRun, (), "", "Print the packages to be removed, but do not remove them");
+    DECLARE_MESSAGE(CmdRemoveOptOutdated, (), "", "Select all packages with versions that do not match the portfiles");
+    DECLARE_MESSAGE(CmdRemoveOptRecurse,
+                    (),
+                    "",
+                    "Allow removal of packages not explicitly specified on the command line");
+    DECLARE_MESSAGE(CmdSetInstalledOptDryRun, (), "", "Do not actually build or install");
+    DECLARE_MESSAGE(CmdSetInstalledOptNoUsage, (), "", "Don't print CMake usage information after install.");
+    DECLARE_MESSAGE(CmdSetInstalledOptWritePkgConfig,
+                    (),
+                    "",
+                    "Writes out a NuGet packages.config-formatted file for use with external binary caching.\n"
+                    "See `vcpkg help binarycaching` for more information.");
+    DECLARE_MESSAGE(CmdUpdateBaselineOptDryRun, (), "", "Print out plan without execution");
+    DECLARE_MESSAGE(CmdUpdateBaselineOptInitial,
+                    (),
+                    "",
+                    "add a `builtin-baseline` to a vcpkg.json that doesn't already have it");
+    DECLARE_MESSAGE(CmdUpgradeOptAllowUnsupported,
+                    (),
+                    "",
+                    "Instead of erroring on an unsupported port, continue with a warning.");
+    DECLARE_MESSAGE(CmdUpgradeOptNoDryRun, (), "", "Actually upgrade");
+    DECLARE_MESSAGE(CmdUpgradeOptNoKeepGoing, (), "", "Stop installing packages on failure");
+    DECLARE_MESSAGE(CmdXDownloadOptHeader, (), "", "Additional header to use when fetching from URLs");
+    DECLARE_MESSAGE(CmdXDownloadOptSha, (), "", "The hash of the file to be downloaded");
+    DECLARE_MESSAGE(CmdXDownloadOptSkipSha, (), "", "Do not check the SHA512 of the downloaded file");
+    DECLARE_MESSAGE(CmdXDownloadOptStore, (), "", "Indicates the file should be stored instead of fetched");
+    DECLARE_MESSAGE(CmdXDownloadOptUrl, (), "", "URL to download and store if missing from cache");
     DECLARE_MESSAGE(CommandFailed,
                     (msg::command_line),
                     "",
@@ -785,11 +964,6 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "Could not deduce nuget id and version from filename: {path}");
-    DECLARE_MESSAGE(CouldNotFindToolVersion,
-                    (msg::version, msg::path),
-                    "",
-                    "Could not find <tools version=\"{version}\"> in {path}");
-    DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
     DECLARE_MESSAGE(CouldNotFindBaseline,
                     (msg::commit_sha, msg::path),
                     "",
@@ -798,10 +972,6 @@ namespace vcpkg
                     (msg::commit_sha, msg::package_name),
                     "",
                     "Couldn't find baseline `\"{commit_sha}\"` for repo {package_name}");
-    DECLARE_MESSAGE(FailedToFetchError,
-                    (msg::error_msg, msg::package_name),
-                    "",
-                    "{error_msg}\nFailed to fetch {package_name}:");
     DECLARE_MESSAGE(CouldNotFindBaselineInCommit,
                     (msg::commit_sha, msg::package_name),
                     "",
@@ -810,7 +980,12 @@ namespace vcpkg
                     (msg::package_name, msg::commit_sha),
                     "",
                     "could not find the git tree for `versions` in repo {package_name} at commit {commit_sha}");
+    DECLARE_MESSAGE(CouldNotFindToolVersion,
+                    (msg::version, msg::path),
+                    "",
+                    "Could not find <tools version=\"{version}\"> in {path}");
     DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: {path}");
+    DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
     DECLARE_MESSAGE(Creating7ZipArchive, (), "", "Creating 7zip archive...");
     DECLARE_MESSAGE(CreatingNugetPackage, (), "", "Creating NuGet package...");
     DECLARE_MESSAGE(CreatingZipArchive, (), "", "Creating zip archive...");
@@ -897,11 +1072,11 @@ namespace vcpkg
                     "Embedding `vcpkg-configuration` in a manifest file is an EXPERIMENTAL feature.");
     DECLARE_MESSAGE(EmptyArg, (msg::option), "", "The option --{option} must be passed a non-empty argument.");
     DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
+    DECLARE_MESSAGE(EndOfStringInCodeUnit, (), "", "found end of string in middle of code point");
     DECLARE_MESSAGE(EnvInvalidMaxConcurrency,
                     (msg::env_var, msg::value),
                     "{value} is the invalid value of an environment variable",
                     "{env_var} is {value}, must be > 0");
-    DECLARE_MESSAGE(EndOfStringInCodeUnit, (), "", "found end of string in middle of code point");
     DECLARE_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:");
     DECLARE_MESSAGE(ErrorDetectingCompilerInfo,
                     (msg::path),
@@ -990,13 +1165,17 @@ namespace vcpkg
         (msg::expected),
         "{expected} is a locale-invariant delimiter; for example, the ':' or '=' in 'zlib:x64-windows=skip'",
         "expected '{expected}' here");
-    DECLARE_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' here");
-    DECLARE_MESSAGE(ExpectedPathToExist, (msg::path), "", "Expected {path} to exist after fetching");
     DECLARE_MESSAGE(ExpectedDigitsAfterDecimal, (), "", "Expected digits after the decimal point");
+    DECLARE_MESSAGE(ExpectedExtension,
+                    (msg::extension, msg::path),
+                    "",
+                    "The file extension was not {extension}: {path}");
+    DECLARE_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' here");
     DECLARE_MESSAGE(ExpectedOneSetOfTags,
                     (msg::count, msg::old_value, msg::new_value, msg::value),
                     "{old_value} is a left tag and {new_value} is the right tag. {value} is the input.",
                     "Found {count} sets of {old_value}.*{new_value} but expected exactly 1, in block:\n{value}");
+    DECLARE_MESSAGE(ExpectedPathToExist, (msg::path), "", "Expected {path} to exist after fetching");
     DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
     DECLARE_MESSAGE(ExpectedStatusField, (), "", "Expected 'status' field in status paragraph");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
@@ -1021,15 +1200,28 @@ namespace vcpkg
                     "vcpkg export does not support manifest mode, in order to allow for future design considerations. "
                     "You may use export in classic mode by running vcpkg outside of a manifest-based project.");
     DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.");
+    DECLARE_MESSAGE(ExtractingTool, (msg::tool_name), "", "Extracting {tool_name}...");
+    DECLARE_MESSAGE(FailedPostBuildChecks,
+                    (msg::count, msg::path),
+                    "",
+                    "Found {count} post-build check problem(s). To submit these ports to curated catalogs, please "
+                    "first correct the portfile: {path}");
     DECLARE_MESSAGE(FailedToCheckoutRepo,
                     (msg::package_name),
                     "",
                     "failed to check out `versions` from repo {package_name}");
+    DECLARE_MESSAGE(FailedToDetermineArchitecture,
+                    (msg::path, msg::command_line),
+                    "",
+                    "unable to determine the architecture of {path}.\n{command_line}");
+    DECLARE_MESSAGE(FailedToDetermineCurrentCommit, (), "", "Failed to determine the current commit:");
     DECLARE_MESSAGE(FailedToDownloadFromMirrorSet, (), "", "Failed to download from mirror set");
     DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":");
+    DECLARE_MESSAGE(FailedToFetchError,
+                    (msg::error_msg, msg::package_name),
+                    "",
+                    "{error_msg}\nFailed to fetch {package_name}:");
     DECLARE_MESSAGE(FailedToFindBaseline, (), "", "Failed to find baseline.json");
-    DECLARE_MESSAGE(ExtractingTool, (msg::tool_name), "", "Extracting {tool_name}...");
-    DECLARE_MESSAGE(FailedToDetermineCurrentCommit, (), "", "Failed to determine the current commit:");
     DECLARE_MESSAGE(FailedToFindPortFeature, (msg::feature, msg::spec), "", "Could not find {feature} in {spec}.");
     DECLARE_MESSAGE(FailedToFormatMissingFile,
                     (),
@@ -1040,16 +1232,12 @@ namespace vcpkg
                     "",
                     "The control or manifest file for {spec} could not be loaded due to the following error. Please "
                     "remove {spec} and try again.");
-    DECLARE_MESSAGE(UnexpectedPortName,
-                    (msg::expected, msg::actual, msg::path),
-                    "{expected} is the expected port and {actual} is the port declared by the user.",
-                    "the port {expected} is declared as {actual} in {path}");
+    DECLARE_MESSAGE(FailedToLoadManifest, (msg::path), "", "Failed to load manifest from directory {path}");
     DECLARE_MESSAGE(FailedToLoadPort,
                     (msg::package_name, msg::path),
                     "",
                     "Failed to load port {package_name} from {path}");
     DECLARE_MESSAGE(FailedToLoadPortFrom, (msg::path), "", "Failed to load port from {path}");
-    DECLARE_MESSAGE(FailedToLoadManifest, (msg::path), "", "Failed to load manifest from directory {path}");
     DECLARE_MESSAGE(FailedToLoadUnnamedPortFromPath, (msg::path), "", "Failed to load port from {path}");
     DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}");
     DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
@@ -1063,6 +1251,10 @@ namespace vcpkg
     DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse control file: {path}");
     DECLARE_MESSAGE(FailedToParseJson, (msg::path), "", "Failed to parse JSON file: {path}");
     DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: {path}");
+    DECLARE_MESSAGE(FailedToParseNoTopLevelObj,
+                    (msg::path),
+                    "",
+                    "Failed to parse {path}, expected a top-level object.");
     DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                     (msg::error_msg),
                     "'{error_msg}' is the error message for failing to parse the Binary Paragraph.",
@@ -1100,11 +1292,11 @@ namespace vcpkg
                     (msg::url, msg::value),
                     "{value} is a reference",
                     "Fetching registry information from {url} ({value})...");
-    DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at \"{path}\".");
-    DECLARE_MESSAGE(FloatingPointConstTooBig, (msg::count), "", "Floating point constant too big: {count}");
     DECLARE_MESSAGE(FileNotFound, (msg::path), "", "{path}: file not found");
     DECLARE_MESSAGE(FilesExported, (msg::path), "", "Files exported at: {path}");
     DECLARE_MESSAGE(FileSystemOperationFailed, (), "", "Filesystem operation failed:");
+    DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at \"{path}\".");
+    DECLARE_MESSAGE(FloatingPointConstTooBig, (msg::count), "", "Floating point constant too big: {count}");
     DECLARE_MESSAGE(FollowingPackagesMissingControl,
                     (),
                     "",
@@ -1236,8 +1428,54 @@ namespace vcpkg
     DECLARE_MESSAGE(HelpRemoveOutdatedCommand, (), "", "Uninstall all out-of-date packages.");
     DECLARE_MESSAGE(HelpResponseFileCommand, (), "", "Specify a response file to provide additional parameters.");
     DECLARE_MESSAGE(HelpSearchCommand, (), "", "Search for packages available to be built.");
+    DECLARE_MESSAGE(HelpTextOptFullDesc, (), "", "Do not truncate long text");
     DECLARE_MESSAGE(HelpTopicCommand, (), "", "Display help for a specific topic.");
     DECLARE_MESSAGE(HelpTopicsCommand, (), "", "Display the list of help topics.");
+    DECLARE_MESSAGE(HelpTxtOptAllowUnsupportedPort,
+                    (),
+                    "",
+                    "Instead of erroring on an unsupported port, continue with a warning.");
+    DECLARE_MESSAGE(HelpTxtOptCleanAfterBuild,
+                    (),
+                    "",
+                    "Clean buildtrees, packages and downloads after building each package");
+    DECLARE_MESSAGE(HelpTxtOptCleanBuildTreesAfterBuild, (), "", "Clean buildtrees after building each package");
+    DECLARE_MESSAGE(HelpTxtOptCleanDownloadsAfterBuild, (), "", "Clean downloads after building each package");
+    DECLARE_MESSAGE(HelpTxtOptCleanPkgAfterBuild, (), "", "Clean packages after building each package");
+    DECLARE_MESSAGE(HelpTxtOptDryRun, (), "", "Do not actually build or install.");
+    DECLARE_MESSAGE(HelpTxtOptEditable,
+                    (),
+                    "",
+                    "Disable source re-extraction and binary caching for libraries on the command line (classic mode)");
+    DECLARE_MESSAGE(HelpTxtOptEnforcePortChecks,
+                    (),
+                    "",
+                    "Fail install if a port has detected problems or attempts to use a deprecated feature");
+    DECLARE_MESSAGE(HelpTxtOptKeepGoing, (), "", "Continue installing packages on failure");
+    DECLARE_MESSAGE(HelpTxtOptManifestFeature,
+                    (),
+                    "",
+                    "Additional feature from the top-level manifest to install (manifest mode).");
+    DECLARE_MESSAGE(HelpTxtOptManifestNoDefault,
+                    (),
+                    "",
+                    "Don't install the default features from the top-level manifest (manifest mode).");
+    DECLARE_MESSAGE(HelpTxtOptNoDownloads, (), "", "Do not download new sources");
+    DECLARE_MESSAGE(HelpTxtOptNoUsage, (), "", "Don't print CMake usage information after install.");
+    DECLARE_MESSAGE(HelpTxtOptOnlyBinCache, (), "", "Fail if cached binaries are not available");
+    DECLARE_MESSAGE(HelpTxtOptOnlyDownloads, (), "", "Download sources but don't build packages");
+    DECLARE_MESSAGE(HelpTxtOptRecurse, (), "", "Allow removal of packages as part of installation");
+    DECLARE_MESSAGE(HelpTxtOptUseAria2, (), "", "Use aria2 to perform download tasks");
+    DECLARE_MESSAGE(HelpTxtOptUseHeadVersion,
+                    (),
+                    "",
+                    "Install the libraries on the command line using the latest upstream sources (classic mode)");
+    DECLARE_MESSAGE(
+        HelpTxtOptWritePkgConfig,
+        (),
+        "",
+        "Writes out a NuGet packages.config-formatted file for use with external binary caching.\nSee `vcpkg help "
+        "binarycaching` for more information.");
     DECLARE_MESSAGE(
         HelpUpdateBaseline,
         (),
@@ -1401,13 +1639,19 @@ namespace vcpkg
                     (),
                     "",
                     "Value of --sort must be one of 'lexicographical', 'topological', 'reverse'.");
+    DECLARE_MESSAGE(
+        InvalidCommentStyle,
+        (),
+        "",
+        "vcpkg does not support c-style comments, however most objects allow $-prefixed fields to be used as "
+        "comments.");
     DECLARE_MESSAGE(InvalidCommitId, (msg::commit_sha), "", "Invalid commit id: {commit_sha}");
     DECLARE_MESSAGE(InvalidFilename,
                     (msg::value, msg::path),
                     "'{value}' is a list of invalid characters. I.e. \\/:*?<>|",
                     "Filename cannot contain invalid chars {value}, but was {path}");
-    DECLARE_MESSAGE(InvalidFloatingPointConst, (msg::count), "", "Invalid floating point constant: {count}");
     DECLARE_MESSAGE(InvalidFileType, (msg::path), "", "failed: {path} cannot handle file type");
+    DECLARE_MESSAGE(InvalidFloatingPointConst, (msg::count), "", "Invalid floating point constant: {count}");
     DECLARE_MESSAGE(InvalidFormatString,
                     (msg::actual),
                     "{actual} is the provided format string",
@@ -1419,12 +1663,12 @@ namespace vcpkg
         (msg::system_name, msg::value),
         "'{value}' is the linkage type vcpkg would did not understand. (Correct values would be static ofr dynamic)",
         "Invalid {system_name} linkage type: [{value}]");
-    DECLARE_MESSAGE(InvalidPortVersonName, (msg::path), "", "Found invalid port version file name: `{path}`.");
-    DECLARE_MESSAGE(InvalidString, (), "", "Invalid utf8 passed to Value::string(std::string)");
     DECLARE_MESSAGE(InvalidOptionForRemove,
                     (),
                     "'remove' is a command that should not be changed.",
                     "'remove' accepts either libraries or '--outdated'");
+    DECLARE_MESSAGE(InvalidPortVersonName, (msg::path), "", "Found invalid port version file name: `{path}`.");
+    DECLARE_MESSAGE(InvalidString, (), "", "Invalid utf8 passed to Value::string(std::string)");
     DECLARE_MESSAGE(InvalidTriplet, (msg::triplet), "", "Invalid triplet: {triplet}");
     DECLARE_MESSAGE(IrregularFile, (msg::path), "", "path was not a regular file: {path}");
     DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected \"{path}\" to be an object.");
@@ -1540,12 +1784,19 @@ namespace vcpkg
                     (),
                     "",
                     "Using local portfile versions. To update the local portfiles, use `git pull`.");
-    DECLARE_MESSAGE(ManifestFormatCompleted, (), "", "Succeeded in formatting the manifest files.");
-    DECLARE_MESSAGE(MismatchedFiles, (), "", "file to store does not match hash");
     DECLARE_MESSAGE(ManifestConflict,
                     (msg::path),
                     "",
                     "Found both a manifest and CONTROL files in port \"{path}\"; please rename one or the other");
+    DECLARE_MESSAGE(ManifestFormatCompleted, (), "", "Succeeded in formatting the manifest files.");
+    DECLARE_MESSAGE(MismatchedFiles, (), "", "file to store does not match hash");
+    DECLARE_MESSAGE(MismatchedManifestAfterReserialize,
+                    (),
+                    "The original file output and generated output are printed after this line, in English as it's "
+                    "intended to be used in the issue submission and read by devs. This message indicates an internal "
+                    "error in vcpkg.",
+                    "The serialized manifest was different from the original manifest. Please open an issue at "
+                    "https://github.com/microsoft/vcpkg, with the following output:");
     DECLARE_MESSAGE(MismatchedNames,
                     (msg::package_name, msg::actual),
                     "{actual} is the port name found",
@@ -1670,6 +1921,134 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute: {path}");
+    DECLARE_MESSAGE(PerformingPostBuildValidation, (), "", "-- Performing post-build validation");
+    DECLARE_MESSAGE(PortBugAllowRestrictedHeaders,
+                    (msg::env_var),
+                    "",
+                    "In exceptional circumstances, this policy can be disabled via {env_var}");
+    DECLARE_MESSAGE(PortBugBinDirExists,
+                    (msg::path),
+                    "",
+                    "There should be no bin\\ directory in a static build, but {path} is present.");
+    DECLARE_MESSAGE(PortBugDebugBinDirExists,
+                    (msg::path),
+                    "",
+                    "There should be no debug\\bin\\ directory in a static build, but {path} is present.");
+    DECLARE_MESSAGE(PortBugDebugShareDir,
+                    (),
+                    "",
+                    "/debug/share should not exist. Please reorganize any important files, then use\n"
+                    "file(REMOVE_RECURSE \"${{CURRENT_PACKAGES_DIR}}/debug/share\")");
+    DECLARE_MESSAGE(PortBugDllAppContainerBitNotSet,
+                    (),
+                    "",
+                    "The App Container bit must be set for Windows Store apps. The following DLLs do not have the App "
+                    "Container bit set:");
+    DECLARE_MESSAGE(PortBugDllInLibDir,
+                    (),
+                    "",
+                    "The following dlls were found in /lib or /debug/lib. Please move them to /bin or "
+                    "/debug/bin, respectively.");
+    DECLARE_MESSAGE(PortBugDuplicateIncludeFiles,
+                    (),
+                    "",
+                    "Include files should not be duplicated into the /debug/include directory. If this cannot "
+                    "be disabled in the project cmake, use\n"
+                    "file(REMOVE_RECURSE \"${{CURRENT_PACKAGES_DIR}}/debug/include\")");
+    DECLARE_MESSAGE(PortBugFoundCopyrightFiles, (), "", "The following files are potential copyright files:");
+    DECLARE_MESSAGE(PortBugFoundDebugBinaries, (msg::count), "", "Found {count} debug binaries:");
+    DECLARE_MESSAGE(PortBugFoundDllInStaticBuild,
+                    (),
+                    "",
+                    "DLLs should not be present in a static build, but the following DLLs were found:");
+    DECLARE_MESSAGE(PortBugFoundEmptyDirectories,
+                    (msg::path),
+                    "",
+                    "There should be no empty directories in {path}. The following empty directories were found:");
+    DECLARE_MESSAGE(PortBugFoundExeInBinDir,
+                    (),
+                    "",
+                    "The following EXEs were found in /bin or /debug/bin. EXEs are not valid distribution targets.");
+    DECLARE_MESSAGE(PortBugFoundReleaseBinaries, (msg::count), "", "Found {count} release binaries:");
+    DECLARE_MESSAGE(PortBugIncludeDirInCMakeHelperPort,
+                    (),
+                    "",
+                    "The folder /include exists in a cmake helper port; this is incorrect, since only cmake "
+                    "files should be installed");
+    DECLARE_MESSAGE(PortBugInspectFiles, (msg::extension), "", "To inspect the {extension} files, use:");
+    DECLARE_MESSAGE(PortBugInvalidCrtLinkage,
+                    (msg::expected),
+                    "{expected} is the expected build type",
+                    "Invalid crt linkage. Expected {expected}, but the following libs had:");
+    DECLARE_MESSAGE(PortBugMergeLibCMakeDir,
+                    (msg::spec),
+                    "",
+                    "The /lib/cmake folder should be merged with /debug/lib/cmake and moved to /share/{spec}/cmake. "
+                    "Please use the helper function `vcpkg_cmake_config_fixup()` from the port vcpkg-cmake-config.`");
+    DECLARE_MESSAGE(PortBugMismatchedNumberOfBinaries, (), "", "Mismatching number of debug and release binaries.");
+    DECLARE_MESSAGE(
+        PortBugMisplacedCMakeFiles,
+        (msg::spec),
+        "",
+        "The following cmake files were found outside /share/{spec}. Please place cmake files in /share/{spec}.");
+    DECLARE_MESSAGE(PortBugMisplacedFiles, (msg::path), "", "The following files are placed in {path}:");
+    DECLARE_MESSAGE(PortBugMisplacedFilesCont, (), "", "Files cannot be present in those directories.");
+    DECLARE_MESSAGE(PortBugMisplacedPkgConfigFiles,
+                    (),
+                    "",
+                    "pkgconfig directories should be one of share/pkgconfig (for header only libraries only), "
+                    "lib/pkgconfig, or lib/debug/pkgconfig. The following misplaced pkgconfig files were found:");
+    DECLARE_MESSAGE(PortBugMissingDebugBinaries, (), "", "Debug binaries were not found.");
+    DECLARE_MESSAGE(PortBugMissingFile,
+                    (msg::path),
+                    "",
+                    "The /{path} file does not exist. This file must exist for CMake helper ports.");
+    DECLARE_MESSAGE(PortBugMissingImportedLibs,
+                    (msg::path),
+                    "",
+                    "Import libraries were not present in {path}.\nIf this is intended, add the following line in the "
+                    "portfile:\nset(VCPKG_POLICY_DLLS_WITHOUT_LIBS enabled)");
+    DECLARE_MESSAGE(PortBugMissingIncludeDir,
+                    (),
+                    "",
+                    "The folder /include is empty or not present. This indicates the library was not correctly "
+                    "installed.");
+    DECLARE_MESSAGE(PortBugMissingLicense,
+                    (msg::spec),
+                    "'{CURRENT_PACKAGES_DIR}' should not be translated.",
+                    "The software license must be available at ${CURRENT_PACKAGES_DIR}/share/{spec}/copyright");
+    DECLARE_MESSAGE(PortBugMissingReleaseBinaries, (), "", "Release binaries were not found.");
+    DECLARE_MESSAGE(PortBugMovePkgConfigFiles, (), "", "You can move the pkgconfig files with commands similar to:");
+    DECLARE_MESSAGE(PortBugOutdatedCRT, (), "", "Detected outdated dynamic CRT in the following files:");
+    DECLARE_MESSAGE(
+        PortBugRemoveBinDir,
+        (),
+        "",
+        "If the creation of bin\\ and/or debug\\bin\\ cannot be disabled, use this in the portfile to remove them");
+    DECLARE_MESSAGE(
+        PortBugRemoveEmptyDirectories,
+        (),
+        "",
+        "If a directory should be populated but is not, this might indicate an error in the portfile.\n"
+        "If the directories are not needed and their creation cannot be disabled, use something like this in "
+        "the portfile to remove them:");
+    DECLARE_MESSAGE(PortBugRemoveEmptyDirs,
+                    (),
+                    "Only the 'empty directories left by the above renames' part should be translated",
+                    "vcpkg_fixup_pkgconfig()\nfile(REMOVE_RECURSE empty directories left by the above renames)");
+    DECLARE_MESSAGE(PortBugRestrictedHeaderPaths,
+                    (msg::env_var),
+                    "A list of restricted headers is printed after this message, one per line.",
+                    "The following restricted headers can prevent the core C++ runtime and other packages from "
+                    "compiling correctly. In exceptional circumstances, this policy can be disabled via {env_var}.");
+    DECLARE_MESSAGE(PortBugSetDllsWithoutExports,
+                    (),
+                    "'exports' means an entry in a DLL's export table. After this message, one file path per line is "
+                    "printed listing each DLL with an empty export table.",
+                    "DLLs without any exports are likely a bug in the build script. If this is intended, add the "
+                    "following line in the portfile:\n"
+                    "set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)\n"
+                    "The following DLLs have no exports:");
     DECLARE_MESSAGE(PortDependencyConflict,
                     (msg::package_name),
                     "",
@@ -1807,9 +2186,9 @@ namespace vcpkg
                     (msg::command_name),
                     "",
                     "To update these packages and all dependencies, run\n{command_name} upgrade'");
-    DECLARE_MESSAGE(TripletFileNotFound, (msg::triplet), "", "Triplet file {triplet}.cmake not found");
     DECLARE_MESSAGE(TrailingCommaInArray, (), "", "Trailing comma in array");
     DECLARE_MESSAGE(TrailingCommaInObj, (), "", "Trailing comma in an object");
+    DECLARE_MESSAGE(TripletFileNotFound, (msg::triplet), "", "Triplet file {triplet}.cmake not found");
     DECLARE_MESSAGE(TwoFeatureFlagsSpecified,
                     (msg::value),
                     "'{value}' is a feature flag.",
@@ -1824,7 +2203,6 @@ namespace vcpkg
                     (msg::expected, msg::actual),
                     "{expected} is the expected byte size and {actual} is the actual byte size.",
                     "Expected {expected} bytes to be written, but {actual} were written.");
-    DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.");
     DECLARE_MESSAGE(UnexpectedCharExpectedCloseBrace, (), "", "Unexpected character; expected property or close brace");
     DECLARE_MESSAGE(UnexpectedCharExpectedColon, (), "", "Unexpected character; expected colon");
     DECLARE_MESSAGE(UnexpectedCharExpectedComma, (), "", "Unexpected character; expected comma or close brace");
@@ -1845,12 +2223,17 @@ namespace vcpkg
     DECLARE_MESSAGE(UnexpectedEOFMidKeyword, (), "", "Unexpected EOF in middle of keyword");
     DECLARE_MESSAGE(UnexpectedEOFMidString, (), "", "Unexpected EOF in middle of string");
     DECLARE_MESSAGE(UnexpectedEOFMidUnicodeEscape, (), "", "Unexpected end of file in middle of unicode escape");
+    DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.");
     DECLARE_MESSAGE(UnexpectedEscapeSequence, (), "", "Unexpected escape sequence continuation");
     DECLARE_MESSAGE(UnexpectedExtension, (msg::extension), "", "Unexpected archive extension: '{extension}'.");
     DECLARE_MESSAGE(UnexpectedFormat,
                     (msg::expected, msg::actual),
                     "{expected} is the expected format, {actual} is the actual format.",
                     "Expected format is [{expected}], but was [{actual}].");
+    DECLARE_MESSAGE(UnexpectedPortName,
+                    (msg::expected, msg::actual, msg::path),
+                    "{expected} is the expected port and {actual} is the port declared by the user.",
+                    "the port {expected} is declared as {actual} in {path}");
     DECLARE_MESSAGE(UnexpectedToolOutput,
                     (msg::tool_name, msg::path),
                     "The actual command line output will be appended after this message.",
@@ -1998,15 +2381,11 @@ namespace vcpkg
                     "'--' at the beginning must be preserved",
                     "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.");
     DECLARE_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
-    DECLARE_MESSAGE(VcpkgRegistriesCacheIsNotDirectory,
-                    (msg::path),
-                    "",
-                    "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not a directory: {path}");
+    DECLARE_MESSAGE(Utf8ConversionFailed, (), "", "Failed to convert to UTF-8");
     DECLARE_MESSAGE(VcpkgCeIsExperimental,
                     (),
                     "",
                     "vcpkg-ce ('configure environment') is experimental and may change at any time.");
-    DECLARE_MESSAGE(Utf8ConversionFailed, (), "", "Failed to convert to UTF-8");
     DECLARE_MESSAGE(VcpkgCommitTableHeader, (), "", "VCPKG Commit");
     DECLARE_MESSAGE(
         VcpkgCompletion,
@@ -2025,17 +2404,15 @@ namespace vcpkg
         "vcpkg has crashed. Please create an issue at https://github.com/microsoft/vcpkg containing a brief summary of "
         "what you were trying to do and the following information.");
     DECLARE_MESSAGE(VcpkgInvalidCommand, (msg::command_name), "", "invalid command: {command_name}");
-    DECLARE_MESSAGE(
-        InvalidCommentStyle,
-        (),
-        "",
-        "vcpkg does not support c-style comments, however most objects allow $-prefixed fields to be used as "
-        "comments.");
     DECLARE_MESSAGE(VcpkgInVsPrompt,
                     (msg::value, msg::triplet),
                     "'{value}' is a VS prompt",
                     "vcpkg appears to be in a Visual Studio prompt targeting {value} but installing for {triplet}. "
                     "Consider using --triplet {value}-windows or --triplet {value}-uwp.");
+    DECLARE_MESSAGE(VcpkgRegistriesCacheIsNotDirectory,
+                    (msg::path),
+                    "",
+                    "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not a directory: {path}");
     DECLARE_MESSAGE(VcpkgRootRequired, (), "", "Setting VCPKG_ROOT is required for standalone bootstrap.");
     DECLARE_MESSAGE(VcpkgRootsDir, (msg::env_var), "", "Specify the vcpkg root directory.\n(default: '{env_var}')");
     DECLARE_MESSAGE(VcpkgSendMetricsButDisabled, (), "", "passed --sendmetrics, but metrics are disabled.");
@@ -2087,381 +2464,4 @@ namespace vcpkg
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}");
-    DECLARE_MESSAGE(FailedToParseNoTopLevelObj,
-                    (msg::path),
-                    "",
-                    "Failed to parse {path}, expected a top-level object.");
-    DECLARE_MESSAGE(MismatchedManifestAfterReserialize,
-                    (),
-                    "The original file output and generated output are printed after this line, in English as it's "
-                    "intended to be used in the issue submission and read by devs. This message indicates an internal "
-                    "error in vcpkg.",
-                    "The serialized manifest was different from the original manifest. Please open an issue at "
-                    "https://github.com/microsoft/vcpkg, with the following output:");
-    DECLARE_MESSAGE(PortBugIncludeDirInCMakeHelperPort,
-                    (),
-                    "",
-                    "The folder /include exists in a cmake helper port; this is incorrect, since only cmake "
-                    "files should be installed");
-    DECLARE_MESSAGE(PortBugMissingIncludeDir,
-                    (),
-                    "",
-                    "The folder /include is empty or not present. This indicates the library was not correctly "
-                    "installed.");
-    DECLARE_MESSAGE(PortBugRestrictedHeaderPaths,
-                    (msg::env_var),
-                    "A list of restricted headers is printed after this message, one per line.",
-                    "The following restricted headers can prevent the core C++ runtime and other packages from "
-                    "compiling correctly. In exceptional circumstances, this policy can be disabled via {env_var}.");
-    DECLARE_MESSAGE(PortBugAllowRestrictedHeaders,
-                    (msg::env_var),
-                    "",
-                    "In exceptional circumstances, this policy can be disabled via {env_var}");
-    DECLARE_MESSAGE(PortBugDuplicateIncludeFiles,
-                    (),
-                    "",
-                    "Include files should not be duplicated into the /debug/include directory. If this cannot "
-                    "be disabled in the project cmake, use\n"
-                    "file(REMOVE_RECURSE \"${{CURRENT_PACKAGES_DIR}}/debug/include\")");
-    DECLARE_MESSAGE(PortBugDebugShareDir,
-                    (),
-                    "",
-                    "/debug/share should not exist. Please reorganize any important files, then use\n"
-                    "file(REMOVE_RECURSE \"${{CURRENT_PACKAGES_DIR}}/debug/share\")");
-    DECLARE_MESSAGE(PortBugMissingFile,
-                    (msg::path),
-                    "",
-                    "The /{path} file does not exist. This file must exist for CMake helper ports.");
-    DECLARE_MESSAGE(PortBugMergeLibCMakeDir,
-                    (msg::spec),
-                    "",
-                    "The /lib/cmake folder should be merged with /debug/lib/cmake and moved to /share/{spec}/cmake. "
-                    "Please use the helper function `vcpkg_cmake_config_fixup()` from the port vcpkg-cmake-config.`");
-    DECLARE_MESSAGE(
-        PortBugMisplacedCMakeFiles,
-        (msg::spec),
-        "",
-        "The following cmake files were found outside /share/{spec}. Please place cmake files in /share/{spec}.");
-    DECLARE_MESSAGE(PortBugDllInLibDir,
-                    (),
-                    "",
-                    "The following dlls were found in /lib or /debug/lib. Please move them to /bin or "
-                    "/debug/bin, respectively.");
-    DECLARE_MESSAGE(PortBugMissingLicense,
-                    (msg::spec),
-                    "'{CURRENT_PACKAGES_DIR}' should not be translated.",
-                    "The software license must be available at ${CURRENT_PACKAGES_DIR}/share/{spec}/copyright");
-    DECLARE_MESSAGE(PortBugFoundCopyrightFiles, (), "", "The following files are potential copyright files:");
-    DECLARE_MESSAGE(PortBugFoundExeInBinDir,
-                    (),
-                    "",
-                    "The following EXEs were found in /bin or /debug/bin. EXEs are not valid distribution targets.");
-    DECLARE_MESSAGE(PortBugSetDllsWithoutExports,
-                    (),
-                    "'exports' means an entry in a DLL's export table. After this message, one file path per line is "
-                    "printed listing each DLL with an empty export table.",
-                    "DLLs without any exports are likely a bug in the build script. If this is intended, add the "
-                    "following line in the portfile:\n"
-                    "set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)\n"
-                    "The following DLLs have no exports:");
-    DECLARE_MESSAGE(PortBugDllAppContainerBitNotSet,
-                    (),
-                    "",
-                    "The App Container bit must be set for Windows Store apps. The following DLLs do not have the App "
-                    "Container bit set:");
-    DECLARE_MESSAGE(BuiltWithIncorrectArchitecture,
-                    (),
-                    "",
-                    "The following files were built for an incorrect architecture:");
-    DECLARE_MESSAGE(BinaryWithInvalidArchitecture,
-                    (msg::path, msg::expected, msg::actual),
-                    "{expected} and {actual} are architectures",
-                    "{path}\n Expected: {expected}, but was {actual}");
-    DECLARE_MESSAGE(ExpectedExtension,
-                    (msg::extension, msg::path),
-                    "",
-                    "The file extension was not {extension}: {path}");
-    DECLARE_MESSAGE(FailedToDetermineArchitecture,
-                    (msg::path, msg::command_line),
-                    "",
-                    "unable to determine the architecture of {path}.\n{command_line}");
-    DECLARE_MESSAGE(PortBugFoundDllInStaticBuild,
-                    (),
-                    "",
-                    "DLLs should not be present in a static build, but the following DLLs were found:");
-    DECLARE_MESSAGE(PortBugMismatchedNumberOfBinaries, (), "", "Mismatching number of debug and release binaries.");
-    DECLARE_MESSAGE(PortBugFoundDebugBinaries, (msg::count), "", "Found {count} debug binaries:");
-    DECLARE_MESSAGE(PortBugFoundReleaseBinaries, (msg::count), "", "Found {count} release binaries:");
-    DECLARE_MESSAGE(PortBugMissingDebugBinaries, (), "", "Debug binaries were not found.");
-    DECLARE_MESSAGE(PortBugMissingReleaseBinaries, (), "", "Release binaries were not found.");
-    DECLARE_MESSAGE(PortBugMissingImportedLibs,
-                    (msg::path),
-                    "",
-                    "Import libraries were not present in {path}.\nIf this is intended, add the following line in the "
-                    "portfile:\nset(VCPKG_POLICY_DLLS_WITHOUT_LIBS enabled)");
-    DECLARE_MESSAGE(PortBugBinDirExists,
-                    (msg::path),
-                    "",
-                    "There should be no bin\\ directory in a static build, but {path} is present.");
-    DECLARE_MESSAGE(PortBugDebugBinDirExists,
-                    (msg::path),
-                    "",
-                    "There should be no debug\\bin\\ directory in a static build, but {path} is present.");
-    DECLARE_MESSAGE(
-        PortBugRemoveBinDir,
-        (),
-        "",
-        "If the creation of bin\\ and/or debug\\bin\\ cannot be disabled, use this in the portfile to remove them");
-    DECLARE_MESSAGE(PortBugFoundEmptyDirectories,
-                    (msg::path),
-                    "",
-                    "There should be no empty directories in {path}. The following empty directories were found:");
-    DECLARE_MESSAGE(
-        PortBugRemoveEmptyDirectories,
-        (),
-        "",
-        "If a directory should be populated but is not, this might indicate an error in the portfile.\n"
-        "If the directories are not needed and their creation cannot be disabled, use something like this in "
-        "the portfile to remove them:");
-    DECLARE_MESSAGE(PortBugMisplacedPkgConfigFiles,
-                    (),
-                    "",
-                    "pkgconfig directories should be one of share/pkgconfig (for header only libraries only), "
-                    "lib/pkgconfig, or lib/debug/pkgconfig. The following misplaced pkgconfig files were found:");
-    DECLARE_MESSAGE(PortBugMovePkgConfigFiles, (), "", "You can move the pkgconfig files with commands similar to:");
-    DECLARE_MESSAGE(PortBugRemoveEmptyDirs,
-                    (),
-                    "Only the 'empty directories left by the above renames' part should be translated",
-                    "vcpkg_fixup_pkgconfig()\nfile(REMOVE_RECURSE empty directories left by the above renames)");
-    DECLARE_MESSAGE(PortBugInvalidCrtLinkage,
-                    (msg::expected),
-                    "{expected} is the expected build type",
-                    "Invalid crt linkage. Expected {expected}, but the following libs had:");
-    DECLARE_MESSAGE(PortBugInspectFiles, (msg::extension), "", "To inspect the {extension} files, use:");
-    DECLARE_MESSAGE(PortBugOutdatedCRT, (), "", "Detected outdated dynamic CRT in the following files:");
-    DECLARE_MESSAGE(PortBugMisplacedFiles, (msg::path), "", "The following files are placed in {path}:");
-    DECLARE_MESSAGE(PortBugMisplacedFilesCont, (), "", "Files cannot be present in those directories.");
-    DECLARE_MESSAGE(PerformingPostBuildValidation, (), "", "-- Performing post-build validation");
-    DECLARE_MESSAGE(FailedPostBuildChecks,
-                    (msg::count, msg::path),
-                    "",
-                    "Found {count} post-build check problem(s). To submit these ports to curated catalogs, please "
-                    "first correct the portfile: {path}");
-    DECLARE_MESSAGE(HelpTxtOptDryRun, (), "", "Do not actually build or install.");
-    DECLARE_MESSAGE(HelpTxtOptUseHeadVersion,
-                    (),
-                    "",
-                    "Install the libraries on the command line using the latest upstream sources (classic mode)");
-    DECLARE_MESSAGE(HelpTxtOptNoDownloads, (), "", "Do not download new sources");
-    DECLARE_MESSAGE(HelpTxtOptOnlyDownloads, (), "", "Download sources but don't build packages");
-    DECLARE_MESSAGE(HelpTxtOptOnlyBinCache, (), "", "Fail if cached binaries are not available");
-    DECLARE_MESSAGE(HelpTxtOptRecurse, (), "", "Allow removal of packages as part of installation");
-    DECLARE_MESSAGE(HelpTxtOptKeepGoing, (), "", "Continue installing packages on failure");
-    DECLARE_MESSAGE(HelpTxtOptEditable,
-                    (),
-                    "",
-                    "Disable source re-extraction and binary caching for libraries on the command line (classic mode)");
-    DECLARE_MESSAGE(HelpTxtOptUseAria2, (), "", "Use aria2 to perform download tasks");
-    DECLARE_MESSAGE(HelpTxtOptCleanAfterBuild,
-                    (),
-                    "",
-                    "Clean buildtrees, packages and downloads after building each package");
-    DECLARE_MESSAGE(HelpTxtOptCleanBuildTreesAfterBuild, (), "", "Clean buildtrees after building each package");
-    DECLARE_MESSAGE(HelpTxtOptCleanPkgAfterBuild, (), "", "Clean packages after building each package");
-    DECLARE_MESSAGE(HelpTxtOptCleanDownloadsAfterBuild, (), "", "Clean downloads after building each package");
-    DECLARE_MESSAGE(HelpTxtOptManifestNoDefault,
-                    (),
-                    "",
-                    "Don't install the default features from the top-level manifest (manifest mode).");
-    DECLARE_MESSAGE(HelpTxtOptEnforcePortChecks,
-                    (),
-                    "",
-                    "Fail install if a port has detected problems or attempts to use a deprecated feature");
-    DECLARE_MESSAGE(HelpTxtOptAllowUnsupportedPort,
-                    (),
-                    "",
-                    "Instead of erroring on an unsupported port, continue with a warning.");
-    DECLARE_MESSAGE(HelpTxtOptNoUsage, (), "", "Don't print CMake usage information after install.");
-    DECLARE_MESSAGE(
-        HelpTxtOptWritePkgConfig,
-        (),
-        "",
-        "Writes out a NuGet packages.config-formatted file for use with external binary caching.\nSee `vcpkg help "
-        "binarycaching` for more information.");
-    DECLARE_MESSAGE(HelpTxtOptManifestFeature,
-                    (),
-                    "",
-                    "Additional feature from the top-level manifest to install (manifest mode).");
-    DECLARE_MESSAGE(CmdAddVersionOptAll, (), "", "Process versions for all ports.");
-    DECLARE_MESSAGE(CmdAddVersionOptOverwriteVersion, (), "", "Overwrite `git-tree` of an existing version.");
-    DECLARE_MESSAGE(CmdAddVersionOptSkipFormatChk, (), "", "Skips the formatting check of vcpkg.json files.");
-    DECLARE_MESSAGE(CmdAddVersionOptSkipVersionFormatChk, (), "", "Skips the version format check.");
-    DECLARE_MESSAGE(CmdAddVersionOptVerbose, (), "", "Print success messages instead of just errors.");
-    DECLARE_MESSAGE(CISettingsOptExclude, (), "", "Comma separated list of ports to skip");
-    DECLARE_MESSAGE(CISettingsOptHostExclude, (), "", "Comma separated list of ports to skip for the host triplet");
-    DECLARE_MESSAGE(CISettingsOptXUnit, (), "", "File to output results in XUnit format (internal)");
-    DECLARE_MESSAGE(CISettingsOptCIBase,
-                    (),
-                    "",
-                    "Path to the ci.baseline.txt file. Used to skip ports and detect regressions.");
-    DECLARE_MESSAGE(CISettingsOptFailureLogs, (), "", "Directory to which failure logs will be copied");
-    DECLARE_MESSAGE(CISettingsOptOutputHashes, (), "", "File to output all determined package hashes");
-    DECLARE_MESSAGE(CISettingsOptParentHashes,
-                    (),
-                    "",
-                    "File to read package hashes for a parent CI state, to reduce the set of changed packages");
-    DECLARE_MESSAGE(CISettingsOptSkippedCascadeCount,
-                    (),
-                    "",
-                    "Asserts that the number of --exclude and supports skips exactly equal this number");
-    DECLARE_MESSAGE(CISwitchOptDryRun, (), "", "Print out plan without execution");
-    DECLARE_MESSAGE(CISwitchOptRandomize, (), "", "Randomize the install order");
-    DECLARE_MESSAGE(CISwitchOptAllowUnexpectedPassing,
-                    (),
-                    "",
-                    "Indicates that 'Passing, remove from fail list' results should not be emitted.");
-    DECLARE_MESSAGE(CISwitchOptSkipFailures,
-                    (),
-                    "",
-                    "Indicates that ports marked `=fail` in ci.baseline.txt should be skipped.");
-    DECLARE_MESSAGE(CISwitchOptXUnitAll, (), "", "Report also unchanged ports to the XUnit output (internal)");
-    DECLARE_MESSAGE(CmdContactOptSurvey, (), "", "Launch default browser to the current vcpkg survey");
-    DECLARE_MESSAGE(CISettingsVerifyVersion, (), "", "Print result for each port instead of just errors.");
-    DECLARE_MESSAGE(CISettingsVerifyGitTree,
-                    (),
-                    "",
-                    "Verify that each git tree object matches its declared version (this is very slow)");
-    DECLARE_MESSAGE(CISettingsExclude, (), "", "Comma-separated list of ports to skip");
-    DECLARE_MESSAGE(CmdDependInfoOptDot, (), "", "Creates graph on basis of dot");
-    DECLARE_MESSAGE(CmdDependInfoOptDGML, (), "", "Creates graph on basis of dgml");
-    DECLARE_MESSAGE(CmdDependInfoOptDepth, (), "", "Show recursion depth in output");
-    DECLARE_MESSAGE(CmdDependInfoOptMaxRecurse, (), "", "Set max recursion depth, a value of -1 indicates no limit");
-    DECLARE_MESSAGE(CmdDependInfoOptSort,
-                    (),
-                    "",
-                    "Set sort order for the list of dependencies, accepted values are: lexicographical, topological "
-                    "(default), x-tree, "
-                    "reverse");
-    DECLARE_MESSAGE(CmdEditOptBuildTrees, (), "", "Open editor into the port-specific buildtree subfolder");
-    DECLARE_MESSAGE(CmdEditOptAll,
-                    (),
-                    "",
-                    "Open editor into the port as well as the port-specific buildtree subfolder");
-    DECLARE_MESSAGE(CmdEnvOptions, (msg::path, msg::env_var), "", "Add installed {path} to {env_var}");
-    DECLARE_MESSAGE(
-        CmdFetchOptXStderrStatus,
-        (),
-        "",
-        "Direct status/downloading messages to stderr rather than stdout. (Errors/failures still go to stdout)");
-    DECLARE_MESSAGE(CmdFormatManifestOptAll, (), "", "Format all ports' manifest files.");
-    DECLARE_MESSAGE(CmdFormatManifestOptConvertControl, (), "", "Convert CONTROL files to manifest files.");
-    DECLARE_MESSAGE(CmdGenerateMessageMapOptOutputComments,
-                    (),
-                    "",
-                    "When generating the message map, include comments (the default)");
-    DECLARE_MESSAGE(
-        CmdGenerateMessageMapOptNoOutputComments,
-        (),
-        "",
-        "When generating the message map, exclude comments (useful for generating the English localization file)");
-    DECLARE_MESSAGE(CmdInfoOptInstalled, (), "", "(experimental) Report on installed packages instead of available");
-    DECLARE_MESSAGE(CmdInfoOptTransitive, (), "", "(experimental) Also report on dependencies of installed packages");
-    DECLARE_MESSAGE(CmdNewOptApplication, (), "", "Create an application manifest (don't require name or version).");
-    DECLARE_MESSAGE(CmdNewOptSingleFile, (), "", "Embed vcpkg-configuration.json into vcpkg.json.");
-    DECLARE_MESSAGE(CmdNewOptVersionRelaxed,
-                    (),
-                    "",
-                    "Interpret --version as a relaxed-numeric version. (Nonnegative numbers separated by dots)");
-    DECLARE_MESSAGE(CmdNewOptVersionDate, (), "", "Interpret --version as an ISO 8601 date. (YYYY-MM-DD)");
-    DECLARE_MESSAGE(CmdNewOptVersionString, (), "", "Interpret --version as a string with no ordering behavior.");
-    DECLARE_MESSAGE(CmdNewSettingName, (), "", "Name for the new manifest.");
-    DECLARE_MESSAGE(CmdNewSettingVersion, (), "", "Version for the new manifest.");
-    DECLARE_MESSAGE(CmdRegenerateOptForce,
-                    (),
-                    "",
-                    "proceeds with the (potentially dangerous) action without confirmation");
-    DECLARE_MESSAGE(CmdRegenerateOptDryRun,
-                    (),
-                    "",
-                    "does not actually perform the action, shows only what would be done");
-    DECLARE_MESSAGE(CmdRegenerateOptNormalize, (), "", "apply any deprecation fixups");
-    DECLARE_MESSAGE(HelpTextOptFullDesc, (), "", "Do not truncate long text");
-    DECLARE_MESSAGE(CmdSetInstalledOptDryRun, (), "", "Do not actually build or install");
-    DECLARE_MESSAGE(CmdSetInstalledOptNoUsage, (), "", "Don't print CMake usage information after install.");
-    DECLARE_MESSAGE(CmdSetInstalledOptWritePkgConfig,
-                    (),
-                    "",
-                    "Writes out a NuGet packages.config-formatted file for use with external binary caching.\n"
-                    "See `vcpkg help binarycaching` for more information.");
-    DECLARE_MESSAGE(CmdUpdateBaselineOptInitial,
-                    (),
-                    "",
-                    "add a `builtin-baseline` to a vcpkg.json that doesn't already have it");
-    DECLARE_MESSAGE(CmdUpdateBaselineOptDryRun, (), "", "Print out plan without execution");
-    DECLARE_MESSAGE(CmdUpgradeOptNoDryRun, (), "", "Actually upgrade");
-    DECLARE_MESSAGE(CmdUpgradeOptNoKeepGoing, (), "", "Stop installing packages on failure");
-    DECLARE_MESSAGE(CmdUpgradeOptAllowUnsupported,
-                    (),
-                    "",
-                    "Instead of erroring on an unsupported port, continue with a warning.");
-    DECLARE_MESSAGE(CmdXDownloadOptStore, (), "", "Indicates the file should be stored instead of fetched");
-    DECLARE_MESSAGE(CmdXDownloadOptSkipSha, (), "", "Do not check the SHA512 of the downloaded file");
-    DECLARE_MESSAGE(CmdXDownloadOptSha, (), "", "The hash of the file to be downloaded");
-    DECLARE_MESSAGE(CmdXDownloadOptUrl, (), "", "URL to download and store if missing from cache");
-    DECLARE_MESSAGE(CmdXDownloadOptHeader, (), "", "Additional header to use when fetching from URLs");
-    DECLARE_MESSAGE(CmdExportOptDryRun, (), "", "Do not actually export.");
-    DECLARE_MESSAGE(CmdExportOptRaw, (), "", "Export to an uncompressed directory");
-    DECLARE_MESSAGE(CmdExportOptNuget, (), "", "Export a NuGet package");
-    DECLARE_MESSAGE(CmdExportOptIFW, (), "", "Export to an IFW-based installer");
-    DECLARE_MESSAGE(CmdExportOptZip, (), "", "Export to a zip file");
-    DECLARE_MESSAGE(CmdExportOpt7Zip, (), "", "Export to a 7zip (.7z) file");
-    DECLARE_MESSAGE(CmdExportOptChocolatey, (), "", "Export a Chocolatey package (experimental feature)");
-    DECLARE_MESSAGE(CmdExportOptPrefab, (), "", "Export to Prefab format");
-    DECLARE_MESSAGE(CmdExportOptMaven, (), "", "Enable Maven");
-    DECLARE_MESSAGE(CmdExportOptDebug, (), "", "Enable prefab debug");
-    DECLARE_MESSAGE(CmdExportOptInstalled, (), "", "Export all installed packages");
-    DECLARE_MESSAGE(CmdExportSettingOutput, (), "", "Specify the output name (used to construct filename)");
-    DECLARE_MESSAGE(CmdExportSettingOutputDir, (), "", "Specify the output directory for produced artifacts");
-    DECLARE_MESSAGE(CmdExportSettingNugetID,
-                    (),
-                    "",
-                    "Specify the id for the exported NuGet package (overrides --output)");
-    DECLARE_MESSAGE(CmdExportSettingNugetDesc, (), "", "Specify a description for the exported NuGet package");
-    DECLARE_MESSAGE(CmdExportSettingNugetVersion, (), "", "Specify the version for the exported NuGet package");
-    DECLARE_MESSAGE(CmdExportSettingRepoURL, (), "", "Specify the remote repository URL for the online installer");
-    DECLARE_MESSAGE(CmdExportSettingPkgDir, (), "", "Specify the temporary directory path for the repacked packages");
-    DECLARE_MESSAGE(CmdExportSettingRepoDir, (), "", "Specify the directory path for the exported repository");
-    DECLARE_MESSAGE(CmdExportSettingConfigFile,
-                    (),
-                    "",
-                    "Specify the temporary file path for the installer configuration");
-    DECLARE_MESSAGE(CmdExportSettingInstallerPath, (), "", "Specify the file path for the exported installer");
-    DECLARE_MESSAGE(CmdExportSettingChocolateyMaint,
-                    (),
-                    "",
-                    "Specify the maintainer for the exported Chocolatey package (experimental feature)");
-    DECLARE_MESSAGE(CmdExportSettingChocolateyVersion,
-                    (),
-                    "",
-                    "Specify the version suffix to add for the exported Chocolatey package (experimental feature)");
-    DECLARE_MESSAGE(CmdExportSettingPrefabGroupID,
-                    (),
-                    "",
-                    "GroupId uniquely identifies your project according Maven specifications");
-    DECLARE_MESSAGE(CmdExportSettingPrefabArtifactID,
-                    (),
-                    "",
-                    "Artifact Id is the name of the project according Maven specifications");
-    DECLARE_MESSAGE(CmdExportSettingPrefabVersion,
-                    (),
-                    "",
-                    "Version is the name of the project according Maven specifications");
-    DECLARE_MESSAGE(CmdExportSettingSDKMinVersion, (), "", "Android minimum supported SDK version");
-    DECLARE_MESSAGE(CmdExportSettingSDKTargetVersion, (), "", "Android target sdk version");
-    DECLARE_MESSAGE(CmdRemoveOptRecurse,
-                    (),
-                    "",
-                    "Allow removal of packages not explicitly specified on the command line");
-    DECLARE_MESSAGE(CmdRemoveOptDryRun, (), "", "Print the packages to be removed, but do not remove them");
-    DECLARE_MESSAGE(CmdRemoveOptOutdated, (), "", "Select all packages with versions that do not match the portfiles");
 }
