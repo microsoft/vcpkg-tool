@@ -432,6 +432,7 @@ add_custom_command(
     OUTPUT ${CMAKE_CURRENT_LIST_DIR}/ce/ce/locales/messages.json
     COMMAND "${NODEJS}" ARGS "${CMAKE_CURRENT_SOURCE_DIR}/ce/ce/node_modules/translate-strings/dist/main.js" "." "--json"
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/ce/ce/node_modules"
+            "${CMAKE_CURRENT_SOURCE_DIR}/ce/test/node_modules"
     WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/ce/ce"
     COMMENT "Running translate-strings..."
     VERBATIM
