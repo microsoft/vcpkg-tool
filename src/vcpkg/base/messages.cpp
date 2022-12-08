@@ -639,6 +639,8 @@ namespace vcpkg
     REGISTER_MESSAGE(FishCompletion);
     REGISTER_MESSAGE(FloatingPointConstTooBig);
     REGISTER_MESSAGE(FileNotFound);
+    REGISTER_MESSAGE(FileReadFailed);
+    REGISTER_MESSAGE(FileSeekFailed);
     REGISTER_MESSAGE(FilesExported);
     REGISTER_MESSAGE(FileSystemOperationFailed);
     REGISTER_MESSAGE(FollowingPackagesMissingControl);
@@ -849,6 +851,12 @@ namespace vcpkg
     REGISTER_MESSAGE(ParseControlErrorInfoWhileLoading);
     REGISTER_MESSAGE(ParseControlErrorInfoWrongTypeFields);
     REGISTER_MESSAGE(PathMustBeAbsolute);
+    REGISTER_MESSAGE(PECoffHeaderTooShort);
+    REGISTER_MESSAGE(PEConfigCrossesSectionBoundary);
+    REGISTER_MESSAGE(PEImportCrossesSectionBoundary);
+    REGISTER_MESSAGE(PEPlusTagInvalid);
+    REGISTER_MESSAGE(PERvaNotFound);
+    REGISTER_MESSAGE(PESignatureMismatch);
     REGISTER_MESSAGE(PortDependencyConflict);
     REGISTER_MESSAGE(PortNotInBaseline);
     REGISTER_MESSAGE(PortsAdded);

@@ -54,9 +54,11 @@ namespace vcpkg
         return Util::fmap(ports, [](auto&& kvpair) -> const SourceControlFileAndLocation* { return &kvpair.second; });
     }
 
-    PathsPortFileProvider::PathsPortFileProvider(const VcpkgPaths& paths, std::unique_ptr<IOverlayProvider>&& overlay)
-        : m_baseline(make_baseline_provider(paths))
-        , m_versioned(make_versioned_portfile_provider(paths))
+    PathsPortFileProvider::PathsPortFileProvider(const Filesystem& fs,
+                                                 const RegistrySet& registry_set,
+                                                 std::unique_ptr<IOverlayProvider>&& overlay)
+        : m_baseline(make_baseline_provider(registry_set))
+        , m_versioned(make_versioned_portfile_provider(fs, registry_set))
         , m_overlay(std::move(overlay))
     {
     }
@@ -92,7 +94,7 @@ namespace vcpkg
     {
         struct BaselineProviderImpl : IBaselineProvider
         {
-            BaselineProviderImpl(const VcpkgPaths& paths_) : paths(paths_) { }
+            BaselineProviderImpl(const RegistrySet& registry_set_) : registry_set(registry_set_) { }
             BaselineProviderImpl(const BaselineProviderImpl&) = delete;
             BaselineProviderImpl& operator=(const BaselineProviderImpl&) = delete;
 
@@ -105,14 +107,14 @@ namespace vcpkg
                 }
                 else
                 {
-                    auto version = paths.get_registry_set().baseline_for_port(port_name);
+                    auto version = registry_set.baseline_for_port(port_name);
                     m_baseline_cache.emplace(port_name.to_string(), version);
                     return version;
                 }
             }
 
         private:
-            const VcpkgPaths& paths;
+            const RegistrySet& registry_set;
             mutable std::map<std::string, ExpectedL<Version>, std::less<>> m_baseline_cache;
         };
 
@@ -249,10 +251,10 @@ namespace vcpkg
 
         struct OverlayProviderImpl : IOverlayProvider
         {
-            OverlayProviderImpl(const VcpkgPaths& paths, View<std::string> overlay_ports)
-                : m_fs(paths.get_filesystem())
-                , m_overlay_ports(Util::fmap(overlay_ports,
-                                             [&paths](const std::string& s) -> Path { return paths.original_cwd / s; }))
+            OverlayProviderImpl(const Filesystem& fs, const Path& original_cwd, View<std::string> overlay_ports)
+                : m_fs(fs), m_overlay_ports(Util::fmap(overlay_ports, [&original_cwd](const std::string& s) -> Path {
+                    return original_cwd / s;
+                }))
             {
                 for (auto&& overlay : m_overlay_ports)
                 {
@@ -390,11 +392,12 @@ namespace vcpkg
 
         struct ManifestProviderImpl : IOverlayProvider
         {
-            ManifestProviderImpl(const VcpkgPaths& paths,
+            ManifestProviderImpl(const Filesystem& fs,
+                                 const Path& original_cwd,
                                  View<std::string> overlay_ports,
                                  const Path& manifest_path,
                                  std::unique_ptr<SourceControlFile>&& manifest_scf)
-                : m_overlay_ports{paths, overlay_ports}
+                : m_overlay_ports{fs, original_cwd, overlay_ports}
                 , m_manifest_scf_and_location{std::move(manifest_scf), manifest_path}
             {
             }
@@ -424,28 +427,32 @@ namespace vcpkg
         };
     } // unnamed namespace
 
-    std::unique_ptr<IBaselineProvider> make_baseline_provider(const vcpkg::VcpkgPaths& paths)
+    std::unique_ptr<IBaselineProvider> make_baseline_provider(const RegistrySet& registry_set)
     {
-        return std::make_unique<BaselineProviderImpl>(paths);
+        return std::make_unique<BaselineProviderImpl>(registry_set);
     }
 
-    std::unique_ptr<IVersionedPortfileProvider> make_versioned_portfile_provider(const vcpkg::VcpkgPaths& paths)
+    std::unique_ptr<IVersionedPortfileProvider> make_versioned_portfile_provider(const Filesystem& fs,
+                                                                                 const RegistrySet& registry_set)
     {
-        return std::make_unique<VersionedPortfileProviderImpl>(paths.get_filesystem(), paths.get_registry_set());
+        return std::make_unique<VersionedPortfileProviderImpl>(fs, registry_set);
     }
 
-    std::unique_ptr<IOverlayProvider> make_overlay_provider(const vcpkg::VcpkgPaths& paths,
+    std::unique_ptr<IOverlayProvider> make_overlay_provider(const Filesystem& fs,
+                                                            const Path& original_cwd,
                                                             View<std::string> overlay_ports)
     {
-        return std::make_unique<OverlayProviderImpl>(paths, overlay_ports);
+        return std::make_unique<OverlayProviderImpl>(fs, original_cwd, overlay_ports);
     }
 
-    std::unique_ptr<IOverlayProvider> make_manifest_provider(const vcpkg::VcpkgPaths& paths,
+    std::unique_ptr<IOverlayProvider> make_manifest_provider(const Filesystem& fs,
+                                                             const Path& original_cwd,
                                                              View<std::string> overlay_ports,
                                                              const Path& manifest_path,
                                                              std::unique_ptr<SourceControlFile>&& manifest_scf)
     {
-        return std::make_unique<ManifestProviderImpl>(paths, overlay_ports, manifest_path, std::move(manifest_scf));
+        return std::make_unique<ManifestProviderImpl>(
+            fs, original_cwd, overlay_ports, manifest_path, std::move(manifest_scf));
     }
 
 } // namespace vcpkg

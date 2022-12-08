@@ -6,362 +6,240 @@
 
 #include <stdio.h>
 
-// See https://docs.microsoft.com/en-us/windows/win32/debug/pe-format
-
-namespace vcpkg
+namespace
 {
-    static void read_and_verify_pe_signature(const ReadFilePointer& fs)
-    {
-        static constexpr long OFFSET_TO_PE_SIGNATURE_OFFSET = 0x3c;
-
-        static constexpr StringLiteral PE_SIGNATURE = "PE\0\0";
-
-        Checks::check_exit(VCPKG_LINE_INFO, fs.seek(OFFSET_TO_PE_SIGNATURE_OFFSET, SEEK_SET) == 0);
-        uint32_t offset_to_pe_signature;
-        Checks::check_exit(VCPKG_LINE_INFO, fs.read(&offset_to_pe_signature, sizeof(uint32_t), 1) == 1);
-        Checks::check_exit(VCPKG_LINE_INFO, fs.seek(offset_to_pe_signature, SEEK_SET) == 0);
-
-        char signature[PE_SIGNATURE.size()];
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           fs.read(signature, sizeof(char), PE_SIGNATURE.size()) == PE_SIGNATURE.size());
-        Checks::msg_check_exit(
-            VCPKG_LINE_INFO, PE_SIGNATURE == StringView{signature, PE_SIGNATURE.size()}, msgIncorrectPESignature);
-    }
-
-    struct CoffFileHeader
-    {
-        uint16_t machine;
-        uint16_t number_of_sections;
-        uint32_t date_time_stamp;
-        uint32_t pointer_to_symbol_table;
-        uint32_t number_of_symbols;
-        uint16_t size_of_optional_header;
-        uint16_t characteristics;
-    };
-
+    using namespace vcpkg;
     static_assert(sizeof(CoffFileHeader) == 20, "The CoffFileHeader struct must match its on-disk representation");
-
-    struct CommonPEOptionalHeaders
-    {
-        uint16_t magic;
-        unsigned char major_linker_version;
-        unsigned char minor_linker_version;
-        uint32_t size_of_code;
-        uint32_t size_of_initialized_data;
-        uint32_t size_of_uninitialized_data;
-        uint32_t address_of_entry_point;
-        uint32_t base_of_code;
-    };
-
     static_assert(sizeof(CommonPEOptionalHeaders) == 24,
                   "The CommonPEOptionalHeaders struct must match its on-disk representation");
-
-    struct UniquePEOptionalHeaders
-    {
-        uint32_t base_of_data;
-        uint32_t imagebase;
-        uint32_t section_alignment;
-        uint32_t file_alignment;
-        uint16_t major_operating_system_version;
-        uint16_t minor_operating_system_version;
-        uint16_t major_image_version;
-        uint16_t minor_image_version;
-        uint16_t major_subsystem_version;
-        uint16_t minor_subsystem_version;
-        uint32_t win32_version_value;
-        uint32_t size_of_image;
-        uint32_t size_of_headers;
-        uint32_t checksum;
-        uint16_t subsystem;
-        uint16_t dll_characteristics;
-        uint32_t size_of_stack_reserve;
-        uint32_t size_of_stack_commit;
-        uint32_t size_of_heap_reserve;
-        uint32_t size_of_heap_commit;
-        uint32_t loader_flags;
-        uint32_t number_of_rva_and_sizes;
-    };
-
     static_assert(sizeof(UniquePEOptionalHeaders) == 72,
                   "The UniquePEOptionalHeaders struct must match its on-disk representation.");
-
-    struct UniquePEPlusOptionalHeaders
-    {
-        uint64_t imagebase;
-        uint32_t section_alignment;
-        uint32_t file_alignment;
-        uint16_t major_operating_system_version;
-        uint16_t minor_operating_system_version;
-        uint16_t major_image_version;
-        uint16_t minor_image_version;
-        uint16_t major_subsystem_version;
-        uint16_t minor_subsystem_version;
-        uint32_t win32_version_value;
-        uint32_t size_of_image;
-        uint32_t size_of_headers;
-        uint32_t checksum;
-        uint16_t subsystem;
-        uint16_t dll_characteristics;
-        uint64_t size_of_stack_reserve;
-        uint64_t size_of_stack_commit;
-        uint64_t size_of_heap_reserve;
-        uint64_t size_of_heap_commit;
-        uint32_t loader_flags;
-        uint32_t number_of_rva_and_sizes;
-    };
-
     static_assert(sizeof(UniquePEPlusOptionalHeaders) == 88,
                   "The UniquePEPlusOptionalHeaders struct must match its on-disk representation.");
-
-    struct ImageDataDirectory
-    {
-        uint32_t virtual_address;
-        uint32_t size;
-    };
-
     static_assert(sizeof(ImageDataDirectory) == 8,
                   "The ImageDataDirectory struct must match its on-disk representation.");
-
-    struct SectionTableHeader
-    {
-        unsigned char name[8];
-        uint32_t virtual_size;
-        uint32_t virtual_address;
-        uint32_t size_of_raw_data;
-        uint32_t pointer_to_raw_data;
-        uint32_t pointer_to_relocations;
-        uint32_t pointer_to_line_numbers;
-        uint16_t number_of_relocations;
-        uint16_t number_of_line_numbers;
-        uint32_t characteristics;
-    };
-
     static_assert(sizeof(SectionTableHeader) == 40,
                   "The SectionTableHeader struct must match its on-disk representation.");
 
-    struct ImportDirectoryTableEntry
+    ExpectedL<Unit> read_pe_signature_and_get_coff_header_offset(ReadFilePointer& f)
     {
-        uint32_t import_lookup_table_rva;
-        uint32_t date_time_stamp;
-        uint32_t forwarder_chain;
-        uint32_t name_rva;
-        uint32_t import_address_table_rva;
-    };
-
-    struct LoadedDll
-    {
-        CoffFileHeader coff_header;
-        CommonPEOptionalHeaders common_optional_headers;
-        union
+        static constexpr long OFFSET_TO_PE_SIGNATURE_OFFSET = 0x3c;
+        static constexpr StringLiteral PE_SIGNATURE = "PE\0\0";
+        static constexpr auto PE_SIGNATURE_SIZE = static_cast<uint32_t>(PE_SIGNATURE.size());
         {
-            UniquePEOptionalHeaders pe_headers;
-            UniquePEPlusOptionalHeaders pe_plus_headers;
-        };
-
-        std::vector<ImageDataDirectory> data_directories;
-        std::vector<SectionTableHeader> section_headers;
-
-        explicit LoadedDll(const ReadFilePointer& fs)
-        {
-            read_and_verify_pe_signature(fs);
-            Checks::check_exit(VCPKG_LINE_INFO, fs.read(&coff_header, sizeof(coff_header), 1) == 1);
-            read_optional_header(fs);
-            read_section_headers(fs);
+            auto seek_to_signature_offset = f.try_seek_to(OFFSET_TO_PE_SIGNATURE_OFFSET);
+            if (!seek_to_signature_offset.has_value())
+            {
+                return std::move(seek_to_signature_offset).error();
+            }
         }
 
-        std::vector<std::string> read_imported_dlls(const ReadFilePointer& fs) const
+        uint32_t offset;
         {
-            std::vector<std::string> results;
-            if (data_directories.size() < 2)
+            auto read_offset = f.try_read_all(&offset, sizeof(offset));
+            if (!read_offset.has_value())
             {
-                Debug::print("No import directory\n");
-                return results;
+                return std::move(read_offset).error();
+            }
+        }
+
+        {
+            auto seek_to_signature = f.try_seek_to(offset);
+            if (!seek_to_signature.has_value())
+            {
+                return std::move(seek_to_signature).error();
+            }
+        }
+
+        char signature[PE_SIGNATURE_SIZE];
+        {
+            auto read_signature = f.try_read_all(signature, PE_SIGNATURE_SIZE);
+            if (!read_signature.has_value())
+            {
+                return std::move(read_signature).error();
+            }
+        }
+
+        if (PE_SIGNATURE != StringView{signature, PE_SIGNATURE_SIZE})
+        {
+            return msg::format(msgPESignatureMismatch, msg::path = f.path());
+        }
+
+        return Unit{};
+    }
+
+    ExpectedL<Unit> try_read_optional_header(DllMetadata& metadata, ReadFilePointer& f)
+    {
+        // pre: metadata.coff_header has been loaded
+        const auto size_of_optional_header = metadata.coff_header.size_of_optional_header;
+        if (size_of_optional_header < (sizeof(CommonPEOptionalHeaders) + sizeof(UniquePEOptionalHeaders)))
+        {
+            return msg::format(msgPECoffHeaderTooShort, msg::path = f.path());
+        }
+
+        std::vector<unsigned char> optional_header(size_of_optional_header);
+        {
+            auto optional_header_read = f.try_read_all(optional_header.data(), size_of_optional_header);
+            if (!optional_header_read.has_value())
+            {
+                return std::move(optional_header_read).error();
+            }
+        }
+
+        ::memcpy(&metadata.common_optional_headers, optional_header.data(), sizeof(metadata.common_optional_headers));
+        size_t offset_to_data_directories;
+        if (metadata.common_optional_headers.magic == 0x10b)
+        {
+            metadata.pe_type = PEType::PE32;
+            memcpy(&metadata.pe_headers,
+                   optional_header.data() + sizeof(CommonPEOptionalHeaders),
+                   sizeof(metadata.pe_headers));
+            offset_to_data_directories = 96;
+        }
+        else if (metadata.common_optional_headers.magic == 0x20b)
+        {
+            metadata.pe_type = PEType::PE32Plus;
+            memcpy(&metadata.pe_plus_headers,
+                   optional_header.data() + sizeof(CommonPEOptionalHeaders),
+                   sizeof(metadata.pe_plus_headers));
+            offset_to_data_directories = 112;
+        }
+        else
+        {
+            return msg::format(msgPEPlusTagInvalid, msg::path = f.path());
+        }
+
+        size_t number_of_data_directories =
+            (optional_header.size() - offset_to_data_directories) / sizeof(ImageDataDirectory);
+        metadata.data_directories.resize(number_of_data_directories);
+        memcpy(metadata.data_directories.data(),
+               optional_header.data() + offset_to_data_directories,
+               metadata.data_directories.size() * sizeof(ImageDataDirectory));
+
+        return Unit{};
+    }
+
+    ExpectedL<Unit> try_read_section_headers(DllMetadata& metadata, ReadFilePointer& f)
+    {
+        // pre: f is positioned directly after the optional header
+        const auto number_of_sections = metadata.coff_header.number_of_sections;
+        metadata.section_headers.resize(number_of_sections);
+        return f.try_read_all(metadata.section_headers.data(), number_of_sections * sizeof(SectionTableHeader));
+    }
+
+    // seeks the file `f` to the location in the file denoted by `rva`;
+    // returns the remaining size of data in the section
+    ExpectedL<size_t> try_seek_to_rva(const DllMetadata& metadata, ReadFilePointer& f, uint32_t rva)
+    {
+        // The PE spec says that the sections have to be sorted by virtual_address and
+        // contiguous, but this does not assume that for paranoia reasons.
+        for (const auto& section : metadata.section_headers)
+        {
+            const auto section_size = std::max(section.size_of_raw_data, section.virtual_size);
+            if (rva < section.virtual_address || rva >= section.virtual_address + section_size)
+            {
+                continue;
             }
 
-            const auto& import_data_directory = data_directories[1];
-            if (import_data_directory.virtual_address == 0)
+            const auto start_offset_within_section = rva - section.virtual_address;
+            const auto file_pointer = start_offset_within_section + section.pointer_to_raw_data;
+            const size_t leftover = section.size_of_raw_data - start_offset_within_section;
+            return f.try_seek_to(file_pointer).map([=](Unit) { return leftover; });
+        }
+
+        return msg::format(msgPERvaNotFound, msg::path = f.path(), msg::value = rva);
+    }
+
+    ExpectedL<Unit> try_read_image_config_directory(DllMetadata& metadata, ReadFilePointer& f)
+    {
+        // pre: try_read_section_headers succeeded on `metadata`
+        if (metadata.data_directories.size() < 11)
+        {
+            // metadata.load_config_type = LoadConfigType::UnsetOrOld;
+            return Unit{};
+        }
+
+        const auto& load_config_data_directory = metadata.data_directories[10];
+        auto maybe_remaining_size = try_seek_to_rva(metadata, f, load_config_data_directory.virtual_address);
+        if (const auto remaining_size = maybe_remaining_size.get())
+        {
+            if (*remaining_size < load_config_data_directory.size)
             {
-                Debug::print("null import directory\n");
-                return results;
+                return msg::format(msgPEConfigCrossesSectionBoundary, msg::path = f.path());
             }
 
-            auto remaining_size = seek_to_rva(fs, import_data_directory.virtual_address);
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               remaining_size >= import_data_directory.size,
-                               "Import data directory crosses a section boundary.");
-            remaining_size = import_data_directory.size;
-            if (remaining_size < sizeof(ImportDirectoryTableEntry))
+            switch (metadata.pe_type)
             {
-                Debug::print("No import directory table entries\n");
-                return results;
-            }
+                case PEType::PE32:
+                    if (*remaining_size >= sizeof(metadata.image_config_directory32))
+                    {
+                        auto config_read = f.try_read_all(&metadata.image_config_directory32,
+                                                          sizeof(metadata.image_config_directory32));
+                        if (config_read.has_value())
+                        {
+                            metadata.load_config_type = LoadConfigType::PE32;
+                        }
 
-            // -1 for the all-zeroes ImportDirectoryTableEntry
-            const auto maximum_directory_entries = (remaining_size / sizeof(ImportDirectoryTableEntry)) - 1;
-            std::vector<uint32_t> name_rvas; // collect all the RVAs first because loading each name seeks
-            static constexpr ImportDirectoryTableEntry all_zeroes{};
-            for (size_t idx = 0; idx < maximum_directory_entries; ++idx)
-            {
-                ImportDirectoryTableEntry entry;
-                Checks::check_exit(VCPKG_LINE_INFO, fs.read(&entry, sizeof(entry), 1) == 1);
-                if (::memcmp(&entry, &all_zeroes, sizeof(ImportDirectoryTableEntry)) == 0)
-                {
-                    // found the special "null terminator"
+                        return config_read;
+                    }
                     break;
-                }
+                case PEType::PE32Plus:
+                    if (*remaining_size >= sizeof(metadata.image_config_directory64))
+                    {
+                        auto config_read = f.try_read_all(&metadata.image_config_directory64,
+                                                          sizeof(metadata.image_config_directory64));
+                        if (config_read.has_value())
+                        {
+                            metadata.load_config_type = LoadConfigType::PE32Plus;
+                        }
 
-                name_rvas.push_back(entry.name_rva);
+                        return config_read;
+                    }
+                    break;
+                case PEType::Unset:
+                default: Checks::unreachable(VCPKG_LINE_INFO);
             }
-
-            for (const auto name_rva : name_rvas)
-            {
-                results.push_back(read_ntbs_from_rva(fs, name_rva));
-            }
-
-            return results;
         }
 
-    private:
-        void read_optional_header(const ReadFilePointer& fs)
-        {
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               coff_header.size_of_optional_header >=
-                                   (sizeof(CommonPEOptionalHeaders) + sizeof(UniquePEOptionalHeaders)));
-            std::vector<unsigned char> optional_header(coff_header.size_of_optional_header);
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               fs.read(optional_header.data(), 1, optional_header.size()) == optional_header.size());
-            ::memcpy(&common_optional_headers, optional_header.data(), sizeof(common_optional_headers));
-            size_t offset_to_data_directories;
-            if (common_optional_headers.magic == 0x10b)
-            {
-                memcpy(&pe_headers, optional_header.data() + sizeof(CommonPEOptionalHeaders), sizeof(pe_headers));
-                offset_to_data_directories = 96;
-            }
-            else if (common_optional_headers.magic == 0x20b)
-            {
-                memcpy(&pe_plus_headers,
-                       optional_header.data() + sizeof(CommonPEOptionalHeaders),
-                       sizeof(pe_plus_headers));
-                offset_to_data_directories = 112;
-            }
-            else
-            {
-                Checks::exit_with_message(VCPKG_LINE_INFO,
-                                          "Image did not have a PE or PE+ magic number in its optional header.");
-            }
+        return std::move(maybe_remaining_size).error();
+    }
 
-            size_t number_of_data_directories =
-                (optional_header.size() - offset_to_data_directories) / sizeof(ImageDataDirectory);
-            data_directories.resize(number_of_data_directories);
-            memcpy(data_directories.data(),
-                   optional_header.data() + offset_to_data_directories,
-                   data_directories.size() * sizeof(ImageDataDirectory));
-        }
-
-        void read_section_headers(const ReadFilePointer& fs)
-        {
-            section_headers.resize(coff_header.number_of_sections);
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               fs.read(section_headers.data(), sizeof(SectionTableHeader), section_headers.size()) ==
-                                   section_headers.size());
-        }
-
-        // seeks the file `fs` to the location in the file denoted by `rva`;
-        // returns the remaining size of data in the section
-        size_t seek_to_rva(const ReadFilePointer& fs, uint32_t rva) const noexcept
-        {
-            // The PE spec says that the sections have to be sorted by virtual_address and
-            // contiguous, but this does not assume that for paranoia reasons.
-            for (const auto& section : section_headers)
-            {
-                const auto section_size = std::max(section.size_of_raw_data, section.virtual_size);
-                if (rva < section.virtual_address || rva >= section.virtual_address + section_size)
-                {
-                    continue;
-                }
-
-                const auto start_offset_within_section = rva - section.virtual_address;
-                const auto file_pointer = start_offset_within_section + section.pointer_to_raw_data;
-                Checks::check_exit(VCPKG_LINE_INFO, fs.seek(file_pointer, SEEK_SET) == 0);
-                return section.size_of_raw_data - start_offset_within_section;
-            }
-
-            Checks::exit_with_message(VCPKG_LINE_INFO, "Could not find RVA %08X", rva);
-        }
-
-        std::string read_ntbs_from_rva(const ReadFilePointer& fs, uint32_t rva) const
-        {
-            // Note that maximum_size handles the case that size_of_raw_data < virtual_size, where the loader
-            // inserts the null(s).
-            const auto maximum_size = seek_to_rva(fs, rva);
+    ExpectedL<std::string> try_read_ntbs_from_rva(const DllMetadata& metadata, ReadFilePointer& f, uint32_t rva)
+    {
+        // Note that maximum_size handles the case that size_of_raw_data < virtual_size, where the loader
+        // inserts the null(s).
+        return try_seek_to_rva(metadata, f, rva).then([&](size_t maximum_size) -> ExpectedL<std::string> {
             std::string result;
             for (;;)
             {
                 if (result.size() == maximum_size)
                 {
-                    return result;
+                    break;
                 }
 
-                int ch = fs.getc();
-                if (ch == EOF || ch == '\0')
+                auto maybe_ch = f.try_getc();
+                if (auto ch = maybe_ch.get())
                 {
-                    return result;
+                    if (*ch == '\0')
+                    {
+                        break;
+                    }
+
+                    result.push_back(*ch);
+                    continue;
                 }
 
-                result.push_back(static_cast<char>(ch));
-            }
-        }
-    };
-
-    MachineType read_dll_machine_type(const ReadFilePointer& fs)
-    {
-        LoadedDll dll(fs);
-        return to_machine_type(dll.coff_header.machine);
-    }
-
-    std::vector<std::string> read_dll_imported_dll_names(const ReadFilePointer& fs)
-    {
-        LoadedDll dll(fs);
-        return dll.read_imported_dlls(fs);
-    }
-
-    struct ArchiveMemberHeader
-    {
-        char name[16];
-        char date[12];
-        char user_id[6];
-        char group_id[6];
-        char mode[8];
-        char size[10];
-        char end_of_header[2];
-
-        void check_end_of_header() const
-        {
-            // The name[0] == '\0' check is for freeglut, see GitHub issue #223
-            Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                   name[0] == '\0' || (end_of_header[0] == '`' && end_of_header[1] == '\n'),
-                                   msgIncorrectLibHeaderEnd);
-        }
-
-        uint64_t decoded_size() const
-        {
-            char size_plus_null[11];
-            memcpy(size_plus_null, size, 10);
-            size_plus_null[10] = '\0';
-            uint64_t value = strtoull(size_plus_null, nullptr, 10);
-            if (value & 1u)
-            {
-                ++value; // align to short
+                return std::move(maybe_ch).error();
             }
 
-            return value;
-        }
-    };
+            return std::move(result);
+        });
+    }
 
     static_assert(sizeof(ArchiveMemberHeader) == 60,
                   "The ArchiveMemberHeader struct must match its on-disk representation");
 
-    static MachineType read_import_machine_type_after_sig1(const ReadFilePointer& fs)
+    MachineType read_import_machine_type_after_sig1(const ReadFilePointer& f)
     {
         struct ImportHeaderPrefixAfterSig1
         {
@@ -370,7 +248,7 @@ namespace vcpkg
             uint16_t machine;
         } tmp;
 
-        Checks::check_exit(VCPKG_LINE_INFO, fs.read(&tmp, sizeof(tmp), 1) == 1);
+        Checks::check_exit(VCPKG_LINE_INFO, f.read(&tmp, sizeof(tmp), 1) == 1);
         if (tmp.sig2 == 0xFFFF)
         {
             return to_machine_type(tmp.machine);
@@ -380,13 +258,13 @@ namespace vcpkg
         return MachineType::UNKNOWN;
     }
 
-    static void read_and_verify_archive_file_signature(const ReadFilePointer& fs)
+    void read_and_verify_archive_file_signature(const ReadFilePointer& f)
     {
         static constexpr StringLiteral FILE_START = "!<arch>\n";
-        Checks::check_exit(VCPKG_LINE_INFO, fs.seek(0, SEEK_SET) == 0);
+        Checks::check_exit(VCPKG_LINE_INFO, f.seek(0, SEEK_SET) == 0);
 
         char file_start[FILE_START.size()];
-        Checks::check_exit(VCPKG_LINE_INFO, fs.read(&file_start, FILE_START.size(), 1) == 1);
+        Checks::check_exit(VCPKG_LINE_INFO, f.read(&file_start, FILE_START.size(), 1) == 1);
 
         if (FILE_START != StringView{file_start, FILE_START.size()})
         {
@@ -395,25 +273,25 @@ namespace vcpkg
         }
     }
 
-    static void read_and_skip_first_linker_member(const vcpkg::ReadFilePointer& fs)
+    void read_and_skip_first_linker_member(const vcpkg::ReadFilePointer& f)
     {
         ArchiveMemberHeader first_linker_member_header;
         Checks::check_exit(VCPKG_LINE_INFO,
-                           fs.read(&first_linker_member_header, sizeof(first_linker_member_header), 1) == 1);
+                           f.read(&first_linker_member_header, sizeof(first_linker_member_header), 1) == 1);
         if (memcmp(first_linker_member_header.name, "/ ", 2) != 0)
         {
             Debug::println("Could not find proper first linker member");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
-        Checks::check_exit(VCPKG_LINE_INFO, fs.seek(first_linker_member_header.decoded_size(), SEEK_CUR) == 0);
+        Checks::check_exit(VCPKG_LINE_INFO, f.seek(first_linker_member_header.decoded_size(), SEEK_CUR) == 0);
     }
 
-    static std::vector<uint32_t> read_second_linker_member_offsets(const vcpkg::ReadFilePointer& fs)
+    std::vector<uint32_t> read_second_linker_member_offsets(const vcpkg::ReadFilePointer& f)
     {
         ArchiveMemberHeader second_linker_member_header;
         Checks::check_exit(VCPKG_LINE_INFO,
-                           fs.read(&second_linker_member_header, sizeof(second_linker_member_header), 1) == 1);
+                           f.read(&second_linker_member_header, sizeof(second_linker_member_header), 1) == 1);
         if (memcmp(second_linker_member_header.name, "/ ", 2) != 0)
         {
             Debug::println("Could not find proper second linker member");
@@ -430,7 +308,7 @@ namespace vcpkg
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
-        Checks::check_exit(VCPKG_LINE_INFO, fs.read(&archive_member_count, sizeof(archive_member_count), 1) == 1);
+        Checks::check_exit(VCPKG_LINE_INFO, f.read(&archive_member_count, sizeof(archive_member_count), 1) == 1);
         const auto maximum_possible_archive_members = (second_size / sizeof(uint32_t)) - 1;
         if (archive_member_count > maximum_possible_archive_members)
         {
@@ -440,33 +318,33 @@ namespace vcpkg
 
         std::vector<uint32_t> offsets(archive_member_count);
         Checks::check_exit(VCPKG_LINE_INFO,
-                           fs.read(offsets.data(), sizeof(uint32_t), archive_member_count) == archive_member_count);
+                           f.read(offsets.data(), sizeof(uint32_t), archive_member_count) == archive_member_count);
 
         // Ignore offsets that point to offset 0. See vcpkg github #223 #288 #292
         offsets.erase(std::remove(offsets.begin(), offsets.end(), 0u), offsets.end());
         // Sort the offsets, because it is possible for them to be unsorted. See vcpkg github #292
         std::sort(offsets.begin(), offsets.end());
         uint64_t leftover = second_size - sizeof(uint32_t) - (archive_member_count * sizeof(uint32_t));
-        Checks::check_exit(VCPKG_LINE_INFO, fs.seek(leftover, SEEK_CUR) == 0);
+        Checks::check_exit(VCPKG_LINE_INFO, f.seek(leftover, SEEK_CUR) == 0);
         return offsets;
     }
 
-    static std::vector<MachineType> read_machine_types_from_archive_members(const vcpkg::ReadFilePointer& fs,
-                                                                            const std::vector<uint32_t>& member_offsets)
+    std::vector<MachineType> read_machine_types_from_archive_members(const vcpkg::ReadFilePointer& f,
+                                                                     const std::vector<uint32_t>& member_offsets)
     {
         std::vector<MachineType> machine_types; // used as a set because n is tiny
         // Next we have the obj and pseudo-object files
         for (unsigned int offset : member_offsets)
         {
             // Skip the header, no need to read it
-            Checks::check_exit(VCPKG_LINE_INFO, fs.seek(offset + sizeof(ArchiveMemberHeader), SEEK_SET) == 0);
+            Checks::check_exit(VCPKG_LINE_INFO, f.seek(offset + sizeof(ArchiveMemberHeader), SEEK_SET) == 0);
             uint16_t machine_type_raw;
-            Checks::check_exit(VCPKG_LINE_INFO, fs.read(&machine_type_raw, sizeof(machine_type_raw), 1) == 1);
+            Checks::check_exit(VCPKG_LINE_INFO, f.read(&machine_type_raw, sizeof(machine_type_raw), 1) == 1);
 
             auto result_machine_type = to_machine_type(machine_type_raw);
             if (result_machine_type == MachineType::UNKNOWN)
             {
-                result_machine_type = read_import_machine_type_after_sig1(fs);
+                result_machine_type = read_import_machine_type_after_sig1(f);
             }
 
             if (result_machine_type == MachineType::UNKNOWN ||
@@ -481,13 +359,167 @@ namespace vcpkg
         std::sort(machine_types.begin(), machine_types.end());
         return machine_types;
     }
+} // unnamed namespace
 
-    std::vector<MachineType> read_lib_machine_types(const ReadFilePointer& fs)
+namespace vcpkg
+{
+    bool DllMetadata::is_arm64_ec() const noexcept
     {
-        read_and_verify_archive_file_signature(fs);
-        read_and_skip_first_linker_member(fs);
-        const auto offsets = read_second_linker_member_offsets(fs);
-        return read_machine_types_from_archive_members(fs, offsets);
+        switch (load_config_type)
+        {
+            case LoadConfigType::UnsetOrOld: return false;
+            case LoadConfigType::PE32: return image_config_directory32.CHPEMetadataPointer != 0;
+            case LoadConfigType::PE32Plus: return image_config_directory64.CHPEMetadataPointer != 0;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
+    MachineType DllMetadata::get_machine_type() const noexcept { return to_machine_type(coff_header.machine); }
+
+    void ArchiveMemberHeader::check_end_of_header() const
+    {
+        // The name[0] == '\0' check is for freeglut, see GitHub issue #223
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               name[0] == '\0' || (end_of_header[0] == '`' && end_of_header[1] == '\n'),
+                               msgIncorrectLibHeaderEnd);
+    }
+
+    uint64_t ArchiveMemberHeader::decoded_size() const
+    {
+        char size_plus_null[11];
+        memcpy(size_plus_null, size, 10);
+        size_plus_null[10] = '\0';
+        uint64_t value = strtoull(size_plus_null, nullptr, 10);
+        if (value & 1u)
+        {
+            ++value; // align to short
+        }
+
+        return value;
+    }
+
+    ExpectedL<DllMetadata> try_read_dll_metadata(ReadFilePointer& f)
+    {
+        {
+            auto signature = read_pe_signature_and_get_coff_header_offset(f);
+            if (!signature.has_value())
+            {
+                return std::move(signature).error();
+            }
+        }
+
+        DllMetadata result{};
+
+        {
+            auto read_coff = f.try_read_all(&result.coff_header, sizeof(result.coff_header));
+            if (!read_coff.has_value())
+            {
+                return std::move(read_coff).error();
+            }
+        }
+
+        {
+            auto read_optional_header = try_read_optional_header(result, f);
+            if (!read_optional_header.has_value())
+            {
+                return std::move(read_optional_header).error();
+            }
+        }
+
+        {
+            auto read_section_headers = try_read_section_headers(result, f);
+            if (!read_section_headers)
+            {
+                return std::move(read_section_headers).error();
+            }
+        }
+
+        {
+            auto read_load_config_directory = try_read_image_config_directory(result, f);
+            if (!read_load_config_directory)
+            {
+                return std::move(read_load_config_directory).error();
+            }
+        }
+
+        return result;
+    }
+
+    ExpectedL<std::vector<std::string>> try_read_dll_imported_dll_names(const DllMetadata& dll, ReadFilePointer& f)
+    {
+        if (dll.data_directories.size() < 2)
+        {
+            Debug::print("No import directory\n");
+            return std::vector<std::string>{};
+        }
+
+        const auto& import_data_directory = dll.data_directories[1];
+        if (import_data_directory.virtual_address == 0)
+        {
+            Debug::print("Null import directory\n");
+            return std::vector<std::string>{};
+        }
+
+        return try_seek_to_rva(dll, f, import_data_directory.virtual_address)
+            .then([&](size_t remaining_size) -> ExpectedL<std::vector<std::string>> {
+                if (remaining_size < import_data_directory.size)
+                {
+                    return msg::format(msgPEImportCrossesSectionBoundary, msg::path = f.path());
+                }
+
+                std::vector<std::string> results;
+                remaining_size = import_data_directory.size;
+                if (remaining_size < sizeof(ImportDirectoryTableEntry))
+                {
+                    Debug::print("No import directory table entries");
+                    return results;
+                }
+
+                // -1 for the all-zeroes ImportDirectoryTableEntry
+                const auto maximum_directory_entries = (remaining_size / sizeof(ImportDirectoryTableEntry)) - 1;
+                std::vector<uint32_t> name_rvas; // collect all the RVAs first because loading each name seeks
+                static constexpr ImportDirectoryTableEntry all_zeroes{};
+                for (size_t idx = 0; idx < maximum_directory_entries; ++idx)
+                {
+                    ImportDirectoryTableEntry entry;
+                    auto entry_load = f.try_read_all(&entry, sizeof(entry));
+                    if (!entry_load.has_value())
+                    {
+                        return std::move(entry_load).error();
+                    }
+
+                    if (::memcmp(&entry, &all_zeroes, sizeof(ImportDirectoryTableEntry)) == 0)
+                    {
+                        // found the special "null terminator"
+                        break;
+                    }
+
+                    name_rvas.push_back(entry.name_rva);
+                }
+
+                for (const auto name_rva : name_rvas)
+                {
+                    auto maybe_string = try_read_ntbs_from_rva(dll, f, name_rva);
+                    if (const auto s = maybe_string.get())
+                    {
+                        results.push_back(std::move(*s));
+                    }
+                    else
+                    {
+                        return std::move(maybe_string).error();
+                    }
+                }
+
+                return results;
+            });
+    }
+
+    std::vector<MachineType> read_lib_machine_types(const ReadFilePointer& f)
+    {
+        read_and_verify_archive_file_signature(f);
+        read_and_skip_first_linker_member(f);
+        const auto offsets = read_second_linker_member_offsets(f);
+        return read_machine_types_from_archive_members(f, offsets);
     }
 
     MachineType to_machine_type(const uint16_t value)
@@ -501,6 +533,7 @@ namespace vcpkg
             case MachineType::ARM:
             case MachineType::ARM64:
             case MachineType::ARM64EC:
+            case MachineType::ARM64X:
             case MachineType::ARMNT:
             case MachineType::EBC:
             case MachineType::I386:
