@@ -1306,7 +1306,7 @@ namespace vcpkg
     DECLARE_MESSAGE(InstallingMavenFile,
                     (msg::path),
                     "Printed after a filesystem operation error",
-                    "{path} installing maven file");
+                    "{path} installing Maven file");
     DECLARE_MESSAGE(InstallingPackage,
                     (msg::action_index, msg::count, msg::spec),
                     "",
@@ -2129,7 +2129,7 @@ namespace vcpkg
                     (),
                     "",
                     "Instead of erroring on an unsupported port, continue with a warning.");
-    DECLARE_MESSAGE(HelpTxtOptNoUsage, (), "", "Don't print cmake usage information after install.");
+    DECLARE_MESSAGE(HelpTxtOptNoUsage, (), "", "Don't print CMake usage information after install.");
     DECLARE_MESSAGE(
         HelpTxtOptWritePkgConfig,
         (),
@@ -2211,7 +2211,7 @@ namespace vcpkg
         CmdGenerateMessageMapOptNoOutputComments,
         (),
         "",
-        "When generating the message map, exclude comments (useful for generating the english localization file)");
+        "When generating the message map, exclude comments (useful for generating the English localization file)");
     DECLARE_MESSAGE(CmdInfoOptInstalled, (), "", "(experimental) Report on installed packages instead of available");
     DECLARE_MESSAGE(CmdInfoOptTransitive, (), "", "(experimental) Also report on dependencies of installed packages");
     DECLARE_MESSAGE(CmdNewOptApplication, (), "", "Create an application manifest (don't require name or version).");
@@ -2235,7 +2235,7 @@ namespace vcpkg
     DECLARE_MESSAGE(CmdRegenerateOptNormalize, (), "", "apply any deprecation fixups");
     DECLARE_MESSAGE(HelpTextOptFullDesc, (), "", "Do not truncate long text");
     DECLARE_MESSAGE(CmdSetInstalledOptDryRun, (), "", "Do not actually build or install");
-    DECLARE_MESSAGE(CmdSetInstalledOptNoUsage, (), "", "Don't print cmake usage information after install.");
+    DECLARE_MESSAGE(CmdSetInstalledOptNoUsage, (), "", "Don't print CMake usage information after install.");
     DECLARE_MESSAGE(CmdSetInstalledOptWritePkgConfig,
                     (),
                     "",
@@ -2265,7 +2265,7 @@ namespace vcpkg
     DECLARE_MESSAGE(CmdExportOpt7Zip, (), "", "Export to a 7zip (.7z) file");
     DECLARE_MESSAGE(CmdExportOptChocolatey, (), "", "Export a Chocolatey package (experimental feature)");
     DECLARE_MESSAGE(CmdExportOptPrefab, (), "", "Export to Prefab format");
-    DECLARE_MESSAGE(CmdExportOptMaven, (), "", "Enable maven");
+    DECLARE_MESSAGE(CmdExportOptMaven, (), "", "Enable Maven");
     DECLARE_MESSAGE(CmdExportOptDebug, (), "", "Enable prefab debug");
     DECLARE_MESSAGE(CmdExportOptInstalled, (), "", "Export all installed packages");
     DECLARE_MESSAGE(CmdExportSettingOutput, (), "", "Specify the output name (used to construct filename)");
@@ -2295,16 +2295,16 @@ namespace vcpkg
     DECLARE_MESSAGE(CmdExportSettingPrefabGroupID,
                     (),
                     "",
-                    "GroupId uniquely identifies your project according maven specifications");
+                    "GroupId uniquely identifies your project according Maven specifications");
     DECLARE_MESSAGE(CmdExportSettingPrefabArtifactID,
                     (),
                     "",
-                    "Artifact Id is the name of the project according maven specifications");
+                    "Artifact Id is the name of the project according Maven specifications");
     DECLARE_MESSAGE(CmdExportSettingPrefabVersion,
                     (),
                     "",
-                    "Version is the name of the project according maven specifications");
-    DECLARE_MESSAGE(CmdExportSettingSDKMinVersion, (), "", "Android minimum supported sdk version");
+                    "Version is the name of the project according Maven specifications");
+    DECLARE_MESSAGE(CmdExportSettingSDKMinVersion, (), "", "Android minimum supported SDK version");
     DECLARE_MESSAGE(CmdExportSettingSDKTargetVersion, (), "", "Android target sdk version");
     DECLARE_MESSAGE(CmdRemoveOptRecurse,
                     (),
