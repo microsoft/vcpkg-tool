@@ -127,6 +127,13 @@ jobs:
           git -C "$env:VCPKG_ROOT" checkout $sha
     - task: CodeQL3000Init@0
       displayName: 'CodeQL Initialize'
+    - task: UseNode@1
+      displayName: Use Node 16 or later
+      inputs:
+        version: "16.x"
+    - script: npm install -g @microsoft/rush
+      displayName: Install Rush
+      workingDirectory: ce\common\config\rush
     - task: CmdLine@2
       displayName: "Build vcpkg with CMake"
       inputs:
