@@ -4,7 +4,7 @@
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
-
+#include <vcpkg/base/messages.h>
 #include <vcpkg/archives.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/configure-environment.h>
@@ -171,12 +171,15 @@ namespace vcpkg
         cmd_run.string_arg("--z-vcpkg-downloads").string_arg(paths.downloads);
         cmd_run.string_arg("--z-vcpkg-registries-cache").string_arg(paths.registries_cache());
 
-        auto maybe_vslang = get_environment_variable("VSLANG");
-        auto vslang = maybe_vslang.get();
-        auto maybe_lcid = Strings::strto<int>(*vslang);
-        auto lcid = maybe_lcid.get();
-        auto lang_tag = msg::get_language_tag(*lcid);
-        cmd_run.string_arg("--language").string_arg(*lang_tag.get());
+        if (auto maybe_file = msg::get_file())
+        {
+            auto file = maybe_file.get();
+            auto temp_dir = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
+            fs.write_contents(temp_dir, StringView{file->begin(), file->end()}, VCPKG_LINE_INFO);
+            cmd_run.string_arg("--language").string_arg(temp_dir / temp_dir.filename());
+        }
+
+       
 
         Debug::println("Running configure-environment with ", cmd_run.command_line());
 

@@ -26,45 +26,14 @@ export function createSandbox(): <T>(code: string, context?: any) => T {
 
 export const safeEval = createSandbox();
 
-
-const languages = <Record<string, any>>{
-  none: require('../locales/messages.json'),
-  cs: require('../locales/messages.cs.json'),
-  de: require('../locales/messages.de.json'),
-  en: require('../locales/messages.en.json'),
-  es: require('../locales/messages.es.json'),
-  fr: require('../locales/messages.fr.json'),
-  it: require('../locales/messages.it.json'),
-  ja: require('../locales/messages.ja.json'),
-  ko: require('../locales/messages.ko.json'),
-  pl: require('../locales/messages.pl.json'),
-  'pt-BR': require('../locales/messages.pt-BR.json'),
-  ru: require('../locales/messages.ru.json'),
-  tr: require('../locales/messages.tr.json'),
-  'zh-Hans': require('../locales/messages.zh-Hans.json'),
-  'zh-Hant': require('../locales/messages.zh-Hant.json'),
-};
-
 type PrimitiveValue = string | number | boolean | undefined | Date;
-let currentLocale = languages['none'];
+let currentLocale = require('../locales/messages.json');
 
 export function setLocale(newLocale: string) {
-  currentLocale = languages[newLocale];
+  currentLocale = require(newLocale)
   if (currentLocale) {
     return;
   }
-
-  const l = newLocale.lastIndexOf('-');
-  if (l > -1) {
-    const localeFiltered = newLocale.substr(0, l);
-    currentLocale = languages[localeFiltered];
-    if (currentLocale) {
-      return;
-    }
-  }
-
-  // fall back to none
-  currentLocale = languages['none'];
 }
 
 
