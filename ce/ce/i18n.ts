@@ -29,11 +29,10 @@ export const safeEval = createSandbox();
 type PrimitiveValue = string | number | boolean | undefined | Date;
 let currentLocale = require('../locales/messages.json');
 
-export function setLocale(newLocale: string) {
-  currentLocale = require(newLocale)
-  if (currentLocale) {
-    return;
-  }
+export function setLocale(newLocale: string | undefined) {
+    if (newLocale) {
+        currentLocale = require(newLocale);
+    }
 }
 
 
@@ -67,10 +66,7 @@ export function i(literals: TemplateStringsArray, ...values: Array<string | numb
       // fill out the template string.
       return safeEval(`\`${str}\``, values.reduce((p, c, i) => { p[`p${i}`] = c; return p; }, <any>{}));
     }
-    // console.log({ literals, str });
   }
-  //console.log(key);
-
   // if the translation isn't available, just resolve the string template normally.
   return String.raw(literals, ...values);
 }

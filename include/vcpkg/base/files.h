@@ -7,7 +7,6 @@
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/pragmas.h>
-#include <vcpkg/base/setup_messages.h>
 #include <vcpkg/base/stringview.h>
 
 #include <stdio.h>

@@ -1,7 +1,7 @@
 #include <vcpkg/base/basic_checks.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/json.h>
-#include <vcpkg/base/messages.h>
+#include <vcpkg/base/setup_messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
@@ -176,8 +176,9 @@ namespace vcpkg
         {
             auto file = maybe_file.get();
             auto temp_dir = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
-            fs.write_contents(temp_dir, StringView{file->begin(), file->end()}, VCPKG_LINE_INFO);
-            cmd_run.string_arg("--language").string_arg(temp_dir / temp_dir.filename());
+            auto temp_file = temp_dir / "messages.json";
+            fs.write_contents(temp_file, StringView{file->begin(), file->end()}, VCPKG_LINE_INFO);
+            cmd_run.string_arg("--language").string_arg(temp_file);
         }
 
         Debug::println("Running configure-environment with ", cmd_run.command_line());

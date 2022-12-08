@@ -122,7 +122,7 @@ export class CommandLine {
   get language() {
     const l = this.switches['language'] || [];
     strict.ok((l?.length || 0) < 2, i`Expected a single value for ${cmdSwitch('language')} - found multiple`);
-    return l[0] || Intl.DateTimeFormat().resolvedOptions().locale;
+      return l[0];
   }
 
   get allLanguages(): boolean {
