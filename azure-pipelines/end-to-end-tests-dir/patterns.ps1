@@ -4,7 +4,7 @@
 # Creates a git registry to run the e2e tests on
 $e2eProjects = "$PSScriptRoot/../e2e_projects"
 $manifestRoot = "$e2eProjects/registries-package-patterns"
-$e2eRegistryPath = "$PSScriptRoot/../e2e_registry"
+$e2eRegistryPath = "$PSScriptRoot/../e2e_registry".Replace('\', '\\')
 Push-Location $e2eRegistryPath
 try
 {
@@ -21,7 +21,7 @@ try
 		'-c', 'core.autocrlf=false'
 	)
 
-	git @gitConfig init -b main . | Out-Null
+	git @gitConfig init . | Out-Null
 	Throw-IfFailed
 	git @gitConfig add -A | Out-Null
 	Throw-IfFailed
@@ -36,6 +36,7 @@ finally
 }
 ### </Initialize Registry>
 
+$commonArgs += @("--x-manifest-root=$manifestRoot")
 
 # [patterns] No patterns (no default)
 Write-Host "[patterns] No patterns (no default)"
@@ -43,7 +44,7 @@ $inFile = "$manifestRoot/no-patterns.json.in"
 (Get-Content -Path "$inFile").Replace("`$E2ERegistryPath", $e2eRegistryPath).Replace("`$E2ERegistryBaseline", $e2eRegistryBaseline) `
 | Out-File "$manifestRoot/vcpkg.json"
 
-Run-Vcpkg -EndToEndTestSilent install @commonArgs "--x-manifest-root=$manifestRoot" | Out-Null
+Run-Vcpkg -EndToEndTestSilent @commonArgs install | Out-Null
 Throw-IfFailed
 Refresh-TestRoot
 
@@ -53,7 +54,7 @@ $inFile = "$manifestRoot/only-patterns.json.in"
 (Get-Content -Path "$inFile").Replace("`$E2ERegistryPath", $e2eRegistryPath).Replace("`$E2ERegistryBaseline", $e2eRegistryBaseline) `
 | Out-File "$manifestRoot/vcpkg.json"
 
-Run-Vcpkg -EndToEndTestSilent install @commonArgs "--x-manifest-root=$manifestRoot" | Out-Null
+Run-Vcpkg -EndToEndTestSilent @commonArgs install | Out-Null
 Throw-IfFailed
 Refresh-TestRoot
 
@@ -63,7 +64,7 @@ $inFile = "$manifestRoot/with-default.json.in"
 (Get-Content -Path "$inFile").Replace("`$E2ERegistryPath", $e2eRegistryPath).Replace("`$E2ERegistryBaseline", $e2eRegistryBaseline) `
 | Out-File "$manifestRoot/vcpkg.json"
 
-Run-Vcpkg -EndToEndTestSilent install @commonArgs "--x-manifest-root=$manifestRoot" | Out-Null
+Run-Vcpkg -EndToEndTestSilent @commonArgs install | Out-Null
 Throw-IfFailed
 Refresh-TestRoot
 
@@ -73,7 +74,7 @@ $inFile = "$manifestRoot/with-redeclaration.json.in"
 (Get-Content -Path "$inFile").Replace("`$E2ERegistryPath", $e2eRegistryPath).Replace("`$E2ERegistryBaseline", $e2eRegistryBaseline) `
 | Out-File "$manifestRoot/vcpkg.json"
 
-$out = Run-VcpkgAndCaptureOutput -EndToEndTestSilent install @commonArgs "--x-manifest-root=$manifestRoot"
+$out = Run-VcpkgAndCaptureOutput -EndToEndTestSilent @commonArgs install
 Throw-IfFailed
 if ($out -notmatch "redeclarations will be ignored")
 {
