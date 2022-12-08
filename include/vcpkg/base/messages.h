@@ -909,6 +909,10 @@ namespace vcpkg
                     (),
                     "",
                     "Allow removal of packages not explicitly specified on the command line");
+    DECLARE_MESSAGE(CmdSettingCopiedFilesLog, (), "", "Path to the copied files log to create");
+    DECLARE_MESSAGE(CmdSettingInstalledDir, (), "", "Path to the installed tree to use");
+    DECLARE_MESSAGE(CmdSettingTargetBin, (), "", "Path to the binary to analyze");
+    DECLARE_MESSAGE(CmdSettingTLogFile, (), "", "Path to the tlog file to create");
     DECLARE_MESSAGE(CmdSetInstalledOptDryRun, (), "", "Do not actually build or install");
     DECLARE_MESSAGE(CmdSetInstalledOptNoUsage, (), "", "Don't print CMake usage information after install.");
     DECLARE_MESSAGE(CmdSetInstalledOptWritePkgConfig,

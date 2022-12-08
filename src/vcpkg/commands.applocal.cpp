@@ -498,10 +498,10 @@ namespace vcpkg::Commands
         static constexpr StringLiteral OPTION_COPIED_FILES_LOG = "copied-files-log";
 
         static constexpr CommandSetting SETTINGS[] = {
-            {OPTION_TARGET_BINARY, "Path to the binary to analyze"},
-            {OPTION_INSTALLED_DIR, "Path to the installed tree to use"},
-            {OPTION_TLOG_FILE, "Path to the tlog file to create"},
-            {OPTION_COPIED_FILES_LOG, "Path to the copied files log to create"},
+            {OPTION_TARGET_BINARY, []() { return msg::format(msgCmdSettingTargetBin); }},
+            {OPTION_INSTALLED_DIR, []() { return msg::format(msgCmdSettingInstalledDir); }},
+            {OPTION_TLOG_FILE, []() { return msg::format(msgCmdSettingTLogFile); }},
+            {OPTION_COPIED_FILES_LOG, []() { return msg::format(msgCmdSettingCopiedFilesLog); }},
         };
 
         const CommandStructure COMMAND_STRUCTURE = {
