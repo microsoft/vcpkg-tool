@@ -479,7 +479,7 @@
         <Str Cat="Text">
           <Val><![CDATA[All MSBuild C++ projects can now #include any installed libraries. Linking will be handled automatically. Installing new libraries will make them instantly available.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Todos os projetos do MSBuild C++ agora podem #incluir bibliotecas instaladas. A vinculação será tratada automaticamente. A instalação de novas bibliotecas as disponibilizará instantaneamente.]]></Val>
+            <Val><![CDATA[Todos os projetos do MSBuild C++ agora podem utilizar #include bibliotecas instaladas. A vinculação será tratada automaticamente. A instalação de novas bibliotecas as disponibilizará instantaneamente.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1440,6 +1440,15 @@
           <Val><![CDATA[found end of string in middle of code point]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[encontrou o final da cadeia de caracteres no meio do ponto de código]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";EnvInvalidMaxConcurrency" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{env_var} is {value}, must be > 0]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{env_var} é {valor}, deve ser > 0]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
