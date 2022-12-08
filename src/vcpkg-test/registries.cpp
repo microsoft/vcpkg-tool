@@ -125,6 +125,7 @@ TEST_CASE ("check valid package patterns", "[registries]")
     CHECK(PD::is_package_pattern("*"));
     CHECK(PD::is_package_pattern("b*"));
     CHECK(PD::is_package_pattern("boost*"));
+    CHECK(PD::is_package_pattern("boost-*"));
 
     // reject invalid patterns
     CHECK(!PD::is_package_pattern("*a"));

@@ -1492,10 +1492,10 @@ namespace vcpkg::Json
             return true;
         }
 
-        if (sv == "*")
+        /*if (sv == "*")
         {
             return true;
-        }
+        }*/
 
         // ([a-z0-9]+(-[a-z0-9]+)*)(\*?)
         auto cur = sv.begin();
@@ -1503,10 +1503,21 @@ namespace vcpkg::Json
         for (;;)
         {
             // [a-z0-9]+
-            if (cur == last || !is_lower_digit(*cur))
+            if (cur == last)
             {
                 return false;
             }
+
+            if (!is_lower_digit(*cur))
+            {
+                if (*cur != '*')
+                {
+                    return false;
+                }
+
+                return ++cur == last;
+            }
+
             do
             {
                 ++cur;
