@@ -210,7 +210,7 @@ namespace vcpkg::Commands::Edit
             const auto last = full_path.end();
             first = std::find_if_not(first, last, [](const char c) { return c == '@'; });
             const auto comma = std::find(first, last, ',');
-            candidate_paths.emplace_back(first, comma);
+            candidate_paths.emplace_back(&*first, comma - first);
         }
 #elif defined(__APPLE__)
         candidate_paths.emplace_back("/Applications/Visual Studio Code - Insiders.app/Contents/Resources/app/bin/code");
