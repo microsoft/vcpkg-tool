@@ -603,12 +603,12 @@ namespace vcpkg
          {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, []() { return msg::format(msgHelpTxtOptCleanDownloadsAfterBuild); }},
          {OPTION_MANIFEST_NO_DEFAULT_FEATURES, []() { return msg::format(msgHelpTxtOptManifestNoDefault); }},
          {OPTION_ENFORCE_PORT_CHECKS, []() { return msg::format(msgHelpTxtOptEnforcePortChecks); }},
-         {OPTION_PROHIBIT_BACKCOMPAT_FEATURES, ""},
+         {OPTION_PROHIBIT_BACKCOMPAT_FEATURES, nullptr},
          {OPTION_ALLOW_UNSUPPORTED_PORT, []() { return msg::format(msgHelpTxtOptAllowUnsupportedPort); }},
          {OPTION_NO_PRINT_USAGE, []() { return msg::format(msgHelpTxtOptNoUsage); }}}};
 
     static constexpr std::array<CommandSetting, 2> INSTALL_SETTINGS = {{
-        {OPTION_XUNIT, ""}, // internal use
+        {OPTION_XUNIT, nullptr}, // internal use
         {OPTION_WRITE_PACKAGES_CONFIG, []() { return msg::format(msgHelpTxtOptWritePkgConfig); }},
     }};
 

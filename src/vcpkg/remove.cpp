@@ -163,8 +163,8 @@ namespace vcpkg::Remove
     static constexpr StringLiteral OPTION_OUTDATED = "outdated";
 
     static constexpr std::array<CommandSwitch, 5> SWITCHES = {{
-        {OPTION_PURGE, ""},
-        {OPTION_NO_PURGE, ""},
+        {OPTION_PURGE, nullptr},
+        {OPTION_NO_PURGE, nullptr},
         {OPTION_RECURSE, []() { return msg::format(msgCmdRemoveOptRecurse); }},
         {OPTION_DRY_RUN, []() { return msg::format(msgCmdRemoveOptDryRun); }},
         {OPTION_OUTDATED, []() { return msg::format(msgCmdRemoveOptOutdated); }},
