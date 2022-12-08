@@ -419,7 +419,7 @@ if(VCPKG_PDB_SUFFIX)
 endif()
 
 # === Target: generate-message-map ===
-
+if (VCPKG_ARTIFACTS_DEVELOPMENT)
 add_custom_target(generate-message-map
    COMMAND vcpkg x-generate-default-message-map locales/messages.json ${CMAKE_CURRENT_LIST_DIR}/ce/ce/locales/messages.json
    DEPENDS ${CMAKE_CURRENT_LIST_DIR}/ce/ce/locales/messages.json
@@ -437,8 +437,7 @@ add_custom_command(
     COMMENT "Running translate-strings..."
     VERBATIM
 )
-
-
+endif()
 
 # === Target: vcpkg-test ===
 
