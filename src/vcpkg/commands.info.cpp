@@ -20,8 +20,8 @@ namespace vcpkg::Commands::Info
     static constexpr StringLiteral OPTION_INSTALLED = "x-installed";
 
     static constexpr CommandSwitch INFO_SWITCHES[] = {
-        {OPTION_INSTALLED, "(experimental) Report on installed packages instead of available"},
-        {OPTION_TRANSITIVE, "(experimental) Also report on dependencies of installed packages"},
+        {OPTION_INSTALLED, []() { return msg::format(msgCmdInfoOptInstalled); }},
+        {OPTION_TRANSITIVE, []() { return msg::format(msgCmdInfoOptTransitive); }},
     };
 
     const CommandStructure COMMAND_STRUCTURE = {

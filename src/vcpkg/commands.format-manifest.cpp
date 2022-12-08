@@ -162,8 +162,8 @@ namespace vcpkg::Commands::FormatManifest
     static constexpr StringLiteral OPTION_CONVERT_CONTROL = "convert-control";
 
     const CommandSwitch FORMAT_SWITCHES[] = {
-        {OPTION_ALL, "Format all ports' manifest files."},
-        {OPTION_CONVERT_CONTROL, "Convert CONTROL files to manifest files."},
+        {OPTION_ALL, []() { return msg::format(msgCmdFormatManifestOptAll); }},
+        {OPTION_CONVERT_CONTROL, []() { return msg::format(msgCmdFormatManifestOptConvertControl); }},
     };
 
     const CommandStructure COMMAND_STRUCTURE = {

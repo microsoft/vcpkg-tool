@@ -22,12 +22,10 @@ namespace vcpkg::Commands::SetInstalled
     static constexpr StringLiteral OPTION_NO_PRINT_USAGE = "no-print-usage";
 
     static constexpr CommandSwitch INSTALL_SWITCHES[] = {
-        {OPTION_DRY_RUN, "Do not actually build or install"},
-        {OPTION_NO_PRINT_USAGE, "Don't print cmake usage information after install."}};
+        {OPTION_DRY_RUN, []() { return msg::format(msgCmdSetInstalledOptDryRun); }},
+        {OPTION_NO_PRINT_USAGE, []() { return msg::format(msgCmdSetInstalledOptNoUsage); }}};
     static constexpr CommandSetting INSTALL_SETTINGS[] = {
-        {OPTION_WRITE_PACKAGES_CONFIG,
-         "Writes out a NuGet packages.config-formatted file for use with external binary caching.\n"
-         "See `vcpkg help binarycaching` for more information."},
+        {OPTION_WRITE_PACKAGES_CONFIG, []() { return msg::format(msgCmdSetInstalledOptWritePkgConfig); }},
     };
 
     const CommandStructure COMMAND_STRUCTURE = {

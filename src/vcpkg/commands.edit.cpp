@@ -95,8 +95,8 @@ namespace vcpkg::Commands::Edit
     }
 
     static constexpr std::array<CommandSwitch, 2> EDIT_SWITCHES = {
-        {{OPTION_BUILDTREES, "Open editor into the port-specific buildtree subfolder"},
-         {OPTION_ALL, "Open editor into the port as well as the port-specific buildtree subfolder"}}};
+        {{OPTION_BUILDTREES, []() { return msg::format(msgCmdEditOptBuildTrees); }},
+         {OPTION_ALL, []() { return msg::format(msgCmdEditOptAll); }}}};
 
     const CommandStructure COMMAND_STRUCTURE = {
         create_example_string("edit zlib"),

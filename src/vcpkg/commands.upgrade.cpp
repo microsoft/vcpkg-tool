@@ -28,10 +28,10 @@ namespace vcpkg::Commands::Upgrade
     static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
 
     static constexpr std::array<CommandSwitch, 4> INSTALL_SWITCHES = {{
-        {OPTION_NO_DRY_RUN, "Actually upgrade"},
-        {OPTION_KEEP_GOING, ""},
-        {OPTION_NO_KEEP_GOING, "Stop installing packages on failure"},
-        {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
+        {OPTION_NO_DRY_RUN, []() { return msg::format(msgCmdUpgradeOptNoDryRun); }},
+        {OPTION_KEEP_GOING, nullptr},
+        {OPTION_NO_KEEP_GOING, []() { return msg::format(msgCmdUpgradeOptNoKeepGoing); }},
+        {OPTION_ALLOW_UNSUPPORTED_PORT, []() { return msg::format(msgCmdUpgradeOptAllowUnsupported); }},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
