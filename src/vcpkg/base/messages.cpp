@@ -203,8 +203,8 @@ namespace vcpkg::msg
             ::abort();
         }
     }
-    const Optional<cmrc::file> get_file() 
-    { 
+    const Optional<cmrc::file> get_file()
+    {
         Messages& m = messages();
         return m.json_file;
     }
