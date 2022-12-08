@@ -292,8 +292,7 @@ namespace vcpkg::Commands::CI
     {
         const auto all_ports = Util::Sets::contains(args.switches, OPTION_RUN_FEATURE_TESTS_ALL_PORTS);
         std::vector<std::string> ports;
-        auto iter = args.settings.find(OPTION_RUN_FEATURE_TESTS_PORTS);
-        if (iter != args.settings.end())
+        if (auto iter = args.settings.find(OPTION_RUN_FEATURE_TESTS_PORTS); iter != args.settings.end())
         {
             ports = Strings::split(iter->second, ',');
         }
@@ -452,9 +451,6 @@ namespace vcpkg::Commands::CI
                 build_logs_recorder_storage = filesystem.almost_canonical(raw_path, VCPKG_LINE_INFO);
             }
         }
-
-        const IBuildLogsRecorder& build_logs_recorder =
-            build_logs_recorder_storage ? *(build_logs_recorder_storage.get()) : null_build_logs_recorder();
 
         PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
@@ -790,6 +786,9 @@ namespace vcpkg::Commands::CI
                                       });
             }
             SetInstalled::adjust_action_plan_to_status_db(action_plan, status_db);
+
+            const IBuildLogsRecorder& build_logs_recorder =
+                build_logs_recorder_storage ? *(build_logs_recorder_storage.get()) : null_build_logs_recorder();
 
             auto summary = Install::perform(
                 args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder, var_provider);
