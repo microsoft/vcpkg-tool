@@ -1365,20 +1365,6 @@ namespace vcpkg
 
     FilePointer::operator bool() const noexcept { return m_fs != nullptr; }
 
-    int FilePointer::seek(int offset, int origin) const noexcept { return ::fseek(m_fs, offset, origin); }
-    int FilePointer::seek(unsigned int offset, int origin) const noexcept
-    {
-        return this->seek(static_cast<long long>(offset), origin);
-    }
-    int FilePointer::seek(long offset, int origin) const noexcept { return ::fseek(m_fs, offset, origin); }
-    int FilePointer::seek(unsigned long offset, int origin) const noexcept
-    {
-#if defined(_WIN32)
-        return ::_fseeki64(m_fs, static_cast<long long>(offset), origin);
-#else  // ^^^ _WIN32 / !_WIN32 vvv
-        return ::fseeko(m_fs, static_cast<long long>(offset), origin);
-#endif // ^^^ !_WIN32
-    }
     int FilePointer::seek(long long offset, int origin) const noexcept
     {
 #if defined(_WIN32)
@@ -1387,13 +1373,8 @@ namespace vcpkg
         return ::fseeko(m_fs, offset, origin);
 #endif // ^^^ !_WIN32
     }
-    int FilePointer::seek(unsigned long long offset, int origin) const noexcept
-    {
-        Checks::check_exit(VCPKG_LINE_INFO, offset < LLONG_MAX);
-        return this->seek(static_cast<long long>(offset), origin);
-    }
 
-    unsigned long long FilePointer::tell() const noexcept
+    long long FilePointer::tell() const noexcept
     {
 #if defined(_WIN32)
         return ::_ftelli64(m_fs);
@@ -1410,57 +1391,7 @@ namespace vcpkg
 
     const Path& FilePointer::path() const { return m_path; }
 
-    ExpectedL<Unit> FilePointer::try_seek_to(int offset)
-    {
-        if (this->seek(offset, SEEK_SET))
-        {
-            return msg::format(msgFileSeekFailed, msg::path = m_path, msg::byte_offset = offset);
-        }
-
-        return Unit{};
-    }
-
-    ExpectedL<Unit> FilePointer::try_seek_to(unsigned int offset)
-    {
-        if (this->seek(offset, SEEK_SET))
-        {
-            return msg::format(msgFileSeekFailed, msg::path = m_path, msg::byte_offset = offset);
-        }
-
-        return Unit{};
-    }
-
-    ExpectedL<Unit> FilePointer::try_seek_to(long offset)
-    {
-        if (this->seek(offset, SEEK_SET))
-        {
-            return msg::format(msgFileSeekFailed, msg::path = m_path, msg::byte_offset = offset);
-        }
-
-        return Unit{};
-    }
-
-    ExpectedL<Unit> FilePointer::try_seek_to(unsigned long offset)
-    {
-        if (this->seek(offset, SEEK_SET))
-        {
-            return msg::format(msgFileSeekFailed, msg::path = m_path, msg::byte_offset = offset);
-        }
-
-        return Unit{};
-    }
-
     ExpectedL<Unit> FilePointer::try_seek_to(long long offset)
-    {
-        if (this->seek(offset, SEEK_SET))
-        {
-            return msg::format(msgFileSeekFailed, msg::path = m_path, msg::byte_offset = offset);
-        }
-
-        return Unit{};
-    }
-
-    ExpectedL<Unit> FilePointer::try_seek_to(unsigned long long offset)
     {
         if (this->seek(offset, SEEK_SET))
         {

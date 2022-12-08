@@ -118,23 +118,13 @@ namespace vcpkg
         FilePointer& operator=(const FilePointer&) = delete;
         explicit operator bool() const noexcept;
 
-        int seek(int offset, int origin) const noexcept;
-        int seek(unsigned int offset, int origin) const noexcept;
-        int seek(long offset, int origin) const noexcept;
-        int seek(unsigned long offset, int origin) const noexcept;
         int seek(long long offset, int origin) const noexcept;
-        int seek(unsigned long long offset, int origin) const noexcept;
-        unsigned long long tell() const noexcept;
+        long long tell() const noexcept;
         int eof() const noexcept;
         std::error_code error() const noexcept;
 
         const Path& path() const;
-        ExpectedL<Unit> try_seek_to(int offset);
-        ExpectedL<Unit> try_seek_to(unsigned int offset);
-        ExpectedL<Unit> try_seek_to(long offset);
-        ExpectedL<Unit> try_seek_to(unsigned long offset);
         ExpectedL<Unit> try_seek_to(long long offset);
-        ExpectedL<Unit> try_seek_to(unsigned long long offset);
 
         ~FilePointer();
     };
