@@ -179,8 +179,6 @@ namespace vcpkg
             cmd_run.string_arg("--language").string_arg(temp_dir / temp_dir.filename());
         }
 
-       
-
         Debug::println("Running configure-environment with ", cmd_run.command_line());
 
         auto result = cmd_execute(cmd_run, WorkingDirectory{paths.original_cwd}).value_or_exit(VCPKG_LINE_INFO);
