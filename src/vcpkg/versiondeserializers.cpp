@@ -192,11 +192,7 @@ namespace vcpkg
         return t;
     }
 
-    void serialize_schemed_version(Json::Object& out_obj,
-                                   VersionScheme scheme,
-                                   StringView version,
-                                   int port_version,
-                                   bool always_emit_port_version)
+    void serialize_schemed_version(Json::Object& out_obj, VersionScheme scheme, StringView version, int port_version)
     {
         auto version_field = [](VersionScheme version_scheme) {
             switch (version_scheme)
@@ -211,7 +207,7 @@ namespace vcpkg
 
         out_obj.insert(version_field(scheme), Json::Value::string(version));
 
-        if (port_version != 0 || always_emit_port_version)
+        if (port_version != 0)
         {
             out_obj.insert(PORT_VERSION, Json::Value::integer(port_version));
         }

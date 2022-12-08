@@ -171,5 +171,9 @@ export function unpackTarGz(session: Session, archiveUri: Uri, outputUri: Uri, e
 
 export function unpackTarBz(session: Session, archiveUri: Uri, outputUri: Uri, events: Partial<UnpackEvents>, options: UnpackOptions): Promise<void> {
   session.channels.debug(`unpacking TAR.BZ2 ${archiveUri} => ${outputUri}`);
-  return unpackTarImpl(session, archiveUri, outputUri, events, options, bz2);
+  return unpackTarImpl(session, archiveUri, outputUri, events, options, () => {
+    const decompressor = bz2();
+    (<any>decompressor).autoDestroy = false;
+    return decompressor;
+  });
 }

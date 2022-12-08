@@ -97,24 +97,21 @@ namespace vcpkg::Commands::CI
     static constexpr StringLiteral OPTION_SKIPPED_CASCADE_COUNT = "x-skipped-cascade-count";
 
     static constexpr std::array<CommandSetting, 8> CI_SETTINGS = {
-        {{OPTION_EXCLUDE, "Comma separated list of ports to skip"},
-         {OPTION_HOST_EXCLUDE, "Comma separated list of ports to skip for the host triplet"},
-         {OPTION_XUNIT, "File to output results in XUnit format (internal)"},
-         {OPTION_CI_BASELINE, "Path to the ci.baseline.txt file. Used to skip ports and detect regressions."},
-         {OPTION_FAILURE_LOGS, "Directory to which failure logs will be copied"},
-         {OPTION_OUTPUT_HASHES, "File to output all determined package hashes"},
-         {OPTION_PARENT_HASHES,
-          "File to read package hashes for a parent CI state, to reduce the set of changed packages"},
-         {OPTION_SKIPPED_CASCADE_COUNT,
-          "Asserts that the number of --exclude and supports skips exactly equal this number"}}};
+        {{OPTION_EXCLUDE, []() { return msg::format(msgCISettingsOptExclude); }},
+         {OPTION_HOST_EXCLUDE, []() { return msg::format(msgCISettingsOptHostExclude); }},
+         {OPTION_XUNIT, []() { return msg::format(msgCISettingsOptXUnit); }},
+         {OPTION_CI_BASELINE, []() { return msg::format(msgCISettingsOptCIBase); }},
+         {OPTION_FAILURE_LOGS, []() { return msg::format(msgCISettingsOptFailureLogs); }},
+         {OPTION_OUTPUT_HASHES, []() { return msg::format(msgCISettingsOptOutputHashes); }},
+         {OPTION_PARENT_HASHES, []() { return msg::format(msgCISettingsOptParentHashes); }},
+         {OPTION_SKIPPED_CASCADE_COUNT, []() { return msg::format(msgCISettingsOptSkippedCascadeCount); }}}};
 
     static constexpr std::array<CommandSwitch, 5> CI_SWITCHES = {{
-        {OPTION_DRY_RUN, "Print out plan without execution"},
-        {OPTION_RANDOMIZE, "Randomize the install order"},
-        {OPTION_ALLOW_UNEXPECTED_PASSING,
-         "Indicates that 'Passing, remove from fail list' results should not be emitted."},
-        {OPTION_SKIP_FAILURES, "Indicates that ports marked `=fail` in ci.baseline.txt should be skipped."},
-        {OPTION_XUNIT_ALL, "Report also unchanged ports to the XUnit output (internal)"},
+        {OPTION_DRY_RUN, []() { return msg::format(msgCISwitchOptDryRun); }},
+        {OPTION_RANDOMIZE, []() { return msg::format(msgCISwitchOptRandomize); }},
+        {OPTION_ALLOW_UNEXPECTED_PASSING, []() { return msg::format(msgCISwitchOptAllowUnexpectedPassing); }},
+        {OPTION_SKIP_FAILURES, []() { return msg::format(msgCISwitchOptSkipFailures); }},
+        {OPTION_XUNIT_ALL, []() { return msg::format(msgCISwitchOptXUnitAll); }},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
