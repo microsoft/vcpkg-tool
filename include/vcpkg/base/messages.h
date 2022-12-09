@@ -296,6 +296,7 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(base_url, "azblob://");
     DECLARE_MSG_ARG(binary_source, "azblob");
     DECLARE_MSG_ARG(build_result, "One of the BuildResultXxx messages (such as BuildResultSucceeded/SUCCEEDED)");
+    DECLARE_MSG_ARG(byte_offset, "42");
     DECLARE_MSG_ARG(column, "42");
     DECLARE_MSG_ARG(command_line, "vcpkg install zlib");
     DECLARE_MSG_ARG(command_name, "install");
@@ -1297,6 +1298,14 @@ namespace vcpkg
                     "{value} is a reference",
                     "Fetching registry information from {url} ({value})...");
     DECLARE_MESSAGE(FileNotFound, (msg::path), "", "{path}: file not found");
+    DECLARE_MESSAGE(FileReadFailed,
+                    (msg::path, msg::byte_offset, msg::count),
+                    "",
+                    "Failed to read {count} bytes from {path} at offset {byte_offset}.");
+    DECLARE_MESSAGE(FileSeekFailed,
+                    (msg::path, msg::byte_offset),
+                    "",
+                    "Failed to seek to position {byte_offset} in {path}.");
     DECLARE_MESSAGE(FilesExported, (msg::path), "", "Files exported at: {path}");
     DECLARE_MESSAGE(FileSystemOperationFailed, (), "", "Filesystem operation failed:");
     DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at \"{path}\".");
@@ -1925,6 +1934,36 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute: {path}");
+    DECLARE_MESSAGE(
+        PECoffHeaderTooShort,
+        (msg::path),
+        "Portable executable is a term-of-art, see https://learn.microsoft.com/en-us/windows/win32/debug/pe-format",
+        "While parsing Portable Executable {path}, size of COFF header too small to contain a valid PE header.");
+    DECLARE_MESSAGE(
+        PEConfigCrossesSectionBoundary,
+        (msg::path),
+        "Portable executable is a term-of-art, see https://learn.microsoft.com/en-us/windows/win32/debug/pe-format",
+        "While parsing Portable Executable {path}, image config directory crosses a secion boundary.");
+    DECLARE_MESSAGE(
+        PEImportCrossesSectionBoundary,
+        (msg::path),
+        "Portable executable is a term-of-art, see https://learn.microsoft.com/en-us/windows/win32/debug/pe-format",
+        "While parsing Portable Executable {path}, import table crosses a secion boundary.");
+    DECLARE_MESSAGE(
+        PEPlusTagInvalid,
+        (msg::path),
+        "Portable executable is a term-of-art, see https://learn.microsoft.com/en-us/windows/win32/debug/pe-format",
+        "While parsing Portable Executable {path}, optional header was neither PE32 nor PE32+.");
+    DECLARE_MESSAGE(PERvaNotFound,
+                    (msg::path, msg::value),
+                    "{value:#X} is the Relative Virtual Address sought. Portable executable is a term-of-art, see "
+                    "https://learn.microsoft.com/en-us/windows/win32/debug/pe-format",
+                    "While parsing Portable Executable {path}, could not find RVA {value:#X}.");
+    DECLARE_MESSAGE(
+        PESignatureMismatch,
+        (msg::path),
+        "Portable Executable is a term-of-art, see https://learn.microsoft.com/en-us/windows/win32/debug/pe-format",
+        "While parsing Portable Executable {path}, signature mismatch.");
     DECLARE_MESSAGE(PerformingPostBuildValidation, (), "", "-- Performing post-build validation");
     DECLARE_MESSAGE(PortBugAllowRestrictedHeaders,
                     (msg::env_var),
