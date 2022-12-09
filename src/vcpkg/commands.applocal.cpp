@@ -56,7 +56,8 @@ namespace
         void resolve(const Path& binary)
         {
             vcpkg::printf("vcpkg applocal processing: %s\n", binary);
-            const auto imported_names = vcpkg::read_dll_imported_dll_names(m_fs.open_for_read(binary, VCPKG_LINE_INFO));
+            const auto imported_names =
+                vcpkg::read_dll_imported_dll_names(m_fs.open_for_read(binary, VCPKG_LINE_INFO));
             Debug::print("Imported DLLs of ", binary, " were ", Strings::join("\n", imported_names), "\n");
 
             for (auto&& imported_name : imported_names)
