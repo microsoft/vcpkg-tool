@@ -1114,6 +1114,10 @@ namespace vcpkg
     REGISTER_MESSAGE(CmdEditOptBuildTrees);
     REGISTER_MESSAGE(CmdEditOptAll);
     REGISTER_MESSAGE(CmdEnvOptions);
+    REGISTER_MESSAGE(CmdExportPortAddVersionSuffix);
+    REGISTER_MESSAGE(CmdExportPortForce);
+    REGISTER_MESSAGE(CmdExportPortNoRegistries);
+    REGISTER_MESSAGE(CmdExportPortSubdir);
     REGISTER_MESSAGE(CmdFetchOptXStderrStatus);
     REGISTER_MESSAGE(CmdFormatManifestOptAll);
     REGISTER_MESSAGE(CmdFormatManifestOptConvertControl);

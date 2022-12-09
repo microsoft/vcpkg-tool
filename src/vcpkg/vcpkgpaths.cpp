@@ -331,7 +331,10 @@ namespace
 
             if (!ret.is_absolute())
             {
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgPathMustBeAbsolute, msg::path = ret.native());
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                              msgPathMustBeAbsolute,
+                                              msg::path = ret.native(),
+                                              msg::env_var = "X_VCPKG_REGISTRIES_CACHE");
             }
         }
         else

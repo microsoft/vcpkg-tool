@@ -136,24 +136,20 @@ namespace vcpkg::Commands::ExportPort
     constexpr static StringLiteral OPTION_FORCE = "force";
     constexpr static StringLiteral OPTION_VERSION = "version";
     constexpr static StringLiteral OPTION_NO_REGISTRIES = "no-registries";
-    constexpr static StringLiteral OPTION_NO_SUBDIR = "no-subdir";
+    constexpr static StringLiteral OPTION_NO_SUBDIR = "subdir";
 
     constexpr static CommandSwitch SWITCHES[]{
-        {OPTION_ADD_VERSION_SUFFIX, "adds the port version as a suffix to the output subdirectory"},
-        {OPTION_FORCE, "overwrite existing files in destination"},
-        {OPTION_NO_REGISTRIES, "ignore configured registries when resolving port"},
-        {OPTION_NO_SUBDIR, "don't create a subdirectory for the port"},
-    };
-
-    constexpr static CommandSetting SETTINGS[]{
-        {OPTION_VERSION, "export port files from a specific version"},
+        {OPTION_ADD_VERSION_SUFFIX, []() { return msg::format(msgCmdExportPortAddVersionSuffix); }},
+        {OPTION_FORCE, []() { return msg::format(msgCmdExportPortForce); }},
+        {OPTION_NO_REGISTRIES, []() { return msg::format(msgCmdExportPortNoRegistries); }},
+        {OPTION_SUBDIR, []() { return msg::format(msgCmdExportPortSubdir); }},
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
         create_example_string("x-export-port fmt 8.11.0#2git ../my-overlay-ports"),
         1,
         2,
-        {{SWITCHES}, {SETTINGS}, {/*multisettings*/}},
+        {{SWITCHES}, {/*settings*/}, {/*multisettings*/}},
         nullptr,
     };
 
@@ -162,10 +158,11 @@ namespace vcpkg::Commands::ExportPort
         auto options = args.parse_arguments(COMMAND_STRUCTURE);
         bool add_suffix = Util::Sets::contains(options.switches, OPTION_ADD_VERSION_SUFFIX);
         bool force = Util::Sets::contains(options.switches, OPTION_FORCE);
-        bool no_subdir = Util::Sets::contains(options.switches, OPTION_NO_SUBDIR);
+        bool no_subdir = !Util::Sets::contains(options.switches, OPTION_SUBDIR);
         bool include_registries = !Util::Sets::contains(options.switches, OPTION_NO_REGISTRIES);
         const auto& config = paths.get_configuration().config;
-        const bool has_registries = Util::any_of(config.registries, [](const auto& reg) { return reg.kind != "artifact"; });
+        const bool has_registries =
+            Util::any_of(config.registries, [](const auto& reg) { return reg.kind != "artifact"; });
 
         Optional<Version> maybe_version;
         auto it = options.settings.find(OPTION_VERSION);
@@ -270,7 +267,6 @@ namespace vcpkg::Commands::ExportPort
         {
             if (include_registries)
             {
-
             }
 
             export_classic_mode_port(paths, port_name, final_path);

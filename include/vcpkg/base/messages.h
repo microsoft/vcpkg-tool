@@ -818,6 +818,10 @@ namespace vcpkg
                     "Open editor into the port as well as the port-specific buildtree subfolder");
     DECLARE_MESSAGE(CmdEditOptBuildTrees, (), "", "Open editor into the port-specific buildtree subfolder");
     DECLARE_MESSAGE(CmdEnvOptions, (msg::path, msg::env_var), "", "Add installed {path} to {env_var}");
+    DECLARE_MESSAGE(CmdExportPortAddVersionSuffix, (), "", "adds the port version as a suffix to the output directory");
+    DECLARE_MESSAGE(CmdExportPortForce, (), "", "overwrite existing files in destination");
+    DECLARE_MESSAGE(CmdExportPortNoRegistries, (), "", "ignore configured registris when resolving port");
+    DECLARE_MESSAGE(CmdExportPortSubdir, (), "", "create a subdirectory for the port");
     DECLARE_MESSAGE(CmdExportOpt7Zip, (), "", "Export to a 7zip (.7z) file");
     DECLARE_MESSAGE(CmdExportOptChocolatey, (), "", "Export a Chocolatey package (experimental feature)");
     DECLARE_MESSAGE(CmdExportOptDebug, (), "", "Enable prefab debug");
@@ -1181,6 +1185,16 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedStatusField, (), "", "Expected 'status' field in status paragraph");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
     DECLARE_MESSAGE(ExpectedValueForOption, (msg::option), "", "expected value after --{option}.");
+    DECLARE_MESSAGE(
+        ExpectedRegistryToContainPort,
+        (msg::package_name, msg::path, msg::url),
+        "",
+        "A registry declares port {package_name} but the port definition was not found in the registry.\n"
+        "\n\tRegistry: {path}\n\n"
+        "If the port is expected to exist in the registry review that the baseline and versions database files are "
+        "correct.\n"
+        "If you expected the port name to resolve to a different registry adjust your registry configuration.\n"
+        "See {url} for more details.");
     DECLARE_MESSAGE(ExportArchitectureReq,
                     (),
                     "",
@@ -1194,6 +1208,44 @@ namespace vcpkg
                     "The following packages are already built and will be exported:");
     DECLARE_MESSAGE(ExportingMaintenanceTool, (), "", "Exporting maintenance tool...");
     DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
+    DECLARE_MESSAGE(ExportPortFilesMissing,
+                    (msg::package_name, msg::path),
+                    "",
+                    "Missing port files for {package_name}\n"
+                    "Expected {path} to contain the port files.\n"
+                    "Make sure that the port name is correct.");
+    DECLARE_MESSAGE(ExportPortIgnoreSuffixNoSubdir,
+                    (),
+                    "'-add-version-suffix' and '--subdir' are command-line options and should be left untranslated",
+                    "Ignoring option --add-version-suffix because option --no-subdir was passed.");
+    DECLARE_MESSAGE(ExportPortIgnoreSuffixNoVersion,
+                    (),
+                    "'--add-version-suffix' is a command-line option and should be left untranslated",
+                    "Ignoring option --add-version-suffix because no version argument was passed.");
+    DECLARE_MESSAGE(ExportPortNoDestination,
+                    (),
+                    "",
+                    "Missing destination argument.\n"
+                    "No destination argument was passed and no overlay port locations are configured.\n"
+                    "Add a destination argument or review your configuration if you expected vcpkg to export to an "
+                    "overlay ports location.");
+    DECLARE_MESSAGE(ExportPortPathExistsAndNotEmpty,
+                    (msg::path),
+                    "'--force' is a command-line option and should be left untranslated",
+                    "Export path {path} is not empty.\n"
+                    "Use option --force to overwrite existing files.");
+    DECLARE_MESSAGE(ExportPortVersionArgumentInvalid,
+                    (msg::version),
+                    "'--version' is a command-line option and should be left untranslated",
+                    "The value of --version={version} is not a valid version.");
+    DECLARE_MESSAGE(ExportPortVersionNotFound, (msg::version), "", "Version {version} not found");
+    DECLARE_MESSAGE(ExportPortVersionsDbFileMissing,
+                    (msg::package_name, msg::path),
+                    "",
+                    "Versions database file for {package_name} is missing.\n"
+                    "Expected file {path} to exist.\n"
+                    "Make sure that the port name is correct.");
+    DECLARE_MESSAGE(ExportPortSuccess, (msg::path), "", "Port files have been exported to {path}");
     DECLARE_MESSAGE(ExportPrefabRequiresAndroidTriplet, (), "", "export prefab requires an Android triplet.");
     DECLARE_MESSAGE(ExportUnsupportedInManifest,
                     (),
@@ -1927,9 +1979,9 @@ namespace vcpkg
                     "while loading {path}:");
     DECLARE_MESSAGE(ParseControlErrorInfoWrongTypeFields, (), "", "The following fields had the wrong types:");
     DECLARE_MESSAGE(PathMustBeAbsolute,
-                    (msg::path),
+                    (msg::path, msg::env_var),
                     "",
-                    "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute: {path}");
+                    "Value of environment variable {env_var} is not absolute: {path}");
     DECLARE_MESSAGE(
         PECoffHeaderTooShort,
         (msg::path),
@@ -2469,6 +2521,7 @@ namespace vcpkg
                     "",
                     "dependency {spec} was expected to be at least version "
                     "{expected_version}, but is currently {actual_version}.");
+    DECLARE_MESSAGE(VersionInvalid, (msg::version), "", "'{version}' is not a valid version.");
     DECLARE_MESSAGE(
         VersionInvalidDate,
         (msg::version),

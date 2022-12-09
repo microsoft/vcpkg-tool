@@ -783,8 +783,8 @@ namespace vcpkg
                     if (!overlay_path.is_absolute())
                     {
                         msg::println_error(msgPathMustBeAbsolute,
-                                           msg::env_var = VcpkgCmdArguments::OVERLAY_PORTS_ENV,
-                                           msg::path = overlay_path);
+                                           msg::path = overlay_path,
+                                           msg::env_var = VcpkgCmdArguments::OVERLAY_PORTS_ENV);
                         has_errors = true;
                     }
                 }
