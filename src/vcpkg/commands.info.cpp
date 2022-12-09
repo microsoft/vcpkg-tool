@@ -20,8 +20,8 @@ namespace vcpkg::Commands::Info
     static constexpr StringLiteral OPTION_INSTALLED = "x-installed";
 
     static constexpr CommandSwitch INFO_SWITCHES[] = {
-        {OPTION_INSTALLED, "(experimental) Report on installed packages instead of available"},
-        {OPTION_TRANSITIVE, "(experimental) Also report on dependencies of installed packages"},
+        {OPTION_INSTALLED, []() { return msg::format(msgCmdInfoOptInstalled); }},
+        {OPTION_TRANSITIVE, []() { return msg::format(msgCmdInfoOptTransitive); }},
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -53,9 +53,10 @@ namespace vcpkg::Commands::Info
                                           msg::option = OPTION_INSTALLED);
         }
 
+        auto& fs = paths.get_filesystem();
         if (installed)
         {
-            const StatusParagraphs status_paragraphs = database_load_check(paths.get_filesystem(), paths.installed());
+            const StatusParagraphs status_paragraphs = database_load_check(fs, paths.installed());
             std::set<PackageSpec> specs_written;
             std::vector<PackageSpec> specs_to_write;
             for (auto&& arg : args.command_arguments)
@@ -115,7 +116,9 @@ namespace vcpkg::Commands::Info
         {
             Json::Object response;
             Json::Object results;
-            PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
+            auto registry_set = paths.make_registry_set();
+            PathsPortFileProvider provider(
+                fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
 
             for (auto&& arg : args.command_arguments)
             {

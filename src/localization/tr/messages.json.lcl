@@ -479,7 +479,7 @@
         <Str Cat="Text">
           <Val><![CDATA[All MSBuild C++ projects can now #include any installed libraries. Linking will be handled automatically. Installing new libraries will make them instantly available.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Tüm MSBuild C++ projeleri artık tüm yüklü kitaplıkları #içerebilir. Bağlama otomatik olarak gerçekleştirilecektir. Yeni kitaplıklar kurmak, onları anında kullanılabilir hale getirecektir.]]></Val>
+            <Val><![CDATA[Tüm MSBuild C++ projeleri artık tüm yüklü kitaplıkları içerebilir (#include). Bağlama otomatik olarak gerçekleştirilecektir. Yeni kitaplıklar kurmak, onları anında kullanılabilir hale getirecektir.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1440,6 +1440,15 @@
           <Val><![CDATA[found end of string in middle of code point]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[kod noktasının ortasında dizenin sonu bulundu]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";EnvInvalidMaxConcurrency" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{env_var} is {value}, must be > 0]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{env_var} değeri {value}, bu değer > 0 olmalıdır]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

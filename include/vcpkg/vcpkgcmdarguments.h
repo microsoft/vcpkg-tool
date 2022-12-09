@@ -28,35 +28,20 @@ namespace vcpkg
 
     struct CommandSwitch
     {
-        constexpr CommandSwitch(const StringLiteral& name, const StringLiteral& short_help_text)
-            : name(name), short_help_text(short_help_text)
-        {
-        }
-
         StringLiteral name;
-        StringLiteral short_help_text;
+        LocalizedString (*helpmsg)();
     };
 
     struct CommandSetting
     {
-        constexpr CommandSetting(const StringLiteral& name, const StringLiteral& short_help_text)
-            : name(name), short_help_text(short_help_text)
-        {
-        }
-
         StringLiteral name;
-        StringLiteral short_help_text;
+        LocalizedString (*helpmsg)();
     };
 
     struct CommandMultiSetting
     {
-        constexpr CommandMultiSetting(const StringLiteral& name, const StringLiteral& short_help_text)
-            : name(name), short_help_text(short_help_text)
-        {
-        }
-
         StringLiteral name;
-        StringLiteral short_help_text;
+        LocalizedString (*helpmsg)();
     };
 
     struct CommandOptionsStructure

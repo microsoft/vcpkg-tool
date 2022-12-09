@@ -3,6 +3,8 @@
 #include <vcpkg/base/fwd/format.h>
 #include <vcpkg/base/fwd/parse.h>
 
+#include <vcpkg/fwd/packagespec.h>
+
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/json.h>
@@ -140,12 +142,6 @@ namespace vcpkg
         }
 
         Optional<Version> try_get_minimum_version() const;
-    };
-
-    enum class ImplicitDefault : bool
-    {
-        NO,
-        YES,
     };
 
     struct Dependency

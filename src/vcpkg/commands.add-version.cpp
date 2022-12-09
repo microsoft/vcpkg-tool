@@ -311,11 +311,11 @@ namespace
 namespace vcpkg::Commands::AddVersion
 {
     const CommandSwitch COMMAND_SWITCHES[] = {
-        {OPTION_ALL, "Process versions for all ports."},
-        {OPTION_OVERWRITE_VERSION, "Overwrite `git-tree` of an existing version."},
-        {OPTION_SKIP_FORMATTING_CHECK, "Skips the formatting check of vcpkg.json files."},
-        {OPTION_SKIP_VERSION_FORMAT_CHECK, "Skips the version format check."},
-        {OPTION_VERBOSE, "Print success messages instead of just errors."},
+        {OPTION_ALL, []() { return msg::format(msgCmdAddVersionOptAll); }},
+        {OPTION_OVERWRITE_VERSION, []() { return msg::format(msgCmdAddVersionOptOverwriteVersion); }},
+        {OPTION_SKIP_FORMATTING_CHECK, []() { return msg::format(msgCmdAddVersionOptSkipFormatChk); }},
+        {OPTION_SKIP_VERSION_FORMAT_CHECK, []() { return msg::format(msgCmdAddVersionOptSkipVersionFormatChk); }},
+        {OPTION_VERBOSE, []() { return msg::format(msgCmdAddVersionOptVerbose); }},
     };
 
     const CommandStructure COMMAND_STRUCTURE{

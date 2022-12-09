@@ -18,15 +18,15 @@ namespace vcpkg::Commands::X_Download
     static constexpr StringLiteral OPTION_HEADER = "header";
 
     static constexpr CommandSwitch FETCH_SWITCHES[] = {
-        {OPTION_STORE, "Indicates the file should be stored instead of fetched"},
-        {OPTION_SKIP_SHA512, "Do not check the SHA512 of the downloaded file"},
+        {OPTION_STORE, []() { return msg::format(msgCmdXDownloadOptStore); }},
+        {OPTION_SKIP_SHA512, []() { return msg::format(msgCmdXDownloadOptSkipSha); }},
     };
     static constexpr CommandSetting FETCH_SETTINGS[] = {
-        {OPTION_SHA512, "The hash of the file to be downloaded"},
+        {OPTION_SHA512, []() { return msg::format(msgCmdXDownloadOptSha); }},
     };
     static constexpr CommandMultiSetting FETCH_MULTISETTINGS[] = {
-        {OPTION_URL, "URL to download and store if missing from cache"},
-        {OPTION_HEADER, "Additional header to use when fetching from URLs"},
+        {OPTION_URL, []() { return msg::format(msgCmdXDownloadOptUrl); }},
+        {OPTION_HEADER, []() { return msg::format(msgCmdXDownloadOptHeader); }},
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
