@@ -58,7 +58,8 @@ namespace
             vcpkg::printf("vcpkg applocal processing: %s\n", binary);
             auto dll_file = m_fs.open_for_read(binary, VCPKG_LINE_INFO);
             const auto dll_metadata = vcpkg::try_read_dll_metadata(dll_file).value_or_exit(VCPKG_LINE_INFO);
-            const auto imported_names = vcpkg::try_read_dll_imported_dll_names(dll_metadata, dll_file).value_or_exit(VCPKG_LINE_INFO);
+            const auto imported_names =
+                vcpkg::try_read_dll_imported_dll_names(dll_metadata, dll_file).value_or_exit(VCPKG_LINE_INFO);
             Debug::print("Imported DLLs of ", binary, " were ", Strings::join("\n", imported_names), "\n");
 
             for (auto&& imported_name : imported_names)
