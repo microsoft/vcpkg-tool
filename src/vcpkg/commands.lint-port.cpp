@@ -20,18 +20,17 @@ using namespace vcpkg;
 
 namespace
 {
-
-    static constexpr StringLiteral OPTION_ALL = "all";
-    static constexpr StringLiteral OPTION_FIX = "fix";
-    static constexpr StringLiteral OPTION_INCREASE_VERSION = "increase-version";
+    constexpr StringLiteral OPTION_ALL = "all";
+    constexpr StringLiteral OPTION_FIX = "fix";
+    constexpr StringLiteral OPTION_INCREASE_VERSION = "increase-version";
 }
 
 namespace vcpkg::Commands::LintPort
 {
     const CommandSwitch COMMAND_SWITCHES[] = {
-        {OPTION_ALL, "Checks all ports."},
-        {OPTION_FIX, "Tries to fix all problems that were found."},
-        {OPTION_INCREASE_VERSION, "Increase the port-version of a port if a problem was fixed."}};
+        {OPTION_ALL, []() { return msg::format(msgCmdLintPortOptAllPorts); }},
+        {OPTION_FIX, []() { return msg::format(msgCmdLintPortOptFix); }},
+        {OPTION_INCREASE_VERSION, []() { return msg::format(msgCmdLintPortOptIncreaseVersion); }}};
 
     const CommandStructure COMMAND_STRUCTURE{
         create_example_string(R"###(x-lint-port <port name>)###"),

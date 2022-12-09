@@ -13,8 +13,6 @@
 
 namespace vcpkg
 {
-    struct TripletInstance;
-
     struct Triplet
     {
     public:
