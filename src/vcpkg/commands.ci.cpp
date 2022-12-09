@@ -735,6 +735,18 @@ namespace vcpkg::Commands::CI
                         switch (result.build_result.value_or_exit(VCPKG_LINE_INFO).code)
                         {
                             case BuildResult::BUILD_FAILED:
+                                if (Path* dir = logs_dir.get())
+                                {
+                                    auto issue_body_path = *dir / "issue_body.md";
+                                    paths.get_filesystem().write_contents(
+                                        issue_body_path,
+                                        create_github_issue(
+                                            args,
+                                            result.build_result.value_or_exit(VCPKG_LINE_INFO),
+                                            paths,
+                                            result.get_install_plan_action().value_or_exit(VCPKG_LINE_INFO)),
+                                        VCPKG_LINE_INFO);
+                                }
                             case BuildResult::POST_BUILD_CHECKS_FAILED:
                             case BuildResult::FILE_CONFLICTS:
                                 known_failures.insert(result.get_abi().value_or_exit(VCPKG_LINE_INFO));
@@ -772,6 +784,7 @@ namespace vcpkg::Commands::CI
                        result.logs_dir.value_or(""),
                        '\n');
             }
+            Checks::exit_success(VCPKG_LINE_INFO);
 
             if (!known_failures.empty())
             {
