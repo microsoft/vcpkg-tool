@@ -175,6 +175,7 @@ namespace vcpkg
     {
         std::string name;
         Optional<std::vector<std::string>> features;
+        Optional<Version> version;
         Optional<std::string> triplet;
         Optional<PlatformExpression::Expr> platform;
 

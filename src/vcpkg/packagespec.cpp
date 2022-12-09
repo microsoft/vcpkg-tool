@@ -196,6 +196,48 @@ namespace vcpkg
             } while (true);
             ret.features = std::move(features);
         }
+        if (ch == '@')
+        {
+            std::string version_str;
+            do
+            {
+                ch = parser.next();
+                while (ParserBase::is_alphanumdash(ch) || ch == '.' || ch == '_')
+                {
+                    version_str += ch;
+                    ch = parser.next();
+                }
+                
+                if (parser.cur() == '\\')
+                {
+                    parser.next();
+                    version_str += parser.cur();
+                    continue;
+                }
+
+                if (parser.cur() == '#')
+                {
+                    auto port_version_str = parser.match_while(ParserBase::is_ascii_digit);
+                    if (port_version_str.empty())
+                    {
+                        parser.add_error("expected port-version (must be a positive integer number)");
+                        return nullopt;
+                    }
+                    auto maybe_port_version = Strings::strto<int>(port_version_str);
+                    if (!maybe_port_version)
+                    {
+                        parser.add_error(fmt::format("couldn't parse port-version '{}' (must be a positive integer number)", port_version_str));
+                        return nullopt;
+                    }
+
+                    ret.version.emplace(version_str, maybe_port_version.value_or_exit(VCPKG_LINE_INFO));
+                    break;
+                }
+                ret.version.emplace(version_str, 0);
+                
+                break;
+            } while (true);
+        }
         if (ch == ':')
         {
             parser.next();

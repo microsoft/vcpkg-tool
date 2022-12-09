@@ -132,22 +132,20 @@ namespace
 
 namespace vcpkg::Commands::ExportPort
 {
-    constexpr static StringLiteral OPTION_ADD_VERSION_SUFFIX = "add-version-suffix";
     constexpr static StringLiteral OPTION_FORCE = "force";
     constexpr static StringLiteral OPTION_VERSION = "version";
     constexpr static StringLiteral OPTION_NO_REGISTRIES = "no-registries";
-    constexpr static StringLiteral OPTION_NO_SUBDIR = "subdir";
+    constexpr static StringLiteral OPTION_SUBDIR = "subdir";
 
     constexpr static CommandSwitch SWITCHES[]{
-        {OPTION_ADD_VERSION_SUFFIX, []() { return msg::format(msgCmdExportPortAddVersionSuffix); }},
         {OPTION_FORCE, []() { return msg::format(msgCmdExportPortForce); }},
         {OPTION_NO_REGISTRIES, []() { return msg::format(msgCmdExportPortNoRegistries); }},
         {OPTION_SUBDIR, []() { return msg::format(msgCmdExportPortSubdir); }},
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("x-export-port fmt 8.11.0#2git ../my-overlay-ports"),
-        1,
+        create_example_string("x-export-port fmt@8.11.0#2 ../my-overlay-ports"),
+        2,
         2,
         {{SWITCHES}, {/*settings*/}, {/*multisettings*/}},
         nullptr,
@@ -156,88 +154,31 @@ namespace vcpkg::Commands::ExportPort
     void ExportPortCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
     {
         auto options = args.parse_arguments(COMMAND_STRUCTURE);
-        bool add_suffix = Util::Sets::contains(options.switches, OPTION_ADD_VERSION_SUFFIX);
         bool force = Util::Sets::contains(options.switches, OPTION_FORCE);
-        bool no_subdir = !Util::Sets::contains(options.switches, OPTION_SUBDIR);
+        bool subdir = Util::Sets::contains(options.switches, OPTION_SUBDIR);
         bool include_registries = !Util::Sets::contains(options.switches, OPTION_NO_REGISTRIES);
         const auto& config = paths.get_configuration().config;
         const bool has_registries =
             Util::any_of(config.registries, [](const auto& reg) { return reg.kind != "artifact"; });
 
-        Optional<Version> maybe_version;
-        auto it = options.settings.find(OPTION_VERSION);
-        if (it != options.settings.end())
+        const auto package_spec_arg = args.command_arguments[0];
+        const auto maybe_package_spec = parse_qualified_specifier(package_spec_arg);
+        if (!maybe_package_spec.has_value())
         {
-            const auto& version_arg = it->second;
-            auto version_segments = Strings::split(version_arg, '#');
-            if (version_segments.size() > 2)
-            {
-                msg::println_error(msgExportPortVersionArgumentInvalid, msg::version = version_arg);
-                Checks::exit_fail(VCPKG_LINE_INFO);
-            }
-
-            int port_version = 0;
-            if (version_segments.size() == 2)
-            {
-                auto maybe_port_version = Strings::strto<int>(version_segments[1]);
-                if (!maybe_port_version)
-                {
-                    msg::println_error(msgExportPortVersionArgumentInvalid, msg::version = version_arg);
-                    Checks::exit_fail(VCPKG_LINE_INFO);
-                }
-                port_version = maybe_port_version.value_or_exit(VCPKG_LINE_INFO);
-            }
-
-            maybe_version.emplace(version_segments[0], port_version);
+            // print error message
+            Checks::exit_fail(VCPKG_LINE_INFO);
         }
+        const auto package_spec = maybe_package_spec.value_or_exit(VCPKG_LINE_INFO);
+        const auto port_name = package_spec.name;
+        const auto& maybe_version = package_spec.version;
 
-        if (add_suffix)
+        auto destination = Path(args.command_arguments[1]);
+        if (subdir)
         {
-            if (!maybe_version)
-            {
-                add_suffix = false;
-                msg::println_warning(msgExportPortIgnoreSuffixNoVersion);
-            }
-
-            if (no_subdir)
-            {
-                add_suffix = false;
-                msg::println_warning(msgExportPortIgnoreSuffixNoSubdir);
-            }
+            destination /= port_name;
         }
-
-        const auto& port_name = args.command_arguments[0];
-        Optional<Path> maybe_destination;
-        if (args.command_arguments.size() == 2)
-        {
-            maybe_destination.emplace(args.command_arguments[1]);
-        }
-
-        if (!maybe_destination)
-        {
-            if (paths.overlay_ports.empty())
-            {
-                msg::println_error(msgExportPortNoDestination);
-                Checks::exit_fail(VCPKG_LINE_INFO);
-            }
-
-            maybe_destination.emplace(paths.overlay_ports.front());
-        }
-
         auto& fs = paths.get_filesystem();
-        // Made lexically normal for prettier printing
-        Path final_path =
-            fs.absolute(maybe_destination.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO).lexically_normal();
-        if (!no_subdir)
-        {
-            auto subdir = port_name;
-            if (add_suffix)
-            {
-                subdir += fmt::format(
-                    "-{}", Strings::replace_all(maybe_version.value_or_exit(VCPKG_LINE_INFO).to_string(), "#", "-"));
-            }
-            final_path /= subdir;
-        }
+        const Path final_path = fs.absolute(destination, VCPKG_LINE_INFO).lexically_normal();
 
         if (force)
         {
@@ -267,6 +208,7 @@ namespace vcpkg::Commands::ExportPort
         {
             if (include_registries)
             {
+                // todo: ???
             }
 
             export_classic_mode_port(paths, port_name, final_path);
