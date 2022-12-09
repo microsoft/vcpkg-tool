@@ -656,23 +656,26 @@ namespace vcpkg
         table.header("Options");
         for (auto&& option : command_structure.options.switches)
         {
-            if (option.short_help_text.size() != 0)
+            auto helpmsg = option.helpmsg;
+            if (helpmsg)
             {
-                table.format(Strings::format("--%s", option.name), option.short_help_text);
+                table.format(Strings::format("--%s", option.name), helpmsg());
             }
         }
         for (auto&& option : command_structure.options.settings)
         {
-            if (option.short_help_text.size() != 0)
+            auto helpmsg = option.helpmsg;
+            if (helpmsg)
             {
-                table.format(Strings::format("--%s=...", option.name), option.short_help_text);
+                table.format(Strings::format("--%s=...", option.name), helpmsg());
             }
         }
         for (auto&& option : command_structure.options.multisettings)
         {
-            if (option.short_help_text.size() != 0)
+            auto helpmsg = option.helpmsg;
+            if (helpmsg)
             {
-                table.format(Strings::format("--%s=...", option.name), option.short_help_text);
+                table.format(Strings::format("--%s=...", option.name), helpmsg());
             }
         }
 

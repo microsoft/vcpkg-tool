@@ -163,11 +163,11 @@ namespace vcpkg::Remove
     static constexpr StringLiteral OPTION_OUTDATED = "outdated";
 
     static constexpr std::array<CommandSwitch, 5> SWITCHES = {{
-        {OPTION_PURGE, ""},
-        {OPTION_NO_PURGE, ""},
-        {OPTION_RECURSE, "Allow removal of packages not explicitly specified on the command line"},
-        {OPTION_DRY_RUN, "Print the packages to be removed, but do not remove them"},
-        {OPTION_OUTDATED, "Select all packages with versions that do not match the portfiles"},
+        {OPTION_PURGE, nullptr},
+        {OPTION_NO_PURGE, nullptr},
+        {OPTION_RECURSE, []() { return msg::format(msgCmdRemoveOptRecurse); }},
+        {OPTION_DRY_RUN, []() { return msg::format(msgCmdRemoveOptDryRun); }},
+        {OPTION_OUTDATED, []() { return msg::format(msgCmdRemoveOptOutdated); }},
     }};
 
     static std::vector<std::string> valid_arguments(const VcpkgPaths& paths)
@@ -205,7 +205,10 @@ namespace vcpkg::Remove
             }
 
             // Load ports from ports dirs
-            PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
+            auto& fs = paths.get_filesystem();
+            auto registry_set = paths.make_registry_set();
+            PathsPortFileProvider provider(
+                fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
 
             specs = Util::fmap(Update::find_outdated_packages(provider, status_db),
                                [](auto&& outdated) { return outdated.spec; });

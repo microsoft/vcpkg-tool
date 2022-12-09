@@ -588,52 +588,45 @@ namespace vcpkg
     static constexpr StringLiteral OPTION_NO_PRINT_USAGE = "no-print-usage";
 
     static constexpr std::array<CommandSwitch, 18> INSTALL_SWITCHES = {
-        {{OPTION_DRY_RUN, "Do not actually build or install"},
-         {OPTION_USE_HEAD_VERSION,
-          "Install the libraries on the command line using the latest upstream sources (classic mode)"},
-         {OPTION_NO_DOWNLOADS, "Do not download new sources"},
-         {OPTION_ONLY_DOWNLOADS, "Download sources but don't build packages"},
-         {OPTION_ONLY_BINARYCACHING, "Fail if cached binaries are not available"},
-         {OPTION_RECURSE, "Allow removal of packages as part of installation"},
-         {OPTION_KEEP_GOING, "Continue installing packages on failure"},
-         {OPTION_EDITABLE,
-          "Disable source re-extraction and binary caching for libraries on the command line (classic mode)"},
-
-         {OPTION_USE_ARIA2, "Use aria2 to perform download tasks"},
-         {OPTION_CLEAN_AFTER_BUILD, "Clean buildtrees, packages and downloads after building each package"},
-         {OPTION_CLEAN_BUILDTREES_AFTER_BUILD, "Clean buildtrees after building each package"},
-         {OPTION_CLEAN_PACKAGES_AFTER_BUILD, "Clean packages after building each package"},
-         {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, "Clean downloads after building each package"},
-         {OPTION_MANIFEST_NO_DEFAULT_FEATURES,
-          "Don't install the default features from the top-level manifest (manifest mode)."},
-         {OPTION_ENFORCE_PORT_CHECKS,
-          "Fail install if a port has detected problems or attempts to use a deprecated feature"},
-         {OPTION_PROHIBIT_BACKCOMPAT_FEATURES, ""},
-         {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
-         {OPTION_NO_PRINT_USAGE, "Don't print cmake usage information after install."}}};
+        {{OPTION_DRY_RUN, []() { return msg::format(msgHelpTxtOptDryRun); }},
+         {OPTION_USE_HEAD_VERSION, []() { return msg::format(msgHelpTxtOptUseHeadVersion); }},
+         {OPTION_NO_DOWNLOADS, []() { return msg::format(msgHelpTxtOptNoDownloads); }},
+         {OPTION_ONLY_DOWNLOADS, []() { return msg::format(msgHelpTxtOptOnlyDownloads); }},
+         {OPTION_ONLY_BINARYCACHING, []() { return msg::format(msgHelpTxtOptOnlyBinCache); }},
+         {OPTION_RECURSE, []() { return msg::format(msgHelpTxtOptRecurse); }},
+         {OPTION_KEEP_GOING, []() { return msg::format(msgHelpTxtOptKeepGoing); }},
+         {OPTION_EDITABLE, []() { return msg::format(msgHelpTxtOptEditable); }},
+         {OPTION_USE_ARIA2, []() { return msg::format(msgHelpTxtOptUseAria2); }},
+         {OPTION_CLEAN_AFTER_BUILD, []() { return msg::format(msgHelpTxtOptCleanAfterBuild); }},
+         {OPTION_CLEAN_BUILDTREES_AFTER_BUILD, []() { return msg::format(msgHelpTxtOptCleanBuildTreesAfterBuild); }},
+         {OPTION_CLEAN_PACKAGES_AFTER_BUILD, []() { return msg::format(msgHelpTxtOptCleanPkgAfterBuild); }},
+         {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, []() { return msg::format(msgHelpTxtOptCleanDownloadsAfterBuild); }},
+         {OPTION_MANIFEST_NO_DEFAULT_FEATURES, []() { return msg::format(msgHelpTxtOptManifestNoDefault); }},
+         {OPTION_ENFORCE_PORT_CHECKS, []() { return msg::format(msgHelpTxtOptEnforcePortChecks); }},
+         {OPTION_PROHIBIT_BACKCOMPAT_FEATURES, nullptr},
+         {OPTION_ALLOW_UNSUPPORTED_PORT, []() { return msg::format(msgHelpTxtOptAllowUnsupportedPort); }},
+         {OPTION_NO_PRINT_USAGE, []() { return msg::format(msgHelpTxtOptNoUsage); }}}};
 
     static constexpr std::array<CommandSetting, 2> INSTALL_SETTINGS = {{
-        {OPTION_XUNIT, ""}, // internal use
-        {OPTION_WRITE_PACKAGES_CONFIG,
-         "Writes out a NuGet packages.config-formatted file for use with external binary caching.\nSee `vcpkg help "
-         "binarycaching` for more information."},
+        {OPTION_XUNIT, nullptr}, // internal use
+        {OPTION_WRITE_PACKAGES_CONFIG, []() { return msg::format(msgHelpTxtOptWritePkgConfig); }},
     }};
 
     static constexpr std::array<CommandMultiSetting, 1> INSTALL_MULTISETTINGS = {{
-        {OPTION_MANIFEST_FEATURE, "Additional feature from the top-level manifest to install (manifest mode)."},
+        {OPTION_MANIFEST_FEATURE, []() { return msg::format(msgHelpTxtOptManifestFeature); }},
     }};
 
     static std::vector<std::string> get_all_port_names(const VcpkgPaths& paths)
     {
-        const auto& registries = paths.get_registry_set();
+        const auto registries = paths.make_registry_set();
 
         std::vector<std::string> ret;
-        for (const auto& registry : registries.registries())
+        for (const auto& registry : registries->registries())
         {
             const auto packages = registry.packages();
             ret.insert(ret.end(), packages.begin(), packages.end());
         }
-        if (auto registry = registries.default_registry())
+        if (auto registry = registries->default_registry())
         {
             registry->get_all_port_names(ret);
         }
@@ -1005,8 +998,9 @@ namespace vcpkg
 
             auto manifest_scf = std::move(maybe_manifest_scf).value_or_exit(VCPKG_LINE_INFO);
             const auto& manifest_core = *manifest_scf->core_paragraph;
+            auto registry_set = paths.make_registry_set();
             if (auto maybe_error = manifest_scf->check_against_feature_flags(
-                    manifest->path, paths.get_feature_flags(), paths.get_registry_set().is_default_builtin_registry()))
+                    manifest->path, paths.get_feature_flags(), registry_set->is_default_builtin_registry()))
             {
                 Checks::exit_with_message(VCPKG_LINE_INFO, maybe_error.value_or_exit(VCPKG_LINE_INFO));
             }
@@ -1076,12 +1070,12 @@ namespace vcpkg
                 get_global_metrics_collector().track_define(DefineMetric::ManifestOverrides);
             }
 
-            auto verprovider = make_versioned_portfile_provider(paths);
-            auto baseprovider = make_baseline_provider(paths);
+            const bool add_builtin_ports_directory_as_overlay =
+                registry_set->is_default_builtin_registry() && !paths.use_git_default_registry();
+            auto verprovider = make_versioned_portfile_provider(fs, *registry_set);
+            auto baseprovider = make_baseline_provider(*registry_set);
 
             std::vector<std::string> extended_overlay_ports;
-            const bool add_builtin_ports_directory_as_overlay =
-                paths.get_registry_set().is_default_builtin_registry() && !paths.use_git_default_registry();
             extended_overlay_ports.reserve(paths.overlay_ports.size() + add_builtin_ports_directory_as_overlay);
             extended_overlay_ports = paths.overlay_ports;
             if (add_builtin_ports_directory_as_overlay)
@@ -1089,8 +1083,8 @@ namespace vcpkg
                 extended_overlay_ports.emplace_back(paths.builtin_ports_directory().native());
             }
 
-            auto oprovider =
-                make_manifest_provider(paths, extended_overlay_ports, manifest->path, std::move(manifest_scf));
+            auto oprovider = make_manifest_provider(
+                fs, paths.original_cwd, extended_overlay_ports, manifest->path, std::move(manifest_scf));
             auto install_plan = create_versioned_install_plan(*verprovider,
                                                               *baseprovider,
                                                               *oprovider,
@@ -1117,7 +1111,7 @@ namespace vcpkg
             Util::erase_remove_if(install_plan.install_actions,
                                   [&toplevel](auto&& action) { return action.spec == toplevel; });
 
-            PathsPortFileProvider provider(paths, std::move(oprovider));
+            PathsPortFileProvider provider(fs, *registry_set, std::move(oprovider));
             Commands::SetInstalled::perform_and_exit_ex(args,
                                                         paths,
                                                         provider,
@@ -1132,7 +1126,9 @@ namespace vcpkg
                                                         print_cmake_usage);
         }
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(
+            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(

@@ -479,7 +479,7 @@
         <Str Cat="Text">
           <Val><![CDATA[All MSBuild C++ projects can now #include any installed libraries. Linking will be handled automatically. Installing new libraries will make them instantly available.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[所有 MSBuild C++ 專案現在都可以 #包含任何安裝的程式庫。系統會自動處理連結。安裝新的程式庫會讓它們立即可供使用。]]></Val>
+            <Val><![CDATA[所有 MSBuild C++ 專案現在都可將任何已安裝的程式庫透過 #include 納入。系統會自動處理連結。安裝新的程式庫會讓它們立即可供使用。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1437,6 +1437,15 @@
           <Val><![CDATA[found end of string in middle of code point]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[在字碼元素中間找到字串結尾]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";EnvInvalidMaxConcurrency" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{env_var} is {value}, must be > 0]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{env_var} 是 {value}，必須 > 0]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
