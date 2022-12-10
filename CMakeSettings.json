@@ -34,6 +34,87 @@
       ]
     },
     {
+      "name": "x64-Debug-NoArtifacts",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "variables": [
+        {
+          "name": "VCPKG_ARTIFACTS_DEVELOPMENT",
+          "value": "False",
+          "type": "BOOL"
+        },
+        {
+          "name": "VCPKG_BUILD_TLS12_DOWNLOADER",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "VCPKG_BUILD_BENCHMARKING",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "VCPKG_BUILD_FUZZING",
+          "value": "True",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "name": "x64-Debug-Official-2022-11-10",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "variables": [
+        {
+          "name": "VCPKG_OFFICIAL_BUILD",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "VCPKG_BASE_VERSION",
+          "value": "2022-11-10",
+          "type": "STRING"
+        },
+        {
+          "name": "VCPKG_STANDALONE_BUNDLE_SHA",
+          "value": "edc1bad5689508953842d13b062a750791af57e0c6bb9d441d4545e81d99841dead2d33a5cb382b6cf50d2d32414ee617ada6e761c868fcbb28fa9bcb7bca6ba",
+          "type": "STRING"
+        },
+        {
+          "name": "VCPKG_CE_SHA",
+          "value": "b677e4d66e711e623a2765499cc5b662544c1df07a95b495f31a195f6e525c00cef0111dbb008b544d987fdcd1140fd69877908b3c3e7771231eaaa2cb1939ac",
+          "type": "STRING"
+        },
+        {
+          "name": "VCPKG_BUILD_TLS12_DOWNLOADER",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "VCPKG_BUILD_BENCHMARKING",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "VCPKG_BUILD_FUZZING",
+          "value": "True",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
       "name": "x64-Release",
       "generator": "Ninja",
       "configurationType": "RelWithDebInfo",

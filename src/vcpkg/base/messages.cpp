@@ -524,6 +524,8 @@ namespace vcpkg
     REGISTER_MESSAGE(CreatingZipArchive);
     REGISTER_MESSAGE(CreationFailed);
     REGISTER_MESSAGE(CurlFailedToExecute);
+    REGISTER_MESSAGE(CurlFailedToPut);
+    REGISTER_MESSAGE(CurlFailedToPutHttp);
     REGISTER_MESSAGE(CurlReportedUnexpectedResults);
     REGISTER_MESSAGE(CurlReturnedUnexpectedResponseCodes);
     REGISTER_MESSAGE(CurrentCommitBaseline);
@@ -537,8 +539,14 @@ namespace vcpkg
     REGISTER_MESSAGE(DocumentedFieldsSuggestUpdate);
     REGISTER_MESSAGE(DownloadAvailable);
     REGISTER_MESSAGE(DownloadedSources);
+    REGISTER_MESSAGE(DownloadFailedCurl);
+    REGISTER_MESSAGE(DownloadFailedHashMismatch);
+    REGISTER_MESSAGE(DownloadFailedRetrying);
+    REGISTER_MESSAGE(DownloadFailedStatusCode);
     REGISTER_MESSAGE(DownloadingPortableToolVersionX);
     REGISTER_MESSAGE(DownloadingTool);
+    REGISTER_MESSAGE(DownloadingUrl);
+    REGISTER_MESSAGE(DownloadWinHttpError);
     REGISTER_MESSAGE(DownloadingVcpkgCeBundle);
     REGISTER_MESSAGE(DownloadingVcpkgCeBundleLatest);
     REGISTER_MESSAGE(DownloadingVcpkgStandaloneBundle);
@@ -825,6 +833,8 @@ namespace vcpkg
     REGISTER_MESSAGE(NoLocalizationForMessages);
     REGISTER_MESSAGE(NoOutdatedPackages);
     REGISTER_MESSAGE(NoRegistryForPort);
+    REGISTER_MESSAGE(NoUrlsAndHashSpecified);
+    REGISTER_MESSAGE(NoUrlsAndNoHashSpecified);
     REGISTER_MESSAGE(NugetPackageFileSucceededButCreationFailed);
     REGISTER_MESSAGE(OptionMustBeInteger);
     REGISTER_MESSAGE(OptionRequired);
@@ -875,6 +885,7 @@ namespace vcpkg
     REGISTER_MESSAGE(RestoredPackage);
     REGISTER_MESSAGE(RestoredPackagesFromVendor);
     REGISTER_MESSAGE(ResultsHeader);
+    REGISTER_MESSAGE(SecretBanner);
     REGISTER_MESSAGE(SerializedBinParagraphHeader);
     REGISTER_MESSAGE(SettingEnvVar);
     REGISTER_MESSAGE(ShallowRepositoryDetected);
@@ -976,6 +987,7 @@ namespace vcpkg
     REGISTER_MESSAGE(VcpkgHasCrashed);
     REGISTER_MESSAGE(VcpkgInvalidCommand);
     REGISTER_MESSAGE(InvalidCommentStyle);
+    REGISTER_MESSAGE(InvalidUri);
     REGISTER_MESSAGE(VcpkgInVsPrompt);
     REGISTER_MESSAGE(VcpkgRootRequired);
     REGISTER_MESSAGE(VcpkgRootsDir);

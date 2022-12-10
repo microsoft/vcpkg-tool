@@ -1,0 +1,63 @@
+{
+  "id": "tools/arduino/arduino-ide",
+  "version": "1.18.15",
+  "description": "The open-source Arduino Software (IDE) makes it easy to write code and upload it to the board. This software can be used with any Arduino board.",
+  "summary": "Arduino IDE",
+  "contacts": {
+    "Marc Goodner": {
+      "email": "mgoodner@microsoft.com",
+      "role": "publisher"
+    },
+    "Arduino": {
+      "role": "originator"
+    }
+  },
+  "demands": {
+    "windows": {
+      "install": {
+        "unzip": "https://downloads.arduino.cc/arduino-1.8.15-windows.zip",
+        "sha256": "C53E7D291EDEBCDB58FFA34AEB53C5B777D814CEA8030297F06116ED0598D139",
+        "strip": 1
+      },
+      "exports": {
+        "tools": {
+          "arduino": "arduino.exe"
+        },
+        "paths": {
+          "PATH": "."
+        }
+      }
+    },
+    "linux and x86": {
+      "install": {
+        "untar": "https://downloads.arduino.cc/arduino-1.8.15-linux32.tar.xz",
+        "sha512": "02a10831c7125144ac6f701528f9d176a1a7ac0df6d9391d31d6758ae8f3dea3f8b8390320c7e7d3efb9ed45fb79527caa798ad354bc8a857c2f9c42f4612a8f",
+        "strip": 2
+      }
+    },
+    "linux and x64": {
+      "install": {
+        "untar": "https://downloads.arduino.cc/arduino-1.8.15-linux64.tar.xz",
+        "sha512": "ae84a8f62cbd3ecf5400a357ac5ebd04cbc80b31a2fbc80f280850465f7460ad3a02b32830021ef980b72c60d52eb65a4fc551988c91d01b25e8d646596175f8",
+        "strip": 2
+      }
+    },
+    "linux and arm64": {
+      "install": {
+        "untar": "https://downloads.arduino.cc/arduino-1.8.15-linuxaarch64.tar.xz",
+        "sha512": "22b4e5f3a79723bb09d85107facfe7d367d8a1aa347447e935481823192bd2390bfe0e5e694a5e2ee6addb59ec269a72eb829f8f791fb8641000179884bcfff2",
+        "strip": 2
+      }
+    },
+    "not windows": {
+      "exports": {
+        "tools": {
+          "arduino": "arduino"
+        },
+        "paths": {
+          "PATH": "."
+        }
+      }
+    }
+  }
+}
