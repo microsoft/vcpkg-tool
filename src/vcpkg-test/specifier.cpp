@@ -3,10 +3,31 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/packagespec.h>
+#include <vcpkg/versions.h>
 
 #include <vcpkg-test/util.h>
 
 using namespace vcpkg;
+
+namespace
+{
+    void test_version(StringView spec_str,
+                      StringView name,
+                      StringView version_str,
+                      int port_version,
+                      Optional<std::string> triplet = nullopt)
+    {
+        auto maybe_spec = parse_qualified_specifier(spec_str);
+        REQUIRE(maybe_spec);
+        auto& spec = *maybe_spec.get();
+        CHECK(spec.name == name);
+        REQUIRE(spec.version);
+        auto& version = *spec.version.get();
+        CHECK(version.text() == version_str);
+        CHECK(version.port_version() == port_version);
+        CHECK(spec.triplet == triplet);
+    }
+}
 
 TEST_CASE ("specifier conversion", "[specifier]")
 {
@@ -45,6 +66,24 @@ TEST_CASE ("specifier parsing", "[specifier]")
         REQUIRE(spec.name == "zlib");
         REQUIRE(!spec.features);
         REQUIRE(!spec.triplet);
+    }
+
+    SECTION ("parsed specifier from string with version")
+    {
+        auto maybe_spec = vcpkg::parse_qualified_specifier("zlib[core]@1.2.13#2:x64-uwp");
+        REQUIRE(maybe_spec);
+
+        auto& spec = *maybe_spec.get();
+        CHECK(spec.name == "zlib");
+        REQUIRE(spec.features);
+        auto& features = *spec.features.get();
+        REQUIRE(features.size() == 1);
+        CHECK(features[0] == "core");
+        REQUIRE(spec.version);
+        auto& version = *spec.version.get();
+        CHECK(version.text() == "1.2.13");
+        CHECK(version.port_version() == 2);
+        CHECK(spec.triplet.value_or("") == "x64-uwp");
     }
 
     SECTION ("parsed specifier from string with triplet")
@@ -107,6 +146,77 @@ TEST_CASE ("specifier parsing", "[specifier]")
         };
         Util::sort(spectargets);
         Test::check_ranges(specs, spectargets);
+    }
+}
+
+TEST_CASE ("specifier version parsing", "[specifier]")
+{
+    // dot version
+    test_version("a@1.2.13", "a", "1.2.13", 0);
+
+    // date version
+    test_version("a@2022-12-09", "a", "2022-12-09", 0);
+
+    // string version
+    test_version("a@vista", "a", "vista", 0);
+
+    // with port-version
+    test_version("a@1.2.13#2", "a", "1.2.13", 2);
+    test_version("a@2022-12-09#9", "a", "2022-12-09", 9);
+    test_version("a@vista#20", "a", "vista", 20);
+
+    // with triplet
+    test_version("a@1.2.13#2:x64-windows", "a", "1.2.13", 2, "x64-windows");
+    test_version("a@2022-12-09#9:x86-windows", "a", "2022-12-09", 9, "x86-windows");
+    test_version("a@vista#20:x64-linux-static", "a", "vista", 20, "x64-linux-static");
+
+    // escaped version strings
+    test_version(R"(a@with\ space#1)", "a", "with space", 1);
+    test_version(R"(a@not\:a-triplet:x64-windows)", "a", "not:a-triplet", 0, "x64-windows");
+    test_version(R"(a@https\:\/\/github.com\/Microsoft\/vcpkg\/releases\/1.0.0)",
+                 "a",
+                 "https://github.com/Microsoft/vcpkg/releases/1.0.0",
+                 0);
+    test_version(R"==(a@\!\@\$\%\^\&\*\(\)\_\-\+\=\{\}\[\]\|\\\;\:\'\"\,\<\.\>\/\?\`\~)==",
+                 "a",
+                 R"==(!@$%^&*()_-+={}[]|\;:'",<.>/?`~)==",
+                 0);
+
+    // error cases
+    SECTION ("no version")
+    {
+        auto maybe_spec = parse_qualified_specifier("a@:x64-windows");
+        REQUIRE(!maybe_spec);
+        CHECK(maybe_spec.error() == R"(<unknown>:1:3: error: expected version
+    on expression: a@:x64-windows
+                     ^)");
+    }
+
+    SECTION ("no version 2")
+    {
+        auto maybe_spec = parse_qualified_specifier("a@#2:x64-windows");
+        REQUIRE(!maybe_spec);
+        CHECK(maybe_spec.error() == R"(<unknown>:1:3: error: expected version
+    on expression: a@#2:x64-windows
+                     ^)");
+    }
+
+    SECTION ("unescaped :")
+    {
+        auto maybe_spec = parse_qualified_specifier("a@not:a-triplet:x64-windows");
+        REQUIRE(!maybe_spec);
+        CHECK(maybe_spec.error() == R"(<unknown>:1:16: error: expected eof
+    on expression: a@not:a-triplet:x64-windows
+                                  ^)");
+    }
+
+    SECTION ("unescaped special character warning")
+    {
+        auto maybe_spec = parse_qualified_specifier("a@hello!:x64-windows");
+        REQUIRE(!maybe_spec);
+        CHECK(maybe_spec.error() == R"(<unknown>:1:8: error: expected eof
+    on expression: a@hello!:x64-windows
+                          ^)");
     }
 }
 
