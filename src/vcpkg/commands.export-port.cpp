@@ -4,7 +4,7 @@
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/util.h>
 
-#include <vcpkg/archives.h> // for extract_tar_cmake
+#include <vcpkg/archives.h>
 #include <vcpkg/commands.export-port.h>
 #include <vcpkg/configuration.h>
 #include <vcpkg/metrics.h>
@@ -43,15 +43,16 @@ namespace
         }
     }
 
-    void export_registry_port_version(const VcpkgPaths& paths,
-                                      StringView port_name,
-                                      const Version& version,
-                                      const Path& destination)
+    void export_registry_port(const VcpkgPaths& paths,
+                              StringView port_name,
+                              Optional<Version> version,
+                              const Path& destination)
     {
         // Registry configuration
         const auto& config = paths.get_configuration();
         auto registries = config.instantiate_registry_set(paths);
-        auto source = registries->fetch_port_files(port_name, version);
+        auto source = version ? registries->fetch_port_files(port_name, version.value_or_exit(VCPKG_LINE_INFO))
+                              : registries->fetch_port_files(port_name);
         if (!source)
         {
             msg::println_error(source.error());
@@ -62,10 +63,10 @@ namespace
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
-    void export_classic_mode_port_version(const VcpkgPaths& paths,
-                                          StringView port_name,
-                                          const Version& version,
-                                          const Path& destination)
+    void export_classic_mode_versioned(const VcpkgPaths& paths,
+                                       StringView port_name,
+                                       const Version& version,
+                                       const Path& destination)
     {
         const auto db_file = paths.builtin_registry_versions / fmt::format("{}-/{}.json", port_name[0], port_name);
 
@@ -119,7 +120,7 @@ namespace
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
-    void export_classic_mode_port(const VcpkgPaths& paths, StringView port_name, const Path& destination)
+    void export_classic_mode_unversioned(const VcpkgPaths& paths, StringView port_name, const Path& destination)
     {
         auto& fs = paths.get_filesystem();
         const auto port_dir = paths.builtin_ports_directory() / port_name;
@@ -197,21 +198,22 @@ namespace vcpkg::Commands::ExportPort
                                                         Hash::get_string_sha256(version->to_string()));
             if (include_registries && has_registries)
             {
-                export_registry_port_version(paths, port_name, *version, final_path);
+                export_registry_port(paths, port_name, *version, final_path);
             }
             else
             {
-                export_classic_mode_port_version(paths, port_name, *version, final_path);
+                export_classic_mode_versioned(paths, port_name, *version, final_path);
             }
         }
         else
         {
             if (include_registries)
             {
-                // todo: ???
+                // fetchs baseline version on the configured registry
+                export_registry_port(paths, port_name, nullopt, final_path);
             }
 
-            export_classic_mode_port(paths, port_name, final_path);
+            export_classic_mode_unversioned(paths, port_name, final_path);
         }
         Checks::exit_success(VCPKG_LINE_INFO);
     }

@@ -1191,6 +1191,25 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, implementation_ != nullptr);
     }
 
+    ExpectedL<PathAndLocation> RegistrySet::fetch_port_files(StringView port_name)
+    {
+        auto impl = registry_for_port(port_name);
+        if (!impl) return msg::format(msgNoRegistryForPort, msg::package_name = port_name);
+
+        auto entry = impl->get_port_entry(port_name);
+        if (!entry)
+        {
+            return msg::format(msgExpectedRegistryToContainPort,
+                               msg::package_name = port_name,
+                               msg::path = impl->friendly_identifier(),
+                               msg::url = docs::registries_url);
+        }
+
+        return impl->get_baseline_version(port_name).then([&entry](auto&& version) {
+            return entry->get_version(version).map_error([](auto&& e) { return LocalizedString::from_raw(e); });
+        });
+    }
+
     ExpectedL<PathAndLocation> RegistrySet::fetch_port_files(StringView port_name, const Version& version) const
     {
         auto impl = registry_for_port(port_name);
@@ -1199,13 +1218,13 @@ namespace vcpkg
         auto entry = impl->get_port_entry(port_name);
         if (!entry)
         {
-            // TODO: This should print impl->friendly_identifier() as part of the message.
             return msg::format(msgExpectedRegistryToContainPort,
                                msg::package_name = port_name,
                                msg::path = impl->friendly_identifier(),
                                msg::url = docs::registries_url);
         }
 
+        // todo: localize message from registry
         return entry->get_version(version).map_error([](auto&& e) { return LocalizedString::from_raw(e); });
     }
 

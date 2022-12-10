@@ -118,6 +118,10 @@ namespace vcpkg
         {
         }
 
+        // fetchs port files for the baseline version of a port and returns their location on disk
+        ExpectedL<PathAndLocation> fetch_port_files(StringView port_name);
+
+        // fetchs port files for a specific version of a port and returns their location on disk
         ExpectedL<PathAndLocation> fetch_port_files(StringView port_name, const Version& version) const;
 
         // finds the correct registry for the port name
