@@ -151,36 +151,39 @@ TEST_CASE ("specifier parsing", "[specifier]")
 
 TEST_CASE ("specifier version parsing", "[specifier]")
 {
-    // dot version
-    test_version("a@1.2.13", "a", "1.2.13", 0);
+    SECTION ("success cases")
+    {
+        // dot version
+        test_version("a@1.2.13", "a", "1.2.13", 0);
 
-    // date version
-    test_version("a@2022-12-09", "a", "2022-12-09", 0);
+        // date version
+        test_version("a@2022-12-09", "a", "2022-12-09", 0);
 
-    // string version
-    test_version("a@vista", "a", "vista", 0);
+        // string version
+        test_version("a@vista", "a", "vista", 0);
 
-    // with port-version
-    test_version("a@1.2.13#2", "a", "1.2.13", 2);
-    test_version("a@2022-12-09#9", "a", "2022-12-09", 9);
-    test_version("a@vista#20", "a", "vista", 20);
+        // with port-version
+        test_version("a@1.2.13#2", "a", "1.2.13", 2);
+        test_version("a@2022-12-09#9", "a", "2022-12-09", 9);
+        test_version("a@vista#20", "a", "vista", 20);
 
-    // with triplet
-    test_version("a@1.2.13#2:x64-windows", "a", "1.2.13", 2, "x64-windows");
-    test_version("a@2022-12-09#9:x86-windows", "a", "2022-12-09", 9, "x86-windows");
-    test_version("a@vista#20:x64-linux-static", "a", "vista", 20, "x64-linux-static");
+        // with triplet
+        test_version("a@1.2.13#2:x64-windows", "a", "1.2.13", 2, "x64-windows");
+        test_version("a@2022-12-09#9:x86-windows", "a", "2022-12-09", 9, "x86-windows");
+        test_version("a@vista#20:x64-linux-static", "a", "vista", 20, "x64-linux-static");
 
-    // escaped version strings
-    test_version(R"(a@with\ space#1)", "a", "with space", 1);
-    test_version(R"(a@not\:a-triplet:x64-windows)", "a", "not:a-triplet", 0, "x64-windows");
-    test_version(R"(a@https\:\/\/github.com\/Microsoft\/vcpkg\/releases\/1.0.0)",
-                 "a",
-                 "https://github.com/Microsoft/vcpkg/releases/1.0.0",
-                 0);
-    test_version(R"==(a@\!\@\$\%\^\&\*\(\)\_\-\+\=\{\}\[\]\|\\\;\:\'\"\,\<\.\>\/\?\`\~)==",
-                 "a",
-                 R"==(!@$%^&*()_-+={}[]|\;:'",<.>/?`~)==",
-                 0);
+        // escaped version strings
+        test_version(R"(a@with\ space#1)", "a", "with space", 1);
+        test_version(R"(a@not\:a-triplet:x64-windows)", "a", "not:a-triplet", 0, "x64-windows");
+        test_version(R"(a@https\:\/\/github.com\/Microsoft\/vcpkg\/releases\/1.0.0)",
+                     "a",
+                     "https://github.com/Microsoft/vcpkg/releases/1.0.0",
+                     0);
+        test_version(R"==(a@\!\@\$\%\^\&\*\(\)\_\-\+\=\{\}\[\]\|\\\;\:\'\"\,\<\.\>\/\?\`\~)==",
+                     "a",
+                     R"==(!@$%^&*()_-+={}[]|\;:'",<.>/?`~)==",
+                     0);
+    }
 
     // error cases
     SECTION ("no version")
@@ -203,11 +206,21 @@ TEST_CASE ("specifier version parsing", "[specifier]")
 
     SECTION ("unescaped :")
     {
-        auto maybe_spec = parse_qualified_specifier("a@not:a-triplet:x64-windows");
-        REQUIRE(!maybe_spec);
-        CHECK(maybe_spec.error() == R"(<unknown>:1:16: error: expected eof
+        ParserBase p("a@not:a-triplet:x64-windows", "test");
+        auto maybe_spec = parse_qualified_specifier(p);
+        CHECK(!maybe_spec);
+
+        REQUIRE(p.get_error());
+        CHECK(p.get_error()->to_string() == R"(test:1:16: error: unexpected ':' in triplet
     on expression: a@not:a-triplet:x64-windows
                                   ^)");
+
+        auto& warnings = p.messages().warnings;
+        REQUIRE(warnings.size() == 1);
+        CHECK(warnings[0].format("test", MessageKind::Warning).to_string() ==
+              R"(test:1:6: warning: unescaped ':' detected here
+    on expression: a@not:a-triplet:x64-windows
+                        ^)");
     }
 
     SECTION ("unescaped special character warning")

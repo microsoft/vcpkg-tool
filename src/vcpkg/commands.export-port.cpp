@@ -134,7 +134,6 @@ namespace
 namespace vcpkg::Commands::ExportPort
 {
     constexpr static StringLiteral OPTION_FORCE = "force";
-    constexpr static StringLiteral OPTION_VERSION = "version";
     constexpr static StringLiteral OPTION_NO_REGISTRIES = "no-registries";
     constexpr static StringLiteral OPTION_SUBDIR = "subdir";
 

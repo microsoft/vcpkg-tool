@@ -198,69 +198,80 @@ namespace vcpkg
         }
         if (ch == '@')
         {
+            parser.next();
             std::string version_str;
-            do
+            while (true)
             {
-                parser.next();
-                // For convenience, special characters in semver and dates do not require escaping.
                 version_str +=
                     parser
                         .match_while([](auto ch) {
                             return ParserBase::is_alphanum(ch) || ch == '.' || ch == '-' || ch == '+' || ch == '_';
                         })
                         .to_string();
+
                 if (parser.cur() == '\\')
                 {
                     parser.next();
                     if (parser.cur() == '#')
                     {
-                        parser.add_error("character '#' is not allowed in version strings");
+                        parser.add_error("character # is not allowed in versions");
                         return nullopt;
                     }
-
                     version_str += parser.cur();
+                    parser.next();
                     continue;
                 }
+                break;
+            }
 
-                if (version_str.empty())
+            if (version_str.empty())
+            {
+                parser.add_error("expected version");
+                return nullopt;
+            }
+
+            if (parser.cur() == '#')
+            {
+                parser.next();
+                auto port_version_str = parser.match_while(ParserBase::is_ascii_digit);
+                if (port_version_str.empty())
                 {
-                    parser.add_error("expected version");
+                    parser.add_error("expected port-version (must be a positive integer number)");
                     return nullopt;
                 }
 
-                if (parser.cur() == '#')
+                auto maybe_port_version = Strings::strto<int>(port_version_str);
+                if (!maybe_port_version)
                 {
-                    parser.next();
-                    auto port_version_str = parser.match_while(ParserBase::is_ascii_digit);
-                    if (port_version_str.empty())
-                    {
-                        parser.add_error("expected port-version (must be a positive integer number)");
-                        return nullopt;
-                    }
-                    auto maybe_port_version = Strings::strto<int>(port_version_str);
-                    if (!maybe_port_version)
-                    {
-                        parser.add_error(fmt::format(
-                            "couldn't parse port-version '{}' (must be a positive integer number)", port_version_str));
-                        return nullopt;
-                    }
-
-                    ret.version.emplace(version_str, maybe_port_version.value_or_exit(VCPKG_LINE_INFO));
-                    break;
+                    parser.add_error(fmt::format("couldn't parse port-version '{}' (must be a positive integer number)",
+                                                 port_version_str));
+                    return nullopt;
                 }
-                ret.version.emplace(version_str, 0);
 
-                break;
-            } while (true);
+                ret.version.emplace(version_str, maybe_port_version.value_or_exit(VCPKG_LINE_INFO));
+            }
+            else
+            {
+                ret.version.emplace(version_str, 0);
+            }
             ch = parser.cur();
         }
         if (ch == ':')
         {
+            const auto loc = parser.cur_loc();
             parser.next();
             ret.triplet = parser.match_while(ParserBase::is_package_name_char).to_string();
             if (ret.triplet.get()->empty())
             {
                 parser.add_error("expected triplet name (must be lowercase, digits, '-')");
+                return nullopt;
+            }
+
+            ch = parser.cur();
+            if (ch == ':')
+            {
+                parser.add_error("unexpected ':' in triplet");
+                parser.add_warning(LocalizedString::from_raw("unescaped ':' detected here"), loc);
                 return nullopt;
             }
         }
