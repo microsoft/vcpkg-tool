@@ -10,9 +10,8 @@ namespace vcpkg::Commands
     static constexpr StringLiteral OPTION_NO_OUTPUT_COMMENTS = "no-output-comments";
 
     static constexpr CommandSwitch GENERATE_MESSAGE_MAP_SWITCHES[]{
-        {OPTION_OUTPUT_COMMENTS, "When generating the message map, include comments (the default)"},
-        {OPTION_NO_OUTPUT_COMMENTS,
-         "When generating the message map, exclude comments (useful for generating the english localization file)"},
+        {OPTION_OUTPUT_COMMENTS, []() { return msg::format(msgCmdGenerateMessageMapOptOutputComments); }},
+        {OPTION_NO_OUTPUT_COMMENTS, []() { return msg::format(msgCmdGenerateMessageMapOptNoOutputComments); }},
     };
 
     const CommandStructure COMMAND_STRUCTURE = {

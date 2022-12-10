@@ -92,16 +92,13 @@ namespace vcpkg::Commands::DependInfo
         constexpr int NO_RECURSE_LIMIT_VALUE = -1;
 
         constexpr std::array<CommandSwitch, 3> DEPEND_SWITCHES = {
-            {{OPTION_DOT, "Creates graph on basis of dot"},
-             {OPTION_DGML, "Creates graph on basis of dgml"},
-             {OPTION_SHOW_DEPTH, "Show recursion depth in output"}}};
+            {{OPTION_DOT, []() { return msg::format(msgCmdDependInfoOptDot); }},
+             {OPTION_DGML, []() { return msg::format(msgCmdDependInfoOptDGML); }},
+             {OPTION_SHOW_DEPTH, []() { return msg::format(msgCmdDependInfoOptDepth); }}}};
 
         constexpr std::array<CommandSetting, 2> DEPEND_SETTINGS = {
-            {{OPTION_MAX_RECURSE, "Set max recursion depth, a value of -1 indicates no limit"},
-             {OPTION_SORT,
-              "Set sort order for the list of dependencies, accepted values are: lexicographical, topological "
-              "(default), x-tree, "
-              "reverse"}}};
+            {{OPTION_MAX_RECURSE, []() { return msg::format(msgCmdDependInfoOptMaxRecurse); }},
+             {OPTION_SORT, []() { return msg::format(msgCmdDependInfoOptSort); }}}};
 
         enum SortMode
         {
@@ -309,7 +306,10 @@ namespace vcpkg::Commands::DependInfo
                 std::string{arg}, default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
+        auto& fs = paths.get_filesystem();
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(
+            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 

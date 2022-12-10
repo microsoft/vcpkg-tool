@@ -239,7 +239,7 @@ namespace vcpkg
         std::array<char, 1024 * 4> buf{};
         auto written = readlink("/proc/self/exe", buf.data(), buf.size());
         Checks::check_exit(VCPKG_LINE_INFO, written != -1, "Could not determine current executable path.");
-        return Path(buf.data(), buf.data() + written);
+        return Path(buf.data(), written);
 #endif
     }
 
