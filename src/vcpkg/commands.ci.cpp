@@ -77,7 +77,20 @@ namespace
         CiBuildLogsRecorder create_for_feature_test(const FullPackageSpec& spec, Filesystem& filesystem) const
         {
             static int counter = 0;
-            auto new_base_path = base_path / Strings::concat("feature_test_", ++counter);
+            std::string feature;
+            if (spec.features.size() == 1)
+            {
+                feature = "core";
+            }
+            else if (spec.features.size() == 2)
+            {
+                feature = spec.features.back();
+            }
+            else
+            {
+                feature = Strings::concat("all_", ++counter);
+            }
+            auto new_base_path = base_path / Strings::concat(spec.package_spec.name(), '_', feature);
             filesystem.create_directory(new_base_path, VCPKG_LINE_INFO);
             filesystem.write_contents(new_base_path / "tested_spec.txt", spec.to_string(), VCPKG_LINE_INFO);
             return {new_base_path};
