@@ -188,7 +188,9 @@ namespace vcpkg
 
     Optional<std::string> parse_feature_name(ParserBase& parser);
     Optional<std::string> parse_package_name(ParserBase& parser);
-    ExpectedS<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input);
+    ExpectedS<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input,
+                                                                  StringView origin = "<unknown>",
+                                                                  MessageSink& warningsSink = null_sink);
     Optional<ParsedQualifiedSpecifier> parse_qualified_specifier(ParserBase& parser);
 }
 

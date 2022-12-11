@@ -11,6 +11,12 @@ using namespace vcpkg;
 
 namespace
 {
+    struct TestMessageSink : MessageSink
+    {
+        virtual void print(Color, StringView s) override { text.append(s.begin(), s.end()); }
+        std::string text;
+    };
+
     void test_version(StringView spec_str,
                       StringView name,
                       StringView version_str,
@@ -206,28 +212,34 @@ TEST_CASE ("specifier version parsing", "[specifier]")
 
     SECTION ("unescaped :")
     {
-        ParserBase p("a@not:a-triplet:x64-windows", "test");
-        auto maybe_spec = parse_qualified_specifier(p);
-        CHECK(!maybe_spec);
+        TestMessageSink test_sink;
+        auto maybe_spec = parse_qualified_specifier("a@not:a-triplet:x64-windows", "test", test_sink);
+        REQUIRE(!maybe_spec);
 
-        REQUIRE(p.get_error());
-        CHECK(p.get_error()->to_string() == R"(test:1:16: error: unexpected ':' in triplet
+        CHECK(test_sink.text ==
+              R"(test:1:6: warning: unescaped ':' detected
+    on expression: a@not:a-triplet:x64-windows
+                        ^
+)");
+
+        CHECK(maybe_spec.error() == R"(test:1:16: error: unexpected ':' in triplet
     on expression: a@not:a-triplet:x64-windows
                                   ^)");
-
-        auto& warnings = p.messages().warnings;
-        REQUIRE(warnings.size() == 1);
-        CHECK(warnings[0].format("test", MessageKind::Warning).to_string() ==
-              R"(test:1:6: warning: unescaped ':' detected here
-    on expression: a@not:a-triplet:x64-windows
-                        ^)");
     }
 
     SECTION ("unescaped special character warning")
     {
-        auto maybe_spec = parse_qualified_specifier("a@hello!:x64-windows");
+        TestMessageSink test_sink;
+        auto maybe_spec = parse_qualified_specifier("a@hello!:x64-windows", "test", test_sink);
         REQUIRE(!maybe_spec);
-        CHECK(maybe_spec.error() == R"(<unknown>:1:8: error: expected eof
+
+        CHECK(test_sink.text ==
+              R"(test:1:8: warning: unescaped '!' detected
+    on expression: a@hello!:x64-windows
+                          ^
+)");
+
+        CHECK(maybe_spec.error() == R"(test:1:8: error: expected eof
     on expression: a@hello!:x64-windows
                           ^)");
     }

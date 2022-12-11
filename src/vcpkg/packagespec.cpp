@@ -93,11 +93,18 @@ namespace vcpkg
         return PackageSpec{name, t};
     }
 
-    ExpectedS<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input)
+    ExpectedS<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input,
+                                                                  StringView origin,
+                                                                  MessageSink& warningsSink)
     {
-        auto parser = ParserBase(input, "<unknown>");
+        auto parser = ParserBase(input, origin);
         auto maybe_pqs = parse_qualified_specifier(parser);
         if (!parser.at_eof()) parser.add_error("expected eof");
+        for (auto&& warning : parser.messages().warnings)
+        {
+            warningsSink.println(warning.format(origin, MessageKind::Warning));
+        }
+
         if (auto e = parser.get_error()) return e->to_string();
         return std::move(maybe_pqs).value_or_exit(VCPKG_LINE_INFO);
     }
@@ -217,7 +224,7 @@ namespace vcpkg
                         parser.add_error("character # is not allowed in versions");
                         return nullopt;
                     }
-                    version_str += parser.cur();
+                    version_str += static_cast<char>(parser.cur());
                     parser.next();
                     continue;
                 }
@@ -254,7 +261,14 @@ namespace vcpkg
             {
                 ret.version.emplace(version_str, 0);
             }
+
             ch = parser.cur();
+            if (!parser.at_eof() && !ParserBase::is_whitespace(ch) && ch != ':' && ch != '(' && ch != ',')
+            {
+                parser.add_warning(
+                    LocalizedString::from_raw(fmt::format("unescaped '{}' detected", static_cast<char>(ch))),
+                    parser.cur_loc());
+            }
         }
         if (ch == ':')
         {
@@ -271,7 +285,7 @@ namespace vcpkg
             if (ch == ':')
             {
                 parser.add_error("unexpected ':' in triplet");
-                parser.add_warning(LocalizedString::from_raw("unescaped ':' detected here"), loc);
+                parser.add_warning(LocalizedString::from_raw("unescaped ':' detected"), loc);
                 return nullopt;
             }
         }
