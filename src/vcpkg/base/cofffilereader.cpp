@@ -129,7 +129,7 @@ namespace
 
     // seeks the file `f` to the location in the file denoted by `rva`;
     // returns the remaining size of data in the section
-    ExpectedL<size_t> try_seek_to_rva(const DllMetadata& metadata, ReadFilePointer& f, uint32_t rva)
+    ExpectedL<uint32_t> try_seek_to_rva(const DllMetadata& metadata, ReadFilePointer& f, uint32_t rva)
     {
         // The PE spec says that the sections have to be sorted by virtual_address and
         // contiguous, but this does not assume that for paranoia reasons.
@@ -143,7 +143,7 @@ namespace
 
             const auto start_offset_within_section = rva - section.virtual_address;
             const auto file_pointer = start_offset_within_section + section.pointer_to_raw_data;
-            const size_t leftover = section.size_of_raw_data - start_offset_within_section;
+            const uint32_t leftover = section.size_of_raw_data - start_offset_within_section;
             return f.try_seek_to(file_pointer).map([=](Unit) { return leftover; });
         }
 
@@ -204,11 +204,27 @@ namespace
         return std::move(maybe_remaining_size).error();
     }
 
+    ExpectedL<Unit> try_read_struct_from_rva(
+        const DllMetadata& metadata, ReadFilePointer& f, void* target, uint32_t rva, uint32_t size)
+    {
+        return try_seek_to_rva(metadata, f, rva).then([&](uint32_t maximum_size) -> ExpectedL<Unit> {
+            if (maximum_size >= size)
+            {
+                return f.try_read_all(target, size);
+            }
+
+            return f.try_read_all(target, maximum_size).map([&](Unit) {
+                ::memset(static_cast<char*>(target) + maximum_size, 0, size - maximum_size);
+                return Unit{};
+            });
+        });
+    }
+
     ExpectedL<std::string> try_read_ntbs_from_rva(const DllMetadata& metadata, ReadFilePointer& f, uint32_t rva)
     {
         // Note that maximum_size handles the case that size_of_raw_data < virtual_size, where the loader
         // inserts the null(s).
-        return try_seek_to_rva(metadata, f, rva).then([&](size_t maximum_size) -> ExpectedL<std::string> {
+        return try_seek_to_rva(metadata, f, rva).then([&](uint32_t maximum_size) -> ExpectedL<std::string> {
             std::string result;
             for (;;)
             {
@@ -443,6 +459,32 @@ namespace vcpkg
         }
 
         return result;
+    }
+
+    ExpectedL<bool> try_read_if_dll_has_exports(const DllMetadata& dll, ReadFilePointer& f)
+    {
+        if (dll.data_directories.size() < 1)
+        {
+            Debug::print("No export directory\n");
+            return false;
+        }
+
+        const auto& export_data_directory = dll.data_directories[0];
+        if (export_data_directory.virtual_address == 0)
+        {
+            Debug::print("Null export directory.\n");
+            return false;
+        }
+
+        ExportDirectoryTable export_directory_table;
+        auto export_read_result = try_read_struct_from_rva(
+            dll, f, &export_directory_table, export_data_directory.virtual_address, sizeof(export_directory_table));
+        if (!export_read_result.has_value())
+        {
+            return std::move(export_read_result).error();
+        }
+
+        return export_directory_table.address_table_entries != 0;
     }
 
     ExpectedL<std::vector<std::string>> try_read_dll_imported_dll_names(const DllMetadata& dll, ReadFilePointer& f)

@@ -37,6 +37,26 @@ namespace vcpkg
         uint32_t base_of_code;
     };
 
+    enum class DllCharacteristics : uint16_t
+    {
+        HighEntropyVA = 0x0020,
+        DynamicBase = 0x0040,
+        ForceIntegrity = 0x0080,
+        NxCompat = 0x0100,
+        NoIsolation = 0x0200,
+        NoSeh = 0x0400,
+        NoBind = 0x0800,
+        AppContainer = 0x1000,
+        WdmDriver = 0x2000,
+        GuardCF = 0x4000,
+        TSAware = 0x8000
+    };
+
+    constexpr bool operator&(DllCharacteristics lhs, DllCharacteristics rhs) noexcept
+    {
+        return (static_cast<uint16_t>(lhs) & static_cast<uint16_t>(rhs)) != 0;
+    }
+
     struct UniquePEOptionalHeaders
     {
         uint32_t base_of_data;
@@ -54,7 +74,7 @@ namespace vcpkg
         uint32_t size_of_headers;
         uint32_t checksum;
         uint16_t subsystem;
-        uint16_t dll_characteristics;
+        DllCharacteristics dll_characteristics;
         uint32_t size_of_stack_reserve;
         uint32_t size_of_stack_commit;
         uint32_t size_of_heap_reserve;
@@ -79,7 +99,7 @@ namespace vcpkg
         uint32_t size_of_headers;
         uint32_t checksum;
         uint16_t subsystem;
-        uint16_t dll_characteristics;
+        DllCharacteristics dll_characteristics;
         uint64_t size_of_stack_reserve;
         uint64_t size_of_stack_commit;
         uint64_t size_of_heap_reserve;
@@ -106,6 +126,21 @@ namespace vcpkg
         uint16_t number_of_relocations;
         uint16_t number_of_line_numbers;
         uint32_t characteristics;
+    };
+
+    struct ExportDirectoryTable
+    {
+        uint32_t export_flags;
+        uint32_t timestamp;
+        uint16_t major_version;
+        uint16_t minor_version;
+        uint32_t name_rva;
+        uint32_t ordinal_base;
+        uint32_t address_table_entries;
+        uint32_t number_of_name_pointers;
+        uint32_t export_address_table_rva;
+        uint32_t name_pointer_rva;
+        uint32_t ordinal_table_rva;
     };
 
     struct ImportDirectoryTableEntry
@@ -284,6 +319,7 @@ namespace vcpkg
     };
 
     ExpectedL<DllMetadata> try_read_dll_metadata(ReadFilePointer& f);
+    ExpectedL<bool> try_read_if_dll_has_exports(const DllMetadata& dll, ReadFilePointer& f);
     ExpectedL<std::vector<std::string>> try_read_dll_imported_dll_names(const DllMetadata& dll, ReadFilePointer& f);
     std::vector<MachineType> read_lib_machine_types(const ReadFilePointer& f);
 }
