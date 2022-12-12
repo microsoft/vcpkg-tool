@@ -499,6 +499,7 @@ namespace vcpkg
     REGISTER_MESSAGE(CommandFailed);
     REGISTER_MESSAGE(CompressFolderFailed);
     REGISTER_MESSAGE(ComputingInstallPlan);
+    REGISTER_MESSAGE(ConfigurationErrorRegistriesWithoutBaseline);
     REGISTER_MESSAGE(ConflictingFiles);
     REGISTER_MESSAGE(CMakeUsingExportedLibs);
     REGISTER_MESSAGE(CommunityTriplets);
@@ -555,6 +556,11 @@ namespace vcpkg
     REGISTER_MESSAGE(DuplicateCommandOption);
     REGISTER_MESSAGE(DuplicatedKeyInObj);
     REGISTER_MESSAGE(DuplicateOptions);
+    REGISTER_MESSAGE(DuplicatePackagePattern);
+    REGISTER_MESSAGE(DuplicatePackagePatternFirstOcurrence);
+    REGISTER_MESSAGE(DuplicatePackagePatternIgnoredLocations);
+    REGISTER_MESSAGE(DuplicatePackagePatternLocation);
+    REGISTER_MESSAGE(DuplicatePackagePatternRegistry);
     REGISTER_MESSAGE(ElapsedInstallTime);
     REGISTER_MESSAGE(ElapsedTimeForChecks);
     REGISTER_MESSAGE(EmailVcpkgTeam);
@@ -860,6 +866,9 @@ namespace vcpkg
     REGISTER_MESSAGE(ParseControlErrorInfoTypesEntry);
     REGISTER_MESSAGE(ParseControlErrorInfoWhileLoading);
     REGISTER_MESSAGE(ParseControlErrorInfoWrongTypeFields);
+    REGISTER_MESSAGE(ParseIdentifierError);
+    REGISTER_MESSAGE(ParsePackageNameError);
+    REGISTER_MESSAGE(ParsePackagePatternError);
     REGISTER_MESSAGE(PathMustBeAbsolute);
     REGISTER_MESSAGE(PECoffHeaderTooShort);
     REGISTER_MESSAGE(PEConfigCrossesSectionBoundary);
@@ -1007,6 +1016,7 @@ namespace vcpkg
     REGISTER_MESSAGE(WaitingToTakeFilesystemLock);
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
+    REGISTER_MESSAGE(WarnOnParseConfig);
     REGISTER_MESSAGE(WhileLookingForSpec);
     REGISTER_MESSAGE(WindowsOnlyCommand);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);

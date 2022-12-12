@@ -947,6 +947,13 @@ namespace vcpkg
                     "Comparing Utf8Decoders with different provenance; this is always an error");
     DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":");
     DECLARE_MESSAGE(ComputingInstallPlan, (), "", "Computing installation plan...");
+    DECLARE_MESSAGE(ConfigurationErrorRegistriesWithoutBaseline,
+                    (msg::path, msg::url),
+                    "",
+                    "The configuration defined in {path} is invalid.\n\n"
+                    "Using registries requires that a baseline is set for the default registry or that the default "
+                    "registry is null.\n\n"
+                    "See {url} for more details.");
     DECLARE_MESSAGE(ConflictingFiles,
                     (msg::path, msg::spec),
                     "",
@@ -1101,6 +1108,11 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is a command line option.",
                     "'--{value}' specified multiple times.");
+    DECLARE_MESSAGE(DuplicatePackagePattern, (msg::package_name), "", "Package \"{package_name}\" is duplicated.");
+    DECLARE_MESSAGE(DuplicatePackagePatternFirstOcurrence, (), "", "First declared in:");
+    DECLARE_MESSAGE(DuplicatePackagePatternIgnoredLocations, (), "", "The following redeclarations will be ignored:");
+    DECLARE_MESSAGE(DuplicatePackagePatternLocation, (msg::path), "", "location: {path}");
+    DECLARE_MESSAGE(DuplicatePackagePatternRegistry, (msg::url), "", "registry: {url}");
     DECLARE_MESSAGE(ElapsedInstallTime, (msg::count), "", "Total elapsed time: {count}");
     DECLARE_MESSAGE(ElapsedTimeForChecks, (msg::elapsed), "", "Time to determine pass/fail: {elapsed}");
     DECLARE_MESSAGE(EmailVcpkgTeam, (msg::url), "", "Send an email to {url} with any feedback.");
@@ -1965,6 +1977,24 @@ namespace vcpkg
                     "Error messages are is printed after this.",
                     "while loading {path}:");
     DECLARE_MESSAGE(ParseControlErrorInfoWrongTypeFields, (), "", "The following fields had the wrong types:");
+    DECLARE_MESSAGE(
+        ParseIdentifierError,
+        (msg::value, msg::url),
+        "{value} is a lowercase identifier like 'boost'",
+        "\"{value}\" is not a valid identifier. "
+        "Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)");
+    DECLARE_MESSAGE(
+        ParsePackageNameError,
+        (msg::package_name, msg::url),
+        "",
+        "\"{package_name}\" is not a valid package name. "
+        "Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)");
+    DECLARE_MESSAGE(ParsePackagePatternError,
+                    (msg::package_name, msg::url),
+                    "",
+                    "\"{package_name}\" is not a valid package pattern. "
+                    "Package patterns must use only one wildcard character (*) and it must be the last character in "
+                    "the pattern (see {url} for more information)");
     DECLARE_MESSAGE(PathMustBeAbsolute,
                     (msg::path),
                     "",
@@ -2544,6 +2574,7 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
+    DECLARE_MESSAGE(WarnOnParseConfig, (msg::path), "", "Found the following warnings in configuration {path}:");
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}");

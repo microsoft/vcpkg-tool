@@ -119,6 +119,11 @@ namespace vcpkg
         // finds the correct registry for the port name
         // Returns the null pointer if there is no registry set up for that name
         const RegistryImplementation* registry_for_port(StringView port_name) const;
+
+        // Returns a list of registries that can resolve a given port name
+        // the returned list is sorted by priority.
+        std::vector<const RegistryImplementation*> registries_for_port(StringView name) const;
+
         ExpectedL<Version> baseline_for_port(StringView port_name) const;
 
         View<Registry> registries() const { return registries_; }
@@ -196,4 +201,6 @@ namespace vcpkg
     private:
         VersionDbEntryDeserializer underlying;
     };
+
+    size_t package_match_prefix(StringView name, StringView pattern);
 }
