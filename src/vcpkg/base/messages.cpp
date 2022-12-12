@@ -603,11 +603,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ExportingMaintenanceTool);
     REGISTER_MESSAGE(ExportingPackage);
     REGISTER_MESSAGE(ExportPortFilesMissing);
-    REGISTER_MESSAGE(ExportPortIgnoreSuffixNoSubdir);
-    REGISTER_MESSAGE(ExportPortIgnoreSuffixNoVersion);
-    REGISTER_MESSAGE(ExportPortNoDestination);
     REGISTER_MESSAGE(ExportPortPathExistsAndNotEmpty);
-    REGISTER_MESSAGE(ExportPortVersionArgumentInvalid);
     REGISTER_MESSAGE(ExportPortVersionNotFound);
     REGISTER_MESSAGE(ExportPortVersionsDbFileMissing);
     REGISTER_MESSAGE(ExportPortSuccess);
@@ -1114,7 +1110,6 @@ namespace vcpkg
     REGISTER_MESSAGE(CmdEditOptBuildTrees);
     REGISTER_MESSAGE(CmdEditOptAll);
     REGISTER_MESSAGE(CmdEnvOptions);
-    REGISTER_MESSAGE(CmdExportPortAddVersionSuffix);
     REGISTER_MESSAGE(CmdExportPortForce);
     REGISTER_MESSAGE(CmdExportPortNoRegistries);
     REGISTER_MESSAGE(CmdExportPortSubdir);

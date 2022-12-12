@@ -818,7 +818,6 @@ namespace vcpkg
                     "Open editor into the port as well as the port-specific buildtree subfolder");
     DECLARE_MESSAGE(CmdEditOptBuildTrees, (), "", "Open editor into the port-specific buildtree subfolder");
     DECLARE_MESSAGE(CmdEnvOptions, (msg::path, msg::env_var), "", "Add installed {path} to {env_var}");
-    DECLARE_MESSAGE(CmdExportPortAddVersionSuffix, (), "", "adds the port version as a suffix to the output directory");
     DECLARE_MESSAGE(CmdExportPortForce, (), "", "overwrite existing files in destination");
     DECLARE_MESSAGE(CmdExportPortNoRegistries, (), "", "ignore configured registris when resolving port");
     DECLARE_MESSAGE(CmdExportPortSubdir, (), "", "create a subdirectory for the port");
@@ -1214,30 +1213,11 @@ namespace vcpkg
                     "Missing port files for {package_name}\n"
                     "Expected {path} to contain the port files.\n"
                     "Make sure that the port name is correct.");
-    DECLARE_MESSAGE(ExportPortIgnoreSuffixNoSubdir,
-                    (),
-                    "'-add-version-suffix' and '--subdir' are command-line options and should be left untranslated",
-                    "Ignoring option --add-version-suffix because option --no-subdir was passed.");
-    DECLARE_MESSAGE(ExportPortIgnoreSuffixNoVersion,
-                    (),
-                    "'--add-version-suffix' is a command-line option and should be left untranslated",
-                    "Ignoring option --add-version-suffix because no version argument was passed.");
-    DECLARE_MESSAGE(ExportPortNoDestination,
-                    (),
-                    "",
-                    "Missing destination argument.\n"
-                    "No destination argument was passed and no overlay port locations are configured.\n"
-                    "Add a destination argument or review your configuration if you expected vcpkg to export to an "
-                    "overlay ports location.");
     DECLARE_MESSAGE(ExportPortPathExistsAndNotEmpty,
                     (msg::path),
                     "'--force' is a command-line option and should be left untranslated",
                     "Export path {path} is not empty.\n"
                     "Use option --force to overwrite existing files.");
-    DECLARE_MESSAGE(ExportPortVersionArgumentInvalid,
-                    (msg::version),
-                    "'--version' is a command-line option and should be left untranslated",
-                    "The value of --version={version} is not a valid version.");
     DECLARE_MESSAGE(ExportPortVersionNotFound, (msg::version), "", "Version {version} not found");
     DECLARE_MESSAGE(ExportPortVersionsDbFileMissing,
                     (msg::package_name, msg::path),
