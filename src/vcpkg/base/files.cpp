@@ -3110,7 +3110,7 @@ namespace vcpkg
             }
 
             if (options == CopyOptions::update_existing &&
-                difftime(destination_stat.st_mtime, source_stat.st_mtime) >= 0.0)
+                destination_stat.st_mtime >= source_stat.st_mtime)
             {
                 return false;
             }
