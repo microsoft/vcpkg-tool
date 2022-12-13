@@ -32,7 +32,7 @@ specifiers:
   sorted-btree: 1.6.0
   source-map-support: 0.5.21
   tape: ^4.9.2
-  translate-strings: 1.0.11
+  translate-strings: 1.1.15
   txtgen: 2.2.8
   typescript: 4.5.5
   unbzip2-stream: 1.4.3
@@ -72,7 +72,7 @@ dependencies:
   sorted-btree: 1.6.0
   source-map-support: 0.5.21
   tape: 4.16.1
-  translate-strings: 1.0.11
+  translate-strings: 1.1.15
   txtgen: 2.2.8
   typescript: 4.5.5
   unbzip2-stream: 1.4.3
@@ -2062,8 +2062,8 @@ packages:
     resolution: {integrity: sha1-gYT9NH2snNwYWZLzpmIuFLnZq2o=}
     dev: false
 
-  /translate-strings/1.0.11:
-    resolution: {integrity: sha1-i+eu9wMHYWvFb6M+A5OM0z1sUto=}
+  /translate-strings/1.1.15:
+    resolution: {integrity: sha1-PoTack2jIs6+u2+KDpVm6hMo6p4=}
     engines: {node: '>=10.12.0'}
     hasBin: true
     dependencies:
@@ -2331,7 +2331,7 @@ packages:
     dev: false
 
   file:projects/vcpkg-ce.tgz:
-    resolution: {integrity: sha512-3XJ7b/ScbG0/B0JLlKK0DVNa0kmSdPbHKFNeAf0Ct7H3nuYPCXoSNOLTOvLulXY3jwsQOwDEeHokZoSARv7IjA==, tarball: file:projects/vcpkg-ce.tgz}
+    resolution: {integrity: sha512-O5GxN+ZoF3hquqt2ub09md3GjVfGH9yfH3MYDTa4hB8NF69g7tunlrBPZ6qFOdx/71FchtIWuDvA2MO2oAJgHw==, tarball: file:projects/vcpkg-ce.tgz}
     name: '@rush-temp/vcpkg-ce'
     version: 0.0.0
     dependencies:
@@ -2357,7 +2357,7 @@ packages:
       shx: 0.3.4
       sorted-btree: 1.6.0
       source-map-support: 0.5.21
-      translate-strings: 1.0.11
+      translate-strings: 1.1.15
       typescript: 4.5.5
       unbzip2-stream: 1.4.3
       vscode-uri: 3.0.3
