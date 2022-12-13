@@ -4,10 +4,12 @@ if ($IsWindows) {
     # Path to my simple project
     $buildDir = "$PSScriptRoot/../e2e_projects/applocal-test/build"
 
+    cmd.exe /c "$buildDir/build.bat" "$buildDir"
+
     # Tests z-applocal command
     Run-Vcpkg z-applocal `
-            --target-binary=$buildDir/Debug/main.exe `
-            --installed-bin-dir=$buildDir/x64-windows/debug/bin
+            --target-binary=$buildDir/main.exe `
+            --installed-bin-dir=$buildDir
     Throw-IfFailed
 
     # Tests z-applocal command with no arguments
@@ -16,11 +18,11 @@ if ($IsWindows) {
 
     # Tests z-applocal with no installed-bin-dir argument
     Run-Vcpkg z-applocal `
-            --target-binary=$buildDir/Debug/main.exe
+            --target-binary=$buildDir/main.exe
     Throw-IfNotFailed
 
     # Tests z-applocal with no target-binary argument
     Run-Vcpkg z-applocal `
-            --installed-bin-dir=$buildDir/x64-windows/debug/bin
+            --installed-bin-dir=$buildDir
     Throw-IfNotFailed
 }

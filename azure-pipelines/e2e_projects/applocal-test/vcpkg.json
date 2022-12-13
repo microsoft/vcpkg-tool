@@ -1,8 +1,0 @@
-{
-	"dependencies": [
-		"mylib"
-	],
-	"vcpkg-configuration": {
-		"overlay-ports": [ "./port" ]
-	}
-}
