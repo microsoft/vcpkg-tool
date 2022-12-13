@@ -2,13 +2,11 @@
 // Licensed under the MIT License.
 
 import { UnpackEvents } from '../interfaces/events';
-import { Credentials } from '../util/credentials';
 import { execute } from '../util/exec-cmd';
 import { isFilePath, Uri } from '../util/uri';
 
 export interface CloneOptions {
   force?: boolean;
-  credentials?: Credentials;
 }
 
 /** @internal */

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/downloads.h>
+#include <vcpkg/base/fwd/messages.h>
 
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
@@ -12,18 +13,15 @@
 
 namespace vcpkg
 {
-    namespace details
+    struct SplitURIView
     {
-        struct SplitURIView
-        {
-            StringView scheme;
-            Optional<StringView> authority;
-            StringView path_query_fragment;
-        };
+        StringView scheme;
+        Optional<StringView> authority;
+        StringView path_query_fragment;
+    };
 
-        // e.g. {"https","//example.org", "/index.html"}
-        ExpectedS<SplitURIView> split_uri_view(StringView uri);
-    }
+    // e.g. {"https","//example.org", "/index.html"}
+    ExpectedL<SplitURIView> split_uri_view(StringView uri);
 
     void verify_downloaded_file_hash(const Filesystem& fs,
                                      StringView sanitized_url,
@@ -35,9 +33,12 @@ namespace vcpkg
     std::vector<int> download_files(Filesystem& fs,
                                     View<std::pair<std::string, Path>> url_pairs,
                                     View<std::string> headers);
-    ExpectedS<int> put_file(const Filesystem&, StringView url, View<std::string> headers, const Path& file);
+    ExpectedL<int> put_file(const Filesystem&,
+                            StringView url,
+                            const std::vector<std::string>& secrets,
+                            View<std::string> headers,
+                            const Path& file);
     std::vector<int> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets);
-    std::string replace_secrets(std::string input, View<std::string> secrets);
 
     struct DownloadManagerConfig
     {
@@ -59,28 +60,42 @@ namespace vcpkg
 
         void download_file(Filesystem& fs,
                            const std::string& url,
-                           const Path& download_path,
-                           const Optional<std::string>& sha512) const
-        {
-            this->download_file(fs, url, {}, download_path, sha512);
-        }
-
-        void download_file(Filesystem& fs,
-                           const std::string& url,
                            View<std::string> headers,
                            const Path& download_path,
-                           const Optional<std::string>& sha512) const;
+                           const Optional<std::string>& sha512,
+                           MessageSink& progress_sink) const;
 
         // Returns url that was successfully downloaded from
         std::string download_file(Filesystem& fs,
                                   View<std::string> urls,
                                   View<std::string> headers,
                                   const Path& download_path,
-                                  const Optional<std::string>& sha512) const;
+                                  const Optional<std::string>& sha512,
+                                  MessageSink& progress_sink) const;
 
-        ExpectedS<int> put_file_to_mirror(const Filesystem& fs, const Path& file_to_put, StringView sha512) const;
+        ExpectedL<int> put_file_to_mirror(const Filesystem& fs, const Path& file_to_put, StringView sha512) const;
 
     private:
         DownloadManagerConfig m_config;
     };
+
+    Optional<unsigned long long> try_parse_curl_max5_size(StringView sv);
+
+    struct CurlProgressData
+    {
+        unsigned int total_percent;
+        unsigned long long total_size;
+        unsigned int recieved_percent;
+        unsigned long long recieved_size;
+        unsigned int transfer_percent;
+        unsigned long long transfer_size;
+        unsigned long long average_download_speed; // bytes per second
+        unsigned long long average_upload_speed;   // bytes per second
+        // ElapsedTime total_time;
+        // ElapsedTime time_spent;
+        // ElapsedTime time_left;
+        unsigned long long current_speed;
+    };
+
+    Optional<CurlProgressData> try_parse_curl_progress_data(StringView curl_progress_line);
 }

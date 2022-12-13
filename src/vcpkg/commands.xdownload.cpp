@@ -16,17 +16,18 @@ namespace vcpkg::Commands::X_Download
     static constexpr StringLiteral OPTION_SHA512 = "sha512";
     static constexpr StringLiteral OPTION_URL = "url";
     static constexpr StringLiteral OPTION_HEADER = "header";
+    static constexpr StringLiteral OPTION_MACHINE_PROGRESS = "z-machine-readable-progress";
 
     static constexpr CommandSwitch FETCH_SWITCHES[] = {
-        {OPTION_STORE, "Indicates the file should be stored instead of fetched"},
-        {OPTION_SKIP_SHA512, "Do not check the SHA512 of the downloaded file"},
-    };
+        {OPTION_STORE, []() { return msg::format(msgCmdXDownloadOptStore); }},
+        {OPTION_SKIP_SHA512, []() { return msg::format(msgCmdXDownloadOptSkipSha); }},
+        {OPTION_MACHINE_PROGRESS, nullptr}};
     static constexpr CommandSetting FETCH_SETTINGS[] = {
-        {OPTION_SHA512, "The hash of the file to be downloaded"},
+        {OPTION_SHA512, []() { return msg::format(msgCmdXDownloadOptSha); }},
     };
     static constexpr CommandMultiSetting FETCH_MULTISETTINGS[] = {
-        {OPTION_URL, "URL to download and store if missing from cache"},
-        {OPTION_HEADER, "Additional header to use when fetching from URLs"},
+        {OPTION_URL, []() { return msg::format(msgCmdXDownloadOptUrl); }},
+        {OPTION_HEADER, []() { return msg::format(msgCmdXDownloadOptHeader); }},
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -133,7 +134,13 @@ namespace vcpkg::Commands::X_Download
                 urls = it_urls->second;
             }
 
-            download_manager.download_file(fs, urls, headers, file, sha);
+            download_manager.download_file(fs,
+                                           urls,
+                                           headers,
+                                           file,
+                                           sha,
+                                           Util::Sets::contains(parsed.switches, OPTION_MACHINE_PROGRESS) ? stdout_sink
+                                                                                                          : null_sink);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
     }

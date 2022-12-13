@@ -8,7 +8,7 @@ import { UnpackEvents } from '../interfaces/events';
 import { Session } from '../session';
 import { execute } from '../util/exec-cmd';
 import { Uri } from '../util/uri';
-import { Vcpkg } from '../vcpkg';
+import { vcpkgFetch } from '../vcpkg';
 
 export async function installEspIdf(session: Session, events: Partial<UnpackEvents>, targetLocation: Uri) {
   // check for some file that espressif installs to see if it's installed.
@@ -17,8 +17,7 @@ export async function installEspIdf(session: Session, events: Partial<UnpackEven
   // create the .espressif folder for the espressif installation
   const dotEspidf = await targetLocation.createDirectory('.espressif');
 
-  const vcpkg = new Vcpkg(session);
-  const pythonPath = await vcpkg.fetch('python3_with_venv');
+  const pythonPath = await vcpkgFetch(session, 'python3_with_venv');
   if (!pythonPath) {
     throw new Error(i`Could not activate esp-idf: python was not found.`);
   }
@@ -67,8 +66,7 @@ export async function installEspIdf(session: Session, events: Partial<UnpackEven
 }
 
 export async function activateEspIdf(session: Session, activation: Activation, targetLocation: Uri) {
-  const vcpkg = new Vcpkg(session);
-  const pythonPath = await vcpkg.fetch('python3_with_venv');
+  const pythonPath = await vcpkgFetch(session, 'python3_with_venv');
   if (!pythonPath) {
     throw new Error(i`Could not activate esp-idf: python was not found.`);
   }

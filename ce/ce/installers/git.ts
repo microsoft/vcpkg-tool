@@ -7,12 +7,10 @@ import { InstallEvents, InstallOptions } from '../interfaces/events';
 import { CloneSettings, GitInstaller } from '../interfaces/metadata/installers/git';
 import { Session } from '../session';
 import { Uri } from '../util/uri';
-import { Vcpkg } from '../vcpkg';
+import { vcpkgFetch } from '../vcpkg';
 
 export async function installGit(session: Session, name: string, version: string, targetLocation: Uri, install: GitInstaller, events: Partial<InstallEvents>, options: Partial<InstallOptions & CloneOptions & CloneSettings>): Promise<void> {
-  const vcpkg = new Vcpkg(session);
-
-  const gitPath = await vcpkg.fetch('git');
+  const gitPath = await vcpkgFetch(session, 'git');
 
   if (!gitPath) {
     throw new Error(i`Git is not installed`);
