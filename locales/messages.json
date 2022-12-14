@@ -660,6 +660,8 @@
   "_IgnoringVcpkgRootEnvironment.comment": "{actual} is the path we actually used, {value} is the path to vcpkg's binary An example of {path} is /foo/bar.",
   "IllegalFeatures": "List of features is not allowed in this context",
   "IllegalPlatformSpec": "Platform qualifier is not allowed in this context",
+  "IllegalTripletSpec": "Triplet qualifier is not allowed in this context",
+  "IllegalVersionSpec": "Version qualifier is not allowed in this context",
   "ImproperShaLength": "SHA512's must be 128 hex characters: {value}",
   "_ImproperShaLength.comment": "{value} is a sha.",
   "IncorrectArchiveFileSignature": "Incorrect archive file signature",
