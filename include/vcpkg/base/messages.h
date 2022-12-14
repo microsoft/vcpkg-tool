@@ -1088,11 +1088,11 @@ namespace vcpkg
                     (msg::system_api, msg::exit_code, msg::url),
                     "",
                     "{url}: {system_api} failed with exit code {exit_code}");
-    DECLARE_MESSAGE(DownloadingVcpkgCeBundle, (msg::version), "", "Downloading vcpkg-ce bundle {version}...");
+    DECLARE_MESSAGE(DownloadingVcpkgCeBundle, (msg::version), "", "Downloading vcpkg-artifacts bundle {version}...");
     DECLARE_MESSAGE(DownloadingVcpkgCeBundleLatest,
                     (),
                     "This message is normally displayed only in development.",
-                    "Downloading latest vcpkg-ce bundle...");
+                    "Downloading latest vcpkg-artifacts bundle...");
     DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundle, (msg::version), "", "Downloading standalone bundle {version}.");
     DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundleLatest, (), "", "Downloading latest standalone bundle.");
     DECLARE_MESSAGE(DownloadRootsDir,
@@ -1315,7 +1315,7 @@ namespace vcpkg
                     (msg::tool_name, msg::version),
                     "",
                     "Could not parse version for tool {tool_name}. Version string was: {version}");
-    DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
+    DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-artifacts.");
     DECLARE_MESSAGE(FailedToRead, (msg::path, msg::error_msg), "", "Failed to read {path}: {error_msg}");
     DECLARE_MESSAGE(FailedToReadParagraph, (msg::path), "", "Failed to read paragraphs from {path}");
     DECLARE_MESSAGE(FailedToRemoveControl, (msg::path), "", "Failed to remove control file {path}");
