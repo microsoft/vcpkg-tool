@@ -61,3 +61,27 @@ $expected = "warning: The App Container bit must be set for Windows Store apps. 
 if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
     throw 'Did not detect DLL with wrong appcontainer.'
 }
+
+# Wrong CRT linkage
+Refresh-TestRoot
+if (Test-Path "$WorkingRoot/wrong-crt") {
+    Remove-Item "$WorkingRoot/wrong-crt" -Recurse -Force
+}
+
+mkdir "$WorkingRoot/wrong-crt"
+Copy-Item -Recurse "$PSScriptRoot/../e2e_assets/test-lib-port-template-dynamic-crt" "$WorkingRoot/wrong-crt/test-lib"
+Run-Vcpkg env "$WorkingRoot/wrong-crt/test-lib/build.cmd" --Triplet x86-windows-static
+Throw-IfFailed
+
+$buildOutput = Run-VcpkgAndCaptureOutput --triplet x86-windows-static "--x-buildtrees-root=$buildtreesRoot" "--x-install-root=$installRoot" "--x-packages-root=$packagesRoot" install --overlay-ports="$WorkingRoot/wrong-crt" test-lib --no-binarycaching
+$expected = "warning: Invalid crt linkage. Expected Debug,Static, but the following libs had:`n" + `
+"    $packagesRoot\test-lib_x86-windows-static\debug\lib\test_lib.lib: Debug,Dynamic`n" + `
+"warning: To inspect the lib files, use:`n" + `
+"    dumpbin.exe /directives mylibfile.lib`n" + `
+"warning: Invalid crt linkage. Expected Release,Static, but the following libs had:`n" + `
+"    $packagesRoot\test-lib_x86-windows-static\lib\test_lib.lib: Release,Dynamic`n" + `
+"warning: To inspect the lib files, use:`n" + `
+"    dumpbin.exe /directives mylibfile.lib`n"
+if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    throw 'Did not detect lib with wrong CRT linkage.'
+}

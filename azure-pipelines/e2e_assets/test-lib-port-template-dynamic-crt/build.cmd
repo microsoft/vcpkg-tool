@@ -1,0 +1,6 @@
+mkdir "%~dp0debug"
+mkdir "%~dp0release"
+cl /c /MDd "%~dp0test.c" /Fo"%~dp0debug\test.obj"
+lib "%~dp0debug\test.obj" /OUT:"%~dp0debug\test_lib.lib"
+cl /c /MD "%~dp0test.c" /Fo"%~dp0release\test.obj"
+lib "%~dp0release\test.obj" /OUT:"%~dp0release\test_lib.lib"
