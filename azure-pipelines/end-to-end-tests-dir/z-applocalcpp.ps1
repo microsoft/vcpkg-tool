@@ -4,7 +4,7 @@ if ($IsWindows) {
     # Path to my simple project
     $buildDir = "$PSScriptRoot/../e2e_projects/applocal-test/build"
 
-    Run-Vcpkg env "$buildDir/build.bat" "$buildDir"
+    Run-Vcpkg env "`"$buildDir/build.bat`" `"$buildDir`""
 
     # Tests z-applocal command
     Run-Vcpkg z-applocal `
