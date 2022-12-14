@@ -3013,16 +3013,16 @@ namespace vcpkg
 
             if (options == CopyOptions::update_existing)
             {
-                WIN32_FILE_ATTRIBUTE_DATA attributes_source;
-                if (!GetFileAttributesExW(wide_source.c_str(), GetFileExInfoStandard, &attributes_source))
-                {
-                    ec.assign(GetLastError(), std::system_category());
-                    return false;
-                }
-
                 WIN32_FILE_ATTRIBUTE_DATA attributes_destination;
                 if (GetFileAttributesExW(wide_destination.c_str(), GetFileExInfoStandard, &attributes_destination))
                 {
+                    WIN32_FILE_ATTRIBUTE_DATA attributes_source;
+                    if (!GetFileAttributesExW(wide_source.c_str(), GetFileExInfoStandard, &attributes_source))
+                    {
+                        ec.assign(GetLastError(), std::system_category());
+                        return false;
+                    }
+
                     // Do not copy if destination file is equal or more recent than source file
                     if (CompareFileTime(&attributes_destination.ftLastWriteTime, &attributes_source.ftLastWriteTime) >=
                         0)
