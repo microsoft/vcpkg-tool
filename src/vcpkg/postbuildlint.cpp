@@ -484,7 +484,6 @@ namespace vcpkg::PostBuildLint
         {
             msg::println_warning(msgPortBugDllAppContainerBitNotSet);
             print_paths(dlls_with_improper_uwp_bit);
-            msg::println_warning(msgPortBugDllAppContainerBitNotSet);
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -1025,7 +1024,9 @@ namespace vcpkg::PostBuildLint
         Util::erase_remove_if(release_libs, lib_filter);
 
         if (!pre_build_info.build_type && !build_info.policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
+        {
             error_count += check_matching_debug_and_release_binaries(debug_libs, release_libs);
+        }
 
         if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK))
         {
@@ -1077,7 +1078,10 @@ namespace vcpkg::PostBuildLint
                 error_count += check_exports_of_dlls(build_info.policies, dlls);
                 error_count += check_uwp_bit_of_dlls(pre_build_info.cmake_system_name, dlls);
                 error_count += check_outdated_crt_linkage_of_dlls(dlls, build_info, pre_build_info);
-                error_count += check_dll_architecture(pre_build_info.target_architecture, dlls);
+                if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK))
+                {
+                    error_count += check_dll_architecture(pre_build_info.target_architecture, dlls);
+                }
             }
             break;
             case LinkageType::STATIC:

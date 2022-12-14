@@ -3543,13 +3543,17 @@ namespace vcpkg
 
     void print_paths(const std::vector<Path>& paths)
     {
-        std::string message = "\n";
+        LocalizedString ls;
+        ls.append_raw('\n');
         for (const Path& p : paths)
         {
-            Strings::append(message, "    ", p.generic_u8string(), '\n');
+            auto as_preferred = p;
+            as_preferred.make_preferred();
+            ls.append_indent().append_raw(as_preferred).append_raw('\n');
         }
-        message.push_back('\n');
-        msg::write_unlocalized_text_to_stdout(Color::none, message);
+
+        ls.append_raw('\n');
+        msg::print(ls);
     }
 
     IExclusiveFileLock::~IExclusiveFileLock() = default;
