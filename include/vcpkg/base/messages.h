@@ -1602,6 +1602,8 @@ namespace vcpkg
         "switch.");
     DECLARE_MESSAGE(IllegalFeatures, (), "", "List of features is not allowed in this context");
     DECLARE_MESSAGE(IllegalPlatformSpec, (), "", "Platform qualifier is not allowed in this context");
+    DECLARE_MESSAGE(IllegalTripletSpec, (), "", "Triplet qualifier is not allowed in this context");
+    DECLARE_MESSAGE(IllegalVersionSpec, (), "", "Version qualifier is not allowed in this context");
     DECLARE_MESSAGE(ImproperShaLength,
                     (msg::value),
                     "{value} is a sha.",

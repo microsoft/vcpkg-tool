@@ -14,5 +14,7 @@ namespace vcpkg
                                                     ZStringView example_text,
                                                     const VcpkgPaths& paths);
 
+    VersionedPackageSpec check_and_get_versioned_package_spec(std::string&& spec_string, ZStringView example_text);
+
     void check_triplet(Triplet t, const VcpkgPaths& paths);
 }

@@ -37,6 +37,24 @@ namespace vcpkg
     std::string PackageSpec::to_string() const { return Strings::format("%s:%s", this->name(), this->triplet()); }
     void PackageSpec::to_string(std::string& s) const { Strings::append(s, this->name(), ':', this->triplet()); }
 
+    // VersionedPackageSpec {
+    std::string VersionedPackageSpec::to_string() const
+    {
+        std::string ret;
+        to_string(ret);
+        return ret;
+    }
+
+    void VersionedPackageSpec::to_string(std::string& s) const
+    {
+        Strings::append(s, m_name);
+        if (auto v = m_version.get())
+        {
+            Strings::append(s, '@', v->to_string());
+        }
+    }
+    // } VersionedPackageSpec
+
     bool operator==(const PackageSpec& left, const PackageSpec& right)
     {
         return left.name() == right.name() && left.triplet() == right.triplet();
@@ -68,9 +86,20 @@ namespace vcpkg
 
     ExpectedS<FullPackageSpec> ParsedQualifiedSpecifier::to_full_spec(Triplet default_triplet, ImplicitDefault id) const
     {
+        if (version)
+        {
+            return {
+                msg::format_error(msgIllegalVersionSpec).data(),
+                expected_right_tag,
+            };
+        }
+
         if (platform)
         {
-            return {msg::format(msg::msgErrorMessage).append(msgIllegalPlatformSpec).data(), expected_right_tag};
+            return {
+                msg::format_error(msgIllegalPlatformSpec).data(),
+                expected_right_tag,
+            };
         }
 
         const Triplet t = triplet ? Triplet::from_canonical_name(*triplet.get()) : default_triplet;
@@ -80,17 +109,52 @@ namespace vcpkg
 
     ExpectedS<PackageSpec> ParsedQualifiedSpecifier::to_package_spec(Triplet default_triplet) const
     {
-        if (platform)
-        {
-            return {msg::format(msg::msgErrorMessage).append(msgIllegalPlatformSpec).data(), expected_right_tag};
-        }
         if (features)
         {
-            return {msg::format(msg::msgErrorMessage).append(msgIllegalFeatures).data(), expected_right_tag};
+            return {
+                msg::format_error(msgIllegalFeatures).data(),
+                expected_right_tag,
+            };
+        }
+
+        if (version)
+        {
+            return {
+                msg::format_error(msgIllegalVersionSpec).data(),
+                expected_right_tag,
+            };
+        }
+
+        if (platform)
+        {
+            return {
+                msg::format_error(msgIllegalPlatformSpec).data(),
+                expected_right_tag,
+            };
         }
 
         const Triplet t = triplet ? Triplet::from_canonical_name(*triplet.get()) : default_triplet;
         return PackageSpec{name, t};
+    }
+
+    ExpectedL<VersionedPackageSpec> ParsedQualifiedSpecifier::to_versioned_spec() const
+    {
+        if (features)
+        {
+            return msg::format_error(msgIllegalFeatures);
+        }
+
+        if (triplet)
+        {
+            return msg::format_error(msgIllegalTripletSpec);
+        }
+
+        if (platform)
+        {
+            return msg::format_error(msgIllegalPlatformSpec);
+        }
+
+        return VersionedPackageSpec{name, version};
     }
 
     ExpectedS<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input,

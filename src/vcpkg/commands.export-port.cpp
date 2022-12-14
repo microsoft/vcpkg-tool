@@ -7,6 +7,7 @@
 #include <vcpkg/archives.h>
 #include <vcpkg/commands.export-port.h>
 #include <vcpkg/configuration.h>
+#include <vcpkg/input.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
@@ -161,16 +162,12 @@ namespace vcpkg::Commands::ExportPort
         const bool has_registries =
             Util::any_of(config.registries, [](const auto& reg) { return reg.kind != "artifact"; });
 
-        const auto package_spec_arg = args.command_arguments[0];
-        const auto maybe_package_spec = parse_qualified_specifier(package_spec_arg);
-        if (!maybe_package_spec.has_value())
-        {
-            // print error message
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-        const auto package_spec = maybe_package_spec.value_or_exit(VCPKG_LINE_INFO);
-        const auto port_name = package_spec.name;
-        const auto& maybe_version = package_spec.version;
+        auto package_spec_arg = args.command_arguments[0];
+        auto package_spec =
+            check_and_get_versioned_package_spec(std::move(package_spec_arg), COMMAND_STRUCTURE.example_text);
+
+        const auto port_name = package_spec.name();
+        const auto& maybe_version = package_spec.version();
 
         auto destination = Path(args.command_arguments[1]);
         if (subdir)

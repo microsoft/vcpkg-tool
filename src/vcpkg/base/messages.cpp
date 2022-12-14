@@ -727,6 +727,8 @@ namespace vcpkg
     REGISTER_MESSAGE(IgnoringVcpkgRootEnvironment);
     REGISTER_MESSAGE(IllegalFeatures);
     REGISTER_MESSAGE(IllegalPlatformSpec);
+    REGISTER_MESSAGE(IllegalTripletSpec);
+    REGISTER_MESSAGE(IllegalVersionSpec);
     REGISTER_MESSAGE(ImproperShaLength);
     REGISTER_MESSAGE(IncorrectArchiveFileSignature);
     REGISTER_MESSAGE(IncorrectLibHeaderEnd);

@@ -59,4 +59,21 @@ namespace vcpkg
         msg::write_unlocalized_text_to_stdout(Color::none, example_text);
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
+
+    VersionedPackageSpec check_and_get_versioned_package_spec(std::string&& spec_string, ZStringView example_text)
+    {
+        const std::string as_lowercase = Strings::ascii_to_lowercase(std::move(spec_string));
+        auto expected_spec = parse_qualified_specifier(as_lowercase, "cli", stdout_sink)
+                                 .map_error([](auto&& s) { return LocalizedString::from_raw(s); })
+                                 .then(&ParsedQualifiedSpecifier::to_versioned_spec);
+
+        if (const auto spec = expected_spec.get())
+        {
+            return *spec;
+        }
+
+        msg::write_unlocalized_text_to_stdout(Color::error, expected_spec.error());
+        msg::write_unlocalized_text_to_stdout(Color::none, example_text);
+        Checks::exit_fail(VCPKG_LINE_INFO);
+    }
 }

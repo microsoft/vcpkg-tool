@@ -53,6 +53,29 @@ namespace vcpkg
     bool operator==(const PackageSpec& left, const PackageSpec& right);
     inline bool operator!=(const PackageSpec& left, const PackageSpec& right) { return !(left == right); }
 
+    /// <summary>
+    /// Specification of a versioned package. Contains all information to reference
+    /// a specific package version.
+    /// </summary>
+    struct VersionedPackageSpec
+    {
+        VersionedPackageSpec() = default;
+        VersionedPackageSpec(const std::string& name, const Optional<Version>& version)
+            : m_name(name), m_version(version)
+        {
+        }
+
+        const std::string& name() const { return m_name; }
+        Optional<Version> version() const { return m_version; }
+
+        std::string to_string() const;
+        void to_string(std::string& s) const;
+
+    private:
+        std::string m_name;
+        Optional<Version> m_version;
+    };
+
     ///
     /// <summary>
     /// Full specification of a feature. Contains all information to reference
@@ -184,6 +207,8 @@ namespace vcpkg
         ExpectedS<FullPackageSpec> to_full_spec(Triplet default_triplet, ImplicitDefault id) const;
 
         ExpectedS<PackageSpec> to_package_spec(Triplet default_triplet) const;
+
+        ExpectedL<VersionedPackageSpec> to_versioned_spec() const;
     };
 
     Optional<std::string> parse_feature_name(ParserBase& parser);

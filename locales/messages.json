@@ -924,8 +924,6 @@
   "_ParsePackageNameError.comment": "An example of {package_name} is zlib. An example of {url} is https://github.com/microsoft/vcpkg.",
   "ParsePackagePatternError": "\"{package_name}\" is not a valid package pattern. Package patterns must use only one wildcard character (*) and it must be the last character in the pattern (see {url} for more information)",
   "_ParsePackagePatternError.comment": "An example of {package_name} is zlib. An example of {url} is https://github.com/microsoft/vcpkg.",
-  "PathMustBeAbsolute": "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute: {path}",
-  "_PathMustBeAbsolute.comment": "An example of {path} is /foo/bar.",
   "PathMustBeAbsolute": "Value of environment variable {env_var} is not absolute: {path}",
   "_PathMustBeAbsolute.comment": "An example of {path} is /foo/bar. An example of {env_var} is VCPKG_DEFAULT_TRIPLET.",
   "PerformingPostBuildValidation": "-- Performing post-build validation",
