@@ -221,7 +221,7 @@ namespace vcpkg
                     parser.next();
                     if (parser.cur() == '#')
                     {
-                        parser.add_error("character # is not allowed in versions");
+                        parser.add_error(msg::format(msgPackageSpecParseErrorHashNotAllowedInVersions));
                         return nullopt;
                     }
                     version_str += static_cast<char>(parser.cur());
@@ -233,7 +233,7 @@ namespace vcpkg
 
             if (version_str.empty())
             {
-                parser.add_error("expected version");
+                parser.add_error(msg::format(msgPackageSpecParseErrorExpectedVersion));
                 return nullopt;
             }
 
@@ -243,15 +243,15 @@ namespace vcpkg
                 auto port_version_str = parser.match_while(ParserBase::is_ascii_digit);
                 if (port_version_str.empty())
                 {
-                    parser.add_error("expected port-version (must be a positive integer number)");
+                    parser.add_error(msg::format(msgPackageSpecParseErrorExpectedPortVersion));
                     return nullopt;
                 }
 
                 auto maybe_port_version = Strings::strto<int>(port_version_str);
                 if (!maybe_port_version)
                 {
-                    parser.add_error(fmt::format("couldn't parse port-version '{}' (must be a positive integer number)",
-                                                 port_version_str));
+                    parser.add_error(
+                        msg::format(msgPackageSpecParseErrorFailedToParsePortVersion, msg::value = port_version_str));
                     return nullopt;
                 }
 
@@ -265,9 +265,9 @@ namespace vcpkg
             ch = parser.cur();
             if (!parser.at_eof() && !ParserBase::is_whitespace(ch) && ch != ':' && ch != '(' && ch != ',')
             {
-                parser.add_warning(
-                    LocalizedString::from_raw(fmt::format("unescaped '{}' detected", static_cast<char>(ch))),
-                    parser.cur_loc());
+                parser.add_warning(msg::format(msgPackageSpecParseWarningUnescapedCharacterDetected,
+                                               msg::value = static_cast<char>(ch)),
+                                   parser.cur_loc());
             }
         }
         if (ch == ':')
@@ -277,15 +277,16 @@ namespace vcpkg
             ret.triplet = parser.match_while(ParserBase::is_package_name_char).to_string();
             if (ret.triplet.get()->empty())
             {
-                parser.add_error("expected triplet name (must be lowercase, digits, '-')");
+                parser.add_error(msg::format(msgPackageSpecParseErrorExpectedTriplet));
                 return nullopt;
             }
 
             ch = parser.cur();
             if (ch == ':')
             {
-                parser.add_error("unexpected ':' in triplet");
-                parser.add_warning(LocalizedString::from_raw("unescaped ':' detected"), loc);
+                parser.add_error(msg::format(msgPackageSpecParseErrorUnexpectedColonInTriplet));
+                parser.add_warning(msg::format(msgPackageSpecParseWarningUnescapedCharacterDetected, msg::value = ':'),
+                                   loc);
                 return nullopt;
             }
         }

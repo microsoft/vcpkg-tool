@@ -189,6 +189,10 @@ TEST_CASE ("specifier version parsing", "[specifier]")
                      "a",
                      R"==(!@$%^&*()_-+={}[]|\;:'",<.>/?`~)==",
                      0);
+
+        // with platform expressions
+        test_version(
+            R"(a@with\ \(parenthesis\)#2:x86-windows (static & !uwp))", "a", "with (parenthesis)", 2, "x86-windows");
     }
 
     // error cases
@@ -196,7 +200,7 @@ TEST_CASE ("specifier version parsing", "[specifier]")
     {
         auto maybe_spec = parse_qualified_specifier("a@:x64-windows");
         REQUIRE(!maybe_spec);
-        CHECK(maybe_spec.error() == R"(<unknown>:1:3: error: expected version
+        CHECK(maybe_spec.error() == R"(<unknown>:1:3: error: expected a version
     on expression: a@:x64-windows
                      ^)");
     }
@@ -205,7 +209,7 @@ TEST_CASE ("specifier version parsing", "[specifier]")
     {
         auto maybe_spec = parse_qualified_specifier("a@#2:x64-windows");
         REQUIRE(!maybe_spec);
-        CHECK(maybe_spec.error() == R"(<unknown>:1:3: error: expected version
+        CHECK(maybe_spec.error() == R"(<unknown>:1:3: error: expected a version
     on expression: a@#2:x64-windows
                      ^)");
     }

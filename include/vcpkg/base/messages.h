@@ -1938,6 +1938,25 @@ namespace vcpkg
         "If you are sure you want to rebuild the above packages, run the command with the --recurse option.");
     DECLARE_MESSAGE(PackagesToRemove, (), "", "The following packages will be removed:");
     DECLARE_MESSAGE(PackagesUpToDate, (), "", "No packages need updating.");
+    DECLARE_MESSAGE(PackageSpecParseErrorExpectedPortVersion,
+                    (),
+                    "",
+                    "expected a port version (must be a positive integer number)");
+    DECLARE_MESSAGE(PackageSpecParseErrorFailedToParsePortVersion,
+                    (msg::value),
+                    "{value} is the port's revision number, a positive integer number",
+                    "couldn't parse port version '{value}' (must be a positive integer number)");
+    DECLARE_MESSAGE(PackageSpecParseErrorExpectedTriplet,
+                    (),
+                    "",
+                    "expected triplet name (must be lowercase, digits, '-')");
+    DECLARE_MESSAGE(PackageSpecParseErrorExpectedVersion, (), "", "expected a version");
+    DECLARE_MESSAGE(PackageSpecParseErrorHashNotAllowedInVersions, (), "", "character '#' is not allowed in versions");
+    DECLARE_MESSAGE(PackageSpecParseErrorUnexpectedColonInTriplet, (), "", "unexpected ':' in triplet");
+    DECLARE_MESSAGE(PackageSpecParseWarningUnescapedCharacterDetected,
+                    (msg::value),
+                    "{value} is any special character, e.g.: '!', '@', '\', etc.",
+                    "unescaped '{value}' detected");
     DECLARE_MESSAGE(PackingVendorFailed,
                     (msg::vendor),
                     "",

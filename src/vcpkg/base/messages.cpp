@@ -849,6 +849,13 @@ namespace vcpkg
     REGISTER_MESSAGE(PackagesToRebuildSuggestRecurse);
     REGISTER_MESSAGE(PackagesToRemove);
     REGISTER_MESSAGE(PackagesUpToDate);
+    REGISTER_MESSAGE(PackageSpecParseErrorExpectedPortVersion);
+    REGISTER_MESSAGE(PackageSpecParseErrorFailedToParsePortVersion);
+    REGISTER_MESSAGE(PackageSpecParseErrorExpectedTriplet);
+    REGISTER_MESSAGE(PackageSpecParseErrorExpectedVersion);
+    REGISTER_MESSAGE(PackageSpecParseErrorHashNotAllowedInVersions);
+    REGISTER_MESSAGE(PackageSpecParseErrorUnexpectedColonInTriplet);
+    REGISTER_MESSAGE(PackageSpecParseWarningUnescapedCharacterDetected);
     REGISTER_MESSAGE(PackingVendorFailed);
     REGISTER_MESSAGE(PairedSurrogatesAreInvalid);
     REGISTER_MESSAGE(ParseControlErrorInfoInvalidFields);
