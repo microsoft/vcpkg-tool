@@ -1,0 +1,50 @@
+{
+  "id": "tools/microsoft/openocd",
+  "version": "0.11.0-ms1",
+  "description": "OpenOCD provides on-chip programming and debugging support with a layered architecture of JTAG interface and TAP support including: (X)SVF playback to facilitate automated boundary scan and FPGA/CPLD programming; debug target support (e.g. ARM, MIPS): single-stepping, breakpoints/watchpoints, gprof profiling, etc; flash chip drivers (e.g. CFI, NAND, internal flash); embedded TCL interpreter for easy scripting. Several network interfaces are available for interacting with OpenOCD: telnet, TCL, and GDB. The GDB server enables OpenOCD to function as a \"remote target\" for source-level debugging of embedded systems using the GNU GDB program (and the others who talk GDB protocol, e.g. IDA Pro). This build of OpenOCD includes additional vendor extensions from Azure Sphere, Raspberry Pi, and STMicroelectronics, plus improved RTOS support.",
+  "summary": "Free and open on-chip debugging",
+  "contacts": {
+    "Ben McMorran": {
+      "email": "bemcmorr@microsoft.com",
+      "role": [
+        "publisher",
+        "originator"
+      ]
+    },
+    "OpenOCD (upstream)": {
+      "email": "openocd-user@lists.sourceforge.net",
+      "role": "other"
+    }
+  },
+  "demands": {
+    "windows and x64": {
+      "install": {
+        "untar": "https://github.com/microsoft/openocd/releases/download/ms-v0.11.0-ms1/openocd-ms-v0.11.0-ms1-i686-w64-mingw32.tar.gz",
+        "sha256": "dabe82ecc1aa1b1aa6d28216ee74d5702b9147fc74796990e14a7fa5644744a1"
+      },
+      "exports": {
+        "tools": {
+          "openocd": "bin/openocd.exe"
+        },
+        "paths": {
+          "PATH": "bin"
+        }
+      }
+    },
+    "linux and x64": {
+      "install": {
+        "untar": "https://github.com/microsoft/openocd/releases/download/ms-v0.11.0-ms1/openocd-ms-v0.11.0-ms1-linux.tar.gz",
+        "sha256": "e70a1405f5ffeb87d9487b49fe40171fe896fbd7d01a51b12cffdfb6d2b0501b",
+        "strip": 1
+      },
+      "exports": {
+        "tools": {
+          "openocd": "bin/openocd"
+        },
+        "paths": {
+          "PATH": "bin"
+        }
+      }
+    }
+  }
+}
