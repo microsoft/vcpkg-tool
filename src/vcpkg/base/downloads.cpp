@@ -526,7 +526,8 @@ namespace vcpkg
                             StringView url,
                             const std::vector<std::string>& secrets,
                             View<std::string> headers,
-                            const Path& file, StringView request)
+                            const Path& file,
+                            StringView request)
     {
         static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
 
