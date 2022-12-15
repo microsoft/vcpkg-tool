@@ -963,54 +963,41 @@ namespace vcpkg
             {
                 msg::print(
                     LocalizedString().append_indent().append(msgPortBugInvalidCrtLinkageEntry, msg::path = btf.file));
+                LocalizedString prefix;
                 if ((btf.has_dynamic_debug + btf.has_dynamic_release + btf.has_static_debug + btf.has_static_release) ==
                     1)
                 {
-                    // reasonable lib that tries to link with but one CRT
-                    if (btf.has_dynamic_debug)
-                    {
-                        msg::println(msgLinkageDynamicDebug);
-                    }
-                    else if (btf.has_dynamic_release)
-                    {
-                        msg::println(msgLinkageDynamicRelease);
-                    }
-                    else if (btf.has_static_debug)
-                    {
-                        msg::println(msgLinkageStaticDebug);
-                    }
-                    else
-                    {
-                        msg::println(msgLinkageStaticRelease);
-                    }
+                    prefix.append_raw(" ");
                 }
                 else
                 {
                     msg::println();
-                    if (btf.has_dynamic_debug)
-                    {
-                        msg::println(LocalizedString().append_indent(2).append(msgLinkageDynamicDebug));
-                    }
+                    prefix.append_indent(2);
+                }
 
-                    if (btf.has_dynamic_release)
-                    {
-                        msg::println(LocalizedString().append_indent(2).append(msgLinkageDynamicRelease));
-                    }
+                if (btf.has_dynamic_debug)
+                {
+                    msg::println(LocalizedString(prefix).append(msgLinkageDynamicDebug));
+                }
 
-                    if (btf.has_static_debug)
-                    {
-                        msg::println(LocalizedString().append_indent(2).append(msgLinkageStaticDebug));
-                    }
+                if (btf.has_dynamic_release)
+                {
+                    msg::println(LocalizedString(prefix).append(msgLinkageDynamicRelease));
+                }
 
-                    if (btf.has_static_release)
-                    {
-                        msg::println(LocalizedString().append_indent(2).append(msgLinkageStaticRelease));
-                    }
+                if (btf.has_static_debug)
+                {
+                    msg::println(LocalizedString(prefix).append(msgLinkageStaticDebug));
+                }
+
+                if (btf.has_static_release)
+                {
+                    msg::println(LocalizedString(prefix).append(msgLinkageStaticRelease));
                 }
             }
 
-            msg::println_warning(msg::format(msgPortBugInspectFiles, msg::extension = "lib")
-                                     .append_raw("\n    dumpbin.exe /directives mylibfile.lib"));
+            msg::println(msg::format(msgPortBugInspectFiles, msg::extension = "lib")
+                             .append_raw("\n    dumpbin.exe /directives mylibfile.lib"));
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -1052,8 +1039,8 @@ namespace vcpkg
                 msg::write_unlocalized_text_to_stdout(Color::warning,
                                                       fmt::format("    {}:{}\n", btf.file, btf.outdated_crt.name));
             }
-            msg::println_warning(msg::format(msgPortBugInspectFiles, msg::extension = "dll")
-                                     .append_raw("\n    dumpbin.exe /dependents mylibfile.dll"));
+            msg::println(msg::format(msgPortBugInspectFiles, msg::extension = "dll")
+                             .append_raw("\n    dumpbin.exe /dependents mylibfile.dll"));
             return LintStatus::PROBLEM_DETECTED;
         }
 
