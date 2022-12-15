@@ -1333,16 +1333,13 @@ namespace vcpkg
     {
         if (!prebuildinfo.using_vcvars())
         {
-            static Toolset external_toolset = []() -> Toolset {
-                Toolset ret;
-                ret.dumpbin.clear();
-                ret.supported_architectures = {ToolsetArchOption{"", get_host_processor(), get_host_processor()}};
-                ret.vcvarsall.clear();
-                ret.vcvarsall_options = {};
-                ret.version = "external";
-                ret.visual_studio_root_path.clear();
-                return ret;
-            }();
+            static const Toolset external_toolset{
+                Path{},
+                Path{},
+                std::vector<std::string>{},
+                "external",
+                std::string{},
+                std::vector<ToolsetArchOption>{ToolsetArchOption{"", get_host_processor(), get_host_processor()}}};
             return external_toolset;
         }
 

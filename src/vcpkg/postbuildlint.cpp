@@ -1186,16 +1186,12 @@ namespace vcpkg
                 error_count += check_no_dlls_present(build_info.policies, dlls);
 
                 error_count += check_bin_folders_are_not_present_in_static_build(build_info.policies, fs, package_dir);
-
-                if (!toolset.dumpbin.empty() && !build_info.policies.is_enabled(BuildPolicy::SKIP_DUMPBIN_CHECKS))
+                if (!build_info.policies.is_enabled(BuildPolicy::ONLY_RELEASE_CRT))
                 {
-                    if (!build_info.policies.is_enabled(BuildPolicy::ONLY_RELEASE_CRT))
-                    {
-                        error_count += check_crt_linkage_of_libs(fs, build_info, false, debug_libs);
-                    }
-
-                    error_count += check_crt_linkage_of_libs(fs, build_info, true, release_libs);
+                    error_count += check_crt_linkage_of_libs(fs, build_info, false, debug_libs);
                 }
+
+                error_count += check_crt_linkage_of_libs(fs, build_info, true, release_libs);
                 break;
             }
             default: Checks::unreachable(VCPKG_LINE_INFO);

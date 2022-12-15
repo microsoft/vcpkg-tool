@@ -279,33 +279,26 @@ namespace vcpkg::VisualStudio
                         // unknown toolset minor version
                         continue;
                     }
-                    const auto dumpbin_dir = subdir / "bin/HostX86/x86";
-                    const auto dumpbin_path = dumpbin_dir / "dumpbin.exe";
-                    paths_examined.push_back(dumpbin_path);
-                    if (fs.exists(dumpbin_path, IgnoreErrors{}))
+
+                    Toolset toolset{vs_instance.root_path,
+                                    vcvarsall_bat,
+                                    {vcvars_option},
+                                    toolset_version,
+                                    toolset_version_full.to_string(),
+                                    supported_architectures};
+
+                    found_toolsets.push_back(std::move(toolset));
+                    if (v140_is_available)
                     {
-                        Toolset toolset{vs_instance.root_path,
-                                        dumpbin_path,
-                                        vcvarsall_bat,
-                                        {vcvars_option},
-                                        toolset_version,
-                                        toolset_version_full.to_string(),
-                                        supported_architectures};
-
-                        found_toolsets.push_back(std::move(toolset));
-                        if (v140_is_available)
-                        {
-                            found_toolsets.push_back({vs_instance.root_path,
-                                                      dumpbin_path,
-                                                      vcvarsall_bat,
-                                                      {"-vcvars_ver=14.0"},
-                                                      V_140,
-                                                      "14",
-                                                      supported_architectures});
-                        }
-
-                        continue;
+                        found_toolsets.push_back({vs_instance.root_path,
+                                                  vcvarsall_bat,
+                                                  {"-vcvars_ver=14.0"},
+                                                  V_140,
+                                                  "14",
+                                                  supported_architectures});
                     }
+
+                    continue;
                 }
 
                 continue;
@@ -337,18 +330,14 @@ namespace vcpkg::VisualStudio
                     if (fs.exists(vs_bin_dir / "amd64_arm/vcvarsamd64_arm.bat", IgnoreErrors{}))
                         supported_architectures.push_back({"amd64_arm", CPU::X64, CPU::ARM});
 
-                    if (fs.exists(vs_dumpbin_exe, IgnoreErrors{}))
-                    {
-                        const Toolset toolset = {vs_instance.root_path,
-                                                 vs_dumpbin_exe,
-                                                 vcvarsall_bat,
-                                                 {},
-                                                 major_version == "14" ? V_140 : V_120,
-                                                 major_version,
-                                                 supported_architectures};
+                    const Toolset toolset = {vs_instance.root_path,
+                                             vcvarsall_bat,
+                                             {},
+                                             major_version == "14" ? V_140 : V_120,
+                                             major_version,
+                                             supported_architectures};
 
-                        found_toolsets.push_back(toolset);
-                    }
+                    found_toolsets.push_back(toolset);
                 }
             }
         }

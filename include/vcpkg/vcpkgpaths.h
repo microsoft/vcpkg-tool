@@ -36,7 +36,6 @@ namespace vcpkg
     struct Toolset
     {
         Path visual_studio_root_path;
-        Path dumpbin;
         Path vcvarsall;
         std::vector<std::string> vcvarsall_options;
         ZStringView version;
