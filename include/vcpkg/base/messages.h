@@ -2093,8 +2093,9 @@ namespace vcpkg
         (msg::expected),
         "{expected} is one of LinkageDynamicDebug/LinkageDynamicRelease/LinkageStaticDebug/LinkageStaticRelease. "
         "Immediately after this message is a file by file list with what linkages they contain. 'CRT' is an acronym "
-        "meaning C Runtime. FIXME add link to /MT/MTd/MD/MDd switch docs here. This is complicated because a binary "
-        "can link with more than one CRT.\n"
+        "meaning C Runtime. See also: "
+        "https://learn.microsoft.com/en-us/cpp/build/reference/md-mt-ld-use-run-time-library?view=msvc-170. This is "
+        "complicated because a binary can link with more than one CRT.\n"
         "Example fully formatted message:\n"
         "The following binaries should use the Dynamic Debug CRT.\n"
         "    C:\\some\\path\\to\\sane\\lib links with: Dynamic Release\n"
