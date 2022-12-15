@@ -10,7 +10,7 @@
 #include <vcpkg/postbuildlint.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::PostBuildLint
+namespace vcpkg
 {
     constexpr static const StringLiteral windows_system_names[] = {
         "",
@@ -855,6 +855,34 @@ namespace vcpkg::PostBuildLint
         bool has_dynamic_debug = false;
     };
 
+    static LocalizedString format_linkage(LinkageType linkage, bool release)
+    {
+        switch (linkage)
+        {
+            case LinkageType::DYNAMIC:
+                if (release)
+                {
+                    return msg::format(msgLinkageDynamicRelease);
+                }
+                else
+                {
+                    return msg::format(msgLinkageDynamicDebug);
+                }
+                break;
+            case LinkageType::STATIC:
+                if (release)
+                {
+                    return msg::format(msgLinkageStaticRelease);
+                }
+                else
+                {
+                    return msg::format(msgLinkageStaticRelease);
+                }
+                break;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
     static LintStatus check_crt_linkage_of_libs(const Filesystem& fs,
                                                 const BuildInfo& build_info,
                                                 bool expect_release,
@@ -871,10 +899,10 @@ namespace vcpkg::PostBuildLint
                            " has directives: " + Strings::join(" ", lib_info.linker_directives));
 
             BuildTypeAndFile this_lib{lib};
-            constexpr static const StringLiteral static_release_crt = "/DEFAULTLIB:\"LIBCMT\"";
-            constexpr static const StringLiteral static_debug_crt = "/DEFAULTLIB:\"LIBCMTd\"";
-            constexpr static const StringLiteral dynamic_release_crt = "/DEFAULTLIB:\"MSVCRT\"";
-            constexpr static const StringLiteral dynamic_debug_crt = "/DEFAULTLIB:\"MSVCRTd\"";
+            constexpr static const StringLiteral static_release_crt = "/DEFAULTLIB:LIBCMT";
+            constexpr static const StringLiteral static_debug_crt = "/DEFAULTLIB:LIBCMTd";
+            constexpr static const StringLiteral dynamic_release_crt = "/DEFAULTLIB:MSVCRT";
+            constexpr static const StringLiteral dynamic_debug_crt = "/DEFAULTLIB:MSVCRTd";
 
             for (auto&& directive : lib_info.linker_directives)
             {
@@ -895,22 +923,96 @@ namespace vcpkg::PostBuildLint
                     this_lib.has_dynamic_debug = true;
                 }
             }
+
+            bool fail = false;
+            if (expect_release)
+            {
+                fail |= this_lib.has_static_debug;
+                fail |= this_lib.has_dynamic_debug;
+            }
+            else
+            {
+                fail |= this_lib.has_static_release;
+                fail |= this_lib.has_dynamic_release;
+            }
+
+            switch (build_info.crt_linkage)
+            {
+                case LinkageType::DYNAMIC:
+                    fail |= this_lib.has_static_debug;
+                    fail |= this_lib.has_static_release;
+                    break;
+                case LinkageType::STATIC:
+                    fail |= this_lib.has_dynamic_debug;
+                    fail |= this_lib.has_dynamic_release;
+                    break;
+                default: Checks::unreachable(VCPKG_LINE_INFO);
+            }
+
+            if (fail)
+            {
+                libs_with_invalid_crt.push_back(std::move(this_lib));
+            }
         }
 
-        // if (!libs_with_invalid_crt.empty())
-        //{
-        //     msg::println_warning(msgPortBugInvalidCrtLinkage, msg::expected = expected_build_type.to_string());
+        if (!libs_with_invalid_crt.empty())
+        {
+            msg::println_warning(msgPortBugInvalidCrtLinkage,
+                                 msg::expected = format_linkage(build_info.crt_linkage, expect_release));
+            for (const BuildTypeAndFile& btf : libs_with_invalid_crt)
+            {
+                msg::print(
+                    LocalizedString().append_indent().append(msgPortBugInvalidCrtLinkageEntry, msg::path = btf.file));
+                if ((btf.has_dynamic_debug + btf.has_dynamic_release + btf.has_static_debug + btf.has_static_release) ==
+                    1)
+                {
+                    // reasonable lib that tries to link with but one CRT
+                    if (btf.has_dynamic_debug)
+                    {
+                        msg::println(msgLinkageDynamicDebug);
+                    }
+                    else if (btf.has_dynamic_release)
+                    {
+                        msg::println(msgLinkageDynamicRelease);
+                    }
+                    else if (btf.has_static_debug)
+                    {
+                        msg::println(msgLinkageStaticDebug);
+                    }
+                    else
+                    {
+                        msg::println(msgLinkageStaticRelease);
+                    }
+                }
+                else
+                {
+                    msg::println();
+                    if (btf.has_dynamic_debug)
+                    {
+                        msg::println(LocalizedString().append_indent(2).append(msgLinkageDynamicDebug));
+                    }
 
-        //    for (const BuildTypeAndFile& btf : libs_with_invalid_crt)
-        //    {
-        //        msg::write_unlocalized_text_to_stdout(
-        //            Color::warning, fmt::format("    {}: {}\n", btf.file, btf.build_type.to_string()));
-        //    }
+                    if (btf.has_dynamic_release)
+                    {
+                        msg::println(LocalizedString().append_indent(2).append(msgLinkageDynamicRelease));
+                    }
 
-        //    msg::println_warning(msg::format(msgPortBugInspectFiles, msg::extension = "lib")
-        //                             .append_raw("\n    dumpbin.exe /directives mylibfile.lib"));
-        //    return LintStatus::PROBLEM_DETECTED;
-        //}
+                    if (btf.has_static_debug)
+                    {
+                        msg::println(LocalizedString().append_indent(2).append(msgLinkageStaticDebug));
+                    }
+
+                    if (btf.has_static_release)
+                    {
+                        msg::println(LocalizedString().append_indent(2).append(msgLinkageStaticRelease));
+                    }
+                }
+            }
+
+            msg::println_warning(msg::format(msgPortBugInspectFiles, msg::extension = "lib")
+                                     .append_raw("\n    dumpbin.exe /directives mylibfile.lib"));
+            return LintStatus::PROBLEM_DETECTED;
+        }
 
         return LintStatus::SUCCESS;
     }
@@ -1120,11 +1222,11 @@ namespace vcpkg::PostBuildLint
         return error_count;
     }
 
-    size_t perform_all_checks(const PackageSpec& spec,
-                              const VcpkgPaths& paths,
-                              const PreBuildInfo& pre_build_info,
-                              const BuildInfo& build_info,
-                              const Path& port_dir)
+    size_t perform_post_build_lint_checks(const PackageSpec& spec,
+                                          const VcpkgPaths& paths,
+                                          const PreBuildInfo& pre_build_info,
+                                          const BuildInfo& build_info,
+                                          const Path& port_dir)
     {
         msg::println(msgPerformingPostBuildValidation);
         const size_t error_count = perform_all_checks_and_return_error_count(spec, paths, pre_build_info, build_info);

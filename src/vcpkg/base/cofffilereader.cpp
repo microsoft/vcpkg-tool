@@ -326,8 +326,8 @@ namespace
         return offsets;
     }
 
-    LibInformation read_machine_types_from_archive_members(const vcpkg::ReadFilePointer& f,
-                                                                     const std::vector<uint32_t>& member_offsets)
+    LibInformation read_lib_information_from_archive_members(const vcpkg::ReadFilePointer& f,
+                                                             const std::vector<uint32_t>& member_offsets)
     {
         std::vector<MachineType> machine_types; // used as sets because n is tiny
         std::vector<std::string> directives;
@@ -370,34 +370,35 @@ namespace
                 // Look for linker directive sections
                 for (auto&& section : sections)
                 {
-                    if (!(section.characteristics & SectionTableFlags::LinkInfo)
-                        || memcmp(".drectve", &section.name, 8) != 0
-                        || section.number_of_relocations != 0
-                        || section.number_of_line_numbers != 0)
+                    if (!(section.characteristics & SectionTableFlags::LinkInfo) ||
+                        memcmp(".drectve", &section.name, 8) != 0 || section.number_of_relocations != 0 ||
+                        section.number_of_line_numbers != 0)
                     {
                         continue;
                     }
 
                     // read the actual directive
-                    std::string directive;
+                    std::string directive_command_line;
                     const auto section_offset = coff_base + section.pointer_to_raw_data;
                     Checks::check_exit(VCPKG_LINE_INFO, f.seek(section_offset, SEEK_SET) == 0);
-                    directive.resize(section.size_of_raw_data);
-                    auto fun = f.read(directive.data(), 1, section.size_of_raw_data);
-                    Checks::check_exit(VCPKG_LINE_INFO,
-                                        fun ==
-                                           section.size_of_raw_data);
+                    directive_command_line.resize(section.size_of_raw_data);
+                    auto fun = f.read(directive_command_line.data(), 1, section.size_of_raw_data);
+                    Checks::check_exit(VCPKG_LINE_INFO, fun == section.size_of_raw_data);
 
-                    if (Strings::starts_with(directive, StringLiteral{"\xEF\xBB\xBF"}))
+                    if (Strings::starts_with(directive_command_line, StringLiteral{"\xEF\xBB\xBF"}))
                     {
-                        // chop of the BOM
-                        directive.erase(0, 3);
+                        // chop off the BOM
+                        directive_command_line.erase(0, 3);
                     }
 
-                    auto insertion_point = std::lower_bound(directives.begin(), directives.end(), directive);
-                    if (insertion_point == directives.end() || *insertion_point != directive)
+                    for (auto&& directive : tokenize_command_line(directive_command_line))
                     {
-                        directives.insert(insertion_point, std::move(directive));
+                        auto insertion_point =
+                            std::lower_bound(directives.begin(), directives.end(), directive_command_line);
+                        if (insertion_point == directives.end() || *insertion_point != directive)
+                        {
+                            directives.insert(insertion_point, std::move(directive));
+                        }
                     }
                 }
             }
@@ -451,6 +452,87 @@ namespace vcpkg
         }
 
         return value;
+    }
+
+    static void handle_uninteresting_command_line_ch(char ch, size_t& slash_count, std::string& this_arg)
+    {
+        // n backslashes not followed by a quotation mark produce n backslashes
+        if (slash_count)
+        {
+            this_arg.append(slash_count, '\\');
+            slash_count = 0;
+        }
+
+        this_arg.push_back(ch);
+    }
+
+    static void handle_maybe_adding_argument(std::vector<std::string>& result, std::string& this_arg)
+    {
+        if (!this_arg.empty())
+        {
+            result.push_back(std::move(this_arg));
+            this_arg.clear();
+        }
+    }
+
+    std::vector<std::string> tokenize_command_line(StringView cmd_line)
+    {
+        std::vector<std::string> result;
+        std::string this_arg;
+        bool in_quoted_argument = false;
+        std::size_t slash_count = 0;
+        for (auto&& ch : cmd_line)
+        {
+            if (ch == '\\')
+            {
+                ++slash_count;
+            }
+            else if (ch == '"')
+            {
+                // 2n backslashes followed by a quotation mark produce n backslashes followed by an (ending) quotation
+                // mark
+                //
+                // 2n + 1 backslashes followed by a quotation mark produce n backslashes followed by an (escaped)
+                // quotation mark
+                if (slash_count)
+                {
+                    this_arg.append(slash_count >> 1, '\\');
+                    if (std::exchange(slash_count, std::size_t{}) & 0x1u)
+                    {
+                        // escaped
+                        handle_uninteresting_command_line_ch('"', slash_count, this_arg);
+                    }
+                    else
+                    {
+                        // not escaped
+                        in_quoted_argument = !in_quoted_argument;
+                    }
+                }
+                else
+                {
+                    in_quoted_argument = !in_quoted_argument;
+                }
+            }
+            else if (ParserBase::is_whitespace(ch))
+            {
+                if (in_quoted_argument)
+                {
+                    handle_uninteresting_command_line_ch(ch, slash_count, this_arg);
+                }
+                else
+                {
+                    handle_maybe_adding_argument(result, this_arg);
+                }
+            }
+            else
+            {
+                handle_uninteresting_command_line_ch(ch, slash_count, this_arg);
+            }
+        }
+
+        this_arg.append(slash_count, '\\');
+        handle_maybe_adding_argument(result, this_arg);
+        return result;
     }
 
     ExpectedL<DllMetadata> try_read_dll_metadata(ReadFilePointer& f)
@@ -600,7 +682,7 @@ namespace vcpkg
         read_and_verify_archive_file_signature(f);
         read_and_skip_first_linker_member(f);
         const auto offsets = read_second_linker_member_offsets(f);
-        return read_machine_types_from_archive_members(f, offsets);
+        return read_lib_information_from_archive_members(f, offsets);
     }
 
     MachineType to_machine_type(const uint16_t value)

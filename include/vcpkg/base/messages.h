@@ -1811,6 +1811,10 @@ namespace vcpkg
                     (msg::value),
                     "Example of {value} is 'unknownlicense'",
                     "Unknown license identifier '{value}'. Known values are listed at https://spdx.org/licenses/");
+    DECLARE_MESSAGE(LinkageDynamicDebug, (), "", "Dynamic Debug");
+    DECLARE_MESSAGE(LinkageDynamicRelease, (), "", "Dynamic Release");
+    DECLARE_MESSAGE(LinkageStaticDebug, (), "", "Static Debug");
+    DECLARE_MESSAGE(LinkageStaticRelease, (), "", "Static Release");
     DECLARE_MESSAGE(ListOfValidFieldsForControlFiles,
                     (),
                     "",
@@ -2084,10 +2088,27 @@ namespace vcpkg
                     "The folder /include exists in a cmake helper port; this is incorrect, since only cmake "
                     "files should be installed");
     DECLARE_MESSAGE(PortBugInspectFiles, (msg::extension), "", "To inspect the {extension} files, use:");
-    DECLARE_MESSAGE(PortBugInvalidCrtLinkage,
-                    (msg::expected),
-                    "{expected} is the expected build type",
-                    "Invalid crt linkage. Expected {expected}, but the following libs had:");
+    DECLARE_MESSAGE(
+        PortBugInvalidCrtLinkage,
+        (msg::expected),
+        "{expected} is one of LinkageDynamicDebug/LinkageDynamicRelease/LinkageStaticDebug/LinkageStaticRelease. "
+        "Immediately after this message is a file by file list with what linkages they contain. 'CRT' is an acronym "
+        "meaning C Runtime. FIXME add link to /MT/MTd/MD/MDd switch docs here. This is complicated because a binary "
+        "can link with more than one CRT.\n"
+        "Example fully formatted message:\n"
+        "The following binaries should use the Dynamic Debug CRT.\n"
+        "    C:\\some\\path\\to\\sane\\lib links with: Dynamic Release\n"
+        "    C:\\some\\path\\to\\lib links with:\n"
+        "        Static Debug\n"
+        "        Dynamic Release\n"
+        "    C:\\some\\different\\path\\to\\a\\dll links with:\n"
+        "        Static Debug\n"
+        "        Dynamic Debug\n",
+        "The following binaries should use the {expected} CRT.");
+    DECLARE_MESSAGE(PortBugInvalidCrtLinkageEntry,
+                    (msg::path),
+                    "See explanation in PortBugInvalidCrtLinkage",
+                    "{path} links with:");
     DECLARE_MESSAGE(PortBugMergeLibCMakeDir,
                     (msg::spec),
                     "",

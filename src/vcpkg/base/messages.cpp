@@ -801,6 +801,10 @@ namespace vcpkg
     REGISTER_MESSAGE(LicenseExpressionImbalancedParens);
     REGISTER_MESSAGE(LicenseExpressionUnknownException);
     REGISTER_MESSAGE(LicenseExpressionUnknownLicense);
+    REGISTER_MESSAGE(LinkageDynamicDebug);
+    REGISTER_MESSAGE(LinkageDynamicRelease);
+    REGISTER_MESSAGE(LinkageStaticDebug);
+    REGISTER_MESSAGE(LinkageStaticRelease);
     REGISTER_MESSAGE(ListOfValidFieldsForControlFiles);
     REGISTER_MESSAGE(LoadingCommunityTriplet);
     REGISTER_MESSAGE(LoadingDependencyInformation);
@@ -1070,6 +1074,7 @@ namespace vcpkg
     REGISTER_MESSAGE(PortBugMovePkgConfigFiles);
     REGISTER_MESSAGE(PortBugRemoveEmptyDirs);
     REGISTER_MESSAGE(PortBugInvalidCrtLinkage);
+    REGISTER_MESSAGE(PortBugInvalidCrtLinkageEntry);
     REGISTER_MESSAGE(PortBugInspectFiles);
     REGISTER_MESSAGE(PortBugOutdatedCRT);
     REGISTER_MESSAGE(PortBugMisplacedFiles);
