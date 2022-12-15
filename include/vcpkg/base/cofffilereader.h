@@ -114,6 +114,50 @@ namespace vcpkg
         uint32_t size;
     };
 
+    enum class SectionTableFlags : uint32_t
+    {
+        TypeNoPad = 0x00000008u,
+        CntCode = 0x00000020u,
+        CntInitializedData = 0x00000040u,
+        CntUniniitalizedData = 0x00000080u,
+        LinkOther = 0x00000100u,
+        LinkInfo = 0x00000200u,
+        LinkRemove = 0x00000400u,
+        LinkComdat = 0x00001000u,
+        GpRel = 0x00008000u,
+        MemPurgable = 0x00020000u,
+        // Mem16Bit has the same constant as MemPurgable?!
+        MemLocked = 0x00040000u,
+        MemPreload = 0x00080000u,
+        Align1Bytes = 0x00100000u,
+        Align2Bytes = 0x00200000u,
+        Align4Bytes = 0x00300000u,
+        Align8Bytes = 0x00400000u,
+        Align16Bytes = 0x00500000u,
+        Align32Bytes = 0x00600000u,
+        Align64Bytes = 0x00700000u,
+        Align128Bytes = 0x00800000u,
+        Align256Bytes = 0x00900000u,
+        Align512Bytes = 0x00A00000u,
+        Align1024Bytes = 0x00B00000u,
+        Align2048Bytes = 0x00C00000u,
+        Align4096Bytes = 0x00D00000u,
+        Align8192Bytes = 0x00E00000u,
+        LinkNumberOfRelocationsOverflow = 0x01000000u,
+        MemDiscardable = 0x02000000u,
+        MemNotCached = 0x04000000u,
+        MemNotPaged = 0x08000000u,
+        MemShared = 0x10000000u,
+        MemExecute = 0x20000000u,
+        MemRead = 0x40000000u,
+        MemWrite = 0x80000000u
+    };
+
+    constexpr bool operator&(SectionTableFlags lhs, SectionTableFlags rhs) noexcept
+    {
+        return (static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs)) != 0;
+    }
+
     struct SectionTableHeader
     {
         unsigned char name[8];
@@ -125,7 +169,7 @@ namespace vcpkg
         uint32_t pointer_to_line_numbers;
         uint16_t number_of_relocations;
         uint16_t number_of_line_numbers;
-        uint32_t characteristics;
+        SectionTableFlags characteristics;
     };
 
     struct ExportDirectoryTable
@@ -318,8 +362,29 @@ namespace vcpkg
         uint64_t decoded_size() const;
     };
 
+    struct ImportHeader
+    {
+        uint16_t sig1; // must be IMAGE_FILE_MACHINE_UNKNOWN
+        uint16_t sig2; // must be 0xFFFF
+        uint16_t version;
+        uint16_t machine;
+        uint32_t date_time_stamp;
+        uint32_t size_of_data;
+        uint16_t ordinal_hint;
+        uint16_t type_and_name_type;
+        // 2 bits: type
+        // 3 bits: name type
+        // 11 bits: reserved and must be 0
+    };
+
+    struct LibInformation
+    {
+        std::vector<MachineType> machine_types;
+        std::vector<std::string> linker_directives;
+    };
+
     ExpectedL<DllMetadata> try_read_dll_metadata(ReadFilePointer& f);
     ExpectedL<bool> try_read_if_dll_has_exports(const DllMetadata& dll, ReadFilePointer& f);
     ExpectedL<std::vector<std::string>> try_read_dll_imported_dll_names(const DllMetadata& dll, ReadFilePointer& f);
-    std::vector<MachineType> read_lib_machine_types(const ReadFilePointer& f);
+    LibInformation read_lib_information(const ReadFilePointer& f);
 }

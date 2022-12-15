@@ -1,12 +1,12 @@
 #include <vcpkg/base/cofffilereader.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/build.h>
 #include <vcpkg/packagespec.h>
-#include <vcpkg/postbuildlint.buildtype.h>
 #include <vcpkg/postbuildlint.h>
 #include <vcpkg/vcpkgpaths.h>
 
@@ -570,8 +570,9 @@ namespace vcpkg::PostBuildLint
                                        msg::extension = ".lib",
                                        msg::path = file);
 
-                const auto machine_types = Util::fmap(read_lib_machine_types(fs.open_for_read(file, VCPKG_LINE_INFO)),
-                                                      [](MachineType mt) { return get_actual_architecture(mt); });
+                const auto machine_types =
+                    Util::fmap(read_lib_information(fs.open_for_read(file, VCPKG_LINE_INFO)).machine_types,
+                               [](MachineType mt) { return get_actual_architecture(mt); });
                 // Either machine_types is empty (meaning this lib is architecture independent), or
                 // we need at least one of the machine types to match.
                 // Agnostic example: Folly's debug library
@@ -848,61 +849,68 @@ namespace vcpkg::PostBuildLint
     struct BuildTypeAndFile
     {
         Path file;
-        BuildType build_type;
+        bool has_static_release = false;
+        bool has_static_debug = false;
+        bool has_dynamic_release = false;
+        bool has_dynamic_debug = false;
     };
 
-    static LintStatus check_crt_linkage_of_libs(const BuildType& expected_build_type,
-                                                const std::vector<Path>& libs,
-                                                const Path& dumpbin_exe)
+    static LintStatus check_crt_linkage_of_libs(const Filesystem& fs,
+                                                const BuildInfo& build_info,
+                                                bool expect_release,
+                                                const std::vector<Path>& libs)
     {
-        auto bad_build_types = std::vector<BuildType>({
-            {ConfigurationType::DEBUG, LinkageType::STATIC},
-            {ConfigurationType::DEBUG, LinkageType::DYNAMIC},
-            {ConfigurationType::RELEASE, LinkageType::STATIC},
-            {ConfigurationType::RELEASE, LinkageType::DYNAMIC},
-        });
-        Util::erase_remove(bad_build_types, expected_build_type);
-
+        (void)build_info;
+        (void)expect_release;
         std::vector<BuildTypeAndFile> libs_with_invalid_crt;
-
         for (const Path& lib : libs)
         {
-            auto cmd_line = Command(dumpbin_exe).string_arg("/directives").string_arg(lib);
-            const auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd_line), "dumpbin");
-            if (const auto output = maybe_output.get())
+            auto lib_file = fs.try_open_for_read(lib).value_or_exit(VCPKG_LINE_INFO);
+            auto lib_info = read_lib_information(lib_file);
+            Debug::println("The lib " + lib.native() +
+                           " has directives: " + Strings::join(" ", lib_info.linker_directives));
+
+            BuildTypeAndFile this_lib{lib};
+            constexpr static const StringLiteral static_release_crt = "/DEFAULTLIB:\"LIBCMT\"";
+            constexpr static const StringLiteral static_debug_crt = "/DEFAULTLIB:\"LIBCMTd\"";
+            constexpr static const StringLiteral dynamic_release_crt = "/DEFAULTLIB:\"MSVCRT\"";
+            constexpr static const StringLiteral dynamic_debug_crt = "/DEFAULTLIB:\"MSVCRTd\"";
+
+            for (auto&& directive : lib_info.linker_directives)
             {
-                for (const BuildType& bad_build_type : bad_build_types)
+                if (Strings::case_insensitive_ascii_equals(directive, static_release_crt))
                 {
-                    if (bad_build_type.has_crt_linker_option(*output))
-                    {
-                        libs_with_invalid_crt.push_back({lib, bad_build_type});
-                        break;
-                    }
+                    this_lib.has_static_release = true;
+                }
+                else if (Strings::case_insensitive_ascii_equals(directive, static_debug_crt))
+                {
+                    this_lib.has_static_debug = true;
+                }
+                else if (Strings::case_insensitive_ascii_equals(directive, dynamic_release_crt))
+                {
+                    this_lib.has_dynamic_release = true;
+                }
+                else if (Strings::case_insensitive_ascii_equals(directive, dynamic_debug_crt))
+                {
+                    this_lib.has_dynamic_debug = true;
                 }
             }
-            else
-            {
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                              msg::format(msgCommandFailed, msg::command_line = cmd_line.command_line())
-                                                  .append_raw('\n')
-                                                  .append_raw(maybe_output.error()));
-            }
         }
 
-        if (!libs_with_invalid_crt.empty())
-        {
-            msg::println_warning(msgPortBugInvalidCrtLinkage, msg::expected = expected_build_type.to_string());
+        // if (!libs_with_invalid_crt.empty())
+        //{
+        //     msg::println_warning(msgPortBugInvalidCrtLinkage, msg::expected = expected_build_type.to_string());
 
-            for (const BuildTypeAndFile& btf : libs_with_invalid_crt)
-            {
-                msg::write_unlocalized_text_to_stdout(
-                    Color::warning, fmt::format("    {}: {}\n", btf.file, btf.build_type.to_string()));
-            }
+        //    for (const BuildTypeAndFile& btf : libs_with_invalid_crt)
+        //    {
+        //        msg::write_unlocalized_text_to_stdout(
+        //            Color::warning, fmt::format("    {}: {}\n", btf.file, btf.build_type.to_string()));
+        //    }
 
-            msg::println_warning(msg::format(msgPortBugInspectFiles, msg::extension = "lib")
-                                     .append_raw("\n    dumpbin.exe /directives mylibfile.lib"));
-            return LintStatus::PROBLEM_DETECTED;
-        }
+        //    msg::println_warning(msg::format(msgPortBugInspectFiles, msg::extension = "lib")
+        //                             .append_raw("\n    dumpbin.exe /directives mylibfile.lib"));
+        //    return LintStatus::PROBLEM_DETECTED;
+        //}
 
         return LintStatus::SUCCESS;
     }
@@ -977,8 +985,6 @@ namespace vcpkg::PostBuildLint
                                                             const BuildInfo& build_info)
     {
         const auto& fs = paths.get_filesystem();
-
-        // for dumpbin
         const Toolset& toolset = paths.get_toolset(pre_build_info);
         const auto package_dir = paths.package_dir(spec);
 
@@ -1096,11 +1102,10 @@ namespace vcpkg::PostBuildLint
                 {
                     if (!build_info.policies.is_enabled(BuildPolicy::ONLY_RELEASE_CRT))
                     {
-                        error_count += check_crt_linkage_of_libs(
-                            BuildType(ConfigurationType::DEBUG, build_info.crt_linkage), debug_libs, toolset.dumpbin);
+                        error_count += check_crt_linkage_of_libs(fs, build_info, false, debug_libs);
                     }
-                    error_count += check_crt_linkage_of_libs(
-                        BuildType(ConfigurationType::RELEASE, build_info.crt_linkage), release_libs, toolset.dumpbin);
+
+                    error_count += check_crt_linkage_of_libs(fs, build_info, true, release_libs);
                 }
                 break;
             }

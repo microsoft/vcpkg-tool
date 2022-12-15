@@ -73,7 +73,7 @@ Copy-Item -Recurse "$PSScriptRoot/../e2e_assets/test-lib-port-template-dynamic-c
 Run-Vcpkg env "$WorkingRoot/wrong-crt/test-lib/build.cmd" --Triplet x86-windows-static
 Throw-IfFailed
 
-$buildOutput = Run-VcpkgAndCaptureOutput --triplet x86-windows-static "--x-buildtrees-root=$buildtreesRoot" "--x-install-root=$installRoot" "--x-packages-root=$packagesRoot" install --overlay-ports="$WorkingRoot/wrong-crt" test-lib --no-binarycaching
+$buildOutput = Run-VcpkgAndCaptureOutput --triplet x86-windows-static "--x-buildtrees-root=$buildtreesRoot" "--x-install-root=$installRoot" "--x-packages-root=$packagesRoot" install --overlay-ports="$WorkingRoot/wrong-crt" test-lib --no-binarycaching --debug
 $expected = "warning: Invalid crt linkage. Expected Debug,Static, but the following libs had:`n" + `
 "    $packagesRoot\test-lib_x86-windows-static\debug\lib\test_lib.lib: Debug,Dynamic`n" + `
 "warning: To inspect the lib files, use:`n" + `

@@ -255,25 +255,6 @@ namespace
     static_assert(sizeof(ArchiveMemberHeader) == 60,
                   "The ArchiveMemberHeader struct must match its on-disk representation");
 
-    MachineType read_import_machine_type_after_sig1(const ReadFilePointer& f)
-    {
-        struct ImportHeaderPrefixAfterSig1
-        {
-            uint16_t sig2;
-            uint16_t version;
-            uint16_t machine;
-        } tmp;
-
-        Checks::check_exit(VCPKG_LINE_INFO, f.read(&tmp, sizeof(tmp), 1) == 1);
-        if (tmp.sig2 == 0xFFFF)
-        {
-            return to_machine_type(tmp.machine);
-        }
-
-        // This can happen, for example, if this is a .drectve member
-        return MachineType::UNKNOWN;
-    }
-
     void read_and_verify_archive_file_signature(const ReadFilePointer& f)
     {
         static constexpr StringLiteral FILE_START = "!<arch>\n";
@@ -345,22 +326,80 @@ namespace
         return offsets;
     }
 
-    std::vector<MachineType> read_machine_types_from_archive_members(const vcpkg::ReadFilePointer& f,
+    LibInformation read_machine_types_from_archive_members(const vcpkg::ReadFilePointer& f,
                                                                      const std::vector<uint32_t>& member_offsets)
     {
-        std::vector<MachineType> machine_types; // used as a set because n is tiny
+        std::vector<MachineType> machine_types; // used as sets because n is tiny
+        std::vector<std::string> directives;
         // Next we have the obj and pseudo-object files
         for (unsigned int offset : member_offsets)
         {
             // Skip the header, no need to read it
-            Checks::check_exit(VCPKG_LINE_INFO, f.seek(offset + sizeof(ArchiveMemberHeader), SEEK_SET) == 0);
-            uint16_t machine_type_raw;
-            Checks::check_exit(VCPKG_LINE_INFO, f.read(&machine_type_raw, sizeof(machine_type_raw), 1) == 1);
+            const auto coff_base = offset + sizeof(ArchiveMemberHeader);
+            Checks::check_exit(VCPKG_LINE_INFO, f.seek(coff_base, SEEK_SET) == 0);
+            static_assert(sizeof(CoffFileHeader) == sizeof(ImportHeader), "Boom");
+            char loaded_header[sizeof(CoffFileHeader)];
+            Checks::check_exit(VCPKG_LINE_INFO, f.read(&loaded_header, sizeof(loaded_header), 1) == 1);
 
-            auto result_machine_type = to_machine_type(machine_type_raw);
+            CoffFileHeader coff_header;
+            ::memcpy(&coff_header, loaded_header, sizeof(coff_header));
+            auto result_machine_type = to_machine_type(coff_header.machine);
+            bool import_object = false;
             if (result_machine_type == MachineType::UNKNOWN)
             {
-                result_machine_type = read_import_machine_type_after_sig1(f);
+                ImportHeader import_header;
+                ::memcpy(&import_header, loaded_header, sizeof(import_header));
+                if (import_header.sig2 == 0xFFFFu)
+                {
+                    import_object = true;
+                    result_machine_type = to_machine_type(import_header.machine);
+                }
+            }
+
+            if (!import_object)
+            {
+                // Object files shouldn't have optional headers, but the spec says we should skip over one if any
+                f.seek(coff_header.size_of_optional_header, SEEK_CUR);
+                // Read section headers
+                std::vector<SectionTableHeader> sections;
+                sections.resize(coff_header.number_of_sections);
+                Checks::check_exit(VCPKG_LINE_INFO,
+                                   f.read(sections.data(),
+                                          sizeof(SectionTableHeader),
+                                          coff_header.number_of_sections) == coff_header.number_of_sections);
+                // Look for linker directive sections
+                for (auto&& section : sections)
+                {
+                    if (!(section.characteristics & SectionTableFlags::LinkInfo)
+                        || memcmp(".drectve", &section.name, 8) != 0
+                        || section.number_of_relocations != 0
+                        || section.number_of_line_numbers != 0)
+                    {
+                        continue;
+                    }
+
+                    // read the actual directive
+                    std::string directive;
+                    const auto section_offset = coff_base + section.pointer_to_raw_data;
+                    Checks::check_exit(VCPKG_LINE_INFO, f.seek(section_offset, SEEK_SET) == 0);
+                    directive.resize(section.size_of_raw_data);
+                    auto fun = f.read(directive.data(), 1, section.size_of_raw_data);
+                    Checks::check_exit(VCPKG_LINE_INFO,
+                                        fun ==
+                                           section.size_of_raw_data);
+
+                    if (Strings::starts_with(directive, StringLiteral{"\xEF\xBB\xBF"}))
+                    {
+                        // chop of the BOM
+                        directive.erase(0, 3);
+                    }
+
+                    auto insertion_point = std::lower_bound(directives.begin(), directives.end(), directive);
+                    if (insertion_point == directives.end() || *insertion_point != directive)
+                    {
+                        directives.insert(insertion_point, std::move(directive));
+                    }
+                }
             }
 
             if (result_machine_type == MachineType::UNKNOWN ||
@@ -373,7 +412,7 @@ namespace
         }
 
         std::sort(machine_types.begin(), machine_types.end());
-        return machine_types;
+        return LibInformation{std::move(machine_types), std::move(directives)};
     }
 } // unnamed namespace
 
@@ -556,7 +595,7 @@ namespace vcpkg
             });
     }
 
-    std::vector<MachineType> read_lib_machine_types(const ReadFilePointer& f)
+    LibInformation read_lib_information(const ReadFilePointer& f)
     {
         read_and_verify_archive_file_signature(f);
         read_and_skip_first_linker_member(f);
