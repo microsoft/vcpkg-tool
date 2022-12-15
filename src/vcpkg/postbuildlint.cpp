@@ -1074,7 +1074,6 @@ namespace vcpkg
                                                             const BuildInfo& build_info)
     {
         const auto& fs = paths.get_filesystem();
-        const Toolset& toolset = paths.get_toolset(pre_build_info);
         const auto package_dir = paths.package_dir(spec);
 
         size_t error_count = 0;
