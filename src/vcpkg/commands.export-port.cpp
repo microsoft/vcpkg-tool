@@ -39,8 +39,20 @@ namespace
         {
             const auto src_path = source / file;
             const auto dst_path = destination / file;
-            fs.create_directories(dst_path.parent_path(), IgnoreErrors{});
-            fs.copy_file(src_path, dst_path, CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
+
+            fs.create_directories(dst_path.parent_path(), ec);
+            if (ec)
+            {
+                msg::println_error(msgExportPortFailedToCreateDirectory, msg::path = dst_path.parent_path());
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+
+            fs.copy_file(src_path, dst_path, CopyOptions::overwrite_existing, ec);
+            if (ec)
+            {
+                msg::println_error(msgExportPortFailedToCopyFiles, msg::package_name = port_name, msg::path = dst_path);
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
         }
     }
 
@@ -95,8 +107,9 @@ namespace
                 fs.create_directories(parent_dir, VCPKG_LINE_INFO);
 
                 const auto archive_path =
-                    parent_dir /
-                    fmt::format("{}-{}-{}.tar", port_name, entry.version.text(), entry.version.port_version());
+                    parent_dir / fmt::format("{}-{}.tar",
+                                             port_name,
+                                             Hash::get_string_sha256(entry.version.to_string()).substr(0, 10));
 
                 auto maybe_export = git_export_archive(paths.git_builtin_config(), entry.git_tree, archive_path);
                 if (!maybe_export)
@@ -126,7 +139,6 @@ namespace
         auto& fs = paths.get_filesystem();
         const auto port_dir = paths.builtin_ports_directory() / port_name;
         copy_port_files(fs, port_name, port_dir, destination);
-        msg::println(msgExportPortSuccess, msg::path = destination);
         msg::println(msgExportPortSuccess, msg::path = destination);
         Checks::exit_success(VCPKG_LINE_INFO);
     }

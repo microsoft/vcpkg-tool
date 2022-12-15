@@ -1256,6 +1256,11 @@ namespace vcpkg
                     "The following packages are already built and will be exported:");
     DECLARE_MESSAGE(ExportingMaintenanceTool, (), "", "Exporting maintenance tool...");
     DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
+    DECLARE_MESSAGE(ExportPortFailedToCopyFiles,
+                    (msg::package_name, msg::path),
+                    "",
+                    "Failed to export files for package {package_name} to destination {path}");
+    DECLARE_MESSAGE(ExportPortFailedToCreateDirectory, (msg::path), "", "Failed to create destination path: {path}");
     DECLARE_MESSAGE(ExportPortFilesMissing,
                     (msg::package_name, msg::path),
                     "",
