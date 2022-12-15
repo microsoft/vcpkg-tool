@@ -103,6 +103,9 @@ namespace vcpkg
         std::vector<std::string> cos_read_prefixes;
         std::vector<std::string> cos_write_prefixes;
 
+        std::vector<std::string> gha_read_prefixes;
+        std::vector<std::string> gha_write_prefixes;
+
         std::vector<std::string> sources_to_read;
         std::vector<std::string> sources_to_write;
 
