@@ -247,7 +247,7 @@ namespace vcpkg::Export
     void export_integration_files(const Path& raw_exported_dir_path, const VcpkgPaths& paths)
     {
         const std::vector<Path> integration_files_relative_to_root = {
-            Path{"vcpkg.exe"},
+            Path{"./vcpkg.exe"},
             Path{"scripts/buildsystems/msbuild/vcpkg.targets"},
             Path{"scripts/buildsystems/msbuild/vcpkg.props"},
             Path{"scripts/buildsystems/msbuild/vcpkg-general.xml"},
