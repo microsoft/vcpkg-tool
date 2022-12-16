@@ -247,7 +247,6 @@ namespace vcpkg::Export
     void export_integration_files(const Path& raw_exported_dir_path, const VcpkgPaths& paths)
     {
         const std::vector<Path> integration_files_relative_to_root = {
-            Path{"vcpkg.exe"},
             Path{"scripts/buildsystems/msbuild/vcpkg.targets"},
             Path{"scripts/buildsystems/msbuild/vcpkg.props"},
             Path{"scripts/buildsystems/msbuild/vcpkg-general.xml"},
@@ -263,6 +262,12 @@ namespace vcpkg::Export
             fs.create_directories(destination.parent_path(), IgnoreErrors{});
             fs.copy_file(source, destination, CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
         }
+
+        // Copying exe (this is not relative to root)
+        Path vcpkg_exe = get_exe_path_of_current_process();
+        auto destination = raw_exported_dir_path / "vcpkg.exe";
+        fs.copy_file(vcpkg_exe, destination, CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
+
         fs.write_contents(raw_exported_dir_path / ".vcpkg-root", "", VCPKG_LINE_INFO);
     }
 
