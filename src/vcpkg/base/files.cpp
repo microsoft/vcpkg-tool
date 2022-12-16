@@ -3020,11 +3020,24 @@ namespace vcpkg
                             return false;
                         }
 
+                        // Overwrite file because a newer version was found
                         if (::CopyFileW(wide_source.c_str(), wide_destination.c_str(), FALSE))
                         {
                             ec.clear();
                             return true;
                         }
+                        else
+                        {
+                            last_error = GetLastError();
+                            ec.assign(static_cast<int>(last_error), std::system_category());
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        last_error = GetLastError();
+                        ec.assign(static_cast<int>(last_error), std::system_category());
+                        return false;
                     }
                 }
 
