@@ -931,13 +931,12 @@ namespace
                           std::vector<std::string>&& write_prefixes)
             : paths(paths), m_read_prefixes(std::move(read_prefixes)), m_write_prefixes(std::move(write_prefixes))
         {
-            m_read_cache_key = get_environment_variable("VCPKG_GHA_READ_KEY").value_or("");
-            m_write_cache_key = get_environment_variable("VCPKG_GHA_WRITE_KEY").value_or("");
+            m_read_cache_key = get_environment_variable("VCPKG_GHA_READ_KEY").value_or("vcpkg");
+            m_write_cache_key = get_environment_variable("VCPKG_GHA_WRITE_KEY").value_or("vcpkg");
 
             auto token = get_environment_variable("VCPKG_ACTIONS_RUNTIME_TOKEN")
                              .value_or(get_environment_variable("ACTIONS_RUNTIME_TOKEN").value_or(""));
             m_token_header = "Authorization: Bearer " + token;
-            m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
         }
 
         Command command() const
@@ -973,7 +972,9 @@ namespace
             return json.get()->get("archiveLocation")->string(VCPKG_LINE_INFO).to_string();
         }
 
-        Optional<int64_t> reserveCacheEntry(const std::string& prefix, const std::string& abi, int64_t cacheSize) const
+        Optional<int64_t> reserve_cache_entry(const std::string& prefix,
+                                              const std::string& abi,
+                                              int64_t cacheSize) const
         {
             Json::Object payload;
             payload.insert("key", m_write_cache_key);
@@ -1026,7 +1027,7 @@ namespace
                 if (url_paths.empty()) break;
 
                 msg::println(
-                    msgAttemptingToFetchPackagesFromVendor, msg::count = url_paths.size(), msg::vendor = "gha");
+                    msgAttemptingToFetchPackagesFromVendor, msg::count = url_paths.size(), msg::vendor = "GHA");
 
                 auto codes = download_files(fs, url_paths, {});
                 std::vector<size_t> action_idxs;
@@ -1096,12 +1097,12 @@ namespace
             size_t upload_count = 0;
             for (const auto& prefix : m_write_prefixes)
             {
-                auto cacheId = reserveCacheEntry(prefix, abi, cache_size);
+                auto cacheId = reserve_cache_entry(prefix, abi, cache_size);
                 if (!cacheId) continue;
 
                 std::vector<std::string> headers{
                     m_token_header,
-                    m_accept_header,
+                    m_accept_header.to_string(),
                     "Content-Type: application/octet-stream",
                     "Content-Range: bytes 0-" + std::to_string(cache_size) + "/*",
                 };
@@ -1158,8 +1159,8 @@ namespace
             }
         }
 
+        static constexpr StringLiteral m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
         std::string m_token_header;
-        std::string m_accept_header;
 
         std::string m_read_cache_key;
         std::string m_write_cache_key;
