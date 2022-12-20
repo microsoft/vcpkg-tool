@@ -258,7 +258,7 @@ namespace vcpkg::Lint
                     {
                         param = param.substr(StringLiteral("share/").size());
                     }
-                    if (param == "${PORT}" || param == origin)
+                    if (param == "${PORT}" || Strings::case_insensitive_ascii_equals(param, origin))
                     {
                         portfile_content.erase(target, end_param - target);
                     }
