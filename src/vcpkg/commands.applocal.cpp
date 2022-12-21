@@ -44,12 +44,13 @@ namespace
             , m_installed_bin_parent(m_installed_bin_dir.parent_path())
             , m_tlog_file(std::move(tlog_file))
             , m_copied_files_log(std::move(copied_files_log))
-            , openni2_installed(m_fs.exists(m_installed_bin_parent / "bin/OpenNI2/openni2deploy.ps1", VCPKG_LINE_INFO))
-            , azurekinectsdk_installed(
+            , m_openni2_installed(
+                  m_fs.exists(m_installed_bin_parent / "bin/OpenNI2/openni2deploy.ps1", VCPKG_LINE_INFO))
+            , m_azurekinectsdk_installed(
                   m_fs.exists(m_installed_bin_parent / "tools/azure-kinect-sensor-sdk/k4adeploy.ps1", VCPKG_LINE_INFO))
-            , magnum_installed(m_fs.exists(m_installed_bin_parent / "bin/magnum/magnumdeploy.ps1", VCPKG_LINE_INFO) ||
-                               m_fs.exists(m_installed_bin_parent / "bin/magnum-d/magnumdeploy.ps1", VCPKG_LINE_INFO))
-            , qt_installed(m_fs.exists(m_installed_bin_parent / "plugins/qtdeploy.ps1", VCPKG_LINE_INFO))
+            , m_magnum_installed(m_fs.exists(m_installed_bin_parent / "bin/magnum/magnumdeploy.ps1", VCPKG_LINE_INFO) ||
+                                 m_fs.exists(m_installed_bin_parent / "bin/magnum-d/magnumdeploy.ps1", VCPKG_LINE_INFO))
+            , m_qt_installed(m_fs.exists(m_installed_bin_parent / "plugins/qtdeploy.ps1", VCPKG_LINE_INFO))
         {
         }
 
@@ -66,30 +67,30 @@ namespace
             {
                 if (m_searched.find(imported_name) != m_searched.end())
                 {
-                    Debug::print("  %s: previously searched - Skip", imported_name);
+                    Debug::println(" ", imported_name, "previously searched - Skip");
                     continue;
                 }
                 m_searched.insert(imported_name);
 
                 Path target_binary_dir = binary.parent_path();
                 Path installed_item_file_path = m_installed_bin_dir / imported_name;
-                Path target_item_file_path = Path(target_binary_dir) / imported_name;
+                Path target_item_file_path = target_binary_dir / imported_name;
 
                 if (m_fs.exists(installed_item_file_path, VCPKG_LINE_INFO))
                 {
                     deploy_binary(m_deployment_dir, m_installed_bin_dir, imported_name);
 
-                    if (openni2_installed)
+                    if (m_openni2_installed)
                     {
                         deployOpenNI2(target_binary_dir, m_installed_bin_parent, imported_name);
                     }
 
-                    if (azurekinectsdk_installed)
+                    if (m_azurekinectsdk_installed)
                     {
                         deployAzureKinectSensorSDK(target_binary_dir, m_installed_bin_parent, imported_name);
                     }
 
-                    if (magnum_installed)
+                    if (m_magnum_installed)
                     {
                         bool g_is_debug = m_installed_bin_parent.stem() == "debug";
                         if (g_is_debug)
@@ -102,7 +103,7 @@ namespace
                         }
                     }
 
-                    if (qt_installed)
+                    if (m_qt_installed)
                     {
                         deployQt(m_deployment_dir, m_installed_bin_parent / "plugins", imported_name);
                     }
@@ -111,15 +112,12 @@ namespace
                 }
                 else if (m_fs.exists(target_item_file_path, VCPKG_LINE_INFO))
                 {
-                    Debug::print("  %s: %s not found in %s; locally deployed",
-                                 imported_name,
-                                 imported_name,
-                                 m_installed_bin_parent.c_str());
-                    resolve(installed_item_file_path);
+                    Debug::println("  ", imported_name, " not found in ", m_installed_bin_parent, "; locally deployed");
+                    resolve(target_item_file_path);
                 }
                 else
                 {
-                    Debug::print("  %s: %s not found", imported_name, installed_item_file_path.c_str());
+                    Debug::println("  ", imported_name, ": ", installed_item_file_path.c_str(), " not found");
                 }
             }
         }
@@ -135,7 +133,7 @@ namespace
                 std::string binary_name = "depthengine_2_0.dll";
                 Path inst_dir = installed_dir / "tools/azure-kinect-sensor-sdk";
 
-                Debug::print("  Deploying Azure Kinect Sensor SDK Initialization");
+                Debug::println("  Deploying Azure Kinect Sensor SDK Initialization");
                 deploy_binary(target_binary_dir, inst_dir, binary_name);
             }
         }
@@ -147,10 +145,10 @@ namespace
         {
             if (target_binary_name == "OpenNI2.dll")
             {
-                Debug::print("  Deploying OpenNI2 Initialization");
+                Debug::println("  Deploying OpenNI2 Initialization");
                 deploy_binary(target_binary_dir, installed_dir / "bin/OpenNI2", "OpenNI.ini");
 
-                Debug::print("  Deploying OpenNI2 Drivers");
+                Debug::println("  Deploying OpenNI2 Drivers");
                 Path drivers = target_binary_dir / "OpenNI2/Drivers";
                 std::error_code ec;
                 m_fs.create_directories(drivers, ec);
@@ -175,7 +173,7 @@ namespace
             std::error_code ec;
             if (m_fs.exists(magnum_plugins_dir / plugins_subdir_name, ec))
             {
-                Debug::print("  Deploying plugins directory %s", plugins_subdir_name);
+                Debug::println(" Deploying plugins directory ", plugins_subdir_name);
 
                 Path new_dir = target_binary_dir / plugins_base / plugins_subdir_name;
                 m_fs.create_directories(new_dir, ec);
@@ -189,7 +187,7 @@ namespace
             }
             else
             {
-                Debug::print("  Skipping plugins directory %s: doesn't exist", plugins_subdir_name);
+                Debug::println("  Skipping plugins directory ", plugins_subdir_name, ": doesn't exist");
             }
         }
 
@@ -197,7 +195,7 @@ namespace
                           const Path& magnum_plugins_dir,
                           const std::string& target_binary_name)
         {
-            Debug::print("Deploying magnum plugins");
+            Debug::println("Deploying magnum plugins");
 
             if (target_binary_name == "MagnumAudio.dll" || target_binary_name == "MagnumAudio-d.dll")
             {
@@ -229,7 +227,7 @@ namespace
             std::error_code ec;
             if (m_fs.exists(qt_plugins_dir / plugins_subdir_name, ec))
             {
-                Debug::print("  Deploying plugins directory %s", plugins_subdir_name);
+                Debug::println("  Deploying plugins directory ", plugins_subdir_name);
 
                 Path new_dir = target_binary_dir / "plugins" / plugins_subdir_name;
                 m_fs.create_directories(new_dir, ec);
@@ -248,7 +246,7 @@ namespace
             }
             else
             {
-                Debug::print("  Skipping plugins directory %s : doesn't exist", plugins_subdir_name);
+                Debug::println("  Skipping plugins directory ", plugins_subdir_name, ": doesn't exist");
             }
         }
 
@@ -266,7 +264,7 @@ namespace
             }
             else if (target_binary_name == "Qt5Guid.dll" || target_binary_name == "Qt5Gui.dll")
             {
-                Debug::print("  Deploying platforms");
+                Debug::println("  Deploying platforms");
 
                 std::error_code ec;
                 Path new_dir = target_binary_dir / "plugins" / "platforms";
@@ -440,7 +438,7 @@ namespace
             }
             else if (ec == std::errc::no_such_file_or_directory)
             {
-                Debug::print("Attempted to deploy %s, but it didn't exist", source);
+                Debug::println("Attempted to deploy ", source, ", but it didn't exist");
 
                 ReleaseMutex(the_mutant);
                 CloseHandle(the_mutant);
@@ -484,10 +482,10 @@ namespace
         WriteFilePointer m_tlog_file;
         WriteFilePointer m_copied_files_log;
         std::unordered_set<std::string> m_searched;
-        bool openni2_installed;
-        bool azurekinectsdk_installed;
-        bool magnum_installed;
-        bool qt_installed;
+        bool m_openni2_installed;
+        bool m_azurekinectsdk_installed;
+        bool m_magnum_installed;
+        bool m_qt_installed;
     };
 }
 

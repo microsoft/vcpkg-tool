@@ -3017,6 +3017,7 @@ namespace vcpkg
                         if (CompareFileTime(&attributes_destination.ftLastWriteTime,
                                             &attributes_source.ftLastWriteTime) >= 0)
                         {
+                            ec.clear();
                             return false;
                         }
 
@@ -3122,15 +3123,15 @@ namespace vcpkg
                 return false;
             }
 
+             if (options == CopyOptions::update_existing && destination_stat.st_mtime >= source_stat.st_mtime)
+            {
+                return false;
+            }
+
             if (options == CopyOptions::overwrite_existing || options == CopyOptions::update_existing)
             {
                 destination_fd.ftruncate(0, ec);
                 if (ec) return false;
-            }
-
-            if (options == CopyOptions::update_existing && destination_stat.st_mtime >= source_stat.st_mtime)
-            {
-                return false;
             }
 
 #if defined(__APPLE__)
