@@ -3123,7 +3123,7 @@ namespace vcpkg
                 return false;
             }
 
-             if (options == CopyOptions::update_existing && destination_stat.st_mtime >= source_stat.st_mtime)
+            if (options == CopyOptions::update_existing && destination_stat.st_mtime >= source_stat.st_mtime)
             {
                 return false;
             }
