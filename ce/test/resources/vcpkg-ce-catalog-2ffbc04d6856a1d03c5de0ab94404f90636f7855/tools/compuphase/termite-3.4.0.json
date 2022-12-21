@@ -1,0 +1,34 @@
+{
+  "info": {
+    "id": "tools/compuphase/termite",
+    "version": "3.4.0",
+    "description": "Termite is an easy to use and easy to configure RS232 terminal. It uses an interface similar to that of \"messenger\" or \"chat\" programs, with a large window that contains all received data and an edit line for typing in strings to transmit.",
+    "summary": "Termite is an easy to use and easy to configure RS232 terminal."
+  },
+  "contacts": {
+    "Alan Leung": {
+      "email": "alleu@microsoft.com",
+      "role": "publisher"
+    },
+    "CompuPhase": {
+      "email": "info@compuphase.com",
+      "role": "originator"
+    }
+  },
+  "demands": {
+    "windows": {
+      "install": {
+        "unzip": "https://www.compuphase.com/software/termite-3.4.zip",
+        "sha256": "e72eddaabe1375dc9422d20b359206d242bf0745f47f60ce37d21e9dd905ba51"
+      },
+      "exports": {
+        "tools": {
+          "termite": "bin/Termite.exe"
+        },
+        "paths": {
+          "PATH": "bin"
+        }
+      }
+    }
+  }
+}

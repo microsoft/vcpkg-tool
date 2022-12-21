@@ -847,7 +847,7 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
                 "dependencies": [
                     "firebending",
                     {
-                        "name": "order.white-lotus",
+                        "name": "order-white-lotus",
                         "features": [
                             "the-ancient-ways",
                             {
@@ -914,7 +914,7 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(pgh.feature_paragraphs[0]->dependencies.size() == 3);
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[0].name == "firebending");
 
-    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].name == "order.white-lotus");
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].name == "order-white-lotus");
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features.size() == 2);
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features[0].name == "the-ancient-ways");
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features[0].platform.is_empty());
