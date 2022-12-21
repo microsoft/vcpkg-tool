@@ -15,7 +15,7 @@ function Test-MetricsEnabled() {
         $actualArgs += $TestArgs
     }
 
-    $vcpkgOutput = Run-Vcpkg $actualArgs
+    $vcpkgOutput = Run-VcpkgAndCaptureOutput $actualArgs
     if ($vcpkgOutput.Contains($metricsAreDisabledMessage)) {
         Write-Host 'Metrics are disabled'
         return $false
@@ -42,7 +42,7 @@ try {
     }
 
     # Also test that you get no message without --sendmetrics
-    $vcpkgOutput = Run-Vcpkg list
+    $vcpkgOutput = Run-VcpkgAndCaptureOutput list
     if ($vcpkgOutput.Contains($metricsAreDisabledMessage)) {
         throw "Disabled metrics emit message even without --sendmetrics"
     }

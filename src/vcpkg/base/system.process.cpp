@@ -239,7 +239,7 @@ namespace vcpkg
         std::array<char, 1024 * 4> buf{};
         auto written = readlink("/proc/self/exe", buf.data(), buf.size());
         Checks::check_exit(VCPKG_LINE_INFO, written != -1, "Could not determine current executable path.");
-        return Path(buf.data(), buf.data() + written);
+        return Path(buf.data(), written);
 #endif
     }
 
@@ -466,8 +466,8 @@ namespace vcpkg
                                                                                       const WorkingDirectory& wd,
                                                                                       const Environment& env)
     {
-        std::vector<ExpectedL<ExitCodeAndOutput>> res(cmd_lines.size(), LocalizedString());
-        if (cmd_lines.size() == 0)
+        std::vector<ExpectedL<ExitCodeAndOutput>> res(cmd_lines.size(), LocalizedString{});
+        if (cmd_lines.empty())
         {
             return res;
         }
@@ -480,7 +480,7 @@ namespace vcpkg
 
         std::atomic<size_t> work_item{0};
         const auto num_threads =
-            static_cast<size_t>(std::max(1, std::min(get_concurrency(), static_cast<int>(cmd_lines.size()))));
+            std::max(static_cast<size_t>(1), std::min(static_cast<size_t>(get_concurrency()), cmd_lines.size()));
 
         auto work = [&]() {
             std::size_t item;
@@ -491,6 +491,7 @@ namespace vcpkg
         };
 
         std::vector<std::future<void>> workers;
+        workers.reserve(num_threads - 1);
         for (size_t x = 0; x < num_threads - 1; ++x)
         {
             workers.emplace_back(std::async(std::launch::async | std::launch::deferred, work));
@@ -890,8 +891,9 @@ namespace vcpkg
                                                Encoding encoding)
     {
         const ElapsedTimer timer;
+        static std::atomic_int32_t id_counter{1000};
+        const auto id = Strings::format("%4i", id_counter.fetch_add(1, std::memory_order_relaxed));
 #if defined(_WIN32)
-        const auto proc_id = std::to_string(::GetCurrentProcessId());
         using vcpkg::g_ctrl_c_state;
 
         g_ctrl_c_state.transition_to_spawn_process();
@@ -900,9 +902,8 @@ namespace vcpkg
                 return output.wait_and_stream_output(data_cb, encoding);
             });
         g_ctrl_c_state.transition_from_spawn_process();
-#else  // ^^^ _WIN32 // !_WIN32 vvv
+#else // ^^^ _WIN32 // !_WIN32 vvv
         Checks::check_exit(VCPKG_LINE_INFO, encoding == Encoding::Utf8);
-        const auto proc_id = std::to_string(::getpid());
 
         std::string actual_cmd_line;
         if (wd.working_directory.empty())
@@ -920,11 +921,27 @@ namespace vcpkg
                                   .extract();
         }
 
-        Debug::print(proc_id, ": popen(", actual_cmd_line, ")\n");
+        Debug::print(id, ": popen(", actual_cmd_line, ")\n");
         // Flush stdout before launching external process
         fflush(stdout);
 
-        const auto pipe = popen(actual_cmd_line.c_str(), "r");
+        FILE* pipe = nullptr;
+#if defined(__APPLE__)
+        static std::mutex mtx;
+#endif
+
+        // Scope for lock guard
+        {
+#if defined(__APPLE__)
+            // `popen` sometimes returns 127 on OSX when executed in parallel.
+            // Related: https://github.com/microsoft/vcpkg-tool/pull/695#discussion_r973364608
+
+            std::lock_guard guard(mtx);
+#endif
+
+            pipe = popen(actual_cmd_line.c_str(), "r");
+        }
+
         if (pipe == nullptr)
         {
             return format_system_error_message("popen", errno);
@@ -942,7 +959,15 @@ namespace vcpkg
             return format_system_error_message("feof", errno);
         }
 
-        int ec = pclose(pipe);
+        int ec;
+        // Scope for lock guard
+        {
+#if defined(__APPLE__)
+            // See the comment above at the call to `popen`.
+            std::lock_guard guard(mtx);
+#endif
+            ec = pclose(pipe);
+        }
         if (WIFEXITED(ec))
         {
             ec = WEXITSTATUS(ec);
@@ -963,7 +988,7 @@ namespace vcpkg
         g_subprocess_stats += elapsed;
         if (const auto pec = exit_code.get())
         {
-            Debug::print(proc_id,
+            Debug::print(id,
                          ": cmd_execute_and_stream_data() returned ",
                          *pec,
                          " after ",

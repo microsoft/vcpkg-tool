@@ -235,9 +235,15 @@ namespace vcpkg::Strings
     template<>
     Optional<int> strto<int>(StringView);
     template<>
+    Optional<unsigned int> strto<unsigned int>(StringView);
+    template<>
     Optional<long> strto<long>(StringView);
     template<>
+    Optional<unsigned long> strto<unsigned long>(StringView);
+    template<>
     Optional<long long> strto<long long>(StringView);
+    template<>
+    Optional<unsigned long long> strto<unsigned long long>(StringView);
     template<>
     Optional<double> strto<double>(StringView);
 

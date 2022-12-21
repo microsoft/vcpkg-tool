@@ -12,6 +12,23 @@ if(NOT VCPKG_FMT_URL)
     set(VCPKG_FMT_URL "https://github.com/fmtlib/fmt/archive/refs/tags/9.1.0.tar.gz")
 endif()
 
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
+set(OLD_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+set(SKIP_WARNINGS OFF)
+if(MSVC AND VCPKG_DEVELOPMENT_WARNINGS AND NOT (CMAKE_CXX_COMPILER_ID MATCHES "AppleClang") AND NOT (CMAKE_CXX_COMPILER_ID MATCHES "[Cc]lang"))
+    set(SKIP_WARNINGS ON)
+    # fmt\core.h(418): warning C6239: (<non-zero constant> && <expression>) always evaluates to the result of <expression>:  Did you intend to use the bitwise-and (&) operator? If not, consider removing the redundant '<non-zero constant>' and the && operator.
+    string(APPEND CMAKE_CXX_FLAGS " /wd6239")
+    # This one is guarded by an assert
+    # fmt\format-inl.h(327): warning C6385: Reading invalid data from 'pow10_significands'.: Lines: 298, 300, 327
+    string(APPEND CMAKE_CXX_FLAGS " /wd6385")
+    # fmt\os.h(377): warning C6326: Potential comparison of a constant with another constant.
+    string(APPEND CMAKE_CXX_FLAGS " /wd6326")
+endif()
+
 include(FetchContent)
 FetchContent_Declare(
     fmt
@@ -27,4 +44,8 @@ if(VCPKG_DEPENDENCY_EXTERNAL_FMT)
     find_package(fmt CONFIG REQUIRED)
 else()
     FetchContent_MakeAvailable(fmt)
+endif()
+
+if(SKIP_WARNINGS)
+    set(CMAKE_CXX_FLAGS "${OLD_CXX_FLAGS}")
 endif()

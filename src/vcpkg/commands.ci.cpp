@@ -82,12 +82,6 @@ namespace
 
 namespace vcpkg::Commands::CI
 {
-    struct TripletAndSummary
-    {
-        Triplet triplet;
-        InstallSummary summary;
-    };
-
     static constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
     static constexpr StringLiteral OPTION_EXCLUDE = "exclude";
     static constexpr StringLiteral OPTION_HOST_EXCLUDE = "host-exclude";
@@ -103,24 +97,21 @@ namespace vcpkg::Commands::CI
     static constexpr StringLiteral OPTION_SKIPPED_CASCADE_COUNT = "x-skipped-cascade-count";
 
     static constexpr std::array<CommandSetting, 8> CI_SETTINGS = {
-        {{OPTION_EXCLUDE, "Comma separated list of ports to skip"},
-         {OPTION_HOST_EXCLUDE, "Comma separated list of ports to skip for the host triplet"},
-         {OPTION_XUNIT, "File to output results in XUnit format (internal)"},
-         {OPTION_CI_BASELINE, "Path to the ci.baseline.txt file. Used to skip ports and detect regressions."},
-         {OPTION_FAILURE_LOGS, "Directory to which failure logs will be copied"},
-         {OPTION_OUTPUT_HASHES, "File to output all determined package hashes"},
-         {OPTION_PARENT_HASHES,
-          "File to read package hashes for a parent CI state, to reduce the set of changed packages"},
-         {OPTION_SKIPPED_CASCADE_COUNT,
-          "Asserts that the number of --exclude and supports skips exactly equal this number"}}};
+        {{OPTION_EXCLUDE, []() { return msg::format(msgCISettingsOptExclude); }},
+         {OPTION_HOST_EXCLUDE, []() { return msg::format(msgCISettingsOptHostExclude); }},
+         {OPTION_XUNIT, []() { return msg::format(msgCISettingsOptXUnit); }},
+         {OPTION_CI_BASELINE, []() { return msg::format(msgCISettingsOptCIBase); }},
+         {OPTION_FAILURE_LOGS, []() { return msg::format(msgCISettingsOptFailureLogs); }},
+         {OPTION_OUTPUT_HASHES, []() { return msg::format(msgCISettingsOptOutputHashes); }},
+         {OPTION_PARENT_HASHES, []() { return msg::format(msgCISettingsOptParentHashes); }},
+         {OPTION_SKIPPED_CASCADE_COUNT, []() { return msg::format(msgCISettingsOptSkippedCascadeCount); }}}};
 
     static constexpr std::array<CommandSwitch, 5> CI_SWITCHES = {{
-        {OPTION_DRY_RUN, "Print out plan without execution"},
-        {OPTION_RANDOMIZE, "Randomize the install order"},
-        {OPTION_ALLOW_UNEXPECTED_PASSING,
-         "Indicates that 'Passing, remove from fail list' results should not be emitted."},
-        {OPTION_SKIP_FAILURES, "Indicates that ports marked `=fail` in ci.baseline.txt should be skipped."},
-        {OPTION_XUNIT_ALL, "Report also unchanged ports to the XUnit output (internal)"},
+        {OPTION_DRY_RUN, []() { return msg::format(msgCISwitchOptDryRun); }},
+        {OPTION_RANDOMIZE, []() { return msg::format(msgCISwitchOptRandomize); }},
+        {OPTION_ALLOW_UNEXPECTED_PASSING, []() { return msg::format(msgCISwitchOptAllowUnexpectedPassing); }},
+        {OPTION_SKIP_FAILURES, []() { return msg::format(msgCISwitchOptSkipFailures); }},
+        {OPTION_XUNIT_ALL, []() { return msg::format(msgCISwitchOptXUnitAll); }},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -300,7 +291,8 @@ namespace vcpkg::Commands::CI
         return result;
     }
 
-    static void print_baseline_regressions(const std::map<PackageSpec, BuildResult>& results,
+    static void print_baseline_regressions(const std::vector<SpecSummary>& results,
+                                           const std::map<PackageSpec, BuildResult>& known,
                                            const CiBaselineData& cidata,
                                            const std::string& ci_baseline_file_name,
                                            bool allow_unexpected_passing)
@@ -309,6 +301,16 @@ namespace vcpkg::Commands::CI
         LocalizedString output = msg::format(msgCiBaselineRegressionHeader);
         output.append_raw('\n');
         for (auto&& r : results)
+        {
+            auto result = r.build_result.value_or_exit(VCPKG_LINE_INFO).code;
+            auto msg = format_ci_result(r.get_spec(), result, cidata, ci_baseline_file_name, allow_unexpected_passing);
+            if (!msg.empty())
+            {
+                has_error = true;
+                output.append(msg).append_raw('\n');
+            }
+        }
+        for (auto&& r : known)
         {
             auto msg = format_ci_result(r.first, r.second, cidata, ci_baseline_file_name, allow_unexpected_passing);
             if (!msg.empty())
@@ -384,11 +386,11 @@ namespace vcpkg::Commands::CI
         const IBuildLogsRecorder& build_logs_recorder =
             build_logs_recorder_storage ? *(build_logs_recorder_storage.get()) : null_build_logs_recorder();
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(
+            filesystem, *registry_set, make_overlay_provider(filesystem, paths.original_cwd, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
-
-        XunitWriter xunitTestResults;
 
         const ElapsedTimer timer;
         std::vector<std::string> all_port_names =
@@ -497,49 +499,51 @@ namespace vcpkg::Commands::CI
             auto summary = Install::perform(
                 args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder, var_provider);
 
-            std::map<PackageSpec, BuildResult> full_results;
-
-            // Adding results for ports that were built or pulled from an archive
             for (auto&& result : summary.results)
             {
-                const auto& spec = result.get_spec();
-                auto& port_features = split_specs->features.at(spec);
-                split_specs->known.erase(spec);
-                auto code = result.build_result.value_or_exit(VCPKG_LINE_INFO).code;
-                xunitTestResults.add_test_results(
-                    spec, code, result.timing, result.start_time, split_specs->abi_map.at(spec), port_features);
-                full_results.emplace(spec, code);
-            }
-            full_results.insert(split_specs->known.begin(), split_specs->known.end());
-
-            // Adding results for ports that were not built because they have known states
-            if (Util::Sets::contains(options.switches, OPTION_XUNIT_ALL))
-            {
-                for (auto&& port : split_specs->known)
-                {
-                    auto& port_features = split_specs->features.at(port.first);
-                    xunitTestResults.add_test_results(port.first,
-                                                      port.second,
-                                                      ElapsedTime{},
-                                                      std::chrono::system_clock::time_point{},
-                                                      split_specs->abi_map.at(port.first),
-                                                      port_features);
-                }
+                split_specs->known.erase(result.get_spec());
             }
 
-            TripletAndSummary result{target_triplet, std::move(summary)};
-
-            msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\nTriplet: {}\n", result.triplet));
-            result.summary.print();
+            msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\nTriplet: {}\n", target_triplet));
+            summary.print();
 
             if (baseline_iter != settings.end())
             {
-                print_baseline_regressions(full_results, cidata, baseline_iter->second, allow_unexpected_passing);
+                print_baseline_regressions(
+                    summary.results, split_specs->known, cidata, baseline_iter->second, allow_unexpected_passing);
             }
 
             auto it_xunit = settings.find(OPTION_XUNIT);
             if (it_xunit != settings.end())
             {
+                XunitWriter xunitTestResults;
+
+                // Adding results for ports that were built or pulled from an archive
+                for (auto&& result : summary.results)
+                {
+                    const auto& spec = result.get_spec();
+                    auto& port_features = split_specs->features.at(spec);
+                    auto code = result.build_result.value_or_exit(VCPKG_LINE_INFO).code;
+                    xunitTestResults.add_test_results(
+                        spec, code, result.timing, result.start_time, split_specs->abi_map.at(spec), port_features);
+                }
+
+                // Adding results for ports that were not built because they have known states
+                if (Util::Sets::contains(options.switches, OPTION_XUNIT_ALL))
+                {
+                    for (auto&& port : split_specs->known)
+                    {
+                        const auto& spec = port.first;
+                        auto& port_features = split_specs->features.at(spec);
+                        xunitTestResults.add_test_results(spec,
+                                                          port.second,
+                                                          ElapsedTime{},
+                                                          std::chrono::system_clock::time_point{},
+                                                          split_specs->abi_map.at(spec),
+                                                          port_features);
+                    }
+                }
+
                 filesystem.write_contents(
                     it_xunit->second, xunitTestResults.build_xml(target_triplet), VCPKG_LINE_INFO);
             }

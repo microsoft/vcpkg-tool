@@ -1,0 +1,72 @@
+{
+  "info": {
+    "id": "tools/arduino/arduino-cli",
+    "version": "0.18.3",
+    "description": "The open-source Arduino Software (IDE) makes it easy to write code and upload it to the board. This software can be used with any Arduino board.",
+    "summary": "Arduino IDE"
+  },
+  "contacts": {
+    "Marc Goodner": {
+      "email": "mgoodner@microsoft.com",
+      "role": "publisher"
+    },
+    "Arduino": {
+      "role": "originator"
+    }
+  },
+  "demands": {
+    "windows and x64": {
+      "install": {
+        "unzip": "https://github.com/arduino/arduino-cli/releases/download/0.18.3/arduino-cli_0.18.3_Windows_64bit.zip",
+        "sha256": "b92ae2923edab07e7d39ac8fdc54500bf5198868522d7acfa5090de970cf9603"
+      }
+    },
+    "windows and x86": {
+      "install": {
+        "unzip": "https://github.com/arduino/arduino-cli/releases/download/0.18.3/arduino-cli_0.18.3_Windows_32bit.zip",
+        "sha256": "b8fa3f2c614557decf6ebe6688bc635b9260a220305be139d2368c437d4c3cfa"
+      }
+    },
+    "windows": {
+      "exports": {
+        "tools": {
+          "arduino-cli": "arduino-cli.exe"
+        },
+        "paths": {
+          "PATH": "."
+        }
+      }
+    },
+    "linux and x86": {
+      "install": {
+        "untar": "https://github.com/arduino/arduino-cli/releases/download/0.18.3/arduino-cli_0.18.3_Linux_32bit.tar.gz",
+        "sha256": "fe238a22579905866ed9e6582a0d6078060f29a9de3dbbb47b3931ef9a5f1f08",
+        "strip": 1
+      }
+    },
+    "linux and x64": {
+      "install": {
+        "untar": "https://github.com/arduino/arduino-cli/releases/download/0.18.3/arduino-cli_0.18.3_Linux_64bit.tar.gz",
+        "sha256": "80fb4547fb869086769dade348040864ae77b30d13cf6786d384bebccf4eb7eb",
+        "strip": 1
+      }
+    },
+    "linux and arm64": {
+      "install": {
+        "untar": "https://github.com/arduino/arduino-cli/releases/download/0.18.3/arduino-cli_0.18.3_Linux_ARM64.tar.gz",
+        "sha256": "13eb5ab0edb9a8f20768e7e0e5b967140f0fac7f84ef4f78c0dae0c8f13cdb73",
+        "strip": 1
+      }
+    },
+    "not windows": {
+      "exports": {
+        "tools": {
+          "arduino-cli": "arduino-cli"
+        },
+        "paths": {
+          "PATH": "."
+        }
+      }
+    }
+  }
+}

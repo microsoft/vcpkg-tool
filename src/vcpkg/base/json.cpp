@@ -1352,6 +1352,8 @@ namespace vcpkg::Json
     }
     // } auto stringify()
 
+    uint64_t get_json_parsing_stats() { return g_json_parsing_stats.load(); }
+
     static std::vector<std::string> invalid_json_fields(const Json::Object& obj,
                                                         Span<const StringView> known_fields) noexcept
     {
@@ -1463,9 +1465,7 @@ namespace vcpkg::Json
         if (!is_ident(sv))
         {
             r.add_generic_error(type_name(),
-                                Strings::concat("must be lowercase alphanumeric+hyphens and not reserved (see ",
-                                                vcpkg::docs::manifests_url,
-                                                " for more information)"));
+                                msg::format(msgParseIdentifierError, msg::value = sv, msg::url = docs::manifests_url));
         }
         return sv.to_string();
     }
@@ -1475,32 +1475,86 @@ namespace vcpkg::Json
         return r.array_elements(arr, IdentifierDeserializer::instance);
     }
 
-    bool PackageNameDeserializer::is_package_name(StringView sv)
+    Optional<std::string> PackageNameDeserializer::visit_string(Json::Reader& r, StringView sv)
     {
-        if (sv.size() == 0)
+        if (!IdentifierDeserializer::is_ident(sv))
         {
-            return false;
+            r.add_generic_error(
+                type_name(),
+                msg::format(msgParsePackageNameError, msg::package_name = sv, msg::url = docs::manifests_url));
+        }
+        return sv.to_string();
+    }
+
+    bool PackagePatternDeserializer::is_package_pattern(StringView sv)
+    {
+        if (IdentifierDeserializer::is_ident(sv))
+        {
+            return true;
         }
 
-        for (const auto& ident : Strings::split(sv, '.'))
+        /*if (sv == "*")
         {
-            if (!IdentifierDeserializer::is_ident(ident))
+            return true;
+        }*/
+
+        // ([a-z0-9]+(-[a-z0-9]+)*)(\*?)
+        auto cur = sv.begin();
+        const auto last = sv.end();
+        for (;;)
+        {
+            // [a-z0-9]+
+            if (cur == last)
             {
                 return false;
             }
-        }
 
-        return true;
+            if (!is_lower_digit(*cur))
+            {
+                if (*cur != '*')
+                {
+                    return false;
+                }
+
+                return ++cur == last;
+            }
+
+            do
+            {
+                ++cur;
+                if (cur == last)
+                {
+                    return true;
+                }
+            } while (is_lower_digit(*cur));
+
+            switch (*cur)
+            {
+                case '-':
+                    // repeat outer [a-z0-9]+ again to match -[a-z0-9]+
+                    ++cur;
+                    continue;
+                case '*':
+                    // match last optional *
+                    ++cur;
+                    return cur == last;
+                default: return false;
+            }
+        }
     }
 
-    uint64_t get_json_parsing_stats() { return g_json_parsing_stats.load(); }
-
-    Optional<std::string> PackageNameDeserializer::visit_string(Json::Reader&, StringView sv)
+    Optional<PackagePatternDeclaration> PackagePatternDeserializer::visit_string(Json::Reader& r, StringView sv)
     {
-        if (!is_package_name(sv))
+        if (!is_package_pattern(sv))
         {
-            return nullopt;
+            r.add_generic_error(
+                type_name(),
+                msg::format(msgParsePackagePatternError, msg::package_name = sv, msg::url = docs::registries_url));
         }
-        return sv.to_string();
+
+        return PackagePatternDeclaration{
+            sv.to_string(),
+            r.path(),
+        };
     }
 }

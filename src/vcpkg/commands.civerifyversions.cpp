@@ -36,12 +36,12 @@ namespace vcpkg::Commands::CIVerifyVersions
     static constexpr StringLiteral OPTION_VERIFY_GIT_TREES = "verify-git-trees";
 
     static constexpr CommandSwitch VERIFY_VERSIONS_SWITCHES[]{
-        {OPTION_VERBOSE, "Print result for each port instead of just errors."},
-        {OPTION_VERIFY_GIT_TREES, "Verify that each git tree object matches its declared version (this is very slow)"},
+        {OPTION_VERBOSE, []() { return msg::format(msgCISettingsVerifyVersion); }},
+        {OPTION_VERIFY_GIT_TREES, []() { return msg::format(msgCISettingsVerifyGitTree); }},
     };
 
     static constexpr CommandSetting VERIFY_VERSIONS_SETTINGS[] = {
-        {OPTION_EXCLUDE, "Comma-separated list of ports to skip"},
+        {OPTION_EXCLUDE, []() { return msg::format(msgCISettingsExclude); }},
     };
 
     const CommandStructure COMMAND_STRUCTURE{

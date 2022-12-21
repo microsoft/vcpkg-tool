@@ -28,4 +28,4 @@ $env:VCPKG_ROOT="C:\Dev\vcpkg"
 }
 ```
 
-6. Run `C:\Path\To\vcpkg-tool\ce\ce.ps1 activate`
+6. Run `C:\Path\To\vcpkg-tool\build\vcpkg.ps1 activate`
