@@ -34,7 +34,11 @@ namespace
         auto result = check_portfile_deprecated_functions(old_content.to_string(), "test", Fix::YES, msg_sink);
         REQUIRE(result.status == Status::Fixed);
         REQUIRE(msg_sink.counter == 0);
-        REQUIRE(result.new_portfile_content == new_content);
+        if (result.new_portfile_content != new_content)
+        {
+            REQUIRE(Strings::replace_all(result.new_portfile_content, "\r", "\\r") ==
+                    Strings::replace_all(new_content, "\r", "\\r"));
+        }
         if (new_host_dependency.empty())
         {
             REQUIRE(result.added_host_deps.empty());

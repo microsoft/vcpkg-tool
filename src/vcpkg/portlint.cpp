@@ -174,6 +174,90 @@ namespace vcpkg::Lint
         return lint_result.status;
     }
 
+    namespace
+    {
+        std::string::size_type find_param(const std::string& content,
+                                          ZStringView param,
+                                          std::string::size_type start,
+                                          std::string::size_type end)
+        {
+            while ((start = content.find(param.c_str(), start)) != std::string::npos)
+            {
+                if (start > end) return std::string::npos;
+                // param must be not included in another word
+                if (ParserBase::is_word_char(content[start - 1]) ||
+                    ParserBase::is_word_char(content[start + param.size()]))
+                {
+                    start += param.size();
+                }
+                else
+                {
+                    return start;
+                }
+            }
+            return std::string::npos;
+        }
+
+        void replace_param(std::string& content,
+                           ZStringView old_param,
+                           ZStringView new_param,
+                           std::string::size_type start,
+                           std::string::size_type end)
+        {
+            auto index = find_param(content, old_param, start, end);
+            if (index != std::string::npos)
+            {
+                content.replace(index, old_param.size(), new_param.c_str());
+            }
+        }
+
+        void remove_param(std::string& content, ZStringView param, std::string::size_type index)
+        {
+            const auto first_white_space = content.find_last_not_of(" \n\t\r", index - 1) + 1;
+            const auto white_space_length = index - first_white_space;
+            content.erase(first_white_space, white_space_length + param.size());
+        }
+
+        void find_remove_param(std::string& content,
+                               ZStringView param,
+                               std::string::size_type start,
+                               std::string::size_type end)
+        {
+            const auto start_param = find_param(content, param, start, end);
+            if (start_param != std::string::npos)
+            {
+                remove_param(content, param, start_param);
+            }
+        }
+
+        struct ParamAndValue
+        {
+            std::string::size_type start_param = std::string::npos;
+            std::string::size_type start_value = std::string::npos;
+            std::string::size_type end_value = std::string::npos;
+            bool found() const { return start_param != std::string::npos; }
+            bool value_found() const { return start_value != std::string::npos && end_value != std::string::npos; }
+            std::string get_value(const std::string& content) const
+            {
+                return content.substr(start_value, end_value - start_value);
+            }
+            std::string::size_type full_length() const { return end_value - start_param; }
+        };
+
+        ParamAndValue find_param_maybe_value(const std::string& content,
+                                             ZStringView param,
+                                             std::string::size_type start,
+                                             std::string::size_type end)
+        {
+            auto start_param = find_param(content, param, start, end);
+            if (start_param == std::string::npos) return {};
+            const auto start_value = content.find_first_not_of(" \r\n\t)", start_param + param.size());
+            const auto end_value = content.find_first_of(" \r\n\t)", start_value);
+            if (end_value == std::string::npos || end_value > end) return ParamAndValue{start_param};
+            return ParamAndValue{start_param, start_value, end_value};
+        }
+    }
+
     FixedPortfile check_portfile_deprecated_functions(std::string&& portfile_content,
                                                       StringView origin,
                                                       Fix fix,
@@ -208,12 +292,7 @@ namespace vcpkg::Lint
                 break;
             }
             const auto end = portfile_content.find(')', index);
-            const auto ninja = portfile_content.find("PREFER_NINJA", index);
-            if (ninja != std::string::npos && ninja < end)
-            {
-                const auto start = portfile_content.find_last_not_of(" \n\t\r", ninja - 1) + 1;
-                portfile_content.erase(start, (ninja - start) + StringLiteral("PREFER_NINJA").size());
-            }
+            find_remove_param(portfile_content, "PREFER_NINJA", index, end);
             portfile_content.replace(index, StringLiteral("vcpkg_configure_cmake").size(), "vcpkg_cmake_configure");
             fixedPortfile.added_host_deps.insert("vcpkg-cmake");
         }
@@ -244,15 +323,12 @@ namespace vcpkg::Lint
                 break;
             }
             const auto end = portfile_content.find(')', index);
-            const auto target = portfile_content.find("TARGET_PATH");
-            if (target != std::string::npos && target < end)
+            auto target = find_param_maybe_value(portfile_content, "TARGET_PATH", index, end);
+            if (target.found())
             {
-                auto start_param = target + StringLiteral("TARGET_PATH").size();
-                start_param = portfile_content.find_first_not_of(" \n\t)", start_param);
-                const auto end_param = portfile_content.find_first_of(" \n\t)", start_param);
-                if (end_param != std::string::npos && end_param <= end)
+                if (target.value_found())
                 {
-                    const auto original_param = portfile_content.substr(start_param, end_param - start_param);
+                    const auto original_param = target.get_value(portfile_content);
                     auto param = StringView(original_param);
                     if (Strings::starts_with(param, "share/"))
                     {
@@ -260,32 +336,27 @@ namespace vcpkg::Lint
                     }
                     if (param == "${PORT}" || Strings::case_insensitive_ascii_equals(param, origin))
                     {
-                        portfile_content.erase(target, end_param - target);
+                        portfile_content.erase(target.start_param, target.full_length());
                     }
                     else
                     {
-                        portfile_content.replace(target, (end_param - target) - param.size(), "PACKAGE_NAME ");
+                        portfile_content.replace(
+                            target.start_param, target.full_length() - param.size(), "PACKAGE_NAME ");
                     }
                     // remove the CONFIG_PATH part if it uses the same param
-                    const auto start_config_path = portfile_content.find("CONFIG_PATH", index);
-                    if (start_config_path != std::string::npos && start_config_path < end)
+                    auto config = find_param_maybe_value(portfile_content, "CONFIG_PATH", index, end);
+                    if (config.value_found())
                     {
-                        start_param = start_config_path + StringLiteral("CONFIG_PATH").size();
-                        start_param = portfile_content.find_first_not_of(" \n\t)", start_param);
-                        const auto end_config_param = portfile_content.find_first_of(" \n\t)", start_param);
-                        const auto config_param =
-                            StringView(portfile_content).substr(start_param, end_config_param - start_param);
-                        if (config_param == original_param)
+                        if (config.get_value(portfile_content) == original_param)
                         {
-                            const auto start_next = portfile_content.find_first_not_of(' ', end_config_param);
-                            portfile_content.erase(start_config_path, start_next - start_config_path);
+                            const auto start_next = portfile_content.find_first_not_of(' ', config.end_value);
+                            portfile_content.erase(config.start_param, start_next - config.start_param);
                         }
                     }
                 }
                 else
                 {
-                    const auto start = portfile_content.find_last_not_of(" \n\t\r", target - 1) + 1;
-                    portfile_content.erase(start, StringLiteral("TARGET_PATH").size() + (target - start));
+                    remove_param(portfile_content, "TARGET_PATH", target.start_param);
                 }
             }
             portfile_content.replace(
@@ -301,65 +372,40 @@ namespace vcpkg::Lint
                 break;
             }
             const auto end = portfile_content.find(')', index);
-            const auto target = portfile_content.find("OUT_SOURCE_PATH", index);
-            if (target != std::string::npos && target < end)
+            auto out_source_path = find_param_maybe_value(portfile_content, "OUT_SOURCE_PATH", index, end);
+            if (out_source_path.value_found())
             {
-                const auto before_out_source_path = portfile_content.find_last_not_of(' ', target - 1);
-                auto start_param = target + StringLiteral("OUT_SOURCE_PATH").size();
-                start_param = portfile_content.find_first_not_of(" \n\r\t)", start_param);
-                const auto end_param = portfile_content.find_first_of(" \n\r\t)", start_param);
-                if (end_param != std::string::npos && end_param <= end)
+                const auto param_value = out_source_path.get_value(portfile_content);
+
+                const auto before_param = portfile_content.find_last_not_of(' ', out_source_path.start_param - 1) + 1;
+                auto after_value = portfile_content.find_first_not_of(" \r", out_source_path.end_value);
+                const std::string line_ending = portfile_content[after_value - 1] == '\r' ? "\r\n" : "\n";
+                if (portfile_content[after_value] != '\n')
                 {
-                    const auto out_source_path_param = portfile_content.substr(start_param, end_param - start_param);
-                    const auto after_param = portfile_content.find_first_not_of(' ', end_param);
-                    auto erase_lenth = after_param - before_out_source_path;
-                    bool was_crlf = false;
-                    if (portfile_content[after_param] != '\n' && portfile_content[after_param] != '\r')
-                    {
-                        erase_lenth -= 1; // if OUT_SOURCE_PATH is not on its own line, don't remove new line character
-                    }
-                    if (portfile_content[after_param] == '\r')
-                    {
-                        erase_lenth += 1; // \r\n is used as line ending
-                        was_crlf = true;
-                    }
-                    // remove '   OUT_SOURCE_PATH FOOBAR  ' line
-                    portfile_content.erase(before_out_source_path + 1, erase_lenth);
+                    // if OUT_SOURCE_PATH is not on its own line, don't remove new line character
+                    after_value -= line_ending.size();
+                }
+                // remove '   OUT_SOURCE_PATH FOOBAR  ' line
+                portfile_content.erase(before_param, after_value + 1 - before_param);
 
-                    // Replace 'REF' by 'SOURCE_BASE'
-                    auto ref_index = index;
-                    while ((ref_index = portfile_content.find("REF", ref_index)) != std::string::npos)
-                    {
-                        if (ref_index > end) break;
-                        if (!isspace(portfile_content[ref_index - 1]) ||
-                            !isspace(portfile_content[ref_index + StringLiteral("REF").size()]))
-                        { // 'REF' must be not included in another word
-                            ref_index += 3;
-                        }
-                        else
-                        {
-                            portfile_content.replace(ref_index, StringLiteral("REF").size(), "SOURCE_BASE");
-                            break;
-                        }
-                    }
+                // Replace 'REF' by 'SOURCE_BASE'
+                replace_param(portfile_content, "REF", "SOURCE_BASE", index, end);
 
-                    // insert 'FOOBAR' or // '\n   FOOBAR' after '('
-                    auto open_bracket = portfile_content.find('(', index);
-                    if (open_bracket != std::string::npos && open_bracket < target)
+                // insert 'FOOBAR' or // '\n   FOOBAR' after '('
+                auto open_bracket = portfile_content.find('(', index);
+                if (open_bracket != std::string::npos && open_bracket < out_source_path.start_param)
+                {
+                    char c = portfile_content[before_param - 1];
+                    if (c == '\n')
                     {
-                        char c = portfile_content[before_out_source_path];
-                        if (c == '\n')
-                        {
-                            // if the OUT_SOURCE_PATH was in a new line, insert the param in a new line
-                            portfile_content.insert(open_bracket + 1,
-                                                    (was_crlf ? "\r\n" : "\n") +
-                                                        std::string(target - before_out_source_path - 1, ' ') +
-                                                        out_source_path_param);
-                        }
-                        else
-                        {
-                            portfile_content.insert(open_bracket + 1, out_source_path_param + ' ');
-                        }
+                        // if the OUT_SOURCE_PATH was in a new line, insert the param in a new line
+                        auto num_spaces = out_source_path.start_param - before_param;
+                        portfile_content.insert(open_bracket + 1,
+                                                line_ending + std::string(num_spaces, ' ') + param_value);
+                    }
+                    else
+                    {
+                        portfile_content.insert(open_bracket + 1, param_value + ' ');
                     }
                 }
             }
