@@ -9,6 +9,7 @@
 #include <vcpkg/configuration.h>
 #include <vcpkg/input.h>
 #include <vcpkg/metrics.h>
+#include <vcpkg/paragraphs.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -17,20 +18,59 @@ namespace
 {
     using namespace vcpkg;
 
+    void print_success_message(Path destination,
+                               StringView port_name,
+                               Optional<Version> version,
+                               Optional<StringView> registry = nullopt)
+    {
+        if (!version)
+        {
+            msg::println(msgExportPortSuccessUnversioned, msg::path = destination, msg::package_name = port_name);
+        }
+        else if (auto r = registry.get())
+        {
+            msg::println(msgExportPortSuccessFromRegistry,
+                         msg::path = destination,
+                         msg::package_name = port_name,
+                         msg::version = version.value_or_exit(VCPKG_LINE_INFO),
+                         msg::url = *r);
+        }
+        else
+        {
+            msg::println(msgExportPortSuccess,
+                         msg::path = destination,
+                         msg::package_name = port_name,
+                         msg::version = version.value_or_exit(VCPKG_LINE_INFO));
+        }
+    }
+
+    Optional<Version> try_get_port_version(Filesystem& fs, const Path& destination)
+    {
+        auto maybe_spgh = Paragraphs::try_load_port(fs, destination);
+        if (auto spgh = maybe_spgh.get())
+        {
+            if (auto scf = spgh->get())
+            {
+                return std::move(scf->to_version());
+            }
+        }
+        return nullopt;
+    }
+
     void copy_port_files(Filesystem& fs, StringView port_name, const Path& source, const Path& destination)
     {
         std::error_code ec;
         if (!fs.exists(source, VCPKG_LINE_INFO))
         {
-            msg::println_error(msgExportPortFilesMissing, msg::package_name = port_name, msg::path = source);
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            Checks::msg_exit_with_error(
+                VCPKG_LINE_INFO, msgExportPortFilesMissing, msg::package_name = port_name, msg::path = source);
         }
 
         auto port_files = fs.get_regular_files_recursive(source, ec);
         if (ec)
         {
-            msg::println_error(msgExportPortFilesMissing, msg::package_name = port_name, msg::path = source);
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            Checks::msg_exit_with_error(
+                VCPKG_LINE_INFO, msgExportPortFilesMissing, msg::package_name = port_name, msg::path = source);
         }
 
         for (const auto& file : Util::fmap(port_files, [&source](StringView&& str) -> Path {
@@ -43,15 +83,17 @@ namespace
             fs.create_directories(dst_path.parent_path(), ec);
             if (ec)
             {
-                msg::println_error(msgExportPortFailedToCreateDirectory, msg::path = dst_path.parent_path());
-                Checks::exit_fail(VCPKG_LINE_INFO);
+                Checks::msg_exit_with_error(
+                    VCPKG_LINE_INFO, msgExportPortFailedToCreateDirectory, msg::path = dst_path.parent_path());
             }
 
             fs.copy_file(src_path, dst_path, CopyOptions::overwrite_existing, ec);
             if (ec)
             {
-                msg::println_error(msgExportPortFailedToCopyFiles, msg::package_name = port_name, msg::path = dst_path);
-                Checks::exit_fail(VCPKG_LINE_INFO);
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                            msgExportPortFailedToCopyFiles,
+                                            msg::package_name = port_name,
+                                            msg::path = dst_path);
             }
         }
     }
@@ -61,18 +103,19 @@ namespace
                               Optional<Version> version,
                               const Path& destination)
     {
-        // Registry configuration
         const auto& config = paths.get_configuration();
         auto registries = config.instantiate_registry_set(paths);
-        auto source = version ? registries->fetch_port_files(port_name, version.value_or_exit(VCPKG_LINE_INFO))
-                              : registries->fetch_port_files(port_name);
-        if (!source)
+        auto maybe_source = version ? registries->fetch_port_files(port_name, version.value_or_exit(VCPKG_LINE_INFO))
+                                    : registries->fetch_port_files(port_name);
+        if (!maybe_source)
         {
-            msg::println_error(source.error());
+            msg::println_error(maybe_source.error());
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
-        copy_port_files(paths.get_filesystem(), port_name, source.value_or_exit(VCPKG_LINE_INFO).path, destination);
-        msg::println(msgExportPortSuccess, msg::path = destination);
+
+        auto source = *maybe_source.get();
+        copy_port_files(paths.get_filesystem(), port_name, source.local_portfiles_path, destination);
+        print_success_message(destination, port_name, source.version, source.registry_id);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
@@ -121,7 +164,7 @@ namespace
                 fs.create_directories(destination, VCPKG_LINE_INFO);
                 extract_tar_cmake(Tools::CMAKE, archive_path, destination);
                 fs.remove(archive_path, VCPKG_LINE_INFO);
-                msg::println(msgExportPortSuccess, msg::path = destination);
+                print_success_message(destination, port_name, version);
                 Checks::exit_success(VCPKG_LINE_INFO);
             }
         }
@@ -139,7 +182,8 @@ namespace
         auto& fs = paths.get_filesystem();
         const auto port_dir = paths.builtin_ports_directory() / port_name;
         copy_port_files(fs, port_name, port_dir, destination);
-        msg::println(msgExportPortSuccess, msg::path = destination);
+        auto version = try_get_port_version(fs, destination);
+        print_success_message(destination, port_name, version);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 }
@@ -182,10 +226,18 @@ namespace vcpkg::Commands::ExportPort
         const auto& maybe_version = package_spec.version();
 
         auto destination = Path(args.command_arguments[1]);
+
+        // makes destination paths relative to cwd instead of vcpkg.exe location
+        if (destination.is_relative())
+        {
+            destination = paths.original_cwd / destination;
+        }
+
         if (subdir)
         {
             destination /= port_name;
         }
+
         auto& fs = paths.get_filesystem();
         const Path final_path = fs.absolute(destination, VCPKG_LINE_INFO).lexically_normal();
 

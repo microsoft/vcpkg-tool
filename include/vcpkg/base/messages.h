@@ -1279,7 +1279,18 @@ namespace vcpkg
                     "Versions database file for {package_name} is missing.\n"
                     "Expected file {path} to exist.\n"
                     "Make sure that the port name is correct.");
-    DECLARE_MESSAGE(ExportPortSuccess, (msg::path), "", "Port files have been exported to {path}");
+    DECLARE_MESSAGE(ExportPortSuccess,
+                    (msg::path, msg::package_name, msg::version),
+                    "",
+                    "Port files for {package_name}@{version} have been exported to {path}");
+    DECLARE_MESSAGE(ExportPortSuccessFromRegistry,
+                    (msg::path, msg::package_name, msg::version, msg::url),
+                    "",
+                    "Port files for {package_name}@{version} from {url} have been exported to {path}");
+    DECLARE_MESSAGE(ExportPortSuccessUnversioned,
+                    (msg::path, msg::package_name),
+                    "",
+                    "Port files for {package_name} have been exported to {path}");
     DECLARE_MESSAGE(ExportPrefabRequiresAndroidTriplet, (), "", "export prefab requires an Android triplet.");
     DECLARE_MESSAGE(ExportUnsupportedInManifest,
                     (),

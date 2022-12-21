@@ -60,6 +60,15 @@ namespace vcpkg
         std::string location;
     };
 
+    struct PortInfo
+    {
+        std::string port_name;
+        Version version;
+        std::string registry_id;
+        Path local_portfiles_path;
+        std::string spdx_download_location;
+    };
+
     struct RegistryEntry
     {
         virtual View<Version> get_port_versions() const = 0;
@@ -119,10 +128,10 @@ namespace vcpkg
         }
 
         // fetchs port files for the baseline version of a port and returns their location on disk
-        ExpectedL<PathAndLocation> fetch_port_files(StringView port_name);
+        ExpectedL<PortInfo> fetch_port_files(StringView port_name);
 
         // fetchs port files for a specific version of a port and returns their location on disk
-        ExpectedL<PathAndLocation> fetch_port_files(StringView port_name, const Version& version) const;
+        ExpectedL<PortInfo> fetch_port_files(StringView port_name, const Version& version) const;
 
         // finds the correct registry for the port name
         // Returns the null pointer if there is no registry set up for that name
