@@ -276,7 +276,7 @@ namespace vcpkg::Lint
             }
             else
             {
-                status = Status::Fixed;
+                status |= Status::Fixed;
             }
         };
         if (Strings::contains(portfile_content, "vcpkg_build_msbuild"))
@@ -412,6 +412,31 @@ namespace vcpkg::Lint
             portfile_content.replace(
                 index, StringLiteral("vcpkg_extract_source_archive_ex").size(), "vcpkg_extract_source_archive");
         }
+        index = 0;
+        while ((index = portfile_content.find("vcpkg_check_features", index)) != std::string::npos)
+        {
+            const auto end = portfile_content.find(')', index);
+            const auto features = find_param(portfile_content, "FEATURES", index, end);
+            const auto inverted_features = find_param(portfile_content, "INVERTED_FEATURES", index, end);
+            if (features == std::string::npos && inverted_features == std::string::npos)
+            {
+                if (fix == Fix::NO)
+                {
+                    status |= Status::Problem;
+                    warningsSink.println_warning(msgLintVcpkgCheckFeatures, msg::package_name = origin);
+                    break;
+                }
+                status |= Status::Fixed;
+
+                auto feature_options = find_param_maybe_value(portfile_content, "OUT_FEATURE_OPTIONS", index, end);
+                if (feature_options.value_found())
+                {
+                    portfile_content.insert(feature_options.end_value, " FEATURES");
+                }
+            }
+            index = end;
+        }
+
         fixedPortfile.status = status;
         if (fix == Fix::YES)
         {

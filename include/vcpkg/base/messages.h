@@ -563,6 +563,7 @@ namespace vcpkg
         "{actual} is the currently used deprecated function, {expected} is the function that should be used",
         "The deprecated function \"{actual}\" is used inside the port \"{package_name}\". Use the function "
         "\"{expected}\" instead.");
+
     DECLARE_MESSAGE(
         LintDeprecatedLicenseExpressionWithReplacement,
         (msg::package_name, msg::actual, msg::new_value),
@@ -586,6 +587,11 @@ namespace vcpkg
                     "",
                     "Use the version scheme \"{new_scheme}\" instead of \"{old_scheme}\" in port "
                     "\"{package_name}\".");
+    DECLARE_MESSAGE(LintVcpkgCheckFeatures,
+                    (msg::package_name),
+                    "",
+                    "Calling `vcpkg_check_features` without the `FEATURES` keyword has been deprecated. Please add the "
+                    "`FEATURES` keyword to the call inside the port {package_name}.");
     DECLARE_MESSAGE(LintPortErrorsFixed,
                     (msg::package_name),
                     "",

@@ -190,4 +190,21 @@ vcpkg_extract_source_archive(SOURCE_PATH ARCHIVE ${ARCHIVE})
         check_replacement(
             Strings::replace_all(content, "\n", "\r\n"), Strings::replace_all(new_content, "\n", "\r\n"), "");
     }
+
+    SECTION ("vcpkg_check_features")
+    {
+        auto content = R"-(
+vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
+    graphml         IGRAPH_GRAPHML_SUPPORT
+    openmp          IGRAPH_OPENMP_SUPPORT
+)
+)-";
+        auto new_content = R"-(
+vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS FEATURES
+    graphml         IGRAPH_GRAPHML_SUPPORT
+    openmp          IGRAPH_OPENMP_SUPPORT
+)
+)-";
+        check_replacement(content, new_content, "");
+    }
 }
