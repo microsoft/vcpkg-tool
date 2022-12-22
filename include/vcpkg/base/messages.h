@@ -291,6 +291,7 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(old_value, "");
     DECLARE_MSG_ARG(new_value, "");
 
+    DECLARE_MSG_ARG(action_index, "340");
     DECLARE_MSG_ARG(actual_version, "1.3.8");
     DECLARE_MSG_ARG(arch, "x64");
     DECLARE_MSG_ARG(base_url, "azblob://");
@@ -300,18 +301,26 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(column, "42");
     DECLARE_MSG_ARG(command_line, "vcpkg install zlib");
     DECLARE_MSG_ARG(command_name, "install");
+    DECLARE_MSG_ARG(commit_sha, "7cfad47ae9f68b183983090afd6337cd60fd4949");
     DECLARE_MSG_ARG(count, "42");
     DECLARE_MSG_ARG(elapsed, "3.532 min");
+    DECLARE_MSG_ARG(env_var, "VCPKG_DEFAULT_TRIPLET");
     DECLARE_MSG_ARG(error_msg, "File Not Found");
     DECLARE_MSG_ARG(exit_code, "127");
     DECLARE_MSG_ARG(expected_version, "1.3.8");
+    DECLARE_MSG_ARG(extension, ".exe");
+    DECLARE_MSG_ARG(feature, "avisynthplus");
     DECLARE_MSG_ARG(new_scheme, "version");
     DECLARE_MSG_ARG(old_scheme, "version-string");
     DECLARE_MSG_ARG(option, "editable");
     DECLARE_MSG_ARG(package_name, "zlib");
     DECLARE_MSG_ARG(path, "/foo/bar");
     DECLARE_MSG_ARG(row, "42");
+    DECLARE_MSG_ARG(sha,
+                    "eb32643dd2164c72b8a660ef52f1e701bb368324ae461e12d70d6a9aefc0c9573387ee2ed3828037ed62bb3e8f566416a2"
+                    "d3b3827a3928f0bff7c29f7662293e");
     DECLARE_MSG_ARG(spec, "zlib:x64-windows");
+    DECLARE_MSG_ARG(supports_expression, "windows & !static");
     DECLARE_MSG_ARG(system_api, "CreateProcessW");
     DECLARE_MSG_ARG(system_name, "Darwin");
     DECLARE_MSG_ARG(tool_name, "aria2");
@@ -320,14 +329,6 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(vcpkg_line_info, "/a/b/foo.cpp(13)");
     DECLARE_MSG_ARG(vendor, "Azure");
     DECLARE_MSG_ARG(version, "1.3.8");
-    DECLARE_MSG_ARG(action_index, "340");
-    DECLARE_MSG_ARG(env_var, "VCPKG_DEFAULT_TRIPLET");
-    DECLARE_MSG_ARG(extension, ".exe");
-    DECLARE_MSG_ARG(supports_expression, "windows & !static");
-    DECLARE_MSG_ARG(feature, "avisynthplus");
-    DECLARE_MSG_ARG(commit_sha,
-                    "a18442042722dd48e20714ec034a12fcc0576c9af7be5188586970e2edf47529825bdc99af366b1d5891630c8dbf6f63bf"
-                    "a9f012e77ab3d3ed80d1a118e3b2be");
 
 #undef DECLARE_MSG_ARG
 
@@ -946,6 +947,13 @@ namespace vcpkg
                     "Comparing Utf8Decoders with different provenance; this is always an error");
     DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":");
     DECLARE_MESSAGE(ComputingInstallPlan, (), "", "Computing installation plan...");
+    DECLARE_MESSAGE(ConfigurationErrorRegistriesWithoutBaseline,
+                    (msg::path, msg::url),
+                    "",
+                    "The configuration defined in {path} is invalid.\n\n"
+                    "Using registries requires that a baseline is set for the default registry or that the default "
+                    "registry is null.\n\n"
+                    "See {url} for more details.");
     DECLARE_MESSAGE(ConflictingFiles,
                     (msg::path, msg::spec),
                     "",
@@ -991,7 +999,18 @@ namespace vcpkg
     DECLARE_MESSAGE(CreatingNugetPackage, (), "", "Creating NuGet package...");
     DECLARE_MESSAGE(CreatingZipArchive, (), "", "Creating zip archive...");
     DECLARE_MESSAGE(CreationFailed, (msg::path), "", "Creating {path} failed.");
-    DECLARE_MESSAGE(CurlFailedToExecute, (msg::exit_code), "", "curl failed to execute with exit code {exit_code}.");
+    DECLARE_MESSAGE(CurlFailedToExecute,
+                    (msg::exit_code),
+                    "curl is the name of a program, see curl.se",
+                    "curl failed to execute with exit code {exit_code}.");
+    DECLARE_MESSAGE(CurlFailedToPut,
+                    (msg::exit_code, msg::url),
+                    "curl is the name of a program, see curl.se",
+                    "curl failed to put file to {url} with exit code {exit_code}.");
+    DECLARE_MESSAGE(CurlFailedToPutHttp,
+                    (msg::exit_code, msg::url, msg::value),
+                    "curl is the name of a program, see curl.se. {value} is an HTTP status code",
+                    "curl failed to put file to {url} with exit code {exit_code} and http code {value}.");
     DECLARE_MESSAGE(CurlReportedUnexpectedResults,
                     (msg::command_line, msg::actual),
                     "{command_line} is the command line to call curl.exe, {actual} is the console output "
@@ -1005,7 +1024,7 @@ namespace vcpkg
                     "=== end curl output ===");
     DECLARE_MESSAGE(CurlReturnedUnexpectedResponseCodes,
                     (msg::actual, msg::expected),
-                    "{actual} and {expected} are integers",
+                    "{actual} and {expected} are integers, curl is the name of a program, see curl.se",
                     "curl returned a different number of response codes than were expected for the request ({actual} "
                     "vs expected {expected}).");
     DECLARE_MESSAGE(CurrentCommitBaseline,
@@ -1035,6 +1054,26 @@ namespace vcpkg
                     "",
                     "A downloadable copy of this tool is available and can be used by unsetting {env_var}.");
     DECLARE_MESSAGE(DownloadedSources, (msg::spec), "", "Downloaded sources for {spec}");
+    DECLARE_MESSAGE(DownloadFailedCurl,
+                    (msg::url, msg::exit_code),
+                    "",
+                    "{url}: curl failed to download with exit code {exit_code}");
+    DECLARE_MESSAGE(DownloadFailedHashMismatch,
+                    (msg::url, msg::path, msg::expected, msg::actual),
+                    "{expected} and {actual} are SHA512 hashes in hex format.",
+                    "File does not have the expected hash:\n"
+                    "url: {url}\n"
+                    "File: {path}\n"
+                    "Expected hash: {expected}\n"
+                    "Actual hash: {actual}");
+    DECLARE_MESSAGE(DownloadFailedRetrying,
+                    (msg::value),
+                    "{value} is a number of milliseconds",
+                    "Download failed -- retrying after {value}ms");
+    DECLARE_MESSAGE(DownloadFailedStatusCode,
+                    (msg::url, msg::value),
+                    "{value} is an HTTP status code",
+                    "{url}: failed: status code {value}");
     DECLARE_MESSAGE(DownloadingPortableToolVersionX,
                     (msg::tool_name, msg::version),
                     "",
@@ -1044,11 +1083,16 @@ namespace vcpkg
                     (msg::tool_name, msg::url, msg::path),
                     "",
                     "Downloading {tool_name}...\n{url}->{path}");
-    DECLARE_MESSAGE(DownloadingVcpkgCeBundle, (msg::version), "", "Downloading vcpkg-ce bundle {version}...");
+    DECLARE_MESSAGE(DownloadingUrl, (msg::url), "", "Downloading {url}");
+    DECLARE_MESSAGE(DownloadWinHttpError,
+                    (msg::system_api, msg::exit_code, msg::url),
+                    "",
+                    "{url}: {system_api} failed with exit code {exit_code}");
+    DECLARE_MESSAGE(DownloadingVcpkgCeBundle, (msg::version), "", "Downloading vcpkg-artifacts bundle {version}...");
     DECLARE_MESSAGE(DownloadingVcpkgCeBundleLatest,
                     (),
                     "This message is normally displayed only in development.",
-                    "Downloading latest vcpkg-ce bundle...");
+                    "Downloading latest vcpkg-artifacts bundle...");
     DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundle, (msg::version), "", "Downloading standalone bundle {version}.");
     DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundleLatest, (), "", "Downloading latest standalone bundle.");
     DECLARE_MESSAGE(DownloadRootsDir,
@@ -1064,6 +1108,11 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is a command line option.",
                     "'--{value}' specified multiple times.");
+    DECLARE_MESSAGE(DuplicatePackagePattern, (msg::package_name), "", "Package \"{package_name}\" is duplicated.");
+    DECLARE_MESSAGE(DuplicatePackagePatternFirstOcurrence, (), "", "First declared in:");
+    DECLARE_MESSAGE(DuplicatePackagePatternIgnoredLocations, (), "", "The following redeclarations will be ignored:");
+    DECLARE_MESSAGE(DuplicatePackagePatternLocation, (msg::path), "", "location: {path}");
+    DECLARE_MESSAGE(DuplicatePackagePatternRegistry, (msg::url), "", "registry: {url}");
     DECLARE_MESSAGE(ElapsedInstallTime, (msg::count), "", "Total elapsed time: {count}");
     DECLARE_MESSAGE(ElapsedTimeForChecks, (msg::elapsed), "", "Time to determine pass/fail: {elapsed}");
     DECLARE_MESSAGE(EmailVcpkgTeam, (msg::url), "", "Send an email to {url} with any feedback.");
@@ -1266,7 +1315,7 @@ namespace vcpkg
                     (msg::tool_name, msg::version),
                     "",
                     "Could not parse version for tool {tool_name}. Version string was: {version}");
-    DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
+    DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-artifacts.");
     DECLARE_MESSAGE(FailedToRead, (msg::path, msg::error_msg), "", "Failed to read {path}: {error_msg}");
     DECLARE_MESSAGE(FailedToReadParagraph, (msg::path), "", "Failed to read paragraphs from {path}");
     DECLARE_MESSAGE(FailedToRemoveControl, (msg::path), "", "Failed to remove control file {path}");
@@ -1875,6 +1924,8 @@ namespace vcpkg
     DECLARE_MESSAGE(NoLocalizationForMessages, (), "", "No localized messages for the following: ");
     DECLARE_MESSAGE(NoOutdatedPackages, (), "", "There are no outdated packages.");
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
+    DECLARE_MESSAGE(NoUrlsAndHashSpecified, (msg::sha), "", "No urls specified to download SHA: {sha}");
+    DECLARE_MESSAGE(NoUrlsAndNoHashSpecified, (), "", "No urls specified and no hash specified.");
     DECLARE_MESSAGE(NugetPackageFileSucceededButCreationFailed,
                     (msg::path),
                     "",
@@ -1926,6 +1977,24 @@ namespace vcpkg
                     "Error messages are is printed after this.",
                     "while loading {path}:");
     DECLARE_MESSAGE(ParseControlErrorInfoWrongTypeFields, (), "", "The following fields had the wrong types:");
+    DECLARE_MESSAGE(
+        ParseIdentifierError,
+        (msg::value, msg::url),
+        "{value} is a lowercase identifier like 'boost'",
+        "\"{value}\" is not a valid identifier. "
+        "Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)");
+    DECLARE_MESSAGE(
+        ParsePackageNameError,
+        (msg::package_name, msg::url),
+        "",
+        "\"{package_name}\" is not a valid package name. "
+        "Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)");
+    DECLARE_MESSAGE(ParsePackagePatternError,
+                    (msg::package_name, msg::url),
+                    "",
+                    "\"{package_name}\" is not a valid package pattern. "
+                    "Package patterns must use only one wildcard character (*) and it must be the last character in "
+                    "the pattern (see {url} for more information)");
     DECLARE_MESSAGE(PathMustBeAbsolute,
                     (msg::path),
                     "",
@@ -2138,6 +2207,7 @@ namespace vcpkg
         "{value} may be either a 'vendor' like 'Azure' or 'NuGet', or a file path like C:\\example or /usr/example",
         "Restored {count} package(s) from {value} in {elapsed}. Use --debug to see more details.");
     DECLARE_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
+    DECLARE_MESSAGE(SecretBanner, (), "", "*** SECRET ***");
     DECLARE_MESSAGE(SerializedBinParagraphHeader, (), "", "\nSerialized Binary Paragraph");
     DECLARE_MESSAGE(SettingEnvVar,
                     (msg::env_var, msg::url),
@@ -2443,6 +2513,10 @@ namespace vcpkg
         "vcpkg has crashed. Please create an issue at https://github.com/microsoft/vcpkg containing a brief summary of "
         "what you were trying to do and the following information.");
     DECLARE_MESSAGE(VcpkgInvalidCommand, (msg::command_name), "", "invalid command: {command_name}");
+    DECLARE_MESSAGE(InvalidUri,
+                    (msg::value),
+                    "{value} is the URI we attempted to parse.",
+                    "unable to parse uri: {value}");
     DECLARE_MESSAGE(VcpkgInVsPrompt,
                     (msg::value, msg::triplet),
                     "'{value}' is a VS prompt",
@@ -2500,6 +2574,7 @@ namespace vcpkg
                     "The message named {value} starts with warning:, it must be changed to prepend "
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
+    DECLARE_MESSAGE(WarnOnParseConfig, (msg::path), "", "Found the following warnings in configuration {path}:");
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}");

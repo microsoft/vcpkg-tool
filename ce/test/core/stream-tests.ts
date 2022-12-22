@@ -7,8 +7,6 @@ import { SuiteLocal } from './SuiteLocal';
 
 describe('StreamTests', () => {
   const local = new SuiteLocal();
-  const fs = local.fs;
-
   after(local.after.bind(local));
   it('event emitter works', async () => {
 

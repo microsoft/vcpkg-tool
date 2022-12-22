@@ -499,6 +499,7 @@ namespace vcpkg
     REGISTER_MESSAGE(CommandFailed);
     REGISTER_MESSAGE(CompressFolderFailed);
     REGISTER_MESSAGE(ComputingInstallPlan);
+    REGISTER_MESSAGE(ConfigurationErrorRegistriesWithoutBaseline);
     REGISTER_MESSAGE(ConflictingFiles);
     REGISTER_MESSAGE(CMakeUsingExportedLibs);
     REGISTER_MESSAGE(CommunityTriplets);
@@ -524,6 +525,8 @@ namespace vcpkg
     REGISTER_MESSAGE(CreatingZipArchive);
     REGISTER_MESSAGE(CreationFailed);
     REGISTER_MESSAGE(CurlFailedToExecute);
+    REGISTER_MESSAGE(CurlFailedToPut);
+    REGISTER_MESSAGE(CurlFailedToPutHttp);
     REGISTER_MESSAGE(CurlReportedUnexpectedResults);
     REGISTER_MESSAGE(CurlReturnedUnexpectedResponseCodes);
     REGISTER_MESSAGE(CurrentCommitBaseline);
@@ -537,8 +540,14 @@ namespace vcpkg
     REGISTER_MESSAGE(DocumentedFieldsSuggestUpdate);
     REGISTER_MESSAGE(DownloadAvailable);
     REGISTER_MESSAGE(DownloadedSources);
+    REGISTER_MESSAGE(DownloadFailedCurl);
+    REGISTER_MESSAGE(DownloadFailedHashMismatch);
+    REGISTER_MESSAGE(DownloadFailedRetrying);
+    REGISTER_MESSAGE(DownloadFailedStatusCode);
     REGISTER_MESSAGE(DownloadingPortableToolVersionX);
     REGISTER_MESSAGE(DownloadingTool);
+    REGISTER_MESSAGE(DownloadingUrl);
+    REGISTER_MESSAGE(DownloadWinHttpError);
     REGISTER_MESSAGE(DownloadingVcpkgCeBundle);
     REGISTER_MESSAGE(DownloadingVcpkgCeBundleLatest);
     REGISTER_MESSAGE(DownloadingVcpkgStandaloneBundle);
@@ -547,6 +556,11 @@ namespace vcpkg
     REGISTER_MESSAGE(DuplicateCommandOption);
     REGISTER_MESSAGE(DuplicatedKeyInObj);
     REGISTER_MESSAGE(DuplicateOptions);
+    REGISTER_MESSAGE(DuplicatePackagePattern);
+    REGISTER_MESSAGE(DuplicatePackagePatternFirstOcurrence);
+    REGISTER_MESSAGE(DuplicatePackagePatternIgnoredLocations);
+    REGISTER_MESSAGE(DuplicatePackagePatternLocation);
+    REGISTER_MESSAGE(DuplicatePackagePatternRegistry);
     REGISTER_MESSAGE(ElapsedInstallTime);
     REGISTER_MESSAGE(ElapsedTimeForChecks);
     REGISTER_MESSAGE(EmailVcpkgTeam);
@@ -825,6 +839,8 @@ namespace vcpkg
     REGISTER_MESSAGE(NoLocalizationForMessages);
     REGISTER_MESSAGE(NoOutdatedPackages);
     REGISTER_MESSAGE(NoRegistryForPort);
+    REGISTER_MESSAGE(NoUrlsAndHashSpecified);
+    REGISTER_MESSAGE(NoUrlsAndNoHashSpecified);
     REGISTER_MESSAGE(NugetPackageFileSucceededButCreationFailed);
     REGISTER_MESSAGE(OptionMustBeInteger);
     REGISTER_MESSAGE(OptionRequired);
@@ -850,6 +866,9 @@ namespace vcpkg
     REGISTER_MESSAGE(ParseControlErrorInfoTypesEntry);
     REGISTER_MESSAGE(ParseControlErrorInfoWhileLoading);
     REGISTER_MESSAGE(ParseControlErrorInfoWrongTypeFields);
+    REGISTER_MESSAGE(ParseIdentifierError);
+    REGISTER_MESSAGE(ParsePackageNameError);
+    REGISTER_MESSAGE(ParsePackagePatternError);
     REGISTER_MESSAGE(PathMustBeAbsolute);
     REGISTER_MESSAGE(PECoffHeaderTooShort);
     REGISTER_MESSAGE(PEConfigCrossesSectionBoundary);
@@ -875,6 +894,7 @@ namespace vcpkg
     REGISTER_MESSAGE(RestoredPackage);
     REGISTER_MESSAGE(RestoredPackagesFromVendor);
     REGISTER_MESSAGE(ResultsHeader);
+    REGISTER_MESSAGE(SecretBanner);
     REGISTER_MESSAGE(SerializedBinParagraphHeader);
     REGISTER_MESSAGE(SettingEnvVar);
     REGISTER_MESSAGE(ShallowRepositoryDetected);
@@ -976,6 +996,7 @@ namespace vcpkg
     REGISTER_MESSAGE(VcpkgHasCrashed);
     REGISTER_MESSAGE(VcpkgInvalidCommand);
     REGISTER_MESSAGE(InvalidCommentStyle);
+    REGISTER_MESSAGE(InvalidUri);
     REGISTER_MESSAGE(VcpkgInVsPrompt);
     REGISTER_MESSAGE(VcpkgRootRequired);
     REGISTER_MESSAGE(VcpkgRootsDir);
@@ -995,6 +1016,7 @@ namespace vcpkg
     REGISTER_MESSAGE(WaitingToTakeFilesystemLock);
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
+    REGISTER_MESSAGE(WarnOnParseConfig);
     REGISTER_MESSAGE(WhileLookingForSpec);
     REGISTER_MESSAGE(WindowsOnlyCommand);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);

@@ -1,7 +1,7 @@
 {
   "name": "vcpkg-ce",
   "version": "0.8.0",
-  "description": "vcpkg-ce CLI",
+  "description": "vcpkg-artifacts",
   "main": "ce/dist/main.js",
   "bin": {
     "ce_": "./ce/dist/main.js"
@@ -13,8 +13,8 @@
     "node": ">=16.0.0"
   },
   "scripts": {
-    "postinstall": "node ./create-links create && node ./wrapper-scripts create",
-    "uninstall": "node ./create-links remove && node ./wrapper-scripts remove",
+    "postinstall": "node ./create-links create",
+    "uninstall": "node ./create-links remove",
     "prepack": "npx rimraf ./common/temp/node_modules/.pnpm/typescript* ./common/temp/node_modules/.pnpm/translate-strings*  ./common/temp/node_modules/.pnpm/ts-morph*  ./common/temp/node_modules/.pnpm/@types* && node ./prepare-deploy.js"
   },
   "repository": {
@@ -25,9 +25,8 @@
     "**/*"
   ],
   "keywords": [
-    "vcpkg-ce",
-    "vcpkg",
-    "ce"
+    "vcpkg-artifacts",
+    "vcpkg"
   ],
   "author": "Microsoft",
   "license": "MIT",
