@@ -388,7 +388,16 @@ namespace vcpkg
 
             for (auto&& var : vars)
             {
-                env_strings.push_back(var);
+                if (Strings::case_insensitive_ascii_equals(var, "PATH"))
+                {
+                    new_path.assign(prepend_to_path.data(), prepend_to_path.size());
+                    if (!new_path.empty()) new_path.push_back(';');
+                    new_path.append(get_environment_variable("PATH").value_or(""));
+                }
+                else
+                {
+                    env_strings.push_back(var);
+                }
             }
         }
 
