@@ -51,7 +51,7 @@ namespace
         {
             if (auto scf = spgh->get())
             {
-                return std::move(scf->to_version());
+                return scf->to_version();
             }
         }
         return nullopt;
@@ -267,7 +267,7 @@ namespace vcpkg::Commands::ExportPort
         }
         else
         {
-            if (include_registries)
+            if (include_registries && has_registries)
             {
                 // fetchs baseline version on the configured registry
                 export_registry_port(paths, port_name, nullopt, final_path);
