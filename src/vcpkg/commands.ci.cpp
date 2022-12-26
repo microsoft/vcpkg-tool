@@ -611,6 +611,7 @@ namespace vcpkg::Commands::CI
                 FullPackageSpec spec;
                 CiFeatureBaselineState actual_state;
                 Optional<Path> logs_dir;
+                ElapsedTime build_time;
             };
 
             std::vector<UnexpectedResult> unexpected_states;
@@ -618,7 +619,8 @@ namespace vcpkg::Commands::CI
             const auto handle_result = [&](FullPackageSpec&& spec,
                                            CiFeatureBaselineState result,
                                            CiFeatureBaselineEntry baseline,
-                                           Optional<Path> logs_dir = nullopt) {
+                                           Optional<Path> logs_dir = nullopt,
+                                           ElapsedTime build_time = {}) {
                 bool expected_cascade =
                     (baseline.state == CiFeatureBaselineState::Cascade ||
                      (spec.features.size() > 1 && Util::all_of(spec.features, [&](const auto& feature) {
@@ -627,14 +629,14 @@ namespace vcpkg::Commands::CI
                 bool actual_cascade = (result == CiFeatureBaselineState::Cascade);
                 if (actual_cascade != expected_cascade)
                 {
-                    unexpected_states.push_back(UnexpectedResult{std::move(spec), result, logs_dir});
+                    unexpected_states.push_back(UnexpectedResult{std::move(spec), result, logs_dir, build_time});
                 }
                 bool expected_fail =
                     (baseline.state == CiFeatureBaselineState::Fail || baseline.will_fail(spec.features));
                 bool actual_fail = (result == CiFeatureBaselineState::Fail);
                 if (expected_fail != actual_fail)
                 {
-                    unexpected_states.push_back(UnexpectedResult{std::move(spec), result, logs_dir});
+                    unexpected_states.push_back(UnexpectedResult{std::move(spec), result, logs_dir, build_time});
                 }
             };
 
@@ -734,6 +736,7 @@ namespace vcpkg::Commands::CI
                     const IBuildLogsRecorder& build_logs_recorder = feature_build_logs_recorder_storage
                                                                         ? *(feature_build_logs_recorder_storage.get())
                                                                         : null_build_logs_recorder();
+                    ElapsedTimer timer;
                     const auto summary = Install::perform(args,
                                                           install_plan,
                                                           KeepGoing::YES,
@@ -743,6 +746,7 @@ namespace vcpkg::Commands::CI
                                                           build_logs_recorder,
                                                           var_provider);
                     binary_cache.clear_cache();
+
                     for (const auto& result : summary.results)
                     {
                         switch (result.build_result.value_or_exit(VCPKG_LINE_INFO).code)
@@ -771,10 +775,12 @@ namespace vcpkg::Commands::CI
                     {
                         case BuildResult::DOWNLOADED:
                         case vcpkg::BuildResult::SUCCEEDED:
-                            handle_result(std::move(spec), CiFeatureBaselineState::Pass, baseline, logs_dir);
+                            handle_result(
+                                std::move(spec), CiFeatureBaselineState::Pass, baseline, logs_dir, timer.elapsed());
                             break;
                         case vcpkg::BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
-                            handle_result(std::move(spec), CiFeatureBaselineState::Cascade, baseline, logs_dir);
+                            handle_result(
+                                std::move(spec), CiFeatureBaselineState::Cascade, baseline, logs_dir, timer.elapsed());
                             break;
                         case BuildResult::BUILD_FAILED:
                         case BuildResult::POST_BUILD_CHECKS_FAILED:
@@ -782,7 +788,8 @@ namespace vcpkg::Commands::CI
                         case BuildResult::CACHE_MISSING:
                         case BuildResult::REMOVED:
                         case BuildResult::EXCLUDED:
-                            handle_result(std::move(spec), CiFeatureBaselineState::Fail, baseline, logs_dir);
+                            handle_result(
+                                std::move(spec), CiFeatureBaselineState::Fail, baseline, logs_dir, timer.elapsed());
                             break;
                     }
                 }
@@ -795,6 +802,8 @@ namespace vcpkg::Commands::CI
                        result.actual_state,
                        " ",
                        result.logs_dir.value_or(""),
+                       " after ",
+                       result.build_time.to_string(),
                        '\n');
             }
             Checks::exit_success(VCPKG_LINE_INFO);
