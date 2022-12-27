@@ -146,7 +146,7 @@ TEST_CASE ("cmdlinebuilder", "[system]")
 TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
 {
     std::vector<vcpkg::Command> vec;
-    for (size_t i = 0; i < 50; i++)
+    for (size_t i = 0; i != 100; ++i)
     {
 #if defined(_WIN32)
         vcpkg::Command cmd("cmd.exe");
@@ -154,7 +154,7 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
         const auto cmd_str = "echo " + std::to_string(i);
         cmd.string_arg(cmd_str);
 #else
-        vcpkg::Command cmd("echo");
+        vcpkg::Command cmd("sleep 1 && echo");
         const auto cmd_str = std::string(i, 'a');
         cmd.string_arg(cmd_str);
 #endif
@@ -163,7 +163,7 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
 
     auto res = vcpkg::cmd_execute_and_capture_output_parallel(vcpkg::View<vcpkg::Command>(vec));
 
-    for (size_t i = 0; i < res.size(); ++i)
+    for (size_t i = 0; i != res.size(); ++i)
     {
         auto out = res[i].get();
         REQUIRE(out != nullptr);

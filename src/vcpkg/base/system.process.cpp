@@ -475,6 +475,7 @@ namespace vcpkg
                                                                                       const WorkingDirectory& wd,
                                                                                       const Environment& env)
     {
+        ElapsedTimer elapsed
         std::vector<ExpectedL<ExitCodeAndOutput>> res(cmd_lines.size(), LocalizedString{});
         if (cmd_lines.empty())
         {
@@ -514,6 +515,7 @@ namespace vcpkg
         {
             w.get();
         }
+        print2("Elapsed time for parallel execution: ", elapsed, '\n');
         return res;
     }
 
