@@ -7,6 +7,7 @@
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/system.debug.h>
 
 #include <string>
 
@@ -145,6 +146,7 @@ TEST_CASE ("cmdlinebuilder", "[system]")
 
 TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
 {
+    vcpkg::Debug::g_debugging = true;
     std::vector<vcpkg::Command> vec;
     for (size_t i = 0; i != 100; ++i)
     {
@@ -154,7 +156,7 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
         const auto cmd_str = "echo " + std::to_string(i);
         cmd.string_arg(cmd_str);
 #else
-        vcpkg::Command cmd("sleep 1 && echo");
+        vcpkg::Command cmd("echo");
         const auto cmd_str = std::string(i, 'a');
         cmd.string_arg(cmd_str);
 #endif
