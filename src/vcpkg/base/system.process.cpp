@@ -475,7 +475,7 @@ namespace vcpkg
                                                                                       const WorkingDirectory& wd,
                                                                                       const Environment& env)
     {
-        ElapsedTimer elapsed
+        ElapsedTimer elapsed;
         std::vector<ExpectedL<ExitCodeAndOutput>> res(cmd_lines.size(), LocalizedString{});
         if (cmd_lines.empty())
         {
