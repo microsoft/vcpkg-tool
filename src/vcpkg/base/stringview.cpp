@@ -29,6 +29,10 @@ namespace vcpkg
 
     bool operator==(StringView lhs, StringView rhs) noexcept
     {
+        if (lhs.empty() && rhs.empty())
+        {
+            return false;
+        }
         return lhs.size() == rhs.size() && memcmp(lhs.data(), rhs.data(), lhs.size()) == 0;
     }
 
