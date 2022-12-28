@@ -1191,7 +1191,7 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, implementation_ != nullptr);
     }
 
-    ExpectedL<PathAndLocation> RegistrySet::fetch_port_files(StringView port_name)
+    ExpectedL<PortInfo> RegistrySet::fetch_port_files(StringView port_name)
     {
         auto impl = registry_for_port(port_name);
         if (!impl) return msg::format(msgNoRegistryForPort, msg::package_name = port_name);
@@ -1205,12 +1205,22 @@ namespace vcpkg
                                msg::url = docs::registries_url);
         }
 
-        return impl->get_baseline_version(port_name).then([&entry](auto&& version) {
-            return entry->get_version(version).map_error([](auto&& e) { return LocalizedString::from_raw(e); });
+        return impl->get_baseline_version(port_name).then([&](auto&& version) {
+            return entry->get_version(version)
+                .map_error([](auto&& e) { return LocalizedString::from_raw(e); })
+                .map([&](auto&& pnl) -> PortInfo {
+                    return PortInfo{
+                        port_name.to_string(),
+                        std::move(version),
+                        impl->friendly_identifier().to_string(),
+                        pnl.path,
+                        pnl.location,
+                    };
+                });
         });
     }
 
-    ExpectedL<PathAndLocation> RegistrySet::fetch_port_files(StringView port_name, const Version& version) const
+    ExpectedL<PortInfo> RegistrySet::fetch_port_files(StringView port_name, const Version& version) const
     {
         auto impl = registry_for_port(port_name);
         if (!impl) return msg::format(msgNoRegistryForPort, msg::package_name = port_name);
@@ -1225,7 +1235,17 @@ namespace vcpkg
         }
 
         // todo: localize message from registry
-        return entry->get_version(version).map_error([](auto&& e) { return LocalizedString::from_raw(e); });
+        return entry->get_version(version)
+            .map_error([](auto&& e) { return LocalizedString::from_raw(e); })
+            .map([&](auto&& pnl) -> PortInfo {
+                return PortInfo{
+                    port_name.to_string(),
+                    version,
+                    impl->friendly_identifier().to_string(),
+                    pnl.path,
+                    pnl.location,
+                };
+            });
     }
 
     const RegistryImplementation* RegistrySet::registry_for_port(StringView name) const
