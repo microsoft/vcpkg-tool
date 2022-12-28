@@ -31,7 +31,7 @@ namespace vcpkg
     {
         if (lhs.empty() && rhs.empty())
         {
-            return false;
+            return true;
         }
         return lhs.size() == rhs.size() && memcmp(lhs.data(), rhs.data(), lhs.size()) == 0;
     }
