@@ -3027,12 +3027,9 @@ namespace vcpkg
                             ec.clear();
                             return true;
                         }
-                        else
-                        {
-                            last_error = GetLastError();
-                            ec.assign(static_cast<int>(last_error), std::system_category());
-                            return false;
-                        }
+                        last_error = GetLastError();
+                        ec.assign(static_cast<int>(last_error), std::system_category());
+                        return false;
                     }
                     else
                     {
@@ -3125,6 +3122,7 @@ namespace vcpkg
 
             if (options == CopyOptions::update_existing && destination_stat.st_mtime >= source_stat.st_mtime)
             {
+                ec.clear();
                 return false;
             }
 
