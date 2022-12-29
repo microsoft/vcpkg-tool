@@ -3,8 +3,8 @@
 #include <vcpkg/base/system.print.h>
 
 #include <vcpkg/archives.h>
+#include <vcpkg/commands.bootstrap-standalone.h>
 #include <vcpkg/commands.version.h>
-#include <vcpkg/commands.zbootstrap-standalone.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
@@ -13,14 +13,14 @@
 namespace vcpkg::Commands
 {
     static const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("z-bootstrap-standalone"),
+        create_example_string("bootstrap-standalone"),
         0,
         0,
         {{}, {}},
         nullptr,
     };
 
-    void ZBootstrapStandaloneCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
+    void BootstrapStandaloneCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
     {
         DownloadManager download_manager{{}};
         const auto maybe_vcpkg_root_env = args.vcpkg_root_dir_env.get();
