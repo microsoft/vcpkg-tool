@@ -440,9 +440,7 @@ namespace
         {
             const auto source = installed_dir / target_binary_name;
             const auto target = target_binary_dir / target_binary_name;
-
             const auto mutant_name = "vcpkg-applocal-" + Hash::get_string_sha256(target_binary_dir);
-           
             const MutantGuard mutant(mutant_name);
 
             std::error_code ec;
