@@ -31,6 +31,32 @@ namespace
         return fs.open_for_write(entry->second, VCPKG_LINE_INFO);
     }
 
+    struct MutantGuard
+    {
+        MutantGuard(StringView name)
+        {
+            h = ::CreateMutexW(nullptr, FALSE, Strings::to_utf16(name).c_str());
+            if (h)
+            {
+                WaitForSingleObject(h, INFINITE);
+            }
+            else
+            {
+                Checks::exit_with_message(VCPKG_LINE_INFO, "Failed to acquire mutant %s", name);
+            }
+        }
+        explicit operator bool() const { return h; }
+        ~MutantGuard()
+        {
+            if (h)
+            {
+                ReleaseMutex(h);
+                CloseHandle(h);
+            }
+        }
+        HANDLE h;
+    };
+
     struct AppLocalInvocation
     {
         AppLocalInvocation(Filesystem& fs,
@@ -416,32 +442,8 @@ namespace
             const auto target = target_binary_dir / target_binary_name;
 
             const auto mutant_name = "vcpkg-applocal-" + Hash::get_string_sha256(target_binary_dir);
-            struct MutantGuard
-            {
-                MutantGuard(StringView name)
-                {
-                    h = ::CreateMutexW(nullptr, FALSE, Strings::to_utf16(name).c_str());
-                    if (h)
-                    {
-                        WaitForSingleObject(h, INFINITE);
-                    }
-                }
-                explicit operator bool() const { return h; }
-                ~MutantGuard()
-                {
-                    if (h)
-                    {
-                        ReleaseMutex(h);
-                        CloseHandle(h);
-                    }
-                }
-                HANDLE h;
-            };
+           
             const MutantGuard mutant(mutant_name);
-            if (!mutant)
-            {
-                Checks::exit_with_message(VCPKG_LINE_INFO, "Failed to acquire mutant %s", mutant_name);
-            }
 
             std::error_code ec;
             const bool did_deploy = m_fs.copy_file(source, target, CopyOptions::update_existing, ec);
