@@ -45,7 +45,7 @@ namespace
                 Checks::exit_with_message(VCPKG_LINE_INFO, "Failed to acquire mutant %s", name);
             }
         }
-        explicit operator bool() const { return h; }
+
         ~MutantGuard()
         {
             if (h)
@@ -54,6 +54,8 @@ namespace
                 CloseHandle(h);
             }
         }
+
+    private:
         HANDLE h;
     };
 
