@@ -30,3 +30,13 @@ node_modules/
 /azure-pipelines/e2e_projects/applocal-test/build/mylib.dll
 /azure-pipelines/e2e_projects/applocal-test/build/mylib.lib
 /azure-pipelines/e2e_projects/applocal-test/build/mylib.obj
+/azure-pipelines/e2e_projects/applocal-test/plugins/azure_kinect_sensor_sdk/main.cpp
+/azure-pipelines/e2e_projects/applocal-test/plugins/azure_kinect_sensor_sdk/main.obj
+/azure-pipelines/e2e_projects/applocal-test/plugins/azure_kinect_sensor_sdk/depthengine_2_0.exp
+/azure-pipelines/e2e_projects/applocal-test/plugins/azure_kinect_sensor_sdk/depthengine_2_0.dll
+/azure-pipelines/e2e_projects/applocal-test/plugins/azure_kinect_sensor_sdk/depthengine_2_0.lib
+/azure-pipelines/e2e_projects/applocal-test/plugins/azure_kinect_sensor_sdk/depthengine_2_0.obj
+/azure-pipelines/e2e_projects/applocal-test/plugins/azure_kinect_sensor_sdk/k4a.exp
+/azure-pipelines/e2e_projects/applocal-test/plugins/azure_kinect_sensor_sdk/k4a.dll
+/azure-pipelines/e2e_projects/applocal-test/plugins/azure_kinect_sensor_sdk/k4a.lib
+/azure-pipelines/e2e_projects/applocal-test/plugins/azure_kinect_sensor_sdk/k4a.obj
