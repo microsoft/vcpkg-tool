@@ -149,6 +149,7 @@ namespace vcpkg::Commands::CI
                                         const std::vector<FullPackageSpec>& specs,
                                         const CreateInstallPlanOptions& serialize_options)
     {
+        // Initialize for all ports
         std::vector<PackageSpec> packages_with_qualified_deps;
         for (auto&& spec : specs)
         {
@@ -158,10 +159,21 @@ namespace vcpkg::Commands::CI
                 packages_with_qualified_deps.push_back(spec.package_spec);
             }
         }
-
         var_provider.load_dep_info_vars(packages_with_qualified_deps, serialize_options.host_triplet);
-        auto action_plan = create_feature_install_plan(provider, var_provider, specs, {}, serialize_options);
+        var_provider.load_tag_vars(specs, provider, serialize_options.host_triplet);
 
+        // Determine set of ports which is applicable to the target
+        const auto applicable_specs = Util::filter(specs, [&](auto& spec) -> bool {
+            auto&& scfl = provider.get_control_file(spec.package_spec.name()).value_or_exit(VCPKG_LINE_INFO);
+            const auto& supports_expression = scfl.source_control_file->core_paragraph->supports_expression;
+            return supports_expression.is_empty()
+                       ? true
+                       : supports_expression.evaluate(
+                             var_provider.get_tag_vars(spec.package_spec).value_or_exit(VCPKG_LINE_INFO));
+        });
+
+        // Create install plan and complement initialization for ports to be installed for the host
+        auto action_plan = create_feature_install_plan(provider, var_provider, applicable_specs, {}, serialize_options);
         var_provider.load_tag_vars(action_plan, provider, serialize_options.host_triplet);
 
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.already_installed.empty());
