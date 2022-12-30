@@ -287,7 +287,7 @@ namespace
                 std::error_code ec;
                 if (!m_fs.exists(target_binary_dir / "qt.conf", ec))
                 {
-                    m_fs.write_contents(target_binary_dir / "qt.conf", "[Paths]", ec);
+                    m_fs.write_contents(target_binary_dir / "qt.conf", "[Paths]\n", ec);
                 }
             }
             else if (target_binary_name == "Qt5Guid.dll" || target_binary_name == "Qt5Gui.dll")
@@ -362,9 +362,32 @@ namespace
                     }
                     else
                     {
-                        Checks::exit_with_message(VCPKG_LINE_INFO, "FAILED", ec.message());
+                        Checks::exit_with_message(VCPKG_LINE_INFO, "qml directory must exist with Qt5Qml.dll");
                     }
                 }
+                std::vector<std::string> libs = {"Qt5Quick.dll",
+                                                 "Qt5Quickd.dll",
+                                                 "Qt5QmlModels.dll",
+                                                 "Qt5QmlModelsd.dll",
+                                                 "Qt5QuickControls2.dll",
+                                                 "Qt5QuickControls2d.dll",
+                                                 "Qt5QuickShapes.dll",
+                                                 "Qt5QuickShapesd.dll",
+                                                 "Qt5QuickTemplates2.dll",
+                                                 "Qt5QuickTemplates2d.dll",
+                                                 "Qt5QmlWorkerScript.dll",
+                                                 "Qt5QmlWorkerScriptd.dll",
+                                                 "Qt5QuickParticles.dll",
+                                                 "Qt5QuickParticlesd.dll",
+                                                 "Qt5QuickWidgets.dll",
+                                                 "Qt5QuickWidgetsd.dll"};
+                for (const auto& lib : libs)
+                {
+                    deploy_binary(target_binary_dir, bin_dir, lib);
+                }
+
+                deployPluginsQt("scenegraph", target_binary_dir, qt_plugins_dir);
+                deployPluginsQt("qmltooling", target_binary_dir, qt_plugins_dir);
             }
             else if (target_binary_name == "Qt5Quickd.dll" || target_binary_name == "Qt5Quick.dll")
             {
@@ -380,7 +403,7 @@ namespace
                                                  "Qt5QuickParticlesd.dll",
                                                  "Qt5QuickWidgets.dll",
                                                  "Qt5QuickWidgetsd.dll"};
-                for (std::string lib : libs)
+                for (const auto& lib : libs)
                 {
                     deploy_binary(target_binary_dir, bin_dir, lib);
                 }
@@ -388,51 +411,46 @@ namespace
                 deployPluginsQt("scenegraph", target_binary_dir, qt_plugins_dir);
                 deployPluginsQt("qmltooling", target_binary_dir, qt_plugins_dir);
             }
-
-            std::error_code ec;
-            std::vector<Path> children = m_fs.get_files_non_recursive(target_binary_name, ec);
-            for (auto&& c : children)
+            else if (Strings::starts_with(target_binary_name, "Qt5Declarative") &&
+                     Strings::ends_with(target_binary_name, ".dll"))
             {
-                if (c == "Qt5Declarative.dll" || c == "Qt5Declaratived.dll")
-                {
-                    deployPluginsQt("qml1tooling", target_binary_dir, qt_plugins_dir);
-                }
-
-                if (c == "Qt5Positioning.dll" || c == "Qt5Positioningd.dll")
-                {
-                    deployPluginsQt("position", target_binary_dir, qt_plugins_dir);
-                }
-
-                if (c == "Qt5Location.dll" || c == "Qt5Locationd.dll")
-                {
-                    deployPluginsQt("geoservices", target_binary_dir, qt_plugins_dir);
-                }
-
-                if (c == "Qt5Sensors.dll" || c == "Qt5Sensorsd.dll")
-                {
-                    deployPluginsQt("sensors", target_binary_dir, qt_plugins_dir);
-                    deployPluginsQt("sensorgestures", target_binary_dir, qt_plugins_dir);
-                }
-
-                if (c == "Qt5WebEngineCore.dll" || c == "Qt5WebEngineCored.dll")
-                {
-                    deployPluginsQt("qtwebengine", target_binary_dir, qt_plugins_dir);
-                }
-
-                if (c == "Qt53DRenderer.dll" || c == "Qt53DRendererd.dll")
-                {
-                    deployPluginsQt("sceneparsers", target_binary_dir, qt_plugins_dir);
-                }
-
-                if (c == "Qt5TextToSpeech.dll" || c == "Qt5TextToSpeechd.dll")
-                {
-                    deployPluginsQt("texttospeech", target_binary_dir, qt_plugins_dir);
-                }
-
-                if (c == "Qt5SerialBus.dll" || c == "Qt5SerialBusd.dll")
-                {
-                    deployPluginsQt("canbus", target_binary_dir, qt_plugins_dir);
-                }
+                  deployPluginsQt("qml1tooling", target_binary_dir, qt_plugins_dir);
+            }
+            else if (Strings::starts_with(target_binary_name, "Qt5Positioning") &&
+                     Strings::ends_with(target_binary_name, ".dll"))
+            {
+                  deployPluginsQt("position", target_binary_dir, qt_plugins_dir);
+            }
+            else if (Strings::starts_with(target_binary_name, "Qt5Location") &&
+                     Strings::ends_with(target_binary_name, ".dll"))
+            {
+                  deployPluginsQt("geoservices", target_binary_dir, qt_plugins_dir);
+            }
+            else if (Strings::starts_with(target_binary_name, "Qt5Sensors") &&
+                     Strings::ends_with(target_binary_name, ".dll"))
+            {
+                  deployPluginsQt("sensors", target_binary_dir, qt_plugins_dir);
+                  deployPluginsQt("sensorgestures", target_binary_dir, qt_plugins_dir);
+            }
+            else if (Strings::starts_with(target_binary_name, "Qt5WebEngineCore") &&
+                     Strings::ends_with(target_binary_name, ".dll"))
+            {
+                  deployPluginsQt("qtwebengine", target_binary_dir, qt_plugins_dir);
+            }
+            else if (Strings::starts_with(target_binary_name, "Qt53DRenderer") &&
+                     Strings::ends_with(target_binary_name, ".dll"))
+            {
+                  deployPluginsQt("sceneparsers", target_binary_dir, qt_plugins_dir);
+            }
+            else if (Strings::starts_with(target_binary_name, "Qt5TextToSpeech") &&
+                     Strings::ends_with(target_binary_name, ".dll"))
+            {
+                  deployPluginsQt("texttospeech", target_binary_dir, qt_plugins_dir);
+            }
+            else if (Strings::starts_with(target_binary_name, "Qt5SerialBus") &&
+                     Strings::ends_with(target_binary_name, ".dll"))
+            {
+                  deployPluginsQt("canbus", target_binary_dir, qt_plugins_dir);
             }
         }
 
