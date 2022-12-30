@@ -1,0 +1,14 @@
+{
+  "name": "zzz-unexpected-port",
+  "version": "1",
+  "description": "Cannot be installed",
+  "supports": "native & !native",
+  "dependencies": [
+    {
+      "name": "zzz-expected-port",
+      "features": [
+        "zzz-unexpected-feature"
+      ]
+    }
+  ]
+}

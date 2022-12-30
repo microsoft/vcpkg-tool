@@ -1,0 +1,10 @@
+{
+  "name": "zzz-expected-port",
+  "version": "1",
+  "features": {
+    "zzz-unexpected-feature": {
+      "description": "Cannot be installed",
+      "supports": "native & !native"
+    }
+  }
+}
