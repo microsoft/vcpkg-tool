@@ -414,43 +414,43 @@ namespace
             else if (Strings::starts_with(target_binary_name, "Qt5Declarative") &&
                      Strings::ends_with(target_binary_name, ".dll"))
             {
-                  deployPluginsQt("qml1tooling", target_binary_dir, qt_plugins_dir);
+                deployPluginsQt("qml1tooling", target_binary_dir, qt_plugins_dir);
             }
             else if (Strings::starts_with(target_binary_name, "Qt5Positioning") &&
                      Strings::ends_with(target_binary_name, ".dll"))
             {
-                  deployPluginsQt("position", target_binary_dir, qt_plugins_dir);
+                deployPluginsQt("position", target_binary_dir, qt_plugins_dir);
             }
             else if (Strings::starts_with(target_binary_name, "Qt5Location") &&
                      Strings::ends_with(target_binary_name, ".dll"))
             {
-                  deployPluginsQt("geoservices", target_binary_dir, qt_plugins_dir);
+                deployPluginsQt("geoservices", target_binary_dir, qt_plugins_dir);
             }
             else if (Strings::starts_with(target_binary_name, "Qt5Sensors") &&
                      Strings::ends_with(target_binary_name, ".dll"))
             {
-                  deployPluginsQt("sensors", target_binary_dir, qt_plugins_dir);
-                  deployPluginsQt("sensorgestures", target_binary_dir, qt_plugins_dir);
+                deployPluginsQt("sensors", target_binary_dir, qt_plugins_dir);
+                deployPluginsQt("sensorgestures", target_binary_dir, qt_plugins_dir);
             }
             else if (Strings::starts_with(target_binary_name, "Qt5WebEngineCore") &&
                      Strings::ends_with(target_binary_name, ".dll"))
             {
-                  deployPluginsQt("qtwebengine", target_binary_dir, qt_plugins_dir);
+                deployPluginsQt("qtwebengine", target_binary_dir, qt_plugins_dir);
             }
             else if (Strings::starts_with(target_binary_name, "Qt53DRenderer") &&
                      Strings::ends_with(target_binary_name, ".dll"))
             {
-                  deployPluginsQt("sceneparsers", target_binary_dir, qt_plugins_dir);
+                deployPluginsQt("sceneparsers", target_binary_dir, qt_plugins_dir);
             }
             else if (Strings::starts_with(target_binary_name, "Qt5TextToSpeech") &&
                      Strings::ends_with(target_binary_name, ".dll"))
             {
-                  deployPluginsQt("texttospeech", target_binary_dir, qt_plugins_dir);
+                deployPluginsQt("texttospeech", target_binary_dir, qt_plugins_dir);
             }
             else if (Strings::starts_with(target_binary_name, "Qt5SerialBus") &&
                      Strings::ends_with(target_binary_name, ".dll"))
             {
-                  deployPluginsQt("canbus", target_binary_dir, qt_plugins_dir);
+                deployPluginsQt("canbus", target_binary_dir, qt_plugins_dir);
             }
         }
 
