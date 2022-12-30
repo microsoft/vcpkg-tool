@@ -1,15 +1,15 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
 # Not a number
-Run-Vcpkg ci --triplet=$Triplet --x-skipped-cascade-count=fish
+Run-Vcpkg ci --dry-run --triplet=$Triplet --x-skipped-cascade-count=fish
 Throw-IfNotFailed
 
 # Negative
-Run-Vcpkg ci --triplet=$Triplet --x-skipped-cascade-count=-1
+Run-Vcpkg ci --dry-run --triplet=$Triplet --x-skipped-cascade-count=-1
 Throw-IfNotFailed
 
 # Clearly not the correct answer
-Run-Vcpkg ci --triplet=$Triplet --x-skipped-cascade-count=1000
+Run-Vcpkg ci --dry-run --triplet=$Triplet --x-skipped-cascade-count=1000
 Throw-IfNotFailed
 
 # Regular ci; may take a few seconds to complete
