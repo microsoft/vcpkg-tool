@@ -6,6 +6,7 @@
 #include <vcpkg/commands.activate.h>
 #include <vcpkg/commands.add-version.h>
 #include <vcpkg/commands.add.h>
+#include <vcpkg/commands.applocal.h>
 #include <vcpkg/commands.autocomplete.h>
 #include <vcpkg/commands.bootstrap-standalone.h>
 #include <vcpkg/commands.buildexternal.h>
@@ -66,6 +67,7 @@ namespace vcpkg::Commands
         static const BootstrapStandaloneCommand boostrap_standalone{};
         static const ZPreRegisterTelemetryCommand zpreregister_telemetry{};
 #if defined(_WIN32)
+        static const AppLocalCommand applocal{};
         static const UploadMetrics::UploadMetricsCommand upload_metrics{};
 #endif // defined(_WIN32)
 
@@ -80,6 +82,7 @@ namespace vcpkg::Commands
             {"z-preregister-telemetry", &zpreregister_telemetry},
 #if defined(_WIN32)
             {"x-upload-metrics", &upload_metrics},
+            {"z-applocal", &applocal}
 #endif // defined(_WIN32)
         };
         return t;
