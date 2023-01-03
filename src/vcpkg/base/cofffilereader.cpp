@@ -3,6 +3,7 @@
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/util.h>
 
 #include <stdio.h>
 
@@ -270,7 +271,12 @@ namespace
         }
     }
 
-    void read_and_skip_first_linker_member(const vcpkg::ReadFilePointer& f)
+    uint32_t bswap(uint32_t value)
+    {
+        return (value >> 24) | ((value & 0x00FF0000u) >> 8) | ((value & 0x0000FF00u) << 8) | (value << 24);
+    }
+
+    Optional<std::vector<uint32_t>> try_read_first_linker_member_offsets(const vcpkg::ReadFilePointer& f)
     {
         ArchiveMemberHeader first_linker_member_header;
         Checks::check_exit(VCPKG_LINE_INFO,
@@ -278,13 +284,53 @@ namespace
         if (memcmp(first_linker_member_header.name, "/ ", 2) != 0)
         {
             Debug::println("Could not find proper first linker member");
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            return nullopt;
         }
 
-        Checks::check_exit(VCPKG_LINE_INFO, f.seek(first_linker_member_header.decoded_size(), SEEK_CUR) == 0);
+        auto first_size = first_linker_member_header.decoded_size();
+        uint32_t archive_symbol_count;
+        if (first_size < sizeof(archive_symbol_count))
+        {
+            Debug::println("Firstlinker member was too small to contain a single uint32_t");
+            return nullopt;
+        }
+
+        if (f.read(&archive_symbol_count, sizeof(archive_symbol_count), 1) != 1)
+        {
+            Debug::println("Could not read first linker member.");
+            return nullopt;
+        }
+
+        archive_symbol_count = bswap(archive_symbol_count);
+        const auto maximum_possible_archive_members = (first_size / sizeof(uint32_t)) - 1;
+        if (archive_symbol_count > maximum_possible_archive_members)
+        {
+            Debug::println("First linker member was too small to contain the expected number of symbols");
+            return nullopt;
+        }
+
+        std::vector<uint32_t> offsets(archive_symbol_count);
+        if (f.read(offsets.data(), sizeof(uint32_t), archive_symbol_count) != archive_symbol_count)
+        {
+            Debug::println("Could not read first linker member offsets.");
+            return nullopt;
+        }
+
+        // convert (big endian) offsets to little endian
+        for (auto&& offset : offsets)
+        {
+            offset = bswap(offset);
+        }
+
+        Util::sort_unique_erase(offsets);
+        offsets.erase(std::remove(offsets.begin(), offsets.end(), 0u), offsets.end());
+        std::sort(offsets.begin(), offsets.end());
+        uint64_t leftover = first_size - sizeof(uint32_t) - (archive_symbol_count * sizeof(uint32_t));
+        Checks::check_exit(VCPKG_LINE_INFO, f.seek(leftover, SEEK_CUR) == 0);
+        return offsets;
     }
 
-    std::vector<uint32_t> read_second_linker_member_offsets(const vcpkg::ReadFilePointer& f)
+    Optional<std::vector<uint32_t>> try_read_second_linker_member_offsets(const vcpkg::ReadFilePointer& f)
     {
         ArchiveMemberHeader second_linker_member_header;
         Checks::check_exit(VCPKG_LINE_INFO,
@@ -292,7 +338,7 @@ namespace
         if (memcmp(second_linker_member_header.name, "/ ", 2) != 0)
         {
             Debug::println("Could not find proper second linker member");
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            return nullopt;
         }
 
         const auto second_size = second_linker_member_header.decoded_size();
@@ -302,20 +348,28 @@ namespace
         if (second_size < sizeof(archive_member_count))
         {
             Debug::println("Second linker member was too small to contain a single uint32_t");
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            return nullopt;
         }
 
-        Checks::check_exit(VCPKG_LINE_INFO, f.read(&archive_member_count, sizeof(archive_member_count), 1) == 1);
+        if (f.read(&archive_member_count, sizeof(archive_member_count), 1) != 1)
+        {
+            Debug::println("Failed to read second linker member member count.");
+            return nullopt;
+        }
+
         const auto maximum_possible_archive_members = (second_size / sizeof(uint32_t)) - 1;
         if (archive_member_count > maximum_possible_archive_members)
         {
             Debug::println("Second linker member was too small to contain the expected number of archive members");
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            return nullopt;
         }
 
         std::vector<uint32_t> offsets(archive_member_count);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           f.read(offsets.data(), sizeof(uint32_t), archive_member_count) == archive_member_count);
+        if (f.read(offsets.data(), sizeof(uint32_t), archive_member_count) != archive_member_count)
+        {
+            Debug::println("Failed to read second linker member offsets");
+            return nullopt;
+        }
 
         // Ignore offsets that point to offset 0. See vcpkg github #223 #288 #292
         offsets.erase(std::remove(offsets.begin(), offsets.end(), 0u), offsets.end());
@@ -680,9 +734,26 @@ namespace vcpkg
     LibInformation read_lib_information(const ReadFilePointer& f)
     {
         read_and_verify_archive_file_signature(f);
-        read_and_skip_first_linker_member(f);
-        const auto offsets = read_second_linker_member_offsets(f);
-        return read_lib_information_from_archive_members(f, offsets);
+        const auto first_offsets = try_read_first_linker_member_offsets(f);
+        const auto second_offsets = try_read_second_linker_member_offsets(f);
+        const std::vector<uint32_t>* offsets;
+        // "Although both linker members provide a directory of symbols and archive members that
+        // contain them, the second linker member is used in preference to the first by all current linkers."
+        if (auto maybe_offsets2 = second_offsets.get())
+        {
+            offsets = maybe_offsets2;
+        }
+        else if (auto maybe_offsets = first_offsets.get())
+        {
+            offsets = maybe_offsets;
+        }
+        else
+        {
+            // FIXME message
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        return read_lib_information_from_archive_members(f, *offsets);
     }
 
     MachineType to_machine_type(const uint16_t value)
