@@ -1266,6 +1266,7 @@ namespace vcpkg
                 std::vector<std::string> features;
             };
 
+            struct PackageNode;
             // This object contains the current version within a given version scheme (except for the "string" scheme,
             // there we save an object for every version)
             struct VersionSchemeInfo
@@ -1277,6 +1278,7 @@ namespace vcpkg
                 std::vector<std::string> origins;
                 // mapping from feature name -> dependencies of this feature
                 std::map<std::string, std::vector<FeatureSpec>> deps;
+                std::set<PackageNode*> dependencies; // track to which PackageNodes this vsi has dependencies
 
                 bool is_less_than(const Version& new_ver) const;
             };
@@ -1302,7 +1304,8 @@ namespace vcpkg
                 Optional<std::unique_ptr<VersionSchemeInfo>> relaxed_semver;
                 Optional<std::unique_ptr<VersionSchemeInfo>> date;
                 std::set<std::string> requested_features;
-                bool default_features = true;
+                // state to track if default features must be enables at next require_port_version call
+                bool update_default_features = false;
                 bool user_requested = false;
 
                 VersionSchemeInfo* get_node(const Version& ver);
@@ -1314,7 +1317,7 @@ namespace vcpkg
                 //     replaces the current entry for the scheme
                 VersionSchemeInfo& emplace_node(VersionScheme scheme, const Version& ver);
 
-                PackageNode() = default;
+                PackageNode(bool only_host_dependency) : only_host_dependency(only_host_dependency){};
                 PackageNode(const PackageNode&) = delete;
                 PackageNode(PackageNode&&) = default;
                 PackageNode& operator=(const PackageNode&) = delete;
@@ -1336,6 +1339,47 @@ namespace vcpkg
                         f(vsi.second);
                     }
                 }
+
+                bool default_features_enabled() const
+                {
+                    using DF = Dependency::DefaultFeatures;
+                    return user_requested_default_features == DF::Yes ||
+                           (user_requested_default_features == DF::DontCare && !only_host_dependency);
+                }
+                void update_default_features_state(bool host_dependency, Dependency::DefaultFeatures user_requested_df)
+                {
+                    const bool old = default_features_enabled();
+                    const bool old_only_host = only_host_dependency;
+                    only_host_dependency = only_host_dependency && host_dependency;
+                    if (user_requested_default_features == Dependency::DefaultFeatures::DontCare ||
+                        user_requested_df != Dependency::DefaultFeatures::No)
+                    {
+                        user_requested_default_features = user_requested_df;
+                    }
+                    if (old != default_features_enabled())
+                    {
+                        update_default_features = true;
+                    }
+                    if (old_only_host != only_host_dependency)
+                    {
+                        // we are now a normal dependency, all dependencies of this port must be now also normal
+                        // dependencies
+                        foreach_vsi([](VersionSchemeInfo& vsi) {
+                            for (PackageNode* dep : vsi.dependencies)
+                            {
+                                if (dep->is_only_host_dependency())
+                                {
+                                    dep->update_default_features_state(false, Dependency::DefaultFeatures::DontCare);
+                                }
+                            }
+                        });
+                    }
+                }
+                bool is_only_host_dependency() const { return only_host_dependency; }
+
+            private:
+                Dependency::DefaultFeatures user_requested_default_features = Dependency::DefaultFeatures::DontCare;
+                bool only_host_dependency = false; // if the package was only requested as host dependency
             };
 
             // the roots of the dependency graph (given in the manifest file)
@@ -1345,8 +1389,10 @@ namespace vcpkg
             // mapping from { package specifier -> node containing resolution information for that package }
             std::map<PackageSpec, PackageNode> m_graph;
 
-            std::pair<const PackageSpec, PackageNode>& emplace_package(const PackageSpec& spec);
-
+            std::pair<const PackageSpec, PackageNode>& emplace_package(
+                const PackageSpec& spec,
+                bool host_dependency,
+                Dependency::DefaultFeatures user_requested = Dependency::DefaultFeatures::DontCare);
             // the following functions will add stuff recursively
             void require_dependency(std::pair<const PackageSpec, PackageNode>& ref,
                                     const Dependency& dep,
@@ -1472,7 +1518,7 @@ namespace vcpkg
                     }
                 }
 
-                auto& dep_node = emplace_package(dep_spec);
+                auto& dep_node = emplace_package(dep_spec, dep.host || ref.second.is_only_host_dependency());
                 if (dep_spec == ref.first)
                 {
                     // this is a feature dependency for oneself
@@ -1484,6 +1530,7 @@ namespace vcpkg
                 else
                 {
                     require_dependency(dep_node, dep, ref.first.name());
+                    vsi.dependencies.insert(&dep_node.second);
                 }
 
                 p.first->second.emplace_back(dep_spec, "core");
@@ -1589,11 +1636,12 @@ namespace vcpkg
                 replace = versioned_graph_entry.is_less_than(version);
             }
 
-            if (replace)
+            if (replace || graph_entry.second.update_default_features)
             {
                 versioned_graph_entry.scfl = p_scfl;
                 versioned_graph_entry.version = p_scfl->source_control_file->to_version();
                 versioned_graph_entry.deps.clear();
+                versioned_graph_entry.dependencies.clear();
 
                 // add all dependencies to the graph
                 add_feature_to(graph_entry, versioned_graph_entry, "core");
@@ -1603,13 +1651,14 @@ namespace vcpkg
                     add_feature_to(graph_entry, versioned_graph_entry, f);
                 }
 
-                if (graph_entry.second.default_features)
+                if (graph_entry.second.default_features_enabled())
                 {
                     for (auto&& f : p_scfl->source_control_file->core_paragraph->default_features)
                     {
                         add_feature_to(graph_entry, versioned_graph_entry, f);
                     }
                 }
+                graph_entry.second.update_default_features = false;
             }
         }
 
@@ -1617,18 +1666,9 @@ namespace vcpkg
                                                           const std::string& origin)
         {
             (void)origin;
-            if (!ref.second.default_features)
+            if (!ref.second.default_features_enabled())
             {
-                ref.second.default_features = true;
-                ref.second.foreach_vsi([this, &ref](VersionSchemeInfo& vsi) {
-                    if (vsi.scfl)
-                    {
-                        for (auto&& f : vsi.scfl->source_control_file->core_paragraph->default_features)
-                        {
-                            this->add_feature_to(ref, vsi, f);
-                        }
-                    }
-                });
+                ref.second.update_default_features_state(false, Dependency::DefaultFeatures::Yes);
             }
         }
         void VersionedPackageGraph::require_port_feature(std::pair<const PackageSpec, PackageNode>& ref,
@@ -1649,9 +1689,11 @@ namespace vcpkg
         }
 
         std::pair<const PackageSpec, VersionedPackageGraph::PackageNode>& VersionedPackageGraph::emplace_package(
-            const PackageSpec& spec)
+            const PackageSpec& spec, bool host_dependency, Dependency::DefaultFeatures user_requested)
         {
-            return *m_graph.emplace(spec, PackageNode{}).first;
+            auto& node = *m_graph.emplace(spec, PackageNode(host_dependency)).first;
+            node.second.update_default_features_state(host_dependency, user_requested);
+            return node;
         }
 
         ExpectedL<Version> VersionedPackageGraph::dep_to_version(const std::string& name,
@@ -1724,8 +1766,7 @@ namespace vcpkg
                 // Note: x[core], x[y] will still eventually depend on defaults due to the second x[y]
                 if (Util::find(dep.features, "core") != dep.features.end())
                 {
-                    auto& node = emplace_package(dep_to_spec(dep));
-                    node.second.default_features = false;
+                    emplace_package(dep_to_spec(dep), dep.host, Dependency::DefaultFeatures::No);
                 }
             }
 
@@ -1734,7 +1775,7 @@ namespace vcpkg
                 const auto& dep = *pdep;
                 auto spec = dep_to_spec(dep);
 
-                auto& node = emplace_package(spec);
+                auto& node = emplace_package(spec, dep.host, dep.default_features);
                 node.second.user_requested = true;
 
                 auto maybe_overlay = m_o_provider.get_control_file(dep.name);
@@ -1869,7 +1910,7 @@ namespace vcpkg
                             const Version& new_ver,
                             const PackageSpec& origin,
                             View<std::string> features) -> Optional<std::string> {
-                auto&& node = emplace_package(spec).second;
+                auto&& node = emplace_package(spec, spec.triplet() == m_host_triplet).second;
                 auto overlay = m_o_provider.get_control_file(spec.name());
                 auto over_it = m_overrides.find(spec.name());
 
@@ -2036,7 +2077,7 @@ namespace vcpkg
                     if (back.deps.empty())
                     {
                         emitted[back.ipa.spec] =
-                            emplace_package(back.ipa.spec)
+                            emplace_package(back.ipa.spec, back.ipa.spec.triplet() == m_host_triplet)
                                 .second.get_node(
                                     back.ipa.source_control_file_and_location.get()->source_control_file->to_version());
                         ret.install_actions.push_back(std::move(back.ipa));

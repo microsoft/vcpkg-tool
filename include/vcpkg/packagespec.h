@@ -9,6 +9,7 @@
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>
+#include <vcpkg/base/util.h>
 #include <vcpkg/base/view.h>
 
 #include <vcpkg/platform-expression.h>
@@ -143,12 +144,30 @@ namespace vcpkg
 
     struct Dependency
     {
+        Dependency(std::string n = {},
+                   std::vector<std::string> f = {},
+                   PlatformExpression::Expr expr = {},
+                   DependencyConstraint dc = {},
+                   bool h = false)
+            : name(std::move(n))
+            , features(std::move(f))
+            , platform(std::move(expr))
+            , constraint(std::move(dc))
+            , host(h)
+            , default_features(Util::contains(features, "core") ? DefaultFeatures::No : DefaultFeatures::Yes)
+        {
+        }
         std::string name;
         std::vector<std::string> features;
         PlatformExpression::Expr platform;
         DependencyConstraint constraint;
         bool host = false;
-
+        enum class DefaultFeatures
+        {
+            Yes,
+            No,
+            DontCare
+        } default_features = DefaultFeatures::DontCare;
         Json::Object extra_info;
 
         /// @param id adds "default" if "core" not present.

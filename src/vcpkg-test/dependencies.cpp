@@ -94,7 +94,7 @@ struct MockVersionedPortfileProvider : IVersionedPortfileProvider
 
 static void check_name_and_features(const InstallPlanAction& ipa,
                                     StringLiteral name,
-                                    std::initializer_list<StringLiteral> features)
+                                    std::initializer_list<StringLiteral> features = {})
 {
     CHECK(ipa.spec.name() == name);
     CHECK(ipa.source_control_file_and_location.has_value());
@@ -220,7 +220,8 @@ static ExpectedS<ActionPlan> create_versioned_install_plan(const IVersionedPortf
                                                            const CMakeVars::CMakeVarProvider& var_provider,
                                                            const std::vector<Dependency>& deps,
                                                            const std::vector<DependencyOverride>& overrides,
-                                                           const PackageSpec& toplevel)
+                                                           const PackageSpec& toplevel,
+                                                           const Triplet host_triplet = Test::ARM_UWP)
 {
     return create_versioned_install_plan(provider,
                                          bprovider,
@@ -229,7 +230,7 @@ static ExpectedS<ActionPlan> create_versioned_install_plan(const IVersionedPortf
                                          deps,
                                          overrides,
                                          toplevel,
-                                         Test::ARM_UWP,
+                                         host_triplet,
                                          UnsupportedPortAction::Error);
 }
 
@@ -1642,6 +1643,148 @@ TEST_CASE ("version install transitive default features", "[versionplan]")
     REQUIRE(install_plan.size() == 2);
     check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
     check_name_and_version(install_plan.install_actions[1], "c", {"1", 0});
+}
+
+TEST_CASE ("version dont install default features when host", "[versionplan]")
+{
+    MockVersionedPortfileProvider vp;
+
+    auto a_x = make_fpgh("x");
+    auto& a_scf = vp.emplace("a", {"1", 0}, VersionScheme::Relaxed).source_control_file;
+    a_scf->core_paragraph->default_features.emplace_back("x");
+    a_scf->feature_paragraphs.push_back(std::move(a_x));
+
+    MockCMakeVarProvider var_provider;
+
+    MockBaselineProvider bp;
+    bp.v["a"] = {"1", 0};
+
+    SECTION ("only one host dependency ")
+    {
+        auto install_plan = create_versioned_install_plan(
+                                vp, bp, var_provider, {Dependency{"a", {"core"}, {}, {}, true}}, {}, toplevel_spec())
+                                .value_or_exit(VCPKG_LINE_INFO);
+        REQUIRE(install_plan.size() == 1);
+        check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {});
+    }
+    SECTION ("only one host dependency, default-features = true")
+    {
+        Dependency dep{"a", {}, {}, {}, true};
+        dep.default_features = Dependency::DefaultFeatures::Yes;
+        auto install_plan = create_versioned_install_plan(vp, bp, var_provider, {dep}, {}, toplevel_spec())
+                                .value_or_exit(VCPKG_LINE_INFO);
+        REQUIRE(install_plan.size() == 1);
+        check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
+    }
+    SECTION ("triplet = host triplet")
+    {
+        auto install_plan =
+            create_versioned_install_plan(vp,
+                                          bp,
+                                          var_provider,
+                                          {Dependency{"a", {}, {}, {}, true}, Dependency{"a", {}, {}, {}, false}},
+                                          {},
+                                          toplevel_spec(),
+                                          toplevel_spec().triplet())
+                .value_or_exit(VCPKG_LINE_INFO);
+        REQUIRE(install_plan.size() == 1);
+        check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
+    }
+    SECTION ("triplet = host triplet, default-features = false")
+    {
+        auto install_plan = create_versioned_install_plan(
+                                vp,
+                                bp,
+                                var_provider,
+                                {Dependency{"a", {"core"}, {}, {}, true}, Dependency{"a", {"core"}, {}, {}, false}},
+                                {},
+                                toplevel_spec(),
+                                toplevel_spec().triplet())
+                                .value_or_exit(VCPKG_LINE_INFO);
+        REQUIRE(install_plan.size() == 1);
+        check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {});
+    }
+}
+
+TEST_CASE ("'default-features': true vs 'default-features': true", "[versionplan]")
+{
+    MockVersionedPortfileProvider vp;
+
+    auto a_x = make_fpgh("x");
+    auto& a_scf = vp.emplace("a", {"1", 0}, VersionScheme::Relaxed).source_control_file;
+    a_scf->core_paragraph->default_features.emplace_back("x");
+    a_scf->feature_paragraphs.push_back(std::move(a_x));
+
+    MockCMakeVarProvider var_provider;
+
+    MockBaselineProvider bp;
+    bp.v["a"] = {"1", 0};
+
+    SECTION ("default-features = true, host = true")
+    {
+        Dependency dep_host{"a", {}, {}, {}, true};
+        dep_host.default_features = Dependency::DefaultFeatures::Yes;
+        Dependency dep_normal{"a", {}, {}, {}, false};
+        dep_normal.default_features = Dependency::DefaultFeatures::No;
+        auto install_plan =
+            create_versioned_install_plan(
+                vp, bp, var_provider, {dep_host, dep_normal}, {}, toplevel_spec(), toplevel_spec().triplet())
+                .value_or_exit(VCPKG_LINE_INFO);
+        REQUIRE(install_plan.size() == 1);
+        check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
+    }
+    SECTION ("default-features = true, host = false")
+    {
+        Dependency dep_host{"a", {}, {}, {}, true};
+        dep_host.default_features = Dependency::DefaultFeatures::No;
+        Dependency dep_normal{"a", {}, {}, {}, false};
+        dep_normal.default_features = Dependency::DefaultFeatures::Yes;
+        auto install_plan =
+            create_versioned_install_plan(
+                vp, bp, var_provider, {dep_host, dep_normal}, {}, toplevel_spec(), toplevel_spec().triplet())
+                .value_or_exit(VCPKG_LINE_INFO);
+        REQUIRE(install_plan.size() == 1);
+        check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
+    }
+}
+
+TEST_CASE ("version dont install default features when host (transitive)", "[versionplan]")
+{
+    MockVersionedPortfileProvider vp;
+    MockBaselineProvider bp;
+    const auto create_port = [&](auto name) -> auto&
+    {
+        auto a_x = make_fpgh("x");
+        auto& a_scf = vp.emplace(name, {"1", 0}, VersionScheme::Relaxed).source_control_file;
+        a_scf->core_paragraph->default_features.emplace_back("x");
+        a_scf->feature_paragraphs.push_back(std::move(a_x));
+        bp.v[name] = {"1", 0};
+        return a_scf;
+    };
+    // every port has a default feature x; Dependencies a -> b, b -> c, c -> d
+    // we request a host dependency to "a" and a normal one to "c" while triplet = host-triplet
+    // => a and b should have no default features, c and d should have a default feature
+    create_port("a")->core_paragraph->dependencies.emplace_back("b", std::vector<std::string>{"core"});
+    create_port("b")->core_paragraph->dependencies.emplace_back("c", std::vector<std::string>{"core"});
+    create_port("c")->core_paragraph->dependencies.emplace_back("d", std::vector<std::string>{"core"});
+    create_port("d");
+
+    MockCMakeVarProvider var_provider;
+
+    auto install_plan =
+        create_versioned_install_plan(vp,
+                                      bp,
+                                      var_provider,
+                                      {Dependency{"a", {"core"}, {}, {}, true}, Dependency{"c", {}, {}, {}, false}},
+                                      {},
+                                      toplevel_spec(),
+                                      toplevel_spec().triplet())
+            .value_or_exit(VCPKG_LINE_INFO);
+    REQUIRE(install_plan.size() == 4);
+    check_name_and_version(install_plan.install_actions[0], "d", {"1", 0}, {"x"});
+    check_name_and_version(install_plan.install_actions[1], "c", {"1", 0}, {"x"});
+    check_name_and_version(install_plan.install_actions[2], "b", {"1", 0}, {});
+    check_name_and_version(install_plan.install_actions[3], "a", {"1", 0}, {});
 }
 
 static PlatformExpression::Expr parse_platform(StringView l)

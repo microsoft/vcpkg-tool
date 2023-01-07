@@ -480,7 +480,11 @@ namespace vcpkg
             r.optional_object_field(obj, FEATURES, dep.features, arr_id_d);
 
             bool default_features = true;
-            r.optional_object_field(obj, DEFAULT_FEATURES, default_features, Json::BooleanDeserializer::instance);
+            if (r.optional_object_field(obj, DEFAULT_FEATURES, default_features, Json::BooleanDeserializer::instance))
+            {
+                using DF = Dependency::DefaultFeatures;
+                dep.default_features = default_features ? DF::Yes : DF::No;
+            }
             if (!default_features)
             {
                 dep.features.emplace_back("core");

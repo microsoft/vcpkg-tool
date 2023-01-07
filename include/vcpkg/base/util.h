@@ -266,6 +266,13 @@ namespace vcpkg::Util
         return std::find(begin(cont), end(cont), v);
     }
 
+    template<class Container, class V>
+    auto contains(const Container& cont, const V& v)
+    {
+        using std::end;
+        return Util::find(cont, v) != end(cont);
+    }
+
     template<class Container, class Pred>
     auto find_if(Container&& cont, Pred pred)
     {
