@@ -717,6 +717,26 @@ namespace vcpkg
         return res;
     }
 
+    std::string get_cmake_find_package_name(StringView dirname, StringView filename)
+    {
+        StringView res;
+        if (Strings::ends_with(filename, "Config.cmake"))
+        {
+            res = filename.substr(0, filename.size() - 12);
+        }
+        else if (Strings::ends_with(filename, "-config.cmake"))
+        {
+            res = filename.substr(0, filename.size() - 13);
+        }
+
+        if (!Strings::case_insensitive_ascii_equals(res, dirname.substr(0, res.size())))
+        {
+            res = {};
+        }
+
+        return std::string(res);
+    }
+
     CMakeUsageInfo get_cmake_usage(const Filesystem& fs, const InstalledPaths& installed, const BinaryParagraph& bpgh)
     {
         CMakeUsageInfo ret;

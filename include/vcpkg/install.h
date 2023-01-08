@@ -97,6 +97,7 @@ namespace vcpkg
     };
 
     std::vector<std::string> get_cmake_add_library_names(StringView cmake_file);
+    std::string get_cmake_find_package_name(StringView dirname, StringView filename);
     CMakeUsageInfo get_cmake_usage(const Filesystem& fs, const InstalledPaths& installed, const BinaryParagraph& bpgh);
 
     namespace Install

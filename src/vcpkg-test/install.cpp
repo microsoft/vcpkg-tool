@@ -152,4 +152,14 @@ cmake_policy(POP)
 
     auto maybe_example = get_cmake_add_library_names("add_library(<Pkg>)");
     CHECK(maybe_example.empty());
+
+    CHECK(get_cmake_find_package_name("proj", "proj-config.cmake") == "proj");
+    CHECK(get_cmake_find_package_name("Proj", "proj-config.cmake") == "proj");
+    CHECK(get_cmake_find_package_name("Proj-1.0", "proj-config.cmake") == "proj");
+    CHECK(get_cmake_find_package_name("proj", "ProjConfig.cmake") == "Proj");
+    CHECK(get_cmake_find_package_name("Proj", "ProjConfig.cmake") == "Proj");
+    CHECK(get_cmake_find_package_name("proj-1.0", "ProjConfig.cmake") == "Proj");
+    CHECK(get_cmake_find_package_name("pro", "proj-config.cmake") == "");
+    CHECK(get_cmake_find_package_name("Pro", "ProjConfig.cmake") == "");
+    CHECK(get_cmake_find_package_name("proj", "Findproj.cmake") == "");
 }
