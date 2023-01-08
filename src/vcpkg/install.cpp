@@ -866,6 +866,14 @@ namespace vcpkg
                         return l < r;
                     });
 
+                    static const auto is_namespaced = [](const std::string& target) {
+                        return Strings::contains(target, "::");
+                    };
+                    if (Util::any_of(targets, is_namespaced))
+                    {
+                        Util::erase_remove_if(targets, [](const std::string& t) { return !is_namespaced(t); });
+                    }
+
                     msg.append_indent();
                     msg.append_fmt_raw("find_package({} CONFIG REQUIRED)", package_names_pair.second);
                     msg.append_raw('\n');
