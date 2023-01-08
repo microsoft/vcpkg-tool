@@ -760,7 +760,8 @@ namespace vcpkg
         auto files = fs.read_lines(installed.listfile_path(bpgh), ec);
         if (!ec)
         {
-            std::unordered_map<std::string, std::string> config_files;
+            // Mapping directories to unique config names and tp library targets
+            std::map<std::string, std::string> package_names;
             std::map<std::string, std::vector<std::string>> library_targets;
             bool is_header_only = true;
             std::string header_path;
@@ -773,34 +774,36 @@ namespace vcpkg
                     if (Strings::ends_with(suffix, "vcpkg-cmake-wrapper.cmake")) continue;
                     if (Strings::contains(suffix, "/Find")) continue;
 
-                    // CMake file is inside the share folder
-                    const auto path = installed.root() / suffix;
-                    const auto find_package_name = Path(path.parent_path()).filename().to_string();
-                    const auto contents = fs.read_contents(path, ec);
+                    const auto filepath = installed.root() / suffix;
+                    const auto parent_path = Path(filepath.parent_path());
+                    if (!Strings::ends_with(parent_path.parent_path(), "/share"))
+                        continue; // Ignore nested find modules, config, or helpers
+
+                    const auto filename = filepath.filename().to_string();
+                    const auto dirname = parent_path.filename().to_string();
+
+                    const auto package_name = get_cmake_find_package_name(dirname, filename);
+                    if (!package_name.empty())
+                    {
+                        // This heuristics works for one package name per dir.
+                        auto ambiguous_package_name = package_names.find(dirname);
+                        if (ambiguous_package_name == package_names.end())
+                            package_names[dirname] = package_name;
+                        else
+                            ambiguous_package_name->second.clear();
+                    }
+
+                    const auto contents = fs.read_contents(filepath, ec);
                     if (!ec)
                     {
                         auto targets = get_cmake_add_library_names(contents);
                         if (!targets.empty())
                         {
-                            auto& all_targets = library_targets[find_package_name];
+                            auto& all_targets = library_targets[dirname];
                             all_targets.insert(all_targets.end(),
                                                std::make_move_iterator(targets.begin()),
                                                std::make_move_iterator(targets.end()));
                         }
-                    }
-
-                    auto filename = Path(suffix).filename().to_string();
-                    if (Strings::ends_with(filename, "Config.cmake"))
-                    {
-                        auto root = filename.substr(0, filename.size() - 12);
-                        if (Strings::case_insensitive_ascii_equals(root, find_package_name))
-                            config_files[find_package_name] = root;
-                    }
-                    else if (Strings::ends_with(filename, "-config.cmake"))
-                    {
-                        auto root = filename.substr(0, filename.size() - 13);
-                        if (Strings::case_insensitive_ascii_equals(root, find_package_name))
-                            config_files[find_package_name] = root;
                     }
                 }
                 if (Strings::contains(suffix, "/lib/") || Strings::contains(suffix, "/bin/"))
@@ -847,25 +850,30 @@ namespace vcpkg
                 auto msg = msg::format(msgCMakeTargetsUsage, msg::package_name = bpgh.spec.name()).append_raw("\n\n");
                 msg.append_indent().append(msgCMakeTargetsUsageHeuristicMessage).append_raw('\n');
 
-                for (auto&& library_target_pair : library_targets)
+                for (auto&& package_names_pair : package_names)
                 {
-                    auto config_it = config_files.find(library_target_pair.first);
-                    msg.append_indent();
-                    msg.append_fmt_raw("find_package({} CONFIG REQUIRED)",
-                                       config_it == config_files.end() ? library_target_pair.first : config_it->second);
-                    msg.append_raw('\n');
+                    if (package_names_pair.second.empty()) continue;
 
-                    auto& targets = library_target_pair.second;
+                    const auto library_target_pair = library_targets.find(package_names_pair.first);
+                    if (library_target_pair == library_targets.end()) continue;
+
+                    auto& targets = library_target_pair->second;
+                    if (targets.empty()) continue;
+
                     Util::sort_unique_erase(targets, [](const std::string& l, const std::string& r) {
                         if (l.size() < r.size()) return true;
                         if (l.size() > r.size()) return false;
                         return l < r;
                     });
 
+                    msg.append_indent();
+                    msg.append_fmt_raw("find_package({} CONFIG REQUIRED)", package_names_pair.second);
+                    msg.append_raw('\n');
+
                     if (targets.size() > 4)
                     {
                         auto omitted = targets.size() - 4;
-                        library_target_pair.second.erase(targets.begin() + 4, targets.end());
+                        targets.erase(targets.begin() + 4, targets.end());
                         msg.append_indent()
                             .append_raw("# ")
                             .append(msgCmakeTargetsExcluded, msg::count = omitted)
