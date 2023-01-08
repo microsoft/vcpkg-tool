@@ -707,8 +707,8 @@ namespace vcpkg
         {
             const auto start_of_library_name = find_skip_add_library(real_first, first, last);
             const auto end_of_library_name = std::find_if(start_of_library_name, last, is_terminating_char);
-            if (end_of_library_name != start_of_library_name
-                && std::none_of(start_of_library_name, end_of_library_name, is_forbidden_char))
+            if (end_of_library_name != start_of_library_name &&
+                std::none_of(start_of_library_name, end_of_library_name, is_forbidden_char))
             {
                 res.emplace_back(start_of_library_name, end_of_library_name);
             }
@@ -749,6 +749,10 @@ namespace vcpkg
             {
                 if (Strings::contains(suffix, "/share/") && Strings::ends_with(suffix, ".cmake"))
                 {
+                    if (Strings::ends_with(suffix, "vcpkg-port-config.cmake")) continue;
+                    if (Strings::ends_with(suffix, "vcpkg-cmake-wrapper.cmake")) continue;
+                    if (Strings::contains(suffix, "/Find")) continue;
+
                     // CMake file is inside the share folder
                     const auto path = installed.root() / suffix;
                     const auto find_package_name = Path(path.parent_path()).filename().to_string();
