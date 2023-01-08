@@ -690,8 +690,12 @@ namespace vcpkg
 
     std::vector<std::string> get_cmake_add_library_names(StringView cmake_file)
     {
-        constexpr static auto is_library_name_char = [](char ch) {
-            return ch != ')' && ch != '$' && !ParserBase::is_whitespace(ch);
+        constexpr static auto is_terminating_char = [](const char ch) {
+            return ch == ')' || ParserBase::is_whitespace(ch);
+        };
+
+        constexpr static auto is_forbidden_char = [](const char ch) {
+            return ch == '$' || ch == '"' || ch == '[' || ch == '#' || ch == ';' || ch == '<';
         };
 
         const auto real_first = cmake_file.begin();
@@ -699,22 +703,18 @@ namespace vcpkg
         const auto last = cmake_file.end();
 
         std::vector<std::string> res;
-        for (;;)
+        while (first != last)
         {
-            first = find_skip_add_library(real_first, first, last);
-            if (first == last)
+            const auto start_of_library_name = find_skip_add_library(real_first, first, last);
+            const auto end_of_library_name = std::find_if(start_of_library_name, last, is_terminating_char);
+            if (end_of_library_name != start_of_library_name
+                && std::none_of(start_of_library_name, end_of_library_name, is_forbidden_char))
             {
-                return res;
+                res.emplace_back(start_of_library_name, end_of_library_name);
             }
-            auto start_of_library_name = std::find_if_not(first, last, ParserBase::is_whitespace);
-            auto end_of_library_name = std::find_if_not(start_of_library_name, last, is_library_name_char);
-            if (end_of_library_name == start_of_library_name)
-            {
-                first = end_of_library_name;
-                continue;
-            }
-            res.emplace_back(start_of_library_name, end_of_library_name);
+            first = end_of_library_name;
         }
+        return res;
     }
 
     CMakeUsageInfo get_cmake_usage(const Filesystem& fs, const InstalledPaths& installed, const BinaryParagraph& bpgh)
