@@ -92,7 +92,7 @@ namespace vcpkg
     {
         std::string message;
         bool usage_file = false;
-        Optional<bool> header_only;
+        bool header_only = false;
         std::map<std::string, std::vector<std::string>> cmake_targets_map;
     };
 

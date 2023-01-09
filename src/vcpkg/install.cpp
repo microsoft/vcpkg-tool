@@ -763,8 +763,8 @@ namespace vcpkg
             // Mapping directories to unique config names and tp library targets
             std::map<std::string, std::string> package_names;
             std::map<std::string, std::vector<std::string>> library_targets;
-            bool is_header_only = true;
             std::string header_path;
+            bool has_binaries = false;
 
             for (auto&& suffix : files)
             {
@@ -806,12 +806,12 @@ namespace vcpkg
                         }
                     }
                 }
-                if (Strings::contains(suffix, "/lib/") || Strings::contains(suffix, "/bin/"))
+                if (!has_binaries && (Strings::contains(suffix, "/lib/") || Strings::contains(suffix, "/bin/")))
                 {
-                    if (!Strings::ends_with(suffix, ".pc") && !Strings::ends_with(suffix, "/")) is_header_only = false;
+                    if (!Strings::ends_with(suffix, ".pc") && !Strings::ends_with(suffix, "/")) has_binaries = true;
                 }
 
-                if (is_header_only && header_path.empty())
+                if (header_path.empty())
                 {
                     const auto it = suffix.find("/include/");
                     if (it != std::string::npos && !Strings::ends_with(suffix, "/"))
@@ -821,7 +821,7 @@ namespace vcpkg
                 }
             }
 
-            ret.header_only = is_header_only;
+            ret.header_only = !has_binaries && !header_path.empty();
 
             if (!package_names.empty())
             {
@@ -873,7 +873,7 @@ namespace vcpkg
 
                 ret.message = msg.extract_data();
             }
-            else if (is_header_only && !header_path.empty())
+            else if (ret.header_only)
             {
                 static auto cmakeify = [](std::string name) {
                     auto n = Strings::ascii_to_uppercase(Strings::replace_all(std::move(name), "-", "_"));
