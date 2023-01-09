@@ -638,19 +638,26 @@ namespace vcpkg
         }
 
         msg::println_warning(msgPortBugMismatchedNumberOfBinaries);
-        msg::println_warning(msgPortBugFoundDebugBinaries, msg::count = debug_count);
-        print_paths(debug_binaries);
-        msg::println_warning(msgPortBugFoundDebugBinaries, msg::count = release_count);
-        print_paths(release_binaries);
-
         if (debug_count == 0)
         {
-            msg::println_warning(msgPortBugMissingDebugBinaries);
+            msg::println(msgPortBugMissingDebugBinaries);
         }
+        else
+        {
+            msg::println(msgPortBugFoundDebugBinaries, msg::count = debug_count);
+            print_paths(debug_binaries);
+        }
+
         if (release_count == 0)
         {
-            msg::println_warning(msgPortBugMissingReleaseBinaries);
+            msg::println(msgPortBugMissingReleaseBinaries);
         }
+        else
+        {
+            msg::println(msgPortBugFoundReleaseBinaries, msg::count = release_count);
+            print_paths(release_binaries);
+        }
+
         return LintStatus::PROBLEM_DETECTED;
     }
 

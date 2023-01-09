@@ -2119,7 +2119,7 @@ namespace vcpkg
                     "",
                     "The /lib/cmake folder should be merged with /debug/lib/cmake and moved to /share/{spec}/cmake. "
                     "Please use the helper function `vcpkg_cmake_config_fixup()` from the port vcpkg-cmake-config.`");
-    DECLARE_MESSAGE(PortBugMismatchedNumberOfBinaries, (), "", "Mismatching number of debug and release binaries.");
+    DECLARE_MESSAGE(PortBugMismatchedNumberOfBinaries, (), "", "Mismatched number of debug and release binaries.");
     DECLARE_MESSAGE(
         PortBugMisplacedCMakeFiles,
         (msg::spec),
