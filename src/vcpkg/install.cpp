@@ -761,7 +761,12 @@ namespace vcpkg
         if (!ec)
         {
             // Mapping directories to unique config names and tp library targets
-            std::map<std::string, std::string> package_names;
+            struct ConfigPackages
+            {
+                std::string dir;
+                std::string name;
+            };
+            std::vector<ConfigPackages> config_packages;
             std::map<std::string, std::vector<std::string>> library_targets;
             std::string header_path;
             bool has_binaries = false;
@@ -790,11 +795,10 @@ namespace vcpkg
                     if (!package_name.empty())
                     {
                         // This heuristics works for one package name per dir.
-                        auto ambiguous_package_name = package_names.find(dirname);
-                        if (ambiguous_package_name == package_names.end())
-                            package_names[dirname] = package_name;
+                        if(!config_packages.empty() && config_packages.back().dir == dirname)
+                            config_packages.back().name.clear();
                         else
-                            ambiguous_package_name->second.clear();
+                            config_packages.push_back({dirname, package_name});
                     }
 
                     const auto contents = fs.read_contents(filepath, ec);
@@ -824,16 +828,15 @@ namespace vcpkg
 
             // Post-process cmake config data
             bool has_targets_for_output = false;
-            for (auto&& package_names_pair : package_names)
+            for (auto&& package : config_packages)
             {
-                const auto library_target_pair = library_targets.find(package_names_pair.first);
+                const auto library_target_pair = library_targets.find(package.dir);
                 if (library_target_pair == library_targets.end()) continue;
 
-                const auto& package_name = package_names_pair.second;
                 auto& targets = library_target_pair->second;
                 if (!targets.empty())
                 {
-                    if (!package_name.empty()) has_targets_for_output = true;
+                    if (!package.name.empty()) has_targets_for_output = true;
 
                     Util::sort_unique_erase(targets, [](const std::string& l, const std::string& r) {
                         if (l.size() < r.size()) return true;
@@ -849,7 +852,7 @@ namespace vcpkg
                         Util::erase_remove_if(targets, [](const std::string& t) { return !is_namespaced(t); });
                     }
                 }
-                ret.cmake_targets_map[package_name] = std::move(targets);
+                ret.cmake_targets_map[package.name] = std::move(targets);
             }
 
             if (has_targets_for_output)
