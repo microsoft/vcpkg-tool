@@ -823,29 +823,7 @@ namespace vcpkg
 
             ret.header_only = is_header_only;
 
-            if (library_targets.empty())
-            {
-                if (is_header_only && !header_path.empty())
-                {
-                    static auto cmakeify = [](std::string name) {
-                        auto n = Strings::ascii_to_uppercase(Strings::replace_all(std::move(name), "-", "_"));
-                        if (n.empty() || ParserBase::is_ascii_digit(n[0]))
-                        {
-                            n.insert(n.begin(), '_');
-                        }
-                        return n;
-                    };
-
-                    const auto name = cmakeify(bpgh.spec.name());
-                    auto msg = msg::format(msgHeaderOnlyUsage, msg::package_name = bpgh.spec.name()).extract_data();
-                    Strings::append(msg, "\n\n");
-                    Strings::append(msg, "    find_path(", name, "_INCLUDE_DIRS \"", header_path, "\")\n");
-                    Strings::append(msg, "    target_include_directories(main PRIVATE ${", name, "_INCLUDE_DIRS})\n\n");
-
-                    ret.message = std::move(msg);
-                }
-            }
-            else
+            if (!package_names.empty())
             {
                 auto msg = msg::format(msgCMakeTargetsUsage, msg::package_name = bpgh.spec.name()).append_raw("\n\n");
                 msg.append_indent().append(msgCMakeTargetsUsageHeuristicMessage).append_raw('\n');
@@ -894,6 +872,25 @@ namespace vcpkg
                 }
 
                 ret.message = msg.extract_data();
+            }
+            else if (is_header_only && !header_path.empty())
+            {
+                static auto cmakeify = [](std::string name) {
+                    auto n = Strings::ascii_to_uppercase(Strings::replace_all(std::move(name), "-", "_"));
+                    if (n.empty() || ParserBase::is_ascii_digit(n[0]))
+                    {
+                        n.insert(n.begin(), '_');
+                    }
+                    return n;
+                };
+
+                const auto name = cmakeify(bpgh.spec.name());
+                auto msg = msg::format(msgHeaderOnlyUsage, msg::package_name = bpgh.spec.name()).extract_data();
+                Strings::append(msg, "\n\n");
+                Strings::append(msg, "    find_path(", name, "_INCLUDE_DIRS \"", header_path, "\")\n");
+                Strings::append(msg, "    target_include_directories(main PRIVATE ${", name, "_INCLUDE_DIRS})\n\n");
+
+                ret.message = std::move(msg);
             }
             ret.cmake_targets_map = std::move(library_targets);
         }
