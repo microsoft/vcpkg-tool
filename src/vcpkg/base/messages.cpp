@@ -1148,6 +1148,10 @@ namespace vcpkg
     REGISTER_MESSAGE(CmdRegenerateOptDryRun);
     REGISTER_MESSAGE(CmdRegenerateOptNormalize);
     REGISTER_MESSAGE(HelpTextOptFullDesc);
+    REGISTER_MESSAGE(CmdSettingCopiedFilesLog);
+    REGISTER_MESSAGE(CmdSettingInstalledDir);
+    REGISTER_MESSAGE(CmdSettingTargetBin);
+    REGISTER_MESSAGE(CmdSettingTLogFile);
     REGISTER_MESSAGE(CmdSetInstalledOptDryRun);
     REGISTER_MESSAGE(CmdSetInstalledOptNoUsage);
     REGISTER_MESSAGE(CmdSetInstalledOptWritePkgConfig);

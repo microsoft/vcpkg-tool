@@ -1642,6 +1642,42 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmdSettingCopiedFilesLog" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Path to the copied files log to create]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[要创建的复制文件日志的路径]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdSettingInstalledDir" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Path to the installed tree to use]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[要使用的已安装树的路径]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdSettingTLogFile" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Path to the tlog file to create]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[要创建的 tlog 文件的路径]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdSettingTargetBin" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Path to the binary to analyze]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[要分析的二进制文件的路径]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CmdUpdateBaselineOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Print out plan without execution]]></Val>
@@ -1779,6 +1815,15 @@
           <Val><![CDATA[Computing installation plan...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[正在计算安装计划...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ConfigurationErrorRegistriesWithoutBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The configuration defined in {path} is invalid.]A;]A;Using registries requires that a baseline is set for the default registry or that the default registry is null.]A;]A;See {url} for more details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} 中定义的配置无效。]A;]A;使用注册表需要为默认注册表设置基线，或者默认注册表为 null。]A;]A;有关更多详细信息，请参阅 {url}。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2220,19 +2265,25 @@
       </Item>
       <Item ItemId=";DownloadingVcpkgCeBundle" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Downloading vcpkg-ce bundle {version}...]]></Val>
+          <Val><![CDATA[Downloading vcpkg-artifacts bundle {version}...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[正在下载 vcpkg-ce 捆绑包 {version}...]]></Val>
+            <Val><![CDATA[正在下载 vcpkg-artifacts 捆绑包 {version}...]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Downloading vcpkg-ce bundle {version}...]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";DownloadingVcpkgCeBundleLatest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Downloading latest vcpkg-ce bundle...]]></Val>
+          <Val><![CDATA[Downloading latest vcpkg-artifacts bundle...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[正在下载最新的 vcpkg-ce 捆绑包...]]></Val>
+            <Val><![CDATA[正在下载最新的 vcpkg-artifacts 捆绑包...]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Downloading latest vcpkg-ce bundle...]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2268,6 +2319,51 @@
           <Val><![CDATA['--{value}' specified multiple times.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[“--{value}”指定了多次。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DuplicatePackagePattern" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Package "{package_name}" is duplicated.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[包“{package_name}”重复。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DuplicatePackagePatternFirstOcurrence" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[First declared in:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[首次声明位置:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DuplicatePackagePatternIgnoredLocations" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following redeclarations will be ignored:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[系统将忽略以下重新声明:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DuplicatePackagePatternLocation" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[location: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[位置: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DuplicatePackagePatternRegistry" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[registry: {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[注册表: {url}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3084,10 +3180,13 @@
       </Item>
       <Item ItemId=";FailedToProvisionCe" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Failed to provision vcpkg-ce.]]></Val>
+          <Val><![CDATA[Failed to provision vcpkg-artifacts.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[无法预配 vcpkg-ce。]]></Val>
+            <Val><![CDATA[未能预配 vcpkg-artifacts。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Failed to provision vcpkg-ce.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5506,6 +5605,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ParseIdentifierError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA["{value}" 不是有效的标识符。标识符必须由小写字母数字字符和连字符组成，且不得为预留值(有关详细信息，请参阅 {url})]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParsePackageNameError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[“{package_name}”不是有效的包名称。包名称必须由小写字母数字字符和连字符组成，且不得为预留值(有关详细信息，请参阅 {url})]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParsePackagePatternError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA["{package_name}" is not a valid package pattern. Package patterns must use only one wildcard character (*) and it must be the last character in the pattern (see {url} for more information)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[“{package_name}”不是有效的包模式。包模式只能使用一个通配符(*)，并且它必须是模式中的最后一个字符(有关详细信息，请参阅 {url})]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PathMustBeAbsolute" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute: {path}]]></Val>
@@ -7218,6 +7344,15 @@
           <Val><![CDATA[waiting to take filesystem lock on {path}...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[正在等待锁定 {path} 上的文件系统...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WarnOnParseConfig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Found the following warnings in configuration {path}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[在配置 {path} 中发现以下警告:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

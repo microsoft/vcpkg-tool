@@ -1642,6 +1642,42 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmdSettingCopiedFilesLog" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Path to the copied files log to create]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Caminho do log de arquivos copiados a ser criado]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdSettingInstalledDir" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Path to the installed tree to use]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Caminho da árvore instalada a ser usada]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdSettingTLogFile" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Path to the tlog file to create]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Caminho do arquivo tlog a ser criado]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdSettingTargetBin" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Path to the binary to analyze]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Caminho do binário a ser analisado]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CmdUpdateBaselineOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Print out plan without execution]]></Val>
@@ -2229,19 +2265,25 @@
       </Item>
       <Item ItemId=";DownloadingVcpkgCeBundle" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Downloading vcpkg-ce bundle {version}...]]></Val>
+          <Val><![CDATA[Downloading vcpkg-artifacts bundle {version}...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Baixando o pacote vcpkg-ce {version}...]]></Val>
+            <Val><![CDATA[Baixando o pacote de artefatos-vcpkg {version}...]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Downloading vcpkg-ce bundle {version}...]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";DownloadingVcpkgCeBundleLatest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Downloading latest vcpkg-ce bundle...]]></Val>
+          <Val><![CDATA[Downloading latest vcpkg-artifacts bundle...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Baixando o pacote vcpkg-ce mais recente...]]></Val>
+            <Val><![CDATA[Baixando o mais recente pacote de artefatos-vcpkg...]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Downloading latest vcpkg-ce bundle...]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3138,10 +3180,13 @@
       </Item>
       <Item ItemId=";FailedToProvisionCe" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Failed to provision vcpkg-ce.]]></Val>
+          <Val><![CDATA[Failed to provision vcpkg-artifacts.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Falha ao provisionar vcpkg-ce.]]></Val>
+            <Val><![CDATA[Falha ao provisionar os artefatos-vcpkg.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Failed to provision vcpkg-ce.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>

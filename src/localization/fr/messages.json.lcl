@@ -1642,6 +1642,42 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmdSettingCopiedFilesLog" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Path to the copied files log to create]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Chemin d’accès vers le journal des fichiers copiés à créer]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdSettingInstalledDir" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Path to the installed tree to use]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Chemin d’accès vers l’arborescence installée à utiliser]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdSettingTLogFile" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Path to the tlog file to create]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Chemin d’accès vers le fichier tlog à créer]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdSettingTargetBin" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Path to the binary to analyze]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Chemin d’accès vers le binaire à analyser]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CmdUpdateBaselineOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Print out plan without execution]]></Val>
@@ -1779,6 +1815,15 @@
           <Val><![CDATA[Computing installation plan...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Calcul du plan d’installation...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ConfigurationErrorRegistriesWithoutBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The configuration defined in {path} is invalid.]A;]A;Using registries requires that a baseline is set for the default registry or that the default registry is null.]A;]A;See {url} for more details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[La configuration définie dans {path} n’est pas valide.]A;]A;L’utilisation de registres nécessite qu’une ligne de base soit définie pour le Registre par défaut ou que le Registre par défaut soit null.]A;]A;Pour plus d’informations, consultez {url}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2220,19 +2265,25 @@
       </Item>
       <Item ItemId=";DownloadingVcpkgCeBundle" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Downloading vcpkg-ce bundle {version}...]]></Val>
+          <Val><![CDATA[Downloading vcpkg-artifacts bundle {version}...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Téléchargement du bundle vcpkg-ce {version}...]]></Val>
+            <Val><![CDATA[Téléchargement de l’offre groupée vcpkg-artifacts {version}...]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Downloading vcpkg-ce bundle {version}...]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";DownloadingVcpkgCeBundleLatest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Downloading latest vcpkg-ce bundle...]]></Val>
+          <Val><![CDATA[Downloading latest vcpkg-artifacts bundle...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Téléchargement du dernier bundle vcpkg-ce...]]></Val>
+            <Val><![CDATA[Téléchargement de la dernière offre groupée vcpkg-artifacts...]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Downloading latest vcpkg-ce bundle...]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2268,6 +2319,51 @@
           <Val><![CDATA['--{value}' specified multiple times.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA['--{value}' spécifié plusieurs fois.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DuplicatePackagePattern" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Package "{package_name}" is duplicated.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Le package « {package_name} » est dupliqué.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DuplicatePackagePatternFirstOcurrence" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[First declared in:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Première déclaration dans :]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DuplicatePackagePatternIgnoredLocations" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following redeclarations will be ignored:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Les redéclarations suivantes seront ignorées :]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DuplicatePackagePatternLocation" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[location: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[emplacement : {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DuplicatePackagePatternRegistry" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[registry: {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[registre : {url}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3084,10 +3180,13 @@
       </Item>
       <Item ItemId=";FailedToProvisionCe" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Failed to provision vcpkg-ce.]]></Val>
+          <Val><![CDATA[Failed to provision vcpkg-artifacts.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Échec de l’approvisionnement de vcpkg-ce]]></Val>
+            <Val><![CDATA[Échec de l’approvisionnement de vcpkg-artifacts.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Failed to provision vcpkg-ce.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5503,6 +5602,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ParseIdentifierError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[« {value} » n’est pas un identificateur valide. Les identificateurs doivent être alphanumériques en minuscules+traits d’union et non réservés (voir {url} pour plus d’informations)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParsePackageNameError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[« {package_name} » n’est pas un nom de package valide. Les noms de package doivent être alphanumériques en minuscules+traits d’union et non réservés (voir {url} pour plus d’informations)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParsePackagePatternError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA["{package_name}" is not a valid package pattern. Package patterns must use only one wildcard character (*) and it must be the last character in the pattern (see {url} for more information)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[« {package_name} » n’est pas un modèle de package valide. Les modèles de package doivent utiliser un seul caractère générique (*) et il doit s’agir du dernier caractère du modèle (voir {url} pour plus d’informations)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PathMustBeAbsolute" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute: {path}]]></Val>
@@ -7215,6 +7341,15 @@
           <Val><![CDATA[waiting to take filesystem lock on {path}...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[en attente du verrouillage du système de fichiers sur {path}...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WarnOnParseConfig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Found the following warnings in configuration {path}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[J'ai trouvé les avertissements suivants dans la configuration {path} :]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
