@@ -822,20 +822,18 @@ namespace vcpkg
 
             ret.header_only = !has_binaries && !header_path.empty();
 
-            if (!package_names.empty())
+            // Post-process cmake config data
+            bool has_targets_for_output = false;
+            for (auto&& package_names_pair : package_names)
             {
-                auto msg = msg::format(msgCMakeTargetsUsage, msg::package_name = bpgh.spec.name()).append_raw("\n\n");
-                msg.append_indent().append(msgCMakeTargetsUsageHeuristicMessage).append_raw('\n');
+                const auto library_target_pair = library_targets.find(package_names_pair.first);
+                if (library_target_pair == library_targets.end()) continue;
 
-                for (auto&& package_names_pair : package_names)
+                const auto& package_name = package_names_pair.second;
+                auto& targets = library_target_pair->second;
+                if (!targets.empty())
                 {
-                    if (package_names_pair.second.empty()) continue;
-
-                    const auto library_target_pair = library_targets.find(package_names_pair.first);
-                    if (library_target_pair == library_targets.end()) continue;
-
-                    auto& targets = library_target_pair->second;
-                    if (targets.empty()) continue;
+                    if (!package_name.empty()) has_targets_for_output = true;
 
                     Util::sort_unique_erase(targets, [](const std::string& l, const std::string& r) {
                         if (l.size() < r.size()) return true;
@@ -850,15 +848,30 @@ namespace vcpkg
                     {
                         Util::erase_remove_if(targets, [](const std::string& t) { return !is_namespaced(t); });
                     }
+                }
+                ret.cmake_targets_map[package_name] = std::move(targets);
+            }
+
+            if (has_targets_for_output)
+            {
+                auto msg = msg::format(msgCMakeTargetsUsage, msg::package_name = bpgh.spec.name()).append_raw("\n\n");
+                msg.append_indent().append(msgCMakeTargetsUsageHeuristicMessage).append_raw('\n');
+
+                for (const auto package_targets_pair : ret.cmake_targets_map)
+                {
+                    const auto& package_name = package_targets_pair.first;
+                    if (package_name.empty()) continue;
+
+                    const auto& targets = package_targets_pair.second;
+                    if (targets.empty()) continue;
 
                     msg.append_indent();
-                    msg.append_fmt_raw("find_package({} CONFIG REQUIRED)", package_names_pair.second);
+                    msg.append_fmt_raw("find_package({} CONFIG REQUIRED)", package_name);
                     msg.append_raw('\n');
 
-                    if (targets.size() > 4)
+                    const auto omitted = (targets.size() > 4) ? (targets.size() - 4) : 0;
+                    if (omitted)
                     {
-                        auto omitted = targets.size() - 4;
-                        targets.erase(targets.begin() + 4, targets.end());
                         msg.append_indent()
                             .append_raw("# ")
                             .append(msgCmakeTargetsExcluded, msg::count = omitted)
@@ -866,7 +879,7 @@ namespace vcpkg
                     }
 
                     msg.append_indent()
-                        .append_fmt_raw("target_link_libraries(main PRIVATE {})", Strings::join(" ", targets))
+                        .append_fmt_raw("target_link_libraries(main PRIVATE {})", Strings::join(" ", targets.begin(), targets.end() - omitted))
                         .append_raw("\n\n");
                 }
 
@@ -891,7 +904,6 @@ namespace vcpkg
 
                 ret.message = std::move(msg);
             }
-            ret.cmake_targets_map = std::move(library_targets);
         }
         return ret;
     }
