@@ -766,15 +766,19 @@ namespace vcpkg
             std::string header_path;
             bool has_binaries = false;
 
-            for (auto&& suffix : files)
+            for (auto&& triplet_and_suffix : files)
             {
-                if (Strings::contains(suffix, "/share/") && Strings::ends_with(suffix, ".cmake"))
+                const auto first_slash = triplet_and_suffix.find("/");
+                if (first_slash == std::string::npos) continue;
+
+                const auto suffix = StringView(triplet_and_suffix).substr(first_slash + 1);
+                if (Strings::starts_with(suffix, "share/") && Strings::ends_with(suffix, ".cmake"))
                 {
                     if (Strings::ends_with(suffix, "vcpkg-port-config.cmake")) continue;
                     if (Strings::ends_with(suffix, "vcpkg-cmake-wrapper.cmake")) continue;
                     if (Strings::contains(suffix, "/Find")) continue;
 
-                    const auto filepath = installed.root() / suffix;
+                    const auto filepath = installed.root() / triplet_and_suffix;
                     const auto parent_path = Path(filepath.parent_path());
                     if (!Strings::ends_with(parent_path.parent_path(), "/share"))
                         continue; // Ignore nested find modules, config, or helpers
@@ -806,18 +810,13 @@ namespace vcpkg
                         }
                     }
                 }
-                if (!has_binaries && (Strings::contains(suffix, "/lib/") || Strings::contains(suffix, "/bin/")))
+                else if (!has_binaries && (Strings::starts_with(suffix, "lib/") || Strings::starts_with(suffix, "bin/")))
                 {
                     if (!Strings::ends_with(suffix, ".pc") && !Strings::ends_with(suffix, "/")) has_binaries = true;
                 }
-
-                if (header_path.empty())
+                else if (header_path.empty() && Strings::starts_with(suffix, "include/"))
                 {
-                    const auto it = suffix.find("/include/");
-                    if (it != std::string::npos && !Strings::ends_with(suffix, "/"))
-                    {
-                        header_path = suffix.substr(it + 9);
-                    }
+                    if (!Strings::ends_with(suffix, "/")) header_path = suffix.substr(9).to_string();
                 }
             }
 
