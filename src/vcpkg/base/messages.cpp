@@ -1057,7 +1057,6 @@ namespace vcpkg
     REGISTER_MESSAGE(PortBugDllAppContainerBitNotSet);
     REGISTER_MESSAGE(BuiltWithIncorrectArchitecture);
     REGISTER_MESSAGE(BinaryWithInvalidArchitecture);
-    REGISTER_MESSAGE(ExpectedExtension);
     REGISTER_MESSAGE(FailedToDetermineArchitecture);
     REGISTER_MESSAGE(PortBugFoundDllInStaticBuild);
     REGISTER_MESSAGE(PortBugMismatchedNumberOfBinaries);

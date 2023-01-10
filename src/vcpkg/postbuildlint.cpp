@@ -585,13 +585,20 @@ namespace vcpkg
         {
             for (const Path& file : files)
             {
-                Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                       Strings::case_insensitive_ascii_equals(file.extension(), ".lib"),
-                                       msgExpectedExtension,
-                                       msg::extension = ".lib",
-                                       msg::path = file);
-                auto file_handle = fs.open_for_read(file, VCPKG_LINE_INFO);
-                auto machine_types = read_lib_information(file_handle).value_or_exit(VCPKG_LINE_INFO).machine_types;
+                if (!Strings::case_insensitive_ascii_equals(file.extension(), ".lib"))
+                {
+                    continue;
+                }
+
+                auto maybe_lib_information = fs.try_open_for_read(file).then(
+                    [](ReadFilePointer&& file_handle) { return read_lib_information(file_handle); });
+
+                if (!maybe_lib_information.has_value())
+                {
+                    continue;
+                }
+
+                auto&& machine_types = maybe_lib_information.value_or_exit(VCPKG_LINE_INFO).machine_types;
                 {
                     auto llvm_bitcode =
                         std::find(machine_types.begin(), machine_types.end(), MachineType::LLVM_BITCODE);
@@ -931,8 +938,15 @@ namespace vcpkg
         std::vector<BuildTypeAndFile> libs_with_invalid_crt;
         for (const Path& lib : libs)
         {
-            auto lib_file = fs.try_open_for_read(lib).value_or_exit(VCPKG_LINE_INFO);
-            auto lib_info = read_lib_information(lib_file).value_or_exit(VCPKG_LINE_INFO);
+            auto maybe_lib_info = fs.try_open_for_read(lib).then(
+                [](ReadFilePointer&& lib_file) { return read_lib_information(lib_file); });
+
+            if (!maybe_lib_info.has_value())
+            {
+                continue;
+            }
+
+            auto&& lib_info = maybe_lib_info.value_or_exit(VCPKG_LINE_INFO);
             Debug::println("The lib " + lib.native() +
                            " has directives: " + Strings::join(" ", lib_info.linker_directives));
 
