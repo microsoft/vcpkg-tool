@@ -830,7 +830,7 @@ namespace vcpkg
                 }
                 else if (header_path.empty() && Strings::starts_with(suffix, "include/"))
                 {
-                    header_path = suffix.substr(9).to_string();
+                    header_path = suffix.substr(8).to_string();
                 }
             }
 
