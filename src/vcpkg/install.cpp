@@ -777,7 +777,11 @@ namespace vcpkg
                 if (first_slash == std::string::npos) continue;
 
                 const auto suffix = StringView(triplet_and_suffix).substr(first_slash + 1);
-                if (Strings::starts_with(suffix, "share/") && Strings::ends_with(suffix, ".cmake"))
+                if (Strings::starts_with(suffix, "d") || Strings::ends_with(suffix, "/"))
+                {
+                    continue;
+                }
+                else if (Strings::starts_with(suffix, "share/") && Strings::ends_with(suffix, ".cmake"))
                 {
                     if (Strings::ends_with(suffix, "vcpkg-port-config.cmake")) continue;
                     if (Strings::ends_with(suffix, "vcpkg-cmake-wrapper.cmake")) continue;
@@ -814,14 +818,17 @@ namespace vcpkg
                         }
                     }
                 }
-                else if (!has_binaries &&
-                         (Strings::starts_with(suffix, "lib/") || Strings::starts_with(suffix, "bin/")))
+                else if (!has_binaries && Strings::starts_with(suffix, "bin/"))
                 {
-                    if (!Strings::ends_with(suffix, ".pc") && !Strings::ends_with(suffix, "/")) has_binaries = true;
+                    has_binaries = true;
+                }
+                else if (!has_binaries && Strings::starts_with(suffix, "lib/"))
+                {
+                    has_binaries = !Strings::ends_with(suffix, ".pc");
                 }
                 else if (header_path.empty() && Strings::starts_with(suffix, "include/"))
                 {
-                    if (!Strings::ends_with(suffix, "/")) header_path = suffix.substr(9).to_string();
+                    header_path = suffix.substr(9).to_string();
                 }
             }
 
