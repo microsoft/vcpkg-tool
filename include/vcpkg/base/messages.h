@@ -2383,11 +2383,6 @@ namespace vcpkg
                     "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', "
                     "'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', "
                     "'x-aws-config', 'http', and 'files'");
-    DECLARE_MESSAGE(UnknownMachineCode,
-                    (msg::value),
-                    "{value} is machine type code, see "
-                    "https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#machine-types",
-                    "Unknown machine type code {value}");
     DECLARE_MESSAGE(UnknownOptions, (msg::command_name), "", "Unknown option(s) for command '{command_name}':");
     DECLARE_MESSAGE(UnknownParameterForIntegrate,
                     (msg::value),

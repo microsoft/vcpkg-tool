@@ -380,6 +380,17 @@ namespace
         return offsets;
     }
 
+    static void add_machine_type(std::vector<MachineType>& machine_types, MachineType machine_type)
+    {
+        if (machine_type == MachineType::UNKNOWN ||
+            std::find(machine_types.begin(), machine_types.end(), machine_type) != machine_types.end())
+        {
+            return;
+        }
+
+        machine_types.push_back(machine_type);
+    }
+
     LibInformation read_lib_information_from_archive_members(const vcpkg::ReadFilePointer& f,
                                                              const std::vector<uint32_t>& member_offsets)
     {
@@ -391,36 +402,40 @@ namespace
             // Skip the header, no need to read it
             const auto coff_base = offset + sizeof(ArchiveMemberHeader);
             Checks::check_exit(VCPKG_LINE_INFO, f.seek(coff_base, SEEK_SET) == 0);
-            static_assert(sizeof(CoffFileHeader) == sizeof(ImportHeader), "Boom");
-            char loaded_header[sizeof(CoffFileHeader)];
-            Checks::check_exit(VCPKG_LINE_INFO, f.read(&loaded_header, sizeof(loaded_header), 1) == 1);
-
-            CoffFileHeader coff_header;
-            ::memcpy(&coff_header, loaded_header, sizeof(coff_header));
-            auto result_machine_type = to_machine_type(coff_header.machine);
-            bool import_object = false;
-            if (result_machine_type == MachineType::UNKNOWN)
+            uint32_t tag_sniffer;
+            Checks::check_exit(VCPKG_LINE_INFO, f.read(&tag_sniffer, sizeof(tag_sniffer), 1) == 1);
+            if (tag_sniffer == LlvmBitcodeSignature)
             {
-                ImportHeader import_header;
-                ::memcpy(&import_header, loaded_header, sizeof(import_header));
-                if (import_header.sig2 == 0xFFFFu)
-                {
-                    import_object = true;
-                    result_machine_type = to_machine_type(import_header.machine);
-                }
+                // obj is LLVM bitcode
+                add_machine_type(machine_types, MachineType::LLVM_BITCODE);
             }
-
-            if (!import_object)
+            else if (tag_sniffer == ImportHeaderSignature)
             {
+                // obj is an import obj
+                ImportHeaderAfterSignature import_header;
+                Checks::check_exit(VCPKG_LINE_INFO, f.read(&import_header, sizeof(import_header), 1) == 1);
+                add_machine_type(machine_types, static_cast<MachineType>(import_header.machine));
+            }
+            else
+            {
+                // obj is traditional COFF
+                CoffFileHeaderSignature coff_signature;
+                static_assert(sizeof(tag_sniffer) == sizeof(coff_signature), "BOOM");
+                memcpy(&coff_signature, &tag_sniffer, sizeof(tag_sniffer));
+                add_machine_type(machine_types, static_cast<MachineType>(coff_signature.machine));
+
+                CoffFileHeaderAfterSignature coff_header;
+                Checks::check_exit(VCPKG_LINE_INFO, f.read(&coff_header, sizeof(coff_header), 1) == 1);
+
                 // Object files shouldn't have optional headers, but the spec says we should skip over one if any
                 f.seek(coff_header.size_of_optional_header, SEEK_CUR);
                 // Read section headers
                 std::vector<SectionTableHeader> sections;
-                sections.resize(coff_header.number_of_sections);
+                sections.resize(coff_signature.number_of_sections);
                 Checks::check_exit(VCPKG_LINE_INFO,
                                    f.read(sections.data(),
                                           sizeof(SectionTableHeader),
-                                          coff_header.number_of_sections) == coff_header.number_of_sections);
+                                          coff_signature.number_of_sections) == coff_signature.number_of_sections);
                 // Look for linker directive sections
                 for (auto&& section : sections)
                 {
@@ -456,14 +471,6 @@ namespace
                     }
                 }
             }
-
-            if (result_machine_type == MachineType::UNKNOWN ||
-                std::find(machine_types.begin(), machine_types.end(), result_machine_type) != machine_types.end())
-            {
-                continue;
-            }
-
-            machine_types.push_back(result_machine_type);
         }
 
         std::sort(machine_types.begin(), machine_types.end());
@@ -484,7 +491,7 @@ namespace vcpkg
         }
     }
 
-    MachineType DllMetadata::get_machine_type() const noexcept { return to_machine_type(coff_header.machine); }
+    MachineType DllMetadata::get_machine_type() const noexcept { return static_cast<MachineType>(coff_header.machine); }
 
     void ArchiveMemberHeader::check_end_of_header() const
     {
@@ -754,41 +761,5 @@ namespace vcpkg
         }
 
         return read_lib_information_from_archive_members(f, *offsets);
-    }
-
-    MachineType to_machine_type(const uint16_t value)
-    {
-        const MachineType t = static_cast<MachineType>(value);
-        switch (t)
-        {
-            case MachineType::UNKNOWN:
-            case MachineType::AM33:
-            case MachineType::AMD64:
-            case MachineType::ARM:
-            case MachineType::ARM64:
-            case MachineType::ARM64EC:
-            case MachineType::ARM64X:
-            case MachineType::ARMNT:
-            case MachineType::EBC:
-            case MachineType::I386:
-            case MachineType::IA64:
-            case MachineType::M32R:
-            case MachineType::MIPS16:
-            case MachineType::MIPSFPU:
-            case MachineType::MIPSFPU16:
-            case MachineType::POWERPC:
-            case MachineType::POWERPCFP:
-            case MachineType::R4000:
-            case MachineType::RISCV32:
-            case MachineType::RISCV64:
-            case MachineType::RISCV128:
-            case MachineType::SH3:
-            case MachineType::SH3DSP:
-            case MachineType::SH4:
-            case MachineType::SH5:
-            case MachineType::THUMB:
-            case MachineType::WCEMIPSV2: return t;
-            default: Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgUnknownMachineCode, msg::value = value);
-        }
     }
 }

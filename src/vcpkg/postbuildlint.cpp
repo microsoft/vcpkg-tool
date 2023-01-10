@@ -496,18 +496,39 @@ namespace vcpkg
         std::string actual_arch;
     };
 
-    static std::string get_actual_architecture(const MachineType& machine_type)
+    static std::string get_printable_architecture(const MachineType& machine_type)
     {
         switch (machine_type)
         {
-            case MachineType::AMD64:
-            case MachineType::IA64: return "x64";
-            case MachineType::I386: return "x86";
-            case MachineType::ARM:
-            case MachineType::ARMNT: return "arm";
+            case MachineType::UNKNOWN: return "unknown";
+            case MachineType::AM33: return "matsushita-am33";
+            case MachineType::AMD64: return "x64";
+            case MachineType::ARM: return "arm";
             case MachineType::ARM64: return "arm64";
             case MachineType::ARM64EC: return "arm64ec";
-            default: return "Machine Type Code = " + std::to_string(static_cast<uint16_t>(machine_type));
+            case MachineType::ARM64X: return "arm64x";
+            case MachineType::ARMNT: return "arm";
+            case MachineType::EBC: return "efi-byte-code";
+            case MachineType::I386: return "x86";
+            case MachineType::IA64: return "ia64";
+            case MachineType::M32R: return "mitsubishi-m32r-le";
+            case MachineType::MIPS16: return "mips16";
+            case MachineType::MIPSFPU: return "mipsfpu";
+            case MachineType::MIPSFPU16: return "mipsfpu16";
+            case MachineType::POWERPC: return "ppc";
+            case MachineType::POWERPCFP: return "ppcfp";
+            case MachineType::R4000: return "mips-le";
+            case MachineType::RISCV32: return "riscv-32";
+            case MachineType::RISCV64: return "riscv-64";
+            case MachineType::RISCV128: return "riscv-128";
+            case MachineType::SH3: return "hitachi-sh3";
+            case MachineType::SH3DSP: return "hitachi-sh3-dsp";
+            case MachineType::SH4: return "hitachi-sh4";
+            case MachineType::SH5: return "hitachi-sh5";
+            case MachineType::THUMB: return "thumb";
+            case MachineType::WCEMIPSV2: return "mips-le-wce-v2";
+            case MachineType::LLVM_BITCODE: return "llvm-bitcode";
+            default: return "unknown-" + std::to_string(static_cast<uint16_t>(machine_type));
         }
     }
 
@@ -531,10 +552,10 @@ namespace vcpkg
 
         for (const PostBuildCheckDllData& dll_data : dlls)
         {
-            const std::string actual_architecture = get_actual_architecture(dll_data.machine_type);
+            const std::string actual_architecture = get_printable_architecture(dll_data.machine_type);
             if (expected_architecture == "arm64ec")
             {
-                if (actual_architecture != "x64" || !dll_data.is_arm64_ec)
+                if (dll_data.machine_type != MachineType::AMD64 || !dll_data.is_arm64_ec)
                 {
                     binaries_with_invalid_architecture.push_back({dll_data.path, actual_architecture});
                 }
@@ -570,16 +591,26 @@ namespace vcpkg
                                        msg::extension = ".lib",
                                        msg::path = file);
 
-                const auto machine_types =
-                    Util::fmap(read_lib_information(fs.open_for_read(file, VCPKG_LINE_INFO)).machine_types,
-                               [](MachineType mt) { return get_actual_architecture(mt); });
+                auto machine_types = read_lib_information(fs.open_for_read(file, VCPKG_LINE_INFO)).machine_types;
+                {
+                    auto llvm_bitcode =
+                        std::find(machine_types.begin(), machine_types.end(), MachineType::LLVM_BITCODE);
+                    if (llvm_bitcode != machine_types.end())
+                    {
+                        machine_types.erase(llvm_bitcode);
+                    }
+                }
+
+                auto printable_machine_types =
+                    Util::fmap(machine_types, [](MachineType mt) { return get_printable_architecture(mt); });
                 // Either machine_types is empty (meaning this lib is architecture independent), or
                 // we need at least one of the machine types to match.
-                // Agnostic example: Folly's debug library
+                // Agnostic example: Folly's debug library, LLVM LTO libraries
                 // Multiple example: arm64x libraries
-                if (!machine_types.empty() && !Util::Vectors::contains(machine_types, expected_architecture))
+                if (!printable_machine_types.empty() &&
+                    !Util::Vectors::contains(printable_machine_types, expected_architecture))
                 {
-                    binaries_with_invalid_architecture.push_back({file, Strings::join(",", machine_types)});
+                    binaries_with_invalid_architecture.push_back({file, Strings::join(",", printable_machine_types)});
                 }
             }
         }

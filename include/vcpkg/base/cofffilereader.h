@@ -25,6 +25,21 @@ namespace vcpkg
         uint16_t characteristics;
     };
 
+    struct CoffFileHeaderSignature
+    {
+        uint16_t machine;
+        uint16_t number_of_sections;
+    };
+
+    struct CoffFileHeaderAfterSignature
+    {
+        uint32_t date_time_stamp;
+        uint32_t pointer_to_symbol_table;
+        uint32_t number_of_symbols;
+        uint16_t size_of_optional_header;
+        uint16_t characteristics;
+    };
+
     struct CommonPEOptionalHeaders
     {
         uint16_t magic;
@@ -276,38 +291,38 @@ namespace vcpkg
         uint64_t CHPEMetadataPointer;
     };
 
+    // It is expected that enumerators not in this list may be present.
     enum class MachineType : uint16_t
     {
-        UNKNOWN = 0x0,     // The contents of this field are assumed to be applicable to any machine type
-        AM33 = 0x1d3,      // Matsushita AM33
-        AMD64 = 0x8664,    // x64
-        ARM = 0x1c0,       // ARM little endian
-        ARM64 = 0xaa64,    // ARM64 little endian
-        ARM64EC = 0xa641,  // ARM64 "emulation compatible"
-        ARM64X = 0xa64e,   // ARM64X
-        ARMNT = 0x1c4,     // ARM Thumb-2 little endian
-        EBC = 0xebc,       // EFI byte code
-        I386 = 0x14c,      // Intel 386 or later processors and compatible processors
-        IA64 = 0x200,      // Intel Itanium processor family
-        M32R = 0x9041,     // Mitsubishi M32R little endian
-        MIPS16 = 0x266,    // MIPS16
-        MIPSFPU = 0x366,   // MIPS with FPU
-        MIPSFPU16 = 0x466, // MIPS16 with FPU
-        POWERPC = 0x1f0,   // Power PC little endian
-        POWERPCFP = 0x1f1, // Power PC with floating point support
-        R4000 = 0x166,     // MIPS little endian
-        RISCV32 = 0x5032,  // RISC-V 32-bit address space
-        RISCV64 = 0x5064,  // RISC-V 64-bit address space
-        RISCV128 = 0x5128, // RISC-V 128-bit address space
-        SH3 = 0x1a2,       // Hitachi SH3
-        SH3DSP = 0x1a3,    // Hitachi SH3 DSP
-        SH4 = 0x1a6,       // Hitachi SH4
-        SH5 = 0x1a8,       // Hitachi SH5
-        THUMB = 0x1c2,     // Thumb
-        WCEMIPSV2 = 0x169, // MIPS little-endian WCE v2
+        UNKNOWN = 0x0,         // The contents of this field are assumed to be applicable to any machine type
+        AM33 = 0x1d3,          // Matsushita AM33
+        AMD64 = 0x8664,        // x64
+        ARM = 0x1c0,           // ARM little endian
+        ARM64 = 0xaa64,        // ARM64 little endian
+        ARM64EC = 0xa641,      // ARM64 "emulation compatible"
+        ARM64X = 0xa64e,       // ARM64X
+        ARMNT = 0x1c4,         // ARM Thumb-2 little endian
+        EBC = 0xebc,           // EFI byte code
+        I386 = 0x14c,          // Intel 386 or later processors and compatible processors
+        IA64 = 0x200,          // Intel Itanium processor family
+        M32R = 0x9041,         // Mitsubishi M32R little endian
+        MIPS16 = 0x266,        // MIPS16
+        MIPSFPU = 0x366,       // MIPS with FPU
+        MIPSFPU16 = 0x466,     // MIPS16 with FPU
+        POWERPC = 0x1f0,       // Power PC little endian
+        POWERPCFP = 0x1f1,     // Power PC with floating point support
+        R4000 = 0x166,         // MIPS little endian
+        RISCV32 = 0x5032,      // RISC-V 32-bit address space
+        RISCV64 = 0x5064,      // RISC-V 64-bit address space
+        RISCV128 = 0x5128,     // RISC-V 128-bit address space
+        SH3 = 0x1a2,           // Hitachi SH3
+        SH3DSP = 0x1a3,        // Hitachi SH3 DSP
+        SH4 = 0x1a6,           // Hitachi SH4
+        SH5 = 0x1a8,           // Hitachi SH5
+        THUMB = 0x1c2,         // Thumb
+        WCEMIPSV2 = 0x169,     // MIPS little-endian WCE v2
+        LLVM_BITCODE = 0x4342, // LLVM bitcode https://www.llvm.org/docs/BitCodeFormat.html#llvm-ir-magic-number
     };
-
-    MachineType to_machine_type(const uint16_t value);
 
     enum class PEType
     {
@@ -366,6 +381,22 @@ namespace vcpkg
     {
         uint16_t sig1; // must be IMAGE_FILE_MACHINE_UNKNOWN
         uint16_t sig2; // must be 0xFFFF
+        uint16_t version;
+        uint16_t machine;
+        uint32_t date_time_stamp;
+        uint32_t size_of_data;
+        uint16_t ordinal_hint;
+        uint16_t type_and_name_type;
+        // 2 bits: type
+        // 3 bits: name type
+        // 11 bits: reserved and must be 0
+    };
+
+    constexpr uint32_t ImportHeaderSignature = 0xFFFF0000u;
+    constexpr uint32_t LlvmBitcodeSignature = 0xDEC04342u;
+
+    struct ImportHeaderAfterSignature
+    {
         uint16_t version;
         uint16_t machine;
         uint32_t date_time_stamp;

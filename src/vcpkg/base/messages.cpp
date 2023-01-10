@@ -956,7 +956,6 @@ namespace vcpkg
     REGISTER_MESSAGE(UnexpectedToolOutput);
     REGISTER_MESSAGE(UnknownBaselineFileContent);
     REGISTER_MESSAGE(UnknownBinaryProviderType);
-    REGISTER_MESSAGE(UnknownMachineCode);
     REGISTER_MESSAGE(UnknownOptions);
     REGISTER_MESSAGE(UnknownParameterForIntegrate);
     REGISTER_MESSAGE(UnknownPolicySetting);
