@@ -773,13 +773,13 @@ namespace vcpkg
 
             for (auto&& triplet_and_suffix : files)
             {
-                if (triplet_and_suffix.back() == '/') continue;
+                if (triplet_and_suffix.empty() || triplet_and_suffix.back() == '/') continue;
 
                 const auto first_slash = triplet_and_suffix.find("/");
                 if (first_slash == std::string::npos) continue;
 
                 const auto suffix = StringView(triplet_and_suffix).substr(first_slash + 1);
-                if (suffix[0] == 'd'/*ebug*/)
+                if (suffix.empty() || suffix[0] == 'd'/*ebug*/)
                 {
                     continue;
                 }
@@ -789,12 +789,13 @@ namespace vcpkg
                     if (Strings::ends_with(suffix_without_ending, "/vcpkg-port-config")) continue;
                     if (Strings::ends_with(suffix_without_ending, "/vcpkg-cmake-wrapper")) continue;
                     if (Strings::ends_with(suffix_without_ending, /*[Vv]*/"ersion")) continue;
-                    if (Strings::contains(suffix, "/Find")) continue;
 
                     const auto filepath = installed.root() / triplet_and_suffix;
                     const auto parent_path = Path(filepath.parent_path());
                     if (!Strings::ends_with(parent_path.parent_path(), "/share"))
                         continue; // Ignore nested find modules, config, or helpers
+
+                    if (Strings::contains(suffix_without_ending, "/Find")) continue;
 
                     const auto dirname = parent_path.filename().to_string();
                     const auto package_name = get_cmake_find_package_name(dirname, filepath.filename());
