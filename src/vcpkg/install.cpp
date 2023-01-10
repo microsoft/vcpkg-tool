@@ -773,18 +773,22 @@ namespace vcpkg
 
             for (auto&& triplet_and_suffix : files)
             {
+                if (triplet_and_suffix.back() == '/') continue;
+
                 const auto first_slash = triplet_and_suffix.find("/");
                 if (first_slash == std::string::npos) continue;
 
                 const auto suffix = StringView(triplet_and_suffix).substr(first_slash + 1);
-                if (Strings::starts_with(suffix, "d") || Strings::ends_with(suffix, "/"))
+                if (suffix[0] == 'd'/*ebug*/)
                 {
                     continue;
                 }
                 else if (Strings::starts_with(suffix, "share/") && Strings::ends_with(suffix, ".cmake"))
                 {
-                    if (Strings::ends_with(suffix, "vcpkg-port-config.cmake")) continue;
-                    if (Strings::ends_with(suffix, "vcpkg-cmake-wrapper.cmake")) continue;
+                    const auto suffix_without_ending = suffix.substr(0, suffix.size() - 6);
+                    if (Strings::ends_with(suffix_without_ending, "/vcpkg-port-config")) continue;
+                    if (Strings::ends_with(suffix_without_ending, "/vcpkg-cmake-wrapper")) continue;
+                    if (Strings::ends_with(suffix_without_ending, /*[Vv]*/"ersion")) continue;
                     if (Strings::contains(suffix, "/Find")) continue;
 
                     const auto filepath = installed.root() / triplet_and_suffix;
@@ -792,10 +796,8 @@ namespace vcpkg
                     if (!Strings::ends_with(parent_path.parent_path(), "/share"))
                         continue; // Ignore nested find modules, config, or helpers
 
-                    const auto filename = filepath.filename().to_string();
                     const auto dirname = parent_path.filename().to_string();
-
-                    const auto package_name = get_cmake_find_package_name(dirname, filename);
+                    const auto package_name = get_cmake_find_package_name(dirname, filepath.filename());
                     if (!package_name.empty())
                     {
                         // This heuristics works for one package name per dir.
