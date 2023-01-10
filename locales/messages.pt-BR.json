@@ -633,7 +633,7 @@
   "PortBugMissingFile": "O arquivo /{path} não existe. Esse arquivo deve existir em portas auxiliares do CMake.",
   "PortBugMissingImportedLibs": "Bibliotecas de importação não estavam presentes em {path}.\nSe isso for desejado, adicione a seguinte linha no portfile:\nset(VCPKG_POLICY_DLLS_WITHOUT_LIBS enabled)",
   "PortBugMissingIncludeDir": "A pasta /include está vazia ou não está presente. Isso indica que a biblioteca não foi instalada corretamente.",
-  "PortBugMissingLicense": "A licença de software deve estar disponível em ${CURRENT_PACKAGES_DIR}/share/{spec}/copyright",
+  "PortBugMissingLicense": "The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{spec}/copyright",
   "PortBugMissingReleaseBinaries": "Binários de lançamento não encontrados.",
   "PortBugMovePkgConfigFiles": "Você pode mover os arquivos pkgconfig com comandos semelhantes a:",
   "PortBugOutdatedCRT": "Um CRT dinâmico desatualizado foi detectado nos seguintes arquivos:",

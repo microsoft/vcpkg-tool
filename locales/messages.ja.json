@@ -633,7 +633,7 @@
   "PortBugMissingFile": "/{path} ファイルが存在しません。このファイルは、CMake ヘルパー ポート用に存在する必要があります。",
   "PortBugMissingImportedLibs": "インポート ライブラリが {path} にありませんでした。\nこれが意図されている場合は、profile に次の行を追加します:\nset(VCPKG_POLICY_DLLS_WITHOUT_LIBS enabled)",
   "PortBugMissingIncludeDir": "フォルダー /include が空であるか、存在しません。これは、ライブラリが正しくインストールされなかった場合を示しています。",
-  "PortBugMissingLicense": "ソフトウェア ライセンスは ${CURRENT_PACKAGES_DIR}/share/{spec}/copyright で入手できる必要があります",
+  "PortBugMissingLicense": "The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{spec}/copyright",
   "PortBugMissingReleaseBinaries": "リリース バイナリが見つかりませんでした。",
   "PortBugMovePkgConfigFiles": "次のようなコマンドを使用して、pkgconfig ファイルを移動できます:",
   "PortBugOutdatedCRT": "次のファイルで古い動的 CRT が検出されました:",

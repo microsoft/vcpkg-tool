@@ -633,7 +633,7 @@
   "PortBugMissingFile": "/{path} 文件不存在。对于 CMake 帮助程序端口，此文件必须存在。",
   "PortBugMissingImportedLibs": "{path} 中不存在导入库。\n如果希望这样，请在端口文件:\nset(已启用 VCPKG_POLICY_DLLS_WITHOUT_LIBS)中添加以下行",
   "PortBugMissingIncludeDir": "文件夹 /include 为空或不存在。这表示库未正确安装。",
-  "PortBugMissingLicense": "必须在 ${CURRENT_PACKAGES_DIR}/share/{spec}/copyright 中提供软件许可证",
+  "PortBugMissingLicense": "The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{spec}/copyright",
   "PortBugMissingReleaseBinaries": "找不到版本二进制文件。",
   "PortBugMovePkgConfigFiles": "可以使用类似于以下的命令移动 pkgconfig 文件:",
   "PortBugOutdatedCRT": "在以下文件中检测到过时的动态 CRT:",
