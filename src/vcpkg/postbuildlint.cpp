@@ -1141,7 +1141,8 @@ namespace vcpkg
         const auto release_bin_dir = package_dir / "bin";
 
         NotExtensionsCaseInsensitive lib_filter;
-        if (Util::Vectors::contains(windows_system_names, pre_build_info.cmake_system_name))
+        const bool windows_target = Util::Vectors::contains(windows_system_names, pre_build_info.cmake_system_name);
+        if (windows_target)
         {
             lib_filter = NotExtensionsCaseInsensitive{{".lib"}};
         }
@@ -1160,78 +1161,83 @@ namespace vcpkg
             error_count += check_matching_debug_and_release_binaries(debug_libs, release_libs);
         }
 
-        if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK))
+        if (windows_target)
         {
-            std::vector<Path> libs;
-            libs.insert(libs.cend(), debug_libs.cbegin(), debug_libs.cend());
-            libs.insert(libs.cend(), release_libs.cbegin(), release_libs.cend());
-            error_count +=
-                check_lib_architecture(pre_build_info.target_architecture, pre_build_info.cmake_system_name, libs, fs);
-        }
-
-        std::vector<Path> debug_dlls = fs.get_regular_files_recursive(debug_bin_dir, IgnoreErrors{});
-        Util::erase_remove_if(debug_dlls, NotExtensionCaseInsensitive{".dll"});
-        std::vector<Path> release_dlls = fs.get_regular_files_recursive(release_bin_dir, IgnoreErrors{});
-        Util::erase_remove_if(release_dlls, NotExtensionCaseInsensitive{".dll"});
-
-        switch (build_info.library_linkage)
-        {
-            case LinkageType::DYNAMIC:
+            Debug::println("Running windows targeting post-build checks");
+            if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK))
             {
-                if (!pre_build_info.build_type &&
-                    !build_info.policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
-                    error_count += check_matching_debug_and_release_binaries(debug_dlls, release_dlls);
-
-                error_count += check_lib_files_are_available_if_dlls_are_available(
-                    build_info.policies, debug_libs.size(), debug_dlls.size(), debug_lib_dir);
-                error_count += check_lib_files_are_available_if_dlls_are_available(
-                    build_info.policies, release_libs.size(), release_dlls.size(), release_lib_dir);
-
-                std::vector<PostBuildCheckDllData> dlls;
-                dlls.reserve(debug_dlls.size() + release_dlls.size());
-                for (const Path& dll : debug_dlls)
-                {
-                    auto maybe_dll_data = try_load_dll_data(fs, dll);
-                    if (const auto dll_data = maybe_dll_data.get())
-                    {
-                        dlls.emplace_back(std::move(*dll_data));
-                    }
-                }
-
-                for (const Path& dll : release_dlls)
-                {
-                    auto maybe_dll_data = try_load_dll_data(fs, dll);
-                    if (const auto dll_data = maybe_dll_data.get())
-                    {
-                        dlls.emplace_back(std::move(*dll_data));
-                    }
-                }
-
-                error_count += check_exports_of_dlls(build_info.policies, dlls);
-                error_count += check_uwp_bit_of_dlls(pre_build_info.cmake_system_name, dlls);
-                error_count += check_outdated_crt_linkage_of_dlls(dlls, build_info, pre_build_info);
-                if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK))
-                {
-                    error_count += check_dll_architecture(pre_build_info.target_architecture, dlls);
-                }
+                std::vector<Path> libs;
+                libs.insert(libs.cend(), debug_libs.cbegin(), debug_libs.cend());
+                libs.insert(libs.cend(), release_libs.cbegin(), release_libs.cend());
+                error_count += check_lib_architecture(
+                    pre_build_info.target_architecture, pre_build_info.cmake_system_name, libs, fs);
             }
-            break;
-            case LinkageType::STATIC:
+
+            std::vector<Path> debug_dlls = fs.get_regular_files_recursive(debug_bin_dir, IgnoreErrors{});
+            Util::erase_remove_if(debug_dlls, NotExtensionCaseInsensitive{".dll"});
+            std::vector<Path> release_dlls = fs.get_regular_files_recursive(release_bin_dir, IgnoreErrors{});
+            Util::erase_remove_if(release_dlls, NotExtensionCaseInsensitive{".dll"});
+
+            switch (build_info.library_linkage)
             {
-                auto dlls = release_dlls;
-                dlls.insert(dlls.end(), debug_dlls.begin(), debug_dlls.end());
-                error_count += check_no_dlls_present(build_info.policies, dlls);
-
-                error_count += check_bin_folders_are_not_present_in_static_build(build_info.policies, fs, package_dir);
-                if (!build_info.policies.is_enabled(BuildPolicy::ONLY_RELEASE_CRT))
+                case LinkageType::DYNAMIC:
                 {
-                    error_count += check_crt_linkage_of_libs(fs, build_info, false, debug_libs);
-                }
+                    if (!pre_build_info.build_type &&
+                        !build_info.policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
+                        error_count += check_matching_debug_and_release_binaries(debug_dlls, release_dlls);
 
-                error_count += check_crt_linkage_of_libs(fs, build_info, true, release_libs);
+                    error_count += check_lib_files_are_available_if_dlls_are_available(
+                        build_info.policies, debug_libs.size(), debug_dlls.size(), debug_lib_dir);
+                    error_count += check_lib_files_are_available_if_dlls_are_available(
+                        build_info.policies, release_libs.size(), release_dlls.size(), release_lib_dir);
+
+                    std::vector<PostBuildCheckDllData> dlls;
+                    dlls.reserve(debug_dlls.size() + release_dlls.size());
+                    for (const Path& dll : debug_dlls)
+                    {
+                        auto maybe_dll_data = try_load_dll_data(fs, dll);
+                        if (const auto dll_data = maybe_dll_data.get())
+                        {
+                            dlls.emplace_back(std::move(*dll_data));
+                        }
+                    }
+
+                    for (const Path& dll : release_dlls)
+                    {
+                        auto maybe_dll_data = try_load_dll_data(fs, dll);
+                        if (const auto dll_data = maybe_dll_data.get())
+                        {
+                            dlls.emplace_back(std::move(*dll_data));
+                        }
+                    }
+
+                    error_count += check_exports_of_dlls(build_info.policies, dlls);
+                    error_count += check_uwp_bit_of_dlls(pre_build_info.cmake_system_name, dlls);
+                    error_count += check_outdated_crt_linkage_of_dlls(dlls, build_info, pre_build_info);
+                    if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK))
+                    {
+                        error_count += check_dll_architecture(pre_build_info.target_architecture, dlls);
+                    }
+                }
                 break;
+                case LinkageType::STATIC:
+                {
+                    auto dlls = release_dlls;
+                    dlls.insert(dlls.end(), debug_dlls.begin(), debug_dlls.end());
+                    error_count += check_no_dlls_present(build_info.policies, dlls);
+
+                    error_count +=
+                        check_bin_folders_are_not_present_in_static_build(build_info.policies, fs, package_dir);
+                    if (!build_info.policies.is_enabled(BuildPolicy::ONLY_RELEASE_CRT))
+                    {
+                        error_count += check_crt_linkage_of_libs(fs, build_info, false, debug_libs);
+                    }
+
+                    error_count += check_crt_linkage_of_libs(fs, build_info, true, release_libs);
+                    break;
+                }
+                default: Checks::unreachable(VCPKG_LINE_INFO);
             }
-            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
 
         error_count += check_no_empty_folders(fs, package_dir);
