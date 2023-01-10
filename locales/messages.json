@@ -437,8 +437,6 @@
   "ExpectedCharacterHere": "expected '{expected}' here",
   "_ExpectedCharacterHere.comment": "{expected} is a locale-invariant delimiter; for example, the ':' or '=' in 'zlib:x64-windows=skip'",
   "ExpectedDigitsAfterDecimal": "Expected digits after the decimal point",
-  "ExpectedExtension": "The file extension was not {extension}: {path}",
-  "_ExpectedExtension.comment": "An example of {extension} is .exe. An example of {path} is /foo/bar.",
   "ExpectedFailOrSkip": "expected 'fail', 'skip', or 'pass' here",
   "ExpectedOneSetOfTags": "Found {count} sets of {old_value}.*{new_value} but expected exactly 1, in block:\n{value}",
   "_ExpectedOneSetOfTags.comment": "{old_value} is a left tag and {new_value} is the right tag. {value} is the input. An example of {count} is 42.",
