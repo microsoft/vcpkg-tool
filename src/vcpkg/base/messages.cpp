@@ -723,7 +723,6 @@ namespace vcpkg
     REGISTER_MESSAGE(IllegalPlatformSpec);
     REGISTER_MESSAGE(ImproperShaLength);
     REGISTER_MESSAGE(IncorrectArchiveFileSignature);
-    REGISTER_MESSAGE(IncorrectLibHeaderEnd);
     REGISTER_MESSAGE(IncorrectPESignature);
     REGISTER_MESSAGE(IncorrectNumberOfArgs);
     REGISTER_MESSAGE(IncrementedUtf8Decoder);
@@ -769,6 +768,7 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidFloatingPointConst);
     REGISTER_MESSAGE(InvalidHexDigit);
     REGISTER_MESSAGE(InvalidIntegerConst);
+    REGISTER_MESSAGE(InvalidLibraryMissingLinkerMembers);
     REGISTER_MESSAGE(InvalidPortVersonName);
     REGISTER_MESSAGE(InvalidString);
     REGISTER_MESSAGE(InvalidFileType);
@@ -784,6 +784,8 @@ namespace vcpkg
     REGISTER_MESSAGE(JsonValueNotObject);
     REGISTER_MESSAGE(JsonValueNotString);
     REGISTER_MESSAGE(LaunchingProgramFailed);
+    REGISTER_MESSAGE(LibraryArchiveMemberTooSmall);
+    REGISTER_MESSAGE(LibraryFirstLinkerMemberMissing);
     REGISTER_MESSAGE(LicenseExpressionContainsExtraPlus);
     REGISTER_MESSAGE(LicenseExpressionContainsInvalidCharacter);
     REGISTER_MESSAGE(LicenseExpressionContainsUnicode);

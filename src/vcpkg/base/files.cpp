@@ -1365,15 +1365,6 @@ namespace vcpkg
 
     FilePointer::operator bool() const noexcept { return m_fs != nullptr; }
 
-    int FilePointer::seek(long long offset, int origin) const noexcept
-    {
-#if defined(_WIN32)
-        return ::_fseeki64(m_fs, offset, origin);
-#else  // ^^^ _WIN32 / !_WIN32 vvv
-        return ::fseeko(m_fs, offset, origin);
-#endif // ^^^ !_WIN32
-    }
-
     long long FilePointer::tell() const noexcept
     {
 #if defined(_WIN32)
@@ -1391,9 +1382,17 @@ namespace vcpkg
 
     const Path& FilePointer::path() const { return m_path; }
 
-    ExpectedL<Unit> FilePointer::try_seek_to(long long offset)
+    ExpectedL<Unit> FilePointer::try_seek_to(long long offset) { return try_seek_to(offset, SEEK_SET); }
+
+    ExpectedL<Unit> FilePointer::try_seek_to(long long offset, int origin)
     {
-        if (this->seek(offset, SEEK_SET))
+#if defined(_WIN32)
+        const int result = ::_fseeki64(m_fs, offset, origin);
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+        const int result = ::fseeko(m_fs, offset, origin);
+#endif // ^^^ !_WIN32
+
+        if (result)
         {
             return msg::format(msgFileSeekFailed, msg::path = m_path, msg::byte_offset = offset);
         }

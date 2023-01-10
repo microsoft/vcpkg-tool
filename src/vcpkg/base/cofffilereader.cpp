@@ -256,19 +256,20 @@ namespace
     static_assert(sizeof(ArchiveMemberHeader) == 60,
                   "The ArchiveMemberHeader struct must match its on-disk representation");
 
-    void read_and_verify_archive_file_signature(const ReadFilePointer& f)
+    ExpectedL<Unit> read_and_verify_archive_file_signature(ReadFilePointer& f)
     {
         static constexpr StringLiteral FILE_START = "!<arch>\n";
-        Checks::check_exit(VCPKG_LINE_INFO, f.seek(0, SEEK_SET) == 0);
+        static constexpr auto FILE_START_SIZE = FILE_START.size();
+        return f.try_seek_to(0).then([&f](Unit) -> ExpectedL<Unit> {
+            char file_start[FILE_START.size()];
+            auto result = f.try_read_all(file_start, FILE_START_SIZE);
+            if (result.has_value() && FILE_START != StringView{file_start, FILE_START_SIZE})
+            {
+                return msg::format_error(msgIncorrectArchiveFileSignature);
+            }
 
-        char file_start[FILE_START.size()];
-        Checks::check_exit(VCPKG_LINE_INFO, f.read(&file_start, FILE_START.size(), 1) == 1);
-
-        if (FILE_START != StringView{file_start, FILE_START.size()})
-        {
-            msg::println_error(msgIncorrectArchiveFileSignature);
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
+            return result;
+        });
     }
 
     uint32_t bswap(uint32_t value)
@@ -276,44 +277,45 @@ namespace
         return (value >> 24) | ((value & 0x00FF0000u) >> 8) | ((value & 0x0000FF00u) << 8) | (value << 24);
     }
 
-    Optional<std::vector<uint32_t>> try_read_first_linker_member_offsets(const vcpkg::ReadFilePointer& f)
+    ExpectedL<std::vector<uint32_t>> try_read_first_linker_member_offsets(ReadFilePointer& f)
     {
         ArchiveMemberHeader first_linker_member_header;
         Checks::check_exit(VCPKG_LINE_INFO,
                            f.read(&first_linker_member_header, sizeof(first_linker_member_header), 1) == 1);
         if (memcmp(first_linker_member_header.name, "/ ", 2) != 0)
         {
-            Debug::println("Could not find proper first linker member");
-            return nullopt;
+            return msg::format_error(msgLibraryFirstLinkerMemberMissing);
         }
 
         auto first_size = first_linker_member_header.decoded_size();
         uint32_t archive_symbol_count;
         if (first_size < sizeof(archive_symbol_count))
         {
-            Debug::println("Firstlinker member was too small to contain a single uint32_t");
-            return nullopt;
+            return msg::format_error(msgLibraryArchiveMemberTooSmall);
         }
 
-        if (f.read(&archive_symbol_count, sizeof(archive_symbol_count), 1) != 1)
         {
-            Debug::println("Could not read first linker member.");
-            return nullopt;
+            auto read = f.try_read_all(&archive_symbol_count, sizeof(archive_symbol_count));
+            if (!read.has_value())
+            {
+                return std::move(read).error();
+            }
         }
 
         archive_symbol_count = bswap(archive_symbol_count);
         const auto maximum_possible_archive_members = (first_size / sizeof(uint32_t)) - 1;
         if (archive_symbol_count > maximum_possible_archive_members)
         {
-            Debug::println("First linker member was too small to contain the expected number of symbols");
-            return nullopt;
+            return msg::format_error(msgLibraryArchiveMemberTooSmall);
         }
 
         std::vector<uint32_t> offsets(archive_symbol_count);
-        if (f.read(offsets.data(), sizeof(uint32_t), archive_symbol_count) != archive_symbol_count)
         {
-            Debug::println("Could not read first linker member offsets.");
-            return nullopt;
+            auto read = f.try_read_all(offsets.data(), sizeof(uint32_t) * archive_symbol_count);
+            if (!read.has_value())
+            {
+                return std::move(read).error();
+            }
         }
 
         // convert (big endian) offsets to little endian
@@ -326,18 +328,30 @@ namespace
         offsets.erase(std::remove(offsets.begin(), offsets.end(), 0u), offsets.end());
         std::sort(offsets.begin(), offsets.end());
         uint64_t leftover = first_size - sizeof(uint32_t) - (archive_symbol_count * sizeof(uint32_t));
-        Checks::check_exit(VCPKG_LINE_INFO, f.seek(leftover, SEEK_CUR) == 0);
+        {
+            auto seek = f.try_seek_to(leftover, SEEK_CUR);
+            if (!seek.has_value())
+            {
+                return std::move(seek).error();
+            }
+        }
+
         return offsets;
     }
 
-    Optional<std::vector<uint32_t>> try_read_second_linker_member_offsets(const vcpkg::ReadFilePointer& f)
+    ExpectedL<Optional<std::vector<uint32_t>>> try_read_second_linker_member_offsets(ReadFilePointer& f)
     {
         ArchiveMemberHeader second_linker_member_header;
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           f.read(&second_linker_member_header, sizeof(second_linker_member_header), 1) == 1);
+        {
+            auto read = f.try_read_all(&second_linker_member_header, sizeof(second_linker_member_header));
+            if (!read.has_value())
+            {
+                return std::move(read).error();
+            }
+        }
+
         if (memcmp(second_linker_member_header.name, "/ ", 2) != 0)
         {
-            Debug::println("Could not find proper second linker member");
             return nullopt;
         }
 
@@ -347,28 +361,30 @@ namespace
 
         if (second_size < sizeof(archive_member_count))
         {
-            Debug::println("Second linker member was too small to contain a single uint32_t");
-            return nullopt;
+            return msg::format_error(msgLibraryArchiveMemberTooSmall);
         }
 
-        if (f.read(&archive_member_count, sizeof(archive_member_count), 1) != 1)
         {
-            Debug::println("Failed to read second linker member member count.");
-            return nullopt;
+            auto read = f.try_read_all(&archive_member_count, sizeof(archive_member_count));
+            if (!read.has_value())
+            {
+                return std::move(read).error();
+            }
         }
 
         const auto maximum_possible_archive_members = (second_size / sizeof(uint32_t)) - 1;
         if (archive_member_count > maximum_possible_archive_members)
         {
-            Debug::println("Second linker member was too small to contain the expected number of archive members");
-            return nullopt;
+            return msg::format_error(msgLibraryArchiveMemberTooSmall);
         }
 
         std::vector<uint32_t> offsets(archive_member_count);
-        if (f.read(offsets.data(), sizeof(uint32_t), archive_member_count) != archive_member_count)
         {
-            Debug::println("Failed to read second linker member offsets");
-            return nullopt;
+            auto read = f.try_read_all(offsets.data(), sizeof(uint32_t) * archive_member_count);
+            if (!read.has_value())
+            {
+                return std::move(read).error();
+            }
         }
 
         // Ignore offsets that point to offset 0. See vcpkg github #223 #288 #292
@@ -376,7 +392,14 @@ namespace
         // Sort the offsets, because it is possible for them to be unsorted. See vcpkg github #292
         std::sort(offsets.begin(), offsets.end());
         uint64_t leftover = second_size - sizeof(uint32_t) - (archive_member_count * sizeof(uint32_t));
-        Checks::check_exit(VCPKG_LINE_INFO, f.seek(leftover, SEEK_CUR) == 0);
+        {
+            auto seek = f.try_seek_to(leftover, SEEK_CUR);
+            if (!seek.has_value())
+            {
+                return std::move(seek).error();
+            }
+        }
+
         return offsets;
     }
 
@@ -391,8 +414,8 @@ namespace
         machine_types.push_back(machine_type);
     }
 
-    LibInformation read_lib_information_from_archive_members(const vcpkg::ReadFilePointer& f,
-                                                             const std::vector<uint32_t>& member_offsets)
+    ExpectedL<LibInformation> read_lib_information_from_archive_members(ReadFilePointer& f,
+                                                                        const std::vector<uint32_t>& member_offsets)
     {
         std::vector<MachineType> machine_types; // used as sets because n is tiny
         std::vector<std::string> directives;
@@ -401,9 +424,23 @@ namespace
         {
             // Skip the header, no need to read it
             const auto coff_base = offset + sizeof(ArchiveMemberHeader);
-            Checks::check_exit(VCPKG_LINE_INFO, f.seek(coff_base, SEEK_SET) == 0);
+            {
+                auto seek = f.try_seek_to(coff_base);
+                if (!seek.has_value())
+                {
+                    return std::move(seek).error();
+                }
+            }
+
             uint32_t tag_sniffer;
-            Checks::check_exit(VCPKG_LINE_INFO, f.read(&tag_sniffer, sizeof(tag_sniffer), 1) == 1);
+            {
+                auto read = f.try_read_all(&tag_sniffer, sizeof(tag_sniffer));
+                if (!read.has_value())
+                {
+                    return std::move(read).error();
+                }
+            }
+
             if (tag_sniffer == LlvmBitcodeSignature)
             {
                 // obj is LLVM bitcode
@@ -413,7 +450,14 @@ namespace
             {
                 // obj is an import obj
                 ImportHeaderAfterSignature import_header;
-                Checks::check_exit(VCPKG_LINE_INFO, f.read(&import_header, sizeof(import_header), 1) == 1);
+                {
+                    auto read = f.try_read_all(&import_header, sizeof(import_header));
+                    if (!read.has_value())
+                    {
+                        return std::move(read).error();
+                    }
+                }
+
                 add_machine_type(machine_types, static_cast<MachineType>(import_header.machine));
             }
             else
@@ -425,17 +469,35 @@ namespace
                 add_machine_type(machine_types, static_cast<MachineType>(coff_signature.machine));
 
                 CoffFileHeaderAfterSignature coff_header;
-                Checks::check_exit(VCPKG_LINE_INFO, f.read(&coff_header, sizeof(coff_header), 1) == 1);
+                {
+                    auto read = f.try_read_all(&coff_header, sizeof(coff_header));
+                    if (!read.has_value())
+                    {
+                        return std::move(read).error();
+                    }
+                }
 
                 // Object files shouldn't have optional headers, but the spec says we should skip over one if any
-                f.seek(coff_header.size_of_optional_header, SEEK_CUR);
+                {
+                    auto seek = f.try_seek_to(coff_header.size_of_optional_header, SEEK_CUR);
+                    if (!seek.has_value())
+                    {
+                        return std::move(seek).error();
+                    }
+                }
+
                 // Read section headers
                 std::vector<SectionTableHeader> sections;
                 sections.resize(coff_signature.number_of_sections);
-                Checks::check_exit(VCPKG_LINE_INFO,
-                                   f.read(sections.data(),
-                                          sizeof(SectionTableHeader),
-                                          coff_signature.number_of_sections) == coff_signature.number_of_sections);
+                {
+                    auto read =
+                        f.try_read_all(sections.data(), sizeof(SectionTableHeader) * coff_signature.number_of_sections);
+                    if (!read.has_value())
+                    {
+                        return std::move(read).error();
+                    }
+                }
+
                 // Look for linker directive sections
                 for (auto&& section : sections)
                 {
@@ -449,10 +511,22 @@ namespace
                     // read the actual directive
                     std::string directive_command_line;
                     const auto section_offset = coff_base + section.pointer_to_raw_data;
-                    Checks::check_exit(VCPKG_LINE_INFO, f.seek(section_offset, SEEK_SET) == 0);
+                    {
+                        auto seek = f.try_seek_to(section_offset);
+                        if (!seek.has_value())
+                        {
+                            return std::move(seek).error();
+                        }
+                    }
+
                     directive_command_line.resize(section.size_of_raw_data);
-                    auto fun = f.read(directive_command_line.data(), 1, section.size_of_raw_data);
-                    Checks::check_exit(VCPKG_LINE_INFO, fun == section.size_of_raw_data);
+                    {
+                        auto read = f.try_read_all(directive_command_line.data(), section.size_of_raw_data);
+                        if (!read.has_value())
+                        {
+                            return std::move(read).error();
+                        }
+                    }
 
                     if (Strings::starts_with(directive_command_line, StringLiteral{"\xEF\xBB\xBF"}))
                     {
@@ -492,14 +566,6 @@ namespace vcpkg
     }
 
     MachineType DllMetadata::get_machine_type() const noexcept { return static_cast<MachineType>(coff_header.machine); }
-
-    void ArchiveMemberHeader::check_end_of_header() const
-    {
-        // The name[0] == '\0' check is for freeglut, see GitHub issue #223
-        Checks::msg_check_exit(VCPKG_LINE_INFO,
-                               name[0] == '\0' || (end_of_header[0] == '`' && end_of_header[1] == '\n'),
-                               msgIncorrectLibHeaderEnd);
-    }
 
     uint64_t ArchiveMemberHeader::decoded_size() const
     {
@@ -738,15 +804,30 @@ namespace vcpkg
             });
     }
 
-    LibInformation read_lib_information(const ReadFilePointer& f)
+    ExpectedL<LibInformation> read_lib_information(ReadFilePointer& f)
     {
-        read_and_verify_archive_file_signature(f);
-        const auto first_offsets = try_read_first_linker_member_offsets(f);
-        const auto second_offsets = try_read_second_linker_member_offsets(f);
+        auto read_signature = read_and_verify_archive_file_signature(f);
+        if (!read_signature.has_value())
+        {
+            return std::move(read_signature).error();
+        }
+
+        auto first_offsets = try_read_first_linker_member_offsets(f);
+        if (!first_offsets.has_value())
+        {
+            return std::move(first_offsets).error();
+        }
+
+        auto second_offsets = try_read_second_linker_member_offsets(f);
+        if (!first_offsets.has_value())
+        {
+            return std::move(first_offsets).error();
+        }
+
         const std::vector<uint32_t>* offsets;
         // "Although both linker members provide a directory of symbols and archive members that
         // contain them, the second linker member is used in preference to the first by all current linkers."
-        if (auto maybe_offsets2 = second_offsets.get())
+        if (auto maybe_offsets2 = second_offsets.get()->get())
         {
             offsets = maybe_offsets2;
         }
@@ -756,8 +837,7 @@ namespace vcpkg
         }
         else
         {
-            // FIXME message
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            return msg::format_error(msgInvalidLibraryMissingLinkerMembers);
         }
 
         return read_lib_information_from_archive_members(f, *offsets);

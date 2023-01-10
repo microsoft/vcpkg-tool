@@ -590,8 +590,8 @@ namespace vcpkg
                                        msgExpectedExtension,
                                        msg::extension = ".lib",
                                        msg::path = file);
-
-                auto machine_types = read_lib_information(fs.open_for_read(file, VCPKG_LINE_INFO)).machine_types;
+                auto file_handle = fs.open_for_read(file, VCPKG_LINE_INFO);
+                auto machine_types = read_lib_information(file_handle).value_or_exit(VCPKG_LINE_INFO).machine_types;
                 {
                     auto llvm_bitcode =
                         std::find(machine_types.begin(), machine_types.end(), MachineType::LLVM_BITCODE);
@@ -932,7 +932,7 @@ namespace vcpkg
         for (const Path& lib : libs)
         {
             auto lib_file = fs.try_open_for_read(lib).value_or_exit(VCPKG_LINE_INFO);
-            auto lib_info = read_lib_information(lib_file);
+            auto lib_info = read_lib_information(lib_file).value_or_exit(VCPKG_LINE_INFO);
             Debug::println("The lib " + lib.native() +
                            " has directives: " + Strings::join(" ", lib_info.linker_directives));
 

@@ -373,7 +373,6 @@ namespace vcpkg
         char size[10];
         char end_of_header[2];
 
-        void check_end_of_header() const;
         uint64_t decoded_size() const;
     };
 
@@ -418,5 +417,5 @@ namespace vcpkg
     ExpectedL<DllMetadata> try_read_dll_metadata(ReadFilePointer& f);
     ExpectedL<bool> try_read_if_dll_has_exports(const DllMetadata& dll, ReadFilePointer& f);
     ExpectedL<std::vector<std::string>> try_read_dll_imported_dll_names(const DllMetadata& dll, ReadFilePointer& f);
-    LibInformation read_lib_information(const ReadFilePointer& f);
+    ExpectedL<LibInformation> read_lib_information(ReadFilePointer& f);
 }

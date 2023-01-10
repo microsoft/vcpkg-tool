@@ -1579,7 +1579,6 @@ namespace vcpkg
                     "{value} is a sha.",
                     "SHA512's must be 128 hex characters: {value}");
     DECLARE_MESSAGE(IncorrectArchiveFileSignature, (), "", "Incorrect archive file signature");
-    DECLARE_MESSAGE(IncorrectLibHeaderEnd, (), "", "Incorrect lib header end");
     DECLARE_MESSAGE(IncorrectNumberOfArgs,
                     (msg::command_name, msg::expected, msg::actual),
                     "'{expected}' is the required number of arguments. '{actual}' is the number of arguments provided.",
@@ -1720,6 +1719,8 @@ namespace vcpkg
                     "invalid format string: {actual}");
     DECLARE_MESSAGE(InvalidHexDigit, (), "", "Invalid hex digit in unicode escape");
     DECLARE_MESSAGE(InvalidIntegerConst, (msg::count), "", "Invalid integer constant: {count}");
+    DECLARE_MESSAGE(InvalidLibraryMissingLinkerMembers, (), "", "Library was invalid: could not find a linker member.");
+    DECLARE_MESSAGE(InvalidLibraryMissingSignature, (), "", "Library was invalid: did not find !<arch> signature.");
     DECLARE_MESSAGE(
         InvalidLinkage,
         (msg::system_name, msg::value),
@@ -1746,6 +1747,11 @@ namespace vcpkg
                     (msg::tool_name),
                     "A platform API call failure message is appended after this",
                     "Launching {tool_name}:");
+    DECLARE_MESSAGE(LibraryArchiveMemberTooSmall,
+                    (),
+                    "",
+                    "A library archive member was too small to contain the expected data type.");
+    DECLARE_MESSAGE(LibraryFirstLinkerMemberMissing, (), "", "Could not find first linker member name.");
     DECLARE_MESSAGE(LicenseExpressionContainsExtraPlus,
                     (),
                     "",
