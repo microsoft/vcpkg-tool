@@ -779,7 +779,7 @@ namespace vcpkg
                 if (first_slash == std::string::npos) continue;
 
                 const auto suffix = StringView(triplet_and_suffix).substr(first_slash + 1);
-                if (suffix.empty() || suffix[0] == 'd'/*ebug*/)
+                if (suffix.empty() || suffix[0] == 'd' /*ebug*/)
                 {
                     continue;
                 }
@@ -788,7 +788,7 @@ namespace vcpkg
                     const auto suffix_without_ending = suffix.substr(0, suffix.size() - 6);
                     if (Strings::ends_with(suffix_without_ending, "/vcpkg-port-config")) continue;
                     if (Strings::ends_with(suffix_without_ending, "/vcpkg-cmake-wrapper")) continue;
-                    if (Strings::ends_with(suffix_without_ending, /*[Vv]*/"ersion")) continue;
+                    if (Strings::ends_with(suffix_without_ending, /*[Vv]*/ "ersion")) continue;
 
                     const auto filepath = installed.root() / triplet_and_suffix;
                     const auto parent_path = Path(filepath.parent_path());
