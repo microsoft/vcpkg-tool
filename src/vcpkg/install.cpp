@@ -760,7 +760,7 @@ namespace vcpkg
         auto files = fs.read_lines(installed.listfile_path(bpgh), ec);
         if (!ec)
         {
-            // Mapping directories to unique config names and tp library targets
+            // Mapping directories to unique config names and to library targets
             struct ConfigPackages
             {
                 std::string dir;
@@ -795,7 +795,7 @@ namespace vcpkg
                     if (!package_name.empty())
                     {
                         // This heuristics works for one package name per dir.
-                        if(!config_packages.empty() && config_packages.back().dir == dirname)
+                        if (!config_packages.empty() && config_packages.back().dir == dirname)
                             config_packages.back().name.clear();
                         else
                             config_packages.push_back({dirname, package_name});
@@ -814,7 +814,8 @@ namespace vcpkg
                         }
                     }
                 }
-                else if (!has_binaries && (Strings::starts_with(suffix, "lib/") || Strings::starts_with(suffix, "bin/")))
+                else if (!has_binaries &&
+                         (Strings::starts_with(suffix, "lib/") || Strings::starts_with(suffix, "bin/")))
                 {
                     if (!Strings::ends_with(suffix, ".pc") && !Strings::ends_with(suffix, "/")) has_binaries = true;
                 }
@@ -882,7 +883,8 @@ namespace vcpkg
                     }
 
                     msg.append_indent()
-                        .append_fmt_raw("target_link_libraries(main PRIVATE {})", Strings::join(" ", targets.begin(), targets.end() - omitted))
+                        .append_fmt_raw("target_link_libraries(main PRIVATE {})",
+                                        Strings::join(" ", targets.begin(), targets.end() - omitted))
                         .append_raw("\n\n");
                 }
 
