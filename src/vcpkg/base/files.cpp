@@ -1502,18 +1502,6 @@ namespace vcpkg
 
     int WriteFilePointer::put(int c) const noexcept { return ::fputc(c, m_fs); }
 
-    std::vector<std::string> Filesystem::read_lines(const Path& file_path, LineInfo li) const
-    {
-        std::error_code ec;
-        auto maybe_lines = this->read_lines(file_path, ec);
-        if (ec)
-        {
-            exit_filesystem_call_error(li, ec, __func__, {file_path});
-        }
-
-        return maybe_lines;
-    }
-
     std::string Filesystem::read_contents(const Path& file_path, LineInfo li) const
     {
         std::error_code ec;
@@ -2087,14 +2075,15 @@ namespace vcpkg
 
             return output;
         }
-        virtual std::vector<std::string> read_lines(const Path& file_path, std::error_code& ec) const override
+        virtual ExpectedL<std::vector<std::string>> read_lines(const Path& file_path) const override
         {
             StatsTimer t(g_us_filesystem_stats);
+            std::error_code ec;
             ReadFilePointer file{file_path, ec};
             if (ec)
             {
-                Debug::print("Failed to open: ", file_path, '\n');
-                return std::vector<std::string>();
+                Debug::println("Failed to open: ", file_path);
+                return format_filesystem_call_error(ec, __func__, {file_path});
             }
 
             Strings::LinesCollector output;
@@ -2109,7 +2098,7 @@ namespace vcpkg
                 }
                 else if ((ec = file.error()))
                 {
-                    return std::vector<std::string>();
+                    return format_filesystem_call_error(ec, "read_lines_read", {file_path});
                 }
             } while (!file.eof());
 

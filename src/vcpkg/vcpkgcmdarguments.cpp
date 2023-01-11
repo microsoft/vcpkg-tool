@@ -198,7 +198,7 @@ namespace vcpkg
             if (arg.size() > 0 && arg[0] == '@')
             {
                 arg.erase(arg.begin());
-                auto lines = fs.read_lines(arg, VCPKG_LINE_INFO);
+                auto lines = fs.read_lines(arg).value_or_exit(VCPKG_LINE_INFO);
                 v.insert(v.end(), std::make_move_iterator(lines.begin()), std::make_move_iterator(lines.end()));
             }
             else
