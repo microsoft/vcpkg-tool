@@ -10,4 +10,7 @@ namespace vcpkg
 }
 
 #define VCPKG_LINE_INFO                                                                                                \
-    vcpkg::LineInfo { __LINE__, __FILE__ }
+    vcpkg::LineInfo                                                                                                    \
+    {                                                                                                                  \
+        __LINE__, __FILE__                                                                                             \
+    }
