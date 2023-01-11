@@ -8,10 +8,21 @@
 
 #include <string>
 
+#include <cmrc/cmrc.hpp>
+
 namespace vcpkg::msg
 {
-    void load_from_message_map(const Json::Object& message_map);
+
+    struct MessageMapAndFile
+    {
+        Json::Object map;
+        cmrc::file map_file;
+    };
+
+    void load_from_message_map(const MessageMapAndFile& message_map);
+
     Optional<std::string> get_locale_path(int LCID);
     Optional<StringLiteral> get_language_tag(int LCID);
-    ExpectedS<Json::Object> get_message_map_from_lcid(int LCID);
+    ExpectedS<MessageMapAndFile> get_message_map_from_lcid(int LCID);
+    const Optional<cmrc::file> get_file();
 }

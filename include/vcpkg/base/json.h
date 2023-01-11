@@ -294,7 +294,7 @@ namespace vcpkg::Json
             bool operator!=(const_iterator other) const noexcept { return !(this->underlying_ == other.underlying_); }
 
         private:
-            friend struct Object;
+            friend Object;
             explicit const_iterator(const underlying_t::const_iterator& it) : underlying_(it) { }
             underlying_t::const_iterator underlying_;
         };

@@ -171,7 +171,7 @@ namespace vcpkg::msg
             std::vector<StringLiteral> names;
             std::vector<StringLiteral> default_strings;     // const after startup
             std::vector<ZStringView> localization_comments; // const after startup
-
+            Optional<cmrc::file> json_file;
             std::vector<std::string> localized_strings;
         };
 
@@ -203,11 +203,17 @@ namespace vcpkg::msg
             ::abort();
         }
     }
-
-    void load_from_message_map(const Json::Object& message_map)
+    const Optional<cmrc::file> get_file()
     {
         Messages& m = messages();
+        return m.json_file;
+    }
+    void load_from_message_map(const MessageMapAndFile& map_and_file)
+    {
+        auto&& message_map = map_and_file.map;
+        Messages& m = messages();
         m.localized_strings.resize(m.names.size());
+        m.json_file = map_and_file.map_file;
 
         std::vector<std::string> names_without_localization;
 
@@ -235,7 +241,7 @@ namespace vcpkg::msg
         }
     }
 
-    ExpectedS<Json::Object> get_message_map_from_lcid(int LCID)
+    ExpectedS<MessageMapAndFile> get_message_map_from_lcid(int LCID)
     {
         threadunsafe_initialize_context();
         auto embedded_filesystem = cmrc::cmakerc::get_filesystem();
@@ -244,7 +250,10 @@ namespace vcpkg::msg
         if (const auto locale_path = maybe_locale_path.get())
         {
             auto file = embedded_filesystem.open(*locale_path);
-            return Json::parse_object(StringView{file.begin(), file.end()}, *locale_path);
+            return Json::parse_object(StringView{file.begin(), file.end()}, *locale_path)
+                .map([&](Json::Object&& parsed_file) {
+                    return MessageMapAndFile{std::move(parsed_file), file};
+                });
         }
 
         return std::string{"Unrecognized LCID"};
@@ -264,7 +273,7 @@ namespace vcpkg::msg
             std::pair<int, StringLiteral>(1029, "cs"), // Czech
             std::pair<int, StringLiteral>(1031, "de"), // German
             // Always use default handling for 1033 (English)
-            // std::pair<int, StringLiteral>(1033, "en"),       // English
+            // std::pair<int, StringLiteral>(1033, "en"),    // English
             std::pair<int, StringLiteral>(3082, "es"),       // Spanish (Spain)
             std::pair<int, StringLiteral>(1036, "fr"),       // French
             std::pair<int, StringLiteral>(1040, "it"),       // Italian

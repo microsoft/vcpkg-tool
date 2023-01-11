@@ -126,14 +126,21 @@ jobs:
           git -C "$env:VCPKG_ROOT" checkout $sha
     - task: CodeQL3000Init@0
       displayName: 'CodeQL Initialize'
+    - task: UseNode@1
+      displayName: Use Node 16 or later
+      inputs:
+        version: "16.x"
+    - script: npm install -g @microsoft/rush
+      displayName: Install Rush
+      workingDirectory: ce\common\config\rush
     - task: CmdLine@2
       displayName: "Build vcpkg with CMake"
       inputs:
         script: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x86 -host_arch=x86
           rmdir /s /q build.x86.debug > nul 2> nul
-          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -B build.x86.debug
-          ninja.exe -C build.x86.debug
+          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_ARTIFACTS_DEVELOPMENT=ON -B build.x86.debug
+          ninja.exe -C build.x86.debug all generate-message-map
         failOnStderr: true
     - script: build.x86.debug\vcpkg-test.exe
       displayName: "Run vcpkg tests"
@@ -151,12 +158,6 @@ jobs:
       inputs:
         filePath: 'azure-pipelines/Format-CxxCode.ps1'
         pwsh: true
-    - task: CmdLine@2
-      displayName: 'Generate the Messages File'
-      inputs:
-        script: |
-          build.x86.debug\vcpkg.exe x-generate-default-message-map locales/messages.json
-          build.x86.debug\vcpkg.exe x-generate-default-message-map --no-output-comments locales/messages.en.json
     - task: Powershell@2
       displayName: 'Create Diff'
       inputs:
