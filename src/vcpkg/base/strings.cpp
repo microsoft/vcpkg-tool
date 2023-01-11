@@ -467,6 +467,20 @@ Optional<int> Strings::strto<int>(StringView sv)
 }
 
 template<>
+Optional<unsigned int> Strings::strto<unsigned int>(StringView sv)
+{
+    auto opt = strto<unsigned long>(sv);
+    if (auto p = opt.get())
+    {
+        if (*p <= UINT_MAX)
+        {
+            return static_cast<unsigned int>(*p);
+        }
+    }
+    return nullopt;
+}
+
+template<>
 Optional<long> Strings::strto<long>(StringView sv)
 {
     // disallow initial whitespace
@@ -494,6 +508,33 @@ Optional<long> Strings::strto<long>(StringView sv)
 }
 
 template<>
+Optional<unsigned long> Strings::strto<unsigned long>(StringView sv)
+{
+    // disallow initial whitespace
+    if (sv.empty() || ParserBase::is_whitespace(sv[0]))
+    {
+        return nullopt;
+    }
+
+    auto with_nul_terminator = sv.to_string();
+
+    errno = 0;
+    char* endptr = nullptr;
+    long res = strtoul(with_nul_terminator.c_str(), &endptr, 10);
+    if (endptr != with_nul_terminator.data() + with_nul_terminator.size())
+    {
+        // contains invalid characters
+        return nullopt;
+    }
+    else if (errno == ERANGE)
+    {
+        return nullopt;
+    }
+
+    return res;
+}
+
+template<>
 Optional<long long> Strings::strto<long long>(StringView sv)
 {
     // disallow initial whitespace
@@ -507,6 +548,33 @@ Optional<long long> Strings::strto<long long>(StringView sv)
     errno = 0;
     char* endptr = nullptr;
     long long res = strtoll(with_nul_terminator.c_str(), &endptr, 10);
+    if (endptr != with_nul_terminator.data() + with_nul_terminator.size())
+    {
+        // contains invalid characters
+        return nullopt;
+    }
+    else if (errno == ERANGE)
+    {
+        return nullopt;
+    }
+
+    return res;
+}
+
+template<>
+Optional<unsigned long long> Strings::strto<unsigned long long>(StringView sv)
+{
+    // disallow initial whitespace
+    if (sv.empty() || ParserBase::is_whitespace(sv[0]))
+    {
+        return nullopt;
+    }
+
+    auto with_nul_terminator = sv.to_string();
+
+    errno = 0;
+    char* endptr = nullptr;
+    long long res = strtoull(with_nul_terminator.c_str(), &endptr, 10);
     if (endptr != with_nul_terminator.data() + with_nul_terminator.size())
     {
         // contains invalid characters

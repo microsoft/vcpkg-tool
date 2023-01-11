@@ -139,7 +139,9 @@ namespace vcpkg
 
     Json::Object serialize_manifest(const SourceControlFile& scf);
 
-    ExpectedS<ManifestConfiguration> parse_manifest_configuration(StringView origin, const Json::Object& manifest);
+    ExpectedL<ManifestConfiguration> parse_manifest_configuration(const Json::Object& manifest,
+                                                                  StringView origin,
+                                                                  MessageSink& warningsSink);
 
     /// <summary>
     /// Named pair of a SourceControlFile and the location of this file

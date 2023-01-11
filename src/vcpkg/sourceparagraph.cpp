@@ -452,10 +452,9 @@ namespace vcpkg
 
         virtual Optional<Dependency> visit_string(Json::Reader& r, StringView sv) override
         {
-            if (!Json::PackageNameDeserializer::is_package_name(sv))
+            if (!Json::IdentifierDeserializer::is_ident(sv))
             {
-                r.add_generic_error(type_name(),
-                                    "must be lowercase alphanumeric+hyphens, split with periods, and not reserved");
+                r.add_generic_error(type_name(), "must be lowercase alphanumeric+hyphens and not reserved");
             }
 
             Dependency dep;
@@ -1189,29 +1188,42 @@ namespace vcpkg
     };
     ManifestConfigurationDeserializer ManifestConfigurationDeserializer::instance;
 
-    ExpectedS<struct ManifestConfiguration> parse_manifest_configuration(StringView origin,
-                                                                         const Json::Object& manifest)
+    ExpectedL<ManifestConfiguration> parse_manifest_configuration(const Json::Object& manifest,
+                                                                  StringView origin,
+                                                                  MessageSink& warningsSink)
     {
         Json::Reader reader;
-
         auto res = reader.visit(manifest, ManifestConfigurationDeserializer::instance);
+
+        if (!reader.warnings().empty())
+        {
+            warningsSink.println(Color::warning, msgWarnOnParseConfig, msg::path = origin);
+            for (auto&& warning : reader.warnings())
+            {
+                warningsSink.println(Color::warning, LocalizedString::from_raw(warning));
+            }
+            warningsSink.println(Color::warning, msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
+            warningsSink.println(Color::warning, msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url);
+        }
 
         if (!reader.errors().empty())
         {
-            std::string ret = "Error: in the manifest ";
-            Strings::append(ret, origin, "\nwhile obtaining configuration information from the manifest:\n");
+            LocalizedString ret;
+            ret.append(msgFailedToParseConfig, msg::path = origin);
+            ret.append_raw("\n");
             for (auto&& err : reader.errors())
             {
-                Strings::append(ret, "    ", err, "\n");
+                ret.append_indent();
+                ret.append_fmt_raw("{}\n", err);
             }
-            msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
-            msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url);
+            ret.append(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
+            ret.append_raw("\n");
+            ret.append(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url);
+            ret.append_raw("\n");
             return std::move(ret);
         }
-        else
-        {
-            return std::move(res).value_or_exit(VCPKG_LINE_INFO);
-        }
+
+        return std::move(res).value_or_exit(VCPKG_LINE_INFO);
     }
 
     SourceControlFile SourceControlFile::clone() const
@@ -1601,18 +1613,8 @@ namespace vcpkg
 
         if (auto configuration = scf.core_paragraph->vcpkg_configuration.get())
         {
-            Json::Reader reader;
-            auto maybe_configuration = reader.visit(*configuration, get_configuration_deserializer());
-            if (!reader.errors().empty())
-            {
-                msg::println_error(msgErrorWhileParsing, msg::path = ManifestDeserializer::VCPKG_CONFIGURATION);
-                for (auto&& msg : reader.errors())
-                {
-                    msg::println_error(LocalizedString().append_indent().append_raw(msg));
-                }
-                msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
-                Checks::exit_fail(VCPKG_LINE_INFO);
-            }
+            auto maybe_configuration =
+                parse_configuration(*configuration, ManifestDeserializer::VCPKG_CONFIGURATION, stdout_sink);
             obj.insert(ManifestDeserializer::VCPKG_CONFIGURATION,
                        maybe_configuration.value_or_exit(VCPKG_LINE_INFO).serialize());
         }

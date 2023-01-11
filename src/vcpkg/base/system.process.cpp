@@ -17,6 +17,7 @@ extern char** environ;
 #endif
 
 #if defined(__FreeBSD__)
+extern char** environ;
 #include <sys/sysctl.h>
 #include <sys/wait.h>
 #endif
@@ -225,10 +226,10 @@ namespace vcpkg
         int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
         char exePath[2048];
         size_t len = sizeof(exePath);
-        auto rcode = sysctl(mib, 4, exePath, &len, NULL, 0);
+        auto rcode = sysctl(mib, 4, exePath, &len, nullptr, 0);
         Checks::check_exit(VCPKG_LINE_INFO, rcode == 0, "Could not determine current executable path.");
         Checks::check_exit(VCPKG_LINE_INFO, len > 0, "Could not determine current executable path.");
-        return Path(exePath, exePath + len - 1);
+        return Path(exePath, len - 1);
 #elif defined(__OpenBSD__)
         const char* progname = getprogname();
         char resolved_path[PATH_MAX];
@@ -388,7 +389,16 @@ namespace vcpkg
 
             for (auto&& var : vars)
             {
-                env_strings.push_back(var);
+                if (Strings::case_insensitive_ascii_equals(var, "PATH"))
+                {
+                    new_path.assign(prepend_to_path.data(), prepend_to_path.size());
+                    if (!new_path.empty()) new_path.push_back(';');
+                    new_path.append(get_environment_variable("PATH").value_or(""));
+                }
+                else
+                {
+                    env_strings.push_back(var);
+                }
             }
         }
 

@@ -3001,6 +3001,44 @@ namespace vcpkg
                     return false;
                 }
 
+                if (options == CopyOptions::update_existing)
+                {
+                    WIN32_FILE_ATTRIBUTE_DATA attributes_destination;
+                    if (GetFileAttributesExW(wide_destination.c_str(), GetFileExInfoStandard, &attributes_destination))
+                    {
+                        WIN32_FILE_ATTRIBUTE_DATA attributes_source;
+                        if (!GetFileAttributesExW(wide_source.c_str(), GetFileExInfoStandard, &attributes_source))
+                        {
+                            ec.assign(GetLastError(), std::system_category());
+                            return false;
+                        }
+
+                        // Do not copy if destination file is equal or more recent than source file
+                        if (CompareFileTime(&attributes_destination.ftLastWriteTime,
+                                            &attributes_source.ftLastWriteTime) >= 0)
+                        {
+                            ec.clear();
+                            return false;
+                        }
+
+                        // Overwrite file because a newer version was found
+                        if (::CopyFileW(wide_source.c_str(), wide_destination.c_str(), FALSE))
+                        {
+                            ec.clear();
+                            return true;
+                        }
+                        last_error = GetLastError();
+                        ec.assign(static_cast<int>(last_error), std::system_category());
+                        return false;
+                    }
+                    else
+                    {
+                        last_error = GetLastError();
+                        ec.assign(static_cast<int>(last_error), std::system_category());
+                        return false;
+                    }
+                }
+
                 // open handles to both files in exclusive mode to implement the equivalent() check
                 FileHandle source_handle(wide_source.c_str(), FILE_READ_DATA, 0, OPEN_EXISTING, 0, ec);
                 if (ec)
@@ -3043,7 +3081,7 @@ namespace vcpkg
             }
 
             int open_options = O_WRONLY | O_CREAT;
-            if (options != CopyOptions::overwrite_existing)
+            if (options != CopyOptions::overwrite_existing && options != CopyOptions::update_existing)
             {
                 // the standard wording suggests that we should create a file through a broken symlink which would
                 // forbid use of O_EXCL. However, implementations like boost::copy_file don't do this and doing it
@@ -3082,7 +3120,13 @@ namespace vcpkg
                 return false;
             }
 
-            if (options == CopyOptions::overwrite_existing)
+            if (options == CopyOptions::update_existing && destination_stat.st_mtime >= source_stat.st_mtime)
+            {
+                ec.clear();
+                return false;
+            }
+
+            if (options == CopyOptions::overwrite_existing || options == CopyOptions::update_existing)
             {
                 destination_fd.ftruncate(0, ec);
                 if (ec) return false;
