@@ -806,6 +806,8 @@
   "_LintPortErrorsFixed.comment": "An example of {package_name} is zlib.",
   "LintSuggestNewVersionScheme": "Use the version scheme \"{new_scheme}\" instead of \"{old_scheme}\" in port \"{package_name}\".",
   "_LintSuggestNewVersionScheme.comment": "An example of {new_scheme} is version. An example of {old_scheme} is version-string. An example of {package_name} is zlib.",
+  "LintVcpkgCheckFeatures": "Calling `vcpkg_check_features` without the `FEATURES` keyword has been deprecated. Please add the `FEATURES` keyword to the call inside the port {package_name}.",
+  "_LintVcpkgCheckFeatures.comment": "An example of {package_name} is zlib.",
   "ListOfValidFieldsForControlFiles": "This is the list of valid fields for CONTROL files (case-sensitive):",
   "LoadingCommunityTriplet": "-- [COMMUNITY] Loading triplet configuration from: {path}",
   "_LoadingCommunityTriplet.comment": "'-- [COMMUNITY]' at the beginning must be preserved An example of {path} is /foo/bar.",
