@@ -1,4 +1,4 @@
-#include <vcpkg/base/system_headers.h>
+#include <vcpkg/base/system-headers.h>
 
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/files.h>
@@ -2108,6 +2108,7 @@ namespace vcpkg
             if (res.size() > 0 && Strings::starts_with(res[0], "\xEF\xBB\xBF"))
             {
                 // remove byte-order mark from the beginning of the string
+                res[0].erase(0, 3);
             }
 
             return res;

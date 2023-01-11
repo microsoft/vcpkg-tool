@@ -1,0 +1,4 @@
+namespace vcpkg
+{
+    struct HelpTableFormatter;
+}

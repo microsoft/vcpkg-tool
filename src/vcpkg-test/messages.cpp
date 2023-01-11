@@ -1,7 +1,7 @@
 #include <catch2/catch.hpp>
 
 #include <vcpkg/base/json.h>
-#include <vcpkg/base/setup_messages.h>
+#include <vcpkg/base/setup-messages.h>
 
 #include <vcpkg/commands.generate-message-map.h>
 

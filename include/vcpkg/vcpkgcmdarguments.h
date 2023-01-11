@@ -5,6 +5,7 @@
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
+#include <vcpkg/base/cmd-parser.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
@@ -73,17 +74,6 @@ namespace vcpkg
 #endif
 
     std::string create_example_string(const std::string& command_and_arguments);
-
-    struct HelpTableFormatter
-    {
-        void format(StringView col1, StringView col2);
-        void example(StringView example_text);
-        void header(StringView name);
-        void blank();
-        void text(StringView text, int indent = 0);
-
-        std::string m_str;
-    };
 
     struct FeatureFlagSettings
     {
