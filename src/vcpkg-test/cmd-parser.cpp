@@ -34,8 +34,7 @@ TEST_CASE ("Smoke test help table formatter", "[cmd_parser]")
                                   demonstrate that the worst case combo can be accommodated
 
 some example command
-this is some text
-)";
+this is some text)";
 
     CHECK(uut.m_str == expected);
 }
