@@ -62,45 +62,46 @@ namespace vcpkg
     {
         using std::chrono::duration_cast;
         using std::chrono::hours;
-        using std::chrono::microseconds;
         using std::chrono::milliseconds;
         using std::chrono::minutes;
         using std::chrono::nanoseconds;
         using std::chrono::seconds;
 
-        const auto nanos_as_double = static_cast<double>(nanos.count());
+        auto ns_total = nanos.count();
 
-        if (duration_cast<hours>(nanos) > hours())
-        {
-            const auto t = nanos_as_double / duration_cast<nanoseconds>(hours(1)).count();
-            return Strings::format("%.4g h", t);
+        std::string ret;
+
+        const auto one_day_ns = duration_cast<nanoseconds>(hours(24)).count();
+        if (ns_total >= one_day_ns) {
+            int64_t d = ns_total / one_day_ns;
+            ns_total %= one_day_ns;
+            if (d != 0) ret.append(Strings::format("%dd", d));
         }
 
-        if (duration_cast<minutes>(nanos) > minutes())
-        {
-            const auto t = nanos_as_double / duration_cast<nanoseconds>(minutes(1)).count();
-            return Strings::format("%.4g min", t);
+        const auto one_hour_ns = duration_cast<nanoseconds>(hours(1)).count();
+        if (ns_total >= one_hour_ns) {
+            int64_t h = ns_total / one_hour_ns;
+            ns_total %= one_hour_ns;
+            if (h != 0) ret.append(Strings::format("%dh", h));
         }
 
-        if (duration_cast<seconds>(nanos) > seconds())
-        {
-            const auto t = nanos_as_double / duration_cast<nanoseconds>(seconds(1)).count();
-            return Strings::format("%.4g s", t);
+        const auto one_minute_ns = duration_cast<nanoseconds>(minutes(1)).count();
+        if (ns_total >= one_minute_ns) {
+            int64_t m = ns_total / one_minute_ns;
+            ns_total %= one_minute_ns;
+            if (m != 0) ret.append(Strings::format("%dm", m));
         }
 
-        if (duration_cast<milliseconds>(nanos) > milliseconds())
-        {
-            const auto t = nanos_as_double / duration_cast<nanoseconds>(milliseconds(1)).count();
-            return Strings::format("%.4g ms", t);
+        const auto one_second_ns = duration_cast<nanoseconds>(seconds(1)).count();
+        const auto one_millisecond_ns = duration_cast<nanoseconds>(milliseconds(1)).count();
+        if (ns_total >= one_millisecond_ns) {
+            int64_t s = ns_total / one_second_ns;
+            ns_total %= one_second_ns;
+            int64_t ms = ns_total / one_millisecond_ns;
+            ret.append(Strings::format("%d.%03ds", s, ms));
         }
 
-        if (duration_cast<microseconds>(nanos) > microseconds())
-        {
-            const auto t = nanos_as_double / duration_cast<nanoseconds>(microseconds(1)).count();
-            return Strings::format("%.4g us", t);
-        }
-
-        return Strings::format("%.4g ns", nanos_as_double);
+        return ret;
     }
 
     ElapsedTimer::ElapsedTimer() noexcept
