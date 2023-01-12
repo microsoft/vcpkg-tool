@@ -94,12 +94,10 @@ namespace vcpkg
 
         const auto one_second_ns = duration_cast<nanoseconds>(seconds(1)).count();
         const auto one_millisecond_ns = duration_cast<nanoseconds>(milliseconds(1)).count();
-        if (ns_total >= one_millisecond_ns) {
-            const auto s = ns_total / one_second_ns;
-            ns_total %= one_second_ns;
-            const auto ms = ns_total / one_millisecond_ns;
-            ret.append(Strings::format("%d.%03ds", s, ms));
-        }
+        const auto s = ns_total / one_second_ns;
+        ns_total %= one_second_ns;
+        const auto ms = ns_total / one_millisecond_ns;
+        ret.append(Strings::format("%d.%03ds", s, ms));
 
         return ret;
     }
