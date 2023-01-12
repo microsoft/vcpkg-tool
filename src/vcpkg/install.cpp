@@ -27,15 +27,6 @@
 
 #include <iterator>
 
-namespace
-{
-    struct ConfigPackages
-    {
-        std::string dir;
-        std::string name;
-    };
-}
-
 namespace vcpkg
 {
     using file_pack = std::pair<std::string, std::string>;
@@ -768,10 +759,16 @@ namespace vcpkg
             return ret;
         }
 
+        struct ConfigPackage
+        {
+            std::string dir;
+            std::string name;
+        };
+
         auto files = fs.read_lines(installed.listfile_path(bpgh), ec);
         if (!ec)
         {
-            std::vector<ConfigPackages> config_packages;
+            std::vector<ConfigPackage> config_packages;
             std::map<std::string, std::vector<std::string>> library_targets;
             std::string header_path;
             bool has_binaries = false;
