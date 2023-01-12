@@ -773,6 +773,8 @@ namespace vcpkg
             std::string header_path;
             bool has_binaries = false;
 
+            static constexpr StringLiteral INCLUDE_PREFIX = "include/";
+
             for (auto&& triplet_and_suffix : files)
             {
                 if (triplet_and_suffix.empty() || triplet_and_suffix.back() == '/') continue;
@@ -831,9 +833,9 @@ namespace vcpkg
                 {
                     has_binaries = !Strings::ends_with(suffix, ".pc");
                 }
-                else if (header_path.empty() && Strings::starts_with(suffix, "include/"))
+                else if (header_path.empty() && Strings::starts_with(suffix, INCLUDE_PREFIX))
                 {
-                    header_path = suffix.substr(8).to_string();
+                    header_path = suffix.substr(INCLUDE_PREFIX.size()).to_string();
                 }
             }
 
