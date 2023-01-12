@@ -1,3 +1,5 @@
+#pragma once
+
 #include <vcpkg/base/fwd/cmd-parser.h>
 
 #include <vcpkg/base/stringview.h>
