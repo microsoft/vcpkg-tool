@@ -5,9 +5,9 @@
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>
+#include <vcpkg/base/span.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/view.h>
 
 namespace vcpkg::Json
 {

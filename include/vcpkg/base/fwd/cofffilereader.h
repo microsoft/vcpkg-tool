@@ -1,3 +1,5 @@
+#pragma once
+
 namespace vcpkg
 {
     struct CoffFileHeader;
