@@ -27,6 +27,15 @@
 
 #include <iterator>
 
+namespace
+{
+    struct ConfigPackages
+    {
+        std::string dir;
+        std::string name;
+    };
+}
+
 namespace vcpkg
 {
     using file_pack = std::pair<std::string, std::string>;
@@ -712,6 +721,7 @@ namespace vcpkg
             {
                 res.emplace_back(start_of_library_name, end_of_library_name);
             }
+
             first = end_of_library_name;
         }
         return res;
@@ -719,14 +729,15 @@ namespace vcpkg
 
     std::string get_cmake_find_package_name(StringView dirname, StringView filename)
     {
+        static constexpr StringLiteral CASE_SENSITIVE_CONFIG_SUFFIX = "Config.cmake";
+        static constexpr StringLiteral CASE_INSENSITIVE_CONFIG_SUFFIX = "-config.cmake";
+
         StringView res;
-        if (Strings::ends_with(filename, "Config.cmake"))
-        {
-            res = filename.substr(0, filename.size() - 12);
+        if (Strings::ends_with(filename, CASE_SENSITIVE_CONFIG_SUFFIX)) {
+            res = filename.substr(0, filename.size() - CASE_SENSITIVE_CONFIG_SUFFIX.size());
         }
-        else if (Strings::ends_with(filename, "-config.cmake"))
-        {
-            res = filename.substr(0, filename.size() - 13);
+        else if (Strings::ends_with(filename, CASE_INSENSITIVE_CONFIG_SUFFIX)) {
+            res = filename.substr(0, filename.size() - CASE_INSENSITIVE_CONFIG_SUFFIX.size());
         }
 
         if (!Strings::case_insensitive_ascii_equals(res, dirname.substr(0, res.size())))
@@ -760,12 +771,6 @@ namespace vcpkg
         auto files = fs.read_lines(installed.listfile_path(bpgh), ec);
         if (!ec)
         {
-            // Mapping directories to unique config names and to library targets
-            struct ConfigPackages
-            {
-                std::string dir;
-                std::string name;
-            };
             std::vector<ConfigPackages> config_packages;
             std::map<std::string, std::vector<std::string>> library_targets;
             std::string header_path;
@@ -871,7 +876,7 @@ namespace vcpkg
                 auto msg = msg::format(msgCMakeTargetsUsage, msg::package_name = bpgh.spec.name()).append_raw("\n\n");
                 msg.append_indent().append(msgCMakeTargetsUsageHeuristicMessage).append_raw('\n');
 
-                for (const auto package_targets_pair : ret.cmake_targets_map)
+                for (auto&& package_targets_pair : ret.cmake_targets_map)
                 {
                     const auto& package_name = package_targets_pair.first;
                     if (package_name.empty()) continue;
