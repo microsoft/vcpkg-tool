@@ -2,9 +2,12 @@
 
 #include <vcpkg/base/fwd/cmd-parser.h>
 
+#include <vcpkg/base/expected.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/stringview.h>
 
 #include <string>
+#include <vector>
 
 namespace vcpkg
 {
@@ -23,4 +26,8 @@ namespace vcpkg
 
         std::string m_str;
     };
+
+    std::vector<std::string> convert_argc_argv_to_arguments(int argc, const CommandLineCharType* const* const argv);
+    ExpectedL<Unit> replace_response_file_parameters(std::vector<std::string>& inputs,
+                                                     const ILineReader& response_file_source);
 }

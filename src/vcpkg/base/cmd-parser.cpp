@@ -82,4 +82,68 @@ namespace vcpkg
         }
         m_str.append(line_start, best_break);
     }
+
+    std::vector<std::string> convert_argc_argv_to_arguments(int argc, const CommandLineCharType* const* const argv)
+    {
+        std::vector<std::string> result;
+        // starts at 1 to skip over the program name
+        for (int idx = 1; idx < argc; ++idx)
+        {
+            result.emplace_back(
+#if defined(_WIN32)
+                Strings::to_utf8(argv[idx])
+#else
+                argv[idx]
+#endif // ^^^ !_WIN32
+            );
+        }
+
+        return result;
+    }
+
+    ExpectedL<Unit> replace_response_file_parameters(std::vector<std::string>& inputs,
+                                                     const ILineReader& response_file_source)
+    {
+        auto first = inputs.begin();
+        auto last = inputs.end();
+        while (first != last)
+        {
+            if (first->empty() || first->front() != '@')
+            {
+                ++first;
+                continue;
+            }
+
+            const auto file_name = static_cast<StringView>(*first);
+            auto maybe_response_file_lines = response_file_source.read_lines(file_name.substr(1));
+            if (auto response_file_lines = maybe_response_file_lines.get())
+            {
+                if (response_file_lines->empty())
+                {
+                    first = inputs.erase(first);
+                    last = inputs.end();
+                    continue;
+                }
+
+                // replace the response file name with the first line, and insert the rest
+                auto lines_begin = std::make_move_iterator(response_file_lines->begin());
+                const auto lines_end = std::make_move_iterator(response_file_lines->end());
+                *first = *lines_begin;
+                ++first;
+                ++lines_begin;
+                if (lines_begin != lines_end)
+                {
+                    first = inputs.insert(first, lines_begin, lines_end);
+                    first += response_file_lines->size() - 1;
+                    last = inputs.end();
+                }
+            }
+            else
+            {
+                return std::move(maybe_response_file_lines).error();
+            }
+        }
+
+        return Unit{};
+    }
 }

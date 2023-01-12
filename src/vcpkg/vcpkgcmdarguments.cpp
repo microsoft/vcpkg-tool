@@ -185,28 +185,8 @@ namespace vcpkg
                                                                   const int argc,
                                                                   const CommandLineCharType* const* const argv)
     {
-        std::vector<std::string> v;
-        for (int i = 1; i < argc; ++i)
-        {
-            std::string arg;
-#if defined(_WIN32)
-            arg = Strings::to_utf8(argv[i]);
-#else
-            arg = argv[i];
-#endif
-            // Response file?
-            if (arg.size() > 0 && arg[0] == '@')
-            {
-                arg.erase(arg.begin());
-                auto lines = fs.read_lines(arg).value_or_exit(VCPKG_LINE_INFO);
-                v.insert(v.end(), std::make_move_iterator(lines.begin()), std::make_move_iterator(lines.end()));
-            }
-            else
-            {
-                v.emplace_back(std::move(arg));
-            }
-        }
-
+        std::vector<std::string> v = convert_argc_argv_to_arguments(argc, argv);
+        replace_response_file_parameters(v, fs).value_or_exit(VCPKG_LINE_INFO);
         return VcpkgCmdArguments::create_from_arg_sequence(v.data(), v.data() + v.size());
     }
 

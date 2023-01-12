@@ -67,12 +67,6 @@ namespace vcpkg
     void print_usage();
     void print_usage(const CommandStructure& command_structure);
 
-#if defined(_WIN32)
-    using CommandLineCharType = wchar_t;
-#else
-    using CommandLineCharType = char;
-#endif
-
     std::string create_example_string(const std::string& command_and_arguments);
 
     struct FeatureFlagSettings
