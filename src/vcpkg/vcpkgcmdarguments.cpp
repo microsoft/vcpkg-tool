@@ -181,7 +181,7 @@ namespace vcpkg
         }
     }
 
-    VcpkgCmdArguments VcpkgCmdArguments::create_from_command_line(const IReadLines& fs,
+    VcpkgCmdArguments VcpkgCmdArguments::create_from_command_line(const ILineReader& fs,
                                                                   const int argc,
                                                                   const CommandLineCharType* const* const argv)
     {

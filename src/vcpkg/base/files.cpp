@@ -1502,7 +1502,7 @@ namespace vcpkg
 
     int WriteFilePointer::put(int c) const noexcept { return ::fputc(c, m_fs); }
 
-    IReadLines::~IReadLines() = default;
+    ILineReader::~ILineReader() = default;
 
     std::string Filesystem::read_contents(const Path& file_path, LineInfo li) const
     {

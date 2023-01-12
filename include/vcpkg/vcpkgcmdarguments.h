@@ -85,7 +85,7 @@ namespace vcpkg
 
     struct VcpkgCmdArguments
     {
-        static VcpkgCmdArguments create_from_command_line(const IReadLines& fs,
+        static VcpkgCmdArguments create_from_command_line(const ILineReader& fs,
                                                           const int argc,
                                                           const CommandLineCharType* const* const argv);
         static VcpkgCmdArguments create_from_arg_sequence(const std::string* arg_begin, const std::string* arg_end);
