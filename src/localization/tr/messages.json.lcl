@@ -5886,10 +5886,13 @@
       </Item>
       <Item ItemId=";PortBugMissingLicense" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The software license must be available at ${CURRENT_PACKAGES_DIR}/share/{spec}/copyright]]></Val>
+          <Val><![CDATA[The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{spec}/copyright]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Yazılım lisansının ${CURRENT_PACKAGES_DIR}/share/{spec}/copyright adresinden kullanılabilir olması gerekir]]></Val>
+            <Val><![CDATA[Yazılım lisansı ${{CURRENT_PACKAGES_DIR}}/share/{spec}/copyright adresinde kullanıma sunulmalıdır]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The software license must be available at ${CURRENT_PACKAGES_DIR}/share/{spec}/copyright]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
