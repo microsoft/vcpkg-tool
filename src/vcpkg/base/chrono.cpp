@@ -73,21 +73,21 @@ namespace vcpkg
 
         const auto one_day_ns = duration_cast<nanoseconds>(hours(24)).count();
         if (ns_total >= one_day_ns) {
-            int64_t d = ns_total / one_day_ns;
+            const auto d = ns_total / one_day_ns;
             ns_total %= one_day_ns;
             if (d != 0) ret.append(Strings::format("%dd", d));
         }
 
         const auto one_hour_ns = duration_cast<nanoseconds>(hours(1)).count();
         if (ns_total >= one_hour_ns) {
-            int64_t h = ns_total / one_hour_ns;
+            const auto h = ns_total / one_hour_ns;
             ns_total %= one_hour_ns;
             if (h != 0) ret.append(Strings::format("%dh", h));
         }
 
         const auto one_minute_ns = duration_cast<nanoseconds>(minutes(1)).count();
         if (ns_total >= one_minute_ns) {
-            int64_t m = ns_total / one_minute_ns;
+            const auto m = ns_total / one_minute_ns;
             ns_total %= one_minute_ns;
             if (m != 0) ret.append(Strings::format("%dm", m));
         }
@@ -95,9 +95,9 @@ namespace vcpkg
         const auto one_second_ns = duration_cast<nanoseconds>(seconds(1)).count();
         const auto one_millisecond_ns = duration_cast<nanoseconds>(milliseconds(1)).count();
         if (ns_total >= one_millisecond_ns) {
-            int64_t s = ns_total / one_second_ns;
+            const auto s = ns_total / one_second_ns;
             ns_total %= one_second_ns;
-            int64_t ms = ns_total / one_millisecond_ns;
+            const auto ms = ns_total / one_millisecond_ns;
             ret.append(Strings::format("%d.%03ds", s, ms));
         }
 
