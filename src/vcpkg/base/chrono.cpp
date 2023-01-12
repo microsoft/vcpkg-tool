@@ -58,7 +58,7 @@ namespace vcpkg
         return to_utc_time(date_in_seconds).value_or_exit(VCPKG_LINE_INFO);
     }
 
-    static std::string format_time_userfriendly(const std::chrono::nanoseconds& nanos)
+    static std::string format_time_userfriendly(const std::chrono::nanoseconds& nanos, StringLiteral delimiter = " ")
     {
         using std::chrono::duration_cast;
         using std::chrono::hours;
@@ -99,7 +99,7 @@ namespace vcpkg
         const auto ms = ns_total / one_millisecond_ns;
         tokens.emplace_back(Strings::format("%d.%03ds", s, ms));
 
-        return Strings::join(" ", tokens);
+        return Strings::join(delimiter, tokens);
     }
 
     ElapsedTimer::ElapsedTimer() noexcept
