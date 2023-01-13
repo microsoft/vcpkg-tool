@@ -724,10 +724,12 @@ namespace vcpkg
         static constexpr StringLiteral CASE_INSENSITIVE_CONFIG_SUFFIX = "-config.cmake";
 
         StringView res;
-        if (Strings::ends_with(filename, CASE_SENSITIVE_CONFIG_SUFFIX)) {
+        if (Strings::ends_with(filename, CASE_SENSITIVE_CONFIG_SUFFIX))
+        {
             res = filename.substr(0, filename.size() - CASE_SENSITIVE_CONFIG_SUFFIX.size());
         }
-        else if (Strings::ends_with(filename, CASE_INSENSITIVE_CONFIG_SUFFIX)) {
+        else if (Strings::ends_with(filename, CASE_INSENSITIVE_CONFIG_SUFFIX))
+        {
             res = filename.substr(0, filename.size() - CASE_INSENSITIVE_CONFIG_SUFFIX.size());
         }
 
