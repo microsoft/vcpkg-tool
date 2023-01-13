@@ -1,3 +1,5 @@
+#pragma once
+
 #include <vcpkg/base/system-headers.h>
 
 #include <catch2/catch.hpp>
