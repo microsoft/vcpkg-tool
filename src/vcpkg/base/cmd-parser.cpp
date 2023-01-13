@@ -9,13 +9,206 @@ namespace
 {
     using namespace vcpkg;
 
-    static void help_table_newline_indent(std::string& target)
+    void help_table_newline_indent(std::string& target)
     {
         target.push_back('\n');
         target.append(34, ' ');
     }
 
     static constexpr ptrdiff_t S_MAX_LINE_LENGTH = 100;
+
+    void insert_lowercase_strings(std::vector<std::string>& target, const std::vector<std::string>& source)
+    {
+        target.reserve(source.size());
+        for (const std::string& value : source)
+        {
+            target.emplace_back(Strings::ascii_to_lowercase(value));
+        }
+    }
+
+    std::string switch_name_to_display(vcpkg::StringView switch_name, StabilityTag stability)
+    {
+        std::string result{"--"};
+        if (stability == StabilityTag::Experimental)
+        {
+            result.append("x-");
+        }
+
+        result.append(switch_name.data(), switch_name.size());
+        return result;
+    }
+
+    std::string option_name_to_display(vcpkg::StringView switch_name, StabilityTag stability)
+    {
+        auto result = switch_name_to_display(switch_name, stability);
+        result.append("=...");
+        return result;
+    }
+
+    bool try_parse_switch(vcpkg::StringView target, vcpkg::StringView switch_name, StabilityTag stability, bool& value)
+    {
+        auto first = target.data();
+        const auto last = first + target.size();
+        if (first == last || *first != '-')
+        {
+            return false;
+        }
+
+        ++first;
+        if (first == last || *first != '-')
+        {
+            return false;
+        }
+
+        ++first;
+
+        const bool saw_no = last - first >= 3 && first[0] == 'n' && first[1] == 'o' && first[2] == '-';
+        if (saw_no)
+        {
+            first += 3;
+        }
+
+        const bool saw_z = last - first >= 2 && first[0] == 'z' && first[1] == '-';
+        if (saw_z)
+        {
+            first += 2;
+        }
+
+        const bool saw_x = last - first >= 2 && first[0] == 'x' && first[1] == '-';
+        if (saw_x)
+        {
+            first += 2;
+        }
+
+        switch (stability)
+        {
+            case StabilityTag::Standard:
+                if (saw_z)
+                {
+                    return false;
+                }
+
+                break;
+            case StabilityTag::Experimental:
+                if (!saw_x || saw_z)
+                {
+                    return false;
+                }
+
+                break;
+            case StabilityTag::ImplementationDetail:
+                if (saw_x || !saw_z)
+                {
+                    return false;
+                }
+
+                break;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+
+        const bool saw_name = std::equal(first, last, switch_name.begin(), switch_name.end());
+        if (!saw_name)
+        {
+            return false;
+        }
+
+        value = !saw_no;
+        return true;
+    }
+
+    enum class TryParseOptionResult
+    {
+        NoMatch,
+        ValueSet,
+        ValueIsNextParameter
+    };
+
+    TryParseOptionResult try_parse_option(vcpkg::StringView target_lowercase,
+                                          vcpkg::StringView target,
+                                          vcpkg::StringView option_name,
+                                          StabilityTag stability,
+                                          std::string& value)
+    {
+        auto first = target_lowercase.data();
+        const auto last = first + target_lowercase.size();
+        if (first == last || *first != '-')
+        {
+            return TryParseOptionResult::NoMatch;
+        }
+
+        ++first;
+        if (first == last || *first != '-')
+        {
+            return TryParseOptionResult::NoMatch;
+        }
+
+        ++first;
+
+        const bool saw_z = last - first >= 2 && first[0] == 'z' && first[1] == '-';
+        if (saw_z)
+        {
+            first += 2;
+        }
+
+        const bool saw_x = last - first >= 2 && first[0] == 'x' && first[1] == '-';
+        if (saw_x)
+        {
+            first += 2;
+        }
+
+        switch (stability)
+        {
+            case StabilityTag::Standard:
+                if (saw_z)
+                {
+                    return TryParseOptionResult::NoMatch;
+                }
+
+                break;
+            case StabilityTag::Experimental:
+                if (!saw_x || saw_z)
+                {
+                    return TryParseOptionResult::NoMatch;
+                }
+
+                break;
+            case StabilityTag::ImplementationDetail:
+                if (saw_x || !saw_z)
+                {
+                    return TryParseOptionResult::NoMatch;
+                }
+
+                break;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+
+        if (static_cast<size_t>(last - first) < option_name.size())
+        {
+            return TryParseOptionResult::NoMatch;
+        }
+
+        auto name_end = first + option_name.size();
+        if (!std::equal(first, name_end, option_name.begin(), option_name.end()))
+        {
+            return TryParseOptionResult::NoMatch;
+        }
+
+        if (name_end == last)
+        {
+            return TryParseOptionResult::ValueIsNextParameter;
+        }
+
+        if (*name_end == '=')
+        {
+            ++name_end; // consume =
+            const auto original_last = target.data() + target.size();
+            const auto original_first = original_last - (last - name_end);
+            value.assign(original_first, original_last);
+            return TryParseOptionResult::ValueSet;
+        }
+
+        return TryParseOptionResult::NoMatch;
+    }
 }
 
 namespace vcpkg
@@ -145,5 +338,493 @@ namespace vcpkg
         }
 
         return Unit{};
+    }
+
+    CmdParser::CmdParser()
+        : argument_strings(), argument_strings_lowercase(), argument_parsed(), errors(), options_table()
+    {
+        options_table.header(msg::format(msgOptions));
+    }
+
+    CmdParser::CmdParser(View<std::string> inputs)
+        : argument_strings(inputs.begin(), inputs.end())
+        , argument_strings_lowercase()
+        , argument_parsed(argument_strings.size(), '\0')
+        , errors()
+        , options_table()
+    {
+        insert_lowercase_strings(argument_strings_lowercase, argument_strings);
+        options_table.header(msg::format(msgOptions));
+    }
+
+    CmdParser::CmdParser(std::vector<std::string>&& inputs)
+        : argument_strings(std::move(inputs))
+        , argument_strings_lowercase()
+        , argument_parsed(argument_strings.size(), '\0')
+        , errors()
+        , options_table()
+    {
+        insert_lowercase_strings(argument_strings_lowercase, argument_strings);
+        options_table.header(msg::format(msgOptions));
+    }
+
+    CmdParser::CmdParser(const CmdParser&) = default;
+    CmdParser::CmdParser(CmdParser&&) = default;
+    CmdParser& CmdParser::operator=(const CmdParser&) = default;
+    CmdParser& CmdParser::operator=(CmdParser&&) = default;
+
+    bool CmdParser::parse_switch(StringView switch_name, StabilityTag stability, bool& value)
+    {
+        std::size_t found = 0;
+        for (std::size_t idx = 0; idx < argument_strings.size(); ++idx)
+        {
+            if (argument_parsed[idx] != '\0')
+            {
+                continue;
+            }
+
+            if (try_parse_switch(argument_strings_lowercase[idx], switch_name, stability, value))
+            {
+                if (found == 1)
+                {
+                    errors.emplace_back(msg::format_error(msgSwitchUsedMultipleTimes, msg::option = switch_name));
+                }
+
+                ++found;
+                argument_parsed[idx] = '\1';
+            }
+        }
+
+        return found > 0;
+    }
+
+    bool CmdParser::parse_switch(StringView switch_name, StabilityTag stability, Optional<bool>& value)
+    {
+        bool target;
+        bool parsed = parse_switch(switch_name, stability, target);
+        if (parsed)
+        {
+            value.emplace(parsed);
+        }
+
+        return parsed;
+    }
+
+    bool CmdParser::parse_switch(StringView switch_name, StabilityTag stability)
+    {
+        bool target = false;
+        parse_switch(switch_name, stability, target);
+        return target;
+    }
+
+    bool CmdParser::parse_switch(StringView switch_name,
+                                 StabilityTag stability,
+                                 bool& value,
+                                 const LocalizedString& help_text)
+    {
+        Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
+        options_table.format(switch_name_to_display(switch_name, stability), help_text);
+        return parse_switch(switch_name, stability, value);
+    }
+
+    bool CmdParser::parse_switch(StringView switch_name,
+                                 StabilityTag stability,
+                                 Optional<bool>& value,
+                                 const LocalizedString& help_text)
+    {
+        Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
+        options_table.format(switch_name_to_display(switch_name, stability), help_text);
+        return parse_switch(switch_name, stability, value);
+    }
+
+    bool CmdParser::parse_switch(StringView switch_name, StabilityTag stability, const LocalizedString& help_text)
+    {
+        Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
+        options_table.format(switch_name_to_display(switch_name, stability), help_text);
+        return parse_switch(switch_name, stability);
+    }
+
+    bool CmdParser::parse_option(StringView option_name, StabilityTag stability, std::string& value)
+    {
+        std::size_t found = 0;
+        for (std::size_t idx = 0; idx < argument_strings.size(); ++idx)
+        {
+            if (argument_parsed[idx] != '\0')
+            {
+                continue;
+            }
+
+            auto parse_result =
+                try_parse_option(argument_strings_lowercase[idx], argument_strings[idx], option_name, stability, value);
+            if (parse_result == TryParseOptionResult::NoMatch)
+            {
+                continue;
+            }
+
+            if (found == 1)
+            {
+                errors.emplace_back(msg::format_error(msgOptionUsedMultipleTimes, msg::option = option_name));
+            }
+
+            if (parse_result == TryParseOptionResult::ValueIsNextParameter)
+            {
+                if (idx + 1 == argument_strings.size() || argument_parsed[idx + 1] != '\0')
+                {
+                    errors.emplace_back(msg::format_error(msgOptionRequiresAValue, msg::option = option_name));
+                    continue;
+                }
+
+                ++found;
+                value = argument_strings[idx + 1];
+                argument_parsed[idx] = '\1';
+                argument_parsed[idx + 1] = '\1';
+                ++idx;
+            }
+            else
+            {
+                Checks::check_exit(VCPKG_LINE_INFO, parse_result == TryParseOptionResult::ValueSet);
+                ++found;
+                argument_parsed[idx] = '\1';
+            }
+        }
+
+        return found > 0;
+    }
+
+    bool CmdParser::parse_option(StringView option_name, StabilityTag stability, Optional<std::string>& value)
+    {
+        std::string target;
+        bool parsed = parse_option(option_name, stability, target);
+        if (parsed)
+        {
+            value.emplace(std::move(target));
+        }
+
+        return parsed;
+    }
+
+    bool CmdParser::parse_option(StringView option_name,
+                                 StabilityTag stability,
+                                 std::string& value,
+                                 const LocalizedString& help_text)
+    {
+        Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
+        options_table.format(option_name_to_display(option_name, stability), help_text);
+        return parse_option(option_name, stability, value);
+    }
+
+    bool CmdParser::parse_option(StringView option_name,
+                                 StabilityTag stability,
+                                 Optional<std::string>& value,
+                                 const LocalizedString& help_text)
+    {
+        Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
+        options_table.format(option_name_to_display(option_name, stability), help_text);
+        return parse_option(option_name, stability, value);
+    }
+
+    bool CmdParser::parse_multi_option(StringView option_name, StabilityTag stability, std::vector<std::string>& value)
+    {
+        bool found = false;
+        std::string temp_entry;
+        for (std::size_t idx = 0; idx < argument_strings.size(); ++idx)
+        {
+            if (argument_parsed[idx] != '\0')
+            {
+                continue;
+            }
+
+            auto parse_result = try_parse_option(
+                argument_strings_lowercase[idx], argument_strings[idx], option_name, stability, temp_entry);
+            if (parse_result == TryParseOptionResult::NoMatch)
+            {
+                continue;
+            }
+
+            if (parse_result == TryParseOptionResult::ValueIsNextParameter)
+            {
+                if (idx + 1 == argument_strings.size() || argument_parsed[idx + 1] != '\0')
+                {
+                    errors.emplace_back(msg::format_error(msgOptionRequiresAValue, msg::option = option_name));
+                    continue;
+                }
+
+                if (!found)
+                {
+                    value.clear();
+                    found = true;
+                }
+
+                value.emplace_back(argument_strings[idx + 1]);
+                argument_parsed[idx] = '\1';
+                argument_parsed[idx + 1] = '\1';
+                ++idx;
+            }
+            else
+            {
+                Checks::check_exit(VCPKG_LINE_INFO, parse_result == TryParseOptionResult::ValueSet);
+                if (!found)
+                {
+                    value.clear();
+                    found = true;
+                }
+
+                value.emplace_back(std::move(temp_entry));
+                temp_entry.clear();
+                argument_parsed[idx] = '\1';
+            }
+        }
+
+        return found;
+    }
+
+    bool CmdParser::parse_multi_option(StringView option_name,
+                                       StabilityTag stability,
+                                       Optional<std::vector<std::string>>& value)
+    {
+        std::vector<std::string> target;
+        bool parsed = parse_multi_option(option_name, stability, target);
+        if (parsed)
+        {
+            value.emplace(std::move(target));
+        }
+
+        return parsed;
+    }
+
+    bool CmdParser::parse_multi_option(StringView option_name,
+                                       StabilityTag stability,
+                                       std::vector<std::string>& value,
+                                       const LocalizedString& help_text)
+    {
+        Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
+        options_table.format(option_name_to_display(option_name, stability), help_text);
+        return parse_multi_option(option_name, stability, value);
+    }
+
+    bool CmdParser::parse_multi_option(StringView option_name,
+                                       StabilityTag stability,
+                                       Optional<std::vector<std::string>>& value,
+                                       const LocalizedString& help_text)
+    {
+        Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
+        options_table.format(option_name_to_display(option_name, stability), help_text);
+        return parse_multi_option(option_name, stability, value);
+    }
+
+    Optional<std::string> CmdParser::extract_first_command_like_arg_lowercase()
+    {
+        for (std::size_t idx = 0; idx < argument_strings.size(); ++idx)
+        {
+            if (argument_parsed[idx] == '\0')
+            {
+                const auto& this_arg = argument_strings_lowercase[idx];
+                if (this_arg == "--version")
+                {
+                    argument_parsed[idx] = '\1';
+                    return "version";
+                }
+
+                if (!Strings::starts_with(this_arg, "--"))
+                {
+                    argument_parsed[idx] = '\1';
+                    return this_arg;
+                }
+            }
+        }
+
+        return nullopt;
+    }
+
+    std::vector<std::string> CmdParser::get_remaining_args() const
+    {
+        std::vector<std::string> results;
+        results.reserve(std::count(argument_parsed.begin(), argument_parsed.end(), '\0'));
+        for (std::size_t idx = 0; idx < argument_strings.size(); ++idx)
+        {
+            if (argument_parsed[idx] == '\0')
+            {
+                results.emplace_back(argument_strings[idx]);
+            }
+        }
+
+        return results;
+    }
+
+    void CmdParser::add_unexpected_argument_errors_after(size_t idx)
+    {
+        do
+        {
+            argument_parsed[idx] = '\1';
+            errors.emplace_back(msg::format_error(msgUnexpectedArgument, (msg::option = argument_strings[idx])));
+        } while (++idx, idx < argument_parsed.size());
+    }
+
+    void CmdParser::enforce_no_remaining_args(StringView command_name)
+    {
+        for (std::size_t idx = 0; idx < argument_parsed.size(); ++idx)
+        {
+            if (argument_parsed[idx] == '\0')
+            {
+                errors.emplace_back(msg::format_error(msgNonZeroRemainingArgs, (msg::command_name = command_name)));
+                add_unexpected_argument_errors_after(idx);
+                return;
+            }
+        }
+    }
+
+    std::string CmdParser::consume_only_remaining_arg(StringView command_name)
+    {
+        std::size_t idx = 0;
+        std::size_t selected;
+        for (;; ++idx)
+        {
+            if (idx >= argument_parsed.size())
+            {
+                errors.emplace_back(msg::format_error(msgNonOneRemainingArgs, (msg::command_name = command_name)));
+                return std::string{};
+            }
+
+            if (argument_parsed[idx] == '\0')
+            {
+                argument_parsed[idx] = '\1';
+                selected = idx;
+                break;
+            }
+        }
+
+        while (++idx < argument_parsed.size())
+        {
+            if (argument_parsed[idx] == '\0')
+            {
+                errors.emplace_back(msg::format_error(msgNonOneRemainingArgs, (msg::command_name = command_name)));
+                add_unexpected_argument_errors_after(idx);
+                return std::string{};
+            }
+        }
+
+        return argument_strings[selected];
+    }
+
+    Optional<std::string> CmdParser::consume_only_remaining_arg_optional(StringView command_name)
+    {
+        std::size_t idx = 0;
+        std::size_t selected;
+        for (;; ++idx)
+        {
+            if (idx >= argument_parsed.size())
+            {
+                return nullopt;
+            }
+
+            if (argument_parsed[idx] == '\0')
+            {
+                argument_parsed[idx] = '\1';
+                selected = idx;
+                break;
+            }
+        }
+
+        while (++idx < argument_parsed.size())
+        {
+            if (argument_parsed[idx] == '\0')
+            {
+                errors.emplace_back(
+                    msg::format_error(msgNonZeroOrOneRemainingArgs, (msg::command_name = command_name)));
+                add_unexpected_argument_errors_after(idx);
+                return nullopt;
+            }
+        }
+
+        return argument_strings[selected];
+    }
+
+    std::vector<std::string> CmdParser::consume_remaining_args()
+    {
+        std::vector<std::string> results;
+        results.reserve(std::count(argument_parsed.begin(), argument_parsed.end(), '\0'));
+        for (std::size_t idx = 0; idx < argument_parsed.size(); ++idx)
+        {
+            if (argument_parsed[idx] == '\0')
+            {
+                argument_parsed[idx] = '\1';
+                results.emplace_back(argument_strings[idx]);
+            }
+        }
+
+        return results;
+    }
+
+    std::vector<std::string> CmdParser::consume_remaining_args(StringView command_name, std::size_t arity)
+    {
+        Checks::check_exit(VCPKG_LINE_INFO, arity != 0); // use enforce_no_remaining_args instead
+        Checks::check_exit(VCPKG_LINE_INFO, arity != 1); // use consume_only_remaining_arg instead
+        std::vector<std::string> results = consume_remaining_args();
+        if (results.size() != arity)
+        {
+            errors.emplace_back(msg::format_error(msgNonExactlyArgs,
+                                                  msg::command_name = command_name,
+                                                  msg::expected = arity,
+                                                  msg::actual = results.size()));
+            for (std::size_t idx = arity; idx < results.size(); ++idx)
+            {
+                errors.emplace_back(msg::format_error(msgUnexpectedArgument, msg::option = results[idx]));
+            }
+
+            results.clear();
+        }
+
+        return results;
+    }
+
+    std::vector<std::string> CmdParser::consume_remaining_args(StringView command_name,
+                                                               std::size_t min_arity,
+                                                               std::size_t max_arity)
+    {
+        Checks::check_exit(VCPKG_LINE_INFO, min_arity < max_arity); // if == use single parameter overload instead
+        Checks::check_exit(VCPKG_LINE_INFO, max_arity != 0);        // use enforce_no_remaining_args instead
+        Checks::check_exit(VCPKG_LINE_INFO, max_arity != 1);        // use consume_only_remaining_arg instead
+        std::vector<std::string> results = consume_remaining_args();
+        if (max_arity < results.size() || results.size() < min_arity)
+        {
+            errors.emplace_back(msg::format_error(msgNonRangeArgs,
+                                                  msg::command_name = command_name,
+                                                  msg::lower = min_arity,
+                                                  msg::upper = max_arity,
+                                                  msg::actual = results.size()));
+            for (std::size_t idx = max_arity; idx < results.size(); ++idx)
+            {
+                errors.emplace_back(msg::format_error(msgUnexpectedArgument, msg::option = results[idx]));
+            }
+
+            results.clear();
+        }
+
+        return results;
+    }
+
+    LocalizedString CmdParser::get_options_table() const { return LocalizedString::from_raw(options_table.m_str); }
+
+    LocalizedString CmdParser::get_full_help_text(const LocalizedString& help_text) const
+    {
+        auto result = help_text;
+        result.append(get_options_table());
+        return result;
+    }
+
+    void CmdParser::exit_with_errors(const LocalizedString& help_text)
+    {
+        if (errors.empty())
+        {
+            return;
+        }
+
+        for (auto&& error : errors)
+        {
+            msg::write_unlocalized_text_to_stdout(Color::error, error.append_raw("\n"));
+        }
+
+        msg::write_unlocalized_text_to_stdout(Color::none, get_full_help_text(help_text));
+        Checks::exit_with_code(VCPKG_LINE_INFO, 1);
     }
 }

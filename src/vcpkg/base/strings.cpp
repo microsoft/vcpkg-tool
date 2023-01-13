@@ -197,6 +197,12 @@ bool Strings::case_insensitive_ascii_equals(StringView left, StringView right)
 
 void Strings::ascii_to_lowercase(char* first, char* last) { std::transform(first, last, first, tolower_char); }
 
+std::string Strings::ascii_to_lowercase(const std::string& s)
+{
+    auto result = s;
+    return ascii_to_lowercase(std::move(result));
+}
+
 std::string Strings::ascii_to_lowercase(std::string&& s)
 {
     Strings::ascii_to_lowercase(s.data(), s.data() + s.size());

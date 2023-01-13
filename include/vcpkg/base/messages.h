@@ -310,6 +310,7 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(expected_version, "1.3.8");
     DECLARE_MSG_ARG(extension, ".exe");
     DECLARE_MSG_ARG(feature, "avisynthplus");
+    DECLARE_MSG_ARG(lower, "42");
     DECLARE_MSG_ARG(new_scheme, "version");
     DECLARE_MSG_ARG(old_scheme, "version-string");
     DECLARE_MSG_ARG(option, "editable");
@@ -325,6 +326,7 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(system_name, "Darwin");
     DECLARE_MSG_ARG(tool_name, "aria2");
     DECLARE_MSG_ARG(triplet, "x64-windows");
+    DECLARE_MSG_ARG(upper, "42");
     DECLARE_MSG_ARG(url, "https://github.com/microsoft/vcpkg");
     DECLARE_MSG_ARG(vcpkg_line_info, "/a/b/foo.cpp(13)");
     DECLARE_MSG_ARG(vendor, "Azure");
@@ -1926,6 +1928,28 @@ namespace vcpkg
                     "The name 'search' is the name of a command that is not localized.",
                     "No packages are installed. Did you mean `search`?");
     DECLARE_MESSAGE(NoLocalizationForMessages, (), "", "No localized messages for the following: ");
+    DECLARE_MESSAGE(NonExactlyArgs,
+                    (msg::command_name, msg::expected, msg::actual),
+                    "{expected} and {actual} are integers",
+                    "the command '{command_name}' requires exactly {expected} arguments, but {actual} were provided");
+    DECLARE_MESSAGE(NonOneRemainingArgs,
+                    (msg::command_name),
+                    "",
+                    "the command '{command_name}' requires exactly one argument");
+    DECLARE_MESSAGE(
+        NonRangeArgs,
+        (msg::command_name, msg::lower, msg::upper, msg::actual),
+        "{actual} is an integer",
+        "the command '{command_name}' requires between {lower} and {upper} arguments, inclusive, but {actual} "
+        "were provided");
+    DECLARE_MESSAGE(NonZeroOrOneRemainingArgs,
+                    (msg::command_name),
+                    "",
+                    "the command '{command_name}' requires zero or one arguments");
+    DECLARE_MESSAGE(NonZeroRemainingArgs,
+                    (msg::command_name),
+                    "",
+                    "the command '{command_name}' does not accept any additional arguments");
     DECLARE_MESSAGE(NoOutdatedPackages, (), "", "There are no outdated packages.");
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
     DECLARE_MESSAGE(NoUrlsAndHashSpecified, (msg::sha), "", "No urls specified to download SHA: {sha}");
@@ -1936,10 +1960,13 @@ namespace vcpkg
                     "NuGet package creation succeeded, but no .nupkg was produced. Expected: \"{path}\"");
     DECLARE_MESSAGE(OptionMustBeInteger, (msg::option), "", "Value of --{option} must be an integer.");
     DECLARE_MESSAGE(OptionRequired, (msg::option), "", "--{option} option is required.");
+    DECLARE_MESSAGE(OptionRequiresAValue, (msg::option), "", "the option '{option}' requires a value");
+    DECLARE_MESSAGE(OptionUsedMultipleTimes, (msg::option), "", "the option '{option}' was specified multiple times");
     DECLARE_MESSAGE(OptionRequiresOption,
                     (msg::value, msg::option),
                     "{value} is a command line option.",
                     "--{value} requires --{option}");
+    DECLARE_MESSAGE(Options, (), "Printed just before a list of options for a command", "Options");
     DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph");
     DECLARE_MESSAGE(OverlayPatchDir, (msg::path), "", "Overlay path \"{path}\" must exist and must be a directory.");
     DECLARE_MESSAGE(OverlayTriplets, (msg::path), "", "Overlay triplets from {path} :");
@@ -2279,6 +2306,7 @@ namespace vcpkg
                     "",
                     "You may need to update the vcpkg binary; try running {command_line} to update.");
     DECLARE_MESSAGE(SupportedPort, (msg::package_name), "", "Port {package_name} is supported.");
+    DECLARE_MESSAGE(SwitchUsedMultipleTimes, (msg::option), "", "the switch '{option}' was specified multiple times");
     DECLARE_MESSAGE(SystemApiErrorMessage,
                     (msg::system_api, msg::exit_code, msg::error_msg),
                     "",
@@ -2312,6 +2340,7 @@ namespace vcpkg
                     "Unable to determine toolchain use for {triplet} with with CMAKE_SYSTEM_NAME {system_name}. Did "
                     "you mean to use "
                     "VCPKG_CHAINLOAD_TOOLCHAIN_FILE?");
+    DECLARE_MESSAGE(UnexpectedArgument, (msg::option), "", "unexpected argument: {option}");
     DECLARE_MESSAGE(UnexpectedByteSize,
                     (msg::expected, msg::actual),
                     "{expected} is the expected byte size and {actual} is the actual byte size.",

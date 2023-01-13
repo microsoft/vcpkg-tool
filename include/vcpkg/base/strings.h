@@ -141,6 +141,7 @@ namespace vcpkg::Strings
     bool case_insensitive_ascii_equals(StringView left, StringView right);
 
     void ascii_to_lowercase(char* first, char* last);
+    std::string ascii_to_lowercase(const std::string& s);
     std::string ascii_to_lowercase(std::string&& s);
 
     std::string ascii_to_uppercase(std::string&& s);

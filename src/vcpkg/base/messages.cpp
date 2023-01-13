@@ -846,6 +846,11 @@ namespace vcpkg
     REGISTER_MESSAGE(NoError);
     REGISTER_MESSAGE(NoInstalledPackages);
     REGISTER_MESSAGE(NoLocalizationForMessages);
+    REGISTER_MESSAGE(NonExactlyArgs);
+    REGISTER_MESSAGE(NonOneRemainingArgs);
+    REGISTER_MESSAGE(NonRangeArgs);
+    REGISTER_MESSAGE(NonZeroOrOneRemainingArgs);
+    REGISTER_MESSAGE(NonZeroRemainingArgs);
     REGISTER_MESSAGE(NoOutdatedPackages);
     REGISTER_MESSAGE(NoRegistryForPort);
     REGISTER_MESSAGE(NoUrlsAndHashSpecified);
@@ -853,7 +858,10 @@ namespace vcpkg
     REGISTER_MESSAGE(NugetPackageFileSucceededButCreationFailed);
     REGISTER_MESSAGE(OptionMustBeInteger);
     REGISTER_MESSAGE(OptionRequired);
+    REGISTER_MESSAGE(OptionRequiresAValue);
     REGISTER_MESSAGE(OptionRequiresOption);
+    REGISTER_MESSAGE(OptionUsedMultipleTimes);
+    REGISTER_MESSAGE(Options);
     REGISTER_MESSAGE(OriginalBinParagraphHeader);
     REGISTER_MESSAGE(OverlayPatchDir);
     REGISTER_MESSAGE(OverlayTriplets);
@@ -925,6 +933,7 @@ namespace vcpkg
     REGISTER_MESSAGE(SuggestStartingBashShell);
     REGISTER_MESSAGE(SuggestUpdateVcpkg);
     REGISTER_MESSAGE(SupportedPort);
+    REGISTER_MESSAGE(SwitchUsedMultipleTimes);
     REGISTER_MESSAGE(SystemApiErrorMessage);
     REGISTER_MESSAGE(ToolFetchFailed);
     REGISTER_MESSAGE(ToolInWin10);
@@ -955,6 +964,7 @@ namespace vcpkg
     REGISTER_MESSAGE(UnexpectedEOFMidUnicodeEscape);
     REGISTER_MESSAGE(UnexpectedErrorDuringBulkDownload);
     REGISTER_MESSAGE(UnexpectedEscapeSequence);
+    REGISTER_MESSAGE(UnexpectedArgument);
     REGISTER_MESSAGE(UnexpectedByteSize);
     REGISTER_MESSAGE(UnexpectedExtension);
     REGISTER_MESSAGE(UnexpectedFormat);
