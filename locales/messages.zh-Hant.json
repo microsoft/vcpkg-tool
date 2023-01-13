@@ -633,7 +633,7 @@
   "PortBugMissingFile": "/{path} 檔案不存在。CMake 協助程式連接埠必須有此檔案。",
   "PortBugMissingImportedLibs": "匯入程式庫不存在於{path}中。\n如果這是想要的，請在 portfile 中新增下列行:\n已啟用 set(VCPKG_POLICY_DLLS_WITHOUT_LIBS)",
   "PortBugMissingIncludeDir": "資料夾 /include 是空白的或不存在。這表示未正確安裝程式庫。",
-  "PortBugMissingLicense": "The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{spec}/copyright",
+  "PortBugMissingLicense": "軟體授權必須在 ${{CURRENT_PACKAGES_DIR}}/share/{spec}/copyright 提供",
   "PortBugMissingReleaseBinaries": "找不到版本二進位檔。",
   "PortBugMovePkgConfigFiles": "您可以移動具有類似下列命令的 pkgconfig 檔案:",
   "PortBugOutdatedCRT": "在下列檔案中偵測到過期的動態 CRT:",

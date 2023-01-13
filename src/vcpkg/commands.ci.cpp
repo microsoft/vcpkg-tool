@@ -2,12 +2,12 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
 #include <vcpkg/base/sortedvector.h>
+#include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
-#include <vcpkg/base/view.h>
 #include <vcpkg/base/xmlserializer.h>
 
 #include <vcpkg/binarycaching.h>
