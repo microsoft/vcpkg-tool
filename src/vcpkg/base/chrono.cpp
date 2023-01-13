@@ -72,21 +72,24 @@ namespace vcpkg
         std::vector<std::string> tokens;
 
         const auto one_day_ns = duration_cast<nanoseconds>(hours(24)).count();
-        if (ns_total >= one_day_ns) {
+        if (ns_total >= one_day_ns)
+        {
             const auto d = ns_total / one_day_ns;
             ns_total %= one_day_ns;
             if (d != 0) tokens.emplace_back(Strings::format("%dd", d));
         }
 
         const auto one_hour_ns = duration_cast<nanoseconds>(hours(1)).count();
-        if (ns_total >= one_hour_ns) {
+        if (ns_total >= one_hour_ns)
+        {
             const auto h = ns_total / one_hour_ns;
             ns_total %= one_hour_ns;
             if (h != 0) tokens.emplace_back(Strings::format("%dh", h));
         }
 
         const auto one_minute_ns = duration_cast<nanoseconds>(minutes(1)).count();
-        if (ns_total >= one_minute_ns) {
+        if (ns_total >= one_minute_ns)
+        {
             const auto m = ns_total / one_minute_ns;
             ns_total %= one_minute_ns;
             if (m != 0) tokens.emplace_back(Strings::format("%dm", m));
