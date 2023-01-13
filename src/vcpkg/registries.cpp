@@ -1,4 +1,4 @@
-#include <vcpkg/base/delayed_init.h>
+#include <vcpkg/base/delayed-init.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/messages.h>

@@ -633,7 +633,7 @@
   "PortBugMissingFile": "Soubor /{path} neexistuje. Tento soubor musí existovat pro pomocné porty CMake.",
   "PortBugMissingImportedLibs": "V {path} se nenacházely knihovny importu.\nPokud je to zamýšleno, přidejte do souboru portů následující řádek:\nset (VCPKG_POLICY_DLLS_WITHOUT_LIBS povoleno)",
   "PortBugMissingIncludeDir": "Složka /include je prázdná nebo není k dispozici. To znamená, že knihovna nebyla správně nainstalována.",
-  "PortBugMissingLicense": "The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{spec}/copyright",
+  "PortBugMissingLicense": "Licence na software musí být k dispozici na adrese ${{CURRENT_PACKAGES_DIR}}/share/{spec}/copyright.",
   "PortBugMissingReleaseBinaries": "Binární soubory vydaných verzí nebyly nalezeny.",
   "PortBugMovePkgConfigFiles": "Soubory pkgconfig můžete přesunout pomocí podobných příkazů:",
   "PortBugOutdatedCRT": "V následujících souborech byl zjištěn zastaralý dynamický crt:",

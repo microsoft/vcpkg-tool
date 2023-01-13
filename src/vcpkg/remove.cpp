@@ -38,15 +38,15 @@ namespace vcpkg::Remove
             write_update(fs, installed, spgh);
         }
 
-        std::error_code ec;
-        auto lines = fs.read_lines(installed.listfile_path(ipv.core->package), ec);
-        if (!ec)
+        auto maybe_lines = fs.read_lines(installed.listfile_path(ipv.core->package));
+        if (auto lines = maybe_lines.get())
         {
             std::vector<Path> dirs_touched;
-            for (auto&& suffix : lines)
+            for (auto&& suffix : *lines)
             {
                 auto target = installed.root() / suffix;
 
+                std::error_code ec;
                 const auto status = fs.symlink_status(target, ec);
                 if (ec)
                 {
@@ -82,6 +82,7 @@ namespace vcpkg::Remove
             {
                 if (fs.is_empty(*b, IgnoreErrors{}))
                 {
+                    std::error_code ec;
                     fs.remove(*b, ec);
                     if (ec)
                     {

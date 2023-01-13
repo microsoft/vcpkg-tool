@@ -1,3 +1,5 @@
+#pragma once
+
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 

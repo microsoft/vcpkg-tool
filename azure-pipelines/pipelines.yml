@@ -126,10 +126,31 @@ jobs:
           git -C "$env:VCPKG_ROOT" checkout $sha
     - task: CodeQL3000Init@0
       displayName: 'CodeQL Initialize'
+    - task: Powershell@2
+      displayName: 'Format C++'
+      inputs:
+        filePath: 'azure-pipelines/Format-CxxCode.ps1'
+        pwsh: true
+    - task: Powershell@2
+      displayName: 'Create Diff'
+      inputs:
+        filePath: azure-pipelines/Create-PRDiff.ps1
+        arguments: '-DiffFile $(DiffFile)'
+        pwsh: true
+    - task: PublishBuildArtifacts@1
+      condition: failed()
+      displayName: 'Publish Format and Messages File Diff'
+      inputs:
+        PathtoPublish: '$(DiffFile)'
+        ArtifactName: 'format.diff'
     - task: UseNode@1
       displayName: Use Node 16 or later
       inputs:
         version: "16.x"
+    - task: npmAuthenticate@0
+      inputs:
+        workingFile: 'ce\common\config\rush\.npmrc'
+      # The working directory change is to get the above .npmrc used when installing rush
     - script: npm install -g @microsoft/rush
       displayName: Install Rush
       workingDirectory: ce\common\config\rush
@@ -153,22 +174,5 @@ jobs:
         filePath: 'azure-pipelines/end-to-end-tests.ps1'
         workingDirectory: '$(Build.SourcesDirectory)/build.x86.debug'
         pwsh: true
-    - task: Powershell@2
-      displayName: 'Format C++'
-      inputs:
-        filePath: 'azure-pipelines/Format-CxxCode.ps1'
-        pwsh: true
-    - task: Powershell@2
-      displayName: 'Create Diff'
-      inputs:
-        filePath: azure-pipelines/Create-PRDiff.ps1
-        arguments: '-DiffFile $(DiffFile)'
-        pwsh: true
-    - task: PublishBuildArtifacts@1
-      condition: failed()
-      displayName: 'Publish Format and Messages File Diff'
-      inputs:
-        PathtoPublish: '$(DiffFile)'
-        ArtifactName: 'format.diff'
     - task: CodeQL3000Finalize@0
       displayName: 'CodeQL Finalize'

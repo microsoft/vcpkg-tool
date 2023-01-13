@@ -1,4 +1,4 @@
-#include <vcpkg/base/api_stable_format.h>
+#include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/messages.h>

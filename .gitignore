@@ -18,6 +18,7 @@ node_modules/
 /ce/test/**/*.map
 /ce/test/**/*.js
 /ce/ce/vcpkg-ce.build.log
+/ce/common/config/rush/.npmrc
 /ce/common/config/rush/pnpm-lock.yaml
 /ce/test/vcpkg-ce.test.build.log
 /ce/common/temp

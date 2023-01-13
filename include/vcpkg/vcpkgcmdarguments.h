@@ -5,6 +5,7 @@
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
+#include <vcpkg/base/cmd-parser.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
@@ -74,17 +75,6 @@ namespace vcpkg
 
     std::string create_example_string(const std::string& command_and_arguments);
 
-    struct HelpTableFormatter
-    {
-        void format(StringView col1, StringView col2);
-        void example(StringView example_text);
-        void header(StringView name);
-        void blank();
-        void text(StringView text, int indent = 0);
-
-        std::string m_str;
-    };
-
     struct FeatureFlagSettings
     {
         bool registries;
@@ -95,7 +85,7 @@ namespace vcpkg
 
     struct VcpkgCmdArguments
     {
-        static VcpkgCmdArguments create_from_command_line(const Filesystem& fs,
+        static VcpkgCmdArguments create_from_command_line(const ILineReader& fs,
                                                           const int argc,
                                                           const CommandLineCharType* const* const argv);
         static VcpkgCmdArguments create_from_arg_sequence(const std::string* arg_begin, const std::string* arg_end);

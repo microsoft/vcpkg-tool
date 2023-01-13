@@ -633,7 +633,7 @@
   "PortBugMissingFile": "/{path} dosyası yok. CMake yardımcı bağlantı noktaları için bu dosya bulunmalıdır.",
   "PortBugMissingImportedLibs": "İçeri aktarma kitaplıkları {path} yolunda yoktu.\n Bu amaçlandıysa, portfile’da:\nset(VCPKG_POLICY_DLLS_WITHOUT_LIBS etkin) satırı ekleyin",
   "PortBugMissingIncludeDir": "/include klasörü boş veya yok. Bu, kitaplığın düzgün yüklenmemiş olduğunu gösterir.",
-  "PortBugMissingLicense": "The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{spec}/copyright",
+  "PortBugMissingLicense": "Yazılım lisansı ${{CURRENT_PACKAGES_DIR}}/share/{spec}/copyright adresinde kullanıma sunulmalıdır",
   "PortBugMissingReleaseBinaries": "Yayın ikili dosyaları bulunamadı.",
   "PortBugMovePkgConfigFiles": "pkgconfig dosyalarını aşağıdakine benzer komutlarla taşıyabilirsiniz:",
   "PortBugOutdatedCRT": "Aşağıdaki dosyalarda süresi geçmiş dinamik CRT algılandı:",
