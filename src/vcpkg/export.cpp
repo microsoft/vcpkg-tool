@@ -528,7 +528,8 @@ namespace vcpkg::Export
                 const InstallDir dirs =
                     InstallDir::from_destination_root(export_paths, action.spec.triplet(), binary_paragraph);
 
-                auto lines = fs.read_lines(paths.installed().listfile_path(binary_paragraph), VCPKG_LINE_INFO);
+                auto lines =
+                    fs.read_lines(paths.installed().listfile_path(binary_paragraph)).value_or_exit(VCPKG_LINE_INFO);
                 std::vector<Path> files;
                 for (auto&& suffix : lines)
                 {

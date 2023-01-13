@@ -3,7 +3,7 @@
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/to_string.h>
+#include <vcpkg/base/to-string.h>
 
 #include <errno.h>
 #include <inttypes.h>
