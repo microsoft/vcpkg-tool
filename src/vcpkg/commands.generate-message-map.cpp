@@ -16,8 +16,8 @@ namespace vcpkg::Commands
 
     const CommandStructure COMMAND_STRUCTURE = {
         create_example_string(R"###(x-generate-default-message-map locales/messages.json)###"),
-        1,
-        1,
+        2,
+        2,
         {GENERATE_MESSAGE_MAP_SWITCHES, {}, {}},
         nullptr,
     };
@@ -221,6 +221,18 @@ namespace vcpkg::Commands
         if (has_errors)
         {
             Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        // get the path to artifacts messages.json
+        Path path_to_artifact_messages = args.command_arguments[1];
+
+        // parse file to get json obj
+        auto artifact_messages = Json::parse_file(VCPKG_LINE_INFO, fs, path_to_artifact_messages).first;
+        auto artifact_obj = artifact_messages.object(VCPKG_LINE_INFO);
+
+        for (auto&& it : artifact_obj)
+        {
+            obj.insert(it.first, it.second);
         }
 
         auto stringified = Json::stringify(obj);

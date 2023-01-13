@@ -960,7 +960,7 @@ namespace vcpkg
             std::vector<std::string> error_logs;
             if (fs.exists(logs, VCPKG_LINE_INFO))
             {
-                error_logs = fs.read_lines(logs, VCPKG_LINE_INFO);
+                error_logs = fs.read_lines(logs).value_or_exit(VCPKG_LINE_INFO);
                 Util::erase_remove_if(error_logs, [](const auto& line) { return line.empty(); });
             }
             return ExtendedBuildResult{BuildResult::BUILD_FAILED, stdoutlog, std::move(error_logs)};
