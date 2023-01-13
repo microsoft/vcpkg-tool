@@ -690,8 +690,12 @@ namespace vcpkg
 
     std::vector<std::string> get_cmake_add_library_names(StringView cmake_file)
     {
-        constexpr static auto is_library_name_char = [](char ch) {
-            return ch != ')' && ch != '$' && !ParserBase::is_whitespace(ch);
+        constexpr static auto is_terminating_char = [](const char ch) {
+            return ch == ')' || ParserBase::is_whitespace(ch);
+        };
+
+        constexpr static auto is_forbidden_char = [](const char ch) {
+            return ch == '$' || ch == '"' || ch == '[' || ch == '#' || ch == ';' || ch == '<';
         };
 
         const auto real_first = cmake_file.begin();
@@ -699,22 +703,42 @@ namespace vcpkg
         const auto last = cmake_file.end();
 
         std::vector<std::string> res;
-        for (;;)
+        while (first != last)
         {
-            first = find_skip_add_library(real_first, first, last);
-            if (first == last)
+            const auto start_of_library_name = find_skip_add_library(real_first, first, last);
+            const auto end_of_library_name = std::find_if(start_of_library_name, last, is_terminating_char);
+            if (end_of_library_name != start_of_library_name &&
+                std::none_of(start_of_library_name, end_of_library_name, is_forbidden_char))
             {
-                return res;
+                res.emplace_back(start_of_library_name, end_of_library_name);
             }
-            auto start_of_library_name = std::find_if_not(first, last, ParserBase::is_whitespace);
-            auto end_of_library_name = std::find_if_not(start_of_library_name, last, is_library_name_char);
-            if (end_of_library_name == start_of_library_name)
-            {
-                first = end_of_library_name;
-                continue;
-            }
-            res.emplace_back(start_of_library_name, end_of_library_name);
+
+            first = end_of_library_name;
         }
+        return res;
+    }
+
+    std::string get_cmake_find_package_name(StringView dirname, StringView filename)
+    {
+        static constexpr StringLiteral CASE_SENSITIVE_CONFIG_SUFFIX = "Config.cmake";
+        static constexpr StringLiteral CASE_INSENSITIVE_CONFIG_SUFFIX = "-config.cmake";
+
+        StringView res;
+        if (Strings::ends_with(filename, CASE_SENSITIVE_CONFIG_SUFFIX))
+        {
+            res = filename.substr(0, filename.size() - CASE_SENSITIVE_CONFIG_SUFFIX.size());
+        }
+        else if (Strings::ends_with(filename, CASE_INSENSITIVE_CONFIG_SUFFIX))
+        {
+            res = filename.substr(0, filename.size() - CASE_INSENSITIVE_CONFIG_SUFFIX.size());
+        }
+
+        if (!Strings::case_insensitive_ascii_equals(res, dirname.substr(0, res.size())))
+        {
+            res = {};
+        }
+
+        return std::string(res);
     }
 
     CMakeUsageInfo get_cmake_usage(const Filesystem& fs, const InstalledPaths& installed, const BinaryParagraph& bpgh)
@@ -737,111 +761,137 @@ namespace vcpkg
             return ret;
         }
 
+        struct ConfigPackage
+        {
+            std::string dir;
+            std::string name;
+        };
+
         auto maybe_files = fs.read_lines(installed.listfile_path(bpgh));
         if (auto files = maybe_files.get())
         {
-            std::unordered_map<std::string, std::string> config_files;
+            std::vector<ConfigPackage> config_packages;
             std::map<std::string, std::vector<std::string>> library_targets;
-            bool is_header_only = true;
             std::string header_path;
+            bool has_binaries = false;
 
-            for (auto&& suffix : *files)
+            static constexpr StringLiteral INCLUDE_PREFIX = "include/";
+
+            for (auto&& triplet_and_suffix : *files)
             {
-                if (Strings::contains(suffix, "/share/") && Strings::ends_with(suffix, ".cmake"))
+                if (triplet_and_suffix.empty() || triplet_and_suffix.back() == '/') continue;
+
+                const auto first_slash = triplet_and_suffix.find("/");
+                if (first_slash == std::string::npos) continue;
+
+                const auto suffix = StringView(triplet_and_suffix).substr(first_slash + 1);
+                if (suffix.empty() || suffix[0] == 'd' /*ebug*/)
                 {
-                    // CMake file is inside the share folder
-                    const auto path = installed.root() / suffix;
-                    const auto find_package_name = Path(path.parent_path()).filename().to_string();
-                    const auto contents = fs.read_contents(path, ec);
+                    continue;
+                }
+                else if (Strings::starts_with(suffix, "share/") && Strings::ends_with(suffix, ".cmake"))
+                {
+                    const auto suffix_without_ending = suffix.substr(0, suffix.size() - 6);
+                    if (Strings::ends_with(suffix_without_ending, "/vcpkg-port-config")) continue;
+                    if (Strings::ends_with(suffix_without_ending, "/vcpkg-cmake-wrapper")) continue;
+                    if (Strings::ends_with(suffix_without_ending, /*[Vv]*/ "ersion")) continue;
+
+                    const auto filepath = installed.root() / triplet_and_suffix;
+                    const auto parent_path = Path(filepath.parent_path());
+                    if (!Strings::ends_with(parent_path.parent_path(), "/share"))
+                        continue; // Ignore nested find modules, config, or helpers
+
+                    if (Strings::contains(suffix_without_ending, "/Find")) continue;
+
+                    const auto dirname = parent_path.filename().to_string();
+                    const auto package_name = get_cmake_find_package_name(dirname, filepath.filename());
+                    if (!package_name.empty())
+                    {
+                        // This heuristics works for one package name per dir.
+                        if (!config_packages.empty() && config_packages.back().dir == dirname)
+                            config_packages.back().name.clear();
+                        else
+                            config_packages.push_back({dirname, package_name});
+                    }
+
+                    const auto contents = fs.read_contents(filepath, ec);
                     if (!ec)
                     {
                         auto targets = get_cmake_add_library_names(contents);
                         if (!targets.empty())
                         {
-                            auto& all_targets = library_targets[find_package_name];
+                            auto& all_targets = library_targets[dirname];
                             all_targets.insert(all_targets.end(),
                                                std::make_move_iterator(targets.begin()),
                                                std::make_move_iterator(targets.end()));
                         }
                     }
-
-                    auto filename = Path(suffix).filename().to_string();
-                    if (Strings::ends_with(filename, "Config.cmake"))
-                    {
-                        auto root = filename.substr(0, filename.size() - 12);
-                        if (Strings::case_insensitive_ascii_equals(root, find_package_name))
-                            config_files[find_package_name] = root;
-                    }
-                    else if (Strings::ends_with(filename, "-config.cmake"))
-                    {
-                        auto root = filename.substr(0, filename.size() - 13);
-                        if (Strings::case_insensitive_ascii_equals(root, find_package_name))
-                            config_files[find_package_name] = root;
-                    }
                 }
-                if (Strings::contains(suffix, "/lib/") || Strings::contains(suffix, "/bin/"))
+                else if (!has_binaries && Strings::starts_with(suffix, "bin/"))
                 {
-                    if (!Strings::ends_with(suffix, ".pc") && !Strings::ends_with(suffix, "/")) is_header_only = false;
+                    has_binaries = true;
                 }
-
-                if (is_header_only && header_path.empty())
+                else if (!has_binaries && Strings::starts_with(suffix, "lib/"))
                 {
-                    const auto it = suffix.find("/include/");
-                    if (it != std::string::npos && !Strings::ends_with(suffix, "/"))
-                    {
-                        header_path = suffix.substr(it + 9);
-                    }
+                    has_binaries = !Strings::ends_with(suffix, ".pc");
+                }
+                else if (header_path.empty() && Strings::starts_with(suffix, INCLUDE_PREFIX))
+                {
+                    header_path = suffix.substr(INCLUDE_PREFIX.size()).to_string();
                 }
             }
 
-            ret.header_only = is_header_only;
+            ret.header_only = !has_binaries && !header_path.empty();
 
-            if (library_targets.empty())
+            // Post-process cmake config data
+            bool has_targets_for_output = false;
+            for (auto&& package : config_packages)
             {
-                if (is_header_only && !header_path.empty())
+                const auto library_target_pair = library_targets.find(package.dir);
+                if (library_target_pair == library_targets.end()) continue;
+
+                auto& targets = library_target_pair->second;
+                if (!targets.empty())
                 {
-                    static auto cmakeify = [](std::string name) {
-                        auto n = Strings::ascii_to_uppercase(Strings::replace_all(std::move(name), "-", "_"));
-                        if (n.empty() || ParserBase::is_ascii_digit(n[0]))
-                        {
-                            n.insert(n.begin(), '_');
-                        }
-                        return n;
-                    };
+                    if (!package.name.empty()) has_targets_for_output = true;
 
-                    const auto name = cmakeify(bpgh.spec.name());
-                    auto msg = msg::format(msgHeaderOnlyUsage, msg::package_name = bpgh.spec.name()).extract_data();
-                    Strings::append(msg, "\n\n");
-                    Strings::append(msg, "    find_path(", name, "_INCLUDE_DIRS \"", header_path, "\")\n");
-                    Strings::append(msg, "    target_include_directories(main PRIVATE ${", name, "_INCLUDE_DIRS})\n\n");
-
-                    ret.message = std::move(msg);
-                }
-            }
-            else
-            {
-                auto msg = msg::format(msgCMakeTargetsUsage, msg::package_name = bpgh.spec.name()).append_raw("\n\n");
-                msg.append_indent().append(msgCMakeTargetsUsageHeuristicMessage).append_raw('\n');
-
-                for (auto&& library_target_pair : library_targets)
-                {
-                    auto config_it = config_files.find(library_target_pair.first);
-                    msg.append_indent();
-                    msg.append_fmt_raw("find_package({} CONFIG REQUIRED)",
-                                       config_it == config_files.end() ? library_target_pair.first : config_it->second);
-                    msg.append_raw('\n');
-
-                    auto& targets = library_target_pair.second;
                     Util::sort_unique_erase(targets, [](const std::string& l, const std::string& r) {
                         if (l.size() < r.size()) return true;
                         if (l.size() > r.size()) return false;
                         return l < r;
                     });
 
-                    if (targets.size() > 4)
+                    static const auto is_namespaced = [](const std::string& target) {
+                        return Strings::contains(target, "::");
+                    };
+                    if (Util::any_of(targets, is_namespaced))
                     {
-                        auto omitted = targets.size() - 4;
-                        library_target_pair.second.erase(targets.begin() + 4, targets.end());
+                        Util::erase_remove_if(targets, [](const std::string& t) { return !is_namespaced(t); });
+                    }
+                }
+                ret.cmake_targets_map[package.name] = std::move(targets);
+            }
+
+            if (has_targets_for_output)
+            {
+                auto msg = msg::format(msgCMakeTargetsUsage, msg::package_name = bpgh.spec.name()).append_raw("\n\n");
+                msg.append_indent().append(msgCMakeTargetsUsageHeuristicMessage).append_raw('\n');
+
+                for (auto&& package_targets_pair : ret.cmake_targets_map)
+                {
+                    const auto& package_name = package_targets_pair.first;
+                    if (package_name.empty()) continue;
+
+                    const auto& targets = package_targets_pair.second;
+                    if (targets.empty()) continue;
+
+                    msg.append_indent();
+                    msg.append_fmt_raw("find_package({} CONFIG REQUIRED)", package_name);
+                    msg.append_raw('\n');
+
+                    const auto omitted = (targets.size() > 4) ? (targets.size() - 4) : 0;
+                    if (omitted)
+                    {
                         msg.append_indent()
                             .append_raw("# ")
                             .append(msgCmakeTargetsExcluded, msg::count = omitted)
@@ -849,13 +899,32 @@ namespace vcpkg
                     }
 
                     msg.append_indent()
-                        .append_fmt_raw("target_link_libraries(main PRIVATE {})", Strings::join(" ", targets))
+                        .append_fmt_raw("target_link_libraries(main PRIVATE {})",
+                                        Strings::join(" ", targets.begin(), targets.end() - omitted))
                         .append_raw("\n\n");
                 }
 
                 ret.message = msg.extract_data();
             }
-            ret.cmake_targets_map = std::move(library_targets);
+            else if (ret.header_only)
+            {
+                static auto cmakeify = [](std::string name) {
+                    auto n = Strings::ascii_to_uppercase(Strings::replace_all(std::move(name), "-", "_"));
+                    if (n.empty() || ParserBase::is_ascii_digit(n[0]))
+                    {
+                        n.insert(n.begin(), '_');
+                    }
+                    return n;
+                };
+
+                const auto name = cmakeify(bpgh.spec.name());
+                auto msg = msg::format(msgHeaderOnlyUsage, msg::package_name = bpgh.spec.name()).extract_data();
+                Strings::append(msg, "\n\n");
+                Strings::append(msg, "    find_path(", name, "_INCLUDE_DIRS \"", header_path, "\")\n");
+                Strings::append(msg, "    target_include_directories(main PRIVATE ${", name, "_INCLUDE_DIRS})\n\n");
+
+                ret.message = std::move(msg);
+            }
         }
         return ret;
     }
