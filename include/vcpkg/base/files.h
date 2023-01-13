@@ -156,13 +156,18 @@ namespace vcpkg
 
     uint64_t get_filesystem_stats();
 
-    struct Filesystem
+    struct ILineReader
+    {
+        virtual ExpectedL<std::vector<std::string>> read_lines(const Path& file_path) const = 0;
+
+    protected:
+        ~ILineReader();
+    };
+
+    struct Filesystem : ILineReader
     {
         virtual std::string read_contents(const Path& file_path, std::error_code& ec) const = 0;
         std::string read_contents(const Path& file_path, LineInfo li) const;
-
-        virtual std::vector<std::string> read_lines(const Path& file_path, std::error_code& ec) const = 0;
-        std::vector<std::string> read_lines(const Path& file_path, LineInfo li) const;
 
         virtual Path find_file_recursively_up(const Path& starting_dir,
                                               const Path& filename,

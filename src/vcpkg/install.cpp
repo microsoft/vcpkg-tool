@@ -737,15 +737,15 @@ namespace vcpkg
             return ret;
         }
 
-        auto files = fs.read_lines(installed.listfile_path(bpgh), ec);
-        if (!ec)
+        auto maybe_files = fs.read_lines(installed.listfile_path(bpgh));
+        if (auto files = maybe_files.get())
         {
             std::unordered_map<std::string, std::string> config_files;
             std::map<std::string, std::vector<std::string>> library_targets;
             bool is_header_only = true;
             std::string header_path;
 
-            for (auto&& suffix : files)
+            for (auto&& suffix : *files)
             {
                 if (Strings::contains(suffix, "/share/") && Strings::ends_with(suffix, ".cmake"))
                 {

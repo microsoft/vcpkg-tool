@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vcpkg/base/basic_checks.h>
+#include <vcpkg/base/basic-checks.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/strings.h>
 
