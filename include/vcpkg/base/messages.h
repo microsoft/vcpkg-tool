@@ -2127,8 +2127,8 @@ namespace vcpkg
                     "installed.");
     DECLARE_MESSAGE(PortBugMissingLicense,
                     (msg::spec),
-                    "'{CURRENT_PACKAGES_DIR}' should not be translated.",
-                    "The software license must be available at ${CURRENT_PACKAGES_DIR}/share/{spec}/copyright");
+                    "",
+                    "The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{spec}/copyright");
     DECLARE_MESSAGE(PortBugMissingReleaseBinaries, (), "", "Release binaries were not found.");
     DECLARE_MESSAGE(PortBugMovePkgConfigFiles, (), "", "You can move the pkgconfig files with commands similar to:");
     DECLARE_MESSAGE(PortBugOutdatedCRT, (), "", "Detected outdated dynamic CRT in the following files:");

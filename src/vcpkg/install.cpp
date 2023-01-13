@@ -765,8 +765,8 @@ namespace vcpkg
             std::string name;
         };
 
-        auto files = fs.read_lines(installed.listfile_path(bpgh), ec);
-        if (!ec)
+        auto maybe_files = fs.read_lines(installed.listfile_path(bpgh));
+        if (auto files = maybe_files.get())
         {
             std::vector<ConfigPackage> config_packages;
             std::map<std::string, std::vector<std::string>> library_targets;
@@ -775,7 +775,7 @@ namespace vcpkg
 
             static constexpr StringLiteral INCLUDE_PREFIX = "include/";
 
-            for (auto&& triplet_and_suffix : files)
+            for (auto&& triplet_and_suffix : *files)
             {
                 if (triplet_and_suffix.empty() || triplet_and_suffix.back() == '/') continue;
 
