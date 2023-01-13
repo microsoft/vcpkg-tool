@@ -349,7 +349,7 @@ namespace vcpkg
     CmdParser::CmdParser(View<std::string> inputs)
         : argument_strings(inputs.begin(), inputs.end())
         , argument_strings_lowercase()
-        , argument_parsed(argument_strings.size(), '\0')
+        , argument_parsed(argument_strings.size(), false)
         , errors()
         , options_table()
     {
@@ -360,7 +360,7 @@ namespace vcpkg
     CmdParser::CmdParser(std::vector<std::string>&& inputs)
         : argument_strings(std::move(inputs))
         , argument_strings_lowercase()
-        , argument_parsed(argument_strings.size(), '\0')
+        , argument_parsed(argument_strings.size(), false)
         , errors()
         , options_table()
     {
@@ -378,7 +378,7 @@ namespace vcpkg
         std::size_t found = 0;
         for (std::size_t idx = 0; idx < argument_strings.size(); ++idx)
         {
-            if (argument_parsed[idx] != '\0')
+            if (argument_parsed[idx] != false)
             {
                 continue;
             }
@@ -391,7 +391,7 @@ namespace vcpkg
                 }
 
                 ++found;
-                argument_parsed[idx] = '\1';
+                argument_parsed[idx] = true;
             }
         }
 
@@ -449,7 +449,7 @@ namespace vcpkg
         std::size_t found = 0;
         for (std::size_t idx = 0; idx < argument_strings.size(); ++idx)
         {
-            if (argument_parsed[idx] != '\0')
+            if (argument_parsed[idx] != false)
             {
                 continue;
             }
@@ -468,7 +468,7 @@ namespace vcpkg
 
             if (parse_result == TryParseOptionResult::ValueIsNextParameter)
             {
-                if (idx + 1 == argument_strings.size() || argument_parsed[idx + 1] != '\0')
+                if (idx + 1 == argument_strings.size() || argument_parsed[idx + 1] != false)
                 {
                     errors.emplace_back(msg::format_error(msgOptionRequiresAValue, msg::option = option_name));
                     continue;
@@ -476,15 +476,15 @@ namespace vcpkg
 
                 ++found;
                 value = argument_strings[idx + 1];
-                argument_parsed[idx] = '\1';
-                argument_parsed[idx + 1] = '\1';
+                argument_parsed[idx] = true;
+                argument_parsed[idx + 1] = true;
                 ++idx;
             }
             else
             {
                 Checks::check_exit(VCPKG_LINE_INFO, parse_result == TryParseOptionResult::ValueSet);
                 ++found;
-                argument_parsed[idx] = '\1';
+                argument_parsed[idx] = true;
             }
         }
 
@@ -529,7 +529,7 @@ namespace vcpkg
         std::string temp_entry;
         for (std::size_t idx = 0; idx < argument_strings.size(); ++idx)
         {
-            if (argument_parsed[idx] != '\0')
+            if (argument_parsed[idx] != false)
             {
                 continue;
             }
@@ -543,7 +543,7 @@ namespace vcpkg
 
             if (parse_result == TryParseOptionResult::ValueIsNextParameter)
             {
-                if (idx + 1 == argument_strings.size() || argument_parsed[idx + 1] != '\0')
+                if (idx + 1 == argument_strings.size() || argument_parsed[idx + 1] != false)
                 {
                     errors.emplace_back(msg::format_error(msgOptionRequiresAValue, msg::option = option_name));
                     continue;
@@ -556,8 +556,8 @@ namespace vcpkg
                 }
 
                 value.emplace_back(argument_strings[idx + 1]);
-                argument_parsed[idx] = '\1';
-                argument_parsed[idx + 1] = '\1';
+                argument_parsed[idx] = true;
+                argument_parsed[idx + 1] = true;
                 ++idx;
             }
             else
@@ -571,7 +571,7 @@ namespace vcpkg
 
                 value.emplace_back(std::move(temp_entry));
                 temp_entry.clear();
-                argument_parsed[idx] = '\1';
+                argument_parsed[idx] = true;
             }
         }
 
@@ -616,18 +616,18 @@ namespace vcpkg
     {
         for (std::size_t idx = 0; idx < argument_strings.size(); ++idx)
         {
-            if (argument_parsed[idx] == '\0')
+            if (argument_parsed[idx] == false)
             {
                 const auto& this_arg = argument_strings_lowercase[idx];
                 if (this_arg == "--version")
                 {
-                    argument_parsed[idx] = '\1';
+                    argument_parsed[idx] = true;
                     return "version";
                 }
 
                 if (!Strings::starts_with(this_arg, "--"))
                 {
-                    argument_parsed[idx] = '\1';
+                    argument_parsed[idx] = true;
                     return this_arg;
                 }
             }
@@ -639,10 +639,10 @@ namespace vcpkg
     std::vector<std::string> CmdParser::get_remaining_args() const
     {
         std::vector<std::string> results;
-        results.reserve(std::count(argument_parsed.begin(), argument_parsed.end(), '\0'));
+        results.reserve(std::count(argument_parsed.begin(), argument_parsed.end(), static_cast<char>(false)));
         for (std::size_t idx = 0; idx < argument_strings.size(); ++idx)
         {
-            if (argument_parsed[idx] == '\0')
+            if (argument_parsed[idx] == false)
             {
                 results.emplace_back(argument_strings[idx]);
             }
@@ -655,7 +655,7 @@ namespace vcpkg
     {
         do
         {
-            argument_parsed[idx] = '\1';
+            argument_parsed[idx] = true;
             errors.emplace_back(msg::format_error(msgUnexpectedArgument, (msg::option = argument_strings[idx])));
         } while (++idx, idx < argument_parsed.size());
     }
@@ -664,7 +664,7 @@ namespace vcpkg
     {
         for (std::size_t idx = 0; idx < argument_parsed.size(); ++idx)
         {
-            if (argument_parsed[idx] == '\0')
+            if (argument_parsed[idx] == false)
             {
                 errors.emplace_back(msg::format_error(msgNonZeroRemainingArgs, (msg::command_name = command_name)));
                 add_unexpected_argument_errors_after(idx);
@@ -685,9 +685,9 @@ namespace vcpkg
                 return std::string{};
             }
 
-            if (argument_parsed[idx] == '\0')
+            if (argument_parsed[idx] == false)
             {
-                argument_parsed[idx] = '\1';
+                argument_parsed[idx] = true;
                 selected = idx;
                 break;
             }
@@ -695,7 +695,7 @@ namespace vcpkg
 
         while (++idx < argument_parsed.size())
         {
-            if (argument_parsed[idx] == '\0')
+            if (argument_parsed[idx] == false)
             {
                 errors.emplace_back(msg::format_error(msgNonOneRemainingArgs, (msg::command_name = command_name)));
                 add_unexpected_argument_errors_after(idx);
@@ -717,9 +717,9 @@ namespace vcpkg
                 return nullopt;
             }
 
-            if (argument_parsed[idx] == '\0')
+            if (argument_parsed[idx] == false)
             {
-                argument_parsed[idx] = '\1';
+                argument_parsed[idx] = true;
                 selected = idx;
                 break;
             }
@@ -727,7 +727,7 @@ namespace vcpkg
 
         while (++idx < argument_parsed.size())
         {
-            if (argument_parsed[idx] == '\0')
+            if (argument_parsed[idx] == false)
             {
                 errors.emplace_back(
                     msg::format_error(msgNonZeroOrOneRemainingArgs, (msg::command_name = command_name)));
@@ -742,12 +742,12 @@ namespace vcpkg
     std::vector<std::string> CmdParser::consume_remaining_args()
     {
         std::vector<std::string> results;
-        results.reserve(std::count(argument_parsed.begin(), argument_parsed.end(), '\0'));
+        results.reserve(std::count(argument_parsed.begin(), argument_parsed.end(), static_cast<char>(false)));
         for (std::size_t idx = 0; idx < argument_parsed.size(); ++idx)
         {
-            if (argument_parsed[idx] == '\0')
+            if (argument_parsed[idx] == false)
             {
-                argument_parsed[idx] = '\1';
+                argument_parsed[idx] = true;
                 results.emplace_back(argument_strings[idx]);
             }
         }
