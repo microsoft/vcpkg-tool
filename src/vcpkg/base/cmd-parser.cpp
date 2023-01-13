@@ -22,18 +22,21 @@ namespace vcpkg
 {
     void HelpTableFormatter::format(StringView col1, StringView col2)
     {
-        // 2 space, 31 col1, 1 space, 65 col2 = 99
-        m_str.append(2, ' ');
+        static constexpr std::size_t initial_space = 2;
+        static constexpr std::size_t col1_capacity = 31;
+        static constexpr std::size_t seperating_space = 1;
+
+        m_str.append(initial_space, ' ');
         Strings::append(m_str, col1);
-        if (col1.size() > 31)
+        if (col1.size() > col1_capacity)
         {
             help_table_newline_indent(m_str);
         }
         else
         {
-            m_str.append(32 - col1.size(), ' ');
+            m_str.append((col1_capacity + seperating_space) - col1.size(), ' ');
         }
-        text(col2, 34);
+        text(col2, initial_space + col1_capacity + seperating_space);
 
         m_str.push_back('\n');
     }
