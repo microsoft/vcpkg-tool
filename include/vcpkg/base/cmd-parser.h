@@ -110,6 +110,12 @@ namespace vcpkg
 
         // Emits an error if there are any remaining arguments.
         void enforce_no_remaining_args(StringView command_name);
+
+        //
+        // All remaining_arg functions assert that the remaining args don't start with --. If they do,
+        // emits an error and returns the erroneous result (typically empty).
+        //
+
         // Consumes the one remaining argument. Emits an error and returns empty string if the number of arguments left
         // is not 1.
         std::string consume_only_remaining_arg(StringView command_name);
@@ -139,6 +145,8 @@ namespace vcpkg
     private:
         // Adds all arguments that aren't parsed after `idx` as errors.
         void add_unexpected_argument_errors_after(size_t idx);
+        void add_unexpected_option_error(const std::string& unrecognized_option);
+        bool consume_remaining_args_impl(std::vector<std::string>& result);
 
         std::vector<std::string> argument_strings;
         std::vector<std::string> argument_strings_lowercase;

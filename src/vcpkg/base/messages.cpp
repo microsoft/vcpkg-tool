@@ -859,6 +859,7 @@ namespace vcpkg
     REGISTER_MESSAGE(OptionMustBeInteger);
     REGISTER_MESSAGE(OptionRequired);
     REGISTER_MESSAGE(OptionRequiresAValue);
+    REGISTER_MESSAGE(OptionRequiresANonDashesValue);
     REGISTER_MESSAGE(OptionRequiresOption);
     REGISTER_MESSAGE(OptionUsedMultipleTimes);
     REGISTER_MESSAGE(Options);
@@ -1041,6 +1042,7 @@ namespace vcpkg
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
     REGISTER_MESSAGE(FailedToFetchError);
     REGISTER_MESSAGE(UnexpectedPortName);
+    REGISTER_MESSAGE(UnexpectedOption);
     REGISTER_MESSAGE(FailedToLoadUnnamedPortFromPath);
     REGISTER_MESSAGE(TrailingCommaInArray);
     REGISTER_MESSAGE(TrailingCommaInObj);

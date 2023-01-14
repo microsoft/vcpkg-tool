@@ -474,10 +474,20 @@ namespace vcpkg
                     continue;
                 }
 
-                ++found;
-                value = argument_strings[idx + 1];
                 argument_parsed[idx] = true;
+                if (Strings::starts_with(argument_strings[idx + 1], "--"))
+                {
+                    errors.emplace_back(msg::format_error(msgOptionRequiresANonDashesValue,
+                                                          msg::option = option_name,
+                                                          msg::actual = argument_strings[idx],
+                                                          msg::value = argument_strings[idx + 1]));
+                    ++idx;
+                    continue;
+                }
+
+                ++found;
                 argument_parsed[idx + 1] = true;
+                value = argument_strings[idx + 1];
                 ++idx;
             }
             else
@@ -549,6 +559,17 @@ namespace vcpkg
                     continue;
                 }
 
+                argument_parsed[idx] = true;
+                if (Strings::starts_with(argument_strings[idx + 1], "--"))
+                {
+                    errors.emplace_back(msg::format_error(msgOptionRequiresANonDashesValue,
+                                                          msg::option = option_name,
+                                                          msg::actual = argument_strings[idx],
+                                                          msg::value = argument_strings[idx + 1]));
+                    ++idx;
+                    continue;
+                }
+
                 if (!found)
                 {
                     value.clear();
@@ -556,7 +577,6 @@ namespace vcpkg
                 }
 
                 value.emplace_back(argument_strings[idx + 1]);
-                argument_parsed[idx] = true;
                 argument_parsed[idx + 1] = true;
                 ++idx;
             }
@@ -656,8 +676,38 @@ namespace vcpkg
         do
         {
             argument_parsed[idx] = true;
-            errors.emplace_back(msg::format_error(msgUnexpectedArgument, (msg::option = argument_strings[idx])));
+            add_unexpected_option_error(argument_strings[idx]);
         } while (++idx, idx < argument_parsed.size());
+    }
+
+    void CmdParser::add_unexpected_option_error(const std::string& unrecognized_option)
+    {
+        errors.emplace_back(msg::format_error(msgUnexpectedArgument, (msg::option = unrecognized_option)));
+    }
+
+    bool CmdParser::consume_remaining_args_impl(std::vector<std::string>& results)
+    {
+        bool error = false;
+        results.reserve(std::count(argument_parsed.begin(), argument_parsed.end(), static_cast<char>(false)));
+        for (std::size_t idx = 0; idx < argument_parsed.size(); ++idx)
+        {
+            if (argument_parsed[idx] == false)
+            {
+                argument_parsed[idx] = true;
+                if (Strings::starts_with(argument_strings[idx], "--"))
+                {
+                    error = true;
+                    results.clear();
+                    errors.emplace_back(msg::format_error(msgUnexpectedOption, msg::option = argument_strings[idx]));
+                }
+                else if (!error)
+                {
+                    results.emplace_back(argument_strings[idx]);
+                }
+            }
+        }
+
+        return error;
     }
 
     void CmdParser::enforce_no_remaining_args(StringView command_name)
@@ -693,6 +743,13 @@ namespace vcpkg
             }
         }
 
+        bool error = false;
+        if (Strings::starts_with(argument_strings[selected], "--"))
+        {
+            error = true;
+            errors.emplace_back(msg::format_error(msgUnexpectedOption, (msg::option = argument_strings[idx])));
+        }
+
         while (++idx < argument_parsed.size())
         {
             if (argument_parsed[idx] == false)
@@ -701,6 +758,11 @@ namespace vcpkg
                 add_unexpected_argument_errors_after(idx);
                 return std::string{};
             }
+        }
+
+        if (error)
+        {
+            return std::string{};
         }
 
         return argument_strings[selected];
@@ -725,6 +787,13 @@ namespace vcpkg
             }
         }
 
+        bool error = false;
+        if (Strings::starts_with(argument_strings[selected], "--"))
+        {
+            error = true;
+            errors.emplace_back(msg::format_error(msgUnexpectedOption, (msg::option = argument_strings[idx])));
+        }
+
         while (++idx < argument_parsed.size())
         {
             if (argument_parsed[idx] == false)
@@ -736,22 +805,18 @@ namespace vcpkg
             }
         }
 
+        if (error)
+        {
+            return nullopt;
+        }
+
         return argument_strings[selected];
     }
 
     std::vector<std::string> CmdParser::consume_remaining_args()
     {
         std::vector<std::string> results;
-        results.reserve(std::count(argument_parsed.begin(), argument_parsed.end(), static_cast<char>(false)));
-        for (std::size_t idx = 0; idx < argument_parsed.size(); ++idx)
-        {
-            if (argument_parsed[idx] == false)
-            {
-                argument_parsed[idx] = true;
-                results.emplace_back(argument_strings[idx]);
-            }
-        }
-
+        (void)consume_remaining_args_impl(results);
         return results;
     }
 
@@ -759,7 +824,12 @@ namespace vcpkg
     {
         Checks::check_exit(VCPKG_LINE_INFO, arity != 0); // use enforce_no_remaining_args instead
         Checks::check_exit(VCPKG_LINE_INFO, arity != 1); // use consume_only_remaining_arg instead
-        std::vector<std::string> results = consume_remaining_args();
+        std::vector<std::string> results;
+        if (consume_remaining_args_impl(results))
+        {
+            return results;
+        }
+
         if (results.size() != arity)
         {
             errors.emplace_back(msg::format_error(msgNonExactlyArgs,
@@ -784,7 +854,12 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, min_arity < max_arity); // if == use single parameter overload instead
         Checks::check_exit(VCPKG_LINE_INFO, max_arity != 0);        // use enforce_no_remaining_args instead
         Checks::check_exit(VCPKG_LINE_INFO, max_arity != 1);        // use consume_only_remaining_arg instead
-        std::vector<std::string> results = consume_remaining_args();
+        std::vector<std::string> results;
+        if (consume_remaining_args_impl(results))
+        {
+            return results;
+        }
+
         if (max_arity < results.size() || results.size() < min_arity)
         {
             errors.emplace_back(msg::format_error(msgNonRangeArgs,

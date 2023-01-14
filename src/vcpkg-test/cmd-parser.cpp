@@ -307,8 +307,9 @@ TEST_CASE ("Options can be parsed", "[cmd_parser]")
     CHECK(option_value == "fluffy");
 
     Optional<std::string> optional_value;
-    CHECK(uut.parse_option("evil-option", StabilityTag::Experimental, optional_value));
-    CHECK(optional_value.value_or_exit(VCPKG_LINE_INFO) == "--evil-value");
+    // Trying to set the value of an option to a --dashed thing consumes the dashed thing but not the value
+    CHECK(!uut.parse_option("evil-option", StabilityTag::Experimental, optional_value));
+    CHECK(!optional_value.has_value());
     optional_value.clear();
     CHECK(!uut.parse_option("evil-option", StabilityTag::Experimental, optional_value));
     CHECK(!optional_value.has_value());
@@ -328,17 +329,20 @@ TEST_CASE ("Options can be parsed", "[cmd_parser]")
 
     // Duplicate options emit errors, consume all duplicates, and take the last value
     std::string duplicate_value;
-    CHECK(uut.get_errors().empty());
+    auto expected_errors =
+        localized({"error: the option 'evil-option' requires a value; if you intended to set 'evil-option' to "
+                   "'--evil-value', use the equals form instead: --x-evil-option=--evil-value"});
+    CHECK(uut.get_errors() == expected_errors);
     CHECK(uut.parse_option("duplicate", StabilityTag::Standard, duplicate_value));
     CHECK(duplicate_value == "last");
-    const auto expected_errors = localized({"error: the option 'duplicate' was specified multiple times"});
+    expected_errors.push_back(LocalizedString::from_raw("error: the option 'duplicate' was specified multiple times"));
     CHECK(uut.get_errors() == expected_errors);
     duplicate_value = "good";
     CHECK(!uut.parse_option("duplicate", StabilityTag::Standard, duplicate_value));
     CHECK(duplicate_value == "good");
 
     CHECK(uut.get_errors() == expected_errors);
-    CHECK(uut.get_remaining_args().empty());
+    CHECK(uut.get_remaining_args() == std::vector<std::string>{"--evil-value"});
 }
 
 TEST_CASE ("Options can have stability tags", "[cmd_parser]")
@@ -445,8 +449,8 @@ TEST_CASE ("Multi-options can be parsed", "[cmd_parser]")
     CHECK(option_value == std::vector<std::string>{"fluffy"});
 
     Optional<std::vector<std::string>> optional_value;
-    CHECK(uut.parse_multi_option("evil-option", StabilityTag::Experimental, optional_value));
-    CHECK(optional_value.value_or_exit(VCPKG_LINE_INFO) == std::vector<std::string>{"--evil-value"});
+    CHECK(!uut.parse_multi_option("evil-option", StabilityTag::Experimental, optional_value));
+    CHECK(!optional_value.has_value());
     optional_value.clear();
     CHECK(!uut.parse_multi_option("evil-option", StabilityTag::Experimental, optional_value));
     CHECK(!optional_value.has_value());
@@ -465,11 +469,14 @@ TEST_CASE ("Multi-options can be parsed", "[cmd_parser]")
     CHECK(optional_option_value.value_or_exit(VCPKG_LINE_INFO) == std::vector<std::string>{"set"});
 
     std::vector<std::string> duplicate_value;
-    CHECK(uut.get_errors().empty());
+    const auto expected_errors =
+        localized({"error: the option 'evil-option' requires a value; if you intended to set 'evil-option' to "
+                   "'--evil-value', use the equals form instead: --x-evil-option=--evil-value"});
+    CHECK(uut.get_errors() == expected_errors);
     CHECK(uut.parse_multi_option("duplicate", StabilityTag::Standard, duplicate_value));
     CHECK(duplicate_value == std::vector<std::string>{"a", "b", "last"});
-    CHECK(uut.get_errors().empty());
-    CHECK(uut.get_remaining_args().empty());
+    CHECK(uut.get_errors() == expected_errors);
+    CHECK(uut.get_remaining_args() == std::vector<std::string>{"--evil-value"});
 }
 
 TEST_CASE ("Multi-options can have stability tags", "[cmd_parser]")
@@ -787,6 +794,64 @@ TEST_CASE ("Consume remaining args", "[cmd_parser]")
               localized(
                   {"error: the command 'example' requires between 2 and 3 arguments, inclusive, but 4 were provided",
                    "error: unexpected argument: fourth-arg"}));
+        CHECK(uut.get_remaining_args().empty());
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"--first-arg"}};
+        CHECK(uut.consume_remaining_args() == std::vector<std::string>{});
+        const auto expected_errors = localized({"error: unexpected option: --first-arg"});
+        CHECK(uut.get_errors() == expected_errors);
+        CHECK(uut.get_remaining_args().empty());
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"--first-arg"}};
+        CHECK(uut.consume_only_remaining_arg("command") == std::string{});
+        const auto expected_errors = localized({"error: unexpected option: --first-arg"});
+        CHECK(uut.get_errors() == expected_errors);
+        CHECK(uut.get_remaining_args().empty());
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"--first-arg"}};
+        CHECK(!uut.consume_only_remaining_arg_optional("command").has_value());
+        const auto expected_errors = localized({"error: unexpected option: --first-arg"});
+        CHECK(uut.get_errors() == expected_errors);
+        CHECK(uut.get_remaining_args().empty());
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"--first-arg", "second-arg"}};
+        CHECK(uut.consume_remaining_args("command", 2) == std::vector<std::string>{});
+        const auto expected_errors = localized({"error: unexpected option: --first-arg"});
+        CHECK(uut.get_errors() == expected_errors);
+        CHECK(uut.get_remaining_args().empty());
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"--first-arg", "second-arg"}};
+        // note that arity isn't checked if the 'looks like switch' check fails
+        CHECK(uut.consume_remaining_args("command", 3) == std::vector<std::string>{});
+        const auto expected_errors = localized({"error: unexpected option: --first-arg"});
+        CHECK(uut.get_errors() == expected_errors);
+        CHECK(uut.get_remaining_args().empty());
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"--first-arg", "second-arg"}};
+        CHECK(uut.consume_remaining_args("command", 1, 2) == std::vector<std::string>{});
+        const auto expected_errors = localized({"error: unexpected option: --first-arg"});
+        CHECK(uut.get_errors() == expected_errors);
+        CHECK(uut.get_remaining_args().empty());
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"--first-arg", "second-arg"}};
+        // note that arity isn't checked if the 'looks like switch' check fails
+        CHECK(uut.consume_remaining_args("command", 3, 4) == std::vector<std::string>{});
+        const auto expected_errors = localized({"error: unexpected option: --first-arg"});
+        CHECK(uut.get_errors() == expected_errors);
         CHECK(uut.get_remaining_args().empty());
     }
 }
