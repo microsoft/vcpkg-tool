@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vcpkg/base/system_headers.h>
+#include <vcpkg/base/system-headers.h>
 
 #if defined(_MSC_VER)
 // pch.h only is used for performance with MSVC

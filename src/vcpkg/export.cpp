@@ -263,6 +263,16 @@ namespace vcpkg::Export
             fs.create_directories(destination.parent_path(), IgnoreErrors{});
             fs.copy_file(source, destination, CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
         }
+
+        // Copying exe (this is not relative to root)
+        Path vcpkg_exe = get_exe_path_of_current_process();
+#if defined(_WIN32)
+        auto destination = raw_exported_dir_path / "vcpkg.exe";
+#else
+        auto destination = raw_exported_dir_path / "vcpkg";
+#endif
+        fs.copy_file(vcpkg_exe, destination, CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
+
         fs.write_contents(raw_exported_dir_path / ".vcpkg-root", "", VCPKG_LINE_INFO);
     }
 
@@ -518,7 +528,8 @@ namespace vcpkg::Export
                 const InstallDir dirs =
                     InstallDir::from_destination_root(export_paths, action.spec.triplet(), binary_paragraph);
 
-                auto lines = fs.read_lines(paths.installed().listfile_path(binary_paragraph), VCPKG_LINE_INFO);
+                auto lines =
+                    fs.read_lines(paths.installed().listfile_path(binary_paragraph)).value_or_exit(VCPKG_LINE_INFO);
                 std::vector<Path> files;
                 for (auto&& suffix : lines)
                 {

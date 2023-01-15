@@ -1,4 +1,4 @@
-#include <vcpkg/base/basic_checks.h>
+#include <vcpkg/base/basic-checks.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.new.h>

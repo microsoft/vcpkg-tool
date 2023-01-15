@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/view.h>
+#include <vcpkg/base/span.h>
 
 #include <algorithm>
 #include <functional>

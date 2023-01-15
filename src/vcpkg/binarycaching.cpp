@@ -1,3 +1,4 @@
+#include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
@@ -20,8 +21,6 @@
 #include <vcpkg/vcpkgpaths.h>
 
 #include <iterator>
-
-#include "vcpkg/base/api_stable_format.h"
 
 using namespace vcpkg;
 
