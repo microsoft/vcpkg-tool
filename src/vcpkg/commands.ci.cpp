@@ -741,7 +741,7 @@ namespace vcpkg::Commands::CI
                     const IBuildLogsRecorder& build_logs_recorder = feature_build_logs_recorder_storage
                                                                         ? *(feature_build_logs_recorder_storage.get())
                                                                         : null_build_logs_recorder();
-                    ElapsedTimer timer;
+                    ElapsedTimer install_timer;
                     const auto summary = Install::perform(args,
                                                           install_plan,
                                                           KeepGoing::YES,
@@ -777,16 +777,17 @@ namespace vcpkg::Commands::CI
                             default: break;
                         }
                     }
+                    const auto time_to_install = install_timer.elapsed();
                     switch (summary.results.back().build_result.value_or_exit(VCPKG_LINE_INFO).code)
                     {
                         case BuildResult::DOWNLOADED:
                         case vcpkg::BuildResult::SUCCEEDED:
                             handle_result(
-                                std::move(spec), CiFeatureBaselineState::Pass, baseline, logs_dir, timer.elapsed());
+                                std::move(spec), CiFeatureBaselineState::Pass, baseline, logs_dir, time_to_install);
                             break;
                         case vcpkg::BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
                             handle_result(
-                                std::move(spec), CiFeatureBaselineState::Cascade, baseline, logs_dir, timer.elapsed());
+                                std::move(spec), CiFeatureBaselineState::Cascade, baseline, logs_dir, time_to_install);
                             break;
                         case BuildResult::BUILD_FAILED:
                         case BuildResult::POST_BUILD_CHECKS_FAILED:
@@ -795,7 +796,7 @@ namespace vcpkg::Commands::CI
                         case BuildResult::REMOVED:
                         case BuildResult::EXCLUDED:
                             handle_result(
-                                std::move(spec), CiFeatureBaselineState::Fail, baseline, logs_dir, timer.elapsed());
+                                std::move(spec), CiFeatureBaselineState::Fail, baseline, logs_dir, time_to_install);
                             break;
                     }
                 }
