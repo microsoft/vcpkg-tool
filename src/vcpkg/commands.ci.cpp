@@ -769,6 +769,7 @@ namespace vcpkg::Commands::CI
                                             result.get_install_plan_action().value_or_exit(VCPKG_LINE_INFO)),
                                         VCPKG_LINE_INFO);
                                 }
+                                [[fallthrough]];
                             case BuildResult::POST_BUILD_CHECKS_FAILED:
                             case BuildResult::FILE_CONFLICTS:
                                 known_failures.insert(result.get_abi().value_or_exit(VCPKG_LINE_INFO));
