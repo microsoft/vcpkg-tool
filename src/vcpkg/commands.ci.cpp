@@ -660,7 +660,12 @@ namespace vcpkg::Commands::CI
                     if (feature->supports_expression.evaluate(dep_info_vars) &&
                         !Util::Sets::contains(baseline.skip_features, feature->name))
                     {
-                        all_features.push_back(feature->name);
+                        // if we expect a feature to cascade don't add it the the all features test because this test
+                        // will them simply cascade too
+                        if (!Util::Sets::contains(baseline.cascade_features, feature->name))
+                        {
+                            all_features.push_back(feature->name);
+                        }
                         if (test_features_seperatly &&
                             !Util::Sets::contains(baseline.no_separate_feature_test, feature->name))
                         {
