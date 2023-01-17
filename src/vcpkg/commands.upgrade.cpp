@@ -93,7 +93,7 @@ namespace vcpkg::Commands::Upgrade
         auto& var_provider = *var_provider_storage;
 
         // input sanitization
-        const std::vector<PackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
+        const std::vector<PackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
             return check_and_get_package_spec(std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
 

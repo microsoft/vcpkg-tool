@@ -964,7 +964,6 @@ namespace vcpkg
                     (msg::path, msg::spec),
                     "",
                     "The following files are already installed in {path} and are in conflict with {spec}");
-    DECLARE_MESSAGE(ConflictingValuesForOption, (msg::option), "", "conflicting values specified for '--{option}'.");
     DECLARE_MESSAGE(ConstraintViolation, (), "", "Found a constraint violation:");
     DECLARE_MESSAGE(ContinueCodeUnitInStart, (), "", "found continue code unit in start position");
     DECLARE_MESSAGE(ControlAndManifestFilesPresent,
@@ -1105,15 +1104,10 @@ namespace vcpkg
                     (msg::env_var),
                     "",
                     "Specify the downloads root directory.\n(default: {env_var})");
-    DECLARE_MESSAGE(DuplicateCommandOption, (msg::option), "", "The option --{option} can only be passed once.");
     DECLARE_MESSAGE(DuplicatedKeyInObj,
                     (msg::value),
                     "{value} is a json property/object",
                     "Duplicated key \"{value}\" in an object");
-    DECLARE_MESSAGE(DuplicateOptions,
-                    (msg::value),
-                    "'{value}' is a command line option.",
-                    "'--{value}' specified multiple times.");
     DECLARE_MESSAGE(DuplicatePackagePattern, (msg::package_name), "", "Package \"{package_name}\" is duplicated.");
     DECLARE_MESSAGE(DuplicatePackagePatternFirstOcurrence, (), "", "First declared in:");
     DECLARE_MESSAGE(DuplicatePackagePatternIgnoredLocations, (), "", "The following redeclarations will be ignored:");
@@ -1126,7 +1120,6 @@ namespace vcpkg
                     (),
                     "",
                     "Embedding `vcpkg-configuration` in a manifest file is an EXPERIMENTAL feature.");
-    DECLARE_MESSAGE(EmptyArg, (msg::option), "", "The option --{option} must be passed a non-empty argument.");
     DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
     DECLARE_MESSAGE(EndOfStringInCodeUnit, (), "", "found end of string in middle of code point");
     DECLARE_MESSAGE(EnvInvalidMaxConcurrency,
@@ -1235,7 +1228,6 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
     DECLARE_MESSAGE(ExpectedStatusField, (), "", "Expected 'status' field in status paragraph");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
-    DECLARE_MESSAGE(ExpectedValueForOption, (msg::option), "", "expected value after --{option}.");
     DECLARE_MESSAGE(ExportArchitectureReq,
                     (),
                     "",
@@ -1582,10 +1574,6 @@ namespace vcpkg
                     "SHA512's must be 128 hex characters: {value}");
     DECLARE_MESSAGE(IncorrectArchiveFileSignature, (), "", "Incorrect archive file signature");
     DECLARE_MESSAGE(IncorrectLibHeaderEnd, (), "", "Incorrect lib header end");
-    DECLARE_MESSAGE(IncorrectNumberOfArgs,
-                    (msg::command_name, msg::expected, msg::actual),
-                    "'{expected}' is the required number of arguments. '{actual}' is the number of arguments provided.",
-                    "'{command_name}' requires '{expected}' arguments, but '{actual}' were provided.");
     DECLARE_MESSAGE(IncorrectPESignature, (), "", "Incorrect PE signature");
     DECLARE_MESSAGE(IncrementedUtf8Decoder, (), "", "Incremented Utf8Decoder at the end of the string");
     DECLARE_MESSAGE(InfoSetEnvVar,

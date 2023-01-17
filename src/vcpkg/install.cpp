@@ -969,7 +969,7 @@ namespace vcpkg
         if (auto p = paths.get_manifest().get())
         {
             bool failure = false;
-            if (!args.command_arguments.empty())
+            if (!options.command_arguments.empty())
             {
                 msg::println_error(msgErrorIndividualPackagesUnsupported);
                 msg::println(Color::error, msg::msgSeeURL, msg::url = docs::manifests_url);
@@ -996,7 +996,7 @@ namespace vcpkg
         else
         {
             bool failure = false;
-            if (args.command_arguments.empty())
+            if (options.command_arguments.empty())
             {
                 msg::println_error(msgErrorRequirePackagesList);
                 failure = true;
@@ -1189,7 +1189,7 @@ namespace vcpkg
         PathsPortFileProvider provider(
             fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
 
-        const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
+        const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
                 std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });

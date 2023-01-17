@@ -193,50 +193,12 @@ namespace vcpkg
         args.forwardable_arguments = args.parser.get_remaining_args();
 
         args.parser.exit_with_errors(args.parser.get_full_help_text(LocalizedString::from_raw("FIXME")));
-        args.command_arguments = args.parser.get_remaining_args();
-        // FIXME
-        Util::erase_remove_if(args.command_arguments,
-                              [](const std::string& arg) { return Strings::starts_with(arg, "--"); });
         return args;
     }
 
     ParsedArguments VcpkgCmdArguments::parse_arguments(const CommandStructure& command_structure) const
     {
-        bool failed = false;
         ParsedArguments output;
-
-        const size_t actual_arg_count = command_arguments.size();
-
-        if (command_structure.minimum_arity == command_structure.maximum_arity)
-        {
-            if (actual_arg_count != command_structure.minimum_arity)
-            {
-                msg::println_error(msgIncorrectNumberOfArgs,
-                                   msg::command_name = this->command,
-                                   msg::expected = command_structure.minimum_arity,
-                                   msg::actual = actual_arg_count);
-                failed = true;
-            }
-        }
-        else
-        {
-            if (actual_arg_count < command_structure.minimum_arity)
-            {
-                msg::println_error(msgIncorrectNumberOfArgs,
-                                   msg::command_name = this->command,
-                                   msg::expected = command_structure.minimum_arity,
-                                   msg::actual = actual_arg_count);
-                failed = true;
-            }
-            if (actual_arg_count > command_structure.maximum_arity)
-            {
-                msg::println_error(msgIncorrectNumberOfArgs,
-                                   msg::command_name = this->command,
-                                   msg::expected = command_structure.minimum_arity,
-                                   msg::actual = actual_arg_count);
-                failed = true;
-            }
-        }
 
         auto parser_copy = this->parser;
         for (const auto& switch_ : command_structure.options.switches)
@@ -320,6 +282,32 @@ namespace vcpkg
                     output.multisettings.emplace(option.name.to_string(), std::move(maybe_parse_result));
                 }
             }
+        }
+
+        if (command_structure.maximum_arity == 0)
+        {
+            parser_copy.enforce_no_remaining_args(command);
+        }
+        else if (command_structure.minimum_arity == 0 && command_structure.maximum_arity == 1)
+        {
+            auto maybe_arg = parser_copy.consume_only_remaining_arg_optional(command);
+            if (auto arg = maybe_arg.get())
+            {
+                output.command_arguments.push_back(std::move(*arg));
+            }
+        }
+        else if (command_structure.minimum_arity == 1 && command_structure.maximum_arity == 1)
+        {
+            output.command_arguments.push_back(parser_copy.consume_only_remaining_arg(command));
+        }
+        else if (command_structure.minimum_arity == command_structure.maximum_arity)
+        {
+            output.command_arguments = parser_copy.consume_remaining_args(command, command_structure.minimum_arity);
+        }
+        else
+        {
+            output.command_arguments = parser_copy.consume_remaining_args(
+                command, command_structure.minimum_arity, command_structure.maximum_arity);
         }
 
         parser_copy.exit_with_errors(LocalizedString::from_raw("FIXME"));

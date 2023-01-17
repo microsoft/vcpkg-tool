@@ -119,9 +119,9 @@ namespace vcpkg::Commands::List
 
         const auto enable_fulldesc = Util::Sets::contains(options.switches, OPTION_FULLDESC.to_string());
 
-        if (!args.command_arguments.empty())
+        if (!options.command_arguments.empty())
         {
-            auto& query = args.command_arguments[0];
+            auto& query = options.command_arguments[0];
             auto pghs = Util::filter(installed_packages, [query](const StatusParagraph* status_paragraph) {
                 return Strings::case_insensitive_ascii_contains(status_paragraph->package.displayname(), query);
             });

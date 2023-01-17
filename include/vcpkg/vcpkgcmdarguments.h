@@ -210,7 +210,6 @@ namespace vcpkg
 
         const std::string& get_command() const noexcept { return command; }
 
-        std::vector<std::string> command_arguments;
         std::vector<std::string> forwardable_arguments;
 
         ParsedArguments parse_arguments(const CommandStructure& command_structure) const;

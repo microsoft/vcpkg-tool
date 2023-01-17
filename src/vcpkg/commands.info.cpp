@@ -59,7 +59,7 @@ namespace vcpkg::Commands::Info
             const StatusParagraphs status_paragraphs = database_load_check(fs, paths.installed());
             std::set<PackageSpec> specs_written;
             std::vector<PackageSpec> specs_to_write;
-            for (auto&& arg : args.command_arguments)
+            for (auto&& arg : options.command_arguments)
             {
                 ParserBase parser(arg, "<command>");
                 auto maybe_qpkg = parse_qualified_specifier(parser);
@@ -120,7 +120,7 @@ namespace vcpkg::Commands::Info
             PathsPortFileProvider provider(
                 fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
 
-            for (auto&& arg : args.command_arguments)
+            for (auto&& arg : options.command_arguments)
             {
                 ParserBase parser(arg, "<command>");
                 auto maybe_pkg = parse_package_name(parser);

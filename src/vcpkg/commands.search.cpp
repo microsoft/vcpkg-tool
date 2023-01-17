@@ -29,9 +29,9 @@ namespace vcpkg::Commands
         const ParsedArguments options = args.parse_arguments(SearchCommandStructure);
         const bool full_description = Util::Sets::contains(options.switches, OPTION_FULLDESC);
         Optional<StringView> filter;
-        if (!args.command_arguments.empty())
+        if (!options.command_arguments.empty())
         {
-            filter = StringView{args.command_arguments[0]};
+            filter = StringView{options.command_arguments[0]};
         }
 
         perform_find_port_and_exit(paths, full_description, args.json.value_or(false), filter, paths.overlay_ports);

@@ -513,7 +513,6 @@ namespace vcpkg
     REGISTER_MESSAGE(CMakeUsingExportedLibs);
     REGISTER_MESSAGE(CommunityTriplets);
     REGISTER_MESSAGE(ComparingUtf8Decoders);
-    REGISTER_MESSAGE(ConflictingValuesForOption);
     REGISTER_MESSAGE(ConstraintViolation);
     REGISTER_MESSAGE(ContinueCodeUnitInStart);
     REGISTER_MESSAGE(ControlAndManifestFilesPresent);
@@ -562,9 +561,7 @@ namespace vcpkg
     REGISTER_MESSAGE(DownloadingVcpkgStandaloneBundle);
     REGISTER_MESSAGE(DownloadingVcpkgStandaloneBundleLatest);
     REGISTER_MESSAGE(DownloadRootsDir);
-    REGISTER_MESSAGE(DuplicateCommandOption);
     REGISTER_MESSAGE(DuplicatedKeyInObj);
-    REGISTER_MESSAGE(DuplicateOptions);
     REGISTER_MESSAGE(DuplicatePackagePattern);
     REGISTER_MESSAGE(DuplicatePackagePatternFirstOcurrence);
     REGISTER_MESSAGE(DuplicatePackagePatternIgnoredLocations);
@@ -574,7 +571,6 @@ namespace vcpkg
     REGISTER_MESSAGE(ElapsedTimeForChecks);
     REGISTER_MESSAGE(EmailVcpkgTeam);
     REGISTER_MESSAGE(EmbeddingVcpkgConfigInManifest);
-    REGISTER_MESSAGE(EmptyArg);
     REGISTER_MESSAGE(EmptyLicenseExpression);
     REGISTER_MESSAGE(EndOfStringInCodeUnit);
     REGISTER_MESSAGE(EnvInvalidMaxConcurrency);
@@ -613,7 +609,6 @@ namespace vcpkg
     REGISTER_MESSAGE(ExpectedPortName);
     REGISTER_MESSAGE(ExpectedStatusField);
     REGISTER_MESSAGE(ExpectedTripletName);
-    REGISTER_MESSAGE(ExpectedValueForOption);
     REGISTER_MESSAGE(ExtendedDocumentationAtUrl);
     REGISTER_MESSAGE(ExtractingTool);
     REGISTER_MESSAGE(FailedToDetermineCurrentCommit);
@@ -734,7 +729,6 @@ namespace vcpkg
     REGISTER_MESSAGE(IncorrectArchiveFileSignature);
     REGISTER_MESSAGE(IncorrectLibHeaderEnd);
     REGISTER_MESSAGE(IncorrectPESignature);
-    REGISTER_MESSAGE(IncorrectNumberOfArgs);
     REGISTER_MESSAGE(IncrementedUtf8Decoder);
     REGISTER_MESSAGE(InfoSetEnvVar);
     REGISTER_MESSAGE(InitRegistryFailedNoRepo);

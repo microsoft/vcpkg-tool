@@ -160,14 +160,14 @@ namespace vcpkg::Help
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        (void)args.parse_arguments(COMMAND_STRUCTURE);
+        const auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
 
-        if (args.command_arguments.empty())
+        if (parsed.command_arguments.empty())
         {
             print_usage();
             Checks::exit_success(VCPKG_LINE_INFO);
         }
-        const auto& topic = args.command_arguments[0];
+        const auto& topic = parsed.command_arguments[0];
         if (topic == "triplets" || topic == "triple")
         {
             help_topic_valid_triplet(paths);

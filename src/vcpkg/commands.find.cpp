@@ -217,11 +217,11 @@ namespace vcpkg::Commands
         const ParsedArguments options = args.parse_arguments(FindCommandStructure);
         const bool full_description = Util::Sets::contains(options.switches, OPTION_FULLDESC);
         const bool enable_json = args.json.value_or(false);
-        auto&& selector = args.command_arguments[0];
+        auto&& selector = options.command_arguments[0];
         Optional<StringView> filter;
-        if (args.command_arguments.size() == 2)
+        if (options.command_arguments.size() == 2)
         {
-            filter = StringView{args.command_arguments[1]};
+            filter = StringView{options.command_arguments[1]};
         }
 
         if (selector == "artifact")

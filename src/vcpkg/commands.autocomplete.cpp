@@ -34,13 +34,14 @@ namespace vcpkg::Commands::Autocomplete
     {
         g_should_send_metrics = false;
 
+        auto&& command_arguments = args.get_forwardable_arguments();
         // Handles vcpkg <command>
-        if (args.command_arguments.size() <= 1)
+        if (command_arguments.size() <= 1)
         {
             StringView requested_command = "";
-            if (args.command_arguments.size() == 1)
+            if (command_arguments.size() == 1)
             {
-                requested_command = args.command_arguments[0];
+                requested_command = command_arguments[0];
             }
 
             // First try public commands
@@ -87,13 +88,13 @@ namespace vcpkg::Commands::Autocomplete
             output_sorted_results_and_exit(VCPKG_LINE_INFO, std::move(private_commands));
         }
 
-        // args.command_arguments.size() >= 2
-        const auto& command_name = args.command_arguments[0];
+        // command_arguments.size() >= 2
+        const auto& command_name = command_arguments[0];
 
         // Handles vcpkg install package:<triplet>
         if (command_name == "install")
         {
-            StringView last_arg = args.command_arguments.back();
+            StringView last_arg = command_arguments.back();
             auto colon = Util::find(last_arg, ':');
             if (colon != last_arg.end())
             {
@@ -136,7 +137,7 @@ namespace vcpkg::Commands::Autocomplete
         {
             if (command_name == command.name)
             {
-                StringView prefix = args.command_arguments.back();
+                StringView prefix = command_arguments.back();
                 std::vector<std::string> results;
 
                 const bool is_option = Strings::starts_with(prefix, "-");

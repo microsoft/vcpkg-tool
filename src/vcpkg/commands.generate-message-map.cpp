@@ -224,7 +224,7 @@ namespace vcpkg::Commands
         }
 
         // get the path to artifacts messages.json
-        Path path_to_artifact_messages = args.command_arguments[1];
+        Path path_to_artifact_messages = parsed_args.command_arguments[1];
 
         // parse file to get json obj
         auto artifact_messages = Json::parse_file(VCPKG_LINE_INFO, fs, path_to_artifact_messages).first;
@@ -236,7 +236,7 @@ namespace vcpkg::Commands
         }
 
         auto stringified = Json::stringify(obj);
-        Path filepath = fs.current_path(VCPKG_LINE_INFO) / args.command_arguments[0];
+        Path filepath = fs.current_path(VCPKG_LINE_INFO) / parsed_args.command_arguments[0];
         fs.write_contents(filepath, stringified, VCPKG_LINE_INFO);
         Checks::exit_success(VCPKG_LINE_INFO);
     }

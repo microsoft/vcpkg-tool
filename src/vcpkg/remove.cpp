@@ -199,7 +199,7 @@ namespace vcpkg::Remove
         std::vector<PackageSpec> specs;
         if (Util::Sets::contains(options.switches, OPTION_OUTDATED))
         {
-            if (args.command_arguments.size() != 0)
+            if (options.command_arguments.size() != 0)
             {
                 msg::println_error(msgInvalidOptionForRemove);
                 Checks::exit_fail(VCPKG_LINE_INFO);
@@ -222,12 +222,12 @@ namespace vcpkg::Remove
         }
         else
         {
-            if (args.command_arguments.size() < 1)
+            if (options.command_arguments.size() < 1)
             {
                 msg::println_error(msgInvalidOptionForRemove);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
-            specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
+            specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
                 return check_and_get_package_spec(
                     std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
             });

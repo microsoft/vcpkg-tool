@@ -33,17 +33,17 @@ namespace vcpkg::Commands
     void AddCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
     {
         MetricsSubmission metrics;
-        (void)args.parse_arguments(AddCommandStructure);
-        auto&& selector = args.command_arguments[0];
+        auto parsed = args.parse_arguments(AddCommandStructure);
+        auto&& selector = parsed.command_arguments[0];
 
         if (selector == "artifact")
         {
             Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                   args.command_arguments.size() <= 2,
+                                   parsed.command_arguments.size() <= 2,
                                    msgAddArtifactOnlyOne,
                                    msg::command_line = "vcpkg add artifact");
 
-            auto artifact_name = args.command_arguments[1];
+            auto artifact_name = parsed.command_arguments[1];
             auto artifact_hash = Hash::get_string_hash(artifact_name, Hash::Algorithm::Sha256);
             metrics.track_string(StringMetric::CommandContext, "artifact");
             metrics.track_string(StringMetric::CommandArgs, artifact_hash);
@@ -63,11 +63,11 @@ namespace vcpkg::Commands
             }
 
             std::vector<ParsedQualifiedSpecifier> specs;
-            specs.reserve(args.command_arguments.size() - 1);
-            for (std::size_t idx = 1; idx < args.command_arguments.size(); ++idx)
+            specs.reserve(parsed.command_arguments.size() - 1);
+            for (std::size_t idx = 1; idx < parsed.command_arguments.size(); ++idx)
             {
                 ParsedQualifiedSpecifier value =
-                    parse_qualified_specifier(args.command_arguments[idx]).value_or_exit(VCPKG_LINE_INFO);
+                    parse_qualified_specifier(parsed.command_arguments[idx]).value_or_exit(VCPKG_LINE_INFO);
                 if (const auto t = value.triplet.get())
                 {
                     Checks::msg_exit_with_error(VCPKG_LINE_INFO,

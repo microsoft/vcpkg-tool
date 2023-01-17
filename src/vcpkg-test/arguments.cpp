@@ -96,8 +96,8 @@ TEST_CASE ("VcpkgCmdArguments from argument sequence with valued options", "[arg
         auto opts = v.parse_arguments(cmdstruct);
 
         REQUIRE(opts.settings["a"] == "b");
-        REQUIRE(v.command_arguments.size() == 1);
-        REQUIRE(v.command_arguments[0] == "argument");
+        REQUIRE(opts.command_arguments.size() == 1);
+        REQUIRE(opts.command_arguments[0] == "argument");
         REQUIRE(v.get_command() == "command");
     }
 
@@ -115,7 +115,7 @@ TEST_CASE ("VcpkgCmdArguments from argument sequence with valued options", "[arg
         REQUIRE(opts.settings.find("d") == opts.settings.end());
         REQUIRE(opts.switches.find("a") != opts.switches.end());
         REQUIRE(opts.settings.find("c") == opts.settings.end());
-        REQUIRE(v.command_arguments.size() == 0);
+        REQUIRE(opts.command_arguments.size() == 0);
     }
 }
 

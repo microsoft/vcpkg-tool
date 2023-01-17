@@ -136,11 +136,11 @@ namespace vcpkg::Commands::PortsDiff
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        (void)args.parse_arguments(COMMAND_STRUCTURE);
+        const auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
 
-        const std::string git_commit_id_for_previous_snapshot = args.command_arguments.at(0);
+        const std::string git_commit_id_for_previous_snapshot = parsed.command_arguments.at(0);
         const std::string git_commit_id_for_current_snapshot =
-            args.command_arguments.size() < 2 ? "HEAD" : args.command_arguments.at(1);
+            parsed.command_arguments.size() < 2 ? "HEAD" : parsed.command_arguments.at(1);
 
         check_commit_exists(paths, git_commit_id_for_current_snapshot);
         check_commit_exists(paths, git_commit_id_for_previous_snapshot);
