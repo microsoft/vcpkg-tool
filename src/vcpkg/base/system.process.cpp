@@ -51,7 +51,7 @@ namespace vcpkg
 {
     void append_shell_escaped(std::string& target, StringView content)
     {
-        if (Strings::find_first_of(content, " \t\n\r\"\\,;&`^|'") != content.end())
+        if (Strings::find_first_of(content, " \t\n\r\"\\,;&`^|'()") != content.end())
         {
             // TODO: improve this to properly handle all escaping
 #if _WIN32
