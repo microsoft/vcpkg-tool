@@ -404,7 +404,7 @@ namespace vcpkg
         bool parsed = parse_switch(switch_name, stability, target);
         if (parsed)
         {
-            value.emplace(parsed);
+            value.emplace(target);
         }
 
         return parsed;

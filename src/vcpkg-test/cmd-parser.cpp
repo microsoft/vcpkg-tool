@@ -192,6 +192,7 @@ TEST_CASE ("Arguments can be parsed as switches", "[cmd_parser]")
     v.emplace_back("--duplicate");
     v.emplace_back("--duplicate");
     v.emplace_back("--no-disabled-switch");
+    v.emplace_back("--no-opt-disabled-switch");
     v.emplace_back("--caSeySwitCh");
     v.emplace_back("--simple");
     CmdParser uut{v};
@@ -235,6 +236,11 @@ TEST_CASE ("Arguments can be parsed as switches", "[cmd_parser]")
     bool disabled_switch = true;
     CHECK(uut.parse_switch("disabled-switch", StabilityTag::Standard, disabled_switch));
     CHECK(!disabled_switch);
+
+    Optional<bool> opt_disabled_switch;
+    CHECK(uut.parse_switch("opt-disabled-switch", StabilityTag::Standard, opt_disabled_switch));
+    CHECK(opt_disabled_switch.has_value());
+    CHECK(opt_disabled_switch.value_or_exit(VCPKG_LINE_INFO) == false);
 
     // Switches are case insensitive
     bool casey_switch = false;
