@@ -154,4 +154,6 @@ namespace vcpkg
         std::vector<LocalizedString> errors;
         HelpTableFormatter options_table;
     };
+
+    void delistify_conjoined_multivalue(std::vector<std::string>& target);
 }

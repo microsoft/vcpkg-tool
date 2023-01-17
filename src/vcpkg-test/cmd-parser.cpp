@@ -855,3 +855,48 @@ TEST_CASE ("Consume remaining args", "[cmd_parser]")
         CHECK(uut.get_remaining_args().empty());
     }
 }
+
+TEST_CASE ("delistify_conjoined_value", "[cmd_parser]")
+{
+    {
+        std::vector<std::string> empty;
+        delistify_conjoined_multivalue(empty);
+        CHECK(empty.empty());
+    }
+
+    {
+        std::vector<std::string> only_one{"a"};
+        delistify_conjoined_multivalue(only_one);
+        CHECK(only_one == std::vector<std::string>{"a"});
+    }
+
+    {
+        std::vector<std::string> several{"a", "b", "c"};
+        delistify_conjoined_multivalue(several);
+        CHECK(several == std::vector<std::string>{"a", "b", "c"});
+    }
+
+    {
+        std::vector<std::string> uut{"a", ",,,,,", "c"};
+        delistify_conjoined_multivalue(uut);
+        CHECK(uut == std::vector<std::string>{"a", "c"});
+    }
+
+    {
+        std::vector<std::string> uut{"a", ",,,,,b", "c"};
+        delistify_conjoined_multivalue(uut);
+        CHECK(uut == std::vector<std::string>{"a", "b", "c"});
+    }
+
+    {
+        std::vector<std::string> uut{"a", ",,,,,b,d,", "c"};
+        delistify_conjoined_multivalue(uut);
+        CHECK(uut == std::vector<std::string>{"a", "b", "d", "c"});
+    }
+
+    {
+        std::vector<std::string> uut{"a,b", "c,d"};
+        delistify_conjoined_multivalue(uut);
+        CHECK(uut == std::vector<std::string>{"a", "b", "c", "d"});
+    }
+}

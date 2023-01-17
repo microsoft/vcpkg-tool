@@ -710,6 +710,37 @@ namespace vcpkg
         return error;
     }
 
+    void delistify_conjoined_multivalue(std::vector<std::string>& target)
+    {
+        auto first = target.begin();
+        while (first != target.end())
+        {
+            if (Strings::contains(*first, ','))
+            {
+                auto as_split = Strings::split(*first, ',');
+                switch (as_split.size())
+                {
+                    case 0: first = target.erase(first); break;
+                    case 1:
+                        *first = std::move(as_split[0]);
+                        ++first;
+                        break;
+                    default:
+                        *first = std::move(as_split[0]);
+                        ++first;
+                        first = target.insert(first,
+                                              std::make_move_iterator(as_split.begin() + 1),
+                                              std::make_move_iterator(as_split.end()));
+                        first += as_split.size() - 1;
+                }
+            }
+            else
+            {
+                ++first;
+            }
+        }
+    }
+
     void CmdParser::enforce_no_remaining_args(StringView command_name)
     {
         for (std::size_t idx = 0; idx < argument_parsed.size(); ++idx)
