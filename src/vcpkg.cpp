@@ -91,7 +91,7 @@ namespace
         // track version on each invocation
         get_global_metrics_collector().track_string(StringMetric::VcpkgVersion, Commands::Version::version.to_string());
 
-        if (args.command.empty())
+        if (args.get_command().empty())
         {
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -99,7 +99,7 @@ namespace
 
         static const auto find_command = [&](auto&& commands) {
             auto it = Util::find_if(commands, [&](auto&& commandc) {
-                return Strings::case_insensitive_ascii_equals(commandc.name, args.command);
+                return Strings::case_insensitive_ascii_equals(commandc.name, args.get_command());
             });
             using std::end;
             if (it != end(commands))
@@ -143,7 +143,7 @@ namespace
             return command_function->function->perform_and_exit(args, paths, default_triplet, host_triplet);
         }
 
-        return invalid_command(args.command);
+        return invalid_command(args.get_command());
     }
 
     const ElapsedTimer g_total_time;

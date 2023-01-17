@@ -98,7 +98,7 @@ TEST_CASE ("VcpkgCmdArguments from argument sequence with valued options", "[arg
         REQUIRE(opts.settings["a"] == "b");
         REQUIRE(v.command_arguments.size() == 1);
         REQUIRE(v.command_arguments[0] == "argument");
-        REQUIRE(v.command == "command");
+        REQUIRE(v.get_command() == "command");
     }
 
     SECTION ("case 2")
@@ -135,7 +135,7 @@ TEST_CASE ("vcpkg_root parse with equal separator", "[arguments]")
 
 TEST_CASE ("Combine asset cache params", "[arguments]")
 {
-    std::vector<std::string> t = {vcpkg::Strings::concat("--", VcpkgCmdArguments::ASSET_SOURCES_ARG, "=x-azurl,value")};
+    std::vector<std::string> t = {"--x-asset-sources=x-azurl,value"};
     auto v = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
     REQUIRE(!v.asset_sources_template().has_value());
     v = VcpkgCmdArguments::create_from_arg_sequence(t.data(), t.data() + t.size());

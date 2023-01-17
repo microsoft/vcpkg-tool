@@ -127,60 +127,6 @@ namespace vcpkg
         }
     }
 
-    static void parse_cojoined_value(StringView new_value, StringView option_name, Optional<std::string>& option_field)
-    {
-        if (option_field.has_value())
-        {
-            msg::println_error(msgDuplicateOptions, msg::value = option_name);
-            print_usage();
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-
-        option_field.emplace(new_value.data(), new_value.size());
-    }
-
-    static void parse_switch(bool new_setting, StringView option_name, Optional<bool>& option_field)
-    {
-        if (option_field && option_field != new_setting)
-        {
-            msg::println_error(msgConflictingValuesForOption, msg::option = option_name);
-            print_usage();
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-        option_field = new_setting;
-    }
-
-    static void parse_cojoined_multivalue(StringView new_value,
-                                          StringView option_name,
-                                          std::vector<std::string>& option_field)
-    {
-        if (new_value.size() == 0)
-        {
-            msg::println_error(msgExpectedValueForOption, msg::option = option_name);
-            print_usage();
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-
-        option_field.emplace_back(new_value.begin(), new_value.end());
-    }
-
-    static void parse_cojoined_list_multivalue(StringView new_value,
-                                               StringView option_name,
-                                               std::vector<std::string>& option_field)
-    {
-        if (new_value.size() == 0)
-        {
-            msg::println_error(msgExpectedValueForOption, msg::option = option_name);
-            print_usage();
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-
-        for (const auto& v : Strings::split(new_value, ','))
-        {
-            option_field.emplace_back(v.begin(), v.end());
-        }
-    }
-
     VcpkgCmdArguments VcpkgCmdArguments::create_from_command_line(const ILineReader& fs,
                                                                   const int argc,
                                                                   const CommandLineCharType* const* const argv)
@@ -190,234 +136,67 @@ namespace vcpkg
         return VcpkgCmdArguments::create_from_arg_sequence(v.data(), v.data() + v.size());
     }
 
-    enum class TryParseArgumentResult
-    {
-        NotFound,
-        Found,
-        FoundAndConsumedLookahead
-    };
-
-    template<class T, class F>
-    static TryParseArgumentResult try_parse_argument_as_option(
-        StringView arg, Optional<StringView> lookahead, StringView option, T& place, F parser)
-    {
-        if (Strings::starts_with(arg, "x-") && !Strings::starts_with(option, "x-"))
-        {
-            arg = arg.substr(2);
-        }
-
-        if (Strings::starts_with(arg, option))
-        {
-            if (arg.size() == option.size())
-            {
-                if (auto next = lookahead.get())
-                {
-                    parser(*next, option, place);
-                    return TryParseArgumentResult::FoundAndConsumedLookahead;
-                }
-
-                msg::println_error(msgExpectedValueForOption, msg::option = option);
-                print_usage();
-                Checks::exit_fail(VCPKG_LINE_INFO);
-            }
-
-            if (arg[option.size()] == '=')
-            {
-                parser(arg.substr(option.size() + 1), option, place);
-                return TryParseArgumentResult::Found;
-            }
-        }
-
-        return TryParseArgumentResult::NotFound;
-    }
-
-    static bool equals_modulo_experimental(StringView arg, StringView option)
-    {
-        if (Strings::starts_with(arg, "x-") && !Strings::starts_with(option, "x-"))
-        {
-            return arg.substr(2) == option;
-        }
-        else
-        {
-            return arg == option;
-        }
-    }
-
-    // returns true if this does parse this argument as this option
-    template<class T>
-    static bool try_parse_argument_as_switch(StringView option, StringView arg, T& place)
-    {
-        if (equals_modulo_experimental(arg, option))
-        {
-            parse_switch(true, option, place);
-            return true;
-        }
-
-        if (Strings::starts_with(arg, "no-") && equals_modulo_experimental(arg.substr(3), option))
-        {
-            parse_switch(false, option, place);
-            return true;
-        }
-
-        return false;
-    }
-
     VcpkgCmdArguments VcpkgCmdArguments::create_from_arg_sequence(const std::string* arg_first,
                                                                   const std::string* arg_last)
     {
-        VcpkgCmdArguments args;
+        VcpkgCmdArguments args{CmdParser{View<std::string>{arg_first, arg_last}}};
         std::vector<std::string> feature_flags;
 
-        if (arg_first != arg_last)
-        {
-            args.forwardable_arguments.assign(arg_first + 1, arg_last);
-            if (arg_first + 1 == arg_last && *arg_first == "--version")
-            {
-                args.command = "version";
-                return args;
-            }
-        }
+        args.parser.parse_switch(DEBUG_SWITCH, StabilityTag::Standard, args.debug);
+        args.parser.parse_switch(DEBUG_ENV_SWITCH, StabilityTag::Standard, args.debug_env);
+        args.parser.parse_switch(DISABLE_METRICS_SWITCH, StabilityTag::Standard, args.disable_metrics);
+        args.parser.parse_switch(SEND_METRICS_SWITCH, StabilityTag::Standard, args.send_metrics);
+        args.parser.parse_switch(PRINT_METRICS_SWITCH, StabilityTag::Standard, args.print_metrics);
+        args.parser.parse_switch(FEATURE_PACKAGES_SWITCH, StabilityTag::Standard, args.feature_packages);
+        args.parser.parse_switch(BINARY_CACHING_SWITCH, StabilityTag::Standard, args.binary_caching);
+        args.parser.parse_switch(WAIT_FOR_LOCK_SWITCH, StabilityTag::Experimental, args.wait_for_lock);
+        args.parser.parse_switch(IGNORE_LOCK_FAILURES_SWITCH, StabilityTag::Experimental, args.ignore_lock_failures);
+        args.parser.parse_switch(JSON_SWITCH, StabilityTag::Experimental, args.json);
+        args.parser.parse_switch(
+            EXACT_ABI_TOOLS_VERSIONS_SWITCH, StabilityTag::Experimental, args.exact_abi_tools_versions);
 
-        for (auto it = arg_first; it != arg_last; ++it)
-        {
-            std::string basic_arg = *it;
+        args.parser.parse_option(VCPKG_ROOT_DIR_ARG, StabilityTag::Standard, args.vcpkg_root_dir_arg);
+        args.parser.parse_option(TRIPLET_ARG, StabilityTag::Standard, args.triplet);
+        args.parser.parse_option(HOST_TRIPLET_ARG, StabilityTag::Standard, args.host_triplet);
+        args.parser.parse_option(MANIFEST_ROOT_DIR_ARG, StabilityTag::Experimental, args.manifest_root_dir);
+        args.parser.parse_option(BUILDTREES_ROOT_DIR_ARG, StabilityTag::Experimental, args.buildtrees_root_dir);
+        args.parser.parse_option(DOWNLOADS_ROOT_DIR_ARG, StabilityTag::Standard, args.downloads_root_dir);
+        args.parser.parse_option(INSTALL_ROOT_DIR_ARG, StabilityTag::Experimental, args.install_root_dir);
+        args.parser.parse_option(PACKAGES_ROOT_DIR_ARG, StabilityTag::Experimental, args.packages_root_dir);
+        args.parser.parse_option(SCRIPTS_ROOT_DIR_ARG, StabilityTag::Experimental, args.scripts_root_dir);
+        args.parser.parse_option(BUILTIN_PORTS_ROOT_DIR_ARG, StabilityTag::Experimental, args.builtin_ports_root_dir);
+        args.parser.parse_option(
+            BUILTIN_REGISTRY_VERSIONS_DIR_ARG, StabilityTag::Experimental, args.builtin_registry_versions_dir);
+        args.parser.parse_option(REGISTRIES_CACHE_DIR_ARG, StabilityTag::Experimental, args.registries_cache_dir);
+        args.parser.parse_option(ASSET_SOURCES_ARG, StabilityTag::Experimental, args.asset_sources_template_arg);
 
-            if (basic_arg.empty())
-            {
-                continue;
-            }
+        args.parser.parse_multi_option(OVERLAY_PORTS_ARG, StabilityTag::Standard, args.cli_overlay_ports);
+        args.parser.parse_multi_option(OVERLAY_TRIPLETS_ARG, StabilityTag::Standard, args.cli_overlay_triplets);
+        args.parser.parse_multi_option(BINARY_SOURCES_ARG, StabilityTag::Standard, args.binary_sources);
+        args.parser.parse_multi_option(CMAKE_SCRIPT_ARG, StabilityTag::Standard, args.cmake_args);
 
-            if (basic_arg.size() >= 2 && basic_arg[0] == '-' && basic_arg[1] != '-')
-            {
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgUnsupportedShortOptions, msg::value = basic_arg);
-            }
-
-            if (basic_arg.size() < 2 || basic_arg[0] != '-')
-            {
-                if (args.command.empty())
-                {
-                    args.command = std::move(basic_arg);
-                }
-                else
-                {
-                    args.command_arguments.push_back(std::move(basic_arg));
-                }
-                continue;
-            }
-
-            // make argument case insensitive before the first =
-            auto first_eq = Util::find(Span<char>(basic_arg), '=');
-            Strings::ascii_to_lowercase(basic_arg.data(), first_eq);
-            // basic_arg[0] == '-' && basic_arg[1] == '-'
-            StringView arg = StringView(basic_arg).substr(2);
-            constexpr static std::pair<StringView, Optional<std::string> VcpkgCmdArguments::*> cojoined_values[] = {
-                {VCPKG_ROOT_DIR_ARG, &VcpkgCmdArguments::vcpkg_root_dir_arg},
-                {TRIPLET_ARG, &VcpkgCmdArguments::triplet},
-                {HOST_TRIPLET_ARG, &VcpkgCmdArguments::host_triplet},
-                {MANIFEST_ROOT_DIR_ARG, &VcpkgCmdArguments::manifest_root_dir},
-                {BUILDTREES_ROOT_DIR_ARG, &VcpkgCmdArguments::buildtrees_root_dir},
-                {DOWNLOADS_ROOT_DIR_ARG, &VcpkgCmdArguments::downloads_root_dir},
-                {INSTALL_ROOT_DIR_ARG, &VcpkgCmdArguments::install_root_dir},
-                {PACKAGES_ROOT_DIR_ARG, &VcpkgCmdArguments::packages_root_dir},
-                {SCRIPTS_ROOT_DIR_ARG, &VcpkgCmdArguments::scripts_root_dir},
-                {BUILTIN_PORTS_ROOT_DIR_ARG, &VcpkgCmdArguments::builtin_ports_root_dir},
-                {BUILTIN_REGISTRY_VERSIONS_DIR_ARG, &VcpkgCmdArguments::builtin_registry_versions_dir},
-                {REGISTRIES_CACHE_DIR_ARG, &VcpkgCmdArguments::registries_cache_dir},
-                {ASSET_SOURCES_ARG, &VcpkgCmdArguments::asset_sources_template_arg},
-            };
-
-            constexpr static std::pair<StringView, std::vector<std::string> VcpkgCmdArguments::*>
-                cojoined_multivalues[] = {
-                    {OVERLAY_PORTS_ARG, &VcpkgCmdArguments::cli_overlay_ports},
-                    {OVERLAY_TRIPLETS_ARG, &VcpkgCmdArguments::cli_overlay_triplets},
-                    {BINARY_SOURCES_ARG, &VcpkgCmdArguments::binary_sources},
-                    {CMAKE_SCRIPT_ARG, &VcpkgCmdArguments::cmake_args},
-                };
-
-            constexpr static std::pair<StringView, Optional<bool> VcpkgCmdArguments::*> switches[] = {
-                {DEBUG_SWITCH, &VcpkgCmdArguments::debug},
-                {DEBUG_ENV_SWITCH, &VcpkgCmdArguments::debug_env},
-                {DISABLE_METRICS_SWITCH, &VcpkgCmdArguments::disable_metrics},
-                {SEND_METRICS_SWITCH, &VcpkgCmdArguments::send_metrics},
-                {PRINT_METRICS_SWITCH, &VcpkgCmdArguments::print_metrics},
-                {FEATURE_PACKAGES_SWITCH, &VcpkgCmdArguments::feature_packages},
-                {BINARY_CACHING_SWITCH, &VcpkgCmdArguments::binary_caching},
-                {WAIT_FOR_LOCK_SWITCH, &VcpkgCmdArguments::wait_for_lock},
-                {IGNORE_LOCK_FAILURES_SWITCH, &VcpkgCmdArguments::ignore_lock_failures},
-                {JSON_SWITCH, &VcpkgCmdArguments::json},
-                {EXACT_ABI_TOOLS_VERSIONS_SWITCH, &VcpkgCmdArguments::exact_abi_tools_versions},
-            };
-
-            Optional<StringView> lookahead;
-            if (it + 1 != arg_last)
-            {
-                lookahead = it[1];
-            }
-
-            bool found = false;
-            for (const auto& pr : cojoined_values)
-            {
-                switch (try_parse_argument_as_option(arg, lookahead, pr.first, args.*pr.second, parse_cojoined_value))
-                {
-                    case TryParseArgumentResult::FoundAndConsumedLookahead: ++it; [[fallthrough]];
-                    case TryParseArgumentResult::Found: found = true; break;
-                    case TryParseArgumentResult::NotFound: break;
-                    default: Checks::unreachable(VCPKG_LINE_INFO);
-                }
-            }
-            if (found) continue;
-
-            for (const auto& pr : cojoined_multivalues)
-            {
-                switch (
-                    try_parse_argument_as_option(arg, lookahead, pr.first, args.*pr.second, parse_cojoined_multivalue))
-                {
-                    case TryParseArgumentResult::FoundAndConsumedLookahead: ++it; [[fallthrough]];
-                    case TryParseArgumentResult::Found: found = true; break;
-                    case TryParseArgumentResult::NotFound: break;
-                    default: Checks::unreachable(VCPKG_LINE_INFO);
-                }
-            }
-            if (found) continue;
-
-            switch (try_parse_argument_as_option(
-                arg, lookahead, FEATURE_FLAGS_ARG, feature_flags, parse_cojoined_list_multivalue))
-            {
-                case TryParseArgumentResult::FoundAndConsumedLookahead: ++it; [[fallthrough]];
-                case TryParseArgumentResult::Found: found = true; break;
-                case TryParseArgumentResult::NotFound: break;
-                default: Checks::unreachable(VCPKG_LINE_INFO);
-            }
-
-            for (const auto& pr : switches)
-            {
-                if (try_parse_argument_as_switch(pr.first, arg, args.*pr.second))
-                {
-                    found = true;
-                    break;
-                }
-            }
-            if (found) continue;
-
-            const auto eq_pos = std::find(arg.begin(), arg.end(), '=');
-            if (eq_pos != arg.end())
-            {
-                const auto& key = StringView(arg.begin(), eq_pos);
-                const auto& value = StringView(eq_pos + 1, arg.end());
-
-                args.command_options[key.to_string()].push_back(value.to_string());
-            }
-            else
-            {
-                args.command_switches.insert(arg.to_string());
-            }
-        }
+        std::vector<std::string> partial_feature_flags;
+        args.parser.parse_multi_option(FEATURE_FLAGS_ARG, StabilityTag::Standard, partial_feature_flags);
+        delistify_conjoined_multivalue(partial_feature_flags);
 
         parse_feature_flags(feature_flags, args);
 
         // --debug-env implies --debug
         if (const auto p = args.debug_env.get()) args.debug_env = *p;
 
+        auto maybe_command = args.parser.extract_first_command_like_arg_lowercase();
+        if (auto command = maybe_command.get())
+        {
+            args.command = *command;
+        }
+
+        args.forwardable_arguments = args.parser.get_remaining_args();
+
+        args.parser.exit_with_errors(args.parser.get_full_help_text(LocalizedString::from_raw("FIXME")));
+        args.command_arguments = args.parser.get_remaining_args();
+        // FIXME
+        Util::erase_remove_if(args.command_arguments,
+                              [](const std::string& arg) { return Strings::starts_with(arg, "--"); });
         return args;
     }
 
@@ -459,126 +238,91 @@ namespace vcpkg
             }
         }
 
-        auto switches_copy = this->command_switches;
-        auto options_copy = this->command_options;
-
-        const auto find_option = [](const auto& set, StringLiteral name) {
-            auto it = set.find(name);
-            if (it == set.end() && !Strings::starts_with(name, "x-"))
-            {
-                it = set.find(Strings::format("x-%s", name));
-            }
-
-            return it;
-        };
-
+        auto parser_copy = this->parser;
         for (const auto& switch_ : command_structure.options.switches)
         {
-            const auto it = find_option(switches_copy, switch_.name);
-            if (it != switches_copy.end())
+            bool parse_result;
+            auto name = switch_.name.to_string();
+            StabilityTag tag = StabilityTag::Standard;
+            if (Strings::starts_with(name, "x-"))
             {
-                output.switches.insert(switch_.name.to_string());
-                switches_copy.erase(it);
+                name.erase(0, 2);
+                tag = StabilityTag::Experimental;
             }
-            const auto option_it = find_option(options_copy, switch_.name);
-            if (option_it != options_copy.end())
+
+            if (switch_.helpmsg)
             {
-                // This means that the switch was passed like '--a=xyz'
-                msg::println_error(msgNoArgumentsForOption, msg::option = switch_.name);
-                options_copy.erase(option_it);
-                failed = true;
+                if (parser_copy.parse_switch(name, tag, parse_result, switch_.helpmsg()) && parse_result)
+                {
+                    output.switches.emplace(switch_.name.to_string());
+                }
+            }
+            else
+            {
+                if (parser_copy.parse_switch(name, tag, parse_result) && parse_result)
+                {
+                    output.switches.emplace(switch_.name.to_string());
+                }
             }
         }
 
-        for (const auto& option : command_structure.options.settings)
         {
-            const auto it = find_option(options_copy, option.name);
-            if (it != options_copy.end())
+            std::string maybe_parse_result;
+            for (const auto& option : command_structure.options.settings)
             {
-                const auto& value = it->second;
-                if (value.empty())
+                auto name = option.name.to_string();
+                StabilityTag tag = StabilityTag::Standard;
+                if (Strings::starts_with(name, "x-"))
                 {
-                    Checks::unreachable(VCPKG_LINE_INFO);
+                    name.erase(0, 2);
+                    tag = StabilityTag::Experimental;
                 }
 
-                if (value.size() > 1)
+                if (option.helpmsg)
                 {
-                    msg::println_error(msgDuplicateCommandOption, msg::option = option.name);
-                    failed = true;
-                }
-                else if (value.front().empty())
-                {
-                    // Fail when not given a value, e.g.: "vcpkg install sqlite3 --additional-ports="
-                    msg::println_error(msgEmptyArg, msg::option = option.name);
-                    failed = true;
+                    if (parser_copy.parse_option(name, tag, maybe_parse_result, option.helpmsg()))
+                    {
+                        output.settings.emplace(option.name.to_string(), std::move(maybe_parse_result));
+                    }
                 }
                 else
                 {
-                    output.settings.emplace(option.name, value.front());
-                    options_copy.erase(it);
+                    if (parser_copy.parse_option(name, tag, maybe_parse_result))
+                    {
+                        output.settings.emplace(option.name.to_string(), std::move(maybe_parse_result));
+                    }
                 }
-            }
-            const auto switch_it = find_option(switches_copy, option.name);
-            if (switch_it != switches_copy.end())
-            {
-                // This means that the option was passed like '--a'
-                msg::println_error(msgEmptyArg, msg::option = option.name);
-                switches_copy.erase(switch_it);
-                failed = true;
             }
         }
 
         for (const auto& option : command_structure.options.multisettings)
         {
-            const auto it = find_option(options_copy, option.name);
-            if (it != options_copy.end())
+            auto name = option.name.to_string();
+            StabilityTag tag = StabilityTag::Standard;
+            if (Strings::starts_with(name, "x-"))
             {
-                const auto& value = it->second;
-                for (const auto& v : value)
+                name.erase(0, 2);
+                tag = StabilityTag::Experimental;
+            }
+
+            std::vector<std::string> maybe_parse_result;
+            if (option.helpmsg)
+            {
+                if (parser_copy.parse_multi_option(name, tag, maybe_parse_result, option.helpmsg()))
                 {
-                    if (v.empty())
-                    {
-                        msg::println_error(msgEmptyArg, msg::option = option.name);
-                        failed = true;
-                    }
-                    else
-                    {
-                        output.multisettings[option.name.to_string()].push_back(v);
-                    }
+                    output.multisettings.emplace(option.name.to_string(), std::move(maybe_parse_result));
                 }
-                options_copy.erase(it);
             }
-            const auto switch_it = find_option(switches_copy, option.name);
-            if (switch_it != switches_copy.end())
+            else
             {
-                // This means that the option was passed like '--a'
-                msg::println_error(msgEmptyArg, msg::option = option.name);
-                switches_copy.erase(switch_it);
-                failed = true;
+                if (parser_copy.parse_multi_option(name, tag, maybe_parse_result))
+                {
+                    output.multisettings.emplace(option.name.to_string(), std::move(maybe_parse_result));
+                }
             }
         }
 
-        if (!switches_copy.empty() || !options_copy.empty())
-        {
-            auto message = msg::format(msgUnknownOptions, msg::command_name = this->command);
-            for (auto&& switch_ : switches_copy)
-            {
-                message.append_indent().append_raw("\'--" + switch_ + "\'\n");
-            }
-            for (auto&& option : options_copy)
-            {
-                message.append_indent().append_raw("\'--" + option.first + "\'\n");
-            }
-
-            failed = true;
-        }
-
-        if (failed)
-        {
-            print_usage(command_structure);
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-
+        parser_copy.exit_with_errors(LocalizedString::from_raw("FIXME"));
         return output;
     }
 
@@ -586,6 +330,14 @@ namespace vcpkg
     {
         return forwardable_arguments;
     }
+
+    VcpkgCmdArguments::VcpkgCmdArguments(const VcpkgCmdArguments&) = default;
+    VcpkgCmdArguments::VcpkgCmdArguments(VcpkgCmdArguments&&) = default;
+    VcpkgCmdArguments& VcpkgCmdArguments::operator=(const VcpkgCmdArguments&) = default;
+    VcpkgCmdArguments& VcpkgCmdArguments::operator=(VcpkgCmdArguments&&) = default;
+    VcpkgCmdArguments::~VcpkgCmdArguments() = default;
+
+    VcpkgCmdArguments::VcpkgCmdArguments(CmdParser&& parser_) : parser(std::move(parser_)) { }
 
     void print_usage()
     {

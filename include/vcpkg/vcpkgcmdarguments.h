@@ -25,6 +25,8 @@ namespace vcpkg
         std::map<std::string, std::vector<std::string>, std::less<>> multisettings;
 
         const std::string* read_setting(StringLiteral setting) const noexcept;
+
+        std::vector<std::string> command_arguments;
     };
 
     struct CommandSwitch
@@ -93,26 +95,26 @@ namespace vcpkg
         Optional<std::string> vcpkg_root_dir_arg;
         constexpr static StringLiteral VCPKG_ROOT_ENV_NAME = "VCPKG_ROOT_ENV";
         Optional<std::string> vcpkg_root_dir_env;
-        constexpr static StringLiteral MANIFEST_ROOT_DIR_ARG = "x-manifest-root";
+        constexpr static StringLiteral MANIFEST_ROOT_DIR_ARG = "manifest-root";
         Optional<std::string> manifest_root_dir;
 
-        constexpr static StringLiteral BUILDTREES_ROOT_DIR_ARG = "x-buildtrees-root";
+        constexpr static StringLiteral BUILDTREES_ROOT_DIR_ARG = "buildtrees-root";
         Optional<std::string> buildtrees_root_dir;
         constexpr static StringLiteral DOWNLOADS_ROOT_DIR_ENV = "VCPKG_DOWNLOADS";
         constexpr static StringLiteral DOWNLOADS_ROOT_DIR_ARG = "downloads-root";
         Optional<std::string> downloads_root_dir;
-        constexpr static StringLiteral INSTALL_ROOT_DIR_ARG = "x-install-root";
+        constexpr static StringLiteral INSTALL_ROOT_DIR_ARG = "install-root";
         Optional<std::string> install_root_dir;
-        constexpr static StringLiteral PACKAGES_ROOT_DIR_ARG = "x-packages-root";
+        constexpr static StringLiteral PACKAGES_ROOT_DIR_ARG = "packages-root";
         Optional<std::string> packages_root_dir;
-        constexpr static StringLiteral SCRIPTS_ROOT_DIR_ARG = "x-scripts-root";
+        constexpr static StringLiteral SCRIPTS_ROOT_DIR_ARG = "scripts-root";
         Optional<std::string> scripts_root_dir;
-        constexpr static StringLiteral BUILTIN_PORTS_ROOT_DIR_ARG = "x-builtin-ports-root";
+        constexpr static StringLiteral BUILTIN_PORTS_ROOT_DIR_ARG = "builtin-ports-root";
         Optional<std::string> builtin_ports_root_dir;
-        constexpr static StringLiteral BUILTIN_REGISTRY_VERSIONS_DIR_ARG = "x-builtin-registry-versions-dir";
+        constexpr static StringLiteral BUILTIN_REGISTRY_VERSIONS_DIR_ARG = "builtin-registry-versions-dir";
         Optional<std::string> builtin_registry_versions_dir;
         constexpr static StringLiteral REGISTRIES_CACHE_DIR_ENV = "X_VCPKG_REGISTRIES_CACHE";
-        constexpr static StringLiteral REGISTRIES_CACHE_DIR_ARG = "x-registries-cache";
+        constexpr static StringLiteral REGISTRIES_CACHE_DIR_ARG = "registries-cache";
         Optional<std::string> registries_cache_dir;
 
         constexpr static StringLiteral DEFAULT_VISUAL_STUDIO_PATH_ENV = "VCPKG_VISUAL_STUDIO_PATH";
@@ -136,10 +138,10 @@ namespace vcpkg
         constexpr static StringLiteral BINARY_SOURCES_ARG = "binarysource";
         std::vector<std::string> binary_sources;
 
-        constexpr static StringLiteral CMAKE_SCRIPT_ARG = "x-cmake-args";
+        constexpr static StringLiteral CMAKE_SCRIPT_ARG = "cmake-args";
         std::vector<std::string> cmake_args;
 
-        constexpr static StringLiteral EXACT_ABI_TOOLS_VERSIONS_SWITCH = "x-abi-tools-use-exact-versions";
+        constexpr static StringLiteral EXACT_ABI_TOOLS_VERSIONS_SWITCH = "abi-tools-use-exact-versions";
         Optional<bool> exact_abi_tools_versions;
 
         constexpr static StringLiteral DEBUG_SWITCH = "debug";
@@ -155,20 +157,20 @@ namespace vcpkg
         constexpr static StringLiteral PRINT_METRICS_SWITCH = "printmetrics";
         Optional<bool> print_metrics = nullopt;
 
-        constexpr static StringLiteral WAIT_FOR_LOCK_SWITCH = "x-wait-for-lock";
+        constexpr static StringLiteral WAIT_FOR_LOCK_SWITCH = "wait-for-lock";
         Optional<bool> wait_for_lock = nullopt;
 
-        constexpr static StringLiteral IGNORE_LOCK_FAILURES_SWITCH = "x-ignore-lock-failures";
+        constexpr static StringLiteral IGNORE_LOCK_FAILURES_SWITCH = "ignore-lock-failures";
         constexpr static StringLiteral IGNORE_LOCK_FAILURES_ENV = "X_VCPKG_IGNORE_LOCK_FAILURES";
         Optional<bool> ignore_lock_failures = nullopt;
 
         bool do_not_take_lock = false;
 
-        constexpr static StringLiteral JSON_SWITCH = "x-json";
+        constexpr static StringLiteral JSON_SWITCH = "json";
         Optional<bool> json = nullopt;
 
         constexpr static StringLiteral ASSET_SOURCES_ENV = "X_VCPKG_ASSET_SOURCES";
-        constexpr static StringLiteral ASSET_SOURCES_ARG = "x-asset-sources";
+        constexpr static StringLiteral ASSET_SOURCES_ARG = "asset-sources";
 
         // feature flags
         constexpr static StringLiteral FEATURE_FLAGS_ENV = "VCPKG_FEATURE_FLAGS";
@@ -206,8 +208,10 @@ namespace vcpkg
 
         bool output_json() const { return json.value_or(false); }
 
-        std::string command;
+        const std::string& get_command() const noexcept { return command; }
+
         std::vector<std::string> command_arguments;
+        std::vector<std::string> forwardable_arguments;
 
         ParsedArguments parse_arguments(const CommandStructure& command_structure) const;
 
@@ -228,17 +232,24 @@ namespace vcpkg
 
         const std::vector<std::string>& get_forwardable_arguments() const noexcept;
 
+        VcpkgCmdArguments(const VcpkgCmdArguments&);
+        VcpkgCmdArguments(VcpkgCmdArguments&&);
+        VcpkgCmdArguments& operator=(const VcpkgCmdArguments&);
+        VcpkgCmdArguments& operator=(VcpkgCmdArguments&&);
+        ~VcpkgCmdArguments();
+
     private:
+        VcpkgCmdArguments(CmdParser&& parser);
+
         void imbue_from_environment_impl(std::function<Optional<std::string>(ZStringView)> get_env);
 
         Optional<std::string> asset_sources_template_env; // for ASSET_SOURCES_ENV
         Optional<std::string> asset_sources_template_arg; // for ASSET_SOURCES_ARG
 
-        std::set<std::string, std::less<>> command_switches;
-        std::map<std::string, std::vector<std::string>, std::less<>> command_options;
-
-        std::vector<std::string> forwardable_arguments;
+        std::string command;
 
         Optional<StringLiteral> m_detected_ci_environment;
+
+        CmdParser parser;
     };
 }

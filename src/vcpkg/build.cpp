@@ -1487,7 +1487,7 @@ namespace vcpkg
             "\n-",
             paths.get_toolver_diagnostics(),
             "\n**To Reproduce**\n\n",
-            Strings::concat("`vcpkg ", args.command, " ", Strings::join(" ", args.command_arguments), "`\n"),
+            Strings::concat("`vcpkg ", args.get_command(), " ", Strings::join(" ", args.command_arguments), "`\n"),
             "\n**Failure logs**\n\n```\n",
             paths.get_filesystem().read_contents(build_result.stdoutlog.value_or_exit(VCPKG_LINE_INFO),
                                                  VCPKG_LINE_INFO),
