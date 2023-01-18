@@ -181,7 +181,7 @@ namespace vcpkg
         }
     }
 
-    VcpkgCmdArguments VcpkgCmdArguments::create_from_command_line(const Filesystem& fs,
+    VcpkgCmdArguments VcpkgCmdArguments::create_from_command_line(const ILineReader& fs,
                                                                   const int argc,
                                                                   const CommandLineCharType* const* const argv)
     {
@@ -198,7 +198,7 @@ namespace vcpkg
             if (arg.size() > 0 && arg[0] == '@')
             {
                 arg.erase(arg.begin());
-                auto lines = fs.read_lines(arg, VCPKG_LINE_INFO);
+                auto lines = fs.read_lines(arg).value_or_exit(VCPKG_LINE_INFO);
                 v.insert(v.end(), std::make_move_iterator(lines.begin()), std::make_move_iterator(lines.end()));
             }
             else
@@ -656,23 +656,26 @@ namespace vcpkg
         table.header("Options");
         for (auto&& option : command_structure.options.switches)
         {
-            if (option.short_help_text.size() != 0)
+            auto helpmsg = option.helpmsg;
+            if (helpmsg)
             {
-                table.format(Strings::format("--%s", option.name), option.short_help_text);
+                table.format(Strings::format("--%s", option.name), helpmsg());
             }
         }
         for (auto&& option : command_structure.options.settings)
         {
-            if (option.short_help_text.size() != 0)
+            auto helpmsg = option.helpmsg;
+            if (helpmsg)
             {
-                table.format(Strings::format("--%s=...", option.name), option.short_help_text);
+                table.format(Strings::format("--%s=...", option.name), helpmsg());
             }
         }
         for (auto&& option : command_structure.options.multisettings)
         {
-            if (option.short_help_text.size() != 0)
+            auto helpmsg = option.helpmsg;
+            if (helpmsg)
             {
-                table.format(Strings::format("--%s=...", option.name), option.short_help_text);
+                table.format(Strings::format("--%s=...", option.name), helpmsg());
             }
         }
 
@@ -961,74 +964,6 @@ namespace vcpkg
                                          "  vcpkg %s\n",
                                          command_and_arguments);
         return cs;
-    }
-
-    static void help_table_newline_indent(std::string& target)
-    {
-        target.push_back('\n');
-        target.append(34, ' ');
-    }
-
-    static constexpr ptrdiff_t S_MAX_LINE_LENGTH = 100;
-
-    void HelpTableFormatter::format(StringView col1, StringView col2)
-    {
-        // 2 space, 31 col1, 1 space, 65 col2 = 99
-        m_str.append(2, ' ');
-        Strings::append(m_str, col1);
-        if (col1.size() > 31)
-        {
-            help_table_newline_indent(m_str);
-        }
-        else
-        {
-            m_str.append(32 - col1.size(), ' ');
-        }
-        text(col2, 34);
-
-        m_str.push_back('\n');
-    }
-
-    void HelpTableFormatter::header(StringView name)
-    {
-        m_str.append(name.data(), name.size());
-        m_str.push_back(':');
-        m_str.push_back('\n');
-    }
-
-    void HelpTableFormatter::example(StringView example_text)
-    {
-        m_str.append(example_text.data(), example_text.size());
-        m_str.push_back('\n');
-    }
-
-    void HelpTableFormatter::blank() { m_str.push_back('\n'); }
-
-    // Note: this formatting code does not properly handle unicode, however all of our documentation strings are English
-    // ASCII.
-    void HelpTableFormatter::text(StringView text, int indent)
-    {
-        const char* line_start = text.begin();
-        const char* const e = text.end();
-        const char* best_break = std::find_if(line_start, e, [](char ch) { return ch == ' ' || ch == '\n'; });
-
-        while (best_break != e)
-        {
-            const char* next_break = std::find_if(best_break + 1, e, [](char ch) { return ch == ' ' || ch == '\n'; });
-            if (*best_break == '\n' || next_break - line_start + indent > S_MAX_LINE_LENGTH)
-            {
-                m_str.append(line_start, best_break);
-                m_str.push_back('\n');
-                line_start = best_break + 1;
-                best_break = next_break;
-                m_str.append(indent, ' ');
-            }
-            else
-            {
-                best_break = next_break;
-            }
-        }
-        m_str.append(line_start, best_break);
     }
 
     // out-of-line definitions since C++14 doesn't allow inline constexpr static variables

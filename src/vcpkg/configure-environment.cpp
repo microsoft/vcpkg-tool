@@ -1,6 +1,7 @@
-#include <vcpkg/base/basic_checks.h>
+#include <vcpkg/base/basic-checks.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/setup-messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
@@ -125,7 +126,7 @@ namespace vcpkg
                 "https://github.com/microsoft/vcpkg-tool/releases/download/" VCPKG_BASE_VERSION_AS_STRING
                 "/vcpkg-ce.tgz";
             const auto ce_tarball = paths.downloads / "vcpkg-ce-" VCPKG_BASE_VERSION_AS_STRING ".tgz";
-            download_manager.download_file(fs, ce_uri, ce_tarball, VCPKG_CE_SHA_AS_STRING);
+            download_manager.download_file(fs, ce_uri, {}, ce_tarball, VCPKG_CE_SHA_AS_STRING, null_sink);
             extract_ce_tarball(paths, ce_tarball, node_path, node_modules);
             fs.write_contents(ce_sha_path, VCPKG_CE_SHA_AS_STRING, VCPKG_LINE_INFO);
         }
@@ -143,7 +144,7 @@ namespace vcpkg
         msg::println(Color::warning, msgDownloadingVcpkgCeBundleLatest);
         const auto ce_uri = "https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-ce.tgz";
         const auto ce_tarball = paths.downloads / "vcpkg-ce-latest.tgz";
-        download_manager.download_file(fs, ce_uri, ce_tarball, nullopt);
+        download_manager.download_file(fs, ce_uri, {}, ce_tarball, nullopt, null_sink);
         extract_ce_tarball(paths, ce_tarball, node_path, node_modules);
 #endif // ^^^ !VCPKG_CE_SHA
 
@@ -170,6 +171,15 @@ namespace vcpkg
         cmd_run.string_arg("--z-vcpkg-artifacts-root").string_arg(paths.artifacts());
         cmd_run.string_arg("--z-vcpkg-downloads").string_arg(paths.downloads);
         cmd_run.string_arg("--z-vcpkg-registries-cache").string_arg(paths.registries_cache());
+
+        if (auto maybe_file = msg::get_file())
+        {
+            auto file = maybe_file.get();
+            auto temp_dir = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
+            auto temp_file = temp_dir / "messages.json";
+            fs.write_contents(temp_file, StringView{file->begin(), file->end()}, VCPKG_LINE_INFO);
+            cmd_run.string_arg("--language").string_arg(temp_file);
+        }
 
         Debug::println("Running configure-environment with ", cmd_run.command_line());
 

@@ -99,7 +99,8 @@ namespace
 
     constexpr StringLiteral OPTION_FULLDESC = "x-full-desc"; // TODO: This should find a better home, eventually
 
-    constexpr std::array<CommandSwitch, 1> FindSwitches = {{{OPTION_FULLDESC, "Do not truncate long text"}}};
+    constexpr std::array<CommandSwitch, 1> FindSwitches = {
+        {{OPTION_FULLDESC, []() { return msg::format(msgHelpTextOptFullDesc); }}}};
 
     const CommandStructure FindCommandStructure = {
         Strings::format("Searches for the indicated artifact or port. With no parameter after 'artifact' or 'port', "
@@ -121,7 +122,9 @@ namespace vcpkg::Commands
                                     Optional<StringView> filter,
                                     View<std::string> overlay_ports)
     {
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, overlay_ports));
+        auto& fs = paths.get_filesystem();
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, overlay_ports));
         auto source_paragraphs =
             Util::fmap(provider.load_all_control_files(),
                        [](auto&& port) -> const SourceControlFile* { return port->source_control_file.get(); });

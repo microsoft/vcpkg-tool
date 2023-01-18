@@ -21,6 +21,7 @@ namespace vcpkg
         Optional<std::string> reference;
         Optional<std::string> repo;
         Optional<std::vector<std::string>> packages;
+        Optional<std::vector<Json::PackagePatternDeclaration>> package_declarations;
 
         Json::Value serialize() const;
 
@@ -73,5 +74,14 @@ namespace vcpkg
     };
 
     Json::IDeserializer<Configuration>& get_configuration_deserializer();
+    // Parse configuration from a file containing a valid vcpkg-configuration.json file
+    Optional<Configuration> parse_configuration(StringView contents,
+                                                StringView origin,
+                                                vcpkg::MessageSink& messageSink);
+    // Parse a configuration JSON object
+    Optional<Configuration> parse_configuration(const Json::Object& object,
+                                                StringView origin,
+                                                vcpkg::MessageSink& messageSink);
+
     std::vector<std::string> find_unknown_fields(const Configuration& config);
 }

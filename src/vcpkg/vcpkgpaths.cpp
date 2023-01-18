@@ -88,53 +88,19 @@ namespace
         return {std::move(manifest_value.first.object(VCPKG_LINE_INFO)), std::move(manifest_path)};
     }
 
-    Optional<ManifestConfiguration> config_from_manifest(const Path& manifest_path,
-                                                         const Optional<ManifestAndPath>& manifest_doc)
+    static Optional<ManifestConfiguration> config_from_manifest(const Optional<ManifestAndPath>& manifest_doc)
     {
         if (auto manifest = manifest_doc.get())
         {
-            return parse_manifest_configuration(manifest_path, manifest->manifest).value_or_exit(VCPKG_LINE_INFO);
+            return parse_manifest_configuration(manifest->manifest, manifest->path, stdout_sink)
+                .value_or_exit(VCPKG_LINE_INFO);
         }
         return nullopt;
     }
 
-    Optional<Configuration> config_from_json(const Path& config_path, const Filesystem& fs)
-    {
-        if (!fs.exists(config_path, VCPKG_LINE_INFO))
-        {
-            return nullopt;
-        }
-
-        auto parsed_config = Json::parse_file(VCPKG_LINE_INFO, fs, config_path);
-        if (!parsed_config.first.is_object())
-        {
-            msg::println_error(msgFailedToParseNoTopLevelObj, msg::path = config_path);
-            msg::println(Color::error, msg::msgSeeURL, msg::url = docs::registries_url);
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-        const auto& obj = parsed_config.first.object(VCPKG_LINE_INFO);
-
-        Json::Reader reader;
-        auto parsed_config_opt = reader.visit(obj, get_configuration_deserializer());
-        if (!reader.errors().empty())
-        {
-            msg::println_error(msgFailedToParseConfig, msg::path = config_path);
-
-            for (auto&& msg : reader.errors())
-            {
-                msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("    {}\n", msg));
-            }
-
-            msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-
-        return parsed_config_opt;
-    }
-
-    std::vector<std::string> merge_overlays(const std::vector<std::string>& cli_overlays,
-                                            const std::vector<std::string>& manifest_overlays,
-                                            const std::vector<std::string>& env_overlays)
+    static std::vector<std::string> merge_overlays(const std::vector<std::string>& cli_overlays,
+                                                   const std::vector<std::string>& manifest_overlays,
+                                                   const std::vector<std::string>& env_overlays)
     {
         std::vector<std::string> ret = cli_overlays;
 
@@ -210,6 +176,26 @@ namespace
                     default_reg.kind = "builtin";
                     default_reg.baseline = std::move(*p_baseline);
                 }
+            }
+        }
+
+        const auto& final_config = ret.config;
+        const bool has_ports_registries =
+            Util::any_of(final_config.registries, [](auto&& reg) { return reg.kind != "artifact"; });
+        if (has_ports_registries)
+        {
+            const auto default_registry = final_config.default_reg.get();
+            const bool is_null_default = (default_registry) ? !default_registry->kind.has_value() : false;
+            const bool has_baseline = (default_registry) ? default_registry->baseline.has_value() : false;
+            if (!is_null_default && !has_baseline)
+            {
+                auto origin =
+                    ret.directory /
+                    ((ret.source == ConfigurationSource::ManifestFile) ? "vcpkg.json" : "vcpkg-configuration.json");
+                msg::println_error(msgConfigurationErrorRegistriesWithoutBaseline,
+                                   msg::path = origin,
+                                   msg::url = vcpkg::docs::registries_url);
+                Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
 
@@ -579,7 +565,6 @@ namespace vcpkg
         VcpkgPathsImpl(Filesystem& fs, const VcpkgCmdArguments& args, const Path& root, const Path& original_cwd)
             : VcpkgPathsImplStage1(fs, args, root, original_cwd)
             , m_config_dir(m_manifest_dir.empty() ? root : m_manifest_dir)
-            , m_has_configuration_file(fs.exists(m_config_dir / "vcpkg-configuration.json", VCPKG_LINE_INFO))
             , m_manifest_path(m_manifest_dir.empty() ? Path{} : m_manifest_dir / "vcpkg.json")
             , m_registries_work_tree_dir(m_registries_cache / "git")
             , m_registries_dot_git_dir(m_registries_cache / "git" / ".git")
@@ -650,7 +635,6 @@ namespace vcpkg
         }
 
         const Path m_config_dir;
-        const bool m_has_configuration_file;
         const Path m_manifest_path;
         const Path m_registries_work_tree_dir;
         const Path m_registries_dot_git_dir;
@@ -669,7 +653,6 @@ namespace vcpkg
 
         Optional<ManifestAndPath> m_manifest_doc;
         ConfigurationAndSource m_config;
-        std::unique_ptr<RegistrySet> m_registry_set;
     };
 
     VcpkgPaths::VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args)
@@ -696,12 +679,17 @@ namespace vcpkg
         Debug::print("Using downloads-root: ", downloads, '\n');
 
         {
-            auto maybe_manifest_config = config_from_manifest(m_pimpl->m_manifest_path, m_pimpl->m_manifest_doc);
-            auto maybe_config_json = config_from_json(m_pimpl->m_config_dir / "vcpkg-configuration.json", filesystem);
+            const auto config_path = m_pimpl->m_config_dir / "vcpkg-configuration.json";
+            auto maybe_manifest_config = config_from_manifest(m_pimpl->m_manifest_doc);
+            auto maybe_json_config = !filesystem.exists(config_path, IgnoreErrors{})
+                                         ? nullopt
+                                         : parse_configuration(filesystem.read_contents(config_path, IgnoreErrors{}),
+                                                               config_path,
+                                                               stdout_sink);
 
             m_pimpl->m_config = merge_validate_configs(std::move(maybe_manifest_config),
                                                        m_pimpl->m_manifest_dir,
-                                                       std::move(maybe_config_json),
+                                                       std::move(maybe_json_config),
                                                        m_pimpl->m_config_dir,
                                                        *this);
 
@@ -716,12 +704,10 @@ namespace vcpkg
                 Util::transform(config.overlay_triplets, resolve_relative_to_config);
             }
 
-            overlay_ports = merge_overlays(
-                args.cli_overlay_ports, get_configuration().config.overlay_ports, args.env_overlay_ports);
+            overlay_ports =
+                merge_overlays(args.cli_overlay_ports, m_pimpl->m_config.config.overlay_ports, args.env_overlay_ports);
             overlay_triplets = merge_overlays(
-                args.cli_overlay_triplets, get_configuration().config.overlay_triplets, args.env_overlay_triplets);
-
-            m_pimpl->m_registry_set = m_pimpl->m_config.instantiate_registry_set(*this);
+                args.cli_overlay_triplets, m_pimpl->m_config.config.overlay_triplets, args.env_overlay_triplets);
         }
 
         for (const std::string& triplet : this->overlay_triplets)
@@ -730,32 +716,6 @@ namespace vcpkg
         }
         m_pimpl->triplets_dirs.emplace_back(triplets);
         m_pimpl->triplets_dirs.emplace_back(community_triplets);
-
-        // metrics from configuration
-        auto default_registry = m_pimpl->m_registry_set->default_registry();
-        auto other_registries = m_pimpl->m_registry_set->registries();
-        MetricsSubmission metrics;
-        if (default_registry)
-        {
-            metrics.track_string(StringMetric::RegistriesDefaultRegistryKind, default_registry->kind().to_string());
-        }
-        else
-        {
-            metrics.track_string(StringMetric::RegistriesDefaultRegistryKind, "disabled");
-        }
-
-        if (other_registries.size() != 0)
-        {
-            std::vector<StringLiteral> registry_kinds;
-            for (const auto& reg : other_registries)
-            {
-                registry_kinds.push_back(reg.implementation().kind());
-            }
-            Util::sort_unique_erase(registry_kinds);
-            metrics.track_string(StringMetric::RegistriesKindsUsed, Strings::join(",", registry_kinds));
-        }
-
-        get_global_metrics_collector().track_submission(std::move(metrics));
     }
 
     VcpkgPaths::~VcpkgPaths() = default;
@@ -1319,10 +1279,35 @@ namespace vcpkg
 
     const ConfigurationAndSource& VcpkgPaths::get_configuration() const { return m_pimpl->m_config; }
 
-    const RegistrySet& VcpkgPaths::get_registry_set() const
+    std::unique_ptr<RegistrySet> VcpkgPaths::make_registry_set() const
     {
-        Checks::check_exit(VCPKG_LINE_INFO, m_pimpl->m_registry_set != nullptr);
-        return *m_pimpl->m_registry_set;
+        auto registry_set = m_pimpl->m_config.instantiate_registry_set(*this);
+        // metrics from configuration
+        auto default_registry = registry_set->default_registry();
+        auto other_registries = registry_set->registries();
+        MetricsSubmission metrics;
+        if (default_registry)
+        {
+            metrics.track_string(StringMetric::RegistriesDefaultRegistryKind, default_registry->kind().to_string());
+        }
+        else
+        {
+            metrics.track_string(StringMetric::RegistriesDefaultRegistryKind, "disabled");
+        }
+
+        if (other_registries.size() != 0)
+        {
+            std::vector<StringLiteral> registry_kinds;
+            for (const auto& reg : other_registries)
+            {
+                registry_kinds.push_back(reg.implementation().kind());
+            }
+            Util::sort_unique_erase(registry_kinds);
+            metrics.track_string(StringMetric::RegistriesKindsUsed, Strings::join(",", registry_kinds));
+        }
+
+        get_global_metrics_collector().track_submission(std::move(metrics));
+        return registry_set;
     }
 
 #if defined(_WIN32)

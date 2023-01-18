@@ -146,7 +146,7 @@ namespace vcpkg
         Optional<const ManifestAndPath&> get_manifest() const;
         bool manifest_mode_enabled() const;
         const ConfigurationAndSource& get_configuration() const;
-        const RegistrySet& get_registry_set() const;
+        std::unique_ptr<RegistrySet> make_registry_set() const;
 
         // Retrieve a toolset matching the requirements in prebuildinfo
         const Toolset& get_toolset(const PreBuildInfo& prebuildinfo) const;

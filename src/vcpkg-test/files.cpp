@@ -1,4 +1,4 @@
-#include <vcpkg/base/system_headers.h>
+#include <vcpkg/base/system-headers.h>
 
 #include <catch2/catch.hpp>
 
@@ -256,7 +256,6 @@ TEST_CASE ("vcpkg Path conversions", "[filesystem][files]")
     CHECK(Path(str).native() == "some string");
     CHECK(Path(std::move(moved_from)).native() == "moved from");
     CHECK(Path(ntbs).native() == "some utf-8");
-    CHECK(Path(str.begin(), str.end()).native() == "some string");
     CHECK(Path(str.data(), str.size()).native() == "some string");
 
     Path p("convert from");

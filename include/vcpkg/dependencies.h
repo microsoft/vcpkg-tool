@@ -164,7 +164,7 @@ namespace vcpkg
 
         GraphRandomizer* randomizer = nullptr;
         Triplet host_triplet;
-        UnsupportedPortAction unsupported_port_action;
+        UnsupportedPortAction unsupported_port_action = UnsupportedPortAction::Warn;
     };
 
     std::vector<RemovePlanAction> create_remove_plan(const std::vector<PackageSpec>& specs,

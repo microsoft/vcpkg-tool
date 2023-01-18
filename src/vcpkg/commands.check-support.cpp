@@ -114,7 +114,10 @@ namespace vcpkg::Commands
                 std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
+        auto& fs = paths.get_filesystem();
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(
+            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
 
         // for each spec in the user-requested specs, check all dependencies

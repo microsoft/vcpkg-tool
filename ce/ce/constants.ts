@@ -17,6 +17,11 @@ export const defaultConfig =
       "kind": "artifact",
       "name": "microsoft",
       "location": "https://aka.ms/vcpkg-ce-default"
+    },
+    {
+      "kind": "artifact",
+      "name": "cmsis",
+      "location": "https://aka.ms/vcpkg-artifacts-cmsis"
     }
   ]
 }

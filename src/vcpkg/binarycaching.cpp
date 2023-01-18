@@ -1,3 +1,4 @@
+#include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
@@ -20,8 +21,6 @@
 #include <vcpkg/vcpkgpaths.h>
 
 #include <iterator>
-
-#include "vcpkg/base/api_stable_format.h"
 
 using namespace vcpkg;
 
@@ -325,15 +324,14 @@ namespace
             for (auto&& put_url_template : m_put_url_templates)
             {
                 auto url = put_url_template.instantiate_variables(action);
-                auto maybe_success = put_file(fs, url, put_url_template.headers_for_put, tmp_archive_path);
+                auto maybe_success = put_file(fs, url, m_secrets, put_url_template.headers_for_put, tmp_archive_path);
                 if (maybe_success)
                 {
                     http_remotes_pushed++;
                     continue;
                 }
 
-                auto errors = replace_secrets(std::move(maybe_success).error(), m_secrets);
-                msg::println(Color::warning, msgReplaceSecretsError, msg::error_msg = errors);
+                msg::println(Color::warning, maybe_success.error());
             }
 
             if (!m_put_url_templates.empty())

@@ -24,7 +24,7 @@ export class CacheCommand extends Command {
 
   get description() {
     return [
-      i`Manages the download cache.`,
+      i`Manages the download cache`,
     ];
   }
 

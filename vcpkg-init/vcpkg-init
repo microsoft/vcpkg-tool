@@ -63,7 +63,7 @@ Z_VCPKG_bootstrap() {
   fi
 
   chmod +x "${VCPKG_ROOT}/vcpkg"
-  "${VCPKG_ROOT}/vcpkg" z-bootstrap-standalone
+  "${VCPKG_ROOT}/vcpkg" bootstrap-standalone
   echo $VCPKG_BASE_VERSION > "${VCPKG_ROOT}/vcpkg-one-liner-version.txt"
   return 0;
 }

@@ -1,6 +1,6 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/messages.h>
-#include <vcpkg/base/setup_messages.h>
+#include <vcpkg/base/setup-messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/util.h>
 
@@ -171,7 +171,7 @@ namespace vcpkg::msg
             std::vector<StringLiteral> names;
             std::vector<StringLiteral> default_strings;     // const after startup
             std::vector<ZStringView> localization_comments; // const after startup
-
+            Optional<cmrc::file> json_file;
             std::vector<std::string> localized_strings;
         };
 
@@ -203,11 +203,17 @@ namespace vcpkg::msg
             ::abort();
         }
     }
-
-    void load_from_message_map(const Json::Object& message_map)
+    const Optional<cmrc::file> get_file()
     {
         Messages& m = messages();
+        return m.json_file;
+    }
+    void load_from_message_map(const MessageMapAndFile& map_and_file)
+    {
+        auto&& message_map = map_and_file.map;
+        Messages& m = messages();
         m.localized_strings.resize(m.names.size());
+        m.json_file = map_and_file.map_file;
 
         std::vector<std::string> names_without_localization;
 
@@ -235,7 +241,7 @@ namespace vcpkg::msg
         }
     }
 
-    ExpectedS<Json::Object> get_message_map_from_lcid(int LCID)
+    ExpectedS<MessageMapAndFile> get_message_map_from_lcid(int LCID)
     {
         threadunsafe_initialize_context();
         auto embedded_filesystem = cmrc::cmakerc::get_filesystem();
@@ -244,7 +250,10 @@ namespace vcpkg::msg
         if (const auto locale_path = maybe_locale_path.get())
         {
             auto file = embedded_filesystem.open(*locale_path);
-            return Json::parse_object(StringView{file.begin(), file.end()}, *locale_path);
+            return Json::parse_object(StringView{file.begin(), file.end()}, *locale_path)
+                .map([&](Json::Object&& parsed_file) {
+                    return MessageMapAndFile{std::move(parsed_file), file};
+                });
         }
 
         return std::string{"Unrecognized LCID"};
@@ -264,7 +273,7 @@ namespace vcpkg::msg
             std::pair<int, StringLiteral>(1029, "cs"), // Czech
             std::pair<int, StringLiteral>(1031, "de"), // German
             // Always use default handling for 1033 (English)
-            // std::pair<int, StringLiteral>(1033, "en"),       // English
+            // std::pair<int, StringLiteral>(1033, "en"),    // English
             std::pair<int, StringLiteral>(3082, "es"),       // Spanish (Spain)
             std::pair<int, StringLiteral>(1036, "fr"),       // French
             std::pair<int, StringLiteral>(1040, "it"),       // Italian
@@ -499,6 +508,7 @@ namespace vcpkg
     REGISTER_MESSAGE(CommandFailed);
     REGISTER_MESSAGE(CompressFolderFailed);
     REGISTER_MESSAGE(ComputingInstallPlan);
+    REGISTER_MESSAGE(ConfigurationErrorRegistriesWithoutBaseline);
     REGISTER_MESSAGE(ConflictingFiles);
     REGISTER_MESSAGE(CMakeUsingExportedLibs);
     REGISTER_MESSAGE(CommunityTriplets);
@@ -519,13 +529,15 @@ namespace vcpkg
     REGISTER_MESSAGE(CouldNotFindGitTreeAtCommit);
     REGISTER_MESSAGE(CreatedNuGetPackage);
     REGISTER_MESSAGE(CreateFailureLogsDir);
-    REGISTER_MESSAGE(CurlFailedToExecute);
-    REGISTER_MESSAGE(CurlReturnedUnexpectedResponseCodes);
     REGISTER_MESSAGE(Creating7ZipArchive);
     REGISTER_MESSAGE(CreatingNugetPackage);
     REGISTER_MESSAGE(CreatingZipArchive);
     REGISTER_MESSAGE(CreationFailed);
+    REGISTER_MESSAGE(CurlFailedToExecute);
+    REGISTER_MESSAGE(CurlFailedToPut);
+    REGISTER_MESSAGE(CurlFailedToPutHttp);
     REGISTER_MESSAGE(CurlReportedUnexpectedResults);
+    REGISTER_MESSAGE(CurlReturnedUnexpectedResponseCodes);
     REGISTER_MESSAGE(CurrentCommitBaseline);
     REGISTER_MESSAGE(DateTableHeader);
     REGISTER_MESSAGE(DefaultBrowserLaunched);
@@ -537,8 +549,14 @@ namespace vcpkg
     REGISTER_MESSAGE(DocumentedFieldsSuggestUpdate);
     REGISTER_MESSAGE(DownloadAvailable);
     REGISTER_MESSAGE(DownloadedSources);
+    REGISTER_MESSAGE(DownloadFailedCurl);
+    REGISTER_MESSAGE(DownloadFailedHashMismatch);
+    REGISTER_MESSAGE(DownloadFailedRetrying);
+    REGISTER_MESSAGE(DownloadFailedStatusCode);
     REGISTER_MESSAGE(DownloadingPortableToolVersionX);
     REGISTER_MESSAGE(DownloadingTool);
+    REGISTER_MESSAGE(DownloadingUrl);
+    REGISTER_MESSAGE(DownloadWinHttpError);
     REGISTER_MESSAGE(DownloadingVcpkgCeBundle);
     REGISTER_MESSAGE(DownloadingVcpkgCeBundleLatest);
     REGISTER_MESSAGE(DownloadingVcpkgStandaloneBundle);
@@ -547,6 +565,11 @@ namespace vcpkg
     REGISTER_MESSAGE(DuplicateCommandOption);
     REGISTER_MESSAGE(DuplicatedKeyInObj);
     REGISTER_MESSAGE(DuplicateOptions);
+    REGISTER_MESSAGE(DuplicatePackagePattern);
+    REGISTER_MESSAGE(DuplicatePackagePatternFirstOcurrence);
+    REGISTER_MESSAGE(DuplicatePackagePatternIgnoredLocations);
+    REGISTER_MESSAGE(DuplicatePackagePatternLocation);
+    REGISTER_MESSAGE(DuplicatePackagePatternRegistry);
     REGISTER_MESSAGE(ElapsedInstallTime);
     REGISTER_MESSAGE(ElapsedTimeForChecks);
     REGISTER_MESSAGE(EmailVcpkgTeam);
@@ -638,6 +661,8 @@ namespace vcpkg
     REGISTER_MESSAGE(FetchingRegistryInfo);
     REGISTER_MESSAGE(FloatingPointConstTooBig);
     REGISTER_MESSAGE(FileNotFound);
+    REGISTER_MESSAGE(FileReadFailed);
+    REGISTER_MESSAGE(FileSeekFailed);
     REGISTER_MESSAGE(FilesExported);
     REGISTER_MESSAGE(FileSystemOperationFailed);
     REGISTER_MESSAGE(FishCompletion);
@@ -825,6 +850,8 @@ namespace vcpkg
     REGISTER_MESSAGE(NoLocalizationForMessages);
     REGISTER_MESSAGE(NoOutdatedPackages);
     REGISTER_MESSAGE(NoRegistryForPort);
+    REGISTER_MESSAGE(NoUrlsAndHashSpecified);
+    REGISTER_MESSAGE(NoUrlsAndNoHashSpecified);
     REGISTER_MESSAGE(NugetPackageFileSucceededButCreationFailed);
     REGISTER_MESSAGE(OptionMustBeInteger);
     REGISTER_MESSAGE(OptionRequired);
@@ -850,7 +877,16 @@ namespace vcpkg
     REGISTER_MESSAGE(ParseControlErrorInfoTypesEntry);
     REGISTER_MESSAGE(ParseControlErrorInfoWhileLoading);
     REGISTER_MESSAGE(ParseControlErrorInfoWrongTypeFields);
+    REGISTER_MESSAGE(ParseIdentifierError);
+    REGISTER_MESSAGE(ParsePackageNameError);
+    REGISTER_MESSAGE(ParsePackagePatternError);
     REGISTER_MESSAGE(PathMustBeAbsolute);
+    REGISTER_MESSAGE(PECoffHeaderTooShort);
+    REGISTER_MESSAGE(PEConfigCrossesSectionBoundary);
+    REGISTER_MESSAGE(PEImportCrossesSectionBoundary);
+    REGISTER_MESSAGE(PEPlusTagInvalid);
+    REGISTER_MESSAGE(PERvaNotFound);
+    REGISTER_MESSAGE(PESignatureMismatch);
     REGISTER_MESSAGE(PortDependencyConflict);
     REGISTER_MESSAGE(PortNotInBaseline);
     REGISTER_MESSAGE(PortsAdded);
@@ -866,10 +902,10 @@ namespace vcpkg
     REGISTER_MESSAGE(RegistryCreated);
     REGISTER_MESSAGE(RemoveDependencies);
     REGISTER_MESSAGE(RemovePackageConflict);
-    REGISTER_MESSAGE(ReplaceSecretsError);
     REGISTER_MESSAGE(RestoredPackage);
     REGISTER_MESSAGE(RestoredPackagesFromVendor);
     REGISTER_MESSAGE(ResultsHeader);
+    REGISTER_MESSAGE(SecretBanner);
     REGISTER_MESSAGE(SerializedBinParagraphHeader);
     REGISTER_MESSAGE(SettingEnvVar);
     REGISTER_MESSAGE(ShallowRepositoryDetected);
@@ -971,6 +1007,7 @@ namespace vcpkg
     REGISTER_MESSAGE(VcpkgHasCrashed);
     REGISTER_MESSAGE(VcpkgInvalidCommand);
     REGISTER_MESSAGE(InvalidCommentStyle);
+    REGISTER_MESSAGE(InvalidUri);
     REGISTER_MESSAGE(VcpkgInVsPrompt);
     REGISTER_MESSAGE(VcpkgRootRequired);
     REGISTER_MESSAGE(VcpkgRootsDir);
@@ -990,13 +1027,13 @@ namespace vcpkg
     REGISTER_MESSAGE(WaitingToTakeFilesystemLock);
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
+    REGISTER_MESSAGE(WarnOnParseConfig);
     REGISTER_MESSAGE(WhileLookingForSpec);
     REGISTER_MESSAGE(WindowsOnlyCommand);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
     REGISTER_MESSAGE(FailedToFetchError);
     REGISTER_MESSAGE(UnexpectedPortName);
     REGISTER_MESSAGE(FailedToLoadUnnamedPortFromPath);
-
     REGISTER_MESSAGE(TrailingCommaInArray);
     REGISTER_MESSAGE(TrailingCommaInObj);
     REGISTER_MESSAGE(Utf8ConversionFailed);
@@ -1008,4 +1045,161 @@ namespace vcpkg
     REGISTER_MESSAGE(TripletFileNotFound);
     REGISTER_MESSAGE(VcpkgRegistriesCacheIsNotDirectory);
     REGISTER_MESSAGE(FailedToParseNoTopLevelObj);
+    REGISTER_MESSAGE(MismatchedManifestAfterReserialize);
+    REGISTER_MESSAGE(PortBugIncludeDirInCMakeHelperPort);
+    REGISTER_MESSAGE(PortBugMissingIncludeDir);
+    REGISTER_MESSAGE(PortBugRestrictedHeaderPaths);
+    REGISTER_MESSAGE(PortBugAllowRestrictedHeaders);
+    REGISTER_MESSAGE(PortBugDuplicateIncludeFiles);
+    REGISTER_MESSAGE(PortBugDebugShareDir);
+    REGISTER_MESSAGE(PortBugMissingFile);
+    REGISTER_MESSAGE(PortBugMergeLibCMakeDir);
+    REGISTER_MESSAGE(PortBugMisplacedCMakeFiles);
+    REGISTER_MESSAGE(PortBugDllInLibDir);
+    REGISTER_MESSAGE(PortBugMissingLicense);
+    REGISTER_MESSAGE(PortBugFoundCopyrightFiles);
+    REGISTER_MESSAGE(PortBugFoundExeInBinDir);
+    REGISTER_MESSAGE(PortBugSetDllsWithoutExports);
+    REGISTER_MESSAGE(PortBugDllAppContainerBitNotSet);
+    REGISTER_MESSAGE(BuiltWithIncorrectArchitecture);
+    REGISTER_MESSAGE(BinaryWithInvalidArchitecture);
+    REGISTER_MESSAGE(ExpectedExtension);
+    REGISTER_MESSAGE(FailedToDetermineArchitecture);
+    REGISTER_MESSAGE(PortBugFoundDllInStaticBuild);
+    REGISTER_MESSAGE(PortBugMismatchedNumberOfBinaries);
+    REGISTER_MESSAGE(PortBugFoundDebugBinaries);
+    REGISTER_MESSAGE(PortBugFoundReleaseBinaries);
+    REGISTER_MESSAGE(PortBugMissingDebugBinaries);
+    REGISTER_MESSAGE(PortBugMissingReleaseBinaries);
+    REGISTER_MESSAGE(PortBugMissingImportedLibs);
+    REGISTER_MESSAGE(PortBugBinDirExists);
+    REGISTER_MESSAGE(PortBugDebugBinDirExists);
+    REGISTER_MESSAGE(PortBugRemoveBinDir);
+    REGISTER_MESSAGE(PortBugFoundEmptyDirectories);
+    REGISTER_MESSAGE(PortBugRemoveEmptyDirectories);
+    REGISTER_MESSAGE(PortBugMisplacedPkgConfigFiles);
+    REGISTER_MESSAGE(PortBugMovePkgConfigFiles);
+    REGISTER_MESSAGE(PortBugRemoveEmptyDirs);
+    REGISTER_MESSAGE(PortBugInvalidCrtLinkage);
+    REGISTER_MESSAGE(PortBugInspectFiles);
+    REGISTER_MESSAGE(PortBugOutdatedCRT);
+    REGISTER_MESSAGE(PortBugMisplacedFiles);
+    REGISTER_MESSAGE(PortBugMisplacedFilesCont);
+    REGISTER_MESSAGE(PerformingPostBuildValidation);
+    REGISTER_MESSAGE(FailedPostBuildChecks);
+    REGISTER_MESSAGE(HelpTxtOptDryRun);
+    REGISTER_MESSAGE(HelpTxtOptUseHeadVersion);
+    REGISTER_MESSAGE(HelpTxtOptNoDownloads);
+    REGISTER_MESSAGE(HelpTxtOptOnlyDownloads);
+    REGISTER_MESSAGE(HelpTxtOptOnlyBinCache);
+    REGISTER_MESSAGE(HelpTxtOptRecurse);
+    REGISTER_MESSAGE(HelpTxtOptKeepGoing);
+    REGISTER_MESSAGE(HelpTxtOptEditable);
+    REGISTER_MESSAGE(HelpTxtOptUseAria2);
+    REGISTER_MESSAGE(HelpTxtOptCleanAfterBuild);
+    REGISTER_MESSAGE(HelpTxtOptCleanBuildTreesAfterBuild);
+    REGISTER_MESSAGE(HelpTxtOptCleanPkgAfterBuild);
+    REGISTER_MESSAGE(HelpTxtOptCleanDownloadsAfterBuild);
+    REGISTER_MESSAGE(HelpTxtOptManifestNoDefault);
+    REGISTER_MESSAGE(HelpTxtOptEnforcePortChecks);
+    REGISTER_MESSAGE(HelpTxtOptAllowUnsupportedPort);
+    REGISTER_MESSAGE(HelpTxtOptNoUsage);
+    REGISTER_MESSAGE(HelpTxtOptWritePkgConfig);
+    REGISTER_MESSAGE(HelpTxtOptManifestFeature);
+    REGISTER_MESSAGE(CmdAddVersionOptAll);
+    REGISTER_MESSAGE(CmdAddVersionOptOverwriteVersion);
+    REGISTER_MESSAGE(CmdAddVersionOptSkipFormatChk);
+    REGISTER_MESSAGE(CmdAddVersionOptSkipVersionFormatChk);
+    REGISTER_MESSAGE(CmdAddVersionOptVerbose);
+    REGISTER_MESSAGE(CISettingsOptExclude);
+    REGISTER_MESSAGE(CISettingsOptHostExclude);
+    REGISTER_MESSAGE(CISettingsOptXUnit);
+    REGISTER_MESSAGE(CISettingsOptCIBase);
+    REGISTER_MESSAGE(CISettingsOptFailureLogs);
+    REGISTER_MESSAGE(CISettingsOptOutputHashes);
+    REGISTER_MESSAGE(CISettingsOptParentHashes);
+    REGISTER_MESSAGE(CISettingsOptSkippedCascadeCount);
+    REGISTER_MESSAGE(CISwitchOptDryRun);
+    REGISTER_MESSAGE(CISwitchOptRandomize);
+    REGISTER_MESSAGE(CISwitchOptAllowUnexpectedPassing);
+    REGISTER_MESSAGE(CISwitchOptSkipFailures);
+    REGISTER_MESSAGE(CISwitchOptXUnitAll);
+    REGISTER_MESSAGE(CmdContactOptSurvey);
+    REGISTER_MESSAGE(CISettingsVerifyVersion);
+    REGISTER_MESSAGE(CISettingsVerifyGitTree);
+    REGISTER_MESSAGE(CISettingsExclude);
+    REGISTER_MESSAGE(CmdDependInfoOptDot);
+    REGISTER_MESSAGE(CmdDependInfoOptDGML);
+    REGISTER_MESSAGE(CmdDependInfoOptDepth);
+    REGISTER_MESSAGE(CmdDependInfoOptMaxRecurse);
+    REGISTER_MESSAGE(CmdDependInfoOptSort);
+    REGISTER_MESSAGE(CmdEditOptBuildTrees);
+    REGISTER_MESSAGE(CmdEditOptAll);
+    REGISTER_MESSAGE(CmdEnvOptions);
+    REGISTER_MESSAGE(CmdFetchOptXStderrStatus);
+    REGISTER_MESSAGE(CmdFormatManifestOptAll);
+    REGISTER_MESSAGE(CmdFormatManifestOptConvertControl);
+    REGISTER_MESSAGE(CmdGenerateMessageMapOptOutputComments);
+    REGISTER_MESSAGE(CmdGenerateMessageMapOptNoOutputComments);
+    REGISTER_MESSAGE(CmdInfoOptInstalled);
+    REGISTER_MESSAGE(CmdInfoOptTransitive);
+    REGISTER_MESSAGE(CmdNewOptApplication);
+    REGISTER_MESSAGE(CmdNewOptSingleFile);
+    REGISTER_MESSAGE(CmdNewOptVersionRelaxed);
+    REGISTER_MESSAGE(CmdNewOptVersionDate);
+    REGISTER_MESSAGE(CmdNewOptVersionString);
+    REGISTER_MESSAGE(CmdNewSettingName);
+    REGISTER_MESSAGE(CmdNewSettingVersion);
+    REGISTER_MESSAGE(CmdRegenerateOptForce);
+    REGISTER_MESSAGE(CmdRegenerateOptDryRun);
+    REGISTER_MESSAGE(CmdRegenerateOptNormalize);
+    REGISTER_MESSAGE(HelpTextOptFullDesc);
+    REGISTER_MESSAGE(CmdSettingCopiedFilesLog);
+    REGISTER_MESSAGE(CmdSettingInstalledDir);
+    REGISTER_MESSAGE(CmdSettingTargetBin);
+    REGISTER_MESSAGE(CmdSettingTLogFile);
+    REGISTER_MESSAGE(CmdSetInstalledOptDryRun);
+    REGISTER_MESSAGE(CmdSetInstalledOptNoUsage);
+    REGISTER_MESSAGE(CmdSetInstalledOptWritePkgConfig);
+    REGISTER_MESSAGE(CmdUpdateBaselineOptInitial);
+    REGISTER_MESSAGE(CmdUpdateBaselineOptDryRun);
+    REGISTER_MESSAGE(CmdUpgradeOptNoDryRun);
+    REGISTER_MESSAGE(CmdUpgradeOptNoKeepGoing);
+    REGISTER_MESSAGE(CmdUpgradeOptAllowUnsupported);
+    REGISTER_MESSAGE(CmdXDownloadOptStore);
+    REGISTER_MESSAGE(CmdXDownloadOptSkipSha);
+    REGISTER_MESSAGE(CmdXDownloadOptSha);
+    REGISTER_MESSAGE(CmdXDownloadOptUrl);
+    REGISTER_MESSAGE(CmdXDownloadOptHeader);
+    REGISTER_MESSAGE(CmdExportOptDryRun);
+    REGISTER_MESSAGE(CmdExportOptRaw);
+    REGISTER_MESSAGE(CmdExportOptNuget);
+    REGISTER_MESSAGE(CmdExportOptIFW);
+    REGISTER_MESSAGE(CmdExportOptZip);
+    REGISTER_MESSAGE(CmdExportOpt7Zip);
+    REGISTER_MESSAGE(CmdExportOptChocolatey);
+    REGISTER_MESSAGE(CmdExportOptPrefab);
+    REGISTER_MESSAGE(CmdExportOptMaven);
+    REGISTER_MESSAGE(CmdExportOptDebug);
+    REGISTER_MESSAGE(CmdExportOptInstalled);
+    REGISTER_MESSAGE(CmdExportSettingOutput);
+    REGISTER_MESSAGE(CmdExportSettingOutputDir);
+    REGISTER_MESSAGE(CmdExportSettingNugetID);
+    REGISTER_MESSAGE(CmdExportSettingNugetDesc);
+    REGISTER_MESSAGE(CmdExportSettingNugetVersion);
+    REGISTER_MESSAGE(CmdExportSettingRepoURL);
+    REGISTER_MESSAGE(CmdExportSettingPkgDir);
+    REGISTER_MESSAGE(CmdExportSettingRepoDir);
+    REGISTER_MESSAGE(CmdExportSettingConfigFile);
+    REGISTER_MESSAGE(CmdExportSettingInstallerPath);
+    REGISTER_MESSAGE(CmdExportSettingChocolateyMaint);
+    REGISTER_MESSAGE(CmdExportSettingChocolateyVersion);
+    REGISTER_MESSAGE(CmdExportSettingPrefabGroupID);
+    REGISTER_MESSAGE(CmdExportSettingPrefabArtifactID);
+    REGISTER_MESSAGE(CmdExportSettingPrefabVersion);
+    REGISTER_MESSAGE(CmdExportSettingSDKMinVersion);
+    REGISTER_MESSAGE(CmdExportSettingSDKTargetVersion);
+    REGISTER_MESSAGE(CmdRemoveOptRecurse);
+    REGISTER_MESSAGE(CmdRemoveOptDryRun);
+    REGISTER_MESSAGE(CmdRemoveOptOutdated);
 }
