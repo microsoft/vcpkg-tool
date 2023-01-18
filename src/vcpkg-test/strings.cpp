@@ -2,8 +2,8 @@
 
 #include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/span.h>
 #include <vcpkg/base/strings.h>
-#include <vcpkg/base/view.h>
 
 #include <stdint.h>
 
