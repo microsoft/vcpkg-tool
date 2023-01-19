@@ -1,6 +1,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/cofffilereader.h>
 #include <vcpkg/base/optional.h>
+#include <vcpkg/base/parse.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/util.h>
