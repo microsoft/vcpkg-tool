@@ -986,4 +986,23 @@ TEST_CASE ("count_constraints_do_not_contain_dashes", "[cmd_parser]")
                                              "error: unexpected switch: --zlib"}));
         CHECK(uut.get_remaining_args().empty());
     }
+
+    {
+        // Note that the same parse sequence as above but parsing out the --dot first results in a different error
+        // message
+        CmdParser uut{std::vector<std::string>{"depend-info", "--sort", "--dot", "--x-tree", "--zlib", "bar"}};
+        CHECK(uut.extract_first_command_like_arg_lowercase().value_or_exit(VCPKG_LINE_INFO) == "depend-info");
+        CHECK(uut.get_errors().empty());
+        CHECK(uut.parse_switch("dot", StabilityTag::Standard));
+        CHECK(uut.get_errors().empty());
+        std::string sort_value;
+        CHECK(!uut.parse_option("sort", StabilityTag::Standard, sort_value));
+        CHECK(sort_value.empty());
+        CHECK(uut.get_errors() == localized({"error: the option 'sort' requires a value"}));
+        CHECK(uut.consume_only_remaining_arg("depend-info").empty());
+        CHECK(uut.get_errors() == localized({"error: the option 'sort' requires a value",
+                                             "error: unexpected switch: --x-tree",
+                                             "error: unexpected switch: --zlib"}));
+        CHECK(uut.get_remaining_args().empty());
+    }
 }
