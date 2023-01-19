@@ -1,4 +1,6 @@
-#include <vcpkg/base/system_headers.h>
+#pragma once
+
+#include <vcpkg/base/system-headers.h>
 
 #include <catch2/catch.hpp>
 

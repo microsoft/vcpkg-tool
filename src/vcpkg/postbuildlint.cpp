@@ -810,16 +810,17 @@ namespace vcpkg
             // Always allow .pc files in "lib/pkgconfig":
             if (pkgconfig_parent_name == "lib") continue;
             // Allow .pc in "share/pkgconfig" if and only if it contains no "Libs:" or "Libs.private:" directives:
-            const bool contains_libs = Util::any_of(fs.read_lines(path, VCPKG_LINE_INFO), [](const std::string& line) {
-                if (Strings::starts_with(line, "Libs"))
-                {
-                    // only consider "Libs:" or "Libs.private:" directives when they have a value
-                    const auto colon = line.find_first_of(':');
-                    if (colon != std::string::npos && line.find_first_not_of(' ', colon + 1) != std::string::npos)
-                        return true;
-                }
-                return false;
-            });
+            const bool contains_libs =
+                Util::any_of(fs.read_lines(path).value_or_exit(VCPKG_LINE_INFO), [](const std::string& line) {
+                    if (Strings::starts_with(line, "Libs"))
+                    {
+                        // only consider "Libs:" or "Libs.private:" directives when they have a value
+                        const auto colon = line.find_first_of(':');
+                        if (colon != std::string::npos && line.find_first_not_of(' ', colon + 1) != std::string::npos)
+                            return true;
+                    }
+                    return false;
+                });
             if (pkgconfig_parent_name == "share" && !contains_libs) continue;
             if (!contains_libs)
             {
