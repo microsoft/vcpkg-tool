@@ -1035,8 +1035,9 @@ namespace vcpkg
     REGISTER_MESSAGE(WindowsOnlyCommand);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
     REGISTER_MESSAGE(FailedToFetchError);
-    REGISTER_MESSAGE(UnexpectedPortName);
     REGISTER_MESSAGE(UnexpectedOption);
+    REGISTER_MESSAGE(UnexpectedPortName);
+    REGISTER_MESSAGE(UnexpectedSwitch);
     REGISTER_MESSAGE(FailedToLoadUnnamedPortFromPath);
     REGISTER_MESSAGE(TrailingCommaInArray);
     REGISTER_MESSAGE(TrailingCommaInObj);

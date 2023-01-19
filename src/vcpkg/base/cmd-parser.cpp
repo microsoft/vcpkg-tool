@@ -468,13 +468,13 @@ namespace vcpkg
 
             if (parse_result == TryParseOptionResult::ValueIsNextParameter)
             {
+                argument_parsed[idx] = true;
                 if (idx + 1 == argument_strings.size() || argument_parsed[idx + 1] != false)
                 {
                     errors.emplace_back(msg::format_error(msgOptionRequiresAValue, msg::option = option_name));
                     continue;
                 }
 
-                argument_parsed[idx] = true;
                 if (Strings::starts_with(argument_strings[idx + 1], "--"))
                 {
                     errors.emplace_back(msg::format_error(msgOptionRequiresANonDashesValue,
@@ -673,16 +673,49 @@ namespace vcpkg
 
     void CmdParser::add_unexpected_argument_errors_after(size_t idx)
     {
-        do
+        for (; idx < argument_parsed.size(); ++idx)
         {
-            argument_parsed[idx] = true;
-            add_unexpected_option_error(argument_strings[idx]);
-        } while (++idx, idx < argument_parsed.size());
+            if (!argument_parsed[idx])
+            {
+                argument_parsed[idx] = true;
+                add_unexpected_argument_error(argument_strings[idx]);
+            }
+        }
     }
 
-    void CmdParser::add_unexpected_option_error(const std::string& unrecognized_option)
+    void CmdParser::add_unexpected_argument_errors() { add_unexpected_argument_errors_after(0); }
+
+    bool CmdParser::add_unexpected_switch_errors()
     {
-        errors.emplace_back(msg::format_error(msgUnexpectedArgument, (msg::option = unrecognized_option)));
+        bool errors = false;
+        for (size_t idx = 0; idx < argument_parsed.size(); ++idx)
+        {
+            if (!argument_parsed[idx] && Strings::starts_with(argument_strings[idx], "--"))
+            {
+                errors = true;
+                argument_parsed[idx] = true;
+                add_unexpected_switch_error(argument_strings[idx]);
+            }
+        }
+
+        return errors;
+    }
+
+    void CmdParser::add_unexpected_argument_error(const std::string& unrecognized)
+    {
+        errors.emplace_back(msg::format_error(msgUnexpectedArgument, msg::option = unrecognized));
+    }
+
+    void CmdParser::add_unexpected_switch_error(const std::string& unrecognized)
+    {
+        if (Strings::contains(unrecognized, '='))
+        {
+            errors.emplace_back(msg::format_error(msgUnexpectedOption, msg::option = unrecognized));
+        }
+        else
+        {
+            errors.emplace_back(msg::format_error(msgUnexpectedSwitch, msg::option = unrecognized));
+        }
     }
 
     bool CmdParser::consume_remaining_args_impl(std::vector<std::string>& results)
@@ -698,7 +731,7 @@ namespace vcpkg
                 {
                     error = true;
                     results.clear();
-                    errors.emplace_back(msg::format_error(msgUnexpectedOption, msg::option = argument_strings[idx]));
+                    add_unexpected_switch_error(argument_strings[idx]);
                 }
                 else if (!error)
                 {
@@ -743,6 +776,7 @@ namespace vcpkg
 
     void CmdParser::enforce_no_remaining_args(StringView command_name)
     {
+        (void)add_unexpected_switch_errors();
         for (std::size_t idx = 0; idx < argument_parsed.size(); ++idx)
         {
             if (argument_parsed[idx] == false)
@@ -756,6 +790,7 @@ namespace vcpkg
 
     std::string CmdParser::consume_only_remaining_arg(StringView command_name)
     {
+        const auto error = add_unexpected_switch_errors();
         std::size_t idx = 0;
         std::size_t selected;
         for (;; ++idx)
@@ -772,13 +807,6 @@ namespace vcpkg
                 selected = idx;
                 break;
             }
-        }
-
-        bool error = false;
-        if (Strings::starts_with(argument_strings[selected], "--"))
-        {
-            error = true;
-            errors.emplace_back(msg::format_error(msgUnexpectedOption, (msg::option = argument_strings[idx])));
         }
 
         while (++idx < argument_parsed.size())
@@ -801,6 +829,7 @@ namespace vcpkg
 
     Optional<std::string> CmdParser::consume_only_remaining_arg_optional(StringView command_name)
     {
+        const auto error = add_unexpected_switch_errors();
         std::size_t idx = 0;
         std::size_t selected;
         for (;; ++idx)
@@ -816,13 +845,6 @@ namespace vcpkg
                 selected = idx;
                 break;
             }
-        }
-
-        bool error = false;
-        if (Strings::starts_with(argument_strings[selected], "--"))
-        {
-            error = true;
-            errors.emplace_back(msg::format_error(msgUnexpectedOption, (msg::option = argument_strings[idx])));
         }
 
         while (++idx < argument_parsed.size())

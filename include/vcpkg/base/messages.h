@@ -2336,7 +2336,10 @@ namespace vcpkg
                     "Unable to determine toolchain use for {triplet} with with CMAKE_SYSTEM_NAME {system_name}. Did "
                     "you mean to use "
                     "VCPKG_CHAINLOAD_TOOLCHAIN_FILE?");
-    DECLARE_MESSAGE(UnexpectedArgument, (msg::option), "", "unexpected argument: {option}");
+    DECLARE_MESSAGE(UnexpectedArgument,
+                    (msg::option),
+                    "Argument is literally what the user passed on the command line.",
+                    "unexpected argument: {option}");
     DECLARE_MESSAGE(UnexpectedByteSize,
                     (msg::expected, msg::actual),
                     "{expected} is the expected byte size and {actual} is the actual byte size.",
@@ -2368,11 +2371,18 @@ namespace vcpkg
                     (msg::expected, msg::actual),
                     "{expected} is the expected format, {actual} is the actual format.",
                     "Expected format is [{expected}], but was [{actual}].");
-    DECLARE_MESSAGE(UnexpectedOption, (msg::option), "", "unexpected option: {option}");
+    DECLARE_MESSAGE(UnexpectedOption,
+                    (msg::option),
+                    "Option is a command line option like --option=value",
+                    "unexpected option: {option}");
     DECLARE_MESSAGE(UnexpectedPortName,
                     (msg::expected, msg::actual, msg::path),
                     "{expected} is the expected port and {actual} is the port declared by the user.",
                     "the port {expected} is declared as {actual} in {path}");
+    DECLARE_MESSAGE(UnexpectedSwitch,
+                    (msg::option),
+                    "Switch is a command line switch like --switch",
+                    "unexpected switch: {option}");
     DECLARE_MESSAGE(UnexpectedToolOutput,
                     (msg::tool_name, msg::path),
                     "The actual command line output will be appended after this message.",

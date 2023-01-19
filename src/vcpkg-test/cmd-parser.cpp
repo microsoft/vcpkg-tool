@@ -404,8 +404,8 @@ TEST_CASE ("Options missing values at the end generate errors", "[cmd_parser]")
     CHECK(!uut.parse_option("missing-value", StabilityTag::Standard, value));
     CHECK(value.empty());
     CHECK(uut.get_errors() == localized({"error: the option 'missing-value' requires a value"}));
-    // The bad parameter is not consumed
-    CHECK(uut.get_remaining_args() == std::vector<std::string>{"--missing-value"});
+    // The bad parameter is consumed
+    CHECK(uut.get_remaining_args().empty());
 }
 
 TEST_CASE ("Options missing values in the middle generate errors", "[cmd_parser]")
@@ -420,8 +420,8 @@ TEST_CASE ("Options missing values in the middle generate errors", "[cmd_parser]
     CHECK(!uut.parse_option("missing-value", StabilityTag::Standard, value));
     CHECK(value.empty());
     CHECK(uut.get_errors() == localized({"error: the option 'missing-value' requires a value"}));
-    // The bad parameter is not consumed
-    CHECK(uut.get_remaining_args() == std::vector<std::string>{"--missing-value", "a"});
+    // The bad parameter is consumed
+    CHECK(uut.get_remaining_args() == std::vector<std::string>{"a"});
 }
 
 TEST_CASE ("Multi-options can be parsed", "[cmd_parser]")
@@ -806,7 +806,7 @@ TEST_CASE ("Consume remaining args", "[cmd_parser]")
     {
         CmdParser uut{std::vector<std::string>{"--first-arg"}};
         CHECK(uut.consume_remaining_args() == std::vector<std::string>{});
-        const auto expected_errors = localized({"error: unexpected option: --first-arg"});
+        const auto expected_errors = localized({"error: unexpected switch: --first-arg"});
         CHECK(uut.get_errors() == expected_errors);
         CHECK(uut.get_remaining_args().empty());
     }
@@ -814,7 +814,8 @@ TEST_CASE ("Consume remaining args", "[cmd_parser]")
     {
         CmdParser uut{std::vector<std::string>{"--first-arg"}};
         CHECK(uut.consume_only_remaining_arg("command") == std::string{});
-        const auto expected_errors = localized({"error: unexpected option: --first-arg"});
+        const auto expected_errors = localized(
+            {"error: unexpected switch: --first-arg", "error: the command 'command' requires exactly one argument"});
         CHECK(uut.get_errors() == expected_errors);
         CHECK(uut.get_remaining_args().empty());
     }
@@ -822,7 +823,25 @@ TEST_CASE ("Consume remaining args", "[cmd_parser]")
     {
         CmdParser uut{std::vector<std::string>{"--first-arg"}};
         CHECK(!uut.consume_only_remaining_arg_optional("command").has_value());
-        const auto expected_errors = localized({"error: unexpected option: --first-arg"});
+        const auto expected_errors = localized({"error: unexpected switch: --first-arg"});
+        CHECK(uut.get_errors() == expected_errors);
+        CHECK(uut.get_remaining_args().empty());
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"--first-arg", "second-arg"}};
+        CHECK(!uut.consume_only_remaining_arg_optional("command").has_value());
+        const auto expected_errors = localized({"error: unexpected switch: --first-arg"});
+        CHECK(uut.get_errors() == expected_errors);
+        CHECK(uut.get_remaining_args().empty());
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"--first-arg", "second-arg", "third-arg"}};
+        CHECK(!uut.consume_only_remaining_arg_optional("command").has_value());
+        const auto expected_errors = localized({"error: unexpected switch: --first-arg",
+                                                "error: the command 'command' requires zero or one arguments",
+                                                "error: unexpected argument: third-arg"});
         CHECK(uut.get_errors() == expected_errors);
         CHECK(uut.get_remaining_args().empty());
     }
@@ -830,7 +849,7 @@ TEST_CASE ("Consume remaining args", "[cmd_parser]")
     {
         CmdParser uut{std::vector<std::string>{"--first-arg", "second-arg"}};
         CHECK(uut.consume_remaining_args("command", 2) == std::vector<std::string>{});
-        const auto expected_errors = localized({"error: unexpected option: --first-arg"});
+        const auto expected_errors = localized({"error: unexpected switch: --first-arg"});
         CHECK(uut.get_errors() == expected_errors);
         CHECK(uut.get_remaining_args().empty());
     }
@@ -839,7 +858,7 @@ TEST_CASE ("Consume remaining args", "[cmd_parser]")
         CmdParser uut{std::vector<std::string>{"--first-arg", "second-arg"}};
         // note that arity isn't checked if the 'looks like switch' check fails
         CHECK(uut.consume_remaining_args("command", 3) == std::vector<std::string>{});
-        const auto expected_errors = localized({"error: unexpected option: --first-arg"});
+        const auto expected_errors = localized({"error: unexpected switch: --first-arg"});
         CHECK(uut.get_errors() == expected_errors);
         CHECK(uut.get_remaining_args().empty());
     }
@@ -847,7 +866,7 @@ TEST_CASE ("Consume remaining args", "[cmd_parser]")
     {
         CmdParser uut{std::vector<std::string>{"--first-arg", "second-arg"}};
         CHECK(uut.consume_remaining_args("command", 1, 2) == std::vector<std::string>{});
-        const auto expected_errors = localized({"error: unexpected option: --first-arg"});
+        const auto expected_errors = localized({"error: unexpected switch: --first-arg"});
         CHECK(uut.get_errors() == expected_errors);
         CHECK(uut.get_remaining_args().empty());
     }
@@ -856,7 +875,7 @@ TEST_CASE ("Consume remaining args", "[cmd_parser]")
         CmdParser uut{std::vector<std::string>{"--first-arg", "second-arg"}};
         // note that arity isn't checked if the 'looks like switch' check fails
         CHECK(uut.consume_remaining_args("command", 3, 4) == std::vector<std::string>{});
-        const auto expected_errors = localized({"error: unexpected option: --first-arg"});
+        const auto expected_errors = localized({"error: unexpected switch: --first-arg"});
         CHECK(uut.get_errors() == expected_errors);
         CHECK(uut.get_remaining_args().empty());
     }
@@ -904,5 +923,67 @@ TEST_CASE ("delistify_conjoined_value", "[cmd_parser]")
         std::vector<std::string> uut{"a,b", "c,d"};
         delistify_conjoined_multivalue(uut);
         CHECK(uut == std::vector<std::string>{"a", "b", "c", "d"});
+    }
+}
+
+TEST_CASE ("count_constraints_do_not_contain_dashes", "[cmd_parser]")
+{
+    {
+        CmdParser uut{std::vector<std::string>{"a", "--arg", "value", "--opt=setting"}};
+        uut.enforce_no_remaining_args("test-command");
+        CHECK(uut.get_errors() ==
+              localized({"error: unexpected switch: --arg",
+                         "error: unexpected option: --opt=setting",
+                         "error: the command 'test-command' does not accept any additional arguments",
+                         "error: unexpected argument: a",
+                         "error: unexpected argument: value"}));
+        CHECK(uut.get_remaining_args().empty());
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"a", "--arg", "value", "--opt=setting"}};
+        uut.consume_only_remaining_arg("test-command");
+        CHECK(uut.get_errors() == localized({"error: unexpected switch: --arg",
+                                             "error: unexpected option: --opt=setting",
+                                             "error: the command 'test-command' requires exactly one argument",
+                                             "error: unexpected argument: value"}));
+        CHECK(uut.get_remaining_args().empty());
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"depend-info", "--sort", "--x-tree", "--zlib", "bar", "baz"}};
+        CHECK(uut.extract_first_command_like_arg_lowercase().value_or_exit(VCPKG_LINE_INFO) == "depend-info");
+        CHECK(uut.get_errors().empty());
+        std::string sort_value;
+        CHECK(!uut.parse_option("sort", StabilityTag::Standard, sort_value));
+        CHECK(sort_value.empty());
+        CHECK(uut.get_errors() == localized({"error: the option 'sort' requires a value; if you intended to set 'sort' "
+                                             "to '--x-tree', use the equals form instead: --sort=--x-tree"}));
+        CHECK(uut.consume_only_remaining_arg("depend-info").empty());
+        CHECK(uut.get_errors() == localized({"error: the option 'sort' requires a value; if you intended to set 'sort' "
+                                             "to '--x-tree', use the equals form instead: --sort=--x-tree",
+                                             "error: unexpected switch: --x-tree",
+                                             "error: unexpected switch: --zlib",
+                                             "error: the command 'depend-info' requires exactly one argument",
+                                             "error: unexpected argument: baz"}));
+        CHECK(uut.get_remaining_args().empty());
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"depend-info", "--sort", "--dot", "--x-tree", "--zlib", "bar"}};
+        CHECK(uut.extract_first_command_like_arg_lowercase().value_or_exit(VCPKG_LINE_INFO) == "depend-info");
+        CHECK(uut.get_errors().empty());
+        std::string sort_value;
+        CHECK(!uut.parse_option("sort", StabilityTag::Standard, sort_value));
+        CHECK(sort_value.empty());
+        CHECK(uut.get_errors() == localized({"error: the option 'sort' requires a value; if you intended to set 'sort' "
+                                             "to '--dot', use the equals form instead: --sort=--dot"}));
+        CHECK(uut.parse_switch("dot", StabilityTag::Standard));
+        CHECK(uut.consume_only_remaining_arg("depend-info").empty());
+        CHECK(uut.get_errors() == localized({"error: the option 'sort' requires a value; if you intended to set 'sort' "
+                                             "to '--dot', use the equals form instead: --sort=--dot",
+                                             "error: unexpected switch: --x-tree",
+                                             "error: unexpected switch: --zlib"}));
+        CHECK(uut.get_remaining_args().empty());
     }
 }
