@@ -79,7 +79,8 @@ namespace vcpkg
             target.push_back('"');
 #else
             // On non-Windows, `\` is the escape character and always requires doubling. Inner double-quotes must be
-            // escaped. Additionally, '`' and '$' must be escaped or they will retain their special meaning in the shell.
+            // escaped. Additionally, '`' and '$' must be escaped or they will retain their special meaning in the
+            // shell.
             target.push_back('"');
             for (auto ch : content)
             {
