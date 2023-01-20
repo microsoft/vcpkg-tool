@@ -1,0 +1,6 @@
+
+// char * test = "${CURRENT_INSTALLED_DIR}"
+
+/* 
+${CURRENT_INSTALLED_DIR}
+*/
