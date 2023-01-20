@@ -357,6 +357,8 @@
   "FileReadFailed": "{byte_offset} uzaklığında {path} yolundan {count} bayt okunamadı.",
   "FileSeekFailed": "{path} içinde {byte_offset} konumlandırma aranamadı.",
   "FileSystemOperationFailed": "Filesystem işlemi başarısız oldu:",
+  "FilesContainAbsolutePath1": "There should be no absolute paths, such as the following, in an installed package:",
+  "FilesContainAbsolutePath2": "Absolute paths were found in the following files:",
   "FilesExported": "{path} konumunda dışa aktarılan dosyalar",
   "FishCompletion": "vcpkg balık tamamlama zaten \"{path}\" konumuna eklendi.",
   "FloatingPointConstTooBig": "Kayan nokta sabiti çok büyük: {count}",

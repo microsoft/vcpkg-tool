@@ -357,6 +357,8 @@
   "FileReadFailed": "Falha ao ler {count} bytes de {path} no deslocamento {byte_offset}.",
   "FileSeekFailed": "Falha ao buscar a posição {byte_offset} em {path}.",
   "FileSystemOperationFailed": "Falha na operação do sistema de arquivos:",
+  "FilesContainAbsolutePath1": "There should be no absolute paths, such as the following, in an installed package:",
+  "FilesContainAbsolutePath2": "Absolute paths were found in the following files:",
   "FilesExported": "Arquivos exportados em: {path}",
   "FishCompletion": "a conclusão do peixe vcpkg já foi adicionada em \"{path}\".",
   "FloatingPointConstTooBig": "Constante de ponto flutuante muito grande: {count}",

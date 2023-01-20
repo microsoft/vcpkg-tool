@@ -357,6 +357,8 @@
   "FileReadFailed": "Čtení {count} bajtů z cesty {path} na posunu {byte_offset} se nezdařilo.",
   "FileSeekFailed": "Nepodařilo se vyhledat umístění pro {byte_offset} v cestě {path}.",
   "FileSystemOperationFailed": "Operace systému souborů se nezdařila:",
+  "FilesContainAbsolutePath1": "There should be no absolute paths, such as the following, in an installed package:",
+  "FilesContainAbsolutePath2": "Absolute paths were found in the following files:",
   "FilesExported": "Soubory exportované v: {path}",
   "FishCompletion": "Dokončení vcpkg fish je už přidáno do {path}.",
   "FloatingPointConstTooBig": "Konstanta čísla s plovoucí desetinnou čárkou je příliš velká: {count}",
