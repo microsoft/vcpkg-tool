@@ -51,7 +51,7 @@ namespace vcpkg
 {
     void append_shell_escaped(std::string& target, StringView content)
     {
-        if (Strings::find_first_of(content, " \t\n\r\"\\,;&`^|'") != content.end())
+        if (Strings::find_first_of(content, " \t\n\r\"\\`$,;&^|'()") != content.end())
         {
             // TODO: improve this to properly handle all escaping
 #if _WIN32
@@ -79,11 +79,12 @@ namespace vcpkg
             target.push_back('"');
 #else
             // On non-Windows, `\` is the escape character and always requires doubling. Inner double-quotes must be
-            // escaped.
+            // escaped. Additionally, '`' and '$' must be escaped or they will retain their special meaning in the
+            // shell.
             target.push_back('"');
             for (auto ch : content)
             {
-                if (ch == '\\' || ch == '"') target.push_back('\\');
+                if (ch == '\\' || ch == '"' || ch == '`' || ch == '$') target.push_back('\\');
                 target.push_back(ch);
             }
             target.push_back('"');
