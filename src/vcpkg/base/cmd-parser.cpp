@@ -730,10 +730,9 @@ namespace vcpkg
                 if (Strings::starts_with(argument_strings[idx], "--"))
                 {
                     error = true;
-                    results.clear();
                     add_unexpected_switch_error(argument_strings[idx]);
                 }
-                else if (!error)
+                else
                 {
                     results.emplace_back(argument_strings[idx]);
                 }
@@ -869,7 +868,11 @@ namespace vcpkg
     std::vector<std::string> CmdParser::consume_remaining_args()
     {
         std::vector<std::string> results;
-        (void)consume_remaining_args_impl(results);
+        if (consume_remaining_args_impl(results))
+        {
+            results.clear();
+        }
+
         return results;
     }
 
@@ -878,11 +881,7 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, arity != 0); // use enforce_no_remaining_args instead
         Checks::check_exit(VCPKG_LINE_INFO, arity != 1); // use consume_only_remaining_arg instead
         std::vector<std::string> results;
-        if (consume_remaining_args_impl(results))
-        {
-            return results;
-        }
-
+        bool error = consume_remaining_args_impl(results);
         if (results.size() != arity)
         {
             errors.emplace_back(msg::format_error(msgNonExactlyArgs,
@@ -894,6 +893,11 @@ namespace vcpkg
                 errors.emplace_back(msg::format_error(msgUnexpectedArgument, msg::option = results[idx]));
             }
 
+            error = true;
+        }
+
+        if (error)
+        {
             results.clear();
         }
 
@@ -908,11 +912,7 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, max_arity != 0);        // use enforce_no_remaining_args instead
         Checks::check_exit(VCPKG_LINE_INFO, max_arity != 1);        // use consume_only_remaining_arg instead
         std::vector<std::string> results;
-        if (consume_remaining_args_impl(results))
-        {
-            return results;
-        }
-
+        bool error = consume_remaining_args_impl(results);
         if (max_arity < results.size() || results.size() < min_arity)
         {
             errors.emplace_back(msg::format_error(msgNonRangeArgs,
@@ -925,6 +925,11 @@ namespace vcpkg
                 errors.emplace_back(msg::format_error(msgUnexpectedArgument, msg::option = results[idx]));
             }
 
+            error = true;
+        }
+
+        if (error)
+        {
             results.clear();
         }
 

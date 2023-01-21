@@ -847,7 +847,7 @@ TEST_CASE ("Consume remaining args", "[cmd_parser]")
     }
 
     {
-        CmdParser uut{std::vector<std::string>{"--first-arg", "second-arg"}};
+        CmdParser uut{std::vector<std::string>{"--first-arg", "second-arg", "third-arg"}};
         CHECK(uut.consume_remaining_args("command", 2) == std::vector<std::string>{});
         const auto expected_errors = localized({"error: unexpected switch: --first-arg"});
         CHECK(uut.get_errors() == expected_errors);
@@ -855,10 +855,11 @@ TEST_CASE ("Consume remaining args", "[cmd_parser]")
     }
 
     {
-        CmdParser uut{std::vector<std::string>{"--first-arg", "second-arg"}};
-        // note that arity isn't checked if the 'looks like switch' check fails
+        CmdParser uut{std::vector<std::string>{"--first-arg", "second-arg", "third-arg"}};
         CHECK(uut.consume_remaining_args("command", 3) == std::vector<std::string>{});
-        const auto expected_errors = localized({"error: unexpected switch: --first-arg"});
+        const auto expected_errors =
+            localized({"error: unexpected switch: --first-arg",
+                       "error: the command 'command' requires exactly 3 arguments, but 2 were provided"});
         CHECK(uut.get_errors() == expected_errors);
         CHECK(uut.get_remaining_args().empty());
     }
@@ -873,9 +874,10 @@ TEST_CASE ("Consume remaining args", "[cmd_parser]")
 
     {
         CmdParser uut{std::vector<std::string>{"--first-arg", "second-arg"}};
-        // note that arity isn't checked if the 'looks like switch' check fails
         CHECK(uut.consume_remaining_args("command", 3, 4) == std::vector<std::string>{});
-        const auto expected_errors = localized({"error: unexpected switch: --first-arg"});
+        const auto expected_errors = localized(
+            {"error: unexpected switch: --first-arg",
+             "error: the command 'command' requires between 3 and 4 arguments, inclusive, but 1 were provided"});
         CHECK(uut.get_errors() == expected_errors);
         CHECK(uut.get_remaining_args().empty());
     }
@@ -929,6 +931,22 @@ TEST_CASE ("delistify_conjoined_value", "[cmd_parser]")
 TEST_CASE ("count_constraints_do_not_contain_dashes", "[cmd_parser]")
 {
     {
+        CmdParser uut{std::vector<std::string>{"--arg", "--opt=setting"}};
+        uut.enforce_no_remaining_args("test-command");
+        CHECK(uut.get_errors() ==
+              localized({"error: unexpected switch: --arg", "error: unexpected option: --opt=setting"}));
+        CHECK(uut.get_remaining_args().empty());
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"--arg", "--opt=setting"}};
+        uut.enforce_no_remaining_args("test-command");
+        CHECK(uut.get_errors() ==
+              localized({"error: unexpected switch: --arg", "error: unexpected option: --opt=setting"}));
+        CHECK(uut.get_remaining_args().empty());
+    }
+
+    {
         CmdParser uut{std::vector<std::string>{"a", "--arg", "value", "--opt=setting"}};
         uut.enforce_no_remaining_args("test-command");
         CHECK(uut.get_errors() ==
@@ -937,6 +955,15 @@ TEST_CASE ("count_constraints_do_not_contain_dashes", "[cmd_parser]")
                          "error: the command 'test-command' does not accept any additional arguments",
                          "error: unexpected argument: a",
                          "error: unexpected argument: value"}));
+        CHECK(uut.get_remaining_args().empty());
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"--arg", "--opt=setting"}};
+        uut.consume_only_remaining_arg("test-command");
+        CHECK(uut.get_errors() == localized({"error: unexpected switch: --arg",
+                                             "error: unexpected option: --opt=setting",
+                                             "error: the command 'test-command' requires exactly one argument"}));
         CHECK(uut.get_remaining_args().empty());
     }
 
@@ -950,6 +977,51 @@ TEST_CASE ("count_constraints_do_not_contain_dashes", "[cmd_parser]")
         CHECK(uut.get_remaining_args().empty());
     }
 
+    {
+        CmdParser uut{std::vector<std::string>{"arg", "--switch", "--option=value", "bar"}};
+        CHECK(uut.consume_remaining_args().empty());
+        CHECK(uut.get_remaining_args().empty());
+        CHECK(uut.get_errors() ==
+              localized({"error: unexpected switch: --switch", "error: unexpected option: --option=value"}));
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"arg", "--switch", "--option=value", "bar", "baz"}};
+        CHECK(uut.consume_remaining_args("command-name", 2).empty());
+        CHECK(uut.get_remaining_args().empty());
+        CHECK(uut.get_errors() ==
+              localized({"error: unexpected switch: --switch",
+                         "error: unexpected option: --option=value",
+                         "error: the command 'command-name' requires exactly 2 arguments, but 3 were provided",
+                         "error: unexpected argument: baz"}));
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"arg", "--switch", "--option=value"}};
+        CHECK(uut.consume_remaining_args("command-name", 2, 3).empty());
+        CHECK(uut.get_remaining_args().empty());
+        CHECK(uut.get_errors() == localized({"error: unexpected switch: --switch",
+                                             "error: unexpected option: --option=value",
+                                             "error: the command 'command-name' requires between 2 and 3 arguments, "
+                                             "inclusive, but 1 were provided"}));
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"arg", "--switch", "--option=value", "bar", "baz", "fourth"}};
+        CHECK(uut.consume_remaining_args("command-name", 2, 3).empty());
+        CHECK(uut.get_remaining_args().empty());
+        CHECK(
+            uut.get_errors() ==
+            localized(
+                {"error: unexpected switch: --switch",
+                 "error: unexpected option: --option=value",
+                 "error: the command 'command-name' requires between 2 and 3 arguments, inclusive, but 4 were provided",
+                 "error: unexpected argument: fourth"}));
+    }
+}
+
+TEST_CASE ("real world commands", "[cmd_parser]")
+{
     {
         CmdParser uut{std::vector<std::string>{"depend-info", "--sort", "--x-tree", "--zlib", "bar", "baz"}};
         CHECK(uut.extract_first_command_like_arg_lowercase().value_or_exit(VCPKG_LINE_INFO) == "depend-info");
