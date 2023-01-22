@@ -38,10 +38,10 @@ using namespace vcpkg;
 
 namespace
 {
-    void invalid_command(const std::string& cmd)
+    void invalid_command(const VcpkgCmdArguments& args)
     {
-        msg::println(Color::error, msgVcpkgInvalidCommand, msg::command_name = cmd);
-        print_usage();
+        msg::println_error(msgVcpkgInvalidCommand, msg::command_name = args.get_command());
+        print_command_list_usage();
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
@@ -93,7 +93,7 @@ namespace
 
         if (args.get_command().empty())
         {
-            print_usage();
+            print_command_list_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
@@ -143,7 +143,7 @@ namespace
             return command_function->function->perform_and_exit(args, paths, default_triplet, host_triplet);
         }
 
-        return invalid_command(args.get_command());
+        return invalid_command(args);
     }
 
     const ElapsedTimer g_total_time;

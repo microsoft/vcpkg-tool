@@ -63,6 +63,95 @@ namespace
         {"BUILD_ID", "Generic"},
         {"BUILD_NUMBER", "Generic"},
     };
+
+    void maybe_parse_cmd_arguments(CmdParser& cmd_parser,
+                                   ParsedArguments& output,
+                                   StringView command,
+                                   const CommandStructure& command_structure)
+    {
+        for (const auto& switch_ : command_structure.options.switches)
+        {
+            bool parse_result;
+            auto name = switch_.name.to_string();
+            StabilityTag tag = StabilityTag::Standard;
+            if (Strings::starts_with(name, "x-"))
+            {
+                name.erase(0, 2);
+                tag = StabilityTag::Experimental;
+            }
+
+            if (switch_.helpmsg)
+            {
+                if (cmd_parser.parse_switch(name, tag, parse_result, switch_.helpmsg()) && parse_result)
+                {
+                    output.switches.emplace(switch_.name.to_string());
+                }
+            }
+            else
+            {
+                if (cmd_parser.parse_switch(name, tag, parse_result) && parse_result)
+                {
+                    output.switches.emplace(switch_.name.to_string());
+                }
+            }
+        }
+
+        {
+            std::string maybe_parse_result;
+            for (const auto& option : command_structure.options.settings)
+            {
+                auto name = option.name.to_string();
+                StabilityTag tag = StabilityTag::Standard;
+                if (Strings::starts_with(name, "x-"))
+                {
+                    name.erase(0, 2);
+                    tag = StabilityTag::Experimental;
+                }
+
+                if (option.helpmsg)
+                {
+                    if (cmd_parser.parse_option(name, tag, maybe_parse_result, option.helpmsg()))
+                    {
+                        output.settings.emplace(option.name.to_string(), std::move(maybe_parse_result));
+                    }
+                }
+                else
+                {
+                    if (cmd_parser.parse_option(name, tag, maybe_parse_result))
+                    {
+                        output.settings.emplace(option.name.to_string(), std::move(maybe_parse_result));
+                    }
+                }
+            }
+        }
+
+        for (const auto& option : command_structure.options.multisettings)
+        {
+            auto name = option.name.to_string();
+            StabilityTag tag = StabilityTag::Standard;
+            if (Strings::starts_with(name, "x-"))
+            {
+                name.erase(0, 2);
+                tag = StabilityTag::Experimental;
+            }
+
+            std::vector<std::string> maybe_parse_result;
+            if (option.helpmsg)
+            {
+                if (cmd_parser.parse_multi_option(name, tag, maybe_parse_result, option.helpmsg()))
+                {
+                    output.multisettings.emplace(option.name.to_string(), std::move(maybe_parse_result));
+                }
+            }
+            else
+            {
+                if (cmd_parser.parse_multi_option(name, tag, maybe_parse_result))
+                {
+                    output.multisettings.emplace(option.name.to_string(), std::move(maybe_parse_result));
+                }
+            }
+        }
+    }
 }
 
 namespace vcpkg
@@ -151,28 +240,57 @@ namespace vcpkg
         args.parser.parse_switch(BINARY_CACHING_SWITCH, StabilityTag::Standard, args.binary_caching);
         args.parser.parse_switch(WAIT_FOR_LOCK_SWITCH, StabilityTag::Experimental, args.wait_for_lock);
         args.parser.parse_switch(IGNORE_LOCK_FAILURES_SWITCH, StabilityTag::Experimental, args.ignore_lock_failures);
-        args.parser.parse_switch(JSON_SWITCH, StabilityTag::Experimental, args.json);
+        args.parser.parse_switch(JSON_SWITCH, StabilityTag::Experimental, args.json, msg::format(msgJsonSwitch));
         args.parser.parse_switch(
             EXACT_ABI_TOOLS_VERSIONS_SWITCH, StabilityTag::Experimental, args.exact_abi_tools_versions);
 
-        args.parser.parse_option(VCPKG_ROOT_DIR_ARG, StabilityTag::Standard, args.vcpkg_root_dir_arg);
-        args.parser.parse_option(TRIPLET_ARG, StabilityTag::Standard, args.triplet);
-        args.parser.parse_option(HOST_TRIPLET_ARG, StabilityTag::Standard, args.host_triplet);
+        args.parser.parse_option(VCPKG_ROOT_DIR_ARG,
+                                 StabilityTag::Standard,
+                                 args.vcpkg_root_dir_arg,
+                                 msg::format(msgVcpkgRootsDir, msg::env_var = "VCPKG_ROOT"));
+        args.parser.parse_option(TRIPLET_ARG,
+                                 StabilityTag::Standard,
+                                 args.triplet,
+                                 msg::format(msgSpecifyTargetArch, msg::env_var = "VCPKG_DEFAULT_TRIPLET"));
+        args.parser.parse_option(HOST_TRIPLET_ARG,
+                                 StabilityTag::Standard,
+                                 args.host_triplet,
+                                 msg::format(msgSpecifyHostArch, msg::env_var = "VCPKG_DEFAULT_HOST_TRIPLET"));
         args.parser.parse_option(MANIFEST_ROOT_DIR_ARG, StabilityTag::Experimental, args.manifest_root_dir);
-        args.parser.parse_option(BUILDTREES_ROOT_DIR_ARG, StabilityTag::Experimental, args.buildtrees_root_dir);
-        args.parser.parse_option(DOWNLOADS_ROOT_DIR_ARG, StabilityTag::Standard, args.downloads_root_dir);
-        args.parser.parse_option(INSTALL_ROOT_DIR_ARG, StabilityTag::Experimental, args.install_root_dir);
-        args.parser.parse_option(PACKAGES_ROOT_DIR_ARG, StabilityTag::Experimental, args.packages_root_dir);
+        args.parser.parse_option(BUILDTREES_ROOT_DIR_ARG,
+                                 StabilityTag::Experimental,
+                                 args.buildtrees_root_dir,
+                                 msg::format(msgBuildTreesRootDir));
+        args.parser.parse_option(DOWNLOADS_ROOT_DIR_ARG,
+                                 StabilityTag::Standard,
+                                 args.downloads_root_dir,
+                                 msg::format(msgDownloadRootsDir, msg::env_var = "VCPKG_DOWNLOADS"));
+        args.parser.parse_option(
+            INSTALL_ROOT_DIR_ARG, StabilityTag::Experimental, args.install_root_dir, msg::format(msgInstallRootDir));
+        args.parser.parse_option(
+            PACKAGES_ROOT_DIR_ARG, StabilityTag::Experimental, args.packages_root_dir, msg::format(msgPackageRootDir));
         args.parser.parse_option(SCRIPTS_ROOT_DIR_ARG, StabilityTag::Experimental, args.scripts_root_dir);
         args.parser.parse_option(BUILTIN_PORTS_ROOT_DIR_ARG, StabilityTag::Experimental, args.builtin_ports_root_dir);
         args.parser.parse_option(
             BUILTIN_REGISTRY_VERSIONS_DIR_ARG, StabilityTag::Experimental, args.builtin_registry_versions_dir);
         args.parser.parse_option(REGISTRIES_CACHE_DIR_ARG, StabilityTag::Experimental, args.registries_cache_dir);
-        args.parser.parse_option(ASSET_SOURCES_ARG, StabilityTag::Experimental, args.asset_sources_template_arg);
+        args.parser.parse_option(ASSET_SOURCES_ARG,
+                                 StabilityTag::Experimental,
+                                 args.asset_sources_template_arg,
+                                 msg::format(msgAssetSourcesArg));
 
-        args.parser.parse_multi_option(OVERLAY_PORTS_ARG, StabilityTag::Standard, args.cli_overlay_ports);
-        args.parser.parse_multi_option(OVERLAY_TRIPLETS_ARG, StabilityTag::Standard, args.cli_overlay_triplets);
-        args.parser.parse_multi_option(BINARY_SOURCES_ARG, StabilityTag::Standard, args.binary_sources);
+        args.parser.parse_multi_option(
+            OVERLAY_PORTS_ARG,
+            StabilityTag::Standard,
+            args.cli_overlay_ports,
+            msg::format(msgSpecifyDirectoriesWhenSearching, msg::env_var = "VCPKG_OVERLAY_PORTS"));
+        args.parser.parse_multi_option(
+            OVERLAY_TRIPLETS_ARG,
+            StabilityTag::Standard,
+            args.cli_overlay_triplets,
+            msg::format(msgSpecifyDirectoriesContaining, msg::env_var = "VCPKG_OVERLAY_TRIPLETS"));
+        args.parser.parse_multi_option(
+            BINARY_SOURCES_ARG, StabilityTag::Standard, args.binary_sources, msg::format(msgBinarySourcesArg));
         args.parser.parse_multi_option(CMAKE_SCRIPT_ARG, StabilityTag::Standard, args.cmake_args);
 
         std::vector<std::string> partial_feature_flags;
@@ -191,106 +309,28 @@ namespace vcpkg
         }
 
         args.forwardable_arguments = args.parser.get_remaining_args();
+        auto&& initial_parser_errors = args.parser.get_errors();
+        if (!initial_parser_errors.empty())
+        {
+            msg::write_unlocalized_text_to_stdout(Color::error, Strings::join("\n", initial_parser_errors) + "\n");
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
 
-        args.parser.exit_with_errors(args.parser.get_full_help_text(LocalizedString::from_raw("FIXME")));
         return args;
     }
 
     ParsedArguments VcpkgCmdArguments::parse_arguments(const CommandStructure& command_structure) const
     {
         ParsedArguments output;
-
-        auto parser_copy = this->parser;
-        for (const auto& switch_ : command_structure.options.switches)
-        {
-            bool parse_result;
-            auto name = switch_.name.to_string();
-            StabilityTag tag = StabilityTag::Standard;
-            if (Strings::starts_with(name, "x-"))
-            {
-                name.erase(0, 2);
-                tag = StabilityTag::Experimental;
-            }
-
-            if (switch_.helpmsg)
-            {
-                if (parser_copy.parse_switch(name, tag, parse_result, switch_.helpmsg()) && parse_result)
-                {
-                    output.switches.emplace(switch_.name.to_string());
-                }
-            }
-            else
-            {
-                if (parser_copy.parse_switch(name, tag, parse_result) && parse_result)
-                {
-                    output.switches.emplace(switch_.name.to_string());
-                }
-            }
-        }
-
-        {
-            std::string maybe_parse_result;
-            for (const auto& option : command_structure.options.settings)
-            {
-                auto name = option.name.to_string();
-                StabilityTag tag = StabilityTag::Standard;
-                if (Strings::starts_with(name, "x-"))
-                {
-                    name.erase(0, 2);
-                    tag = StabilityTag::Experimental;
-                }
-
-                if (option.helpmsg)
-                {
-                    if (parser_copy.parse_option(name, tag, maybe_parse_result, option.helpmsg()))
-                    {
-                        output.settings.emplace(option.name.to_string(), std::move(maybe_parse_result));
-                    }
-                }
-                else
-                {
-                    if (parser_copy.parse_option(name, tag, maybe_parse_result))
-                    {
-                        output.settings.emplace(option.name.to_string(), std::move(maybe_parse_result));
-                    }
-                }
-            }
-        }
-
-        for (const auto& option : command_structure.options.multisettings)
-        {
-            auto name = option.name.to_string();
-            StabilityTag tag = StabilityTag::Standard;
-            if (Strings::starts_with(name, "x-"))
-            {
-                name.erase(0, 2);
-                tag = StabilityTag::Experimental;
-            }
-
-            std::vector<std::string> maybe_parse_result;
-            if (option.helpmsg)
-            {
-                if (parser_copy.parse_multi_option(name, tag, maybe_parse_result, option.helpmsg()))
-                {
-                    output.multisettings.emplace(option.name.to_string(), std::move(maybe_parse_result));
-                }
-            }
-            else
-            {
-                if (parser_copy.parse_multi_option(name, tag, maybe_parse_result))
-                {
-                    output.multisettings.emplace(option.name.to_string(), std::move(maybe_parse_result));
-                }
-            }
-        }
-
+        auto cmd_parser = this->parser;
+        maybe_parse_cmd_arguments(cmd_parser, output, command, command_structure);
         if (command_structure.maximum_arity == 0)
         {
-            parser_copy.enforce_no_remaining_args(command);
+            cmd_parser.enforce_no_remaining_args(command);
         }
         else if (command_structure.minimum_arity == 0 && command_structure.maximum_arity == 1)
         {
-            auto maybe_arg = parser_copy.consume_only_remaining_arg_optional(command);
+            auto maybe_arg = cmd_parser.consume_only_remaining_arg_optional(command);
             if (auto arg = maybe_arg.get())
             {
                 output.command_arguments.push_back(std::move(*arg));
@@ -298,19 +338,19 @@ namespace vcpkg
         }
         else if (command_structure.minimum_arity == 1 && command_structure.maximum_arity == 1)
         {
-            output.command_arguments.push_back(parser_copy.consume_only_remaining_arg(command));
+            output.command_arguments.push_back(cmd_parser.consume_only_remaining_arg(command));
         }
         else if (command_structure.minimum_arity == command_structure.maximum_arity)
         {
-            output.command_arguments = parser_copy.consume_remaining_args(command, command_structure.minimum_arity);
+            output.command_arguments = cmd_parser.consume_remaining_args(command, command_structure.minimum_arity);
         }
         else
         {
-            output.command_arguments = parser_copy.consume_remaining_args(
+            output.command_arguments = cmd_parser.consume_remaining_args(
                 command, command_structure.minimum_arity, command_structure.maximum_arity);
         }
 
-        parser_copy.exit_with_errors(LocalizedString::from_raw("FIXME"));
+        cmd_parser.exit_with_errors(LocalizedString::from_raw(command_structure.example_text));
         return output;
     }
 
@@ -327,7 +367,7 @@ namespace vcpkg
 
     VcpkgCmdArguments::VcpkgCmdArguments(CmdParser&& parser_) : parser(std::move(parser_)) { }
 
-    void print_usage()
+    void print_command_list_usage()
     {
         HelpTableFormatter table;
         table.header("Commands");
@@ -355,9 +395,6 @@ namespace vcpkg
         table.format("vcpkg version", msg::format(msgHelpVersionCommand));
         table.format("vcpkg contact", msg::format(msgHelpContactCommand));
         table.blank();
-        table.header("Options");
-        VcpkgCmdArguments::append_common_options(table);
-        table.blank();
         table.format("@response_file", msg::format(msgHelpResponseFileCommand));
         table.blank();
         table.example(msg::format(msgHelpExampleCommand));
@@ -367,66 +404,16 @@ namespace vcpkg
 
     void print_usage(const CommandStructure& command_structure)
     {
-        HelpTableFormatter table;
-        if (!command_structure.example_text.empty())
-        {
-            table.example(command_structure.example_text);
-        }
+        auto with_common_options = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
+        ParsedArguments throwaway;
+        maybe_parse_cmd_arguments(with_common_options.parser,
+                                  throwaway,
+                                  StringLiteral{"this-command-will-not-be-printed"},
+                                  command_structure);
 
-        table.header("Options");
-        for (auto&& option : command_structure.options.switches)
-        {
-            auto helpmsg = option.helpmsg;
-            if (helpmsg)
-            {
-                table.format(Strings::format("--%s", option.name), helpmsg());
-            }
-        }
-        for (auto&& option : command_structure.options.settings)
-        {
-            auto helpmsg = option.helpmsg;
-            if (helpmsg)
-            {
-                table.format(Strings::format("--%s=...", option.name), helpmsg());
-            }
-        }
-        for (auto&& option : command_structure.options.multisettings)
-        {
-            auto helpmsg = option.helpmsg;
-            if (helpmsg)
-            {
-                table.format(Strings::format("--%s=...", option.name), helpmsg());
-            }
-        }
-
-        VcpkgCmdArguments::append_common_options(table);
-        msg::println(LocalizedString::from_raw(table.m_str));
-    }
-
-    void VcpkgCmdArguments::append_common_options(HelpTableFormatter& table)
-    {
-        static auto opt = [](StringView arg, StringView joiner, StringView value) {
-            return Strings::concat("--", arg, joiner, value);
-        };
-
-        table.format(opt(TRIPLET_ARG, "=", "<t>"),
-                     msg::format(msgSpecifyTargetArch, msg::env_var = "VCPKG_DEFAULT_TRIPLET"));
-        table.format(opt(HOST_TRIPLET_ARG, "=", "<t>"),
-                     msg::format(msgSpecifyHostArch, msg::env_var = "VCPKG_DEFAULT_HOST_TRIPLET"));
-        table.format(opt(OVERLAY_PORTS_ARG, "=", "<path>"),
-                     msg::format(msgSpecifyDirectoriesWhenSearching, msg::env_var = "VCPKG_OVERLAY_PORTS"));
-        table.format(opt(OVERLAY_TRIPLETS_ARG, "=", "<path>"),
-                     msg::format(msgSpecifyDirectoriesContaining, msg::env_var = "VCPKG_OVERLAY_TRIPLETS"));
-        table.format(opt(BINARY_SOURCES_ARG, "=", "<path>"), msg::format(msgBinarySourcesArg));
-        table.format(opt(ASSET_SOURCES_ARG, "=", "<path>"), msg::format(msgAssetSourcesArg));
-        table.format(opt(DOWNLOADS_ROOT_DIR_ARG, "=", "<path>"),
-                     msg::format(msgDownloadRootsDir, msg::env_var = "VCPKG_DOWNLOADS"));
-        table.format(opt(VCPKG_ROOT_DIR_ARG, "=", "<path>"),
-                     msg::format(msgVcpkgRootsDir, msg::env_var = "VCPKG_ROOT"));
-        table.format(opt(BUILDTREES_ROOT_DIR_ARG, "=", "<path>"), msg::format(msgBuildTreesRootDir));
-        table.format(opt(INSTALL_ROOT_DIR_ARG, "=", "<path>"), msg::format(msgInstallRootDir));
-        table.format(opt(PACKAGES_ROOT_DIR_ARG, "=", "<path>"), msg::format(msgPackageRootDir));
-        table.format(opt(JSON_SWITCH, "", ""), msg::format(msgJsonSwitch));
+        auto result = LocalizedString::from_raw(command_structure.example_text);
+        with_common_options.parser.append_options_table(result);
+        msg::println(result);
     }
 
     static void from_env(const std::function<Optional<std::string>(ZStringView)>& f,

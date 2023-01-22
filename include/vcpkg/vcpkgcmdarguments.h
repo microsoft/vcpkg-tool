@@ -7,6 +7,7 @@
 
 #include <vcpkg/base/cmd-parser.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
@@ -66,7 +67,7 @@ namespace vcpkg
         std::vector<std::string> (*valid_arguments)(const VcpkgPaths& paths);
     };
 
-    void print_usage();
+    void print_command_list_usage();
     void print_usage(const CommandStructure& command_structure);
 
     std::string create_example_string(const std::string& command_and_arguments);
@@ -85,8 +86,6 @@ namespace vcpkg
                                                           const int argc,
                                                           const CommandLineCharType* const* const argv);
         static VcpkgCmdArguments create_from_arg_sequence(const std::string* arg_begin, const std::string* arg_end);
-
-        static void append_common_options(HelpTableFormatter& target);
 
         constexpr static StringLiteral VCPKG_ROOT_DIR_ENV = "VCPKG_ROOT";
         constexpr static StringLiteral VCPKG_ROOT_DIR_ARG = "vcpkg-root";
@@ -249,6 +248,7 @@ namespace vcpkg
 
         Optional<StringLiteral> m_detected_ci_environment;
 
+        friend void print_usage(const CommandStructure& command_structure);
         CmdParser parser;
     };
 }

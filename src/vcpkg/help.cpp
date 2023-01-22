@@ -164,7 +164,7 @@ namespace vcpkg::Help
 
         if (parsed.command_arguments.empty())
         {
-            print_usage();
+            print_command_list_usage();
             Checks::exit_success(VCPKG_LINE_INFO);
         }
         const auto& topic = parsed.command_arguments[0];

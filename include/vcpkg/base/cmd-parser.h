@@ -10,6 +10,7 @@
 #include <vcpkg/base/stringview.h>
 
 #include <cstddef>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -34,6 +35,13 @@ namespace vcpkg
     std::vector<std::string> convert_argc_argv_to_arguments(int argc, const CommandLineCharType* const* const argv);
     ExpectedL<Unit> replace_response_file_parameters(std::vector<std::string>& inputs,
                                                      const ILineReader& response_file_source);
+
+    struct SwitchName
+    {
+        std::string switch_name;
+        StabilityTag stability;
+        bool operator<(const SwitchName& rhs) const;
+    };
 
     struct CmdParser
     {
@@ -136,12 +144,10 @@ namespace vcpkg
 
         const std::vector<LocalizedString>& get_errors() const { return errors; }
 
-        LocalizedString get_options_table() const;
+        void append_options_table(LocalizedString&) const;
 
-        LocalizedString get_full_help_text(const LocalizedString& help_text) const;
-
-        // If there are any errors, prints the command, help text, and help table, then terminates the program.
-        void exit_with_errors(const LocalizedString& help_text);
+        // If there are any errors, prints the example, arguments table, then terminates the program.
+        void exit_with_errors(LocalizedString example);
 
     private:
         // Adds all arguments that aren't parsed after `idx` as errors.
@@ -156,7 +162,7 @@ namespace vcpkg
         std::vector<std::string> argument_strings_lowercase;
         std::vector<char> argument_parsed; // think vector<bool>
         std::vector<LocalizedString> errors;
-        HelpTableFormatter options_table;
+        std::map<SwitchName, LocalizedString> options_table;
     };
 
     void delistify_conjoined_multivalue(std::vector<std::string>& target);

@@ -38,9 +38,9 @@ namespace
         return result;
     }
 
-    std::string option_name_to_display(vcpkg::StringView switch_name, StabilityTag stability)
+    std::string option_name_to_switch_name(vcpkg::StringView switch_name)
     {
-        auto result = switch_name_to_display(switch_name, stability);
+        auto result = switch_name.to_string();
         result.append("=...");
         return result;
     }
@@ -340,10 +340,11 @@ namespace vcpkg
         return Unit{};
     }
 
+    bool SwitchName::operator<(const SwitchName& rhs) const { return switch_name < rhs.switch_name; }
+
     CmdParser::CmdParser()
         : argument_strings(), argument_strings_lowercase(), argument_parsed(), errors(), options_table()
     {
-        options_table.header(msg::format(msgOptions));
     }
 
     CmdParser::CmdParser(View<std::string> inputs)
@@ -354,7 +355,6 @@ namespace vcpkg
         , options_table()
     {
         insert_lowercase_strings(argument_strings_lowercase, argument_strings);
-        options_table.header(msg::format(msgOptions));
     }
 
     CmdParser::CmdParser(std::vector<std::string>&& inputs)
@@ -365,7 +365,6 @@ namespace vcpkg
         , options_table()
     {
         insert_lowercase_strings(argument_strings_lowercase, argument_strings);
-        options_table.header(msg::format(msgOptions));
     }
 
     CmdParser::CmdParser(const CmdParser&) = default;
@@ -423,7 +422,7 @@ namespace vcpkg
                                  const LocalizedString& help_text)
     {
         Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
-        options_table.format(switch_name_to_display(switch_name, stability), help_text);
+        options_table.emplace(SwitchName{switch_name.to_string(), stability}, help_text);
         return parse_switch(switch_name, stability, value);
     }
 
@@ -433,14 +432,14 @@ namespace vcpkg
                                  const LocalizedString& help_text)
     {
         Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
-        options_table.format(switch_name_to_display(switch_name, stability), help_text);
+        options_table.emplace(SwitchName{switch_name.to_string(), stability}, help_text);
         return parse_switch(switch_name, stability, value);
     }
 
     bool CmdParser::parse_switch(StringView switch_name, StabilityTag stability, const LocalizedString& help_text)
     {
         Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
-        options_table.format(switch_name_to_display(switch_name, stability), help_text);
+        options_table.emplace(SwitchName{switch_name.to_string(), stability}, help_text);
         return parse_switch(switch_name, stability);
     }
 
@@ -519,7 +518,7 @@ namespace vcpkg
                                  const LocalizedString& help_text)
     {
         Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
-        options_table.format(option_name_to_display(option_name, stability), help_text);
+        options_table.emplace(SwitchName{option_name_to_switch_name(option_name), stability}, help_text);
         return parse_option(option_name, stability, value);
     }
 
@@ -529,7 +528,7 @@ namespace vcpkg
                                  const LocalizedString& help_text)
     {
         Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
-        options_table.format(option_name_to_display(option_name, stability), help_text);
+        options_table.emplace(SwitchName{option_name_to_switch_name(option_name), stability}, help_text);
         return parse_option(option_name, stability, value);
     }
 
@@ -618,7 +617,7 @@ namespace vcpkg
                                        const LocalizedString& help_text)
     {
         Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
-        options_table.format(option_name_to_display(option_name, stability), help_text);
+        options_table.emplace(SwitchName{option_name_to_switch_name(option_name), stability}, help_text);
         return parse_multi_option(option_name, stability, value);
     }
 
@@ -628,7 +627,7 @@ namespace vcpkg
                                        const LocalizedString& help_text)
     {
         Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
-        options_table.format(option_name_to_display(option_name, stability), help_text);
+        options_table.emplace(SwitchName{option_name_to_switch_name(option_name), stability}, help_text);
         return parse_multi_option(option_name, stability, value);
     }
 
@@ -687,18 +686,18 @@ namespace vcpkg
 
     bool CmdParser::add_unexpected_switch_errors()
     {
-        bool errors = false;
+        bool error = false;
         for (size_t idx = 0; idx < argument_parsed.size(); ++idx)
         {
             if (!argument_parsed[idx] && Strings::starts_with(argument_strings[idx], "--"))
             {
-                errors = true;
+                error = true;
                 argument_parsed[idx] = true;
                 add_unexpected_switch_error(argument_strings[idx]);
             }
         }
 
-        return errors;
+        return error;
     }
 
     void CmdParser::add_unexpected_argument_error(const std::string& unrecognized)
@@ -936,16 +935,19 @@ namespace vcpkg
         return results;
     }
 
-    LocalizedString CmdParser::get_options_table() const { return LocalizedString::from_raw(options_table.m_str); }
-
-    LocalizedString CmdParser::get_full_help_text(const LocalizedString& help_text) const
+    void CmdParser::append_options_table(LocalizedString& results) const
     {
-        auto result = help_text;
-        result.append(get_options_table());
-        return result;
+        HelpTableFormatter table;
+        table.header(msg::format(msgOptions));
+        for (auto&& entry : options_table)
+        {
+            table.format(switch_name_to_display(entry.first.switch_name, entry.first.stability), entry.second);
+        }
+
+        results.append_raw(table.m_str);
     }
 
-    void CmdParser::exit_with_errors(const LocalizedString& help_text)
+    void CmdParser::exit_with_errors(LocalizedString example)
     {
         if (errors.empty())
         {
@@ -957,7 +959,8 @@ namespace vcpkg
             msg::write_unlocalized_text_to_stdout(Color::error, error.append_raw("\n"));
         }
 
-        msg::write_unlocalized_text_to_stdout(Color::none, get_full_help_text(help_text));
+        append_options_table(example);
+        msg::println(Color::none, example);
         Checks::exit_with_code(VCPKG_LINE_INFO, 1);
     }
 }

@@ -563,19 +563,19 @@ TEST_CASE ("Help table is generated", "[cmd_parser]")
     CmdParser uut{std::vector<std::string>{}};
 
     bool unused_bool;
-    uut.parse_switch("a", StabilityTag::Standard, unused_bool, LocalizedString::from_raw("a help"));
+    uut.parse_switch("z", StabilityTag::Standard, unused_bool, LocalizedString::from_raw("z help"));
     uut.parse_switch("b", StabilityTag::Experimental, unused_bool, LocalizedString::from_raw("b help"));
 
     Optional<bool> unused_optional_bool;
-    uut.parse_switch("c", StabilityTag::Standard, unused_optional_bool, LocalizedString::from_raw("c help"));
+    uut.parse_switch("y", StabilityTag::Standard, unused_optional_bool, LocalizedString::from_raw("y help"));
     uut.parse_switch("d", StabilityTag::Experimental, unused_optional_bool, LocalizedString::from_raw("d help"));
 
-    uut.parse_switch("e", StabilityTag::Standard, LocalizedString::from_raw("e help"));
+    uut.parse_switch("x", StabilityTag::Standard, LocalizedString::from_raw("x help"));
     uut.parse_switch("f", StabilityTag::Experimental, LocalizedString::from_raw("f help"));
 
     std::string unused_option;
     uut.parse_option("g", StabilityTag::Standard, unused_option, LocalizedString::from_raw("g help"));
-    uut.parse_option("h", StabilityTag::Experimental, unused_option, LocalizedString::from_raw("h help"));
+    uut.parse_option("w", StabilityTag::Experimental, unused_option, LocalizedString::from_raw("w help"));
 
     Optional<std::string> unused_optional_option;
     uut.parse_option("i", StabilityTag::Standard, unused_optional_option, LocalizedString::from_raw("i help"));
@@ -597,14 +597,10 @@ TEST_CASE ("Help table is generated", "[cmd_parser]")
 
     const auto expected = LocalizedString::from_raw(
         R"(Options:
-  --a                             a help
   --x-b                           b help
-  --c                             c help
   --x-d                           d help
-  --e                             e help
   --x-f                           f help
   --g=...                         g help
-  --x-h=...                       h help
   --i=...                         i help
   --x-j=...                       j help
   --k=...                         k help
@@ -613,8 +609,14 @@ TEST_CASE ("Help table is generated", "[cmd_parser]")
   --x-n=...                       n help
   --o=...                         m help
   --x-p=...                       n help
+  --x-w=...                       w help
+  --x                             x help
+  --y                             y help
+  --z                             z help
 )");
-    CHECK(uut.get_options_table() == expected);
+    LocalizedString actual;
+    uut.append_options_table(actual);
+    CHECK(actual == expected);
 }
 
 TEST_CASE ("Enforce zero remaining args", "[cmd_parser]")
