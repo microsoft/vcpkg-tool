@@ -66,7 +66,6 @@ namespace
 
     void maybe_parse_cmd_arguments(CmdParser& cmd_parser,
                                    ParsedArguments& output,
-                                   StringView command,
                                    const CommandStructure& command_structure)
     {
         for (const auto& switch_ : command_structure.options.switches)
@@ -240,7 +239,6 @@ namespace vcpkg
         args.parser.parse_switch(BINARY_CACHING_SWITCH, StabilityTag::Standard, args.binary_caching);
         args.parser.parse_switch(WAIT_FOR_LOCK_SWITCH, StabilityTag::Experimental, args.wait_for_lock);
         args.parser.parse_switch(IGNORE_LOCK_FAILURES_SWITCH, StabilityTag::Experimental, args.ignore_lock_failures);
-        args.parser.parse_switch(JSON_SWITCH, StabilityTag::Experimental, args.json, msg::format(msgJsonSwitch));
         args.parser.parse_switch(
             EXACT_ABI_TOOLS_VERSIONS_SWITCH, StabilityTag::Experimental, args.exact_abi_tools_versions);
 
@@ -323,7 +321,7 @@ namespace vcpkg
     {
         ParsedArguments output;
         auto cmd_parser = this->parser;
-        maybe_parse_cmd_arguments(cmd_parser, output, command, command_structure);
+        maybe_parse_cmd_arguments(cmd_parser, output, command_structure);
         if (command_structure.maximum_arity == 0)
         {
             cmd_parser.enforce_no_remaining_args(command);
@@ -406,10 +404,7 @@ namespace vcpkg
     {
         auto with_common_options = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
         ParsedArguments throwaway;
-        maybe_parse_cmd_arguments(with_common_options.parser,
-                                  throwaway,
-                                  StringLiteral{"this-command-will-not-be-printed"},
-                                  command_structure);
+        maybe_parse_cmd_arguments(with_common_options.parser, throwaway, command_structure);
 
         auto result = LocalizedString::from_raw(command_structure.example_text);
         with_common_options.parser.append_options_table(result);
@@ -710,8 +705,6 @@ namespace vcpkg
     constexpr StringLiteral VcpkgCmdArguments::WAIT_FOR_LOCK_SWITCH;
     constexpr StringLiteral VcpkgCmdArguments::IGNORE_LOCK_FAILURES_SWITCH;
     constexpr StringLiteral VcpkgCmdArguments::IGNORE_LOCK_FAILURES_ENV;
-
-    constexpr StringLiteral VcpkgCmdArguments::JSON_SWITCH;
 
     constexpr StringLiteral VcpkgCmdArguments::ASSET_SOURCES_ENV;
     constexpr StringLiteral VcpkgCmdArguments::ASSET_SOURCES_ARG;

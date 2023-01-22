@@ -165,9 +165,6 @@ namespace vcpkg
 
         bool do_not_take_lock = false;
 
-        constexpr static StringLiteral JSON_SWITCH = "json";
-        Optional<bool> json = nullopt;
-
         constexpr static StringLiteral ASSET_SOURCES_ENV = "X_VCPKG_ASSET_SOURCES";
         constexpr static StringLiteral ASSET_SOURCES_ARG = "asset-sources";
 
@@ -204,8 +201,6 @@ namespace vcpkg
             return f;
         }
         const Optional<StringLiteral>& detected_ci_environment() const { return m_detected_ci_environment; }
-
-        bool output_json() const { return json.value_or(false); }
 
         const std::string& get_command() const noexcept { return command; }
 

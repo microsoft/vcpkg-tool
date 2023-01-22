@@ -10,9 +10,11 @@
 namespace vcpkg::Commands
 {
     static constexpr StringLiteral OPTION_FULLDESC = "x-full-desc"; // TODO: This should find a better home, eventually
+    static constexpr StringLiteral OPTION_JSON = "x-json";
 
-    static constexpr std::array<CommandSwitch, 1> SearchSwitches = {
-        {{OPTION_FULLDESC, []() { return msg::format(msgHelpTextOptFullDesc); }}}};
+    static constexpr std::array<CommandSwitch, 2> SearchSwitches = {
+        {{OPTION_FULLDESC, []() { return msg::format(msgHelpTextOptFullDesc); }},
+         {OPTION_JSON, []() { return msg::format(msgJsonSwitch); }}}};
 
     const CommandStructure SearchCommandStructure = {
         Strings::format(
@@ -34,6 +36,7 @@ namespace vcpkg::Commands
             filter = StringView{options.command_arguments[0]};
         }
 
-        perform_find_port_and_exit(paths, full_description, args.json.value_or(false), filter, paths.overlay_ports);
+        perform_find_port_and_exit(
+            paths, full_description, Util::Sets::contains(options.switches, OPTION_JSON), filter, paths.overlay_ports);
     }
 }

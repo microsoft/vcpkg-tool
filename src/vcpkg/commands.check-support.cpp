@@ -16,11 +16,15 @@
 
 namespace vcpkg::Commands
 {
+    static constexpr StringLiteral OPTION_JSON{"x-json"};
+    static constexpr std::array<CommandSwitch, 1> CHECK_SUPPORT_SWITCHES = {
+        {{OPTION_JSON, []() { return msg::format(msgJsonSwitch); }}}};
+
     const CommandStructure COMMAND_STRUCTURE = {
         create_example_string(R"(x-check-support <package>...)"),
         1,
         SIZE_MAX,
-        {},
+        {CHECK_SUPPORT_SWITCHES},
         nullptr,
     };
 
@@ -106,7 +110,7 @@ namespace vcpkg::Commands
                                         Triplet host_triplet)
     {
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
-        const bool use_json = args.json.value_or(false);
+        const bool use_json = Util::Sets::contains(options.switches, OPTION_JSON);
         Json::Array json_to_print; // only used when `use_json`
 
         const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
