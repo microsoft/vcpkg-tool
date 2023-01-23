@@ -2151,10 +2151,7 @@ namespace vcpkg
         "If a directory should be populated but is not, this might indicate an error in the portfile.\n"
         "If the directories are not needed and their creation cannot be disabled, use something like this in "
         "the portfile to remove them:");
-    DECLARE_MESSAGE(PortBugRemoveEmptyDirs,
-                    (),
-                    "Only the 'empty directories left by the above renames' part should be translated",
-                    "vcpkg_fixup_pkgconfig()\nfile(REMOVE_RECURSE empty directories left by the above renames)");
+    DECLARE_MESSAGE(PortBugRemoveEmptyDirs, (), "", "empty directories left by the above renames");
     DECLARE_MESSAGE(PortBugRestrictedHeaderPaths,
                     (msg::env_var),
                     "A list of restricted headers is printed after this message, one per line.",
