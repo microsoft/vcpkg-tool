@@ -419,15 +419,14 @@ if(VCPKG_PDB_SUFFIX)
 endif()
 
 # === Target: generate-message-map ===
+add_custom_target(generate-message-map
+   COMMAND vcpkg x-generate-default-message-map locales/messages.json ${CMAKE_CURRENT_LIST_DIR}/ce/ce/locales/messages.json
+   DEPENDS ${CMAKE_CURRENT_LIST_DIR}/ce/ce/locales/messages.json
+   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+   COMMENT "Update locales/messages.json"
+   VERBATIM
+)
 if (VCPKG_ARTIFACTS_DEVELOPMENT)
-    add_custom_target(generate-message-map
-       COMMAND vcpkg x-generate-default-message-map locales/messages.json ${CMAKE_CURRENT_LIST_DIR}/ce/ce/locales/messages.json
-       DEPENDS ${CMAKE_CURRENT_LIST_DIR}/ce/ce/locales/messages.json
-       WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-       COMMENT "Update locales/messages.json"
-       VERBATIM
-    )
-
     add_custom_command(
         OUTPUT ${CMAKE_CURRENT_LIST_DIR}/ce/ce/locales/messages.json
         COMMAND "${NODEJS}" ARGS "${CMAKE_CURRENT_SOURCE_DIR}/ce/ce/node_modules/translate-strings/dist/main.js" "." "--json"

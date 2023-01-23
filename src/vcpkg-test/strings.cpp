@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/span.h>
 #include <vcpkg/base/strings.h>
 
 #include <stdint.h>
@@ -53,6 +54,75 @@ TEST_CASE ("find_first_of", "[strings]")
     REQUIRE(find_first_of("abcdefg", "g") == std::string("g"));
     REQUIRE(find_first_of("abcdefg", "bg") == std::string("bcdefg"));
     REQUIRE(find_first_of("abcdefg", "gb") == std::string("bcdefg"));
+}
+
+TEST_CASE ("contains_any_ignoring_c_comments", "[strings]")
+{
+    using vcpkg::Strings::contains_any_ignoring_c_comments;
+    vcpkg::StringView to_find[] = {"abc", "wer"};
+    REQUIRE(contains_any_ignoring_c_comments(R"(abc)", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"("abc")", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"("" //abc)", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"(/*abc*/ "")", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"(/**abc*/ "")", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"(/**abc**/ "")", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"(/*abc)", to_find));
+    // note that the line end is escaped making the single line comment include the abc
+    REQUIRE_FALSE(contains_any_ignoring_c_comments("// test \\\nabc", to_find));
+    // note that the comment start is in a string literal so it isn't a comment
+    REQUIRE(contains_any_ignoring_c_comments("\"//\" test abc", to_find));
+    // note that the comment is in a raw string literal so it isn't a comment
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"( // abc )")-", to_find));
+    // found after the raw string literal
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"( // )" abc)-", to_find));
+    // comment after the raw string literal
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R"( // )" // abc)-", to_find));
+    // the above, but with a d_char_sequence for the raw literal
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"hello( // abc )hello")-", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"hello( // )hello" abc)-", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R"hello( // )hello" // abc)-", to_find));
+    // the above, but with a d_char_sequence that is a needle
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"abc( // abc )abc")-", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"abc( // )abc" abc)-", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"abc( // )abc" // abc)-", to_find));
+    // raw literal termination edge cases
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R")-", to_find));    // ends input
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R"h)-", to_find));   // ends input d_char
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R"()-", to_find));   // ends input paren
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R"h()-", to_find));  // ends input paren d_char
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R"())-", to_find));  // ends input close paren
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R"()")-", to_find)); // ends input exactly
+    // raw literal termination edge cases (success)
+    REQUIRE(contains_any_ignoring_c_comments(R"-(abcR")-", to_find));    // ends input
+    REQUIRE(contains_any_ignoring_c_comments(R"-(abcR"h)-", to_find));   // ends input d_char
+    REQUIRE(contains_any_ignoring_c_comments(R"-(abcR"()-", to_find));   // ends input paren
+    REQUIRE(contains_any_ignoring_c_comments(R"-(abcR"h()-", to_find));  // ends input paren d_char
+    REQUIRE(contains_any_ignoring_c_comments(R"-(abcR"())-", to_find));  // ends input close paren
+    REQUIRE(contains_any_ignoring_c_comments(R"-(abcR"()")-", to_find)); // ends input exactly
+
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"()"abc)-", to_find));
+
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"hello( hello" // abc )")-", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"(R"-( // abc )-")", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"(R"-( // hello )-" // abc)", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"(R"-( /* abc */ )-")", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"(R"-()- /* abc */ )-")", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"(qwer )", to_find));
+    REQUIRE(contains_any_ignoring_c_comments("\"a\" \"g\" // er \n abc)", to_find));
+}
+
+TEST_CASE ("contains_any_ignoring_hash_comments", "[strings]")
+{
+    using vcpkg::Strings::contains_any_ignoring_hash_comments;
+    vcpkg::StringView to_find[] = {"abc", "wer"};
+    REQUIRE(contains_any_ignoring_hash_comments("abc", to_find));
+    REQUIRE(contains_any_ignoring_hash_comments("wer", to_find));
+    REQUIRE(contains_any_ignoring_hash_comments("wer # test", to_find));
+    REQUIRE(contains_any_ignoring_hash_comments("\n wer # \n test", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_hash_comments("# wer", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_hash_comments("\n# wer", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_hash_comments("\n  # wer\n", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_hash_comments("\n test # wer", to_find));
 }
 
 TEST_CASE ("edit distance", "[strings]")

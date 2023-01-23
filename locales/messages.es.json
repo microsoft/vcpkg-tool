@@ -357,6 +357,8 @@
   "FileReadFailed": "No se pudieron leer {count} bytes de {path} en el desplazamiento {byte_offset}.",
   "FileSeekFailed": "No se pudo buscar la posición {byte_offset} en {path}.",
   "FileSystemOperationFailed": "Error en la operación del sistema de archivos:",
+  "FilesContainAbsolutePath1": "There should be no absolute paths, such as the following, in an installed package:",
+  "FilesContainAbsolutePath2": "Absolute paths were found in the following files:",
   "FilesExported": "Archivos exportados en: {path}",
   "FishCompletion": "La finalización del pez vcpkg ya se agregó en \"{path}\".",
   "FloatingPointConstTooBig": "Constante en punto flotante demasiado grande: {count}",

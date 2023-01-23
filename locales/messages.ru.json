@@ -357,6 +357,8 @@
   "FileReadFailed": "Не удалось прочитать {count} байт из {path} по смещению {byte_offset}.",
   "FileSeekFailed": "Не удалось найти расположение {byte_offset} в {path}.",
   "FileSystemOperationFailed": "Сбой операции файловой системы:",
+  "FilesContainAbsolutePath1": "В установленном пакете не должно быть абсолютных путей, таких как следующие:",
+  "FilesContainAbsolutePath2": "Абсолютные пути найдены в следующих файлах:",
   "FilesExported": "Файлы экспортированы в папку: {path}",
   "FishCompletion": "Завершение vcpkg fish уже полностью добавлено в \"{path}\".",
   "FloatingPointConstTooBig": "Слишком большая константа с плавающей запятой: {count}",

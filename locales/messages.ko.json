@@ -357,6 +357,8 @@
   "FileReadFailed": "오프셋 {byte_offset}의 {path}에서 {count}바이트를 읽지 못했습니다.",
   "FileSeekFailed": "{path}에서 {byte_offset} 위치를 찾지 못했습니다.",
   "FileSystemOperationFailed": "파일 시스템 작업이 실패했습니다.",
+  "FilesContainAbsolutePath1": "설치된 패키지에는 다음과 같은 절대 경로가 없어야 합니다.",
+  "FilesContainAbsolutePath2": "다음 파일에서 절대 경로를 찾았습니다.",
   "FilesExported": "내보낸 파일: {path}",
   "FishCompletion": "vcpkg 물고기 완성은 이미 \"{path}\"에 추가되었습니다.",
   "FloatingPointConstTooBig": "부동 소수점 상수가 너무 큼: {count}",
