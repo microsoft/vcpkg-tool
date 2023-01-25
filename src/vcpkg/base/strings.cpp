@@ -388,6 +388,102 @@ Optional<StringView> Strings::find_at_most_one_enclosed(StringView input, String
     return result.front();
 }
 
+bool vcpkg::Strings::contains_any_ignoring_c_comments(const std::string& source, View<StringView> to_find)
+{
+    std::string::size_type offset = 0;
+    std::string::size_type no_comment_offset = 0;
+    while (offset != std::string::npos)
+    {
+        no_comment_offset = std::max(offset, no_comment_offset);
+        auto start = source.find_first_of("/\"", no_comment_offset);
+        if (start == std::string::npos || start + 1 == source.size() || no_comment_offset == std::string::npos)
+        {
+            return Strings::contains_any(StringView(source).substr(offset), to_find);
+        }
+
+        if (source[start] == '/')
+        {
+            if (source[start + 1] == '/' || source[start + 1] == '*')
+            {
+                if (Strings::contains_any(StringView(source).substr(offset, start - offset), to_find))
+                {
+                    return true;
+                }
+                if (source[start + 1] == '/')
+                {
+                    offset = source.find_first_of('\n', start);
+                    while (offset != std::string::npos && source[offset - 1] == '\\')
+                        offset = source.find_first_of('\n', offset + 1);
+                    if (offset != std::string::npos) ++offset;
+                    continue;
+                }
+                offset = source.find_first_of('/', start + 1);
+                while (offset != std::string::npos && source[offset - 1] != '*')
+                    offset = source.find_first_of('/', offset + 1);
+                if (offset != std::string::npos) ++offset;
+                continue;
+            }
+        }
+        else if (source[start] == '\"')
+        {
+            if (start > 0 && source[start - 1] == 'R') // raw string literals
+            {
+                auto end = source.find_first_of('(', start);
+                if (end == std::string::npos)
+                {
+                    // invalid c++, but allowed: auto test = 'R"'
+                    no_comment_offset = start + 1;
+                    continue;
+                }
+                auto d_char_sequence = ')' + source.substr(start + 1, end - start - 1);
+                d_char_sequence.push_back('\"');
+                no_comment_offset = source.find(d_char_sequence, end);
+                if (no_comment_offset != std::string::npos) no_comment_offset += d_char_sequence.size();
+                continue;
+            }
+            no_comment_offset = source.find_first_of('"', start + 1);
+            while (no_comment_offset != std::string::npos && source[no_comment_offset - 1] == '\\')
+                no_comment_offset = source.find_first_of('"', no_comment_offset + 1);
+            if (no_comment_offset != std::string::npos) ++no_comment_offset;
+            continue;
+        }
+        no_comment_offset = start + 1;
+    }
+    return false;
+}
+
+bool Strings::contains_any_ignoring_hash_comments(StringView source, View<StringView> to_find)
+{
+    auto first = source.data();
+    auto block_start = first;
+    const auto last = first + source.size();
+    for (; first != last; ++first)
+    {
+        if (*first == '#')
+        {
+            if (Strings::contains_any(StringView{block_start, first}, to_find))
+            {
+                return true;
+            }
+
+            first = std::find(first, last, '\n'); // skip comment
+            if (first == last)
+            {
+                return false;
+            }
+
+            block_start = first;
+        }
+    }
+
+    return Strings::contains_any(StringView{block_start, last}, to_find);
+}
+
+bool Strings::contains_any(StringView source, View<StringView> to_find)
+{
+    return Util::any_of(to_find, [=](StringView s) { return Strings::contains(source, s); });
+}
+
 bool Strings::equals(StringView a, StringView b)
 {
     if (a.size() != b.size()) return false;

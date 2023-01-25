@@ -357,6 +357,8 @@
   "FileReadFailed": "未能从 {path} 的 {byte_offset} 偏移处读取 {count} 个字节。",
   "FileSeekFailed": "未能在 {path} 中找到位置 {byte_offset}。",
   "FileSystemOperationFailed": "文件系统操作失败:",
+  "FilesContainAbsolutePath1": "安装的包中不应有绝对路径，如下所示:",
+  "FilesContainAbsolutePath2": "在以下文件中找到了绝对路径:",
   "FilesExported": "文件导出位置: {path}",
   "FishCompletion": "已在“{path}”下添加 vcpkg fish 完成。",
   "FloatingPointConstTooBig": "浮点常量太大: {count}",

@@ -1332,6 +1332,13 @@ namespace vcpkg
                     "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details "
                     "on how to provide credentials.");
     DECLARE_MESSAGE(FeedbackAppreciated, (), "", "Thank you for your feedback!");
+    DECLARE_MESSAGE(
+        FilesContainAbsolutePath1,
+        (),
+        "This message is printed before a list of found absolute paths, followed by FilesContainAbsolutePath2, "
+        "followed by a list of found files.",
+        "There should be no absolute paths, such as the following, in an installed package:");
+    DECLARE_MESSAGE(FilesContainAbsolutePath2, (), "", "Absolute paths were found in the following files:");
     DECLARE_MESSAGE(FetchingBaselineInfo,
                     (msg::package_name),
                     "",

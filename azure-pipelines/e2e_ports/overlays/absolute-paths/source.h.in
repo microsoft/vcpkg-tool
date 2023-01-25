@@ -1,0 +1,5 @@
+
+char * test2 = R"--(/* 
+
+// ${CURRENT_INSTALLED_DIR} */
+)--";

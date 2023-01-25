@@ -654,13 +654,15 @@ namespace vcpkg
     REGISTER_MESSAGE(FeedbackAppreciated);
     REGISTER_MESSAGE(FetchingBaselineInfo);
     REGISTER_MESSAGE(FetchingRegistryInfo);
-    REGISTER_MESSAGE(FishCompletion);
     REGISTER_MESSAGE(FloatingPointConstTooBig);
     REGISTER_MESSAGE(FileNotFound);
     REGISTER_MESSAGE(FileReadFailed);
     REGISTER_MESSAGE(FileSeekFailed);
     REGISTER_MESSAGE(FilesExported);
     REGISTER_MESSAGE(FileSystemOperationFailed);
+    REGISTER_MESSAGE(FishCompletion);
+    REGISTER_MESSAGE(FilesContainAbsolutePath1);
+    REGISTER_MESSAGE(FilesContainAbsolutePath2);
     REGISTER_MESSAGE(FollowingPackagesMissingControl);
     REGISTER_MESSAGE(FollowingPackagesNotInstalled);
     REGISTER_MESSAGE(FollowingPackagesUpgraded);
