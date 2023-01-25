@@ -68,11 +68,11 @@ if (-not $IsMacOS -and -not $IsLinux) {
 
     Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "ninja-testing", "--vcpkg-root=$TestingRoot"))
     Throw-IfFailed
-    Require-FileExists "$TestingRoot/down loads/tools/ninja-testing-1.10.2-windows/ninja.exe"
+    Require-FileExists "$TestingRoot/down loads/tools/ninja-testing-1.10.2-windows-generic/ninja.exe"
 
     $path = $env:PATH
 
-    $env:PATH = "$path;$TestingRoot/down loads/tools/ninja-testing-1.10.2-windows"
+    $env:PATH = "$path;$TestingRoot/down loads/tools/ninja-testing-1.10.2-windows-generic"
     Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "ninja", "--vcpkg-root=$TestingRoot"))
     Throw-IfFailed
     Require-FileNotExists "$TestingRoot/down loads/tools/ninja-1.10.2-windows-generic/ninja.exe"
@@ -82,7 +82,7 @@ if (-not $IsMacOS -and -not $IsLinux) {
     Throw-IfFailed
     Require-FileExists "$TestingRoot/down loads/tools/ninja-1.10.2-windows-generic/ninja.exe"
 
-    Remove-Item -Recurse -Force "$TestingRoot/down loads/tools/ninja-1.10.2-windows" -ErrorAction SilentlyContinue
+    Remove-Item -Recurse -Force "$TestingRoot/down loads/tools/ninja-1.10.2-windows-generic" -ErrorAction SilentlyContinue
     Remove-Item env:VCPKG_FORCE_DOWNLOADED_BINARIES
 
     $env:VCPKG_FORCE_SYSTEM_BINARIES = "1"
