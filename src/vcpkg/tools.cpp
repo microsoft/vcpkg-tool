@@ -60,6 +60,22 @@ namespace vcpkg
         return std::array<int, 3>{*d1.get(), *d2.get(), *d3.get()};
     }
 
+    static Optional<ToolData> parse_tool_data_from_xml(StringView XML,
+                                                       StringView XML_PATH,
+                                                       StringView tool,
+                                                       StringView os)
+    {
+#if _M_ARM64 || (__GNUC__ && __aarch64__)
+        return parse_tool_data_from_xml(XML, XML_PATH, tool, os, "arm64");
+#elif _WIN64 || (__GNUC__ && __x86_64__)
+        return parse_tool_data_from_xml(XML, XML_PATH, tool, os, "x64");
+#elif _WIN32 || __GNUC__
+        return parse_tool_data_from_xml(XML, XML_PATH, tool, os, "x86");
+#else
+        return nullopt;
+#endif
+    }
+
     static Optional<ToolData> parse_tool_data_from_xml(StringView XML, StringView XML_PATH, StringView tool)
     {
 #if defined(_WIN32)
@@ -77,7 +93,8 @@ namespace vcpkg
 #endif
     }
 
-    Optional<ToolData> parse_tool_data_from_xml(StringView XML, StringView XML_PATH, StringView tool, StringView os)
+    Optional<ToolData> parse_tool_data_from_xml(
+        StringView XML, StringView XML_PATH, StringView tool, StringView os, StringView arch)
     {
         static const std::string XML_VERSION = "2";
         static const std::regex XML_VERSION_REGEX{R"###(<tools[\s]+version="([^"]+)">)###"};
@@ -95,9 +112,18 @@ namespace vcpkg
                                msg::expected_version = XML_VERSION,
                                msg::actual_version = match_xml_version[1].str());
 
-        const std::regex tool_regex{Strings::format(R"###(<tool[\s]+name="%s"[\s]+os="%s">)###", tool, os)};
+        const std::regex tool_regex{
+            Strings::format(R"###(<tool[\s]+name="%s"[\s]+os="%s"[\s]+arch="%s">)###", tool, os, arch)};
         std::cmatch match_tool_entry;
-        const bool has_tool_entry = std::regex_search(XML.begin(), XML.end(), match_tool_entry, tool_regex);
+        bool has_tool_entry = std::regex_search(XML.begin(), XML.end(), match_tool_entry, tool_regex);
+        if (!has_tool_entry)
+        {
+            // If there is no architecture specific tool, check if there is a generic tool definition.
+            const std::regex tool_regex_generic{Strings::format(R"###(<tool[\s]+name="%s"[\s]+os="%s">)###", tool, os)};
+            has_tool_entry = std::regex_search(XML.begin(), XML.end(), match_tool_entry, tool_regex_generic);
+            arch = "generic";
+        }
+
         if (!has_tool_entry) return nullopt;
 
         const std::string tool_data =
@@ -117,7 +143,7 @@ namespace vcpkg
                                msg::tool_name = tool,
                                msg::version = version_as_string);
 
-        Path tool_dir_name = Strings::format("%s-%s-%s", tool, version_as_string, os);
+        Path tool_dir_name = Strings::format("%s-%s-%s-%s", tool, version_as_string, os, arch);
         Path download_subpath;
         if (auto a = archive_name.get())
         {
