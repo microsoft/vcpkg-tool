@@ -64,7 +64,7 @@ if (-not $IsMacOS -and -not $IsLinux) {
     $env:VCPKG_DOWNLOADS = Join-Path $TestingRoot 'down loads'
     Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "7zip", "--vcpkg-root=$TestingRoot"))
     Throw-IfFailed
-    Require-FileExists "$TestingRoot/down loads/tools/7zip-19.00-windows/Files/7-Zip/7z.exe"
+    Require-FileExists "$TestingRoot/down loads/tools/7zip-19.00-windows-generic/Files/7-Zip/7z.exe"
 
     Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "ninja-testing", "--vcpkg-root=$TestingRoot"))
     Throw-IfFailed
@@ -75,12 +75,12 @@ if (-not $IsMacOS -and -not $IsLinux) {
     $env:PATH = "$path;$TestingRoot/down loads/tools/ninja-testing-1.10.2-windows"
     Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "ninja", "--vcpkg-root=$TestingRoot"))
     Throw-IfFailed
-    Require-FileNotExists "$TestingRoot/down loads/tools/ninja-1.10.2-windows/ninja.exe"
+    Require-FileNotExists "$TestingRoot/down loads/tools/ninja-1.10.2-windows-generic/ninja.exe"
 
     $env:VCPKG_FORCE_DOWNLOADED_BINARIES = "1"
     Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "ninja", "--vcpkg-root=$TestingRoot"))
     Throw-IfFailed
-    Require-FileExists "$TestingRoot/down loads/tools/ninja-1.10.2-windows/ninja.exe"
+    Require-FileExists "$TestingRoot/down loads/tools/ninja-1.10.2-windows-generic/ninja.exe"
 
     Remove-Item -Recurse -Force "$TestingRoot/down loads/tools/ninja-1.10.2-windows" -ErrorAction SilentlyContinue
     Remove-Item env:VCPKG_FORCE_DOWNLOADED_BINARIES
@@ -89,7 +89,7 @@ if (-not $IsMacOS -and -not $IsLinux) {
     $env:PATH = "$PSScriptRoot\..\e2e_assets\fetch;$path"
     Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "ninja", "--vcpkg-root=$TestingRoot"))
     Throw-IfFailed
-    Require-FileNotExists "$TestingRoot/down loads/tools/ninja-1.10.2-windows/ninja.exe"
+    Require-FileNotExists "$TestingRoot/down loads/tools/ninja-1.10.2-windows-generic/ninja.exe"
 
     Remove-Item env:VCPKG_FORCE_SYSTEM_BINARIES
     $out = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("fetch", "ninja", "--vcpkg-root=$TestingRoot", "--x-stderr-status"))
