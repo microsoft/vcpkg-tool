@@ -13,7 +13,6 @@
   "scripts": {
     "eslint-fix": "eslint  . --fix --ext .ts",
     "eslint": "eslint  . --ext .ts",
-    "clean": "shx rm -rf dist .rush *.log && shx echo Done",
     "build": "tsc -p .",
     "watch": "tsc -p . --watch",
     "prepare": "npm run build",
@@ -43,13 +42,9 @@
     "@types/semver": "7.3.9",
     "@types/tar-stream": "~2.2.0",
     "typescript": "4.5.5",
-    "shx": "0.3.4",
     "chalk": "4.1.2",
     "translate-strings": "1.1.15",
-    "@types/marked-terminal": "3.1.3",
-    "@types/marked": "4.0.2",
     "@types/cli-progress": "3.11.0",
-    "@types/mocha": "9.1.0",
     "source-map-support": "0.5.21"
   },
   "dependencies": {
@@ -57,14 +52,13 @@
     "vscode-uri": "3.0.3",
     "yaml": "2.0.0-10",
     "semver": "7.3.5",
-    "tar-stream": "~2.3.0",
+    "tar-stream": "~2.3.77",
     "sorted-btree": "1.6.0",
     "sed-lite": "0.8.4",
     "unbzip2-stream": "1.4.3",
     "chalk": "4.1.2",
-    "marked-terminal": "5.1.1",
-    "marked": "4.0.12",
     "cli-progress": "3.11.1",
-    "xml-writer": "1.7.0"
+    "xml-writer": "1.7.0",
+    "strip-ansi": "5.2"
   }
 }
