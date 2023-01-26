@@ -45,59 +45,116 @@ namespace
         return result;
     }
 
-    bool try_parse_switch(vcpkg::StringView target, vcpkg::StringView switch_name, StabilityTag stability, bool& value)
+    bool try_consume_dash_dash(const char*& first, const char* last)
     {
-        auto first = target.data();
-        const auto last = first + target.size();
-        if (first == last || *first != '-')
+        if (last - first >= 2 && first[0] == '-' && first[1] == '-')
         {
-            return false;
+            first += 2;
+            return true;
         }
 
-        ++first;
-        if (first == last || *first != '-')
-        {
-            return false;
-        }
+        return false;
+    }
 
-        ++first;
-
+    bool try_consume_no_dash(const char*& first, const char* last)
+    {
         const bool saw_no = last - first >= 3 && first[0] == 'n' && first[1] == 'o' && first[2] == '-';
         if (saw_no)
         {
             first += 3;
         }
 
-        const bool saw_z = last - first >= 2 && first[0] == 'z' && first[1] == '-';
-        if (saw_z)
+        return saw_no;
+    }
+
+    bool try_consume_ch_dash(const char*& first, const char* last, char ch)
+    {
+        const bool saw = last - first >= 2 && first[0] == ch && first[1] == '-';
+        if (saw)
         {
             first += 2;
         }
 
-        const bool saw_x = last - first >= 2 && first[0] == 'x' && first[1] == '-';
-        if (saw_x)
+        return saw;
+    }
+
+    enum class Prefix
+    {
+        Error,
+        Nothing,
+        X,
+        Z
+    };
+
+    Prefix try_consume_prefix(const char*& first, const char* last)
+    {
+        auto first_copy = first;
+        Prefix potential;
+        char error_ch;
+        if (try_consume_ch_dash(first_copy, last, 'x'))
         {
-            first += 2;
+            potential = Prefix::X;
+            error_ch = 'z';
+        }
+        else if (try_consume_ch_dash(first_copy, last, 'z'))
+        {
+            potential = Prefix::Z;
+            error_ch = 'x';
+        }
+        else
+        {
+            return Prefix::Nothing;
+        }
+
+        // forbid x-z- or z-x-
+        if (try_consume_ch_dash(first_copy, last, error_ch))
+        {
+            return Prefix::Error;
+        }
+
+        first = first_copy;
+        return potential;
+    }
+
+    bool try_parse_switch(vcpkg::StringView target, vcpkg::StringView switch_name, StabilityTag stability, bool& value)
+    {
+        auto first = target.data();
+        const auto last = first + target.size();
+        if (!try_consume_dash_dash(first, last))
+        {
+            return false;
+        }
+
+        bool saw_no = try_consume_no_dash(first, last);
+        Prefix saw_prefix = try_consume_prefix(first, last);
+        if (saw_prefix == Prefix::Error)
+        {
+            return false;
+        }
+
+        if (saw_prefix != Prefix::Nothing && !saw_no)
+        {
+            saw_no = try_consume_no_dash(first, last);
         }
 
         switch (stability)
         {
             case StabilityTag::Standard:
-                if (saw_z)
+                if (saw_prefix == Prefix::Z)
                 {
                     return false;
                 }
 
                 break;
             case StabilityTag::Experimental:
-                if (!saw_x || saw_z)
+                if (saw_prefix != Prefix::X)
                 {
                     return false;
                 }
 
                 break;
             case StabilityTag::ImplementationDetail:
-                if (saw_x || !saw_z)
+                if (saw_prefix != Prefix::Z)
                 {
                     return false;
                 }
@@ -106,8 +163,14 @@ namespace
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
 
-        const bool saw_name = std::equal(first, last, switch_name.begin(), switch_name.end());
-        if (!saw_name)
+        auto switch_name_begin = switch_name.begin();
+        if (Strings::starts_with(switch_name, "no-"))
+        {
+            saw_no = !saw_no;
+            switch_name_begin += 3;
+        }
+
+        if (!std::equal(first, last, switch_name_begin, switch_name.end()))
         {
             return false;
         }
@@ -131,49 +194,35 @@ namespace
     {
         auto first = target_lowercase.data();
         const auto last = first + target_lowercase.size();
-        if (first == last || *first != '-')
+        if (!try_consume_dash_dash(first, last))
         {
             return TryParseOptionResult::NoMatch;
         }
 
-        ++first;
-        if (first == last || *first != '-')
+        Prefix saw_prefix = try_consume_prefix(first, last);
+        if (saw_prefix == Prefix::Error)
         {
             return TryParseOptionResult::NoMatch;
-        }
-
-        ++first;
-
-        const bool saw_z = last - first >= 2 && first[0] == 'z' && first[1] == '-';
-        if (saw_z)
-        {
-            first += 2;
-        }
-
-        const bool saw_x = last - first >= 2 && first[0] == 'x' && first[1] == '-';
-        if (saw_x)
-        {
-            first += 2;
         }
 
         switch (stability)
         {
             case StabilityTag::Standard:
-                if (saw_z)
+                if (saw_prefix == Prefix::Z)
                 {
                     return TryParseOptionResult::NoMatch;
                 }
 
                 break;
             case StabilityTag::Experimental:
-                if (!saw_x || saw_z)
+                if (saw_prefix != Prefix::X)
                 {
                     return TryParseOptionResult::NoMatch;
                 }
 
                 break;
             case StabilityTag::ImplementationDetail:
-                if (saw_x || !saw_z)
+                if (saw_prefix != Prefix::Z)
                 {
                     return TryParseOptionResult::NoMatch;
                 }

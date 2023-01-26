@@ -21,7 +21,6 @@ namespace vcpkg::msg
     REGISTER_MESSAGE(ErrorMessage);
     REGISTER_MESSAGE(InternalErrorMessage);
     REGISTER_MESSAGE(InternalErrorMessageContact);
-    REGISTER_MESSAGE(BothYesAndNoOptionSpecifiedError);
 
     // basic implementation - the write_unlocalized_text_to_stdout
 #if defined(_WIN32)
@@ -1146,7 +1145,6 @@ namespace vcpkg
     REGISTER_MESSAGE(CmdFetchOptXStderrStatus);
     REGISTER_MESSAGE(CmdFormatManifestOptAll);
     REGISTER_MESSAGE(CmdFormatManifestOptConvertControl);
-    REGISTER_MESSAGE(CmdGenerateMessageMapOptOutputComments);
     REGISTER_MESSAGE(CmdGenerateMessageMapOptNoOutputComments);
     REGISTER_MESSAGE(CmdInfoOptInstalled);
     REGISTER_MESSAGE(CmdInfoOptTransitive);

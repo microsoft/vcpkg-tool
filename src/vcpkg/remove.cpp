@@ -158,14 +158,12 @@ namespace vcpkg::Remove
     }
 
     static constexpr StringLiteral OPTION_PURGE = "purge";
-    static constexpr StringLiteral OPTION_NO_PURGE = "no-purge";
     static constexpr StringLiteral OPTION_RECURSE = "recurse";
     static constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
     static constexpr StringLiteral OPTION_OUTDATED = "outdated";
 
-    static constexpr std::array<CommandSwitch, 5> SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 4> SWITCHES = {{
         {OPTION_PURGE, nullptr},
-        {OPTION_NO_PURGE, nullptr},
         {OPTION_RECURSE, []() { return msg::format(msgCmdRemoveOptRecurse); }},
         {OPTION_DRY_RUN, []() { return msg::format(msgCmdRemoveOptDryRun); }},
         {OPTION_OUTDATED, []() { return msg::format(msgCmdRemoveOptOutdated); }},
@@ -233,15 +231,7 @@ namespace vcpkg::Remove
             });
         }
 
-        const bool no_purge = Util::Sets::contains(options.switches, OPTION_NO_PURGE);
-        if (no_purge && Util::Sets::contains(options.switches, OPTION_PURGE))
-        {
-            msg::println_error(msgMutuallyExclusiveOption, msg::value = "no-purge", msg::option = "purge");
-            msg::write_unlocalized_text_to_stdout(Color::none, COMMAND_STRUCTURE.example_text);
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-        const Purge purge = no_purge ? Purge::NO : Purge::YES;
-
+        const Purge purge = Util::Sets::contains(options.switches, OPTION_PURGE) ? Purge::YES : Purge::NO;
         const bool is_recursive = Util::Sets::contains(options.switches, OPTION_RECURSE);
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
 

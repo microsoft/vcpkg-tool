@@ -367,10 +367,6 @@ namespace vcpkg::msg
         "Please open an issue at "
         "https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug "
         "with detailed steps to reproduce the problem.");
-    DECLARE_MESSAGE(BothYesAndNoOptionSpecifiedError,
-                    (msg::option),
-                    "",
-                    "cannot specify both --no-{option} and --{option}.");
 
     void println_warning(const LocalizedString& s);
     template<class Message, class... Ts>
@@ -882,10 +878,6 @@ namespace vcpkg
         (),
         "",
         "When generating the message map, exclude comments (useful for generating the English localization file)");
-    DECLARE_MESSAGE(CmdGenerateMessageMapOptOutputComments,
-                    (),
-                    "",
-                    "When generating the message map, include comments (the default)");
     DECLARE_MESSAGE(CmdInfoOptInstalled, (), "", "(experimental) Report on installed packages instead of available");
     DECLARE_MESSAGE(CmdInfoOptTransitive, (), "", "(experimental) Also report on dependencies of installed packages");
     DECLARE_MESSAGE(CmdNewOptApplication, (), "", "Create an application manifest (don't require name or version).");

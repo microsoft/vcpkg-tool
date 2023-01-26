@@ -6,11 +6,9 @@
 
 namespace vcpkg::Commands
 {
-    static constexpr StringLiteral OPTION_OUTPUT_COMMENTS = "output-comments";
     static constexpr StringLiteral OPTION_NO_OUTPUT_COMMENTS = "no-output-comments";
 
     static constexpr CommandSwitch GENERATE_MESSAGE_MAP_SWITCHES[]{
-        {OPTION_OUTPUT_COMMENTS, []() { return msg::format(msgCmdGenerateMessageMapOptOutputComments); }},
         {OPTION_NO_OUTPUT_COMMENTS, []() { return msg::format(msgCmdGenerateMessageMapOptNoOutputComments); }},
     };
 
@@ -127,15 +125,7 @@ namespace vcpkg::Commands
     void GenerateDefaultMessageMapCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
     {
         auto parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
-
         const bool output_comments = !Util::Sets::contains(parsed_args.switches, OPTION_NO_OUTPUT_COMMENTS);
-
-        if (!output_comments && Util::Sets::contains(parsed_args.switches, OPTION_OUTPUT_COMMENTS))
-        {
-            Checks::msg_exit_with_error(
-                VCPKG_LINE_INFO, msg::msgBothYesAndNoOptionSpecifiedError, msg::option = OPTION_OUTPUT_COMMENTS);
-        }
-
         // in order to implement sorting, we create a vector of messages before converting into a JSON object
         struct Message
         {
