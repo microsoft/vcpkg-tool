@@ -228,8 +228,6 @@ namespace vcpkg
                                                                   const std::string* arg_last)
     {
         VcpkgCmdArguments args{CmdParser{View<std::string>{arg_first, arg_last}}};
-        std::vector<std::string> feature_flags;
-
         args.parser.parse_switch(DEBUG_SWITCH, StabilityTag::Standard, args.debug);
         args.parser.parse_switch(DEBUG_ENV_SWITCH, StabilityTag::Standard, args.debug_env);
         args.parser.parse_switch(DISABLE_METRICS_SWITCH, StabilityTag::Standard, args.disable_metrics);
@@ -291,10 +289,9 @@ namespace vcpkg
             BINARY_SOURCES_ARG, StabilityTag::Standard, args.binary_sources, msg::format(msgBinarySourcesArg));
         args.parser.parse_multi_option(CMAKE_SCRIPT_ARG, StabilityTag::Standard, args.cmake_args);
 
-        std::vector<std::string> partial_feature_flags;
-        args.parser.parse_multi_option(FEATURE_FLAGS_ARG, StabilityTag::Standard, partial_feature_flags);
-        delistify_conjoined_multivalue(partial_feature_flags);
-
+        std::vector<std::string> feature_flags;
+        args.parser.parse_multi_option(FEATURE_FLAGS_ARG, StabilityTag::Standard, feature_flags);
+        delistify_conjoined_multivalue(feature_flags);
         parse_feature_flags(feature_flags, args);
 
         // --debug-env implies --debug

@@ -151,3 +151,10 @@ TEST_CASE ("Combine asset cache params", "[arguments]")
     v.imbue_from_fake_environment(envmap);
     REQUIRE(v.asset_sources_template() == "x-azurl,value1;x-azurl,value");
 }
+
+TEST_CASE ("Feature flag off", "[arguments]")
+{
+    std::vector<std::string> t = {"--feature-flags=-versions"};
+    auto v = VcpkgCmdArguments::create_from_arg_sequence(t.data(), t.data() + t.size());
+    CHECK(!v.versions_enabled());
+}
