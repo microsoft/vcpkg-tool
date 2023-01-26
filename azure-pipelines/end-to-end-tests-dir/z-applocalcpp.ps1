@@ -5,8 +5,8 @@ if ($IsWindows) {
     $buildDir = "$PSScriptRoot/../e2e_projects/applocal-test/build"
     $pluginsDir = "$PSScriptRoot/../e2e_projects/applocal-test/plugins"
 
-    Run-Vcpkg env "`"$buildDir/build.bat`" `"$buildDir`""
-    Run-Vcpkg env "`"$pluginsDir/azure_kinect_sensor_sdk/build.bat`" `"$pluginsDir`""
+    Run-Vcpkg env "$buildDir/build.bat"
+    Run-Vcpkg env "$pluginsDir/azure_kinect_sensor_sdk/build.bat"
 
     # Tests z-applocal command
     Run-Vcpkg z-applocal `
