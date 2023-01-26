@@ -775,6 +775,7 @@ namespace vcpkg
             std::string header_path;
             bool has_binaries = false;
 
+            static constexpr StringLiteral DOT_CMAKE = ".cmake";
             static constexpr StringLiteral INCLUDE_PREFIX = "include/";
 
             for (auto&& triplet_and_suffix : *files)
@@ -789,9 +790,9 @@ namespace vcpkg
                 {
                     continue;
                 }
-                else if (Strings::starts_with(suffix, "share/") && Strings::ends_with(suffix, ".cmake"))
+                else if (Strings::starts_with(suffix, "share/") && Strings::ends_with(suffix, DOT_CMAKE))
                 {
-                    const auto suffix_without_ending = suffix.substr(0, suffix.size() - 6);
+                    const auto suffix_without_ending = suffix.substr(0, DOT_CMAKE.size());
                     if (Strings::ends_with(suffix_without_ending, "/vcpkg-port-config")) continue;
                     if (Strings::ends_with(suffix_without_ending, "/vcpkg-cmake-wrapper")) continue;
                     if (Strings::ends_with(suffix_without_ending, /*[Vv]*/ "ersion")) continue;
