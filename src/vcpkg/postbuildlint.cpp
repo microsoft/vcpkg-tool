@@ -1,11 +1,13 @@
 #include <vcpkg/base/cofffilereader.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/build.h>
+#include <vcpkg/installedpaths.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/postbuildlint.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -1119,6 +1121,98 @@ namespace vcpkg
         return LintStatus::SUCCESS;
     }
 
+    static bool file_contains_absolute_paths(const Filesystem& fs,
+                                             const Path& file,
+                                             const std::vector<StringView> stringview_paths)
+    {
+        const auto extension = file.extension();
+        if (extension == ".h" || extension == ".hpp" || extension == ".hxx")
+        {
+            return Strings::contains_any_ignoring_c_comments(fs.read_contents(file, IgnoreErrors{}), stringview_paths);
+        }
+
+        if (extension == ".cfg" || extension == ".ini" || file.filename() == "usage")
+        {
+            const auto contents = fs.read_contents(file, IgnoreErrors{});
+            return Strings::contains_any(contents, stringview_paths);
+        }
+
+        if (extension == ".py" || extension == ".sh" || extension == ".cmake" || extension == ".pc" ||
+            extension == ".conf")
+        {
+            const auto contents = fs.read_contents(file, IgnoreErrors{});
+            return Strings::contains_any_ignoring_hash_comments(contents, stringview_paths);
+        }
+
+        if (extension.empty())
+        {
+            std::error_code ec;
+            ReadFilePointer read_file(file, ec);
+            if (ec) return false;
+            char buffer[5];
+            if (read_file.read(buffer, 1, sizeof(buffer)) < sizeof(buffer)) return false;
+            if (Strings::starts_with(StringView(buffer, sizeof(buffer)), "#!") ||
+                Strings::starts_with(StringView(buffer, sizeof(buffer)), "\xEF\xBB\xBF#!") /* ignore byte-order mark */)
+            {
+                const auto contents = fs.read_contents(file, IgnoreErrors{});
+                return Strings::contains_any_ignoring_hash_comments(contents, stringview_paths);
+            }
+            return false;
+        }
+        return false;
+    }
+
+    static LintStatus check_no_absolute_paths_in(const Filesystem& fs, const Path& dir, Span<Path> absolute_paths)
+    {
+        std::vector<std::string> string_paths;
+        for (const auto& path : absolute_paths)
+        {
+#if defined(_WIN32)
+            // As supplied, all /s, and all \s
+            string_paths.push_back(path.native());
+            auto path_preferred = path;
+            path_preferred.make_preferred();
+            string_paths.push_back(path_preferred.native());
+            string_paths.push_back(path.generic_u8string());
+#else
+            string_paths.push_back(path.native());
+#endif
+        }
+
+        Util::sort_unique_erase(string_paths);
+
+        const auto stringview_paths = Util::fmap(string_paths, [](std::string& s) { return StringView(s); });
+
+        std::vector<Path> failing_files;
+        for (auto&& file : fs.get_regular_files_recursive(dir, IgnoreErrors{}))
+        {
+            if (file_contains_absolute_paths(fs, file, stringview_paths))
+            {
+                failing_files.push_back(file);
+            }
+        }
+
+        if (failing_files.empty())
+        {
+            return LintStatus::SUCCESS;
+        }
+
+        auto error_message = msg::format(msgFilesContainAbsolutePath1);
+        for (auto&& absolute_path : absolute_paths)
+        {
+            error_message.append_raw('\n').append_indent().append_raw(absolute_path);
+        }
+
+        error_message.append_raw('\n').append(msgFilesContainAbsolutePath2);
+        for (auto&& failure : failing_files)
+        {
+            error_message.append_raw('\n').append_indent().append_raw(failure);
+        }
+
+        msg::println_warning(error_message);
+        return LintStatus::PROBLEM_DETECTED;
+    }
+
     static void operator+=(size_t& left, const LintStatus& right) { left += static_cast<size_t>(right); }
 
     static size_t perform_all_checks_and_return_error_count(const PackageSpec& spec,
@@ -1259,6 +1353,11 @@ namespace vcpkg
         error_count += check_no_files_in_dir(fs, package_dir);
         error_count += check_no_files_in_dir(fs, package_dir / "debug");
         error_count += check_pkgconfig_dir_only_in_lib_dir(fs, package_dir);
+        if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ABSOLUTE_PATHS_CHECK))
+        {
+            error_count += check_no_absolute_paths_in(
+                fs, package_dir, std::vector<Path>{package_dir, paths.installed().root(), paths.build_dir(spec)});
+        }
 
         return error_count;
     }

@@ -357,6 +357,8 @@
   "FileReadFailed": "Nie można odczytać {count} bajtów z {path} z przesunięciem {byte_offset}.",
   "FileSeekFailed": "Nie można poszukać pozycji {byte_offset} w ścieżce {path}.",
   "FileSystemOperationFailed": "Operacja systemu plików nie powiodła się:",
+  "FilesContainAbsolutePath1": "W zainstalowanym pakiecie nie powinny istnieć ścieżki bezwzględne, takie jak następujące:",
+  "FilesContainAbsolutePath2": "Ścieżki bezwzględne zostały znalezione w następujących plikach:",
   "FilesExported": "Pliki wyeksportowane do: {path}",
   "FishCompletion": "Uzupełnianie powłoki fish w menedżerze vcpkg zostało już dodane w lokalizacji \"{path}\".",
   "FloatingPointConstTooBig": "Stała zmiennoprzecinkowa jest za duża: {count}",

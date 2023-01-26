@@ -125,11 +125,13 @@ export class Activation {
   addDefine(name: string, value: string) {
     const v = findCaseInsensitiveOnWindows(this.#defines, name);
 
-    if (v && v !== value) {
+    if (v === undefined) {
+      this.#defines.set(name, value);
+    } else if (v !== value) {
       // conflict. todo: what do we want to do?
       this.#session.channels.warning(i`Duplicate define ${name} during activation. New value will replace old.`);
+      this.#defines.set(name, value);
     }
-    this.#defines.set(name, value);
   }
 
   get defines() {
@@ -144,10 +146,12 @@ export class Activation {
   /** a collection of tool locations from artifacts */
   addTool(name: string, value: string) {
     const t = findCaseInsensitiveOnWindows(this.#tools, name);
-    if (t && t !== value) {
-      this.#session.channels.error(i`Duplicate tool declared ${name} during activation.  New value will replace old.`);
+    if (t === undefined) {
+      this.#tools.set(name, value);
+    } else if (t !== value) {
+      this.#session.channels.warning(i`Duplicate tool declared ${name} during activation.  New value will replace old.`);
+      this.#tools.set(name, value);
     }
-    this.#tools.set(name, value);
   }
 
   get tools() {
@@ -166,10 +170,12 @@ export class Activation {
   /** Aliases are tools that get exposed to the user as shell aliases */
   addAlias(name: string, value: string) {
     const a = findCaseInsensitiveOnWindows(this.#aliases, name);
-    if (a && a !== value) {
-      this.#session.channels.error(i`Duplicate alias declared ${name} during activation.  New value will replace old.`);
+    if (a === undefined) {
+      this.#aliases.set(name, value);
+    } else if (a !== value) {
+      this.#session.channels.warning(i`Duplicate alias declared ${name} during activation.  New value will replace old.`);
+      this.#aliases.set(name, value);
     }
-    this.#aliases.set(name, value);
   }
 
   async getAlias(name: string, refcheck = new Set<string>()): Promise<string | undefined> {
@@ -196,10 +202,12 @@ export class Activation {
     location = typeof location === 'string' ? location : location.fsPath;
 
     const l = this.#locations.get(name);
-    if (l !== location) {
-      this.#session.channels.error(i`Duplicate location declared ${name} during activation. New value will replace old.`);
+    if (l === undefined) {
+      this.#locations.set(name, location);
+    } else if (l !== location) {
+      this.#session.channels.warning(i`Duplicate location declared ${name} during activation. New value will replace old.`);
+      this.#locations.set(name, location);
     }
-    this.#locations.set(name, location);
   }
 
   get locations() {
@@ -276,7 +284,7 @@ export class Activation {
       return;
     }
     let v = this.#properties.get(name);
-    if (!v) {
+    if (v === undefined) {
       v = new Set<string>();
       this.#properties.set(name, v);
     }

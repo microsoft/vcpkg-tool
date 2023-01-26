@@ -357,6 +357,8 @@
   "FileReadFailed": "無法從位移 {byte_offset} 的 {path} 讀取 {count} 位元組。",
   "FileSeekFailed": "無法在 {path} 中搜尋至位置 {byte_offset}。",
   "FileSystemOperationFailed": "檔案系統操作失敗:",
+  "FilesContainAbsolutePath1": "在安裝的套件中不應該有絕對路徑，例如下列路徑:",
+  "FilesContainAbsolutePath2": "在下列檔案中發現絕對路徑:",
   "FilesExported": "檔案匯出於: {path}",
   "FishCompletion": "vcpkg fish 完成已新增於 \"{path}\"。",
   "FloatingPointConstTooBig": "浮點常數太大: {count}",

@@ -176,3 +176,47 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
 #endif
     }
 }
+
+TEST_CASE ("append_shell_escaped", "[system]")
+{
+    using vcpkg::Command;
+
+    Command cmd;
+
+    cmd.clear();
+    cmd.string_arg("shell_escaped_chars1");
+    cmd.string_arg(",");
+    cmd.string_arg(";");
+    cmd.string_arg("&");
+    cmd.string_arg("^");
+    cmd.string_arg("|");
+    cmd.string_arg("(");
+    cmd.string_arg(")");
+    cmd.string_arg("'");
+    REQUIRE(cmd.command_line() == "shell_escaped_chars1 \",\" \";\" \"&\" \"^\" \"|\" \"(\" \")\" \"'\"");
+
+    cmd.clear();
+    // double-quote and backslash must be escaped on all platforms
+    cmd.string_arg("shell_escaped_chars2");
+    cmd.string_arg("\"");
+    cmd.string_arg("\\");
+    REQUIRE(cmd.command_line() == "shell_escaped_chars2 \"\\\"\" \"\\\\\"");
+
+    cmd.clear();
+    // backquote and dollar-sign must be escaped on non-_WIN32 platforms
+    cmd.string_arg("shell_escaped_chars3");
+    cmd.string_arg("`");
+    cmd.string_arg("$");
+#if defined(_WIN32)
+    REQUIRE(cmd.command_line() == "shell_escaped_chars3 \"`\" \"$\"");
+#else
+    REQUIRE(cmd.command_line() == "shell_escaped_chars3 \"\\`\" \"\\$\"");
+#endif
+
+#if 0
+    // TODO: add checks for tab/newline/carriage-return chars in commands
+    cmd.string_arg("\t");
+    cmd.string_arg("\n");
+    cmd.string_arg("\r");
+#endif
+}
