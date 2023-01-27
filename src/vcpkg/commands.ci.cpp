@@ -121,6 +121,7 @@ namespace vcpkg::Commands::CI
     static constexpr StringLiteral OPTION_TEST_FEATURES_SEPARATELY = "test-features-separately";
     static constexpr StringLiteral OPTION_RUN_FEATURE_TESTS_PORTS = "run-feature-tests-for-ports";
     static constexpr StringLiteral OPTION_RUN_FEATURE_TESTS_ALL_PORTS = "run-feature-tests-for-all-ports";
+    static constexpr StringLiteral OPTION_ONLY_RUN_FEATURE_TESTS = "only-run-feature-tests";
 
     static constexpr std::array<CommandSetting, 10> CI_SETTINGS = {
         {{OPTION_EXCLUDE, []() { return msg::format(msgCISettingsOptExclude); }},
@@ -142,27 +143,28 @@ namespace vcpkg::Commands::CI
                   "A comma seperated list of ports for which the specified feature tests should be run");
           }}}};
 
-    static constexpr std::array<CommandSwitch, 9> CI_SWITCHES = {{
-        {OPTION_DRY_RUN, []() { return msg::format(msgCISwitchOptDryRun); }},
-        {OPTION_RANDOMIZE, []() { return msg::format(msgCISwitchOptRandomize); }},
-        {OPTION_ALLOW_UNEXPECTED_PASSING, []() { return msg::format(msgCISwitchOptAllowUnexpectedPassing); }},
-        {OPTION_SKIP_FAILURES, []() { return msg::format(msgCISwitchOptSkipFailures); }},
-        {OPTION_XUNIT_ALL, []() { return msg::format(msgCISwitchOptXUnitAll); }},
-        {OPTION_RUN_FEATURE_TESTS_ALL_PORTS,
-         []() { return LocalizedString::from_raw("Runs the specified tests for all ports"); }},
-        {OPTION_TEST_FEATURE_CORE,
-         []() { return LocalizedString::from_raw("Tests the 'core' feature for every specified port"); }},
-        {OPTION_TEST_FEATURES_SEPARATELY,
-         []() {
-             return LocalizedString::from_raw("Tests every feature of a port seperatly for every specified port");
-         }},
-        {OPTION_TEST_FEATURES_COMBINED,
-         []() {
-             return LocalizedString::from_raw(
-                 "Tests the combination of every feature of a port for every specified port");
-         }},
-
-    }};
+    static constexpr std::array<CommandSwitch, 10> CI_SWITCHES = {
+        {{OPTION_DRY_RUN, []() { return msg::format(msgCISwitchOptDryRun); }},
+         {OPTION_RANDOMIZE, []() { return msg::format(msgCISwitchOptRandomize); }},
+         {OPTION_ALLOW_UNEXPECTED_PASSING, []() { return msg::format(msgCISwitchOptAllowUnexpectedPassing); }},
+         {OPTION_SKIP_FAILURES, []() { return msg::format(msgCISwitchOptSkipFailures); }},
+         {OPTION_XUNIT_ALL, []() { return msg::format(msgCISwitchOptXUnitAll); }},
+         {OPTION_RUN_FEATURE_TESTS_ALL_PORTS,
+          []() { return LocalizedString::from_raw("Runs the specified tests for all ports"); }},
+         {OPTION_TEST_FEATURE_CORE,
+          []() { return LocalizedString::from_raw("Tests the 'core' feature for every specified port"); }},
+         {OPTION_TEST_FEATURES_SEPARATELY,
+          []() {
+              return LocalizedString::from_raw("Tests every feature of a port seperatly for every specified port");
+          }},
+         {OPTION_TEST_FEATURES_COMBINED,
+          []() {
+              return LocalizedString::from_raw(
+                  "Tests the combination of every feature of a port for every specified port");
+          }},
+         {OPTION_ONLY_RUN_FEATURE_TESTS, []() {
+              return LocalizedString::from_raw("Only run the feature tests and not the normal ci test of all ports");
+          }}}};
 
     const CommandStructure COMMAND_STRUCTURE = {
         create_example_string("ci --triplet=x64-windows"),
@@ -421,6 +423,7 @@ namespace vcpkg::Commands::CI
         const auto test_feature_core = Util::Sets::contains(options.switches, OPTION_TEST_FEATURE_CORE);
         const auto test_features_combined = Util::Sets::contains(options.switches, OPTION_TEST_FEATURES_COMBINED);
         const auto test_features_seperatly = Util::Sets::contains(options.switches, OPTION_TEST_FEATURES_SEPARATELY);
+        const auto only_run_feature_tests = Util::Sets::contains(options.switches, OPTION_ONLY_RUN_FEATURE_TESTS);
 
         const auto run_tests_all_ports = Util::Sets::contains(options.switches, OPTION_RUN_FEATURE_TESTS_ALL_PORTS);
         const auto run_tests_ports_list = Util::Sets::contains(options.settings, OPTION_RUN_FEATURE_TESTS_PORTS);
@@ -813,7 +816,10 @@ namespace vcpkg::Commands::CI
                        result.build_time.to_string(),
                        '\n');
             }
-            Checks::exit_success(VCPKG_LINE_INFO);
+            if (only_run_feature_tests)
+            {
+                Checks::exit_success(VCPKG_LINE_INFO);
+            }
 
             if (!known_failures.empty())
             {
