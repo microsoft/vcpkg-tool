@@ -63,7 +63,7 @@ namespace vcpkg::Commands::LintPort
             Checks::msg_check_exit(VCPKG_LINE_INFO,
                                    add_all,
                                    msgAddVersionUseOptionAll,
-                                   msg::command_name = "x-add-version",
+                                   msg::command_name = "x-lint-port",
                                    msg::option = OPTION_ALL);
 
             for (auto&& port_dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
