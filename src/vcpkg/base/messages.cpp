@@ -1,6 +1,6 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/messages.h>
-#include <vcpkg/base/setup_messages.h>
+#include <vcpkg/base/setup-messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/util.h>
 
@@ -171,7 +171,7 @@ namespace vcpkg::msg
             std::vector<StringLiteral> names;
             std::vector<StringLiteral> default_strings;     // const after startup
             std::vector<ZStringView> localization_comments; // const after startup
-
+            Optional<cmrc::file> json_file;
             std::vector<std::string> localized_strings;
         };
 
@@ -203,11 +203,17 @@ namespace vcpkg::msg
             ::abort();
         }
     }
-
-    void load_from_message_map(const Json::Object& message_map)
+    const Optional<cmrc::file> get_file()
     {
         Messages& m = messages();
+        return m.json_file;
+    }
+    void load_from_message_map(const MessageMapAndFile& map_and_file)
+    {
+        auto&& message_map = map_and_file.map;
+        Messages& m = messages();
         m.localized_strings.resize(m.names.size());
+        m.json_file = map_and_file.map_file;
 
         std::vector<std::string> names_without_localization;
 
@@ -235,7 +241,7 @@ namespace vcpkg::msg
         }
     }
 
-    ExpectedS<Json::Object> get_message_map_from_lcid(int LCID)
+    ExpectedS<MessageMapAndFile> get_message_map_from_lcid(int LCID)
     {
         threadunsafe_initialize_context();
         auto embedded_filesystem = cmrc::cmakerc::get_filesystem();
@@ -244,7 +250,10 @@ namespace vcpkg::msg
         if (const auto locale_path = maybe_locale_path.get())
         {
             auto file = embedded_filesystem.open(*locale_path);
-            return Json::parse_object(StringView{file.begin(), file.end()}, *locale_path);
+            return Json::parse_object(StringView{file.begin(), file.end()}, *locale_path)
+                .map([&](Json::Object&& parsed_file) {
+                    return MessageMapAndFile{std::move(parsed_file), file};
+                });
         }
 
         return std::string{"Unrecognized LCID"};
@@ -264,7 +273,7 @@ namespace vcpkg::msg
             std::pair<int, StringLiteral>(1029, "cs"), // Czech
             std::pair<int, StringLiteral>(1031, "de"), // German
             // Always use default handling for 1033 (English)
-            // std::pair<int, StringLiteral>(1033, "en"),       // English
+            // std::pair<int, StringLiteral>(1033, "en"),    // English
             std::pair<int, StringLiteral>(3082, "es"),       // Spanish (Spain)
             std::pair<int, StringLiteral>(1036, "fr"),       // French
             std::pair<int, StringLiteral>(1040, "it"),       // Italian
@@ -660,13 +669,15 @@ namespace vcpkg
     REGISTER_MESSAGE(FeedbackAppreciated);
     REGISTER_MESSAGE(FetchingBaselineInfo);
     REGISTER_MESSAGE(FetchingRegistryInfo);
-    REGISTER_MESSAGE(FishCompletion);
     REGISTER_MESSAGE(FloatingPointConstTooBig);
     REGISTER_MESSAGE(FileNotFound);
     REGISTER_MESSAGE(FileReadFailed);
     REGISTER_MESSAGE(FileSeekFailed);
     REGISTER_MESSAGE(FilesExported);
     REGISTER_MESSAGE(FileSystemOperationFailed);
+    REGISTER_MESSAGE(FishCompletion);
+    REGISTER_MESSAGE(FilesContainAbsolutePath1);
+    REGISTER_MESSAGE(FilesContainAbsolutePath2);
     REGISTER_MESSAGE(FollowingPackagesMissingControl);
     REGISTER_MESSAGE(FollowingPackagesNotInstalled);
     REGISTER_MESSAGE(FollowingPackagesUpgraded);
@@ -1166,6 +1177,10 @@ namespace vcpkg
     REGISTER_MESSAGE(CmdRegenerateOptDryRun);
     REGISTER_MESSAGE(CmdRegenerateOptNormalize);
     REGISTER_MESSAGE(HelpTextOptFullDesc);
+    REGISTER_MESSAGE(CmdSettingCopiedFilesLog);
+    REGISTER_MESSAGE(CmdSettingInstalledDir);
+    REGISTER_MESSAGE(CmdSettingTargetBin);
+    REGISTER_MESSAGE(CmdSettingTLogFile);
     REGISTER_MESSAGE(CmdSetInstalledOptDryRun);
     REGISTER_MESSAGE(CmdSetInstalledOptNoUsage);
     REGISTER_MESSAGE(CmdSetInstalledOptWritePkgConfig);

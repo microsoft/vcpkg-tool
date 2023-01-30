@@ -6,7 +6,9 @@
 #include <vcpkg/commands.activate.h>
 #include <vcpkg/commands.add-version.h>
 #include <vcpkg/commands.add.h>
+#include <vcpkg/commands.applocal.h>
 #include <vcpkg/commands.autocomplete.h>
+#include <vcpkg/commands.bootstrap-standalone.h>
 #include <vcpkg/commands.buildexternal.h>
 #include <vcpkg/commands.cache.h>
 #include <vcpkg/commands.check-support.h>
@@ -44,7 +46,6 @@
 #include <vcpkg/commands.version.h>
 #include <vcpkg/commands.xdownload.h>
 #include <vcpkg/commands.xvsinstances.h>
-#include <vcpkg/commands.zbootstrap-standalone.h>
 #include <vcpkg/commands.zce.h>
 #include <vcpkg/commands.zpreregistertelemetry.h>
 #include <vcpkg/commands.zprintconfig.h>
@@ -64,9 +65,10 @@ namespace vcpkg::Commands
         static const X_Download::XDownloadCommand xdownload{};
         static const GenerateDefaultMessageMapCommand generate_message_map{};
         static const Hash::HashCommand hash{};
-        static const ZBootstrapStandaloneCommand zboostrap_standalone{};
+        static const BootstrapStandaloneCommand boostrap_standalone{};
         static const ZPreRegisterTelemetryCommand zpreregister_telemetry{};
 #if defined(_WIN32)
+        static const AppLocalCommand applocal{};
         static const UploadMetrics::UploadMetricsCommand upload_metrics{};
 #endif // defined(_WIN32)
 
@@ -77,10 +79,11 @@ namespace vcpkg::Commands
             {"x-init-registry", &init_registry},
             {"x-download", &xdownload},
             {"x-generate-default-message-map", &generate_message_map},
-            {"z-bootstrap-standalone", &zboostrap_standalone},
+            {"bootstrap-standalone", &boostrap_standalone},
             {"z-preregister-telemetry", &zpreregister_telemetry},
 #if defined(_WIN32)
             {"x-upload-metrics", &upload_metrics},
+            {"z-applocal", &applocal}
 #endif // defined(_WIN32)
         };
         return t;

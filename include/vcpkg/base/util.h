@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/view.h>
+#include <vcpkg/base/span.h>
 
 #include <algorithm>
 #include <functional>
@@ -264,6 +264,13 @@ namespace vcpkg::Util
         using std::begin;
         using std::end;
         return std::find(begin(cont), end(cont), v);
+    }
+
+    template<class Range, class T>
+    bool contains(const Range& r, const T& el)
+    {
+        using std::end;
+        return Util::find(r, el) != end(r);
     }
 
     template<class Container, class Pred>

@@ -15,7 +15,7 @@
   "scripts": {
     "postinstall": "node ./create-links create",
     "uninstall": "node ./create-links remove",
-    "prepack": "npx rimraf ./common/temp/node_modules/.pnpm/typescript* ./common/temp/node_modules/.pnpm/translate-strings*  ./common/temp/node_modules/.pnpm/ts-morph*  ./common/temp/node_modules/.pnpm/@types* && node ./prepare-deploy.js"
+    "prepack": "node ./prepare-deploy.js"
   },
   "repository": {
     "type": "git",

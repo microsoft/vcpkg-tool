@@ -6,8 +6,8 @@
 
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/view.h>
 
 #include <vcpkg/versiondeserializers.h>
 #include <vcpkg/versions.h>

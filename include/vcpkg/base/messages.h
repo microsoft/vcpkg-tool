@@ -914,6 +914,10 @@ namespace vcpkg
                     (),
                     "",
                     "Allow removal of packages not explicitly specified on the command line");
+    DECLARE_MESSAGE(CmdSettingCopiedFilesLog, (), "", "Path to the copied files log to create");
+    DECLARE_MESSAGE(CmdSettingInstalledDir, (), "", "Path to the installed tree to use");
+    DECLARE_MESSAGE(CmdSettingTargetBin, (), "", "Path to the binary to analyze");
+    DECLARE_MESSAGE(CmdSettingTLogFile, (), "", "Path to the tlog file to create");
     DECLARE_MESSAGE(CmdSetInstalledOptDryRun, (), "", "Do not actually build or install");
     DECLARE_MESSAGE(CmdSetInstalledOptNoUsage, (), "", "Don't print CMake usage information after install.");
     DECLARE_MESSAGE(CmdSetInstalledOptWritePkgConfig,
@@ -1382,6 +1386,13 @@ namespace vcpkg
                     "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details "
                     "on how to provide credentials.");
     DECLARE_MESSAGE(FeedbackAppreciated, (), "", "Thank you for your feedback!");
+    DECLARE_MESSAGE(
+        FilesContainAbsolutePath1,
+        (),
+        "This message is printed before a list of found absolute paths, followed by FilesContainAbsolutePath2, "
+        "followed by a list of found files.",
+        "There should be no absolute paths, such as the following, in an installed package:");
+    DECLARE_MESSAGE(FilesContainAbsolutePath2, (), "", "Absolute paths were found in the following files:");
     DECLARE_MESSAGE(FetchingBaselineInfo,
                     (msg::package_name),
                     "",
@@ -2192,8 +2203,8 @@ namespace vcpkg
                     "installed.");
     DECLARE_MESSAGE(PortBugMissingLicense,
                     (msg::spec),
-                    "'{CURRENT_PACKAGES_DIR}' should not be translated.",
-                    "The software license must be available at ${CURRENT_PACKAGES_DIR}/share/{spec}/copyright");
+                    "",
+                    "The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{spec}/copyright");
     DECLARE_MESSAGE(PortBugMissingReleaseBinaries, (), "", "Release binaries were not found.");
     DECLARE_MESSAGE(PortBugMovePkgConfigFiles, (), "", "You can move the pkgconfig files with commands similar to:");
     DECLARE_MESSAGE(PortBugOutdatedCRT, (), "", "Detected outdated dynamic CRT in the following files:");

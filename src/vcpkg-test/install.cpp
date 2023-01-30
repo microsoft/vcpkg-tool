@@ -123,18 +123,43 @@ cmake_policy(POP)
     res = get_cmake_add_library_names(fmt_targets);
     CHECK(res == std::vector<std::string>{"fmt::fmt", "fmt::fmt-header-only"});
 
-    res = get_cmake_add_library_names("add_library(bar) foo_add_library(baz)");
+    res = get_cmake_add_library_names("add_library(bar) foo_add_library(baz) add_library()");
     CHECK(res == std::vector<std::string>{"bar"});
 
     res = get_cmake_add_library_names("add_library(bar) add_library(baz-bar) add_library(baz_%_bar)");
     CHECK(res == std::vector<std::string>{"bar", "baz-bar", "baz_%_bar"});
 
-    res = get_cmake_add_library_names("add_library(bar${foo})");
-    CHECK(res == std::vector<std::string>{"bar"});
-
-    res = get_cmake_add_library_names("add_library() add_library(foo) add_library(   \nbar)");
-    CHECK(res == std::vector<std::string>{"foo", "bar"});
-
     res = get_cmake_add_library_names("add_library(foo) add_library(foo) add_library(foo)");
     CHECK(res == std::vector<std::string>{"foo", "foo", "foo"});
+
+    // In the following cases, the empty list indicates the need for an explicit usage file.
+
+    auto with_var = get_cmake_add_library_names("add_library(bar${foo}) add_library(${foo}) add_library(   \nbar)");
+    CHECK(with_var.empty());
+
+    auto with_comment = get_cmake_add_library_names("add_library( # rem \n    foo)  add_library( bar# rem3)");
+    CHECK(with_comment.empty());
+
+    auto with_quotes =
+        get_cmake_add_library_names("add_library(\"literal\")  add_library(\"${var}\") add_library(\"prefix${name}\")");
+    CHECK(with_quotes.empty());
+
+    auto with_upper_case = get_cmake_add_library_names("ADD_LIBRARY(foo)");
+    CHECK(with_upper_case.empty());
+
+    auto with_extra_space = get_cmake_add_library_names("add_library (foo)");
+    CHECK(with_extra_space.empty());
+
+    auto maybe_example = get_cmake_add_library_names("add_library(<Pkg>)");
+    CHECK(maybe_example.empty());
+
+    CHECK(get_cmake_find_package_name("proj", "proj-config.cmake") == "proj");
+    CHECK(get_cmake_find_package_name("Proj", "proj-config.cmake") == "proj");
+    CHECK(get_cmake_find_package_name("Proj-1.0", "proj-config.cmake") == "proj");
+    CHECK(get_cmake_find_package_name("proj", "ProjConfig.cmake") == "Proj");
+    CHECK(get_cmake_find_package_name("Proj", "ProjConfig.cmake") == "Proj");
+    CHECK(get_cmake_find_package_name("proj-1.0", "ProjConfig.cmake") == "Proj");
+    CHECK(get_cmake_find_package_name("pro", "proj-config.cmake") == "");
+    CHECK(get_cmake_find_package_name("Pro", "ProjConfig.cmake") == "");
+    CHECK(get_cmake_find_package_name("proj", "Findproj.cmake") == "");
 }

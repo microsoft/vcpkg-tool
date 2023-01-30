@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vcpkg/base/view.h>
+#include <vcpkg/base/span.h>
 
 #include <vcpkg/dependencies.h>
 
