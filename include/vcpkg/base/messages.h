@@ -820,7 +820,7 @@ namespace vcpkg
     DECLARE_MESSAGE(CmdEditOptBuildTrees, (), "", "Open editor into the port-specific buildtree subfolder");
     DECLARE_MESSAGE(CmdEnvOptions, (msg::path, msg::env_var), "", "Add installed {path} to {env_var}");
     DECLARE_MESSAGE(CmdExportPortForce, (), "", "overwrite existing files in destination");
-    DECLARE_MESSAGE(CmdExportPortNoRegistries, (), "", "ignore configured registris when resolving port");
+    DECLARE_MESSAGE(CmdExportPortNoRegistries, (), "", "ignore configured registries");
     DECLARE_MESSAGE(CmdExportPortSubdir, (), "", "create a subdirectory for the port");
     DECLARE_MESSAGE(CmdExportOpt7Zip, (), "", "Export to a 7zip (.7z) file");
     DECLARE_MESSAGE(CmdExportOptChocolatey, (), "", "Export a Chocolatey package (experimental feature)");
@@ -1243,9 +1243,9 @@ namespace vcpkg
         "",
         "A registry declares port {package_name} but the port definition was not found in the registry.\n"
         "\n\tRegistry: {path}\n\n"
-        "If the port is expected to exist in the registry review that the baseline and versions database files are "
+        "If the port is expected to exist in the registry, check that the baseline and versions database files are "
         "correct.\n"
-        "If you expected the port name to resolve to a different registry adjust your registry configuration.\n"
+        "If you expected the port name to resolve to a different registry, adjust your registry configuration.\n"
         "See {url} for more details.");
     DECLARE_MESSAGE(ExportArchitectureReq,
                     (),
