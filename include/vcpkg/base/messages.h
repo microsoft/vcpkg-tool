@@ -2125,7 +2125,8 @@ namespace vcpkg
     DECLARE_MESSAGE(PortBugMissingProvidedUsage,
                     (msg::spec, msg::value),
                     "",
-                    "The port provided \"usage\" but forgot to install to ${{CURRENT_PACKAGES_DIR}}/share/{spec}/usage\n"
+                    "The port provided \"usage\" but forgot to install to\n"
+                    "${{CURRENT_PACKAGES_DIR}}/share/{spec}/usage\n"
                     "Add this to your portfile.cmake:\n{value}");
     DECLARE_MESSAGE(PortBugMissingImportedLibs,
                     (msg::path),
