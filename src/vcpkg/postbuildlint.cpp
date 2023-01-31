@@ -240,6 +240,25 @@ namespace vcpkg::PostBuildLint
         return LintStatus::SUCCESS;
     }
 
+    static LintStatus check_for_usage_forgot_install(const Filesystem& fs,
+                                                  const VcpkgPaths& paths,
+                                                  const Path& package_dir,
+                                                  const PackageSpec& spec)
+    {
+        static const std::string STANDARD_INSTALL_USAGE = R"###(file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/usage" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}"))###";
+
+        auto port_path = paths.root / "ports" / spec.name();
+        auto usage_path_from = port_path / "usage";
+        auto usage_path_to = package_dir / "share" / spec.name() / "usage";
+
+        if (fs.exists(usage_path_from, IgnoreErrors{}) && !fs.exists(usage_path_to, IgnoreErrors{})) {
+            msg::println_warning(msgPortBugMissingProvidedUsage, msg::spec = spec.name(), msg::value = STANDARD_INSTALL_USAGE);
+            return LintStatus::PROBLEM_DETECTED;
+        }
+
+        return LintStatus::SUCCESS;
+    }
+
     static LintStatus check_folder_lib_cmake(const Filesystem& fs, const Path& package_dir, const PackageSpec& spec)
     {
         const auto lib_cmake = package_dir / "lib" / "cmake";
@@ -1099,6 +1118,7 @@ namespace vcpkg::PostBuildLint
         error_count += check_for_copyright_file(fs, spec, paths);
         error_count += check_for_exes(fs, package_dir);
         error_count += check_for_exes(fs, package_dir / "debug");
+        error_count += check_for_usage_forgot_install(fs, paths, package_dir, spec);
 
         const auto debug_lib_dir = package_dir / "debug" / "lib";
         const auto release_lib_dir = package_dir / "lib";
