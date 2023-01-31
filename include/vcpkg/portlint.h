@@ -33,6 +33,8 @@ namespace vcpkg::Lint
 
     VersionScheme get_recommended_version_scheme(StringView raw_version, VersionScheme original_scheme);
 
+    Status check_usage_forgot_to_install(Filesystem& fs, const SourceControlFileAndLocation& scf, Fix fix);
+
     Status check_used_version_scheme(SourceControlFile& scf, Fix fix);
 
     Status check_license_expression(SourceControlFile& scf, Fix fix);

@@ -829,6 +829,8 @@ namespace vcpkg
     REGISTER_MESSAGE(LintDeprecatedLicenseExpressionWithoutReplacement);
     REGISTER_MESSAGE(LintDeprecatedLicenseExpressionWithReplacement);
     REGISTER_MESSAGE(LintMissingLicenseExpression);
+    REGISTER_MESSAGE(LintUsageForgotToInstall);
+    REGISTER_MESSAGE(LintUsageNotStandard);
     REGISTER_MESSAGE(LintSuggestNewVersionScheme);
     REGISTER_MESSAGE(LintVcpkgCheckFeatures);
     REGISTER_MESSAGE(LintPortErrors);

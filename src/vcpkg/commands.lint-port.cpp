@@ -87,6 +87,7 @@ namespace vcpkg::Commands::LintPort
             Lint::Status s = Lint::check_license_expression(*scf.source_control_file, fix);
             s |= Lint::check_used_version_scheme(*scf.source_control_file, fix);
             s |= Lint::check_portfile_deprecated_functions(fs, scf, fix);
+            s |= Lint::check_usage_forgot_to_install(fs, scf, fix);
 
             if (s == Lint::Status::Fixed || s == Lint::Status::PartiallyFixed)
             {

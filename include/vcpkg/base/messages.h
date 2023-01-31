@@ -588,6 +588,15 @@ namespace vcpkg
                     "",
                     "Use the version scheme \"{new_scheme}\" instead of \"{old_scheme}\" in port "
                     "\"{package_name}\".");
+    DECLARE_MESSAGE(LintUsageForgotToInstall,
+                    (msg::package_name),
+                    "",
+                    "The port \"{package_name}\" provided \"usage\", but forgot to install.");
+    DECLARE_MESSAGE(LintUsageNotStandard,
+                    (msg::package_name, msg::value),
+                    "",
+                    "The port \"{package_name}\" installed \"usage\", but not in a standard way:\n"
+                    "{value}");
     DECLARE_MESSAGE(LintVcpkgCheckFeatures,
                     (msg::package_name),
                     "",

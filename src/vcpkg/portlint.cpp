@@ -5,6 +5,8 @@
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/versions.h>
 
+#include <regex>
+
 #include "vcpkg/base/system.print.h"
 #include "vcpkg/base/util.h"
 
@@ -20,6 +22,43 @@ namespace vcpkg::Lint
         if (DateVersion::try_parse(raw_version)) return VersionScheme::Date;
         if (DotVersion::try_parse_relaxed(raw_version)) return VersionScheme::Relaxed;
         return original_scheme;
+    }
+
+    Status check_usage_forgot_to_install(Filesystem& fs, const SourceControlFileAndLocation& scf, Fix fix) {
+        auto portfile_path =  scf.source_location / "portfile.cmake";
+        auto usage_path = scf.source_location / "usage";
+        if (!fs.exists(usage_path, VCPKG_LINE_INFO)) {
+            return Status::Ok;
+        }
+        // Try find the `file( ..... /usage"` pattern
+        static const std::regex MATCH_USAGE_REGEX{R"###((file|FILE)\([\w\W]*/usage)###"};
+        static const std::string STANDARD_INSTALL_USAGE = R"###(file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/usage" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}"))###";
+
+        auto portfile = fs.read_contents(portfile_path, VCPKG_LINE_INFO);
+        std::smatch match_install_usage;
+        const bool has_install_usage = std::regex_search(portfile, match_install_usage, MATCH_USAGE_REGEX);
+
+        // TODO: Should we skip empty package (like boost, ...)?
+        if (!has_install_usage) {
+            if (fix == Fix::YES) {
+                portfile += "\n";
+                portfile += STANDARD_INSTALL_USAGE;
+                portfile += "\n";
+                fs.write_contents(portfile_path, portfile, VCPKG_LINE_INFO);
+                return Status::Fixed;
+            }
+            msg::println_warning(msgLintUsageForgotToInstall,
+                                 msg::package_name = scf.source_control_file->core_paragraph->name);
+            return Status::Problem;
+        }
+
+        if (portfile.find(STANDARD_INSTALL_USAGE) == std::string::npos) {
+            msg::println_warning(msgLintUsageNotStandard,
+                                 msg::package_name = scf.source_control_file->core_paragraph->name,
+                                 msg::value = STANDARD_INSTALL_USAGE);
+        }
+
+        return Status::Ok;
     }
 
     Status check_used_version_scheme(SourceControlFile& scf, Fix fix)
