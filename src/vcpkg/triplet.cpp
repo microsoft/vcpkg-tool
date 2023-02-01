@@ -1,5 +1,5 @@
 #include <vcpkg/base/strings.h>
-
+#include <vcpkg/packagespec.h>
 #include <vcpkg/triplet.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
@@ -83,13 +83,33 @@ namespace vcpkg
         return Triplet::from_canonical_name(std::move(canonical_name));
     }
 
-    Triplet default_triplet(const VcpkgCmdArguments& args)
+    Triplet default_triplet(const VcpkgCmdArguments& args, bool is_manifest_mode)
     {
         if (auto triplet = args.triplet.get())
         {
+            // The triplet is set by --triplet or VCPKG_DEFAULT_TRIPLET.
             return Triplet::from_canonical_name(*triplet);
         }
 #if defined(_WIN32)
+        // The triplet is not specified or is part of a string qualifier i.e. zlib:x64-windows
+        if (is_manifest_mode)
+        {
+            msg::println_warning(msgDefaultTriplet);
+        }
+        else
+        {
+            bool used_default_triplet = false;
+            for (auto&& arg : args.command_arguments)
+            {
+                const std::string as_lowercase = Strings::ascii_to_lowercase(std::string{arg});
+                auto maybe_qpkg = parse_qualified_specifier(as_lowercase);
+                if (maybe_qpkg.has_value() && !maybe_qpkg.get()->triplet.has_value())
+                {
+                    msg::println_warning(msgDefaultTriplet);
+                    break;
+                }
+            }
+        }
         return Triplet::from_canonical_name("x86-windows");
 #else
         return system_triplet();

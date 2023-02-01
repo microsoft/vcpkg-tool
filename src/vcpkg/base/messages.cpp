@@ -543,6 +543,7 @@ namespace vcpkg
     REGISTER_MESSAGE(DefaultBrowserLaunched);
     REGISTER_MESSAGE(DefaultFlag);
     REGISTER_MESSAGE(DefaultPathToBinaries);
+    REGISTER_MESSAGE(DefaultTriplet);
     REGISTER_MESSAGE(DeleteVcpkgConfigFromManifest);
     REGISTER_MESSAGE(DeprecatedPrefabDebugOption);
     REGISTER_MESSAGE(DetectCompilerHash);
