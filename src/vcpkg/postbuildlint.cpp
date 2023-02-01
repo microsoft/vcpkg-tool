@@ -241,15 +241,14 @@ namespace vcpkg::PostBuildLint
     }
 
     static LintStatus check_for_usage_forgot_install(const Filesystem& fs,
-                                                     const VcpkgPaths& paths,
+                                                     const Path& port_dir,
                                                      const Path& package_dir,
                                                      const PackageSpec& spec)
     {
         static const std::string STANDARD_INSTALL_USAGE =
             R"###(file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/usage" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}"))###";
 
-        auto port_path = paths.root / "ports" / spec.name();
-        auto usage_path_from = port_path / "usage";
+        auto usage_path_from = port_dir / "usage";
         auto usage_path_to = package_dir / "share" / spec.name() / "usage";
 
         if (fs.exists(usage_path_from, IgnoreErrors{}) && !fs.exists(usage_path_to, IgnoreErrors{}))
@@ -1093,7 +1092,8 @@ namespace vcpkg::PostBuildLint
     static size_t perform_all_checks_and_return_error_count(const PackageSpec& spec,
                                                             const VcpkgPaths& paths,
                                                             const PreBuildInfo& pre_build_info,
-                                                            const BuildInfo& build_info)
+                                                            const BuildInfo& build_info,
+                                                            const Path& port_dir)
     {
         const auto& fs = paths.get_filesystem();
 
@@ -1121,7 +1121,7 @@ namespace vcpkg::PostBuildLint
         error_count += check_for_copyright_file(fs, spec, paths);
         error_count += check_for_exes(fs, package_dir);
         error_count += check_for_exes(fs, package_dir / "debug");
-        error_count += check_for_usage_forgot_install(fs, paths, package_dir, spec);
+        error_count += check_for_usage_forgot_install(fs, port_dir, package_dir, spec);
 
         const auto debug_lib_dir = package_dir / "debug" / "lib";
         const auto release_lib_dir = package_dir / "lib";
@@ -1233,7 +1233,7 @@ namespace vcpkg::PostBuildLint
                               const Path& port_dir)
     {
         msg::println(msgPerformingPostBuildValidation);
-        const size_t error_count = perform_all_checks_and_return_error_count(spec, paths, pre_build_info, build_info);
+        const size_t error_count = perform_all_checks_and_return_error_count(spec, paths, pre_build_info, build_info, port_dir);
 
         if (error_count != 0)
         {
