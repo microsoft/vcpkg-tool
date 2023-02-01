@@ -2123,11 +2123,10 @@ namespace vcpkg
                     "",
                     "The /{path} file does not exist. This file must exist for CMake helper ports.");
     DECLARE_MESSAGE(PortBugMissingProvidedUsage,
-                    (msg::spec, msg::value),
+                    (msg::spec),
                     "",
-                    "The port provided \"usage\" but forgot to install to\n"
-                    "${{CURRENT_PACKAGES_DIR}}/share/{spec}/usage\n"
-                    "Add: {value}");
+                    "The port provided \"usage\" but forgot to install to /share/{spec}/usage, add the following line"
+                    "in the portfile:");
     DECLARE_MESSAGE(PortBugMissingImportedLibs,
                     (msg::path),
                     "",

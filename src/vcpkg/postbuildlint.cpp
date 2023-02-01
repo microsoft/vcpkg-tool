@@ -245,16 +245,17 @@ namespace vcpkg::PostBuildLint
                                                      const Path& package_dir,
                                                      const PackageSpec& spec)
     {
-        static const std::string STANDARD_INSTALL_USAGE =
+        static constexpr StringLiteral STANDARD_INSTALL_USAGE =
             R"###(file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/usage" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}"))###";
 
         auto usage_path_from = port_dir / "usage";
         auto usage_path_to = package_dir / "share" / spec.name() / "usage";
 
-        if (fs.exists(usage_path_from, IgnoreErrors{}) && !fs.exists(usage_path_to, IgnoreErrors{}))
+        if (fs.is_regular_file(usage_path_from) && !fs.is_regular_file(usage_path_to))
         {
-            msg::println_warning(
-                msgPortBugMissingProvidedUsage, msg::spec = spec.name(), msg::value = STANDARD_INSTALL_USAGE);
+            msg::println_warning(msg::format(msgPortBugMissingProvidedUsage, msg::spec = spec.name())
+                                     .append_raw('\n')
+                                     .append_raw(STANDARD_INSTALL_USAGE));
             return LintStatus::PROBLEM_DETECTED;
         }
 
