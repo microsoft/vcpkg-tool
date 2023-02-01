@@ -1233,7 +1233,8 @@ namespace vcpkg::PostBuildLint
                               const Path& port_dir)
     {
         msg::println(msgPerformingPostBuildValidation);
-        const size_t error_count = perform_all_checks_and_return_error_count(spec, paths, pre_build_info, build_info, port_dir);
+        const size_t error_count =
+            perform_all_checks_and_return_error_count(spec, paths, pre_build_info, build_info, port_dir);
 
         if (error_count != 0)
         {
