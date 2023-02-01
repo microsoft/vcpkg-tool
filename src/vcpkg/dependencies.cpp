@@ -815,25 +815,28 @@ namespace vcpkg
                 }
                 else
                 {
-                    auto supports_expression = clust.get_applicable_supports_expression(spec);
-                    if (supports_expression && !supports_expression.get()->is_empty())
+                    auto maybe_supports_expression = clust.get_applicable_supports_expression(spec);
+                    auto supports_expression = maybe_supports_expression.get();
+                    if (supports_expression && !supports_expression->is_empty())
                     {
-                        if (!supports_expression.get()->evaluate(
+                        if (!supports_expression->evaluate(
                                 m_var_provider.get_dep_info_vars(spec.spec()).value_or_exit(VCPKG_LINE_INFO)))
                         {
-                            auto localized_msg =
-                                msg::format(msgUnsupportedPortFeature,
-                                            msg::spec = spec,
-                                            msg::supports_expression = to_string(*supports_expression.get()));
-
+                            const auto supports_expression_text = to_string(*supports_expression);
                             if (unsupported_port_action == UnsupportedPortAction::Error)
                             {
-                                Checks::msg_exit_with_message(VCPKG_LINE_INFO, localized_msg);
+                                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                                              msgUnsupportedSupportsExpression,
+                                                              msg::spec = spec,
+                                                              msg::supports_expression = supports_expression_text);
                             }
                             else
                             {
                                 m_warnings.push_back(
-                                    msg::format(msg::msgWarningMessage).append(localized_msg).extract_data());
+                                    msg::format_warning(msgUnsupportedSupportsExpressionWarning,
+                                                        msg::spec = spec,
+                                                        msg::supports_expression = supports_expression_text)
+                                        .extract_data());
                             }
                         }
                     }
@@ -1898,13 +1901,20 @@ namespace vcpkg
                     {
                         if (!supports_expr.evaluate(m_var_provider.get_or_load_dep_info_vars(spec, m_host_triplet)))
                         {
-                            const auto msg = Strings::concat(
-                                spec, "@", new_ver, " is only supported on '", to_string(supports_expr), "'\n");
+                            const auto supports_expression_text = to_string(supports_expr);
                             if (unsupported_port_action == UnsupportedPortAction::Error)
                             {
-                                return "Error: " + msg;
+                                return msg::format_error(msgUnsupportedSupportsExpression,
+                                                         msg::spec = spec,
+                                                         msg::supports_expression = supports_expression_text)
+                                    .extract_data();
                             }
-                            ret.warnings.emplace_back("Warning: " + msg);
+
+                            ret.warnings.emplace_back(
+                                msg::format_warning(msgUnsupportedSupportsExpressionWarning,
+                                                    msg::spec = spec,
+                                                    msg::supports_expression = supports_expression_text)
+                                    .extract_data());
                         }
                     }
                 }
@@ -1924,19 +1934,21 @@ namespace vcpkg
                     {
                         if (!supports_expr.evaluate(m_var_provider.get_or_load_dep_info_vars(spec, m_host_triplet)))
                         {
-                            const auto msg = Strings::concat(spec,
-                                                             "@",
-                                                             new_ver,
-                                                             " The feature ",
-                                                             f,
-                                                             " is only supported on '",
-                                                             to_string(supports_expr),
-                                                             "'\n");
+                            const auto spec_text = FeatureSpec(spec, f).to_string();
+                            const auto supports_expression_text = to_string(supports_expr);
                             if (unsupported_port_action == UnsupportedPortAction::Error)
                             {
-                                return "Error: " + msg;
+                                return msg::format_error(msgUnsupportedSupportsExpression,
+                                                         msg::spec = spec_text,
+                                                         msg::supports_expression = supports_expression_text)
+                                    .extract_data();
                             }
-                            ret.warnings.emplace_back("Warning: " + msg);
+
+                            ret.warnings.emplace_back(
+                                msg::format_warning(msgUnsupportedSupportsExpressionWarning,
+                                                    msg::spec = spec_text,
+                                                    msg::supports_expression = supports_expression_text)
+                                    .extract_data());
                         }
                     }
                 }

@@ -2414,10 +2414,18 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is the name of a port dependency.",
                     "- dependency {value} is not supported.");
-    DECLARE_MESSAGE(UnsupportedPortFeature,
+    DECLARE_MESSAGE(UnsupportedSupportsExpression,
                     (msg::spec, msg::supports_expression),
                     "",
-                    "{spec} is only supported on '{supports_expression}'");
+                    "{spec} is only supported on '{supports_expression}'. This usually means that there are known "
+                    "build failures, or runtime problems, when building other platforms. To ignore this and attempt to "
+                    "build {spec} anyway, rerun vcpkg with `--allow-unsupported`.");
+    DECLARE_MESSAGE(
+        UnsupportedSupportsExpressionWarning,
+        (msg::spec, msg::supports_expression),
+        "",
+        "{spec} is only supported on '{supports_expression}'. This usually means that there are known build failures, "
+        "or runtime problems, when building other platforms. Proceeding anyway due to `--allow-unsupported`.");
     DECLARE_MESSAGE(UnsupportedShortOptions,
                     (msg::value),
                     "'{value}' is the short option given",
