@@ -114,6 +114,8 @@ jobs:
     value: $(Build.SourcesDirectory)\vcpkg-root
   - name: Codeql.BuildIdentifier
     value: vcpkg_cpp
+  - name: Codeql.Language
+    value: cpp
   steps:
     - task: Powershell@2
       displayName: "Clone vcpkg repo to serve as root"
@@ -124,8 +126,6 @@ jobs:
           $sha = (Get-Content vcpkg-init/vcpkg-scripts-sha.txt -Raw).Trim()
           git clone https://github.com/microsoft/vcpkg $env:VCPKG_ROOT -n
           git -C "$env:VCPKG_ROOT" checkout $sha
-    - task: CodeQL3000Init@0
-      displayName: 'CodeQL Initialize'
     - task: Powershell@2
       displayName: 'Format C++'
       inputs:
@@ -154,6 +154,8 @@ jobs:
     - script: npm install -g @microsoft/rush
       displayName: Install Rush
       workingDirectory: ce\common\config\rush
+    - task: CodeQL3000Init@0
+      displayName: 'CodeQL Initialize'
     - task: CmdLine@2
       displayName: "Build vcpkg with CMake"
       inputs:
@@ -163,6 +165,8 @@ jobs:
           cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_ARTIFACTS_DEVELOPMENT=ON -B build.x86.debug
           ninja.exe -C build.x86.debug all generate-message-map
         failOnStderr: true
+    - task: CodeQL3000Finalize@0
+      displayName: 'CodeQL Finalize'
     - script: build.x86.debug\vcpkg-test.exe
       displayName: "Run vcpkg tests"
       failOnStderr: true
@@ -174,5 +178,3 @@ jobs:
         filePath: 'azure-pipelines/end-to-end-tests.ps1'
         workingDirectory: '$(Build.SourcesDirectory)/build.x86.debug'
         pwsh: true
-    - task: CodeQL3000Finalize@0
-      displayName: 'CodeQL Finalize'
