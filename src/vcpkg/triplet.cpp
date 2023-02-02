@@ -1,4 +1,5 @@
 #include <vcpkg/base/strings.h>
+
 #include <vcpkg/packagespec.h>
 #include <vcpkg/triplet.h>
 #include <vcpkg/vcpkgcmdarguments.h>
@@ -85,6 +86,7 @@ namespace vcpkg
 
     Triplet default_triplet(const VcpkgCmdArguments& args, bool is_manifest_mode)
     {
+        (void)is_manifest_mode;
         if (auto triplet = args.triplet.get())
         {
             // The triplet is set by --triplet or VCPKG_DEFAULT_TRIPLET.
@@ -98,7 +100,6 @@ namespace vcpkg
         }
         else
         {
-            bool used_default_triplet = false;
             for (auto&& arg : args.command_arguments)
             {
                 const std::string as_lowercase = Strings::ascii_to_lowercase(std::string{arg});
