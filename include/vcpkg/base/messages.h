@@ -1046,7 +1046,8 @@ namespace vcpkg
     DECLARE_MESSAGE(DefaultTriplet,
                     (),
                     "",
-                    "Starting with the September 2023 release, the default vcpkg triplet for builds will change from x86-windows to x64-windows.");
+                    "Starting with the September 2023 release, the default vcpkg triplet for builds will change from "
+                    "x86-windows to x64-windows.");
     DECLARE_MESSAGE(DeleteVcpkgConfigFromManifest,
                     (msg::path),
                     "",

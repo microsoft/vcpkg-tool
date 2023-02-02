@@ -324,6 +324,7 @@
   "_DefaultFlag.comment": "An example of {option} is editable.",
   "DefaultPathToBinaries": "Based on your system settings, the default path to store binaries is \"{path}\". This consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.",
   "_DefaultPathToBinaries.comment": "An example of {path} is /foo/bar.",
+  "DefaultTriplet": "Starting with the September 2023 release, the default vcpkg triplet for builds will change from x86-windows to x64-windows.",
   "DeleteVcpkgConfigFromManifest": "-- Or remove \"vcpkg-configuration\" from the manifest file {path}.",
   "_DeleteVcpkgConfigFromManifest.comment": "An example of {path} is /foo/bar.",
   "DeprecatedPrefabDebugOption": "--prefab-debug is now deprecated.",
