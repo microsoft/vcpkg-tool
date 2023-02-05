@@ -28,6 +28,7 @@ namespace vcpkg::PlatformExpression
         openbsd,
         osx,
         uwp,
+        xbox,
         android,
         emscripten,
         ios,
@@ -54,6 +55,7 @@ namespace vcpkg::PlatformExpression
             {"openbsd", Identifier::openbsd},
             {"osx", Identifier::osx},
             {"uwp", Identifier::uwp},
+            {"xbox", Identifier::xbox},
             {"android", Identifier::android},
             {"emscripten", Identifier::emscripten},
             {"ios", Identifier::ios},
@@ -532,6 +534,7 @@ namespace vcpkg::PlatformExpression
                         case Identifier::arm64: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm64");
                         case Identifier::windows:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "") ||
+                                   true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Windows") ||
                                    true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore") ||
                                    true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "MinGW");
                         case Identifier::mingw: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "MinGW");
@@ -541,6 +544,8 @@ namespace vcpkg::PlatformExpression
                         case Identifier::osx: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Darwin");
                         case Identifier::uwp:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore");
+                        case Identifier::xbox:
+                            return true_if_exists_and_equal("Z_VCPKG_IS_XBOX", "true");
                         case Identifier::android: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Android");
                         case Identifier::emscripten:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Emscripten");
