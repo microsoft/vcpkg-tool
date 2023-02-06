@@ -974,6 +974,8 @@ namespace vcpkg
     REGISTER_MESSAGE(UnrecognizedConfigField);
     REGISTER_MESSAGE(UnrecognizedIdentifier);
     REGISTER_MESSAGE(UnsupportedFeature);
+    REGISTER_MESSAGE(UnsupportedFeatureSupportsExpression);
+    REGISTER_MESSAGE(UnsupportedFeatureSupportsExpressionWarning);
     REGISTER_MESSAGE(UnsupportedPort);
     REGISTER_MESSAGE(UnsupportedPortDependency);
     REGISTER_MESSAGE(UnsupportedShortOptions);
