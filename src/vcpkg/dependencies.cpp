@@ -185,9 +185,12 @@ namespace vcpkg
                 bool defaults_requested = false;
                 if (const ClusterInstalled* inst = m_installed.get())
                 {
+                    out_reinstall_requirements.emplace_back(m_spec, "core");
+                    auto& scfl = get_scfl_or_exit();
                     for (const std::string& installed_feature : inst->original_features)
                     {
-                        out_reinstall_requirements.emplace_back(m_spec, installed_feature);
+                        if (scfl.source_control_file->find_feature(installed_feature).has_value())
+                            out_reinstall_requirements.emplace_back(m_spec, installed_feature);
                     }
                     defaults_requested = inst->defaults_requested;
                 }

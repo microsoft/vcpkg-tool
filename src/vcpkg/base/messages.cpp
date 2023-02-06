@@ -1060,6 +1060,7 @@ namespace vcpkg
     REGISTER_MESSAGE(PortBugMisplacedCMakeFiles);
     REGISTER_MESSAGE(PortBugDllInLibDir);
     REGISTER_MESSAGE(PortBugMissingLicense);
+    REGISTER_MESSAGE(PortBugMissingProvidedUsage);
     REGISTER_MESSAGE(PortBugFoundCopyrightFiles);
     REGISTER_MESSAGE(PortBugFoundExeInBinDir);
     REGISTER_MESSAGE(PortBugSetDllsWithoutExports);

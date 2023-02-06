@@ -7,7 +7,7 @@ import { i } from '../../i18n';
 import { session } from '../../main';
 import { Uri } from '../../util/uri';
 import { Command } from '../command';
-import { Table } from '../markdown-table';
+import { Table } from '../console-table';
 import { log } from '../styling';
 import { Clear } from '../switches/clear';
 
