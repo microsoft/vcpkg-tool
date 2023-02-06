@@ -240,6 +240,28 @@ namespace vcpkg
         return LintStatus::SUCCESS;
     }
 
+    static LintStatus check_for_usage_forgot_install(const Filesystem& fs,
+                                                     const Path& port_dir,
+                                                     const Path& package_dir,
+                                                     const PackageSpec& spec)
+    {
+        static constexpr StringLiteral STANDARD_INSTALL_USAGE =
+            R"###(file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/usage" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}"))###";
+
+        auto usage_path_from = port_dir / "usage";
+        auto usage_path_to = package_dir / "share" / spec.name() / "usage";
+
+        if (fs.is_regular_file(usage_path_from) && !fs.is_regular_file(usage_path_to))
+        {
+            msg::println_warning(msg::format(msgPortBugMissingProvidedUsage, msg::spec = spec.name())
+                                     .append_raw('\n')
+                                     .append_raw(STANDARD_INSTALL_USAGE));
+            return LintStatus::PROBLEM_DETECTED;
+        }
+
+        return LintStatus::SUCCESS;
+    }
+
     static LintStatus check_folder_lib_cmake(const Filesystem& fs, const Path& package_dir, const PackageSpec& spec)
     {
         const auto lib_cmake = package_dir / "lib" / "cmake";
@@ -1218,7 +1240,8 @@ namespace vcpkg
     static size_t perform_all_checks_and_return_error_count(const PackageSpec& spec,
                                                             const VcpkgPaths& paths,
                                                             const PreBuildInfo& pre_build_info,
-                                                            const BuildInfo& build_info)
+                                                            const BuildInfo& build_info,
+                                                            const Path& port_dir)
     {
         const auto& fs = paths.get_filesystem();
         const auto package_dir = paths.package_dir(spec);
@@ -1243,6 +1266,7 @@ namespace vcpkg
         error_count += check_for_copyright_file(fs, spec, paths);
         error_count += check_for_exes(fs, package_dir);
         error_count += check_for_exes(fs, package_dir / "debug");
+        error_count += check_for_usage_forgot_install(fs, port_dir, package_dir, spec);
 
         const auto debug_lib_dir = package_dir / "debug" / "lib";
         const auto release_lib_dir = package_dir / "lib";
@@ -1369,7 +1393,8 @@ namespace vcpkg
                                           const Path& port_dir)
     {
         msg::println(msgPerformingPostBuildValidation);
-        const size_t error_count = perform_all_checks_and_return_error_count(spec, paths, pre_build_info, build_info);
+        const size_t error_count =
+            perform_all_checks_and_return_error_count(spec, paths, pre_build_info, build_info, port_dir);
 
         if (error_count != 0)
         {
