@@ -951,6 +951,8 @@
   "PortBugMissingIncludeDir": "The folder /include is empty or not present. This indicates the library was not correctly installed.",
   "PortBugMissingLicense": "The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{package_name}/copyright",
   "_PortBugMissingLicense.comment": "An example of {package_name} is zlib.",
+  "PortBugMissingProvidedUsage": "The port provided \"usage\" but forgot to install to /share/{package_name}/usage, add the following linein the portfile:",
+  "_PortBugMissingProvidedUsage.comment": "An example of {package_name} is zlib.",
   "PortBugMissingReleaseBinaries": "Release binaries were not found.",
   "PortBugMovePkgConfigFiles": "You can move the pkgconfig files with commands similar to:",
   "PortBugOutdatedCRT": "Detected outdated dynamic CRT in the following files:",

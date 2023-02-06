@@ -253,7 +253,7 @@ namespace vcpkg::PostBuildLint
 
         if (fs.is_regular_file(usage_path_from) && !fs.is_regular_file(usage_path_to))
         {
-            msg::println_warning(msg::format(msgPortBugMissingProvidedUsage, msg::spec = spec.name())
+            msg::println_warning(msg::format(msgPortBugMissingProvidedUsage, msg::package_name = spec.name())
                                      .append_raw('\n')
                                      .append_raw(STANDARD_INSTALL_USAGE));
             return LintStatus::PROBLEM_DETECTED;
