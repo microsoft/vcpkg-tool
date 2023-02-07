@@ -253,7 +253,7 @@ namespace vcpkg::PostBuildLint
 
         if (fs.is_regular_file(usage_path_from) && !fs.is_regular_file(usage_path_to))
         {
-            msg::println_warning(msg::format(msgPortBugMissingProvidedUsage, msg::spec = spec.name())
+            msg::println_warning(msg::format(msgPortBugMissingProvidedUsage, msg::package_name = spec.name())
                                      .append_raw('\n')
                                      .append_raw(STANDARD_INSTALL_USAGE));
             return LintStatus::PROBLEM_DETECTED;
@@ -267,7 +267,7 @@ namespace vcpkg::PostBuildLint
         const auto lib_cmake = package_dir / "lib" / "cmake";
         if (fs.exists(lib_cmake, IgnoreErrors{}))
         {
-            msg::println_warning(msgPortBugMergeLibCMakeDir, msg::spec = spec.name());
+            msg::println_warning(msgPortBugMergeLibCMakeDir, msg::package_name = spec.name());
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -314,7 +314,7 @@ namespace vcpkg::PostBuildLint
         const auto lib_cmake_debug = package_dir / "debug" / "lib" / "cmake";
         if (fs.exists(lib_cmake_debug, IgnoreErrors{}))
         {
-            msg::println_warning(msgPortBugMergeLibCMakeDir, msg::spec = spec.name());
+            msg::println_warning(msgPortBugMergeLibCMakeDir, msg::package_name = spec.name());
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -368,7 +368,7 @@ namespace vcpkg::PostBuildLint
             }
         }
 
-        msg::println_warning(msgPortBugMissingLicense, msg::spec = spec.name());
+        msg::println_warning(msgPortBugMissingLicense, msg::package_name = spec.name());
         if (potential_copyright_files.size() == 1)
         {
             // if there is only one candidate, provide the cmake lines needed to place it in the proper location
