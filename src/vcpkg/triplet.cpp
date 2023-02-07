@@ -93,21 +93,26 @@ namespace vcpkg
             return Triplet::from_canonical_name(*triplet);
         }
 #if defined(_WIN32)
-        // The triplet is not specified or is part of a string qualifier i.e. zlib:x64-windows
-        if (is_manifest_mode)
+        // Skip warning message on JSON output
+        if (!Strings::case_insensitive_ascii_equals(args.command, "z-print-config"))
         {
-            msg::println_warning(msgDefaultTriplet);
-        }
-        else
-        {
-            for (auto&& arg : args.command_arguments)
+            // The triplet is not specified or is part of a string qualifier i.e. zlib:x64-windows
+            auto host_triplet = system_triplet().canonical_name();
+            if (is_manifest_mode)
             {
-                const std::string as_lowercase = Strings::ascii_to_lowercase(std::string{arg});
-                auto maybe_qpkg = parse_qualified_specifier(as_lowercase);
-                if (maybe_qpkg.has_value() && !maybe_qpkg.get()->triplet.has_value())
+                msg::println_warning(msgDefaultTriplet, msg::triplet = host_triplet);
+            }
+            else
+            {
+                for (auto&& arg : args.command_arguments)
                 {
-                    msg::println_warning(msgDefaultTriplet);
-                    break;
+                    const std::string as_lowercase = Strings::ascii_to_lowercase(std::string{arg});
+                    auto maybe_qpkg = parse_qualified_specifier(as_lowercase);
+                    if (maybe_qpkg.has_value() && !maybe_qpkg.get()->triplet.has_value())
+                    {
+                        msg::println_warning(msgDefaultTriplet, msg::triplet = host_triplet);
+                        break;
+                    }
                 }
             }
         }
