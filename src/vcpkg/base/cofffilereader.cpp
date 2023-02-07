@@ -262,7 +262,7 @@ namespace
         static constexpr StringLiteral FILE_START = "!<arch>\n";
         static constexpr auto FILE_START_SIZE = FILE_START.size();
         return f.try_seek_to(0).then([&f](Unit) -> ExpectedL<Unit> {
-            char file_start[FILE_START.size()];
+            char file_start[FILE_START_SIZE];
             auto result = f.try_read_all(file_start, FILE_START_SIZE);
             if (result.has_value() && FILE_START != StringView{file_start, FILE_START_SIZE})
             {
@@ -325,9 +325,8 @@ namespace
             offset = bswap(offset);
         }
 
-        Util::sort_unique_erase(offsets);
         offsets.erase(std::remove(offsets.begin(), offsets.end(), 0u), offsets.end());
-        std::sort(offsets.begin(), offsets.end());
+        Util::sort_unique_erase(offsets);
         uint64_t leftover = first_size - sizeof(uint32_t) - (archive_symbol_count * sizeof(uint32_t));
         {
             auto seek = f.try_seek_to(leftover, SEEK_CUR);
@@ -820,9 +819,9 @@ namespace vcpkg
         }
 
         auto second_offsets = try_read_second_linker_member_offsets(f);
-        if (!first_offsets.has_value())
+        if (!second_offsets.has_value())
         {
-            return std::move(first_offsets).error();
+            return std::move(second_offsets).error();
         }
 
         const std::vector<uint32_t>* offsets;
