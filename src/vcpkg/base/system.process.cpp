@@ -577,7 +577,7 @@ namespace vcpkg
                                                          const WorkingDirectory& wd,
                                                          const Environment& env,
                                                          DWORD dwCreationFlags,
-                                                         STARTUPINFOW& startup_info) noexcept
+                                                         STARTUPINFOEXW& startup_info) noexcept
     {
         ProcessInfo process_info;
         Debug::print("CreateProcessW(", cmd_line, ")\n");
@@ -604,10 +604,11 @@ namespace vcpkg
                            nullptr,
                            nullptr,
                            TRUE,
-                           IDLE_PRIORITY_CLASS | CREATE_UNICODE_ENVIRONMENT | dwCreationFlags,
+                           IDLE_PRIORITY_CLASS | CREATE_UNICODE_ENVIRONMENT | EXTENDED_STARTUPINFO_PRESENT |
+                               dwCreationFlags,
                            env.get().empty() ? nullptr : environment_block.data(),
                            working_directory.empty() ? nullptr : working_directory.data(),
-                           &startup_info,
+                           &startup_info.StartupInfo,
                            &process_info.proc_info))
         {
             return process_info;
@@ -621,13 +622,13 @@ namespace vcpkg
                                                                     const Environment& env,
                                                                     DWORD dwCreationFlags) noexcept
     {
-        STARTUPINFOW startup_info;
-        memset(&startup_info, 0, sizeof(STARTUPINFOW));
-        startup_info.cb = sizeof(STARTUPINFOW);
-        startup_info.dwFlags = STARTF_USESHOWWINDOW;
-        startup_info.wShowWindow = SW_HIDE;
+        STARTUPINFOEXW startup_info_ex;
+        memset(&startup_info_ex, 0, sizeof(STARTUPINFOEXW));
+        startup_info_ex.StartupInfo.cb = sizeof(STARTUPINFOEXW);
+        startup_info_ex.StartupInfo.dwFlags = STARTF_USESHOWWINDOW;
+        startup_info_ex.StartupInfo.wShowWindow = SW_HIDE;
 
-        return windows_create_process(cmd_line, wd, env, dwCreationFlags, startup_info);
+        return windows_create_process(cmd_line, wd, env, dwCreationFlags, startup_info_ex);
     }
 
     struct ProcessInfoAndPipes
@@ -681,10 +682,10 @@ namespace vcpkg
     {
         ProcessInfoAndPipes ret;
 
-        STARTUPINFOW startup_info;
-        memset(&startup_info, 0, sizeof(STARTUPINFOW));
-        startup_info.cb = sizeof(STARTUPINFOW);
-        startup_info.dwFlags |= STARTF_USESTDHANDLES;
+        STARTUPINFOEXW startup_info_ex;
+        memset(&startup_info_ex, 0, sizeof(STARTUPINFOEXW));
+        startup_info_ex.StartupInfo.cb = sizeof(STARTUPINFOEXW);
+        startup_info_ex.StartupInfo.dwFlags |= STARTF_USESTDHANDLES;
 
         SECURITY_ATTRIBUTES saAttr;
         memset(&saAttr, 0, sizeof(SECURITY_ATTRIBUTES));
@@ -693,35 +694,52 @@ namespace vcpkg
         saAttr.lpSecurityDescriptor = NULL;
 
         // Create a pipe for the child process's STDOUT.
-        if (!CreatePipe(&ret.child_stdout, &startup_info.hStdOutput, &saAttr, 0))
+        if (!CreatePipe(&ret.child_stdout, &startup_info_ex.StartupInfo.hStdOutput, &saAttr, 0))
         {
             return format_system_error_message("CreatePipe stdout", GetLastError());
         }
 
-        // Ensure the read handle to the pipe for STDOUT is not inherited.
-        if (!SetHandleInformation(ret.child_stdout, HANDLE_FLAG_INHERIT, 0))
-        {
-            return format_system_error_message("SetHandleInformation stdout", GetLastError());
-        }
-
         // Create a pipe for the child process's STDIN.
-        if (!CreatePipe(&startup_info.hStdInput, &ret.child_stdin, &saAttr, 0))
+        if (!CreatePipe(&startup_info_ex.StartupInfo.hStdInput, &ret.child_stdin, &saAttr, 0))
         {
             return format_system_error_message("CreatePipe stdin", GetLastError());
         }
 
-        // Ensure the write handle to the pipe for STDIN is not inherited.
-        if (!SetHandleInformation(ret.child_stdin, HANDLE_FLAG_INHERIT, 0))
+        startup_info_ex.StartupInfo.hStdError = startup_info_ex.StartupInfo.hStdOutput;
+
+        // Ensure that only the write handle to STDOUT and the read handle to STDIN are inherited.
+        // from https://devblogs.microsoft.com/oldnewthing/20111216-00/?p=8873
+        SIZE_T size = 0;
+        if (InitializeProcThreadAttributeList(nullptr, 1, 0, &size) || GetLastError() != ERROR_INSUFFICIENT_BUFFER)
         {
-            return format_system_error_message("SetHandleInformation stdin", GetLastError());
+            return format_system_error_message("InitializeProcThreadAttributeList nullptr", GetLastError());
+        }
+        std::vector<unsigned char> buffer(size, 0);
+        startup_info_ex.lpAttributeList = reinterpret_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(buffer.data());
+        Checks::check_exit(VCPKG_LINE_INFO, startup_info_ex.lpAttributeList != nullptr);
+        ASSUME(startup_info_ex.lpAttributeList != nullptr);
+        if (!InitializeProcThreadAttributeList(startup_info_ex.lpAttributeList, 1, 0, &size))
+        {
+            return format_system_error_message("InitializeProcThreadAttributeList attribute_list", GetLastError());
+        }
+        std::vector<HANDLE> handles_to_inherit = {
+            {startup_info_ex.StartupInfo.hStdOutput, startup_info_ex.StartupInfo.hStdInput}};
+        if (!UpdateProcThreadAttribute(startup_info_ex.lpAttributeList,
+                                       0,
+                                       PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
+                                       handles_to_inherit.data(),
+                                       handles_to_inherit.size() * sizeof(HANDLE),
+                                       nullptr,
+                                       nullptr))
+        {
+            return format_system_error_message("InitializeProcThreadAttributeList attribute_list", GetLastError());
         }
 
-        startup_info.hStdError = startup_info.hStdOutput;
+        auto maybe_proc_info = windows_create_process(cmd_line, wd, env, dwCreationFlags, startup_info_ex);
 
-        auto maybe_proc_info = windows_create_process(cmd_line, wd, env, dwCreationFlags, startup_info);
-
-        CloseHandle(startup_info.hStdInput);
-        CloseHandle(startup_info.hStdOutput);
+        DeleteProcThreadAttributeList(startup_info_ex.lpAttributeList);
+        CloseHandle(startup_info_ex.StartupInfo.hStdInput);
+        CloseHandle(startup_info_ex.StartupInfo.hStdOutput);
 
         if (auto proc_info = maybe_proc_info.get())
         {
