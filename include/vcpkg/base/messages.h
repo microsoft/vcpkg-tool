@@ -1824,10 +1824,10 @@ namespace vcpkg
                     (msg::value),
                     "Example of {value} is 'unknownlicense'",
                     "Unknown license identifier '{value}'. Known values are listed at https://spdx.org/licenses/");
-    DECLARE_MESSAGE(LinkageDynamicDebug, (), "", "Dynamic Debug");
-    DECLARE_MESSAGE(LinkageDynamicRelease, (), "", "Dynamic Release");
-    DECLARE_MESSAGE(LinkageStaticDebug, (), "", "Static Debug");
-    DECLARE_MESSAGE(LinkageStaticRelease, (), "", "Static Release");
+    DECLARE_MESSAGE(LinkageDynamicDebug, (), "", "Dynamic Debug (/MDd)");
+    DECLARE_MESSAGE(LinkageDynamicRelease, (), "", "Dynamic Release (/MD)");
+    DECLARE_MESSAGE(LinkageStaticDebug, (), "", "Static Debug (/MTd)");
+    DECLARE_MESSAGE(LinkageStaticRelease, (), "", "Static Release (/MT)");
     DECLARE_MESSAGE(ListOfValidFieldsForControlFiles,
                     (),
                     "",
