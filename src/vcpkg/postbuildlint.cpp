@@ -970,8 +970,8 @@ namespace vcpkg
             }
 
             auto&& lib_info = maybe_lib_info.value_or_exit(VCPKG_LINE_INFO);
-            Debug::println("The lib " + lib.native() +
-                           " has directives: " + Strings::join(" ", lib_info.linker_directives));
+            Debug::println("The lib ", lib.native(),
+                           " has directives: ", Strings::join(" ", lib_info.linker_directives));
 
             BuildTypeAndFile this_lib{lib};
             constexpr static const StringLiteral static_release_crt = "/DEFAULTLIB:LIBCMT";
