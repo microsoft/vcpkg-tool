@@ -28,34 +28,18 @@ namespace
         static constexpr long OFFSET_TO_PE_SIGNATURE_OFFSET = 0x3c;
         static constexpr StringLiteral PE_SIGNATURE = "PE\0\0";
         static constexpr auto PE_SIGNATURE_SIZE = static_cast<uint32_t>(PE_SIGNATURE.size());
-        {
-            auto seek_to_signature_offset = f.try_seek_to(OFFSET_TO_PE_SIGNATURE_OFFSET);
-            if (!seek_to_signature_offset.has_value())
-            {
-                return std::move(seek_to_signature_offset).error();
-            }
-        }
-
         uint32_t offset;
         {
-            auto read_offset = f.try_read_all(&offset, sizeof(offset));
+            auto read_offset = f.try_read_all_from(OFFSET_TO_PE_SIGNATURE_OFFSET, &offset, sizeof(offset));
             if (!read_offset.has_value())
             {
                 return std::move(read_offset).error();
             }
         }
 
-        {
-            auto seek_to_signature = f.try_seek_to(offset);
-            if (!seek_to_signature.has_value())
-            {
-                return std::move(seek_to_signature).error();
-            }
-        }
-
         char signature[PE_SIGNATURE_SIZE];
         {
-            auto read_signature = f.try_read_all(signature, PE_SIGNATURE_SIZE);
+            auto read_signature = f.try_read_all_from(offset, signature, PE_SIGNATURE_SIZE);
             if (!read_signature.has_value())
             {
                 return std::move(read_signature).error();
@@ -424,17 +408,9 @@ namespace
         {
             // Skip the header, no need to read it
             const auto coff_base = offset + sizeof(ArchiveMemberHeader);
-            {
-                auto seek = f.try_seek_to(coff_base);
-                if (!seek.has_value())
-                {
-                    return std::move(seek).error();
-                }
-            }
-
             uint32_t tag_sniffer;
             {
-                auto read = f.try_read_all(&tag_sniffer, sizeof(tag_sniffer));
+                auto read = f.try_read_all_from(coff_base, &tag_sniffer, sizeof(tag_sniffer));
                 if (!read.has_value())
                 {
                     return std::move(read).error();
@@ -511,17 +487,10 @@ namespace
                     // read the actual directive
                     std::string directive_command_line;
                     const auto section_offset = coff_base + section.pointer_to_raw_data;
-                    {
-                        auto seek = f.try_seek_to(section_offset);
-                        if (!seek.has_value())
-                        {
-                            return std::move(seek).error();
-                        }
-                    }
-
                     directive_command_line.resize(section.size_of_raw_data);
                     {
-                        auto read = f.try_read_all(directive_command_line.data(), section.size_of_raw_data);
+                        auto read = f.try_read_all_from(
+                            section_offset, directive_command_line.data(), section.size_of_raw_data);
                         if (!read.has_value())
                         {
                             return std::move(read).error();

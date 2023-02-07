@@ -1464,6 +1464,11 @@ namespace vcpkg
         return static_cast<char>(result);
     }
 
+    ExpectedL<Unit> ReadFilePointer::try_read_all_from(long long offset, void* buffer, std::uint32_t size)
+    {
+        return try_seek_to(offset).then([&](Unit) { return try_read_all(buffer, size); });
+    }
+
     WriteFilePointer::WriteFilePointer() noexcept = default;
 
     WriteFilePointer::WriteFilePointer(WriteFilePointer&&) noexcept = default;

@@ -137,6 +137,7 @@ namespace vcpkg
         size_t read(void* buffer, size_t element_size, size_t element_count) const noexcept;
         ExpectedL<Unit> try_read_all(void* buffer, std::uint32_t size);
         ExpectedL<char> try_getc();
+        ExpectedL<Unit> try_read_all_from(long long offset, void* buffer, std::uint32_t size);
     };
 
     struct WriteFilePointer : FilePointer
