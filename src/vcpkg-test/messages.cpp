@@ -8,7 +8,7 @@
 using namespace vcpkg;
 using namespace vcpkg::Commands;
 
-TEST_CASE ("append floaging list", "[LocalizedString]")
+TEST_CASE ("append floating list", "[LocalizedString]")
 {
     const auto a = LocalizedString::from_raw("a");
     const auto b = LocalizedString::from_raw("b");
