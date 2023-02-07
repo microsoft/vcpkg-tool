@@ -14,7 +14,7 @@
 
 namespace vcpkg
 {
-    constexpr static const StringLiteral windows_system_names[] = {
+    constexpr static std::array<StringLiteral, 4> windows_system_names = {
         "",
         "Windows",
         "WindowsStore",
@@ -27,38 +27,36 @@ namespace vcpkg
         PROBLEM_DETECTED = 1
     };
 
-    struct OutdatedDynamicCrt
-    {
-        std::string name;
-    };
+    // clang-format off
+#define OUTDATED_V_NO_120 \
+    StringLiteral{"msvcp100.dll"},          \
+    StringLiteral{"msvcp100d.dll"},         \
+    StringLiteral{"msvcp110.dll"},          \
+    StringLiteral{"msvcp110_win.dll"},      \
+    StringLiteral{"msvcp60.dll"},           \
+    StringLiteral{"msvcp60.dll"},           \
+                               \
+    StringLiteral{"msvcrt.dll"},            \
+    StringLiteral{"msvcr100.dll"},          \
+    StringLiteral{"msvcr100d.dll"},         \
+    StringLiteral{"msvcr100_clr0400.dll"},  \
+    StringLiteral{"msvcr110.dll"},          \
+    StringLiteral{"msvcrt20.dll"},          \
+    StringLiteral{"msvcrt40.dll"}
 
-    static Span<const OutdatedDynamicCrt> get_outdated_dynamic_crts(const Optional<std::string>& toolset_version)
-    {
-        static const std::vector<OutdatedDynamicCrt> V_NO_120 = {
-            {"msvcp100.dll"},
-            {"msvcp100d.dll"},
-            {"msvcp110.dll"},
-            {"msvcp110_win.dll"},
-            {"msvcp60.dll"},
-            {"msvcp60.dll"},
+    // clang-format on
 
-            {"msvcrt.dll"},
-            {"msvcr100.dll"},
-            {"msvcr100d.dll"},
-            {"msvcr100_clr0400.dll"},
-            {"msvcr110.dll"},
-            {"msvcrt20.dll"},
-            {"msvcrt40.dll"},
+    static View<StringLiteral> get_outdated_dynamic_crts(const Optional<std::string>& toolset_version)
+    {
+        static constexpr std::array<StringLiteral, 13> V_NO_120 = {OUTDATED_V_NO_120};
+
+        static constexpr std::array<StringLiteral, 17> V_NO_MSVCRT = {
+            OUTDATED_V_NO_120,
+            StringLiteral{"msvcp120.dll"},
+            StringLiteral{"msvcp120_clr0400.dll"},
+            StringLiteral{"msvcr120.dll"},
+            StringLiteral{"msvcr120_clr0400.dll"},
         };
-
-        static const std::vector<OutdatedDynamicCrt> V_NO_MSVCRT = [&]() {
-            auto ret = V_NO_120;
-            ret.push_back({"msvcp120.dll"});
-            ret.push_back({"msvcp120_clr0400.dll"});
-            ret.push_back({"msvcr120.dll"});
-            ret.push_back({"msvcr120_clr0400.dll"});
-            return ret;
-        }();
 
         const auto tsv = toolset_version.get();
         if (tsv && (*tsv) == "v120")
@@ -69,6 +67,8 @@ namespace vcpkg
         // Default case for all version >= VS 2015.
         return V_NO_MSVCRT;
     }
+
+#undef OUTDATED_V_NO_120
 
     static LintStatus check_for_files_in_include_directory(const Filesystem& fs,
                                                            const BuildPolicies& policies,
@@ -958,8 +958,6 @@ namespace vcpkg
                                                 bool expect_release,
                                                 const std::vector<Path>& libs)
     {
-        (void)build_info;
-        (void)expect_release;
         std::vector<BuildTypeAndFile> libs_with_invalid_crt;
         for (const Path& lib : libs)
         {
@@ -1084,7 +1082,7 @@ namespace vcpkg
     struct OutdatedDynamicCrtAndFile
     {
         Path file;
-        OutdatedDynamicCrt outdated_crt;
+        StringLiteral outdated_crt;
     };
 
     static LintStatus check_outdated_crt_linkage_of_dlls(const std::vector<PostBuildCheckDllData>& dlls,
@@ -1098,9 +1096,10 @@ namespace vcpkg
 
         for (const PostBuildCheckDllData& dll_data : dlls)
         {
-            for (const OutdatedDynamicCrt& outdated_crt : outdated_crts)
+            for (const StringLiteral& outdated_crt : outdated_crts)
             {
-                if (Util::Vectors::contains(dll_data.dependencies, outdated_crt.name))
+                if (Util::Vectors::contains(
+                        dll_data.dependencies, outdated_crt, Strings::case_insensitive_ascii_equals))
                 {
                     dlls_with_outdated_crt.push_back({dll_data.path, outdated_crt});
                     break;
@@ -1114,7 +1113,7 @@ namespace vcpkg
             for (const OutdatedDynamicCrtAndFile& btf : dlls_with_outdated_crt)
             {
                 msg::write_unlocalized_text_to_stdout(Color::warning,
-                                                      fmt::format("    {}:{}\n", btf.file, btf.outdated_crt.name));
+                                                      fmt::format("    {}:{}\n", btf.file, btf.outdated_crt));
             }
             msg::println(msg::format(msgPortBugInspectFiles, msg::extension = "dll")
                              .append_raw("\n    dumpbin.exe /dependents mylibfile.dll"));
