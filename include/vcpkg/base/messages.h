@@ -3,6 +3,7 @@
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/json.h>
 #include <vcpkg/base/fwd/messages.h>
+#include <vcpkg/base/fwd/span.h>
 
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/lineinfo.h>
@@ -27,91 +28,55 @@ namespace vcpkg
     struct LocalizedString
     {
         LocalizedString() = default;
-        operator StringView() const noexcept { return m_data; }
-        const std::string& data() const noexcept { return m_data; }
-        const std::string& to_string() const noexcept { return m_data; }
-        std::string extract_data() { return std::exchange(m_data, ""); }
+        operator StringView() const noexcept;
+        const std::string& data() const noexcept;
+        const std::string& to_string() const noexcept;
+        std::string extract_data();
 
-        static LocalizedString from_raw(std::string&& s) { return LocalizedString(std::move(s)); }
+        static LocalizedString from_raw(std::string&& s) noexcept;
 
         template<class StringLike, std::enable_if_t<std::is_constructible_v<StringView, const StringLike&>, int> = 0>
         static LocalizedString from_raw(const StringLike& s)
         {
             return LocalizedString(StringView(s));
         }
-        LocalizedString& append_raw(char c)
-        {
-            m_data.push_back(c);
-            return *this;
-        }
-        LocalizedString& append_raw(StringView s)
-        {
-            m_data.append(s.begin(), s.size());
-            return *this;
-        }
+
+        LocalizedString& append_raw(char c);
+        LocalizedString& append_raw(StringView s);
         template<class... Args>
         LocalizedString& append_fmt_raw(fmt::format_string<Args...> s, Args&&... args)
         {
             m_data.append(fmt::format(s, std::forward<Args>(args)...));
             return *this;
         }
-        LocalizedString& append(const LocalizedString& s)
-        {
-            m_data.append(s.m_data);
-            return *this;
-        }
+        LocalizedString& append(const LocalizedString& s);
         template<class Message, class... Args>
         LocalizedString& append(Message m, const Args&... args)
         {
             return append(msg::format(m, args...));
         }
 
-        LocalizedString& append_indent(size_t indent = 1)
-        {
-            m_data.append(indent * 4, ' ');
-            return *this;
-        }
+        LocalizedString& append_indent(size_t indent = 1);
 
-        friend const char* to_printf_arg(const LocalizedString& s) { return s.data().c_str(); }
-
-        friend bool operator==(const LocalizedString& lhs, const LocalizedString& rhs)
-        {
-            return lhs.data() == rhs.data();
-        }
-
-        friend bool operator!=(const LocalizedString& lhs, const LocalizedString& rhs)
-        {
-            return lhs.data() != rhs.data();
-        }
-
-        friend bool operator<(const LocalizedString& lhs, const LocalizedString& rhs)
-        {
-            return lhs.data() < rhs.data();
-        }
-
-        friend bool operator<=(const LocalizedString& lhs, const LocalizedString& rhs)
-        {
-            return lhs.data() <= rhs.data();
-        }
-
-        friend bool operator>(const LocalizedString& lhs, const LocalizedString& rhs)
-        {
-            return lhs.data() > rhs.data();
-        }
-
-        friend bool operator>=(const LocalizedString& lhs, const LocalizedString& rhs)
-        {
-            return lhs.data() >= rhs.data();
-        }
-
-        bool empty() const { return m_data.empty(); }
-        void clear() { m_data.clear(); }
+        // 0 items - Does nothing
+        // 1 item - .append_raw(' ').append(item)
+        // 2+ items - foreach: .append_raw('\n').append_indent(indent).append(item)
+        LocalizedString& append_floating_list(int indent, View<LocalizedString> items);
+        friend const char* to_printf_arg(const LocalizedString& s) noexcept;
+        friend bool operator==(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;
+        friend bool operator!=(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;
+        friend bool operator<(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;
+        friend bool operator<=(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;
+        friend bool operator>(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;
+        friend bool operator>=(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;
+        bool empty() const noexcept;
+        void clear() noexcept;
 
     private:
         std::string m_data;
 
-        explicit LocalizedString(StringView data) : m_data(data.data(), data.size()) { }
-        explicit LocalizedString(std::string&& data) : m_data(std::move(data)) { }
+        explicit LocalizedString(StringView data);
+        explicit LocalizedString(std::string&& data) noexcept;
     };
 }
 

@@ -389,10 +389,10 @@ namespace
     {
         return msg.append_indent(indent_level)
             .append(msgDuplicatePackagePatternLocation, msg::path = location)
-            .append_raw("\n")
+            .append_raw('\n')
             .append_indent(indent_level)
             .append(msgDuplicatePackagePatternRegistry, msg::url = registry)
-            .append_raw("\n");
+            .append_raw('\n');
     }
 
     std::vector<LocalizedString> collect_package_pattern_warnings(const std::vector<RegistryConfig>& registries)
@@ -436,20 +436,20 @@ namespace
                 auto first = locations.begin();
                 const auto last = locations.end();
                 auto warning = msg::format_warning(msgDuplicatePackagePattern, msg::package_name = pattern)
-                                   .append_raw("\n")
+                                   .append_raw('\n')
                                    .append_indent()
                                    .append(msgDuplicatePackagePatternFirstOcurrence)
-                                   .append_raw("\n");
+                                   .append_raw('\n');
                 append_declaration_warning(warning, first->location, first->registry, 2)
-                    .append_raw("\n")
+                    .append_raw('\n')
                     .append_indent()
                     .append(msgDuplicatePackagePatternIgnoredLocations)
-                    .append_raw("\n");
+                    .append_raw('\n');
                 ++first;
                 append_declaration_warning(warning, first->location, first->registry, 2);
                 while (++first != last)
                 {
-                    warning.append_raw("\n");
+                    warning.append_raw('\n');
                     append_declaration_warning(warning, first->location, first->registry, 2);
                 }
                 warnings.emplace_back(warning);

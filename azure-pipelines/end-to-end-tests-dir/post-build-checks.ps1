@@ -62,18 +62,18 @@ Run-Vcpkg env "$TestingRoot/wrong-crt/test-lib/build.cmd" --Triplet x86-windows-
 Throw-IfFailed
 
 $buildOutput = Run-VcpkgAndCaptureOutput --triplet x86-windows-static "--x-buildtrees-root=$buildtreesRoot" "--x-install-root=$installRoot" "--x-packages-root=$packagesRoot" install --overlay-ports="$TestingRoot/wrong-crt" test-lib --no-binarycaching
-$expected = "warning: The following binaries should use the Static Release CRT.`n" +
+$expected = "warning: The following binaries should use the Static Debug (/MTd) CRT.`n" +
 "    $packagesRoot\test-lib_x86-windows-static\debug\lib\both_lib.lib links with:`n" +
-"        Dynamic Debug`n" +
-"        Dynamic Release`n" +
-"    $packagesRoot\test-lib_x86-windows-static\debug\lib\test_lib.lib links with: Dynamic Debug`n" +
+"        Dynamic Debug (/MDd)`n" +
+"        Dynamic Release (/MD)`n" +
+"    $packagesRoot\test-lib_x86-windows-static\debug\lib\test_lib.lib links with: Dynamic Debug (/MDd)`n" +
 "To inspect the lib files, use:`n" +
 "    dumpbin.exe /directives mylibfile.lib`n" +
-"warning: The following binaries should use the Static Release CRT.`n" +
+"warning: The following binaries should use the Static Release (/MT) CRT.`n" +
 "    $packagesRoot\test-lib_x86-windows-static\lib\both_lib.lib links with:`n" +
-"        Dynamic Debug`n" +
-"        Dynamic Release`n" +
-"    $packagesRoot\test-lib_x86-windows-static\lib\test_lib.lib links with: Dynamic Release`n" +
+"        Dynamic Debug (/MDd)`n" +
+"        Dynamic Release (/MD)`n" +
+"    $packagesRoot\test-lib_x86-windows-static\lib\test_lib.lib links with: Dynamic Release (/MD)`n" +
 "To inspect the lib files, use:`n" +
 "    dumpbin.exe /directives mylibfile.lib`n"
 if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {

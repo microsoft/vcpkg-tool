@@ -209,7 +209,7 @@ namespace
                              msg::format(msgAddVersionAddedVersionToFile,
                                          msg::version = port_version.version,
                                          msg::path = version_db_file_path)
-                                 .append_raw(" ")
+                                 .append_raw(' ')
                                  .append(msgAddVersionNewFile));
             }
             return UpdateResult::Updated;

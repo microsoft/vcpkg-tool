@@ -13,6 +13,90 @@ CMRC_DECLARE(cmakerc);
 
 using namespace vcpkg;
 
+namespace vcpkg
+{
+    LocalizedString::operator StringView() const noexcept { return m_data; }
+    const std::string& LocalizedString::data() const noexcept { return m_data; }
+    const std::string& LocalizedString::to_string() const noexcept { return m_data; }
+    std::string LocalizedString::extract_data() { return std::exchange(m_data, std::string{}); }
+
+    LocalizedString LocalizedString::from_raw(std::string&& s) noexcept { return LocalizedString(std::move(s)); }
+
+    LocalizedString& LocalizedString::append_raw(char c)
+    {
+        m_data.push_back(c);
+        return *this;
+    }
+
+    LocalizedString& LocalizedString::append_raw(StringView s)
+    {
+        m_data.append(s.begin(), s.size());
+        return *this;
+    }
+
+    LocalizedString& LocalizedString::append(const LocalizedString& s)
+    {
+        m_data.append(s.m_data);
+        return *this;
+    }
+
+    LocalizedString& LocalizedString::append_indent(size_t indent)
+    {
+        m_data.append(indent * 4, ' ');
+        return *this;
+    }
+
+    LocalizedString& LocalizedString::append_floating_list(int indent, View<LocalizedString> items)
+    {
+        switch (items.size())
+        {
+            case 0: break;
+            case 1: append_raw(' ').append(items[0]); break;
+            default:
+                for (auto&& item : items)
+                {
+                    append_raw('\n').append_indent(indent).append(item);
+                }
+
+                break;
+        }
+
+        return *this;
+    }
+
+    const char* to_printf_arg(const LocalizedString& s) noexcept { return s.data().c_str(); }
+
+    bool operator==(const LocalizedString& lhs, const LocalizedString& rhs) noexcept
+    {
+        return lhs.data() == rhs.data();
+    }
+
+    bool operator!=(const LocalizedString& lhs, const LocalizedString& rhs) noexcept
+    {
+        return lhs.data() != rhs.data();
+    }
+
+    bool operator<(const LocalizedString& lhs, const LocalizedString& rhs) noexcept { return lhs.data() < rhs.data(); }
+
+    bool operator<=(const LocalizedString& lhs, const LocalizedString& rhs) noexcept
+    {
+        return lhs.data() <= rhs.data();
+    }
+
+    bool operator>(const LocalizedString& lhs, const LocalizedString& rhs) noexcept { return lhs.data() > rhs.data(); }
+
+    bool operator>=(const LocalizedString& lhs, const LocalizedString& rhs) noexcept
+    {
+        return lhs.data() >= rhs.data();
+    }
+
+    bool LocalizedString::empty() const noexcept { return m_data.empty(); }
+    void LocalizedString::clear() noexcept { m_data.clear(); }
+
+    LocalizedString::LocalizedString(StringView data) : m_data(data.data(), data.size()) { }
+    LocalizedString::LocalizedString(std::string&& data) noexcept : m_data(std::move(data)) { }
+}
+
 namespace vcpkg::msg
 {
     REGISTER_MESSAGE(SeeURL);

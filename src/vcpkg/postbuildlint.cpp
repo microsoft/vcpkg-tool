@@ -946,7 +946,7 @@ namespace vcpkg
                 }
                 else
                 {
-                    return msg::format(msgLinkageStaticRelease);
+                    return msg::format(msgLinkageStaticDebug);
                 }
                 break;
             default: Checks::unreachable(VCPKG_LINE_INFO);
@@ -1034,41 +1034,34 @@ namespace vcpkg
         {
             msg::println_warning(msgPortBugInvalidCrtLinkage,
                                  msg::expected = format_linkage(build_info.crt_linkage, expect_release));
+            std::vector<LocalizedString> printed_linkages;
             for (const BuildTypeAndFile& btf : libs_with_invalid_crt)
             {
-                msg::print(
-                    LocalizedString().append_indent().append(msgPortBugInvalidCrtLinkageEntry, msg::path = btf.file));
-                LocalizedString prefix;
-                if ((btf.has_dynamic_debug + btf.has_dynamic_release + btf.has_static_debug + btf.has_static_release) ==
-                    1)
-                {
-                    prefix.append_raw(" ");
-                }
-                else
-                {
-                    msg::println();
-                    prefix.append_indent(2);
-                }
-
+                printed_linkages.clear();
+                LocalizedString this_entry;
+                this_entry.append_indent().append(msgPortBugInvalidCrtLinkageEntry, msg::path = btf.file);
                 if (btf.has_dynamic_debug)
                 {
-                    msg::println(LocalizedString(prefix).append(msgLinkageDynamicDebug));
+                    printed_linkages.push_back(msg::format(msgLinkageDynamicDebug));
                 }
 
                 if (btf.has_dynamic_release)
                 {
-                    msg::println(LocalizedString(prefix).append(msgLinkageDynamicRelease));
+                    printed_linkages.push_back(msg::format(msgLinkageDynamicRelease));
                 }
 
                 if (btf.has_static_debug)
                 {
-                    msg::println(LocalizedString(prefix).append(msgLinkageStaticDebug));
+                    printed_linkages.push_back(msg::format(msgLinkageStaticDebug));
                 }
 
                 if (btf.has_static_release)
                 {
-                    msg::println(LocalizedString(prefix).append(msgLinkageStaticRelease));
+                    printed_linkages.push_back(msg::format(msgLinkageStaticRelease));
                 }
+
+                this_entry.append_floating_list(2, printed_linkages);
+                msg::println(this_entry);
             }
 
             msg::println(msg::format(msgPortBugInspectFiles, msg::extension = "lib")
