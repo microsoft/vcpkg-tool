@@ -74,10 +74,10 @@ namespace vcpkg::Commands::Upgrade
 
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
 
-        const bool no_dry_run = Util::Sets::contains(options.switches, OPTION_NO_DRY_RUN);
-        const KeepGoing keep_going = determine_keep_going(Util::Sets::contains(options.switches, OPTION_KEEP_GOING),
-                                                          Util::Sets::contains(options.switches, OPTION_NO_KEEP_GOING));
-        const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
+        const bool no_dry_run = Sets::contains(options.switches, OPTION_NO_DRY_RUN);
+        const KeepGoing keep_going = determine_keep_going(Sets::contains(options.switches, OPTION_KEEP_GOING),
+                                                          Sets::contains(options.switches, OPTION_NO_KEEP_GOING));
+        const auto unsupported_port_action = Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
 
@@ -93,7 +93,7 @@ namespace vcpkg::Commands::Upgrade
         auto& var_provider = *var_provider_storage;
 
         // input sanitization
-        const std::vector<PackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
+        const std::vector<PackageSpec> specs = vcpkg::fmap(args.command_arguments, [&](auto&& arg) {
             return check_and_get_package_spec(std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
 
@@ -112,7 +112,7 @@ namespace vcpkg::Commands::Upgrade
             action_plan = create_upgrade_plan(
                 provider,
                 var_provider,
-                Util::fmap(outdated_packages, [](const Update::OutdatedPackage& package) { return package.spec; }),
+                vcpkg::fmap(outdated_packages, [](const Update::OutdatedPackage& package) { return package.spec; }),
                 status_db,
                 {host_triplet, unsupported_port_action});
         }
@@ -157,10 +157,10 @@ namespace vcpkg::Commands::Upgrade
                 }
             }
 
-            Util::sort(not_installed);
-            Util::sort(no_control_file);
-            Util::sort(up_to_date);
-            Util::sort(to_upgrade);
+            vcpkg::sort(not_installed);
+            vcpkg::sort(no_control_file);
+            vcpkg::sort(up_to_date);
+            vcpkg::sort(to_upgrade);
 
             if (!up_to_date.empty())
             {

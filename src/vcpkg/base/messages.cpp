@@ -190,7 +190,7 @@ namespace vcpkg::msg
         auto names_sorted = m.names;
         std::sort(names_sorted.begin(), names_sorted.end());
         std::vector<StringLiteral> duplicate_names;
-        Util::set_duplicates(names_sorted.begin(), names_sorted.end(), std::back_inserter(duplicate_names));
+        vcpkg::set_duplicates(names_sorted.begin(), names_sorted.end(), std::back_inserter(duplicate_names));
         for (auto&& duplicate : duplicate_names)
         {
             write_unlocalized_text_to_stdout(

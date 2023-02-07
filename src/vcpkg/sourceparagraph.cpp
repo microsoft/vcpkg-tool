@@ -555,7 +555,7 @@ namespace vcpkg
         virtual Span<const StringView> valid_fields() const override
         {
             static const StringView u[] = {NAME};
-            static const auto t = Util::Vectors::concat<StringView>(schemed_deserializer_fields(), u);
+            static const auto t = Vectors::concat<StringView>(schemed_deserializer_fields(), u);
             return t;
         }
 
@@ -724,8 +724,8 @@ namespace vcpkg
 
         static const StringLiteral* case_insensitive_find(View<StringLiteral> lst, StringView id)
         {
-            return Util::find_if(lst,
-                                 [id](StringLiteral el) { return Strings::case_insensitive_ascii_equals(id, el); });
+            return vcpkg::find_if(lst,
+                                  [id](StringLiteral el) { return Strings::case_insensitive_ascii_equals(id, el); });
         }
         static constexpr bool is_idstring_element(char32_t ch) { return is_alphanumdash(ch) || ch == '.'; }
 
@@ -1014,7 +1014,7 @@ namespace vcpkg
                 BUILTIN_BASELINE,
                 VCPKG_CONFIGURATION,
             };
-            static const auto t = Util::Vectors::concat<StringView>(schemed_deserializer_fields(), u);
+            static const auto t = Vectors::concat<StringView>(schemed_deserializer_fields(), u);
 
             return t;
         }
@@ -1452,8 +1452,8 @@ namespace vcpkg
 
     Optional<const FeatureParagraph&> SourceControlFile::find_feature(StringView featurename) const
     {
-        auto it = Util::find_if(feature_paragraphs,
-                                [&](const std::unique_ptr<FeatureParagraph>& p) { return p->name == featurename; });
+        auto it = vcpkg::find_if(feature_paragraphs,
+                                 [&](const std::unique_ptr<FeatureParagraph>& p) { return p->name == featurename; });
         if (it != feature_paragraphs.end())
             return **it;
         else

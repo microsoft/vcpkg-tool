@@ -105,9 +105,9 @@ static void check_name_and_features(const InstallPlanAction& ipa,
         for (auto&& f : features)
         {
             INFO("f = \"" << f.c_str() << "\"");
-            CHECK(Util::find(ipa.feature_list, f) != ipa.feature_list.end());
+            CHECK(vcpkg::find(ipa.feature_list, f) != ipa.feature_list.end());
         }
-        CHECK(Util::find(ipa.feature_list, "core") != ipa.feature_list.end());
+        CHECK(vcpkg::find(ipa.feature_list, "core") != ipa.feature_list.end());
     }
 }
 

@@ -31,7 +31,7 @@ namespace vcpkg::Export::Prefab
             exit_filesystem_call_error(VCPKG_LINE_INFO, ec, "find_modules", {root, ec.message()});
         }
 
-        Util::erase_remove_if(paths, NotExtensionCaseSensitive{ext});
+        vcpkg::erase_remove_if(paths, NotExtensionCaseSensitive{ext});
         return paths;
     }
 
@@ -162,7 +162,7 @@ namespace vcpkg::Export::Prefab
 
         for (;;)
         {
-            first = Util::search_and_skip(first, last, pkg_revision);
+            first = vcpkg::search_and_skip(first, last, pkg_revision);
             if (first == last) break;
 
             first = std::find_if_not(first, last, ParserBase::is_whitespace);

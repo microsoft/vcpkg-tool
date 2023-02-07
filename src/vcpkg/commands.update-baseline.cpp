@@ -58,8 +58,8 @@ namespace vcpkg::Commands
     {
         auto options = args.parse_arguments(COMMAND_STRUCTURE);
 
-        const bool add_builtin_baseline = Util::Sets::contains(options.switches, OPTION_ADD_INITIAL_BASELINE);
-        const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
+        const bool add_builtin_baseline = Sets::contains(options.switches, OPTION_ADD_INITIAL_BASELINE);
+        const bool dry_run = Sets::contains(options.switches, OPTION_DRY_RUN);
 
         auto configuration = paths.get_configuration();
         const bool has_manifest = paths.get_manifest().has_value();

@@ -103,7 +103,7 @@ namespace vcpkg::PlatformExpression
             std::unique_ptr<ExprImpl> clone() const
             {
                 return std::make_unique<ExprImpl>(
-                    ExprImpl{kind, identifier, Util::fmap(exprs, [](auto&& p) { return p->clone(); })});
+                    ExprImpl{kind, identifier, vcpkg::fmap(exprs, [](auto&& p) { return p->clone(); })});
             }
         };
 
@@ -445,12 +445,12 @@ namespace vcpkg::PlatformExpression
     Expr Expr::And(std::vector<Expr>&& exprs)
     {
         return Expr(std::make_unique<ExprImpl>(
-            ExprKind::op_and, Util::fmap(exprs, [](Expr& expr) { return std::move(expr.underlying_); })));
+            ExprKind::op_and, vcpkg::fmap(exprs, [](Expr& expr) { return std::move(expr.underlying_); })));
     }
     Expr Expr::Or(std::vector<Expr>&& exprs)
     {
         return Expr(std::make_unique<ExprImpl>(
-            ExprKind::op_or, Util::fmap(exprs, [](Expr& expr) { return std::move(expr.underlying_); })));
+            ExprKind::op_or, vcpkg::fmap(exprs, [](Expr& expr) { return std::move(expr.underlying_); })));
     }
 
     bool Expr::evaluate(const Context& context) const

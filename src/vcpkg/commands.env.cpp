@@ -61,11 +61,11 @@ namespace vcpkg::Commands::Env
         auto build_env_cmd = make_build_env_cmd(pre_build_info, toolset);
 
         std::unordered_map<std::string, std::string> extra_env = {};
-        const bool add_bin = Util::Sets::contains(options.switches, OPTION_BIN);
-        const bool add_include = Util::Sets::contains(options.switches, OPTION_INCLUDE);
-        const bool add_debug_bin = Util::Sets::contains(options.switches, OPTION_DEBUG_BIN);
-        const bool add_tools = Util::Sets::contains(options.switches, OPTION_TOOLS);
-        const bool add_python = Util::Sets::contains(options.switches, OPTION_PYTHON);
+        const bool add_bin = Sets::contains(options.switches, OPTION_BIN);
+        const bool add_include = Sets::contains(options.switches, OPTION_INCLUDE);
+        const bool add_debug_bin = Sets::contains(options.switches, OPTION_DEBUG_BIN);
+        const bool add_tools = Sets::contains(options.switches, OPTION_TOOLS);
+        const bool add_python = Sets::contains(options.switches, OPTION_PYTHON);
 
         std::vector<std::string> path_vars;
         const auto current_triplet_path = paths.installed().triplet_dir(triplet);

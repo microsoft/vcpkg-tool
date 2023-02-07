@@ -91,7 +91,7 @@ namespace vcpkg::Commands
             auto& manifest_scf = *maybe_manifest_scf.value_or_exit(VCPKG_LINE_INFO);
             for (const auto& spec : specs)
             {
-                auto dep = Util::find_if(manifest_scf.core_paragraph->dependencies, [&spec](Dependency& dep) {
+                auto dep = vcpkg::find_if(manifest_scf.core_paragraph->dependencies, [&spec](Dependency& dep) {
                     return dep.name == spec.name && !dep.host &&
                            structurally_equal(spec.platform.value_or(PlatformExpression::Expr()), dep.platform);
                 });
@@ -104,7 +104,7 @@ namespace vcpkg::Commands
                 {
                     for (const auto& feature : spec.features.value_or_exit(VCPKG_LINE_INFO))
                     {
-                        if (!Util::Vectors::contains(dep->features, feature))
+                        if (!Vectors::contains(dep->features, feature))
                         {
                             dep->features.push_back(feature);
                         }
@@ -116,7 +116,7 @@ namespace vcpkg::Commands
                 manifest->path, Json::stringify(serialize_manifest(manifest_scf)), VCPKG_LINE_INFO);
             msg::println(msgAddPortSucceeded);
 
-            auto command_args_hash = Strings::join(" ", Util::fmap(specs, [](auto&& spec) -> std::string {
+            auto command_args_hash = Strings::join(" ", vcpkg::fmap(specs, [](auto&& spec) -> std::string {
                                                        return Hash::get_string_hash(spec.name, Hash::Algorithm::Sha256);
                                                    }));
             metrics.track_string(StringMetric::CommandContext, "port");

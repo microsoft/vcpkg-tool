@@ -23,12 +23,12 @@ namespace vcpkg::Commands::Integrate
         const auto last = contents.end();
         for (;;)
         {
-            first = Util::search_and_skip(first, last, VERSION_START);
+            first = vcpkg::search_and_skip(first, last, VERSION_START);
             if (first == last)
             {
                 break;
             }
-            auto version_end = Util::search(first, last, VERSION_END);
+            auto version_end = vcpkg::search(first, last, VERSION_END);
             if (version_end == last)
             {
                 break;
@@ -174,7 +174,7 @@ namespace vcpkg::Commands::Integrate
         dir_id.erase(1, 1); // Erasing the ":"
 
         // NuGet id cannot have invalid characters. We will only use alphanumeric and dot.
-        Util::erase_remove_if(dir_id, [](char c) { return !isalnum(static_cast<unsigned char>(c)) && (c != '.'); });
+        vcpkg::erase_remove_if(dir_id, [](char c) { return !isalnum(static_cast<unsigned char>(c)) && (c != '.'); });
 
         const std::string nuget_id = "vcpkg." + dir_id;
         return nuget_id;

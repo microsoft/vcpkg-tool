@@ -329,12 +329,11 @@ namespace vcpkg::Commands::AddVersion
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         auto parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
-        const bool add_all = Util::Sets::contains(parsed_args.switches, OPTION_ALL);
-        const bool overwrite_version = Util::Sets::contains(parsed_args.switches, OPTION_OVERWRITE_VERSION);
-        const bool skip_formatting_check = Util::Sets::contains(parsed_args.switches, OPTION_SKIP_FORMATTING_CHECK);
-        const bool skip_version_format_check =
-            Util::Sets::contains(parsed_args.switches, OPTION_SKIP_VERSION_FORMAT_CHECK);
-        const bool verbose = !add_all || Util::Sets::contains(parsed_args.switches, OPTION_VERBOSE);
+        const bool add_all = Sets::contains(parsed_args.switches, OPTION_ALL);
+        const bool overwrite_version = Sets::contains(parsed_args.switches, OPTION_OVERWRITE_VERSION);
+        const bool skip_formatting_check = Sets::contains(parsed_args.switches, OPTION_SKIP_FORMATTING_CHECK);
+        const bool skip_version_format_check = Sets::contains(parsed_args.switches, OPTION_SKIP_VERSION_FORMAT_CHECK);
+        const bool verbose = !add_all || Sets::contains(parsed_args.switches, OPTION_VERBOSE);
 
         auto& fs = paths.get_filesystem();
         auto baseline_path = paths.builtin_registry_versions / "baseline.json";
@@ -441,7 +440,7 @@ namespace vcpkg::Commands::AddVersion
             }
 
             // find local uncommitted changes on port
-            if (Util::Sets::contains(changed_ports, port_name))
+            if (Sets::contains(changed_ports, port_name))
             {
                 msg::println_warning(msgAddVersionUncommittedChanges, msg::package_name = port_name);
             }

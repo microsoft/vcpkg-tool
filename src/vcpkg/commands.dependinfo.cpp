@@ -47,7 +47,7 @@ namespace vcpkg::Commands::DependInfo
 
             const size_t original_size = prefix_buf.size();
 
-            if (Util::Sets::contains(printed, currDepend))
+            if (Sets::contains(printed, currDepend))
             {
                 // If we've already printed the set of dependencies, print an elipsis instead
                 Strings::append(prefix_buf, "+- ...\n");
@@ -214,11 +214,11 @@ namespace vcpkg::Commands::DependInfo
         std::string create_graph_as_string(const std::set<std::string, std::less<>>& switches,
                                            const std::vector<PackageDependInfo>& depend_info)
         {
-            if (Util::Sets::contains(switches, OPTION_DOT))
+            if (Sets::contains(switches, OPTION_DOT))
             {
                 return create_dot_as_string(depend_info);
             }
-            else if (Util::Sets::contains(switches, OPTION_DGML))
+            else if (Sets::contains(switches, OPTION_DGML))
             {
                 return create_dgml_as_string(depend_info);
             }
@@ -260,7 +260,7 @@ namespace vcpkg::Commands::DependInfo
             {
                 const InstallPlanAction& install_action = *pia;
 
-                const std::vector<std::string> dependencies = Util::fmap(
+                const std::vector<std::string> dependencies = vcpkg::fmap(
                     install_action.package_dependencies, [](const PackageSpec& spec) { return spec.name(); });
 
                 std::unordered_set<std::string> features{install_action.feature_list.begin(),
@@ -277,8 +277,8 @@ namespace vcpkg::Commands::DependInfo
             assign_depth_to_dependencies(init.spec.name(), 0, max_depth, package_dependencies);
 
             std::vector<PackageDependInfo> out =
-                Util::fmap(package_dependencies, [](auto&& kvpair) -> PackageDependInfo { return kvpair.second; });
-            Util::erase_remove_if(out, [](auto&& info) { return info.depth < 0; });
+                vcpkg::fmap(package_dependencies, [](auto&& kvpair) -> PackageDependInfo { return kvpair.second; });
+            vcpkg::erase_remove_if(out, [](auto&& info) { return info.depth < 0; });
             return out;
         }
     }
@@ -299,9 +299,9 @@ namespace vcpkg::Commands::DependInfo
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         const int max_depth = get_max_depth(options);
         const SortMode sort_mode = get_sort_mode(options);
-        const bool show_depth = Util::Sets::contains(options.switches, OPTION_SHOW_DEPTH);
+        const bool show_depth = Sets::contains(options.switches, OPTION_SHOW_DEPTH);
 
-        const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
+        const std::vector<FullPackageSpec> specs = vcpkg::fmap(args.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
                 std::string{arg}, default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
@@ -330,16 +330,16 @@ namespace vcpkg::Commands::DependInfo
         }
 
         std::vector<const InstallPlanAction*> install_actions =
-            Util::fmap(action_plan.already_installed, [&](const auto& action) { return &action; });
+            vcpkg::fmap(action_plan.already_installed, [&](const auto& action) { return &action; });
         for (auto&& action : action_plan.install_actions)
             install_actions.push_back(&action);
 
         std::vector<PackageDependInfo> depend_info = extract_depend_info(install_actions, max_depth);
 
-        if (Util::Sets::contains(options.switches, OPTION_DOT) || Util::Sets::contains(options.switches, OPTION_DGML))
+        if (Sets::contains(options.switches, OPTION_DOT) || Sets::contains(options.switches, OPTION_DGML))
         {
             const std::vector<const SourceControlFile*> source_control_files =
-                Util::fmap(install_actions, [](const InstallPlanAction* install_action) {
+                vcpkg::fmap(install_actions, [](const InstallPlanAction* install_action) {
                     const SourceControlFileAndLocation& scfl =
                         install_action->source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
                     return const_cast<const SourceControlFile*>(scfl.source_control_file.get());

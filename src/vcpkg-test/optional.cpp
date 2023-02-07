@@ -6,6 +6,8 @@
 
 #include <vector>
 
+using namespace vcpkg;
+
 namespace
 {
     struct identity_projection
@@ -20,8 +22,6 @@ namespace
 
 TEST_CASE ("equal", "[optional]")
 {
-    using vcpkg::Optional;
-
     CHECK(Optional<int>{} == Optional<int>{});
     CHECK_FALSE(Optional<int>{} == Optional<int>{42});
     CHECK_FALSE(Optional<int>{42} == Optional<int>{});
@@ -31,8 +31,6 @@ TEST_CASE ("equal", "[optional]")
 
 TEST_CASE ("ref conversion", "[optional]")
 {
-    using vcpkg::Optional;
-
     Optional<int> i_empty;
     Optional<int> i_1 = 1;
     const Optional<int> ci_1 = 1;
@@ -61,8 +59,6 @@ TEST_CASE ("ref conversion", "[optional]")
 
 TEST_CASE ("value conversion", "[optional]")
 {
-    using vcpkg::Optional;
-
     Optional<long> j = 1;
     Optional<int> i = j;
     Optional<const char*> cstr = "hello, world!";
@@ -82,10 +78,6 @@ TEST_CASE ("value conversion", "[optional]")
 
 TEST_CASE ("optional.map", "[optional]")
 {
-    using vcpkg::NullOpt;
-    using vcpkg::nullopt;
-    using vcpkg::Optional;
-
     const Optional<std::unique_ptr<int>> move_only;
 
     Optional<int*> m = move_only.map([](auto&& p) { return p.get(); });
@@ -109,7 +101,6 @@ TEST_CASE ("optional.map", "[optional]")
 
 TEST_CASE ("common_projection", "[optional]")
 {
-    using vcpkg::Util::common_projection;
     std::vector<int> input;
     CHECK(!common_projection(input, identity_projection{}).has_value());
     input.push_back(42);
@@ -122,9 +113,6 @@ TEST_CASE ("common_projection", "[optional]")
 
 TEST_CASE ("operator==/operator!=", "[optional]")
 {
-    using vcpkg::Optional;
-    using vcpkg::StringLiteral;
-
     SECTION ("same type - opt == opt")
     {
         Optional<std::string> s1;

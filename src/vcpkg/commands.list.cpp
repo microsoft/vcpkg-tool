@@ -106,9 +106,9 @@ namespace vcpkg::Commands::List
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        auto installed_packages = Util::fmap(installed_ipv, [](const InstalledPackageView& ipv) { return ipv.core; });
+        auto installed_packages = vcpkg::fmap(installed_ipv, [](const InstalledPackageView& ipv) { return ipv.core; });
         auto installed_features =
-            Util::fmap_flatten(installed_ipv, [](const InstalledPackageView& ipv) { return ipv.features; });
+            vcpkg::fmap_flatten(installed_ipv, [](const InstalledPackageView& ipv) { return ipv.features; });
         installed_packages.insert(installed_packages.end(), installed_features.begin(), installed_features.end());
 
         std::sort(installed_packages.begin(),
@@ -117,12 +117,12 @@ namespace vcpkg::Commands::List
                       return lhs->package.displayname() < rhs->package.displayname();
                   });
 
-        const auto enable_fulldesc = Util::Sets::contains(options.switches, OPTION_FULLDESC.to_string());
+        const auto enable_fulldesc = Sets::contains(options.switches, OPTION_FULLDESC.to_string());
 
         if (!args.command_arguments.empty())
         {
             auto& query = args.command_arguments[0];
-            auto pghs = Util::filter(installed_packages, [query](const StatusParagraph* status_paragraph) {
+            auto pghs = vcpkg::filter(installed_packages, [query](const StatusParagraph* status_paragraph) {
                 return Strings::case_insensitive_ascii_contains(status_paragraph->package.displayname(), query);
             });
             installed_packages = pghs;

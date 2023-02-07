@@ -54,7 +54,7 @@ namespace vcpkg::Commands
                                                      bool option_version_date,
                                                      bool option_version_string)
     {
-        if (!Util::zero_or_one_set(option_version_relaxed, option_version_date, option_version_string))
+        if (!vcpkg::zero_or_one_set(option_version_relaxed, option_version_date, option_version_string))
         {
             return msg::format_error(msgNewOnlyOneVersionKind);
         }
@@ -133,11 +133,11 @@ namespace vcpkg::Commands
         const auto& current_configuration = paths.get_configuration();
         const auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
 
-        const bool option_application = Util::Sets::contains(parsed.switches, OPTION_APPLICATION);
-        const bool option_single_file = Util::Sets::contains(parsed.switches, OPTION_SINGLE_FILE);
-        const bool option_version_relaxed = Util::Sets::contains(parsed.switches, OPTION_VERSION_RELAXED);
-        const bool option_version_date = Util::Sets::contains(parsed.switches, OPTION_VERSION_DATE);
-        const bool option_version_string = Util::Sets::contains(parsed.switches, OPTION_VERSION_STRING);
+        const bool option_application = Sets::contains(parsed.switches, OPTION_APPLICATION);
+        const bool option_single_file = Sets::contains(parsed.switches, OPTION_SINGLE_FILE);
+        const bool option_version_relaxed = Sets::contains(parsed.switches, OPTION_VERSION_RELAXED);
+        const bool option_version_date = Sets::contains(parsed.switches, OPTION_VERSION_DATE);
+        const bool option_version_string = Sets::contains(parsed.switches, OPTION_VERSION_STRING);
 
         const std::string* name = parsed.read_setting(SETTING_NAME);
         const std::string* version = parsed.read_setting(SETTING_VERSION);

@@ -60,7 +60,7 @@ namespace vcpkg::Commands::X_Download
             sha = sha_it->second;
         }
 
-        if (Util::Sets::contains(parsed.switches, OPTION_SKIP_SHA512))
+        if (Sets::contains(parsed.switches, OPTION_SKIP_SHA512))
         {
             if (sha.has_value())
             {
@@ -94,7 +94,7 @@ namespace vcpkg::Commands::X_Download
         auto sha = get_sha512_check(args, parsed);
 
         // Is this a store command?
-        if (Util::Sets::contains(parsed.switches, OPTION_STORE))
+        if (Sets::contains(parsed.switches, OPTION_STORE))
         {
             auto hash = sha.get();
             if (!hash)
@@ -139,8 +139,8 @@ namespace vcpkg::Commands::X_Download
                                            headers,
                                            file,
                                            sha,
-                                           Util::Sets::contains(parsed.switches, OPTION_MACHINE_PROGRESS) ? stdout_sink
-                                                                                                          : null_sink);
+                                           Sets::contains(parsed.switches, OPTION_MACHINE_PROGRESS) ? stdout_sink
+                                                                                                    : null_sink);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
     }

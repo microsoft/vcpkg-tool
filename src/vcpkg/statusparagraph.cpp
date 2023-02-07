@@ -88,10 +88,10 @@ namespace vcpkg
 
         std::map<std::string, std::vector<FeatureSpec>> deps;
 
-        deps.emplace("core", Util::fmap(core->package.dependencies, extract_deps));
+        deps.emplace("core", vcpkg::fmap(core->package.dependencies, extract_deps));
 
         for (const StatusParagraph* const& feature : features)
-            deps.emplace(feature->package.feature, Util::fmap(feature->package.dependencies, extract_deps));
+            deps.emplace(feature->package.feature, vcpkg::fmap(feature->package.dependencies, extract_deps));
 
         return deps;
     }
@@ -110,9 +110,8 @@ namespace vcpkg
             deps.push_back(dep);
 
         auto this_spec = this->spec();
-        Util::erase_remove_if(deps, [this_spec](const PackageSpec& pspec) { return pspec == this_spec; });
-        Util::sort_unique_erase(deps);
-
+        vcpkg::erase_remove_if(deps, [this_spec](const PackageSpec& pspec) { return pspec == this_spec; });
+        vcpkg::sort_unique_erase(deps);
         return deps;
     }
 

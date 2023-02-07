@@ -77,7 +77,7 @@ namespace vcpkg::Commands::SetInstalled
             if (status_pgh->package.is_feature()) continue;
 
             const auto& abi = status_pgh->package.abi;
-            if (abi.empty() || !Util::Sets::contains(all_abis, abi))
+            if (abi.empty() || !Sets::contains(all_abis, abi))
             {
                 specs_to_remove.push_back(status_pgh->package.spec);
             }
@@ -96,9 +96,8 @@ namespace vcpkg::Commands::SetInstalled
             specs_installed.erase(action.spec);
         }
 
-        Util::erase_remove_if(action_plan.install_actions, [&](const InstallPlanAction& ipa) {
-            return Util::Sets::contains(specs_installed, ipa.spec);
-        });
+        vcpkg::erase_remove_if(action_plan.install_actions,
+                               [&](const InstallPlanAction& ipa) { return Sets::contains(specs_installed, ipa.spec); });
 
         print_plan(action_plan, true, paths.builtin_ports_directory());
 
@@ -156,20 +155,19 @@ namespace vcpkg::Commands::SetInstalled
         // input sanitization
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
 
-        const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
+        const std::vector<FullPackageSpec> specs = vcpkg::fmap(args.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
                 std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
 
         BinaryCache binary_cache{args, paths};
 
-        const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
-        const bool only_downloads = Util::Sets::contains(options.switches, OPTION_ONLY_DOWNLOADS);
-        const KeepGoing keep_going = Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads
-                                         ? KeepGoing::YES
-                                         : KeepGoing::NO;
+        const bool dry_run = Sets::contains(options.switches, OPTION_DRY_RUN);
+        const bool only_downloads = Sets::contains(options.switches, OPTION_ONLY_DOWNLOADS);
+        const KeepGoing keep_going =
+            Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads ? KeepGoing::YES : KeepGoing::NO;
         const PrintUsage print_cmake_usage =
-            Util::Sets::contains(options.switches, OPTION_NO_PRINT_USAGE) ? PrintUsage::NO : PrintUsage::YES;
+            Sets::contains(options.switches, OPTION_NO_PRINT_USAGE) ? PrintUsage::NO : PrintUsage::YES;
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();

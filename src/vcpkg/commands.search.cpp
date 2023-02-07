@@ -27,7 +27,7 @@ namespace vcpkg::Commands
     void SearchCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
     {
         const ParsedArguments options = args.parse_arguments(SearchCommandStructure);
-        const bool full_description = Util::Sets::contains(options.switches, OPTION_FULLDESC);
+        const bool full_description = Sets::contains(options.switches, OPTION_FULLDESC);
         Optional<StringView> filter;
         if (!args.command_arguments.empty())
         {

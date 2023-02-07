@@ -181,7 +181,7 @@ namespace
 
         const auto& final_config = ret.config;
         const bool has_ports_registries =
-            Util::any_of(final_config.registries, [](auto&& reg) { return reg.kind != "artifact"; });
+            vcpkg::any_of(final_config.registries, [](auto&& reg) { return reg.kind != "artifact"; });
         if (has_ports_registries)
         {
             const auto default_registry = final_config.default_reg.get();
@@ -700,8 +700,8 @@ namespace vcpkg
             if (!m_pimpl->m_config.directory.empty())
             {
                 auto& config = m_pimpl->m_config.config;
-                Util::transform(config.overlay_ports, resolve_relative_to_config);
-                Util::transform(config.overlay_triplets, resolve_relative_to_config);
+                vcpkg::transform(config.overlay_ports, resolve_relative_to_config);
+                vcpkg::transform(config.overlay_triplets, resolve_relative_to_config);
             }
 
             overlay_ports =
@@ -730,7 +730,7 @@ namespace vcpkg
 
     bool VcpkgPaths::is_valid_triplet(Triplet t) const
     {
-        const auto it = Util::find_if(this->get_available_triplets(), [&](auto&& available_triplet) {
+        const auto it = vcpkg::find_if(this->get_available_triplets(), [&](auto&& available_triplet) {
             return t.canonical_name() == available_triplet.name;
         });
         return it != this->get_available_triplets().cend();
@@ -738,8 +738,8 @@ namespace vcpkg
 
     const std::vector<std::string> VcpkgPaths::get_available_triplets_names() const
     {
-        return vcpkg::Util::fmap(this->get_available_triplets(),
-                                 [](auto&& triplet_file) -> std::string { return triplet_file.name; });
+        return vcpkg::fmap(this->get_available_triplets(),
+                           [](auto&& triplet_file) -> std::string { return triplet_file.name; });
     }
 
     const std::vector<TripletFile>& VcpkgPaths::get_available_triplets() const
@@ -1302,7 +1302,7 @@ namespace vcpkg
             {
                 registry_kinds.push_back(reg.implementation().kind());
             }
-            Util::sort_unique_erase(registry_kinds);
+            vcpkg::sort_unique_erase(registry_kinds);
             metrics.track_string(StringMetric::RegistriesKindsUsed, Strings::join(",", registry_kinds));
         }
 
@@ -1360,7 +1360,7 @@ namespace vcpkg
             vsp = &m_pimpl->m_default_vs_path;
         }
 
-        auto candidate = Util::find_if(vs_toolsets, [&](const Toolset& t) {
+        auto candidate = vcpkg::find_if(vs_toolsets, [&](const Toolset& t) {
             return (!tsv || *tsv == t.version) && (!vsp || *vsp == t.visual_studio_root_path) &&
                    (!tsvf || toolset_matches_full_version(t, *tsvf));
         });

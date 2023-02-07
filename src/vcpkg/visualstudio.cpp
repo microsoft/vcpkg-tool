@@ -181,7 +181,7 @@ namespace vcpkg::VisualStudio
     {
         std::vector<VisualStudioInstance> sorted{get_visual_studio_instances_internal(fs)};
         std::sort(sorted.begin(), sorted.end(), VisualStudioInstance::preferred_first_comparator);
-        return Util::fmap(sorted, [](const VisualStudioInstance& instance) { return instance.to_string(); });
+        return vcpkg::fmap(sorted, [](const VisualStudioInstance& instance) { return instance.to_string(); });
     }
 
     ToolsetsInformation find_toolset_instances_preferred_first(const Filesystem& fs)
@@ -197,7 +197,7 @@ namespace vcpkg::VisualStudio
         const SortedVector<VisualStudioInstance, decltype(&VisualStudioInstance::preferred_first_comparator)> sorted{
             get_visual_studio_instances_internal(fs), VisualStudioInstance::preferred_first_comparator};
 
-        const bool v140_is_available = Util::find_if(sorted, [&](const VisualStudioInstance& vs_instance) {
+        const bool v140_is_available = vcpkg::find_if(sorted, [&](const VisualStudioInstance& vs_instance) {
                                            return vs_instance.major_version() == "14";
                                        }) != sorted.end();
 

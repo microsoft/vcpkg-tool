@@ -41,11 +41,11 @@ static void features_check(InstallPlanAction& plan,
         // TODO: see if this can be simplified
         if (feature_name == "core" || feature_name.empty())
         {
-            REQUIRE((Util::find(feature_list, "core") != feature_list.end() ||
-                     Util::find(feature_list, "") != feature_list.end()));
+            REQUIRE((vcpkg::find(feature_list, "core") != feature_list.end() ||
+                     vcpkg::find(feature_list, "") != feature_list.end()));
             continue;
         }
-        REQUIRE(Util::find(feature_list, feature_name) != feature_list.end());
+        REQUIRE(vcpkg::find(feature_list, feature_name) != feature_list.end());
     }
 }
 

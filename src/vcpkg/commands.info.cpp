@@ -42,8 +42,8 @@ namespace vcpkg::Commands::Info
                 VCPKG_LINE_INFO, msgMissingOption, msg::option = VcpkgCmdArguments::JSON_SWITCH);
         }
 
-        const bool installed = Util::Sets::contains(options.switches, OPTION_INSTALLED);
-        const bool transitive = Util::Sets::contains(options.switches, OPTION_TRANSITIVE);
+        const bool installed = Sets::contains(options.switches, OPTION_INSTALLED);
+        const bool transitive = Sets::contains(options.switches, OPTION_TRANSITIVE);
 
         if (transitive && !installed)
         {

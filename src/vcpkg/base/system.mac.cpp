@@ -58,7 +58,7 @@ namespace vcpkg
         };
 
         if (!validate_mac_address_format(mac)) return false;
-        return !Util::Vectors::contains(invalid_macs, mac);
+        return !Vectors::contains(invalid_macs, mac);
     }
 
     std::string mac_bytes_to_string(const Span<char>& bytes)

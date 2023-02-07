@@ -775,7 +775,7 @@ namespace
 
                 generate_packages_config(fs, packages_config, attempts);
                 run_nuget_commandline(cmdline);
-                Util::erase_remove_if(attempts, [&](const NuGetPrefetchAttempt& nuget_ref) -> bool {
+                vcpkg::erase_remove_if(attempts, [&](const NuGetPrefetchAttempt& nuget_ref) -> bool {
                     // note that we would like the nupkg downloaded to buildtrees, but nuget.exe downloads it to the
                     // output directory
                     const auto nupkg_path =
@@ -1256,7 +1256,7 @@ namespace vcpkg
         std::vector<std::string> invalid_keys;
         auto result = api_stable_format(url_template, [&](std::string&, StringView key) {
             StringView valid_keys[] = {"name", "version", "sha", "triplet"};
-            if (!Util::Vectors::contains(valid_keys, key))
+            if (!Vectors::contains(valid_keys, key))
             {
                 invalid_keys.push_back(key.to_string());
             }
@@ -1460,7 +1460,7 @@ namespace vcpkg
     {
         switch (m_status)
         {
-            case CacheStatusState::unknown: return !Util::Vectors::contains(m_known_unavailable_providers, sender);
+            case CacheStatusState::unknown: return !Vectors::contains(m_known_unavailable_providers, sender);
             case CacheStatusState::available: return false;
             case CacheStatusState::restored: return false;
             default: Checks::unreachable(VCPKG_LINE_INFO);
@@ -1471,7 +1471,7 @@ namespace vcpkg
     {
         switch (m_status)
         {
-            case CacheStatusState::unknown: return !Util::Vectors::contains(m_known_unavailable_providers, sender);
+            case CacheStatusState::unknown: return !Vectors::contains(m_known_unavailable_providers, sender);
             case CacheStatusState::available: return m_available_provider == sender;
             case CacheStatusState::restored: return false;
             default: Checks::unreachable(VCPKG_LINE_INFO);
@@ -1496,7 +1496,7 @@ namespace vcpkg
         switch (m_status)
         {
             case CacheStatusState::unknown:
-                if (!Util::Vectors::contains(m_known_unavailable_providers, sender))
+                if (!Vectors::contains(m_known_unavailable_providers, sender))
                 {
                     m_known_unavailable_providers.push_back(sender);
                 }
@@ -2565,8 +2565,8 @@ void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
 
 std::string vcpkg::generate_nuget_packages_config(const ActionPlan& action)
 {
-    auto refs = Util::fmap(action.install_actions,
-                           [&](const InstallPlanAction& ipa) { return make_nugetref(ipa, get_nuget_prefix()); });
+    auto refs = vcpkg::fmap(action.install_actions,
+                            [&](const InstallPlanAction& ipa) { return make_nugetref(ipa, get_nuget_prefix()); });
     XmlSerializer xml;
     xml.emit_declaration().line_break();
     xml.open_tag("packages").line_break();

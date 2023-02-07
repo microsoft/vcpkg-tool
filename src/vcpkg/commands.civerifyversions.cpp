@@ -282,8 +282,8 @@ namespace vcpkg::Commands::CIVerifyVersions
     {
         auto parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
 
-        bool verbose = Util::Sets::contains(parsed_args.switches, OPTION_VERBOSE);
-        bool verify_git_trees = Util::Sets::contains(parsed_args.switches, OPTION_VERIFY_GIT_TREES);
+        bool verbose = Sets::contains(parsed_args.switches, OPTION_VERBOSE);
+        bool verify_git_trees = Sets::contains(parsed_args.switches, OPTION_VERIFY_GIT_TREES);
 
         std::set<std::string> exclusion_set;
         auto settings = parsed_args.settings;
@@ -312,7 +312,7 @@ namespace vcpkg::Commands::CIVerifyVersions
         for (const auto& port_path : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
         {
             auto port_name = port_path.stem();
-            if (Util::Sets::contains(exclusion_set, port_name.to_string()))
+            if (Sets::contains(exclusion_set, port_name.to_string()))
             {
                 if (verbose) msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("SKIP: {}\n", port_name));
                 continue;

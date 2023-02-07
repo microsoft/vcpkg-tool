@@ -28,7 +28,7 @@ namespace vcpkg::Commands::Contact
     {
         const ParsedArguments parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
 
-        if (Util::Sets::contains(parsed_args.switches, SWITCHES[0].name))
+        if (Sets::contains(parsed_args.switches, SWITCHES[0].name))
         {
             auto maybe_now = CTime::now();
             if (const auto p_now = maybe_now.get())

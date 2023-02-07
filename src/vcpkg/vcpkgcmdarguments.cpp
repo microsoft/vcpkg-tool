@@ -326,7 +326,7 @@ namespace vcpkg
             }
 
             // make argument case insensitive before the first =
-            auto first_eq = Util::find(Span<char>(basic_arg), '=');
+            auto first_eq = vcpkg::find(Span<char>(basic_arg), '=');
             Strings::ascii_to_lowercase(basic_arg.data(), first_eq);
             // basic_arg[0] == '-' && basic_arg[1] == '-'
             StringView arg = StringView(basic_arg).substr(2);

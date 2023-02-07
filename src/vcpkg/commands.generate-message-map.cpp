@@ -92,8 +92,8 @@ namespace vcpkg::Commands
             return res;
         }
 
-        Util::sort_unique_erase(value_args);
-        Util::sort_unique_erase(comment_args);
+        vcpkg::sort_unique_erase(value_args);
+        vcpkg::sort_unique_erase(comment_args);
 
         auto value_it = value_args.begin();
         auto comment_it = comment_args.begin();
@@ -128,9 +128,9 @@ namespace vcpkg::Commands
     {
         auto parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
 
-        const bool output_comments = !Util::Sets::contains(parsed_args.switches, OPTION_NO_OUTPUT_COMMENTS);
+        const bool output_comments = !Sets::contains(parsed_args.switches, OPTION_NO_OUTPUT_COMMENTS);
 
-        if (!output_comments && Util::Sets::contains(parsed_args.switches, OPTION_OUTPUT_COMMENTS))
+        if (!output_comments && Sets::contains(parsed_args.switches, OPTION_OUTPUT_COMMENTS))
         {
             Checks::msg_exit_with_error(
                 VCPKG_LINE_INFO, msg::msgBothYesAndNoOptionSpecifiedError, msg::option = OPTION_OUTPUT_COMMENTS);

@@ -129,9 +129,9 @@ namespace vcpkg::Help
     void help_topic_valid_triplet(const VcpkgPaths& paths)
     {
         std::map<StringView, std::vector<const TripletFile*>> triplets_per_location;
-        vcpkg::Util::group_by(paths.get_available_triplets(),
-                              &triplets_per_location,
-                              [](const TripletFile& triplet_file) -> StringView { return triplet_file.location; });
+        vcpkg::group_by(paths.get_available_triplets(),
+                        &triplets_per_location,
+                        [](const TripletFile& triplet_file) -> StringView { return triplet_file.location; });
 
         msg::println(msgAvailableArchitectureTriplets);
         msg::println(msgBuiltInTriplets);
@@ -175,7 +175,7 @@ namespace vcpkg::Help
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        auto it_topic = Util::find_if(topics, [&](const Topic& t) { return t.name == topic; });
+        auto it_topic = vcpkg::find_if(topics, [&](const Topic& t) { return t.name == topic; });
         if (it_topic != topics.end())
         {
             it_topic->print(paths);

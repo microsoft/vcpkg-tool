@@ -289,7 +289,7 @@ void Strings::trim_all_and_remove_whitespace_strings(std::vector<std::string>* s
         s = trim(std::move(s));
     }
 
-    Util::erase_remove_if(*strings, [](const std::string& s) { return s.empty(); });
+    vcpkg::erase_remove_if(*strings, [](const std::string& s) { return s.empty(); });
 }
 
 std::vector<std::string> Strings::split(StringView s, const char delimiter)
@@ -475,7 +475,7 @@ bool Strings::contains_any_ignoring_hash_comments(StringView source, View<String
 
 bool Strings::contains_any(StringView source, View<StringView> to_find)
 {
-    return Util::any_of(to_find, [=](StringView s) { return Strings::contains(source, s); });
+    return vcpkg::any_of(to_find, [=](StringView s) { return Strings::contains(source, s); });
 }
 
 bool Strings::equals(StringView a, StringView b)

@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-namespace vcpkg::Util
+namespace vcpkg
 {
     template<class Container>
     using ElementT =
@@ -208,7 +208,7 @@ namespace vcpkg::Util
         using std::begin;
         using std::end;
 
-        return ::vcpkg::Util::search_and_skip(first, last, begin(rng), end(rng));
+        return vcpkg::search_and_skip(first, last, begin(rng), end(rng));
     }
 
     template<class ForwardIt1, class ForwardRange2>
@@ -270,7 +270,7 @@ namespace vcpkg::Util
     bool contains(const Range& r, const T& el)
     {
         using std::end;
-        return Util::find(r, el) != end(r);
+        return vcpkg::find(r, el) != end(r);
     }
 
     template<class Container, class Pred>

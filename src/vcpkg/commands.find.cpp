@@ -126,8 +126,8 @@ namespace vcpkg::Commands
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, overlay_ports));
         auto source_paragraphs =
-            Util::fmap(provider.load_all_control_files(),
-                       [](auto&& port) -> const SourceControlFile* { return port->source_control_file.get(); });
+            vcpkg::fmap(provider.load_all_control_files(),
+                        [](auto&& port) -> const SourceControlFile* { return port->source_control_file.get(); });
 
         if (auto* filter_str = filter.get())
         {
@@ -215,7 +215,7 @@ namespace vcpkg::Commands
     void FindCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
     {
         const ParsedArguments options = args.parse_arguments(FindCommandStructure);
-        const bool full_description = Util::Sets::contains(options.switches, OPTION_FULLDESC);
+        const bool full_description = Sets::contains(options.switches, OPTION_FULLDESC);
         const bool enable_json = args.json.value_or(false);
         auto&& selector = args.command_arguments[0];
         Optional<StringView> filter;

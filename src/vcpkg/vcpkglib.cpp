@@ -54,7 +54,7 @@ namespace vcpkg
         StatusParagraphs current_status_db = load_current_database(fs, status_file, status_file_old);
 
         auto update_files = fs.get_regular_files_non_recursive(updates_dir, VCPKG_LINE_INFO);
-        Util::sort(update_files);
+        vcpkg::sort(update_files);
         if (update_files.empty())
         {
             // updates directory is empty, control file is up-to-date.
@@ -186,7 +186,7 @@ namespace vcpkg
             Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO, ipv.second.core != nullptr, msgCorruptedDatabase);
         }
 
-        return Util::fmap(ipv_map, [](auto&& p) -> InstalledPackageView { return std::move(p.second); });
+        return vcpkg::fmap(ipv_map, [](auto&& p) -> InstalledPackageView { return std::move(p.second); });
     }
 
     std::vector<StatusParagraphAndAssociatedFiles> get_installed_files(Filesystem& fs,
@@ -209,8 +209,8 @@ namespace vcpkg
             upgrade_to_slash_terminated_sorted_format(fs, &installed_files_of_current_pgh, listfile_path);
 
             // Remove the directories
-            Util::erase_remove_if(installed_files_of_current_pgh,
-                                  [](const std::string& file) { return file.back() == '/'; });
+            vcpkg::erase_remove_if(installed_files_of_current_pgh,
+                                   [](const std::string& file) { return file.back() == '/'; });
 
             StatusParagraphAndAssociatedFiles pgh_and_files = {
                 *pgh, SortedVector<std::string>(std::move(installed_files_of_current_pgh))};

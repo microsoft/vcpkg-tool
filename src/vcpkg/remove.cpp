@@ -176,7 +176,7 @@ namespace vcpkg::Remove
         const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
         auto installed_packages = get_installed_ports(status_db);
 
-        return Util::fmap(installed_packages, [](auto&& pgh) -> std::string { return pgh.spec().to_string(); });
+        return vcpkg::fmap(installed_packages, [](auto&& pgh) -> std::string { return pgh.spec().to_string(); });
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -197,7 +197,7 @@ namespace vcpkg::Remove
 
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
         std::vector<PackageSpec> specs;
-        if (Util::Sets::contains(options.switches, OPTION_OUTDATED))
+        if (Sets::contains(options.switches, OPTION_OUTDATED))
         {
             if (args.command_arguments.size() != 0)
             {
@@ -211,8 +211,8 @@ namespace vcpkg::Remove
             PathsPortFileProvider provider(
                 fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
 
-            specs = Util::fmap(Update::find_outdated_packages(provider, status_db),
-                               [](auto&& outdated) { return outdated.spec; });
+            specs = vcpkg::fmap(Update::find_outdated_packages(provider, status_db),
+                                [](auto&& outdated) { return outdated.spec; });
 
             if (specs.empty())
             {
@@ -227,14 +227,14 @@ namespace vcpkg::Remove
                 msg::println_error(msgInvalidOptionForRemove);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
-            specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
+            specs = vcpkg::fmap(args.command_arguments, [&](auto&& arg) {
                 return check_and_get_package_spec(
                     std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
             });
         }
 
-        const bool no_purge = Util::Sets::contains(options.switches, OPTION_NO_PURGE);
-        if (no_purge && Util::Sets::contains(options.switches, OPTION_PURGE))
+        const bool no_purge = Sets::contains(options.switches, OPTION_NO_PURGE);
+        if (no_purge && Sets::contains(options.switches, OPTION_PURGE))
         {
             msg::println_error(msgMutuallyExclusiveOption, msg::value = "no-purge", msg::option = "purge");
             msg::write_unlocalized_text_to_stdout(Color::none, COMMAND_STRUCTURE.example_text);
@@ -242,8 +242,8 @@ namespace vcpkg::Remove
         }
         const Purge purge = no_purge ? Purge::NO : Purge::YES;
 
-        const bool is_recursive = Util::Sets::contains(options.switches, OPTION_RECURSE);
-        const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
+        const bool is_recursive = Sets::contains(options.switches, OPTION_RECURSE);
+        const bool dry_run = Sets::contains(options.switches, OPTION_DRY_RUN);
 
         const std::vector<RemovePlanAction> remove_plan = create_remove_plan(specs, status_db);
 
@@ -253,11 +253,11 @@ namespace vcpkg::Remove
         }
 
         std::map<RemovePlanType, std::vector<const RemovePlanAction*>> group_by_plan_type;
-        Util::group_by(remove_plan, &group_by_plan_type, [](const RemovePlanAction& p) { return p.plan_type; });
+        vcpkg::group_by(remove_plan, &group_by_plan_type, [](const RemovePlanAction& p) { return p.plan_type; });
         print_plan(group_by_plan_type);
 
         const bool has_non_user_requested_packages =
-            Util::find_if(remove_plan, [](const RemovePlanAction& package) -> bool {
+            vcpkg::find_if(remove_plan, [](const RemovePlanAction& package) -> bool {
                 return package.request_type != RequestType::USER_REQUESTED;
             }) != remove_plan.cend();
 

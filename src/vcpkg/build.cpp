@@ -328,7 +328,7 @@ namespace vcpkg
         auto host_architectures = get_supported_host_architectures();
         for (auto&& host : host_architectures)
         {
-            const auto it = Util::find_if(toolset.supported_architectures, [&](const ToolsetArchOption& opt) {
+            const auto it = vcpkg::find_if(toolset.supported_architectures, [&](const ToolsetArchOption& opt) {
                 return host == opt.host_arch && target_arch == opt.target_arch;
             });
             if (it != toolset.supported_architectures.end()) return it->name;
@@ -618,16 +618,16 @@ namespace vcpkg
                                              const Toolset& toolset,
                                              std::vector<CMakeVariable>& out_vars)
     {
-        Util::Vectors::append(&out_vars,
-                              std::initializer_list<CMakeVariable>{
-                                  {"CMD", "BUILD"},
-                                  {"DOWNLOADS", paths.downloads},
-                                  {"TARGET_TRIPLET", triplet.canonical_name()},
-                                  {"TARGET_TRIPLET_FILE", paths.get_triplet_file_path(triplet)},
-                                  {"VCPKG_BASE_VERSION", VCPKG_BASE_VERSION_AS_STRING},
-                                  {"VCPKG_CONCURRENCY", std::to_string(get_concurrency())},
-                                  {"VCPKG_PLATFORM_TOOLSET", toolset.version.c_str()},
-                              });
+        Vectors::append(&out_vars,
+                        std::initializer_list<CMakeVariable>{
+                            {"CMD", "BUILD"},
+                            {"DOWNLOADS", paths.downloads},
+                            {"TARGET_TRIPLET", triplet.canonical_name()},
+                            {"TARGET_TRIPLET_FILE", paths.get_triplet_file_path(triplet)},
+                            {"VCPKG_BASE_VERSION", VCPKG_BASE_VERSION_AS_STRING},
+                            {"VCPKG_CONCURRENCY", std::to_string(get_concurrency())},
+                            {"VCPKG_PLATFORM_TOOLSET", toolset.version.c_str()},
+                        });
         // Make sure GIT could be found
         const Path& git_exe_path = paths.get_tool_exe(Tools::GIT, stdout_sink);
         out_vars.emplace_back("GIT", git_exe_path);
@@ -727,10 +727,10 @@ namespace vcpkg
             {"FEATURES", Strings::join(";", action.feature_list)},
             {"PORT", scf.core_paragraph->name},
             {"VERSION", scf.core_paragraph->raw_version},
-            {"VCPKG_USE_HEAD_VERSION", Util::Enum::to_bool(action.build_options.use_head_version) ? "1" : "0"},
+            {"VCPKG_USE_HEAD_VERSION", Enum::to_bool(action.build_options.use_head_version) ? "1" : "0"},
             {"_VCPKG_DOWNLOAD_TOOL", to_string(action.build_options.download_tool)},
-            {"_VCPKG_EDITABLE", Util::Enum::to_bool(action.build_options.editable) ? "1" : "0"},
-            {"_VCPKG_NO_DOWNLOADS", !Util::Enum::to_bool(action.build_options.allow_downloads) ? "1" : "0"},
+            {"_VCPKG_EDITABLE", Enum::to_bool(action.build_options.editable) ? "1" : "0"},
+            {"_VCPKG_NO_DOWNLOADS", !Enum::to_bool(action.build_options.allow_downloads) ? "1" : "0"},
             {"Z_VCPKG_CHAINLOAD_TOOLCHAIN_FILE", action.pre_build_info(VCPKG_LINE_INFO).toolchain_file()},
         };
 
@@ -755,7 +755,7 @@ namespace vcpkg
             action.abi_info.value_or_exit(VCPKG_LINE_INFO).toolset.value_or_exit(VCPKG_LINE_INFO),
             variables);
 
-        if (Util::Enum::to_bool(action.build_options.only_downloads))
+        if (Enum::to_bool(action.build_options.only_downloads))
         {
             variables.emplace_back("VCPKG_DOWNLOAD_MODE", "true");
         }
@@ -964,7 +964,7 @@ namespace vcpkg
             if (fs.exists(logs, VCPKG_LINE_INFO))
             {
                 error_logs = fs.read_lines(logs).value_or_exit(VCPKG_LINE_INFO);
-                Util::erase_remove_if(error_logs, [](const auto& line) { return line.empty(); });
+                vcpkg::erase_remove_if(error_logs, [](const auto& line) { return line.empty(); });
             }
             return ExtendedBuildResult{BuildResult::BUILD_FAILED, stdoutlog, std::move(error_logs)};
         }
@@ -1158,7 +1158,7 @@ namespace vcpkg
         const bool has_no_pseudo_features = std::none_of(
             sorted_feature_list.begin(), sorted_feature_list.end(), [](StringView s) { return s == default_literal; });
         Checks::check_exit(VCPKG_LINE_INFO, has_no_pseudo_features);
-        Util::sort_unique_erase(sorted_feature_list);
+        vcpkg::sort_unique_erase(sorted_feature_list);
 
         // Check that the "core" feature is present. After resolution into InternalFeatureSet "core" meaning "not
         // default" should have already been handled so "core" should be here.
@@ -1168,7 +1168,7 @@ namespace vcpkg
 
         abi_tag_entries.emplace_back("features", Strings::join(";", sorted_feature_list));
 
-        Util::sort(abi_tag_entries);
+        vcpkg::sort(abi_tag_entries);
 
         const std::string full_abi_info =
             Strings::join("", abi_tag_entries, [](const AbiEntry& p) { return p.key + " " + p.value + "\n"; });
@@ -1184,7 +1184,8 @@ namespace vcpkg
             msg::write_unlocalized_text_to_stdout(Color::none, message);
         }
 
-        auto abi_tag_entries_missing = Util::filter(abi_tag_entries, [](const AbiEntry& p) { return p.value.empty(); });
+        auto abi_tag_entries_missing =
+            vcpkg::filter(abi_tag_entries, [](const AbiEntry& p) { return p.value.empty(); });
 
         if (abi_tag_entries_missing.empty())
         {
@@ -1220,7 +1221,7 @@ namespace vcpkg
             if (action.abi_info.has_value()) continue;
 
             std::vector<AbiEntry> dependency_abis;
-            if (!Util::Enum::to_bool(action.build_options.only_downloads))
+            if (!Enum::to_bool(action.build_options.only_downloads))
             {
                 for (auto&& pspec : action.package_dependencies)
                 {
@@ -1292,7 +1293,7 @@ namespace vcpkg
             }
         }
 
-        if (!missing_fspecs.empty() && !Util::Enum::to_bool(action.build_options.only_downloads))
+        if (!missing_fspecs.empty() && !Enum::to_bool(action.build_options.only_downloads))
         {
             return {BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES, std::move(missing_fspecs)};
         }
@@ -1495,7 +1496,7 @@ namespace vcpkg
             paths.get_filesystem().read_contents(build_result.stdoutlog.value_or_exit(VCPKG_LINE_INFO),
                                                  VCPKG_LINE_INFO),
             "\n```\n",
-            Strings::join("\n", Util::fmap(build_result.error_logs, create_log_details)),
+            Strings::join("\n", vcpkg::fmap(build_result.error_logs, create_log_details)),
             "\n\n**Additional context**\n\n",
             manifest);
     }
@@ -1709,10 +1710,10 @@ namespace vcpkg
                     break;
                 case VcpkgTripletVar::ENV_PASSTHROUGH:
                     passthrough_env_vars_tracked = Strings::split(variable_value, ';');
-                    Util::Vectors::append(&passthrough_env_vars, passthrough_env_vars_tracked);
+                    Vectors::append(&passthrough_env_vars, passthrough_env_vars_tracked);
                     break;
                 case VcpkgTripletVar::ENV_PASSTHROUGH_UNTRACKED:
-                    Util::Vectors::append(&passthrough_env_vars, Strings::split(variable_value, ';'));
+                    Vectors::append(&passthrough_env_vars, Strings::split(variable_value, ';'));
                     break;
                 case VcpkgTripletVar::PUBLIC_ABI_OVERRIDE:
                     public_abi_override = variable_value.empty() ? nullopt : Optional<std::string>{variable_value};

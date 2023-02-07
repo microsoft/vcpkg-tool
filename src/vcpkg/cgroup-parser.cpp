@@ -62,7 +62,7 @@ namespace vcpkg
 
     bool detect_docker_in_cgroup_file(StringView text, StringView origin)
     {
-        return Util::any_of(parse_cgroup_file(text, origin), [](auto&& cgroup) {
+        return vcpkg::any_of(parse_cgroup_file(text, origin), [](auto&& cgroup) {
             return Strings::starts_with(cgroup.control_group, "/docker") ||
                    Strings::starts_with(cgroup.control_group, "/lxc");
         });

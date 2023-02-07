@@ -42,17 +42,17 @@ namespace vcpkg
         const auto parsed = args.parse_arguments(command_structure);
         forwarded_args.push_back(args.command_arguments[0]);
 
-        if (Util::Sets::contains(parsed.switches, FORCE))
+        if (Sets::contains(parsed.switches, FORCE))
         {
             forwarded_args.emplace_back("--force");
         }
 
-        if (Util::Sets::contains(parsed.switches, DRY_RUN))
+        if (Sets::contains(parsed.switches, DRY_RUN))
         {
             forwarded_args.emplace_back("--what-if");
         }
 
-        if (Util::Sets::contains(parsed.switches, NORMALIZE))
+        if (Sets::contains(parsed.switches, NORMALIZE))
         {
             forwarded_args.emplace_back("--normalize");
         }

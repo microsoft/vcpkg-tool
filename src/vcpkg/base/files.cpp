@@ -3538,8 +3538,7 @@ namespace vcpkg
                         for (auto&& extension : extensions)
                         {
                             auto with_extension = base_name + extension;
-                            if (!Util::Vectors::contains(ret, with_extension) &&
-                                this->exists(with_extension, IgnoreErrors{}))
+                            if (!Vectors::contains(ret, with_extension) && this->exists(with_extension, IgnoreErrors{}))
                             {
                                 Debug::print("Found path: ", with_extension, '\n');
                                 ret.push_back(std::move(with_extension));

@@ -49,7 +49,7 @@ namespace vcpkg
                            fs.exists(source_dir, IgnoreErrors{}),
                            Strings::concat("Source directory ", source_dir, "does not exist"));
         auto files = fs.get_files_recursive(source_dir, VCPKG_LINE_INFO);
-        Util::erase_remove_if(files, [](Path& path) { return path.filename() == ".DS_Store"; });
+        vcpkg::erase_remove_if(files, [](Path& path) { return path.filename() == ".DS_Store"; });
         install_files_and_write_listfile(fs, source_dir, files, destination_dir);
     }
     void install_files_and_write_listfile(Filesystem& fs,
@@ -177,9 +177,9 @@ namespace vcpkg
     static SortedVector<std::string> build_list_of_package_files(const Filesystem& fs, const Path& package_dir)
     {
         std::vector<Path> package_file_paths = fs.get_files_recursive(package_dir, IgnoreErrors{});
-        Util::erase_remove_if(package_file_paths, [](Path& path) { return path.filename() == ".DS_Store"; });
+        vcpkg::erase_remove_if(package_file_paths, [](Path& path) { return path.filename() == ".DS_Store"; });
         const size_t package_remove_char_count = package_dir.native().size() + 1; // +1 for the slash
-        auto package_files = Util::fmap(package_file_paths, [package_remove_char_count](const Path& target) {
+        auto package_files = vcpkg::fmap(package_file_paths, [package_remove_char_count](const Path& target) {
             return std::string(target.generic_u8string(), package_remove_char_count);
         });
 
@@ -309,7 +309,7 @@ namespace vcpkg
         const InstallPlanType& plan_type = action.plan_type;
 
         const bool is_user_requested = action.request_type == RequestType::USER_REQUESTED;
-        const bool use_head_version = Util::Enum::to_bool(action.build_options.use_head_version);
+        const bool use_head_version = Enum::to_bool(action.build_options.use_head_version);
 
         if (plan_type == InstallPlanType::ALREADY_INSTALLED)
         {
@@ -631,7 +631,7 @@ namespace vcpkg
             registry->get_all_port_names(ret);
         }
 
-        Util::sort_unique_erase(ret);
+        vcpkg::sort_unique_erase(ret);
         return ret;
     }
 
@@ -675,7 +675,7 @@ namespace vcpkg
 
         for (;;)
         {
-            first = Util::search(first, last, ADD_LIBRARY_CALL);
+            first = vcpkg::search(first, last, ADD_LIBRARY_CALL);
             if (first == last)
             {
                 return first;
@@ -856,7 +856,7 @@ namespace vcpkg
                 {
                     if (!package.name.empty()) has_targets_for_output = true;
 
-                    Util::sort_unique_erase(targets, [](const std::string& l, const std::string& r) {
+                    vcpkg::sort_unique_erase(targets, [](const std::string& l, const std::string& r) {
                         if (l.size() < r.size()) return true;
                         if (l.size() > r.size()) return false;
                         return l < r;
@@ -865,9 +865,9 @@ namespace vcpkg
                     static const auto is_namespaced = [](const std::string& target) {
                         return Strings::contains(target, "::");
                     };
-                    if (Util::any_of(targets, is_namespaced))
+                    if (vcpkg::any_of(targets, is_namespaced))
                     {
-                        Util::erase_remove_if(targets, [](const std::string& t) { return !is_namespaced(t); });
+                        vcpkg::erase_remove_if(targets, [](const std::string& t) { return !is_namespaced(t); });
                     }
                 }
                 ret.cmake_targets_map[package.name] = std::move(targets);
@@ -938,32 +938,29 @@ namespace vcpkg
         const ParsedArguments options =
             args.parse_arguments(paths.manifest_mode_enabled() ? MANIFEST_COMMAND_STRUCTURE : COMMAND_STRUCTURE);
 
-        const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
-        const bool use_head_version = Util::Sets::contains(options.switches, (OPTION_USE_HEAD_VERSION));
-        const bool no_downloads = Util::Sets::contains(options.switches, (OPTION_NO_DOWNLOADS));
-        const bool only_downloads = Util::Sets::contains(options.switches, (OPTION_ONLY_DOWNLOADS));
-        const bool no_build_missing = Util::Sets::contains(options.switches, OPTION_ONLY_BINARYCACHING);
-        const bool is_recursive = Util::Sets::contains(options.switches, (OPTION_RECURSE));
-        const bool is_editable = Util::Sets::contains(options.switches, (OPTION_EDITABLE)) || !args.cmake_args.empty();
-        const bool use_aria2 = Util::Sets::contains(options.switches, (OPTION_USE_ARIA2));
-        const bool clean_after_build = Util::Sets::contains(options.switches, (OPTION_CLEAN_AFTER_BUILD));
+        const bool dry_run = Sets::contains(options.switches, OPTION_DRY_RUN);
+        const bool use_head_version = Sets::contains(options.switches, (OPTION_USE_HEAD_VERSION));
+        const bool no_downloads = Sets::contains(options.switches, (OPTION_NO_DOWNLOADS));
+        const bool only_downloads = Sets::contains(options.switches, (OPTION_ONLY_DOWNLOADS));
+        const bool no_build_missing = Sets::contains(options.switches, OPTION_ONLY_BINARYCACHING);
+        const bool is_recursive = Sets::contains(options.switches, (OPTION_RECURSE));
+        const bool is_editable = Sets::contains(options.switches, (OPTION_EDITABLE)) || !args.cmake_args.empty();
+        const bool use_aria2 = Sets::contains(options.switches, (OPTION_USE_ARIA2));
+        const bool clean_after_build = Sets::contains(options.switches, (OPTION_CLEAN_AFTER_BUILD));
         const bool clean_buildtrees_after_build =
-            Util::Sets::contains(options.switches, (OPTION_CLEAN_BUILDTREES_AFTER_BUILD));
-        const bool clean_packages_after_build =
-            Util::Sets::contains(options.switches, (OPTION_CLEAN_PACKAGES_AFTER_BUILD));
-        const bool clean_downloads_after_build =
-            Util::Sets::contains(options.switches, (OPTION_CLEAN_DOWNLOADS_AFTER_BUILD));
-        const KeepGoing keep_going = Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads
-                                         ? KeepGoing::YES
-                                         : KeepGoing::NO;
+            Sets::contains(options.switches, (OPTION_CLEAN_BUILDTREES_AFTER_BUILD));
+        const bool clean_packages_after_build = Sets::contains(options.switches, (OPTION_CLEAN_PACKAGES_AFTER_BUILD));
+        const bool clean_downloads_after_build = Sets::contains(options.switches, (OPTION_CLEAN_DOWNLOADS_AFTER_BUILD));
+        const KeepGoing keep_going =
+            Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads ? KeepGoing::YES : KeepGoing::NO;
         const bool prohibit_backcompat_features =
-            Util::Sets::contains(options.switches, (OPTION_PROHIBIT_BACKCOMPAT_FEATURES)) ||
-            Util::Sets::contains(options.switches, (OPTION_ENFORCE_PORT_CHECKS));
-        const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
+            Sets::contains(options.switches, (OPTION_PROHIBIT_BACKCOMPAT_FEATURES)) ||
+            Sets::contains(options.switches, (OPTION_ENFORCE_PORT_CHECKS));
+        const auto unsupported_port_action = Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
         const PrintUsage print_cmake_usage =
-            Util::Sets::contains(options.switches, OPTION_NO_PRINT_USAGE) ? PrintUsage::NO : PrintUsage::YES;
+            Sets::contains(options.switches, OPTION_NO_PRINT_USAGE) ? PrintUsage::NO : PrintUsage::YES;
 
         get_global_metrics_collector().track_bool(BoolMetric::InstallManifestMode, paths.manifest_mode_enabled());
 
@@ -1002,12 +999,12 @@ namespace vcpkg
                 msg::println_error(msgErrorRequirePackagesList);
                 failure = true;
             }
-            if (Util::Sets::contains(options.switches, OPTION_MANIFEST_NO_DEFAULT_FEATURES))
+            if (Sets::contains(options.switches, OPTION_MANIFEST_NO_DEFAULT_FEATURES))
             {
                 msg::println_error(msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_NO_DEFAULT_FEATURES);
                 failure = true;
             }
-            if (Util::Sets::contains(options.multisettings, OPTION_MANIFEST_FEATURE))
+            if (Sets::contains(options.multisettings, OPTION_MANIFEST_FEATURE))
             {
                 msg::println_error(msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_FEATURE);
                 failure = true;
@@ -1032,16 +1029,16 @@ namespace vcpkg
         if (use_aria2) download_tool = DownloadTool::ARIA2;
 
         const BuildPackageOptions install_plan_options = {
-            Util::Enum::to_enum<BuildMissing>(!no_build_missing),
-            Util::Enum::to_enum<UseHeadVersion>(use_head_version),
-            Util::Enum::to_enum<AllowDownloads>(!no_downloads),
-            Util::Enum::to_enum<OnlyDownloads>(only_downloads),
-            Util::Enum::to_enum<CleanBuildtrees>(clean_after_build || clean_buildtrees_after_build),
-            Util::Enum::to_enum<CleanPackages>(clean_after_build || clean_packages_after_build),
-            Util::Enum::to_enum<CleanDownloads>(clean_after_build || clean_downloads_after_build),
+            Enum::to_enum<BuildMissing>(!no_build_missing),
+            Enum::to_enum<UseHeadVersion>(use_head_version),
+            Enum::to_enum<AllowDownloads>(!no_downloads),
+            Enum::to_enum<OnlyDownloads>(only_downloads),
+            Enum::to_enum<CleanBuildtrees>(clean_after_build || clean_buildtrees_after_build),
+            Enum::to_enum<CleanPackages>(clean_after_build || clean_packages_after_build),
+            Enum::to_enum<CleanDownloads>(clean_after_build || clean_downloads_after_build),
             download_tool,
             PurgeDecompressFailure::NO,
-            Util::Enum::to_enum<Editable>(is_editable),
+            Enum::to_enum<Editable>(is_editable),
             prohibit_backcompat_features ? BackcompatFeatures::PROHIBIT : BackcompatFeatures::ALLOW,
             print_cmake_usage};
 
@@ -1081,7 +1078,7 @@ namespace vcpkg
             {
                 features.insert(features.end(), manifest_feature_it->second.begin(), manifest_feature_it->second.end());
             }
-            if (Util::Sets::contains(options.switches, OPTION_MANIFEST_NO_DEFAULT_FEATURES))
+            if (Sets::contains(options.switches, OPTION_MANIFEST_NO_DEFAULT_FEATURES))
             {
                 features.emplace_back("core");
             }
@@ -1096,12 +1093,12 @@ namespace vcpkg
             {
                 features.erase(core_it, features.end());
             }
-            Util::sort_unique_erase(features);
+            vcpkg::sort_unique_erase(features);
 
             auto dependencies = manifest_core.dependencies;
             for (const auto& feature : features)
             {
-                auto it = Util::find_if(
+                auto it = vcpkg::find_if(
                     manifest_scf->feature_paragraphs,
                     [&feature](const std::unique_ptr<FeatureParagraph>& fpgh) { return fpgh->name == feature; });
 
@@ -1168,8 +1165,8 @@ namespace vcpkg
             }
 
             // If the manifest refers to itself, it will be added to the install plan.
-            Util::erase_remove_if(install_plan.install_actions,
-                                  [&toplevel](auto&& action) { return action.spec == toplevel; });
+            vcpkg::erase_remove_if(install_plan.install_actions,
+                                   [&toplevel](auto&& action) { return action.spec == toplevel; });
 
             PathsPortFileProvider provider(fs, *registry_set, std::move(oprovider));
             Commands::SetInstalled::perform_and_exit_ex(args,
@@ -1190,7 +1187,7 @@ namespace vcpkg
         PathsPortFileProvider provider(
             fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
 
-        const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
+        const std::vector<FullPackageSpec> specs = vcpkg::fmap(args.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
                 std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
@@ -1227,7 +1224,7 @@ namespace vcpkg
         }
 
 #if defined(_WIN32)
-        const auto maybe_common_triplet = Util::common_projection(
+        const auto maybe_common_triplet = vcpkg::common_projection(
             action_plan.install_actions, [](const InstallPlanAction& to_install) { return to_install.spec.triplet(); });
         if (maybe_common_triplet)
         {

@@ -107,7 +107,7 @@ namespace vcpkg
                     return;
                 }
 
-                if (Util::Sets::contains(info.build_edges, feature))
+                if (Sets::contains(info.build_edges, feature))
                 {
                     // This feature has already been completely handled
                     return;
@@ -140,7 +140,7 @@ namespace vcpkg
                         }
                     }
 
-                    Util::sort_unique_erase(dep_list);
+                    vcpkg::sort_unique_erase(dep_list);
                     info.build_edges.emplace(feature, dep_list);
                 }
                 else
@@ -163,11 +163,11 @@ namespace vcpkg
                             requires_qualified_resolution = true;
                         }
                     }
-                    Util::sort_unique_erase(dep_list);
+                    vcpkg::sort_unique_erase(dep_list);
                     if (requires_qualified_resolution)
                     {
                         auto my_spec = this->m_spec;
-                        Util::erase_remove_if(dep_list, [my_spec](FeatureSpec& f) { return f.spec() == my_spec; });
+                        vcpkg::erase_remove_if(dep_list, [my_spec](FeatureSpec& f) { return f.spec() == my_spec; });
                     }
                     else
                     {
@@ -175,7 +175,7 @@ namespace vcpkg
                     }
                 }
 
-                Util::Vectors::append(&out_new_dependencies, dep_list);
+                Vectors::append(&out_new_dependencies, dep_list);
             }
 
             void create_install_info(std::vector<FeatureSpec>& out_reinstall_requirements)
@@ -467,8 +467,8 @@ namespace vcpkg
             }
         }
 
-        Util::sort_unique_erase(package_dependencies);
-        Util::sort_unique_erase(feature_list);
+        vcpkg::sort_unique_erase(package_dependencies);
+        vcpkg::sort_unique_erase(feature_list);
     }
 
     InstallPlanAction::InstallPlanAction(InstalledPackageView&& ipv, const RequestType& request_type)
@@ -713,13 +713,10 @@ namespace vcpkg
             pgraph.mark_user_requested(spec.package_spec);
             spec.expand_fspecs_to(feature_specs);
         }
-        Util::sort_unique_erase(feature_specs);
 
+        vcpkg::sort_unique_erase(feature_specs);
         pgraph.install(feature_specs, options.unsupported_port_action);
-
-        auto res = pgraph.serialize(options.randomizer);
-
-        return res;
+        return pgraph.serialize(options.randomizer);
     }
 
     void PackageGraph::mark_for_reinstall(const PackageSpec& first_remove_spec,
@@ -808,7 +805,7 @@ namespace vcpkg
                     }
 
                     // And it has at least one qualified dependency
-                    if (has_supports || (paragraph_depends && Util::any_of(*paragraph_depends, [](auto&& dep) {
+                    if (has_supports || (paragraph_depends && vcpkg::any_of(*paragraph_depends, [](auto&& dep) {
                                              return !dep.platform.is_empty();
                                          })))
                     {
@@ -881,13 +878,13 @@ namespace vcpkg
 
             if (!qualified_dependencies.empty())
             {
-                Util::sort_unique_erase(qualified_dependencies);
+                vcpkg::sort_unique_erase(qualified_dependencies);
 
                 // Extract the package specs we need to get dependency info from. We don't run the triplet on a per
                 // feature basis. We run it once for the whole port.
                 auto qualified_package_specs =
-                    Util::fmap(qualified_dependencies, [](const FeatureSpec& fspec) { return fspec.spec(); });
-                Util::sort_unique_erase(qualified_package_specs);
+                    vcpkg::fmap(qualified_dependencies, [](const FeatureSpec& fspec) { return fspec.spec(); });
+                vcpkg::sort_unique_erase(qualified_package_specs);
                 m_var_provider.load_dep_info_vars(qualified_package_specs, m_graph->m_host_triplet);
 
                 // Put all the FeatureSpecs for which we had qualified dependencies back on the dependencies stack.
@@ -907,7 +904,7 @@ namespace vcpkg
         for (const PackageSpec& spec : specs)
             mark_for_reinstall(spec, reinstall_reqs);
 
-        Util::sort_unique_erase(reinstall_reqs);
+        vcpkg::sort_unique_erase(reinstall_reqs);
 
         install(reinstall_reqs, unsupported_port_action);
     }
@@ -962,12 +959,15 @@ namespace vcpkg
                 auto& info = vertex->m_install_info.value_or_exit(VCPKG_LINE_INFO);
                 std::vector<PackageSpec> deps;
                 for (auto&& kv : info.build_edges)
+                {
                     for (auto&& e : kv.second)
                     {
                         auto spec = e.spec();
                         if (spec != vertex->m_spec) deps.push_back(std::move(spec));
                     }
-                Util::sort_unique_erase(deps);
+                }
+
+                vcpkg::sort_unique_erase(deps);
                 return deps;
             }
         } installedgeprovider(*m_graph);
@@ -1127,7 +1127,7 @@ namespace vcpkg
         std::vector<const InstallPlanAction*> excluded;
 
         const bool has_non_user_requested_packages =
-            Util::find_if(action_plan.install_actions, [](const InstallPlanAction& action) -> bool {
+            vcpkg::find_if(action_plan.install_actions, [](const InstallPlanAction& action) -> bool {
                 return action.request_type != RequestType::USER_REQUESTED;
             }) != action_plan.install_actions.cend();
 
@@ -1157,7 +1157,7 @@ namespace vcpkg
         {
             if (action.request_type == RequestType::USER_REQUESTED) already_installed_plans.emplace_back(&action);
         }
-        already_installed_plans = Util::fmap(action_plan.already_installed, [](auto&& action) { return &action; });
+        already_installed_plans = vcpkg::fmap(action_plan.already_installed, [](auto&& action) { return &action; });
 
         std::sort(rebuilt_plans.begin(), rebuilt_plans.end(), &InstallPlanAction::compare_by_name);
         std::sort(only_install_plans.begin(), only_install_plans.end(), &InstallPlanAction::compare_by_name);
@@ -1532,7 +1532,7 @@ namespace vcpkg
                 require_port_feature(ref, f, origin);
             }
 
-            if (Util::find(dep.features, StringView{"core"}) == dep.features.end())
+            if (vcpkg::find(dep.features, StringView{"core"}) == dep.features.end())
             {
                 require_port_defaults(ref, origin);
             }
@@ -1704,10 +1704,10 @@ namespace vcpkg
             auto dep_to_spec = [&toplevel, this](const Dependency& d) {
                 return PackageSpec{d.name, d.host ? m_host_triplet : toplevel.triplet()};
             };
-            auto specs = Util::fmap(deps, dep_to_spec);
+            auto specs = vcpkg::fmap(deps, dep_to_spec);
 
             specs.push_back(toplevel);
-            Util::sort_unique_erase(specs);
+            vcpkg::sort_unique_erase(specs);
             m_var_provider.load_dep_info_vars(specs, m_host_triplet);
             const auto& vars = m_var_provider.get_dep_info_vars(toplevel).value_or_exit(VCPKG_LINE_INFO);
             std::vector<const Dependency*> active_deps;
@@ -1725,7 +1725,7 @@ namespace vcpkg
 
                 // Disable default features for deps with [core] as a dependency
                 // Note: x[core], x[y] will still eventually depend on defaults due to the second x[y]
-                if (Util::find(dep.features, "core") != dep.features.end())
+                if (vcpkg::find(dep.features, "core") != dep.features.end())
                 {
                     auto& node = emplace_package(dep_to_spec(dep));
                     node.second.default_features = false;
@@ -1851,7 +1851,7 @@ namespace vcpkg
         {
             if (!m_errors.empty())
             {
-                Util::sort_unique_erase(m_errors);
+                vcpkg::sort_unique_erase(m_errors);
                 return Strings::join("\n", m_errors);
             }
 

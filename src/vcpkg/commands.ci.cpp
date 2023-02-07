@@ -53,7 +53,7 @@ namespace
             auto& filesystem = paths.get_filesystem();
             const auto source_path = paths.build_dir(spec);
             auto children = filesystem.get_regular_files_non_recursive(source_path, IgnoreErrors{});
-            Util::erase_remove_if(children, NotExtensionCaseInsensitive{".log"});
+            vcpkg::erase_remove_if(children, NotExtensionCaseInsensitive{".log"});
             const auto target_path = base_path / spec.name();
             (void)filesystem.create_directory(target_path, VCPKG_LINE_INFO);
             if (children.empty())
@@ -205,8 +205,8 @@ namespace vcpkg::Commands::CI
                 ret->known.emplace(p->spec, BuildResult::EXCLUDED);
                 will_fail.emplace(p->spec);
             }
-            else if (Util::any_of(p->package_dependencies,
-                                  [&](const PackageSpec& spec) { return Util::Sets::contains(will_fail, spec); }))
+            else if (vcpkg::any_of(p->package_dependencies,
+                                   [&](const PackageSpec& spec) { return Sets::contains(will_fail, spec); }))
             {
                 ret->action_state_string.emplace_back("cascade");
                 ret->cascade_count++;
@@ -242,7 +242,7 @@ namespace vcpkg::Commands::CI
                 to_keep.insert(it->spec);
             }
 
-            if (Util::Sets::contains(to_keep, it->spec))
+            if (Sets::contains(to_keep, it->spec))
             {
                 if (it_known != known.end() && it_known->second == BuildResult::EXCLUDED)
                 {
@@ -256,8 +256,8 @@ namespace vcpkg::Commands::CI
             }
         }
 
-        Util::erase_remove_if(action_plan.install_actions, [&to_keep](const InstallPlanAction& action) {
-            return !Util::Sets::contains(to_keep, action.spec);
+        vcpkg::erase_remove_if(action_plan.install_actions, [&to_keep](const InstallPlanAction& action) {
+            return !Sets::contains(to_keep, action.spec);
         });
     }
 
@@ -344,7 +344,7 @@ namespace vcpkg::Commands::CI
         parse_exclusions(settings, OPTION_EXCLUDE, target_triplet, exclusions_map);
         parse_exclusions(settings, OPTION_HOST_EXCLUDE, host_triplet, exclusions_map);
         auto baseline_iter = settings.find(OPTION_CI_BASELINE);
-        const bool allow_unexpected_passing = Util::Sets::contains(options.switches, OPTION_ALLOW_UNEXPECTED_PASSING);
+        const bool allow_unexpected_passing = Sets::contains(options.switches, OPTION_ALLOW_UNEXPECTED_PASSING);
         CiBaselineData cidata;
         if (baseline_iter == settings.end())
         {
@@ -356,7 +356,7 @@ namespace vcpkg::Commands::CI
         else
         {
             auto skip_failures =
-                Util::Sets::contains(options.switches, OPTION_SKIP_FAILURES) ? SkipFailures::Yes : SkipFailures::No;
+                Sets::contains(options.switches, OPTION_SKIP_FAILURES) ? SkipFailures::Yes : SkipFailures::No;
             const auto& ci_baseline_file_name = baseline_iter->second;
             const auto ci_baseline_file_contents =
                 paths.get_filesystem().read_contents(ci_baseline_file_name, VCPKG_LINE_INFO);
@@ -368,7 +368,7 @@ namespace vcpkg::Commands::CI
 
         auto skipped_cascade_count = parse_skipped_cascade_count(settings);
 
-        const auto is_dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
+        const auto is_dry_run = Sets::contains(options.switches, OPTION_DRY_RUN);
 
         auto& filesystem = paths.get_filesystem();
         Optional<CiBuildLogsRecorder> build_logs_recorder_storage;
@@ -394,7 +394,7 @@ namespace vcpkg::Commands::CI
 
         const ElapsedTimer timer;
         std::vector<std::string> all_port_names =
-            Util::fmap(provider.load_all_control_files(), Paragraphs::get_name_of_control_file);
+            vcpkg::fmap(provider.load_all_control_files(), Paragraphs::get_name_of_control_file);
         // Install the default features for every package
         std::vector<FullPackageSpec> all_default_full_specs;
         all_default_full_specs.reserve(all_port_names.size());
@@ -418,7 +418,7 @@ namespace vcpkg::Commands::CI
             std::random_device e;
         } randomizer_instance;
 
-        if (Util::Sets::contains(options.switches, OPTION_RANDOMIZE))
+        if (Sets::contains(options.switches, OPTION_RANDOMIZE))
         {
             serialize_options.randomizer = &randomizer_instance;
         }
@@ -466,7 +466,7 @@ namespace vcpkg::Commands::CI
         {
             const Path parent_hashes_path = paths.original_cwd / it_parent_hashes->second;
             auto parsed_json = Json::parse_file(VCPKG_LINE_INFO, filesystem, parent_hashes_path);
-            parent_hashes = Util::fmap(parsed_json.first.array(VCPKG_LINE_INFO), [](const auto& json_object) {
+            parent_hashes = vcpkg::fmap(parsed_json.first.array(VCPKG_LINE_INFO), [](const auto& json_object) {
                 auto abi = json_object.object(VCPKG_LINE_INFO).get("abi");
                 Checks::check_exit(VCPKG_LINE_INFO, abi);
 #ifdef _MSC_VER
@@ -529,7 +529,7 @@ namespace vcpkg::Commands::CI
                 }
 
                 // Adding results for ports that were not built because they have known states
-                if (Util::Sets::contains(options.switches, OPTION_XUNIT_ALL))
+                if (Sets::contains(options.switches, OPTION_XUNIT_ALL))
                 {
                     for (auto&& port : split_specs->known)
                     {

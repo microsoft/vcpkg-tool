@@ -51,7 +51,7 @@ namespace vcpkg
 
     std::vector<const SourceControlFileAndLocation*> MapPortFileProvider::load_all_control_files() const
     {
-        return Util::fmap(ports, [](auto&& kvpair) -> const SourceControlFileAndLocation* { return &kvpair.second; });
+        return vcpkg::fmap(ports, [](auto&& kvpair) -> const SourceControlFileAndLocation* { return &kvpair.second; });
     }
 
     PathsPortFileProvider::PathsPortFileProvider(const Filesystem& fs,
@@ -87,7 +87,7 @@ namespace vcpkg
         std::map<std::string, const SourceControlFileAndLocation*> m;
         m_overlay->load_all_control_files(m);
         m_versioned->load_all_control_files(m);
-        return Util::fmap(m, [](const auto& p) { return p.second; });
+        return vcpkg::fmap(m, [](const auto& p) { return p.second; });
     }
 
     namespace
@@ -252,7 +252,7 @@ namespace vcpkg
         struct OverlayProviderImpl : IOverlayProvider
         {
             OverlayProviderImpl(const Filesystem& fs, const Path& original_cwd, View<std::string> overlay_ports)
-                : m_fs(fs), m_overlay_ports(Util::fmap(overlay_ports, [&original_cwd](const std::string& s) -> Path {
+                : m_fs(fs), m_overlay_ports(vcpkg::fmap(overlay_ports, [&original_cwd](const std::string& s) -> Path {
                     return original_cwd / s;
                 }))
             {

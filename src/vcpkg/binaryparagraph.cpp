@@ -70,7 +70,7 @@ namespace vcpkg
         parser.required_field(Fields::MULTI_ARCH, multi_arch);
 
         Triplet my_triplet = this->spec.triplet();
-        this->dependencies = Util::fmap(
+        this->dependencies = vcpkg::fmap(
             parse_qualified_specifier_list(parser.optional_field(Fields::DEPENDS)).value_or_exit(VCPKG_LINE_INFO),
             [my_triplet](const ParsedQualifiedSpecifier& dep) {
                 // for compatibility with previous vcpkg versions, we discard all irrelevant information
@@ -116,7 +116,7 @@ namespace vcpkg
         , abi(abi_tag)
         , type(spgh.type)
     {
-        this->dependencies = Util::fmap(deps, [](const FeatureSpec& spec) { return spec.spec(); });
+        this->dependencies = vcpkg::fmap(deps, [](const FeatureSpec& spec) { return spec.spec(); });
         canonicalize();
     }
 
@@ -135,7 +135,7 @@ namespace vcpkg
         , abi()
         , type(spgh.type)
     {
-        this->dependencies = Util::fmap(deps, [](const FeatureSpec& spec) { return spec.spec(); });
+        this->dependencies = vcpkg::fmap(deps, [](const FeatureSpec& spec) { return spec.spec(); });
         canonicalize();
     }
 
@@ -145,7 +145,7 @@ namespace vcpkg
             return std::all_of(range.begin(), range.end(), [](const std::string& el) { return el.empty(); });
         };
 
-        Util::sort_unique_erase(this->dependencies);
+        vcpkg::sort_unique_erase(this->dependencies);
 
         for (auto& maintainer : this->maintainers)
         {

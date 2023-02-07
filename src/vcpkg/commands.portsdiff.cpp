@@ -151,8 +151,8 @@ namespace vcpkg::Commands::PortsDiff
             read_ports_from_commit(paths, git_commit_id_for_previous_snapshot);
 
         // Already sorted, so set_difference can work on std::vector too
-        const std::vector<std::string> current_ports = Util::extract_keys(current_names_and_versions);
-        const std::vector<std::string> previous_ports = Util::extract_keys(previous_names_and_versions);
+        const std::vector<std::string> current_ports = vcpkg::extract_keys(current_names_and_versions);
+        const std::vector<std::string> previous_ports = vcpkg::extract_keys(previous_names_and_versions);
 
         const SetElementPresence<std::string> setp =
             SetElementPresence<std::string>::create(current_ports, previous_ports);

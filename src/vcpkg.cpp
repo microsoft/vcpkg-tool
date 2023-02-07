@@ -98,7 +98,7 @@ namespace
         }
 
         static const auto find_command = [&](auto&& commands) {
-            auto it = Util::find_if(commands, [&](auto&& commandc) {
+            auto it = vcpkg::find_if(commands, [&](auto&& commandc) {
                 return Strings::case_insensitive_ascii_equals(commandc.name, args.command);
             });
             using std::end;

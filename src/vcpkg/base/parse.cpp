@@ -48,7 +48,7 @@ namespace vcpkg
 
         res.append_raw('\n');
 
-        auto line_end = Util::find_if(location.it, ParserBase::is_lineend);
+        auto line_end = vcpkg::find_if(location.it, ParserBase::is_lineend);
         StringView line = StringView{
             location.start_of_line.pointer_to_current(),
             line_end.pointer_to_current(),

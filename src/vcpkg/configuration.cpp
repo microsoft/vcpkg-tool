@@ -204,7 +204,7 @@ namespace
             {
                 auto& declarations = config->package_declarations.emplace();
                 r.required_object_field(type_name(), obj, PACKAGES, declarations, package_names_deserializer);
-                config->packages.emplace(Util::fmap(declarations, [](auto&& decl) { return decl.pattern; }));
+                config->packages.emplace(vcpkg::fmap(declarations, [](auto&& decl) { return decl.pattern; }));
             }
         }
         return impl;
@@ -331,7 +331,7 @@ namespace
         for (const auto& el : obj)
         {
             auto&& key = el.first;
-            if (Util::find(Configuration::known_fields(), key) == std::end(Configuration::known_fields()))
+            if (vcpkg::find(Configuration::known_fields(), key) == std::end(Configuration::known_fields()))
             {
                 ret.insert_or_replace(key, el.second);
             }
@@ -565,7 +565,7 @@ namespace
         // Unknown fields are left as-is
         for (const auto& el : ce_metadata)
         {
-            if (Util::find(Configuration::known_fields(), el.first) == std::end(Configuration::known_fields()))
+            if (vcpkg::find(Configuration::known_fields(), el.first) == std::end(Configuration::known_fields()))
             {
                 put_into.insert_or_replace(el.first, el.second);
             }
@@ -591,7 +591,7 @@ namespace
                 continue;
             }
 
-            if (Util::find(Configuration::known_fields(), key) == std::end(Configuration::known_fields()))
+            if (vcpkg::find(Configuration::known_fields(), key) == std::end(Configuration::known_fields()))
             {
                 if (Strings::contains(key, " "))
                 {

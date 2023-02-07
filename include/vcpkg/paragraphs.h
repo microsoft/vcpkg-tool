@@ -37,7 +37,7 @@ namespace vcpkg::Paragraphs
         std::vector<std::unique_ptr<ParseControlErrorInfo>> errors;
     };
 
-    // this allows one to pass this around as an overload set to stuff like `Util::fmap`,
+    // this allows one to pass this around as an overload set to stuff like `vcpkg::fmap`,
     // as opposed to making it a function
     constexpr struct
     {

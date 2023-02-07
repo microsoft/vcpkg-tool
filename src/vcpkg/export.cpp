@@ -415,7 +415,7 @@ namespace vcpkg::Export
         else
         {
             // input sanitization
-            ret.specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
+            ret.specs = vcpkg::fmap(args.command_arguments, [&](auto&& arg) {
                 return check_and_get_package_spec(
                     std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
             });
@@ -615,11 +615,11 @@ namespace vcpkg::Export
         }
 
         std::map<ExportPlanType, std::vector<const ExportPlanAction*>> group_by_plan_type;
-        Util::group_by(export_plan, &group_by_plan_type, [](const ExportPlanAction& p) { return p.plan_type; });
+        vcpkg::group_by(export_plan, &group_by_plan_type, [](const ExportPlanAction& p) { return p.plan_type; });
         print_plan(group_by_plan_type);
 
         const bool has_non_user_requested_packages =
-            Util::find_if(export_plan, [](const ExportPlanAction& package) -> bool {
+            vcpkg::find_if(export_plan, [](const ExportPlanAction& package) -> bool {
                 return package.request_type != RequestType::USER_REQUESTED;
             }) != export_plan.cend();
 
@@ -633,7 +633,7 @@ namespace vcpkg::Export
         {
             // No need to show all of them, just the user-requested ones. Dependency resolution will handle the rest.
             std::vector<const ExportPlanAction*> unbuilt = it->second;
-            Util::erase_remove_if(
+            vcpkg::erase_remove_if(
                 unbuilt, [](const ExportPlanAction* a) { return a->request_type != RequestType::USER_REQUESTED; });
 
             const auto s = Strings::join(" ", unbuilt, [](const ExportPlanAction* a) { return a->spec.to_string(); });

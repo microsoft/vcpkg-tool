@@ -92,7 +92,7 @@ namespace vcpkg::Commands::Edit
         auto registry_set = paths.make_registry_set();
         auto sources_and_errors = Paragraphs::try_load_all_registry_ports(paths.get_filesystem(), *registry_set);
 
-        return Util::fmap(sources_and_errors.paragraphs, Paragraphs::get_name_of_control_file);
+        return vcpkg::fmap(sources_and_errors.paragraphs, Paragraphs::get_name_of_control_file);
     }
 
     static constexpr std::array<CommandSwitch, 2> EDIT_SWITCHES = {
@@ -111,13 +111,13 @@ namespace vcpkg::Commands::Edit
                                                             const ParsedArguments& options,
                                                             const std::vector<std::string>& ports)
     {
-        if (Util::Sets::contains(options.switches, OPTION_ALL))
+        if (Sets::contains(options.switches, OPTION_ALL))
         {
             const auto& fs = paths.get_filesystem();
             auto packages = fs.get_files_non_recursive(paths.packages(), VCPKG_LINE_INFO);
 
             // TODO: Support edit for --overlay-ports
-            return Util::fmap(ports, [&](const std::string& port_name) -> std::string {
+            return vcpkg::fmap(ports, [&](const std::string& port_name) -> std::string {
                 const auto portpath = paths.builtin_ports_directory() / port_name;
                 const auto portfile = portpath / "portfile.cmake";
                 const auto buildtrees_current_dir = paths.build_dir(port_name);
@@ -137,14 +137,14 @@ namespace vcpkg::Commands::Edit
             });
         }
 
-        if (Util::Sets::contains(options.switches, OPTION_BUILDTREES))
+        if (Sets::contains(options.switches, OPTION_BUILDTREES))
         {
-            return Util::fmap(ports, [&](const std::string& port_name) -> std::string {
+            return vcpkg::fmap(ports, [&](const std::string& port_name) -> std::string {
                 return Strings::format(R"###("%s")###", paths.build_dir(port_name));
             });
         }
 
-        return Util::fmap(ports, [&](const std::string& port_name) -> std::string {
+        return vcpkg::fmap(ports, [&](const std::string& port_name) -> std::string {
             const auto portpath = paths.builtin_ports_directory() / port_name;
             const auto portfile = portpath / "portfile.cmake";
             return Strings::format(R"###("%s" "%s")###", portpath, portfile);
@@ -238,7 +238,7 @@ namespace vcpkg::Commands::Edit
         }
 #endif
 
-        const auto it = Util::find_if(candidate_paths, [&](const Path& p) { return fs.exists(p, IgnoreErrors{}); });
+        const auto it = vcpkg::find_if(candidate_paths, [&](const Path& p) { return fs.exists(p, IgnoreErrors{}); });
         if (it == candidate_paths.cend())
         {
             msg::println_error(msg::format(msgErrorVsCodeNotFound, msg::env_var = "EDITOR")

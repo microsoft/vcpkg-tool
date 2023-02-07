@@ -36,7 +36,7 @@ static StringView find_cmake_invocation(StringView contents, StringView command)
 
 static StringView extract_cmake_invocation_argument(StringView command, StringView argument)
 {
-    auto it = Util::search_and_skip(command.begin(), command.end(), argument);
+    auto it = vcpkg::search_and_skip(command.begin(), command.end(), argument);
     it = std::find_if_not(it, command.end(), ParserBase::is_whitespace);
     if (it == command.end()) return {};
     if (*it == '"')

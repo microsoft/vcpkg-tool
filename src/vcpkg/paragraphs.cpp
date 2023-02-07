@@ -129,7 +129,7 @@ namespace vcpkg
         {
             auto err = std::make_unique<ParseControlErrorInfo>();
             err->name = name.to_string();
-            err->extra_fields = Util::extract_keys(fields);
+            err->extra_fields = vcpkg::extract_keys(fields);
             err->missing_fields = missing_fields;
             err->expected_types = expected_types;
             return err;
@@ -246,7 +246,7 @@ namespace vcpkg::Paragraphs
                 auto loc = cur_loc();
                 get_fieldname(fieldname);
                 if (cur() != ':') return add_error("expected ':' after field name");
-                if (Util::Sets::contains(fields, fieldname)) return add_error("duplicate field", loc);
+                if (Sets::contains(fields, fieldname)) return add_error("duplicate field", loc);
                 next();
                 skip_tabs_spaces();
                 auto rowcol = cur_rowcol();
@@ -473,7 +473,7 @@ namespace vcpkg::Paragraphs
             p->erase(p->begin());
 
             bcf.features =
-                Util::fmap(*p, [&](auto&& raw_feature) -> BinaryParagraph { return BinaryParagraph(raw_feature); });
+                vcpkg::fmap(*p, [&](auto&& raw_feature) -> BinaryParagraph { return BinaryParagraph(raw_feature); });
 
             if (bcf.core_paragraph.spec != spec)
             {
@@ -507,7 +507,7 @@ namespace vcpkg::Paragraphs
             registry->get_all_port_names(ports);
         }
 
-        Util::sort_unique_erase(ports);
+        vcpkg::sort_unique_erase(ports);
 
         for (const auto& port_name : ports)
         {
@@ -576,10 +576,9 @@ namespace vcpkg::Paragraphs
         LoadResults ret;
 
         auto port_dirs = fs.get_directories_non_recursive(directory, VCPKG_LINE_INFO);
-        Util::sort(port_dirs);
-
-        Util::erase_remove_if(port_dirs,
-                              [&](auto&& port_dir_entry) { return port_dir_entry.filename() == ".DS_Store"; });
+        vcpkg::sort(port_dirs);
+        vcpkg::erase_remove_if(port_dirs,
+                               [&](auto&& port_dir_entry) { return port_dir_entry.filename() == ".DS_Store"; });
 
         for (auto&& path : port_dirs)
         {

@@ -997,8 +997,8 @@ namespace vcpkg
     {
         static const StringView u_git[] = {GIT_TREE};
         static const StringView u_path[] = {PATH};
-        static const auto t_git = vcpkg::Util::Vectors::concat<StringView>(schemed_deserializer_fields(), u_git);
-        static const auto t_path = vcpkg::Util::Vectors::concat<StringView>(schemed_deserializer_fields(), u_path);
+        static const auto t_git = vcpkg::Vectors::concat<StringView>(schemed_deserializer_fields(), u_git);
+        static const auto t_path = vcpkg::Vectors::concat<StringView>(schemed_deserializer_fields(), u_path);
 
         return type == VersionDbType::Git ? t_git : t_path;
     }
@@ -1141,7 +1141,7 @@ namespace vcpkg
     Registry::Registry(std::vector<std::string>&& packages, std::unique_ptr<RegistryImplementation>&& impl)
         : packages_(std::move(packages)), implementation_(std::move(impl))
     {
-        Util::sort_unique_erase(packages_);
+        vcpkg::sort_unique_erase(packages_);
         Checks::check_exit(VCPKG_LINE_INFO, implementation_ != nullptr);
     }
 
@@ -1212,7 +1212,7 @@ namespace vcpkg
                 return lhs.matched_prefix > rhs.matched_prefix;
             });
 
-        return Util::fmap(std::move(candidates), [](const RegistryCandidate& target) { return target.impl; });
+        return vcpkg::fmap(std::move(candidates), [](const RegistryCandidate& target) { return target.impl; });
     }
 
     ExpectedL<Version> RegistrySet::baseline_for_port(StringView port_name) const
@@ -1235,7 +1235,7 @@ namespace vcpkg
             load_versions_file(paths.get_filesystem(), VersionDbType::Git, paths.builtin_registry_versions, port_name);
         if (auto pversions = maybe_versions.get())
         {
-            return Util::fmap(
+            return vcpkg::fmap(
                 *pversions, [](auto&& entry) -> auto{
                     return std::make_pair(SchemedVersion{entry.scheme, entry.version}, entry.git_tree);
                 });

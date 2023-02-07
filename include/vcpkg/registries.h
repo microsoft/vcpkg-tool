@@ -77,7 +77,7 @@ namespace vcpkg
         virtual std::unique_ptr<RegistryEntry> get_port_entry(StringView port_name) const = 0;
 
         // appends the names of the ports to the out parameter
-        // may result in duplicated port names; make sure to Util::sort_unique_erase at the end
+        // may result in duplicated port names; make sure to sort_unique_erase at the end
         virtual void get_all_port_names(std::vector<std::string>& port_names) const = 0;
 
         virtual ExpectedL<Version> get_baseline_version(StringView port_name) const = 0;
