@@ -7,6 +7,8 @@
 
 #include <stdint.h>
 
+#include <functional>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -409,8 +411,8 @@ namespace vcpkg
 
     struct LibInformation
     {
-        std::vector<MachineType> machine_types;
-        std::vector<std::string> linker_directives;
+        std::vector<MachineType> machine_types; // used as set because n is tiny
+        std::set<std::string, std::less<>> linker_directives;
     };
 
     std::vector<std::string> tokenize_command_line(StringView cmd_line);

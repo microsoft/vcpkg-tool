@@ -417,8 +417,8 @@ namespace
     ExpectedL<LibInformation> read_lib_information_from_archive_members(ReadFilePointer& f,
                                                                         const std::vector<uint32_t>& member_offsets)
     {
-        std::vector<MachineType> machine_types; // used as sets because n is tiny
-        std::vector<std::string> directives;
+        std::vector<MachineType> machine_types; // used as set because n is tiny
+        std::set<std::string, std::less<>> directives;
         // Next we have the obj and pseudo-object files
         for (unsigned int offset : member_offsets)
         {
@@ -536,12 +536,7 @@ namespace
 
                     for (auto&& directive : tokenize_command_line(directive_command_line))
                     {
-                        auto insertion_point =
-                            std::lower_bound(directives.begin(), directives.end(), directive_command_line);
-                        if (insertion_point == directives.end() || *insertion_point != directive)
-                        {
-                            directives.insert(insertion_point, std::move(directive));
-                        }
+                        directives.insert(std::move(directive));
                     }
                 }
             }
