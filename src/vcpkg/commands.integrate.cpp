@@ -259,12 +259,7 @@ namespace vcpkg::Commands::Integrate
     }
 #endif
 
-    static const ExpectedS<Path>& get_path_txt_path() noexcept
-    {
-        static const ExpectedS<Path> result = get_user_configuration_home().map(
-            [](const Path& user_configuration_home) { return user_configuration_home / "vcpkg.path.txt"; });
-        return result;
-    }
+    static constexpr StringLiteral vcpkg_path_txt_name = "vcpkg.path.txt";
 
 #if defined(_WIN32)
     static void integrate_install_msbuild14(Filesystem& fs, const Path& tmp_dir)
@@ -365,9 +360,15 @@ namespace vcpkg::Commands::Integrate
         }
 #endif
 
-        fs.write_contents(
-            get_path_txt_path().value_or_exit(VCPKG_LINE_INFO), paths.root.generic_u8string(), VCPKG_LINE_INFO);
-        msg::println(Color::success, msgAppliedUserIntegration);
+        auto maybe_user_configuration_home = get_user_configuration_home();
+        if (auto user_configuration_home = maybe_user_configuration_home.get())
+        {
+            fs.create_directories(*user_configuration_home, IgnoreErrors{});
+            fs.write_contents(
+                *user_configuration_home / vcpkg_path_txt_name, paths.root.generic_u8string(), VCPKG_LINE_INFO);
+            msg::println(Color::success, msgAppliedUserIntegration);
+        }
+
         const auto cmake_toolchain = paths.buildsystems / "vcpkg.cmake";
 
 #if defined(_WIN32)
@@ -389,10 +390,10 @@ namespace vcpkg::Commands::Integrate
         was_deleted |= fs.remove(get_appdata_props_path(), VCPKG_LINE_INFO);
 #endif
 
-        const auto& maybe_pathtxt = get_path_txt_path();
-        if (auto pathtxt = maybe_pathtxt.get())
+        auto maybe_user_configuration_home = get_user_configuration_home();
+        if (auto user_configuration_home = maybe_user_configuration_home.get())
         {
-            was_deleted |= fs.remove(*pathtxt, VCPKG_LINE_INFO);
+            was_deleted |= fs.remove(*user_configuration_home / vcpkg_path_txt_name, VCPKG_LINE_INFO);
         }
 
         if (was_deleted)
