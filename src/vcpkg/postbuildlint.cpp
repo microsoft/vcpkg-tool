@@ -434,8 +434,14 @@ namespace vcpkg
             return std::move(maybe_metadata).error();
         }
 
-        bool has_exports = try_read_if_dll_has_exports(*metadata, *file).value_or(true);
+        auto maybe_has_exports = try_read_if_dll_has_exports(*metadata, *file);
+        auto phas_exports = maybe_has_exports.get();
+        if (!phas_exports)
+        {
+            return std::move(maybe_has_exports).error();
+        }
 
+        bool has_exports = *phas_exports;
         bool has_appcontainer;
         switch (metadata->pe_type)
         {
@@ -970,8 +976,8 @@ namespace vcpkg
             }
 
             auto&& lib_info = maybe_lib_info.value_or_exit(VCPKG_LINE_INFO);
-            Debug::println("The lib ", lib.native(),
-                           " has directives: ", Strings::join(" ", lib_info.linker_directives));
+            Debug::println(
+                "The lib ", lib.native(), " has directives: ", Strings::join(" ", lib_info.linker_directives));
 
             BuildTypeAndFile this_lib{lib};
             constexpr static const StringLiteral static_release_crt = "/DEFAULTLIB:LIBCMT";
@@ -1229,6 +1235,28 @@ namespace vcpkg
 
     static void operator+=(size_t& left, const LintStatus& right) { left += static_cast<size_t>(right); }
 
+    static size_t perform_post_build_checks_dll_loads(const Filesystem& fs,
+                                                      std::vector<PostBuildCheckDllData>& dlls,
+                                                      const std::vector<Path>& dll_files)
+    {
+        size_t error_count = 0;
+        for (const Path& dll : dll_files)
+        {
+            auto maybe_dll_data = try_load_dll_data(fs, dll);
+            if (const auto dll_data = maybe_dll_data.get())
+            {
+                dlls.emplace_back(std::move(*dll_data));
+            }
+            else
+            {
+                ++error_count;
+                msg::println(Color::warning, maybe_dll_data.error());
+            }
+        }
+
+        return error_count;
+    }
+
     static size_t perform_all_checks_and_return_error_count(const PackageSpec& spec,
                                                             const VcpkgPaths& paths,
                                                             const PreBuildInfo& pre_build_info,
@@ -1318,24 +1346,8 @@ namespace vcpkg
 
                     std::vector<PostBuildCheckDllData> dlls;
                     dlls.reserve(debug_dlls.size() + release_dlls.size());
-                    for (const Path& dll : debug_dlls)
-                    {
-                        auto maybe_dll_data = try_load_dll_data(fs, dll);
-                        if (const auto dll_data = maybe_dll_data.get())
-                        {
-                            dlls.emplace_back(std::move(*dll_data));
-                        }
-                    }
-
-                    for (const Path& dll : release_dlls)
-                    {
-                        auto maybe_dll_data = try_load_dll_data(fs, dll);
-                        if (const auto dll_data = maybe_dll_data.get())
-                        {
-                            dlls.emplace_back(std::move(*dll_data));
-                        }
-                    }
-
+                    error_count += perform_post_build_checks_dll_loads(fs, dlls, debug_dlls);
+                    error_count += perform_post_build_checks_dll_loads(fs, dlls, release_dlls);
                     error_count += check_exports_of_dlls(build_info.policies, dlls);
                     error_count += check_uwp_bit_of_dlls(pre_build_info.cmake_system_name, dlls);
                     error_count += check_outdated_crt_linkage_of_dlls(dlls, build_info, pre_build_info);
@@ -1347,10 +1359,11 @@ namespace vcpkg
                 break;
                 case LinkageType::STATIC:
                 {
-                    auto dlls = release_dlls;
-                    dlls.insert(dlls.end(), debug_dlls.begin(), debug_dlls.end());
+                    auto& dlls = debug_dlls;
+                    dlls.insert(dlls.end(),
+                                std::make_move_iterator(release_dlls.begin()),
+                                std::make_move_iterator(release_dlls.end()));
                     error_count += check_no_dlls_present(build_info.policies, dlls);
-
                     error_count +=
                         check_bin_folders_are_not_present_in_static_build(build_info.policies, fs, package_dir);
                     if (!build_info.policies.is_enabled(BuildPolicy::ONLY_RELEASE_CRT))
