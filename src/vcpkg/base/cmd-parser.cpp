@@ -391,10 +391,7 @@ namespace vcpkg
 
     bool SwitchName::operator<(const SwitchName& rhs) const { return switch_name < rhs.switch_name; }
 
-    CmdParser::CmdParser()
-        : argument_strings(), argument_strings_lowercase(), argument_parsed(), errors(), options_table()
-    {
-    }
+    CmdParser::CmdParser() = default;
 
     CmdParser::CmdParser(View<std::string> inputs)
         : argument_strings(inputs.begin(), inputs.end())
