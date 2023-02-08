@@ -360,14 +360,11 @@ namespace vcpkg::Commands::Integrate
         }
 #endif
 
-        auto maybe_user_configuration_home = get_user_configuration_home();
-        if (auto user_configuration_home = maybe_user_configuration_home.get())
-        {
-            fs.create_directories(*user_configuration_home, IgnoreErrors{});
-            fs.write_contents(
-                *user_configuration_home / vcpkg_path_txt_name, paths.root.generic_u8string(), VCPKG_LINE_INFO);
-            msg::println(Color::success, msgAppliedUserIntegration);
-        }
+        auto user_configuration_home = get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO);
+        fs.create_directories(user_configuration_home, IgnoreErrors{});
+        fs.write_contents(
+            user_configuration_home / vcpkg_path_txt_name, paths.root.generic_u8string(), VCPKG_LINE_INFO);
+        msg::println(Color::success, msgAppliedUserIntegration);
 
         const auto cmake_toolchain = paths.buildsystems / "vcpkg.cmake";
 
@@ -390,11 +387,8 @@ namespace vcpkg::Commands::Integrate
         was_deleted |= fs.remove(get_appdata_props_path(), VCPKG_LINE_INFO);
 #endif
 
-        auto maybe_user_configuration_home = get_user_configuration_home();
-        if (auto user_configuration_home = maybe_user_configuration_home.get())
-        {
-            was_deleted |= fs.remove(*user_configuration_home / vcpkg_path_txt_name, VCPKG_LINE_INFO);
-        }
+        auto user_configuration_home = get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO);
+        was_deleted |= fs.remove(user_configuration_home / vcpkg_path_txt_name, VCPKG_LINE_INFO);
 
         if (was_deleted)
         {
