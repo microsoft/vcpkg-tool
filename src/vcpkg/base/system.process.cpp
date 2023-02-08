@@ -709,35 +709,69 @@ namespace vcpkg
 
         // Ensure that only the write handle to STDOUT and the read handle to STDIN are inherited.
         // from https://devblogs.microsoft.com/oldnewthing/20111216-00/?p=8873
-        SIZE_T size = 0;
-        if (InitializeProcThreadAttributeList(nullptr, 1, 0, &size) || GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+        struct ProcAttributeList
         {
-            return format_system_error_message("InitializeProcThreadAttributeList nullptr", GetLastError());
-        }
-        std::vector<unsigned char> buffer(size, 0);
-        startup_info_ex.lpAttributeList = reinterpret_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(buffer.data());
-        Checks::check_exit(VCPKG_LINE_INFO, startup_info_ex.lpAttributeList != nullptr);
-        ASSUME(startup_info_ex.lpAttributeList != nullptr);
-        if (!InitializeProcThreadAttributeList(startup_info_ex.lpAttributeList, 1, 0, &size))
+            static ExpectedL<ProcAttributeList> create(DWORD dwAttributeCount)
+            {
+                SIZE_T size = 0;
+                if (InitializeProcThreadAttributeList(nullptr, dwAttributeCount, 0, &size) ||
+                    GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+                {
+                    return format_system_error_message("InitializeProcThreadAttributeList nullptr", GetLastError());
+                }
+                Checks::check_exit(VCPKG_LINE_INFO, size > 0);
+                ASSUME(size > 0);
+                std::vector<unsigned char> buffer(size, 0);
+                if (!InitializeProcThreadAttributeList(
+                        reinterpret_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(buffer.data()), dwAttributeCount, 0, &size))
+                {
+                    return format_system_error_message("InitializeProcThreadAttributeList attribute_list",
+                                                       GetLastError());
+                }
+                return ProcAttributeList(std::move(buffer));
+            }
+            ExpectedL<Unit> update_attribute(DWORD_PTR Attribute, PVOID lpValue, SIZE_T cbSize)
+            {
+                if (!UpdateProcThreadAttribute(get(), 0, Attribute, lpValue, cbSize, nullptr, nullptr))
+                {
+                    return format_system_error_message("InitializeProcThreadAttributeList attribute_list",
+                                                       GetLastError());
+                }
+                return Unit{};
+            }
+            ~ProcAttributeList() { DeleteProcThreadAttributeList(get()); }
+            LPPROC_THREAD_ATTRIBUTE_LIST get() noexcept
+            {
+                return reinterpret_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(buffer.data());
+            }
+
+            ProcAttributeList(const ProcAttributeList&) = delete;
+            ProcAttributeList& operator=(const ProcAttributeList&) = delete;
+            ProcAttributeList(ProcAttributeList&&) = default;
+            ProcAttributeList& operator=(ProcAttributeList&&) = default;
+
+        private:
+            explicit ProcAttributeList(std::vector<unsigned char>&& buffer) : buffer(std::move(buffer)) { }
+            std::vector<unsigned char> buffer;
+        };
+
+        ExpectedL<ProcAttributeList> proc_attribute_list = ProcAttributeList::create(1);
+        if (!proc_attribute_list.has_value())
         {
-            return format_system_error_message("InitializeProcThreadAttributeList attribute_list", GetLastError());
+            return proc_attribute_list.error();
         }
         std::vector<HANDLE> handles_to_inherit = {
             {startup_info_ex.StartupInfo.hStdOutput, startup_info_ex.StartupInfo.hStdInput}};
-        if (!UpdateProcThreadAttribute(startup_info_ex.lpAttributeList,
-                                       0,
-                                       PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
-                                       handles_to_inherit.data(),
-                                       handles_to_inherit.size() * sizeof(HANDLE),
-                                       nullptr,
-                                       nullptr))
+        auto maybe_error = proc_attribute_list.get()->update_attribute(
+            PROC_THREAD_ATTRIBUTE_HANDLE_LIST, handles_to_inherit.data(), handles_to_inherit.size() * sizeof(HANDLE));
+        if (!maybe_error.has_value())
         {
-            return format_system_error_message("InitializeProcThreadAttributeList attribute_list", GetLastError());
+            return maybe_error.error();
         }
+        startup_info_ex.lpAttributeList = proc_attribute_list.get()->get();
 
         auto maybe_proc_info = windows_create_process(cmd_line, wd, env, dwCreationFlags, startup_info_ex);
 
-        DeleteProcThreadAttributeList(startup_info_ex.lpAttributeList);
         CloseHandle(startup_info_ex.StartupInfo.hStdInput);
         CloseHandle(startup_info_ex.StartupInfo.hStdOutput);
 
