@@ -79,7 +79,7 @@ namespace vcpkg
 
     Optional<ToolData> parse_tool_data_from_xml(StringView XML, StringView XML_PATH, StringView tool, StringView os)
     {
-        static const std::string XML_VERSION = "2";
+        static const char* XML_VERSION = "2";
         static const std::regex XML_VERSION_REGEX{R"###(<tools[\s]+version="([^"]+)">)###"};
         std::cmatch match_xml_version;
         const bool has_xml_version = std::regex_search(XML.begin(), XML.end(), match_xml_version, XML_VERSION_REGEX);
