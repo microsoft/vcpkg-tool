@@ -446,13 +446,13 @@ TEST_CASE ("Multi-options can be parsed", "[cmd_parser]")
     CHECK(option_value == std::vector<std::string>{"cantparsethis"});
     option_value[0] = "kittens";
     CHECK(!uut.parse_multi_option("equally-option", StabilityTag::Standard, option_value));
-    CHECK(option_value == std::vector<std::string>{"kittens"});
+    CHECK(option_value.empty());
 
     CHECK(uut.parse_multi_option("separate-option", StabilityTag::Standard, option_value));
     CHECK(option_value == std::vector<std::string>{"separateparsethis"});
     option_value[0] = "fluffy";
     CHECK(!uut.parse_multi_option("separate-option", StabilityTag::Standard, option_value));
-    CHECK(option_value == std::vector<std::string>{"fluffy"});
+    CHECK(option_value.empty());
 
     Optional<std::vector<std::string>> optional_value;
     CHECK(!uut.parse_multi_option("evil-option", StabilityTag::Experimental, optional_value));
@@ -507,22 +507,23 @@ TEST_CASE ("Multi-options can have stability tags", "[cmd_parser]")
     CHECK(vtest == std::vector<std::string>{"v"});
     vtest[0] = "good";
     CHECK(!uut.parse_multi_option("c", StabilityTag::Standard, vtest));
-    CHECK(vtest == std::vector<std::string>{"good"});
+    CHECK(vtest.empty());
 
+    vtest.push_back("good");
     CHECK(!uut.parse_multi_option("d", StabilityTag::Experimental, vtest));
-    CHECK(vtest == std::vector<std::string>{"good"});
-    vtest[0] = "bad";
+    CHECK(vtest.empty());
+    vtest.push_back("bad");
     CHECK(uut.parse_multi_option("e", StabilityTag::Experimental, vtest));
     CHECK(vtest == std::vector<std::string>{"v"});
     vtest[0] = "good";
     CHECK(!uut.parse_multi_option("f", StabilityTag::Experimental, vtest));
-    CHECK(vtest == std::vector<std::string>{"good"});
+    CHECK(vtest.empty());
 
     CHECK(!uut.parse_multi_option("g", StabilityTag::ImplementationDetail, vtest));
-    CHECK(vtest == std::vector<std::string>{"good"});
+    CHECK(vtest.empty());
     CHECK(!uut.parse_multi_option("h", StabilityTag::ImplementationDetail, vtest));
-    CHECK(vtest == std::vector<std::string>{"good"});
-    vtest[0] = "bad";
+    CHECK(vtest.empty());
+    vtest.push_back("bad");
     CHECK(uut.parse_multi_option("i", StabilityTag::ImplementationDetail, vtest));
     CHECK(vtest == std::vector<std::string>{"v"});
 
@@ -538,8 +539,8 @@ TEST_CASE ("Multi-options missing values at the end generate errors", "[cmd_pars
     CHECK(!uut.parse_multi_option("missing-value", StabilityTag::Standard, value));
     CHECK(value.empty());
     CHECK(uut.get_errors() == localized({"error: the option 'missing-value' requires a value"}));
-    // The bad parameter is not consumed
-    CHECK(uut.get_remaining_args() == std::vector<std::string>{"--missing-value"});
+    // The bad parameter is consumed
+    CHECK(uut.get_remaining_args().empty());
 }
 
 TEST_CASE ("Multi-options missing values in the middle generate errors", "[cmd_parser]")
@@ -554,8 +555,8 @@ TEST_CASE ("Multi-options missing values in the middle generate errors", "[cmd_p
     CHECK(!uut.parse_multi_option("missing-value", StabilityTag::Standard, value));
     CHECK(value.empty());
     CHECK(uut.get_errors() == localized({"error: the option 'missing-value' requires a value"}));
-    // The bad parameter is not consumed
-    CHECK(uut.get_remaining_args() == std::vector<std::string>{"--missing-value", "a"});
+    // The bad parameter is consumed
+    CHECK(uut.get_remaining_args() == std::vector<std::string>{"a"});
 }
 
 TEST_CASE ("Help table is generated", "[cmd_parser]")
@@ -1179,4 +1180,28 @@ TEST_CASE ("inverted switches", "[cmd_parser]")
         CHECK(uut.get_errors().empty());
         CHECK(uut.get_remaining_args() == std::vector<std::string>{"--z-x-no-switch"});
     }
+}
+
+TEST_CASE ("Options do not return consumed args", "[cmd_parser]")
+{
+    CmdParser uut{std::vector<std::string>{"--option", "command", "value"}};
+    CHECK(uut.extract_first_command_like_arg_lowercase().value_or_exit(VCPKG_LINE_INFO) == "command");
+    std::string will_not_change("this value should be left alone");
+    CHECK(!uut.parse_option("option", StabilityTag::Standard, will_not_change));
+    CHECK(will_not_change == "this value should be left alone");
+    CHECK(uut.consume_only_remaining_arg("options-command") == "value");
+    CHECK(uut.get_remaining_args().empty());
+    CHECK(uut.get_errors() == localized({"error: the option 'option' requires a value"}));
+}
+
+TEST_CASE ("Multi options do not return consumed args", "[cmd_parser]")
+{
+    CmdParser uut{std::vector<std::string>{"--option=value", "--option", "command", "value"}};
+    CHECK(uut.extract_first_command_like_arg_lowercase().value_or_exit(VCPKG_LINE_INFO) == "command");
+    std::vector<std::string> will_not_change;
+    CHECK(!uut.parse_multi_option("option", StabilityTag::Standard, will_not_change));
+    CHECK(will_not_change.empty());
+    CHECK(uut.consume_only_remaining_arg("options-command") == "value");
+    CHECK(uut.get_remaining_args().empty());
+    CHECK(uut.get_errors() == localized({"error: the option 'option' requires a value"}));
 }

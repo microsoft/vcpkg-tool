@@ -580,8 +580,9 @@ namespace vcpkg
 
     bool CmdParser::parse_multi_option(StringView option_name, StabilityTag stability, std::vector<std::string>& value)
     {
-        bool found = false;
+        bool any_errors = false;
         std::string temp_entry;
+        value.clear();
         for (std::size_t idx = 0; idx < argument_strings.size(); ++idx)
         {
             if (argument_parsed[idx] != false)
@@ -598,15 +599,19 @@ namespace vcpkg
 
             if (parse_result == TryParseOptionResult::ValueIsNextParameter)
             {
+                argument_parsed[idx] = true;
                 if (idx + 1 == argument_strings.size() || argument_parsed[idx + 1] != false)
                 {
+                    any_errors = true;
+                    value.clear();
                     errors.emplace_back(msg::format_error(msgOptionRequiresAValue, msg::option = option_name));
                     continue;
                 }
 
-                argument_parsed[idx] = true;
                 if (Strings::starts_with(argument_strings[idx + 1], "--"))
                 {
+                    any_errors = true;
+                    value.clear();
                     errors.emplace_back(msg::format_error(msgOptionRequiresANonDashesValue,
                                                           msg::option = option_name,
                                                           msg::actual = argument_strings[idx],
@@ -615,32 +620,28 @@ namespace vcpkg
                     continue;
                 }
 
-                if (!found)
+                if (!any_errors)
                 {
-                    value.clear();
-                    found = true;
+                    value.emplace_back(argument_strings[idx + 1]);
                 }
 
-                value.emplace_back(argument_strings[idx + 1]);
                 argument_parsed[idx + 1] = true;
                 ++idx;
             }
             else
             {
                 Checks::check_exit(VCPKG_LINE_INFO, parse_result == TryParseOptionResult::ValueSet);
-                if (!found)
+                if (!any_errors)
                 {
-                    value.clear();
-                    found = true;
+                    value.emplace_back(std::move(temp_entry));
+                    temp_entry.clear();
                 }
 
-                value.emplace_back(std::move(temp_entry));
-                temp_entry.clear();
                 argument_parsed[idx] = true;
             }
         }
 
-        return found;
+        return !value.empty();
     }
 
     bool CmdParser::parse_multi_option(StringView option_name,

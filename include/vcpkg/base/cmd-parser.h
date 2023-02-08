@@ -76,7 +76,7 @@ namespace vcpkg
 
         // Parses an option from the input named option_name, and stores the value if
         // encountered into value. Returns true if the option was encountered.
-        // Emits an error if the switch is encountered more than once.
+        // Emits an error if the option is encountered more than once and stores the last option-value.
         bool parse_option(StringView option_name, StabilityTag stability, std::string& value);
         bool parse_option(StringView option_name, StabilityTag stability, Optional<std::string>& value);
 
@@ -93,6 +93,8 @@ namespace vcpkg
         // Parses an option from the input named option_name, and stores the value if encountered at least once into
         // value. Returns true if the option was encountered. Considers multiple uses of the option as additional
         // values.
+        // Any existing values in `value` are cleared.
+        // If an error occurs, `value` is cleared.
         bool parse_multi_option(StringView option_name, StabilityTag stability, std::vector<std::string>& value);
         bool parse_multi_option(StringView option_name,
                                 StabilityTag stability,
