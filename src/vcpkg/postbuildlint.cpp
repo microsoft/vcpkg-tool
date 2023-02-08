@@ -834,9 +834,8 @@ namespace vcpkg::PostBuildLint
                 msg::write_unlocalized_text_to_stdout(Color::warning, rename_line);
             }
 
-            msg::write_unlocalized_text_to_stdout(Color::warning,
-                                                  "    vcpkg_fixup_pkgconfig()\n    file(REMOVE_RECURSE ");
-            msg::println(Color::warning, msg::format(msgPortBugRemoveEmptyDirs).append_raw(')'));
+            msg::write_unlocalized_text_to_stdout(Color::warning, "    vcpkg_fixup_pkgconfig()\n    ");
+            msg::println(Color::warning, msgPortBugRemoveEmptyDirs);
 
             return LintStatus::PROBLEM_DETECTED;
         }
