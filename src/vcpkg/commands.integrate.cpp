@@ -620,8 +620,10 @@ namespace vcpkg::Commands::Integrate
     {
         static constexpr StringLiteral INSTALL = "install";
         static constexpr StringLiteral REMOVE = "remove";
+#if defined(_WIN32)
         static constexpr StringLiteral PROJECT = "project";
         static constexpr StringLiteral POWERSHELL = "powershell";
+#endif // ^^^ _WIN32
         static constexpr StringLiteral BASH = "bash";
         static constexpr StringLiteral ZSH = "zsh";
         static constexpr StringLiteral FISH = "x-fish";
