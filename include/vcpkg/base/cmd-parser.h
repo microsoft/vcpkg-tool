@@ -160,10 +160,13 @@ namespace vcpkg
         void add_unexpected_switch_error(const std::string& unrecognized);
         bool consume_remaining_args_impl(std::vector<std::string>& result);
 
+        // The original names the user supplied for arguments after @response-file replacement.
         std::vector<std::string> argument_strings;
+        // Same as above, except all made ascii-lowercase. Used for matching switches and options, but never for
+        // display.
         std::vector<std::string> argument_strings_lowercase;
-        std::vector<char> argument_parsed; // think vector<bool>
-        std::vector<LocalizedString> errors;
+        std::vector<char> argument_parsed;   // Think vector<bool>, records whether the argument was consumed.
+        std::vector<LocalizedString> errors; // Pretty messages for any errors that are encountered, if any.
         std::map<SwitchName, LocalizedString> options_table;
     };
 
