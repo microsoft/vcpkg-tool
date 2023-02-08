@@ -1926,14 +1926,13 @@ namespace vcpkg
     DECLARE_MESSAGE(OptionMustBeInteger, (msg::option), "", "Value of --{option} must be an integer.");
     DECLARE_MESSAGE(OptionRequired, (msg::option), "", "--{option} option is required.");
     DECLARE_MESSAGE(OptionRequiresAValue, (msg::option), "", "the option '{option}' requires a value");
-    DECLARE_MESSAGE(
-        OptionRequiresANonDashesValue,
-        (msg::option, msg::actual, msg::value),
-        "{value} is the value the user actuall typed, {actual} is the version of the option they actually "
-        "typed. (This will be {option} without a prefix) Full example: the option 'evil-option' requires a value; if "
-        "you intended to set 'evil-option' to '--evil-value', use the equals form inetad: --x-evil-option=--evil-value",
-        "the option '{option}' requires a value; if you intended to set '{option}' to '{value}', use the "
-        "equals form instead: {actual}={value}");
+    DECLARE_MESSAGE(OptionRequiresANonDashesValue,
+                    (msg::option, msg::actual, msg::value),
+                    "{value} is the value the user typed, {actual} is {option} potentially with prefixes like '--x-'. "
+                    "Full example: the option 'evil-option' requires a value; if you intended to set 'evil-option' to "
+                    "'--evil-value', use the equals form instead: --x-evil-option=--evil-value",
+                    "the option '{option}' requires a value; if you intended to set '{option}' to '{value}', use the "
+                    "equals form instead: {actual}={value}");
     DECLARE_MESSAGE(OptionUsedMultipleTimes, (msg::option), "", "the option '{option}' was specified multiple times");
     DECLARE_MESSAGE(OptionRequiresOption,
                     (msg::value, msg::option),

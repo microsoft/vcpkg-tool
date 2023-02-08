@@ -858,7 +858,7 @@
   "OptionRequired": "--{option} option is required.",
   "_OptionRequired.comment": "An example of {option} is editable.",
   "OptionRequiresANonDashesValue": "the option '{option}' requires a value; if you intended to set '{option}' to '{value}', use the equals form instead: {actual}={value}",
-  "_OptionRequiresANonDashesValue.comment": "{value} is the value the user actuall typed, {actual} is the version of the option they actually typed. (This will be {option} without a prefix) Full example: the option 'evil-option' requires a value; if you intended to set 'evil-option' to '--evil-value', use the equals form inetad: --x-evil-option=--evil-value An example of {option} is editable.",
+  "_OptionRequiresANonDashesValue.comment": "{value} is the value the user typed, {actual} is {option} potentially with prefixes like '--x-'. Full example: the option 'evil-option' requires a value; if you intended to set 'evil-option' to '--evil-value', use the equals form instead: --x-evil-option=--evil-value An example of {option} is editable.",
   "OptionRequiresAValue": "the option '{option}' requires a value",
   "_OptionRequiresAValue.comment": "An example of {option} is editable.",
   "OptionRequiresOption": "--{value} requires --{option}",
