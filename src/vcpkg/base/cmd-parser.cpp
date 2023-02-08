@@ -350,7 +350,7 @@ namespace vcpkg
         auto last = inputs.end();
         while (first != last)
         {
-            if (first->empty() || first->front() != '@')
+            if (first->c_str()[0] != '@')
             {
                 ++first;
                 continue;
