@@ -130,8 +130,8 @@ namespace vcpkg
         // Consumes the zero or one remaining argument. Emits an error and returns nullopt of the number of arguments
         // left is 2 or more.
         Optional<std::string> consume_only_remaining_arg_optional(StringView command_name);
-        // Consumes the remaining arguments, no errors. See also: "get_remaining_args" for a nondestructive version. Emits
-        // an error and returns an empty vector if any of the arguments start with --
+        // Consumes the remaining arguments, no errors. See also: "get_remaining_args" for a nondestructive version.
+        // Emits an error and returns an empty vector if any of the arguments start with --
         std::vector<std::string> consume_remaining_args();
         // Consumes the remaining arguments. Emits an error and returns an empty vector if the number of arguments left
         // is not exactly equal to arity.

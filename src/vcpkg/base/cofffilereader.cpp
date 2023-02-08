@@ -1,8 +1,10 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/cofffilereader.h>
 #include <vcpkg/base/optional.h>
+#include <vcpkg/base/parse.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/util.h>
 
 #include <stdio.h>
 
@@ -26,34 +28,18 @@ namespace
         static constexpr long OFFSET_TO_PE_SIGNATURE_OFFSET = 0x3c;
         static constexpr StringLiteral PE_SIGNATURE = "PE\0\0";
         static constexpr auto PE_SIGNATURE_SIZE = static_cast<uint32_t>(PE_SIGNATURE.size());
-        {
-            auto seek_to_signature_offset = f.try_seek_to(OFFSET_TO_PE_SIGNATURE_OFFSET);
-            if (!seek_to_signature_offset.has_value())
-            {
-                return std::move(seek_to_signature_offset).error();
-            }
-        }
-
         uint32_t offset;
         {
-            auto read_offset = f.try_read_all(&offset, sizeof(offset));
+            auto read_offset = f.try_read_all_from(OFFSET_TO_PE_SIGNATURE_OFFSET, &offset, sizeof(offset));
             if (!read_offset.has_value())
             {
                 return std::move(read_offset).error();
             }
         }
 
-        {
-            auto seek_to_signature = f.try_seek_to(offset);
-            if (!seek_to_signature.has_value())
-            {
-                return std::move(seek_to_signature).error();
-            }
-        }
-
         char signature[PE_SIGNATURE_SIZE];
         {
-            auto read_signature = f.try_read_all(signature, PE_SIGNATURE_SIZE);
+            auto read_signature = f.try_read_all_from(offset, signature, PE_SIGNATURE_SIZE);
             if (!read_signature.has_value())
             {
                 return std::move(read_signature).error();
@@ -129,7 +115,7 @@ namespace
 
     // seeks the file `f` to the location in the file denoted by `rva`;
     // returns the remaining size of data in the section
-    ExpectedL<size_t> try_seek_to_rva(const DllMetadata& metadata, ReadFilePointer& f, uint32_t rva)
+    ExpectedL<uint32_t> try_seek_to_rva(const DllMetadata& metadata, ReadFilePointer& f, uint32_t rva)
     {
         // The PE spec says that the sections have to be sorted by virtual_address and
         // contiguous, but this does not assume that for paranoia reasons.
@@ -143,7 +129,7 @@ namespace
 
             const auto start_offset_within_section = rva - section.virtual_address;
             const auto file_pointer = start_offset_within_section + section.pointer_to_raw_data;
-            const size_t leftover = section.size_of_raw_data - start_offset_within_section;
+            const uint32_t leftover = section.size_of_raw_data - start_offset_within_section;
             return f.try_seek_to(file_pointer).map([=](Unit) { return leftover; });
         }
 
@@ -204,11 +190,27 @@ namespace
         return std::move(maybe_remaining_size).error();
     }
 
+    ExpectedL<Unit> try_read_struct_from_rva(
+        const DllMetadata& metadata, ReadFilePointer& f, void* target, uint32_t rva, uint32_t size)
+    {
+        return try_seek_to_rva(metadata, f, rva).then([&](uint32_t maximum_size) -> ExpectedL<Unit> {
+            if (maximum_size >= size)
+            {
+                return f.try_read_all(target, size);
+            }
+
+            return f.try_read_all(target, maximum_size).map([&](Unit) {
+                ::memset(static_cast<char*>(target) + maximum_size, 0, size - maximum_size);
+                return Unit{};
+            });
+        });
+    }
+
     ExpectedL<std::string> try_read_ntbs_from_rva(const DllMetadata& metadata, ReadFilePointer& f, uint32_t rva)
     {
         // Note that maximum_size handles the case that size_of_raw_data < virtual_size, where the loader
         // inserts the null(s).
-        return try_seek_to_rva(metadata, f, rva).then([&](size_t maximum_size) -> ExpectedL<std::string> {
+        return try_seek_to_rva(metadata, f, rva).then([&](uint32_t maximum_size) -> ExpectedL<std::string> {
             std::string result;
             for (;;)
             {
@@ -239,113 +241,278 @@ namespace
     static_assert(sizeof(ArchiveMemberHeader) == 60,
                   "The ArchiveMemberHeader struct must match its on-disk representation");
 
-    MachineType read_import_machine_type_after_sig1(const ReadFilePointer& f)
-    {
-        struct ImportHeaderPrefixAfterSig1
-        {
-            uint16_t sig2;
-            uint16_t version;
-            uint16_t machine;
-        } tmp;
-
-        Checks::check_exit(VCPKG_LINE_INFO, f.read(&tmp, sizeof(tmp), 1) == 1);
-        if (tmp.sig2 == 0xFFFF)
-        {
-            return to_machine_type(tmp.machine);
-        }
-
-        // This can happen, for example, if this is a .drectve member
-        return MachineType::UNKNOWN;
-    }
-
-    void read_and_verify_archive_file_signature(const ReadFilePointer& f)
+    ExpectedL<Unit> read_and_verify_archive_file_signature(ReadFilePointer& f)
     {
         static constexpr StringLiteral FILE_START = "!<arch>\n";
-        Checks::check_exit(VCPKG_LINE_INFO, f.seek(0, SEEK_SET) == 0);
+        static constexpr auto FILE_START_SIZE = FILE_START.size();
+        return f.try_seek_to(0).then([&f](Unit) -> ExpectedL<Unit> {
+            char file_start[FILE_START_SIZE];
+            auto result = f.try_read_all(file_start, FILE_START_SIZE);
+            if (result.has_value() && FILE_START != StringView{file_start, FILE_START_SIZE})
+            {
+                return msg::format_error(msgIncorrectArchiveFileSignature);
+            }
 
-        char file_start[FILE_START.size()];
-        Checks::check_exit(VCPKG_LINE_INFO, f.read(&file_start, FILE_START.size(), 1) == 1);
-
-        if (FILE_START != StringView{file_start, FILE_START.size()})
-        {
-            msg::println_error(msgIncorrectArchiveFileSignature);
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
+            return result;
+        });
     }
 
-    void read_and_skip_first_linker_member(const vcpkg::ReadFilePointer& f)
+    uint32_t bswap(uint32_t value)
+    {
+        return (value >> 24) | ((value & 0x00FF0000u) >> 8) | ((value & 0x0000FF00u) << 8) | (value << 24);
+    }
+
+    ExpectedL<std::vector<uint32_t>> try_read_first_linker_member_offsets(ReadFilePointer& f)
     {
         ArchiveMemberHeader first_linker_member_header;
         Checks::check_exit(VCPKG_LINE_INFO,
                            f.read(&first_linker_member_header, sizeof(first_linker_member_header), 1) == 1);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           memcmp(first_linker_member_header.name, "/ ", 2) == 0,
-                           "Could not find proper first linker member");
-        Checks::check_exit(VCPKG_LINE_INFO, f.seek(first_linker_member_header.decoded_size(), SEEK_CUR) == 0);
+        if (memcmp(first_linker_member_header.name, "/ ", 2) != 0)
+        {
+            return msg::format_error(msgLibraryFirstLinkerMemberMissing);
+        }
+
+        auto first_size = first_linker_member_header.decoded_size();
+        uint32_t archive_symbol_count;
+        if (first_size < sizeof(archive_symbol_count))
+        {
+            return msg::format_error(msgLibraryArchiveMemberTooSmall);
+        }
+
+        {
+            auto read = f.try_read_all(&archive_symbol_count, sizeof(archive_symbol_count));
+            if (!read.has_value())
+            {
+                return std::move(read).error();
+            }
+        }
+
+        archive_symbol_count = bswap(archive_symbol_count);
+        const auto maximum_possible_archive_members = (first_size / sizeof(uint32_t)) - 1;
+        if (archive_symbol_count > maximum_possible_archive_members)
+        {
+            return msg::format_error(msgLibraryArchiveMemberTooSmall);
+        }
+
+        std::vector<uint32_t> offsets(archive_symbol_count);
+        {
+            auto read = f.try_read_all(offsets.data(), sizeof(uint32_t) * archive_symbol_count);
+            if (!read.has_value())
+            {
+                return std::move(read).error();
+            }
+        }
+
+        // convert (big endian) offsets to little endian
+        for (auto&& offset : offsets)
+        {
+            offset = bswap(offset);
+        }
+
+        offsets.erase(std::remove(offsets.begin(), offsets.end(), 0u), offsets.end());
+        Util::sort_unique_erase(offsets);
+        uint64_t leftover = first_size - sizeof(uint32_t) - (archive_symbol_count * sizeof(uint32_t));
+        {
+            auto seek = f.try_seek_to(leftover, SEEK_CUR);
+            if (!seek.has_value())
+            {
+                return std::move(seek).error();
+            }
+        }
+
+        return offsets;
     }
 
-    std::vector<uint32_t> read_second_linker_member_offsets(const vcpkg::ReadFilePointer& f)
+    ExpectedL<Optional<std::vector<uint32_t>>> try_read_second_linker_member_offsets(ReadFilePointer& f)
     {
         ArchiveMemberHeader second_linker_member_header;
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           f.read(&second_linker_member_header, sizeof(second_linker_member_header), 1) == 1);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           memcmp(second_linker_member_header.name, "/ ", 2) == 0,
-                           "Could not find proper second linker member");
+        {
+            auto read = f.try_read_all(&second_linker_member_header, sizeof(second_linker_member_header));
+            if (!read.has_value())
+            {
+                return std::move(read).error();
+            }
+        }
+
+        if (memcmp(second_linker_member_header.name, "/ ", 2) != 0)
+        {
+            return nullopt;
+        }
 
         const auto second_size = second_linker_member_header.decoded_size();
         // The first 4 bytes contains the number of archive members
         uint32_t archive_member_count;
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           second_size >= sizeof(archive_member_count),
-                           "Second linker member was too small to contain a single uint32_t");
-        Checks::check_exit(VCPKG_LINE_INFO, f.read(&archive_member_count, sizeof(archive_member_count), 1) == 1);
+
+        if (second_size < sizeof(archive_member_count))
+        {
+            return msg::format_error(msgLibraryArchiveMemberTooSmall);
+        }
+
+        {
+            auto read = f.try_read_all(&archive_member_count, sizeof(archive_member_count));
+            if (!read.has_value())
+            {
+                return std::move(read).error();
+            }
+        }
+
         const auto maximum_possible_archive_members = (second_size / sizeof(uint32_t)) - 1;
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           archive_member_count <= maximum_possible_archive_members,
-                           "Second linker member was too small to contain the expected number of archive members");
+        if (archive_member_count > maximum_possible_archive_members)
+        {
+            return msg::format_error(msgLibraryArchiveMemberTooSmall);
+        }
+
         std::vector<uint32_t> offsets(archive_member_count);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           f.read(offsets.data(), sizeof(uint32_t), archive_member_count) == archive_member_count);
+        {
+            auto read = f.try_read_all(offsets.data(), sizeof(uint32_t) * archive_member_count);
+            if (!read.has_value())
+            {
+                return std::move(read).error();
+            }
+        }
 
         // Ignore offsets that point to offset 0. See vcpkg github #223 #288 #292
         offsets.erase(std::remove(offsets.begin(), offsets.end(), 0u), offsets.end());
         // Sort the offsets, because it is possible for them to be unsorted. See vcpkg github #292
         std::sort(offsets.begin(), offsets.end());
         uint64_t leftover = second_size - sizeof(uint32_t) - (archive_member_count * sizeof(uint32_t));
-        Checks::check_exit(VCPKG_LINE_INFO, f.seek(leftover, SEEK_CUR) == 0);
+        {
+            auto seek = f.try_seek_to(leftover, SEEK_CUR);
+            if (!seek.has_value())
+            {
+                return std::move(seek).error();
+            }
+        }
+
         return offsets;
     }
 
-    std::vector<MachineType> read_machine_types_from_archive_members(const vcpkg::ReadFilePointer& f,
-                                                                     const std::vector<uint32_t>& member_offsets)
+    static void add_machine_type(std::vector<MachineType>& machine_types, MachineType machine_type)
     {
-        std::vector<MachineType> machine_types; // used as a set because n is tiny
+        if (machine_type == MachineType::UNKNOWN ||
+            std::find(machine_types.begin(), machine_types.end(), machine_type) != machine_types.end())
+        {
+            return;
+        }
+
+        machine_types.push_back(machine_type);
+    }
+
+    ExpectedL<LibInformation> read_lib_information_from_archive_members(ReadFilePointer& f,
+                                                                        const std::vector<uint32_t>& member_offsets)
+    {
+        std::vector<MachineType> machine_types; // used as set because n is tiny
+        std::set<std::string, std::less<>> directives;
         // Next we have the obj and pseudo-object files
         for (unsigned int offset : member_offsets)
         {
             // Skip the header, no need to read it
-            Checks::check_exit(VCPKG_LINE_INFO, f.seek(offset + sizeof(ArchiveMemberHeader), SEEK_SET) == 0);
-            uint16_t machine_type_raw;
-            Checks::check_exit(VCPKG_LINE_INFO, f.read(&machine_type_raw, sizeof(machine_type_raw), 1) == 1);
-
-            auto result_machine_type = to_machine_type(machine_type_raw);
-            if (result_machine_type == MachineType::UNKNOWN)
+            const auto coff_base = offset + sizeof(ArchiveMemberHeader);
+            uint32_t tag_sniffer;
             {
-                result_machine_type = read_import_machine_type_after_sig1(f);
+                auto read = f.try_read_all_from(coff_base, &tag_sniffer, sizeof(tag_sniffer));
+                if (!read.has_value())
+                {
+                    return std::move(read).error();
+                }
             }
 
-            if (result_machine_type == MachineType::UNKNOWN ||
-                std::find(machine_types.begin(), machine_types.end(), result_machine_type) != machine_types.end())
+            if (tag_sniffer == LlvmBitcodeSignature)
             {
-                continue;
+                // obj is LLVM bitcode
+                add_machine_type(machine_types, MachineType::LLVM_BITCODE);
             }
+            else if (tag_sniffer == ImportHeaderSignature)
+            {
+                // obj is an import obj
+                ImportHeaderAfterSignature import_header;
+                {
+                    auto read = f.try_read_all(&import_header, sizeof(import_header));
+                    if (!read.has_value())
+                    {
+                        return std::move(read).error();
+                    }
+                }
 
-            machine_types.push_back(result_machine_type);
+                add_machine_type(machine_types, static_cast<MachineType>(import_header.machine));
+            }
+            else
+            {
+                // obj is traditional COFF
+                CoffFileHeaderSignature coff_signature;
+                static_assert(sizeof(tag_sniffer) == sizeof(coff_signature), "BOOM");
+                memcpy(&coff_signature, &tag_sniffer, sizeof(tag_sniffer));
+                add_machine_type(machine_types, static_cast<MachineType>(coff_signature.machine));
+
+                CoffFileHeaderAfterSignature coff_header;
+                {
+                    auto read = f.try_read_all(&coff_header, sizeof(coff_header));
+                    if (!read.has_value())
+                    {
+                        return std::move(read).error();
+                    }
+                }
+
+                // Object files shouldn't have optional headers, but the spec says we should skip over one if any
+                {
+                    auto seek = f.try_seek_to(coff_header.size_of_optional_header, SEEK_CUR);
+                    if (!seek.has_value())
+                    {
+                        return std::move(seek).error();
+                    }
+                }
+
+                // Read section headers
+                std::vector<SectionTableHeader> sections;
+                sections.resize(coff_signature.number_of_sections);
+                {
+                    auto read =
+                        f.try_read_all(sections.data(), sizeof(SectionTableHeader) * coff_signature.number_of_sections);
+                    if (!read.has_value())
+                    {
+                        return std::move(read).error();
+                    }
+                }
+
+                // Look for linker directive sections
+                for (auto&& section : sections)
+                {
+                    if (!(section.characteristics & SectionTableFlags::LinkInfo) ||
+                        memcmp(".drectve", &section.name, 8) != 0 || section.number_of_relocations != 0 ||
+                        section.number_of_line_numbers != 0)
+                    {
+                        continue;
+                    }
+
+                    // read the actual directive
+                    std::string directive_command_line;
+                    const auto section_offset = coff_base + section.pointer_to_raw_data;
+                    directive_command_line.resize(section.size_of_raw_data);
+                    {
+                        auto read = f.try_read_all_from(
+                            section_offset, directive_command_line.data(), section.size_of_raw_data);
+                        if (!read.has_value())
+                        {
+                            return std::move(read).error();
+                        }
+                    }
+
+                    if (Strings::starts_with(directive_command_line, StringLiteral{"\xEF\xBB\xBF"}))
+                    {
+                        // chop off the BOM
+                        directive_command_line.erase(0, 3);
+                    }
+
+                    for (auto&& directive : tokenize_command_line(directive_command_line))
+                    {
+                        directives.insert(std::move(directive));
+                    }
+                }
+            }
         }
 
         std::sort(machine_types.begin(), machine_types.end());
-        return machine_types;
+        return LibInformation{std::move(machine_types), std::move(directives)};
     }
 } // unnamed namespace
 
@@ -362,15 +529,7 @@ namespace vcpkg
         }
     }
 
-    MachineType DllMetadata::get_machine_type() const noexcept { return to_machine_type(coff_header.machine); }
-
-    void ArchiveMemberHeader::check_end_of_header() const
-    {
-        // The name[0] == '\0' check is for freeglut, see GitHub issue #223
-        Checks::msg_check_exit(VCPKG_LINE_INFO,
-                               name[0] == '\0' || (end_of_header[0] == '`' && end_of_header[1] == '\n'),
-                               msgIncorrectLibHeaderEnd);
-    }
+    MachineType DllMetadata::get_machine_type() const noexcept { return static_cast<MachineType>(coff_header.machine); }
 
     uint64_t ArchiveMemberHeader::decoded_size() const
     {
@@ -384,6 +543,87 @@ namespace vcpkg
         }
 
         return value;
+    }
+
+    static void handle_uninteresting_command_line_ch(char ch, size_t& slash_count, std::string& this_arg)
+    {
+        // n backslashes not followed by a quotation mark produce n backslashes
+        if (slash_count)
+        {
+            this_arg.append(slash_count, '\\');
+            slash_count = 0;
+        }
+
+        this_arg.push_back(ch);
+    }
+
+    static void handle_maybe_adding_argument(std::vector<std::string>& result, std::string& this_arg)
+    {
+        if (!this_arg.empty())
+        {
+            result.push_back(std::move(this_arg));
+            this_arg.clear();
+        }
+    }
+
+    std::vector<std::string> tokenize_command_line(StringView cmd_line)
+    {
+        std::vector<std::string> result;
+        std::string this_arg;
+        bool in_quoted_argument = false;
+        std::size_t slash_count = 0;
+        for (auto&& ch : cmd_line)
+        {
+            if (ch == '\\')
+            {
+                ++slash_count;
+            }
+            else if (ch == '"')
+            {
+                // 2n backslashes followed by a quotation mark produce n backslashes followed by an (ending) quotation
+                // mark
+                //
+                // 2n + 1 backslashes followed by a quotation mark produce n backslashes followed by an (escaped)
+                // quotation mark
+                if (slash_count)
+                {
+                    this_arg.append(slash_count >> 1, '\\');
+                    if (std::exchange(slash_count, std::size_t{}) & 0x1u)
+                    {
+                        // escaped
+                        handle_uninteresting_command_line_ch('"', slash_count, this_arg);
+                    }
+                    else
+                    {
+                        // not escaped
+                        in_quoted_argument = !in_quoted_argument;
+                    }
+                }
+                else
+                {
+                    in_quoted_argument = !in_quoted_argument;
+                }
+            }
+            else if (ParserBase::is_whitespace(ch))
+            {
+                if (in_quoted_argument)
+                {
+                    handle_uninteresting_command_line_ch(ch, slash_count, this_arg);
+                }
+                else
+                {
+                    handle_maybe_adding_argument(result, this_arg);
+                }
+            }
+            else
+            {
+                handle_uninteresting_command_line_ch(ch, slash_count, this_arg);
+            }
+        }
+
+        this_arg.append(slash_count, '\\');
+        handle_maybe_adding_argument(result, this_arg);
+        return result;
     }
 
     ExpectedL<DllMetadata> try_read_dll_metadata(ReadFilePointer& f)
@@ -431,6 +671,32 @@ namespace vcpkg
         }
 
         return result;
+    }
+
+    ExpectedL<bool> try_read_if_dll_has_exports(const DllMetadata& dll, ReadFilePointer& f)
+    {
+        if (dll.data_directories.size() < 1)
+        {
+            Debug::print("No export directory\n");
+            return false;
+        }
+
+        const auto& export_data_directory = dll.data_directories[0];
+        if (export_data_directory.virtual_address == 0)
+        {
+            Debug::print("Null export directory.\n");
+            return false;
+        }
+
+        ExportDirectoryTable export_directory_table;
+        auto export_read_result = try_read_struct_from_rva(
+            dll, f, &export_directory_table, export_data_directory.virtual_address, sizeof(export_directory_table));
+        if (!export_read_result.has_value())
+        {
+            return std::move(export_read_result).error();
+        }
+
+        return export_directory_table.address_table_entries != 0;
     }
 
     ExpectedL<std::vector<std::string>> try_read_dll_imported_dll_names(const DllMetadata& dll, ReadFilePointer& f)
@@ -502,47 +768,42 @@ namespace vcpkg
             });
     }
 
-    std::vector<MachineType> read_lib_machine_types(const ReadFilePointer& f)
+    ExpectedL<LibInformation> read_lib_information(ReadFilePointer& f)
     {
-        read_and_verify_archive_file_signature(f);
-        read_and_skip_first_linker_member(f);
-        const auto offsets = read_second_linker_member_offsets(f);
-        return read_machine_types_from_archive_members(f, offsets);
-    }
-
-    MachineType to_machine_type(const uint16_t value)
-    {
-        const MachineType t = static_cast<MachineType>(value);
-        switch (t)
+        auto read_signature = read_and_verify_archive_file_signature(f);
+        if (!read_signature.has_value())
         {
-            case MachineType::UNKNOWN:
-            case MachineType::AM33:
-            case MachineType::AMD64:
-            case MachineType::ARM:
-            case MachineType::ARM64:
-            case MachineType::ARM64EC:
-            case MachineType::ARM64X:
-            case MachineType::ARMNT:
-            case MachineType::EBC:
-            case MachineType::I386:
-            case MachineType::IA64:
-            case MachineType::M32R:
-            case MachineType::MIPS16:
-            case MachineType::MIPSFPU:
-            case MachineType::MIPSFPU16:
-            case MachineType::POWERPC:
-            case MachineType::POWERPCFP:
-            case MachineType::R4000:
-            case MachineType::RISCV32:
-            case MachineType::RISCV64:
-            case MachineType::RISCV128:
-            case MachineType::SH3:
-            case MachineType::SH3DSP:
-            case MachineType::SH4:
-            case MachineType::SH5:
-            case MachineType::THUMB:
-            case MachineType::WCEMIPSV2: return t;
-            default: Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgUnknownMachineCode, msg::value = value);
+            return std::move(read_signature).error();
         }
+
+        auto first_offsets = try_read_first_linker_member_offsets(f);
+        if (!first_offsets.has_value())
+        {
+            return std::move(first_offsets).error();
+        }
+
+        auto second_offsets = try_read_second_linker_member_offsets(f);
+        if (!second_offsets.has_value())
+        {
+            return std::move(second_offsets).error();
+        }
+
+        const std::vector<uint32_t>* offsets;
+        // "Although both linker members provide a directory of symbols and archive members that
+        // contain them, the second linker member is used in preference to the first by all current linkers."
+        if (auto maybe_offsets2 = second_offsets.get()->get())
+        {
+            offsets = maybe_offsets2;
+        }
+        else if (auto maybe_offsets = first_offsets.get())
+        {
+            offsets = maybe_offsets;
+        }
+        else
+        {
+            return msg::format_error(msgInvalidLibraryMissingLinkerMembers);
+        }
+
+        return read_lib_information_from_archive_members(f, *offsets);
     }
 }

@@ -117,13 +117,13 @@ namespace vcpkg
         FilePointer& operator=(const FilePointer&) = delete;
         explicit operator bool() const noexcept;
 
-        int seek(long long offset, int origin) const noexcept;
         long long tell() const noexcept;
         int eof() const noexcept;
         std::error_code error() const noexcept;
 
         const Path& path() const;
         ExpectedL<Unit> try_seek_to(long long offset);
+        ExpectedL<Unit> try_seek_to(long long offset, int origin);
 
         ~FilePointer();
     };
@@ -137,6 +137,7 @@ namespace vcpkg
         size_t read(void* buffer, size_t element_size, size_t element_count) const noexcept;
         ExpectedL<Unit> try_read_all(void* buffer, std::uint32_t size);
         ExpectedL<char> try_getc();
+        ExpectedL<Unit> try_read_all_from(long long offset, void* buffer, std::uint32_t size);
     };
 
     struct WriteFilePointer : FilePointer

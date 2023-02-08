@@ -971,7 +971,7 @@ namespace vcpkg
 
         const BuildInfo build_info = read_build_info(fs, paths.build_info_file_path(action.spec));
         const size_t error_count =
-            PostBuildLint::perform_all_checks(action.spec, paths, pre_build_info, build_info, scfl.source_location);
+            perform_post_build_lint_checks(action.spec, paths, pre_build_info, build_info, scfl.source_location);
 
         auto find_itr = action.feature_dependencies.find("core");
         Checks::check_exit(VCPKG_LINE_INFO, find_itr != action.feature_dependencies.end());

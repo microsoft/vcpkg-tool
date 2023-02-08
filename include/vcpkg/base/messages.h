@@ -3,6 +3,7 @@
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/json.h>
 #include <vcpkg/base/fwd/messages.h>
+#include <vcpkg/base/fwd/span.h>
 
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/lineinfo.h>
@@ -27,91 +28,55 @@ namespace vcpkg
     struct LocalizedString
     {
         LocalizedString() = default;
-        operator StringView() const noexcept { return m_data; }
-        const std::string& data() const noexcept { return m_data; }
-        const std::string& to_string() const noexcept { return m_data; }
-        std::string extract_data() { return std::exchange(m_data, ""); }
+        operator StringView() const noexcept;
+        const std::string& data() const noexcept;
+        const std::string& to_string() const noexcept;
+        std::string extract_data();
 
-        static LocalizedString from_raw(std::string&& s) { return LocalizedString(std::move(s)); }
+        static LocalizedString from_raw(std::string&& s) noexcept;
 
         template<class StringLike, std::enable_if_t<std::is_constructible_v<StringView, const StringLike&>, int> = 0>
         static LocalizedString from_raw(const StringLike& s)
         {
             return LocalizedString(StringView(s));
         }
-        LocalizedString& append_raw(char c)
-        {
-            m_data.push_back(c);
-            return *this;
-        }
-        LocalizedString& append_raw(StringView s)
-        {
-            m_data.append(s.begin(), s.size());
-            return *this;
-        }
+
+        LocalizedString& append_raw(char c);
+        LocalizedString& append_raw(StringView s);
         template<class... Args>
         LocalizedString& append_fmt_raw(fmt::format_string<Args...> s, Args&&... args)
         {
             m_data.append(fmt::format(s, std::forward<Args>(args)...));
             return *this;
         }
-        LocalizedString& append(const LocalizedString& s)
-        {
-            m_data.append(s.m_data);
-            return *this;
-        }
+        LocalizedString& append(const LocalizedString& s);
         template<class Message, class... Args>
         LocalizedString& append(Message m, const Args&... args)
         {
             return append(msg::format(m, args...));
         }
 
-        LocalizedString& append_indent(size_t indent = 1)
-        {
-            m_data.append(indent * 4, ' ');
-            return *this;
-        }
+        LocalizedString& append_indent(size_t indent = 1);
 
-        friend const char* to_printf_arg(const LocalizedString& s) { return s.data().c_str(); }
-
-        friend bool operator==(const LocalizedString& lhs, const LocalizedString& rhs)
-        {
-            return lhs.data() == rhs.data();
-        }
-
-        friend bool operator!=(const LocalizedString& lhs, const LocalizedString& rhs)
-        {
-            return lhs.data() != rhs.data();
-        }
-
-        friend bool operator<(const LocalizedString& lhs, const LocalizedString& rhs)
-        {
-            return lhs.data() < rhs.data();
-        }
-
-        friend bool operator<=(const LocalizedString& lhs, const LocalizedString& rhs)
-        {
-            return lhs.data() <= rhs.data();
-        }
-
-        friend bool operator>(const LocalizedString& lhs, const LocalizedString& rhs)
-        {
-            return lhs.data() > rhs.data();
-        }
-
-        friend bool operator>=(const LocalizedString& lhs, const LocalizedString& rhs)
-        {
-            return lhs.data() >= rhs.data();
-        }
-
-        bool empty() const { return m_data.empty(); }
-        void clear() { m_data.clear(); }
+        // 0 items - Does nothing
+        // 1 item - .append_raw(' ').append(item)
+        // 2+ items - foreach: .append_raw('\n').append_indent(indent).append(item)
+        LocalizedString& append_floating_list(int indent, View<LocalizedString> items);
+        friend const char* to_printf_arg(const LocalizedString& s) noexcept;
+        friend bool operator==(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;
+        friend bool operator!=(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;
+        friend bool operator<(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;
+        friend bool operator<=(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;
+        friend bool operator>(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;
+        friend bool operator>=(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;
+        bool empty() const noexcept;
+        void clear() noexcept;
 
     private:
         std::string m_data;
 
-        explicit LocalizedString(StringView data) : m_data(data.data(), data.size()) { }
-        explicit LocalizedString(std::string&& data) : m_data(std::move(data)) { }
+        explicit LocalizedString(StringView data);
+        explicit LocalizedString(std::string&& data) noexcept;
     };
 }
 
@@ -314,13 +279,11 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(new_scheme, "version");
     DECLARE_MSG_ARG(old_scheme, "version-string");
     DECLARE_MSG_ARG(option, "editable");
-    DECLARE_MSG_ARG(package_name, "zlib");
     DECLARE_MSG_ARG(path, "/foo/bar");
     DECLARE_MSG_ARG(row, "42");
     DECLARE_MSG_ARG(sha,
                     "eb32643dd2164c72b8a660ef52f1e701bb368324ae461e12d70d6a9aefc0c9573387ee2ed3828037ed62bb3e8f566416a2"
                     "d3b3827a3928f0bff7c29f7662293e");
-    DECLARE_MSG_ARG(spec, "zlib:x64-windows");
     DECLARE_MSG_ARG(supports_expression, "windows & !static");
     DECLARE_MSG_ARG(system_api, "CreateProcessW");
     DECLARE_MSG_ARG(system_name, "Darwin");
@@ -331,6 +294,11 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(vcpkg_line_info, "/a/b/foo.cpp(13)");
     DECLARE_MSG_ARG(vendor, "Azure");
     DECLARE_MSG_ARG(version, "1.3.8");
+
+    // Choose carefully between the following when describing packages
+    DECLARE_MSG_ARG(package_name, "zlib");
+    DECLARE_MSG_ARG(spec, "zlib:x64-windows");
+    DECLARE_MSG_ARG(feature_spec, "zlib[featurea,featureb]");
 
 #undef DECLARE_MSG_ARG
 
@@ -1207,10 +1175,6 @@ namespace vcpkg
         "{expected} is a locale-invariant delimiter; for example, the ':' or '=' in 'zlib:x64-windows=skip'",
         "expected '{expected}' here");
     DECLARE_MESSAGE(ExpectedDigitsAfterDecimal, (), "", "Expected digits after the decimal point");
-    DECLARE_MESSAGE(ExpectedExtension,
-                    (msg::extension, msg::path),
-                    "",
-                    "The file extension was not {extension}: {path}");
     DECLARE_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' here");
     DECLARE_MESSAGE(ExpectedOneSetOfTags,
                     (msg::count, msg::old_value, msg::new_value, msg::value),
@@ -1262,16 +1226,20 @@ namespace vcpkg
                     "",
                     "{error_msg}\nFailed to fetch {package_name}:");
     DECLARE_MESSAGE(FailedToFindBaseline, (), "", "Failed to find baseline.json");
-    DECLARE_MESSAGE(FailedToFindPortFeature, (msg::feature, msg::spec), "", "Could not find {feature} in {spec}.");
+    DECLARE_MESSAGE(FailedToFindPortFeature,
+                    (msg::feature, msg::package_name),
+                    "",
+                    "{package_name} has no feature named {feature}.");
     DECLARE_MESSAGE(FailedToFormatMissingFile,
                     (),
                     "",
                     "No files to format.\nPlease pass either --all, or the explicit files to format or convert.");
-    DECLARE_MESSAGE(FailedToLoadInstalledManifest,
-                    (msg::spec),
-                    "",
-                    "The control or manifest file for {spec} could not be loaded due to the following error. Please "
-                    "remove {spec} and try again.");
+    DECLARE_MESSAGE(
+        FailedToLoadInstalledManifest,
+        (msg::package_name),
+        "",
+        "The control or manifest file for {package_name} could not be loaded due to the following error. Please "
+        "remove {package_name} and try again.");
     DECLARE_MESSAGE(FailedToLoadManifest, (msg::path), "", "Failed to load manifest from directory {path}");
     DECLARE_MESSAGE(FailedToLoadPort,
                     (msg::package_name, msg::path),
@@ -1572,7 +1540,6 @@ namespace vcpkg
                     "{value} is a sha.",
                     "SHA512's must be 128 hex characters: {value}");
     DECLARE_MESSAGE(IncorrectArchiveFileSignature, (), "", "Incorrect archive file signature");
-    DECLARE_MESSAGE(IncorrectLibHeaderEnd, (), "", "Incorrect lib header end");
     DECLARE_MESSAGE(IncorrectPESignature, (), "", "Incorrect PE signature");
     DECLARE_MESSAGE(IncrementedUtf8Decoder, (), "", "Incremented Utf8Decoder at the end of the string");
     DECLARE_MESSAGE(InfoSetEnvVar,
@@ -1709,6 +1676,8 @@ namespace vcpkg
                     "invalid format string: {actual}");
     DECLARE_MESSAGE(InvalidHexDigit, (), "", "Invalid hex digit in unicode escape");
     DECLARE_MESSAGE(InvalidIntegerConst, (msg::count), "", "Invalid integer constant: {count}");
+    DECLARE_MESSAGE(InvalidLibraryMissingLinkerMembers, (), "", "Library was invalid: could not find a linker member.");
+    DECLARE_MESSAGE(InvalidLibraryMissingSignature, (), "", "Library was invalid: did not find !<arch> signature.");
     DECLARE_MESSAGE(
         InvalidLinkage,
         (msg::system_name, msg::value),
@@ -1735,6 +1704,11 @@ namespace vcpkg
                     (msg::tool_name),
                     "A platform API call failure message is appended after this",
                     "Launching {tool_name}:");
+    DECLARE_MESSAGE(LibraryArchiveMemberTooSmall,
+                    (),
+                    "",
+                    "A library archive member was too small to contain the expected data type.");
+    DECLARE_MESSAGE(LibraryFirstLinkerMemberMissing, (), "", "Could not find first linker member name.");
     DECLARE_MESSAGE(LicenseExpressionContainsExtraPlus,
                     (),
                     "",
@@ -1804,6 +1778,10 @@ namespace vcpkg
                     (msg::value),
                     "Example of {value} is 'unknownlicense'",
                     "Unknown license identifier '{value}'. Known values are listed at https://spdx.org/licenses/");
+    DECLARE_MESSAGE(LinkageDynamicDebug, (), "", "Dynamic Debug (/MDd)");
+    DECLARE_MESSAGE(LinkageDynamicRelease, (), "", "Dynamic Release (/MD)");
+    DECLARE_MESSAGE(LinkageStaticDebug, (), "", "Static Debug (/MTd)");
+    DECLARE_MESSAGE(LinkageStaticRelease, (), "", "Static Release (/MT)");
     DECLARE_MESSAGE(ListOfValidFieldsForControlFiles,
                     (),
                     "",
@@ -1966,7 +1944,7 @@ namespace vcpkg
     DECLARE_MESSAGE(OverlayPatchDir, (msg::path), "", "Overlay path \"{path}\" must exist and must be a directory.");
     DECLARE_MESSAGE(OverlayTriplets, (msg::path), "", "Overlay triplets from {path} :");
     DECLARE_MESSAGE(OverwritingFile, (msg::path), "", "File {path} was already present and will be overwritten");
-    DECLARE_MESSAGE(PackageAlreadyRemoved, (msg::spec), "", "unable to remove package {spec}: already removed");
+    DECLARE_MESSAGE(PackageAlreadyRemoved, (msg::spec), "", "unable to remove {spec}: already removed");
     DECLARE_MESSAGE(PackageFailedtWhileExtracting,
                     (msg::value, msg::path),
                     "'{value}' is either a tool name or a package name.",
@@ -2110,15 +2088,35 @@ namespace vcpkg
                     "The folder /include exists in a cmake helper port; this is incorrect, since only cmake "
                     "files should be installed");
     DECLARE_MESSAGE(PortBugInspectFiles, (msg::extension), "", "To inspect the {extension} files, use:");
-    DECLARE_MESSAGE(PortBugInvalidCrtLinkage,
-                    (msg::expected),
-                    "{expected} is the expected build type",
-                    "Invalid crt linkage. Expected {expected}, but the following libs had:");
-    DECLARE_MESSAGE(PortBugMergeLibCMakeDir,
-                    (msg::spec),
-                    "",
-                    "The /lib/cmake folder should be merged with /debug/lib/cmake and moved to /share/{spec}/cmake. "
-                    "Please use the helper function `vcpkg_cmake_config_fixup()` from the port vcpkg-cmake-config.`");
+    DECLARE_MESSAGE(
+        PortBugInvalidCrtLinkage,
+        (msg::expected),
+        "{expected} is one of LinkageDynamicDebug/LinkageDynamicRelease/LinkageStaticDebug/LinkageStaticRelease. "
+        "Immediately after this message is a file by file list with what linkages they contain. 'CRT' is an acronym "
+        "meaning C Runtime. See also: "
+        "https://learn.microsoft.com/en-us/cpp/build/reference/md-mt-ld-use-run-time-library?view=msvc-170. This is "
+        "complicated because a binary can link with more than one CRT.\n"
+        "Example fully formatted message:\n"
+        "The following binaries should use the Dynamic Debug (/MDd) CRT.\n"
+        "    C:\\some\\path\\to\\sane\\lib links with: Dynamic Release (/MD)\n"
+        "    C:\\some\\path\\to\\lib links with:\n"
+        "        Static Debug (/MTd)\n"
+        "        Dynamic Release (/MD)\n"
+        "    C:\\some\\different\\path\\to\\a\\dll links with:\n"
+        "        Static Debug (/MTd)\n"
+        "        Dynamic Debug (/MDd)\n",
+        "The following binaries should use the {expected} CRT.");
+    DECLARE_MESSAGE(PortBugInvalidCrtLinkageEntry,
+                    (msg::path),
+                    "See explanation in PortBugInvalidCrtLinkage",
+                    "{path} links with:");
+
+    DECLARE_MESSAGE(
+        PortBugMergeLibCMakeDir,
+        (msg::package_name),
+        "",
+        "The /lib/cmake folder should be merged with /debug/lib/cmake and moved to /share/{package_name}/cmake. "
+        "Please use the helper function `vcpkg_cmake_config_fixup()` from the port vcpkg-cmake-config.`");
     DECLARE_MESSAGE(PortBugMismatchedNumberOfBinaries, (), "", "Mismatching number of debug and release binaries.");
     DECLARE_MESSAGE(
         PortBugMisplacedCMakeFiles,
@@ -2137,6 +2135,12 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "The /{path} file does not exist. This file must exist for CMake helper ports.");
+    DECLARE_MESSAGE(
+        PortBugMissingProvidedUsage,
+        (msg::package_name),
+        "",
+        "The port provided \"usage\" but forgot to install to /share/{package_name}/usage, add the following line"
+        "in the portfile:");
     DECLARE_MESSAGE(PortBugMissingImportedLibs,
                     (msg::path),
                     "",
@@ -2147,10 +2151,11 @@ namespace vcpkg
                     "",
                     "The folder /include is empty or not present. This indicates the library was not correctly "
                     "installed.");
-    DECLARE_MESSAGE(PortBugMissingLicense,
-                    (msg::spec),
-                    "",
-                    "The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{spec}/copyright");
+    DECLARE_MESSAGE(
+        PortBugMissingLicense,
+        (msg::package_name),
+        "",
+        "The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{package_name}/copyright");
     DECLARE_MESSAGE(PortBugMissingReleaseBinaries, (), "", "Release binaries were not found.");
     DECLARE_MESSAGE(PortBugMovePkgConfigFiles, (), "", "You can move the pkgconfig files with commands similar to:");
     DECLARE_MESSAGE(PortBugOutdatedCRT, (), "", "Detected outdated dynamic CRT in the following files:");
@@ -2223,9 +2228,10 @@ namespace vcpkg
                     "",
                     "To remove dependencies in manifest mode, edit your manifest (vcpkg.json) and run 'install'.");
     DECLARE_MESSAGE(RemovePackageConflict,
-                    (msg::spec),
+                    (msg::package_name, msg::spec, msg::triplet),
                     "",
-                    "Another installed package matches the name of an unmatched request. Did you mean {spec}?");
+                    "{spec} is not installed, but {package_name} is installed for {triplet}. Did you mean "
+                    "{package_name}:{triplet}?");
     DECLARE_MESSAGE(RestoredPackage, (msg::path), "", "Restored package from \"{path}\"");
     DECLARE_MESSAGE(
         RestoredPackagesFromVendor,
@@ -2396,11 +2402,6 @@ namespace vcpkg
                     "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', "
                     "'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', "
                     "'x-aws-config', 'http', and 'files'");
-    DECLARE_MESSAGE(UnknownMachineCode,
-                    (msg::value),
-                    "{value} is machine type code, see "
-                    "https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#machine-types",
-                    "Unknown machine type code {value}");
     DECLARE_MESSAGE(UnknownOptions, (msg::command_name), "", "Unknown option(s) for command '{command_name}':");
     DECLARE_MESSAGE(UnknownParameterForIntegrate,
                     (msg::value),
@@ -2437,15 +2438,39 @@ namespace vcpkg
                     (msg::feature, msg::package_name),
                     "",
                     "feature {feature} was passed, but that is not a feature supported by {package_name} supports.");
+    DECLARE_MESSAGE(UnsupportedFeatureSupportsExpression,
+                    (msg::package_name, msg::feature_spec, msg::supports_expression, msg::triplet),
+                    "",
+                    "{feature_spec} is only supported on '{supports_expression}', "
+                    "which does not match {triplet}. This usually means that there are known "
+                    "build failures, or runtime problems, when building other platforms. To ignore this and attempt to "
+                    "build {package_name} anyway, rerun vcpkg with `--allow-unsupported`.");
+    DECLARE_MESSAGE(
+        UnsupportedFeatureSupportsExpressionWarning,
+        (msg::feature_spec, msg::supports_expression, msg::triplet),
+        "",
+        "{feature_spec} is only supported on '{supports_expression}', "
+        "which does not match {triplet}. This usually means that there are known build failures, "
+        "or runtime problems, when building other platforms. Proceeding anyway due to `--allow-unsupported`.");
     DECLARE_MESSAGE(UnsupportedPort, (msg::package_name), "", "Port {package_name} is not supported.");
     DECLARE_MESSAGE(UnsupportedPortDependency,
                     (msg::value),
                     "'{value}' is the name of a port dependency.",
                     "- dependency {value} is not supported.");
-    DECLARE_MESSAGE(UnsupportedPortFeature,
-                    (msg::spec, msg::supports_expression),
+    DECLARE_MESSAGE(UnsupportedSupportsExpression,
+                    (msg::package_name, msg::supports_expression, msg::triplet),
                     "",
-                    "{spec} is only supported on '{supports_expression}'");
+                    "{package_name} is only supported on '{supports_expression}', "
+                    "which does not match {triplet}. This usually means that there are known "
+                    "build failures, or runtime problems, when building other platforms. To ignore this and attempt to "
+                    "build {package_name} anyway, rerun vcpkg with `--allow-unsupported`.");
+    DECLARE_MESSAGE(
+        UnsupportedSupportsExpressionWarning,
+        (msg::package_name, msg::supports_expression, msg::triplet),
+        "",
+        "{package_name} is only supported on '{supports_expression}', "
+        "which does not match {triplet}. This usually means that there are known build failures, "
+        "or runtime problems, when building other platforms. Proceeding anyway due to `--allow-unsupported`.");
     DECLARE_MESSAGE(UnsupportedShortOptions,
                     (msg::value),
                     "'{value}' is the short option given",

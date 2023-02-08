@@ -8,6 +8,18 @@
 using namespace vcpkg;
 using namespace vcpkg::Commands;
 
+TEST_CASE ("append floating list", "[LocalizedString]")
+{
+    const auto a = LocalizedString::from_raw("a");
+    const auto b = LocalizedString::from_raw("b");
+    CHECK(LocalizedString().append_floating_list(2, std::vector<LocalizedString>{}) == LocalizedString());
+    CHECK(LocalizedString().append_floating_list(2, std::vector<LocalizedString>{a}) ==
+          LocalizedString::from_raw(" a"));
+    const auto expected = LocalizedString::from_raw("    heading\n        a\n        b");
+    CHECK(LocalizedString::from_raw("    heading").append_floating_list(2, std::vector<LocalizedString>{a, b}) ==
+          expected);
+}
+
 TEST_CASE ("get path to locale from LCID", "[messages]")
 {
     // valid LCID; Chinese
