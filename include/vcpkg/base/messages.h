@@ -3,6 +3,7 @@
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/json.h>
 #include <vcpkg/base/fwd/messages.h>
+#include <vcpkg/base/fwd/span.h>
 
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/lineinfo.h>
@@ -27,91 +28,55 @@ namespace vcpkg
     struct LocalizedString
     {
         LocalizedString() = default;
-        operator StringView() const noexcept { return m_data; }
-        const std::string& data() const noexcept { return m_data; }
-        const std::string& to_string() const noexcept { return m_data; }
-        std::string extract_data() { return std::exchange(m_data, ""); }
+        operator StringView() const noexcept;
+        const std::string& data() const noexcept;
+        const std::string& to_string() const noexcept;
+        std::string extract_data();
 
-        static LocalizedString from_raw(std::string&& s) { return LocalizedString(std::move(s)); }
+        static LocalizedString from_raw(std::string&& s) noexcept;
 
         template<class StringLike, std::enable_if_t<std::is_constructible_v<StringView, const StringLike&>, int> = 0>
         static LocalizedString from_raw(const StringLike& s)
         {
             return LocalizedString(StringView(s));
         }
-        LocalizedString& append_raw(char c)
-        {
-            m_data.push_back(c);
-            return *this;
-        }
-        LocalizedString& append_raw(StringView s)
-        {
-            m_data.append(s.begin(), s.size());
-            return *this;
-        }
+
+        LocalizedString& append_raw(char c);
+        LocalizedString& append_raw(StringView s);
         template<class... Args>
         LocalizedString& append_fmt_raw(fmt::format_string<Args...> s, Args&&... args)
         {
             m_data.append(fmt::format(s, std::forward<Args>(args)...));
             return *this;
         }
-        LocalizedString& append(const LocalizedString& s)
-        {
-            m_data.append(s.m_data);
-            return *this;
-        }
+        LocalizedString& append(const LocalizedString& s);
         template<class Message, class... Args>
         LocalizedString& append(Message m, const Args&... args)
         {
             return append(msg::format(m, args...));
         }
 
-        LocalizedString& append_indent(size_t indent = 1)
-        {
-            m_data.append(indent * 4, ' ');
-            return *this;
-        }
+        LocalizedString& append_indent(size_t indent = 1);
 
-        friend const char* to_printf_arg(const LocalizedString& s) { return s.data().c_str(); }
-
-        friend bool operator==(const LocalizedString& lhs, const LocalizedString& rhs)
-        {
-            return lhs.data() == rhs.data();
-        }
-
-        friend bool operator!=(const LocalizedString& lhs, const LocalizedString& rhs)
-        {
-            return lhs.data() != rhs.data();
-        }
-
-        friend bool operator<(const LocalizedString& lhs, const LocalizedString& rhs)
-        {
-            return lhs.data() < rhs.data();
-        }
-
-        friend bool operator<=(const LocalizedString& lhs, const LocalizedString& rhs)
-        {
-            return lhs.data() <= rhs.data();
-        }
-
-        friend bool operator>(const LocalizedString& lhs, const LocalizedString& rhs)
-        {
-            return lhs.data() > rhs.data();
-        }
-
-        friend bool operator>=(const LocalizedString& lhs, const LocalizedString& rhs)
-        {
-            return lhs.data() >= rhs.data();
-        }
-
-        bool empty() const { return m_data.empty(); }
-        void clear() { m_data.clear(); }
+        // 0 items - Does nothing
+        // 1 item - .append_raw(' ').append(item)
+        // 2+ items - foreach: .append_raw('\n').append_indent(indent).append(item)
+        LocalizedString& append_floating_list(int indent, View<LocalizedString> items);
+        friend const char* to_printf_arg(const LocalizedString& s) noexcept;
+        friend bool operator==(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;
+        friend bool operator!=(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;
+        friend bool operator<(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;
+        friend bool operator<=(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;
+        friend bool operator>(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;
+        friend bool operator>=(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;
+        bool empty() const noexcept;
+        void clear() noexcept;
 
     private:
         std::string m_data;
 
-        explicit LocalizedString(StringView data) : m_data(data.data(), data.size()) { }
-        explicit LocalizedString(std::string&& data) : m_data(std::move(data)) { }
+        explicit LocalizedString(StringView data);
+        explicit LocalizedString(std::string&& data) noexcept;
     };
 }
 
@@ -1223,10 +1188,6 @@ namespace vcpkg
         "{expected} is a locale-invariant delimiter; for example, the ':' or '=' in 'zlib:x64-windows=skip'",
         "expected '{expected}' here");
     DECLARE_MESSAGE(ExpectedDigitsAfterDecimal, (), "", "Expected digits after the decimal point");
-    DECLARE_MESSAGE(ExpectedExtension,
-                    (msg::extension, msg::path),
-                    "",
-                    "The file extension was not {extension}: {path}");
     DECLARE_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' here");
     DECLARE_MESSAGE(ExpectedOneSetOfTags,
                     (msg::count, msg::old_value, msg::new_value, msg::value),
@@ -1593,7 +1554,6 @@ namespace vcpkg
                     "{value} is a sha.",
                     "SHA512's must be 128 hex characters: {value}");
     DECLARE_MESSAGE(IncorrectArchiveFileSignature, (), "", "Incorrect archive file signature");
-    DECLARE_MESSAGE(IncorrectLibHeaderEnd, (), "", "Incorrect lib header end");
     DECLARE_MESSAGE(IncorrectNumberOfArgs,
                     (msg::command_name, msg::expected, msg::actual),
                     "'{expected}' is the required number of arguments. '{actual}' is the number of arguments provided.",
@@ -1734,6 +1694,8 @@ namespace vcpkg
                     "invalid format string: {actual}");
     DECLARE_MESSAGE(InvalidHexDigit, (), "", "Invalid hex digit in unicode escape");
     DECLARE_MESSAGE(InvalidIntegerConst, (msg::count), "", "Invalid integer constant: {count}");
+    DECLARE_MESSAGE(InvalidLibraryMissingLinkerMembers, (), "", "Library was invalid: could not find a linker member.");
+    DECLARE_MESSAGE(InvalidLibraryMissingSignature, (), "", "Library was invalid: did not find !<arch> signature.");
     DECLARE_MESSAGE(
         InvalidLinkage,
         (msg::system_name, msg::value),
@@ -1760,6 +1722,11 @@ namespace vcpkg
                     (msg::tool_name),
                     "A platform API call failure message is appended after this",
                     "Launching {tool_name}:");
+    DECLARE_MESSAGE(LibraryArchiveMemberTooSmall,
+                    (),
+                    "",
+                    "A library archive member was too small to contain the expected data type.");
+    DECLARE_MESSAGE(LibraryFirstLinkerMemberMissing, (), "", "Could not find first linker member name.");
     DECLARE_MESSAGE(LicenseExpressionContainsExtraPlus,
                     (),
                     "",
@@ -1829,6 +1796,10 @@ namespace vcpkg
                     (msg::value),
                     "Example of {value} is 'unknownlicense'",
                     "Unknown license identifier '{value}'. Known values are listed at https://spdx.org/licenses/");
+    DECLARE_MESSAGE(LinkageDynamicDebug, (), "", "Dynamic Debug (/MDd)");
+    DECLARE_MESSAGE(LinkageDynamicRelease, (), "", "Dynamic Release (/MD)");
+    DECLARE_MESSAGE(LinkageStaticDebug, (), "", "Static Debug (/MTd)");
+    DECLARE_MESSAGE(LinkageStaticRelease, (), "", "Static Release (/MT)");
     DECLARE_MESSAGE(ListOfValidFieldsForControlFiles,
                     (),
                     "",
@@ -2102,10 +2073,29 @@ namespace vcpkg
                     "The folder /include exists in a cmake helper port; this is incorrect, since only cmake "
                     "files should be installed");
     DECLARE_MESSAGE(PortBugInspectFiles, (msg::extension), "", "To inspect the {extension} files, use:");
-    DECLARE_MESSAGE(PortBugInvalidCrtLinkage,
-                    (msg::expected),
-                    "{expected} is the expected build type",
-                    "Invalid crt linkage. Expected {expected}, but the following libs had:");
+    DECLARE_MESSAGE(
+        PortBugInvalidCrtLinkage,
+        (msg::expected),
+        "{expected} is one of LinkageDynamicDebug/LinkageDynamicRelease/LinkageStaticDebug/LinkageStaticRelease. "
+        "Immediately after this message is a file by file list with what linkages they contain. 'CRT' is an acronym "
+        "meaning C Runtime. See also: "
+        "https://learn.microsoft.com/en-us/cpp/build/reference/md-mt-ld-use-run-time-library?view=msvc-170. This is "
+        "complicated because a binary can link with more than one CRT.\n"
+        "Example fully formatted message:\n"
+        "The following binaries should use the Dynamic Debug (/MDd) CRT.\n"
+        "    C:\\some\\path\\to\\sane\\lib links with: Dynamic Release (/MD)\n"
+        "    C:\\some\\path\\to\\lib links with:\n"
+        "        Static Debug (/MTd)\n"
+        "        Dynamic Release (/MD)\n"
+        "    C:\\some\\different\\path\\to\\a\\dll links with:\n"
+        "        Static Debug (/MTd)\n"
+        "        Dynamic Debug (/MDd)\n",
+        "The following binaries should use the {expected} CRT.");
+    DECLARE_MESSAGE(PortBugInvalidCrtLinkageEntry,
+                    (msg::path),
+                    "See explanation in PortBugInvalidCrtLinkage",
+                    "{path} links with:");
+
     DECLARE_MESSAGE(
         PortBugMergeLibCMakeDir,
         (msg::package_name),
@@ -2384,11 +2374,6 @@ namespace vcpkg
                     "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', "
                     "'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', "
                     "'x-aws-config', 'http', and 'files'");
-    DECLARE_MESSAGE(UnknownMachineCode,
-                    (msg::value),
-                    "{value} is machine type code, see "
-                    "https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#machine-types",
-                    "Unknown machine type code {value}");
     DECLARE_MESSAGE(UnknownOptions, (msg::command_name), "", "Unknown option(s) for command '{command_name}':");
     DECLARE_MESSAGE(UnknownParameterForIntegrate,
                     (msg::value),
