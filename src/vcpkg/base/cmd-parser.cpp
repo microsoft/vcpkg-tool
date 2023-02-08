@@ -38,7 +38,7 @@ namespace
         return result;
     }
 
-    std::string option_name_to_switch_name(vcpkg::StringView switch_name)
+    std::string switch_name_to_option_name(vcpkg::StringView switch_name)
     {
         auto result = switch_name.to_string();
         result.append("=...");
@@ -567,7 +567,7 @@ namespace vcpkg
                                  const LocalizedString& help_text)
     {
         Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
-        options_table.emplace(SwitchName{option_name_to_switch_name(option_name), stability}, help_text);
+        options_table.emplace(SwitchName{switch_name_to_option_name(option_name), stability}, help_text);
         return parse_option(option_name, stability, value);
     }
 
@@ -577,7 +577,7 @@ namespace vcpkg
                                  const LocalizedString& help_text)
     {
         Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
-        options_table.emplace(SwitchName{option_name_to_switch_name(option_name), stability}, help_text);
+        options_table.emplace(SwitchName{switch_name_to_option_name(option_name), stability}, help_text);
         return parse_option(option_name, stability, value);
     }
 
@@ -666,7 +666,7 @@ namespace vcpkg
                                        const LocalizedString& help_text)
     {
         Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
-        options_table.emplace(SwitchName{option_name_to_switch_name(option_name), stability}, help_text);
+        options_table.emplace(SwitchName{switch_name_to_option_name(option_name), stability}, help_text);
         return parse_multi_option(option_name, stability, value);
     }
 
@@ -676,7 +676,7 @@ namespace vcpkg
                                        const LocalizedString& help_text)
     {
         Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
-        options_table.emplace(SwitchName{option_name_to_switch_name(option_name), stability}, help_text);
+        options_table.emplace(SwitchName{switch_name_to_option_name(option_name), stability}, help_text);
         return parse_multi_option(option_name, stability, value);
     }
 
