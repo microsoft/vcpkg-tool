@@ -24,12 +24,23 @@ namespace vcpkg::Util
         {
             augend->insert(augend->end(), addend.begin(), addend.end());
         }
+        template<class Vec, class Key, class KeyEqual>
+        bool contains(const Vec& container, const Key& item, KeyEqual key_equal)
+        {
+            for (auto&& citem : container)
+            {
+                if (key_equal(citem, item))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
         template<class Vec, class Key>
         bool contains(const Vec& container, const Key& item)
         {
-            using std::begin;
-            using std::end;
-            return std::find(begin(container), end(container), item) != end(container);
+            return std::find(container.begin(), container.end(), item) != container.end();
         }
         template<class T>
         std::vector<T> concat(View<T> r1, View<T> r2)

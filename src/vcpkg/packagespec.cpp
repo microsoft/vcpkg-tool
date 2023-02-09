@@ -1,4 +1,5 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/format.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/util.h>
@@ -35,6 +36,10 @@ namespace vcpkg
             Strings::append(out, '[', Strings::join(",", features), ']');
         }
         Strings::append(out, ':', package_spec.triplet());
+    }
+    std::string format_name_only_feature_spec(StringView package_name, StringView feature_name)
+    {
+        return fmt::format("{}[{}]", package_name, feature_name);
     }
 
     void FullPackageSpec::expand_fspecs_to(std::vector<FeatureSpec>& out) const

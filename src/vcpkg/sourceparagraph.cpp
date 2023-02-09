@@ -1210,16 +1210,16 @@ namespace vcpkg
         {
             LocalizedString ret;
             ret.append(msgFailedToParseConfig, msg::path = origin);
-            ret.append_raw("\n");
+            ret.append_raw('\n');
             for (auto&& err : reader.errors())
             {
                 ret.append_indent();
                 ret.append_fmt_raw("{}\n", err);
             }
             ret.append(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
-            ret.append_raw("\n");
+            ret.append_raw('\n');
             ret.append(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url);
-            ret.append_raw("\n");
+            ret.append_raw('\n');
             return std::move(ret);
         }
 

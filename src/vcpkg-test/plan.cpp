@@ -1265,6 +1265,25 @@ TEST_CASE ("basic upgrade scheme with features", "[plan]")
     features_check(plan.install_actions.at(0), "a", {"core", "a1"});
 }
 
+TEST_CASE ("basic upgrade scheme with removed features", "[plan]")
+{
+    std::vector<std::unique_ptr<StatusParagraph>> pghs;
+    pghs.push_back(make_status_pgh("a"));
+    pghs.push_back(make_status_feature_pgh("a", "a1"));
+    StatusParagraphs status_db(std::move(pghs));
+
+    PackageSpecMap spec_map;
+    auto spec_a = spec_map.emplace("a");
+
+    MapPortFileProvider provider(spec_map.map);
+    MockCMakeVarProvider var_provider;
+    auto plan = create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
+
+    REQUIRE(plan.size() == 2);
+    remove_plan_check(plan.remove_actions.at(0), "a");
+    features_check(plan.install_actions.at(0), "a", {"core"});
+}
+
 TEST_CASE ("basic upgrade scheme with new default feature", "[plan]")
 {
     // only core of package "a" is installed

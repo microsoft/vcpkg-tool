@@ -1,6 +1,7 @@
 #include <vcpkg/base/cofffilereader.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
@@ -8,13 +9,12 @@
 #include <vcpkg/build.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/packagespec.h>
-#include <vcpkg/postbuildlint.buildtype.h>
 #include <vcpkg/postbuildlint.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::PostBuildLint
+namespace vcpkg
 {
-    constexpr static const StringLiteral windows_system_names[] = {
+    constexpr static std::array<StringLiteral, 4> windows_system_names = {
         "",
         "Windows",
         "WindowsStore",
@@ -27,38 +27,36 @@ namespace vcpkg::PostBuildLint
         PROBLEM_DETECTED = 1
     };
 
-    struct OutdatedDynamicCrt
-    {
-        std::string name;
-    };
+    // clang-format off
+#define OUTDATED_V_NO_120 \
+    StringLiteral{"msvcp100.dll"},          \
+    StringLiteral{"msvcp100d.dll"},         \
+    StringLiteral{"msvcp110.dll"},          \
+    StringLiteral{"msvcp110_win.dll"},      \
+    StringLiteral{"msvcp60.dll"},           \
+    StringLiteral{"msvcp60.dll"},           \
+                               \
+    StringLiteral{"msvcrt.dll"},            \
+    StringLiteral{"msvcr100.dll"},          \
+    StringLiteral{"msvcr100d.dll"},         \
+    StringLiteral{"msvcr100_clr0400.dll"},  \
+    StringLiteral{"msvcr110.dll"},          \
+    StringLiteral{"msvcrt20.dll"},          \
+    StringLiteral{"msvcrt40.dll"}
 
-    static Span<const OutdatedDynamicCrt> get_outdated_dynamic_crts(const Optional<std::string>& toolset_version)
-    {
-        static const std::vector<OutdatedDynamicCrt> V_NO_120 = {
-            {"msvcp100.dll"},
-            {"msvcp100d.dll"},
-            {"msvcp110.dll"},
-            {"msvcp110_win.dll"},
-            {"msvcp60.dll"},
-            {"msvcp60.dll"},
+    // clang-format on
 
-            {"msvcrt.dll"},
-            {"msvcr100.dll"},
-            {"msvcr100d.dll"},
-            {"msvcr100_clr0400.dll"},
-            {"msvcr110.dll"},
-            {"msvcrt20.dll"},
-            {"msvcrt40.dll"},
+    static View<StringLiteral> get_outdated_dynamic_crts(const Optional<std::string>& toolset_version)
+    {
+        static constexpr std::array<StringLiteral, 13> V_NO_120 = {OUTDATED_V_NO_120};
+
+        static constexpr std::array<StringLiteral, 17> V_NO_MSVCRT = {
+            OUTDATED_V_NO_120,
+            StringLiteral{"msvcp120.dll"},
+            StringLiteral{"msvcp120_clr0400.dll"},
+            StringLiteral{"msvcr120.dll"},
+            StringLiteral{"msvcr120_clr0400.dll"},
         };
-
-        static const std::vector<OutdatedDynamicCrt> V_NO_MSVCRT = [&]() {
-            auto ret = V_NO_120;
-            ret.push_back({"msvcp120.dll"});
-            ret.push_back({"msvcp120_clr0400.dll"});
-            ret.push_back({"msvcr120.dll"});
-            ret.push_back({"msvcr120_clr0400.dll"});
-            return ret;
-        }();
 
         const auto tsv = toolset_version.get();
         if (tsv && (*tsv) == "v120")
@@ -69,6 +67,8 @@ namespace vcpkg::PostBuildLint
         // Default case for all version >= VS 2015.
         return V_NO_MSVCRT;
     }
+
+#undef OUTDATED_V_NO_120
 
     static LintStatus check_for_files_in_include_directory(const Filesystem& fs,
                                                            const BuildPolicies& policies,
@@ -240,12 +240,34 @@ namespace vcpkg::PostBuildLint
         return LintStatus::SUCCESS;
     }
 
+    static LintStatus check_for_usage_forgot_install(const Filesystem& fs,
+                                                     const Path& port_dir,
+                                                     const Path& package_dir,
+                                                     const PackageSpec& spec)
+    {
+        static constexpr StringLiteral STANDARD_INSTALL_USAGE =
+            R"###(file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/usage" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}"))###";
+
+        auto usage_path_from = port_dir / "usage";
+        auto usage_path_to = package_dir / "share" / spec.name() / "usage";
+
+        if (fs.is_regular_file(usage_path_from) && !fs.is_regular_file(usage_path_to))
+        {
+            msg::println_warning(msg::format(msgPortBugMissingProvidedUsage, msg::package_name = spec.name())
+                                     .append_raw('\n')
+                                     .append_raw(STANDARD_INSTALL_USAGE));
+            return LintStatus::PROBLEM_DETECTED;
+        }
+
+        return LintStatus::SUCCESS;
+    }
+
     static LintStatus check_folder_lib_cmake(const Filesystem& fs, const Path& package_dir, const PackageSpec& spec)
     {
         const auto lib_cmake = package_dir / "lib" / "cmake";
         if (fs.exists(lib_cmake, IgnoreErrors{}))
         {
-            msg::println_warning(msgPortBugMergeLibCMakeDir, msg::spec = spec.name());
+            msg::println_warning(msgPortBugMergeLibCMakeDir, msg::package_name = spec.name());
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -292,7 +314,7 @@ namespace vcpkg::PostBuildLint
         const auto lib_cmake_debug = package_dir / "debug" / "lib" / "cmake";
         if (fs.exists(lib_cmake_debug, IgnoreErrors{}))
         {
-            msg::println_warning(msgPortBugMergeLibCMakeDir, msg::spec = spec.name());
+            msg::println_warning(msgPortBugMergeLibCMakeDir, msg::package_name = spec.name());
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -346,7 +368,7 @@ namespace vcpkg::PostBuildLint
             }
         }
 
-        msg::println_warning(msgPortBugMissingLicense, msg::spec = spec.name());
+        msg::println_warning(msgPortBugMissingLicense, msg::package_name = spec.name());
         if (potential_copyright_files.size() == 1)
         {
             // if there is only one candidate, provide the cmake lines needed to place it in the proper location
@@ -386,30 +408,78 @@ namespace vcpkg::PostBuildLint
         return LintStatus::SUCCESS;
     }
 
+    struct PostBuildCheckDllData
+    {
+        Path path;
+        MachineType machine_type;
+        bool is_arm64_ec;
+        bool has_exports;
+        bool has_appcontainer;
+        std::vector<std::string> dependencies;
+    };
+
+    static ExpectedL<PostBuildCheckDllData> try_load_dll_data(const Filesystem& fs, const Path& path)
+    {
+        auto maybe_file = fs.try_open_for_read(path);
+        auto file = maybe_file.get();
+        if (!file)
+        {
+            return std::move(maybe_file).error();
+        }
+
+        auto maybe_metadata = try_read_dll_metadata(*file);
+        auto metadata = maybe_metadata.get();
+        if (!metadata)
+        {
+            return std::move(maybe_metadata).error();
+        }
+
+        auto maybe_has_exports = try_read_if_dll_has_exports(*metadata, *file);
+        auto phas_exports = maybe_has_exports.get();
+        if (!phas_exports)
+        {
+            return std::move(maybe_has_exports).error();
+        }
+
+        bool has_exports = *phas_exports;
+        bool has_appcontainer;
+        switch (metadata->pe_type)
+        {
+            case PEType::PE32:
+                has_appcontainer = metadata->pe_headers.dll_characteristics & DllCharacteristics::AppContainer;
+                break;
+            case PEType::PE32Plus:
+                has_appcontainer = metadata->pe_plus_headers.dll_characteristics & DllCharacteristics::AppContainer;
+                break;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+
+        auto maybe_dependencies = try_read_dll_imported_dll_names(*metadata, *file);
+        auto dependencies = maybe_dependencies.get();
+        if (!dependencies)
+        {
+            return std::move(maybe_dependencies).error();
+        }
+
+        return PostBuildCheckDllData{path,
+                                     metadata->get_machine_type(),
+                                     metadata->is_arm64_ec(),
+                                     has_exports,
+                                     has_appcontainer,
+                                     std::move(*dependencies)};
+    }
+
     static LintStatus check_exports_of_dlls(const BuildPolicies& policies,
-                                            const std::vector<Path>& dlls,
-                                            const Path& dumpbin_exe)
+                                            const std::vector<PostBuildCheckDllData>& dlls)
     {
         if (policies.is_enabled(BuildPolicy::DLLS_WITHOUT_EXPORTS)) return LintStatus::SUCCESS;
 
         std::vector<Path> dlls_with_no_exports;
-        for (const Path& dll : dlls)
+        for (const PostBuildCheckDllData& dll_data : dlls)
         {
-            auto cmd_line = Command(dumpbin_exe).string_arg("/exports").string_arg(dll);
-            const auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd_line), "dumpbin");
-            if (const auto output = maybe_output.get())
+            if (!dll_data.has_exports)
             {
-                if (output->find("ordinal hint RVA      name") == std::string::npos)
-                {
-                    dlls_with_no_exports.push_back(dll);
-                }
-            }
-            else
-            {
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                              msg::format(msgCommandFailed, msg::command_line = cmd_line.command_line())
-                                                  .append_raw('\n')
-                                                  .append(maybe_output.error()));
+                dlls_with_no_exports.push_back(dll_data.path);
             }
         }
 
@@ -424,8 +494,7 @@ namespace vcpkg::PostBuildLint
     }
 
     static LintStatus check_uwp_bit_of_dlls(const std::string& expected_system_name,
-                                            const std::vector<Path>& dlls,
-                                            const Path dumpbin_exe)
+                                            const std::vector<PostBuildCheckDllData>& dlls)
     {
         if (expected_system_name != "WindowsStore")
         {
@@ -433,23 +502,11 @@ namespace vcpkg::PostBuildLint
         }
 
         std::vector<Path> dlls_with_improper_uwp_bit;
-        for (const Path& dll : dlls)
+        for (const PostBuildCheckDllData& dll_data : dlls)
         {
-            auto cmd_line = Command(dumpbin_exe).string_arg("/headers").string_arg(dll);
-            const auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd_line), "dumpbin");
-            if (const auto output = maybe_output.get())
+            if (!dll_data.has_appcontainer)
             {
-                if (output->find("App Container") == std::string::npos)
-                {
-                    dlls_with_improper_uwp_bit.push_back(dll);
-                }
-            }
-            else
-            {
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                              msg::format(msgCommandFailed, msg::command_line = cmd_line.command_line())
-                                                  .append_raw('\n')
-                                                  .append(maybe_output.error()));
+                dlls_with_improper_uwp_bit.push_back(dll_data.path);
             }
         }
 
@@ -457,7 +514,6 @@ namespace vcpkg::PostBuildLint
         {
             msg::println_warning(msgPortBugDllAppContainerBitNotSet);
             print_paths(dlls_with_improper_uwp_bit);
-            msg::println_warning(msgPortBugDllAppContainerBitNotSet);
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -470,18 +526,39 @@ namespace vcpkg::PostBuildLint
         std::string actual_arch;
     };
 
-    static std::string get_actual_architecture(const MachineType& machine_type)
+    static std::string get_printable_architecture(const MachineType& machine_type)
     {
         switch (machine_type)
         {
-            case MachineType::AMD64:
-            case MachineType::IA64: return "x64";
-            case MachineType::I386: return "x86";
-            case MachineType::ARM:
-            case MachineType::ARMNT: return "arm";
+            case MachineType::UNKNOWN: return "unknown";
+            case MachineType::AM33: return "matsushita-am33";
+            case MachineType::AMD64: return "x64";
+            case MachineType::ARM: return "arm";
             case MachineType::ARM64: return "arm64";
             case MachineType::ARM64EC: return "arm64ec";
-            default: return "Machine Type Code = " + std::to_string(static_cast<uint16_t>(machine_type));
+            case MachineType::ARM64X: return "arm64x";
+            case MachineType::ARMNT: return "arm";
+            case MachineType::EBC: return "efi-byte-code";
+            case MachineType::I386: return "x86";
+            case MachineType::IA64: return "ia64";
+            case MachineType::M32R: return "mitsubishi-m32r-le";
+            case MachineType::MIPS16: return "mips16";
+            case MachineType::MIPSFPU: return "mipsfpu";
+            case MachineType::MIPSFPU16: return "mipsfpu16";
+            case MachineType::POWERPC: return "ppc";
+            case MachineType::POWERPCFP: return "ppcfp";
+            case MachineType::R4000: return "mips-le";
+            case MachineType::RISCV32: return "riscv-32";
+            case MachineType::RISCV64: return "riscv-64";
+            case MachineType::RISCV128: return "riscv-128";
+            case MachineType::SH3: return "hitachi-sh3";
+            case MachineType::SH3DSP: return "hitachi-sh3-dsp";
+            case MachineType::SH4: return "hitachi-sh4";
+            case MachineType::SH5: return "hitachi-sh5";
+            case MachineType::THUMB: return "thumb";
+            case MachineType::WCEMIPSV2: return "mips-le-wce-v2";
+            case MachineType::LLVM_BITCODE: return "llvm-bitcode";
+            default: return "unknown-" + std::to_string(static_cast<uint16_t>(machine_type));
         }
     }
 
@@ -498,40 +575,24 @@ namespace vcpkg::PostBuildLint
         }
     }
 
-#if defined(_WIN32)
     static LintStatus check_dll_architecture(const std::string& expected_architecture,
-                                             const std::vector<Path>& files,
-                                             const Filesystem& fs)
+                                             const std::vector<PostBuildCheckDllData>& dlls)
     {
         std::vector<FileAndArch> binaries_with_invalid_architecture;
 
-        for (const Path& file : files)
+        for (const PostBuildCheckDllData& dll_data : dlls)
         {
-            if (!Strings::case_insensitive_ascii_equals(file.extension(), ".dll"))
+            const std::string actual_architecture = get_printable_architecture(dll_data.machine_type);
+            if (expected_architecture == "arm64ec")
             {
-                continue;
-            }
-
-            auto maybe_opened = fs.try_open_for_read(file);
-            if (const auto opened = maybe_opened.get())
-            {
-                auto maybe_metadata = try_read_dll_metadata(*opened);
-                if (auto* metadata = maybe_metadata.get())
+                if (dll_data.machine_type != MachineType::AMD64 || !dll_data.is_arm64_ec)
                 {
-                    const auto machine_type = metadata->get_machine_type();
-                    const std::string actual_architecture = get_actual_architecture(machine_type);
-                    if (expected_architecture == "arm64ec")
-                    {
-                        if (actual_architecture != "x64" || !metadata->is_arm64_ec())
-                        {
-                            binaries_with_invalid_architecture.push_back({file, actual_architecture});
-                        }
-                    }
-                    else if (expected_architecture != actual_architecture)
-                    {
-                        binaries_with_invalid_architecture.push_back({file, actual_architecture});
-                    }
+                    binaries_with_invalid_architecture.push_back({dll_data.path, actual_architecture});
                 }
+            }
+            else if (expected_architecture != actual_architecture)
+            {
+                binaries_with_invalid_architecture.push_back({dll_data.path, actual_architecture});
             }
         }
 
@@ -543,7 +604,6 @@ namespace vcpkg::PostBuildLint
 
         return LintStatus::SUCCESS;
     }
-#endif
 
     static LintStatus check_lib_architecture(const std::string& expected_architecture,
                                              const std::string& cmake_system_name,
@@ -555,21 +615,39 @@ namespace vcpkg::PostBuildLint
         {
             for (const Path& file : files)
             {
-                Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                       Strings::case_insensitive_ascii_equals(file.extension(), ".lib"),
-                                       msgExpectedExtension,
-                                       msg::extension = ".lib",
-                                       msg::path = file);
+                if (!Strings::case_insensitive_ascii_equals(file.extension(), ".lib"))
+                {
+                    continue;
+                }
 
-                const auto machine_types = Util::fmap(read_lib_machine_types(fs.open_for_read(file, VCPKG_LINE_INFO)),
-                                                      [](MachineType mt) { return get_actual_architecture(mt); });
+                auto maybe_lib_information = fs.try_open_for_read(file).then(
+                    [](ReadFilePointer&& file_handle) { return read_lib_information(file_handle); });
+
+                if (!maybe_lib_information.has_value())
+                {
+                    continue;
+                }
+
+                auto&& machine_types = maybe_lib_information.value_or_exit(VCPKG_LINE_INFO).machine_types;
+                {
+                    auto llvm_bitcode =
+                        std::find(machine_types.begin(), machine_types.end(), MachineType::LLVM_BITCODE);
+                    if (llvm_bitcode != machine_types.end())
+                    {
+                        machine_types.erase(llvm_bitcode);
+                    }
+                }
+
+                auto printable_machine_types =
+                    Util::fmap(machine_types, [](MachineType mt) { return get_printable_architecture(mt); });
                 // Either machine_types is empty (meaning this lib is architecture independent), or
                 // we need at least one of the machine types to match.
-                // Agnostic example: Folly's debug library
+                // Agnostic example: Folly's debug library, LLVM LTO libraries
                 // Multiple example: arm64x libraries
-                if (!machine_types.empty() && !Util::Vectors::contains(machine_types, expected_architecture))
+                if (!printable_machine_types.empty() &&
+                    !Util::Vectors::contains(printable_machine_types, expected_architecture))
                 {
-                    binaries_with_invalid_architecture.push_back({file, Strings::join(",", machine_types)});
+                    binaries_with_invalid_architecture.push_back({file, Strings::join(",", printable_machine_types)});
                 }
             }
         }
@@ -628,19 +706,26 @@ namespace vcpkg::PostBuildLint
         }
 
         msg::println_warning(msgPortBugMismatchedNumberOfBinaries);
-        msg::println_warning(msgPortBugFoundDebugBinaries, msg::count = debug_count);
-        print_paths(debug_binaries);
-        msg::println_warning(msgPortBugFoundDebugBinaries, msg::count = release_count);
-        print_paths(release_binaries);
-
         if (debug_count == 0)
         {
-            msg::println_warning(msgPortBugMissingDebugBinaries);
+            msg::println(msgPortBugMissingDebugBinaries);
         }
+        else
+        {
+            msg::println(msgPortBugFoundDebugBinaries, msg::count = debug_count);
+            print_paths(debug_binaries);
+        }
+
         if (release_count == 0)
         {
-            msg::println_warning(msgPortBugMissingReleaseBinaries);
+            msg::println(msgPortBugMissingReleaseBinaries);
         }
+        else
+        {
+            msg::println(msgPortBugFoundReleaseBinaries, msg::count = release_count);
+            print_paths(release_binaries);
+        }
+
         return LintStatus::PROBLEM_DETECTED;
     }
 
@@ -840,59 +925,153 @@ namespace vcpkg::PostBuildLint
     struct BuildTypeAndFile
     {
         Path file;
-        BuildType build_type;
+        bool has_static_release = false;
+        bool has_static_debug = false;
+        bool has_dynamic_release = false;
+        bool has_dynamic_debug = false;
     };
 
-    static LintStatus check_crt_linkage_of_libs(const BuildType& expected_build_type,
-                                                const std::vector<Path>& libs,
-                                                const Path& dumpbin_exe)
+    static LocalizedString format_linkage(LinkageType linkage, bool release)
     {
-        auto bad_build_types = std::vector<BuildType>({
-            {ConfigurationType::DEBUG, LinkageType::STATIC},
-            {ConfigurationType::DEBUG, LinkageType::DYNAMIC},
-            {ConfigurationType::RELEASE, LinkageType::STATIC},
-            {ConfigurationType::RELEASE, LinkageType::DYNAMIC},
-        });
-        Util::erase_remove(bad_build_types, expected_build_type);
+        switch (linkage)
+        {
+            case LinkageType::DYNAMIC:
+                if (release)
+                {
+                    return msg::format(msgLinkageDynamicRelease);
+                }
+                else
+                {
+                    return msg::format(msgLinkageDynamicDebug);
+                }
+                break;
+            case LinkageType::STATIC:
+                if (release)
+                {
+                    return msg::format(msgLinkageStaticRelease);
+                }
+                else
+                {
+                    return msg::format(msgLinkageStaticDebug);
+                }
+                break;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
 
+    static LintStatus check_crt_linkage_of_libs(const Filesystem& fs,
+                                                const BuildInfo& build_info,
+                                                bool expect_release,
+                                                const std::vector<Path>& libs)
+    {
         std::vector<BuildTypeAndFile> libs_with_invalid_crt;
-
         for (const Path& lib : libs)
         {
-            auto cmd_line = Command(dumpbin_exe).string_arg("/directives").string_arg(lib);
-            const auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd_line), "dumpbin");
-            if (const auto output = maybe_output.get())
+            auto maybe_lib_info = fs.try_open_for_read(lib).then(
+                [](ReadFilePointer&& lib_file) { return read_lib_information(lib_file); });
+
+            if (!maybe_lib_info.has_value())
             {
-                for (const BuildType& bad_build_type : bad_build_types)
+                continue;
+            }
+
+            auto&& lib_info = maybe_lib_info.value_or_exit(VCPKG_LINE_INFO);
+            Debug::println(
+                "The lib ", lib.native(), " has directives: ", Strings::join(" ", lib_info.linker_directives));
+
+            BuildTypeAndFile this_lib{lib};
+            constexpr static const StringLiteral static_release_crt = "/DEFAULTLIB:LIBCMT";
+            constexpr static const StringLiteral static_debug_crt = "/DEFAULTLIB:LIBCMTd";
+            constexpr static const StringLiteral dynamic_release_crt = "/DEFAULTLIB:MSVCRT";
+            constexpr static const StringLiteral dynamic_debug_crt = "/DEFAULTLIB:MSVCRTd";
+
+            for (auto&& directive : lib_info.linker_directives)
+            {
+                if (Strings::case_insensitive_ascii_equals(directive, static_release_crt))
                 {
-                    if (bad_build_type.has_crt_linker_option(*output))
-                    {
-                        libs_with_invalid_crt.push_back({lib, bad_build_type});
-                        break;
-                    }
+                    this_lib.has_static_release = true;
                 }
+                else if (Strings::case_insensitive_ascii_equals(directive, static_debug_crt))
+                {
+                    this_lib.has_static_debug = true;
+                }
+                else if (Strings::case_insensitive_ascii_equals(directive, dynamic_release_crt))
+                {
+                    this_lib.has_dynamic_release = true;
+                }
+                else if (Strings::case_insensitive_ascii_equals(directive, dynamic_debug_crt))
+                {
+                    this_lib.has_dynamic_debug = true;
+                }
+            }
+
+            bool fail = false;
+            if (expect_release)
+            {
+                fail |= this_lib.has_static_debug;
+                fail |= this_lib.has_dynamic_debug;
             }
             else
             {
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                              msg::format(msgCommandFailed, msg::command_line = cmd_line.command_line())
-                                                  .append_raw('\n')
-                                                  .append_raw(maybe_output.error()));
+                fail |= this_lib.has_static_release;
+                fail |= this_lib.has_dynamic_release;
+            }
+
+            switch (build_info.crt_linkage)
+            {
+                case LinkageType::DYNAMIC:
+                    fail |= this_lib.has_static_debug;
+                    fail |= this_lib.has_static_release;
+                    break;
+                case LinkageType::STATIC:
+                    fail |= this_lib.has_dynamic_debug;
+                    fail |= this_lib.has_dynamic_release;
+                    break;
+                default: Checks::unreachable(VCPKG_LINE_INFO);
+            }
+
+            if (fail)
+            {
+                libs_with_invalid_crt.push_back(std::move(this_lib));
             }
         }
 
         if (!libs_with_invalid_crt.empty())
         {
-            msg::println_warning(msgPortBugInvalidCrtLinkage, msg::expected = expected_build_type.to_string());
-
+            msg::println_warning(msgPortBugInvalidCrtLinkage,
+                                 msg::expected = format_linkage(build_info.crt_linkage, expect_release));
+            std::vector<LocalizedString> printed_linkages;
             for (const BuildTypeAndFile& btf : libs_with_invalid_crt)
             {
-                msg::write_unlocalized_text_to_stdout(
-                    Color::warning, fmt::format("    {}: {}\n", btf.file, btf.build_type.to_string()));
+                printed_linkages.clear();
+                LocalizedString this_entry;
+                this_entry.append_indent().append(msgPortBugInvalidCrtLinkageEntry, msg::path = btf.file);
+                if (btf.has_dynamic_debug)
+                {
+                    printed_linkages.push_back(msg::format(msgLinkageDynamicDebug));
+                }
+
+                if (btf.has_dynamic_release)
+                {
+                    printed_linkages.push_back(msg::format(msgLinkageDynamicRelease));
+                }
+
+                if (btf.has_static_debug)
+                {
+                    printed_linkages.push_back(msg::format(msgLinkageStaticDebug));
+                }
+
+                if (btf.has_static_release)
+                {
+                    printed_linkages.push_back(msg::format(msgLinkageStaticRelease));
+                }
+
+                this_entry.append_floating_list(2, printed_linkages);
+                msg::println(this_entry);
             }
 
-            msg::println_warning(msg::format(msgPortBugInspectFiles, msg::extension = "lib")
-                                     .append_raw("\n    dumpbin.exe /directives mylibfile.lib"));
+            msg::println(msg::format(msgPortBugInspectFiles, msg::extension = "lib")
+                             .append_raw("\n    dumpbin.exe /directives mylibfile.lib"));
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -902,40 +1081,28 @@ namespace vcpkg::PostBuildLint
     struct OutdatedDynamicCrtAndFile
     {
         Path file;
-        OutdatedDynamicCrt outdated_crt;
+        StringLiteral outdated_crt;
     };
 
-    static LintStatus check_outdated_crt_linkage_of_dlls(const std::vector<Path>& dlls,
-                                                         const Path& dumpbin_exe,
+    static LintStatus check_outdated_crt_linkage_of_dlls(const std::vector<PostBuildCheckDllData>& dlls,
                                                          const BuildInfo& build_info,
                                                          const PreBuildInfo& pre_build_info)
     {
         if (build_info.policies.is_enabled(BuildPolicy::ALLOW_OBSOLETE_MSVCRT)) return LintStatus::SUCCESS;
 
+        const auto outdated_crts = get_outdated_dynamic_crts(pre_build_info.platform_toolset);
         std::vector<OutdatedDynamicCrtAndFile> dlls_with_outdated_crt;
 
-        for (const Path& dll : dlls)
+        for (const PostBuildCheckDllData& dll_data : dlls)
         {
-            auto cmd_line = Command(dumpbin_exe).string_arg("/dependents").string_arg(dll);
-            const auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd_line), "dumpbin");
-            if (const auto output = maybe_output.get())
+            for (const StringLiteral& outdated_crt : outdated_crts)
             {
-                for (const OutdatedDynamicCrt& outdated_crt :
-                     get_outdated_dynamic_crts(pre_build_info.platform_toolset))
+                if (Util::Vectors::contains(
+                        dll_data.dependencies, outdated_crt, Strings::case_insensitive_ascii_equals))
                 {
-                    if (Strings::case_insensitive_ascii_contains(*output, outdated_crt.name))
-                    {
-                        dlls_with_outdated_crt.push_back({dll, outdated_crt});
-                        break;
-                    }
+                    dlls_with_outdated_crt.push_back({dll_data.path, outdated_crt});
+                    break;
                 }
-            }
-            else
-            {
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                              msg::format(msgCommandFailed, msg::command_line = cmd_line.command_line())
-                                                  .append_raw('\n')
-                                                  .append_raw(maybe_output.error()));
             }
         }
 
@@ -945,10 +1112,10 @@ namespace vcpkg::PostBuildLint
             for (const OutdatedDynamicCrtAndFile& btf : dlls_with_outdated_crt)
             {
                 msg::write_unlocalized_text_to_stdout(Color::warning,
-                                                      fmt::format("    {}:{}\n", btf.file, btf.outdated_crt.name));
+                                                      fmt::format("    {}:{}\n", btf.file, btf.outdated_crt));
             }
-            msg::println_warning(msg::format(msgPortBugInspectFiles, msg::extension = "dll")
-                                     .append_raw("\n    dumpbin.exe /dependents mylibfile.dll"));
+            msg::println(msg::format(msgPortBugInspectFiles, msg::extension = "dll")
+                             .append_raw("\n    dumpbin.exe /dependents mylibfile.dll"));
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -1068,15 +1235,35 @@ namespace vcpkg::PostBuildLint
 
     static void operator+=(size_t& left, const LintStatus& right) { left += static_cast<size_t>(right); }
 
+    static size_t perform_post_build_checks_dll_loads(const Filesystem& fs,
+                                                      std::vector<PostBuildCheckDllData>& dlls,
+                                                      const std::vector<Path>& dll_files)
+    {
+        size_t error_count = 0;
+        for (const Path& dll : dll_files)
+        {
+            auto maybe_dll_data = try_load_dll_data(fs, dll);
+            if (const auto dll_data = maybe_dll_data.get())
+            {
+                dlls.emplace_back(std::move(*dll_data));
+            }
+            else
+            {
+                ++error_count;
+                msg::println(Color::warning, maybe_dll_data.error());
+            }
+        }
+
+        return error_count;
+    }
+
     static size_t perform_all_checks_and_return_error_count(const PackageSpec& spec,
                                                             const VcpkgPaths& paths,
                                                             const PreBuildInfo& pre_build_info,
-                                                            const BuildInfo& build_info)
+                                                            const BuildInfo& build_info,
+                                                            const Path& port_dir)
     {
         const auto& fs = paths.get_filesystem();
-
-        // for dumpbin
-        const Toolset& toolset = paths.get_toolset(pre_build_info);
         const auto package_dir = paths.package_dir(spec);
 
         size_t error_count = 0;
@@ -1099,6 +1286,7 @@ namespace vcpkg::PostBuildLint
         error_count += check_for_copyright_file(fs, spec, paths);
         error_count += check_for_exes(fs, package_dir);
         error_count += check_for_exes(fs, package_dir / "debug");
+        error_count += check_for_usage_forgot_install(fs, port_dir, package_dir, spec);
 
         const auto debug_lib_dir = package_dir / "debug" / "lib";
         const auto release_lib_dir = package_dir / "lib";
@@ -1106,7 +1294,8 @@ namespace vcpkg::PostBuildLint
         const auto release_bin_dir = package_dir / "bin";
 
         NotExtensionsCaseInsensitive lib_filter;
-        if (Util::Vectors::contains(windows_system_names, pre_build_info.cmake_system_name))
+        const bool windows_target = Util::Vectors::contains(windows_system_names, pre_build_info.cmake_system_name);
+        if (windows_target)
         {
             lib_filter = NotExtensionsCaseInsensitive{{".lib"}};
         }
@@ -1121,73 +1310,72 @@ namespace vcpkg::PostBuildLint
         Util::erase_remove_if(release_libs, lib_filter);
 
         if (!pre_build_info.build_type && !build_info.policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
-            error_count += check_matching_debug_and_release_binaries(debug_libs, release_libs);
-
-        if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK))
         {
-            std::vector<Path> libs;
-            libs.insert(libs.cend(), debug_libs.cbegin(), debug_libs.cend());
-            libs.insert(libs.cend(), release_libs.cbegin(), release_libs.cend());
-            error_count +=
-                check_lib_architecture(pre_build_info.target_architecture, pre_build_info.cmake_system_name, libs, fs);
+            error_count += check_matching_debug_and_release_binaries(debug_libs, release_libs);
         }
 
-        std::vector<Path> debug_dlls = fs.get_regular_files_recursive(debug_bin_dir, IgnoreErrors{});
-        Util::erase_remove_if(debug_dlls, NotExtensionCaseInsensitive{".dll"});
-        std::vector<Path> release_dlls = fs.get_regular_files_recursive(release_bin_dir, IgnoreErrors{});
-        Util::erase_remove_if(release_dlls, NotExtensionCaseInsensitive{".dll"});
-
-        switch (build_info.library_linkage)
+        if (windows_target)
         {
-            case LinkageType::DYNAMIC:
+            Debug::println("Running windows targeting post-build checks");
+            if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK))
             {
-                if (!pre_build_info.build_type &&
-                    !build_info.policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
-                    error_count += check_matching_debug_and_release_binaries(debug_dlls, release_dlls);
-
-                error_count += check_lib_files_are_available_if_dlls_are_available(
-                    build_info.policies, debug_libs.size(), debug_dlls.size(), debug_lib_dir);
-                error_count += check_lib_files_are_available_if_dlls_are_available(
-                    build_info.policies, release_libs.size(), release_dlls.size(), release_lib_dir);
-
-                std::vector<Path> dlls;
-                dlls.insert(dlls.cend(), debug_dlls.cbegin(), debug_dlls.cend());
-                dlls.insert(dlls.cend(), release_dlls.cbegin(), release_dlls.cend());
-
-                if (!toolset.dumpbin.empty() && !build_info.policies.is_enabled(BuildPolicy::SKIP_DUMPBIN_CHECKS))
-                {
-                    error_count += check_exports_of_dlls(build_info.policies, dlls, toolset.dumpbin);
-                    error_count += check_uwp_bit_of_dlls(pre_build_info.cmake_system_name, dlls, toolset.dumpbin);
-                    error_count +=
-                        check_outdated_crt_linkage_of_dlls(dlls, toolset.dumpbin, build_info, pre_build_info);
-                }
-
-#if defined(_WIN32)
-                error_count += check_dll_architecture(pre_build_info.target_architecture, dlls, fs);
-#endif
-                break;
+                std::vector<Path> libs;
+                libs.insert(libs.cend(), debug_libs.cbegin(), debug_libs.cend());
+                libs.insert(libs.cend(), release_libs.cbegin(), release_libs.cend());
+                error_count += check_lib_architecture(
+                    pre_build_info.target_architecture, pre_build_info.cmake_system_name, libs, fs);
             }
-            case LinkageType::STATIC:
+
+            std::vector<Path> debug_dlls = fs.get_regular_files_recursive(debug_bin_dir, IgnoreErrors{});
+            Util::erase_remove_if(debug_dlls, NotExtensionCaseInsensitive{".dll"});
+            std::vector<Path> release_dlls = fs.get_regular_files_recursive(release_bin_dir, IgnoreErrors{});
+            Util::erase_remove_if(release_dlls, NotExtensionCaseInsensitive{".dll"});
+
+            switch (build_info.library_linkage)
             {
-                auto dlls = release_dlls;
-                dlls.insert(dlls.end(), debug_dlls.begin(), debug_dlls.end());
-                error_count += check_no_dlls_present(build_info.policies, dlls);
-
-                error_count += check_bin_folders_are_not_present_in_static_build(build_info.policies, fs, package_dir);
-
-                if (!toolset.dumpbin.empty() && !build_info.policies.is_enabled(BuildPolicy::SKIP_DUMPBIN_CHECKS))
+                case LinkageType::DYNAMIC:
                 {
+                    if (!pre_build_info.build_type &&
+                        !build_info.policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
+                        error_count += check_matching_debug_and_release_binaries(debug_dlls, release_dlls);
+
+                    error_count += check_lib_files_are_available_if_dlls_are_available(
+                        build_info.policies, debug_libs.size(), debug_dlls.size(), debug_lib_dir);
+                    error_count += check_lib_files_are_available_if_dlls_are_available(
+                        build_info.policies, release_libs.size(), release_dlls.size(), release_lib_dir);
+
+                    std::vector<PostBuildCheckDllData> dlls;
+                    dlls.reserve(debug_dlls.size() + release_dlls.size());
+                    error_count += perform_post_build_checks_dll_loads(fs, dlls, debug_dlls);
+                    error_count += perform_post_build_checks_dll_loads(fs, dlls, release_dlls);
+                    error_count += check_exports_of_dlls(build_info.policies, dlls);
+                    error_count += check_uwp_bit_of_dlls(pre_build_info.cmake_system_name, dlls);
+                    error_count += check_outdated_crt_linkage_of_dlls(dlls, build_info, pre_build_info);
+                    if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK))
+                    {
+                        error_count += check_dll_architecture(pre_build_info.target_architecture, dlls);
+                    }
+                }
+                break;
+                case LinkageType::STATIC:
+                {
+                    auto& dlls = debug_dlls;
+                    dlls.insert(dlls.end(),
+                                std::make_move_iterator(release_dlls.begin()),
+                                std::make_move_iterator(release_dlls.end()));
+                    error_count += check_no_dlls_present(build_info.policies, dlls);
+                    error_count +=
+                        check_bin_folders_are_not_present_in_static_build(build_info.policies, fs, package_dir);
                     if (!build_info.policies.is_enabled(BuildPolicy::ONLY_RELEASE_CRT))
                     {
-                        error_count += check_crt_linkage_of_libs(
-                            BuildType(ConfigurationType::DEBUG, build_info.crt_linkage), debug_libs, toolset.dumpbin);
+                        error_count += check_crt_linkage_of_libs(fs, build_info, false, debug_libs);
                     }
-                    error_count += check_crt_linkage_of_libs(
-                        BuildType(ConfigurationType::RELEASE, build_info.crt_linkage), release_libs, toolset.dumpbin);
+
+                    error_count += check_crt_linkage_of_libs(fs, build_info, true, release_libs);
+                    break;
                 }
-                break;
+                default: Checks::unreachable(VCPKG_LINE_INFO);
             }
-            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
 
         error_count += check_no_empty_folders(fs, package_dir);
@@ -1203,14 +1391,15 @@ namespace vcpkg::PostBuildLint
         return error_count;
     }
 
-    size_t perform_all_checks(const PackageSpec& spec,
-                              const VcpkgPaths& paths,
-                              const PreBuildInfo& pre_build_info,
-                              const BuildInfo& build_info,
-                              const Path& port_dir)
+    size_t perform_post_build_lint_checks(const PackageSpec& spec,
+                                          const VcpkgPaths& paths,
+                                          const PreBuildInfo& pre_build_info,
+                                          const BuildInfo& build_info,
+                                          const Path& port_dir)
     {
         msg::println(msgPerformingPostBuildValidation);
-        const size_t error_count = perform_all_checks_and_return_error_count(spec, paths, pre_build_info, build_info);
+        const size_t error_count =
+            perform_all_checks_and_return_error_count(spec, paths, pre_build_info, build_info, port_dir);
 
         if (error_count != 0)
         {

@@ -2851,6 +2851,9 @@
       <Item ItemId=";EmbeddingVcpkgConfigInManifest" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Embedding `vcpkg-configuration` in a manifest file is an EXPERIMENTAL feature.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Das Einbetten von "vcpkg-configuration" in eine Manifestdatei ist ein EXPERIMENTELLEs Feature.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3301,6 +3304,9 @@
       <Item ItemId=";ExpectedPathToExist" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected {path} to exist after fetching]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Es wurde erwartet, dass {path} nach dem Abrufen vorhanden ist.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3436,6 +3442,9 @@
       <Item ItemId=";ExtractingTool" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Extracting {tool_name}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{tool_name} wird extrahiert...]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3906,6 +3915,24 @@
           <Val><![CDATA[Filesystem operation failed:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Fehler beim Vorgang des Dateisystems:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FilesContainAbsolutePath1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[There should be no absolute paths, such as the following, in an installed package:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[In einem installierten Paket sollten keine absoluten Pfade, wie die folgenden, vorhanden sein:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FilesContainAbsolutePath2" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Absolute paths were found in the following files:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Absolute Pfade wurden in den folgenden Dateien gefunden:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6325,6 +6352,9 @@
       <Item ItemId=";PackagesUpToDate" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[No packages need updating.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Es müssen keine Pakete aktualisiert werden.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6451,6 +6481,9 @@
       <Item ItemId=";PathMustBeAbsolute" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Der Wert der Umgebungsvariablen X_VCPKG_REGISTRIES_CACHE ist nicht absolut: {path}]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6823,6 +6856,9 @@
       <Item ItemId=";PortVersionConflict" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The following packages differ from their port versions:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Die folgenden Pakete unterscheiden sich von ihren Portversionen:]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -8536,6 +8572,9 @@
       <Item ItemId=";VcpkgRegistriesCacheIsNotDirectory" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Value of environment variable X_VCPKG_REGISTRIES_CACHE is not a directory: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Der Wert der Umgebungsvariablen X_VCPKG_REGISTRIES_CACHE ist kein Verzeichnis: {path}]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
