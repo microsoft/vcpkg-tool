@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { EventEmitter } from 'ee-ts';
+import { EventEmitter } from 'node:events';
 import { Session } from '../session';
 
 /** Event defintions for channel events */
@@ -40,7 +40,7 @@ export class Stopwatch {
  *
  * Warning, Error, Message, Debug
  */
-export class Channels extends EventEmitter<ChannelEvents> {
+export class Channels extends EventEmitter {
   /** @internal */
   readonly stopwatch: Stopwatch;
 

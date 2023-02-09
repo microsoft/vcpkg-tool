@@ -117,8 +117,10 @@ namespace vcpkg
                     scfl.source_control_file->find_dependencies_for_feature(feature);
                 if (!maybe_qualified_deps.has_value())
                 {
-                    Checks::msg_exit_with_message(
-                        VCPKG_LINE_INFO, msgFailedToFindPortFeature, msg::feature = feature, msg::spec = m_spec.name());
+                    Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                                  msgFailedToFindPortFeature,
+                                                  msg::feature = feature,
+                                                  msg::package_name = m_spec.name());
                 }
                 const std::vector<Dependency>* qualified_deps = &maybe_qualified_deps.value_or_exit(VCPKG_LINE_INFO);
 
@@ -183,9 +185,12 @@ namespace vcpkg
                 bool defaults_requested = false;
                 if (const ClusterInstalled* inst = m_installed.get())
                 {
+                    out_reinstall_requirements.emplace_back(m_spec, "core");
+                    auto& scfl = get_scfl_or_exit();
                     for (const std::string& installed_feature : inst->original_features)
                     {
-                        out_reinstall_requirements.emplace_back(m_spec, installed_feature);
+                        if (scfl.source_control_file->find_feature(installed_feature).has_value())
+                            out_reinstall_requirements.emplace_back(m_spec, installed_feature);
                     }
                     defaults_requested = inst->defaults_requested;
                 }
@@ -229,10 +234,11 @@ namespace vcpkg
                     return *scfl;
                 }
 
-                Checks::msg_exit_with_error(VCPKG_LINE_INFO,
-                                            msg::format(msgFailedToLoadInstalledManifest, msg::spec = m_spec)
-                                                .append_raw('\n')
-                                                .append_raw(m_scfl.error()));
+                Checks::msg_exit_with_error(
+                    VCPKG_LINE_INFO,
+                    msg::format(msgFailedToLoadInstalledManifest, msg::package_name = m_spec.name())
+                        .append_raw('\n')
+                        .append_raw(m_scfl.error()));
             }
 
             Optional<const PlatformExpression::Expr&> get_applicable_supports_expression(const FeatureSpec& spec) const
@@ -248,7 +254,7 @@ namespace vcpkg
                                                     maybe_paragraph.has_value(),
                                                     msgFailedToFindPortFeature,
                                                     msg::feature = spec.feature(),
-                                                    msg::spec = spec.port());
+                                                    msg::package_name = spec.port());
 
                     return maybe_paragraph.get()->supports_expression;
                 }
@@ -799,7 +805,7 @@ namespace vcpkg
                                                         maybe_paragraph.has_value(),
                                                         msgFailedToFindPortFeature,
                                                         msg::feature = spec.feature(),
-                                                        msg::spec = spec.port());
+                                                        msg::package_name = spec.port());
                         paragraph_depends = &maybe_paragraph.value_or_exit(VCPKG_LINE_INFO).dependencies;
                         has_supports = !maybe_paragraph.get()->supports_expression.is_empty();
                     }
@@ -815,25 +821,30 @@ namespace vcpkg
                 }
                 else
                 {
-                    auto supports_expression = clust.get_applicable_supports_expression(spec);
-                    if (supports_expression && !supports_expression.get()->is_empty())
+                    auto maybe_supports_expression = clust.get_applicable_supports_expression(spec);
+                    auto supports_expression = maybe_supports_expression.get();
+                    if (supports_expression && !supports_expression->is_empty())
                     {
-                        if (!supports_expression.get()->evaluate(
+                        if (!supports_expression->evaluate(
                                 m_var_provider.get_dep_info_vars(spec.spec()).value_or_exit(VCPKG_LINE_INFO)))
                         {
-                            auto localized_msg =
-                                msg::format(msgUnsupportedPortFeature,
-                                            msg::spec = spec,
-                                            msg::supports_expression = to_string(*supports_expression.get()));
-
+                            const auto supports_expression_text = to_string(*supports_expression);
                             if (unsupported_port_action == UnsupportedPortAction::Error)
                             {
-                                Checks::msg_exit_with_message(VCPKG_LINE_INFO, localized_msg);
+                                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                                              msgUnsupportedSupportsExpression,
+                                                              msg::package_name = spec.port(),
+                                                              msg::supports_expression = supports_expression_text,
+                                                              msg::triplet = spec.triplet());
                             }
                             else
                             {
                                 m_warnings.push_back(
-                                    msg::format(msg::msgWarningMessage).append(localized_msg).extract_data());
+                                    msg::format_warning(msgUnsupportedSupportsExpressionWarning,
+                                                        msg::package_name = spec.port(),
+                                                        msg::supports_expression = supports_expression_text,
+                                                        msg::triplet = spec.triplet())
+                                        .extract_data());
                             }
                         }
                     }
@@ -1009,11 +1020,10 @@ namespace vcpkg
                         {
                             if (compare_any(*v, constraint) == VerComp::lt)
                             {
-                                constraint_violations.push_back(msg::format(msg::msgWarningMessage)
-                                                                    .append(msgVersionConstraintViolated,
-                                                                            msg::spec = constraints.first,
-                                                                            msg::expected_version = constraint,
-                                                                            msg::actual_version = *v));
+                                constraint_violations.push_back(msg::format_warning(msgVersionConstraintViolated,
+                                                                                    msg::spec = constraints.first,
+                                                                                    msg::expected_version = constraint,
+                                                                                    msg::actual_version = *v));
                                 msg::println(msg::format(msgConstraintViolation)
                                                  .append_raw('\n')
                                                  .append_indent()
@@ -1898,13 +1908,22 @@ namespace vcpkg
                     {
                         if (!supports_expr.evaluate(m_var_provider.get_or_load_dep_info_vars(spec, m_host_triplet)))
                         {
-                            const auto msg = Strings::concat(
-                                spec, "@", new_ver, " is only supported on '", to_string(supports_expr), "'\n");
+                            const auto supports_expression_text = to_string(supports_expr);
                             if (unsupported_port_action == UnsupportedPortAction::Error)
                             {
-                                return "Error: " + msg;
+                                return msg::format_error(msgUnsupportedSupportsExpression,
+                                                         msg::package_name = spec.name(),
+                                                         msg::supports_expression = supports_expression_text,
+                                                         msg::triplet = spec.triplet())
+                                    .extract_data();
                             }
-                            ret.warnings.emplace_back("Warning: " + msg);
+
+                            ret.warnings.emplace_back(
+                                msg::format_warning(msgUnsupportedSupportsExpressionWarning,
+                                                    msg::package_name = spec.name(),
+                                                    msg::supports_expression = supports_expression_text,
+                                                    msg::triplet = spec.triplet())
+                                    .extract_data());
                         }
                     }
                 }
@@ -1924,19 +1943,24 @@ namespace vcpkg
                     {
                         if (!supports_expr.evaluate(m_var_provider.get_or_load_dep_info_vars(spec, m_host_triplet)))
                         {
-                            const auto msg = Strings::concat(spec,
-                                                             "@",
-                                                             new_ver,
-                                                             " The feature ",
-                                                             f,
-                                                             " is only supported on '",
-                                                             to_string(supports_expr),
-                                                             "'\n");
+                            const auto feature_spec_text = format_name_only_feature_spec(spec.name(), f);
+                            const auto supports_expression_text = to_string(supports_expr);
                             if (unsupported_port_action == UnsupportedPortAction::Error)
                             {
-                                return "Error: " + msg;
+                                return msg::format_error(msgUnsupportedFeatureSupportsExpression,
+                                                         msg::package_name = spec.name(),
+                                                         msg::feature_spec = feature_spec_text,
+                                                         msg::supports_expression = supports_expression_text,
+                                                         msg::triplet = spec.triplet())
+                                    .extract_data();
                             }
-                            ret.warnings.emplace_back("Warning: " + msg);
+
+                            ret.warnings.emplace_back(
+                                msg::format_warning(msgUnsupportedFeatureSupportsExpressionWarning,
+                                                    msg::feature_spec = feature_spec_text,
+                                                    msg::supports_expression = supports_expression_text,
+                                                    msg::triplet = spec.triplet())
+                                    .extract_data());
                         }
                     }
                 }

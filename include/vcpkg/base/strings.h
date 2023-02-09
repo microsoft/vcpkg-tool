@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <vector>
 
+#include "vcpkg/base/fwd/span.h"
+
 namespace vcpkg::Strings::details
 {
     // first looks up to_string on `T` using ADL; then, if that isn't found,
@@ -217,6 +219,12 @@ namespace vcpkg::Strings
     StringView find_exactly_one_enclosed(StringView input, StringView left_tag, StringView right_tag);
 
     Optional<StringView> find_at_most_one_enclosed(StringView input, StringView left_tag, StringView right_tag);
+
+    bool contains_any_ignoring_c_comments(const std::string& source, View<StringView> to_find);
+
+    bool contains_any_ignoring_hash_comments(StringView source, View<StringView> to_find);
+
+    bool contains_any(StringView source, View<StringView> to_find);
 
     bool equals(StringView a, StringView b);
 
