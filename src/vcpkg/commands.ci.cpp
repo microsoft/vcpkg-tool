@@ -6,7 +6,6 @@
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 #include <vcpkg/base/xmlserializer.h>
 
@@ -434,9 +433,9 @@ namespace vcpkg::Commands::CI
             {
                 auto&& action = action_plan.install_actions[i];
                 msg += fmt::format("{:40}: {:8}: {}\n",
-                                       action.spec,
-                                       split_specs->action_state_string[i],
-                                       action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
+                                   action.spec,
+                                   split_specs->action_state_string[i],
+                                   action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
             }
 
             msg::write_unlocalized_text_to_stdout(Color::none, msg);

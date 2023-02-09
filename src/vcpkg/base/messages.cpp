@@ -540,6 +540,7 @@ namespace vcpkg
     REGISTER_MESSAGE(AlreadyInstalledNotHead);
     REGISTER_MESSAGE(AnotherInstallationInProgress);
     REGISTER_MESSAGE(AppliedUserIntegration);
+    REGISTER_MESSAGE(ApplocalProcessing);
     REGISTER_MESSAGE(ArtifactsOptionIncompatibility);
     REGISTER_MESSAGE(AssetSourcesArg);
     REGISTER_MESSAGE(AttemptingToFetchPackagesFromVendor);
@@ -825,6 +826,7 @@ namespace vcpkg
     REGISTER_MESSAGE(IncrementedUtf8Decoder);
     REGISTER_MESSAGE(InfoSetEnvVar);
     REGISTER_MESSAGE(InitRegistryFailedNoRepo);
+    REGISTER_MESSAGE(InstallCopiedFile);
     REGISTER_MESSAGE(InstalledBy);
     REGISTER_MESSAGE(InstalledPackages);
     REGISTER_MESSAGE(InstalledRequestedPackages);
@@ -834,6 +836,7 @@ namespace vcpkg
     REGISTER_MESSAGE(InstallingPackage);
     REGISTER_MESSAGE(InstallPackageInstruction);
     REGISTER_MESSAGE(InstallRootDir);
+    REGISTER_MESSAGE(InstallSkippedUpToDateFile);
     REGISTER_MESSAGE(InstallWithSystemManager);
     REGISTER_MESSAGE(InstallWithSystemManagerMono);
     REGISTER_MESSAGE(InstallWithSystemManagerPkg);

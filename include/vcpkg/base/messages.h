@@ -279,6 +279,8 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(old_scheme, "version-string");
     DECLARE_MSG_ARG(option, "editable");
     DECLARE_MSG_ARG(path, "/foo/bar");
+    DECLARE_MSG_ARG(path_destination, "/foo/bar");
+    DECLARE_MSG_ARG(path_source, "/foo/bar");
     DECLARE_MSG_ARG(row, "42");
     DECLARE_MSG_ARG(sha,
                     "eb32643dd2164c72b8a660ef52f1e701bb368324ae461e12d70d6a9aefc0c9573387ee2ed3828037ed62bb3e8f566416a2"
@@ -540,6 +542,7 @@ namespace vcpkg
                     "",
                     "Another installation is in progress on the machine, sleeping 6s before retrying.");
     DECLARE_MESSAGE(AppliedUserIntegration, (), "", "Applied user-wide integration for this vcpkg root.");
+    DECLARE_MESSAGE(ApplocalProcessing, (msg::path), "", "vcpkg applocal processing: {path}");
     DECLARE_MESSAGE(ArtifactsOptionIncompatibility, (msg::option), "", "--{option} has no effect on find artifact.");
     DECLARE_MESSAGE(AssetSourcesArg, (), "", "Add sources for asset caching. See 'vcpkg help assetcaching'.");
     DECLARE_MESSAGE(AttemptingToFetchPackagesFromVendor,
@@ -1429,7 +1432,7 @@ namespace vcpkg
         "Disables fallback to the original URLs in case the mirror does not have the file available.\n"
         "\n"
         "The <rw> optional parameter for certain strings controls how they will be accessed. It can be specified as "
-        "\"read\", \"write\", or \"readwrite\" and defaults to \"read\".\n");
+        "\"read\", \"write\", or \"readwrite\" and defaults to \"read\".");
     DECLARE_MESSAGE(
         HelpBinaryCaching,
         (),
@@ -1487,12 +1490,13 @@ namespace vcpkg
         "The \"nuget\" and \"nugetconfig\" source providers additionally respect certain environment variables while "
         "generating nuget packages. The \"metadata.repository\" field will be optionally generated like:\n"
         "\n"
-        "    <repository type=\"git\" url=\"$VCPKG_NUGET_REPOSITORY\"/>\n"
+        "<repository type=\"git\" url=\"$VCPKG_NUGET_REPOSITORY\"/>\n"
         "or\n"
-        "    <repository type=\"git\"\n"
-        "                url=\"${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git\"\n"
-        "                branch=\"${GITHUB_REF}\"\n"
-        "                commit=\"${GITHUB_SHA}\"/>\n"
+        "<repository\n"
+        " type=\"git\"\n"
+        " url=\"${{GITHUB_SERVER_URL}}/${{GITHUB_REPOSITORY}}.git\"\n"
+        " branch=\"${{GITHUB_REF}}\"\n"
+        " commit=\"${{GITHUB_SHA}}\"/>\n"
         "\n"
         "if the appropriate environment variables are defined and non-empty.\n"
         "\n"
@@ -1672,6 +1676,10 @@ namespace vcpkg
                     "",
                     "Could not create a registry at {path} because this is not a git repository root.\nUse `git init "
                     "{command_line}` to create a git repository in this folder.");
+    DECLARE_MESSAGE(InstallCopiedFile,
+                    (msg::path_source, msg::path_destination),
+                    "",
+                    "{path_source} -> {path_destination} done");
     DECLARE_MESSAGE(InstalledBy, (msg::path), "", "Installed by {path}");
     DECLARE_MESSAGE(InstalledPackages, (), "", "The following packages are already installed:");
     DECLARE_MESSAGE(InstalledRequestedPackages, (), "", "All requested packages are currently installed.");
@@ -1694,6 +1702,10 @@ namespace vcpkg
                     "With a project open, go to Tools->NuGet Package Manager->Package Manager Console and "
                     "paste:\n Install-Package \"{value}\" -Source \"{path}\"");
     DECLARE_MESSAGE(InstallRootDir, (), "", "(Experimental) Specify the install root directory.");
+    DECLARE_MESSAGE(InstallSkippedUpToDateFile,
+                    (msg::path_source, msg::path_destination),
+                    "",
+                    "{path_source} -> {path_destination} skipped, up to date");
     DECLARE_MESSAGE(InstallWithSystemManager,
                     (),
                     "",

@@ -1,7 +1,6 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
 #include <vcpkg/base/strings.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/cmakevars.h>
@@ -839,11 +838,10 @@ namespace vcpkg
                             }
                             else
                             {
-                                m_warnings.push_back(
-                                    msg::format(msgUnsupportedSupportsExpressionWarning,
-                                                        msg::package_name = spec.port(),
-                                                        msg::supports_expression = supports_expression_text,
-                                                        msg::triplet = spec.triplet()));
+                                m_warnings.push_back(msg::format(msgUnsupportedSupportsExpressionWarning,
+                                                                 msg::package_name = spec.port(),
+                                                                 msg::supports_expression = supports_expression_text,
+                                                                 msg::triplet = spec.triplet()));
                             }
                         }
                     }
@@ -1917,11 +1915,10 @@ namespace vcpkg
                                     .extract_data();
                             }
 
-                            ret.warnings.emplace_back(
-                                msg::format(msgUnsupportedSupportsExpressionWarning,
-                                                    msg::package_name = spec.name(),
-                                                    msg::supports_expression = supports_expression_text,
-                                                    msg::triplet = spec.triplet()));
+                            ret.warnings.emplace_back(msg::format(msgUnsupportedSupportsExpressionWarning,
+                                                                  msg::package_name = spec.name(),
+                                                                  msg::supports_expression = supports_expression_text,
+                                                                  msg::triplet = spec.triplet()));
                         }
                     }
                 }
@@ -1953,11 +1950,10 @@ namespace vcpkg
                                     .extract_data();
                             }
 
-                            ret.warnings.emplace_back(
-                                msg::format(msgUnsupportedFeatureSupportsExpressionWarning,
-                                                    msg::feature_spec = feature_spec_text,
-                                                    msg::supports_expression = supports_expression_text,
-                                                    msg::triplet = spec.triplet()));
+                            ret.warnings.emplace_back(msg::format(msgUnsupportedFeatureSupportsExpressionWarning,
+                                                                  msg::feature_spec = feature_spec_text,
+                                                                  msg::supports_expression = supports_expression_text,
+                                                                  msg::triplet = spec.triplet()));
                         }
                     }
                 }

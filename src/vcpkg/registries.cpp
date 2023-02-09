@@ -3,7 +3,6 @@
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
