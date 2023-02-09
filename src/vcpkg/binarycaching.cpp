@@ -2442,118 +2442,13 @@ std::string vcpkg::generate_nuspec(const Path& package_dir,
 
 void vcpkg::help_topic_asset_caching(const VcpkgPaths&)
 {
-    HelpTableFormatter tbl;
-    tbl.text("**Experimental feature: this may change or be removed at any time**");
-    tbl.blank();
-    tbl.text("Vcpkg can use mirrors to cache downloaded assets, ensuring continued operation even if the original "
-             "source changes or disappears.");
-    tbl.blank();
-    tbl.blank();
-    tbl.text(Strings::concat("Asset caching can be configured either by setting the environment variable ",
-                             VcpkgCmdArguments::ASSET_SOURCES_ENV,
-                             " to a semicolon-delimited list of source strings or by passing a sequence of `--",
-                             VcpkgCmdArguments::ASSET_SOURCES_ARG,
-                             "=<source>` command line options. Command line sources are interpreted after environment "
-                             "sources. Commas, semicolons, and backticks can be escaped using backtick (`)."));
-    tbl.blank();
-    tbl.blank();
-    tbl.header("Valid source strings");
-    tbl.format("clear", "Removes all previous sources");
-    tbl.format(
-        "x-azurl,<url>[,<sas>[,<rw>]]",
-        "Adds an Azure Blob Storage source, optionally using Shared Access Signature validation. URL should include "
-        "the container path and be terminated with a trailing `/`. SAS, if defined, should be prefixed with a `?`. "
-        "Non-Azure servers will also work if they respond to GET and PUT requests of the form: `<url><sha512><sas>`.");
-    tbl.format("x-script,<template>",
-               "Dispatches to an external tool to fetch the asset. Within the template, \"{url}\" will be replaced by "
-               "the original url, \"{sha512}\" will be replaced by the SHA512 value, and \"{dst}\" will be replaced by "
-               "the output path to save to. These substitutions will all be properly shell escaped, so an example "
-               "template would be: \"curl -L {url} --output {dst}\". \"{{\" will be replaced by \"}\" and \"}}\" will "
-               "be replaced by \"}\" to avoid expansion. Note that this will be executed inside the build environment, "
-               "so the PATH and other environment variables will be modified by the triplet.");
-    tbl.format("x-block-origin",
-               "Disables fallback to the original URLs in case the mirror does not have the file available.");
-    tbl.blank();
-    tbl.text("The `<rw>` optional parameter for certain strings controls how they will be accessed. It can be "
-             "specified as `read`, `write`, or `readwrite` and defaults to `read`.");
-    tbl.blank();
-    print2(tbl.m_str);
+    msg::println(msgHelpAssetCaching);
     msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::assetcaching_url);
 }
 
 void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
 {
-    HelpTableFormatter tbl;
-    tbl.text("Vcpkg can cache compiled packages to accelerate restoration on a single machine or across the network."
-             " By default, vcpkg will save builds to a local machine cache. This can be disabled by passing "
-             "`--binarysource=clear` as the last option on the command line.");
-    tbl.blank();
-    tbl.blank();
-    tbl.text(
-        "Binary caching can be further configured by either passing `--binarysource=<source>` options "
-        "to every command line or setting the `VCPKG_BINARY_SOURCES` environment variable to a set of sources (Ex: "
-        "\"<source>;<source>;...\"). Command line sources are interpreted after environment sources.");
-    tbl.blank();
-    tbl.blank();
-    tbl.header("Valid source strings");
-    tbl.format("clear", "Removes all previous sources");
-    tbl.format("default[,<rw>]", "Adds the default file-based location.");
-    tbl.format("files,<path>[,<rw>]", "Adds a custom file-based location.");
-    tbl.format("http,<url_template>[,<rw>[,<header>]]",
-               "Adds a custom http-based location. GET, HEAD and PUT request are done to download, check and upload "
-               "the binaries. You can use the variables 'name', 'version', 'sha' and 'triplet'. An example url would "
-               "be 'https://cache.example.com/{triplet}/{name}/{version}/{sha}'. Via the header field you can set a "
-               "custom header to pass an authorization token.");
-    tbl.format("nuget,<uri>[,<rw>]",
-               "Adds a NuGet-based source; equivalent to the `-Source` parameter of the NuGet CLI.");
-    tbl.format("nugetconfig,<path>[,<rw>]",
-               "Adds a NuGet-config-file-based source; equivalent to the `-Config` parameter of the NuGet CLI. This "
-               "config should specify `defaultPushSource` for uploads.");
-    tbl.format("nugettimeout,<seconds>",
-               "Specifies a nugettimeout for NuGet network operations; equivalent to the `-Timeout` parameter of the "
-               "NuGet CLI.");
-    tbl.format("x-azblob,<url>,<sas>[,<rw>]",
-               "**Experimental: will change or be removed without warning** Adds an Azure Blob Storage source. Uses "
-               "Shared Access Signature validation. URL should include the container path.");
-    tbl.format("x-gcs,<prefix>[,<rw>]",
-               "**Experimental: will change or be removed without warning** Adds a Google Cloud Storage (GCS) source. "
-               "Uses the gsutil CLI for uploads and downloads. Prefix should include the gs:// scheme and be suffixed "
-               "with a `/`.");
-    tbl.format("x-aws,<prefix>[,<rw>]",
-               "**Experimental: will change or be removed without warning** Adds an AWS S3 source. "
-               "Uses the aws CLI for uploads and downloads. Prefix should include s3:// scheme and be suffixed "
-               "with a `/`.");
-    tbl.format(
-        "x-aws-config,<parameter>",
-        "**Experimental: will change or be removed without warning** Adds an AWS S3 source. "
-        "Adds an AWS configuration; currently supports only 'no-sign-request' parameter that is an equivalent to the "
-        "'--no-sign-request parameter of the AWS cli.");
-    tbl.format("x-cos,<prefix>[,<rw>]",
-               "**Experimental: will change or be removed without warning** Adds an COS source. "
-               "Uses the cos CLI for uploads and downloads. Prefix should include cos:// scheme and be suffixed "
-               "with a `/`.");
-    tbl.format("interactive", "Enables interactive credential management for some source types");
-    tbl.blank();
-    tbl.text("The `<rw>` optional parameter for certain strings controls whether they will be consulted for "
-             "downloading binaries and whether on-demand builds will be uploaded to that remote. It can be specified "
-             "as 'read', 'write', or 'readwrite'.");
-    tbl.blank();
-    tbl.text("The `nuget` and `nugetconfig` source providers additionally respect certain environment variables while "
-             "generating nuget packages. The `metadata.repository` field will be optionally generated like:\n"
-             "\n"
-             "    <repository type=\"git\" url=\"$VCPKG_NUGET_REPOSITORY\"/>\n"
-             "or\n"
-             "    <repository type=\"git\"\n"
-             "                url=\"${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git\"\n"
-             "                branch=\"${GITHUB_REF}\"\n"
-             "                commit=\"${GITHUB_SHA}\"/>\n"
-             "\n"
-             "if the appropriate environment variables are defined and non-empty.\n");
-    tbl.blank();
-    tbl.text("NuGet's cache is not used by default. To use it for every nuget-based source, set the environment "
-             "variable `VCPKG_USE_NUGET_CACHE` to `true` (case-insensitive) or `1`.\n");
-    tbl.blank();
-    print2(tbl.m_str);
+    msg::println(msgHelpBinaryCaching);
     const auto& maybe_cachepath = default_cache_path();
     if (auto p = maybe_cachepath.get())
     {

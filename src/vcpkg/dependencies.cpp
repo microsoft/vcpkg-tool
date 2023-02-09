@@ -303,7 +303,7 @@ namespace vcpkg
             const CMakeVars::CMakeVarProvider& m_var_provider;
 
             std::unique_ptr<ClusterGraph> m_graph;
-            std::vector<std::string> m_warnings;
+            std::vector<LocalizedString> m_warnings;
         };
 
         /// <summary>
@@ -840,11 +840,10 @@ namespace vcpkg
                             else
                             {
                                 m_warnings.push_back(
-                                    msg::format_warning(msgUnsupportedSupportsExpressionWarning,
+                                    msg::format(msgUnsupportedSupportsExpressionWarning,
                                                         msg::package_name = spec.port(),
                                                         msg::supports_expression = supports_expression_text,
-                                                        msg::triplet = spec.triplet())
-                                        .extract_data());
+                                                        msg::triplet = spec.triplet()));
                             }
                         }
                     }
@@ -1919,11 +1918,10 @@ namespace vcpkg
                             }
 
                             ret.warnings.emplace_back(
-                                msg::format_warning(msgUnsupportedSupportsExpressionWarning,
+                                msg::format(msgUnsupportedSupportsExpressionWarning,
                                                     msg::package_name = spec.name(),
                                                     msg::supports_expression = supports_expression_text,
-                                                    msg::triplet = spec.triplet())
-                                    .extract_data());
+                                                    msg::triplet = spec.triplet()));
                         }
                     }
                 }
@@ -1956,11 +1954,10 @@ namespace vcpkg
                             }
 
                             ret.warnings.emplace_back(
-                                msg::format_warning(msgUnsupportedFeatureSupportsExpressionWarning,
+                                msg::format(msgUnsupportedFeatureSupportsExpressionWarning,
                                                     msg::feature_spec = feature_spec_text,
                                                     msg::supports_expression = supports_expression_text,
-                                                    msg::triplet = spec.triplet())
-                                    .extract_data());
+                                                    msg::triplet = spec.triplet()));
                         }
                     }
                 }

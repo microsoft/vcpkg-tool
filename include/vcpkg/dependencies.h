@@ -117,7 +117,8 @@ namespace vcpkg
         std::vector<RemovePlanAction> remove_actions;
         std::vector<InstallPlanAction> already_installed;
         std::vector<InstallPlanAction> install_actions;
-        std::vector<std::string> warnings;
+        // These do not have the warning: prefix
+        std::vector<LocalizedString> warnings;
     };
 
     enum class ExportPlanType

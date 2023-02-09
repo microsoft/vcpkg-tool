@@ -189,7 +189,7 @@ namespace vcpkg::Commands
 
         if (use_json)
         {
-            print2(Json::stringify(json_to_print));
+            msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(json_to_print));
         }
     }
 

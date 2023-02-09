@@ -776,6 +776,8 @@ namespace vcpkg
     REGISTER_MESSAGE(GitUnexpectedCommandOutput);
     REGISTER_MESSAGE(HashFileFailureToRead);
     REGISTER_MESSAGE(HeaderOnlyUsage);
+    REGISTER_MESSAGE(HelpAssetCaching);
+    REGISTER_MESSAGE(HelpBinaryCaching);
     REGISTER_MESSAGE(HelpBuiltinBase);
     REGISTER_MESSAGE(HelpContactCommand);
     REGISTER_MESSAGE(HelpCreateCommand);

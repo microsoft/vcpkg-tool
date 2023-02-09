@@ -75,7 +75,7 @@ namespace vcpkg
             const auto status = fs.symlink_status(file, ec);
             if (ec)
             {
-                print2(Color::error, "failed: ", file, ": ", ec.message(), "\n");
+                msg::println_warning(format_filesystem_call_error(ec, "symlink_status", {file}));
                 continue;
             }
 
@@ -989,7 +989,6 @@ namespace vcpkg
             if (failure)
             {
                 msg::println(msgUsingManifestAt, msg::path = p->path);
-                print2("\n");
                 print_usage(MANIFEST_COMMAND_STRUCTURE);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
@@ -1014,7 +1013,6 @@ namespace vcpkg
             }
             if (failure)
             {
-                print2("\n");
                 print_usage(COMMAND_STRUCTURE);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
@@ -1158,7 +1156,7 @@ namespace vcpkg
 
             for (const auto& warning : install_plan.warnings)
             {
-                print2(Color::warning, warning, '\n');
+                msg::println_warning(warning);
             }
             for (InstallPlanAction& action : install_plan.install_actions)
             {
@@ -1205,7 +1203,7 @@ namespace vcpkg
 
         for (const auto& warning : action_plan.warnings)
         {
-            msg::write_unlocalized_text_to_stdout(Color::warning, warning + '\n');
+            msg::println_warning(warning);
         }
         for (auto&& action : action_plan.install_actions)
         {

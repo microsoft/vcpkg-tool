@@ -200,7 +200,7 @@ namespace vcpkg::Commands::Upgrade
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty());
         for (const auto& warning : action_plan.warnings)
         {
-            msg::write_unlocalized_text_to_stdout(Color::warning, warning + "\n");
+            msg::println_warning(warning);
         }
         // Set build settings for all install actions
         for (auto&& action : action_plan.install_actions)
