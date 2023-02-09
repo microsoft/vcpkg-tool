@@ -31,5 +31,6 @@
     "source.organizeImports": true
   },
   "eslint.format.enable": true,
-  "files.eol": "\n"
+  "files.eol": "\n",
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
 }
