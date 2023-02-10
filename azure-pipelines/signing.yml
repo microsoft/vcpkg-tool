@@ -25,16 +25,11 @@ parameters:
   - 'GitHub and NuGet'
   - 'NuGet Only'
 variables:
+  - group: vcpkg Official Build Secrets
   - name: TeamName
     value: vcpkg
-  - group: vcpkg-dependency-source-blobs
-  - name: FMT_TARBALL_URL
-    value: "$(fmt-tarball-url)"
-  - group: vcpkgdockercontainers-secrets
-  - name: AZURE_CONTAINER_REGISTRY_USERNAME
-    value: "$(vcpkgdockercontainers-pull-username)"
-  - name: AZURE_CONTAINER_REGISTRY_PASSWORD
-    value: "$(vcpkgdockercontainers-pull-password)"
+  - name: Codeql.Enabled
+    value: true
   # If the user didn't override the signing type, then only real-sign on main.
   - ${{ if ne(parameters.SignTypeOverride, 'default') }}:
     - name: SignType
@@ -59,6 +54,10 @@ jobs:
     - ${{ if ne(parameters.VcpkgBaseVersionOverride, 'default') }}:
       - name: VCPKG_INITIAL_BASE_VERSION
         value: ${{parameters.VcpkgBaseVersionOverride}}
+    - name: Codeql.BuildIdentifier
+      value: vcpkg_ECMAScript
+    - name: Codeql.Language
+      value: javascript
     pool:
       name: 'VSEngSS-MicroBuild2022-1ES'
     steps:
@@ -96,9 +95,13 @@ jobs:
     - script: rush lint
       displayName: Check vcpkg-artifacts for Linting Errors
       workingDirectory: ce
+    - task: CodeQL3000Init@0
+      displayName: 'CodeQL Initialize'
     - script: rush rebuild
       displayName: Build vcpkg-artifacts Packages
       workingDirectory: ce
+    - task: CodeQL3000Finalize@0
+      displayName: 'CodeQL Finalize'
     - script: rush test
       displayName: Run vcpkg-artifacts Tests
       workingDirectory: ce
@@ -116,7 +119,7 @@ jobs:
     - task: ComponentGovernanceComponentDetection@0
       displayName: Detect Components
       inputs:
-        ignoreDirectories: ce/common/temp
+        sourceScanPath: "$(Build.BinariesDirectory)/ce"
     # Inject the NOTICE file. This must run after component detection.
     - task: msospo.ospo-extension.8d7f9abb-6896-461d-9e25-4f74ed65ddb2.notice@0
       displayName: Generate NOTICE File
@@ -200,7 +203,7 @@ jobs:
       inputs:
         failOnStderr: true
         script: |
-          cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" "-DVCPKG_FMT_URL=$FMT_TARBALL_URL" -DVCPKG_BASE_VERSION=$VCPKG_BASE_VERSION -DVCPKG_STANDALONE_BUNDLE_SHA=$VCPKG_STANDALONE_BUNDLE_SHA -DVCPKG_CE_SHA=$VCPKG_CE_SHA -B "$(Build.BinariesDirectory)/build"
+          cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$VCPKG_BASE_VERSION" "-DVCPKG_STANDALONE_BUNDLE_SHA=$VCPKG_STANDALONE_BUNDLE_SHA" "-DVCPKG_CE_SHA=$VCPKG_CE_SHA" -B "$(Build.BinariesDirectory)/build"
           make -j 8 -C "$(Build.BinariesDirectory)/build"
           zip -j "$(Build.ArtifactStagingDirectory)/vcpkg-macos.zip" "$(Build.BinariesDirectory)/build/vcpkg"
     - task: PublishBuildArtifacts@1
@@ -224,7 +227,7 @@ jobs:
       inputs:
         failOnStderr: true
         script: |
-          scl enable devtoolset-9 'cmake3 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_CXX_FLAGS="-static-libgcc -static-libstdc++" "-DVCPKG_FMT_URL=$FMT_TARBALL_URL" -DVCPKG_BASE_VERSION=$VCPKG_BASE_VERSION -DVCPKG_STANDALONE_BUNDLE_SHA=$VCPKG_STANDALONE_BUNDLE_SHA -DVCPKG_CE_SHA=$VCPKG_CE_SHA -B "$(Build.BinariesDirectory)/build"'
+          scl enable devtoolset-9 'cmake3 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_CXX_FLAGS="-static-libgcc -static-libstdc++" "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$VCPKG_BASE_VERSION" "-DVCPKG_STANDALONE_BUNDLE_SHA=$VCPKG_STANDALONE_BUNDLE_SHA" "-DVCPKG_CE_SHA=$VCPKG_CE_SHA" -B "$(Build.BinariesDirectory)/build"'
           make -j 4 -C "$(Build.BinariesDirectory)/build"
           mv "$(Build.BinariesDirectory)/build/vcpkg" "$(Build.ArtifactStagingDirectory)/vcpkg-glibc"
     - task: PublishBuildArtifacts@1
@@ -248,8 +251,8 @@ jobs:
       inputs:
         failOnStderr: false
         script: |
-          docker login vcpkgdockercontainers.azurecr.io -u $(AZURE_CONTAINER_REGISTRY_USERNAME) -p $(AZURE_CONTAINER_REGISTRY_PASSWORD) || exit 1
-          docker build --build-arg "VCPKG_FMT_URL=$FMT_TARBALL_URL" -t vcpkg-muslc-image -f azure-pipelines/vcpkg-alpine/Dockerfile . || exit 1
+          docker login vcpkgdockercontainers.azurecr.io -u $(vcpkgdockercontainers-pull-username) -p $(vcpkgdockercontainers-pull-password) || exit 1
+          docker build --build-arg "FMT_TARBALL_URL=$(fmt-tarball-url)" --build-arg "CMAKERC_TARBALL_URL=$(cmakerc-tarball-url)"  -t vcpkg-muslc-image -f azure-pipelines/vcpkg-alpine/Dockerfile . || exit 1
           docker create -ti --name vcpkg-muslc-container vcpkg-muslc-image sh || exit 1
           docker cp vcpkg-muslc-container:/build/vcpkg "$(Build.ArtifactStagingDirectory)/vcpkg-muslc" || exit 1
           docker container rm vcpkg-muslc-container || exit 1
@@ -272,7 +275,11 @@ jobs:
       VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
       VCPKG_CE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_CE_SHA'] ]
       VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
+      Codeql.BuildIdentifier: vcpkg_cpp
+      Codeql.Language: cpp
     steps:
+    - task: CodeQL3000Init@0
+      displayName: 'CodeQL Initialize'
     - task: CmdLine@2
       displayName: "Build vcpkg x86 with CMake"
       inputs:
@@ -280,7 +287,7 @@ jobs:
         script: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x86 -host_arch=x86
           cmake.exe --version
-          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON "-DVCPKG_FMT_URL=%FMT_TARBALL_URL%" -DVCPKG_BASE_VERSION=%VCPKG_BASE_VERSION% -DVCPKG_STANDALONE_BUNDLE_SHA=%VCPKG_STANDALONE_BUNDLE_SHA% -DVCPKG_CE_SHA=%VCPKG_CE_SHA% -B "$(Build.BinariesDirectory)\x86"
+          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" "-DVCPKG_CE_SHA=$(VCPKG_CE_SHA)" -B "$(Build.BinariesDirectory)\x86"
           ninja.exe -C "$(Build.BinariesDirectory)\x86"
     - task: CmdLine@2
       displayName: "Build vcpkg arm64 with CMake"
@@ -289,8 +296,10 @@ jobs:
         script: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=arm64 -host_arch=x86
           cmake.exe --version
-          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_PDB_SUFFIX="-arm64" "-DVCPKG_FMT_URL=%FMT_TARBALL_URL%" -DVCPKG_BASE_VERSION=%VCPKG_BASE_VERSION% -DVCPKG_STANDALONE_BUNDLE_SHA=%VCPKG_STANDALONE_BUNDLE_SHA% -DVCPKG_CE_SHA=%VCPKG_CE_SHA% -B "$(Build.BinariesDirectory)\arm64"
+          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_PDB_SUFFIX="-arm64" "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" "-DVCPKG_CE_SHA=$(VCPKG_CE_SHA)" -B "$(Build.BinariesDirectory)\arm64"
           ninja.exe -C "$(Build.BinariesDirectory)\arm64"
+    - task: CodeQL3000Finalize@0
+      displayName: 'CodeQL Finalize'
     - task: MicroBuildSigningPlugin@3
       displayName: Install MicroBuild Signing
       inputs:
@@ -330,13 +339,17 @@ jobs:
       condition: and(eq(variables.SignType, 'test'), succeeded())
       inputs:
         SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
-        SigningCert: 8003
+        SigningCert: '8005'
+        SigningPluginSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
+        SigningPluginVersion: 'latest'
     - task: MicroBuildSignMacFiles@1
       displayName: 'Sign and Harden Mac Binaries'
       condition: and(eq(variables.SignType, 'real'), succeeded())
       inputs:
         SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
-        SigningCert: 8023
+        SigningCert: '8025'
+        SigningPluginSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
+        SigningPluginVersion: 'latest'
     - task: MicroBuildSignMacFiles@1
       displayName: 'Notarize Mac Binaries'
       condition: and(eq(variables.SignType, 'real'), succeeded())
@@ -344,6 +357,8 @@ jobs:
         SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
         SigningCert: '8020'
         MacAppName: 'vcpkg'
+        SigningPluginSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
+        SigningPluginVersion: 'latest'
     - task: Powershell@2
       displayName: 'Mint VS Insertion standalone bundle'
       inputs:

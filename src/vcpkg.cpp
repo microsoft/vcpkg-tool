@@ -1,10 +1,10 @@
-#include <vcpkg/base/system_headers.h>
+#include <vcpkg/base/system-headers.h>
 
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
-#include <vcpkg/base/messages.h>
 #include <vcpkg/base/pragmas.h>
+#include <vcpkg/base/setup-messages.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.process.h>

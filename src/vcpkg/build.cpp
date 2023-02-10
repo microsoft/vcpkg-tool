@@ -189,7 +189,10 @@ namespace vcpkg::Build
         const FullPackageSpec spec = check_and_get_full_package_spec(
             std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
+        auto& fs = paths.get_filesystem();
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(
+            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
         return perform_ex(args, spec, host_triplet, provider, binary_cache, null_build_logs_recorder(), paths);
     }
 } // namespace vcpkg::Build
@@ -216,6 +219,7 @@ namespace vcpkg
     static const std::string NAME_SKIP_DUMPBIN_CHECKS = "PolicySkipDumpbinChecks";
     static const std::string NAME_SKIP_ARCHITECTURE_CHECK = "PolicySkipArchitectureCheck";
     static const std::string NAME_CMAKE_HELPER_PORT = "PolicyCmakeHelperPort";
+    static const std::string NAME_SKIP_ABSOLUTE_PATHS_CHECK = "PolicySkipAbsolutePathsCheck";
 
     static std::remove_const_t<decltype(ALL_POLICIES)> generate_all_policies()
     {
@@ -246,6 +250,7 @@ namespace vcpkg
             case BuildPolicy::SKIP_DUMPBIN_CHECKS: return NAME_SKIP_DUMPBIN_CHECKS;
             case BuildPolicy::SKIP_ARCHITECTURE_CHECK: return NAME_SKIP_ARCHITECTURE_CHECK;
             case BuildPolicy::CMAKE_HELPER_PORT: return NAME_CMAKE_HELPER_PORT;
+            case BuildPolicy::SKIP_ABSOLUTE_PATHS_CHECK: return NAME_SKIP_ABSOLUTE_PATHS_CHECK;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -266,6 +271,7 @@ namespace vcpkg
             case BuildPolicy::SKIP_DUMPBIN_CHECKS: return "VCPKG_POLICY_SKIP_DUMPBIN_CHECKS";
             case BuildPolicy::SKIP_ARCHITECTURE_CHECK: return "VCPKG_POLICY_SKIP_ARCHITECTURE_CHECK";
             case BuildPolicy::CMAKE_HELPER_PORT: return "VCPKG_POLICY_CMAKE_HELPER_PORT";
+            case BuildPolicy::SKIP_ABSOLUTE_PATHS_CHECK: return "VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK";
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -957,7 +963,7 @@ namespace vcpkg
             std::vector<std::string> error_logs;
             if (fs.exists(logs, VCPKG_LINE_INFO))
             {
-                error_logs = fs.read_lines(logs, VCPKG_LINE_INFO);
+                error_logs = fs.read_lines(logs).value_or_exit(VCPKG_LINE_INFO);
                 Util::erase_remove_if(error_logs, [](const auto& line) { return line.empty(); });
             }
             return ExtendedBuildResult{BuildResult::BUILD_FAILED, stdoutlog, std::move(error_logs)};
@@ -965,7 +971,7 @@ namespace vcpkg
 
         const BuildInfo build_info = read_build_info(fs, paths.build_info_file_path(action.spec));
         const size_t error_count =
-            PostBuildLint::perform_all_checks(action.spec, paths, pre_build_info, build_info, scfl.source_location);
+            perform_post_build_lint_checks(action.spec, paths, pre_build_info, build_info, scfl.source_location);
 
         auto find_itr = action.feature_dependencies.find("core");
         Checks::check_exit(VCPKG_LINE_INFO, find_itr != action.feature_dependencies.end());
@@ -1232,11 +1238,11 @@ namespace vcpkg
                             Checks::unreachable(VCPKG_LINE_INFO);
                         }
 
-                        dependency_abis.emplace_back(AbiEntry{pspec.name(), status_it->get()->package.abi});
+                        dependency_abis.emplace_back(pspec.name(), status_it->get()->package.abi);
                     }
                     else
                     {
-                        dependency_abis.emplace_back(AbiEntry{pspec.name(), it2->public_abi()});
+                        dependency_abis.emplace_back(pspec.name(), it2->public_abi());
                     }
                 }
             }

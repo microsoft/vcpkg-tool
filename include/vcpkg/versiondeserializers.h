@@ -28,9 +28,5 @@ namespace vcpkg
                                                        bool allow_hash_portversion = false);
     View<StringView> schemed_deserializer_fields();
 
-    void serialize_schemed_version(Json::Object& out_obj,
-                                   VersionScheme scheme,
-                                   StringView version,
-                                   int port_version,
-                                   bool always_emit_port_version = false);
+    void serialize_schemed_version(Json::Object& out_obj, VersionScheme scheme, StringView version, int port_version);
 }

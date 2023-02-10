@@ -5,8 +5,7 @@ $CurrentTest = "Build Test Ports"
 Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e_ports" install vcpkg-internal-e2e-test-port3
 Throw-IfFailed
 
-$output = Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e_ports/vcpkg-internal-e2e-test-port2" install vcpkg-internal-e2e-test-port2
-$output
+$output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e_ports/vcpkg-internal-e2e-test-port2" install vcpkg-internal-e2e-test-port2
 Throw-IfFailed
 if ($output -match 'vcpkg-internal-e2e-test-port3') {
     throw "Should not emit messages about -port3 while checking -port2"
@@ -21,14 +20,14 @@ if ($IsWindows) {
     Throw-IfFailed
 }
 
-$output = Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e_ports/overlays" install broken-no-name
+$output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e_ports/overlays" install broken-no-name
 Throw-IfNotFailed
-if (-not $output -match 'missing field') {
+if ($output -notmatch "missing required field 'name'") {
     throw 'Did not detect missing field'
 }
 
-$output = Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e_ports/overlays" install broken-no-version
+$output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e_ports/overlays" install broken-no-version
 Throw-IfNotFailed
-if (-not $output -match 'missing field') {
+if ($output -notmatch 'expected a versioning field') {
     throw 'Did not detect missing field'
 }

@@ -3,7 +3,7 @@
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/to_string.h>
+#include <vcpkg/base/to-string.h>
 
 #include <errno.h>
 #include <inttypes.h>
@@ -11,6 +11,8 @@
 
 #include <algorithm>
 #include <vector>
+
+#include "vcpkg/base/fwd/span.h"
 
 namespace vcpkg::Strings::details
 {
@@ -218,6 +220,12 @@ namespace vcpkg::Strings
 
     Optional<StringView> find_at_most_one_enclosed(StringView input, StringView left_tag, StringView right_tag);
 
+    bool contains_any_ignoring_c_comments(const std::string& source, View<StringView> to_find);
+
+    bool contains_any_ignoring_hash_comments(StringView source, View<StringView> to_find);
+
+    bool contains_any(StringView source, View<StringView> to_find);
+
     bool equals(StringView a, StringView b);
 
     template<class T>
@@ -235,9 +243,15 @@ namespace vcpkg::Strings
     template<>
     Optional<int> strto<int>(StringView);
     template<>
+    Optional<unsigned int> strto<unsigned int>(StringView);
+    template<>
     Optional<long> strto<long>(StringView);
     template<>
+    Optional<unsigned long> strto<unsigned long>(StringView);
+    template<>
     Optional<long long> strto<long long>(StringView);
+    template<>
+    Optional<unsigned long long> strto<unsigned long long>(StringView);
     template<>
     Optional<double> strto<double>(StringView);
 

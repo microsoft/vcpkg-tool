@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vcpkg/fwd/portfileprovider.h>
-#include <vcpkg/fwd/vcpkgpaths.h>
 
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/util.h>
@@ -56,7 +55,9 @@ namespace vcpkg
 
     struct PathsPortFileProvider : PortFileProvider
     {
-        explicit PathsPortFileProvider(const vcpkg::VcpkgPaths& paths, std::unique_ptr<IOverlayProvider>&& overlay);
+        explicit PathsPortFileProvider(const Filesystem& fs,
+                                       const RegistrySet& registry_set,
+                                       std::unique_ptr<IOverlayProvider>&& overlay);
         ExpectedS<const SourceControlFileAndLocation&> get_control_file(const std::string& src_name) const override;
         std::vector<const SourceControlFileAndLocation*> load_all_control_files() const override;
 
@@ -66,11 +67,14 @@ namespace vcpkg
         std::unique_ptr<IOverlayProvider> m_overlay;
     };
 
-    std::unique_ptr<IBaselineProvider> make_baseline_provider(const vcpkg::VcpkgPaths& paths);
-    std::unique_ptr<IVersionedPortfileProvider> make_versioned_portfile_provider(const vcpkg::VcpkgPaths& paths);
-    std::unique_ptr<IOverlayProvider> make_overlay_provider(const vcpkg::VcpkgPaths& paths,
+    std::unique_ptr<IBaselineProvider> make_baseline_provider(const RegistrySet& registry_set);
+    std::unique_ptr<IVersionedPortfileProvider> make_versioned_portfile_provider(const Filesystem& fs,
+                                                                                 const RegistrySet& registry_set);
+    std::unique_ptr<IOverlayProvider> make_overlay_provider(const Filesystem& fs,
+                                                            const Path& original_cwd,
                                                             View<std::string> overlay_ports);
-    std::unique_ptr<IOverlayProvider> make_manifest_provider(const vcpkg::VcpkgPaths& paths,
+    std::unique_ptr<IOverlayProvider> make_manifest_provider(const Filesystem& fs,
+                                                             const Path& original_cwd,
                                                              View<std::string> overlay_ports,
                                                              const Path& manifest_path,
                                                              std::unique_ptr<SourceControlFile>&& manifest_scf);

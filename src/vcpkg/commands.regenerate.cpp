@@ -1,4 +1,4 @@
-#include <vcpkg/base/basic_checks.h>
+#include <vcpkg/base/basic-checks.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/util.h>
 
@@ -19,9 +19,9 @@ namespace
     constexpr StringLiteral NORMALIZE = "normalize";
 
     constexpr std::array<CommandSwitch, 3> command_switches = {{
-        {FORCE, "proceeds with the (potentially dangerous) action without confirmation"},
-        {DRY_RUN, "does not actually perform the action, shows only what would be done"},
-        {NORMALIZE, "apply any deprecation fixups"},
+        {FORCE, []() { return msg::format(msgCmdRegenerateOptForce); }},
+        {DRY_RUN, []() { return msg::format(msgCmdRegenerateOptDryRun); }},
+        {NORMALIZE, []() { return msg::format(msgCmdRegenerateOptNormalize); }},
     }};
 
     static const CommandStructure command_structure = {

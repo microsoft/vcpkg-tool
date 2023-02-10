@@ -197,7 +197,7 @@ $.registries[0]: mismatched type: expected a registry
 })json";
         check_errors(raw_bad_fs_registry, R"(
 $.registries[0] (a filesystem registry): unexpected field 'reference', did you mean 'baseline'?
-$.registries[0] (a registry): missing required field 'packages' (an array of package names)
+$.registries[0] (a registry): missing required field 'packages' (an array of package patterns)
 )");
 
         std::string raw_bad_git_registry = R"json({
@@ -214,7 +214,7 @@ $.registries[0] (a registry): unexpected field 'no-repository', did you mean 're
 $.registries[0] (a git registry): missing required field 'repository' (a git repository URL)
 $.registries[0].reference: mismatched type: expected a git reference (for example, a branch)
 $.registries[0] (a git registry): unexpected field 'no-repository', did you mean 'repository'?
-$.registries[0].packages: mismatched type: expected an array of package names
+$.registries[0].packages: mismatched type: expected an array of package patterns
 )");
 
         std::string raw_bad_artifact_registry = R"json({

@@ -3,11 +3,13 @@
 #include <vcpkg/base/fwd/format.h>
 #include <vcpkg/base/fwd/parse.h>
 
+#include <vcpkg/fwd/packagespec.h>
+
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/view.h>
+#include <vcpkg/base/span.h>
 
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/triplet.h>
@@ -91,6 +93,8 @@ namespace vcpkg
         std::string m_feature;
     };
 
+    std::string format_name_only_feature_spec(StringView package_name, StringView feature_name);
+
     /// In an internal feature set, "default" represents default features and missing "core" has no semantic
     struct InternalFeatureSet : std::vector<std::string>
     {
@@ -137,12 +141,6 @@ namespace vcpkg
         }
 
         Optional<Version> try_get_minimum_version() const;
-    };
-
-    enum class ImplicitDefault : bool
-    {
-        NO,
-        YES,
     };
 
     struct Dependency

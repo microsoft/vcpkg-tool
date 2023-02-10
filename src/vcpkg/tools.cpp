@@ -212,7 +212,7 @@ namespace vcpkg
 
         virtual void add_system_package_info(LocalizedString& out) const
         {
-            out.append_raw(" ").append(msgInstallWithSystemManager);
+            out.append_raw(' ').append(msgInstallWithSystemManager);
         }
     };
 
@@ -419,11 +419,11 @@ namespace vcpkg
         virtual void add_system_package_info(LocalizedString& out) const override
         {
 #if defined(__APPLE__)
-            out.append_raw(" ").append(msgInstallWithSystemManagerPkg, msg::command_line = "brew install mono");
+            out.append_raw(' ').append(msgInstallWithSystemManagerPkg, msg::command_line = "brew install mono");
 #else
-            out.append_raw(" ").append(msgInstallWithSystemManagerPkg,
+            out.append_raw(' ').append(msgInstallWithSystemManagerPkg,
                                        msg::command_line = "sudo apt install mono-complete");
-            out.append_raw(" ").append(msgInstallWithSystemManagerMono,
+            out.append_raw(' ').append(msgInstallWithSystemManagerMono,
                                        msg::url = "https://www.mono-project.com/download/stable/");
 #endif
         }
@@ -573,9 +573,9 @@ namespace vcpkg
         virtual void add_system_package_info(LocalizedString& out) const override
         {
 #if defined(__APPLE__)
-            out.append_raw(" ").append(msgInstallWithSystemManagerPkg, msg::command_line = "brew install python3");
+            out.append_raw(' ').append(msgInstallWithSystemManagerPkg, msg::command_line = "brew install python3");
 #else
-            out.append_raw(" ").append(msgInstallWithSystemManagerPkg, msg::command_line = "sudo apt install python3");
+            out.append_raw(' ').append(msgInstallWithSystemManagerPkg, msg::command_line = "sudo apt install python3");
 #endif
         }
     };
@@ -595,9 +595,9 @@ namespace vcpkg
         virtual void add_system_package_info(LocalizedString& out) const override
         {
 #if defined(__APPLE__)
-            out.append_raw(" ").append(msgInstallWithSystemManagerPkg, msg::command_line = "brew install python3");
+            out.append_raw(' ').append(msgInstallWithSystemManagerPkg, msg::command_line = "brew install python3");
 #else
-            out.append_raw(" ").append(msgInstallWithSystemManagerPkg,
+            out.append_raw(' ').append(msgInstallWithSystemManagerPkg,
                                        msg::command_line = "sudo apt install python3-virtualenv");
 #endif
         }
@@ -677,7 +677,7 @@ namespace vcpkg
                                     msg::url = tool_data.url,
                                     msg::path = download_path);
 
-                downloader->download_file(fs, tool_data.url, download_path, tool_data.sha512);
+                downloader->download_file(fs, tool_data.url, {}, download_path, tool_data.sha512, null_sink);
             }
             else
             {
@@ -831,7 +831,7 @@ namespace vcpkg
             s.append(msgToolFetchFailed, msg::tool_name = tool.tool_data_name());
             if (env_force_system_binaries && download_available)
             {
-                s.append_raw(" ").append(msgDownloadAvailable, msg::env_var = s_env_vcpkg_force_system_binaries);
+                s.append_raw(' ').append(msgDownloadAvailable, msg::env_var = s_env_vcpkg_force_system_binaries);
             }
             if (consider_system)
             {
@@ -839,7 +839,7 @@ namespace vcpkg
             }
             else if (!download_available)
             {
-                s.append_raw(" ").append(msgUnknownTool);
+                s.append_raw(' ').append(msgUnknownTool);
             }
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, s);
         }
@@ -867,6 +867,10 @@ namespace vcpkg
                 if (tool == Tools::TAR)
                 {
                     return {find_system_tar(fs).value_or_exit(VCPKG_LINE_INFO), {}};
+                }
+                if (tool == Tools::CMAKE_SYSTEM)
+                {
+                    return {find_system_cmake(fs).value_or_exit(VCPKG_LINE_INFO), {}};
                 }
                 GenericToolProvider provider{tool};
                 return get_path(provider, status_sink);
@@ -897,6 +901,39 @@ namespace vcpkg
         {
             return tools[0];
         }
+    }
+
+    ExpectedL<Path> find_system_cmake(const Filesystem& fs)
+    {
+        auto tools = fs.find_from_PATH(Tools::CMAKE);
+        if (!tools.empty())
+        {
+            return std::move(tools[0]);
+        }
+
+#if defined(_WIN32)
+        std::vector<Path> candidate_paths;
+        const auto& program_files = get_program_files_platform_bitness();
+        if (const auto pf = program_files.get())
+        {
+            auto path = *pf / "CMake" / "bin" / "cmake.exe";
+            if (fs.exists(path, IgnoreErrors{})) return path;
+        }
+
+        const auto& program_files_32_bit = get_program_files_32_bit();
+        if (const auto pf = program_files_32_bit.get())
+        {
+            auto path = *pf / "CMake" / "bin" / "cmake.exe";
+            if (fs.exists(path, IgnoreErrors{})) return path;
+        }
+#endif
+
+        return msg::format(msg::msgErrorMessage)
+            .append(msgToolFetchFailed, msg::tool_name = Tools::CMAKE)
+#if !defined(_WIN32)
+            .append(msgInstallWithSystemManager)
+#endif
+            ;
     }
 
     std::unique_ptr<ToolCache> get_tool_cache(Filesystem& fs,
