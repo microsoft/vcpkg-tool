@@ -1344,7 +1344,7 @@ namespace vcpkg
         ForceSystemBinariesOnWeirdPlatforms,
         (),
         "",
-        "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.");
+        "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.");
     DECLARE_MESSAGE(FormattedParseMessageExpression,
                     (msg::value),
                     "Example of {value} is 'x64 & windows'",
