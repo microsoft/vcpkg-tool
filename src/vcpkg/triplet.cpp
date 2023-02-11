@@ -116,8 +116,7 @@ namespace vcpkg
         {
             if (qualified_deps.size() == 0)
             {
-                msg::println_warning(
-                    msgDefaultTriplet, msg::triplet = default_host_triplet(args), msg::value = "x86-windows");
+                msg::println_warning(msgDefaultTriplet, msg::triplet = default_host_triplet(args));
                 return;
             }
             for (auto&& arg : qualified_deps)
@@ -126,8 +125,7 @@ namespace vcpkg
                 auto maybe_qpkg = parse_qualified_specifier(as_lowercase);
                 if (maybe_qpkg.has_value() && !maybe_qpkg.get()->triplet.has_value())
                 {
-                    msg::println_warning(
-                        msgDefaultTriplet, msg::triplet = default_host_triplet(args), msg::value = "x86-windows");
+                    msg::println_warning(msgDefaultTriplet, msg::triplet = default_host_triplet(args));
                     return;
                 }
             }
