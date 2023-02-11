@@ -57,7 +57,7 @@ namespace vcpkg
             }
             else
             {
-                parser.add_type_error(Fields::PORT_VERSION, "a non-negative integer");
+                parser.add_type_error(Fields::PORT_VERSION, msg::format(msgANonNegativeInteger));
             }
         }
 

@@ -34,7 +34,7 @@ namespace vcpkg
             for (auto&& msg : other_errors)
             {
                 target.push_back('\n');
-                target.append(msg);
+                target.append(msg.data());
             }
         }
 

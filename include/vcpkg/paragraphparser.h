@@ -22,8 +22,8 @@ namespace vcpkg
         std::string name;
         std::vector<std::string> missing_fields;
         std::vector<std::string> extra_fields;
-        std::map<std::string, std::string> expected_types;
-        std::vector<std::string> other_errors;
+        std::map<std::string, LocalizedString> expected_types;
+        std::vector<LocalizedString> other_errors;
         std::string error;
 
         bool has_error() const
@@ -59,14 +59,17 @@ namespace vcpkg
         std::string optional_field(StringView fieldname);
         void optional_field(StringView fieldname, std::pair<std::string&, TextRowCol&> out);
 
-        void add_type_error(const std::string& fieldname, const char* type) { expected_types[fieldname] = type; }
+        void add_type_error(const std::string& fieldname, const LocalizedString& type)
+        {
+            expected_types[fieldname] = type;
+        }
 
         std::unique_ptr<ParseControlErrorInfo> error_info(StringView name) const;
 
     private:
         Paragraph&& fields;
         std::vector<std::string> missing_fields;
-        std::map<std::string, std::string> expected_types;
+        std::map<std::string, LocalizedString> expected_types;
     };
 
     ExpectedS<std::vector<std::string>> parse_default_features_list(const std::string& str,

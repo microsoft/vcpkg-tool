@@ -15,13 +15,14 @@ namespace
 
     struct VersionDeserializer final : Json::IDeserializer<std::pair<std::string, Optional<int>>>
     {
-        VersionDeserializer(StringLiteral type, bool allow_hash_portversion)
+        VersionDeserializer(LocalizedString type, bool allow_hash_portversion)
             : m_type(type), m_allow_hash_portversion(allow_hash_portversion)
         {
         }
-        StringView type_name() const override { return m_type; }
 
-        Optional<std::pair<std::string, Optional<int>>> visit_string(Json::Reader& r, StringView sv) override
+        LocalizedString type_name() const { return m_type; }
+
+        Optional<std::pair<std::string, Optional<int>>> visit_string(Json::Reader& r, StringView sv) const override
         {
             auto it = std::find(sv.begin(), sv.end(), '#');
             StringView pv(it, sv.end());
@@ -58,21 +59,22 @@ namespace
             }
             return ret;
         }
-        StringLiteral m_type;
+
+        LocalizedString m_type;
         bool m_allow_hash_portversion;
     };
 
     struct GenericVersionDeserializer : Json::IDeserializer<Version>
     {
         GenericVersionDeserializer(StringLiteral version_field) : m_version_field(version_field) { }
-        StringView type_name() const override { return "a version object"; }
+        LocalizedString type_name() const override { return msg::format(msgAVersionObject); }
 
-        Optional<Version> visit_object(Json::Reader& r, const Json::Object& obj) override
+        Optional<Version> visit_object(Json::Reader& r, const Json::Object& obj) const override
         {
             std::pair<std::string, Optional<int>> version;
             int port_version = 0;
 
-            static VersionDeserializer version_deserializer{"version", false};
+            static const VersionDeserializer version_deserializer{msg::format(msgAVersionOfAnyType), false};
 
             r.required_object_field(type_name(), obj, m_version_field, version, version_deserializer);
             r.optional_object_field(obj, PORT_VERSION, port_version, Json::NaturalNumberDeserializer::instance);
@@ -85,7 +87,7 @@ namespace
 
 namespace vcpkg
 {
-    Optional<SchemedVersion> visit_optional_schemed_deserializer(StringView parent_type,
+    Optional<SchemedVersion> visit_optional_schemed_deserializer(const LocalizedString& parent_type,
                                                                  Json::Reader& r,
                                                                  const Json::Object& obj,
                                                                  bool allow_hash_portversion)
@@ -93,10 +95,10 @@ namespace vcpkg
         VersionScheme version_scheme = VersionScheme::String;
         std::pair<std::string, Optional<int>> version;
 
-        VersionDeserializer version_exact_deserializer{"an exact version string", allow_hash_portversion};
-        VersionDeserializer version_relaxed_deserializer{"a relaxed version string", allow_hash_portversion};
-        VersionDeserializer version_semver_deserializer{"a semantic version string", allow_hash_portversion};
-        VersionDeserializer version_date_deserializer{"a date version string", allow_hash_portversion};
+        VersionDeserializer version_exact_deserializer{msg::format(msgAnExactVersionString), allow_hash_portversion};
+        VersionDeserializer version_relaxed_deserializer{msg::format(msgARelaxedVersionString), allow_hash_portversion};
+        VersionDeserializer version_semver_deserializer{msg::format(msgASemanticVersionString), allow_hash_portversion};
+        VersionDeserializer version_date_deserializer{msg::format(msgADateVersionString), allow_hash_portversion};
 
         bool has_exact = r.optional_object_field(obj, VERSION_STRING, version, version_exact_deserializer);
         bool has_relax = r.optional_object_field(obj, VERSION_RELAXED, version, version_relaxed_deserializer);
@@ -169,7 +171,7 @@ namespace vcpkg
         return SchemedVersion{version_scheme, Version{std::move(version.first), port_version}};
     }
 
-    SchemedVersion visit_required_schemed_deserializer(StringView parent_type,
+    SchemedVersion visit_required_schemed_deserializer(const LocalizedString& parent_type,
                                                        Json::Reader& r,
                                                        const Json::Object& obj,
                                                        bool allow_hash_portversion)
@@ -188,7 +190,7 @@ namespace vcpkg
 
     View<StringView> schemed_deserializer_fields()
     {
-        static const StringView t[] = {VERSION_RELAXED, VERSION_SEMVER, VERSION_STRING, VERSION_DATE, PORT_VERSION};
+        static constexpr StringView t[] = {VERSION_RELAXED, VERSION_SEMVER, VERSION_STRING, VERSION_DATE, PORT_VERSION};
         return t;
     }
 
@@ -213,15 +215,22 @@ namespace vcpkg
         }
     }
 
-    Json::IDeserializer<Version>& get_version_deserializer_instance()
+    LocalizedString VersionConstraintStringDeserializer::type_name() const
     {
-        static GenericVersionDeserializer deserializer(VERSION_STRING);
+        return msg::format(msgAVersionConstraint);
+    }
+
+    const VersionConstraintStringDeserializer VersionConstraintStringDeserializer::instance;
+
+    const Json::IDeserializer<Version>& get_version_deserializer_instance()
+    {
+        static const GenericVersionDeserializer deserializer(VERSION_STRING);
         return deserializer;
     }
 
-    Json::IDeserializer<Version>& get_versiontag_deserializer_instance()
+    const Json::IDeserializer<Version>& get_versiontag_deserializer_instance()
     {
-        static GenericVersionDeserializer deserializer(BASELINE);
+        static const GenericVersionDeserializer deserializer(BASELINE);
         return deserializer;
     }
 }
