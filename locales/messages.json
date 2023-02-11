@@ -964,7 +964,7 @@
   "PortBugOutdatedCRT": "Detected outdated dynamic CRT in the following files:",
   "PortBugRemoveBinDir": "If the creation of bin\\ and/or debug\\bin\\ cannot be disabled, use this in the portfile to remove them",
   "PortBugRemoveEmptyDirectories": "If a directory should be populated but is not, this might indicate an error in the portfile.\nIf the directories are not needed and their creation cannot be disabled, use something like this in the portfile to remove them:",
-  "PortBugRemoveEmptyDirs": "vcpkg_fixup_pkgconfig()\nfile(REMOVE_RECURSE empty directories left by the above renames)",
+  "PortBugRemoveEmptyDirs": "file(REMOVE_RECURSE empty directories left by the above renames)",
   "_PortBugRemoveEmptyDirs.comment": "Only the 'empty directories left by the above renames' part should be translated",
   "PortBugRestrictedHeaderPaths": "The following restricted headers can prevent the core C++ runtime and other packages from compiling correctly. In exceptional circumstances, this policy can be disabled via {env_var}.",
   "_PortBugRestrictedHeaderPaths.comment": "A list of restricted headers is printed after this message, one per line. An example of {env_var} is VCPKG_DEFAULT_TRIPLET.",

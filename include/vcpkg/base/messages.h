@@ -2159,7 +2159,7 @@ namespace vcpkg
     DECLARE_MESSAGE(PortBugRemoveEmptyDirs,
                     (),
                     "Only the 'empty directories left by the above renames' part should be translated",
-                    "vcpkg_fixup_pkgconfig()\nfile(REMOVE_RECURSE empty directories left by the above renames)");
+                    "file(REMOVE_RECURSE empty directories left by the above renames)");
     DECLARE_MESSAGE(PortBugRestrictedHeaderPaths,
                     (msg::env_var),
                     "A list of restricted headers is printed after this message, one per line.",
