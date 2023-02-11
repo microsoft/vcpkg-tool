@@ -324,8 +324,6 @@ namespace vcpkg::Json
         {
             return r.array_elements(arr, Underlying::instance);
         }
-
-        static const ArrayDeserializer instance;
     };
 
     struct ParagraphDeserializer final : IDeserializer<std::vector<std::string>>
