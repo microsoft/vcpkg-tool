@@ -1044,10 +1044,11 @@ namespace vcpkg
                     "Based on your system settings, the default path to store binaries is \"{path}\". This consults "
                     "%LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.");
     DECLARE_MESSAGE(DefaultTriplet,
-                    (msg::triplet),
+                    (msg::triplet, msg::value),
                     "",
                     "Starting with the September 2023 release, the default triplet for builds will change from "
-                    "x86-windows to the detected host triplet ({triplet}).");
+                    "x86-windows to the detected host triplet ({triplet}). To resolve this message, add --triplet "
+                    "{triplet} for the new value, or --triplet {value} to keep the same behavior after the change.");
     DECLARE_MESSAGE(DeleteVcpkgConfigFromManifest,
                     (msg::path),
                     "",

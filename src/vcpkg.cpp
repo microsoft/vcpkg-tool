@@ -132,7 +132,7 @@ namespace
             return command_function->function->perform_and_exit(args, paths);
         }
 
-        Triplet default_triplet = vcpkg::default_triplet(args, paths.manifest_mode_enabled());
+        Triplet default_triplet = vcpkg::default_triplet(args);
         check_triplet(default_triplet, paths);
         Triplet host_triplet = vcpkg::default_host_triplet(args);
         check_triplet(host_triplet, paths);

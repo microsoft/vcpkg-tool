@@ -96,6 +96,7 @@ namespace vcpkg::Commands::Upgrade
         const std::vector<PackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
             return check_and_get_package_spec(std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
+        print_default_triplet_warning(args, args.command_arguments);
 
         ActionPlan action_plan;
         if (specs.empty())

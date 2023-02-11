@@ -84,38 +84,13 @@ namespace vcpkg
         return Triplet::from_canonical_name(std::move(canonical_name));
     }
 
-    Triplet default_triplet(const VcpkgCmdArguments& args, bool is_manifest_mode)
+    Triplet default_triplet(const VcpkgCmdArguments& args)
     {
-        (void)is_manifest_mode;
         if (auto triplet = args.triplet.get())
         {
-            // The triplet is set by --triplet or VCPKG_DEFAULT_TRIPLET.
             return Triplet::from_canonical_name(*triplet);
         }
 #if defined(_WIN32)
-        // Skip warning message on JSON output
-        if (!Strings::case_insensitive_ascii_equals(args.command, "z-print-config"))
-        {
-            // The triplet is not specified or is part of a string qualifier i.e. zlib:x64-windows
-            auto host_triplet = system_triplet().canonical_name();
-            if (is_manifest_mode)
-            {
-                msg::println_warning(msgDefaultTriplet, msg::triplet = host_triplet);
-            }
-            else
-            {
-                for (auto&& arg : args.command_arguments)
-                {
-                    const std::string as_lowercase = Strings::ascii_to_lowercase(std::string{arg});
-                    auto maybe_qpkg = parse_qualified_specifier(as_lowercase);
-                    if (maybe_qpkg.has_value() && !maybe_qpkg.get()->triplet.has_value())
-                    {
-                        msg::println_warning(msgDefaultTriplet, msg::triplet = host_triplet);
-                        break;
-                    }
-                }
-            }
-        }
         return Triplet::from_canonical_name("x86-windows");
 #else
         return system_triplet();
@@ -129,5 +104,34 @@ namespace vcpkg
             return Triplet::from_canonical_name(*host_triplet);
         }
         return system_triplet();
+    }
+
+    void print_default_triplet_warning(const VcpkgCmdArguments& args, const std::vector<std::string>& qualified_deps)
+    {
+        (void)args;
+        (void)qualified_deps;
+#if defined(_WIN32)
+        // The triplet is not set by --triplet or VCPKG_DEFAULT_TRIPLET
+        if (!args.triplet.has_value())
+        {
+            if (qualified_deps.size() == 0)
+            {
+                msg::println_warning(
+                    msgDefaultTriplet, msg::triplet = default_host_triplet(args), msg::value = "x86-windows");
+                return;
+            }
+            for (auto&& arg : qualified_deps)
+            {
+                const std::string as_lowercase = Strings::ascii_to_lowercase(std::string{arg});
+                auto maybe_qpkg = parse_qualified_specifier(as_lowercase);
+                if (maybe_qpkg.has_value() && !maybe_qpkg.get()->triplet.has_value())
+                {
+                    msg::println_warning(
+                        msgDefaultTriplet, msg::triplet = default_host_triplet(args), msg::value = "x86-windows");
+                    return;
+                }
+            }
+        }
+#endif
     }
 }

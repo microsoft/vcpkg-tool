@@ -41,8 +41,9 @@ namespace vcpkg
 
     inline bool operator!=(Triplet left, Triplet right) { return !(left == right); }
 
-    Triplet default_triplet(const VcpkgCmdArguments& args, bool manifest_mode_enabled);
+    Triplet default_triplet(const VcpkgCmdArguments& args);
     Triplet default_host_triplet(const VcpkgCmdArguments& args);
+    void print_default_triplet_warning(const VcpkgCmdArguments& args, const std::vector<std::string>& qualified_deps);
 }
 
 VCPKG_FORMAT_AS(vcpkg::Triplet, vcpkg::StringView);

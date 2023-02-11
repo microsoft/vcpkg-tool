@@ -335,6 +335,8 @@ namespace vcpkg::Commands::CI
     {
         msg::println_warning(msgInternalCICommand);
 
+        print_default_triplet_warning(args, {});
+
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         const auto& settings = options.settings;
 
