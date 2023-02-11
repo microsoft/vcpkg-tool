@@ -993,6 +993,7 @@ namespace vcpkg
                 print_usage(MANIFEST_COMMAND_STRUCTURE);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
+            print_default_triplet_warning(args, {});
         }
         else
         {
@@ -1018,7 +1019,6 @@ namespace vcpkg
                 print_usage(COMMAND_STRUCTURE);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
-            print_default_triplet_warning(args, {});
         }
 
         BinaryCache binary_cache;
