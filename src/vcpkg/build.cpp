@@ -284,7 +284,7 @@ namespace vcpkg
     {
         switch (tool)
         {
-            case DownloadTool::BUILT_IN: return NAME_BUILD_IN_DOWNLOAD;
+            case DownloadTool::BUILT_IN: return NAME_BUILTIN_DOWNLOAD;
             case DownloadTool::ARIA2: return NAME_ARIA2_DOWNLOAD;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
