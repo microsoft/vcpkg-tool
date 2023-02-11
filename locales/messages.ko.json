@@ -654,7 +654,6 @@
   "PortDependencyConflict": "포트 {package_name}에는 다음과 같은 지원되지 않는 종속성이 있습니다.",
   "PortNotInBaseline": "기준선에 포트 {package_name}에 대한 항목이 없습니다.",
   "PortSupportsField": "(지원: \"{supports_expression}\")",
-  "PortTypeConflict": "{spec}의 포트 유형이 설치된 포트 파일과 사용 가능한 포트 파일 간에 다릅니다.\n{spec}을(를) 수동으로 제거하고 이 명령을 다시 실행하세요.",
   "PortVersionConflict": "The following packages differ from their port versions:",
   "PortsAdded": "다음 {count}개 포트가 추가되었습니다.",
   "PortsNoDiff": "두 커밋 사이의 포트에 변경 내용이 없습니다.",

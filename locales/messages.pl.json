@@ -654,7 +654,6 @@
   "PortDependencyConflict": "Port {package_name} ma następujące nieobsługiwane zależności:",
   "PortNotInBaseline": "punkt odniesienia nie zawiera wpisu dla portu {package_name}",
   "PortSupportsField": "(obsługuje: „{supports_expression}”)",
-  "PortTypeConflict": "Typ portu {spec} różni się między zainstalowanym i dostępnym plikiem portfile.\nUsuń ręcznie {spec} i uruchom ponownie to polecenie.",
   "PortVersionConflict": "Następujące pakiety różnią się od ich wersji portów:",
   "PortsAdded": "Dodano następujące porty ({count}):",
   "PortsNoDiff": "Między tymi dwoma zatwierdzeniami nie wprowadzono żadnych zmian w portach.",

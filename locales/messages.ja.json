@@ -654,7 +654,6 @@
   "PortDependencyConflict": "ポート {package_name} には、次のサポートされていない依存関係があります。",
   "PortNotInBaseline": "ベースラインにポート {package_name} のエントリが含まれていません",
   "PortSupportsField": "(supports: \"{supports_expression}\")",
-  "PortTypeConflict": "{spec} のポートの種類は、インストールされているポート ファイルと使用可能なポート ファイルで異なります。\n{spec} を手動で削除してから、このコマンドを再実行してください。",
   "PortVersionConflict": "次のパッケージは、ポート バージョンとは異なります。",
   "PortsAdded": "次の {count} 個のポートが追加されました。",
   "PortsNoDiff": "2 つのコミットの間にポートの変更点はありませんでした。",

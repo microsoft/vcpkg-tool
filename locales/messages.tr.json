@@ -654,7 +654,6 @@
   "PortDependencyConflict": "{package_name} bağlantı noktası aşağıdaki desteklenmeyen bağımlılıklara sahip:",
   "PortNotInBaseline": "taban çizgisi {package_name} bağlantı noktası için bir giriş içermiyor",
   "PortSupportsField": "(destekler: \"{supports_expression}\")",
-  "PortTypeConflict": "{spec} bağlantı noktası türü, kurulu ve kullanılabilir bağlantı noktası dosyası arasında farklılık gösterir.\nLütfen {spec} öğesini manuel olarak kaldırın ve bu komutu yeniden çalıştırın.",
   "PortVersionConflict": "Şu paketler bağlantı noktası sürümlerinden farklı:",
   "PortsAdded": "Aşağıdaki {count} bağlantı noktası eklendi:",
   "PortsNoDiff": "İki işleme arasındaki bağlantı noktalarında herhangi bir değişiklik olmadı.",

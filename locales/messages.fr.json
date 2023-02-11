@@ -654,7 +654,6 @@
   "PortDependencyConflict": "Le port {package_name} a les dépendances non prises en charge suivantes :",
   "PortNotInBaseline": "la base de référence ne contient pas d’entrée pour le port {package_name}.",
   "PortSupportsField": "(prend en charge : « {supports_expression} »)",
-  "PortTypeConflict": "Le type de port de {spec} diffère entre le fichier de port installé et le portfile disponible.\nSupprimez manuellement {spec} et réexéciez cette commande.",
   "PortVersionConflict": "Les packages suivants diffèrent de leur version de port :",
   "PortsAdded": "Les ports {count} suivants ont été ajoutés :",
   "PortsNoDiff": "Il n’y a eu aucune modification dans les ports entre les deux validations.",

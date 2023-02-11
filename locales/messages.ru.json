@@ -654,7 +654,6 @@
   "PortDependencyConflict": "Порт {package_name} имеет следующие неподдерживаемые зависимости:",
   "PortNotInBaseline": "В базовом плане нет записи для порта {package_name}.",
   "PortSupportsField": "(поддерживает: \"{supports_expression}\")",
-  "PortTypeConflict": "Тип порта {spec} в установленном файле порта отличается от доступного.\nУдалите {spec} вручную и повторно выполните эту команду.",
   "PortVersionConflict": "Следующие пакеты отличаются от версий портов:",
   "PortsAdded": "Добавлены следующие порты ({count}):",
   "PortsNoDiff": "Порты между двумя фиксациями не изменились.",

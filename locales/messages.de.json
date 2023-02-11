@@ -654,7 +654,6 @@
   "PortDependencyConflict": "Port {package_name} weist die folgenden nicht unterstützten Abhängigkeiten auf:",
   "PortNotInBaseline": "die Baseline enthält keinen Eintrag für Port {package_name}",
   "PortSupportsField": "(unterstützt: \"{supports_expression}\")",
-  "PortTypeConflict": "Der Porttyp von {spec} unterscheidet sich zwischen der installierten und der verfügbaren Portdatei.\nEntfernen Sie {spec} manuell, und führen Sie diesen Befehl erneut aus.",
   "PortVersionConflict": "Die folgenden Pakete unterscheiden sich von ihren Portversionen:",
   "PortsAdded": "Die folgenden {count} Ports wurden hinzugefügt:",
   "PortsNoDiff": "Es wurden keine Änderungen an den Ports zwischen den beiden Commits vorgenommen.",

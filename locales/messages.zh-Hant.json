@@ -654,7 +654,6 @@
   "PortDependencyConflict": "連接埠 {package_name} 具有下列不支援的相依性:",
   "PortNotInBaseline": "基準不包含連接埠 {package_name} 的項目",
   "PortSupportsField": "(supports: \"{supports_expression}\")",
-  "PortTypeConflict": "{spec} 的連接埠類型在已安裝和可用的設定檔之間不同。\n請手動移除 {spec}，然後重新執行此命令。",
   "PortVersionConflict": "下列套件與其連接埠版本不同:",
   "PortsAdded": "已新增下列 {count} 個連接埠:",
   "PortsNoDiff": "兩個認可之間的連接埠中沒有變更。",

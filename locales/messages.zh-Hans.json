@@ -654,7 +654,6 @@
   "PortDependencyConflict": "端口 {package_name} 具有以下不受支持的依赖项:",
   "PortNotInBaseline": "基线不包含端口 {package_name} 的条目",
   "PortSupportsField": "(支持: “{supports_expression}”)",
-  "PortTypeConflict": "已安装和可用的端口文件之间 {spec} 的端口类型不同。\n请手动删除 {spec} 并重新运行此命令。",
   "PortVersionConflict": "以下包不同于其端口版本:",
   "PortsAdded": "添加了以下 {count} 个端口:",
   "PortsNoDiff": "两次提交之间的端口没有变化。",

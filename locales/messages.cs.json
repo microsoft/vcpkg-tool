@@ -654,7 +654,6 @@
   "PortDependencyConflict": "{package_name} portu má následující nepodporované závislosti:",
   "PortNotInBaseline": "směrný plán neobsahuje položku pro port {package_name}",
   "PortSupportsField": "(podporuje: {supports_expression})",
-  "PortTypeConflict": "Typ portu {spec} se mezi nainstalovaným a dostupným souborem portů liší.\nRučně odeberte {spec} a spusťte tento příkaz znovu.",
   "PortVersionConflict": "Následující balíčky se liší od jejich verzí portů:",
   "PortsAdded": "Přidaly se tyto porty (celkem {count}):",
   "PortsNoDiff": "Mezi těmito dvěma potvrzeními nedošlo k žádným změnám portů.",

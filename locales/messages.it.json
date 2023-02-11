@@ -654,7 +654,6 @@
   "PortDependencyConflict": "La porta {package_name} ha le seguenti dipendenze non supportate:",
   "PortNotInBaseline": "la linea di base non contiene una voce per la porta {package_name}",
   "PortSupportsField": "(supporta: \"{supports_expression}\")",
-  "PortTypeConflict": "Il tipo di porta di {spec} è diverso tra il file di porta installato e quello disponibile.\nRimuovere manualmente {spec} ed eseguire di nuovo questo comando.",
   "PortVersionConflict": "I pacchetti seguenti differiscono dalle versioni delle porte:",
   "PortsAdded": "Sono state aggiunte le porte {count} seguenti:",
   "PortsNoDiff": "Non sono state apportate modifiche alle porte tra i due commit.",
