@@ -613,24 +613,26 @@ namespace vcpkg::Commands::Integrate
 
     namespace Subcommand
     {
-        static const std::string INSTALL = "install";
-        static const std::string REMOVE = "remove";
-        static const std::string PROJECT = "project";
-        static const std::string POWERSHELL = "powershell";
-        static const std::string BASH = "bash";
-        static const std::string ZSH = "zsh";
-        static const std::string FISH = "x-fish";
+        static constexpr StringLiteral INSTALL = "install";
+        static constexpr StringLiteral REMOVE = "remove";
+#if defined(_WIN32)
+        static constexpr StringLiteral PROJECT = "project";
+        static constexpr StringLiteral POWERSHELL = "powershell";
+#endif // ^^^ _WIN32
+        static constexpr StringLiteral BASH = "bash";
+        static constexpr StringLiteral ZSH = "zsh";
+        static constexpr StringLiteral FISH = "x-fish";
     }
 
     static std::vector<std::string> valid_arguments(const VcpkgPaths&)
     {
         return
         {
-            Subcommand::INSTALL, Subcommand::REMOVE,
+            Subcommand::INSTALL.to_string(), Subcommand::REMOVE.to_string(),
 #if defined(_WIN32)
-                Subcommand::PROJECT, Subcommand::POWERSHELL,
+                Subcommand::PROJECT.to_string(), Subcommand::POWERSHELL.to_string(),
 #else
-                Subcommand::BASH, Subcommand::FISH,
+                Subcommand::BASH.to_string(), Subcommand::FISH.to_string(),
 #endif
         };
     }

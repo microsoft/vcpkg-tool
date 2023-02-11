@@ -984,7 +984,6 @@ namespace vcpkg
     REGISTER_MESSAGE(PortsRemoved);
     REGISTER_MESSAGE(PortsUpdated);
     REGISTER_MESSAGE(PortSupportsField);
-    REGISTER_MESSAGE(PortTypeConflict);
     REGISTER_MESSAGE(PreviousIntegrationFileRemains);
     REGISTER_MESSAGE(ProgramReturnedNonzeroExitCode);
     REGISTER_MESSAGE(ProvideExportType);

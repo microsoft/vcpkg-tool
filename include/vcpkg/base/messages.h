@@ -2186,11 +2186,6 @@ namespace vcpkg
     DECLARE_MESSAGE(PortsRemoved, (msg::count), "", "The following {count} ports were removed:");
     DECLARE_MESSAGE(PortsUpdated, (msg::count), "", "\nThe following {count} ports were updated:");
     DECLARE_MESSAGE(PortSupportsField, (msg::supports_expression), "", "(supports: \"{supports_expression}\")");
-    DECLARE_MESSAGE(PortTypeConflict,
-                    (msg::spec),
-                    "",
-                    "The port type of {spec} differs between the installed and available portfile.\nPlease manually "
-                    "remove {spec} and re-run this command.");
     DECLARE_MESSAGE(PortVersionConflict, (), "", "The following packages differ from their port versions:");
     DECLARE_MESSAGE(PrebuiltPackages, (), "", "There are packages that have not been built. To build them run:");
     DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.");

@@ -976,8 +976,6 @@
   "_PortNotInBaseline.comment": "An example of {package_name} is zlib.",
   "PortSupportsField": "(supports: \"{supports_expression}\")",
   "_PortSupportsField.comment": "An example of {supports_expression} is windows & !static.",
-  "PortTypeConflict": "The port type of {spec} differs between the installed and available portfile.\nPlease manually remove {spec} and re-run this command.",
-  "_PortTypeConflict.comment": "An example of {spec} is zlib:x64-windows.",
   "PortVersionConflict": "The following packages differ from their port versions:",
   "PortsAdded": "The following {count} ports were added:",
   "_PortsAdded.comment": "An example of {count} is 42.",
