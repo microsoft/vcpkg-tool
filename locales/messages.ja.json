@@ -648,7 +648,7 @@
   "PortBugOutdatedCRT": "次のファイルで古い動的 CRT が検出されました:",
   "PortBugRemoveBinDir": "bin\\ または debug\\bin\\ の作成を無効にできない場合は、ポートファイルでこれを使用して削除します",
   "PortBugRemoveEmptyDirectories": "ディレクトリを設定する必要があるが設定されていない場合は、portfile でエラーが発生する可能性があります。\nディレクトリが不要で、その作成を無効にできない場合は、portfile で次のように使用して削除します。",
-  "PortBugRemoveEmptyDirs": "vcpkg_fixup_pkgconfig()\nfile(REMOVE_RECURSE 上記の名前変更によって残された空のディレクトリ)",
+  "PortBugRemoveEmptyDirs": "file(REMOVE_RECURSE empty directories left by the above renames)",
   "PortBugRestrictedHeaderPaths": "次の制限付きヘッダーを使用すると、コア C++ ランタイムおよびその他のパッケージが正しくコンパイルされない可能性があります。例外的な状況では、このポリシーは {env_var} 経由で無効にすることができます。",
   "PortBugSetDllsWithoutExports": "エクスポートを行わない DLL は、ビルド スクリプトのバグである可能性があります。これが意図されている場合は、以下の行を portfile を追加します:\nset(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)\n次の DLL にはエクスポートがありません:",
   "PortDependencyConflict": "ポート {package_name} には、次のサポートされていない依存関係があります。",

@@ -648,7 +648,7 @@
   "PortBugOutdatedCRT": "Aşağıdaki dosyalarda süresi geçmiş dinamik CRT algılandı:",
   "PortBugRemoveBinDir": "bin\\ ve/veya debug\\bin\\ oluşturma devre dışı bırakılamıyorsa, bunları kaldırmak için bunu portfile’da kullanın",
   "PortBugRemoveEmptyDirectories": "Doldurulması gereken bir dizin doldurulmamışsa bu, portfile’da bir hata olabileceğini gösterir.\nDizinlere gerek yoksa ve oluşturmaları devre dışı bırakılamıyorsa bunları kaldırmak için portfile’da buna benzer bir özellik kullanın:",
-  "PortBugRemoveEmptyDirs": "vcpkg_fixup_pkgconfig()\nfile(REMOVE_RECURSE yukarıdaki yeniden adlandırmalardan kalan dizinleri boşalt)",
+  "PortBugRemoveEmptyDirs": "file(REMOVE_RECURSE empty directories left by the above renames)",
   "PortBugRestrictedHeaderPaths": "Aşağıdaki kısıtlanmış üst bilgiler çekirdek C++ çalışma zamanının ve diğer paketlerin düzgün bir şekilde derlenmesini önleyebilir. Bu ilke, olağanüstü durumlarda {env_var} yoluyla devre dışı bırakılabilir.",
   "PortBugSetDllsWithoutExports": "Dışarı aktarma içermeyen DLL'ler büyük olasılıkla derleme betiğinde bir hatadır. Bu amaçlandıysa, portfile’da şu satırı ekleyin:\nset(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS etkin)\nAşağıdaki DLL'lerde dışarı aktarma yok:",
   "PortDependencyConflict": "{package_name} bağlantı noktası aşağıdaki desteklenmeyen bağımlılıklara sahip:",

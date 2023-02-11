@@ -648,7 +648,7 @@
   "PortBugOutdatedCRT": "Se detectó CRT dinámico obsoleto en los siguientes archivos:",
   "PortBugRemoveBinDir": "Si no se puede deshabilitar la creación de bin\\ o debug\\bin\\, úselo en el archivo de puerto para quitarlos",
   "PortBugRemoveEmptyDirectories": "Si se debe rellenar un directorio pero no lo está, esto podría indicar un error en el archivo de puerto.\nSi los directorios no son necesarios y su creación no se puede deshabilitar, use algo como esto en el archivo de puerto para quitarlos:",
-  "PortBugRemoveEmptyDirs": "vcpkg_fixup_pkgconfig()\nfile(REMOVE_RECURSE directorios vacíos dejados por los cambios de nombre anteriores)",
+  "PortBugRemoveEmptyDirs": "file(REMOVE_RECURSE empty directories left by the above renames)",
   "PortBugRestrictedHeaderPaths": "Los siguientes encabezados restringidos pueden impedir que el entorno de ejecución de C++ principal y otros paquetes se compilen correctamente. En circunstancias excepcionales, esta directiva se puede deshabilitar mediante {env_var}.",
   "PortBugSetDllsWithoutExports": "Es probable que las DLL sin exportaciones sean un error en el script de compilación. Si se trata de esto, agregue la siguiente línea en el archivo de puerto:\nset(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS habilitado)\nLas siguientes DLL no tienen exportaciones:",
   "PortDependencyConflict": "El puerto {package_name} tiene las siguientes dependencias no admitidas:",
