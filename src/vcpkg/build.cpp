@@ -277,7 +277,7 @@ namespace vcpkg
         }
     }
 
-    static constexpr StringLiteral NAME_BUILD_IN_DOWNLOAD = "BUILT_IN";
+    static constexpr StringLiteral NAME_BUILTIN_DOWNLOAD = "BUILT_IN";
     static constexpr StringLiteral NAME_ARIA2_DOWNLOAD = "ARIA2";
 
     StringLiteral to_string_view(DownloadTool tool)
