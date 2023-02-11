@@ -101,7 +101,7 @@ namespace vcpkg::Commands::Env
 #if defined(_WIN32)
             env = cmd_execute_and_capture_environment(build_env_cmd, env);
 #else  // ^^^ _WIN32 / !_WIN32 vvv
-            Checks::exit_with_message(VCPKG_LINE_INFO, "Build environment commands are not supported on this platform");
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgEnvPlatformNotSupported);
 #endif // ^^^ !_WIN32
         }
 
@@ -109,7 +109,7 @@ namespace vcpkg::Commands::Env
         Command cmd("cmd");
 #else  // ^^^ _WIN32 / !_WIN32 vvv
         Command cmd("");
-        Checks::exit_with_message(VCPKG_LINE_INFO, "Build environment commands are not supported on this platform");
+        Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgEnvPlatformNotSupported);
 #endif // ^^^ !_WIN32
         if (!args.command_arguments.empty())
         {
