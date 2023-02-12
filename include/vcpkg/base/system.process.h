@@ -80,7 +80,8 @@ namespace vcpkg
 
     Command make_basic_cmake_cmd(const Path& cmake_tool_path,
                                  const Path& cmake_script,
-                                 const std::vector<CMakeVariable>& pass_variables);
+                                 const std::vector<CMakeVariable>& pass_variables,
+                                 const std::vector<std::string>& additional_args = {});
 
     Path get_exe_path_of_current_process();
 

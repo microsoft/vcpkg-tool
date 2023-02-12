@@ -1,0 +1,5 @@
+{
+    "name": "vcpkg-test-triplet-abi",
+    "version": "0",
+    "description": "A port that inspects the abi"
+}

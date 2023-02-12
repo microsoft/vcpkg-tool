@@ -9,6 +9,8 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
 
+#include <type_traits>
+
 namespace vcpkg::Json
 {
     struct Reader;
@@ -310,6 +312,19 @@ namespace vcpkg::Json
         }
 
         static NaturalNumberDeserializer instance;
+    };
+
+    struct RealNumberDeserializer final : IDeserializer<double>
+    {
+        virtual StringView type_name() const override { return "a real number"; }
+
+        virtual Optional<double> visit_number(Reader&, double value) override
+        {
+            if (!std::isfinite(value)) return nullopt;
+            return value;
+        }
+
+        static RealNumberDeserializer instance;
     };
 
     struct BooleanDeserializer final : IDeserializer<bool>

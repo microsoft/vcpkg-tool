@@ -35,6 +35,8 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#include <numeric>
+
 using namespace vcpkg;
 
 namespace
@@ -495,11 +497,9 @@ namespace vcpkg
         });
     }
 
-    const EnvCache::TripletMapEntry& EnvCache::get_triplet_cache(const Filesystem& fs, const Path& p) const
+    const EnvCache::TripletMapEntry& EnvCache::get_triplet_cache(const Path& p) const
     {
-        return m_triplet_cache.get_lazy(p, [&]() -> TripletMapEntry {
-            return TripletMapEntry{Hash::get_file_hash(fs, p, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO)};
-        });
+        return m_triplet_cache.get_lazy(p, [&]() -> TripletMapEntry { return TripletMapEntry{}; });
     }
 
     const CompilerInfo& EnvCache::get_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info)
@@ -517,7 +517,7 @@ namespace vcpkg
 
         auto&& toolchain_hash = get_toolchain_cache(m_toolchain_cache, abi_info.pre_build_info->toolchain_file(), fs);
 
-        auto&& triplet_entry = get_triplet_cache(fs, triplet_file_path);
+        auto&& triplet_entry = get_triplet_cache(triplet_file_path);
 
         return triplet_entry.compiler_info.get_lazy(toolchain_hash, [&]() -> CompilerInfo {
             if (m_compiler_tracking)
@@ -531,7 +531,7 @@ namespace vcpkg
         });
     }
 
-    const std::string& EnvCache::get_triplet_info(const VcpkgPaths& paths, const AbiInfo& abi_info)
+    const std::string& EnvCache::get_toolchain_abi(const VcpkgPaths& paths, const AbiInfo& abi_info)
     {
         const auto& fs = paths.get_filesystem();
         Checks::check_exit(VCPKG_LINE_INFO, abi_info.pre_build_info != nullptr);
@@ -539,20 +539,19 @@ namespace vcpkg
 
         auto&& toolchain_hash = get_toolchain_cache(m_toolchain_cache, abi_info.pre_build_info->toolchain_file(), fs);
 
-        auto&& triplet_entry = get_triplet_cache(fs, triplet_file_path);
+        auto&& triplet_entry = get_triplet_cache(triplet_file_path);
 
         if (m_compiler_tracking && !abi_info.pre_build_info->disable_compiler_tracking)
         {
             return triplet_entry.triplet_infos.get_lazy(toolchain_hash, [&]() -> std::string {
                 auto& compiler_info = get_compiler_info(paths, abi_info);
-                return Strings::concat(triplet_entry.hash, '-', toolchain_hash, '-', compiler_info.hash);
+                return Strings::concat(toolchain_hash, '-', compiler_info.hash);
             });
         }
         else
         {
-            return triplet_entry.triplet_infos_without_compiler.get_lazy(toolchain_hash, [&]() -> std::string {
-                return Strings::concat(triplet_entry.hash, '-', toolchain_hash);
-            });
+            return triplet_entry.triplet_infos_without_compiler.get_lazy(
+                toolchain_hash, [&]() -> std::string { return toolchain_hash; });
         }
     }
 
@@ -1061,6 +1060,7 @@ namespace vcpkg
 
     static Optional<AbiTagAndFiles> compute_abi_tag(const VcpkgPaths& paths,
                                                     const InstallPlanAction& action,
+                                                    const CMakeVars::CMakeVarProvider& var_provider,
                                                     Span<const AbiEntry> dependency_abis)
     {
         auto& fs = paths.get_filesystem();
@@ -1090,11 +1090,18 @@ namespace vcpkg
         }
 
         std::vector<AbiEntry> abi_tag_entries(dependency_abis.begin(), dependency_abis.end());
+        const auto& triplet_vars = var_provider.get_triplet_vars(action.spec).value_or_exit(VCPKG_LINE_INFO);
+        for (const auto& triplet_var : triplet_vars)
+        {
+            const auto var_value = triplet_var.second;
+            abi_tag_entries.emplace_back(triplet_var.first,
+                                         std::accumulate(var_value.begin(), var_value.end(), std::string("")));
+        }
 
         const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
-        const auto& triplet_abi = paths.get_triplet_info(abi_info);
+        const auto& toolchain_abi = paths.get_toolchain_abi(abi_info);
         abi_tag_entries.emplace_back("triplet", triplet.canonical_name());
-        abi_tag_entries.emplace_back("triplet_abi", triplet_abi);
+        abi_tag_entries.emplace_back("toolchain_abi", toolchain_abi);
         abi_entries_from_abi_info(abi_info, abi_tag_entries);
 
         // If there is an unusually large number of files in the port then
@@ -1197,7 +1204,7 @@ namespace vcpkg
             fs.write_contents(abi_file_path, full_abi_info, VCPKG_LINE_INFO);
 
             return AbiTagAndFiles{
-                &triplet_abi,
+                &toolchain_abi,
                 Hash::get_file_hash(fs, abi_file_path, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO),
                 abi_file_path,
                 std::move(files),
@@ -1257,7 +1264,7 @@ namespace vcpkg
                 paths, action.spec.triplet(), var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO));
             abi_info.toolset = paths.get_toolset(*abi_info.pre_build_info);
 
-            auto maybe_abi_tag_and_file = compute_abi_tag(paths, action, dependency_abis);
+            auto maybe_abi_tag_and_file = compute_abi_tag(paths, action, var_provider, dependency_abis);
             if (auto p = maybe_abi_tag_and_file.get())
             {
                 abi_info.compiler_info = paths.get_compiler_info(abi_info);
@@ -1725,7 +1732,11 @@ namespace vcpkg
                 case VcpkgTripletVar::LOAD_VCVARS_ENV:
                     if (variable_value.empty())
                     {
+#if defined(_WIN32)
                         load_vcvars_env = !external_toolchain_file.has_value();
+#else
+                        load_vcvars_env = false;
+#endif
                     }
                     else
                     {
