@@ -648,7 +648,7 @@
   "PortBugOutdatedCRT": "Détection de CRT dynamiques obsolètes dans les fichiers suivants :",
   "PortBugRemoveBinDir": "Si la création de bin\\ et/ou debug\\bin\\ ne peut être désactivée, utilisez ceci dans le fichier de port pour les supprimer",
   "PortBugRemoveEmptyDirectories": "Si un répertoire doit être renseigné mais ne l’est pas, cela peut indiquer une erreur dans le fichier de port.\nSi les répertoires ne sont pas nécessaires et que leur création ne peut pas être désactivée, utilisez un élément comme celui-ci dans le fichier port pour les supprimer :",
-  "PortBugRemoveEmptyDirs": "file(REMOVE_RECURSE empty directories left by the above renames)",
+  "PortBugRemoveEmptyDirs": "fichier (répertoires REMOVE_RECURSE vides laissés par les renommages ci-dessus)",
   "PortBugRestrictedHeaderPaths": "Les en-têtes restreints suivants peuvent empêcher la compilation correcte du noyau d’exécution C++ et d’autres paquets. Dans des circonstances exceptionnelles, cette stratégie peut être désactivée via {env_var}.",
   "PortBugSetDllsWithoutExports": "Les DLL sans aucune exportation sont probablement un bogue dans le script de build. Si tel est le cas, ajoutez la ligne suivante dans le fichier de port :\nset(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)\nLes DLL suivantes n’ont pas d’exportations :",
   "PortDependencyConflict": "Le port {package_name} a les dépendances non prises en charge suivantes :",

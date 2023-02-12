@@ -648,7 +648,7 @@
   "PortBugOutdatedCRT": "V následujících souborech byl zjištěn zastaralý dynamický crt:",
   "PortBugRemoveBinDir": "Pokud se vytvoření bin\\ nebo debug\\bin\\ nedá zakázat, odeberte je pomocí této možnosti v souboru portu.",
   "PortBugRemoveEmptyDirectories": "Pokud má být adresář naplněn, ale není, může to znamenat chybu v souboru portu.\n Pokud adresáře nepotřebujete a jejich vytváření nejde zakázat, odeberte je v souboru portů následujícím způsobem:",
-  "PortBugRemoveEmptyDirs": "file(REMOVE_RECURSE empty directories left by the above renames)",
+  "PortBugRemoveEmptyDirs": "file(REMOVE_RECURSE prázdné adresáře, které ponechala výše uvedená přejmenování)",
   "PortBugRestrictedHeaderPaths": "Následující omezená záhlaví můžou zabránit správnému kompilaci základního modulu runtime C++ a dalších balíčků. Za výjimečných okolností lze tuto zásadu zakázat prostřednictvím {env_var}.",
   "PortBugSetDllsWithoutExports": "Knihovny DLL bez exportů jsou pravděpodobně chybou ve skriptu sestavení. Pokud je to záměrné, přidejte do souboru portfile:\nset(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS povoleno).\nNásledující knihovny DLL nemají žádné exporty:",
   "PortDependencyConflict": "{package_name} portu má následující nepodporované závislosti:",

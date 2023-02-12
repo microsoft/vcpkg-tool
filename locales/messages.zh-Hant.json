@@ -648,7 +648,7 @@
   "PortBugOutdatedCRT": "在下列檔案中偵測到過期的動態 CRT:",
   "PortBugRemoveBinDir": "如果無法停用 bin\\ 和/或 debug\\bin\\ 的建立，請在設定檔中使用此選項來移除它們",
   "PortBugRemoveEmptyDirectories": "如果應該填入目錄但未填入，這可能表示設定檔中出現錯誤。\n如果不需要目錄且無法停用其建立，請使用設定檔中的類似內容來移除它們:",
-  "PortBugRemoveEmptyDirs": "file(REMOVE_RECURSE empty directories left by the above renames)",
+  "PortBugRemoveEmptyDirs": "file(REMOVE_RECURSE 以上重新命名留下的空白目錄)",
   "PortBugRestrictedHeaderPaths": "下列受限標頭可能會防止核心 C++ 執行時間及其他封裝正確編譯。在例外狀況下，可透過 {env_var} 停用此原則。",
   "PortBugSetDllsWithoutExports": "沒有匯出的 DLL 可能是組建指令碼中的錯誤。如果這是想要的，請在設定檔中新增下列行:\n已啟用 set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS)\n下列 DLL 沒有匯出:",
   "PortDependencyConflict": "連接埠 {package_name} 具有下列不支援的相依性:",
