@@ -551,7 +551,7 @@
   "FollowingPackagesMissingControl": "The following packages do not have a valid CONTROL or vcpkg.json:",
   "FollowingPackagesNotInstalled": "The following packages are not installed:",
   "FollowingPackagesUpgraded": "The following packages are up-to-date:",
-  "ForceSystemBinariesOnWeirdPlatforms": "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.",
+  "ForceSystemBinariesOnWeirdPlatforms": "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.",
   "FormattedParseMessageExpression": "on expression: {value}",
   "_FormattedParseMessageExpression.comment": "Example of {value} is 'x64 & windows'",
   "GenerateMsgErrorParsingFormatArgs": "parsing format string for {value}:",
