@@ -3256,15 +3256,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ExpectedExtension" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The file extension was not {extension}: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[L'estensione del file non è {extension}: {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ExpectedFailOrSkip" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[expected 'fail', 'skip', or 'pass' here]]></Val>
@@ -3531,10 +3522,13 @@
       </Item>
       <Item ItemId=";FailedToFindPortFeature" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Could not find {feature} in {spec}.]]></Val>
+          <Val><![CDATA[{package_name} has no feature named {feature}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Non è stato possibile trovare {feature} in {spec}.]]></Val>
+            <Val><![CDATA[{package_name} non dispone di funzionalità denominate {feature}.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Could not find {feature} in {spec}.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3558,12 +3552,12 @@
       </Item>
       <Item ItemId=";FailedToLoadInstalledManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The control or manifest file for {spec} could not be loaded due to the following error. Please remove {spec} and try again.]]></Val>
+          <Val><![CDATA[The control or manifest file for {package_name} could not be loaded due to the following error. Please remove {package_name} and try again.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Non è possibile caricare il controllo o il file manifesto per {spec} a causa dell'errore seguente. Rimuovere {spec} e riprovare.]]></Val>
+            <Val><![CDATA[Non è stato possibile caricare il file manifesto o di controllo per {package_name} a causa dell'errore seguente. Rimuovere {package_name} e riprovare.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[The control or mnaifest file for {spec} could not be loaded due to the following error. Please remove {spec} and re-attempt.]]></Val>
+            <Val><![CDATA[The control or manifest file for {spec} could not be loaded due to the following error. Please remove {spec} and try again.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -4813,15 +4807,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";IncorrectLibHeaderEnd" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Incorrect lib header end]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Fine intestazione lib non corretta]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";IncorrectNumberOfArgs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA['{command_name}' requires '{expected}' arguments, but '{actual}' were provided.]]></Val>
@@ -5356,6 +5341,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InvalidLibraryMissingLinkerMembers" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Library was invalid: could not find a linker member.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Libreria non valida: impossibile trovare un membro del linker.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InvalidLinkage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Invalid {system_name} linkage type: [{value}]5D;]]></Val>
@@ -5490,6 +5484,24 @@
           <Val><![CDATA[Launching {tool_name}:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Avvio {tool_name}:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";LibraryArchiveMemberTooSmall" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[A library archive member was too small to contain the expected data type.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Un membro dell'archivio della libreria è troppo piccolo per contenere il tipo di dati previsto.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";LibraryFirstLinkerMemberMissing" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Could not find first linker member name.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Impossibile trovare il nome del primo membro del linker.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5643,6 +5655,42 @@
           <Val><![CDATA[Unknown license identifier '{value}'. Known values are listed at https://spdx.org/licenses/]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Identificatore di licenza sconosciuto '{value}'. I valori noti sono elencati in https://spdx.org/licenses/]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";LinkageDynamicDebug" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Dynamic Debug (/MDd)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Debug dinamico (/MDd)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";LinkageDynamicRelease" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Dynamic Release (/MD)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Rilascio dinamico (/MD)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";LinkageStaticDebug" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Static Debug (/MTd)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Debug statico (/MTd)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";LinkageStaticRelease" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Static Release (/MT)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Rilascio statico (/MT)]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6261,10 +6309,13 @@
       </Item>
       <Item ItemId=";PackageAlreadyRemoved" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[unable to remove package {spec}: already removed]]></Val>
+          <Val><![CDATA[unable to remove {spec}: already removed]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[non è possibile rimuovere il pacchetto {spec}: è già stato rimosso]]></Val>
+            <Val><![CDATA[non è possibile rimuovere {spec}: già rimosso]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[unable to remove package {spec}: already removed]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6618,19 +6669,34 @@
       </Item>
       <Item ItemId=";PortBugInvalidCrtLinkage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Invalid crt linkage. Expected {expected}, but the following libs had:]]></Val>
+          <Val><![CDATA[The following binaries should use the {expected} CRT.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Collegamento crt non valido. Previsto {expected}, ma le seguenti librerie erano:]]></Val>
+            <Val><![CDATA[I file binari seguenti devono usare il CRT {expected}.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Invalid crt linkage. Expected {expected}, but the following libs had:]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugInvalidCrtLinkageEntry" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{path} links with:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} si collega con:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugMergeLibCMakeDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The /lib/cmake folder should be merged with /debug/lib/cmake and moved to /share/{spec}/cmake. Please use the helper function `vcpkg_cmake_config_fixup()` from the port vcpkg-cmake-config.`]]></Val>
+          <Val><![CDATA[The /lib/cmake folder should be merged with /debug/lib/cmake and moved to /share/{package_name}/cmake. Please use the helper function `vcpkg_cmake_config_fixup()` from the port vcpkg-cmake-config.`]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[La cartella /lib/cmake deve essere unita a /debug/lib/cmake e spostata in /share/{spec}/cmake. Usare la funzione helper 'vcpkg_cmake_config_fixup()' dalla porta vcpkg-cmake-config.]]></Val>
+            <Val><![CDATA[La cartella /lib/cmake deve essere unita a /debug/lib/cmake e spostata in /share/{package_name}/cmake. Usare la funzione helper `vcpkg_cmake_config_fixup()` dalla porta vcpkg-cmake-config.`]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The /lib/cmake folder should be merged with /debug/lib/cmake and moved to /share/{spec}/cmake. Please use the helper function `vcpkg_cmake_config_fixup()` from the port vcpkg-cmake-config.`]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6717,13 +6783,22 @@
       </Item>
       <Item ItemId=";PortBugMissingLicense" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{spec}/copyright]]></Val>
+          <Val><![CDATA[The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{package_name}/copyright]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[La licenza software deve essere disponibile all'indirizzo ${{CURRENT_PACKAGES_DIR}}/share/{spec}/copyright]]></Val>
+            <Val><![CDATA[La licenza software deve essere disponibile all'indirizzo ${{CURRENT_PACKAGES_DIR}}/share/{package_name}/copyright]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[The software license must be available at ${CURRENT_PACKAGES_DIR}/share/{spec}/copyright]]></Val>
+            <Val><![CDATA[The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{spec}/copyright]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugMissingProvidedUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The port provided "usage" but forgot to install to /share/{package_name}/usage, add the following linein the portfile:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[La porta ha fornito "usage" ma non è stata installata in /share/{package_name}/usage. Aggiungere la riga seguente nel portfile:]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6774,10 +6849,13 @@
       </Item>
       <Item ItemId=";PortBugRemoveEmptyDirs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[vcpkg_fixup_pkgconfig()]A;file(REMOVE_RECURSE empty directories left by the above renames)]]></Val>
+          <Val><![CDATA[file(REMOVE_RECURSE empty directories left by the above renames)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg_fixup_pkgconfig()]A;file (REMOVE_RECURSE directory vuote lasciate dalle ridenominazioni precedenti)]]></Val>
+            <Val><![CDATA[file (REMOVE_RECURSE directory vuote lasciate dalle ridenominazioni precedenti)]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[vcpkg_fixup_pkgconfig()]A;file(REMOVE_RECURSE empty directories left by the above renames)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6826,15 +6904,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[(supports: "{value}")]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortTypeConflict" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The port type of {spec} differs between the installed and available portfile.]A;Please manually remove {spec} and re-run this command.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Il tipo di porta di {spec} è diverso tra il file di porta installato e quello disponibile.]A;Rimuovere manualmente {spec} ed eseguire di nuovo questo comando.]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6987,10 +7056,13 @@
       </Item>
       <Item ItemId=";RemovePackageConflict" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Another installed package matches the name of an unmatched request. Did you mean {spec}?]]></Val>
+          <Val><![CDATA[{spec} is not installed, but {package_name} is installed for {triplet}. Did you mean {package_name}:{triplet}?]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Un altro pacchetto installato corrisponde al nome di una richiesta non corrispondente. Si intendeva {spec}?]]></Val>
+            <Val><![CDATA[{spec} non è installato, ma {package_name} è installato per {triplet}. Intendevi {package_name}:{triplet}?]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Another installed package matches the name of an unmatched request. Did you mean {spec}?]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -7966,15 +8038,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UnknownMachineCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Unknown machine type code {value}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Codice tipo macchina sconosciuto {value}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";UnknownOptions" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Unknown option(s) for command '{command_name}':]]></Val>
@@ -8101,6 +8164,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UnsupportedFeatureSupportsExpression" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} is only supported on '{supports_expression}', which does not match {triplet}. This usually means that there are known build failures, or runtime problems, when building other platforms. To ignore this and attempt to build {package_name} anyway, rerun vcpkg with `--allow-unsupported`.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature_name} è supportato solo in '{supports_expression}', che non corrisponde a {triplet}. Questo in genere indica che si sono verificati errori di compilazioni noti o problemi di runtime, durante la compilazione di altre piattaforme. Per ignorare questo avviso e procedere comunque con la compilazione di {package_name}, eseguire di nuovo vcpkg con `--allow-unsupported`.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnsupportedFeatureSupportsExpressionWarning" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} is only supported on '{supports_expression}', which does not match {triplet}. This usually means that there are known build failures, or runtime problems, when building other platforms. Proceeding anyway due to `--allow-unsupported`.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature_name} è supportato solo in '{supports_expression}', che non corrisponde a {triplet}. Questo in genere indica che si sono verificati errori di compilazione noti o problemi di runtime durante la compilazione di altre piattaforme. Continuare comunque a causa di `--allow-unsupported`.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UnsupportedPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Port {package_name} is not supported.]]></Val>
@@ -8119,15 +8200,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UnsupportedPortFeature" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{spec} is only supported on '{supports_expression}']]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{spec} è supportato solo in '{supports_expression}']]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";UnsupportedRegistryScheme$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Unsupported registry scheme '${p0}']]></Val>
@@ -8142,6 +8214,24 @@
           <Val><![CDATA[short options are not supported: '{value}']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[le opzioni brevi non sono supportate: '{value}']]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnsupportedSupportsExpression" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} is only supported on '{supports_expression}', which does not match {triplet}. This usually means that there are known build failures, or runtime problems, when building other platforms. To ignore this and attempt to build {package_name} anyway, rerun vcpkg with `--allow-unsupported`.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} è supportato solo in '{supports_expression}', che non corrisponde a {triplet}. Questo in genere indica che si sono verificati errori di compilazioni noti o problemi di runtime, durante la compilazione di altre piattaforme. Per ignorare questo avviso e procedere comunque con la compilazione di {package_name}, eseguire di nuovo vcpkg con `--allow-unsupported`.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnsupportedSupportsExpressionWarning" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} is only supported on '{supports_expression}', which does not match {triplet}. This usually means that there are known build failures, or runtime problems, when building other platforms. Proceeding anyway due to `--allow-unsupported`.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} è supportato solo in '{supports_expression}', che non corrisponde a {triplet}. Questo in genere indica che si sono verificati errori di compilazione noti o problemi di runtime durante la compilazione di altre piattaforme. Continuare comunque a causa di `--allow-unsupported`.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
