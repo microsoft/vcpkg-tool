@@ -94,17 +94,15 @@ namespace vcpkg::Commands::CI
     static constexpr StringLiteral OPTION_RANDOMIZE = "x-randomize";
     static constexpr StringLiteral OPTION_OUTPUT_HASHES = "output-hashes";
     static constexpr StringLiteral OPTION_PARENT_HASHES = "parent-hashes";
-    static constexpr StringLiteral OPTION_SKIPPED_CASCADE_COUNT = "x-skipped-cascade-count";
 
-    static constexpr std::array<CommandSetting, 8> CI_SETTINGS = {
+    static constexpr std::array<CommandSetting, 7> CI_SETTINGS = {
         {{OPTION_EXCLUDE, []() { return msg::format(msgCISettingsOptExclude); }},
          {OPTION_HOST_EXCLUDE, []() { return msg::format(msgCISettingsOptHostExclude); }},
          {OPTION_XUNIT, []() { return msg::format(msgCISettingsOptXUnit); }},
          {OPTION_CI_BASELINE, []() { return msg::format(msgCISettingsOptCIBase); }},
          {OPTION_FAILURE_LOGS, []() { return msg::format(msgCISettingsOptFailureLogs); }},
          {OPTION_OUTPUT_HASHES, []() { return msg::format(msgCISettingsOptOutputHashes); }},
-         {OPTION_PARENT_HASHES, []() { return msg::format(msgCISettingsOptParentHashes); }},
-         {OPTION_SKIPPED_CASCADE_COUNT, []() { return msg::format(msgCISettingsOptSkippedCascadeCount); }}}};
+         {OPTION_PARENT_HASHES, []() { return msg::format(msgCISettingsOptParentHashes); }}}};
 
     static constexpr std::array<CommandSwitch, 5> CI_SWITCHES = {{
         {OPTION_DRY_RUN, []() { return msg::format(msgCISwitchOptDryRun); }},
@@ -129,7 +127,6 @@ namespace vcpkg::Commands::CI
         std::map<PackageSpec, std::string> abi_map;
         // action_state_string.size() will equal install_actions.size()
         std::vector<StringLiteral> action_state_string;
-        int cascade_count = 0;
     };
 
     static bool supported_for_triplet(const CMakeVars::CMakeVarProvider& var_provider,
@@ -209,7 +206,6 @@ namespace vcpkg::Commands::CI
                                   [&](const PackageSpec& spec) { return Util::Sets::contains(will_fail, spec); }))
             {
                 ret->action_state_string.emplace_back("cascade");
-                ret->cascade_count++;
                 ret->known.emplace(p->spec, BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES);
                 will_fail.emplace(p->spec);
             }
@@ -271,24 +267,6 @@ namespace vcpkg::Commands::CI
                               it_exclusions == settings.end()
                                   ? SortedVector<std::string>{}
                                   : SortedVector<std::string>(Strings::split(it_exclusions->second, ',')));
-    }
-
-    static Optional<int> parse_skipped_cascade_count(const std::map<std::string, std::string, std::less<>>& settings)
-    {
-        auto opt = settings.find(OPTION_SKIPPED_CASCADE_COUNT);
-        if (opt == settings.end())
-        {
-            return nullopt;
-        }
-
-        auto result = Strings::strto<int>(opt->second);
-        Checks::msg_check_exit(
-            VCPKG_LINE_INFO, result.has_value(), msgInvalidArgMustBeAnInt, msg::option = OPTION_SKIPPED_CASCADE_COUNT);
-        Checks::msg_check_exit(VCPKG_LINE_INFO,
-                               result.value_or_exit(VCPKG_LINE_INFO) >= 0,
-                               msgInvalidArgMustBePositive,
-                               msg::option = OPTION_SKIPPED_CASCADE_COUNT);
-        return result;
     }
 
     static void print_baseline_regressions(const std::vector<SpecSummary>& results,
@@ -365,8 +343,6 @@ namespace vcpkg::Commands::CI
             ci_parse_messages.exit_if_errors_or_warnings(ci_baseline_file_name);
             cidata = parse_and_apply_ci_baseline(lines, exclusions_map, skip_failures);
         }
-
-        auto skipped_cascade_count = parse_skipped_cascade_count(settings);
 
         const auto is_dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
 
@@ -479,15 +455,6 @@ namespace vcpkg::Commands::CI
         reduce_action_plan(action_plan, split_specs->known, parent_hashes);
 
         msg::println(msgElapsedTimeForChecks, msg::elapsed = timer.elapsed());
-
-        if (auto skipped_cascade_count_ptr = skipped_cascade_count.get())
-        {
-            Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                   *skipped_cascade_count_ptr == split_specs->cascade_count,
-                                   msgExpectedCascadeFailure,
-                                   msg::expected = *skipped_cascade_count_ptr,
-                                   msg::actual = split_specs->cascade_count);
-        }
 
         if (is_dry_run)
         {
