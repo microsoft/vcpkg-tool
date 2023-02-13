@@ -552,14 +552,14 @@ namespace
                             std::vector<Path>&& read_configs,
                             std::vector<Path>&& write_configs,
                             std::string&& timeout,
-                            bool interactive)
+                            bool nuget_interactive)
             : paths(paths)
             , m_read_sources(std::move(read_sources))
             , m_write_sources(std::move(write_sources))
             , m_read_configs(std::move(read_configs))
             , m_write_configs(std::move(write_configs))
             , m_timeout(std::move(timeout))
-            , m_interactive(interactive)
+            , m_interactive(nuget_interactive)
             , m_use_nuget_cache(false)
         {
             const std::string use_nuget_cache = get_environment_variable("VCPKG_USE_NUGET_CACHE").value_or("");
@@ -1546,7 +1546,7 @@ namespace vcpkg
     {
         binary_cache_providers.clear();
         binary_cache_providers.insert("clear");
-        interactive = false;
+        nuget_interactive = false;
         nugettimeout = "100";
         archives_to_read.clear();
         archives_to_write.clear();
@@ -1673,7 +1673,7 @@ namespace
                         segments[1].first);
                 }
 
-                state->interactive = true;
+                state->nuget_interactive = true;
             }
             else if (segments[0].second == "nugetconfig")
             {
@@ -2304,7 +2304,7 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
                                                                   std::move(s.configs_to_read),
                                                                   std::move(s.configs_to_write),
                                                                   std::move(s.nugettimeout),
-                                                                  s.interactive));
+                                                                  s.nuget_interactive));
     }
 
     return providers;
@@ -2439,22 +2439,69 @@ std::string vcpkg::generate_nuspec(const Path& package_dir,
     return std::move(xml.buf);
 }
 
-void vcpkg::help_topic_asset_caching(const VcpkgPaths&)
+LocalizedString vcpkg::format_help_topic_asset_caching()
 {
-    msg::println(msgHelpAssetCaching);
-    msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::assetcaching_url);
+    HelpTableFormatter table;
+    table.format("clear", msg::format(msgHelpCachingClear));
+    table.format("x-azurl,<url>[,<sas>[,<rw>]]", msg::format(msgHelpAssetCachingAzUrl));
+    table.format("x-script,<template>", msg::format(msgHelpAssetCachingScript));
+    table.format("x-block-origin", msg::format(msgHelpAssetCachingBlockOrigin));
+    return msg::format(msgHelpAssetCaching)
+        .append_raw('\n')
+        .append_raw(table.m_str)
+        .append_raw('\n')
+        .append(msgExtendedDocumentationAtUrl, msg::url = docs::assetcaching_url);
 }
 
-void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
+LocalizedString vcpkg::format_help_topic_binary_caching()
 {
-    msg::println(msgHelpBinaryCaching);
+    HelpTableFormatter table;
+
+    // General sources:
+    table.format("clear", msg::format(msgHelpCachingClear));
     const auto& maybe_cachepath = default_cache_path();
     if (auto p = maybe_cachepath.get())
     {
-        msg::println(msgDefaultPathToBinaries, msg::path = *p);
+        table.format("default[,<rw>]", msg::format(msgHelpBinaryCachingDefaults, msg::path = *p));
+    }
+    else
+    {
+        table.format("default[,<rw>]", msg::format(msgHelpBinaryCachingDefaultsError));
     }
 
-    msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::binarycaching_url);
+    table.format("files,<path>[,<rw>]", msg::format(msgHelpBinaryCachingFiles));
+    table.format("http,<url_template>[,<rw>[,<header>]]", msg::format(msgHelpBinaryCachingHttp));
+    table.format("x-azblob,<url>,<sas>[,<rw>]", msg::format(msgHelpBinaryCachingAzBlob));
+    table.format("x-gcs,<prefix>[,<rw>]", msg::format(msgHelpBinaryCachingGcs));
+    table.format("x-cos,<prefix>[,<rw>]", msg::format(msgHelpBinaryCachingCos));
+    table.blank();
+
+    // NuGet sources:
+    table.header(msg::format(msgHelpBinaryCachingNuGetHeader));
+    table.format("nuget,<uri>[,<rw>]", msg::format(msgHelpBinaryCachingNuGet));
+    table.format("nugetconfig,<path>[,<rw>]", msg::format(msgHelpBinaryCachingNuGetConfig));
+    table.format("nugettimeout,<seconds>", msg::format(msgHelpBinaryCachingNuGetTimeout));
+    table.format("interactive", msg::format(msgHelpBinaryCachingNuGetInteractive));
+    table.text(msg::format(msgHelpBinaryCachingNuGetFooter), 2);
+    table.text("\n<repository type=\"git\" url=\"${VCPKG_NUGET_REPOSITORY}\"/>\n"
+               "<repository type=\"git\"\n"
+               "            url=\"${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git\"\n"
+               "            branch=\"${GITHUB_REF}\"\n"
+               "            commit=\"${GITHUB_SHA}\"/>",
+               4);
+    table.blank();
+
+    // AWS sources:
+    table.blank();
+    table.header(msg::format(msgHelpBinaryCachingAwsHeader));
+    table.format("x-aws,<prefix>[,<rw>]", msg::format(msgHelpBinaryCachingAws));
+    table.format("x-aws-config,<parameter>", msg::format(msgHelpBinaryCachingAwsConfig));
+
+    return msg::format(msgHelpBinaryCaching)
+        .append_raw('\n')
+        .append_raw(table.m_str)
+        .append_raw('\n')
+        .append(msgExtendedDocumentationAtUrl, msg::url = docs::binarycaching_url);
 }
 
 std::string vcpkg::generate_nuget_packages_config(const ActionPlan& action)
