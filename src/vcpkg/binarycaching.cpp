@@ -1089,7 +1089,7 @@ namespace
             int64_t cache_size;
             {
                 auto archive = fs.open_for_read(tmp_archive_path, VCPKG_LINE_INFO);
-                archive.seek(0, SEEK_END);
+                archive.try_seek_to(0, SEEK_END);
                 cache_size = archive.tell();
             }
 
