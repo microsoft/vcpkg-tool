@@ -1137,9 +1137,11 @@ namespace
         AwsBinaryProvider(const VcpkgPaths& paths,
                           std::vector<std::string>&& read_prefixes,
                           std::vector<std::string>&& write_prefixes,
-                          const bool no_sign_request)
+                          const bool no_sign_request,
+                          std::string&& aws_endpoint_url)
             : ObjectStorageProvider(paths, std::move(read_prefixes), std::move(write_prefixes))
             , m_no_sign_request(no_sign_request)
+            , m_aws_endpoint_url(aws_endpoint_url)
         {
         }
 
@@ -1154,6 +1156,10 @@ namespace
             {
                 cmd.string_arg("--no-sign-request");
             }
+            if (!m_aws_endpoint_url.empty())
+            {
+                cmd.string_arg("--endpoint-url").string_arg(m_aws_endpoint_url);
+            }
 
             return succeeded(cmd_execute(cmd));
         }
@@ -1165,6 +1171,11 @@ namespace
             {
                 cmd.string_arg("--no-sign-request");
             }
+            if (!m_aws_endpoint_url.empty())
+            {
+                cmd.string_arg("--endpoint-url").string_arg(m_aws_endpoint_url);
+            }
+
             const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::AWSCLI);
             if (out)
             {
@@ -1187,6 +1198,10 @@ namespace
             {
                 cmd.string_arg("--no-sign-request");
             }
+            if (!m_aws_endpoint_url.empty())
+            {
+                cmd.string_arg("--endpoint-url").string_arg(m_aws_endpoint_url);
+            }
 
             const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::AWSCLI);
             if (out)
@@ -1200,6 +1215,7 @@ namespace
 
     private:
         bool m_no_sign_request;
+        std::string m_aws_endpoint_url;
     };
 
     struct CosBinaryProvider : ObjectStorageProvider
@@ -1558,6 +1574,7 @@ namespace vcpkg
         aws_read_prefixes.clear();
         aws_write_prefixes.clear();
         aws_no_sign_request = false;
+        aws_endpoint_url = "";
         cos_read_prefixes.clear();
         cos_write_prefixes.clear();
         sources_to_read.clear();
@@ -1897,23 +1914,43 @@ namespace
             }
             else if (segments[0].second == "x-aws-config")
             {
-                if (segments.size() != 2)
+                if (segments.size() != 2 && segments.size() != 3)
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresSingleStringArgument,
-                                                 msg::binary_source = "x-aws-config"));
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "x-aws-config"));
                 }
 
-                auto no_sign_request = false;
-                if (segments[1].second == "no-sign-request")
+                auto&& p = segments[1].second;
+                if (p == "no-sign-request")
                 {
-                    no_sign_request = true;
+                    if (segments.size() != 2)
+                    {
+                        return add_error(msg::format(msgInvalidArgumentRequiresOneOrTwoArguments,
+                                                     msg::binary_source = "x-aws-config"));
+                    }
+
+                    state->aws_no_sign_request = true;
                 }
-                else
+                else if (p == "endpoint-url")
                 {
-                    return add_error(msg::format(msgInvalidArgument), segments[1].first);
+                    if (segments.size() != 3)
+                    {
+                        return add_error(msg::format(msgInvalidArgumentRequiresOneOrTwoArguments,
+                                                     msg::binary_source = "x-aws-config"));
+                    }
+
+                    if (!Strings::starts_with(segments[2].second, "http://") &&
+                        !Strings::starts_with(segments[2].second, "https://"))
+                    {
+                        return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
+                                                     msg::base_url = "https://",
+                                                     msg::binary_source = "x-aws-config"),
+                                         segments[2].first);
+                    }
+
+                    state->aws_endpoint_url = segments[2].second;
                 }
 
-                state->aws_no_sign_request = no_sign_request;
                 state->binary_cache_providers.insert("aws");
             }
             else if (segments[0].second == "x-cos")
@@ -2280,8 +2317,11 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
 
     if (!s.aws_read_prefixes.empty() || !s.aws_write_prefixes.empty())
     {
-        providers.push_back(std::make_unique<AwsBinaryProvider>(
-            paths, std::move(s.aws_read_prefixes), std::move(s.aws_write_prefixes), s.aws_no_sign_request));
+        providers.push_back(std::make_unique<AwsBinaryProvider>(paths,
+                                                                std::move(s.aws_read_prefixes),
+                                                                std::move(s.aws_write_prefixes),
+                                                                s.aws_no_sign_request,
+                                                                std::move(s.aws_endpoint_url)));
     }
 
     if (!s.cos_read_prefixes.empty() || !s.cos_write_prefixes.empty())
@@ -2523,11 +2563,12 @@ void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
                "**Experimental: will change or be removed without warning** Adds an AWS S3 source. "
                "Uses the aws CLI for uploads and downloads. Prefix should include s3:// scheme and be suffixed "
                "with a `/`.");
-    tbl.format(
-        "x-aws-config,<parameter>",
-        "**Experimental: will change or be removed without warning** Adds an AWS S3 source. "
-        "Adds an AWS configuration; currently supports only 'no-sign-request' parameter that is an equivalent to the "
-        "'--no-sign-request parameter of the AWS cli.");
+    tbl.format("x-aws-config,<parameter>",
+               "**Experimental: will change or be removed without warning** Adds an AWS S3 source. "
+               "Adds an AWS configuration; currently supports 'no-sign-request' and 'endpoint-url' parameters "
+               "which are equivalent to the --no-sign-request and --endpoint-url parameters of the AWS cli. "
+               "Currently only one parameter can be specified per x-aws-config; to specify multiple parameters, "
+               "use multiple x-aws-config sources.");
     tbl.format("x-cos,<prefix>[,<rw>]",
                "**Experimental: will change or be removed without warning** Adds an COS source. "
                "Uses the cos CLI for uploads and downloads. Prefix should include cos:// scheme and be suffixed "
