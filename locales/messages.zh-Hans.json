@@ -648,7 +648,7 @@
   "PortBugOutdatedCRT": "在以下文件中检测到过时的动态 CRT:",
   "PortBugRemoveBinDir": "如果无法禁用 bin\\ 和/或 debug\\bin\\ 的创建，请在端口文件中使用此项移除它们",
   "PortBugRemoveEmptyDirectories": "如果应填充但未填充目录，这可能表示端口文件中存在错误。\n如果不需要目录并且无法禁用其创建，请在端口文件中使用如下所示的内容来移除它们:",
-  "PortBugRemoveEmptyDirs": "file(REMOVE_RECURSE empty directories left by the above renames)",
+  "PortBugRemoveEmptyDirs": "file(REMOVE_RECURSE 上述重命名留下的空目录)",
   "PortBugRestrictedHeaderPaths": "以下受限标头可以阻止核心 C++ 运行时和其他包正确编译。在特殊情况下，可以通过 {env_var} 禁用此策略。",
   "PortBugSetDllsWithoutExports": "不带任何导出的 DLL 可能是生成脚本中的 bug。如果希望这样，请在端口文件:\nset(已启用 VCPKG_POLICY_DLLS_WITHOUT_EXPORTS)\n中添加以下行: 以下 DLL 没有导出:",
   "PortDependencyConflict": "端口 {package_name} 具有以下不受支持的依赖项:",

@@ -648,7 +648,7 @@
   "PortBugOutdatedCRT": "다음 파일에서 오래된 동적 CRT를 검색했습니다.",
   "PortBugRemoveBinDir": "bin\\ 및/또는 debug\\bin\\을 만들 수 없도록 설정할 수 없는 경우 포트 파일에서 이 항목을 사용하여 제거하세요.",
   "PortBugRemoveEmptyDirectories": "디렉터리를 채워야 하지만 채워지지 않는 경우 포트 파일에서 오류가 발생할 수 있습니다.\n디렉터리가 필요하지 않고 디렉터리 만들기를 사용하지 않도록 설정할 수 없는 경우 포트 파일에서 다음과 같은 항목을 사용하여 제거하세요.",
-  "PortBugRemoveEmptyDirs": "file(REMOVE_RECURSE empty directories left by the above renames)",
+  "PortBugRemoveEmptyDirs": "file(REMOVE_RECURSE 위 이름 바꾸기에서 빈 디렉터리를 남김)",
   "PortBugRestrictedHeaderPaths": "다음 제한된 헤더로 인해 코어 C++ 런타임 및 기타 패키지가 제대로 컴파일되지 않습니다. 예외적인 상황에서는 {env_var}을(를) 통해 이 정책을 사용하지 않도록 설정할 수 있습니다.",
   "PortBugSetDllsWithoutExports": "내보내기가 없는 DLL은 빌드 스크립트의 버그일 수 있습니다. 의도한 경우 포트 파일에서 다음 줄을 추가하세요.\nset(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS 사용)\n다음 DLL에 내보내기가 없습니다.",
   "PortDependencyConflict": "포트 {package_name}에는 다음과 같은 지원되지 않는 종속성이 있습니다.",
