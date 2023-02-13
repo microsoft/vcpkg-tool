@@ -106,7 +106,7 @@ namespace vcpkg
         return system_triplet();
     }
 
-    void print_default_triplet_warning(const VcpkgCmdArguments& args, const std::vector<std::string>& qualified_deps)
+    void print_default_triplet_warning(const VcpkgCmdArguments& args, View<std::string> qualified_deps)
     {
         (void)args;
         (void)qualified_deps;
