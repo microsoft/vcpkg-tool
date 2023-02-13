@@ -181,8 +181,9 @@ namespace vcpkg
         }
         else
         {
-            r.add_generic_error(parent_type,
-              "expected a versioning field (one of version, version-date, version-semver, or version-string");
+            r.add_generic_error(
+                parent_type,
+                "expected a versioning field (one of version, version-date, version-semver, or version-string)");
             return {};
         }
     }
