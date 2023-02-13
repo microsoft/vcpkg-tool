@@ -1,7 +1,6 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/strings.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/cmakevars.h>
@@ -189,7 +188,7 @@ namespace vcpkg::Commands
 
         if (use_json)
         {
-            print2(Json::stringify(json_to_print));
+            msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(json_to_print));
         }
     }
 

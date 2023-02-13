@@ -1,5 +1,4 @@
 #include <vcpkg/base/messages.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binarycaching.h>

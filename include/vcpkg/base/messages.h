@@ -279,6 +279,8 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(old_scheme, "version-string");
     DECLARE_MSG_ARG(option, "editable");
     DECLARE_MSG_ARG(path, "/foo/bar");
+    DECLARE_MSG_ARG(path_destination, "/foo/bar");
+    DECLARE_MSG_ARG(path_source, "/foo/bar");
     DECLARE_MSG_ARG(row, "42");
     DECLARE_MSG_ARG(sha,
                     "eb32643dd2164c72b8a660ef52f1e701bb368324ae461e12d70d6a9aefc0c9573387ee2ed3828037ed62bb3e8f566416a2"
@@ -540,6 +542,7 @@ namespace vcpkg
                     "",
                     "Another installation is in progress on the machine, sleeping 6s before retrying.");
     DECLARE_MESSAGE(AppliedUserIntegration, (), "", "Applied user-wide integration for this vcpkg root.");
+    DECLARE_MESSAGE(ApplocalProcessing, (msg::path), "", "vcpkg applocal processing: {path}");
     DECLARE_MESSAGE(ArtifactsOptionIncompatibility, (msg::option), "", "--{option} has no effect on find artifact.");
     DECLARE_MESSAGE(AssetSourcesArg, (), "", "Add sources for asset caching. See 'vcpkg help assetcaching'.");
     DECLARE_MESSAGE(AttemptingToFetchPackagesFromVendor,
@@ -1006,11 +1009,6 @@ namespace vcpkg
     DECLARE_MESSAGE(DateTableHeader, (), "", "Date");
     DECLARE_MESSAGE(DefaultBrowserLaunched, (msg::url), "", "Default browser launched to {url}.");
     DECLARE_MESSAGE(DefaultFlag, (msg::option), "", "Defaulting to --{option} being on.");
-    DECLARE_MESSAGE(DefaultPathToBinaries,
-                    (msg::path),
-                    "",
-                    "Based on your system settings, the default path to store binaries is \"{path}\". This consults "
-                    "%LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.");
     DECLARE_MESSAGE(DeleteVcpkgConfigFromManifest,
                     (msg::path),
                     "",
@@ -1397,6 +1395,158 @@ namespace vcpkg
                     "'header' refers to C/C++ .h files",
                     "{package_name} is header-only and can be used from CMake via:");
     DECLARE_MESSAGE(
+        HelpAssetCaching,
+        (),
+        "The '<rw>' part references code in the following table and should not be localized. The matching values "
+        "\"read\" \"write\" and \"readwrite\" are also fixed. After this block a table with each possible asset "
+        "caching source is printed.",
+        "**Experimental feature: this may change or be removed at any time**\n"
+        "\n"
+        "vcpkg can use mirrors to cache downloaded assets, ensuring continued operation even if the "
+        "original source changes or disappears.\n"
+        "\n"
+        "Asset caching can be configured either by setting the environment variable X_VCPKG_ASSET_SOURCES "
+        "to a semicolon-delimited list of sources or by passing a sequence of "
+        "--x-asset-sources=<source> command line options. Command line sources are interpreted after "
+        "environment sources. Commas, semicolons, and backticks can be escaped using backtick (`).\n"
+        "\n"
+        "The <rw> optional parameter for certain strings controls how they will be accessed. It can be specified as "
+        "\"read\", \"write\", or \"readwrite\" and defaults to \"read\".\n"
+        "\n"
+        "Valid sources:");
+    DECLARE_MESSAGE(
+        HelpAssetCachingAzUrl,
+        (),
+        "This is printed as the 'definition' in a table for 'x-azurl,<url>[,<sas>[,<rw>]]', so <url>, <sas>, and <rw> "
+        "should not be localized.",
+        "Adds an Azure Blob Storage source, optionally using Shared Access Signature validation. URL should include "
+        "the container path and be terminated with a trailing \"/\". <sas>, if defined, should be prefixed with a "
+        "\"?\". "
+        "Non-Azure servers will also work if they respond to GET and PUT requests of the form: "
+        "\"<url><sha512><sas>\".");
+    DECLARE_MESSAGE(HelpAssetCachingBlockOrigin,
+                    (),
+                    "This is printed as the 'definition' in a table for 'x-block-origin'",
+                    "Disables fallback to the original URLs in case the mirror does not have the file available.");
+    DECLARE_MESSAGE(
+        HelpAssetCachingScript,
+        (),
+        "This is printed as the 'definition' in a table for 'x-script,<template>', so <template> should not be "
+        "localized.",
+        "Dispatches to an external tool to fetch the asset. Within the template, \"{{url}}\" will be replaced by the "
+        "original url, \"{{sha512}}\" will be replaced by the SHA512 value, and \"{{dst}}\" will be replaced by the "
+        "output path to save to. These substitutions will all be properly shell escaped, so an example template would "
+        "be: \"curl -L {{url}} --output {{dst}}\". \"{{{{\" will be replaced by \"}}\" and \"}}}}\" will be replaced "
+        "by \"}}\" to avoid expansion. Note that this will be executed inside the build environment, so the PATH and "
+        "other environment variables will be modified by the triplet.");
+    DECLARE_MESSAGE(
+        HelpBinaryCaching,
+        (),
+        "The names in angle brackets like <rw> or in curly braces like {{sha512}} are 'code' and should not be "
+        "localized. The matching values \"read\" \"write\" and \"readwrite\" are also fixed.",
+        "vcpkg can cache compiled packages to accelerate restoration on a single machine or across the network. By "
+        "default, vcpkg will save builds to a local machine cache. This can be disabled by passing "
+        "\"--binarysource=clear\" as the last option on the command line.\n"
+        "\n"
+        "Binary caching can be further configured by either passing \"--binarysource=<source>\" options to every "
+        "command line or setting the `VCPKG_BINARY_SOURCES` environment variable to a set of sources (Example: "
+        "\"<source>;<source>;...\"). Command line sources are interpreted after environment sources.\n"
+        "\n"
+        "The \"<rw>\" optional parameter for certain strings controls whether they will be consulted for downloading "
+        "binaries and whether on-demand builds will be uploaded to that remote. It can be specified as \"read\", "
+        "\"write\", or \"readwrite\".\n"
+        "\n"
+        "General sources:");
+    DECLARE_MESSAGE(
+        HelpBinaryCachingAws,
+        (),
+        "Printed as the 'definition' for 'x-aws,<prefix>[,<rw>]', so '<prefix>' must be preserved verbatim.",
+        "**Experimental: will change or be removed without warning**\n"
+        "Adds an AWS S3 source. Uses the aws CLI for uploads and downloads. Prefix should include s3:// "
+        "scheme and be suffixed with a \"/\".");
+    DECLARE_MESSAGE(HelpBinaryCachingAwsConfig,
+                    (),
+                    "Printed as the 'definition' for 'x-aws-config,<parameter>'.",
+                    "**Experimental: will change or be removed without warning**\n"
+                    "Adds an AWS S3 source. Adds an AWS configuration; currently supports only 'no-sign-request' "
+                    "parameter that is an equivalent to the --no-sign-request parameter "
+                    "of the AWS CLI.");
+    DECLARE_MESSAGE(HelpBinaryCachingAwsHeader, (), "", "Azure Web Services sources");
+    DECLARE_MESSAGE(HelpBinaryCachingAzBlob,
+                    (),
+                    "Printed as the 'definition' for 'x-azblob,<url>,<sas>[,<rw>]'.",
+                    "**Experimental: will change or be removed without warning**\n"
+                    "Adds an Azure Blob Storage source. Uses Shared Access Signature validation. <url> should include "
+                    "the container path. <sas> must be be prefixed with a \"?\".");
+    DECLARE_MESSAGE(HelpBinaryCachingCos,
+                    (),
+                    "Printed as the 'definition' for 'x-cos,<prefix>[,<rw>]'.",
+                    "**Experimental: will change or be removed without warning**\n"
+                    "Adds an COS source. Uses the cos CLI for uploads and downloads. <prefix> should include the "
+                    "scheme 'cos://' and be suffixed with a \"/\".");
+    DECLARE_MESSAGE(HelpBinaryCachingDefaults,
+                    (msg::path),
+                    "Printed as the 'definition' in a table for 'default[,<rw>]'. %LOCALAPPDATA%, %APPDATA%, "
+                    "$XDG_CACHE_HOME, and $HOME are 'code' and should not be localized.",
+                    "Adds the default file-based location. Based on your system settings, the default path to store "
+                    "binaries is \"{path}\". This consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or "
+                    "$HOME on other platforms.");
+    DECLARE_MESSAGE(HelpBinaryCachingDefaultsError,
+                    (),
+                    "Printed as the 'definition' in a table for 'default[,<rw>]', when there was an error fetching the "
+                    "default for some reason.",
+                    "Adds the default file-based location.");
+    DECLARE_MESSAGE(HelpBinaryCachingFiles,
+                    (),
+                    "Printed as the 'definition' for 'files,<path>[,<rw>]'",
+                    "Adds a custom file-based location.");
+    DECLARE_MESSAGE(HelpBinaryCachingGcs,
+                    (),
+                    "Printed as the 'definition' for 'x-gcs,<prefix>[,<rw>]'.",
+                    "**Experimental: will change or be removed without warning**\n"
+                    "Adds a Google Cloud Storage (GCS) source. Uses the gsutil CLI for uploads and downloads. Prefix "
+                    "should include the gs:// scheme and be suffixed with a \"/\".");
+    DECLARE_MESSAGE(
+        HelpBinaryCachingHttp,
+        (),
+        "Printed as the 'definition' of 'http,<url_template>[,<rw>[,<header>]]', so <url_template>, <rw> and <header> "
+        "must be unlocalized. GET, HEAD, and PUT are HTTP verbs that should be not changed. Entries in {{curly "
+        "braces}} also must be unlocalized.",
+        "Adds a custom http-based location. GET, HEAD and PUT request are done to download, check and upload the "
+        "binaries. You can use the variables {{name}}, {{version}}, {{sha}} and {{triplet}}. An example url would be"
+        "'https://cache.example.com/{{triplet}}/{{name}}/{{version}}/{{sha}}'. Via the header field you can set a "
+        "custom header to pass an authorization token.");
+    DECLARE_MESSAGE(HelpBinaryCachingNuGet,
+                    (),
+                    "Printed as the 'definition' of 'nuget,<uri>[,<rw>]'.",
+                    "Adds a NuGet-based source; equivalent to the \"-Source\" parameter of the NuGet CLI.");
+    DECLARE_MESSAGE(HelpBinaryCachingNuGetConfig,
+                    (),
+                    "Printed as the 'definition' of 'nugetconfig,<path>[,<rw>]'.",
+                    "Adds a NuGet-config-file-based source; equivalent to the \"-Config\" parameter of the NuGet CLI. "
+                    "This config should specify \"defaultPushSource\" for uploads.");
+    DECLARE_MESSAGE(HelpBinaryCachingNuGetHeader, (), "", "NuGet sources");
+    DECLARE_MESSAGE(HelpBinaryCachingNuGetInteractive,
+                    (),
+                    "Printed as the 'definition' of 'interactive'.",
+                    "Enables NuGet interactive credential management; the opposite of the \"-NonInteractive\" "
+                    "parameter in the NuGet CLI.");
+    DECLARE_MESSAGE(HelpBinaryCachingNuGetFooter,
+                    (),
+                    "Printed after the 'nuget', 'nugetconfig', 'nugettimeout', and 'interactive' entries; those names "
+                    "must not be localized. Printed before an example XML snippet vcpkg generates when the indicated "
+                    "environment variables are set.",
+                    "NuGet's cache is not used by default. To use it for every NuGet-based source, set the environment "
+                    "variable \"VCPKG_USE_NUGET_CACHE\" to \"true\" (case-insensitive) or \"1\".\n"
+                    "The \"nuget\" and \"nugetconfig\" source providers respect certain environment variables while "
+                    "generating NuGet packages. If the appropriate environment variables are defined and non-empty, "
+                    "\"metadata.repository\" field will be generated like one of the following examples:");
+    DECLARE_MESSAGE(HelpBinaryCachingNuGetTimeout,
+                    (),
+                    "Printed as the 'definition' of 'nugettimeout,<seconds>'",
+                    "Specifies a NuGet timeout for NuGet network operations; equivalent to the \"-Timeout\" parameter "
+                    "of the NuGet CLI.");
+    DECLARE_MESSAGE(
         HelpBuiltinBase,
         (),
         "",
@@ -1404,6 +1554,7 @@ namespace vcpkg
         "every dependency in the graph. For example, if no other constraints are specified (directly or "
         "transitively), then the version will resolve to the baseline of the top level manifest. Baselines "
         "of transitive dependencies are ignored.");
+    DECLARE_MESSAGE(HelpCachingClear, (), "", "Removes all previous sources, including defaults.");
     DECLARE_MESSAGE(HelpContactCommand, (), "", "Display contact information to send feedback.");
     DECLARE_MESSAGE(HelpCreateCommand, (), "", "Create a new port.");
     DECLARE_MESSAGE(HelpDependInfoCommand, (), "", "Display a list of dependencies for ports.");
@@ -1570,6 +1721,10 @@ namespace vcpkg
                     "",
                     "Could not create a registry at {path} because this is not a git repository root.\nUse `git init "
                     "{command_line}` to create a git repository in this folder.");
+    DECLARE_MESSAGE(InstallCopiedFile,
+                    (msg::path_source, msg::path_destination),
+                    "",
+                    "{path_source} -> {path_destination} done");
     DECLARE_MESSAGE(InstalledBy, (msg::path), "", "Installed by {path}");
     DECLARE_MESSAGE(InstalledPackages, (), "", "The following packages are already installed:");
     DECLARE_MESSAGE(InstalledRequestedPackages, (), "", "All requested packages are currently installed.");
@@ -1592,6 +1747,10 @@ namespace vcpkg
                     "With a project open, go to Tools->NuGet Package Manager->Package Manager Console and "
                     "paste:\n Install-Package \"{value}\" -Source \"{path}\"");
     DECLARE_MESSAGE(InstallRootDir, (), "", "(Experimental) Specify the install root directory.");
+    DECLARE_MESSAGE(InstallSkippedUpToDateFile,
+                    (msg::path_source, msg::path_destination),
+                    "",
+                    "{path_source} -> {path_destination} skipped, up to date");
     DECLARE_MESSAGE(InstallWithSystemManager,
                     (),
                     "",
