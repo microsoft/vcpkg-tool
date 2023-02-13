@@ -1411,7 +1411,7 @@ namespace vcpkg
         ForceSystemBinariesOnWeirdPlatforms,
         (),
         "",
-        "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.");
+        "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.");
     DECLARE_MESSAGE(FormattedParseMessageExpression,
                     (msg::value),
                     "Example of {value} is 'x64 & windows'",
@@ -2235,7 +2235,7 @@ namespace vcpkg
     DECLARE_MESSAGE(PortBugRemoveEmptyDirs,
                     (),
                     "Only the 'empty directories left by the above renames' part should be translated",
-                    "vcpkg_fixup_pkgconfig()\nfile(REMOVE_RECURSE empty directories left by the above renames)");
+                    "file(REMOVE_RECURSE empty directories left by the above renames)");
     DECLARE_MESSAGE(PortBugRestrictedHeaderPaths,
                     (msg::env_var),
                     "A list of restricted headers is printed after this message, one per line.",
@@ -2262,11 +2262,6 @@ namespace vcpkg
     DECLARE_MESSAGE(PortsRemoved, (msg::count), "", "The following {count} ports were removed:");
     DECLARE_MESSAGE(PortsUpdated, (msg::count), "", "\nThe following {count} ports were updated:");
     DECLARE_MESSAGE(PortSupportsField, (msg::supports_expression), "", "(supports: \"{supports_expression}\")");
-    DECLARE_MESSAGE(PortTypeConflict,
-                    (msg::spec),
-                    "",
-                    "The port type of {spec} differs between the installed and available portfile.\nPlease manually "
-                    "remove {spec} and re-run this command.");
     DECLARE_MESSAGE(PortVersionConflict, (), "", "The following packages differ from their port versions:");
     DECLARE_MESSAGE(PrebuiltPackages, (), "", "There are packages that have not been built. To build them run:");
     DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.");

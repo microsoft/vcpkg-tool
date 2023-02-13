@@ -355,15 +355,6 @@ namespace vcpkg
                 ExpectedS<const SourceControlFileAndLocation&> maybe_scfl =
                     m_port_provider.get_control_file(ipv.spec().name());
 
-                if (const auto scfl = maybe_scfl.get())
-                {
-                    Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                           scfl->source_control_file->core_paragraph->type.type ==
-                                               ipv.core->package.type.type,
-                                           msgPortTypeConflict,
-                                           msg::spec = ipv.spec());
-                }
-
                 return m_graph
                     .emplace(std::piecewise_construct,
                              std::forward_as_tuple(ipv.spec()),

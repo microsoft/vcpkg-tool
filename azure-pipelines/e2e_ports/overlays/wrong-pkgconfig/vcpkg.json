@@ -1,0 +1,25 @@
+{
+	"$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+	"name": "wrong-pkgconfig",
+	"version": "1.0.0",
+	"features": {
+		"header-only-good": {
+			"description": ""
+		},
+		"header-only-bad": {
+			"description": ""
+		},
+		"lib-good": {
+			"description": ""
+		},
+		"lib-bad": {
+			"description": ""
+		},
+		"debug-good": {
+			"description": ""
+		},
+		"debug-bad": {
+			"description": ""
+		}
+	}
+}

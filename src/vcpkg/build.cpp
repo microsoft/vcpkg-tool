@@ -207,19 +207,19 @@ namespace vcpkg
         Build::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 
-    static const std::string NAME_EMPTY_PACKAGE = "PolicyEmptyPackage";
-    static const std::string NAME_DLLS_WITHOUT_LIBS = "PolicyDLLsWithoutLIBs";
-    static const std::string NAME_DLLS_WITHOUT_EXPORTS = "PolicyDLLsWithoutExports";
-    static const std::string NAME_DLLS_IN_STATIC_LIBRARY = "PolicyDLLsInStaticLibrary";
-    static const std::string NAME_MISMATCHED_NUMBER_OF_BINARIES = "PolicyMismatchedNumberOfBinaries";
-    static const std::string NAME_ONLY_RELEASE_CRT = "PolicyOnlyReleaseCRT";
-    static const std::string NAME_EMPTY_INCLUDE_FOLDER = "PolicyEmptyIncludeFolder";
-    static const std::string NAME_ALLOW_OBSOLETE_MSVCRT = "PolicyAllowObsoleteMsvcrt";
-    static const std::string NAME_ALLOW_RESTRICTED_HEADERS = "PolicyAllowRestrictedHeaders";
-    static const std::string NAME_SKIP_DUMPBIN_CHECKS = "PolicySkipDumpbinChecks";
-    static const std::string NAME_SKIP_ARCHITECTURE_CHECK = "PolicySkipArchitectureCheck";
-    static const std::string NAME_CMAKE_HELPER_PORT = "PolicyCmakeHelperPort";
-    static const std::string NAME_SKIP_ABSOLUTE_PATHS_CHECK = "PolicySkipAbsolutePathsCheck";
+    static constexpr StringLiteral NAME_EMPTY_PACKAGE = "PolicyEmptyPackage";
+    static constexpr StringLiteral NAME_DLLS_WITHOUT_LIBS = "PolicyDLLsWithoutLIBs";
+    static constexpr StringLiteral NAME_DLLS_WITHOUT_EXPORTS = "PolicyDLLsWithoutExports";
+    static constexpr StringLiteral NAME_DLLS_IN_STATIC_LIBRARY = "PolicyDLLsInStaticLibrary";
+    static constexpr StringLiteral NAME_MISMATCHED_NUMBER_OF_BINARIES = "PolicyMismatchedNumberOfBinaries";
+    static constexpr StringLiteral NAME_ONLY_RELEASE_CRT = "PolicyOnlyReleaseCRT";
+    static constexpr StringLiteral NAME_EMPTY_INCLUDE_FOLDER = "PolicyEmptyIncludeFolder";
+    static constexpr StringLiteral NAME_ALLOW_OBSOLETE_MSVCRT = "PolicyAllowObsoleteMsvcrt";
+    static constexpr StringLiteral NAME_ALLOW_RESTRICTED_HEADERS = "PolicyAllowRestrictedHeaders";
+    static constexpr StringLiteral NAME_SKIP_DUMPBIN_CHECKS = "PolicySkipDumpbinChecks";
+    static constexpr StringLiteral NAME_SKIP_ARCHITECTURE_CHECK = "PolicySkipArchitectureCheck";
+    static constexpr StringLiteral NAME_CMAKE_HELPER_PORT = "PolicyCmakeHelperPort";
+    static constexpr StringLiteral NAME_SKIP_ABSOLUTE_PATHS_CHECK = "PolicySkipAbsolutePathsCheck";
 
     static std::remove_const_t<decltype(ALL_POLICIES)> generate_all_policies()
     {
@@ -234,7 +234,7 @@ namespace vcpkg
 
     decltype(ALL_POLICIES) ALL_POLICIES = generate_all_policies();
 
-    const std::string& to_string(BuildPolicy policy)
+    StringLiteral to_string_view(BuildPolicy policy)
     {
         switch (policy)
         {
@@ -254,6 +254,7 @@ namespace vcpkg
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
+    std::string to_string(BuildPolicy policy) { return to_string_view(policy).to_string(); }
 
     ZStringView to_cmake_variable(BuildPolicy policy)
     {
@@ -276,18 +277,20 @@ namespace vcpkg
         }
     }
 
-    static const std::string NAME_BUILD_IN_DOWNLOAD = "BUILT_IN";
-    static const std::string NAME_ARIA2_DOWNLOAD = "ARIA2";
+    static constexpr StringLiteral NAME_BUILTIN_DOWNLOAD = "BUILT_IN";
+    static constexpr StringLiteral NAME_ARIA2_DOWNLOAD = "ARIA2";
 
-    const std::string& to_string(DownloadTool tool)
+    StringLiteral to_string_view(DownloadTool tool)
     {
         switch (tool)
         {
-            case DownloadTool::BUILT_IN: return NAME_BUILD_IN_DOWNLOAD;
+            case DownloadTool::BUILT_IN: return NAME_BUILTIN_DOWNLOAD;
             case DownloadTool::ARIA2: return NAME_ARIA2_DOWNLOAD;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
+
+    std::string to_string(DownloadTool tool) { return to_string_view(tool).to_string(); }
 
     Optional<LinkageType> to_linkage_type(StringView str)
     {
@@ -298,8 +301,8 @@ namespace vcpkg
 
     namespace BuildInfoRequiredField
     {
-        static const std::string CRT_LINKAGE = "CRTLinkage";
-        static const std::string LIBRARY_LINKAGE = "LibraryLinkage";
+        static constexpr StringLiteral CRT_LINKAGE = "CRTLinkage";
+        static constexpr StringLiteral LIBRARY_LINKAGE = "LibraryLinkage";
     }
 
 #if defined(_WIN32)
@@ -728,7 +731,7 @@ namespace vcpkg
             {"PORT", scf.core_paragraph->name},
             {"VERSION", scf.core_paragraph->raw_version},
             {"VCPKG_USE_HEAD_VERSION", Util::Enum::to_bool(action.build_options.use_head_version) ? "1" : "0"},
-            {"_VCPKG_DOWNLOAD_TOOL", to_string(action.build_options.download_tool)},
+            {"_VCPKG_DOWNLOAD_TOOL", to_string_view(action.build_options.download_tool)},
             {"_VCPKG_EDITABLE", Util::Enum::to_bool(action.build_options.editable) ? "1" : "0"},
             {"_VCPKG_NO_DOWNLOADS", !Util::Enum::to_bool(action.build_options.allow_downloads) ? "1" : "0"},
             {"Z_VCPKG_CHAINLOAD_TOOLCHAIN_FILE", action.pre_build_info(VCPKG_LINE_INFO).toolchain_file()},
@@ -1570,15 +1573,17 @@ namespace vcpkg
         std::unordered_map<BuildPolicy, bool> policies;
         for (const auto& policy : ALL_POLICIES)
         {
-            const auto setting = parser.optional_field(to_string(policy));
+            const auto setting = parser.optional_field(to_string_view(policy));
             if (setting.empty()) continue;
             if (setting == "enabled")
                 policies.emplace(policy, true);
             else if (setting == "disabled")
                 policies.emplace(policy, false);
             else
-                Checks::msg_exit_maybe_upgrade(
-                    VCPKG_LINE_INFO, msgUnknownPolicySetting, msg::option = setting, msg::value = to_string(policy));
+                Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                               msgUnknownPolicySetting,
+                                               msg::option = setting,
+                                               msg::value = to_string_view(policy));
         }
 
         if (const auto err = parser.error_info("PostBuildInformation"))
