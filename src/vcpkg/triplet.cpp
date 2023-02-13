@@ -73,6 +73,14 @@ namespace vcpkg
         {
             return CPUArchitecture::PPC64LE;
         }
+        if (Strings::starts_with(this->canonical_name(), "riscv32-"))
+        {
+            return CPUArchitecture::RISCV32;
+        }
+        if (Strings::starts_with(this->canonical_name(), "riscv64-"))
+        {
+            return CPUArchitecture::RISCV64;
+        }
 
         return nullopt;
     }

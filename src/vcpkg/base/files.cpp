@@ -856,11 +856,11 @@ namespace
 
     void vcpkg_remove_all_directory(const Path& base, std::error_code& ec, Path& failure_point, struct stat& base_lstat)
     {
-        // ensure that the directory is writable and executable
+        // ensure that the directory is readable, writable and executable
         // NOTE: the execute bit on directories is needed to allow opening files inside of that directory
-        if ((base_lstat.st_mode & (S_IWUSR | S_IXUSR)) != (S_IWUSR | S_IXUSR))
+        if ((base_lstat.st_mode & (S_IRUSR | S_IWUSR | S_IXUSR)) != (S_IRUSR | S_IWUSR | S_IXUSR))
         {
-            if (::chmod(base.c_str(), base_lstat.st_mode | S_IWUSR | S_IXUSR) != 0)
+            if (::chmod(base.c_str(), base_lstat.st_mode | S_IRUSR | S_IWUSR | S_IXUSR) != 0)
             {
                 ec.assign(errno, std::generic_category());
                 mark_recursive_error(base, ec, failure_point);
@@ -1365,15 +1365,6 @@ namespace vcpkg
 
     FilePointer::operator bool() const noexcept { return m_fs != nullptr; }
 
-    int FilePointer::seek(long long offset, int origin) const noexcept
-    {
-#if defined(_WIN32)
-        return ::_fseeki64(m_fs, offset, origin);
-#else  // ^^^ _WIN32 / !_WIN32 vvv
-        return ::fseeko(m_fs, offset, origin);
-#endif // ^^^ !_WIN32
-    }
-
     long long FilePointer::tell() const noexcept
     {
 #if defined(_WIN32)
@@ -1391,9 +1382,17 @@ namespace vcpkg
 
     const Path& FilePointer::path() const { return m_path; }
 
-    ExpectedL<Unit> FilePointer::try_seek_to(long long offset)
+    ExpectedL<Unit> FilePointer::try_seek_to(long long offset) { return try_seek_to(offset, SEEK_SET); }
+
+    ExpectedL<Unit> FilePointer::try_seek_to(long long offset, int origin)
     {
-        if (this->seek(offset, SEEK_SET))
+#if defined(_WIN32)
+        const int result = ::_fseeki64(m_fs, offset, origin);
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+        const int result = ::fseeko(m_fs, offset, origin);
+#endif // ^^^ !_WIN32
+
+        if (result)
         {
             return msg::format(msgFileSeekFailed, msg::path = m_path, msg::byte_offset = offset);
         }
@@ -1463,6 +1462,11 @@ namespace vcpkg
         }
 
         return static_cast<char>(result);
+    }
+
+    ExpectedL<Unit> ReadFilePointer::try_read_all_from(long long offset, void* buffer, std::uint32_t size)
+    {
+        return try_seek_to(offset).then([&](Unit) { return try_read_all(buffer, size); });
     }
 
     WriteFilePointer::WriteFilePointer() noexcept = default;
@@ -3579,13 +3583,17 @@ namespace vcpkg
 
     void print_paths(const std::vector<Path>& paths)
     {
-        std::string message = "\n";
+        LocalizedString ls;
+        ls.append_raw('\n');
         for (const Path& p : paths)
         {
-            Strings::append(message, "    ", p.generic_u8string(), '\n');
+            auto as_preferred = p;
+            as_preferred.make_preferred();
+            ls.append_indent().append_raw(as_preferred).append_raw('\n');
         }
-        message.push_back('\n');
-        msg::write_unlocalized_text_to_stdout(Color::none, message);
+
+        ls.append_raw('\n');
+        msg::print(ls);
     }
 
     IExclusiveFileLock::~IExclusiveFileLock() = default;

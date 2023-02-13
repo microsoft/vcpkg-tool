@@ -1157,10 +1157,7 @@ namespace vcpkg
                                                               unsupported_port_action)
                                     .value_or_exit(VCPKG_LINE_INFO);
 
-            for (const auto& warning : install_plan.warnings)
-            {
-                print2(Color::warning, warning, '\n');
-            }
+            install_plan.print_unsupported_warnings();
             for (InstallPlanAction& action : install_plan.install_actions)
             {
                 action.build_options = install_plan_options;
@@ -1205,10 +1202,7 @@ namespace vcpkg
         auto action_plan = create_feature_install_plan(
             provider, var_provider, specs, status_db, {host_triplet, unsupported_port_action});
 
-        for (const auto& warning : action_plan.warnings)
-        {
-            msg::write_unlocalized_text_to_stdout(Color::warning, warning + '\n');
-        }
+        action_plan.print_unsupported_warnings();
         for (auto&& action : action_plan.install_actions)
         {
             action.build_options = install_plan_options;

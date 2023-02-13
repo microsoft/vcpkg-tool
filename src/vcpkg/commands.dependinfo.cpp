@@ -319,10 +319,7 @@ namespace vcpkg::Commands::DependInfo
         StatusParagraphs status_db;
         auto action_plan = create_feature_install_plan(
             provider, var_provider, specs, status_db, {host_triplet, UnsupportedPortAction::Warn});
-        for (const auto& warning : action_plan.warnings)
-        {
-            msg::write_unlocalized_text_to_stdout(Color::warning, warning + '\n');
-        }
+        action_plan.print_unsupported_warnings();
 
         if (!action_plan.remove_actions.empty())
         {

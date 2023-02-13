@@ -279,12 +279,17 @@ namespace vcpkg::Remove
             {
                 // The user requested removing a package that was not installed. If the port is installed for another
                 // triplet, warn the user that they may have meant that other package.
+                const auto& action_spec = action.spec;
+                const auto& action_package_name = action_spec.name();
                 for (const auto& package : status_db)
                 {
                     if (package->is_installed() && !package->package.is_feature() &&
-                        package->package.spec.name() == action.spec.name())
+                        package->package.spec.name() == action_package_name)
                     {
-                        msg::println_warning(msgRemovePackageConflict, msg::spec = package->package.spec);
+                        msg::println_warning(msgRemovePackageConflict,
+                                             msg::package_name = action_package_name,
+                                             msg::spec = action.spec,
+                                             msg::triplet = package->package.spec.triplet());
                     }
                 }
             }

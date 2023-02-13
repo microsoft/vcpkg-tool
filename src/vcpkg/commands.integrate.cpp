@@ -259,12 +259,7 @@ namespace vcpkg::Commands::Integrate
     }
 #endif
 
-    static const ExpectedS<Path>& get_path_txt_path() noexcept
-    {
-        static const ExpectedS<Path> result = get_user_configuration_home().map(
-            [](const Path& user_configuration_home) { return user_configuration_home / "vcpkg.path.txt"; });
-        return result;
-    }
+    static constexpr StringLiteral vcpkg_path_txt_name = "vcpkg.path.txt";
 
 #if defined(_WIN32)
     static void integrate_install_msbuild14(Filesystem& fs, const Path& tmp_dir)
@@ -365,9 +360,12 @@ namespace vcpkg::Commands::Integrate
         }
 #endif
 
+        auto user_configuration_home = get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO);
+        fs.create_directories(user_configuration_home, IgnoreErrors{});
         fs.write_contents(
-            get_path_txt_path().value_or_exit(VCPKG_LINE_INFO), paths.root.generic_u8string(), VCPKG_LINE_INFO);
+            user_configuration_home / vcpkg_path_txt_name, paths.root.generic_u8string(), VCPKG_LINE_INFO);
         msg::println(Color::success, msgAppliedUserIntegration);
+
         const auto cmake_toolchain = paths.buildsystems / "vcpkg.cmake";
 
 #if defined(_WIN32)
@@ -389,11 +387,8 @@ namespace vcpkg::Commands::Integrate
         was_deleted |= fs.remove(get_appdata_props_path(), VCPKG_LINE_INFO);
 #endif
 
-        const auto& maybe_pathtxt = get_path_txt_path();
-        if (auto pathtxt = maybe_pathtxt.get())
-        {
-            was_deleted |= fs.remove(*pathtxt, VCPKG_LINE_INFO);
-        }
+        auto user_configuration_home = get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO);
+        was_deleted |= fs.remove(user_configuration_home / vcpkg_path_txt_name, VCPKG_LINE_INFO);
 
         if (was_deleted)
         {
@@ -618,24 +613,26 @@ namespace vcpkg::Commands::Integrate
 
     namespace Subcommand
     {
-        static const std::string INSTALL = "install";
-        static const std::string REMOVE = "remove";
-        static const std::string PROJECT = "project";
-        static const std::string POWERSHELL = "powershell";
-        static const std::string BASH = "bash";
-        static const std::string ZSH = "zsh";
-        static const std::string FISH = "x-fish";
+        static constexpr StringLiteral INSTALL = "install";
+        static constexpr StringLiteral REMOVE = "remove";
+#if defined(_WIN32)
+        static constexpr StringLiteral PROJECT = "project";
+        static constexpr StringLiteral POWERSHELL = "powershell";
+#endif // ^^^ _WIN32
+        static constexpr StringLiteral BASH = "bash";
+        static constexpr StringLiteral ZSH = "zsh";
+        static constexpr StringLiteral FISH = "x-fish";
     }
 
     static std::vector<std::string> valid_arguments(const VcpkgPaths&)
     {
         return
         {
-            Subcommand::INSTALL, Subcommand::REMOVE,
+            Subcommand::INSTALL.to_string(), Subcommand::REMOVE.to_string(),
 #if defined(_WIN32)
-                Subcommand::PROJECT, Subcommand::POWERSHELL,
+                Subcommand::PROJECT.to_string(), Subcommand::POWERSHELL.to_string(),
 #else
-                Subcommand::BASH, Subcommand::FISH,
+                Subcommand::BASH.to_string(), Subcommand::FISH.to_string(),
 #endif
         };
     }
