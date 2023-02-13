@@ -54,7 +54,6 @@ namespace vcpkg::Commands::Env
         auto& var_provider = *var_provider_storage;
 
         var_provider.load_generic_triplet_vars(triplet);
-        print_default_triplet_warning(args, {});
 
         const PreBuildInfo pre_build_info(
             paths, triplet, var_provider.get_generic_triplet_vars(triplet).value_or_exit(VCPKG_LINE_INFO));
