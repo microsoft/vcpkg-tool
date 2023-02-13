@@ -1950,6 +1950,10 @@ namespace
 
                     state->aws_endpoint_url = segments[2].second;
                 }
+                else
+                {
+                    return add_error(msg::format(msgInvalidArgument), segments[1].first);
+                }
 
                 state->binary_cache_providers.insert("aws");
             }
