@@ -1,0 +1,11 @@
+prefix=${pcfiledir}/../..
+includedir=${prefix}/include
+libdir=${prefix}/lib
+
+Name: wrong-pkgconfig
+Description: Test lib
+URL: http://example.com
+Version: 1.0.0
+
+@LIBS@
+Cflags: "-I${includedir}/pkgconf"

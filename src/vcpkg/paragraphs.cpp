@@ -89,7 +89,7 @@ namespace vcpkg
         return value;
     }
 
-    void ParagraphParser::required_field(StringView fieldname, std::pair<std::string&, TextRowCol&> out)
+    void ParagraphParser::required_field(StringLiteral fieldname, std::pair<std::string&, TextRowCol&> out)
     {
         auto maybe_field = remove_field(&fields, fieldname);
         if (const auto field = maybe_field.get())
@@ -97,24 +97,24 @@ namespace vcpkg
         else
             missing_fields.emplace_back(fieldname.data());
     }
-    void ParagraphParser::optional_field(StringView fieldname, std::pair<std::string&, TextRowCol&> out)
+    void ParagraphParser::optional_field(StringLiteral fieldname, std::pair<std::string&, TextRowCol&> out)
     {
         auto maybe_field = remove_field(&fields, fieldname);
         if (auto field = maybe_field.get()) out = std::move(*field);
     }
-    void ParagraphParser::required_field(StringView fieldname, std::string& out)
+    void ParagraphParser::required_field(StringLiteral fieldname, std::string& out)
     {
         TextRowCol ignore;
         required_field(fieldname, {out, ignore});
     }
-    std::string ParagraphParser::optional_field(StringView fieldname)
+    std::string ParagraphParser::optional_field(StringLiteral fieldname)
     {
         std::string out;
         TextRowCol ignore;
         optional_field(fieldname, {out, ignore});
         return out;
     }
-    std::string ParagraphParser::required_field(StringView fieldname)
+    std::string ParagraphParser::required_field(StringLiteral fieldname)
     {
         std::string out;
         TextRowCol ignore;

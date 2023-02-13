@@ -42,6 +42,9 @@ namespace vcpkg
         if (Strings::case_insensitive_ascii_equals(arch, "arm64ec")) return CPUArchitecture::ARM64EC;
         if (Strings::case_insensitive_ascii_equals(arch, "s390x")) return CPUArchitecture::S390X;
         if (Strings::case_insensitive_ascii_equals(arch, "ppc64le")) return CPUArchitecture::PPC64LE;
+        if (Strings::case_insensitive_ascii_equals(arch, "riscv32")) return CPUArchitecture::RISCV32;
+        if (Strings::case_insensitive_ascii_equals(arch, "riscv64")) return CPUArchitecture::RISCV64;
+
         return nullopt;
     }
 
@@ -56,6 +59,8 @@ namespace vcpkg
             case CPUArchitecture::ARM64EC: return "arm64ec";
             case CPUArchitecture::S390X: return "s390x";
             case CPUArchitecture::PPC64LE: return "ppc64le";
+            case CPUArchitecture::RISCV32: return "riscv32";
+            case CPUArchitecture::RISCV64: return "riscv64";
             default: Checks::exit_with_message(VCPKG_LINE_INFO, "unexpected vcpkg::CPUArchitecture");
         }
     }
@@ -149,6 +154,10 @@ namespace vcpkg
 #elif (defined(__ppc64__) || defined(__PPC64__) || defined(__ppc64le__) || defined(__PPC64LE__)) &&                    \
     defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
         return CPUArchitecture::PPC64LE;
+#elif defined(__riscv) && defined(__riscv_xlen) && (__riscv_xlen == 32)
+        return CPUArchitecture::RISCV32;
+#elif defined(__riscv) && defined(__riscv_xlen) && (__riscv_xlen == 64)
+        return CPUArchitecture::RISCV64;
 #else // choose architecture
 #error "Unknown host architecture"
 #endif // choose architecture
