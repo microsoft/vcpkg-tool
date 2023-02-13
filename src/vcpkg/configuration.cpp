@@ -13,7 +13,7 @@ namespace
 
     struct RegistryImplementationKindDeserializer : Json::StringDeserializer
     {
-        LocalizedString type_name() const { return msg::format(msgARegistryImplementationKind); }
+        LocalizedString type_name() const override { return msg::format(msgARegistryImplementationKind); }
 
         static const RegistryImplementationKindDeserializer instance;
     };
@@ -22,7 +22,7 @@ namespace
 
     struct BaselineShaDeserializer : Json::StringDeserializer
     {
-        LocalizedString type_name() const { return msg::format(msgABaseline); }
+        LocalizedString type_name() const override { return msg::format(msgABaseline); }
 
         static const BaselineShaDeserializer instance;
     };
@@ -31,7 +31,7 @@ namespace
 
     struct GitUrlDeserializer : Json::StringDeserializer
     {
-        LocalizedString type_name() const { return msg::format(msgAGitRepositoryUrl); }
+        LocalizedString type_name() const override { return msg::format(msgAGitRepositoryUrl); }
 
         static const GitUrlDeserializer instance;
     };
@@ -40,7 +40,7 @@ namespace
 
     struct GitReferenceDeserializer : Json::StringDeserializer
     {
-        LocalizedString type_name() const { return msg::format(msgAGitReference); }
+        LocalizedString type_name() const override { return msg::format(msgAGitReference); }
 
         static const GitReferenceDeserializer instance;
     };
@@ -49,7 +49,7 @@ namespace
 
     struct ArtifactsGitRegistryUrlDeserializer : Json::StringDeserializer
     {
-        LocalizedString type_name() const { return msg::format(msgAnArtifactsGitRegistryUrl); }
+        LocalizedString type_name() const override { return msg::format(msgAnArtifactsGitRegistryUrl); }
 
         static const ArtifactsGitRegistryUrlDeserializer instance;
     };
@@ -144,7 +144,7 @@ namespace
 
     struct RegistriesArrayDeserializer : Json::ArrayDeserializer<RegistryDeserializer>
     {
-        LocalizedString type_name() const { return msg::format(msgAnArrayOfRegistries); }
+        LocalizedString type_name() const override { return msg::format(msgAnArrayOfRegistries); }
 
         static const RegistriesArrayDeserializer instance;
     };

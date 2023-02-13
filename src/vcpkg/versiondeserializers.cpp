@@ -20,7 +20,7 @@ namespace
         {
         }
 
-        LocalizedString type_name() const { return m_type; }
+        LocalizedString type_name() const override { return m_type; }
 
         Optional<std::pair<std::string, Optional<int>>> visit_string(Json::Reader& r, StringView sv) const override
         {
