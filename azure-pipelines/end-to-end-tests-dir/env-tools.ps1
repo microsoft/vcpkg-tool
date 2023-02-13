@@ -2,4 +2,6 @@
 
 $env:VCPKG_DOWNLOADS = Join-Path $TestingRoot 'empty downloads'
 Run-Vcpkg env --bin --tools --python set
-Throw-IfFailed
+if ($IsWindows) {
+    Throw-IfFailed
+}

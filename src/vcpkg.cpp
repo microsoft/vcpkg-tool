@@ -272,7 +272,7 @@ int main(const int argc, const char* const* const argv)
 
     register_console_ctrl_handler();
 
-#if (defined(__aarch64__) || defined(__arm__) || defined(__s390x__) ||                                                 \
+#if (defined(__aarch64__) || defined(__arm__) || defined(__s390x__) || defined(__riscv) ||                             \
      ((defined(__ppc64__) || defined(__PPC64__) || defined(__ppc64le__) || defined(__PPC64LE__)) &&                    \
       defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)) ||                                       \
      defined(_M_ARM) || defined(_M_ARM64)) &&                                                                          \
