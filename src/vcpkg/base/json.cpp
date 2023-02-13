@@ -1462,7 +1462,8 @@ namespace vcpkg::Json
 
     void Reader::add_warning(LocalizedString type, StringView msg)
     {
-        m_warnings.push_back(std::move(type.append_raw(" (").append(type).append_raw("): ").append_raw(msg)));
+        m_warnings.push_back(std::move(
+            LocalizedString::from_raw(path()).append_raw(" (").append(type).append_raw("): ").append_raw(msg)));
     }
 
     std::string Reader::path() const noexcept
