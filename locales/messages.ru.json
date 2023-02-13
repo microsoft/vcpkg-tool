@@ -266,6 +266,7 @@
   "EndOfStringInCodeUnit": "найден конец строки в середине кодовой точки",
   "EnvInvalidMaxConcurrency": "{env_var} имеет значение {value}, но должно быть > 0",
   "EnvStrFailedToExtract": "не удалось развернуть строку среды:",
+  "EnvPlatformNotSupported": "Build environment commands are not supported on this platform",
   "ErrorDetectingCompilerInfo": "при обнаружении сведений о компиляторе:\nсодержимое файла журнала в \"{path}\":",
   "ErrorIndividualPackagesUnsupported": "В режиме манифеста \"установка vcpkg\" не поддерживает отдельные аргументы пакета. \nЧтобы установить дополнительные пакеты, отредактируете vcpkg.json и запустите \"vcpkg install\" без аргументов пакета.",
   "ErrorInvalidClassicModeOption": "Параметр --{option} не поддерживается в классическом режиме, и манифест не найден.",

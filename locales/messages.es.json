@@ -266,6 +266,7 @@
   "EndOfStringInCodeUnit": "se encontró el final de la cadena en medio del punto de código",
   "EnvInvalidMaxConcurrency": "{env_var} es {value}, debe ser > 0",
   "EnvStrFailedToExtract": "no se pudo expandir la cadena de entorno:",
+  "EnvPlatformNotSupported": "Build environment commands are not supported on this platform",
   "ErrorDetectingCompilerInfo": "al detectar información del compilador:\nEl contenido del archivo de registro en \"{path}\" es:",
   "ErrorIndividualPackagesUnsupported": "En modo de manifiesto, \"vcpkg install\" no admite argumentos de paquete individuales.\nPara instalar paquetes adicionales, edite vcpkg.json y, a continuación, ejecute \"vcpkg install\" sin argumentos de paquete.",
   "ErrorInvalidClassicModeOption": "La opción --{option} no se admite en el modo clásico y no se encontró ningún manifiesto.",

@@ -266,6 +266,7 @@
   "EndOfStringInCodeUnit": "encontrou o final da cadeia de caracteres no meio do ponto de código",
   "EnvInvalidMaxConcurrency": "{env_var} é {valor}, deve ser > 0",
   "EnvStrFailedToExtract": "não foi possível expandir a cadeia de caracteres do ambiente:",
+  "EnvPlatformNotSupported": "Build environment commands are not supported on this platform",
   "ErrorDetectingCompilerInfo": "ao detectar informações do compilador:\nO conteúdo do arquivo de log em \"{path}\" é:",
   "ErrorIndividualPackagesUnsupported": "No modo de manifesto, `vcpkg install` não dá suporte a argumentos de pacotes individuais.\nPara instalar pacotes adicionais, edite o vcpkg.json e execute `vcpkg install` sem nenhum argumento de pacote.",
   "ErrorInvalidClassicModeOption": "A opção --{option} não é suportada no modo clássico e nenhum manifesto foi encontrado.",

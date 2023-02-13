@@ -266,6 +266,7 @@
   "EndOfStringInCodeUnit": "znaleziono koniec ciągu w środku punktu kodu",
   "EnvInvalidMaxConcurrency": "{env_var} ma wartość {value}, musi być > 0",
   "EnvStrFailedToExtract": "Nie można rozwinąć ciągu środowiska:",
+  "EnvPlatformNotSupported": "Build environment commands are not supported on this platform",
   "ErrorDetectingCompilerInfo": "podczas wykrywania informacji o kompilatorze:\nZawartość pliku dziennika w lokalizacji „{path}” to:",
   "ErrorIndividualPackagesUnsupported": "W trybie manifestu polecenie „vcpkg install” nie obsługuje poszczególnych argumentów pakietu.\nAby zainstalować dodatkowe pakiety, edytuj plik vcpkg.json, a następnie uruchom polecenie „vcpkg install” bez żadnych argumentów pakietu.",
   "ErrorInvalidClassicModeOption": "Opcja --{option} nie jest obsługiwana w trybie klasycznym i nie znaleziono manifestu.",

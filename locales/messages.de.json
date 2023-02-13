@@ -266,6 +266,7 @@
   "EndOfStringInCodeUnit": "Ende der Zeichenfolge in der Mitte des Codepunkts gefunden",
   "EnvInvalidMaxConcurrency": "{env_var} ist {value}, muss > 0 sein",
   "EnvStrFailedToExtract": "Die Umgebungszeichenfolge konnte nicht erweitert werden:",
+  "EnvPlatformNotSupported": "Build environment commands are not supported on this platform",
   "ErrorDetectingCompilerInfo": "beim Erfassen von Compiler-Informationen:\nDer Inhalt der Protokolldatei unter „{Pfad}“ lautet:",
   "ErrorIndividualPackagesUnsupported": "Im Manifestmodus unterstützt „vcpkg install“ keine einzelnen Paketargumente.\nUm zusätzliche Pakete zu installieren, bearbeiten Sie „vcpkg.json“, und führen Sie dann „vcpkg install“ ohne Paketargumente aus.",
   "ErrorInvalidClassicModeOption": "Die Option --{option} wird im klassischen Modus nicht unterstützt, und es wurde kein Manifest gefunden.",

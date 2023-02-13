@@ -266,6 +266,7 @@
   "EndOfStringInCodeUnit": "在码位中间找到了字符串结尾",
   "EnvInvalidMaxConcurrency": "{env_var} 为 {value}，必须为 >0",
   "EnvStrFailedToExtract": "无法展开环境字符串:",
+  "EnvPlatformNotSupported": "Build environment commands are not supported on this platform",
   "ErrorDetectingCompilerInfo": "检测编译器信息时: \n“{path}”下的日志文件内容为:",
   "ErrorIndividualPackagesUnsupported": "在清单模式下，`vcpkg install` 不支持单个包参数。\n要安装其他包，请编辑 vcpkg.json，然后在没有任何包参数的情况下运行 `vcpkg install`。",
   "ErrorInvalidClassicModeOption": "在经典模式下不支持选项 --{option}，并且未找到任何清单。",

@@ -266,6 +266,7 @@
   "EndOfStringInCodeUnit": "kod noktasının ortasında dizenin sonu bulundu",
   "EnvInvalidMaxConcurrency": "{env_var} değeri {value}, bu değer > 0 olmalıdır",
   "EnvStrFailedToExtract": "ortam dizesi genişletilemedi:",
+  "EnvPlatformNotSupported": "Build environment commands are not supported on this platform",
   "ErrorDetectingCompilerInfo": "derleyici bilgileri algılanırken:\n \"{path}\" konumundaki günlük dosyası içeriği şu şekildedir:",
   "ErrorIndividualPackagesUnsupported": "Bildirim modunda `vcpkg install`, paket bağımsız değişkenlerini tek tek desteklemez.\nEk paketleri yüklemek için vcpkg.json dosyasını düzenleyin ve paket bağımsız değişkenleri olmadan `vcpkg install` komutunu çalıştırın.",
   "ErrorInvalidClassicModeOption": "--{option} seçeneği klasik modda desteklenmiyor ve bildirim bulunamadı.",
