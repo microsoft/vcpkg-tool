@@ -106,20 +106,20 @@ namespace vcpkg
         return system_triplet();
     }
 
-    void print_default_triplet_warning(const VcpkgCmdArguments& args, View<std::string> qualified_deps)
+    void print_default_triplet_warning(const VcpkgCmdArguments& args, View<std::string> specs)
     {
         (void)args;
-        (void)qualified_deps;
+        (void)specs;
 #if defined(_WIN32)
         // The triplet is not set by --triplet or VCPKG_DEFAULT_TRIPLET
         if (!args.triplet.has_value())
         {
-            if (qualified_deps.size() == 0)
+            if (specs.size() == 0)
             {
                 msg::println_warning(msgDefaultTriplet, msg::triplet = default_host_triplet(args));
                 return;
             }
-            for (auto&& arg : qualified_deps)
+            for (auto&& arg : specs)
             {
                 const std::string as_lowercase = Strings::ascii_to_lowercase(std::string{arg});
                 auto maybe_qpkg = parse_qualified_specifier(as_lowercase);
