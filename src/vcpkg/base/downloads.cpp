@@ -1,4 +1,4 @@
-#include <vcpkg/base/api_stable_format.h>
+#include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/hash.h>

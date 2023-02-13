@@ -2,13 +2,13 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/span.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.mac.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/uuid.h>
-#include <vcpkg/base/view.h>
 
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.version.h>

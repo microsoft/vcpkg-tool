@@ -1,6 +1,6 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/messages.h>
-#include <vcpkg/base/setup_messages.h>
+#include <vcpkg/base/setup-messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/util.h>
 
@@ -12,6 +12,90 @@
 CMRC_DECLARE(cmakerc);
 
 using namespace vcpkg;
+
+namespace vcpkg
+{
+    LocalizedString::operator StringView() const noexcept { return m_data; }
+    const std::string& LocalizedString::data() const noexcept { return m_data; }
+    const std::string& LocalizedString::to_string() const noexcept { return m_data; }
+    std::string LocalizedString::extract_data() { return std::exchange(m_data, std::string{}); }
+
+    LocalizedString LocalizedString::from_raw(std::string&& s) noexcept { return LocalizedString(std::move(s)); }
+
+    LocalizedString& LocalizedString::append_raw(char c)
+    {
+        m_data.push_back(c);
+        return *this;
+    }
+
+    LocalizedString& LocalizedString::append_raw(StringView s)
+    {
+        m_data.append(s.begin(), s.size());
+        return *this;
+    }
+
+    LocalizedString& LocalizedString::append(const LocalizedString& s)
+    {
+        m_data.append(s.m_data);
+        return *this;
+    }
+
+    LocalizedString& LocalizedString::append_indent(size_t indent)
+    {
+        m_data.append(indent * 4, ' ');
+        return *this;
+    }
+
+    LocalizedString& LocalizedString::append_floating_list(int indent, View<LocalizedString> items)
+    {
+        switch (items.size())
+        {
+            case 0: break;
+            case 1: append_raw(' ').append(items[0]); break;
+            default:
+                for (auto&& item : items)
+                {
+                    append_raw('\n').append_indent(indent).append(item);
+                }
+
+                break;
+        }
+
+        return *this;
+    }
+
+    const char* to_printf_arg(const LocalizedString& s) noexcept { return s.data().c_str(); }
+
+    bool operator==(const LocalizedString& lhs, const LocalizedString& rhs) noexcept
+    {
+        return lhs.data() == rhs.data();
+    }
+
+    bool operator!=(const LocalizedString& lhs, const LocalizedString& rhs) noexcept
+    {
+        return lhs.data() != rhs.data();
+    }
+
+    bool operator<(const LocalizedString& lhs, const LocalizedString& rhs) noexcept { return lhs.data() < rhs.data(); }
+
+    bool operator<=(const LocalizedString& lhs, const LocalizedString& rhs) noexcept
+    {
+        return lhs.data() <= rhs.data();
+    }
+
+    bool operator>(const LocalizedString& lhs, const LocalizedString& rhs) noexcept { return lhs.data() > rhs.data(); }
+
+    bool operator>=(const LocalizedString& lhs, const LocalizedString& rhs) noexcept
+    {
+        return lhs.data() >= rhs.data();
+    }
+
+    bool LocalizedString::empty() const noexcept { return m_data.empty(); }
+    void LocalizedString::clear() noexcept { m_data.clear(); }
+
+    LocalizedString::LocalizedString(StringView data) : m_data(data.data(), data.size()) { }
+    LocalizedString::LocalizedString(std::string&& data) noexcept : m_data(std::move(data)) { }
+}
 
 namespace vcpkg::msg
 {
@@ -171,7 +255,7 @@ namespace vcpkg::msg
             std::vector<StringLiteral> names;
             std::vector<StringLiteral> default_strings;     // const after startup
             std::vector<ZStringView> localization_comments; // const after startup
-
+            Optional<cmrc::file> json_file;
             std::vector<std::string> localized_strings;
         };
 
@@ -203,11 +287,17 @@ namespace vcpkg::msg
             ::abort();
         }
     }
-
-    void load_from_message_map(const Json::Object& message_map)
+    const Optional<cmrc::file> get_file()
     {
         Messages& m = messages();
+        return m.json_file;
+    }
+    void load_from_message_map(const MessageMapAndFile& map_and_file)
+    {
+        auto&& message_map = map_and_file.map;
+        Messages& m = messages();
         m.localized_strings.resize(m.names.size());
+        m.json_file = map_and_file.map_file;
 
         std::vector<std::string> names_without_localization;
 
@@ -235,7 +325,7 @@ namespace vcpkg::msg
         }
     }
 
-    ExpectedS<Json::Object> get_message_map_from_lcid(int LCID)
+    ExpectedS<MessageMapAndFile> get_message_map_from_lcid(int LCID)
     {
         threadunsafe_initialize_context();
         auto embedded_filesystem = cmrc::cmakerc::get_filesystem();
@@ -244,7 +334,10 @@ namespace vcpkg::msg
         if (const auto locale_path = maybe_locale_path.get())
         {
             auto file = embedded_filesystem.open(*locale_path);
-            return Json::parse_object(StringView{file.begin(), file.end()}, *locale_path);
+            return Json::parse_object(StringView{file.begin(), file.end()}, *locale_path)
+                .map([&](Json::Object&& parsed_file) {
+                    return MessageMapAndFile{std::move(parsed_file), file};
+                });
         }
 
         return std::string{"Unrecognized LCID"};
@@ -264,7 +357,7 @@ namespace vcpkg::msg
             std::pair<int, StringLiteral>(1029, "cs"), // Czech
             std::pair<int, StringLiteral>(1031, "de"), // German
             // Always use default handling for 1033 (English)
-            // std::pair<int, StringLiteral>(1033, "en"),       // English
+            // std::pair<int, StringLiteral>(1033, "en"),    // English
             std::pair<int, StringLiteral>(3082, "es"),       // Spanish (Spain)
             std::pair<int, StringLiteral>(1036, "fr"),       // French
             std::pair<int, StringLiteral>(1040, "it"),       // Italian
@@ -570,6 +663,7 @@ namespace vcpkg
     REGISTER_MESSAGE(EndOfStringInCodeUnit);
     REGISTER_MESSAGE(EnvInvalidMaxConcurrency);
     REGISTER_MESSAGE(EnvStrFailedToExtract);
+    REGISTER_MESSAGE(EnvPlatformNotSupported);
     REGISTER_MESSAGE(ErrorDetectingCompilerInfo);
     REGISTER_MESSAGE(ErrorIndividualPackagesUnsupported);
     REGISTER_MESSAGE(ErrorInvalidClassicModeOption);
@@ -650,13 +744,15 @@ namespace vcpkg
     REGISTER_MESSAGE(FeedbackAppreciated);
     REGISTER_MESSAGE(FetchingBaselineInfo);
     REGISTER_MESSAGE(FetchingRegistryInfo);
-    REGISTER_MESSAGE(FishCompletion);
     REGISTER_MESSAGE(FloatingPointConstTooBig);
     REGISTER_MESSAGE(FileNotFound);
     REGISTER_MESSAGE(FileReadFailed);
     REGISTER_MESSAGE(FileSeekFailed);
     REGISTER_MESSAGE(FilesExported);
     REGISTER_MESSAGE(FileSystemOperationFailed);
+    REGISTER_MESSAGE(FishCompletion);
+    REGISTER_MESSAGE(FilesContainAbsolutePath1);
+    REGISTER_MESSAGE(FilesContainAbsolutePath2);
     REGISTER_MESSAGE(FollowingPackagesMissingControl);
     REGISTER_MESSAGE(FollowingPackagesNotInstalled);
     REGISTER_MESSAGE(FollowingPackagesUpgraded);
@@ -723,7 +819,6 @@ namespace vcpkg
     REGISTER_MESSAGE(IllegalPlatformSpec);
     REGISTER_MESSAGE(ImproperShaLength);
     REGISTER_MESSAGE(IncorrectArchiveFileSignature);
-    REGISTER_MESSAGE(IncorrectLibHeaderEnd);
     REGISTER_MESSAGE(IncorrectPESignature);
     REGISTER_MESSAGE(IncorrectNumberOfArgs);
     REGISTER_MESSAGE(IncrementedUtf8Decoder);
@@ -769,6 +864,7 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidFloatingPointConst);
     REGISTER_MESSAGE(InvalidHexDigit);
     REGISTER_MESSAGE(InvalidIntegerConst);
+    REGISTER_MESSAGE(InvalidLibraryMissingLinkerMembers);
     REGISTER_MESSAGE(InvalidPortVersonName);
     REGISTER_MESSAGE(InvalidString);
     REGISTER_MESSAGE(InvalidFileType);
@@ -784,6 +880,8 @@ namespace vcpkg
     REGISTER_MESSAGE(JsonValueNotObject);
     REGISTER_MESSAGE(JsonValueNotString);
     REGISTER_MESSAGE(LaunchingProgramFailed);
+    REGISTER_MESSAGE(LibraryArchiveMemberTooSmall);
+    REGISTER_MESSAGE(LibraryFirstLinkerMemberMissing);
     REGISTER_MESSAGE(LicenseExpressionContainsExtraPlus);
     REGISTER_MESSAGE(LicenseExpressionContainsInvalidCharacter);
     REGISTER_MESSAGE(LicenseExpressionContainsUnicode);
@@ -801,6 +899,10 @@ namespace vcpkg
     REGISTER_MESSAGE(LicenseExpressionImbalancedParens);
     REGISTER_MESSAGE(LicenseExpressionUnknownException);
     REGISTER_MESSAGE(LicenseExpressionUnknownLicense);
+    REGISTER_MESSAGE(LinkageDynamicDebug);
+    REGISTER_MESSAGE(LinkageDynamicRelease);
+    REGISTER_MESSAGE(LinkageStaticDebug);
+    REGISTER_MESSAGE(LinkageStaticRelease);
     REGISTER_MESSAGE(ListOfValidFieldsForControlFiles);
     REGISTER_MESSAGE(LoadingCommunityTriplet);
     REGISTER_MESSAGE(LoadingDependencyInformation);
@@ -883,7 +985,6 @@ namespace vcpkg
     REGISTER_MESSAGE(PortsRemoved);
     REGISTER_MESSAGE(PortsUpdated);
     REGISTER_MESSAGE(PortSupportsField);
-    REGISTER_MESSAGE(PortTypeConflict);
     REGISTER_MESSAGE(PreviousIntegrationFileRemains);
     REGISTER_MESSAGE(ProgramReturnedNonzeroExitCode);
     REGISTER_MESSAGE(ProvideExportType);
@@ -952,7 +1053,6 @@ namespace vcpkg
     REGISTER_MESSAGE(UnexpectedToolOutput);
     REGISTER_MESSAGE(UnknownBaselineFileContent);
     REGISTER_MESSAGE(UnknownBinaryProviderType);
-    REGISTER_MESSAGE(UnknownMachineCode);
     REGISTER_MESSAGE(UnknownOptions);
     REGISTER_MESSAGE(UnknownParameterForIntegrate);
     REGISTER_MESSAGE(UnknownPolicySetting);
@@ -963,10 +1063,13 @@ namespace vcpkg
     REGISTER_MESSAGE(UnrecognizedConfigField);
     REGISTER_MESSAGE(UnrecognizedIdentifier);
     REGISTER_MESSAGE(UnsupportedFeature);
+    REGISTER_MESSAGE(UnsupportedFeatureSupportsExpression);
+    REGISTER_MESSAGE(UnsupportedFeatureSupportsExpressionWarning);
     REGISTER_MESSAGE(UnsupportedPort);
     REGISTER_MESSAGE(UnsupportedPortDependency);
-    REGISTER_MESSAGE(UnsupportedPortFeature);
     REGISTER_MESSAGE(UnsupportedShortOptions);
+    REGISTER_MESSAGE(UnsupportedSupportsExpression);
+    REGISTER_MESSAGE(UnsupportedSupportsExpressionWarning);
     REGISTER_MESSAGE(UnsupportedSyntaxInCDATA);
     REGISTER_MESSAGE(UnsupportedSystemName);
     REGISTER_MESSAGE(UnsupportedToolchain);
@@ -1046,13 +1149,13 @@ namespace vcpkg
     REGISTER_MESSAGE(PortBugMisplacedCMakeFiles);
     REGISTER_MESSAGE(PortBugDllInLibDir);
     REGISTER_MESSAGE(PortBugMissingLicense);
+    REGISTER_MESSAGE(PortBugMissingProvidedUsage);
     REGISTER_MESSAGE(PortBugFoundCopyrightFiles);
     REGISTER_MESSAGE(PortBugFoundExeInBinDir);
     REGISTER_MESSAGE(PortBugSetDllsWithoutExports);
     REGISTER_MESSAGE(PortBugDllAppContainerBitNotSet);
     REGISTER_MESSAGE(BuiltWithIncorrectArchitecture);
     REGISTER_MESSAGE(BinaryWithInvalidArchitecture);
-    REGISTER_MESSAGE(ExpectedExtension);
     REGISTER_MESSAGE(FailedToDetermineArchitecture);
     REGISTER_MESSAGE(PortBugFoundDllInStaticBuild);
     REGISTER_MESSAGE(PortBugMismatchedNumberOfBinaries);
@@ -1070,6 +1173,7 @@ namespace vcpkg
     REGISTER_MESSAGE(PortBugMovePkgConfigFiles);
     REGISTER_MESSAGE(PortBugRemoveEmptyDirs);
     REGISTER_MESSAGE(PortBugInvalidCrtLinkage);
+    REGISTER_MESSAGE(PortBugInvalidCrtLinkageEntry);
     REGISTER_MESSAGE(PortBugInspectFiles);
     REGISTER_MESSAGE(PortBugOutdatedCRT);
     REGISTER_MESSAGE(PortBugMisplacedFiles);
@@ -1143,6 +1247,10 @@ namespace vcpkg
     REGISTER_MESSAGE(CmdRegenerateOptDryRun);
     REGISTER_MESSAGE(CmdRegenerateOptNormalize);
     REGISTER_MESSAGE(HelpTextOptFullDesc);
+    REGISTER_MESSAGE(CmdSettingCopiedFilesLog);
+    REGISTER_MESSAGE(CmdSettingInstalledDir);
+    REGISTER_MESSAGE(CmdSettingTargetBin);
+    REGISTER_MESSAGE(CmdSettingTLogFile);
     REGISTER_MESSAGE(CmdSetInstalledOptDryRun);
     REGISTER_MESSAGE(CmdSetInstalledOptNoUsage);
     REGISTER_MESSAGE(CmdSetInstalledOptWritePkgConfig);

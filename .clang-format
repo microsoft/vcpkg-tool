@@ -55,7 +55,7 @@ BraceWrapping:
 
 IncludeBlocks: Regroup
 IncludeCategories:
-  - Regex: '^(<vcpkg/base/system_headers\.h>|"pch\.h")$'
+  - Regex: '^(<vcpkg/base/system-headers\.h>|"pch\.h")$'
     Priority: -1
   - Regex: '^<catch2/catch\.hpp>$'
     Priority: 1

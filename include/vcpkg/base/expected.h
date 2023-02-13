@@ -6,7 +6,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/to_string.h>
+#include <vcpkg/base/to-string.h>
 
 #include <functional>
 #include <system_error>

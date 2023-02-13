@@ -9,8 +9,8 @@ import { getArtifact, RegistryDisplayContext, RegistryResolver } from '../regist
 import { Session } from '../session';
 import { Channels } from '../util/channels';
 import { Uri } from '../util/uri';
+import { Table } from './console-table';
 import { addVersionToArtifactIdentity, artifactIdentity } from './format';
-import { Table } from './markdown-table';
 import { debug, error, log } from './styling';
 
 export async function showArtifacts(artifacts: Iterable<ResolvedArtifact>, registries: RegistryDisplayContext, options?: { force?: boolean }) {

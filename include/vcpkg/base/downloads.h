@@ -6,7 +6,7 @@
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/view.h>
+#include <vcpkg/base/span.h>
 
 #include <string>
 #include <vector>
