@@ -1,5 +1,3 @@
-#include <vcpkg/base/system.print.h>
-
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/commands.setinstalled.h>
 #include <vcpkg/globalstate.h>
