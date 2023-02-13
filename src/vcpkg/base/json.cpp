@@ -1064,8 +1064,6 @@ namespace vcpkg::Json
 
     const BooleanDeserializer BooleanDeserializer::instance;
 
-    const PathDeserializer PathDeserializer::instance;
-
     static constexpr bool is_lower_digit(char ch)
     {
         return ParserBase::is_lower_alpha(ch) || ParserBase::is_ascii_digit(ch);
