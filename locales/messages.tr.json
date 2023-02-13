@@ -365,7 +365,7 @@
   "FollowingPackagesMissingControl": "Aşağıdaki paketlerin geçerli bir CONTROL veya vcpkg.json değeri yok:",
   "FollowingPackagesNotInstalled": "Aşağıdaki paketler yüklü değil:",
   "FollowingPackagesUpgraded": "Aşağıdaki paketler günceldir:",
-  "ForceSystemBinariesOnWeirdPlatforms": "VCPKG_FORCE_SYSTEM_BINARIES ortam değişkeni arm, s390x ve ppc64le platformlarında ayarlanmalıdır.",
+  "ForceSystemBinariesOnWeirdPlatforms": "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.",
   "FormattedParseMessageExpression": "{value} ifadesinde",
   "GenerateMsgErrorParsingFormatArgs": "{value} için biçim dizesi ayrıştırılıyor:",
   "GenerateMsgIncorrectComment": "{value} iletisi yanlış bir açıklama içeriyor:",

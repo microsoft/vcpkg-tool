@@ -365,7 +365,7 @@
   "FollowingPackagesMissingControl": "以下包没有有效的 CONTROL 或 vcpkg.json:",
   "FollowingPackagesNotInstalled": "未安装以下包:",
   "FollowingPackagesUpgraded": "以下包是最新的:",
-  "ForceSystemBinariesOnWeirdPlatforms": "必须在 arm、s390x、ppc64le 平台上设置环境变量 VCPKG_FORCE_SYSTEM_BINARIES。",
+  "ForceSystemBinariesOnWeirdPlatforms": "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.",
   "FormattedParseMessageExpression": "在表达式上: {value}",
   "GenerateMsgErrorParsingFormatArgs": "正在分析 {value} 的格式字符串:",
   "GenerateMsgIncorrectComment": "消息 {value} 的注释不正确:",

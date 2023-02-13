@@ -365,7 +365,7 @@
   "FollowingPackagesMissingControl": "次のパッケージには有効な CONTROL または vcpkg.json がありません:",
   "FollowingPackagesNotInstalled": "次のパッケージはインストールされていません:",
   "FollowingPackagesUpgraded": "次のパッケージは最新です:",
-  "ForceSystemBinariesOnWeirdPlatforms": "環境変数 VCPKG_FORCE_SYSTEM_BINARIES を arm、s390x、および ppc64le プラットフォームで設定する必要があります。",
+  "ForceSystemBinariesOnWeirdPlatforms": "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.",
   "FormattedParseMessageExpression": "式: {value}",
   "GenerateMsgErrorParsingFormatArgs": "{value} の書式指定文字列を解析しています:",
   "GenerateMsgIncorrectComment": "メッセージ {value} のコメントが正しくありません:",

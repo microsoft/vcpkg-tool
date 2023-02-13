@@ -365,7 +365,7 @@
   "FollowingPackagesMissingControl": "Následující balíčky nemají platnou hodnotu CONTROL nebo vcpkg.json:",
   "FollowingPackagesNotInstalled": "Následující balíčky nejsou nainstalovány:",
   "FollowingPackagesUpgraded": "Následující balíčky jsou aktuální:",
-  "ForceSystemBinariesOnWeirdPlatforms": "Proměnná prostředí VCPKG_FORCE_SYSTEM_BINARIES musí být nastavená na platformách arm, s390x a ppc64le.",
+  "ForceSystemBinariesOnWeirdPlatforms": "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.",
   "FormattedParseMessageExpression": "výraz on: {value}",
   "GenerateMsgErrorParsingFormatArgs": "parsuje se řetězec formátu pro hodnotu {value}:",
   "GenerateMsgIncorrectComment": "zpráva {value} má nesprávný komentář:",

@@ -365,7 +365,7 @@
   "FollowingPackagesMissingControl": "다음 패키지에는 유효한 CONTROL 또는 vcpkg.json이 없습니다.",
   "FollowingPackagesNotInstalled": "다음 패키지가 설치되지 않았습니다.",
   "FollowingPackagesUpgraded": "다음 패키지는 최신 상태입니다.",
-  "ForceSystemBinariesOnWeirdPlatforms": "환경 변수 VCPKG_FORCE_SYSTEM_BINARIES는 arm, s390x 및 ppc64le 플랫폼에서 설정해야 합니다.",
+  "ForceSystemBinariesOnWeirdPlatforms": "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.",
   "FormattedParseMessageExpression": "식: {value}",
   "GenerateMsgErrorParsingFormatArgs": "{value}에 대한 형식 문자열 구문 분석:",
   "GenerateMsgIncorrectComment": "메시지 {value}에 잘못된 주석이 있습니다.",

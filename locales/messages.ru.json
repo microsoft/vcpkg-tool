@@ -365,7 +365,7 @@
   "FollowingPackagesMissingControl": "Следующие пакеты не содержат допустимый CONTROL или vcpkg.json.",
   "FollowingPackagesNotInstalled": "Следующие пакеты не установлены.",
   "FollowingPackagesUpgraded": "Следующие пакеты обновлены.",
-  "ForceSystemBinariesOnWeirdPlatforms": "Переменная среды VCPKG_FORCE_SYSTEM_BINARIES должна быть задана на платформах ARM, s390x и ppc64le.",
+  "ForceSystemBinariesOnWeirdPlatforms": "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.",
   "FormattedParseMessageExpression": "в выражении: {value}",
   "GenerateMsgErrorParsingFormatArgs": "строка формата синтаксического анализа для {value}:",
   "GenerateMsgIncorrectComment": "сообщение {value} содержит неправильный комментарий:",
