@@ -118,6 +118,8 @@ namespace vcpkg::Commands::Upgrade
         }
         else
         {
+            print_default_triplet_warning(args, args.command_arguments);
+
             std::vector<PackageSpec> not_installed;
             std::vector<PackageSpec> no_control_file;
             std::vector<PackageSpec> to_upgrade;
