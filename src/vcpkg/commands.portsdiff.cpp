@@ -1,5 +1,4 @@
 #include <vcpkg/base/sortedvector.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -113,7 +112,7 @@ namespace vcpkg::Commands::PortsDiff
 
     static void check_commit_exists(const VcpkgPaths& paths, const std::string& git_commit_id)
     {
-        static const std::string VALID_COMMIT_OUTPUT = "commit\n";
+        static constexpr StringLiteral VALID_COMMIT_OUTPUT = "commit\n";
         auto cmd = paths.git_cmd_builder(paths.root / ".git", paths.root)
                        .string_arg("cat-file")
                        .string_arg("-t")

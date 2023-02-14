@@ -4,7 +4,6 @@
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/configuration.h>
@@ -42,7 +41,6 @@ namespace vcpkg
         if (lhs.default_features != rhs.default_features) return false;
         if (lhs.license != rhs.license) return false;
 
-        if (lhs.type != rhs.type) return false;
         if (!structurally_equal(lhs.supports_expression, rhs.supports_expression)) return false;
 
         if (lhs.extra_info != rhs.extra_info) return false;
@@ -73,17 +71,17 @@ namespace vcpkg
 
     namespace SourceParagraphFields
     {
-        static const std::string BUILD_DEPENDS = "Build-Depends";
-        static const std::string DEFAULT_FEATURES = "Default-Features";
-        static const std::string DESCRIPTION = "Description";
-        static const std::string FEATURE = "Feature";
-        static const std::string MAINTAINERS = "Maintainer";
-        static const std::string NAME = "Source";
-        static const std::string VERSION = "Version";
-        static const std::string PORT_VERSION = "Port-Version";
-        static const std::string HOMEPAGE = "Homepage";
-        static const std::string TYPE = "Type";
-        static const std::string SUPPORTS = "Supports";
+        static constexpr StringLiteral BUILD_DEPENDS = "Build-Depends";
+        static constexpr StringLiteral DEFAULT_FEATURES = "Default-Features";
+        static constexpr StringLiteral DESCRIPTION = "Description";
+        static constexpr StringLiteral FEATURE = "Feature";
+        static constexpr StringLiteral MAINTAINERS = "Maintainer";
+        static constexpr StringLiteral NAME = "Source";
+        static constexpr StringLiteral VERSION = "Version";
+        static constexpr StringLiteral PORT_VERSION = "Port-Version";
+        static constexpr StringLiteral HOMEPAGE = "Homepage";
+        static constexpr StringLiteral TYPE = "Type";
+        static constexpr StringLiteral SUPPORTS = "Supports";
     }
 
     static Span<const StringView> get_list_of_valid_fields()
@@ -105,26 +103,6 @@ namespace vcpkg
     }
 
     void print_error_message(Span<const std::unique_ptr<ParseControlErrorInfo>> error_info_list);
-
-    std::string Type::to_string(const Type& t)
-    {
-        switch (t.type)
-        {
-            case Type::ALIAS: return "Alias";
-            case Type::PORT: return "Port";
-            default: return "Unknown";
-        }
-    }
-
-    Type Type::from_string(const std::string& t)
-    {
-        if (t == "Alias") return Type{Type::ALIAS};
-        if (t == "Port" || t.empty()) return Type{Type::PORT};
-        return Type{Type::UNKNOWN};
-    }
-
-    bool operator==(const Type& lhs, const Type& rhs) { return lhs.type == rhs.type; }
-    bool operator!=(const Type& lhs, const Type& rhs) { return !(lhs == rhs); }
 
     static void trim_all(std::vector<std::string>& arr)
     {
@@ -326,7 +304,8 @@ namespace vcpkg
             }
         }
 
-        spgh->type = Type::from_string(parser.optional_field(SourceParagraphFields::TYPE));
+        // This is leftover from a previous attempt to add "alias ports", not currently used.
+        (void)parser.optional_field(SourceParagraphFields::TYPE);
         auto err = parser.error_info(spgh->name.empty() ? origin : spgh->name);
         if (err)
             return err;

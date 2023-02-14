@@ -540,6 +540,7 @@ namespace vcpkg
     REGISTER_MESSAGE(AlreadyInstalledNotHead);
     REGISTER_MESSAGE(AnotherInstallationInProgress);
     REGISTER_MESSAGE(AppliedUserIntegration);
+    REGISTER_MESSAGE(ApplocalProcessing);
     REGISTER_MESSAGE(ArtifactsOptionIncompatibility);
     REGISTER_MESSAGE(AssetSourcesArg);
     REGISTER_MESSAGE(AttemptingToFetchPackagesFromVendor);
@@ -626,7 +627,7 @@ namespace vcpkg
     REGISTER_MESSAGE(DateTableHeader);
     REGISTER_MESSAGE(DefaultBrowserLaunched);
     REGISTER_MESSAGE(DefaultFlag);
-    REGISTER_MESSAGE(DefaultPathToBinaries);
+    REGISTER_MESSAGE(DefaultTriplet);
     REGISTER_MESSAGE(DeleteVcpkgConfigFromManifest);
     REGISTER_MESSAGE(DeprecatedPrefabDebugOption);
     REGISTER_MESSAGE(DetectCompilerHash);
@@ -663,6 +664,7 @@ namespace vcpkg
     REGISTER_MESSAGE(EndOfStringInCodeUnit);
     REGISTER_MESSAGE(EnvInvalidMaxConcurrency);
     REGISTER_MESSAGE(EnvStrFailedToExtract);
+    REGISTER_MESSAGE(EnvPlatformNotSupported);
     REGISTER_MESSAGE(ErrorDetectingCompilerInfo);
     REGISTER_MESSAGE(ErrorIndividualPackagesUnsupported);
     REGISTER_MESSAGE(ErrorInvalidClassicModeOption);
@@ -776,7 +778,29 @@ namespace vcpkg
     REGISTER_MESSAGE(GitUnexpectedCommandOutput);
     REGISTER_MESSAGE(HashFileFailureToRead);
     REGISTER_MESSAGE(HeaderOnlyUsage);
+    REGISTER_MESSAGE(HelpAssetCaching);
+    REGISTER_MESSAGE(HelpAssetCachingAzUrl);
+    REGISTER_MESSAGE(HelpAssetCachingBlockOrigin);
+    REGISTER_MESSAGE(HelpAssetCachingScript);
+    REGISTER_MESSAGE(HelpBinaryCaching);
+    REGISTER_MESSAGE(HelpBinaryCachingAws);
+    REGISTER_MESSAGE(HelpBinaryCachingAwsConfig);
+    REGISTER_MESSAGE(HelpBinaryCachingAwsHeader);
+    REGISTER_MESSAGE(HelpBinaryCachingAzBlob);
+    REGISTER_MESSAGE(HelpBinaryCachingCos);
+    REGISTER_MESSAGE(HelpBinaryCachingDefaults);
+    REGISTER_MESSAGE(HelpBinaryCachingDefaultsError);
+    REGISTER_MESSAGE(HelpBinaryCachingFiles);
+    REGISTER_MESSAGE(HelpBinaryCachingGcs);
+    REGISTER_MESSAGE(HelpBinaryCachingHttp);
+    REGISTER_MESSAGE(HelpBinaryCachingNuGet);
+    REGISTER_MESSAGE(HelpBinaryCachingNuGetConfig);
+    REGISTER_MESSAGE(HelpBinaryCachingNuGetHeader);
+    REGISTER_MESSAGE(HelpBinaryCachingNuGetInteractive);
+    REGISTER_MESSAGE(HelpBinaryCachingNuGetFooter);
+    REGISTER_MESSAGE(HelpBinaryCachingNuGetTimeout);
     REGISTER_MESSAGE(HelpBuiltinBase);
+    REGISTER_MESSAGE(HelpCachingClear);
     REGISTER_MESSAGE(HelpContactCommand);
     REGISTER_MESSAGE(HelpCreateCommand);
     REGISTER_MESSAGE(HelpDependInfoCommand);
@@ -823,6 +847,7 @@ namespace vcpkg
     REGISTER_MESSAGE(IncrementedUtf8Decoder);
     REGISTER_MESSAGE(InfoSetEnvVar);
     REGISTER_MESSAGE(InitRegistryFailedNoRepo);
+    REGISTER_MESSAGE(InstallCopiedFile);
     REGISTER_MESSAGE(InstalledBy);
     REGISTER_MESSAGE(InstalledPackages);
     REGISTER_MESSAGE(InstalledRequestedPackages);
@@ -832,6 +857,7 @@ namespace vcpkg
     REGISTER_MESSAGE(InstallingPackage);
     REGISTER_MESSAGE(InstallPackageInstruction);
     REGISTER_MESSAGE(InstallRootDir);
+    REGISTER_MESSAGE(InstallSkippedUpToDateFile);
     REGISTER_MESSAGE(InstallWithSystemManager);
     REGISTER_MESSAGE(InstallWithSystemManagerMono);
     REGISTER_MESSAGE(InstallWithSystemManagerPkg);
@@ -984,7 +1010,6 @@ namespace vcpkg
     REGISTER_MESSAGE(PortsRemoved);
     REGISTER_MESSAGE(PortsUpdated);
     REGISTER_MESSAGE(PortSupportsField);
-    REGISTER_MESSAGE(PortTypeConflict);
     REGISTER_MESSAGE(PreviousIntegrationFileRemains);
     REGISTER_MESSAGE(ProgramReturnedNonzeroExitCode);
     REGISTER_MESSAGE(ProvideExportType);

@@ -4,7 +4,7 @@ Param(
     [String]$DiffFile
 )
 
-Start-Process -FilePath 'git' -ArgumentList 'diff' `
+Start-Process -FilePath 'git' -ArgumentList 'diff',':!ce' `
     -NoNewWindow -Wait `
     -RedirectStandardOutput $DiffFile
 if (0 -ne (Get-Item -LiteralPath $DiffFile).Length)

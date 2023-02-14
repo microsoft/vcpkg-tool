@@ -3,7 +3,6 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.applocal.h>
@@ -84,7 +83,7 @@ namespace
 
         void resolve(const Path& binary)
         {
-            vcpkg::printf("vcpkg applocal processing: %s\n", binary);
+            msg::println(msgApplocalProcessing, msg::path = binary);
             auto dll_file = m_fs.open_for_read(binary, VCPKG_LINE_INFO);
             const auto dll_metadata = vcpkg::try_read_dll_metadata(dll_file).value_or_exit(VCPKG_LINE_INFO);
             const auto imported_names =
@@ -467,16 +466,15 @@ namespace
             const bool did_deploy = m_fs.copy_file(source, target, CopyOptions::update_existing, ec);
             if (did_deploy)
             {
-                vcpkg::printf("%s -> %s done\n", source, target);
+                msg::println(msgInstallCopiedFile, msg::path_source = source, msg::path_destination = target);
             }
             else if (!ec)
             {
-                vcpkg::printf("%s -> %s skipped, up to date\n", source, target);
+                msg::println(msgInstallSkippedUpToDateFile, msg::path_source = source, msg::path_destination = target);
             }
             else if (ec == std::errc::no_such_file_or_directory)
             {
                 Debug::println("Attempted to deploy ", source, ", but it didn't exist");
-
                 return false;
             }
             else

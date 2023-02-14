@@ -83,7 +83,7 @@ namespace vcpkg
 
     struct BinaryConfigParserState
     {
-        bool interactive = false;
+        bool nuget_interactive = false;
         std::set<StringLiteral> binary_cache_providers;
 
         std::string nugettimeout = "100";
@@ -154,6 +154,6 @@ namespace vcpkg
 
     std::string generate_nuget_packages_config(const ActionPlan& action);
 
-    void help_topic_asset_caching(const VcpkgPaths& paths);
-    void help_topic_binary_caching(const VcpkgPaths& paths);
+    LocalizedString format_help_topic_asset_caching();
+    LocalizedString format_help_topic_binary_caching();
 }

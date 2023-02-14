@@ -715,6 +715,9 @@
       <Item ItemId=";BaselineConflict" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Specifying vcpkg-configuration.default-registry in a manifest file conflicts with built-in baseline.]A;Please remove one of these conflicting settings.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[在資訊清單檔案中指定 vcpkg-configuration.default-registry 與內建基準衝突。]A;請移除其中一個衝突設定。]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6864,10 +6867,13 @@
       </Item>
       <Item ItemId=";PortBugRemoveEmptyDirs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[vcpkg_fixup_pkgconfig()]A;file(REMOVE_RECURSE empty directories left by the above renames)]]></Val>
+          <Val><![CDATA[file(REMOVE_RECURSE empty directories left by the above renames)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg_fixup_pkgconfig()]A;檔案(REMOVE_RECURSE上面重新命名留下的空白目錄)]]></Val>
+            <Val><![CDATA[file(REMOVE_RECURSE 以上重新命名留下的空白目錄)]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[vcpkg_fixup_pkgconfig()]A;file(REMOVE_RECURSE empty directories left by the above renames)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6916,15 +6922,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[(supports: "{value}")]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortTypeConflict" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The port type of {spec} differs between the installed and available portfile.]A;Please manually remove {spec} and re-run this command.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{spec} 的連接埠類型在已安裝和可用的設定檔之間不同。]A;請手動移除 {spec}，然後重新執行此命令。]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
