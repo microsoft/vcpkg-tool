@@ -229,6 +229,7 @@
   "DateTableHeader": "Дата",
   "DefaultBrowserLaunched": "Браузер по умолчанию запущен на {url}.",
   "DefaultFlag": "По умолчанию включено --{option}.",
+  "DefaultTriplet": "Starting with the September 2023 release, the default triplet for vcpkg libraries will change from x86-windows to the detected host triplet ({triplet}). To resolve this message, add --triplet x86-windows to keep the same behavior.",
   "DeleteVcpkgConfigFromManifest": "-- Или удалите \"vcpkg-configuration\" из {path} файла манифеста.",
   "DeprecatedPrefabDebugOption": "Параметр --prefab-debug упразднен.",
   "DetectCompilerHash": "Обнаружение хэша компилятора для триплета {triplet}...",

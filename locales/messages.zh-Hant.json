@@ -229,6 +229,7 @@
   "DateTableHeader": "日期",
   "DefaultBrowserLaunched": "預設瀏覽器已啟動至 {url}。",
   "DefaultFlag": "預設為 --{option} 開啟。",
+  "DefaultTriplet": "Starting with the September 2023 release, the default triplet for vcpkg libraries will change from x86-windows to the detected host triplet ({triplet}). To resolve this message, add --triplet x86-windows to keep the same behavior.",
   "DeleteVcpkgConfigFromManifest": "-- 或從資訊清單檔案 {path} 移除 \"vcpkg-configuration\"。",
   "DeprecatedPrefabDebugOption": "--prefab-debug 現已取代。",
   "DetectCompilerHash": "正在偵測三重 {triplet} 的編譯器雜湊...",

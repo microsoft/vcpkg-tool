@@ -229,6 +229,7 @@
   "DateTableHeader": "Data",
   "DefaultBrowserLaunched": "Przeglądarka domyślna została uruchomiona na {url}.",
   "DefaultFlag": "Domyślnie opcja --{option} jest włączona.",
+  "DefaultTriplet": "Starting with the September 2023 release, the default triplet for vcpkg libraries will change from x86-windows to the detected host triplet ({triplet}). To resolve this message, add --triplet x86-windows to keep the same behavior.",
   "DeleteVcpkgConfigFromManifest": "-- Lub usuń \"vcpkg-configuration\" z pliku manifestu {path}.",
   "DeprecatedPrefabDebugOption": "Opcja --prefab-debug jest teraz przestarzała.",
   "DetectCompilerHash": "Trwa wykrywanie skrótu kompilatora dla potrójnego elementu {triplet}...",

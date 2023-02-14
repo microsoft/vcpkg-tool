@@ -229,6 +229,7 @@
   "DateTableHeader": "日付",
   "DefaultBrowserLaunched": "既定のブラウザーで {url} が開かれました。",
   "DefaultFlag": "既定で --{option} をオンにしています。",
+  "DefaultTriplet": "Starting with the September 2023 release, the default triplet for vcpkg libraries will change from x86-windows to the detected host triplet ({triplet}). To resolve this message, add --triplet x86-windows to keep the same behavior.",
   "DeleteVcpkgConfigFromManifest": "-- または、マニフェスト ファイル {path} から \"vcpkg-configuration\" を削除します。",
   "DeprecatedPrefabDebugOption": "--prefab-debug は現在非推奨です。",
   "DetectCompilerHash": "トリプレット「{triplet}」のコンパイラ ハッシュを検出しています...",
