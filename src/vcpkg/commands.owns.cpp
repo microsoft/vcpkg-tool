@@ -1,5 +1,3 @@
-#include <vcpkg/base/system.print.h>
-
 #include <vcpkg/commands.owns.h>
 #include <vcpkg/help.h>
 #include <vcpkg/vcpkgcmdarguments.h>

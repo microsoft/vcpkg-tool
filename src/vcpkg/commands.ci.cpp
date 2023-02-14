@@ -6,7 +6,6 @@
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 #include <vcpkg/base/xmlserializer.h>
 
@@ -335,6 +334,8 @@ namespace vcpkg::Commands::CI
     {
         msg::println_warning(msgInternalCICommand);
 
+        print_default_triplet_warning(args, {});
+
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         const auto& settings = options.settings;
 
@@ -433,13 +434,13 @@ namespace vcpkg::Commands::CI
             for (size_t i = 0; i < action_plan.install_actions.size(); ++i)
             {
                 auto&& action = action_plan.install_actions[i];
-                msg += Strings::format("%40s: %8s: %s\n",
-                                       action.spec,
-                                       split_specs->action_state_string[i],
-                                       action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
+                msg += fmt::format("{:40}: {:8}: {}\n",
+                                   action.spec,
+                                   split_specs->action_state_string[i],
+                                   action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
             }
-            vcpkg::print2(msg);
 
+            msg::write_unlocalized_text_to_stdout(Color::none, msg);
             auto it_output_hashes = settings.find(OPTION_OUTPUT_HASHES);
             if (it_output_hashes != settings.end())
             {

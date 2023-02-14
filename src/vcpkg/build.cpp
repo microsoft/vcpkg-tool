@@ -7,7 +7,6 @@
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
@@ -188,6 +187,7 @@ namespace vcpkg::Build
         BinaryCache binary_cache{args, paths};
         const FullPackageSpec spec = check_and_get_full_package_spec(
             std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+        print_default_triplet_warning(args, {&args.command_arguments[0], 1});
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();

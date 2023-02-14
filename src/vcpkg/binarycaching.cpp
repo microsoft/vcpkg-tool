@@ -6,7 +6,6 @@
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/xmlserializer.h>
 
@@ -553,14 +552,14 @@ namespace
                             std::vector<Path>&& read_configs,
                             std::vector<Path>&& write_configs,
                             std::string&& timeout,
-                            bool interactive)
+                            bool nuget_interactive)
             : paths(paths)
             , m_read_sources(std::move(read_sources))
             , m_write_sources(std::move(write_sources))
             , m_read_configs(std::move(read_configs))
             , m_write_configs(std::move(write_configs))
             , m_timeout(std::move(timeout))
-            , m_interactive(interactive)
+            , m_interactive(nuget_interactive)
             , m_use_nuget_cache(false)
         {
             const std::string use_nuget_cache = get_environment_variable("VCPKG_USE_NUGET_CACHE").value_or("");
@@ -1547,7 +1546,7 @@ namespace vcpkg
     {
         binary_cache_providers.clear();
         binary_cache_providers.insert("clear");
-        interactive = false;
+        nuget_interactive = false;
         nugettimeout = "100";
         archives_to_read.clear();
         archives_to_write.clear();
@@ -1674,7 +1673,7 @@ namespace
                         segments[1].first);
                 }
 
-                state->interactive = true;
+                state->nuget_interactive = true;
             }
             else if (segments[0].second == "nugetconfig")
             {
@@ -2305,7 +2304,7 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
                                                                   std::move(s.configs_to_read),
                                                                   std::move(s.configs_to_write),
                                                                   std::move(s.nugettimeout),
-                                                                  s.interactive));
+                                                                  s.nuget_interactive));
     }
 
     return providers;
@@ -2440,127 +2439,69 @@ std::string vcpkg::generate_nuspec(const Path& package_dir,
     return std::move(xml.buf);
 }
 
-void vcpkg::help_topic_asset_caching(const VcpkgPaths&)
+LocalizedString vcpkg::format_help_topic_asset_caching()
 {
-    HelpTableFormatter tbl;
-    tbl.text("**Experimental feature: this may change or be removed at any time**");
-    tbl.blank();
-    tbl.text("Vcpkg can use mirrors to cache downloaded assets, ensuring continued operation even if the original "
-             "source changes or disappears.");
-    tbl.blank();
-    tbl.blank();
-    tbl.text(Strings::concat("Asset caching can be configured either by setting the environment variable ",
-                             VcpkgCmdArguments::ASSET_SOURCES_ENV,
-                             " to a semicolon-delimited list of source strings or by passing a sequence of `--",
-                             VcpkgCmdArguments::ASSET_SOURCES_ARG,
-                             "=<source>` command line options. Command line sources are interpreted after environment "
-                             "sources. Commas, semicolons, and backticks can be escaped using backtick (`)."));
-    tbl.blank();
-    tbl.blank();
-    tbl.header("Valid source strings");
-    tbl.format("clear", "Removes all previous sources");
-    tbl.format(
-        "x-azurl,<url>[,<sas>[,<rw>]]",
-        "Adds an Azure Blob Storage source, optionally using Shared Access Signature validation. URL should include "
-        "the container path and be terminated with a trailing `/`. SAS, if defined, should be prefixed with a `?`. "
-        "Non-Azure servers will also work if they respond to GET and PUT requests of the form: `<url><sha512><sas>`.");
-    tbl.format("x-script,<template>",
-               "Dispatches to an external tool to fetch the asset. Within the template, \"{url}\" will be replaced by "
-               "the original url, \"{sha512}\" will be replaced by the SHA512 value, and \"{dst}\" will be replaced by "
-               "the output path to save to. These substitutions will all be properly shell escaped, so an example "
-               "template would be: \"curl -L {url} --output {dst}\". \"{{\" will be replaced by \"}\" and \"}}\" will "
-               "be replaced by \"}\" to avoid expansion. Note that this will be executed inside the build environment, "
-               "so the PATH and other environment variables will be modified by the triplet.");
-    tbl.format("x-block-origin",
-               "Disables fallback to the original URLs in case the mirror does not have the file available.");
-    tbl.blank();
-    tbl.text("The `<rw>` optional parameter for certain strings controls how they will be accessed. It can be "
-             "specified as `read`, `write`, or `readwrite` and defaults to `read`.");
-    tbl.blank();
-    print2(tbl.m_str);
-    msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::assetcaching_url);
+    HelpTableFormatter table;
+    table.format("clear", msg::format(msgHelpCachingClear));
+    table.format("x-azurl,<url>[,<sas>[,<rw>]]", msg::format(msgHelpAssetCachingAzUrl));
+    table.format("x-script,<template>", msg::format(msgHelpAssetCachingScript));
+    table.format("x-block-origin", msg::format(msgHelpAssetCachingBlockOrigin));
+    return msg::format(msgHelpAssetCaching)
+        .append_raw('\n')
+        .append_raw(table.m_str)
+        .append_raw('\n')
+        .append(msgExtendedDocumentationAtUrl, msg::url = docs::assetcaching_url);
 }
 
-void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
+LocalizedString vcpkg::format_help_topic_binary_caching()
 {
-    HelpTableFormatter tbl;
-    tbl.text("Vcpkg can cache compiled packages to accelerate restoration on a single machine or across the network."
-             " By default, vcpkg will save builds to a local machine cache. This can be disabled by passing "
-             "`--binarysource=clear` as the last option on the command line.");
-    tbl.blank();
-    tbl.blank();
-    tbl.text(
-        "Binary caching can be further configured by either passing `--binarysource=<source>` options "
-        "to every command line or setting the `VCPKG_BINARY_SOURCES` environment variable to a set of sources (Ex: "
-        "\"<source>;<source>;...\"). Command line sources are interpreted after environment sources.");
-    tbl.blank();
-    tbl.blank();
-    tbl.header("Valid source strings");
-    tbl.format("clear", "Removes all previous sources");
-    tbl.format("default[,<rw>]", "Adds the default file-based location.");
-    tbl.format("files,<path>[,<rw>]", "Adds a custom file-based location.");
-    tbl.format("http,<url_template>[,<rw>[,<header>]]",
-               "Adds a custom http-based location. GET, HEAD and PUT request are done to download, check and upload "
-               "the binaries. You can use the variables 'name', 'version', 'sha' and 'triplet'. An example url would "
-               "be 'https://cache.example.com/{triplet}/{name}/{version}/{sha}'. Via the header field you can set a "
-               "custom header to pass an authorization token.");
-    tbl.format("nuget,<uri>[,<rw>]",
-               "Adds a NuGet-based source; equivalent to the `-Source` parameter of the NuGet CLI.");
-    tbl.format("nugetconfig,<path>[,<rw>]",
-               "Adds a NuGet-config-file-based source; equivalent to the `-Config` parameter of the NuGet CLI. This "
-               "config should specify `defaultPushSource` for uploads.");
-    tbl.format("nugettimeout,<seconds>",
-               "Specifies a nugettimeout for NuGet network operations; equivalent to the `-Timeout` parameter of the "
-               "NuGet CLI.");
-    tbl.format("x-azblob,<url>,<sas>[,<rw>]",
-               "**Experimental: will change or be removed without warning** Adds an Azure Blob Storage source. Uses "
-               "Shared Access Signature validation. URL should include the container path.");
-    tbl.format("x-gcs,<prefix>[,<rw>]",
-               "**Experimental: will change or be removed without warning** Adds a Google Cloud Storage (GCS) source. "
-               "Uses the gsutil CLI for uploads and downloads. Prefix should include the gs:// scheme and be suffixed "
-               "with a `/`.");
-    tbl.format("x-aws,<prefix>[,<rw>]",
-               "**Experimental: will change or be removed without warning** Adds an AWS S3 source. "
-               "Uses the aws CLI for uploads and downloads. Prefix should include s3:// scheme and be suffixed "
-               "with a `/`.");
-    tbl.format(
-        "x-aws-config,<parameter>",
-        "**Experimental: will change or be removed without warning** Adds an AWS S3 source. "
-        "Adds an AWS configuration; currently supports only 'no-sign-request' parameter that is an equivalent to the "
-        "'--no-sign-request parameter of the AWS cli.");
-    tbl.format("x-cos,<prefix>[,<rw>]",
-               "**Experimental: will change or be removed without warning** Adds an COS source. "
-               "Uses the cos CLI for uploads and downloads. Prefix should include cos:// scheme and be suffixed "
-               "with a `/`.");
-    tbl.format("interactive", "Enables interactive credential management for some source types");
-    tbl.blank();
-    tbl.text("The `<rw>` optional parameter for certain strings controls whether they will be consulted for "
-             "downloading binaries and whether on-demand builds will be uploaded to that remote. It can be specified "
-             "as 'read', 'write', or 'readwrite'.");
-    tbl.blank();
-    tbl.text("The `nuget` and `nugetconfig` source providers additionally respect certain environment variables while "
-             "generating nuget packages. The `metadata.repository` field will be optionally generated like:\n"
-             "\n"
-             "    <repository type=\"git\" url=\"$VCPKG_NUGET_REPOSITORY\"/>\n"
-             "or\n"
-             "    <repository type=\"git\"\n"
-             "                url=\"${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git\"\n"
-             "                branch=\"${GITHUB_REF}\"\n"
-             "                commit=\"${GITHUB_SHA}\"/>\n"
-             "\n"
-             "if the appropriate environment variables are defined and non-empty.\n");
-    tbl.blank();
-    tbl.text("NuGet's cache is not used by default. To use it for every nuget-based source, set the environment "
-             "variable `VCPKG_USE_NUGET_CACHE` to `true` (case-insensitive) or `1`.\n");
-    tbl.blank();
-    print2(tbl.m_str);
+    HelpTableFormatter table;
+
+    // General sources:
+    table.format("clear", msg::format(msgHelpCachingClear));
     const auto& maybe_cachepath = default_cache_path();
     if (auto p = maybe_cachepath.get())
     {
-        msg::println(msgDefaultPathToBinaries, msg::path = *p);
+        table.format("default[,<rw>]", msg::format(msgHelpBinaryCachingDefaults, msg::path = *p));
+    }
+    else
+    {
+        table.format("default[,<rw>]", msg::format(msgHelpBinaryCachingDefaultsError));
     }
 
-    msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::binarycaching_url);
+    table.format("files,<path>[,<rw>]", msg::format(msgHelpBinaryCachingFiles));
+    table.format("http,<url_template>[,<rw>[,<header>]]", msg::format(msgHelpBinaryCachingHttp));
+    table.format("x-azblob,<url>,<sas>[,<rw>]", msg::format(msgHelpBinaryCachingAzBlob));
+    table.format("x-gcs,<prefix>[,<rw>]", msg::format(msgHelpBinaryCachingGcs));
+    table.format("x-cos,<prefix>[,<rw>]", msg::format(msgHelpBinaryCachingCos));
+    table.blank();
+
+    // NuGet sources:
+    table.header(msg::format(msgHelpBinaryCachingNuGetHeader));
+    table.format("nuget,<uri>[,<rw>]", msg::format(msgHelpBinaryCachingNuGet));
+    table.format("nugetconfig,<path>[,<rw>]", msg::format(msgHelpBinaryCachingNuGetConfig));
+    table.format("nugettimeout,<seconds>", msg::format(msgHelpBinaryCachingNuGetTimeout));
+    table.format("interactive", msg::format(msgHelpBinaryCachingNuGetInteractive));
+    table.text(msg::format(msgHelpBinaryCachingNuGetFooter), 2);
+    table.text("\n<repository type=\"git\" url=\"${VCPKG_NUGET_REPOSITORY}\"/>\n"
+               "<repository type=\"git\"\n"
+               "            url=\"${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git\"\n"
+               "            branch=\"${GITHUB_REF}\"\n"
+               "            commit=\"${GITHUB_SHA}\"/>",
+               4);
+    table.blank();
+
+    // AWS sources:
+    table.blank();
+    table.header(msg::format(msgHelpBinaryCachingAwsHeader));
+    table.format("x-aws,<prefix>[,<rw>]", msg::format(msgHelpBinaryCachingAws));
+    table.format("x-aws-config,<parameter>", msg::format(msgHelpBinaryCachingAwsConfig));
+
+    return msg::format(msgHelpBinaryCaching)
+        .append_raw('\n')
+        .append_raw(table.m_str)
+        .append_raw('\n')
+        .append(msgExtendedDocumentationAtUrl, msg::url = docs::binarycaching_url);
 }
 
 std::string vcpkg::generate_nuget_packages_config(const ActionPlan& action)

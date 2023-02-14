@@ -1,6 +1,5 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/cmakevars.h>
@@ -305,6 +304,7 @@ namespace vcpkg::Commands::DependInfo
             return check_and_get_full_package_spec(
                 std::string{arg}, default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
+        print_default_triplet_warning(args, args.command_arguments);
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
@@ -318,10 +318,7 @@ namespace vcpkg::Commands::DependInfo
         StatusParagraphs status_db;
         auto action_plan = create_feature_install_plan(
             provider, var_provider, specs, status_db, {host_triplet, UnsupportedPortAction::Warn});
-        for (const auto& warning : action_plan.warnings)
-        {
-            msg::write_unlocalized_text_to_stdout(Color::warning, warning + '\n');
-        }
+        action_plan.print_unsupported_warnings();
 
         if (!action_plan.remove_actions.empty())
         {
