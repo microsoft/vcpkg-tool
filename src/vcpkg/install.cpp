@@ -2,7 +2,6 @@
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binarycaching.h>
@@ -75,7 +74,7 @@ namespace vcpkg
             const auto status = fs.symlink_status(file, ec);
             if (ec)
             {
-                print2(Color::error, "failed: ", file, ": ", ec.message(), "\n");
+                msg::println_warning(format_filesystem_call_error(ec, "symlink_status", {file}));
                 continue;
             }
 
@@ -989,10 +988,10 @@ namespace vcpkg
             if (failure)
             {
                 msg::println(msgUsingManifestAt, msg::path = p->path);
-                print2("\n");
                 print_usage(MANIFEST_COMMAND_STRUCTURE);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
+            print_default_triplet_warning(args, {});
         }
         else
         {
@@ -1014,7 +1013,6 @@ namespace vcpkg
             }
             if (failure)
             {
-                print2("\n");
                 print_usage(COMMAND_STRUCTURE);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
@@ -1156,10 +1154,7 @@ namespace vcpkg
                                                               unsupported_port_action)
                                     .value_or_exit(VCPKG_LINE_INFO);
 
-            for (const auto& warning : install_plan.warnings)
-            {
-                print2(Color::warning, warning, '\n');
-            }
+            install_plan.print_unsupported_warnings();
             for (InstallPlanAction& action : install_plan.install_actions)
             {
                 action.build_options = install_plan_options;
@@ -1194,6 +1189,7 @@ namespace vcpkg
             return check_and_get_full_package_spec(
                 std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
+        print_default_triplet_warning(args, args.command_arguments);
 
         // create the plan
         msg::println(msgComputingInstallPlan);
@@ -1203,10 +1199,7 @@ namespace vcpkg
         auto action_plan = create_feature_install_plan(
             provider, var_provider, specs, status_db, {host_triplet, unsupported_port_action});
 
-        for (const auto& warning : action_plan.warnings)
-        {
-            msg::write_unlocalized_text_to_stdout(Color::warning, warning + '\n');
-        }
+        action_plan.print_unsupported_warnings();
         for (auto&& action : action_plan.install_actions)
         {
             action.build_options = install_plan_options;

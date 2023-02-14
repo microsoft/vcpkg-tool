@@ -6864,10 +6864,13 @@
       </Item>
       <Item ItemId=";PortBugRemoveEmptyDirs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[vcpkg_fixup_pkgconfig()]A;file(REMOVE_RECURSE empty directories left by the above renames)]]></Val>
+          <Val><![CDATA[file(REMOVE_RECURSE empty directories left by the above renames)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg_fixup_pkgconfig()]A;file(REMOVE_RECURSE leere Verzeichnisse, die von den oben genannten Umbenennungen übrig geblieben sind)]]></Val>
+            <Val><![CDATA[file(REMOVE_RECURSE leere Verzeichnisse, die von den oben genannten Umbenennungen übrig bleiben)]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[vcpkg_fixup_pkgconfig()]A;file(REMOVE_RECURSE empty directories left by the above renames)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6916,15 +6919,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[(supports: "{value}")]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortTypeConflict" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The port type of {spec} differs between the installed and available portfile.]A;Please manually remove {spec} and re-run this command.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Der Porttyp von {spec} unterscheidet sich zwischen der installierten und der verfügbaren Portdatei.]A;Entfernen Sie {spec} manuell, und führen Sie diesen Befehl erneut aus.]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>

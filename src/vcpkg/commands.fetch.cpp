@@ -1,5 +1,3 @@
-#include <vcpkg/base/system.print.h>
-
 #include <vcpkg/commands.fetch.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
