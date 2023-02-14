@@ -1,5 +1,4 @@
 #include <vcpkg/base/jsonreader.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/configuration.h>
 #include <vcpkg/documentation.h>

@@ -2,7 +2,6 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.civerifyversions.h>
 #include <vcpkg/paragraphs.h>
