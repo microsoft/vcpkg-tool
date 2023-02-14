@@ -603,7 +603,7 @@
   "_HelpBinaryCaching.comment": "The names in angle brackets like <rw> or in curly braces like {{sha512}} are 'code' and should not be localized. The matching values \"read\" \"write\" and \"readwrite\" are also fixed.",
   "HelpBinaryCachingAws": "**Experimental: will change or be removed without warning**\nAdds an AWS S3 source. Uses the aws CLI for uploads and downloads. Prefix should include s3:// scheme and be suffixed with a \"/\".",
   "_HelpBinaryCachingAws.comment": "Printed as the 'definition' for 'x-aws,<prefix>[,<rw>]', so '<prefix>' must be preserved verbatim.",
-  "HelpBinaryCachingAwsConfig": "**Experimental: will change or be removed without warning**\nAdds an AWS S3 source. Adds an AWS configuration; currently supports only 'no-sign-request' parameter that is an equivalent to the --no-sign-request parameter of the AWS CLI.",
+  "HelpBinaryCachingAwsConfig": "**Experimental: will change or be removed without warning**\nAdds an AWS S3 source. Adds an AWS configuration; currently supports 'no-sign-request' and 'endpoint-url' parameters which are equivalent to the --no-sign-request and --endpoint-url parameters of the AWS CLI. Currently only one parameter can be specified per x-aws-config; to specify multiple parameters, use multiple x-aws-config sources.",
   "_HelpBinaryCachingAwsConfig.comment": "Printed as the 'definition' for 'x-aws-config,<parameter>'.",
   "HelpBinaryCachingAwsHeader": "Azure Web Services sources",
   "HelpBinaryCachingAzBlob": "**Experimental: will change or be removed without warning**\nAdds an Azure Blob Storage source. Uses Shared Access Signature validation. <url> should include the container path. <sas> must be be prefixed with a \"?\".",
