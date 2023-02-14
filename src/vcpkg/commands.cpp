@@ -38,6 +38,7 @@
 #include <vcpkg/commands.regenerate.h>
 #include <vcpkg/commands.search.h>
 #include <vcpkg/commands.setinstalled.h>
+#include <vcpkg/commands.test-features.h>
 #include <vcpkg/commands.update-baseline.h>
 #include <vcpkg/commands.upgrade.h>
 #include <vcpkg/commands.upload-metrics.h>
@@ -162,6 +163,7 @@ namespace vcpkg::Commands
         static const InstallCommand install{};
         static const SetInstalled::SetInstalledCommand set_installed{};
         static const CI::CICommand ci{};
+        static const TestFeatures::TestFeaturesCommand test_features{};
         static const Remove::RemoveCommand remove{};
         static const Upgrade::UpgradeCommand upgrade{};
         static const BuildCommand build{};
@@ -176,6 +178,7 @@ namespace vcpkg::Commands
             {"install", &install},
             {"x-set-installed", &set_installed},
             {"ci", &ci},
+            {"test-features", &test_features},
             {"remove", &remove},
             {"upgrade", &upgrade},
             {"build", &build},
