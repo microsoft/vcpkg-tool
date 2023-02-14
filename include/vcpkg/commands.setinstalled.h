@@ -8,6 +8,14 @@
 namespace vcpkg::Commands::SetInstalled
 {
     extern const CommandStructure COMMAND_STRUCTURE;
+
+    /**
+     * @brief adjust_action_plan_to_status_db creates an action plan that installs only the requested ports
+     * @param action_plan An action plan that was created with an empty status db
+     * @param status_db The status db of the installed folder
+     */
+    void adjust_action_plan_to_status_db(ActionPlan& action_plan, const StatusParagraphs& status_db);
+
     void perform_and_exit_ex(const VcpkgCmdArguments& args,
                              const VcpkgPaths& paths,
                              const PathsPortFileProvider& provider,

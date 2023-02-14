@@ -14,6 +14,7 @@
 #include <vcpkg/ci-baseline.h>
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.ci.h>
+#include <vcpkg/commands.setinstalled.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/globalstate.h>
 #include <vcpkg/help.h>
@@ -434,7 +435,7 @@ namespace vcpkg::Commands::CI
             for (size_t i = 0; i < action_plan.install_actions.size(); ++i)
             {
                 auto&& action = action_plan.install_actions[i];
-                msg += fmt::format("{:40}: {:8}: {}\n",
+                msg += fmt::format("{:>40}: {:8}: {}\n",
                                    action.spec,
                                    split_specs->action_state_string[i],
                                    action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
@@ -497,6 +498,7 @@ namespace vcpkg::Commands::CI
         else
         {
             StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+            SetInstalled::adjust_action_plan_to_status_db(action_plan, status_db);
             auto summary = Install::perform(
                 args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder, var_provider);
 

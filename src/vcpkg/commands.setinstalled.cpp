@@ -34,39 +34,14 @@ namespace vcpkg::Commands::SetInstalled
         nullptr,
     };
 
-    void perform_and_exit_ex(const VcpkgCmdArguments& args,
-                             const VcpkgPaths& paths,
-                             const PathsPortFileProvider& provider,
-                             BinaryCache& binary_cache,
-                             const CMakeVars::CMakeVarProvider& cmake_vars,
-                             ActionPlan action_plan,
-                             DryRun dry_run,
-                             const Optional<Path>& maybe_pkgsconfig,
-                             Triplet host_triplet,
-                             const KeepGoing keep_going,
-                             const bool only_downloads,
-                             const PrintUsage print_cmake_usage)
+    void adjust_action_plan_to_status_db(ActionPlan& action_plan, const StatusParagraphs& status_db)
     {
-        auto& fs = paths.get_filesystem();
-
-        cmake_vars.load_tag_vars(action_plan, provider, host_triplet);
-        compute_all_abis(paths, action_plan, cmake_vars, {});
-
         std::set<std::string> all_abis;
-
-        std::vector<PackageSpec> user_requested_specs;
         for (const auto& action : action_plan.install_actions)
         {
             all_abis.insert(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
-            if (action.request_type == RequestType::USER_REQUESTED)
-            {
-                // save for reporting usage later
-                user_requested_specs.push_back(action.spec);
-            }
         }
 
-        // currently (or once) installed specifications
-        auto status_db = database_load_check(fs, paths.installed());
         std::vector<PackageSpec> specs_to_remove;
         std::set<PackageSpec> specs_installed;
         for (auto&& status_pgh : status_db)
@@ -97,6 +72,39 @@ namespace vcpkg::Commands::SetInstalled
         Util::erase_remove_if(action_plan.install_actions, [&](const InstallPlanAction& ipa) {
             return Util::Sets::contains(specs_installed, ipa.spec);
         });
+    }
+
+    void perform_and_exit_ex(const VcpkgCmdArguments& args,
+                             const VcpkgPaths& paths,
+                             const PathsPortFileProvider& provider,
+                             BinaryCache& binary_cache,
+                             const CMakeVars::CMakeVarProvider& cmake_vars,
+                             ActionPlan action_plan,
+                             DryRun dry_run,
+                             const Optional<Path>& maybe_pkgsconfig,
+                             Triplet host_triplet,
+                             const KeepGoing keep_going,
+                             const bool only_downloads,
+                             const PrintUsage print_cmake_usage)
+    {
+        auto& fs = paths.get_filesystem();
+
+        cmake_vars.load_tag_vars(action_plan, provider, host_triplet);
+        compute_all_abis(paths, action_plan, cmake_vars, {});
+
+        std::vector<PackageSpec> user_requested_specs;
+        for (const auto& action : action_plan.install_actions)
+        {
+            if (action.request_type == RequestType::USER_REQUESTED)
+            {
+                // save for reporting usage later
+                user_requested_specs.push_back(action.spec);
+            }
+        }
+
+        // currently (or once) installed specifications
+        auto status_db = database_load_check(fs, paths.installed());
+        adjust_action_plan_to_status_db(action_plan, status_db);
 
         print_plan(action_plan, true, paths.builtin_ports_directory());
 
