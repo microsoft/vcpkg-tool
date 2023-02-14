@@ -1009,6 +1009,12 @@ namespace vcpkg
     DECLARE_MESSAGE(DateTableHeader, (), "", "Date");
     DECLARE_MESSAGE(DefaultBrowserLaunched, (msg::url), "", "Default browser launched to {url}.");
     DECLARE_MESSAGE(DefaultFlag, (msg::option), "", "Defaulting to --{option} being on.");
+    DECLARE_MESSAGE(DefaultTriplet,
+                    (msg::triplet),
+                    "",
+                    "Starting with the September 2023 release, the default triplet for vcpkg libraries will change "
+                    "from x86-windows to the detected host triplet ({triplet}). To resolve this message, add --triplet "
+                    "x86-windows to keep the same behavior.");
     DECLARE_MESSAGE(DeleteVcpkgConfigFromManifest,
                     (msg::path),
                     "",

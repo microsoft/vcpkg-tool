@@ -991,6 +991,7 @@ namespace vcpkg
                 print_usage(MANIFEST_COMMAND_STRUCTURE);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
+            print_default_triplet_warning(args, {});
         }
         else
         {
@@ -1188,6 +1189,7 @@ namespace vcpkg
             return check_and_get_full_package_spec(
                 std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
+        print_default_triplet_warning(args, args.command_arguments);
 
         // create the plan
         msg::println(msgComputingInstallPlan);

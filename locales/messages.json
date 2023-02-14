@@ -324,6 +324,8 @@
   "_DefaultBrowserLaunched.comment": "An example of {url} is https://github.com/microsoft/vcpkg.",
   "DefaultFlag": "Defaulting to --{option} being on.",
   "_DefaultFlag.comment": "An example of {option} is editable.",
+  "DefaultTriplet": "Starting with the September 2023 release, the default triplet for vcpkg libraries will change from x86-windows to the detected host triplet ({triplet}). To resolve this message, add --triplet x86-windows to keep the same behavior.",
+  "_DefaultTriplet.comment": "An example of {triplet} is x64-windows.",
   "DeleteVcpkgConfigFromManifest": "-- Or remove \"vcpkg-configuration\" from the manifest file {path}.",
   "_DeleteVcpkgConfigFromManifest.comment": "An example of {path} is /foo/bar.",
   "DeprecatedPrefabDebugOption": "--prefab-debug is now deprecated.",
