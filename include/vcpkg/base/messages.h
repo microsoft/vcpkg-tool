@@ -1168,7 +1168,7 @@ namespace vcpkg
                     "{value} is a commit sha.",
                     "while fetching baseline `\"{value}\"` from repo {package_name}:");
     DECLARE_MESSAGE(ErrorWhileParsing, (msg::path), "", "Errors occurred while parsing {path}.");
-    DECLARE_MESSAGE(ErrorWhileWriting, (msg::path), "", "Error occured while writing {path}");
+    DECLARE_MESSAGE(ErrorWhileWriting, (msg::path), "", "Error occurred while writing {path}");
     DECLARE_MESSAGE(ExceededRecursionDepth, (), "", "Recursion depth exceeded.");
     DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
     DECLARE_MESSAGE(ExcludedPackages, (), "", "The following packages are excluded:");
@@ -1617,7 +1617,7 @@ namespace vcpkg
     DECLARE_MESSAGE(HelpRemoveOutdatedCommand, (), "", "Uninstall all out-of-date packages.");
     DECLARE_MESSAGE(HelpResponseFileCommand, (), "", "Specify a response file to provide additional parameters.");
     DECLARE_MESSAGE(HelpSearchCommand, (), "", "Search for packages available to be built.");
-    DECLARE_MESSAGE(HelpTextOptFullDesc, (), "", "Do not truncate long text");
+    DECLARE_MESSAGE(HelpTextOptFullDesc, (), "", "Do not truncate long text.");
     DECLARE_MESSAGE(HelpTopicCommand, (), "", "Display help for a specific topic.");
     DECLARE_MESSAGE(HelpTopicsCommand, (), "", "Display the list of help topics.");
     DECLARE_MESSAGE(HelpTxtOptAllowUnsupportedPort,
@@ -1627,10 +1627,10 @@ namespace vcpkg
     DECLARE_MESSAGE(HelpTxtOptCleanAfterBuild,
                     (),
                     "",
-                    "Clean buildtrees, packages and downloads after building each package");
-    DECLARE_MESSAGE(HelpTxtOptCleanBuildTreesAfterBuild, (), "", "Clean buildtrees after building each package");
-    DECLARE_MESSAGE(HelpTxtOptCleanDownloadsAfterBuild, (), "", "Clean downloads after building each package");
-    DECLARE_MESSAGE(HelpTxtOptCleanPkgAfterBuild, (), "", "Clean packages after building each package");
+                    "Clean buildtrees, packages and downloads after building each package.");
+    DECLARE_MESSAGE(HelpTxtOptCleanBuildTreesAfterBuild, (), "", "Clean buildtrees after building each package.");
+    DECLARE_MESSAGE(HelpTxtOptCleanDownloadsAfterBuild, (), "", "Clean downloads after building each package.");
+    DECLARE_MESSAGE(HelpTxtOptCleanPkgAfterBuild, (), "", "Clean packages after building each package.");
     DECLARE_MESSAGE(HelpTxtOptDryRun, (), "", "Do not actually build or install.");
     DECLARE_MESSAGE(HelpTxtOptEditable,
                     (),
@@ -1640,7 +1640,7 @@ namespace vcpkg
                     (),
                     "",
                     "Fail install if a port has detected problems or attempts to use a deprecated feature");
-    DECLARE_MESSAGE(HelpTxtOptKeepGoing, (), "", "Continue installing packages on failure");
+    DECLARE_MESSAGE(HelpTxtOptKeepGoing, (), "", "Continue installing packages on failure.");
     DECLARE_MESSAGE(HelpTxtOptManifestFeature,
                     (),
                     "",
@@ -1649,16 +1649,19 @@ namespace vcpkg
                     (),
                     "",
                     "Don't install the default features from the top-level manifest (manifest mode).");
-    DECLARE_MESSAGE(HelpTxtOptNoDownloads, (), "", "Do not download new sources");
+    DECLARE_MESSAGE(HelpTxtOptNoDownloads, (), "", "Do not download new sources.");
     DECLARE_MESSAGE(HelpTxtOptNoUsage, (), "", "Don't print CMake usage information after install.");
-    DECLARE_MESSAGE(HelpTxtOptOnlyBinCache, (), "", "Fail if cached binaries are not available");
-    DECLARE_MESSAGE(HelpTxtOptOnlyDownloads, (), "", "Download sources but don't build packages");
-    DECLARE_MESSAGE(HelpTxtOptRecurse, (), "", "Allow removal of packages as part of installation");
-    DECLARE_MESSAGE(HelpTxtOptUseAria2, (), "", "Use aria2 to perform download tasks");
+    DECLARE_MESSAGE(HelpTxtOptOnlyBinCache, (), "", "Fail if cached binaries are not available.");
+    DECLARE_MESSAGE(HelpTxtOptOnlyDownloads,
+                    (),
+                    "",
+                    "Make a best-effort attempt to download sources without building.");
+    DECLARE_MESSAGE(HelpTxtOptRecurse, (), "", "Allow removal of packages as part of installation.");
+    DECLARE_MESSAGE(HelpTxtOptUseAria2, (), "", "Use aria2 to perform download tasks.");
     DECLARE_MESSAGE(HelpTxtOptUseHeadVersion,
                     (),
                     "",
-                    "Install the libraries on the command line using the latest upstream sources (classic mode)");
+                    "Install the libraries on the command line using the latest upstream sources (classic mode).");
     DECLARE_MESSAGE(
         HelpTxtOptWritePkgConfig,
         (),

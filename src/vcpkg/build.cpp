@@ -931,18 +931,23 @@ namespace vcpkg
                 env);
         } // close out_file
 
-        // With the exception of empty packages, builds in "Download Mode" always result in failure.
-        if (action.build_options.only_downloads == OnlyDownloads::YES)
-        {
-            // TODO: Capture executed command output and evaluate whether the failure was intended.
-            // If an unintended error occurs then return a BuildResult::DOWNLOAD_FAILURE status.
-            return ExtendedBuildResult{BuildResult::DOWNLOADED};
-        }
-
         const auto buildtimeus = timer.microseconds();
         const auto spec_string = action.spec.to_string();
-
+        const bool build_failed = !succeeded(return_code);
         MetricsSubmission metrics;
+        if (build_failed)
+        {
+            // With the exception of empty or helper ports, builds in "Download Mode" result in failure.
+            if (action.build_options.only_downloads == OnlyDownloads::YES)
+            {
+                // TODO: Capture executed command output and evaluate whether the failure was intended.
+                // If an unintended error occurs then return a BuildResult::DOWNLOAD_FAILURE status.
+                return ExtendedBuildResult{BuildResult::DOWNLOADED};
+            }
+
+            metrics.track_string(StringMetric::BuildError, spec_string);
+        }
+
         metrics.track_buildtime(Hash::get_string_hash(spec_string, Hash::Algorithm::Sha256) + ":[" +
                                     Strings::join(",",
                                                   action.feature_list,
@@ -951,12 +956,6 @@ namespace vcpkg
                                                   }) +
                                     "]",
                                 buildtimeus);
-
-        const bool build_failed = !succeeded(return_code);
-        if (build_failed)
-        {
-            metrics.track_string(StringMetric::BuildError, spec_string);
-        }
 
         get_global_metrics_collector().track_submission(std::move(metrics));
         if (build_failed)
