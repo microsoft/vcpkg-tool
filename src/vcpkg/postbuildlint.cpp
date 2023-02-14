@@ -320,7 +320,9 @@ namespace vcpkg
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_share_folder_names(const Filesystem& fs, const BuildPolicies& policies, const Path& package_dir)
+    static LintStatus check_share_folder_names(const Filesystem& fs,
+                                               const BuildPolicies& policies,
+                                               const Path& package_dir)
     {
         if (policies.is_enabled(BuildPolicy::SKIP_SHARE_FOLDER_CHECK)) return LintStatus::SUCCESS;
 
