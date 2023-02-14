@@ -220,6 +220,7 @@ namespace vcpkg
     static const std::string NAME_SKIP_ARCHITECTURE_CHECK = "PolicySkipArchitectureCheck";
     static const std::string NAME_CMAKE_HELPER_PORT = "PolicyCmakeHelperPort";
     static const std::string NAME_SKIP_ABSOLUTE_PATHS_CHECK = "PolicySkipAbsolutePathsCheck";
+    static const std::string NAME_SKIP_SHARE_FOLDER_CHECK = "PolicySkipShareFolderCheck";
 
     static std::remove_const_t<decltype(ALL_POLICIES)> generate_all_policies()
     {
@@ -251,6 +252,7 @@ namespace vcpkg
             case BuildPolicy::SKIP_ARCHITECTURE_CHECK: return NAME_SKIP_ARCHITECTURE_CHECK;
             case BuildPolicy::CMAKE_HELPER_PORT: return NAME_CMAKE_HELPER_PORT;
             case BuildPolicy::SKIP_ABSOLUTE_PATHS_CHECK: return NAME_SKIP_ABSOLUTE_PATHS_CHECK;
+            case BuildPolicy::SKIP_SHARE_FOLDER_CHECK: return NAME_SKIP_SHARE_FOLDER_CHECK;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -272,6 +274,7 @@ namespace vcpkg
             case BuildPolicy::SKIP_ARCHITECTURE_CHECK: return "VCPKG_POLICY_SKIP_ARCHITECTURE_CHECK";
             case BuildPolicy::CMAKE_HELPER_PORT: return "VCPKG_POLICY_CMAKE_HELPER_PORT";
             case BuildPolicy::SKIP_ABSOLUTE_PATHS_CHECK: return "VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK";
+            case BuildPolicy::SKIP_SHARE_FOLDER_CHECK: return "VCPKG_POLICY_SKIP_SHARE_FOLDER_CHECK";
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }

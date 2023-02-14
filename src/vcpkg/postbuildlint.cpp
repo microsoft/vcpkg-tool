@@ -321,8 +321,10 @@ namespace vcpkg
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_share_folder_names(const Filesystem& fs, const Path& package_dir)
+    static LintStatus check_share_folder_names(const Filesystem& fs, const BuildPolicies& policies, const Path& package_dir)
     {
+        if (policies.is_enabled(BuildPolicy::SKIP_SHARE_FOLDER_CHECK)) return LintStatus::SUCCESS;
+
         const auto cmake_folder_name = package_dir / "share";
         std::error_code ec;
         const auto share_folders = fs.get_directories_non_recursive(cmake_folder_name, ec);
@@ -1304,7 +1306,7 @@ namespace vcpkg
         error_count += check_folder_lib_cmake(fs, package_dir, spec);
         error_count += check_for_misplaced_cmake_files(fs, package_dir, spec);
         error_count += check_folder_debug_lib_cmake(fs, package_dir, spec);
-        error_count += check_share_folder_names(fs, package_dir);
+        error_count += check_share_folder_names(fs, build_info.policies, package_dir);
         error_count += check_for_dlls_in_lib_dir(fs, package_dir);
         error_count += check_for_dlls_in_lib_dir(fs, package_dir / "debug");
         error_count += check_for_copyright_file(fs, spec, paths);

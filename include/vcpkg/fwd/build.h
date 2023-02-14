@@ -107,6 +107,7 @@ namespace vcpkg
         SKIP_ARCHITECTURE_CHECK,
         CMAKE_HELPER_PORT,
         SKIP_ABSOLUTE_PATHS_CHECK,
+        SKIP_SHARE_FOLDER_CHECK,
         // Must be last
         COUNT,
     };
