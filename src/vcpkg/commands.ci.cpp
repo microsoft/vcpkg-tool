@@ -6,7 +6,6 @@
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 #include <vcpkg/base/xmlserializer.h>
 
@@ -130,14 +129,31 @@ namespace vcpkg::Commands::CI
     };
 
     static bool supported_for_triplet(const CMakeVars::CMakeVarProvider& var_provider,
+                                      const SourceControlFile& source_control_file,
+                                      PackageSpec spec)
+    {
+        const auto& supports_expression = source_control_file.core_paragraph->supports_expression;
+        if (supports_expression.is_empty())
+        {
+            return true;
+        }
+        PlatformExpression::Context context = var_provider.get_dep_info_vars(spec).value_or_exit(VCPKG_LINE_INFO);
+        return supports_expression.evaluate(context);
+    }
+
+    static bool supported_for_triplet(const CMakeVars::CMakeVarProvider& var_provider,
                                       const InstallPlanAction* install_plan)
     {
         auto&& scfl = install_plan->source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
-        const auto& supports_expression = scfl.source_control_file->core_paragraph->supports_expression;
-        PlatformExpression::Context context =
-            var_provider.get_tag_vars(install_plan->spec).value_or_exit(VCPKG_LINE_INFO);
+        return supported_for_triplet(var_provider, *scfl.source_control_file, install_plan->spec);
+    }
 
-        return supports_expression.evaluate(context);
+    static bool supported_for_triplet(const CMakeVars::CMakeVarProvider& var_provider,
+                                      const PortFileProvider& provider,
+                                      PackageSpec spec)
+    {
+        auto&& scf = provider.get_control_file(spec.name()).value_or_exit(VCPKG_LINE_INFO).source_control_file;
+        return supported_for_triplet(var_provider, *scf, spec);
     }
 
     static ActionPlan compute_full_plan(const VcpkgPaths& paths,
@@ -150,15 +166,21 @@ namespace vcpkg::Commands::CI
         for (auto&& spec : specs)
         {
             auto&& scfl = provider.get_control_file(spec.package_spec.name()).value_or_exit(VCPKG_LINE_INFO);
-            if (scfl.source_control_file->has_qualified_dependencies())
+            if (scfl.source_control_file->has_qualified_dependencies() ||
+                !scfl.source_control_file->core_paragraph->supports_expression.is_empty())
             {
                 packages_with_qualified_deps.push_back(spec.package_spec);
             }
         }
 
         var_provider.load_dep_info_vars(packages_with_qualified_deps, serialize_options.host_triplet);
-        auto action_plan = create_feature_install_plan(provider, var_provider, specs, {}, serialize_options);
 
+        const auto applicable_specs = Util::filter(specs, [&](auto& spec) -> bool {
+            return create_feature_install_plan(provider, var_provider, {&spec, 1}, {}, serialize_options)
+                .warnings.empty();
+        });
+
+        auto action_plan = create_feature_install_plan(provider, var_provider, applicable_specs, {}, serialize_options);
         var_provider.load_tag_vars(action_plan, provider, serialize_options.host_triplet);
 
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.already_installed.empty());
@@ -313,6 +335,8 @@ namespace vcpkg::Commands::CI
     {
         msg::println_warning(msgInternalCICommand);
 
+        print_default_triplet_warning(args, {});
+
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         const auto& settings = options.settings;
 
@@ -406,16 +430,28 @@ namespace vcpkg::Commands::CI
 
         {
             std::string msg;
+            for (const auto& spec : all_default_full_specs)
+            {
+                if (!Util::Sets::contains(split_specs->abi_map, spec.package_spec))
+                {
+                    bool supp = supported_for_triplet(var_provider, provider, spec.package_spec);
+                    split_specs->known.emplace(spec.package_spec,
+                                               supp ? BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES
+                                                    : BuildResult::EXCLUDED);
+                    if (supp) ++split_specs->cascade_count;
+                    msg += Strings::format("%40s: %8s\n", spec.package_spec, supp ? "cascade" : "skip");
+                }
+            }
             for (size_t i = 0; i < action_plan.install_actions.size(); ++i)
             {
                 auto&& action = action_plan.install_actions[i];
-                msg += Strings::format("%40s: %8s: %s\n",
-                                       action.spec,
-                                       split_specs->action_state_string[i],
-                                       action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
+                msg += fmt::format("{:40}: {:8}: {}\n",
+                                   action.spec,
+                                   split_specs->action_state_string[i],
+                                   action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
             }
-            vcpkg::print2(msg);
 
+            msg::write_unlocalized_text_to_stdout(Color::none, msg);
             auto it_output_hashes = settings.find(OPTION_OUTPUT_HASHES);
             if (it_output_hashes != settings.end())
             {

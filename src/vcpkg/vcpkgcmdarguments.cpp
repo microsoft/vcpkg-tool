@@ -1,6 +1,5 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
