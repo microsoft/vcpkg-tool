@@ -87,7 +87,6 @@ namespace vcpkg::Commands::CI
     static constexpr StringLiteral OPTION_XUNIT = "x-xunit";
     static constexpr StringLiteral OPTION_XUNIT_ALL = "x-xunit-all";
     static constexpr StringLiteral OPTION_CI_BASELINE = "ci-baseline";
-    static constexpr StringLiteral OPTION_CI_FEATURE_BASELINE = "ci-feature-baseline";
     static constexpr StringLiteral OPTION_ALLOW_UNEXPECTED_PASSING = "allow-unexpected-passing";
     static constexpr StringLiteral OPTION_SKIP_FAILURES = "skip-failures";
     static constexpr StringLiteral OPTION_RANDOMIZE = "x-randomize";
@@ -96,16 +95,11 @@ namespace vcpkg::Commands::CI
     static constexpr StringLiteral OPTION_KNOWN_FAILURES = "known-failures-from";
     static constexpr StringLiteral OPTION_SKIPPED_CASCADE_COUNT = "x-skipped-cascade-count";
 
-    static constexpr std::array<CommandSetting, 10> CI_SETTINGS = {{
+    static constexpr std::array<CommandSetting, 9> CI_SETTINGS = {{
         {OPTION_EXCLUDE, []() { return msg::format(msgCISettingsOptExclude); }},
         {OPTION_HOST_EXCLUDE, []() { return msg::format(msgCISettingsOptHostExclude); }},
         {OPTION_XUNIT, []() { return msg::format(msgCISettingsOptXUnit); }},
         {OPTION_CI_BASELINE, []() { return msg::format(msgCISettingsOptCIBase); }},
-        {OPTION_CI_FEATURE_BASELINE,
-         []() {
-             return LocalizedString::from_raw(
-                 "Path to the ci.feature.baseline.txt file. Used to skip ports and detect regressions.");
-         }},
         {OPTION_FAILURE_LOGS, []() { return msg::format(msgCISettingsOptFailureLogs); }},
         {OPTION_OUTPUT_HASHES, []() { return msg::format(msgCISettingsOptOutputHashes); }},
         {OPTION_PARENT_HASHES, []() { return msg::format(msgCISettingsOptParentHashes); }},
