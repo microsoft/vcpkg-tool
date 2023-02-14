@@ -1,5 +1,3 @@
-#include <vcpkg/base/system.print.h>
-
 #include <vcpkg/build.h>
 #include <vcpkg/commands.acquire-project.h>
 #include <vcpkg/commands.acquire.h>

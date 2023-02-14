@@ -1,6 +1,5 @@
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/platform-expression.h>
@@ -28,6 +27,7 @@ namespace vcpkg::PlatformExpression
         openbsd,
         osx,
         uwp,
+        xbox,
         android,
         emscripten,
         ios,
@@ -54,6 +54,7 @@ namespace vcpkg::PlatformExpression
             {"openbsd", Identifier::openbsd},
             {"osx", Identifier::osx},
             {"uwp", Identifier::uwp},
+            {"xbox", Identifier::xbox},
             {"android", Identifier::android},
             {"emscripten", Identifier::emscripten},
             {"ios", Identifier::ios},
@@ -519,7 +520,7 @@ namespace vcpkg::PlatformExpression
                             // Point out in the diagnostic that they should add to the override list because that is
                             // what most users should do, however it is also valid to update the built in identifiers to
                             // recognize the name.
-                            msg::println_error(msgUnrecognizedIdentifier, msg::value = expr.identifier);
+                            msg::println_warning(msgUnrecognizedIdentifier, msg::value = expr.identifier);
                             return false;
                         case Identifier::x64: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "x64");
                         case Identifier::x86: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "x86");
@@ -541,6 +542,9 @@ namespace vcpkg::PlatformExpression
                         case Identifier::osx: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Darwin");
                         case Identifier::uwp:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore");
+                        case Identifier::xbox:
+                            // This identifier is intended to be enabled via VCPKG_DEP_INFO_OVERRIDE_VARS
+                            return false;
                         case Identifier::android: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Android");
                         case Identifier::emscripten:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Emscripten");

@@ -1,6 +1,5 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.zprintconfig.h>
 #include <vcpkg/installedpaths.h>

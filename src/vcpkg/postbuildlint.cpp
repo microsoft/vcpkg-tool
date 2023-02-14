@@ -2,7 +2,6 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -855,16 +854,14 @@ namespace vcpkg
         bool contains_share = false;
 
         auto dir = dir_raw.lexically_normal().generic_u8string(); // force /s
+
+        const auto share_dir = Path(dir) / "share" / "pkgconfig";
+        const auto lib_dir = Path(dir) / "lib" / "pkgconfig";
+        const auto debug_dir = Path(dir) / "debug" / "lib" / "pkgconfig";
         for (Path& path : fs.get_regular_files_recursive(dir, IgnoreErrors{}))
         {
             if (!Strings::ends_with(path, ".pc")) continue;
-            // Always forbid .pc files not in a "pkgconfig" directory:
             const auto parent_path = Path(path.parent_path());
-            if (parent_path.filename() != "pkgconfig") continue;
-            const auto pkgconfig_parent_name = Path(parent_path.parent_path()).filename().to_string();
-            // Always allow .pc files in "lib/pkgconfig":
-            if (pkgconfig_parent_name == "lib") continue;
-            // Allow .pc in "share/pkgconfig" if and only if it contains no "Libs:" or "Libs.private:" directives:
             const bool contains_libs =
                 Util::any_of(fs.read_lines(path).value_or_exit(VCPKG_LINE_INFO), [](const std::string& line) {
                     if (Strings::starts_with(line, "Libs"))
@@ -876,20 +873,28 @@ namespace vcpkg
                     }
                     return false;
                 });
-            if (pkgconfig_parent_name == "share" && !contains_libs) continue;
+            // Allow .pc in "share/pkgconfig" if and only if it contains no "Libs:" or "Libs.private:" directives:
             if (!contains_libs)
             {
+                if (parent_path == share_dir) continue;
                 contains_share = true;
                 misplaced_pkgconfig_files.push_back({std::move(path), MisplacedFile::Type::Share});
                 continue;
             }
-            const bool is_release = path.native().find("debug/") == std::string::npos;
-            misplaced_pkgconfig_files.push_back(
-                {std::move(path), is_release ? MisplacedFile::Type::Release : MisplacedFile::Type::Debug});
-            if (is_release)
-                contains_release = true;
-            else
+
+            const bool is_debug = Strings::starts_with(path, Path(dir) / "debug");
+            if (is_debug)
+            {
+                if (parent_path == debug_dir) continue;
+                misplaced_pkgconfig_files.push_back({std::move(path), MisplacedFile::Type::Debug});
                 contains_debug = true;
+            }
+            else
+            {
+                if (parent_path == lib_dir) continue;
+                misplaced_pkgconfig_files.push_back({std::move(path), MisplacedFile::Type::Release});
+                contains_release = true;
+            }
         }
 
         if (!misplaced_pkgconfig_files.empty())
@@ -899,7 +904,7 @@ namespace vcpkg
             {
                 msg::write_unlocalized_text_to_stdout(Color::warning, fmt::format("    {}\n", item.path));
             }
-            msg::println_warning(msgPortBugMovePkgConfigFiles);
+            msg::println(Color::warning, msgPortBugMovePkgConfigFiles);
 
             std::string create_directory_line("    file(MAKE_DIRECTORY");
             if (contains_release)
@@ -938,8 +943,8 @@ namespace vcpkg
                 msg::write_unlocalized_text_to_stdout(Color::warning, rename_line);
             }
 
-            msg::write_unlocalized_text_to_stdout(Color::warning, "    vcpkg_fixup_pkgconfig()\nfile(REMOVE_RECURSE ");
-            msg::println_warning(msgPortBugRemoveEmptyDirs);
+            msg::write_unlocalized_text_to_stdout(Color::warning, "    vcpkg_fixup_pkgconfig()\n    ");
+            msg::println(Color::warning, msgPortBugRemoveEmptyDirs);
 
             return LintStatus::PROBLEM_DETECTED;
         }

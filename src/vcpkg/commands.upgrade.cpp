@@ -1,5 +1,4 @@
 #include <vcpkg/base/messages.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binarycaching.h>
@@ -118,6 +117,8 @@ namespace vcpkg::Commands::Upgrade
         }
         else
         {
+            print_default_triplet_warning(args, args.command_arguments);
+
             std::vector<PackageSpec> not_installed;
             std::vector<PackageSpec> no_control_file;
             std::vector<PackageSpec> to_upgrade;
@@ -198,10 +199,7 @@ namespace vcpkg::Commands::Upgrade
         }
 
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty());
-        for (const auto& warning : action_plan.warnings)
-        {
-            msg::write_unlocalized_text_to_stdout(Color::warning, warning + "\n");
-        }
+        action_plan.print_unsupported_warnings();
         // Set build settings for all install actions
         for (auto&& action : action_plan.install_actions)
         {

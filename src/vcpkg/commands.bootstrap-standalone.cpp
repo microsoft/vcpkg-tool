@@ -1,6 +1,5 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/archives.h>
 #include <vcpkg/commands.bootstrap-standalone.h>
