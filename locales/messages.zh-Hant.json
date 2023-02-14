@@ -54,7 +54,7 @@
   "AutomaticLinkingForMSBuildProjects": "所有 MSBuild C++ 專案現在都可將任何已安裝的程式庫透過 #include 納入。系統會自動處理連結。安裝新的程式庫會讓它們立即可供使用。",
   "AvailableArchitectureTriplets": "可用的架構三元組:",
   "AvailableHelpTopics": "可用的說明主題:",
-  "BaselineConflict": "Specifying vcpkg-configuration.default-registry in a manifest file conflicts with built-in baseline.\nPlease remove one of these conflicting settings.",
+  "BaselineConflict": "在資訊清單檔案中指定 vcpkg-configuration.default-registry 與內建基準衝突。\n請移除其中一個衝突設定。",
   "BaselineFileNoDefaultField": "位於認可 {commit_sha} 的基準檔案無效 (沒有 \"default\" 欄位)。",
   "BaselineMissingDefault": "來自存放庫 {url} 中認可 `\"{commit_sha}\"` 的 baseline.json 無效 (未包含 \"default\" 欄位)。",
   "BinarySourcesArg": "新增二進位快取的來源。請參閱 'vcpkg help binarycaching'。",
