@@ -180,7 +180,7 @@ namespace vcpkg::Commands::CI
 
         const auto applicable_specs = Util::filter(specs, [&](auto& spec) -> bool {
             return create_feature_install_plan(provider, var_provider, {&spec, 1}, {}, serialize_options)
-                .warnings.empty();
+                .unsupported_features.empty();
         });
 
         auto action_plan = create_feature_install_plan(provider, var_provider, applicable_specs, {}, serialize_options);
