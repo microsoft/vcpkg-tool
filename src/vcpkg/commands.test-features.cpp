@@ -6,7 +6,6 @@
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 #include <vcpkg/base/xmlserializer.h>
 
@@ -257,7 +256,9 @@ namespace vcpkg::Commands::TestFeatures
         for (const auto port : feature_test_ports)
         {
             ++i;
-            print2("\nTest ", i, "/", feature_test_ports.size(), " ", port->core_paragraph->name, "\n");
+            msg::write_unlocalized_text_to_stdout(
+                Color::none,
+                Strings::concat("\nTest ", i, "/", feature_test_ports.size(), " ", port->core_paragraph->name, "\n"));
             const auto& baseline = feature_baseline.get_port(port->core_paragraph->name);
             if (baseline.state == CiFeatureBaselineState::Skip) continue;
             PackageSpec package_spec(port->core_paragraph->name, target_triplet);
@@ -269,7 +270,7 @@ namespace vcpkg::Commands::TestFeatures
             const auto dep_info_vars = var_provider.get_or_load_dep_info_vars(package_spec, host_triplet);
             if (!port->core_paragraph->supports_expression.evaluate(dep_info_vars))
             {
-                print2("Port is not supported on this triplet\n");
+                msg::write_unlocalized_text_to_stdout(Color::none, "Port is not supported on this triplet\n");
                 continue;
             }
             InternalFeatureSet all_features{{"core"}};
@@ -305,13 +306,20 @@ namespace vcpkg::Commands::TestFeatures
                                                                 {},
                                                                 {host_triplet, UnsupportedPortAction::Warn});
 
-                if (!install_plan.warnings.empty())
+                if (!install_plan.unsupported_features.empty())
                 {
-                    print2("Skipping testing of ",
-                           install_plan.install_actions.back().displayname(),
-                           " because of the following warnings: \n",
-                           Strings::join("\n", install_plan.warnings),
-                           '\n');
+                    std::string out;
+                    for (const auto& entry : install_plan.unsupported_features)
+                    {
+                        Strings::append(out, entry.first, " only supported on  ", to_string(entry.second), '\n');
+                    }
+                    msg::write_unlocalized_text_to_stdout(
+                        Color::none,
+                        Strings::concat("Skipping testing of ",
+                                        install_plan.install_actions.back().displayname(),
+                                        " because of the following warnings: \n",
+                                        out,
+                                        '\n'));
                     handle_result(std::move(spec), CiFeatureBaselineState::Cascade, baseline);
                     continue;
                 }
@@ -326,7 +334,9 @@ namespace vcpkg::Commands::TestFeatures
                                               });
                     iter != install_plan.install_actions.end())
                 {
-                    print2(spec, " dependency ", iter->displayname(), " will fail => cascade\n");
+                    msg::write_unlocalized_text_to_stdout(
+                        Color::none,
+                        Strings::concat(spec, " dependency ", iter->displayname(), " will fail => cascade\n"));
                     handle_result(std::move(spec), CiFeatureBaselineState::Cascade, baseline);
                     continue;
                 }
@@ -345,7 +355,7 @@ namespace vcpkg::Commands::TestFeatures
                     handle_result(std::move(spec), CiFeatureBaselineState::Pass, baseline);
                     continue;
                 }
-                print2("Test feature ", spec, '\n');
+                msg::write_unlocalized_text_to_stdout(Color::none, Strings::concat("Test feature ", spec, '\n'));
                 for (auto&& action : install_plan.install_actions)
                 {
                     action.build_options = backcompat_prohibiting_package_options;
@@ -422,15 +432,15 @@ namespace vcpkg::Commands::TestFeatures
 
         for (const auto& result : unexpected_states)
         {
-            print2(Color::error,
-                   result.spec,
-                   " resulted in the unexpected state ",
-                   result.actual_state,
-                   " ",
-                   result.logs_dir.value_or(""),
-                   " after ",
-                   result.build_time.to_string(),
-                   '\n');
+            msg::write_unlocalized_text_to_stderr(Color::error,
+                                                  Strings::concat(result.spec,
+                                                                  " resulted in the unexpected state ",
+                                                                  result.actual_state,
+                                                                  " ",
+                                                                  result.logs_dir.value_or(""),
+                                                                  " after ",
+                                                                  result.build_time.to_string(),
+                                                                  '\n'));
         }
 
         auto it_output_file = settings.find(OPTION_OUTPUT_FAILURE_ABIS);
