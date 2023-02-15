@@ -138,18 +138,17 @@ namespace
 
     ExpectedL<Unit> try_read_image_config_directory(DllMetadata& metadata, ReadFilePointer& f)
     {
-        // pre: try_read_section_headers succeeded on `metadata`
-        if (metadata.data_directories.size() < 11)
+        const auto load_config_data_directory = metadata.try_get_image_data_directory(10);
+        if (!load_config_data_directory)
         {
             // metadata.load_config_type = LoadConfigType::UnsetOrOld;
             return Unit{};
         }
 
-        const auto& load_config_data_directory = metadata.data_directories[10];
-        auto maybe_remaining_size = try_seek_to_rva(metadata, f, load_config_data_directory.virtual_address);
+        auto maybe_remaining_size = try_seek_to_rva(metadata, f, load_config_data_directory->virtual_address);
         if (const auto remaining_size = maybe_remaining_size.get())
         {
-            if (*remaining_size < load_config_data_directory.size)
+            if (*remaining_size < load_config_data_directory->size)
             {
                 return msg::format(msgPEConfigCrossesSectionBoundary, msg::path = f.path());
             }
@@ -529,6 +528,21 @@ namespace vcpkg
         }
     }
 
+    const ImageDataDirectory* DllMetadata::try_get_image_data_directory(size_t directory_index) const noexcept
+    {
+        // pre: try_read_section_headers succeeded on `metadata`
+        if (data_directories.size() > directory_index)
+        {
+            const auto result = data_directories.data() + directory_index;
+            if (result->virtual_address != 0)
+            {
+                return result;
+            }
+        }
+
+        return nullptr;
+    }
+
     MachineType DllMetadata::get_machine_type() const noexcept { return static_cast<MachineType>(coff_header.machine); }
 
     uint64_t ArchiveMemberHeader::decoded_size() const
@@ -675,22 +689,16 @@ namespace vcpkg
 
     ExpectedL<bool> try_read_if_dll_has_exports(const DllMetadata& dll, ReadFilePointer& f)
     {
-        if (dll.data_directories.size() < 1)
+        const auto export_data_directory = dll.try_get_image_data_directory(0);
+        if (!export_data_directory)
         {
-            Debug::print("No export directory\n");
-            return false;
-        }
-
-        const auto& export_data_directory = dll.data_directories[0];
-        if (export_data_directory.virtual_address == 0)
-        {
-            Debug::print("Null export directory.\n");
+            Debug::print("No export directory.\n");
             return false;
         }
 
         ExportDirectoryTable export_directory_table;
         auto export_read_result = try_read_struct_from_rva(
-            dll, f, &export_directory_table, export_data_directory.virtual_address, sizeof(export_directory_table));
+            dll, f, &export_directory_table, export_data_directory->virtual_address, sizeof(export_directory_table));
         if (!export_read_result.has_value())
         {
             return std::move(export_read_result).error();
@@ -701,28 +709,22 @@ namespace vcpkg
 
     ExpectedL<std::vector<std::string>> try_read_dll_imported_dll_names(const DllMetadata& dll, ReadFilePointer& f)
     {
-        if (dll.data_directories.size() < 2)
+        const auto import_data_directory = dll.try_get_image_data_directory(1);
+        if (!import_data_directory)
         {
             Debug::print("No import directory\n");
             return std::vector<std::string>{};
         }
 
-        const auto& import_data_directory = dll.data_directories[1];
-        if (import_data_directory.virtual_address == 0)
-        {
-            Debug::print("Null import directory\n");
-            return std::vector<std::string>{};
-        }
-
-        return try_seek_to_rva(dll, f, import_data_directory.virtual_address)
+        return try_seek_to_rva(dll, f, import_data_directory->virtual_address)
             .then([&](size_t remaining_size) -> ExpectedL<std::vector<std::string>> {
-                if (remaining_size < import_data_directory.size)
+                if (remaining_size < import_data_directory->size)
                 {
                     return msg::format(msgPEImportCrossesSectionBoundary, msg::path = f.path());
                 }
 
                 std::vector<std::string> results;
-                remaining_size = import_data_directory.size;
+                remaining_size = import_data_directory->size;
                 if (remaining_size < sizeof(ImportDirectoryTableEntry))
                 {
                     Debug::print("No import directory table entries");
