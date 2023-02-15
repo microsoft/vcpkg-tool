@@ -9,6 +9,7 @@
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.process.h>
 
+#include <vcpkg/binarycaching.h>
 #include <vcpkg/cgroup-parser.h>
 #include <vcpkg/commands.contact.h>
 #include <vcpkg/commands.h>
@@ -154,6 +155,7 @@ namespace vcpkg::Checks
     // Implements link seam from basic_checks.h
     void on_final_cleanup_and_exit()
     {
+        BinaryCache::wait_for_async_complete();
         const auto elapsed_us_inner = g_total_time.microseconds();
         bool debugging = Debug::g_debugging;
 

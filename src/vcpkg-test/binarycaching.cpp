@@ -24,9 +24,12 @@ struct KnowNothingBinaryProvider : IBinaryProvider
         return RestoreResult::unavailable;
     }
 
-    virtual void push_success(const InstallPlanAction& action) const override { CHECK(action.has_package_abi()); }
+    void push_success(const BinaryPackageInformation& info, const Path&, MessageSink&) override
+    {
+        CHECK_FALSE(info.package_abi.empty());
+    }
 
-    virtual void prefetch(View<InstallPlanAction> actions, View<CacheStatus* const> cache_status) const override
+    void prefetch(View<InstallPlanAction> actions, View<CacheStatus* const> cache_status) const override
     {
         REQUIRE(actions.size() == cache_status.size());
         for (size_t idx = 0; idx < cache_status.size(); ++idx)
@@ -34,7 +37,7 @@ struct KnowNothingBinaryProvider : IBinaryProvider
             CHECK(actions[idx].has_package_abi() == (cache_status[idx] != nullptr));
         }
     }
-    virtual void precheck(View<InstallPlanAction> actions, View<CacheStatus* const> cache_status) const override
+    void precheck(View<InstallPlanAction> actions, View<CacheStatus* const> cache_status) const override
     {
         REQUIRE(actions.size() == cache_status.size());
         for (const auto c : cache_status)
@@ -277,7 +280,7 @@ Build-Depends: bzip
     REQUIRE(ref.nupkg_filename() == "zlib2_x64-windows.1.5.0-vcpkgpackageabi.nupkg");
 
     {
-        auto nuspec = generate_nuspec(pkgPath, ipa, ref, {});
+        auto nuspec = generate_nuspec(pkgPath, BinaryPackageInformation{ipa}, ref, {});
         std::string expected = R"(<package>
   <metadata>
     <id>zlib2_x64-windows</id>
@@ -305,7 +308,7 @@ Dependencies:
     }
 
     {
-        auto nuspec = generate_nuspec(pkgPath, ipa, ref, {"urlvalue"});
+        auto nuspec = generate_nuspec(pkgPath, BinaryPackageInformation{ipa}, ref, {"urlvalue"});
         std::string expected = R"(<package>
   <metadata>
     <id>zlib2_x64-windows</id>
@@ -333,7 +336,8 @@ Dependencies:
         REQUIRE_EQUAL_TEXT(nuspec, expected);
     }
     {
-        auto nuspec = generate_nuspec(pkgPath, ipa, ref, {"urlvalue", "branchvalue", "commitvalue"});
+        auto nuspec =
+            generate_nuspec(pkgPath, BinaryPackageInformation{ipa}, ref, {"urlvalue", "branchvalue", "commitvalue"});
         std::string expected = R"(<package>
   <metadata>
     <id>zlib2_x64-windows</id>
@@ -365,7 +369,7 @@ Dependencies:
 TEST_CASE ("Provider nullptr checks", "[BinaryCache]")
 {
     // create a binary cache to test
-    BinaryCache uut;
+    BinaryCache uut(get_real_filesystem());
     std::vector<std::unique_ptr<IBinaryProvider>> providers;
     providers.emplace_back(std::make_unique<KnowNothingBinaryProvider>());
     uut.install_providers(std::move(providers));
@@ -391,7 +395,7 @@ Description:
     InstallPlanAction& ipa_without_abi = install_plan.back();
 
     // test that the binary cache does the right thing. See also CHECKs etc. in KnowNothingBinaryProvider
-    uut.push_success(ipa_without_abi); // should have no effects
+    uut.push_success(ipa_without_abi, {}); // should have no effects
     CHECK(uut.try_restore(ipa_without_abi) == RestoreResult::unavailable);
     uut.prefetch(install_plan); // should have no effects
 }
