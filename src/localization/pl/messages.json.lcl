@@ -568,6 +568,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ApplocalProcessing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg applocal processing: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Przetwarzanie applocal vcpkg: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ApplyAnyDeprecationFixups" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Apply any deprecation fixups.]]></Val>
@@ -2419,15 +2428,12 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DefaultPathToBinaries" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";DefaultTriplet" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Based on your system settings, the default path to store binaries is "{path}". This consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.]]></Val>
+          <Val><![CDATA[Starting with the September 2023 release, the default triplet for vcpkg libraries will change from x86-windows to the detected host triplet ({triplet}). To resolve this message, add --triplet x86-windows to keep the same behavior.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Na podstawie ustawień systemu, domyślną ścieżką do przechowywania danych binarnych jest „{path}”. Dotyczy to %LOCALAPPDATA%/%APPDATA% w systemie Windows i $XDG_CACHE_HOME lub $HOME na innych platformach.]]></Val>
+            <Val><![CDATA[Począwszy od wersji z września 2023 r., domyślny triplet dla bibliotek vcpkg zmieni się z x86-windows na wykryty triplet hosta ({triplet}). Aby rozwiązać ten komunikat, dodaj element --triplet x86-windows, aby zachować to samo zachowanie.]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Based on your system settings, the default path to store binaries is ]A; '{path}'. This consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2889,6 +2895,15 @@
           <Val><![CDATA[{env_var} is {value}, must be > 0]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{env_var} ma wartość {value}, musi być > 0]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";EnvPlatformNotSupported" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Build environment commands are not supported on this platform]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Polecenia środowiska kompilacji nie są obsługiwane na tej platformie]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3996,10 +4011,13 @@
       </Item>
       <Item ItemId=";ForceSystemBinariesOnWeirdPlatforms" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.]]></Val>
+          <Val><![CDATA[Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Zmienna środowiskowa VCPKG_FORCE_SYSTEM_BINARIES musi być ustawiona na platformach arm, s390x i ppc64le.]]></Val>
+            <Val><![CDATA[Zmienna środowiskowa VCPKG_FORCE_SYSTEM_BINARIES musi być ustawiona na platformach ARM, s390x, ppc64le i RISCV.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4252,11 +4270,209 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";HelpAssetCaching" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[**Experimental feature: this may change or be removed at any time**]A;]A;vcpkg can use mirrors to cache downloaded assets, ensuring continued operation even if the original source changes or disappears.]A;]A;Asset caching can be configured either by setting the environment variable X_VCPKG_ASSET_SOURCES to a semicolon-delimited list of sources or by passing a sequence of --x-asset-sources=<source> command line options. Command line sources are interpreted after environment sources. Commas, semicolons, and backticks can be escaped using backtick (`).]A;]A;The <rw> optional parameter for certain strings controls how they will be accessed. It can be specified as "read", "write", or "readwrite" and defaults to "read".]A;]A;Valid sources:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[**Funkcja eksperymentalna: ta funkcja może ulec zmianie lub zostać usunięta w dowolnym momencie**]A;]A;Program vcpkg może używać duplikatów do buforowania pobranych zasobów, zapewniając kontynuowanie działania, nawet jeśli oryginalne źródło zmieni się lub zniknie.]A;]A;Buforowanie zasobów można skonfigurować, ustawiając zmienną środowiskową X_VCPKG_ASSET_SOURCES na rozdzielaną średnikami listę źródeł lub przekazując sekwencję opcji wiersza polecenia --x-asset-sources=<source>. Źródła wiersza polecenia są interpretowane po źródłach środowiska. Przecinki, średniki i znaki backtick można oznaczyć znakami ucieczki backtick (`).]A;]A;Opcjonalny parametr <rw> dla niektórych ciągów kontroluje sposób uzyskiwania do nich dostępu. Można go określić jako „read”, „write” lub „readwrite”, a wartość domyślna to „read”.]A;]A;Prawidłowe źródła:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpAssetCachingAzUrl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Adds an Azure Blob Storage source, optionally using Shared Access Signature validation. URL should include the container path and be terminated with a trailing "/". <sas>, if defined, should be prefixed with a "?". Non-Azure servers will also work if they respond to GET and PUT requests of the form: "<url><sha512><sas>".]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Dodaje źródło usługi Azure Blob Storage, opcjonalnie używając weryfikacji sygnatury dostępu współdzielonego. Adres URL powinien zawierać ścieżkę kontenera i być zakończony znakiem „/”. <sas>, jeśli została zdefiniowana, powinna mieć prefiks „?”. Serwery spoza platformy Azure będą również działać, jeśli odpowiedzą na żądania GET i PUT w postaci: „<url><sha512><sas>”.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpAssetCachingBlockOrigin" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Disables fallback to the original URLs in case the mirror does not have the file available.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Wyłącza powrót do oryginalnych adresów URL na wypadek, gdyby duplikat nie miał dostępnego pliku.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpAssetCachingScript" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Dispatches to an external tool to fetch the asset. Within the template, "{{url}}" will be replaced by the original url, "{{sha512}}" will be replaced by the SHA512 value, and "{{dst}}" will be replaced by the output path to save to. These substitutions will all be properly shell escaped, so an example template would be: "curl -L {{url}} --output {{dst}}". "{{{{" will be replaced by "}}" and "}}}}" will be replaced by "}}" to avoid expansion. Note that this will be executed inside the build environment, so the PATH and other environment variables will be modified by the triplet.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Wysyła do narzędzia zewnętrznego w celu pobrania zasobu. W szablonie adres „{{url}}” zostanie zastąpiony oryginalnym adresem URL, element „{{sha512}}” zostanie zastąpiony wartością SHA512, a element „{{dst}}” zostanie zastąpiony ścieżką wyjściową do zapisania. Wszystkie te podstawienia będą miały prawidłowe znaki ucieczki powłoki, a przykładowy szablon to: „curl -L {{url}} --output {{dst}}”. „{{{{” zostanie zastąpiony przez „}}”, a „}}}}” zostanie zastąpiony przez „}}”, aby uniknąć rozszerzenia. Należy pamiętać, że zostanie to wykonane w środowisku kompilacji, więc zmienna PATH i inne zmienne środowiskowe zostaną zmodyfikowane przez triplet.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpBinaryCaching" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg can cache compiled packages to accelerate restoration on a single machine or across the network. By default, vcpkg will save builds to a local machine cache. This can be disabled by passing "--binarysource=clear" as the last option on the command line.]A;]A;Binary caching can be further configured by either passing "--binarysource=<source>" options to every command line or setting the `VCPKG_BINARY_SOURCES` environment variable to a set of sources (Example: "<source>;<source>;..."). Command line sources are interpreted after environment sources.]A;]A;The "<rw>" optional parameter for certain strings controls whether they will be consulted for downloading binaries and whether on-demand builds will be uploaded to that remote. It can be specified as "read", "write", or "readwrite".]A;]A;General sources:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Program vcpkg może buforować skompilowane pakiety, aby przyspieszyć przywracanie na jednej maszynie lub w sieci. Domyślnie program vcpkg zapisuje kompilacje w pamięci podręcznej komputera lokalnego. Można to wyłączyć, przekazując polecenie „--binarysource=clear” jako ostatnią opcję w wierszu polecenia.]A;]A;Buforowanie binarne można dodatkowo skonfigurować, przekazując opcje „--binarysource=<source>” do każdego wiersza polecenia lub ustawiając zmienną środowiskową „VCPKG_BINARY_SOURCES” na zestaw źródeł (przykład: „<source>;<source>;...”). Źródła wiersza polecenia są interpretowane po źródłach środowiska.]A;]A;Opcjonalny parametr „<rw>” dla niektórych ciągów określa, czy będą one sprawdzane w celu pobrania plików binarnych i czy kompilacje na żądanie zostaną przekazane do tego elementu zdalnego. Można go określić jako „read”, „write” lub „readwrite”.]A;]A;Źródła ogólne:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpBinaryCachingAws" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[**Experimental: will change or be removed without warning**]A;Adds an AWS S3 source. Uses the aws CLI for uploads and downloads. Prefix should include s3:// scheme and be suffixed with a "/".]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[**Eksperymentalne: zmieni się lub zostanie usunięte bez ostrzeżenia**]A;Dodaje źródło usługi AWS S3. Używa interfejsu wiersza polecenia platformy AWS do przekazywania i pobierania. Prefiks powinien zawierać schemat s3:// i być zakończony sufiksem „/”.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpBinaryCachingAwsConfig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[**Experimental: will change or be removed without warning**]A;Adds an AWS S3 source. Adds an AWS configuration; currently supports only 'no-sign-request' parameter that is an equivalent to the --no-sign-request parameter of the AWS CLI.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[**Eksperymentalne: zmieni się lub zostanie usunięte bez ostrzeżenia**]A;Dodaje źródło usługi AWS S3. Dodaje konfigurację platformy AWS; obecnie obsługuje tylko parametr „no-sign-request”, który jest odpowiednikiem parametru --no-sign-request interfejsu wiersza polecenia platformy AWS.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpBinaryCachingAwsHeader" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Azure Web Services sources]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Źródła usług sieci Web platformy Azure]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpBinaryCachingAzBlob" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[**Experimental: will change or be removed without warning**]A;Adds an Azure Blob Storage source. Uses Shared Access Signature validation. <url> should include the container path. <sas> must be be prefixed with a "?".]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[**Eksperymentalne: zmieni się lub zostanie usunięte bez ostrzeżenia**]A;Dodaje źródło usługi Azure Blob Storage. Używa weryfikacji sygnatury dostępu współdzielonego. <url> powinna zawierać ścieżkę kontenera. <sas> musi mieć prefiks „?”.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpBinaryCachingCos" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[**Experimental: will change or be removed without warning**]A;Adds an COS source. Uses the cos CLI for uploads and downloads. <prefix> should include the scheme 'cos://' and be suffixed with a "/".]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[**Eksperymentalne: zmieni się lub zostanie usunięte bez ostrzeżenia**]A;Dodaje źródło COS. Używa interfejsu wiersza polecenia COS do przekazywania i pobierania. <prefix> powinien zawierać schemat „cos://” i być zakończony sufiksem „/”.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpBinaryCachingDefaults" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Adds the default file-based location. Based on your system settings, the default path to store binaries is "{path}". This consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Dodaje domyślną lokalizację opartą na pliku. Na podstawie ustawień systemu, domyślną ścieżką do przechowywania plików binarnych jest „{path}”. Dotyczy to usługi %LOCALAPPDATA%/%APPDATA% w systemie Windows i $XDG_CACHE_HOME lub $HOME na innych platformach.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpBinaryCachingDefaultsError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Adds the default file-based location.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Dodaje domyślną lokalizację opartą na pliku.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpBinaryCachingFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Adds a custom file-based location.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Dodaje niestandardową lokalizację opartą na pliku.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpBinaryCachingGcs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[**Experimental: will change or be removed without warning**]A;Adds a Google Cloud Storage (GCS) source. Uses the gsutil CLI for uploads and downloads. Prefix should include the gs:// scheme and be suffixed with a "/".]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[**Eksperymentalne: zmieni się lub zostanie usunięte bez ostrzeżenia**]A;Dodaje źródło usługi Google Cloud Storage (GCS). Używa interfejsu wiersza polecenia narzędzia gsutil do przekazywania i pobierania. Prefiks powinien zawierać schemat gs:// i być zakończony sufiksem „/”.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpBinaryCachingHttp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Adds a custom http-based location. GET, HEAD and PUT request are done to download, check and upload the binaries. You can use the variables {{name}}, {{version}}, {{sha}} and {{triplet}}. An example url would be'https://cache.example.com/{{triplet}}/{{name}}/{{version}}/{{sha}}'. Via the header field you can set a custom header to pass an authorization token.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Dodaje niestandardową lokalizację opartą na protokole HTTP. Żądania GET, HEAD i PUT są wykonywane w celu pobrania, sprawdzenia i przekazania plików binarnych. Możesz użyć zmiennych {{name}}, {{version}}, {{sha}} i {{triplet}}. Przykładowy adres URL to „https://cache.example.com/{{triplet}}/{{name}}/{{version}}/{{sha}}”. Za pomocą pola nagłówka możesz ustawić nagłówek niestandardowy, aby przekazywał token autoryzacji.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpBinaryCachingNuGet" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Adds a NuGet-based source; equivalent to the "-Source" parameter of the NuGet CLI.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Dodaje źródło oparte na pakiecie NuGet; odpowiednik parametru „-Source” interfejsu wiersza polecenia NuGet.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpBinaryCachingNuGetConfig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Adds a NuGet-config-file-based source; equivalent to the "-Config" parameter of the NuGet CLI. This config should specify "defaultPushSource" for uploads.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Dodaje źródło oparte na pliku konfiguracyjnym NuGet; odpowiednik parametru „-Config” interfejsu wiersza polecenia NuGet. Ta konfiguracja powinna określać element „defaultPushSource” dla przekazywania.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpBinaryCachingNuGetFooter" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[NuGet's cache is not used by default. To use it for every NuGet-based source, set the environment variable "VCPKG_USE_NUGET_CACHE" to "true" (case-insensitive) or "1".]A;The "nuget" and "nugetconfig" source providers respect certain environment variables while generating NuGet packages. If the appropriate environment variables are defined and non-empty, "metadata.repository" field will be generated like one of the following examples:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Pamięć podręczna pakietu NuGet nie jest domyślnie używana. Aby użyć go dla każdego źródła opartego na narzędziu NuGet, ustaw zmienną środowiskową „VCPKG_USE_NUGET_CACHE” na wartość „true” (bez uwzględniania wielkości liter) lub „1”.]A;Dostawcy źródłowi „nuget” i „nugetconfig” przestrzegają niektórych zmiennych środowiskowych podczas generowania pakietów NuGet. Jeśli odpowiednie zmienne środowiskowe są zdefiniowane i niepuste, pole „metadata.repository” zostanie wygenerowane tak jak w jednym z następujących przykładów:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpBinaryCachingNuGetHeader" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[NuGet sources]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Źródła NuGet]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpBinaryCachingNuGetInteractive" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Enables NuGet interactive credential management; the opposite of the "-NonInteractive" parameter in the NuGet CLI.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Włącza interaktywne zarządzanie poświadczeniami NuGet; przeciwieństwo parametru „-NonInteractive” w interfejsie wiersza polecenia NuGet.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpBinaryCachingNuGetTimeout" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Specifies a NuGet timeout for NuGet network operations; equivalent to the "-Timeout" parameter of the NuGet CLI.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Określa limit czasu pakietu NuGet dla operacji sieciowych NuGet; odpowiednik parametru „-Timeout” interfejsu wiersza polecenia NuGet.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";HelpBuiltinBase" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The baseline references a commit within the vcpkg repository that establishes a minimum version on every dependency in the graph. For example, if no other constraints are specified (directly or transitively), then the version will resolve to the baseline of the top level manifest. Baselines of transitive dependencies are ignored.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Punkt odniesienia odwołuje się do zatwierdzenia w repozytorium vcpkg, które ustanawia minimalną wersję dla każdej zależności na wykresie. Jeśli na przykład nie określono żadnych innych ograniczeń (bezpośrednio lub przechodnio), wersja zostanie rozpoznana jako punkt odniesienia manifestu najwyższego poziomu. Punkty odniesienia zależności przechodnich są ignorowane.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpCachingClear" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Removes all previous sources, including defaults.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Usuwa wszystkie poprzednie źródła, w tym wartości domyślne.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4876,6 +5092,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InstallCopiedFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{path_source} -> {path_destination} done]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path_source} — > wykonano {path_destination}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InstallFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[failed: {path}: {error_msg}]]></Val>
@@ -4899,6 +5124,15 @@
           <Val><![CDATA[(Experimental) Specify the install root directory.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[(Eksperymentalne) Określ katalog główny instalacji.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InstallSkippedUpToDateFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{path_source} -> {path_destination} skipped, up to date]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path_source} -> pominięto {path_destination}, aktualne]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
