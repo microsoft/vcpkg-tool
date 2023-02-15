@@ -6,6 +6,9 @@
 		"header-only-good": {
 			"description": ""
 		},
+		"header-only-in-lib": {
+			"description": ""
+		},
 		"header-only-bad": {
 			"description": ""
 		},
