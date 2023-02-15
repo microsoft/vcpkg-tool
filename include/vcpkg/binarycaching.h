@@ -9,10 +9,14 @@
 #include <vcpkg/base/files.h>
 
 #include <vcpkg/packagespec.h>
+#include <vcpkg/sourceparagraph.h>
 
+#include <condition_variable>
 #include <iterator>
+#include <queue>
 #include <set>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -42,6 +46,21 @@ namespace vcpkg
         const IBinaryProvider* m_available_provider = nullptr; // meaningful iff m_status == available
     };
 
+    struct BinaryPackageInformation
+    {
+        explicit BinaryPackageInformation(const InstallPlanAction& action);
+        std::string package_abi;
+        // The following fields are only needed for the nuget binary cache
+        PackageSpec spec;
+        SourceControlFile& source_control_file;
+        std::string& raw_version;
+        std::string compiler_id;
+        std::string compiler_version;
+        std::string triplet_abi;
+        InternalFeatureSet feature_list;
+        std::vector<PackageSpec> package_dependencies;
+    };
+
     struct IBinaryProvider
     {
         virtual ~IBinaryProvider() = default;
@@ -52,7 +71,9 @@ namespace vcpkg
 
         /// Called upon a successful build of `action` to store those contents in the binary cache.
         /// Prerequisite: action has a package_abi()
-        virtual void push_success(const InstallPlanAction& action) const = 0;
+        virtual void push_success(const BinaryPackageInformation& info,
+                                  const Path& packages_dir,
+                                  MessageSink& msg_sink) = 0;
 
         /// Gives the IBinaryProvider an opportunity to batch any downloading or server communication for
         /// executing `actions`.
@@ -77,7 +98,7 @@ namespace vcpkg
         std::vector<std::string> headers_for_get;
 
         LocalizedString valid() const;
-        std::string instantiate_variables(const InstallPlanAction& action) const;
+        std::string instantiate_variables(const BinaryPackageInformation& info) const;
     };
 
     struct BinaryConfigParserState
@@ -121,8 +142,12 @@ namespace vcpkg
 
     struct BinaryCache
     {
-        BinaryCache() = default;
+        static BinaryCache* current_instance;
+        static void wait_for_async_complete();
+        BinaryCache(Filesystem& filesystem);
         explicit BinaryCache(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
+
+        ~BinaryCache();
 
         void install_providers(std::vector<std::unique_ptr<IBinaryProvider>>&& providers);
         void install_providers_for(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
@@ -131,7 +156,7 @@ namespace vcpkg
         RestoreResult try_restore(const InstallPlanAction& action);
 
         /// Called upon a successful build of `action` to store those contents in the binary cache.
-        void push_success(const InstallPlanAction& action);
+        void push_success(const InstallPlanAction& action, Path package_dir);
 
         /// Gives the IBinaryProvider an opportunity to batch any downloading or server communication for
         /// executing `actions`.
@@ -143,8 +168,22 @@ namespace vcpkg
         std::vector<CacheAvailability> precheck(View<InstallPlanAction> actions);
 
     private:
+        struct ActionToPush
+        {
+            BinaryPackageInformation info;
+            bool clean_after_push;
+            Path packages_dir;
+        };
+        void push_thread_main();
+
         std::unordered_map<std::string, CacheStatus> m_status;
         std::vector<std::unique_ptr<IBinaryProvider>> m_providers;
+        std::condition_variable actions_to_push_notifier;
+        std::mutex actions_to_push_mutex;
+        std::queue<ActionToPush> actions_to_push;
+        std::thread push_thread;
+        std::atomic_bool end_push_thread;
+        Filesystem& filesystem;
     };
 
     ExpectedS<DownloadManagerConfig> parse_download_configuration(const Optional<std::string>& arg);

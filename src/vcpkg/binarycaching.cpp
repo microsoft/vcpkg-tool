@@ -297,45 +297,41 @@ namespace
             return RestoreResult::unavailable;
         }
 
-        void push_success(const InstallPlanAction& action) const override
+        void push_success(const BinaryPackageInformation& info,
+                          const Path& packages_dir,
+                          MessageSink& msg_sink) override
         {
             if (m_write_dirs.empty() && m_put_url_templates.empty())
             {
                 return;
             }
 
-            const auto& abi_tag = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
-            auto& spec = action.spec;
+            const auto& abi_tag = info.package_abi;
+            auto& spec = info.spec;
             auto& fs = paths.get_filesystem();
             const auto archive_subpath = make_archive_subpath(abi_tag);
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            auto compress_result = compress_directory_to_zip(
-                fs, paths.get_tool_cache(), stdout_sink, paths.package_dir(spec), tmp_archive_path);
+            auto compress_result =
+                compress_directory_to_zip(fs, paths.get_tool_cache(), stdout_sink, packages_dir, tmp_archive_path);
             if (!compress_result)
             {
-                msg::println(Color::warning,
-                             msg::format_warning(msgCompressFolderFailed, msg::path = paths.package_dir(spec))
-                                 .append_raw(' ')
-                                 .append_raw(compress_result.error()));
+                msg_sink.println(Color::warning,
+                                 msg::format_warning(msgCompressFolderFailed, msg::path = packages_dir)
+                                     .append_raw(' ')
+                                     .append_raw(compress_result.error()));
                 return;
             }
-            size_t http_remotes_pushed = 0;
             for (auto&& put_url_template : m_put_url_templates)
             {
-                auto url = put_url_template.instantiate_variables(action);
+                auto url = put_url_template.instantiate_variables(info);
                 auto maybe_success = put_file(fs, url, m_secrets, put_url_template.headers_for_put, tmp_archive_path);
                 if (maybe_success)
                 {
-                    http_remotes_pushed++;
+                    m_http_remotes_pushed++;
                     continue;
                 }
 
-                msg::println(Color::warning, maybe_success.error());
-            }
-
-            if (!m_put_url_templates.empty())
-            {
-                msg::println(msgUploadedBinaries, msg::count = http_remotes_pushed, msg::vendor = "HTTP remotes");
+                msg_sink.println(Color::warning, maybe_success.error());
             }
 
             for (const auto& archives_root_dir : m_write_dirs)
@@ -354,14 +350,10 @@ namespace
 
                 if (ec)
                 {
-                    msg::println(Color::warning,
-                                 msg::format(msgFailedToStoreBinaryCache, msg::path = archive_path)
-                                     .append_raw('\n')
-                                     .append_raw(ec.message()));
-                }
-                else
-                {
-                    msg::println(msgStoredBinaryCache, msg::path = archive_path);
+                    msg_sink.println(Color::warning,
+                                     msg::format(msgFailedToStoreBinaryCache, msg::path = archive_path)
+                                         .append_raw('\n')
+                                         .append_raw(ec.message()));
                 }
             }
             // In the case of 1 write dir, the file will be moved instead of copied
@@ -369,7 +361,19 @@ namespace
             {
                 fs.remove(tmp_archive_path, IgnoreErrors{});
             }
+            if (!m_put_url_templates.empty())
+            {
+                msg_sink.println(msgUploadedBinaries, msg::count = m_http_remotes_pushed, msg::vendor = "HTTP remotes");
+            }
         }
+
+        /*void print_upload_statistics(MessageSink& msg_sink) override
+        {
+            if (!m_put_url_templates.empty())
+            {
+                msg_sink.println(msgUploadedBinaries, msg::count = m_http_remotes_pushed, msg::vendor = "HTTP remotes");
+            }
+        };*/
 
         void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
@@ -411,6 +415,7 @@ namespace
         std::vector<Path> m_write_dirs;
         std::vector<UrlTemplate> m_put_url_templates;
         std::vector<std::string> m_secrets;
+        size_t m_http_remotes_pushed = 0;
     };
     struct HttpGetBinaryProvider : IBinaryProvider
     {
@@ -423,7 +428,7 @@ namespace
 
         RestoreResult try_restore(const InstallPlanAction&) const override { return RestoreResult::unavailable; }
 
-        void push_success(const InstallPlanAction&) const override { }
+        void push_success(const BinaryPackageInformation&, const Path&, MessageSink&) override { }
 
         void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
@@ -446,7 +451,7 @@ namespace
 
                     auto&& action = actions[idx];
                     clean_prepare_dir(fs, paths.package_dir(action.spec));
-                    auto uri = url_template.instantiate_variables(action);
+                    auto uri = url_template.instantiate_variables(BinaryPackageInformation{action});
                     url_paths.emplace_back(std::move(uri), make_temp_archive_path(paths.buildtrees(), action.spec));
                     url_indices.push_back(idx);
                 }
@@ -510,7 +515,7 @@ namespace
                         continue;
                     }
 
-                    urls.push_back(url_template.instantiate_variables(actions[idx]));
+                    urls.push_back(url_template.instantiate_variables(BinaryPackageInformation{actions[idx]}));
                     url_indices.push_back(idx);
                 }
 
@@ -808,20 +813,21 @@ namespace
 
         RestoreResult try_restore(const InstallPlanAction&) const override { return RestoreResult::unavailable; }
 
-        void push_success(const InstallPlanAction& action) const override
+        void push_success(const BinaryPackageInformation& info,
+                          const Path& packages_dir,
+                          MessageSink& msg_sink) override
         {
             if (m_write_sources.empty() && m_write_configs.empty())
             {
                 return;
             }
 
-            auto& spec = action.spec;
+            auto& spec = info.spec;
 
-            NugetReference nuget_ref = make_nugetref(action, get_nuget_prefix());
+            NugetReference nuget_ref = make_nugetref(info, get_nuget_prefix());
             auto nuspec_path = paths.buildtrees() / spec.name() / (spec.triplet().to_string() + ".nuspec");
             auto& fs = paths.get_filesystem();
-            fs.write_contents(
-                nuspec_path, generate_nuspec(paths.package_dir(spec), action, nuget_ref), VCPKG_LINE_INFO);
+            fs.write_contents(nuspec_path, generate_nuspec(packages_dir, info, nuget_ref), VCPKG_LINE_INFO);
 
             const auto& nuget_exe = paths.get_tool_exe("nuget", stdout_sink);
             Command cmdline;
@@ -843,7 +849,7 @@ namespace
 
             if (!run_nuget_commandline(cmdline))
             {
-                msg::println(Color::error, msgPackingVendorFailed, msg::vendor = "NuGet");
+                msg_sink.println(Color::error, msgPackingVendorFailed, msg::vendor = "NuGet");
                 return;
             }
 
@@ -867,11 +873,12 @@ namespace
                 {
                     cmd.string_arg("-NonInteractive");
                 }
-                msg::println(
+                msg_sink.println(
                     msgUploadingBinariesToVendor, msg::spec = spec, msg::vendor = "NuGet", msg::path = write_src);
                 if (!run_nuget_commandline(cmd))
                 {
-                    msg::println(Color::error, msgPushingVendorFailed, msg::vendor = "NuGet", msg::path = write_src);
+                    msg_sink.println(
+                        Color::error, msgPushingVendorFailed, msg::vendor = "NuGet", msg::path = write_src);
                 }
             }
             for (auto&& write_cfg : m_write_configs)
@@ -892,14 +899,15 @@ namespace
                 {
                     cmd.string_arg("-NonInteractive");
                 }
-                msg::println(Color::error,
-                             msgUploadingBinariesUsingVendor,
-                             msg::spec = spec,
-                             msg::vendor = "NuGet config",
-                             msg::path = write_cfg);
+                msg_sink.println(Color::error,
+                                 msgUploadingBinariesUsingVendor,
+                                 msg::spec = spec,
+                                 msg::vendor = "NuGet config",
+                                 msg::path = write_cfg);
                 if (!run_nuget_commandline(cmd))
                 {
-                    msg::println(Color::error, msgPushingVendorFailed, msg::vendor = "NuGet", msg::path = write_cfg);
+                    msg_sink.println(
+                        Color::error, msgPushingVendorFailed, msg::vendor = "NuGet", msg::path = write_cfg);
                 }
             }
 
@@ -1007,21 +1015,23 @@ namespace
 
         RestoreResult try_restore(const InstallPlanAction&) const override { return RestoreResult::unavailable; }
 
-        void push_success(const InstallPlanAction& action) const override
+        void push_success(const BinaryPackageInformation& info,
+                          const Path& packages_dir,
+                          MessageSink& msg_sink) override
         {
             if (m_write_prefixes.empty()) return;
             const ElapsedTimer timer;
-            const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
-            auto& spec = action.spec;
+            const auto& abi = info.package_abi;
+            auto& spec = info.spec;
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
             auto compression_result = compress_directory_to_zip(
-                paths.get_filesystem(), paths.get_tool_cache(), stdout_sink, paths.package_dir(spec), tmp_archive_path);
+                paths.get_filesystem(), paths.get_tool_cache(), stdout_sink, packages_dir, tmp_archive_path);
             if (!compression_result)
             {
-                vcpkg::msg::println(Color::warning,
-                                    msg::format_warning(msgCompressFolderFailed, msg::path = paths.package_dir(spec))
-                                        .append_raw(' ')
-                                        .append_raw(compression_result.error()));
+                msg_sink.println(Color::warning,
+                                 msg::format_warning(msgCompressFolderFailed, msg::path = packages_dir)
+                                     .append_raw(' ')
+                                     .append_raw(compression_result.error()));
                 return;
             }
 
@@ -1034,10 +1044,10 @@ namespace
                 }
             }
 
-            msg::println(msgUploadedPackagesToVendor,
-                         msg::count = upload_count,
-                         msg::elapsed = timer.elapsed(),
-                         msg::vendor = vendor());
+            msg_sink.println(msgUploadedPackagesToVendor,
+                             msg::count = upload_count,
+                             msg::elapsed = timer.elapsed(),
+                             msg::vendor = vendor());
         }
 
         void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
@@ -1273,26 +1283,25 @@ namespace vcpkg
         return {};
     }
 
-    std::string UrlTemplate::instantiate_variables(const InstallPlanAction& action) const
+    std::string UrlTemplate::instantiate_variables(const BinaryPackageInformation& info) const
     {
         return api_stable_format(url_template,
                                  [&](std::string& out, StringView key) {
                                      if (key == "version")
                                      {
-                                         out += action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
-                                                    .source_control_file->core_paragraph->raw_version;
+                                         out += info.raw_version;
                                      }
                                      else if (key == "name")
                                      {
-                                         out += action.spec.name();
+                                         out += info.spec.name();
                                      }
                                      else if (key == "triplet")
                                      {
-                                         out += action.spec.triplet().canonical_name();
+                                         out += info.spec.triplet().canonical_name();
                                      }
                                      else if (key == "sha")
                                      {
-                                         out += action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi;
+                                         out += info.package_abi;
                                      }
                                      else
                                      {
@@ -1304,10 +1313,35 @@ namespace vcpkg
             .value_or_exit(VCPKG_LINE_INFO);
     }
 
+    BinaryCache* BinaryCache::current_instance;
+
+    void BinaryCache::wait_for_async_complete()
+    {
+        if (current_instance)
+        {
+            msg::write_unlocalized_text_to_stdout(Color::none, "Wait for end\n");
+            current_instance->end_push_thread = true;
+            current_instance->actions_to_push_notifier.notify_all();
+            current_instance->push_thread.join();
+            msg::write_unlocalized_text_to_stdout(Color::none, "Wait for end done \n");
+            current_instance = nullptr;
+        }
+    }
+
+    BinaryCache::BinaryCache(Filesystem& filesystem)
+        : push_thread([this]() { push_thread_main(); }), end_push_thread{false}, filesystem(filesystem)
+    {
+        Checks::check_exit(VCPKG_LINE_INFO, current_instance == nullptr);
+        current_instance = this;
+    }
+
     BinaryCache::BinaryCache(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+        : BinaryCache(paths.get_filesystem())
     {
         install_providers_for(args, paths);
     }
+
+    BinaryCache::~BinaryCache() { BinaryCache::wait_for_async_complete(); }
 
     void BinaryCache::install_providers(std::vector<std::unique_ptr<IBinaryProvider>>&& providers)
     {
@@ -1387,17 +1421,24 @@ namespace vcpkg
         return RestoreResult::unavailable;
     }
 
-    void BinaryCache::push_success(const InstallPlanAction& action)
+    void BinaryCache::push_success(const InstallPlanAction& action, Path package_dir)
     {
         const auto abi = action.package_abi().get();
         if (abi)
         {
-            for (auto&& provider : m_providers)
+            const auto clean_packages = action.build_options.clean_packages == CleanPackages::YES;
+            if (clean_packages)
             {
-                provider->push_success(action);
+                static int counter = 0;
+                Path new_packaged_dir = package_dir + "_push_" + std::to_string(++counter);
+                filesystem.remove_all(new_packaged_dir, VCPKG_LINE_INFO);
+                filesystem.rename(package_dir, new_packaged_dir, VCPKG_LINE_INFO);
+                package_dir = new_packaged_dir;
             }
 
-            m_status[*abi].mark_restored();
+            std::unique_lock<std::mutex> lock(actions_to_push_mutex);
+            actions_to_push.push(ActionToPush{BinaryPackageInformation{action}, clean_packages, package_dir});
+            actions_to_push_notifier.notify_all();
         }
     }
 
@@ -1453,6 +1494,34 @@ namespace vcpkg
         }
 
         return results;
+    }
+
+    void BinaryCache::push_thread_main()
+    {
+        while (true)
+        {
+            std::unique_lock<std::mutex> lock(actions_to_push_mutex);
+            actions_to_push_notifier.wait(lock, [this]() { return !actions_to_push.empty() || end_push_thread; });
+            if (actions_to_push.empty())
+            {
+                if (end_push_thread) break;
+                continue;
+            }
+
+            auto entry = std::move(actions_to_push.front());
+            actions_to_push.pop();
+            lock.unlock(); // we don't touch actions_to_push anymore
+
+            for (auto&& provider : m_providers)
+            {
+                provider->push_success(entry.info, entry.packages_dir, stdout_sink);
+            }
+            if (entry.clean_after_push)
+            {
+                filesystem.remove_all(entry.packages_dir, VCPKG_LINE_INFO);
+            }
+            actions_to_push_notifier.notify_all();
+        }
     }
 
     bool CacheStatus::should_attempt_precheck(const IBinaryProvider* sender) const noexcept
@@ -1564,6 +1633,21 @@ namespace vcpkg
         configs_to_read.clear();
         configs_to_write.clear();
         secrets.clear();
+    }
+
+    BinaryPackageInformation::BinaryPackageInformation(const InstallPlanAction& action)
+        : package_abi(action.package_abi().value_or_exit(VCPKG_LINE_INFO))
+        , spec(action.spec)
+        , source_control_file(
+              *action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file)
+        , raw_version(source_control_file.core_paragraph->raw_version)
+        , compiler_id(action.abi_info.value_or_exit(VCPKG_LINE_INFO).compiler_info.value_or_exit(VCPKG_LINE_INFO).id)
+        , compiler_version(
+              action.abi_info.value_or_exit(VCPKG_LINE_INFO).compiler_info.value_or_exit(VCPKG_LINE_INFO).version)
+        , triplet_abi(action.abi_info.value_or_exit(VCPKG_LINE_INFO).triplet_abi.value_or_exit(VCPKG_LINE_INFO))
+        , feature_list(action.feature_list)
+        , package_dependencies(action.package_dependencies)
+    {
     }
 }
 
@@ -2366,15 +2450,13 @@ details::NuGetRepoInfo details::get_nuget_repo_info_from_env()
 }
 
 std::string vcpkg::generate_nuspec(const Path& package_dir,
-                                   const InstallPlanAction& action,
+                                   const BinaryPackageInformation& info,
                                    const vcpkg::NugetReference& ref,
                                    details::NuGetRepoInfo rinfo)
 {
-    auto& spec = action.spec;
-    auto& scf = *action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
+    auto& spec = info.spec;
+    auto& scf = info.source_control_file;
     auto& version = scf.core_paragraph->raw_version;
-    const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
-    const auto& compiler_info = abi_info.compiler_info.value_or_exit(VCPKG_LINE_INFO);
     std::string description =
         Strings::concat("NOT FOR DIRECT USE. Automatically generated cache package.\n\n",
                         Strings::join("\n    ", scf.core_paragraph->description),
@@ -2383,16 +2465,16 @@ std::string vcpkg::generate_nuspec(const Path& package_dir,
                         "\nTriplet: ",
                         spec.triplet().to_string(),
                         "\nCXX Compiler id: ",
-                        compiler_info.id,
+                        info.compiler_id,
                         "\nCXX Compiler version: ",
-                        compiler_info.version,
+                        info.compiler_version,
                         "\nTriplet/Compiler hash: ",
-                        abi_info.triplet_abi.value_or_exit(VCPKG_LINE_INFO),
+                        info.triplet_abi,
                         "\nFeatures:",
-                        Strings::join(",", action.feature_list, [](const std::string& s) { return " " + s; }),
+                        Strings::join(",", info.feature_list, [](const std::string& s) { return " " + s; }),
                         "\nDependencies:\n");
 
-    for (auto&& dep : action.package_dependencies)
+    for (auto&& dep : info.package_dependencies)
     {
         Strings::append(description, "    ", dep.name(), '\n');
     }
