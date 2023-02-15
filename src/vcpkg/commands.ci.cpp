@@ -180,7 +180,7 @@ namespace vcpkg::Commands::CI
 
         const auto applicable_specs = Util::filter(specs, [&](auto& spec) -> bool {
             return create_feature_install_plan(provider, var_provider, {&spec, 1}, {}, serialize_options)
-                .warnings.empty();
+                .unsupported_features.empty();
         });
 
         auto action_plan = create_feature_install_plan(provider, var_provider, applicable_specs, {}, serialize_options);
@@ -463,13 +463,13 @@ namespace vcpkg::Commands::CI
                                                supp ? BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES
                                                     : BuildResult::EXCLUDED);
                     if (supp) ++split_specs->cascade_count;
-                    msg += Strings::format("%40s: %8s\n", spec.package_spec, supp ? "cascade" : "skip");
+                    msg += fmt::format("{:>40}: {:>8}\n", spec.package_spec, supp ? "cascade" : "skip");
                 }
             }
             for (size_t i = 0; i < action_plan.install_actions.size(); ++i)
             {
                 auto&& action = action_plan.install_actions[i];
-                msg += fmt::format("{:40}: {:8}: {}\n",
+                msg += fmt::format("{:>40}: {:>8}: {}\n",
                                    action.spec,
                                    split_specs->action_state_string[i],
                                    action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
