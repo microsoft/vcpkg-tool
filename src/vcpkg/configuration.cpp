@@ -376,7 +376,7 @@ namespace
         {
             if (!el.second.is_string())
             {
-                r.add_generic_error(type_name(), "value of [\"", el.first, "\"] must be a string");
+                r.add_generic_error(type_name(), msg::format(msgJsonFieldNotString, msg::json_field = el.first));
                 continue;
             }
 
@@ -452,7 +452,7 @@ namespace
 
             if (!el.second.is_object())
             {
-                r.add_generic_error(type_name(), "value of [\"", key, "\"] must be an object");
+                r.add_generic_error(type_name(), msg::format(msgJsonFieldNotObject, msg::json_field = key));
                 continue;
             }
 
@@ -460,9 +460,7 @@ namespace
             if (demand_obj.contains(CE_DEMANDS))
             {
                 r.add_generic_error(type_name(),
-                                    "$.demands.[\"",
-                                    key,
-                                    "\"] contains a `demands` object (nested `demands` have no effect)");
+                                    msg::format(msgConfigurationNestedDemands, msg::json_field = el.first));
             }
 
             auto maybe_demand = r.visit(demand_obj, CeMetadataDeserializer::instance);
@@ -574,11 +572,7 @@ namespace
         {
             if (default_registry.kind.value_or("") == RegistryConfigDeserializer::KIND_ARTIFACT)
             {
-                r.add_generic_error(type_name(),
-                                    DEFAULT_REGISTRY,
-                                    " cannot be of kind \"",
-                                    RegistryConfigDeserializer::KIND_ARTIFACT,
-                                    "\"");
+                r.add_generic_error(type_name(), msg::format(msgDefaultRegistryIsArtifact));
             }
             ret.default_reg = std::move(default_registry);
         }

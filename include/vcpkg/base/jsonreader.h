@@ -53,12 +53,7 @@ namespace vcpkg::Json
         void add_missing_field_error(const LocalizedString& type, StringView key, const LocalizedString& key_type);
         void add_expected_type_error(const LocalizedString& expected_type);
         void add_extra_field_error(const LocalizedString& type, StringView fields, StringView suggestion = {});
-        template<class... Args>
-        void add_generic_error(const LocalizedString& type, Args&&... args)
-        {
-            // TODO: Fix all callers to be localized
-            m_errors.push_back(LocalizedString::from_raw(Strings::concat(path(), " (", type, "): ", args...)));
-        }
+        void add_generic_error(const LocalizedString& type, LocalizedString&& message);
 
         void add_warning(LocalizedString type, StringView msg);
 

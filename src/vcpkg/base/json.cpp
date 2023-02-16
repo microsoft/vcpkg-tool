@@ -1430,6 +1430,10 @@ namespace vcpkg::Json
             add_generic_error(type, msg::format(msgUnexpectedField, msg::json_field = field));
         }
     }
+    void Reader::add_generic_error(const LocalizedString& type, LocalizedString&& message)
+    {
+        m_errors.push_back(LocalizedString::from_raw(Strings::concat(path(), " (", type, "): ", message)));
+    }
 
     void Reader::check_for_unexpected_fields(const Object& obj,
                                              View<StringView> valid_fields,
