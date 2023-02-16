@@ -361,6 +361,7 @@ namespace vcpkg
         std::vector<ImageDataDirectory> data_directories;
         std::vector<SectionTableHeader> section_headers;
 
+        const ImageDataDirectory* try_get_image_data_directory(size_t directory_index) const noexcept;
         MachineType get_machine_type() const noexcept;
         bool is_arm64_ec() const noexcept;
     };
