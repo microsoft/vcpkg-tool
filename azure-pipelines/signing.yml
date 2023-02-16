@@ -399,6 +399,13 @@ jobs:
           move "$(Build.ArtifactStagingDirectory)\staging\macos\vcpkg" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-macos"
 
           copy "$(Build.SourcesDirectory)\azure-pipelines\vs-insertion\vcpkg.nuspec" "$(Build.ArtifactStagingDirectory)\vs-insertion\staging\vcpkg.nuspec"
+    - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
+      displayName: 'Generate SBOMs'
+      inputs:
+        BuildDropPath: '$(Build.ArtifactStagingDirectory)/drop'
+        ManifestDirPath: '$(Build.ArtifactStagingDirectory)/drop'
+        PackageName: vcpkg
+        PackageVersion: '$(VCPKG_BASE_VERSION)'
     - task: CmdLine@2
       displayName: 'Add Drop PGP Signatures (real sign only)'
       condition: and(eq(variables.SignType, 'real'), succeeded())
