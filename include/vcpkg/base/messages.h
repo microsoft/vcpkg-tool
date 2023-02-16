@@ -1466,18 +1466,18 @@ namespace vcpkg
     DECLARE_MESSAGE(
         HelpBinaryCachingAws,
         (),
-        "Printed as the 'definition' for 'x-aws,<prefix>[,<rw>]', so '<prefix>' must be preserved verbatim.",
+        "Printed as the 'definition' for 'x-aws,<prefix>[,<rw>[,endpoint-url=<endpoint-url>][,profile=<profile>]]', so "
+        "'<prefix>' must be preserved verbatim.",
         "**Experimental: will change or be removed without warning**\n"
         "Adds an AWS S3 source. Uses the aws CLI for uploads and downloads. Prefix should include s3:// "
-        "scheme and be suffixed with a \"/\".");
+        "scheme and be suffixed with a \"/\". Endpoint URL should include http:// or https:// scheme.");
     DECLARE_MESSAGE(HelpBinaryCachingAwsConfig,
                     (),
                     "Printed as the 'definition' for 'x-aws-config,<parameter>'.",
                     "**Experimental: will change or be removed without warning**\n"
-                    "Adds an AWS S3 source. Adds an AWS configuration; currently supports 'no-sign-request' and "
-                    "'endpoint-url' parameters which are equivalent to the --no-sign-request and --endpoint-url "
-                    "parameters of the AWS CLI. Currently only one parameter can be specified per x-aws-config; "
-                    "to specify multiple parameters, use multiple x-aws-config sources.");
+                    "Adds an AWS S3 source. Adds an AWS configuration; currently supports only 'no-sign-request' "
+                    "parameter that is an equivalent to the --no-sign-request parameter "
+                    "of the AWS CLI.");
     DECLARE_MESSAGE(HelpBinaryCachingAwsHeader, (), "", "Azure Web Services sources");
     DECLARE_MESSAGE(HelpBinaryCachingAzBlob,
                     (),
@@ -1800,6 +1800,10 @@ namespace vcpkg
                     (msg::binary_source),
                     "",
                     "invalid argument: binary config '{binary_source}' requires 1 or 2 arguments");
+    DECLARE_MESSAGE(InvalidArgumentRequiresOneToFourArguments,
+                    (msg::binary_source),
+                    "",
+                    "invalid argument: binary config '{binary_source}' requires 1 to 4 arguments");
     DECLARE_MESSAGE(InvalidArgumentRequiresPathArgument,
                     (msg::binary_source),
                     "",

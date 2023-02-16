@@ -922,11 +922,12 @@ namespace
         bool m_use_nuget_cache;
     };
 
+    template<typename TDerived, typename TPrefix = std::string, typename TObjectPath = std::string>
     struct ObjectStorageProvider : IBinaryProvider
     {
         ObjectStorageProvider(const VcpkgPaths& paths,
-                              std::vector<std::string>&& read_prefixes,
-                              std::vector<std::string>&& write_prefixes)
+                              std::vector<TPrefix>&& read_prefixes,
+                              std::vector<TPrefix>&& write_prefixes)
             : paths(paths), m_read_prefixes(std::move(read_prefixes)), m_write_prefixes(std::move(write_prefixes))
         {
         }
@@ -944,7 +945,7 @@ namespace
             size_t restored_count = 0;
             for (const auto& prefix : m_read_prefixes)
             {
-                std::vector<std::pair<std::string, Path>> url_paths;
+                std::vector<std::pair<TObjectPath, Path>> url_paths;
                 std::vector<size_t> url_indices;
 
                 for (size_t idx = 0; idx < cache_status.size(); ++idx)
@@ -958,7 +959,7 @@ namespace
                     auto&& action = actions[idx];
                     clean_prepare_dir(fs, paths.package_dir(action.spec));
                     url_paths.emplace_back(
-                        make_object_path(prefix, action.package_abi().value_or_exit(VCPKG_LINE_INFO)),
+                        TDerived::make_object_path(prefix, action.package_abi().value_or_exit(VCPKG_LINE_INFO)),
                         make_temp_archive_path(paths.buildtrees(), action.spec));
                     url_indices.push_back(idx);
                 }
@@ -1028,7 +1029,7 @@ namespace
             size_t upload_count = 0;
             for (const auto& prefix : m_write_prefixes)
             {
-                if (upload_file(make_object_path(prefix, abi), tmp_archive_path))
+                if (upload_file(TDerived::make_object_path(prefix, abi), tmp_archive_path))
                 {
                     ++upload_count;
                 }
@@ -1054,7 +1055,7 @@ namespace
                         continue;
                     }
 
-                    if (stat(make_object_path(prefix, abi)))
+                    if (stat(TDerived::make_object_path(prefix, abi)))
                     {
                         actions_availability[idx] = CacheAvailability::available;
                         cache_status[idx]->mark_available(this);
@@ -1074,18 +1075,18 @@ namespace
 
     protected:
         virtual StringLiteral vendor() const = 0;
-        virtual bool stat(StringView url) const = 0;
-        virtual bool upload_file(StringView object, const Path& archive) const = 0;
-        virtual bool download_file(StringView object, const Path& archive) const = 0;
+        virtual bool stat(const TObjectPath& url) const = 0;
+        virtual bool upload_file(const TObjectPath& object, const Path& archive) const = 0;
+        virtual bool download_file(const TObjectPath& object, const Path& archive) const = 0;
 
         const VcpkgPaths& paths;
 
     private:
-        std::vector<std::string> m_read_prefixes;
-        std::vector<std::string> m_write_prefixes;
+        std::vector<TPrefix> m_read_prefixes;
+        std::vector<TPrefix> m_write_prefixes;
     };
 
-    struct GcsBinaryProvider : ObjectStorageProvider
+    struct GcsBinaryProvider : ObjectStorageProvider<GcsBinaryProvider>
     {
         GcsBinaryProvider(const VcpkgPaths& paths,
                           std::vector<std::string>&& read_prefixes,
@@ -1098,13 +1099,13 @@ namespace
 
         Command command() const { return Command{paths.get_tool_exe(Tools::GSUTIL, stdout_sink)}; }
 
-        bool stat(StringView url) const override
+        bool stat(const std::string& url) const override
         {
             auto cmd = command().string_arg("-q").string_arg("stat").string_arg(url);
             return succeeded(cmd_execute(cmd));
         }
 
-        bool upload_file(StringView object, const Path& archive) const override
+        bool upload_file(const std::string& object, const Path& archive) const override
         {
             auto cmd = command().string_arg("-q").string_arg("cp").string_arg(archive).string_arg(object);
             const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::GSUTIL);
@@ -1117,7 +1118,7 @@ namespace
             return false;
         }
 
-        bool download_file(StringView object, const Path& archive) const override
+        bool download_file(const std::string& object, const Path& archive) const override
         {
             auto cmd = command().string_arg("-q").string_arg("cp").string_arg(object).string_arg(archive);
             const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::GSUTIL);
@@ -1131,49 +1132,57 @@ namespace
         }
     };
 
-    struct AwsBinaryProvider : ObjectStorageProvider
+    using AwsObjectPath = AwsPrefix; // <path, config>
+    struct AwsBinaryProvider : ObjectStorageProvider<AwsBinaryProvider, AwsPrefix, AwsObjectPath>
     {
         AwsBinaryProvider(const VcpkgPaths& paths,
-                          std::vector<std::string>&& read_prefixes,
-                          std::vector<std::string>&& write_prefixes,
-                          const bool no_sign_request,
-                          std::string&& aws_endpoint_url)
+                          std::vector<AwsPrefix>&& read_prefixes,
+                          std::vector<AwsPrefix>&& write_prefixes,
+                          const bool no_sign_request)
             : ObjectStorageProvider(paths, std::move(read_prefixes), std::move(write_prefixes))
             , m_no_sign_request(no_sign_request)
-            , m_aws_endpoint_url(aws_endpoint_url)
         {
+        }
+
+        static AwsObjectPath make_object_path(const AwsPrefix& prefix, const std::string& abi)
+        {
+            return std::make_pair(ObjectStorageProvider::make_object_path(prefix.first, abi), prefix.second);
         }
 
         StringLiteral vendor() const override { return "AWS"; }
 
         Command command() const { return Command{paths.get_tool_exe(Tools::AWSCLI, stdout_sink)}; }
 
-        bool stat(StringView url) const override
+        void configure_command(Command& cmd, const AwsPrefixConfig& config) const
         {
-            auto cmd = command().string_arg("s3").string_arg("ls").string_arg(url);
             if (m_no_sign_request)
             {
                 cmd.string_arg("--no-sign-request");
             }
-            if (!m_aws_endpoint_url.empty())
+
+            if (!config.profile.empty())
             {
-                cmd.string_arg("--endpoint-url").string_arg(m_aws_endpoint_url);
+                cmd.string_arg("--profile").string_arg(config.profile);
             }
+
+            if (!config.endpoint_url.empty())
+            {
+                cmd.string_arg("--endpoint-url").string_arg(config.endpoint_url);
+            }
+        }
+
+        bool stat(const AwsObjectPath& url) const override
+        {
+            auto cmd = command().string_arg("s3").string_arg("ls").string_arg(url.first);
+            configure_command(cmd, url.second);
 
             return succeeded(cmd_execute(cmd));
         }
 
-        bool upload_file(StringView object, const Path& archive) const override
+        bool upload_file(const AwsObjectPath& object, const Path& archive) const override
         {
-            auto cmd = command().string_arg("s3").string_arg("cp").string_arg(archive).string_arg(object);
-            if (m_no_sign_request)
-            {
-                cmd.string_arg("--no-sign-request");
-            }
-            if (!m_aws_endpoint_url.empty())
-            {
-                cmd.string_arg("--endpoint-url").string_arg(m_aws_endpoint_url);
-            }
+            auto cmd = command().string_arg("s3").string_arg("cp").string_arg(archive).string_arg(object.first);
+            configure_command(cmd, object.second);
 
             const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::AWSCLI);
             if (out)
@@ -1185,22 +1194,15 @@ namespace
             return false;
         }
 
-        bool download_file(StringView object, const Path& archive) const override
+        bool download_file(const AwsObjectPath& object, const Path& archive) const override
         {
             if (!stat(object))
             {
                 return false;
             }
 
-            auto cmd = command().string_arg("s3").string_arg("cp").string_arg(object).string_arg(archive);
-            if (m_no_sign_request)
-            {
-                cmd.string_arg("--no-sign-request");
-            }
-            if (!m_aws_endpoint_url.empty())
-            {
-                cmd.string_arg("--endpoint-url").string_arg(m_aws_endpoint_url);
-            }
+            auto cmd = command().string_arg("s3").string_arg("cp").string_arg(object.first).string_arg(archive);
+            configure_command(cmd, object.second);
 
             const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::AWSCLI);
             if (out)
@@ -1214,10 +1216,9 @@ namespace
 
     private:
         bool m_no_sign_request;
-        std::string m_aws_endpoint_url;
     };
 
-    struct CosBinaryProvider : ObjectStorageProvider
+    struct CosBinaryProvider : ObjectStorageProvider<CosBinaryProvider>
     {
         CosBinaryProvider(const VcpkgPaths& paths,
                           std::vector<std::string>&& read_prefixes,
@@ -1230,13 +1231,13 @@ namespace
 
         Command command() const { return Command{paths.get_tool_exe(Tools::COSCLI, stdout_sink)}; }
 
-        bool stat(StringView url) const override
+        bool stat(const std::string& url) const override
         {
             auto cmd = command().string_arg("ls").string_arg(url);
             return succeeded(cmd_execute(cmd));
         }
 
-        bool upload_file(StringView object, const Path& archive) const override
+        bool upload_file(const std::string& object, const Path& archive) const override
         {
             auto cmd = command().string_arg("cp").string_arg(archive).string_arg(object);
             const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::COSCLI);
@@ -1249,7 +1250,7 @@ namespace
             return false;
         }
 
-        bool download_file(StringView object, const Path& archive) const override
+        bool download_file(const std::string& object, const Path& archive) const override
         {
             auto cmd = command().string_arg("cp").string_arg(object).string_arg(archive);
             const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::COSCLI);
@@ -1573,7 +1574,6 @@ namespace vcpkg
         aws_read_prefixes.clear();
         aws_write_prefixes.clear();
         aws_no_sign_request = false;
-        aws_endpoint_url = "";
         cos_read_prefixes.clear();
         cos_write_prefixes.clear();
         sources_to_read.clear();
@@ -1879,7 +1879,7 @@ namespace
             }
             else if (segments[0].second == "x-aws")
             {
-                // Scheme: x-aws,<prefix>[,<readwrite>]
+                // Scheme: x-aws,<prefix>[,<readwrite>[,endpoint-url=<endpoint-url>][,profile=<profile>]]
                 if (segments.size() < 2)
                 {
                     return add_error(msg::format(msgInvalidArgumentRequiresPrefix, msg::binary_source = "aws"),
@@ -1894,11 +1894,11 @@ namespace
                                      segments[1].first);
                 }
 
-                if (segments.size() > 3)
+                if (segments.size() > 5)
                 {
                     return add_error(
-                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "aws"),
-                        segments[3].first);
+                        msg::format(msgInvalidArgumentRequiresOneToFourArguments, msg::binary_source = "aws"),
+                        segments[5].first);
                 }
 
                 auto p = segments[1].second;
@@ -1907,47 +1907,51 @@ namespace
                     p.push_back('/');
                 }
 
-                handle_readwrite(state->aws_read_prefixes, state->aws_write_prefixes, std::move(p), segments, 2);
+                AwsPrefixConfig config;
+                for (size_t idx = 3; idx < segments.size(); idx++)
+                {
+                    if (Strings::starts_with(segments[idx].second, "endpoint-url="))
+                    {
+                        config.endpoint_url = segments[idx].second.substr(13);
+                        if (!Strings::starts_with(config.endpoint_url, "http://") &&
+                            !Strings::starts_with(config.endpoint_url, "https://"))
+                        {
+                            return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
+                                                         msg::base_url = "http(s)://",
+                                                         msg::binary_source = "aws"),
+                                             segments[idx].first);
+                        }
+                    }
+                    else if (Strings::starts_with(segments[idx].second, "profile="))
+                    {
+                        config.profile = segments[idx].second.substr(8);
+                    }
+                    else
+                    {
+                        return add_error(msg::format(msgInvalidArgument), segments[idx].first);
+                    }
+                }
+
+                handle_readwrite(state->aws_read_prefixes,
+                                 state->aws_write_prefixes,
+                                 std::make_pair(std::move(p), std::move(config)),
+                                 segments,
+                                 2);
 
                 state->binary_cache_providers.insert("aws");
             }
             else if (segments[0].second == "x-aws-config")
             {
-                if (segments.size() != 2 && segments.size() != 3)
+                if (segments.size() != 2)
                 {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "x-aws-config"));
+                    return add_error(msg::format(msgInvalidArgumentRequiresSingleStringArgument,
+                                                 msg::binary_source = "x-aws-config"));
                 }
 
                 auto&& p = segments[1].second;
                 if (p == "no-sign-request")
                 {
-                    if (segments.size() != 2)
-                    {
-                        return add_error(msg::format(msgInvalidArgumentRequiresOneOrTwoArguments,
-                                                     msg::binary_source = "x-aws-config"));
-                    }
-
                     state->aws_no_sign_request = true;
-                }
-                else if (p == "endpoint-url")
-                {
-                    if (segments.size() != 3)
-                    {
-                        return add_error(msg::format(msgInvalidArgumentRequiresOneOrTwoArguments,
-                                                     msg::binary_source = "x-aws-config"));
-                    }
-
-                    if (!Strings::starts_with(segments[2].second, "http://") &&
-                        !Strings::starts_with(segments[2].second, "https://"))
-                    {
-                        return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
-                                                     msg::base_url = "https://",
-                                                     msg::binary_source = "x-aws-config"),
-                                         segments[2].first);
-                    }
-
-                    state->aws_endpoint_url = segments[2].second;
                 }
                 else
                 {
@@ -2320,11 +2324,8 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
 
     if (!s.aws_read_prefixes.empty() || !s.aws_write_prefixes.empty())
     {
-        providers.push_back(std::make_unique<AwsBinaryProvider>(paths,
-                                                                std::move(s.aws_read_prefixes),
-                                                                std::move(s.aws_write_prefixes),
-                                                                s.aws_no_sign_request,
-                                                                std::move(s.aws_endpoint_url)));
+        providers.push_back(std::make_unique<AwsBinaryProvider>(
+            paths, std::move(s.aws_read_prefixes), std::move(s.aws_write_prefixes), s.aws_no_sign_request));
     }
 
     if (!s.cos_read_prefixes.empty() || !s.cos_write_prefixes.empty())
@@ -2538,7 +2539,8 @@ LocalizedString vcpkg::format_help_topic_binary_caching()
     // AWS sources:
     table.blank();
     table.header(msg::format(msgHelpBinaryCachingAwsHeader));
-    table.format("x-aws,<prefix>[,<rw>]", msg::format(msgHelpBinaryCachingAws));
+    table.format("x-aws,<prefix>[,<rw>[,endpoint-url=<endpoint-url>][,profile=<profile>]]",
+                 msg::format(msgHelpBinaryCachingAws));
     table.format("x-aws-config,<parameter>", msg::format(msgHelpBinaryCachingAwsConfig));
 
     return msg::format(msgHelpBinaryCaching)

@@ -14,6 +14,7 @@
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace vcpkg
@@ -80,6 +81,14 @@ namespace vcpkg
         std::string instantiate_variables(const InstallPlanAction& action) const;
     };
 
+    struct AwsPrefixConfig
+    {
+        std::string endpoint_url;
+        std::string profile;
+    };
+
+    using AwsPrefix = std::pair<std::string, AwsPrefixConfig>;
+
     struct BinaryConfigParserState
     {
         bool nuget_interactive = false;
@@ -96,10 +105,9 @@ namespace vcpkg
         std::vector<std::string> gcs_read_prefixes;
         std::vector<std::string> gcs_write_prefixes;
 
-        std::vector<std::string> aws_read_prefixes;
-        std::vector<std::string> aws_write_prefixes;
+        std::vector<AwsPrefix> aws_read_prefixes;
+        std::vector<AwsPrefix> aws_write_prefixes;
         bool aws_no_sign_request = false;
-        std::string aws_endpoint_url = "";
 
         std::vector<std::string> cos_read_prefixes;
         std::vector<std::string> cos_write_prefixes;

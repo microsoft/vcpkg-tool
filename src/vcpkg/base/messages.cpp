@@ -871,6 +871,7 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidArgumentRequiresBaseUrlAndToken);
     REGISTER_MESSAGE(InvalidArgumentRequiresNoneArguments);
     REGISTER_MESSAGE(InvalidArgumentRequiresOneOrTwoArguments);
+    REGISTER_MESSAGE(InvalidArgumentRequiresOneToFourArguments);
     REGISTER_MESSAGE(InvalidArgumentRequiresPathArgument);
     REGISTER_MESSAGE(InvalidArgumentRequiresPrefix);
     REGISTER_MESSAGE(InvalidArgumentRequiresSingleArgument);
