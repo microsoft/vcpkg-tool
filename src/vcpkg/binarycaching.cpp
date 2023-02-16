@@ -173,6 +173,66 @@ namespace
         return buildtrees / spec.name() / (spec.triplet().to_string() + ".zip");
     }
 
+    struct ISingleObjectProvider : IObjectProvider
+    {
+        using IObjectProvider::IObjectProvider;
+        virtual ~ISingleObjectProvider() = default;
+
+        void download(View<StringView> objects, const Path& target_dir) const override final
+        {
+            for (auto object : objects)
+            {
+                download(object, target_dir / object);
+            }
+        };
+        virtual void download(StringView object, const Path& target_file) const = 0;
+
+        void check_availability(View<StringView> objects, Span<bool> cache_status) const override final
+        {
+            auto iter = cache_status.begin();
+            for (auto object : objects)
+            {
+                check_availability(object, iter);
+                ++iter;
+            }
+        }
+        virtual void check_availability(StringView object, bool* cache_status) const = 0;
+    };
+
+    struct FileObjectProvider : ISingleObjectProvider
+    {
+        FileObjectProvider(Access access, Filesystem& filesystem, Path&& dir)
+            : ISingleObjectProvider(access), fs(filesystem), m_dir(std::move(dir))
+        {
+        }
+        static Path make_archive_subpath(const StringView abi)
+        {
+            return Path(abi.substr(0, 2)) / (abi.to_string() + ".zip");
+        }
+        void download(StringView object, const Path& target_dir) const override
+        {
+            const auto archive_path = m_dir / make_archive_subpath(object);
+            if (fs.exists(archive_path, IgnoreErrors{}))
+            {
+                fs.copy_file(archive_path, target_dir / object, CopyOptions::skip_existing, VCPKG_LINE_INFO);
+            }
+        }
+        void upload(StringView object_id, const Path& object, MessageSink& msg_sink) override
+        {
+            fs.copy_file(
+                object, m_dir / make_archive_subpath(object_id), CopyOptions::overwrite_existing, IgnoreErrors{});
+        }
+        void check_availability(StringView object, bool* cache_status) const override
+        {
+            const auto archive_path = m_dir / make_archive_subpath(object);
+            *cache_status = fs.exists(archive_path, IgnoreErrors{});
+        }
+
+    private:
+        Filesystem& fs;
+        Path m_dir;
+    };
+
     struct ArchivesBinaryProvider : IBinaryProvider
     {
         ArchivesBinaryProvider(const VcpkgPaths& paths,
@@ -417,136 +477,55 @@ namespace
         std::vector<std::string> m_secrets;
         size_t m_http_remotes_pushed = 0;
     };
-    struct HttpGetBinaryProvider : IBinaryProvider
+
+    struct HttpObjectProvider : IObjectProvider
     {
-        HttpGetBinaryProvider(const VcpkgPaths& paths,
-                              std::vector<UrlTemplate>&& url_templates,
-                              const std::vector<std::string>& secrets)
-            : paths(paths), m_url_templates(std::move(url_templates)), m_secrets(secrets)
+        HttpObjectProvider(Access access,
+                           Filesystem& fs,
+                           UrlTemplate&& url_template,
+                           const std::vector<std::string>& secrets)
+            : IObjectProvider(access), fs(fs), m_url_template(std::move(url_template)), m_secrets(secrets)
         {
         }
 
-        RestoreResult try_restore(const InstallPlanAction&) const override { return RestoreResult::unavailable; }
-
-        void push_success(const BinaryPackageInformation&, const Path&, MessageSink&) override { }
-
-        void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
+        void download(View<StringView> objects, const Path& target_dir) const override
         {
-            const ElapsedTimer timer;
-            auto& fs = paths.get_filesystem();
-            size_t this_restore_count = 0;
-            std::vector<std::pair<std::string, Path>> url_paths;
-            std::vector<size_t> url_indices;
-            for (auto&& url_template : m_url_templates)
+            auto url_paths = Util::fmap(objects, [&](StringView object) -> std::pair<std::string, Path> {
+                return {m_url_template.instantiate_variable(object), target_dir / object};
+            });
+            auto codes = download_files(fs, url_paths, m_url_template.headers_for_get);
+            for (size_t i = 0; i < codes.size(); ++i)
             {
-                url_paths.clear();
-                url_indices.clear();
-                for (size_t idx = 0; idx < cache_status.size(); ++idx)
+                if (codes[i] != 200)
                 {
-                    auto this_cache_status = cache_status[idx];
-                    if (!this_cache_status || !this_cache_status->should_attempt_restore(this))
-                    {
-                        continue;
-                    }
-
-                    auto&& action = actions[idx];
-                    clean_prepare_dir(fs, paths.package_dir(action.spec));
-                    auto uri = url_template.instantiate_variables(BinaryPackageInformation{action});
-                    url_paths.emplace_back(std::move(uri), make_temp_archive_path(paths.buildtrees(), action.spec));
-                    url_indices.push_back(idx);
-                }
-
-                if (url_paths.empty()) break;
-
-                msg::println(msgAttemptingToFetchPackagesFromVendor,
-                             msg::count = url_paths.size(),
-                             msg::vendor = "HTTP servers");
-
-                auto codes = download_files(fs, url_paths, url_template.headers_for_get);
-                std::vector<size_t> action_idxs;
-                std::vector<Command> jobs;
-                for (size_t i = 0; i < codes.size(); ++i)
-                {
-                    if (codes[i] == 200)
-                    {
-                        action_idxs.push_back(i);
-                        jobs.push_back(decompress_zip_archive_cmd(paths.get_tool_cache(),
-                                                                  stdout_sink,
-                                                                  paths.package_dir(actions[url_indices[i]].spec),
-                                                                  url_paths[i].second));
-                    }
-                }
-                auto job_results = decompress_in_parallel(jobs);
-                for (size_t j = 0; j < jobs.size(); ++j)
-                {
-                    const auto i = action_idxs[j];
-                    if (job_results[j])
-                    {
-                        ++this_restore_count;
-                        fs.remove(url_paths[i].second, VCPKG_LINE_INFO);
-                        cache_status[url_indices[i]]->mark_restored();
-                    }
-                    else
-                    {
-                        Debug::print("Failed to decompress ", url_paths[i].second, '\n');
-                    }
-                }
-            }
-
-            msg::println(msgRestoredPackagesFromVendor,
-                         msg::count = this_restore_count,
-                         msg::elapsed = timer.elapsed(),
-                         msg::value = "HTTP servers");
-        }
-
-        void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
-        {
-            std::vector<CacheAvailability> actions_present{actions.size()};
-            std::vector<std::string> urls;
-            std::vector<size_t> url_indices;
-            for (auto&& url_template : m_url_templates)
-            {
-                urls.clear();
-                url_indices.clear();
-                for (size_t idx = 0; idx < actions.size(); ++idx)
-                {
-                    if (!cache_status[idx]->should_attempt_precheck(this))
-                    {
-                        continue;
-                    }
-
-                    urls.push_back(url_template.instantiate_variables(BinaryPackageInformation{actions[idx]}));
-                    url_indices.push_back(idx);
-                }
-
-                if (urls.empty())
-                {
-                    return;
-                }
-
-                auto codes = url_heads(urls, {}, m_secrets);
-                Checks::check_exit(VCPKG_LINE_INFO, codes.size() == urls.size());
-                for (size_t i = 0; i < codes.size(); ++i)
-                {
-                    if (codes[i] == 200)
-                    {
-                        cache_status[url_indices[i]]->mark_available(this);
-                        actions_present[url_indices[i]] = CacheAvailability::available;
-                    }
-                }
-            }
-
-            for (size_t idx = 0; idx < actions.size(); ++idx)
-            {
-                if (actions_present[idx] == CacheAvailability::unavailable)
-                {
-                    cache_status[idx]->mark_unavailable(this);
+                    fs.remove(url_paths[i].second, IgnoreErrors{});
                 }
             }
         }
+        void upload(StringView object_id, const Path& object, MessageSink& msg_sink) override
+        {
+            auto maybe_success = put_file(
+                fs, m_url_template.instantiate_variable(object_id), m_secrets, m_url_template.headers_for_put, object);
+            if (!maybe_success)
+            {
+                msg_sink.println(Color::warning, maybe_success.error());
+            }
+        }
+        void check_availability(vcpkg::View<StringView> objects, vcpkg::Span<bool> cache_status) const override
+        {
+            auto urls = Util::fmap(objects, [&](StringView object) -> std::string {
+                return m_url_template.url_template + object.to_string();
+            });
+            auto codes = url_heads(urls, {}, m_secrets);
+            Checks::check_exit(VCPKG_LINE_INFO, codes.size() == urls.size());
+            for (size_t i = 0; i < codes.size(); ++i)
+            {
+                cache_status[i] = (codes[i] == 200);
+            }
+        }
 
-        const VcpkgPaths& paths;
-        std::vector<UrlTemplate> m_url_templates;
+        Filesystem& fs;
+        UrlTemplate m_url_template;
         std::vector<std::string> m_secrets;
     };
     struct NugetBinaryProvider : IBinaryProvider
@@ -930,19 +909,20 @@ namespace
         bool m_use_nuget_cache;
     };
 
-    struct ObjectStorageProvider : IBinaryProvider
+    struct BinaryObjectProvider : IBinaryProvider
     {
-        ObjectStorageProvider(const VcpkgPaths& paths,
-                              std::vector<std::string>&& read_prefixes,
-                              std::vector<std::string>&& write_prefixes)
-            : paths(paths), m_read_prefixes(std::move(read_prefixes)), m_write_prefixes(std::move(write_prefixes))
+        BinaryObjectProvider(const VcpkgPaths& paths,
+                             std::vector<std::unique_ptr<IObjectProvider>>&& providers,
+                             std::vector<ExtendedUrlTemplate>&& put_url_templates,
+                             std::vector<ExtendedUrlTemplate>&& get_url_templates)
+            : paths(paths)
+            , m_providers(std::move(providers))
+            , m_put_url_templates(std::move(put_url_templates))
+            , m_get_url_templates(std::move(get_url_templates))
         {
         }
 
-        static std::string make_object_path(const std::string& prefix, const std::string& abi)
-        {
-            return Strings::concat(prefix, abi, ".zip");
-        }
+        static std::string make_object_id(const std::string& abi) { return Strings::concat(abi, ".zip"); }
 
         void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
@@ -950,10 +930,12 @@ namespace
 
             const ElapsedTimer timer;
             size_t restored_count = 0;
-            for (const auto& prefix : m_read_prefixes)
+            std::vector<std::string> objects;
+            for (const auto& provider : m_providers)
             {
-                std::vector<std::pair<std::string, Path>> url_paths;
-                std::vector<size_t> url_indices;
+                if (!provider->supports_read()) continue;
+                objects.clear();
+                std::vector<size_t> object_indices;
 
                 for (size_t idx = 0; idx < cache_status.size(); ++idx)
                 {
@@ -964,27 +946,28 @@ namespace
                     }
 
                     auto&& action = actions[idx];
-                    clean_prepare_dir(fs, paths.package_dir(action.spec));
-                    url_paths.emplace_back(
-                        make_object_path(prefix, action.package_abi().value_or_exit(VCPKG_LINE_INFO)),
-                        make_temp_archive_path(paths.buildtrees(), action.spec));
-                    url_indices.push_back(idx);
+                    objects.push_back(make_object_id(action.package_abi().value_or_exit(VCPKG_LINE_INFO)));
+                    object_indices.push_back(idx);
                 }
 
-                if (url_paths.empty()) break;
+                if (objects.empty()) break;
 
                 msg::println(
-                    msgAttemptingToFetchPackagesFromVendor, msg::count = url_paths.size(), msg::vendor = vendor());
-
+                    msgAttemptingToFetchPackagesFromVendor, msg::count = objects.size(), msg::vendor = "vendor()");
+                const auto objects_view = Util::fmap(objects, [](std::string& s) -> StringView { return s; });
+                Path target_dir = paths.downloads / "binary_cache";
+                fs.create_directories(target_dir, VCPKG_LINE_INFO);
+                provider->download(objects_view, target_dir);
                 std::vector<Command> jobs;
                 std::vector<size_t> idxs;
-                for (size_t idx = 0; idx < url_paths.size(); ++idx)
+                for (size_t idx = 0; idx < objects.size(); ++idx)
                 {
-                    auto&& action = actions[url_indices[idx]];
-                    auto&& url_path = url_paths[idx];
-                    if (!download_file(url_path.first, url_path.second)) continue;
-                    jobs.push_back(decompress_zip_archive_cmd(
-                        paths.get_tool_cache(), stdout_sink, paths.package_dir(action.spec), url_path.second));
+                    Path object_path = target_dir / objects[idx];
+                    if (!fs.exists(object_path, IgnoreErrors{})) continue;
+                    jobs.push_back(decompress_zip_archive_cmd(paths.get_tool_cache(),
+                                                              stdout_sink,
+                                                              paths.package_dir(actions[object_indices[idx]].spec),
+                                                              object_path));
                     idxs.push_back(idx);
                 }
 
@@ -996,21 +979,21 @@ namespace
                     const auto idx = idxs[j];
                     if (!job_results[j])
                     {
-                        Debug::print("Failed to decompress ", url_paths[idx].second, '\n');
+                        Debug::print("Failed to decompress ", target_dir / objects[idx], '\n');
                         continue;
                     }
 
                     // decompression success
                     ++restored_count;
-                    fs.remove(url_paths[idx].second, VCPKG_LINE_INFO);
-                    cache_status[url_indices[idx]]->mark_restored();
+                    fs.remove(target_dir / objects[idx], VCPKG_LINE_INFO);
+                    cache_status[object_indices[idx]]->mark_restored();
                 }
             }
 
             msg::println(msgRestoredPackagesFromVendor,
                          msg::count = restored_count,
                          msg::elapsed = timer.elapsed(),
-                         msg::value = vendor());
+                         msg::value = "vendor()");
         }
 
         RestoreResult try_restore(const InstallPlanAction&) const override { return RestoreResult::unavailable; }
@@ -1019,7 +1002,6 @@ namespace
                           const Path& packages_dir,
                           MessageSink& msg_sink) override
         {
-            if (m_write_prefixes.empty()) return;
             const ElapsedTimer timer;
             const auto& abi = info.package_abi;
             auto& spec = info.spec;
@@ -1034,20 +1016,19 @@ namespace
                                      .append_raw(compression_result.error()));
                 return;
             }
-
+            const auto object_id = make_object_id(abi);
             size_t upload_count = 0;
-            for (const auto& prefix : m_write_prefixes)
+            for (auto& provider : m_providers)
             {
-                if (upload_file(make_object_path(prefix, abi), tmp_archive_path))
+                if (provider->supports_write())
                 {
-                    ++upload_count;
+                    provider->upload(object_id, tmp_archive_path, stdout_sink);
                 }
             }
-
             msg_sink.println(msgUploadedPackagesToVendor,
                              msg::count = upload_count,
                              msg::elapsed = timer.elapsed(),
-                             msg::vendor = vendor());
+                             msg::vendor = "vendor()");
         }
 
         void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
@@ -1082,179 +1063,162 @@ namespace
             }
         }
 
-    protected:
-        virtual StringLiteral vendor() const = 0;
-        virtual bool stat(StringView url) const = 0;
-        virtual bool upload_file(StringView object, const Path& archive) const = 0;
-        virtual bool download_file(StringView object, const Path& archive) const = 0;
-
-        const VcpkgPaths& paths;
-
     private:
-        std::vector<std::string> m_read_prefixes;
-        std::vector<std::string> m_write_prefixes;
+        const VcpkgPaths& paths;
+        std::vector<std::unique_ptr<IObjectProvider>> m_providers;
+        std::unordered_map<std::string, IObjectProvider*> m_available_provider;
+        std::vector<ExtendedUrlTemplate> m_put_url_templates;
+        std::vector<ExtendedUrlTemplate> m_get_url_templates;
     };
 
-    struct GcsBinaryProvider : ObjectStorageProvider
+    struct GcsObjectProvider : ISingleObjectProvider
     {
-        GcsBinaryProvider(const VcpkgPaths& paths,
-                          std::vector<std::string>&& read_prefixes,
-                          std::vector<std::string>&& write_prefixes)
-            : ObjectStorageProvider(paths, std::move(read_prefixes), std::move(write_prefixes))
+        GcsObjectProvider(Access access, const VcpkgPaths& paths, std::string&& prefix)
+            : ISingleObjectProvider(access), paths(paths), m_prefix(std::move(prefix))
         {
         }
-
-        StringLiteral vendor() const override { return "GCS"; }
 
         Command command() const { return Command{paths.get_tool_exe(Tools::GSUTIL, stdout_sink)}; }
 
-        bool stat(StringView url) const override
+        void check_availability(StringView object, bool* cache_status) const override
         {
-            auto cmd = command().string_arg("-q").string_arg("stat").string_arg(url);
-            return succeeded(cmd_execute(cmd));
+            auto cmd =
+                command().string_arg("-q").string_arg("stat").string_arg(Strings::concat(m_prefix, object.to_string()));
+            *cache_status = succeeded(cmd_execute(cmd));
         }
-
-        bool upload_file(StringView object, const Path& archive) const override
+        void upload(StringView object_id, const Path& object, MessageSink& msg_sink) override
         {
-            auto cmd = command().string_arg("-q").string_arg("cp").string_arg(archive).string_arg(object);
+            auto cmd = command()
+                           .string_arg("-q")
+                           .string_arg("cp")
+                           .string_arg(m_prefix + object_id.to_string())
+                           .string_arg(object);
             const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::GSUTIL);
-            if (out)
+            if (!out)
             {
-                return true;
+                msg_sink.println(Color::warning, out.error());
             }
-
-            msg::write_unlocalized_text_to_stdout(Color::warning, out.error());
-            return false;
         }
-
-        bool download_file(StringView object, const Path& archive) const override
+        void download(StringView object, const Path& target_file) const override
         {
-            auto cmd = command().string_arg("-q").string_arg("cp").string_arg(object).string_arg(archive);
+            auto cmd = command()
+                           .string_arg("-q")
+                           .string_arg("cp")
+                           .string_arg(m_prefix + object.to_string())
+                           .string_arg(target_file);
             const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::GSUTIL);
-            if (out)
+            if (!out)
             {
-                return true;
+                msg::write_unlocalized_text_to_stdout(Color::warning, out.error());
             }
-
-            msg::write_unlocalized_text_to_stdout(Color::warning, out.error());
-            return false;
         }
+
+    private:
+        const VcpkgPaths& paths;
+        std::string m_prefix;
     };
 
-    struct AwsBinaryProvider : ObjectStorageProvider
+    struct AwsObjectProvider : ISingleObjectProvider
     {
-        AwsBinaryProvider(const VcpkgPaths& paths,
-                          std::vector<std::string>&& read_prefixes,
-                          std::vector<std::string>&& write_prefixes,
-                          const bool no_sign_request)
-            : ObjectStorageProvider(paths, std::move(read_prefixes), std::move(write_prefixes))
+        AwsObjectProvider(Access access, const VcpkgPaths& paths, std::string&& prefix, const bool no_sign_request)
+            : ISingleObjectProvider(access)
+            , paths(paths)
+            , m_prefix(std::move(prefix))
             , m_no_sign_request(no_sign_request)
         {
         }
 
-        StringLiteral vendor() const override { return "AWS"; }
-
         Command command() const { return Command{paths.get_tool_exe(Tools::AWSCLI, stdout_sink)}; }
 
-        bool stat(StringView url) const override
+        void check_availability(StringView object, bool* cache_status) const override
         {
-            auto cmd = command().string_arg("s3").string_arg("ls").string_arg(url);
+            auto cmd = command().string_arg("s3").string_arg("ls").string_arg(Strings::concat(m_prefix, object));
             if (m_no_sign_request)
             {
                 cmd.string_arg("--no-sign-request");
             }
 
-            return succeeded(cmd_execute(cmd));
+            *cache_status = succeeded(cmd_execute(cmd));
         }
 
-        bool upload_file(StringView object, const Path& archive) const override
+        void upload(StringView object_id, const Path& object, MessageSink& msg_sink) override
         {
-            auto cmd = command().string_arg("s3").string_arg("cp").string_arg(archive).string_arg(object);
+            auto cmd = command().string_arg("s3").string_arg("cp").string_arg(object).string_arg(
+                Strings::concat(m_prefix, object_id));
             if (m_no_sign_request)
             {
                 cmd.string_arg("--no-sign-request");
             }
             const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::AWSCLI);
-            if (out)
+            if (!out)
             {
-                return true;
+                msg_sink.println(Color::warning, out.error());
             }
-
-            msg::write_unlocalized_text_to_stdout(Color::warning, out.error());
-            return false;
         }
 
-        bool download_file(StringView object, const Path& archive) const override
+        void download(StringView object, const Path& target_file) const override
         {
-            if (!stat(object))
-            {
-                return false;
-            }
-
-            auto cmd = command().string_arg("s3").string_arg("cp").string_arg(object).string_arg(archive);
+            auto cmd = command()
+                           .string_arg("s3")
+                           .string_arg("cp")
+                           .string_arg(Strings::concat(m_prefix, object))
+                           .string_arg(target_file);
             if (m_no_sign_request)
             {
                 cmd.string_arg("--no-sign-request");
             }
 
             const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::AWSCLI);
-            if (out)
+            if (!out)
             {
-                return true;
+                msg::write_unlocalized_text_to_stdout(Color::warning, out.error());
             }
-
-            msg::write_unlocalized_text_to_stdout(Color::warning, out.error());
-            return false;
         }
 
     private:
+        const VcpkgPaths& paths;
+        std::string m_prefix;
         bool m_no_sign_request;
     };
 
-    struct CosBinaryProvider : ObjectStorageProvider
+    struct CosObjectProvider : ISingleObjectProvider
     {
-        CosBinaryProvider(const VcpkgPaths& paths,
-                          std::vector<std::string>&& read_prefixes,
-                          std::vector<std::string>&& write_prefixes)
-            : ObjectStorageProvider(paths, std::move(read_prefixes), std::move(write_prefixes))
+        CosObjectProvider(Access access, const VcpkgPaths& paths, std::string&& prefix)
+            : ISingleObjectProvider(access), paths(paths), m_prefix(std::move(prefix))
         {
         }
-
-        StringLiteral vendor() const override { return "COS"; }
 
         Command command() const { return Command{paths.get_tool_exe(Tools::COSCLI, stdout_sink)}; }
 
-        bool stat(StringView url) const override
+        void check_availability(StringView object, bool* cache_status) const override
         {
-            auto cmd = command().string_arg("ls").string_arg(url);
-            return succeeded(cmd_execute(cmd));
+            auto cmd = command().string_arg("ls").string_arg(Strings::concat(m_prefix, object));
+            *cache_status = succeeded(cmd_execute(cmd));
         }
 
-        bool upload_file(StringView object, const Path& archive) const override
+        void upload(StringView object_id, const Path& object, MessageSink& msg_sink) override
         {
-            auto cmd = command().string_arg("cp").string_arg(archive).string_arg(object);
+            auto cmd = command().string_arg("cp").string_arg(object).string_arg(Strings::concat(m_prefix, object_id));
             const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::COSCLI);
-            if (out)
+            if (!out)
             {
-                return true;
+                msg::write_unlocalized_text_to_stdout(Color::warning, out.error());
             }
-
-            msg::write_unlocalized_text_to_stdout(Color::warning, out.error());
-            return false;
         }
 
-        bool download_file(StringView object, const Path& archive) const override
+        void download(StringView object, const Path& target_file) const override
         {
-            auto cmd = command().string_arg("cp").string_arg(object).string_arg(archive);
+            auto cmd = command().string_arg("cp").string_arg(Strings::concat(m_prefix, object).string_arg(target_file);
             const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::COSCLI);
-            if (out)
+            if (!out)
             {
-                return true;
+                msg::write_unlocalized_text_to_stdout(Color::warning, out.error());
             }
-
-            msg::write_unlocalized_text_to_stdout(Color::warning, out.error());
-            return false;
         }
+
+    private:
+        const VcpkgPaths& paths;
+        std::string m_prefix;
     };
 }
 
@@ -1262,9 +1226,32 @@ namespace vcpkg
 {
     LocalizedString UrlTemplate::valid() const
     {
+        static constexpr std::array<StringLiteral, 1> valid_keys = {"sha"};
+        return valid(valid_keys);
+    }
+
+    std::string UrlTemplate::instantiate_variable(StringView sha) const
+    {
+        return api_stable_format(url_template,
+                                 [&](std::string& out, StringView key) {
+                                     if (key == "sha")
+                                     {
+                                         Strings::append(out, sha);
+                                     }
+                                     else
+                                     {
+                                         Debug::println("Unknown key: ", key);
+                                         // We do a input validation while parsing the config
+                                         Checks::unreachable(VCPKG_LINE_INFO);
+                                     };
+                                 })
+            .value_or_exit(VCPKG_LINE_INFO);
+    }
+
+    LocalizedString UrlTemplate::valid(View<StringLiteral> valid_keys) const
+    {
         std::vector<std::string> invalid_keys;
         auto result = api_stable_format(url_template, [&](std::string&, StringView key) {
-            static constexpr std::array<StringLiteral, 4> valid_keys = {"name", "version", "sha", "triplet"};
             if (!Util::Vectors::contains(valid_keys, key))
             {
                 invalid_keys.push_back(key.to_string());
@@ -1283,7 +1270,13 @@ namespace vcpkg
         return {};
     }
 
-    std::string UrlTemplate::instantiate_variables(const BinaryPackageInformation& info) const
+    LocalizedString ExtendedUrlTemplate::valid() const
+    {
+        static constexpr std::array<StringLiteral, 4> valid_keys = {"name", "version", "sha", "triplet"};
+        return UrlTemplate::valid(valid_keys);
+    }
+
+    std::string ExtendedUrlTemplate::instantiate_variables(const BinaryPackageInformation& info) const
     {
         return api_stable_format(url_template,
                                  [&](std::string& out, StringView key) {

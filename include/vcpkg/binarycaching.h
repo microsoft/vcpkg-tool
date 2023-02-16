@@ -61,6 +61,29 @@ namespace vcpkg
         std::vector<PackageSpec> package_dependencies;
     };
 
+    struct IObjectProvider
+    {
+        enum class Access : uint8_t
+        {
+            Read = 0b01,
+            Write = 0b10,
+            ReadWrite = 0b11,
+        };
+        Access access;
+
+        bool supports_write() const { return static_cast<uint8_t>(access) & static_cast<uint8_t>(Access::Write); }
+        bool supports_read() const { return static_cast<uint8_t>(access) & static_cast<uint8_t>(Access::Read); }
+
+        IObjectProvider(Access access) : access(access) { }
+        virtual ~IObjectProvider() = default;
+
+        virtual void download(View<StringView> objects, const Path& target_dir) const = 0;
+
+        virtual void upload(StringView object_id, const Path& object_file, MessageSink& msg_sink) = 0;
+
+        virtual void check_availability(View<StringView> objects, Span<bool> cache_status) const = 0;
+    };
+
     struct IBinaryProvider
     {
         virtual ~IBinaryProvider() = default;
@@ -97,6 +120,18 @@ namespace vcpkg
         std::vector<std::string> headers_for_put;
         std::vector<std::string> headers_for_get;
 
+        LocalizedString valid() const;
+        std::string instantiate_variable(StringView sha) const;
+
+    protected:
+        LocalizedString valid(View<StringLiteral> valid_keys) const;
+    };
+
+    struct ExtendedUrlTemplate : private UrlTemplate
+    {
+        using UrlTemplate::headers_for_get;
+        using UrlTemplate::headers_for_put;
+        using UrlTemplate::url_template;
         LocalizedString valid() const;
         std::string instantiate_variables(const BinaryPackageInformation& info) const;
     };
