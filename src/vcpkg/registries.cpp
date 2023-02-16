@@ -838,9 +838,9 @@ namespace
 
     struct BaselineDeserializer final : Json::IDeserializer<std::map<std::string, Version, std::less<>>>
     {
-        StringView type_name() const override { return "a baseline object"; }
+        LocalizedString type_name() const override { return msg::format(msgABaselineObject); }
 
-        Optional<type> visit_object(Json::Reader& r, const Json::Object& obj) override
+        Optional<type> visit_object(Json::Reader& r, const Json::Object& obj) const override
         {
             std::map<std::string, Version, std::less<>> result;
 
@@ -856,9 +856,10 @@ namespace
             return result;
         }
 
-        static BaselineDeserializer instance;
+        static const BaselineDeserializer instance;
     };
-    BaselineDeserializer BaselineDeserializer::instance;
+
+    const BaselineDeserializer BaselineDeserializer::instance;
 
     Path relative_path_to_versions(StringView port_name)
     {
@@ -985,63 +986,78 @@ namespace
 
         return parse_baseline_versions(contents, baseline, baseline_path);
     }
+
+    struct GitTreeStringDeserializer : Json::StringDeserializer
+    {
+        LocalizedString type_name() const override { return msg::format(msgAGitObjectSha); }
+
+        static const GitTreeStringDeserializer instance;
+    };
+
+    const GitTreeStringDeserializer GitTreeStringDeserializer::instance;
+
+    struct RegistryPathStringDeserializer : Json::StringDeserializer
+    {
+        LocalizedString type_name() const override { return msg::format(msgARegistryPath); }
+
+        static const RegistryPathStringDeserializer instance;
+    };
+
+    const RegistryPathStringDeserializer RegistryPathStringDeserializer::instance;
 }
 
 namespace vcpkg
 {
     constexpr StringLiteral VersionDbEntryDeserializer::GIT_TREE;
     constexpr StringLiteral VersionDbEntryDeserializer::PATH;
-    StringView VersionDbEntryDeserializer::type_name() const { return "a version database entry"; }
+    LocalizedString VersionDbEntryDeserializer::type_name() const { return msg::format(msgAVersionDatabaseEntry); }
     View<StringView> VersionDbEntryDeserializer::valid_fields() const
     {
-        static const StringView u_git[] = {GIT_TREE};
-        static const StringView u_path[] = {PATH};
+        static constexpr StringView u_git[] = {GIT_TREE};
+        static constexpr StringView u_path[] = {PATH};
         static const auto t_git = vcpkg::Util::Vectors::concat<StringView>(schemed_deserializer_fields(), u_git);
         static const auto t_path = vcpkg::Util::Vectors::concat<StringView>(schemed_deserializer_fields(), u_path);
 
         return type == VersionDbType::Git ? t_git : t_path;
     }
 
-    Optional<VersionDbEntry> VersionDbEntryDeserializer::visit_object(Json::Reader& r, const Json::Object& obj)
+    Optional<VersionDbEntry> VersionDbEntryDeserializer::visit_object(Json::Reader& r, const Json::Object& obj) const
     {
         VersionDbEntry ret;
 
         auto schemed_version = visit_required_schemed_deserializer(type_name(), r, obj);
         ret.scheme = schemed_version.scheme;
         ret.version = std::move(schemed_version.version);
-
-        static Json::StringDeserializer git_tree_deserializer("a git object SHA");
-        static Json::StringDeserializer path_deserializer("a registry path");
-
         switch (type)
         {
             case VersionDbType::Git:
             {
-                r.required_object_field(type_name(), obj, GIT_TREE, ret.git_tree, git_tree_deserializer);
+                r.required_object_field(type_name(), obj, GIT_TREE, ret.git_tree, GitTreeStringDeserializer::instance);
                 break;
             }
             case VersionDbType::Filesystem:
             {
                 std::string path_res;
-                r.required_object_field(type_name(), obj, PATH, path_res, path_deserializer);
+                r.required_object_field(type_name(), obj, PATH, path_res, RegistryPathStringDeserializer::instance);
                 if (!Strings::starts_with(path_res, "$/"))
                 {
                     r.add_generic_error(
-                        "a registry path",
+                        msg::format(msgARegistryPath),
                         "A registry path must start with `$` to mean the registry root; e.g., `$/foo/bar`.");
                     return nullopt;
                 }
 
                 if (Strings::contains(path_res, '\\'))
                 {
-                    r.add_generic_error("a registry path",
+                    r.add_generic_error(msg::format(msgARegistryPath),
                                         "A registry path must use forward slashes as path separators.");
                     return nullopt;
                 }
 
                 if (Strings::contains(path_res, "//"))
                 {
-                    r.add_generic_error("a registry path", "A registry path must not have multiple slashes.");
+                    r.add_generic_error(msg::format(msgARegistryPath),
+                                        "A registry path must not have multiple slashes.");
                     return nullopt;
                 }
 
@@ -1069,7 +1085,8 @@ namespace vcpkg
                     ++candidate;
                     if (candidate == last || *candidate == '/')
                     {
-                        r.add_generic_error("a registry path", "A registry path must not have 'dot' path elements.");
+                        r.add_generic_error(msg::format(msgARegistryPath),
+                                            "A registry path must not have 'dot' path elements.");
                         return nullopt;
                     }
 
@@ -1082,7 +1099,7 @@ namespace vcpkg
                     ++candidate;
                     if (candidate == last || *candidate == '/')
                     {
-                        r.add_generic_error("a registry path",
+                        r.add_generic_error(msg::format(msgARegistryPath),
                                             "A registry path must not have 'dot dot' path elements.");
                         return nullopt;
                     }
@@ -1096,10 +1113,10 @@ namespace vcpkg
         return ret;
     }
 
-    StringView VersionDbEntryArrayDeserializer::type_name() const { return "an array of versions"; }
+    LocalizedString VersionDbEntryArrayDeserializer::type_name() const { return msg::format(msgAnArrayOfVersions); }
 
     Optional<std::vector<VersionDbEntry>> VersionDbEntryArrayDeserializer::visit_array(Json::Reader& r,
-                                                                                       const Json::Array& arr)
+                                                                                       const Json::Array& arr) const
     {
         return r.array_elements(arr, underlying);
     }
