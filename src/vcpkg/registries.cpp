@@ -366,12 +366,11 @@ namespace
         }
     }
 
-    static ExpectedS<Path> git_checkout_baseline(const VcpkgPaths& paths, StringView commit_sha)
+    static ExpectedL<Path> git_checkout_baseline(const VcpkgPaths& paths, StringView commit_sha)
     {
         Filesystem& fs = paths.get_filesystem();
         const auto destination_parent = paths.baselines_output() / commit_sha;
         auto destination = destination_parent / "baseline.json";
-
         if (!fs.exists(destination, IgnoreErrors{}))
         {
             const auto destination_tmp = destination_parent / "baseline.json.tmp";
@@ -383,43 +382,43 @@ namespace
                 fs.create_directories(destination_parent, ec);
                 if (ec)
                 {
-                    return {Strings::format(
-                                "Error: while checking out baseline %s\nError: while creating directories %s: %s",
-                                commit_sha,
-                                destination_parent,
-                                ec.message()),
+                    return {msg::format(msg::msgErrorMessage)
+                                .append(format_filesystem_call_error(ec, "create_directories", {destination_parent}))
+                                .append_raw('\n')
+                                .append(msg::msgNoteMessage)
+                                .append(msgWhileCheckingOutBaseline, msg::commit_sha = commit_sha),
                             expected_right_tag};
                 }
                 fs.write_contents(destination_tmp, *contents, ec);
                 if (ec)
                 {
-                    return {Strings::format("Error: while checking out baseline %s\nError: while writing %s: %s",
-                                            commit_sha,
-                                            destination_tmp,
-                                            ec.message()),
+                    return {msg::format(msg::msgErrorMessage)
+                                .append(format_filesystem_call_error(ec, "write_contents", {destination_tmp}))
+                                .append_raw('\n')
+                                .append(msg::msgNoteMessage)
+                                .append(msgWhileCheckingOutBaseline, msg::commit_sha = commit_sha),
                             expected_right_tag};
                 }
                 fs.rename(destination_tmp, destination, ec);
                 if (ec)
                 {
-                    return {Strings::format("Error: while checking out baseline %s\nError: while renaming %s to %s: %s",
-                                            commit_sha,
-                                            destination_tmp,
-                                            destination,
-                                            ec.message()),
+                    return {msg::format(msg::msgErrorMessage)
+                                .append(format_filesystem_call_error(ec, "rename", {destination_tmp, destination}))
+                                .append_raw('\n')
+                                .append(msg::msgNoteMessage)
+                                .append(msgWhileCheckingOutBaseline, msg::commit_sha = commit_sha),
                             expected_right_tag};
                 }
             }
             else
             {
-                return {Strings::format("Error: while checking out baseline from commit '%s' at subpath "
-                                        "'versions/baseline.json':\n%s\nThis may be fixed by updating vcpkg to the "
-                                        "latest master via `git pull` or fetching commits via `git fetch`.",
-                                        commit_sha,
-                                        maybe_contents.error()),
+                return {msg::format_error(msgBaselineGitShowFailed, msg::commit_sha = commit_sha)
+                            .append_raw('\n')
+                            .append(maybe_contents.error()),
                         expected_right_tag};
             }
         }
+
         return destination;
     }
 
@@ -746,6 +745,7 @@ namespace
 
         const auto& git_tree = git_trees[it - port_versions.begin()];
         return m_paths.git_checkout_port(port_name, git_tree, m_paths.root / ".git")
+            .map_error([](LocalizedString&& ls) { return ls.extract_data(); })
             .map([&git_tree](Path&& p) -> PathAndLocation {
                 return {
                     std::move(p),
@@ -805,8 +805,9 @@ namespace
         }
 
         const auto& git_tree = git_trees[it - port_versions.begin()];
-        return parent.m_paths.git_checkout_object_from_remote_registry(git_tree).map(
-            [this, &git_tree](Path&& p) -> PathAndLocation {
+        return parent.m_paths.git_checkout_object_from_remote_registry(git_tree)
+            .map_error([](LocalizedString&& ls) { return ls.extract_data(); })
+            .map([this, &git_tree](Path&& p) -> PathAndLocation {
                 return {
                     std::move(p),
                     Strings::concat("git+", parent.m_repo, "@", git_tree),

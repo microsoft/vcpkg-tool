@@ -947,29 +947,26 @@ namespace vcpkg
         });
     }
 
-    std::string VcpkgPaths::get_current_git_sha_baseline_message() const
+    LocalizedString VcpkgPaths::get_current_git_sha_baseline_message() const
     {
         const auto& git_config = git_builtin_config();
         if (is_shallow_clone(git_config).value_or(false))
         {
-            return msg::format(msgShallowRepositoryDetected, msg::path = git_config.git_dir).to_string();
+            return msg::format(msgShallowRepositoryDetected, msg::path = git_config.git_dir);
         }
 
         auto maybe_cur_sha = get_current_git_sha();
         if (auto p_sha = maybe_cur_sha.get())
         {
-            return msg::format(msgCurrentCommitBaseline, msg::value = *p_sha).to_string();
+            return msg::format(msgCurrentCommitBaseline, msg::commit_sha = *p_sha);
         }
         else
         {
-            return msg::format(msgFailedToDetermineCurrentCommit)
-                .append_raw('\n')
-                .append_raw(maybe_cur_sha.error())
-                .to_string();
+            return msg::format(msgFailedToDetermineCurrentCommit).append_raw('\n').append_raw(maybe_cur_sha.error());
         }
     }
 
-    ExpectedS<Path> VcpkgPaths::git_checkout_port(StringView port_name,
+    ExpectedL<Path> VcpkgPaths::git_checkout_port(StringView port_name,
                                                   StringView git_tree,
                                                   const Path& dot_git_dir) const
     {
@@ -987,20 +984,25 @@ namespace vcpkg
 
         const auto destination_tmp = this->versions_output() / port_name / Strings::concat(git_tree, ".tmp");
         const auto destination_tar = this->versions_output() / port_name / Strings::concat(git_tree, ".tar");
-#define PRELUDE "Error: while checking out port ", port_name, " with git tree ", git_tree, "\n"
         std::error_code ec;
         Path failure_point;
         fs.remove_all(destination_tmp, ec, failure_point);
         if (ec)
         {
-            return {Strings::concat(PRELUDE, "Error: while removing ", failure_point, ": ", ec.message()),
-                    expected_right_tag};
+            return msg::format(msg::msgErrorMessage)
+                .append(format_filesystem_call_error(ec, "remove_all", {destination_tmp}))
+                .append_raw('\n')
+                .append(msg::msgNoteMessage)
+                .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::commit_sha = git_tree);
         }
         fs.create_directories(destination_tmp, ec);
         if (ec)
         {
-            return {Strings::concat(PRELUDE, "Error: while creating directories ", destination_tmp, ": ", ec.message()),
-                    expected_right_tag};
+            return msg::format(msg::msgErrorMessage)
+                .append(format_filesystem_call_error(ec, "create_directories", {destination_tmp}))
+                .append_raw('\n')
+                .append(msg::msgNoteMessage)
+                .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::commit_sha = git_tree);
         }
 
         auto tar_cmd_builder = git_cmd_builder(dot_git_dir, dot_git_dir)
@@ -1011,38 +1013,41 @@ namespace vcpkg
         auto maybe_tar_output = flatten(cmd_execute_and_capture_output(tar_cmd_builder), Tools::TAR);
         if (!maybe_tar_output)
         {
-            auto message =
-                Strings::concat(PRELUDE, "Error: Failed to tar port directory\n", std::move(maybe_tar_output).error());
-
+            auto message = msg::format_error(msgGitCommandFailed, msg::command_line = tar_cmd_builder.command_line());
             const auto& git_config = git_builtin_config();
             if (is_shallow_clone(git_config).value_or(false))
             {
-                message.push_back('\n');
-                message.append(msg::format(msgShallowRepositoryDetected, msg::path = git_config.git_dir).to_string());
+                message.append_raw('\n').append(msgShallowRepositoryDetected, msg::path = git_config.git_dir);
             }
-            return {
-                std::move(message),
-                expected_right_tag,
-            };
+
+            message.append_raw('\n')
+                .append(msg::msgNoteMessage)
+                .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::commit_sha = git_tree);
+
+            return message;
         }
 
         extract_tar_cmake(this->get_tool_exe(Tools::CMAKE, stdout_sink), destination_tar, destination_tmp);
         fs.remove(destination_tar, ec);
         if (ec)
         {
-            return {Strings::concat(PRELUDE, "Error: while removing ", destination_tar, ": ", ec.message()),
-                    expected_right_tag};
+            return msg::format(msg::msgErrorMessage)
+                .append(format_filesystem_call_error(ec, "remove", {destination_tar}))
+                .append_raw('\n')
+                .append(msg::msgNoteMessage)
+                .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::commit_sha = git_tree);
         }
         fs.rename_with_retry(destination_tmp, destination, ec);
         if (ec)
         {
-            return {Strings::concat(
-                        PRELUDE, "Error: while renaming ", destination_tmp, " to ", destination, ": ", ec.message()),
-                    expected_right_tag};
+            return msg::format(msg::msgErrorMessage)
+                .append(format_filesystem_call_error(ec, "rename_with_retry", {destination_tmp, destination}))
+                .append_raw('\n')
+                .append(msg::msgNoteMessage)
+                .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::commit_sha = git_tree);
         }
 
         return destination;
-#undef PRELUDE
     }
 
     ExpectedL<std::string> VcpkgPaths::git_show(StringView treeish, const Path& dot_git_dir) const
@@ -1053,7 +1058,7 @@ namespace vcpkg
         return flatten_out(cmd_execute_and_capture_output(showcmd), Tools::GIT);
     }
 
-    ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
+    ExpectedL<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
     {
         const auto local_repo = this->root / ".git";
         const auto git_cmd = git_cmd_builder({}, {})
@@ -1077,17 +1082,21 @@ namespace vcpkg
                 auto split_line = Strings::split(line, '\t');
                 if (split_line.size() != 2)
                 {
-                    return Strings::format("Error: Unexpected output from command `%s`. Couldn't split by `\\t`.\n%s",
-                                           git_cmd.command_line(),
-                                           line);
+                    Debug::println("couldn't split by tabs");
+                    return msg::format_error(msgGitUnexpectedCommandOutputCmd,
+                                             msg::command_line = git_cmd.command_line())
+                        .append_raw('\n')
+                        .append_raw(line);
                 }
 
                 auto file_info_section = Strings::split(split_line[0], ' ');
                 if (file_info_section.size() != 3)
                 {
-                    return Strings::format("Error: Unexpected output from command `%s`. Couldn't split by ` `.\n%s",
-                                           git_cmd.command_line(),
-                                           line);
+                    Debug::println("couldn't split by spaces");
+                    return msg::format_error(msgGitUnexpectedCommandOutputCmd,
+                                             msg::command_line = git_cmd.command_line())
+                        .append_raw('\n')
+                        .append_raw(line);
                 }
 
                 ret.emplace(split_line[1], file_info_section.back());
@@ -1095,10 +1104,14 @@ namespace vcpkg
             return ret;
         }
 
-        return Strings::format("Error: Couldn't get local treeish objects for ports.\n%s", maybe_output.error());
+        return std::move(maybe_output)
+            .error()
+            .append_raw('\n')
+            .append(msg::msgNoteMessage)
+            .append(msgWhileGettingLocalTreeIshObjectsForPorts);
     }
 
-    ExpectedS<std::string> VcpkgPaths::git_fetch_from_remote_registry(StringView repo, StringView treeish) const
+    ExpectedL<std::string> VcpkgPaths::git_fetch_from_remote_registry(StringView repo, StringView treeish) const
     {
         auto& fs = get_filesystem();
 
@@ -1110,10 +1123,7 @@ namespace vcpkg
         auto maybe_init_output = flatten(cmd_execute_and_capture_output(init_registries_git_dir), Tools::GIT);
         if (!maybe_init_output)
         {
-            return {Strings::format("Error: Failed to initialize local repository %s.\n%s\n",
-                                    work_tree,
-                                    std::move(maybe_init_output).error()),
-                    expected_right_tag};
+            return msg::format_error(msgGitCommandFailed, msg::command_line = init_registries_git_dir.command_line());
         }
 
         auto lock_file = work_tree / ".vcpkg-lock";
@@ -1129,23 +1139,23 @@ namespace vcpkg
         auto maybe_fetch_output = flatten(cmd_execute_and_capture_output(fetch_git_ref), Tools::GIT);
         if (!maybe_fetch_output)
         {
-            return {Strings::format("Error: Failed to fetch ref %s from repository %s.\n%s\n",
-                                    treeish,
-                                    repo,
-                                    std::move(maybe_fetch_output).error()),
-                    expected_right_tag};
+            return msg::format_error(msgGitFailedToFetch, msg::value = treeish, msg::url = repo)
+                .append_raw('\n')
+                .append(std::move(maybe_fetch_output).error());
         }
 
         Command get_fetch_head =
             git_cmd_builder(dot_git_dir, work_tree).string_arg("rev-parse").string_arg("FETCH_HEAD");
         return flatten_out(cmd_execute_and_capture_output(get_fetch_head), Tools::GIT)
             .map([](std::string&& output) { return Strings::trim(output).to_string(); })
-            .map_error([](LocalizedString&& err) {
-                return Strings::concat("Error: Failed to rev-parse FETCH_HEAD.\n", err.extract_data(), "\n");
+            .map_error([&](LocalizedString&& err) {
+                return msg::format_error(msgGitCommandFailed, msg::command_line = get_fetch_head.command_line())
+                    .append_raw('\n')
+                    .append(std::move(err));
             });
     }
 
-    ExpectedS<Unit> VcpkgPaths::git_fetch(StringView repo, StringView treeish) const
+    ExpectedL<Unit> VcpkgPaths::git_fetch(StringView repo, StringView treeish) const
     {
         auto& fs = get_filesystem();
 
@@ -1162,9 +1172,9 @@ namespace vcpkg
         auto maybe_init_output = flatten(cmd_execute_and_capture_output(init_registries_git_dir), Tools::GIT);
         if (!maybe_init_output)
         {
-            return Strings::format("Error: Failed to initialize local repository %s.\n%s\n",
-                                   work_tree,
-                                   std::move(maybe_init_output).error());
+            return msg::format_error(msgGitFailedToInitializeLocalRepository, msg::path = work_tree)
+                .append_raw('\n')
+                .append(std::move(maybe_init_output).error());
         }
 
         Command fetch_git_ref = git_cmd_builder(dot_git_dir, work_tree)
@@ -1177,10 +1187,9 @@ namespace vcpkg
         auto maybe_fetch_output = flatten(cmd_execute_and_capture_output(fetch_git_ref), Tools::GIT);
         if (!maybe_fetch_output)
         {
-            return Strings::format("Error: Failed to fetch ref %s from repository %s.\n%s\n",
-                                   treeish,
-                                   repo,
-                                   std::move(maybe_fetch_output).error());
+            return msg::format_error(msgGitFailedToFetch, msg::value = treeish, msg::url = repo)
+                .append_raw('\n')
+                .append(std::move(maybe_fetch_output).error());
         }
 
         return {Unit{}};
@@ -1190,7 +1199,7 @@ namespace vcpkg
     // hash
     ExpectedL<std::string> VcpkgPaths::git_show_from_remote_registry(StringView hash, const Path& relative_path) const
     {
-        auto revision = Strings::format("%s:%s", hash, relative_path.generic_u8string());
+        auto revision = fmt::format("{}:{}", hash, relative_path.generic_u8string());
         Command git_show = git_cmd_builder(m_pimpl->m_registries_dot_git_dir, m_pimpl->m_registries_work_tree_dir)
                                .string_arg("show")
                                .string_arg(revision);
@@ -1200,7 +1209,7 @@ namespace vcpkg
     ExpectedL<std::string> VcpkgPaths::git_find_object_id_for_remote_registry_path(StringView hash,
                                                                                    const Path& relative_path) const
     {
-        auto revision = Strings::format("%s:%s", hash, relative_path.generic_u8string());
+        auto revision = fmt::format("{}:{}", hash, relative_path.generic_u8string());
         Command git_rev_parse = git_cmd_builder(m_pimpl->m_registries_dot_git_dir, m_pimpl->m_registries_work_tree_dir)
                                     .string_arg("rev-parse")
                                     .string_arg(revision);
@@ -1209,7 +1218,7 @@ namespace vcpkg
             return Strings::trim(std::move(output));
         });
     }
-    ExpectedS<Path> VcpkgPaths::git_checkout_object_from_remote_registry(StringView object) const
+    ExpectedL<Path> VcpkgPaths::git_checkout_object_from_remote_registry(StringView object) const
     {
         auto& fs = get_filesystem();
         fs.create_directories(m_pimpl->m_registries_git_trees, VCPKG_LINE_INFO);
@@ -1222,8 +1231,8 @@ namespace vcpkg
 
         auto pid = get_process_id();
 
-        Path git_tree_temp = Strings::format("%s.tmp%ld", git_tree_final, pid);
-        Path git_tree_temp_tar = Strings::format("%s.tmp%ld.tar", git_tree_final, pid);
+        Path git_tree_temp = fmt::format("{}.tmp{}", git_tree_final, pid);
+        Path git_tree_temp_tar = fmt::format("{}.tmp{}.tar", git_tree_final, pid);
         fs.remove_all(git_tree_temp, VCPKG_LINE_INFO);
         fs.create_directory(git_tree_temp, VCPKG_LINE_INFO);
 
@@ -1238,9 +1247,9 @@ namespace vcpkg
         auto maybe_git_archive_output = flatten(cmd_execute_and_capture_output(git_archive), Tools::GIT);
         if (!maybe_git_archive_output)
         {
-            return {
-                Strings::format("git archive failed with message:\n%s", std::move(maybe_git_archive_output).error()),
-                expected_right_tag};
+            return msg::format_error(msgGitCommandFailed, msg::command_line = git_archive.command_line())
+                .append_raw('\n')
+                .append(std::move(maybe_git_archive_output).error());
         }
 
         extract_tar_cmake(get_tool_exe(Tools::CMAKE, stdout_sink), git_tree_temp_tar, git_tree_temp);
@@ -1249,20 +1258,13 @@ namespace vcpkg
 
         std::error_code ec;
         fs.rename_with_retry(git_tree_temp, git_tree_final, ec);
-        if (fs.exists(git_tree_final, IgnoreErrors{}))
-        {
-            return git_tree_final;
-        }
-
         if (ec)
         {
-            return {Strings::format("rename to %s failed with message:\n%s", git_tree_final, ec.message()),
-                    expected_right_tag};
+            return msg::format(msg::msgErrorMessage)
+                .append(format_filesystem_call_error(ec, "rename_with_retry", {git_tree_temp, git_tree_final}));
         }
-        else
-        {
-            return {"Unknown error", expected_right_tag};
-        }
+
+        return git_tree_final;
     }
 
     Optional<const ManifestAndPath&> VcpkgPaths::get_manifest() const
