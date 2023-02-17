@@ -1974,8 +1974,8 @@ namespace vcpkg
     DECLARE_MESSAGE(InvalidTriplet, (msg::triplet), "", "Invalid triplet: {triplet}");
     DECLARE_MESSAGE(IrregularFile, (msg::path), "", "path was not a regular file: {path}");
     DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected \"{path}\" to be an object.");
-    DECLARE_MESSAGE(JsonFieldNotObject, (msg::json_field), "", "\"{json_field}\" must be an object");
-    DECLARE_MESSAGE(JsonFieldNotString, (msg::json_field), "", "\"{json_field}\" must be a string");
+    DECLARE_MESSAGE(JsonFieldNotObject, (msg::json_field), "", "value of [\"{json_field}\"] must be an object");
+    DECLARE_MESSAGE(JsonFieldNotString, (msg::json_field), "", "value of [\"{json_field}\"] must be a string");
     DECLARE_MESSAGE(JsonFileMissingExtension,
                     (msg::path),
                     "",

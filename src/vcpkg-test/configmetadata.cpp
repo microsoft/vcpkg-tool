@@ -175,7 +175,7 @@ $.default-registry (a registry): unexpected field 'packages', did you mean 'path
     }
 })json";
         check_errors(raw_default_artifact, R"(
-$ (a configuration object): default-registry cannot be of kind "artifact"
+$ (a configuration object): The default registry cannot be an artifact registry.
 )");
         std::string raw_bad_kind = R"json({
     "registries": [{
