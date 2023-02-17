@@ -16,24 +16,24 @@ jobs:
       displayName: "Clone vcpkg repo to serve as root"
     - task: NodeTool@0
       inputs:
-        versionSpec: '16.x'
+        versionSpec: '18.x'
       displayName: 'Install Node.js'
     - script: |
         cd ce
 
-        npm install -g npm
+        npm install -g @microsoft/rush
         rc=$?; if [ $rc -ne 0 ]; then exit $rc ; fi
 
-        npx @microsoft/rush update
+        rush update
         rc=$?; if [ $rc -ne 0 ]; then exit $rc ; fi
 
-        npx @microsoft/rush rebuild
+        rush rebuild
         rc=$?; if [ $rc -ne 0 ]; then exit $rc ; fi
 
-        npx @microsoft/rush test
+        rush test
         rc=$?; if [ $rc -ne 0 ]; then exit $rc ; fi
 
-        npx @microsoft/rush lint
+        rush lint
         rc=$?; if [ $rc -ne 0 ]; then exit $rc ; fi
 
         if [ -n "$(git status --porcelain)" ]; then
@@ -81,7 +81,7 @@ jobs:
 - job: osx
   displayName: 'OSX'
   pool:
-    vmImage: 'macOS-11'
+    vmImage: 'macOS-12'
   variables:
     - name: 'VCPKG_ROOT'
       value: $(Build.SourcesDirectory)/vcpkg-root
@@ -132,9 +132,9 @@ jobs:
         filePath: 'azure-pipelines/Format-CxxCode.ps1'
         pwsh: true
     - task: UseNode@1
-      displayName: Use Node 16 or later
+      displayName: Use Node 18
       inputs:
-        version: "16.x"
+        version: "18.x"
     - task: npmAuthenticate@0
       inputs:
         workingFile: 'ce\common\config\rush\.npmrc'
