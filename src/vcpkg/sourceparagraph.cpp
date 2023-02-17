@@ -486,7 +486,7 @@ namespace vcpkg
                 {
                     auto opt = Strings::strto<int>(ZStringView{constraint_value}.substr(h + 1));
                     auto v = opt.get();
-                    if (v && *v > 0)
+                    if (v && *v >= 0)
                     {
                         dep.constraint.port_version = *v;
                     }
