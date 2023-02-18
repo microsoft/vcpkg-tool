@@ -77,9 +77,9 @@ jobs:
         arguments: '-Destination "$(Build.BinariesDirectory)" -VcpkgBaseVersion $(VCPKG_INITIAL_BASE_VERSION)'
     # Build and test vcpkg-artifacts
     - task: UseNode@1
-      displayName: Use Node 16 or later
+      displayName: Use Node 18 or later
       inputs:
-        version: "16.x"
+        version: "18.x"
     - script: copy azure-pipelines\.npmrc-internal ce\common\config\rush\.npmrc
       displayName: Use internal .npmrc
     - task: npmAuthenticate@0
@@ -192,7 +192,7 @@ jobs:
     dependsOn:
       - arch_independent
     pool:
-      vmImage: macOS-11
+      vmImage: macOS-12
     variables:
       VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
       VCPKG_CE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_CE_SHA'] ]
