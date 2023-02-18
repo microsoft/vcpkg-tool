@@ -404,7 +404,7 @@ namespace vcpkg
             }
             else
             {
-                r.add_generic_error(type_name(), opt.error());
+                r.add_generic_error(type_name(), LocalizedString::from_raw(std::move(opt).error()));
                 return PlatformExpression::Expr::Empty();
             }
         }
@@ -443,7 +443,7 @@ namespace vcpkg
         {
             if (!Json::IdentifierDeserializer::is_ident(sv))
             {
-                r.add_generic_error(type_name(), "must be lowercase alphanumeric+hyphens and not reserved");
+                r.add_generic_error(type_name(), msg::format(msgInvalidDependency));
             }
 
             Dependency dep;
@@ -493,10 +493,7 @@ namespace vcpkg
                     else
                     {
                         r.add_generic_error(type_name(),
-                                            "embedded port-version ('#') in the primary "
-                                            "constraint (\"",
-                                            VERSION_GE,
-                                            "\") must be a positive integer");
+                                            msg::format(msgVersionConstraintPortVersionMustBePositiveInteger));
                     }
                     dep.constraint.value.erase(h);
                 }
@@ -667,10 +664,7 @@ namespace vcpkg
                 }
                 if (!Json::IdentifierDeserializer::is_ident(pr.first))
                 {
-                    r.add_generic_error(type_name(),
-                                        "unexpected field '",
-                                        pr.first,
-                                        "': must be lowercase alphanumeric+hyphens and not reserved");
+                    r.add_generic_error(type_name(), msg::format(msgInvalidFeature));
                     continue;
                 }
                 std::unique_ptr<FeatureParagraph> v;
@@ -947,7 +941,7 @@ namespace vcpkg
             }
             if (auto err = parser.get_error())
             {
-                r.add_generic_error(type_name(), err->to_string());
+                r.add_generic_error(type_name(), LocalizedString::from_raw(err->to_string()));
                 return std::string();
             }
 
@@ -1068,7 +1062,8 @@ namespace vcpkg
             {
                 if (!configuration->is_object())
                 {
-                    r.add_generic_error(type_name(), VCPKG_CONFIGURATION, " must be an object");
+                    r.add_generic_error(type_name(),
+                                        msg::format(msgJsonFieldNotObject, msg::json_field = VCPKG_CONFIGURATION));
                 }
                 else
                 {

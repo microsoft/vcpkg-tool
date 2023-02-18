@@ -31,7 +31,7 @@ namespace
             {
                 if (pv.size() == 1)
                 {
-                    r.add_generic_error(type_name(), "'#' in version text must be followed by a port version");
+                    r.add_generic_error(type_name(), msg::format(msgVersionSharpMustBeFollowedByPortVersion));
                 }
                 else if (pv.size() > 1)
                 {
@@ -39,7 +39,7 @@ namespace
                     if (ret.second.value_or(-1) < 0)
                     {
                         r.add_generic_error(type_name(),
-                                            "port versions after '#' in version text must be non-negative integers");
+                                            msg::format(msgVersionSharpMustBeFollowedByPortVersionNonNegativeInteger));
                     }
                 }
             }
@@ -47,14 +47,12 @@ namespace
             {
                 if (pv.size() == 1)
                 {
-                    r.add_generic_error(type_name(), "invalid character '#' in version text");
+                    r.add_generic_error(type_name(), msg::format(msgInvalidSharpInVersion));
                 }
                 else if (pv.size() > 1)
                 {
                     r.add_generic_error(type_name(),
-                                        "invalid character '#' in version text. Did you mean \"port-version\": ",
-                                        pv.substr(1),
-                                        "?");
+                                        msg::format(msgInvalidSharpInVersionDidYouMean, msg::value = pv.substr(1)));
                 }
             }
             return ret;
@@ -111,7 +109,7 @@ namespace vcpkg
 
         if (has_port_version && version.second)
         {
-            r.add_generic_error(parent_type, "\"port_version\" cannot be combined with an embedded '#' in the version");
+            r.add_generic_error(parent_type, msg::format(msgPortVersionMultipleSpecification));
         }
 
         if (num_versions == 0)
@@ -122,12 +120,12 @@ namespace vcpkg
             }
             else
             {
-                r.add_generic_error(parent_type, "unexpected \"port_version\" without a versioning field");
+                r.add_generic_error(parent_type, msg::format(msgUnexpectedPortversion));
             }
         }
         else if (num_versions > 1)
         {
-            r.add_generic_error(parent_type, "expected only one versioning field");
+            r.add_generic_error(parent_type, msg::format(msgExpectedOneVersioningField));
         }
         else
         {
@@ -141,7 +139,7 @@ namespace vcpkg
                 auto v = DotVersion::try_parse_relaxed(version.first);
                 if (!v)
                 {
-                    r.add_generic_error(parent_type, "'version' text was not a relaxed version:\n", v.error());
+                    r.add_generic_error(parent_type, std::move(v).error());
                 }
             }
             else if (has_semver)
@@ -150,7 +148,7 @@ namespace vcpkg
                 auto v = DotVersion::try_parse_semver(version.first);
                 if (!v)
                 {
-                    r.add_generic_error(parent_type, "'version-semver' text was not a semantic version:\n", v.error());
+                    r.add_generic_error(parent_type, std::move(v).error());
                 }
             }
             else if (has_date)
@@ -159,7 +157,7 @@ namespace vcpkg
                 auto v = DateVersion::try_parse(version.first);
                 if (!v)
                 {
-                    r.add_generic_error(parent_type, "'version-date' text was not a date version:\n", v.error());
+                    r.add_generic_error(parent_type, std::move(v).error());
                 }
             }
             else
@@ -183,9 +181,7 @@ namespace vcpkg
         }
         else
         {
-            r.add_generic_error(
-                parent_type,
-                "expected a versioning field (one of version, version-date, version-semver, or version-string)");
+            r.add_generic_error(parent_type, msg::format(msgVersionMissing));
             return {};
         }
     }
