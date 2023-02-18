@@ -1005,7 +1005,7 @@ namespace vcpkg
     DECLARE_MESSAGE(ConfigurationNestedDemands,
                     (msg::json_field),
                     "",
-                    "\"{json_field}\" contains a nested a `demands` object (nested `demands` have no effect)");
+                    "[\"{json_field}\"] contains a nested `demands` object (nested `demands` have no effect)");
     DECLARE_MESSAGE(ConflictingFiles,
                     (msg::path, msg::spec),
                     "",

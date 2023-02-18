@@ -459,7 +459,7 @@ $.demands (a demand object): value of ["b"] must be an object
 $.demands (a demand object): value of ["c"] must be an object
 $.demands (a demand object): value of ["d"] must be an object
 $.demands (a demand object): value of ["e"] must be an object
-$.demands (a demand object): $.demands.["f"] contains a `demands` object (nested `demands` have no effect)
+$.demands (a demand object): ["f"] contains a nested `demands` object (nested `demands` have no effect)
 )");
     }
 }
