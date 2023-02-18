@@ -97,6 +97,8 @@ jobs:
       failOnStderr: true
     - bash: build.amd64.debug/vcpkg-test
       displayName: 'Run vcpkg tests'
+    - bash: brew install pkg-config
+      displayName: 'Install pkgconfig'
     - task: PowerShell@2
       displayName: 'Run vcpkg end-to-end tests'
       inputs:
