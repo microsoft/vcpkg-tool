@@ -310,6 +310,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ARegistryPathMustBeDelimitedWithForwardSlashes" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[A registry path must use single forward slashes as path separators.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ein Registrierungspfad muss einzelne Schrägstriche als Pfadtrennzeichen verwenden.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ARegistryPathMustNotHaveDots" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[A registry path must not have 'dot' or 'dot dot' path elements.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ein Registrierungspfad darf keine "dot"- oder "dot dot"-Pfadelemente enthalten.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ARegistryPathMustStartWithDollar" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[A registry path must start with `$` to mean the registry root; for example, `$/foo/bar`.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ein Registrierungspfad muss mit "$" beginnen, um den Registrierungsstamm darzustellen. Beispiel: "$/foo/bar".]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ARelaxedVersionString" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[a relaxed version string]]></Val>
@@ -2569,6 +2596,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ConfigurationNestedDemands" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[["{json_field}"]5D; contains a nested `demands` object (nested `demands` have no effect)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[["{json_field}"]5D; enthält ein geschachteltes "demands"-Objekt (geschachtelte "Anforderungen" haben keine Auswirkungen)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ConflictingFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The following files are already installed in {path} and are in conflict with {spec}]]></Val>
@@ -2901,6 +2937,15 @@
           <Val><![CDATA[Defaulting to --{option} being on.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Standardmäßig wird --{option} aktiviert.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DefaultRegistryIsArtifact" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The default registry cannot be an artifact registry.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Die Standardregistrierung kann keine Artefaktregistrierung sein.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3789,6 +3834,15 @@
           <Val><![CDATA[Found {count} sets of {old_value}.*{new_value} but expected exactly 1, in block:]A;{value}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Es wurden {count} Sets mit dem Wert {old_value}.*{new_value} gefunden, aber genau 1 im Block erwartet:]A;{value}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExpectedOneVersioningField" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected only one versioning field]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Es wurde nur ein Versionsverwaltungsfeld erwartet.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6019,11 +6073,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InvalidDependency" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[dependencies must be lowercase alphanumeric+hyphens, and not one of the reserved names]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[-Abhängigkeiten müssen alphanumerische Zeichen und Bindestriche in Kleinbuchstaben und nicht einer der reservierten Namen sein.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InvalidEscapeSequence" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Invalid escape sequence]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Ungültige Escapesequenz]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidFeature" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[features must be lowercase alphanumeric+hyphens, and not one of the reserved names]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[-Features müssen alphanumerische Zeichen und Bindestriche in Kleinbuchstaben und nicht einer der reservierten Namen sein.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6127,6 +6199,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InvalidSharpInVersion" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid character '#' in version text]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ungültiges Zeichen "#" im Versionstext]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidSharpInVersionDidYouMean" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid character '#' in version text. Did you mean "port-version": {value}?]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ungültiges Zeichen "#" im Versionstext. Meinten Sie "port-version": {value}?]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InvalidString" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Invalid utf8 passed to Value::string(std::string)]]></Val>
@@ -6172,6 +6262,24 @@
           <Prev Cat="Text">
             <Val><![CDATA[Expected {path} to be an object.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";JsonFieldNotObject" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[value of ["{json_field}"]5D; must be an object]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Der Wert von ["{json_field}"]5D; muss ein Objekt sein.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";JsonFieldNotString" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[value of ["{json_field}"]5D; must be a string]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Der Wert von ["{json_field}"]5D; muss eine Zeichenfolge sein.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -7678,6 +7786,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PortVersionMultipleSpecification" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA["port_version" cannot be combined with an embedded '#' in the version]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA["port_version" kann nicht mit einem eingebetteten "#" in der Version kombiniert werden.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PortsAdded" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The following {count} ports were added:]]></Val>
@@ -8779,6 +8896,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UnexpectedPortversion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unexpected "port-version" without a versioning field]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Unerwartete "port-version" ohne Versionsverwaltungsfeld]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UnexpectedToolOutput" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{tool_name} ({path}) produced unexpected output when attempting to determine the version:]]></Val>
@@ -9490,6 +9616,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";VersionConstraintPortVersionMustBePositiveInteger" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[port-version (after the '#') in "version>=" must be a positive integer]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Portversion (nach "#") in "version>=" muss eine positive ganze Zahl sein.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";VersionConstraintViolated" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[dependency {spec} was expected to be at least version {expected_version}, but is currently {actual_version}.]]></Val>
@@ -9522,6 +9657,33 @@
           <Val><![CDATA[`{version}` is not a valid semantic version, consult <https://semver.org>.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[„{version}“ ist keine gültige semantische Version. Weitere Informationen finden Sie unter <https://semver.org>.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected a versioning field (one of version, version-date, version-semver, or version-string)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Es wurde ein Versionsverwaltungsfeld erwartet (version, version-date, version-semver oder version-string).]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionSharpMustBeFollowedByPortVersion" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA['#' in version text must be followed by a port version]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Auf "#" im Versionstext muss eine Portversion folgen.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionSharpMustBeFollowedByPortVersionNonNegativeInteger" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA['#' in version text must be followed by a port version (a non-negative integer)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Auf "#" im Versionstext muss eine Portversion folgen (eine nicht negative ganze Zahl).]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
