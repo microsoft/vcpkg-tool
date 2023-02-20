@@ -61,8 +61,6 @@ jobs:
     pool:
       name: 'VSEngSS-MicroBuild2022-1ES'
     steps:
-    - task: CodeQL3000Init@0
-      displayName: 'CodeQL Initialize'
     - task: Powershell@2
       displayName: 'Lock VCPKG_BASE_VERSION'
       name: versions
@@ -79,9 +77,9 @@ jobs:
         arguments: '-Destination "$(Build.BinariesDirectory)" -VcpkgBaseVersion $(VCPKG_INITIAL_BASE_VERSION)'
     # Build and test vcpkg-artifacts
     - task: UseNode@1
-      displayName: Use Node 16 or later
+      displayName: Use Node 18 or later
       inputs:
-        version: "16.x"
+        version: "18.x"
     - script: copy azure-pipelines\.npmrc-internal ce\common\config\rush\.npmrc
       displayName: Use internal .npmrc
     - task: npmAuthenticate@0
@@ -97,9 +95,13 @@ jobs:
     - script: rush lint
       displayName: Check vcpkg-artifacts for Linting Errors
       workingDirectory: ce
+    - task: CodeQL3000Init@0
+      displayName: 'CodeQL Initialize'
     - script: rush rebuild
       displayName: Build vcpkg-artifacts Packages
       workingDirectory: ce
+    - task: CodeQL3000Finalize@0
+      displayName: 'CodeQL Finalize'
     - script: rush test
       displayName: Run vcpkg-artifacts Tests
       workingDirectory: ce
@@ -117,7 +119,7 @@ jobs:
     - task: ComponentGovernanceComponentDetection@0
       displayName: Detect Components
       inputs:
-        ignoreDirectories: ce/common/temp
+        sourceScanPath: "$(Build.BinariesDirectory)/ce"
     # Inject the NOTICE file. This must run after component detection.
     - task: msospo.ospo-extension.8d7f9abb-6896-461d-9e25-4f74ed65ddb2.notice@0
       displayName: Generate NOTICE File
@@ -185,14 +187,12 @@ jobs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)\staging'
         ArtifactName: 'staging'
         publishLocation: 'Container'
-    - task: CodeQL3000Finalize@0
-      displayName: 'CodeQL Finalize'
   - job: macos_build
     displayName: 'MacOS Build'
     dependsOn:
       - arch_independent
     pool:
-      vmImage: macOS-11
+      vmImage: macOS-12
     variables:
       VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
       VCPKG_CE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_CE_SHA'] ]
@@ -298,6 +298,8 @@ jobs:
           cmake.exe --version
           cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_PDB_SUFFIX="-arm64" "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" "-DVCPKG_CE_SHA=$(VCPKG_CE_SHA)" -B "$(Build.BinariesDirectory)\arm64"
           ninja.exe -C "$(Build.BinariesDirectory)\arm64"
+    - task: CodeQL3000Finalize@0
+      displayName: 'CodeQL Finalize'
     - task: MicroBuildSigningPlugin@3
       displayName: Install MicroBuild Signing
       inputs:
@@ -397,6 +399,13 @@ jobs:
           move "$(Build.ArtifactStagingDirectory)\staging\macos\vcpkg" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-macos"
 
           copy "$(Build.SourcesDirectory)\azure-pipelines\vs-insertion\vcpkg.nuspec" "$(Build.ArtifactStagingDirectory)\vs-insertion\staging\vcpkg.nuspec"
+    - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
+      displayName: 'Generate SBOMs'
+      inputs:
+        BuildDropPath: '$(Build.ArtifactStagingDirectory)/drop'
+        ManifestDirPath: '$(Build.ArtifactStagingDirectory)/drop'
+        PackageName: vcpkg
+        PackageVersion: '$(VCPKG_BASE_VERSION)'
     - task: CmdLine@2
       displayName: 'Add Drop PGP Signatures (real sign only)'
       condition: and(eq(variables.SignType, 'real'), succeeded())
@@ -463,8 +472,6 @@ jobs:
         uploadRoslyn: false
         uploadTSLint: false
       condition: eq(variables['Build.SourceBranchName'], 'main')
-    - task: CodeQL3000Finalize@0
-      displayName: 'CodeQL Finalize'
     # Publish everything to a Drop
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Drop'

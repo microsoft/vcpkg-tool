@@ -115,11 +115,12 @@ namespace vcpkg
     {
         bool empty() const { return remove_actions.empty() && already_installed.empty() && install_actions.empty(); }
         size_t size() const { return remove_actions.size() + already_installed.size() + install_actions.size(); }
+        void print_unsupported_warnings();
 
         std::vector<RemovePlanAction> remove_actions;
         std::vector<InstallPlanAction> already_installed;
         std::vector<InstallPlanAction> install_actions;
-        std::vector<std::string> warnings;
+        std::map<FeatureSpec, PlatformExpression::Expr> unsupported_features;
     };
 
     enum class ExportPlanType
@@ -166,7 +167,7 @@ namespace vcpkg
 
         GraphRandomizer* randomizer = nullptr;
         Triplet host_triplet;
-        UnsupportedPortAction unsupported_port_action;
+        UnsupportedPortAction unsupported_port_action = UnsupportedPortAction::Warn;
     };
 
     std::vector<RemovePlanAction> create_remove_plan(const std::vector<PackageSpec>& specs,

@@ -22,22 +22,6 @@ namespace vcpkg
                                                      Triplet host,
                                                      const std::unordered_map<std::string, std::string>& cmake_vars);
 
-    struct Type
-    {
-        enum
-        {
-            UNKNOWN,
-            PORT,
-            ALIAS,
-        } type;
-
-        static std::string to_string(const Type&);
-        static Type from_string(const std::string&);
-    };
-
-    bool operator==(const Type&, const Type&);
-    bool operator!=(const Type&, const Type&);
-
     /// <summary>
     /// Port metadata of additional feature in a package (part of CONTROL file)
     /// </summary>
@@ -82,7 +66,6 @@ namespace vcpkg
         // Currently contacts is only a Json::Object but it will eventually be unified with maintainers
         Json::Object contacts;
 
-        Type type = {Type::PORT};
         PlatformExpression::Expr supports_expression;
 
         Json::Object extra_info;

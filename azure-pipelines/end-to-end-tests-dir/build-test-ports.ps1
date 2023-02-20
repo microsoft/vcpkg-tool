@@ -22,12 +22,12 @@ if ($IsWindows) {
 
 $output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e_ports/overlays" install broken-no-name
 Throw-IfNotFailed
-if (-not $output -match 'missing field') {
+if ($output -notmatch "missing required field 'name'") {
     throw 'Did not detect missing field'
 }
 
 $output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e_ports/overlays" install broken-no-version
 Throw-IfNotFailed
-if (-not $output -match 'missing field') {
+if ($output -notmatch 'expected a versioning field') {
     throw 'Did not detect missing field'
 }

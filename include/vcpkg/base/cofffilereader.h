@@ -7,6 +7,8 @@
 
 #include <stdint.h>
 
+#include <functional>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -18,6 +20,21 @@ namespace vcpkg
     {
         uint16_t machine;
         uint16_t number_of_sections;
+        uint32_t date_time_stamp;
+        uint32_t pointer_to_symbol_table;
+        uint32_t number_of_symbols;
+        uint16_t size_of_optional_header;
+        uint16_t characteristics;
+    };
+
+    struct CoffFileHeaderSignature
+    {
+        uint16_t machine;
+        uint16_t number_of_sections;
+    };
+
+    struct CoffFileHeaderAfterSignature
+    {
         uint32_t date_time_stamp;
         uint32_t pointer_to_symbol_table;
         uint32_t number_of_symbols;
@@ -37,6 +54,26 @@ namespace vcpkg
         uint32_t base_of_code;
     };
 
+    enum class DllCharacteristics : uint16_t
+    {
+        HighEntropyVA = 0x0020,
+        DynamicBase = 0x0040,
+        ForceIntegrity = 0x0080,
+        NxCompat = 0x0100,
+        NoIsolation = 0x0200,
+        NoSeh = 0x0400,
+        NoBind = 0x0800,
+        AppContainer = 0x1000,
+        WdmDriver = 0x2000,
+        GuardCF = 0x4000,
+        TSAware = 0x8000
+    };
+
+    constexpr bool operator&(DllCharacteristics lhs, DllCharacteristics rhs) noexcept
+    {
+        return (static_cast<uint16_t>(lhs) & static_cast<uint16_t>(rhs)) != 0;
+    }
+
     struct UniquePEOptionalHeaders
     {
         uint32_t base_of_data;
@@ -54,7 +91,7 @@ namespace vcpkg
         uint32_t size_of_headers;
         uint32_t checksum;
         uint16_t subsystem;
-        uint16_t dll_characteristics;
+        DllCharacteristics dll_characteristics;
         uint32_t size_of_stack_reserve;
         uint32_t size_of_stack_commit;
         uint32_t size_of_heap_reserve;
@@ -79,7 +116,7 @@ namespace vcpkg
         uint32_t size_of_headers;
         uint32_t checksum;
         uint16_t subsystem;
-        uint16_t dll_characteristics;
+        DllCharacteristics dll_characteristics;
         uint64_t size_of_stack_reserve;
         uint64_t size_of_stack_commit;
         uint64_t size_of_heap_reserve;
@@ -94,6 +131,50 @@ namespace vcpkg
         uint32_t size;
     };
 
+    enum class SectionTableFlags : uint32_t
+    {
+        TypeNoPad = 0x00000008u,
+        CntCode = 0x00000020u,
+        CntInitializedData = 0x00000040u,
+        CntUniniitalizedData = 0x00000080u,
+        LinkOther = 0x00000100u,
+        LinkInfo = 0x00000200u,
+        LinkRemove = 0x00000400u,
+        LinkComdat = 0x00001000u,
+        GpRel = 0x00008000u,
+        MemPurgable = 0x00020000u,
+        // Mem16Bit has the same constant as MemPurgable?!
+        MemLocked = 0x00040000u,
+        MemPreload = 0x00080000u,
+        Align1Bytes = 0x00100000u,
+        Align2Bytes = 0x00200000u,
+        Align4Bytes = 0x00300000u,
+        Align8Bytes = 0x00400000u,
+        Align16Bytes = 0x00500000u,
+        Align32Bytes = 0x00600000u,
+        Align64Bytes = 0x00700000u,
+        Align128Bytes = 0x00800000u,
+        Align256Bytes = 0x00900000u,
+        Align512Bytes = 0x00A00000u,
+        Align1024Bytes = 0x00B00000u,
+        Align2048Bytes = 0x00C00000u,
+        Align4096Bytes = 0x00D00000u,
+        Align8192Bytes = 0x00E00000u,
+        LinkNumberOfRelocationsOverflow = 0x01000000u,
+        MemDiscardable = 0x02000000u,
+        MemNotCached = 0x04000000u,
+        MemNotPaged = 0x08000000u,
+        MemShared = 0x10000000u,
+        MemExecute = 0x20000000u,
+        MemRead = 0x40000000u,
+        MemWrite = 0x80000000u
+    };
+
+    constexpr bool operator&(SectionTableFlags lhs, SectionTableFlags rhs) noexcept
+    {
+        return (static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs)) != 0;
+    }
+
     struct SectionTableHeader
     {
         unsigned char name[8];
@@ -105,7 +186,22 @@ namespace vcpkg
         uint32_t pointer_to_line_numbers;
         uint16_t number_of_relocations;
         uint16_t number_of_line_numbers;
-        uint32_t characteristics;
+        SectionTableFlags characteristics;
+    };
+
+    struct ExportDirectoryTable
+    {
+        uint32_t export_flags;
+        uint32_t timestamp;
+        uint16_t major_version;
+        uint16_t minor_version;
+        uint32_t name_rva;
+        uint32_t ordinal_base;
+        uint32_t address_table_entries;
+        uint32_t number_of_name_pointers;
+        uint32_t export_address_table_rva;
+        uint32_t name_pointer_rva;
+        uint32_t ordinal_table_rva;
     };
 
     struct ImportDirectoryTableEntry
@@ -197,38 +293,38 @@ namespace vcpkg
         uint64_t CHPEMetadataPointer;
     };
 
+    // It is expected that enumerators not in this list may be present.
     enum class MachineType : uint16_t
     {
-        UNKNOWN = 0x0,     // The contents of this field are assumed to be applicable to any machine type
-        AM33 = 0x1d3,      // Matsushita AM33
-        AMD64 = 0x8664,    // x64
-        ARM = 0x1c0,       // ARM little endian
-        ARM64 = 0xaa64,    // ARM64 little endian
-        ARM64EC = 0xa641,  // ARM64 "emulation compatible"
-        ARM64X = 0xa64e,   // ARM64X
-        ARMNT = 0x1c4,     // ARM Thumb-2 little endian
-        EBC = 0xebc,       // EFI byte code
-        I386 = 0x14c,      // Intel 386 or later processors and compatible processors
-        IA64 = 0x200,      // Intel Itanium processor family
-        M32R = 0x9041,     // Mitsubishi M32R little endian
-        MIPS16 = 0x266,    // MIPS16
-        MIPSFPU = 0x366,   // MIPS with FPU
-        MIPSFPU16 = 0x466, // MIPS16 with FPU
-        POWERPC = 0x1f0,   // Power PC little endian
-        POWERPCFP = 0x1f1, // Power PC with floating point support
-        R4000 = 0x166,     // MIPS little endian
-        RISCV32 = 0x5032,  // RISC-V 32-bit address space
-        RISCV64 = 0x5064,  // RISC-V 64-bit address space
-        RISCV128 = 0x5128, // RISC-V 128-bit address space
-        SH3 = 0x1a2,       // Hitachi SH3
-        SH3DSP = 0x1a3,    // Hitachi SH3 DSP
-        SH4 = 0x1a6,       // Hitachi SH4
-        SH5 = 0x1a8,       // Hitachi SH5
-        THUMB = 0x1c2,     // Thumb
-        WCEMIPSV2 = 0x169, // MIPS little-endian WCE v2
+        UNKNOWN = 0x0,         // The contents of this field are assumed to be applicable to any machine type
+        AM33 = 0x1d3,          // Matsushita AM33
+        AMD64 = 0x8664,        // x64
+        ARM = 0x1c0,           // ARM little endian
+        ARM64 = 0xaa64,        // ARM64 little endian
+        ARM64EC = 0xa641,      // ARM64 "emulation compatible"
+        ARM64X = 0xa64e,       // ARM64X
+        ARMNT = 0x1c4,         // ARM Thumb-2 little endian
+        EBC = 0xebc,           // EFI byte code
+        I386 = 0x14c,          // Intel 386 or later processors and compatible processors
+        IA64 = 0x200,          // Intel Itanium processor family
+        M32R = 0x9041,         // Mitsubishi M32R little endian
+        MIPS16 = 0x266,        // MIPS16
+        MIPSFPU = 0x366,       // MIPS with FPU
+        MIPSFPU16 = 0x466,     // MIPS16 with FPU
+        POWERPC = 0x1f0,       // Power PC little endian
+        POWERPCFP = 0x1f1,     // Power PC with floating point support
+        R4000 = 0x166,         // MIPS little endian
+        RISCV32 = 0x5032,      // RISC-V 32-bit address space
+        RISCV64 = 0x5064,      // RISC-V 64-bit address space
+        RISCV128 = 0x5128,     // RISC-V 128-bit address space
+        SH3 = 0x1a2,           // Hitachi SH3
+        SH3DSP = 0x1a3,        // Hitachi SH3 DSP
+        SH4 = 0x1a6,           // Hitachi SH4
+        SH5 = 0x1a8,           // Hitachi SH5
+        THUMB = 0x1c2,         // Thumb
+        WCEMIPSV2 = 0x169,     // MIPS little-endian WCE v2
+        LLVM_BITCODE = 0x4342, // LLVM bitcode https://www.llvm.org/docs/BitCodeFormat.html#llvm-ir-magic-number
     };
-
-    MachineType to_machine_type(const uint16_t value);
 
     enum class PEType
     {
@@ -265,6 +361,7 @@ namespace vcpkg
         std::vector<ImageDataDirectory> data_directories;
         std::vector<SectionTableHeader> section_headers;
 
+        const ImageDataDirectory* try_get_image_data_directory(size_t directory_index) const noexcept;
         MachineType get_machine_type() const noexcept;
         bool is_arm64_ec() const noexcept;
     };
@@ -279,11 +376,49 @@ namespace vcpkg
         char size[10];
         char end_of_header[2];
 
-        void check_end_of_header() const;
         uint64_t decoded_size() const;
     };
 
+    struct ImportHeader
+    {
+        uint16_t sig1; // must be IMAGE_FILE_MACHINE_UNKNOWN
+        uint16_t sig2; // must be 0xFFFF
+        uint16_t version;
+        uint16_t machine;
+        uint32_t date_time_stamp;
+        uint32_t size_of_data;
+        uint16_t ordinal_hint;
+        uint16_t type_and_name_type;
+        // 2 bits: type
+        // 3 bits: name type
+        // 11 bits: reserved and must be 0
+    };
+
+    constexpr uint32_t ImportHeaderSignature = 0xFFFF0000u;
+    constexpr uint32_t LlvmBitcodeSignature = 0xDEC04342u;
+
+    struct ImportHeaderAfterSignature
+    {
+        uint16_t version;
+        uint16_t machine;
+        uint32_t date_time_stamp;
+        uint32_t size_of_data;
+        uint16_t ordinal_hint;
+        uint16_t type_and_name_type;
+        // 2 bits: type
+        // 3 bits: name type
+        // 11 bits: reserved and must be 0
+    };
+
+    struct LibInformation
+    {
+        std::vector<MachineType> machine_types; // used as set because n is tiny
+        std::set<std::string, std::less<>> linker_directives;
+    };
+
+    std::vector<std::string> tokenize_command_line(StringView cmd_line);
     ExpectedL<DllMetadata> try_read_dll_metadata(ReadFilePointer& f);
+    ExpectedL<bool> try_read_if_dll_has_exports(const DllMetadata& dll, ReadFilePointer& f);
     ExpectedL<std::vector<std::string>> try_read_dll_imported_dll_names(const DllMetadata& dll, ReadFilePointer& f);
-    std::vector<MachineType> read_lib_machine_types(const ReadFilePointer& f);
+    ExpectedL<LibInformation> read_lib_information(ReadFilePointer& f);
 }

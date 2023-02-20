@@ -79,7 +79,7 @@ namespace vcpkg
 
     Optional<ToolData> parse_tool_data_from_xml(StringView XML, StringView XML_PATH, StringView tool, StringView os)
     {
-        static const std::string XML_VERSION = "2";
+        static const char* XML_VERSION = "2";
         static const std::regex XML_VERSION_REGEX{R"###(<tools[\s]+version="([^"]+)">)###"};
         std::cmatch match_xml_version;
         const bool has_xml_version = std::regex_search(XML.begin(), XML.end(), match_xml_version, XML_VERSION_REGEX);
@@ -212,7 +212,7 @@ namespace vcpkg
 
         virtual void add_system_package_info(LocalizedString& out) const
         {
-            out.append_raw(" ").append(msgInstallWithSystemManager);
+            out.append_raw(' ').append(msgInstallWithSystemManager);
         }
     };
 
@@ -419,11 +419,11 @@ namespace vcpkg
         virtual void add_system_package_info(LocalizedString& out) const override
         {
 #if defined(__APPLE__)
-            out.append_raw(" ").append(msgInstallWithSystemManagerPkg, msg::command_line = "brew install mono");
+            out.append_raw(' ').append(msgInstallWithSystemManagerPkg, msg::command_line = "brew install mono");
 #else
-            out.append_raw(" ").append(msgInstallWithSystemManagerPkg,
+            out.append_raw(' ').append(msgInstallWithSystemManagerPkg,
                                        msg::command_line = "sudo apt install mono-complete");
-            out.append_raw(" ").append(msgInstallWithSystemManagerMono,
+            out.append_raw(' ').append(msgInstallWithSystemManagerMono,
                                        msg::url = "https://www.mono-project.com/download/stable/");
 #endif
         }
@@ -573,9 +573,9 @@ namespace vcpkg
         virtual void add_system_package_info(LocalizedString& out) const override
         {
 #if defined(__APPLE__)
-            out.append_raw(" ").append(msgInstallWithSystemManagerPkg, msg::command_line = "brew install python3");
+            out.append_raw(' ').append(msgInstallWithSystemManagerPkg, msg::command_line = "brew install python3");
 #else
-            out.append_raw(" ").append(msgInstallWithSystemManagerPkg, msg::command_line = "sudo apt install python3");
+            out.append_raw(' ').append(msgInstallWithSystemManagerPkg, msg::command_line = "sudo apt install python3");
 #endif
         }
     };
@@ -595,9 +595,9 @@ namespace vcpkg
         virtual void add_system_package_info(LocalizedString& out) const override
         {
 #if defined(__APPLE__)
-            out.append_raw(" ").append(msgInstallWithSystemManagerPkg, msg::command_line = "brew install python3");
+            out.append_raw(' ').append(msgInstallWithSystemManagerPkg, msg::command_line = "brew install python3");
 #else
-            out.append_raw(" ").append(msgInstallWithSystemManagerPkg,
+            out.append_raw(' ').append(msgInstallWithSystemManagerPkg,
                                        msg::command_line = "sudo apt install python3-virtualenv");
 #endif
         }
@@ -831,7 +831,7 @@ namespace vcpkg
             s.append(msgToolFetchFailed, msg::tool_name = tool.tool_data_name());
             if (env_force_system_binaries && download_available)
             {
-                s.append_raw(" ").append(msgDownloadAvailable, msg::env_var = s_env_vcpkg_force_system_binaries);
+                s.append_raw(' ').append(msgDownloadAvailable, msg::env_var = s_env_vcpkg_force_system_binaries);
             }
             if (consider_system)
             {
@@ -839,7 +839,7 @@ namespace vcpkg
             }
             else if (!download_available)
             {
-                s.append_raw(" ").append(msgUnknownTool);
+                s.append_raw(' ').append(msgUnknownTool);
             }
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, s);
         }

@@ -6,7 +6,6 @@
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -279,33 +278,26 @@ namespace vcpkg::VisualStudio
                         // unknown toolset minor version
                         continue;
                     }
-                    const auto dumpbin_dir = subdir / "bin/HostX86/x86";
-                    const auto dumpbin_path = dumpbin_dir / "dumpbin.exe";
-                    paths_examined.push_back(dumpbin_path);
-                    if (fs.exists(dumpbin_path, IgnoreErrors{}))
+
+                    Toolset toolset{vs_instance.root_path,
+                                    vcvarsall_bat,
+                                    {vcvars_option},
+                                    toolset_version,
+                                    toolset_version_full.to_string(),
+                                    supported_architectures};
+
+                    found_toolsets.push_back(std::move(toolset));
+                    if (v140_is_available)
                     {
-                        Toolset toolset{vs_instance.root_path,
-                                        dumpbin_path,
-                                        vcvarsall_bat,
-                                        {vcvars_option},
-                                        toolset_version,
-                                        toolset_version_full.to_string(),
-                                        supported_architectures};
-
-                        found_toolsets.push_back(std::move(toolset));
-                        if (v140_is_available)
-                        {
-                            found_toolsets.push_back({vs_instance.root_path,
-                                                      dumpbin_path,
-                                                      vcvarsall_bat,
-                                                      {"-vcvars_ver=14.0"},
-                                                      V_140,
-                                                      "14",
-                                                      supported_architectures});
-                        }
-
-                        continue;
+                        found_toolsets.push_back({vs_instance.root_path,
+                                                  vcvarsall_bat,
+                                                  {"-vcvars_ver=14.0"},
+                                                  V_140,
+                                                  "14",
+                                                  supported_architectures});
                     }
+
+                    continue;
                 }
 
                 continue;
@@ -314,41 +306,47 @@ namespace vcpkg::VisualStudio
             if (major_version == "14" || major_version == "12")
             {
                 const auto vcvarsall_bat = vs_instance.root_path / "VC/vcvarsall.bat";
-
                 paths_examined.push_back(vcvarsall_bat);
                 if (fs.exists(vcvarsall_bat, IgnoreErrors{}))
                 {
-                    const auto vs_dumpbin_dir = vs_instance.root_path / "VC/bin";
-                    const auto vs_dumpbin_exe = vs_dumpbin_dir / "dumpbin.exe";
-                    paths_examined.push_back(vs_dumpbin_exe);
-
                     const auto vs_bin_dir = Path(vcvarsall_bat.parent_path()) / "bin";
                     std::vector<ToolsetArchOption> supported_architectures;
                     if (fs.exists(vs_bin_dir / "vcvars32.bat", IgnoreErrors{}))
-                        supported_architectures.push_back({"x86", CPU::X86, CPU::X86});
-                    if (fs.exists(vs_bin_dir / "amd64/vcvars64.bat", IgnoreErrors{}))
-                        supported_architectures.push_back({"x64", CPU::X64, CPU::X64});
-                    if (fs.exists(vs_bin_dir / "x86_amd64/vcvarsx86_amd64.bat", IgnoreErrors{}))
-                        supported_architectures.push_back({"x86_amd64", CPU::X86, CPU::X64});
-                    if (fs.exists(vs_bin_dir / "x86_arm/vcvarsx86_arm.bat", IgnoreErrors{}))
-                        supported_architectures.push_back({"x86_arm", CPU::X86, CPU::ARM});
-                    if (fs.exists(vs_bin_dir / "amd64_x86/vcvarsamd64_x86.bat", IgnoreErrors{}))
-                        supported_architectures.push_back({"amd64_x86", CPU::X64, CPU::X86});
-                    if (fs.exists(vs_bin_dir / "amd64_arm/vcvarsamd64_arm.bat", IgnoreErrors{}))
-                        supported_architectures.push_back({"amd64_arm", CPU::X64, CPU::ARM});
-
-                    if (fs.exists(vs_dumpbin_exe, IgnoreErrors{}))
                     {
-                        const Toolset toolset = {vs_instance.root_path,
-                                                 vs_dumpbin_exe,
-                                                 vcvarsall_bat,
-                                                 {},
-                                                 major_version == "14" ? V_140 : V_120,
-                                                 major_version,
-                                                 supported_architectures};
-
-                        found_toolsets.push_back(toolset);
+                        supported_architectures.push_back({"x86", CPU::X86, CPU::X86});
                     }
+
+                    if (fs.exists(vs_bin_dir / "amd64/vcvars64.bat", IgnoreErrors{}))
+                    {
+                        supported_architectures.push_back({"x64", CPU::X64, CPU::X64});
+                    }
+
+                    if (fs.exists(vs_bin_dir / "x86_amd64/vcvarsx86_amd64.bat", IgnoreErrors{}))
+                    {
+                        supported_architectures.push_back({"x86_amd64", CPU::X86, CPU::X64});
+                    }
+
+                    if (fs.exists(vs_bin_dir / "x86_arm/vcvarsx86_arm.bat", IgnoreErrors{}))
+                    {
+                        supported_architectures.push_back({"x86_arm", CPU::X86, CPU::ARM});
+                    }
+
+                    if (fs.exists(vs_bin_dir / "amd64_x86/vcvarsamd64_x86.bat", IgnoreErrors{}))
+                    {
+                        supported_architectures.push_back({"amd64_x86", CPU::X64, CPU::X86});
+                    }
+
+                    if (fs.exists(vs_bin_dir / "amd64_arm/vcvarsamd64_arm.bat", IgnoreErrors{}))
+                    {
+                        supported_architectures.push_back({"amd64_arm", CPU::X64, CPU::ARM});
+                    }
+
+                    found_toolsets.push_back(Toolset{vs_instance.root_path,
+                                                     vcvarsall_bat,
+                                                     {},
+                                                     major_version == "14" ? V_140 : V_120,
+                                                     major_version,
+                                                     supported_architectures});
                 }
             }
         }

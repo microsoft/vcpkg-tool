@@ -8,7 +8,6 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
-#include "vcpkg/base/system.print.h"
 #include <vcpkg-test/util.h>
 
 using namespace vcpkg;

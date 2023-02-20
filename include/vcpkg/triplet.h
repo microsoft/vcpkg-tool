@@ -43,6 +43,7 @@ namespace vcpkg
 
     Triplet default_triplet(const VcpkgCmdArguments& args);
     Triplet default_host_triplet(const VcpkgCmdArguments& args);
+    void print_default_triplet_warning(const VcpkgCmdArguments& args, View<std::string> specs);
 }
 
 VCPKG_FORMAT_AS(vcpkg::Triplet, vcpkg::StringView);

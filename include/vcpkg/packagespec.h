@@ -9,7 +9,7 @@
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/view.h>
+#include <vcpkg/base/span.h>
 
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/triplet.h>
@@ -92,6 +92,8 @@ namespace vcpkg
         PackageSpec m_spec;
         std::string m_feature;
     };
+
+    std::string format_name_only_feature_spec(StringView package_name, StringView feature_name);
 
     /// In an internal feature set, "default" represents default features and missing "core" has no semantic
     struct InternalFeatureSet : std::vector<std::string>

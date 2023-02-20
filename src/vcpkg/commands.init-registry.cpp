@@ -1,5 +1,4 @@
 #include <vcpkg/base/files.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.init-registry.h>
 #include <vcpkg/vcpkgcmdarguments.h>

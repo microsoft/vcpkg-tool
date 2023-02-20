@@ -1,4 +1,3 @@
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.h>
@@ -38,15 +37,15 @@ namespace vcpkg::Remove
             write_update(fs, installed, spgh);
         }
 
-        std::error_code ec;
-        auto lines = fs.read_lines(installed.listfile_path(ipv.core->package), ec);
-        if (!ec)
+        auto maybe_lines = fs.read_lines(installed.listfile_path(ipv.core->package));
+        if (auto lines = maybe_lines.get())
         {
             std::vector<Path> dirs_touched;
-            for (auto&& suffix : lines)
+            for (auto&& suffix : *lines)
             {
                 auto target = installed.root() / suffix;
 
+                std::error_code ec;
                 const auto status = fs.symlink_status(target, ec);
                 if (ec)
                 {
@@ -82,6 +81,7 @@ namespace vcpkg::Remove
             {
                 if (fs.is_empty(*b, IgnoreErrors{}))
                 {
+                    std::error_code ec;
                     fs.remove(*b, ec);
                     if (ec)
                     {
@@ -230,6 +230,7 @@ namespace vcpkg::Remove
                 return check_and_get_package_spec(
                     std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
             });
+            print_default_triplet_warning(args, args.command_arguments);
         }
 
         const bool no_purge = Util::Sets::contains(options.switches, OPTION_NO_PURGE);
@@ -277,12 +278,17 @@ namespace vcpkg::Remove
             {
                 // The user requested removing a package that was not installed. If the port is installed for another
                 // triplet, warn the user that they may have meant that other package.
+                const auto& action_spec = action.spec;
+                const auto& action_package_name = action_spec.name();
                 for (const auto& package : status_db)
                 {
                     if (package->is_installed() && !package->package.is_feature() &&
-                        package->package.spec.name() == action.spec.name())
+                        package->package.spec.name() == action_package_name)
                     {
-                        msg::println_warning(msgRemovePackageConflict, msg::spec = package->package.spec);
+                        msg::println_warning(msgRemovePackageConflict,
+                                             msg::package_name = action_package_name,
+                                             msg::spec = action.spec,
+                                             msg::triplet = package->package.spec.triplet());
                     }
                 }
             }
