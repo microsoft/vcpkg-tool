@@ -1183,6 +1183,10 @@ namespace vcpkg
                     "{env_var} is {value}, must be > 0");
     DECLARE_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:");
     DECLARE_MESSAGE(EnvPlatformNotSupported, (), "", "Build environment commands are not supported on this platform");
+    DECLARE_MESSAGE(EnvVarMustBeAbsolutePath,
+                    (msg::path, msg::env_var),
+                    "",
+                    "{env_var} ({path}) was not an absolute path");
     DECLARE_MESSAGE(ErrorDetectingCompilerInfo,
                     (msg::path),
                     "",
@@ -2563,6 +2567,10 @@ namespace vcpkg
                     (msg::system_api, msg::exit_code, msg::error_msg),
                     "",
                     "calling {system_api} failed with {exit_code} ({error_msg})");
+    DECLARE_MESSAGE(SystemRootMustAlwaysBePresent,
+                    (),
+                    "",
+                    "Expected the SystemRoot environment variable to be always set on Windows.");
     DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
     DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
     DECLARE_MESSAGE(ToolOfVersionXNotFound,
@@ -2586,6 +2594,8 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is a feature flag.",
                     "Both '{value}' and -'{value}' were specified as feature flags.");
+    DECLARE_MESSAGE(UnableToReadAppDatas, (), "", "both %LOCALAPPDATA% and %APPDATA% were unreadable");
+    DECLARE_MESSAGE(UnableToReadEnvironmentVariable, (msg::env_var), "", "unable to read {env_var}");
     DECLARE_MESSAGE(UndeterminedToolChainForTriplet,
                     (msg::triplet, msg::system_name),
                     "",
@@ -2841,6 +2851,11 @@ namespace vcpkg
     DECLARE_MESSAGE(VcpkgRootRequired, (), "", "Setting VCPKG_ROOT is required for standalone bootstrap.");
     DECLARE_MESSAGE(VcpkgRootsDir, (msg::env_var), "", "Specify the vcpkg root directory.\n(default: '{env_var}')");
     DECLARE_MESSAGE(VcpkgSendMetricsButDisabled, (), "", "passed --sendmetrics, but metrics are disabled.");
+    DECLARE_MESSAGE(VcvarsRunFailed, (), "", "failed to run vcvarsall.bat to get a Visual Studio environment");
+    DECLARE_MESSAGE(VcvarsRunFailedExitCode,
+                    (msg::exit_code),
+                    "",
+                    "while trying to get a Visual Studio environment, vcvarsall.bat returned {exit_code}");
     DECLARE_MESSAGE(VersionCommandHeader,
                     (msg::version),
                     "",
