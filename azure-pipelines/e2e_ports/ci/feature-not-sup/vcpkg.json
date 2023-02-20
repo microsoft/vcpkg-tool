@@ -1,0 +1,11 @@
+{
+  "name": "feature-not-sup",
+  "version": "1",
+  "dependencies": [],
+  "features": {
+    "not-sup": {
+      "description": "not supported",
+      "supports": "x64 & !x64"
+    }
+  }
+}

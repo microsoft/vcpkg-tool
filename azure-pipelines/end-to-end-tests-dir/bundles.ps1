@@ -118,7 +118,10 @@ New-Item -ItemType File -Force $bundle/.vcpkg-root | Out-Null
 @{
     name = "manifest"
     version = "0"
-    dependencies = @("rapidjson")
+    dependencies = @(@{
+        name = "vcpkg-cmake"
+        host = $true
+    })
 } | ConvertTo-JSON | out-file -enc ascii $manifestdir/vcpkg.json | Out-Null
 
 $a = Run-VcpkgAndCaptureOutput z-print-config `
@@ -146,7 +149,7 @@ foreach ($k in $b.keys) {
     }
 }
 
-Run-Vcpkg install zlib --dry-run @commonArgs `
+Run-Vcpkg install vcpkg-hello-world-1 --dry-run @commonArgs `
     --x-buildtrees-root=$buildtreesRoot `
     --x-builtin-ports-root=$env:VCPKG_ROOT/ports `
     --x-install-root=$installRoot `
@@ -172,7 +175,10 @@ New-Item -ItemType Directory -Force $manifestdir2 | Out-Null
 @{
     name = "manifest"
     version = "0"
-    dependencies = @("rapidjson")
+    dependencies = @(@{
+        name = "vcpkg-cmake"
+        host = $true
+    })
     "builtin-baseline" = "897ff9372f15c032f1e6cd1b97a59b57d66ee5b2"
 } | ConvertTo-JSON | out-file -enc ascii $manifestdir2/vcpkg.json | Out-Null
 
@@ -184,7 +190,7 @@ Run-Vcpkg install @commonArgs `
     --x-packages-root=$packagesRoot
 Throw-IfFailed
 
-Run-Vcpkg search zlib @commonArgs `
+Run-Vcpkg search vcpkg-hello-world-1 @commonArgs `
     --x-manifest-root=$manifestdir2 `
     --x-buildtrees-root=$buildtreesRoot `
     --x-builtin-ports-root=$env:VCPKG_ROOT/ports `

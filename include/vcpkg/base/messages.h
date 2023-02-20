@@ -275,6 +275,8 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(expected_version, "1.3.8");
     DECLARE_MSG_ARG(extension, ".exe");
     DECLARE_MSG_ARG(feature, "avisynthplus");
+    DECLARE_MSG_ARG(json_field, "identifer");
+    DECLARE_MSG_ARG(json_type, "an array of identifiers");
     DECLARE_MSG_ARG(new_scheme, "version");
     DECLARE_MSG_ARG(old_scheme, "version-string");
     DECLARE_MSG_ARG(option, "editable");
@@ -422,6 +424,18 @@ namespace vcpkg
     extern MessageSink& stdout_sink;
     extern MessageSink& stderr_sink;
 
+    DECLARE_MESSAGE(ABaseline, (), "", "a baseline");
+    DECLARE_MESSAGE(ABaselineObject, (), "", "a baseline object");
+    DECLARE_MESSAGE(ABoolean, (), "", "a boolean");
+    DECLARE_MESSAGE(ABuiltinRegistry, (), "", "a builtin registry");
+    DECLARE_MESSAGE(AConfigurationObject, (), "", "a configuration object");
+    DECLARE_MESSAGE(ADependency, (), "", "a dependency");
+    DECLARE_MESSAGE(ADemandObject,
+                    (),
+                    "'demands' are a concept in the schema of a JSON file the user can edit",
+                    "a demand object");
+    DECLARE_MESSAGE(AString, (), "", "a string");
+    DECLARE_MESSAGE(ADateVersionString, (), "", "a date version string");
     DECLARE_MESSAGE(AddArtifactOnlyOne,
                     (msg::command_line),
                     "",
@@ -440,6 +454,7 @@ namespace vcpkg
                     (),
                     "",
                     "Additional packages (*) need to be removed to complete this operation.");
+    DECLARE_MESSAGE(APlatformExpression, (), "", "a platform expression");
     DECLARE_MESSAGE(AddPortRequiresManifest,
                     (msg::command_line),
                     "",
@@ -514,6 +529,13 @@ namespace vcpkg
                     "",
                     "version {version} is already in {path}");
     DECLARE_MESSAGE(AddVersionVersionIs, (msg::version), "", "version: {version}");
+    DECLARE_MESSAGE(ADictionaryOfContacts, (), "", "a dictionary of contacts");
+    DECLARE_MESSAGE(AFeature, (), "", "a feature");
+    DECLARE_MESSAGE(AFilesystemRegistry, (), "", "a filesystem registry");
+    DECLARE_MESSAGE(AGitObjectSha, (), "", "a git object SHA");
+    DECLARE_MESSAGE(AGitReference, (), "", "a git reference (for example, a branch)");
+    DECLARE_MESSAGE(AGitRegistry, (), "", "a git registry");
+    DECLARE_MESSAGE(AGitRepositoryUrl, (), "", "a git repository URL");
     DECLARE_MESSAGE(AllFormatArgsRawArgument,
                     (msg::value),
                     "example of {value} is 'foo {} bar'",
@@ -528,23 +550,68 @@ namespace vcpkg
                     (msg::spec),
                     "'HEAD' means the most recent version of source code",
                     "{spec} is already installed -- not building from HEAD");
+    DECLARE_MESSAGE(AManifest, (), "", "a manifest");
     DECLARE_MESSAGE(AmbiguousConfigDeleteConfigFile,
                     (msg::path),
                     "",
                     "Ambiguous vcpkg configuration provided by both manifest and configuration file.\n-- Delete "
                     "configuration file {path}");
+    DECLARE_MESSAGE(AnArtifactsGitRegistryUrl, (), "", "an artifacts git registry URL");
+    DECLARE_MESSAGE(AnArtifactsRegistry, (), "", "an artifacts registry");
+    DECLARE_MESSAGE(AnArrayOfDependencies, (), "", "an array of dependencies");
+    DECLARE_MESSAGE(AnArrayOfDependencyOverrides, (), "", "an array of dependency overrides");
+    DECLARE_MESSAGE(AnArrayOfIdentifers, (), "", "an array of identifiers");
+    DECLARE_MESSAGE(AnArrayOfOverlayPaths, (), "", "an array of overlay paths");
+    DECLARE_MESSAGE(AnArrayOfOverlayTripletsPaths, (), "", "an array of overlay triplets paths");
+    DECLARE_MESSAGE(AnArrayOfRegistries, (), "", "an array of registries");
+    DECLARE_MESSAGE(AnArrayOfVersions, (), "", "an array of versions");
     DECLARE_MESSAGE(AndroidHomeDirMissingProps,
                     (msg::env_var, msg::path),
                     "Note: 'source.properties' is code and should not be translated.",
                     "source.properties missing in {env_var} directory: {path}");
+    DECLARE_MESSAGE(AnExactVersionString, (), "", "an exact version string");
+    DECLARE_MESSAGE(AnIdentifer, (), "", "an identifier");
+    DECLARE_MESSAGE(AnObjectContainingVcpkgArtifactsMetadata,
+                    (),
+                    "'vcpkg-artifacts' is the name of the product feature and should not be localized",
+                    "an object containing vcpkg-artifacts metadata");
+    DECLARE_MESSAGE(AnOverlayPath, (), "", "an overlay path");
+    DECLARE_MESSAGE(AnOverlayTripletsPath, (), "", "a triplet path");
+    DECLARE_MESSAGE(AnOverride, (), "", "an override");
+    DECLARE_MESSAGE(ANonNegativeInteger, (), "", "a nonnegative integer");
     DECLARE_MESSAGE(AnotherInstallationInProgress,
                     (),
                     "",
                     "Another installation is in progress on the machine, sleeping 6s before retrying.");
+    DECLARE_MESSAGE(AnSpdxLicenseExpression, (), "", "an SPDX license expression");
+    DECLARE_MESSAGE(APackageName, (), "", "a package name");
+    DECLARE_MESSAGE(APackagePattern, (), "", "a package pattern");
+    DECLARE_MESSAGE(APackagePatternArray, (), "", "a package pattern array");
+    DECLARE_MESSAGE(APath, (), "", "a path");
     DECLARE_MESSAGE(AppliedUserIntegration, (), "", "Applied user-wide integration for this vcpkg root.");
     DECLARE_MESSAGE(ApplocalProcessing, (msg::path), "", "vcpkg applocal processing: {path}");
+    DECLARE_MESSAGE(ARegistry, (), "", "a registry");
+    DECLARE_MESSAGE(ARegistryImplementationKind, (), "", "a registry implementation kind");
+    DECLARE_MESSAGE(ARegistryPath, (), "", "a registry path");
+    DECLARE_MESSAGE(ARegistryPathMustBeDelimitedWithForwardSlashes,
+                    (),
+                    "",
+                    "A registry path must use single forward slashes as path separators.");
+    DECLARE_MESSAGE(ARegistryPathMustNotHaveDots,
+                    (),
+                    "",
+                    "A registry path must not have 'dot' or 'dot dot' path elements.");
+    DECLARE_MESSAGE(ARegistryPathMustStartWithDollar,
+                    (),
+                    "",
+                    "A registry path must start with `$` to mean the registry root; for example, `$/foo/bar`.");
+    DECLARE_MESSAGE(ARelaxedVersionString, (), "", "a relaxed version string");
     DECLARE_MESSAGE(ArtifactsOptionIncompatibility, (msg::option), "", "--{option} has no effect on find artifact.");
     DECLARE_MESSAGE(AssetSourcesArg, (), "", "Add sources for asset caching. See 'vcpkg help assetcaching'.");
+    DECLARE_MESSAGE(ASemanticVersionString, (), "", "a semantic version string");
+    DECLARE_MESSAGE(ASetOfFeatures, (), "", "a set of features");
+    DECLARE_MESSAGE(AStringOrArrayOfStrings, (), "", "a string or array of strings");
+    DECLARE_MESSAGE(AStringStringDictionary, (), "", "a \"string\": \"string\" dictionary");
     DECLARE_MESSAGE(AttemptingToFetchPackagesFromVendor,
                     (msg::count, msg::vendor),
                     "",
@@ -569,8 +636,14 @@ namespace vcpkg
                     "An example of env_var is \"HTTP(S)_PROXY\""
                     "'--' at the beginning must be preserved",
                     "-- Automatically setting {env_var} environment variables to \"{url}\".");
+    DECLARE_MESSAGE(AUrl, (), "", "a url");
     DECLARE_MESSAGE(AvailableArchitectureTriplets, (), "", "Available architecture triplets:");
     DECLARE_MESSAGE(AvailableHelpTopics, (), "", "Available help topics:");
+    DECLARE_MESSAGE(AVcpkgRepositoryCommit, (), "", "a vcpkg repository commit");
+    DECLARE_MESSAGE(AVersionDatabaseEntry, (), "", "a version database entry");
+    DECLARE_MESSAGE(AVersionObject, (), "", "a version object");
+    DECLARE_MESSAGE(AVersionOfAnyType, (), "", "a version of any type");
+    DECLARE_MESSAGE(AVersionConstraint, (), "", "a version constriant");
     DECLARE_MESSAGE(BaselineConflict,
                     (),
                     "",
@@ -929,6 +1002,10 @@ namespace vcpkg
                     "Using registries requires that a baseline is set for the default registry or that the default "
                     "registry is null.\n\n"
                     "See {url} for more details.");
+    DECLARE_MESSAGE(ConfigurationNestedDemands,
+                    (msg::json_field),
+                    "",
+                    "[\"{json_field}\"] contains a nested `demands` object (nested `demands` have no effect)");
     DECLARE_MESSAGE(ConflictingFiles,
                     (msg::path, msg::spec),
                     "",
@@ -1009,6 +1086,7 @@ namespace vcpkg
     DECLARE_MESSAGE(DateTableHeader, (), "", "Date");
     DECLARE_MESSAGE(DefaultBrowserLaunched, (msg::url), "", "Default browser launched to {url}.");
     DECLARE_MESSAGE(DefaultFlag, (msg::option), "", "Defaulting to --{option} being on.");
+    DECLARE_MESSAGE(DefaultRegistryIsArtifact, (), "", "The default registry cannot be an artifact registry.");
     DECLARE_MESSAGE(DefaultTriplet,
                     (msg::triplet),
                     "",
@@ -1178,15 +1256,11 @@ namespace vcpkg
     DECLARE_MESSAGE(ExceededRecursionDepth, (), "", "Recursion depth exceeded.");
     DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
     DECLARE_MESSAGE(ExcludedPackages, (), "", "The following packages are excluded:");
+    DECLARE_MESSAGE(ExpectedAnObject, (), "", "expected an object");
     DECLARE_MESSAGE(ExpectedAtMostOneSetOfTags,
                     (msg::count, msg::old_value, msg::new_value, msg::value),
                     "{old_value} is a left tag and {new_value} is the right tag. {value} is the input.",
                     "Found {count} sets of {old_value}.*{new_value} but expected at most 1, in block:\n{value}");
-    DECLARE_MESSAGE(
-        ExpectedCascadeFailure,
-        (msg::expected, msg::actual),
-        "{expected} is the expected number of cascade failures and {actual} is the actual number of cascade failures.",
-        "Expected {expected} cascade failure, but there were {actual} cascade failures.");
     DECLARE_MESSAGE(
         ExpectedCharacterHere,
         (msg::expected),
@@ -1198,6 +1272,7 @@ namespace vcpkg
                     (msg::count, msg::old_value, msg::new_value, msg::value),
                     "{old_value} is a left tag and {new_value} is the right tag. {value} is the input.",
                     "Found {count} sets of {old_value}.*{new_value} but expected exactly 1, in block:\n{value}");
+    DECLARE_MESSAGE(ExpectedOneVersioningField, (), "", "expected only one versioning field");
     DECLARE_MESSAGE(ExpectedPathToExist, (msg::path), "", "Expected {path} to exist after fetching");
     DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
     DECLARE_MESSAGE(ExpectedStatusField, (), "", "Expected 'status' field in status paragraph");
@@ -1318,6 +1393,11 @@ namespace vcpkg
         "followed by a list of found files.",
         "There should be no absolute paths, such as the following, in an installed package:");
     DECLARE_MESSAGE(FilesContainAbsolutePath2, (), "", "Absolute paths were found in the following files:");
+    DECLARE_MESSAGE(FieldKindDidNotHaveExpectedValue,
+                    (msg::expected, msg::actual),
+                    "{expected} is a list of literal kinds the user must type, separated by commas, {actual} is what "
+                    "the user supplied",
+                    "\"kind\" did not have an expected value: (expected one of: {expected}; found {actual})");
     DECLARE_MESSAGE(FetchingBaselineInfo,
                     (msg::package_name),
                     "",
@@ -1774,8 +1854,6 @@ namespace vcpkg
                     (),
                     "",
                     "vcpkg ci is an internal command which will change incompatibly or be removed at any time.");
-    DECLARE_MESSAGE(InvalidArgMustBeAnInt, (msg::option), "", "--{option} must be an integer.");
-    DECLARE_MESSAGE(InvalidArgMustBePositive, (msg::option), "", "--{option} must be non-negative.");
     DECLARE_MESSAGE(InvalidArgument, (), "", "invalid argument");
     DECLARE_MESSAGE(
         InvalidArgumentRequiresAbsolutePath,
@@ -1848,6 +1926,14 @@ namespace vcpkg
         "vcpkg does not support c-style comments, however most objects allow $-prefixed fields to be used as "
         "comments.");
     DECLARE_MESSAGE(InvalidCommitId, (msg::commit_sha), "", "Invalid commit id: {commit_sha}");
+    DECLARE_MESSAGE(InvalidDependency,
+                    (),
+                    "",
+                    "dependencies must be lowercase alphanumeric+hyphens, and not one of the reserved names");
+    DECLARE_MESSAGE(InvalidFeature,
+                    (),
+                    "",
+                    "features must be lowercase alphanumeric+hyphens, and not one of the reserved names");
     DECLARE_MESSAGE(InvalidFilename,
                     (msg::value, msg::path),
                     "'{value}' is a list of invalid characters. I.e. \\/:*?<>|",
@@ -1872,10 +1958,17 @@ namespace vcpkg
                     "'remove' is a command that should not be changed.",
                     "'remove' accepts either libraries or '--outdated'");
     DECLARE_MESSAGE(InvalidPortVersonName, (msg::path), "", "Found invalid port version file name: `{path}`.");
+    DECLARE_MESSAGE(InvalidSharpInVersion, (), "", "invalid character '#' in version text");
+    DECLARE_MESSAGE(InvalidSharpInVersionDidYouMean,
+                    (msg::value),
+                    "{value} is an integer. `\"port-version\":' is JSON syntax and should be unlocalized",
+                    "invalid character '#' in version text. Did you mean \"port-version\": {value}?");
     DECLARE_MESSAGE(InvalidString, (), "", "Invalid utf8 passed to Value::string(std::string)");
     DECLARE_MESSAGE(InvalidTriplet, (msg::triplet), "", "Invalid triplet: {triplet}");
     DECLARE_MESSAGE(IrregularFile, (msg::path), "", "path was not a regular file: {path}");
     DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected \"{path}\" to be an object.");
+    DECLARE_MESSAGE(JsonFieldNotObject, (msg::json_field), "", "value of [\"{json_field}\"] must be an object");
+    DECLARE_MESSAGE(JsonFieldNotString, (msg::json_field), "", "value of [\"{json_field}\"] must be a string");
     DECLARE_MESSAGE(JsonFileMissingExtension,
                     (msg::path),
                     "",
@@ -2014,6 +2107,10 @@ namespace vcpkg
                     (msg::package_name, msg::actual),
                     "{actual} is the port name found",
                     "names did not match: '{package_name}' != '{actual}'");
+    DECLARE_MESSAGE(MismatchedType,
+                    (msg::json_field, msg::json_type),
+                    "",
+                    "{json_field}: mismatched type: expected {json_type}");
     DECLARE_MESSAGE(Missing7zHeader, (), "", "Unable to find 7z header.");
     DECLARE_MESSAGE(MissingAndroidEnv, (), "", "ANDROID_NDK_HOME environment variable missing");
     DECLARE_MESSAGE(MissingAndroidHomeDir, (msg::path), "", "ANDROID_NDK_HOME directory does not exist: {path}");
@@ -2032,6 +2129,11 @@ namespace vcpkg
                     (),
                     "",
                     "If your port is not listed, please open an issue at and/or consider making a pull request.");
+    DECLARE_MESSAGE(MissingRequiredField,
+                    (msg::json_field, msg::json_type),
+                    "Example completely formatted message:\nerror: missing required field 'dependencies' (an array of "
+                    "dependencies)",
+                    "missing required field '{json_field}' ({json_type})");
     DECLARE_MESSAGE(MissmatchedBinParagraphs,
                     (),
                     "",
@@ -2353,6 +2455,10 @@ namespace vcpkg
     DECLARE_MESSAGE(PortsUpdated, (msg::count), "", "\nThe following {count} ports were updated:");
     DECLARE_MESSAGE(PortSupportsField, (msg::supports_expression), "", "(supports: \"{supports_expression}\")");
     DECLARE_MESSAGE(PortVersionConflict, (), "", "The following packages differ from their port versions:");
+    DECLARE_MESSAGE(PortVersionMultipleSpecification,
+                    (),
+                    "",
+                    "\"port_version\" cannot be combined with an embedded '#' in the version");
     DECLARE_MESSAGE(PrebuiltPackages, (), "", "There are packages that have not been built. To build them run:");
     DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.");
     DECLARE_MESSAGE(ProgramReturnedNonzeroExitCode,
@@ -2513,6 +2619,11 @@ namespace vcpkg
     DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.");
     DECLARE_MESSAGE(UnexpectedEscapeSequence, (), "", "Unexpected escape sequence continuation");
     DECLARE_MESSAGE(UnexpectedExtension, (msg::extension), "", "Unexpected archive extension: '{extension}'.");
+    DECLARE_MESSAGE(UnexpectedField, (msg::json_field), "", "unexpected field '{json_field}'");
+    DECLARE_MESSAGE(UnexpectedFieldSuggest,
+                    (msg::json_field, msg::value),
+                    "{value} is a suggested field name to use in a JSON document",
+                    "unexpected field '{json_field}', did you mean '{value}'?");
     DECLARE_MESSAGE(UnexpectedFormat,
                     (msg::expected, msg::actual),
                     "{expected} is the expected format, {actual} is the actual format.",
@@ -2521,6 +2632,10 @@ namespace vcpkg
                     (msg::expected, msg::actual, msg::path),
                     "{expected} is the expected port and {actual} is the port declared by the user.",
                     "the port {expected} is declared as {actual} in {path}");
+    DECLARE_MESSAGE(UnexpectedPortversion,
+                    (),
+                    "'field' means a JSON key/value pair here",
+                    "unexpected \"port-version\" without a versioning field");
     DECLARE_MESSAGE(UnexpectedToolOutput,
                     (msg::tool_name, msg::path),
                     "The actual command line output will be appended after this message.",
@@ -2735,6 +2850,10 @@ namespace vcpkg
         (msg::path, msg::expected_version, msg::actual_version),
         "",
         "Expected {path} version: [{expected_version}], but was [{actual_version}]. Please re-run bootstrap-vcpkg.");
+    DECLARE_MESSAGE(VersionConstraintPortVersionMustBePositiveInteger,
+                    (),
+                    "",
+                    "port-version (after the '#') in \"version>=\" must be a positive integer");
     DECLARE_MESSAGE(VersionConstraintViolated,
                     (msg::spec, msg::expected_version, msg::actual_version),
                     "",
@@ -2754,6 +2873,19 @@ namespace vcpkg
                     (msg::version),
                     "",
                     "`{version}` is not a valid semantic version, consult <https://semver.org>.");
+    DECLARE_MESSAGE(
+        VersionMissing,
+        (),
+        "The names version, version-date, version-semver, and version-string are code and must not be localized",
+        "expected a versioning field (one of version, version-date, version-semver, or version-string)");
+    DECLARE_MESSAGE(VersionSharpMustBeFollowedByPortVersion,
+                    (),
+                    "",
+                    "'#' in version text must be followed by a port version");
+    DECLARE_MESSAGE(VersionSharpMustBeFollowedByPortVersionNonNegativeInteger,
+                    (),
+                    "",
+                    "'#' in version text must be followed by a port version (a non-negative integer)");
     DECLARE_MESSAGE(VersionSpecMismatch,
                     (msg::path, msg::expected_version, msg::actual_version),
                     "",
