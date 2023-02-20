@@ -1,8 +1,7 @@
-#include <vcpkg/base/basic_checks.h>
+#include <vcpkg/base/basic-checks.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/strings.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.add.h>
 #include <vcpkg/configure-environment.h>

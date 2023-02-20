@@ -7,7 +7,7 @@ import { buildRegistryResolver } from '../../artifacts/artifact';
 import { i } from '../../i18n';
 import { session } from '../../main';
 import { Command } from '../command';
-import { Table } from '../markdown-table';
+import { Table } from '../console-table';
 import { error, log } from '../styling';
 import { Project } from '../switches/project';
 import { Version } from '../switches/version';
@@ -34,8 +34,9 @@ export class FindCommand extends Command {
     // load registries (from the current project too if available)
     const resolver = session.globalRegistryResolver.with(
       await buildRegistryResolver(session, (await this.project.manifest)?.metadata.registries));
-    const table = new Table('Artifact', 'Version', 'Summary');
+    const table = new Table(i`Artifact`, i`Version`, i`Summary`);
 
+    let anyEntries = false;
     for (const each of this.inputs) {
       const hasColon = each.indexOf(':') > -1;
       // eslint-disable-next-line prefer-const
@@ -52,13 +53,14 @@ export class FindCommand extends Command {
         }
         for (const result of artifactVersions) {
           if (!result.metadata.dependencyOnly) {
+            anyEntries = true;
             table.push(display, result.metadata.version, result.metadata.summary || '');
           }
         }
       }
     }
 
-    if (!table.anyRows) {
+    if (!anyEntries) {
       error(i`No artifacts found matching criteria: ${cyan.bold(this.inputs.join(', '))}`);
       return false;
     }

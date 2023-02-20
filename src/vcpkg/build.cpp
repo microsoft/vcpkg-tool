@@ -7,7 +7,6 @@
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
@@ -188,6 +187,7 @@ namespace vcpkg::Build
         BinaryCache binary_cache{args, paths};
         const FullPackageSpec spec = check_and_get_full_package_spec(
             std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+        print_default_triplet_warning(args, {&args.command_arguments[0], 1});
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
@@ -207,18 +207,19 @@ namespace vcpkg
         Build::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 
-    static const std::string NAME_EMPTY_PACKAGE = "PolicyEmptyPackage";
-    static const std::string NAME_DLLS_WITHOUT_LIBS = "PolicyDLLsWithoutLIBs";
-    static const std::string NAME_DLLS_WITHOUT_EXPORTS = "PolicyDLLsWithoutExports";
-    static const std::string NAME_DLLS_IN_STATIC_LIBRARY = "PolicyDLLsInStaticLibrary";
-    static const std::string NAME_MISMATCHED_NUMBER_OF_BINARIES = "PolicyMismatchedNumberOfBinaries";
-    static const std::string NAME_ONLY_RELEASE_CRT = "PolicyOnlyReleaseCRT";
-    static const std::string NAME_EMPTY_INCLUDE_FOLDER = "PolicyEmptyIncludeFolder";
-    static const std::string NAME_ALLOW_OBSOLETE_MSVCRT = "PolicyAllowObsoleteMsvcrt";
-    static const std::string NAME_ALLOW_RESTRICTED_HEADERS = "PolicyAllowRestrictedHeaders";
-    static const std::string NAME_SKIP_DUMPBIN_CHECKS = "PolicySkipDumpbinChecks";
-    static const std::string NAME_SKIP_ARCHITECTURE_CHECK = "PolicySkipArchitectureCheck";
-    static const std::string NAME_CMAKE_HELPER_PORT = "PolicyCmakeHelperPort";
+    static constexpr StringLiteral NAME_EMPTY_PACKAGE = "PolicyEmptyPackage";
+    static constexpr StringLiteral NAME_DLLS_WITHOUT_LIBS = "PolicyDLLsWithoutLIBs";
+    static constexpr StringLiteral NAME_DLLS_WITHOUT_EXPORTS = "PolicyDLLsWithoutExports";
+    static constexpr StringLiteral NAME_DLLS_IN_STATIC_LIBRARY = "PolicyDLLsInStaticLibrary";
+    static constexpr StringLiteral NAME_MISMATCHED_NUMBER_OF_BINARIES = "PolicyMismatchedNumberOfBinaries";
+    static constexpr StringLiteral NAME_ONLY_RELEASE_CRT = "PolicyOnlyReleaseCRT";
+    static constexpr StringLiteral NAME_EMPTY_INCLUDE_FOLDER = "PolicyEmptyIncludeFolder";
+    static constexpr StringLiteral NAME_ALLOW_OBSOLETE_MSVCRT = "PolicyAllowObsoleteMsvcrt";
+    static constexpr StringLiteral NAME_ALLOW_RESTRICTED_HEADERS = "PolicyAllowRestrictedHeaders";
+    static constexpr StringLiteral NAME_SKIP_DUMPBIN_CHECKS = "PolicySkipDumpbinChecks";
+    static constexpr StringLiteral NAME_SKIP_ARCHITECTURE_CHECK = "PolicySkipArchitectureCheck";
+    static constexpr StringLiteral NAME_CMAKE_HELPER_PORT = "PolicyCmakeHelperPort";
+    static constexpr StringLiteral NAME_SKIP_ABSOLUTE_PATHS_CHECK = "PolicySkipAbsolutePathsCheck";
 
     static std::remove_const_t<decltype(ALL_POLICIES)> generate_all_policies()
     {
@@ -233,7 +234,7 @@ namespace vcpkg
 
     decltype(ALL_POLICIES) ALL_POLICIES = generate_all_policies();
 
-    const std::string& to_string(BuildPolicy policy)
+    StringLiteral to_string_view(BuildPolicy policy)
     {
         switch (policy)
         {
@@ -249,9 +250,11 @@ namespace vcpkg
             case BuildPolicy::SKIP_DUMPBIN_CHECKS: return NAME_SKIP_DUMPBIN_CHECKS;
             case BuildPolicy::SKIP_ARCHITECTURE_CHECK: return NAME_SKIP_ARCHITECTURE_CHECK;
             case BuildPolicy::CMAKE_HELPER_PORT: return NAME_CMAKE_HELPER_PORT;
+            case BuildPolicy::SKIP_ABSOLUTE_PATHS_CHECK: return NAME_SKIP_ABSOLUTE_PATHS_CHECK;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
+    std::string to_string(BuildPolicy policy) { return to_string_view(policy).to_string(); }
 
     ZStringView to_cmake_variable(BuildPolicy policy)
     {
@@ -269,22 +272,25 @@ namespace vcpkg
             case BuildPolicy::SKIP_DUMPBIN_CHECKS: return "VCPKG_POLICY_SKIP_DUMPBIN_CHECKS";
             case BuildPolicy::SKIP_ARCHITECTURE_CHECK: return "VCPKG_POLICY_SKIP_ARCHITECTURE_CHECK";
             case BuildPolicy::CMAKE_HELPER_PORT: return "VCPKG_POLICY_CMAKE_HELPER_PORT";
+            case BuildPolicy::SKIP_ABSOLUTE_PATHS_CHECK: return "VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK";
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
 
-    static const std::string NAME_BUILD_IN_DOWNLOAD = "BUILT_IN";
-    static const std::string NAME_ARIA2_DOWNLOAD = "ARIA2";
+    static constexpr StringLiteral NAME_BUILTIN_DOWNLOAD = "BUILT_IN";
+    static constexpr StringLiteral NAME_ARIA2_DOWNLOAD = "ARIA2";
 
-    const std::string& to_string(DownloadTool tool)
+    StringLiteral to_string_view(DownloadTool tool)
     {
         switch (tool)
         {
-            case DownloadTool::BUILT_IN: return NAME_BUILD_IN_DOWNLOAD;
+            case DownloadTool::BUILT_IN: return NAME_BUILTIN_DOWNLOAD;
             case DownloadTool::ARIA2: return NAME_ARIA2_DOWNLOAD;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
+
+    std::string to_string(DownloadTool tool) { return to_string_view(tool).to_string(); }
 
     Optional<LinkageType> to_linkage_type(StringView str)
     {
@@ -295,8 +301,8 @@ namespace vcpkg
 
     namespace BuildInfoRequiredField
     {
-        static const std::string CRT_LINKAGE = "CRTLinkage";
-        static const std::string LIBRARY_LINKAGE = "LibraryLinkage";
+        static constexpr StringLiteral CRT_LINKAGE = "CRTLinkage";
+        static constexpr StringLiteral LIBRARY_LINKAGE = "LibraryLinkage";
     }
 
 #if defined(_WIN32)
@@ -505,7 +511,7 @@ namespace vcpkg
 
     struct CompilerInfoCacheDeserializer : Json::IDeserializer<CompilerInfoCache>
     {
-        StringView type_name() const override { return "CompilerInfoCache"; }
+        LocalizedString type_name() const override { return LocalizedString::from_raw("CompilerInfoCache"); }
 
         constexpr static StringLiteral ID = "id";
         constexpr static StringLiteral VERSION = "version";
@@ -527,29 +533,41 @@ namespace vcpkg
             return t;
         }
 
-        virtual Optional<CompilerInfoCache> visit_object(Json::Reader& r, const Json::Object& obj) override
+        Optional<CompilerInfoCache> visit_object(Json::Reader& r, const Json::Object& obj) const override
         {
             CompilerInfoCache cache;
-            Json::StringDeserializer string_deserializer("a string");
-            r.required_object_field(ID, obj, ID, cache.compiler_info.id, string_deserializer);
-            r.required_object_field(VERSION, obj, VERSION, cache.compiler_info.version, string_deserializer);
-            r.required_object_field(HASH, obj, HASH, cache.compiler_info.hash, string_deserializer);
-            r.required_object_field(C_COMPILER_PATH,
+            // This is an internal structure never written by a user by hand, so we don't need localization.
+            r.required_object_field(LocalizedString::from_raw(ID),
+                                    obj,
+                                    ID,
+                                    cache.compiler_info.id,
+                                    Json::UntypedStringDeserializer::instance);
+            r.required_object_field(LocalizedString::from_raw(VERSION),
+                                    obj,
+                                    VERSION,
+                                    cache.compiler_info.version,
+                                    Json::UntypedStringDeserializer::instance);
+            r.required_object_field(LocalizedString::from_raw(HASH),
+                                    obj,
+                                    HASH,
+                                    cache.compiler_info.hash,
+                                    Json::UntypedStringDeserializer::instance);
+            r.required_object_field(LocalizedString::from_raw(C_COMPILER_PATH),
                                     obj,
                                     C_COMPILER_PATH,
                                     cache.compiler_info.c_compiler_path,
                                     Json::PathDeserializer::instance);
-            r.required_object_field(CXX_COMPILER_PATH,
+            r.required_object_field(LocalizedString::from_raw(CXX_COMPILER_PATH),
                                     obj,
                                     CXX_COMPILER_PATH,
                                     cache.compiler_info.cxx_compiler_path,
                                     Json::PathDeserializer::instance);
-            r.required_object_field(C_COMPILER_PATH_LAST_WRITE_TIME,
+            r.required_object_field(LocalizedString::from_raw(C_COMPILER_PATH_LAST_WRITE_TIME),
                                     obj,
                                     C_COMPILER_PATH_LAST_WRITE_TIME,
                                     cache.c_compiler_last_write_time,
                                     Json::Int64Deserializer::instance);
-            r.required_object_field(CXX_COMPILER_PATH_LAST_WRITE_TIME,
+            r.required_object_field(LocalizedString::from_raw(CXX_COMPILER_PATH_LAST_WRITE_TIME),
                                     obj,
                                     CXX_COMPILER_PATH_LAST_WRITE_TIME,
                                     cache.cxx_compiler_last_write_time,
@@ -806,7 +824,7 @@ ${CMAKE_CXX_COMPILER}")
         CompilerInfo compiler_info;
         if (result.has_value())
         {
-            auto lines = fs.read_lines(packagespath / "abi_info", VCPKG_LINE_INFO);
+            auto lines = fs.read_lines(packagespath / "abi_info").value_or_exit(VCPKG_LINE_INFO);
             if (lines.size() == 5)
             {
                 compiler_info.hash = lines[0];
@@ -863,7 +881,7 @@ ${CMAKE_CXX_COMPILER}")
             {"PORT", scf.core_paragraph->name},
             {"VERSION", scf.core_paragraph->raw_version},
             {"VCPKG_USE_HEAD_VERSION", Util::Enum::to_bool(action.build_options.use_head_version) ? "1" : "0"},
-            {"_VCPKG_DOWNLOAD_TOOL", to_string(action.build_options.download_tool)},
+            {"_VCPKG_DOWNLOAD_TOOL", to_string_view(action.build_options.download_tool)},
             {"_VCPKG_EDITABLE", Util::Enum::to_bool(action.build_options.editable) ? "1" : "0"},
             {"_VCPKG_NO_DOWNLOADS", !Util::Enum::to_bool(action.build_options.allow_downloads) ? "1" : "0"},
             {"Z_VCPKG_CHAINLOAD_TOOLCHAIN_FILE", action.pre_build_info(VCPKG_LINE_INFO).toolchain_file()},
@@ -1098,7 +1116,7 @@ ${CMAKE_CXX_COMPILER}")
             std::vector<std::string> error_logs;
             if (fs.exists(logs, VCPKG_LINE_INFO))
             {
-                error_logs = fs.read_lines(logs, VCPKG_LINE_INFO);
+                error_logs = fs.read_lines(logs).value_or_exit(VCPKG_LINE_INFO);
                 Util::erase_remove_if(error_logs, [](const auto& line) { return line.empty(); });
             }
             return ExtendedBuildResult{BuildResult::BUILD_FAILED, stdoutlog, std::move(error_logs)};
@@ -1106,7 +1124,7 @@ ${CMAKE_CXX_COMPILER}")
 
         const BuildInfo build_info = read_build_info(fs, paths.build_info_file_path(action.spec));
         const size_t error_count =
-            PostBuildLint::perform_all_checks(action.spec, paths, pre_build_info, build_info, scfl.source_location);
+            perform_post_build_lint_checks(action.spec, paths, pre_build_info, build_info, scfl.source_location);
 
         auto find_itr = action.feature_dependencies.find("core");
         Checks::check_exit(VCPKG_LINE_INFO, find_itr != action.feature_dependencies.end());
@@ -1705,15 +1723,17 @@ ${CMAKE_CXX_COMPILER}")
         std::unordered_map<BuildPolicy, bool> policies;
         for (const auto& policy : ALL_POLICIES)
         {
-            const auto setting = parser.optional_field(to_string(policy));
+            const auto setting = parser.optional_field(to_string_view(policy));
             if (setting.empty()) continue;
             if (setting == "enabled")
                 policies.emplace(policy, true);
             else if (setting == "disabled")
                 policies.emplace(policy, false);
             else
-                Checks::msg_exit_maybe_upgrade(
-                    VCPKG_LINE_INFO, msgUnknownPolicySetting, msg::option = setting, msg::value = to_string(policy));
+                Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                               msgUnknownPolicySetting,
+                                               msg::option = setting,
+                                               msg::value = to_string_view(policy));
         }
 
         if (const auto err = parser.error_info("PostBuildInformation"))

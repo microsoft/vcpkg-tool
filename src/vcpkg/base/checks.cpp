@@ -105,7 +105,13 @@ namespace vcpkg
     {
         if (!expression)
         {
-            exit_with_message(line_info, error_message);
+            msg::println(Color::error,
+                         msg::format(msg::msgInternalErrorMessage)
+                             .append(locale_invariant_lineinfo(line_info))
+                             .append_raw(error_message)
+                             .append_raw('\n')
+                             .append(msg::msgInternalErrorMessageContact));
+            exit_fail(line_info);
         }
     }
 

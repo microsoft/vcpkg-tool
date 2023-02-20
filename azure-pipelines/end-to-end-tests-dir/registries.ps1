@@ -13,7 +13,7 @@ Throw-IfNotFailed
 Run-Vcpkg install @builtinRegistryArgs --feature-flags=registries 'vcpkg-internal-e2e-test-port'
 Throw-IfNotFailed
 
-Run-Vcpkg install @builtinRegistryArgs --feature-flags=registries 'zlib'
+Run-Vcpkg install @builtinRegistryArgs --feature-flags=registries 'vcpkg-cmake'
 Throw-IfFailed
 
 Write-Trace "Test git and filesystem registries"
@@ -373,9 +373,9 @@ try
     # We pre-seed the install root with a lockfile for the invalid repository, so it isn't actually fetched from
     $vcpkgLockJson = @{
         "/" = @{
-            "HEAD" = $gitMainBaselineCommit; 
-            $gitSecondaryBranch = $gitSecondaryBaselineCommit  
-        } 
+            "HEAD" = $gitMainBaselineCommit;
+            $gitSecondaryBranch = $gitSecondaryBaselineCommit
+        }
     }
    New-Item -Path $installRoot/vcpkg/vcpkg-lock.json -ItemType File `
         -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgLockJson)

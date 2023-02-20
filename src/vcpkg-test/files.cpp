@@ -1,4 +1,4 @@
-#include <vcpkg/base/system_headers.h>
+#include <vcpkg/base/system-headers.h>
 
 #include <catch2/catch.hpp>
 
@@ -140,6 +140,15 @@ namespace
             if (urbg() & 1u)
             {
                 const auto chmod_result = ::chmod(base.c_str(), 0444);
+                if (chmod_result != 0)
+                {
+                    const auto failure_message = std::generic_category().message(errno);
+                    FAIL("chmod failed with " << failure_message);
+                }
+            }
+            if (urbg() & 2u)
+            {
+                const auto chmod_result = ::chmod(base.c_str(), 0000); // e.g. bazel sandbox
                 if (chmod_result != 0)
                 {
                     const auto failure_message = std::generic_category().message(errno);

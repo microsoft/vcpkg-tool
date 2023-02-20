@@ -125,7 +125,7 @@ function bootstrap-vcpkg {
     download https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-glibc $VCPKG
   }
 
-  & $VCPKG z-bootstrap-standalone
+  & $VCPKG bootstrap-standalone
 
   $PATH = $ENV:PATH
   $ENV:PATH="$VCPKG_ROOT;$PATH"

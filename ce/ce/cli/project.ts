@@ -25,7 +25,7 @@ export async function activate(session: Session, artifacts: Array<ResolvedArtifa
     const activation = new Activation(session);
     for (const artifact of artifacts) {
       if (!await artifact.artifact.loadActivationSettings(activation)) {
-        session.channels.error(i`Unable to activate project.`);
+        session.channels.error(i`Unable to activate project`);
         return false;
       }
     }

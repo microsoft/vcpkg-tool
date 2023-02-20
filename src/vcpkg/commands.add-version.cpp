@@ -4,7 +4,6 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/git.h>
 #include <vcpkg/base/json.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.add-version.h>
 #include <vcpkg/configuration.h>
@@ -209,7 +208,7 @@ namespace
                              msg::format(msgAddVersionAddedVersionToFile,
                                          msg::version = port_version.version,
                                          msg::path = version_db_file_path)
-                                 .append_raw(" ")
+                                 .append_raw(' ')
                                  .append(msgAddVersionNewFile));
             }
             return UpdateResult::Updated;
