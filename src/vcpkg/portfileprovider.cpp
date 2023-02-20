@@ -21,13 +21,13 @@ namespace
         OverlayRegistryEntry(Path&& p, Version&& v) : root(p), version(v) { }
 
         View<Version> get_port_versions() const override { return {&version, 1}; }
-        ExpectedS<PathAndLocation> get_version(const Version& v) const override
+        ExpectedL<PathAndLocation> get_version(const Version& v) const override
         {
             if (v == version)
             {
                 return PathAndLocation{root, ""};
             }
-            return Strings::format("Version %s not found; only %s is available.", v.to_string(), version.to_string());
+            return msg::format(msgVersionNotFound, msg::expected = v, msg::actual = version);
         }
 
         Path root;
@@ -207,9 +207,10 @@ namespace vcpkg
                     else
                     {
                         get_global_metrics_collector().track_define(DefineMetric::VersioningErrorVersion);
-                        return maybe_path.error();
+                        return std::move(maybe_path).error().extract_data();
                     }
                 }
+
                 return maybe_ent.error();
             }
 

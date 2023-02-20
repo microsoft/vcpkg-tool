@@ -653,6 +653,10 @@ namespace vcpkg
                     (msg::commit_sha),
                     "",
                     "The baseline file at commit {commit_sha} was invalid (no \"default\" field).");
+    DECLARE_MESSAGE(BaselineFileNoDefaultFieldPath,
+                    (msg::path),
+                    "",
+                    "baseline file at {path} was invalid (no \"default\" field)");
     DECLARE_MESSAGE(BaselineMissingDefault,
                     (msg::commit_sha, msg::url),
                     "",
@@ -1045,6 +1049,10 @@ namespace vcpkg
                     (msg::version, msg::path),
                     "",
                     "Could not find <tools version=\"{version}\"> in {path}");
+    DECLARE_MESSAGE(CouldNotFindVersionDatabaseFile,
+                    (msg::path),
+                    "",
+                    "Couldn't find the versions database file: {path}");
     DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: {path}");
     DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.");
     DECLARE_MESSAGE(Creating7ZipArchive, (), "", "Creating 7zip archive...");
@@ -1349,6 +1357,7 @@ namespace vcpkg
                     (),
                     "",
                     "Failed to parse CMake console output to locate block start/end markers.");
+    DECLARE_MESSAGE(FailedToParseBaseline, (msg::path), "", "Failed to parse baseline: {path}");
     DECLARE_MESSAGE(FailedToParseConfig, (msg::path), "", "Failed to parse configuration {path}");
     DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse control file: {path}");
     DECLARE_MESSAGE(FailedToParseJson, (msg::path), "", "Failed to parse JSON file: {path}");
@@ -1357,12 +1366,17 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "Failed to parse {path}, expected a top-level object.");
+    DECLARE_MESSAGE(FailedToParseNoVersionsArray,
+                    (msg::path),
+                    "",
+                    "Failed to parse {path}, expected a 'versions' array.");
     DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                     (msg::error_msg),
                     "'{error_msg}' is the error message for failing to parse the Binary Paragraph.",
                     "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at "
                     "https://github.com/microsoft/vcpkg, "
                     "with the following output:\n{error_msg}\nSerialized Binary Paragraph:");
+    DECLARE_MESSAGE(FailedToParseVersionsFile, (msg::path), "", "failed to parse versions file {path}");
     DECLARE_MESSAGE(FailedToParseVersionXML,
                     (msg::tool_name, msg::version),
                     "",
@@ -2859,6 +2873,20 @@ namespace vcpkg
                     "",
                     "dependency {spec} was expected to be at least version "
                     "{expected_version}, but is currently {actual_version}.");
+    DECLARE_MESSAGE(VersionBuiltinPortTreeEntryMissing,
+                    (msg::package_name, msg::expected, msg::actual),
+                    "{expected} and {actual} are versions like 1.0.",
+                    "no version database entry for {package_name} at {expected}; using the checked out ports tree "
+                    "version ({actual}).");
+    DECLARE_MESSAGE(VersionDatabaseEntryMissing,
+                    (msg::package_name, msg::version),
+                    "",
+                    "no version entry for {package_name} at {version}.");
+    DECLARE_MESSAGE(VersionGitEntryMissing,
+                    (msg::package_name, msg::version),
+                    "A list of versions, 1 per line, are printed after this message.",
+                    "no version database entry for {package_name} at {version}.\nAvailable versions:");
+    DECLARE_MESSAGE(VersionIncomparable4, (), "", "See `vcpkg help versioning` for more information.");
     DECLARE_MESSAGE(
         VersionInvalidDate,
         (msg::version),
@@ -2878,6 +2906,10 @@ namespace vcpkg
         (),
         "The names version, version-date, version-semver, and version-string are code and must not be localized",
         "expected a versioning field (one of version, version-date, version-semver, or version-string)");
+    DECLARE_MESSAGE(VersionNotFound,
+                    (msg::expected, msg::actual),
+                    "{expected} and {actual} are versions",
+                    "{expected} not available, only {actual} is available");
     DECLARE_MESSAGE(VersionSharpMustBeFollowedByPortVersion,
                     (),
                     "",
