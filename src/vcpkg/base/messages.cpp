@@ -749,7 +749,6 @@ namespace vcpkg
     REGISTER_MESSAGE(ExcludedPackages);
     REGISTER_MESSAGE(ExpectedAnObject);
     REGISTER_MESSAGE(ExpectedAtMostOneSetOfTags);
-    REGISTER_MESSAGE(ExpectedCascadeFailure);
     REGISTER_MESSAGE(ExpectedCharacterHere);
     REGISTER_MESSAGE(ExpectedFailOrSkip);
     REGISTER_MESSAGE(ExpectedPathToExist);
@@ -924,8 +923,6 @@ namespace vcpkg
     REGISTER_MESSAGE(InstallWithSystemManagerPkg);
     REGISTER_MESSAGE(IntegrationFailed);
     REGISTER_MESSAGE(InternalCICommand);
-    REGISTER_MESSAGE(InvalidArgMustBeAnInt);
-    REGISTER_MESSAGE(InvalidArgMustBePositive);
     REGISTER_MESSAGE(InvalidArgument);
     REGISTER_MESSAGE(InvalidArgumentRequiresAbsolutePath);
     REGISTER_MESSAGE(InvalidArgumentRequiresBaseUrl);

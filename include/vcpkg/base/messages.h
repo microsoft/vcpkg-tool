@@ -1262,11 +1262,6 @@ namespace vcpkg
                     "{old_value} is a left tag and {new_value} is the right tag. {value} is the input.",
                     "Found {count} sets of {old_value}.*{new_value} but expected at most 1, in block:\n{value}");
     DECLARE_MESSAGE(
-        ExpectedCascadeFailure,
-        (msg::expected, msg::actual),
-        "{expected} is the expected number of cascade failures and {actual} is the actual number of cascade failures.",
-        "Expected {expected} cascade failure, but there were {actual} cascade failures.");
-    DECLARE_MESSAGE(
         ExpectedCharacterHere,
         (msg::expected),
         "{expected} is a locale-invariant delimiter; for example, the ':' or '=' in 'zlib:x64-windows=skip'",
@@ -1859,8 +1854,6 @@ namespace vcpkg
                     (),
                     "",
                     "vcpkg ci is an internal command which will change incompatibly or be removed at any time.");
-    DECLARE_MESSAGE(InvalidArgMustBeAnInt, (msg::option), "", "--{option} must be an integer.");
-    DECLARE_MESSAGE(InvalidArgMustBePositive, (msg::option), "", "--{option} must be non-negative.");
     DECLARE_MESSAGE(InvalidArgument, (), "", "invalid argument");
     DECLARE_MESSAGE(
         InvalidArgumentRequiresAbsolutePath,
