@@ -182,9 +182,9 @@ namespace vcpkg
         static constexpr StringLiteral GIT_TREE = "git-tree";
         static constexpr StringLiteral PATH = "path";
 
-        StringView type_name() const override;
+        LocalizedString type_name() const override;
         View<StringView> valid_fields() const override;
-        Optional<VersionDbEntry> visit_object(Json::Reader& r, const Json::Object& obj) override;
+        Optional<VersionDbEntry> visit_object(Json::Reader& r, const Json::Object& obj) const override;
         VersionDbEntryDeserializer(VersionDbType type, const Path& root) : type(type), registry_root(root) { }
 
     private:
@@ -194,8 +194,9 @@ namespace vcpkg
 
     struct VersionDbEntryArrayDeserializer final : Json::IDeserializer<std::vector<VersionDbEntry>>
     {
-        virtual StringView type_name() const override;
-        virtual Optional<std::vector<VersionDbEntry>> visit_array(Json::Reader& r, const Json::Array& arr) override;
+        virtual LocalizedString type_name() const override;
+        virtual Optional<std::vector<VersionDbEntry>> visit_array(Json::Reader& r,
+                                                                  const Json::Array& arr) const override;
         VersionDbEntryArrayDeserializer(VersionDbType type, const Path& root) : underlying{type, root} { }
 
     private:

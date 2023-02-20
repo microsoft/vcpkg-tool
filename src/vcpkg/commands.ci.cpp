@@ -93,17 +93,15 @@ namespace vcpkg::Commands::CI
     static constexpr StringLiteral OPTION_RANDOMIZE = "x-randomize";
     static constexpr StringLiteral OPTION_OUTPUT_HASHES = "output-hashes";
     static constexpr StringLiteral OPTION_PARENT_HASHES = "parent-hashes";
-    static constexpr StringLiteral OPTION_SKIPPED_CASCADE_COUNT = "x-skipped-cascade-count";
 
-    static constexpr std::array<CommandSetting, 8> CI_SETTINGS = {
+    static constexpr std::array<CommandSetting, 7> CI_SETTINGS = {
         {{OPTION_EXCLUDE, []() { return msg::format(msgCISettingsOptExclude); }},
          {OPTION_HOST_EXCLUDE, []() { return msg::format(msgCISettingsOptHostExclude); }},
          {OPTION_XUNIT, []() { return msg::format(msgCISettingsOptXUnit); }},
          {OPTION_CI_BASELINE, []() { return msg::format(msgCISettingsOptCIBase); }},
          {OPTION_FAILURE_LOGS, []() { return msg::format(msgCISettingsOptFailureLogs); }},
          {OPTION_OUTPUT_HASHES, []() { return msg::format(msgCISettingsOptOutputHashes); }},
-         {OPTION_PARENT_HASHES, []() { return msg::format(msgCISettingsOptParentHashes); }},
-         {OPTION_SKIPPED_CASCADE_COUNT, []() { return msg::format(msgCISettingsOptSkippedCascadeCount); }}}};
+         {OPTION_PARENT_HASHES, []() { return msg::format(msgCISettingsOptParentHashes); }}}};
 
     static constexpr std::array<CommandSwitch, 5> CI_SWITCHES = {{
         {OPTION_DRY_RUN, []() { return msg::format(msgCISwitchOptDryRun); }},
@@ -128,18 +126,34 @@ namespace vcpkg::Commands::CI
         std::map<PackageSpec, std::string> abi_map;
         // action_state_string.size() will equal install_actions.size()
         std::vector<StringLiteral> action_state_string;
-        int cascade_count = 0;
     };
+
+    static bool supported_for_triplet(const CMakeVars::CMakeVarProvider& var_provider,
+                                      const SourceControlFile& source_control_file,
+                                      PackageSpec spec)
+    {
+        const auto& supports_expression = source_control_file.core_paragraph->supports_expression;
+        if (supports_expression.is_empty())
+        {
+            return true;
+        }
+        PlatformExpression::Context context = var_provider.get_dep_info_vars(spec).value_or_exit(VCPKG_LINE_INFO);
+        return supports_expression.evaluate(context);
+    }
 
     static bool supported_for_triplet(const CMakeVars::CMakeVarProvider& var_provider,
                                       const InstallPlanAction* install_plan)
     {
         auto&& scfl = install_plan->source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
-        const auto& supports_expression = scfl.source_control_file->core_paragraph->supports_expression;
-        PlatformExpression::Context context =
-            var_provider.get_tag_vars(install_plan->spec).value_or_exit(VCPKG_LINE_INFO);
+        return supported_for_triplet(var_provider, *scfl.source_control_file, install_plan->spec);
+    }
 
-        return supports_expression.evaluate(context);
+    static bool supported_for_triplet(const CMakeVars::CMakeVarProvider& var_provider,
+                                      const PortFileProvider& provider,
+                                      PackageSpec spec)
+    {
+        auto&& scf = provider.get_control_file(spec.name()).value_or_exit(VCPKG_LINE_INFO).source_control_file;
+        return supported_for_triplet(var_provider, *scf, spec);
     }
 
     static ActionPlan compute_full_plan(const VcpkgPaths& paths,
@@ -152,15 +166,21 @@ namespace vcpkg::Commands::CI
         for (auto&& spec : specs)
         {
             auto&& scfl = provider.get_control_file(spec.package_spec.name()).value_or_exit(VCPKG_LINE_INFO);
-            if (scfl.source_control_file->has_qualified_dependencies())
+            if (scfl.source_control_file->has_qualified_dependencies() ||
+                !scfl.source_control_file->core_paragraph->supports_expression.is_empty())
             {
                 packages_with_qualified_deps.push_back(spec.package_spec);
             }
         }
 
         var_provider.load_dep_info_vars(packages_with_qualified_deps, serialize_options.host_triplet);
-        auto action_plan = create_feature_install_plan(provider, var_provider, specs, {}, serialize_options);
 
+        const auto applicable_specs = Util::filter(specs, [&](auto& spec) -> bool {
+            return create_feature_install_plan(provider, var_provider, {&spec, 1}, {}, serialize_options)
+                .unsupported_features.empty();
+        });
+
+        auto action_plan = create_feature_install_plan(provider, var_provider, applicable_specs, {}, serialize_options);
         var_provider.load_tag_vars(action_plan, provider, serialize_options.host_triplet);
 
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.already_installed.empty());
@@ -208,7 +228,6 @@ namespace vcpkg::Commands::CI
                                   [&](const PackageSpec& spec) { return Util::Sets::contains(will_fail, spec); }))
             {
                 ret->action_state_string.emplace_back("cascade");
-                ret->cascade_count++;
                 ret->known.emplace(p->spec, BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES);
                 will_fail.emplace(p->spec);
             }
@@ -270,24 +289,6 @@ namespace vcpkg::Commands::CI
                               it_exclusions == settings.end()
                                   ? SortedVector<std::string>{}
                                   : SortedVector<std::string>(Strings::split(it_exclusions->second, ',')));
-    }
-
-    static Optional<int> parse_skipped_cascade_count(const std::map<std::string, std::string, std::less<>>& settings)
-    {
-        auto opt = settings.find(OPTION_SKIPPED_CASCADE_COUNT);
-        if (opt == settings.end())
-        {
-            return nullopt;
-        }
-
-        auto result = Strings::strto<int>(opt->second);
-        Checks::msg_check_exit(
-            VCPKG_LINE_INFO, result.has_value(), msgInvalidArgMustBeAnInt, msg::option = OPTION_SKIPPED_CASCADE_COUNT);
-        Checks::msg_check_exit(VCPKG_LINE_INFO,
-                               result.value_or_exit(VCPKG_LINE_INFO) >= 0,
-                               msgInvalidArgMustBePositive,
-                               msg::option = OPTION_SKIPPED_CASCADE_COUNT);
-        return result;
     }
 
     static void print_baseline_regressions(const std::vector<SpecSummary>& results,
@@ -367,8 +368,6 @@ namespace vcpkg::Commands::CI
             cidata = parse_and_apply_ci_baseline(lines, exclusions_map, skip_failures);
         }
 
-        auto skipped_cascade_count = parse_skipped_cascade_count(settings);
-
         const auto is_dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
 
         auto& filesystem = paths.get_filesystem();
@@ -431,10 +430,21 @@ namespace vcpkg::Commands::CI
 
         {
             std::string msg;
+            for (const auto& spec : all_default_full_specs)
+            {
+                if (!Util::Sets::contains(split_specs->abi_map, spec.package_spec))
+                {
+                    bool supp = supported_for_triplet(var_provider, provider, spec.package_spec);
+                    split_specs->known.emplace(spec.package_spec,
+                                               supp ? BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES
+                                                    : BuildResult::EXCLUDED);
+                    msg += fmt::format("{:>40}: {:>8}\n", spec.package_spec, supp ? "cascade" : "skip");
+                }
+            }
             for (size_t i = 0; i < action_plan.install_actions.size(); ++i)
             {
                 auto&& action = action_plan.install_actions[i];
-                msg += fmt::format("{:40}: {:8}: {}\n",
+                msg += fmt::format("{:>40}: {:>8}: {}\n",
                                    action.spec,
                                    split_specs->action_state_string[i],
                                    action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
@@ -480,15 +490,6 @@ namespace vcpkg::Commands::CI
         reduce_action_plan(action_plan, split_specs->known, parent_hashes);
 
         msg::println(msgElapsedTimeForChecks, msg::elapsed = timer.elapsed());
-
-        if (auto skipped_cascade_count_ptr = skipped_cascade_count.get())
-        {
-            Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                   *skipped_cascade_count_ptr == split_specs->cascade_count,
-                                   msgExpectedCascadeFailure,
-                                   msg::expected = *skipped_cascade_count_ptr,
-                                   msg::actual = split_specs->cascade_count);
-        }
 
         if (is_dry_run)
         {
