@@ -1042,23 +1042,15 @@ namespace vcpkg
                 r.required_object_field(type_name(), obj, PATH, path_res, RegistryPathStringDeserializer::instance);
                 if (!Strings::starts_with(path_res, "$/"))
                 {
-                    r.add_generic_error(
-                        msg::format(msgARegistryPath),
-                        "A registry path must start with `$` to mean the registry root; e.g., `$/foo/bar`.");
+                    r.add_generic_error(msg::format(msgARegistryPath),
+                                        msg::format(msgARegistryPathMustStartWithDollar));
                     return nullopt;
                 }
 
-                if (Strings::contains(path_res, '\\'))
+                if (Strings::contains(path_res, '\\') || Strings::contains(path_res, "//"))
                 {
                     r.add_generic_error(msg::format(msgARegistryPath),
-                                        "A registry path must use forward slashes as path separators.");
-                    return nullopt;
-                }
-
-                if (Strings::contains(path_res, "//"))
-                {
-                    r.add_generic_error(msg::format(msgARegistryPath),
-                                        "A registry path must not have multiple slashes.");
+                                        msg::format(msgARegistryPathMustBeDelimitedWithForwardSlashes));
                     return nullopt;
                 }
 
@@ -1087,7 +1079,7 @@ namespace vcpkg
                     if (candidate == last || *candidate == '/')
                     {
                         r.add_generic_error(msg::format(msgARegistryPath),
-                                            "A registry path must not have 'dot' path elements.");
+                                            msg::format(msgARegistryPathMustNotHaveDots));
                         return nullopt;
                     }
 
@@ -1101,7 +1093,7 @@ namespace vcpkg
                     if (candidate == last || *candidate == '/')
                     {
                         r.add_generic_error(msg::format(msgARegistryPath),
-                                            "A registry path must not have 'dot dot' path elements.");
+                                            msg::format(msgARegistryPathMustNotHaveDots));
                         return nullopt;
                     }
                 }
