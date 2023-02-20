@@ -114,9 +114,9 @@ namespace vcpkg
         void clear();
     };
 
-    ExpectedS<BinaryConfigParserState> create_binary_providers_from_configs_pure(const std::string& env_string,
+    ExpectedL<BinaryConfigParserState> create_binary_providers_from_configs_pure(const std::string& env_string,
                                                                                  View<std::string> args);
-    ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> create_binary_providers_from_configs(
+    ExpectedL<std::vector<std::unique_ptr<IBinaryProvider>>> create_binary_providers_from_configs(
         const VcpkgPaths& paths, View<std::string> args);
 
     struct BinaryCache
@@ -147,7 +147,7 @@ namespace vcpkg
         std::vector<std::unique_ptr<IBinaryProvider>> m_providers;
     };
 
-    ExpectedS<DownloadManagerConfig> parse_download_configuration(const Optional<std::string>& arg);
+    ExpectedL<DownloadManagerConfig> parse_download_configuration(const Optional<std::string>& arg);
 
     std::string generate_nuget_packages_config(const ActionPlan& action);
 

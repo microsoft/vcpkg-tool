@@ -590,6 +590,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ArtifactsOptionIncompatibility);
     REGISTER_MESSAGE(ASemanticVersionString);
     REGISTER_MESSAGE(ASetOfFeatures);
+    REGISTER_MESSAGE(AssetCacheProviderAcceptsNoArguments);
     REGISTER_MESSAGE(AStringOrArrayOfStrings);
     REGISTER_MESSAGE(AStringStringDictionary);
     REGISTER_MESSAGE(AssetSourcesArg);
@@ -609,6 +610,8 @@ namespace vcpkg
     REGISTER_MESSAGE(AvailableArchitectureTriplets);
     REGISTER_MESSAGE(AvailableHelpTopics);
     REGISTER_MESSAGE(AVcpkgRepositoryCommit);
+    REGISTER_MESSAGE(AzUrlAssetCacheRequiresBaseUrl);
+    REGISTER_MESSAGE(AzUrlAssetCacheRequiresLessThanFour);
     REGISTER_MESSAGE(BinarySourcesArg);
     REGISTER_MESSAGE(BuildAlreadyInstalled);
     REGISTER_MESSAGE(BuildDependenciesMissing);
@@ -682,6 +685,9 @@ namespace vcpkg
     REGISTER_MESSAGE(CurlReturnedUnexpectedResponseCodes);
     REGISTER_MESSAGE(CurrentCommitBaseline);
     REGISTER_MESSAGE(DateTableHeader);
+    REGISTER_MESSAGE(DefaultBinaryCachePlatformCacheRequiresAbsolutePath);
+    REGISTER_MESSAGE(DefaultBinaryCacheRequiresAbsolutePath);
+    REGISTER_MESSAGE(DefaultBinaryCacheRequiresDirectory);
     REGISTER_MESSAGE(DefaultBrowserLaunched);
     REGISTER_MESSAGE(DefaultFlag);
     REGISTER_MESSAGE(DefaultRegistryIsArtifact);
@@ -1034,7 +1040,9 @@ namespace vcpkg
     REGISTER_MESSAGE(NoRegistryForPort);
     REGISTER_MESSAGE(NoUrlsAndHashSpecified);
     REGISTER_MESSAGE(NoUrlsAndNoHashSpecified);
+    REGISTER_MESSAGE(NugetOutputNotCapturedBecauseInteractiveSpecified);
     REGISTER_MESSAGE(NugetPackageFileSucceededButCreationFailed);
+    REGISTER_MESSAGE(NugetTimeoutExpectsSinglePositiveInteger);
     REGISTER_MESSAGE(OptionMustBeInteger);
     REGISTER_MESSAGE(OptionRequired);
     REGISTER_MESSAGE(OptionRequiresOption);
@@ -1086,6 +1094,7 @@ namespace vcpkg
     REGISTER_MESSAGE(RestoredPackage);
     REGISTER_MESSAGE(RestoredPackagesFromVendor);
     REGISTER_MESSAGE(ResultsHeader);
+    REGISTER_MESSAGE(ScriptAssetCacheRequiresScript);
     REGISTER_MESSAGE(SecretBanner);
     REGISTER_MESSAGE(SerializedBinParagraphHeader);
     REGISTER_MESSAGE(SettingEnvVar);
@@ -1115,7 +1124,10 @@ namespace vcpkg
     REGISTER_MESSAGE(ToRemovePackages);
     REGISTER_MESSAGE(TotalInstallTime);
     REGISTER_MESSAGE(TwoFeatureFlagsSpecified);
+    REGISTER_MESSAGE(UnableToClearPath);
+    REGISTER_MESSAGE(UnableToRemoveNuPkgAfterRestoring);
     REGISTER_MESSAGE(UndeterminedToolChainForTriplet);
+    REGISTER_MESSAGE(UnexpectedAssetCacheProvider);
     REGISTER_MESSAGE(UnexpectedCharExpectedCloseBrace);
     REGISTER_MESSAGE(UnexpectedCharExpectedColon);
     REGISTER_MESSAGE(UnexpectedCharExpectedComma);
@@ -1124,6 +1136,7 @@ namespace vcpkg
     REGISTER_MESSAGE(UnexpectedCharMidArray);
     REGISTER_MESSAGE(UnexpectedCharMidKeyword);
     REGISTER_MESSAGE(UnexpectedDigitsAfterLeadingZero);
+    REGISTER_MESSAGE(UnexpectedEOFAfterBacktick);
     REGISTER_MESSAGE(UnexpectedEOFAfterEscape);
     REGISTER_MESSAGE(UnexpectedEOFAfterMinus);
     REGISTER_MESSAGE(UnexpectedEOFExpectedChar);
@@ -1223,6 +1236,7 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedToFetchError);
     REGISTER_MESSAGE(UnexpectedPortName);
     REGISTER_MESSAGE(UnexpectedPortversion);
+    REGISTER_MESSAGE(ExpectedReadWriteReadWrite);
     REGISTER_MESSAGE(FailedToLoadUnnamedPortFromPath);
     REGISTER_MESSAGE(TrailingCommaInArray);
     REGISTER_MESSAGE(TrailingCommaInObj);
@@ -1232,6 +1246,8 @@ namespace vcpkg
     REGISTER_MESSAGE(PortVersionMultipleSpecification);
     REGISTER_MESSAGE(ToUpdatePackages);
     REGISTER_MESSAGE(AManifest);
+    REGISTER_MESSAGE(AMaximumOfOneAssetReadUrlCanBeSpecified);
+    REGISTER_MESSAGE(AMaximumOfOneAssetWriteUrlCanBeSpecified);
     REGISTER_MESSAGE(AmbiguousConfigDeleteConfigFile);
     REGISTER_MESSAGE(TripletFileNotFound);
     REGISTER_MESSAGE(VcpkgRegistriesCacheIsNotDirectory);
