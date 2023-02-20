@@ -1022,7 +1022,9 @@ namespace vcpkg
 
             message.append_raw('\n')
                 .append(msg::msgNoteMessage)
-                .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::commit_sha = git_tree);
+                .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::commit_sha = git_tree)
+                .append_raw('\n')
+                .append(maybe_tar_output.error());
 
             return message;
         }
@@ -1104,8 +1106,9 @@ namespace vcpkg
             return ret;
         }
 
-        return std::move(maybe_output)
-            .error()
+        return msg::format(msgGitCommandFailed, msg::command_line = git_cmd.command_line())
+            .append_raw('\n')
+            .append(std::move(maybe_output).error())
             .append_raw('\n')
             .append(msg::msgNoteMessage)
             .append(msgWhileGettingLocalTreeIshObjectsForPorts);
@@ -1123,7 +1126,9 @@ namespace vcpkg
         auto maybe_init_output = flatten(cmd_execute_and_capture_output(init_registries_git_dir), Tools::GIT);
         if (!maybe_init_output)
         {
-            return msg::format_error(msgGitCommandFailed, msg::command_line = init_registries_git_dir.command_line());
+            return msg::format_error(msgGitCommandFailed, msg::command_line = init_registries_git_dir.command_line())
+                .append_raw('\n')
+                .append(maybe_init_output.error());
         }
 
         auto lock_file = work_tree / ".vcpkg-lock";
@@ -1140,6 +1145,8 @@ namespace vcpkg
         if (!maybe_fetch_output)
         {
             return msg::format_error(msgGitFailedToFetch, msg::value = treeish, msg::url = repo)
+                .append_raw('\n')
+                .append(msgGitCommandFailed, msg::command_line = fetch_git_ref.command_line())
                 .append_raw('\n')
                 .append(std::move(maybe_fetch_output).error());
         }
@@ -1174,6 +1181,8 @@ namespace vcpkg
         {
             return msg::format_error(msgGitFailedToInitializeLocalRepository, msg::path = work_tree)
                 .append_raw('\n')
+                .append(msgGitCommandFailed, msg::command_line = init_registries_git_dir.command_line())
+                .append_raw('\n')
                 .append(std::move(maybe_init_output).error());
         }
 
@@ -1188,6 +1197,8 @@ namespace vcpkg
         if (!maybe_fetch_output)
         {
             return msg::format_error(msgGitFailedToFetch, msg::value = treeish, msg::url = repo)
+                .append_raw('\n')
+                .append(msgGitCommandFailed, msg::command_line = fetch_git_ref.command_line())
                 .append_raw('\n')
                 .append(std::move(maybe_fetch_output).error());
         }
@@ -1232,7 +1243,7 @@ namespace vcpkg
         auto pid = get_process_id();
 
         Path git_tree_temp = fmt::format("{}.tmp{}", git_tree_final, pid);
-        Path git_tree_temp_tar = fmt::format("{}.tmp{}.tar", git_tree_final, pid);
+        Path git_tree_temp_tar = git_tree_temp.native() + ".tar";
         fs.remove_all(git_tree_temp, VCPKG_LINE_INFO);
         fs.create_directory(git_tree_temp, VCPKG_LINE_INFO);
 
