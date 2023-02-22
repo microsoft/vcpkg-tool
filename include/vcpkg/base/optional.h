@@ -249,10 +249,22 @@ namespace vcpkg
         {
             constexpr OptionalStorage() noexcept : m_t(nullptr) { }
             constexpr OptionalStorage(const T& t) : m_t(&t) { }
-            constexpr OptionalStorage(const Optional<T>& t) : m_t(t.get()) { }
-            constexpr OptionalStorage(const Optional<const T>& t) : m_t(t.get()) { }
-            constexpr OptionalStorage(Optional<T>&& t) = delete;
-            constexpr OptionalStorage(Optional<const T>&& t) = delete;
+            template<typename U,
+                     std::enable_if_t<std::is_same_v<T, std::decay_t<U>> && !std::is_abstract_v<T>, int*> = nullptr>
+            constexpr OptionalStorage(const Optional<U>& t) : m_t(t.get())
+            {
+            }
+            template<typename U,
+                     std::enable_if_t<std::is_same_v<T, std::decay_t<U>> && !std::is_abstract_v<T>, int*> = nullptr>
+            constexpr OptionalStorage(const Optional<const U>& t) : m_t(t.get())
+            {
+            }
+            template<typename U,
+                     std::enable_if_t<std::is_same_v<T, std::decay_t<U>> && !std::is_abstract_v<T>, int*> = nullptr>
+            constexpr OptionalStorage(Optional<U>&& t) = delete;
+            template<typename U,
+                     std::enable_if_t<std::is_same_v<T, std::decay_t<U>> && !std::is_abstract_v<T>, int*> = nullptr>
+            constexpr OptionalStorage(Optional<const U>&& t) = delete;
 
             constexpr bool has_value() const { return m_t != nullptr; }
 

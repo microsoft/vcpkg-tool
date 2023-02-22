@@ -45,22 +45,8 @@ namespace vcpkg
     {
         virtual ~ToolCache() = default;
 
-        virtual const Path& get_tool_path(StringView tool, MessageSink& status_sink) const
-        {
-            // FIXME why is Optional<const ToolCache&> not possible?
-            (void)tool;
-            (void)status_sink;
-            static Path t;
-            return t;
-        };
-        virtual const std::string& get_tool_version(StringView tool, MessageSink& status_sink) const
-        {
-            // FIXME
-            (void)tool;
-            (void)status_sink;
-            static std::string t;
-            return t;
-        };
+        virtual const Path& get_tool_path(StringView tool, MessageSink& status_sink) const = 0;
+        virtual const std::string& get_tool_version(StringView tool, MessageSink& status_sink) const = 0;
     };
 
     ExpectedS<std::string> extract_prefixed_nonwhitespace(StringLiteral prefix,
