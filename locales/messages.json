@@ -1213,8 +1213,6 @@
   "UnableToReadAppDatas": "both %LOCALAPPDATA% and %APPDATA% were unreadable",
   "UnableToReadEnvironmentVariable": "unable to read {env_var}",
   "_UnableToReadEnvironmentVariable.comment": "An example of {env_var} is VCPKG_DEFAULT_TRIPLET.",
-  "UnableToRemoveNuPkgAfterRestoring": "unable to delete {path} after restoring",
-  "_UnableToRemoveNuPkgAfterRestoring.comment": "An example of {path} is /foo/bar.",
   "UndeterminedToolChainForTriplet": "Unable to determine toolchain use for {triplet} with with CMAKE_SYSTEM_NAME {system_name}. Did you mean to use VCPKG_CHAINLOAD_TOOLCHAIN_FILE?",
   "_UndeterminedToolChainForTriplet.comment": "An example of {triplet} is x64-windows. An example of {system_name} is Darwin.",
   "UnexpectedAssetCacheProvider": "unknown asset provider type: valid source types are 'x-azurl', 'x-script', 'x-block-origin', and 'clear'",

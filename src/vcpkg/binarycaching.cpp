@@ -778,12 +778,6 @@ namespace
                     if (fs.exists(nupkg_path, IgnoreErrors{}))
                     {
                         fs.remove(nupkg_path, VCPKG_LINE_INFO);
-                        if (fs.exists(nupkg_path, IgnoreErrors{}))
-                        {
-                            Checks::msg_exit_with_error(
-                                VCPKG_LINE_INFO, msgUnableToRemoveNuPkgAfterRestoring, msg::path = nupkg_path);
-                        }
-
                         const auto nuget_dir = nuget_ref.spec.dir();
                         if (nuget_dir != nuget_ref.reference.id)
                         {

@@ -1132,7 +1132,6 @@ namespace vcpkg
     REGISTER_MESSAGE(UnableToClearPath);
     REGISTER_MESSAGE(UnableToReadAppDatas);
     REGISTER_MESSAGE(UnableToReadEnvironmentVariable);
-    REGISTER_MESSAGE(UnableToRemoveNuPkgAfterRestoring);
     REGISTER_MESSAGE(UndeterminedToolChainForTriplet);
     REGISTER_MESSAGE(UnexpectedAssetCacheProvider);
     REGISTER_MESSAGE(UnexpectedCharExpectedCloseBrace);

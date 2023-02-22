@@ -2659,7 +2659,6 @@ namespace vcpkg
     DECLARE_MESSAGE(UnableToClearPath, (msg::path), "", "unable to delete {path}");
     DECLARE_MESSAGE(UnableToReadAppDatas, (), "", "both %LOCALAPPDATA% and %APPDATA% were unreadable");
     DECLARE_MESSAGE(UnableToReadEnvironmentVariable, (msg::env_var), "", "unable to read {env_var}");
-    DECLARE_MESSAGE(UnableToRemoveNuPkgAfterRestoring, (msg::path), "", "unable to delete {path} after restoring");
     DECLARE_MESSAGE(UndeterminedToolChainForTriplet,
                     (msg::triplet, msg::system_name),
                     "",
