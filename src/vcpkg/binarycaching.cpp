@@ -191,13 +191,6 @@ namespace
         return nuget_prefix;
     }
 
-    static void clean_prepare_dir(Filesystem& fs, const Path& dir)
-    {
-        fs.remove_all(dir, VCPKG_LINE_INFO);
-        bool created_last = fs.create_directories(dir, VCPKG_LINE_INFO);
-        Checks::check_exit(VCPKG_LINE_INFO, created_last, "unable to clear path: %s", dir);
-    }
-
     static Path make_temp_archive_path(const Path& buildtrees, const PackageSpec& spec)
     {
         return buildtrees / spec.name() / (spec.triplet().to_string() + ".zip");
@@ -253,10 +246,7 @@ namespace
                 fs.copy_file(archive_path, target_dir / object, CopyOptions::skip_existing, VCPKG_LINE_INFO);
             }
         }
-        void upload(Optional<const ToolCache&>,
-                    StringView object_id,
-                    const Path& object,
-                    MessageSink& msg_sink) override
+        void upload(Optional<const ToolCache&>, StringView object_id, const Path& object, MessageSink&) override
         {
             fs.copy_file(
                 object, m_dir / make_archive_subpath(object_id), CopyOptions::overwrite_existing, IgnoreErrors{});
@@ -1058,7 +1048,7 @@ namespace
         void upload(Optional<const ToolCache&> tool_cache,
                     StringView object_id,
                     const Path& object,
-                    MessageSink& msg_sink) override
+                    MessageSink&) override
         {
             auto cmd = command(tool_cache)
                            .string_arg("cp")

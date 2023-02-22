@@ -11,6 +11,8 @@
 #include <string>
 #include <utility>
 
+#include "vcpkg/base/files.h"
+
 namespace vcpkg
 {
     namespace Tools
@@ -43,8 +45,22 @@ namespace vcpkg
     {
         virtual ~ToolCache() = default;
 
-        virtual const Path& get_tool_path(StringView tool, MessageSink& status_sink) const {};
-        virtual const std::string& get_tool_version(StringView tool, MessageSink& status_sink) const {};
+        virtual const Path& get_tool_path(StringView tool, MessageSink& status_sink) const
+        {
+            // FIXME why is Optional<const ToolCache&> not possible?
+            (void)tool;
+            (void)status_sink;
+            static Path t;
+            return t;
+        };
+        virtual const std::string& get_tool_version(StringView tool, MessageSink& status_sink) const
+        {
+            // FIXME
+            (void)tool;
+            (void)status_sink;
+            static std::string t;
+            return t;
+        };
     };
 
     ExpectedS<std::string> extract_prefixed_nonwhitespace(StringLiteral prefix,
