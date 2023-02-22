@@ -605,6 +605,7 @@ namespace vcpkg
     REGISTER_MESSAGE(AVersionConstraint);
     REGISTER_MESSAGE(BaselineConflict);
     REGISTER_MESSAGE(BaselineFileNoDefaultField);
+    REGISTER_MESSAGE(BaselineGitShowFailed);
     REGISTER_MESSAGE(BaselineMissingDefault);
     REGISTER_MESSAGE(AvailableArchitectureTriplets);
     REGISTER_MESSAGE(AvailableHelpTopics);
@@ -831,12 +832,14 @@ namespace vcpkg
     REGISTER_MESSAGE(GeneratingRepo);
     REGISTER_MESSAGE(GetParseFailureInfo);
     REGISTER_MESSAGE(GitCommandFailed);
+    REGISTER_MESSAGE(GitFailedToFetch);
+    REGISTER_MESSAGE(GitFailedToInitializeLocalRepository);
     REGISTER_MESSAGE(GitRegistryMustHaveBaseline);
     REGISTER_MESSAGE(GitStatusOutputExpectedFileName);
     REGISTER_MESSAGE(GitStatusOutputExpectedNewLine);
     REGISTER_MESSAGE(GitStatusOutputExpectedRenameOrNewline);
     REGISTER_MESSAGE(GitStatusUnknownFileStatus);
-    REGISTER_MESSAGE(GitUnexpectedCommandOutput);
+    REGISTER_MESSAGE(GitUnexpectedCommandOutputCmd);
     REGISTER_MESSAGE(HashFileFailureToRead);
     REGISTER_MESSAGE(HeaderOnlyUsage);
     REGISTER_MESSAGE(HelpAssetCaching);
@@ -1223,6 +1226,9 @@ namespace vcpkg
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
     REGISTER_MESSAGE(WarnOnParseConfig);
+    REGISTER_MESSAGE(WhileCheckingOutBaseline);
+    REGISTER_MESSAGE(WhileCheckingOutPortTreeIsh);
+    REGISTER_MESSAGE(WhileGettingLocalTreeIshObjectsForPorts);
     REGISTER_MESSAGE(WhileLookingForSpec);
     REGISTER_MESSAGE(WindowsOnlyCommand);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
