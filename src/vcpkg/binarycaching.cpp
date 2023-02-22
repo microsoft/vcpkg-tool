@@ -233,23 +233,23 @@ namespace
         FileObjectProvider(Access access, Filesystem& filesystem, Path&& dir)
             : ISingleObjectProvider(access), fs(filesystem), m_dir(std::move(dir))
         {
+            fs.create_directories(m_dir, VCPKG_LINE_INFO);
         }
-        static Path make_archive_subpath(const StringView abi)
-        {
-            return Path(abi.substr(0, 2)) / (abi.to_string() + ".zip");
-        }
-        void download(Optional<const ToolCache&>, StringView object, const Path& target_dir) const override
+        static Path make_archive_subpath(const StringView abi) { return Path(abi.substr(0, 2)) / abi; }
+        void download(Optional<const ToolCache&>, StringView object, const Path& target_file) const override
         {
             const auto archive_path = m_dir / make_archive_subpath(object);
             if (fs.exists(archive_path, IgnoreErrors{}))
             {
-                fs.copy_file(archive_path, target_dir / object, CopyOptions::skip_existing, VCPKG_LINE_INFO);
+                fs.copy_file(archive_path, target_file, CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
             }
         }
         void upload(Optional<const ToolCache&>, StringView object_id, const Path& object, MessageSink&) override
         {
-            fs.copy_file(
-                object, m_dir / make_archive_subpath(object_id), CopyOptions::overwrite_existing, IgnoreErrors{});
+            const auto archive_subpath = make_archive_subpath(object_id);
+            const auto archive_path = m_dir / archive_subpath;
+            fs.create_directories(archive_path.parent_path(), IgnoreErrors{});
+            fs.copy_file(object, archive_path, CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
         }
         bool is_available(Optional<const ToolCache&>, StringView object) const override
         {
