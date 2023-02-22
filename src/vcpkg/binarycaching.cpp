@@ -2138,8 +2138,7 @@ ExpectedL<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
     parser.parse();
     if (auto err = parser.get_error())
     {
-        return msg::format(msg::msgErrorMessage)
-            .append_raw(err->to_string())
+        return LocalizedString::from_raw(err->to_string()) // note that this already contains error:
             .append_raw('\n')
             .append(msg::msgNoteMessage)
             .append(msg::msgSeeURL, msg::url = docs::assetcaching_url);
