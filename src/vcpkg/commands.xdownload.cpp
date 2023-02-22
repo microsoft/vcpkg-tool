@@ -7,6 +7,7 @@
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/commands.xdownload.h>
 #include <vcpkg/vcpkgcmdarguments.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg::Commands::X_Download
 {
@@ -83,11 +84,13 @@ namespace vcpkg::Commands::X_Download
         return sha;
     }
 
-    void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs)
+    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
+        auto& fs = paths.get_filesystem();
         auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
+
         DownloadManager download_manager{
-            parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)};
+            parse_download_configuration(fs, args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)};
         auto file = fs.absolute(args.command_arguments[0], VCPKG_LINE_INFO);
 
         auto sha = get_sha512_check(args, parsed);
@@ -113,7 +116,10 @@ namespace vcpkg::Commands::X_Download
                 msg::println_error(msgMismatchedFiles);
                 Checks::unreachable(VCPKG_LINE_INFO);
             }
-            download_manager.put_file_to_mirror(fs, file, actual_hash).value_or_exit(VCPKG_LINE_INFO);
+            Optional<const ToolCache&> test(paths.get_tool_cache());
+            download_manager
+                .put_file_to_mirror(Optional<const ToolCache&>(paths.get_tool_cache()), fs, file, actual_hash)
+                .value_or_exit(VCPKG_LINE_INFO);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
         else
@@ -133,7 +139,8 @@ namespace vcpkg::Commands::X_Download
                 urls = it_urls->second;
             }
 
-            download_manager.download_file(fs,
+            download_manager.download_file(paths.get_tool_cache(),
+                                           fs,
                                            urls,
                                            headers,
                                            file,
@@ -144,8 +151,8 @@ namespace vcpkg::Commands::X_Download
         }
     }
 
-    void XDownloadCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
+    void XDownloadCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
     {
-        X_Download::perform_and_exit(args, fs);
+        X_Download::perform_and_exit(args, paths);
     }
 }

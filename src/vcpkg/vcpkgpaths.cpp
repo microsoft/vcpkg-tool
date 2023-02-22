@@ -338,7 +338,7 @@ namespace
             , m_manifest_dir(compute_manifest_dir(fs, args, original_cwd))
             , m_bundle(load_bundle_file(fs, root))
             , m_download_manager(std::make_shared<DownloadManager>(
-                  parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)))
+                  parse_download_configuration(fs, args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)))
             , m_builtin_ports(process_output_directory(fs, args.builtin_ports_root_dir.get(), root / "ports"))
             , m_default_vs_path(args.default_visual_studio_path
                                     .map([&fs](const std::string& default_visual_studio_path) {

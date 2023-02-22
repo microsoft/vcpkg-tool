@@ -42,7 +42,7 @@ namespace vcpkg::Commands
         msg::println(Color::warning, msgDownloadingVcpkgStandaloneBundleLatest);
         const auto bundle_uri =
             "https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-standalone-bundle.tar.gz";
-        download_manager.download_file(fs, bundle_uri, {}, bundle_tarball, nullopt, null_sink);
+        download_manager.download_file(nullopt, fs, bundle_uri, {}, bundle_tarball, nullopt, null_sink);
 #endif // ^^^ !VCPKG_STANDALONE_BUNDLE_SHA
 
         extract_tar(find_system_tar(fs).value_or_exit(VCPKG_LINE_INFO), bundle_tarball, vcpkg_root);

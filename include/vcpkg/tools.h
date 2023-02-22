@@ -43,8 +43,8 @@ namespace vcpkg
     {
         virtual ~ToolCache() = default;
 
-        virtual const Path& get_tool_path(StringView tool, MessageSink& status_sink) const = 0;
-        virtual const std::string& get_tool_version(StringView tool, MessageSink& status_sink) const = 0;
+        virtual const Path& get_tool_path(StringView tool, MessageSink& status_sink) const {};
+        virtual const std::string& get_tool_version(StringView tool, MessageSink& status_sink) const {};
     };
 
     ExpectedS<std::string> extract_prefixed_nonwhitespace(StringLiteral prefix,

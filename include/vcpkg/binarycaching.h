@@ -1,10 +1,12 @@
 #pragma once
 
+// #include <vcpkg/base/fwd/optional.h>
+
 #include <vcpkg/fwd/binarycaching.h>
 #include <vcpkg/fwd/dependencies.h>
+#include <vcpkg/fwd/tools.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-#include <vcpkg/base/downloads.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
 
@@ -77,11 +79,18 @@ namespace vcpkg
         IObjectProvider(Access access) : access(access) { }
         virtual ~IObjectProvider() = default;
 
-        virtual void download(View<StringView> objects, const Path& target_dir) const = 0;
+        virtual void download(Optional<const ToolCache&> tool_cache,
+                              View<StringView> objects,
+                              const Path& target_dir) const = 0;
 
-        virtual void upload(StringView object_id, const Path& object_file, MessageSink& msg_sink) = 0;
+        virtual void upload(Optional<const ToolCache&> tool_cache,
+                            StringView object_id,
+                            const Path& object_file,
+                            MessageSink& msg_sink) = 0;
 
-        virtual void check_availability(View<StringView> objects, Span<bool> cache_status) const = 0;
+        virtual void check_availability(Optional<const ToolCache&> tool_cache,
+                                        View<StringView> objects,
+                                        Span<bool> cache_status) const = 0;
     };
 
     struct IBinaryProvider
@@ -132,32 +141,31 @@ namespace vcpkg
         using UrlTemplate::headers_for_get;
         using UrlTemplate::headers_for_put;
         using UrlTemplate::url_template;
+        ExtendedUrlTemplate(UrlTemplate&& t) : UrlTemplate(std::move(t)) { }
         LocalizedString valid() const;
         std::string instantiate_variables(const BinaryPackageInformation& info) const;
     };
 
-    struct BinaryConfigParserState
+    struct ObjectCacheConfig
+    {
+        ObjectCacheConfig() = default;
+        ObjectCacheConfig(const ObjectCacheConfig&) = delete;
+        ObjectCacheConfig& operator=(const ObjectCacheConfig&) = delete;
+        ObjectCacheConfig(ObjectCacheConfig&&) = default;
+        ObjectCacheConfig& operator=(ObjectCacheConfig&&) = default;
+        virtual ~ObjectCacheConfig() = default;
+        std::vector<std::unique_ptr<IObjectProvider>> object_providers;
+        std::vector<std::string> secrets;
+        virtual void clear();
+    };
+
+    struct BinaryConfigParserState : ObjectCacheConfig
     {
         bool nuget_interactive = false;
-        std::set<StringLiteral> binary_cache_providers;
-
         std::string nugettimeout = "100";
 
-        std::vector<Path> archives_to_read;
-        std::vector<Path> archives_to_write;
-
-        std::vector<UrlTemplate> url_templates_to_get;
-        std::vector<UrlTemplate> url_templates_to_put;
-
-        std::vector<std::string> gcs_read_prefixes;
-        std::vector<std::string> gcs_write_prefixes;
-
-        std::vector<std::string> aws_read_prefixes;
-        std::vector<std::string> aws_write_prefixes;
-        bool aws_no_sign_request = false;
-
-        std::vector<std::string> cos_read_prefixes;
-        std::vector<std::string> cos_write_prefixes;
+        std::vector<ExtendedUrlTemplate> url_templates_to_get;
+        std::vector<ExtendedUrlTemplate> url_templates_to_put;
 
         std::vector<std::string> sources_to_read;
         std::vector<std::string> sources_to_write;
@@ -165,12 +173,18 @@ namespace vcpkg
         std::vector<Path> configs_to_read;
         std::vector<Path> configs_to_write;
 
-        std::vector<std::string> secrets;
-
-        void clear();
+        void clear() override;
     };
 
-    ExpectedS<BinaryConfigParserState> create_binary_providers_from_configs_pure(const std::string& env_string,
+    struct DownloadManagerConfig : public ObjectCacheConfig
+    {
+        bool block_origin = false;
+        Optional<std::string> script;
+        void clear() override;
+    };
+
+    ExpectedS<BinaryConfigParserState> create_binary_providers_from_configs_pure(Filesystem& fs,
+                                                                                 const std::string& env_string,
                                                                                  View<std::string> args);
     ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> create_binary_providers_from_configs(
         const VcpkgPaths& paths, View<std::string> args);
@@ -221,7 +235,7 @@ namespace vcpkg
         Filesystem& filesystem;
     };
 
-    ExpectedS<DownloadManagerConfig> parse_download_configuration(const Optional<std::string>& arg);
+    ExpectedS<DownloadManagerConfig> parse_download_configuration(Filesystem& fs, const Optional<std::string>& arg);
 
     std::string generate_nuget_packages_config(const ActionPlan& action);
 

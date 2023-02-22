@@ -677,7 +677,7 @@ namespace vcpkg
                                     msg::url = tool_data.url,
                                     msg::path = download_path);
 
-                downloader->download_file(fs, tool_data.url, {}, download_path, tool_data.sha512, null_sink);
+                downloader->download_file(*this, fs, tool_data.url, {}, download_path, tool_data.sha512, null_sink);
             }
             else
             {

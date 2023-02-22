@@ -59,7 +59,6 @@ namespace vcpkg::Commands
         static const Version::VersionCommand version{};
         static const Contact::ContactCommand contact{};
         static const InitRegistry::InitRegistryCommand init_registry{};
-        static const X_Download::XDownloadCommand xdownload{};
         static const GenerateDefaultMessageMapCommand generate_message_map{};
         static const Hash::HashCommand hash{};
         static const BootstrapStandaloneCommand boostrap_standalone{};
@@ -74,7 +73,6 @@ namespace vcpkg::Commands
             {"contact", &contact},
             {"hash", &hash},
             {"x-init-registry", &init_registry},
-            {"x-download", &xdownload},
             {"x-generate-default-message-map", &generate_message_map},
             {"bootstrap-standalone", &boostrap_standalone},
             {"z-preregister-telemetry", &zpreregister_telemetry},
@@ -99,6 +97,7 @@ namespace vcpkg::Commands
         static const CIVerifyVersions::CIVerifyVersionsCommand ci_verify_versions{};
         static const Create::CreateCommand create{};
         static const DeactivateCommand deactivate{};
+        static const X_Download::XDownloadCommand xdownload{};
         static const Edit::EditCommand edit{};
         static const Fetch::FetchCommand fetch{};
         static const FindCommand find_{};
@@ -147,6 +146,7 @@ namespace vcpkg::Commands
             {"x-add-version", &add_version},
             {"x-ci-clean", &ciclean},
             {"x-ci-verify-versions", &ci_verify_versions},
+            {"x-download", &xdownload},
             {"x-package-info", &info},
             {"x-regenerate", &regenerate},
             {"x-vsinstances", &vsinstances},

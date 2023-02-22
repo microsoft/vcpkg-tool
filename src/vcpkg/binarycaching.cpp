@@ -66,6 +66,36 @@ namespace
                                  segments[segment_idx].first);
             }
         }
+
+        Optional<IObjectProvider::Access> parse_readwrite(
+            const std::vector<std::pair<SourceLoc, std::string>>& segments, size_t segment_idx)
+        {
+            using Access = IObjectProvider::Access;
+            if (segment_idx >= segments.size())
+            {
+                return Access::Read;
+            }
+
+            auto& mode = segments[segment_idx].second;
+
+            if (mode == "read")
+            {
+                return Access::Read;
+            }
+            else if (mode == "write")
+            {
+                return Access::Write;
+            }
+            else if (mode == "readwrite")
+            {
+                return Access::ReadWrite;
+            }
+            else
+            {
+                add_error("unexpected argument: expected 'read', readwrite', or 'write'", segments[segment_idx].first);
+                return nullopt;
+            }
+        }
     };
 
     void ConfigSegmentsParser::parse_segments(std::vector<std::pair<SourceLoc, std::string>>& segments)
@@ -178,25 +208,31 @@ namespace
         using IObjectProvider::IObjectProvider;
         virtual ~ISingleObjectProvider() = default;
 
-        void download(View<StringView> objects, const Path& target_dir) const override final
+        void download(Optional<const ToolCache&> tool_cache,
+                      View<StringView> objects,
+                      const Path& target_dir) const override final
         {
             for (auto object : objects)
             {
-                download(object, target_dir / object);
+                download(Optional<const ToolCache&>(tool_cache), object, target_dir / object);
             }
         };
-        virtual void download(StringView object, const Path& target_file) const = 0;
+        virtual void download(Optional<const ToolCache&> tool_cache,
+                              StringView object,
+                              const Path& target_file) const = 0;
 
-        void check_availability(View<StringView> objects, Span<bool> cache_status) const override final
+        void check_availability(Optional<const ToolCache&> tool_cache,
+                                View<StringView> objects,
+                                Span<bool> cache_status) const override final
         {
             auto iter = cache_status.begin();
             for (auto object : objects)
             {
-                check_availability(object, iter);
+                *iter = is_available(tool_cache, object);
                 ++iter;
             }
         }
-        virtual void check_availability(StringView object, bool* cache_status) const = 0;
+        virtual bool is_available(Optional<const ToolCache&> tool_cache, StringView object) const = 0;
     };
 
     struct FileObjectProvider : ISingleObjectProvider
@@ -209,7 +245,7 @@ namespace
         {
             return Path(abi.substr(0, 2)) / (abi.to_string() + ".zip");
         }
-        void download(StringView object, const Path& target_dir) const override
+        void download(Optional<const ToolCache&>, StringView object, const Path& target_dir) const override
         {
             const auto archive_path = m_dir / make_archive_subpath(object);
             if (fs.exists(archive_path, IgnoreErrors{}))
@@ -217,265 +253,23 @@ namespace
                 fs.copy_file(archive_path, target_dir / object, CopyOptions::skip_existing, VCPKG_LINE_INFO);
             }
         }
-        void upload(StringView object_id, const Path& object, MessageSink& msg_sink) override
+        void upload(Optional<const ToolCache&>,
+                    StringView object_id,
+                    const Path& object,
+                    MessageSink& msg_sink) override
         {
             fs.copy_file(
                 object, m_dir / make_archive_subpath(object_id), CopyOptions::overwrite_existing, IgnoreErrors{});
         }
-        void check_availability(StringView object, bool* cache_status) const override
+        bool is_available(Optional<const ToolCache&>, StringView object) const override
         {
             const auto archive_path = m_dir / make_archive_subpath(object);
-            *cache_status = fs.exists(archive_path, IgnoreErrors{});
+            return fs.exists(archive_path, IgnoreErrors{});
         }
 
     private:
         Filesystem& fs;
         Path m_dir;
-    };
-
-    struct ArchivesBinaryProvider : IBinaryProvider
-    {
-        ArchivesBinaryProvider(const VcpkgPaths& paths,
-                               std::vector<Path>&& read_dirs,
-                               std::vector<Path>&& write_dirs,
-                               std::vector<UrlTemplate>&& put_url_templates,
-                               const std::vector<std::string>& secrets)
-            : paths(paths)
-            , m_read_dirs(std::move(read_dirs))
-            , m_write_dirs(std::move(write_dirs))
-            , m_put_url_templates(std::move(put_url_templates))
-            , m_secrets(secrets)
-        {
-        }
-
-        static Path make_archive_subpath(const std::string& abi) { return Path(abi.substr(0, 2)) / (abi + ".zip"); }
-
-        void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
-        {
-            std::vector<size_t> to_try_restore_idxs;
-            std::vector<const InstallPlanAction*> to_try_restore;
-
-            for (const auto& archives_root_dir : m_read_dirs)
-            {
-                const ElapsedTimer timer;
-                to_try_restore_idxs.clear();
-                to_try_restore.clear();
-                for (size_t idx = 0; idx < cache_status.size(); ++idx)
-                {
-                    auto idx_cache_status = cache_status[idx];
-                    if (idx_cache_status && idx_cache_status->should_attempt_restore(this))
-                    {
-                        to_try_restore_idxs.push_back(idx);
-                        to_try_restore.push_back(&actions[idx]);
-                    }
-                }
-
-                auto results = try_restore_n(to_try_restore, archives_root_dir);
-                int num_restored = 0;
-                for (size_t n = 0; n < to_try_restore.size(); ++n)
-                {
-                    if (results[n] == RestoreResult::restored)
-                    {
-                        cache_status[to_try_restore_idxs[n]]->mark_restored();
-                        ++num_restored;
-                    }
-                }
-                msg::println(msgRestoredPackagesFromVendor,
-                             msg::count = num_restored,
-                             msg::elapsed = timer.elapsed(),
-                             msg::value = archives_root_dir.native());
-            }
-        }
-
-        std::vector<RestoreResult> try_restore_n(View<const InstallPlanAction*> actions,
-                                                 const Path& archives_root_dir) const
-        {
-            auto& fs = paths.get_filesystem();
-            std::vector<RestoreResult> results(actions.size(), RestoreResult::unavailable);
-            std::vector<size_t> action_idxs;
-            std::vector<Command> jobs;
-            std::vector<Path> archive_paths;
-            for (size_t i = 0; i < actions.size(); ++i)
-            {
-                const auto& action = *actions[i];
-                const auto& spec = action.spec;
-                const auto& abi_tag = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
-                const auto archive_subpath = make_archive_subpath(abi_tag);
-                auto archive_path = archives_root_dir / archive_subpath;
-                if (fs.exists(archive_path, IgnoreErrors{}))
-                {
-                    auto pkg_path = paths.package_dir(spec);
-                    clean_prepare_dir(fs, pkg_path);
-                    jobs.push_back(
-                        decompress_zip_archive_cmd(paths.get_tool_cache(), stdout_sink, pkg_path, archive_path));
-                    action_idxs.push_back(i);
-                    archive_paths.push_back(std::move(archive_path));
-                }
-            }
-
-            auto job_results = decompress_in_parallel(jobs);
-
-            for (size_t j = 0; j < jobs.size(); ++j)
-            {
-                const auto i = action_idxs[j];
-                const auto& archive_result = job_results[j];
-                if (archive_result)
-                {
-                    results[i] = RestoreResult::restored;
-                    Debug::print("Restored ", archive_paths[j].native(), '\n');
-                }
-                else
-                {
-                    if (actions[i]->build_options.purge_decompress_failure == PurgeDecompressFailure::YES)
-                    {
-                        Debug::print(
-                            "Failed to decompress archive package; purging: ", archive_paths[j].native(), '\n');
-                        fs.remove(archive_paths[j], IgnoreErrors{});
-                    }
-                    else
-                    {
-                        Debug::print("Failed to decompress archive package: ", archive_paths[j].native(), '\n');
-                    }
-                }
-            }
-            return results;
-        }
-
-        RestoreResult try_restore(const InstallPlanAction& action) const override
-        {
-            // Note: this method is almost never called -- it will only be called if another provider promised to
-            // restore a package but then failed at runtime
-            auto p_action = &action;
-            for (const auto& archives_root_dir : m_read_dirs)
-            {
-                if (try_restore_n({&p_action, 1}, archives_root_dir)[0] == RestoreResult::restored)
-                {
-                    msg::println(msgRestoredPackage, msg::path = archives_root_dir.native());
-                    return RestoreResult::restored;
-                }
-            }
-            return RestoreResult::unavailable;
-        }
-
-        void push_success(const BinaryPackageInformation& info,
-                          const Path& packages_dir,
-                          MessageSink& msg_sink) override
-        {
-            if (m_write_dirs.empty() && m_put_url_templates.empty())
-            {
-                return;
-            }
-
-            const auto& abi_tag = info.package_abi;
-            auto& spec = info.spec;
-            auto& fs = paths.get_filesystem();
-            const auto archive_subpath = make_archive_subpath(abi_tag);
-            const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            auto compress_result =
-                compress_directory_to_zip(fs, paths.get_tool_cache(), stdout_sink, packages_dir, tmp_archive_path);
-            if (!compress_result)
-            {
-                msg_sink.println(Color::warning,
-                                 msg::format_warning(msgCompressFolderFailed, msg::path = packages_dir)
-                                     .append_raw(' ')
-                                     .append_raw(compress_result.error()));
-                return;
-            }
-            for (auto&& put_url_template : m_put_url_templates)
-            {
-                auto url = put_url_template.instantiate_variables(info);
-                auto maybe_success = put_file(fs, url, m_secrets, put_url_template.headers_for_put, tmp_archive_path);
-                if (maybe_success)
-                {
-                    m_http_remotes_pushed++;
-                    continue;
-                }
-
-                msg_sink.println(Color::warning, maybe_success.error());
-            }
-
-            for (const auto& archives_root_dir : m_write_dirs)
-            {
-                const auto archive_path = archives_root_dir / archive_subpath;
-                fs.create_directories(archive_path.parent_path(), IgnoreErrors{});
-                std::error_code ec;
-                if (m_write_dirs.size() > 1)
-                {
-                    fs.copy_file(tmp_archive_path, archive_path, CopyOptions::overwrite_existing, ec);
-                }
-                else
-                {
-                    fs.rename_or_copy(tmp_archive_path, archive_path, ".tmp", ec);
-                }
-
-                if (ec)
-                {
-                    msg_sink.println(Color::warning,
-                                     msg::format(msgFailedToStoreBinaryCache, msg::path = archive_path)
-                                         .append_raw('\n')
-                                         .append_raw(ec.message()));
-                }
-            }
-            // In the case of 1 write dir, the file will be moved instead of copied
-            if (m_write_dirs.size() != 1)
-            {
-                fs.remove(tmp_archive_path, IgnoreErrors{});
-            }
-            if (!m_put_url_templates.empty())
-            {
-                msg_sink.println(msgUploadedBinaries, msg::count = m_http_remotes_pushed, msg::vendor = "HTTP remotes");
-            }
-        }
-
-        /*void print_upload_statistics(MessageSink& msg_sink) override
-        {
-            if (!m_put_url_templates.empty())
-            {
-                msg_sink.println(msgUploadedBinaries, msg::count = m_http_remotes_pushed, msg::vendor = "HTTP remotes");
-            }
-        };*/
-
-        void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
-        {
-            auto& fs = paths.get_filesystem();
-            for (size_t idx = 0; idx < actions.size(); ++idx)
-            {
-                const auto& action = actions[idx];
-                const auto& abi_tag = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
-                if (!cache_status[idx]->should_attempt_precheck(this))
-                {
-                    continue;
-                }
-
-                const auto archive_subpath = make_archive_subpath(abi_tag);
-                bool any_available = false;
-                for (auto&& archives_root_dir : m_read_dirs)
-                {
-                    if (fs.exists(archives_root_dir / archive_subpath, IgnoreErrors{}))
-                    {
-                        any_available = true;
-                        break;
-                    }
-                }
-
-                if (any_available)
-                {
-                    cache_status[idx]->mark_available(this);
-                }
-                else
-                {
-                    cache_status[idx]->mark_unavailable(this);
-                }
-            }
-        }
-
-    private:
-        const VcpkgPaths& paths;
-        std::vector<Path> m_read_dirs;
-        std::vector<Path> m_write_dirs;
-        std::vector<UrlTemplate> m_put_url_templates;
-        std::vector<std::string> m_secrets;
-        size_t m_http_remotes_pushed = 0;
     };
 
     struct HttpObjectProvider : IObjectProvider
@@ -488,7 +282,7 @@ namespace
         {
         }
 
-        void download(View<StringView> objects, const Path& target_dir) const override
+        void download(Optional<const ToolCache&>, View<StringView> objects, const Path& target_dir) const override
         {
             auto url_paths = Util::fmap(objects, [&](StringView object) -> std::pair<std::string, Path> {
                 return {m_url_template.instantiate_variable(object), target_dir / object};
@@ -502,7 +296,10 @@ namespace
                 }
             }
         }
-        void upload(StringView object_id, const Path& object, MessageSink& msg_sink) override
+        void upload(Optional<const ToolCache&>,
+                    StringView object_id,
+                    const Path& object,
+                    MessageSink& msg_sink) override
         {
             auto maybe_success = put_file(
                 fs, m_url_template.instantiate_variable(object_id), m_secrets, m_url_template.headers_for_put, object);
@@ -511,7 +308,9 @@ namespace
                 msg_sink.println(Color::warning, maybe_success.error());
             }
         }
-        void check_availability(vcpkg::View<StringView> objects, vcpkg::Span<bool> cache_status) const override
+        void check_availability(Optional<const ToolCache&>,
+                                vcpkg::View<StringView> objects,
+                                vcpkg::Span<bool> cache_status) const override
         {
             auto urls = Util::fmap(objects, [&](StringView object) -> std::string {
                 return m_url_template.url_template + object.to_string();
@@ -914,11 +713,11 @@ namespace
         BinaryObjectProvider(const VcpkgPaths& paths,
                              std::vector<std::unique_ptr<IObjectProvider>>&& providers,
                              std::vector<ExtendedUrlTemplate>&& put_url_templates,
-                             std::vector<ExtendedUrlTemplate>&& get_url_templates)
+                             const std::vector<std::string>& secrets)
             : paths(paths)
             , m_providers(std::move(providers))
             , m_put_url_templates(std::move(put_url_templates))
-            , m_get_url_templates(std::move(get_url_templates))
+            , m_secrets(std::move(secrets))
         {
         }
 
@@ -957,7 +756,7 @@ namespace
                 const auto objects_view = Util::fmap(objects, [](std::string& s) -> StringView { return s; });
                 Path target_dir = paths.downloads / "binary_cache";
                 fs.create_directories(target_dir, VCPKG_LINE_INFO);
-                provider->download(objects_view, target_dir);
+                provider->download(paths.get_tool_cache(), objects_view, target_dir);
                 std::vector<Command> jobs;
                 std::vector<size_t> idxs;
                 for (size_t idx = 0; idx < objects.size(); ++idx)
@@ -996,7 +795,13 @@ namespace
                          msg::value = "vendor()");
         }
 
-        RestoreResult try_restore(const InstallPlanAction&) const override { return RestoreResult::unavailable; }
+        RestoreResult try_restore(const InstallPlanAction& action) const override
+        {
+            CacheStatus status;
+            CacheStatus* pointer = &status;
+            prefetch({&action, 1}, {&pointer, 1});
+            return status.is_restored() ? RestoreResult::restored : RestoreResult::unavailable;
+        }
 
         void push_success(const BinaryPackageInformation& info,
                           const Path& packages_dir,
@@ -1022,8 +827,20 @@ namespace
             {
                 if (provider->supports_write())
                 {
-                    provider->upload(object_id, tmp_archive_path, stdout_sink);
+                    provider->upload(paths.get_tool_cache(), object_id, tmp_archive_path, stdout_sink);
                 }
+            }
+            for (auto&& put_url_template : m_put_url_templates)
+            {
+                auto url = put_url_template.instantiate_variables(info);
+                auto maybe_success = put_file(
+                    paths.get_filesystem(), url, m_secrets, put_url_template.headers_for_put, tmp_archive_path);
+                if (maybe_success)
+                {
+                    continue;
+                }
+
+                msg_sink.println(Color::warning, maybe_success.error());
             }
             msg_sink.println(msgUploadedPackagesToVendor,
                              msg::count = upload_count,
@@ -1033,9 +850,15 @@ namespace
 
         void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
-            std::vector<CacheAvailability> actions_availability{actions.size()};
-            for (const auto& prefix : m_read_prefixes)
+            std::vector<CacheAvailability> actions_availability{actions.size(), CacheAvailability::unavailable};
+            std::vector<std::string> object_names{actions.size()};
+            std::vector<StringView> object_ids;
+            std::vector<size_t> idxs;
+            for (auto& provider : m_providers)
             {
+                if (!provider->supports_read()) continue;
+                idxs.clear();
+                object_ids.clear();
                 for (size_t idx = 0; idx < actions.size(); ++idx)
                 {
                     auto&& action = actions[idx];
@@ -1044,11 +867,23 @@ namespace
                     {
                         continue;
                     }
-
-                    if (stat(make_object_path(prefix, abi)))
+                    if (object_names[idx].empty())
                     {
-                        actions_availability[idx] = CacheAvailability::available;
-                        cache_status[idx]->mark_available(this);
+                        object_names[idx] = make_object_id(abi);
+                    }
+                    object_ids.push_back(object_names[idx]);
+                    idxs.push_back(idx);
+                }
+                std::vector<int8_t> status(object_ids.size(), 0);
+                Span<bool> bool_span(reinterpret_cast<bool*>(status.data()), status.size());
+                provider->check_availability(paths.get_tool_cache(), object_ids, bool_span);
+                for (size_t idx = 0; idx < bool_span.size(); ++idx)
+                {
+                    if (bool_span[idx])
+                    {
+                        auto global_idx = idxs[idx];
+                        actions_availability[global_idx] = CacheAvailability::available;
+                        cache_status[global_idx]->mark_available(this);
                     }
                 }
             }
@@ -1066,29 +901,41 @@ namespace
     private:
         const VcpkgPaths& paths;
         std::vector<std::unique_ptr<IObjectProvider>> m_providers;
-        std::unordered_map<std::string, IObjectProvider*> m_available_provider;
         std::vector<ExtendedUrlTemplate> m_put_url_templates;
         std::vector<ExtendedUrlTemplate> m_get_url_templates;
+        std::vector<std::string> m_secrets;
     };
 
     struct GcsObjectProvider : ISingleObjectProvider
     {
-        GcsObjectProvider(Access access, const VcpkgPaths& paths, std::string&& prefix)
-            : ISingleObjectProvider(access), paths(paths), m_prefix(std::move(prefix))
+        GcsObjectProvider(Access access, std::string&& prefix)
+            : ISingleObjectProvider(access), m_prefix(std::move(prefix))
         {
         }
 
-        Command command() const { return Command{paths.get_tool_exe(Tools::GSUTIL, stdout_sink)}; }
-
-        void check_availability(StringView object, bool* cache_status) const override
+        Command command(Optional<const ToolCache&> tool_cache) const
         {
-            auto cmd =
-                command().string_arg("-q").string_arg("stat").string_arg(Strings::concat(m_prefix, object.to_string()));
-            *cache_status = succeeded(cmd_execute(cmd));
+            if (tool_cache)
+            {
+                return Command{tool_cache.value_or_exit(VCPKG_LINE_INFO).get_tool_path(Tools::GSUTIL, stdout_sink)};
+            }
+            return Command{Tools::GSUTIL};
         }
-        void upload(StringView object_id, const Path& object, MessageSink& msg_sink) override
+
+        bool is_available(Optional<const ToolCache&> tool_cache, StringView object) const override
         {
-            auto cmd = command()
+            auto cmd = command(tool_cache)
+                           .string_arg("-q")
+                           .string_arg("stat")
+                           .string_arg(Strings::concat(m_prefix, object.to_string()));
+            return succeeded(cmd_execute(cmd));
+        }
+        void upload(Optional<const ToolCache&> tool_cache,
+                    StringView object_id,
+                    const Path& object,
+                    MessageSink& msg_sink) override
+        {
+            auto cmd = command(tool_cache)
                            .string_arg("-q")
                            .string_arg("cp")
                            .string_arg(m_prefix + object_id.to_string())
@@ -1099,9 +946,9 @@ namespace
                 msg_sink.println(Color::warning, out.error());
             }
         }
-        void download(StringView object, const Path& target_file) const override
+        void download(Optional<const ToolCache&> tool_cache, StringView object, const Path& target_file) const override
         {
-            auto cmd = command()
+            auto cmd = command(tool_cache)
                            .string_arg("-q")
                            .string_arg("cp")
                            .string_arg(m_prefix + object.to_string())
@@ -1114,37 +961,45 @@ namespace
         }
 
     private:
-        const VcpkgPaths& paths;
         std::string m_prefix;
     };
 
     struct AwsObjectProvider : ISingleObjectProvider
     {
-        AwsObjectProvider(Access access, const VcpkgPaths& paths, std::string&& prefix, const bool no_sign_request)
-            : ISingleObjectProvider(access)
-            , paths(paths)
-            , m_prefix(std::move(prefix))
-            , m_no_sign_request(no_sign_request)
+        AwsObjectProvider(Access access, std::string&& prefix, const bool no_sign_request)
+            : ISingleObjectProvider(access), m_prefix(std::move(prefix)), m_no_sign_request(no_sign_request)
         {
         }
 
-        Command command() const { return Command{paths.get_tool_exe(Tools::AWSCLI, stdout_sink)}; }
-
-        void check_availability(StringView object, bool* cache_status) const override
+        Command command(Optional<const ToolCache&> tool_cache) const
         {
-            auto cmd = command().string_arg("s3").string_arg("ls").string_arg(Strings::concat(m_prefix, object));
+            return tool_cache
+                .map([](auto& tool_cache) { return Command{tool_cache.get_tool_path(Tools::AWSCLI, stdout_sink)}; })
+                .value_or(Command{Tools::AWSCLI});
+        }
+
+        bool is_available(Optional<const ToolCache&> tool_cache, StringView object) const override
+        {
+            auto cmd =
+                command(tool_cache).string_arg("s3").string_arg("ls").string_arg(Strings::concat(m_prefix, object));
             if (m_no_sign_request)
             {
                 cmd.string_arg("--no-sign-request");
             }
 
-            *cache_status = succeeded(cmd_execute(cmd));
+            return succeeded(cmd_execute(cmd));
         }
 
-        void upload(StringView object_id, const Path& object, MessageSink& msg_sink) override
+        void upload(Optional<const ToolCache&> tool_cache,
+                    StringView object_id,
+                    const Path& object,
+                    MessageSink& msg_sink) override
         {
-            auto cmd = command().string_arg("s3").string_arg("cp").string_arg(object).string_arg(
-                Strings::concat(m_prefix, object_id));
+            auto cmd = command(tool_cache)
+                           .string_arg("s3")
+                           .string_arg("cp")
+                           .string_arg(object)
+                           .string_arg(Strings::concat(m_prefix, object_id));
             if (m_no_sign_request)
             {
                 cmd.string_arg("--no-sign-request");
@@ -1156,9 +1011,9 @@ namespace
             }
         }
 
-        void download(StringView object, const Path& target_file) const override
+        void download(Optional<const ToolCache&> tool_cache, StringView object, const Path& target_file) const override
         {
-            auto cmd = command()
+            auto cmd = command(tool_cache)
                            .string_arg("s3")
                            .string_arg("cp")
                            .string_arg(Strings::concat(m_prefix, object))
@@ -1176,29 +1031,39 @@ namespace
         }
 
     private:
-        const VcpkgPaths& paths;
         std::string m_prefix;
         bool m_no_sign_request;
     };
 
     struct CosObjectProvider : ISingleObjectProvider
     {
-        CosObjectProvider(Access access, const VcpkgPaths& paths, std::string&& prefix)
-            : ISingleObjectProvider(access), paths(paths), m_prefix(std::move(prefix))
+        CosObjectProvider(Access access, std::string&& prefix)
+            : ISingleObjectProvider(access), m_prefix(std::move(prefix))
         {
         }
 
-        Command command() const { return Command{paths.get_tool_exe(Tools::COSCLI, stdout_sink)}; }
-
-        void check_availability(StringView object, bool* cache_status) const override
+        Command command(Optional<const ToolCache&> tool_cache) const
         {
-            auto cmd = command().string_arg("ls").string_arg(Strings::concat(m_prefix, object));
-            *cache_status = succeeded(cmd_execute(cmd));
+            return tool_cache
+                .map([](auto& tool_cache) { return Command{tool_cache.get_tool_path(Tools::COSCLI, stdout_sink)}; })
+                .value_or(Command{"cos"});
         }
 
-        void upload(StringView object_id, const Path& object, MessageSink& msg_sink) override
+        bool is_available(Optional<const ToolCache&> tool_cache, StringView object) const override
         {
-            auto cmd = command().string_arg("cp").string_arg(object).string_arg(Strings::concat(m_prefix, object_id));
+            auto cmd = command(tool_cache).string_arg("ls").string_arg(Strings::concat(m_prefix, object));
+            return succeeded(cmd_execute(cmd));
+        }
+
+        void upload(Optional<const ToolCache&> tool_cache,
+                    StringView object_id,
+                    const Path& object,
+                    MessageSink& msg_sink) override
+        {
+            auto cmd = command(tool_cache)
+                           .string_arg("cp")
+                           .string_arg(object)
+                           .string_arg(Strings::concat(m_prefix, object_id));
             const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::COSCLI);
             if (!out)
             {
@@ -1206,9 +1071,12 @@ namespace
             }
         }
 
-        void download(StringView object, const Path& target_file) const override
+        void download(Optional<const ToolCache&> tool_cache, StringView object, const Path& target_file) const override
         {
-            auto cmd = command().string_arg("cp").string_arg(Strings::concat(m_prefix, object).string_arg(target_file);
+            auto cmd = command(tool_cache)
+                           .string_arg("cp")
+                           .string_arg(Strings::concat(m_prefix, object))
+                           .string_arg(target_file);
             const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::COSCLI);
             if (!out)
             {
@@ -1217,7 +1085,6 @@ namespace
         }
 
     private:
-        const VcpkgPaths& paths;
         std::string m_prefix;
     };
 }
@@ -1606,21 +1473,11 @@ namespace vcpkg
 
     void BinaryConfigParserState::clear()
     {
-        binary_cache_providers.clear();
-        binary_cache_providers.insert("clear");
+        ObjectCacheConfig::clear();
         nuget_interactive = false;
         nugettimeout = "100";
-        archives_to_read.clear();
-        archives_to_write.clear();
         url_templates_to_get.clear();
         url_templates_to_put.clear();
-        gcs_read_prefixes.clear();
-        gcs_write_prefixes.clear();
-        aws_read_prefixes.clear();
-        aws_write_prefixes.clear();
-        aws_no_sign_request = false;
-        cos_read_prefixes.clear();
-        cos_write_prefixes.clear();
         sources_to_read.clear();
         sources_to_write.clear();
         configs_to_read.clear();
@@ -1641,6 +1498,12 @@ namespace vcpkg
         , feature_list(action.feature_list)
         , package_dependencies(action.package_dependencies)
     {
+    }
+
+    void ObjectCacheConfig::clear()
+    {
+        object_providers.clear();
+        secrets.clear();
     }
 }
 
@@ -1685,18 +1548,29 @@ namespace
         return cachepath;
     }
 
-    struct BinaryConfigParser : ConfigSegmentsParser
+    struct ObjectCacheConfigParser : ConfigSegmentsParser
     {
-        BinaryConfigParser(StringView text, StringView origin, BinaryConfigParserState* state)
-            : ConfigSegmentsParser(text, origin), state(state)
+        ObjectCacheConfigParser(Filesystem& fs, StringView text, StringView origin, ObjectCacheConfig* state)
+            : ConfigSegmentsParser(text, origin), fs(fs), state(state)
         {
         }
 
-        BinaryConfigParserState* state;
+        Filesystem& fs;
+        ObjectCacheConfig* state;
+        bool aws_no_sign_request = false;
 
         void parse()
         {
             auto all_segments = parse_all_segments();
+            // new parser is stateless, but we want to keep x-aws-config,no-sign-request for backcompat
+            for (const auto& segment : all_segments)
+            {
+                if (segment.size() == 2 && segment[0].second == "x-aws-config" &&
+                    segment[1].second == "no-sign-request")
+                {
+                    aws_no_sign_request = true;
+                }
+            }
             for (auto&& x : all_segments)
             {
                 if (get_error()) return;
@@ -1704,7 +1578,7 @@ namespace
             }
         }
 
-        void handle_segments(std::vector<std::pair<SourceLoc, std::string>>&& segments)
+        virtual void handle_segments(std::vector<std::pair<SourceLoc, std::string>>&& segments)
         {
             Checks::check_exit(VCPKG_LINE_INFO, !segments.empty());
             if (segments[0].second == "clear")
@@ -1732,123 +1606,18 @@ namespace
                                      segments[1].first);
                 }
 
-                handle_readwrite(state->archives_to_read, state->archives_to_write, std::move(p), segments, 2);
+                auto maybe_access = parse_readwrite(segments, 2);
                 if (segments.size() > 3)
                 {
                     return add_error(
                         msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "files"),
                         segments[3].first);
                 }
-                state->binary_cache_providers.insert("files");
-            }
-            else if (segments[0].second == "interactive")
-            {
-                if (segments.size() > 1)
+                if (maybe_access)
                 {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresNoneArguments, msg::binary_source = "interactive"),
-                        segments[1].first);
+                    state->object_providers.push_back(std::make_unique<FileObjectProvider>(
+                        maybe_access.value_or_exit(VCPKG_LINE_INFO), fs, std::move(p)));
                 }
-
-                state->nuget_interactive = true;
-            }
-            else if (segments[0].second == "nugetconfig")
-            {
-                if (segments.size() < 2)
-                {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresSourceArgument, msg::binary_source = "nugetconfig"),
-                        segments[0].first);
-                }
-
-                Path p = segments[1].second;
-                if (!p.is_absolute())
-                {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresAbsolutePath, msg::binary_source = "nugetconfig"),
-                        segments[1].first);
-                }
-
-                handle_readwrite(state->configs_to_read, state->configs_to_write, std::move(p), segments, 2);
-                if (segments.size() > 3)
-                {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "nugetconfig"),
-                        segments[3].first);
-                }
-                state->binary_cache_providers.insert("nuget");
-            }
-            else if (segments[0].second == "nuget")
-            {
-                if (segments.size() < 2)
-                {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresSourceArgument, msg::binary_source = "nuget"),
-                        segments[0].first);
-                }
-
-                auto&& p = segments[1].second;
-                if (p.empty())
-                {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresSourceArgument, msg::binary_source = "nuget"));
-                }
-
-                handle_readwrite(state->sources_to_read, state->sources_to_write, std::move(p), segments, 2);
-                if (segments.size() > 3)
-                {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "nuget"),
-                        segments[3].first);
-                }
-                state->binary_cache_providers.insert("nuget");
-            }
-            else if (segments[0].second == "nugettimeout")
-            {
-                if (segments.size() != 2)
-                {
-                    return add_error(
-                        "expected arguments: binary config 'nugettimeout' expects a single positive integer argument");
-                }
-
-                auto&& t = segments[1].second;
-                if (t.empty())
-                {
-                    return add_error(
-                        "unexpected arguments: binary config 'nugettimeout' requires non-empty nugettimeout");
-                }
-                char* end;
-                long timeout = std::strtol(t.c_str(), &end, 0);
-                if (*end != '\0')
-                {
-                    return add_error("invalid value: binary config 'nugettimeout' requires a valid integer");
-                }
-                if (timeout <= 0)
-                {
-                    return add_error("invalid value: binary config 'nugettimeout' requires integers greater than 0");
-                }
-
-                state->nugettimeout = std::to_string(timeout);
-                state->binary_cache_providers.insert("nuget");
-            }
-            else if (segments[0].second == "default")
-            {
-                if (segments.size() > 2)
-                {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresSingleArgument, msg::binary_source = "default"),
-                        segments[0].first);
-                }
-
-                const auto& maybe_home = default_cache_path();
-                if (!maybe_home)
-                {
-                    return add_error(maybe_home.error(), segments[0].first);
-                }
-
-                handle_readwrite(
-                    state->archives_to_read, state->archives_to_write, Path(*maybe_home.get()), segments, 1);
-                state->binary_cache_providers.insert("default");
             }
             else if (segments[0].second == "x-azblob")
             {
@@ -1898,10 +1667,12 @@ namespace
                 UrlTemplate url_template = {p};
                 auto headers = azure_blob_headers();
                 url_template.headers_for_put.assign(headers.begin(), headers.end());
-                handle_readwrite(
-                    state->url_templates_to_get, state->url_templates_to_put, std::move(url_template), segments, 3);
-
-                state->binary_cache_providers.insert("azblob");
+                auto maybe_access = parse_readwrite(segments, 3);
+                if (maybe_access)
+                {
+                    state->object_providers.push_back(std::make_unique<HttpObjectProvider>(
+                        maybe_access.value_or_exit(VCPKG_LINE_INFO), fs, std::move(url_template), state->secrets));
+                }
             }
             else if (segments[0].second == "x-gcs")
             {
@@ -1933,9 +1704,12 @@ namespace
                     p.push_back('/');
                 }
 
-                handle_readwrite(state->gcs_read_prefixes, state->gcs_write_prefixes, std::move(p), segments, 2);
-
-                state->binary_cache_providers.insert("gcs");
+                auto maybe_access = parse_readwrite(segments, 2);
+                if (maybe_access)
+                {
+                    state->object_providers.push_back(
+                        std::make_unique<GcsObjectProvider>(maybe_access.value_or_exit(VCPKG_LINE_INFO), std::move(p)));
+                }
             }
             else if (segments[0].second == "x-aws")
             {
@@ -1967,9 +1741,12 @@ namespace
                     p.push_back('/');
                 }
 
-                handle_readwrite(state->aws_read_prefixes, state->aws_write_prefixes, std::move(p), segments, 2);
-
-                state->binary_cache_providers.insert("aws");
+                auto maybe_access = parse_readwrite(segments, 2);
+                if (maybe_access)
+                {
+                    state->object_providers.push_back(std::make_unique<AwsObjectProvider>(
+                        maybe_access.value_or_exit(VCPKG_LINE_INFO), std::move(p), aws_no_sign_request));
+                }
             }
             else if (segments[0].second == "x-aws-config")
             {
@@ -1979,18 +1756,11 @@ namespace
                                                  msg::binary_source = "x-aws-config"));
                 }
 
-                auto no_sign_request = false;
-                if (segments[1].second == "no-sign-request")
-                {
-                    no_sign_request = true;
-                }
-                else
+                if (segments[1].second != "no-sign-request")
                 {
                     return add_error(msg::format(msgInvalidArgument), segments[1].first);
                 }
-
-                state->aws_no_sign_request = no_sign_request;
-                state->binary_cache_providers.insert("aws");
+                // already handled in parse(), but do input validation here
             }
             else if (segments[0].second == "x-cos")
             {
@@ -2022,8 +1792,12 @@ namespace
                     p.push_back('/');
                 }
 
-                handle_readwrite(state->cos_read_prefixes, state->cos_write_prefixes, std::move(p), segments, 2);
-                state->binary_cache_providers.insert("cos");
+                auto maybe_access = parse_readwrite(segments, 2);
+                if (maybe_access)
+                {
+                    state->object_providers.push_back(
+                        std::make_unique<CosObjectProvider>(maybe_access.value_or_exit(VCPKG_LINE_INFO), std::move(p)));
+                }
             }
             else if (segments[0].second == "http")
             {
@@ -2061,78 +1835,217 @@ namespace
                     url_template.headers_for_put.push_back(segments[3].second);
                 }
 
-                handle_readwrite(
-                    state->url_templates_to_get, state->url_templates_to_put, std::move(url_template), segments, 2);
-                state->binary_cache_providers.insert("http");
+                auto maybe_access = parse_readwrite(segments, 2);
+                if (maybe_access)
+                {
+                    state->object_providers.push_back(std::make_unique<HttpObjectProvider>(
+                        maybe_access.value_or_exit(VCPKG_LINE_INFO), fs, std::move(url_template), state->secrets));
+                }
             }
             else
             {
                 return add_error(msg::format(msgUnknownBinaryProviderType), segments[0].first);
             }
+        }
+    };
 
-            static const std::map<StringLiteral, DefineMetric> metric_names{
-                {"aws", DefineMetric::BinaryCachingAws},
-                {"azblob", DefineMetric::BinaryCachingAzBlob},
-                {"cos", DefineMetric::BinaryCachingCos},
+    struct BinaryConfigParser : ObjectCacheConfigParser
+    {
+        BinaryConfigParser(Filesystem& fs, StringView text, StringView origin, BinaryConfigParserState* state)
+            : ObjectCacheConfigParser(fs, text, origin, state), state(state)
+        {
+        }
+
+        BinaryConfigParserState* state;
+
+        void handle_segments(std::vector<std::pair<SourceLoc, std::string>>&& segments)
+        {
+            Checks::check_exit(VCPKG_LINE_INFO, !segments.empty());
+            std::string source = segments[0].second;
+            if (segments[0].second == "interactive")
+            {
+                if (segments.size() > 1)
+                {
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresNoneArguments, msg::binary_source = "interactive"),
+                        segments[1].first);
+                }
+
+                state->nuget_interactive = true;
+            }
+            else if (segments[0].second == "nugetconfig")
+            {
+                if (segments.size() < 2)
+                {
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresSourceArgument, msg::binary_source = "nugetconfig"),
+                        segments[0].first);
+                }
+
+                Path p = segments[1].second;
+                if (!p.is_absolute())
+                {
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresAbsolutePath, msg::binary_source = "nugetconfig"),
+                        segments[1].first);
+                }
+
+                handle_readwrite(state->configs_to_read, state->configs_to_write, std::move(p), segments, 2);
+                if (segments.size() > 3)
+                {
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "nugetconfig"),
+                        segments[3].first);
+                }
+            }
+            else if (segments[0].second == "nuget")
+            {
+                if (segments.size() < 2)
+                {
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresSourceArgument, msg::binary_source = "nuget"),
+                        segments[0].first);
+                }
+
+                auto&& p = segments[1].second;
+                if (p.empty())
+                {
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresSourceArgument, msg::binary_source = "nuget"));
+                }
+
+                handle_readwrite(state->sources_to_read, state->sources_to_write, std::move(p), segments, 2);
+                if (segments.size() > 3)
+                {
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "nuget"),
+                        segments[3].first);
+                }
+            }
+            else if (segments[0].second == "nugettimeout")
+            {
+                if (segments.size() != 2)
+                {
+                    return add_error(
+                        "expected arguments: binary config 'nugettimeout' expects a single positive integer argument");
+                }
+
+                auto&& t = segments[1].second;
+                if (t.empty())
+                {
+                    return add_error(
+                        "unexpected arguments: binary config 'nugettimeout' requires non-empty nugettimeout");
+                }
+                char* end;
+                long timeout = std::strtol(t.c_str(), &end, 0);
+                if (*end != '\0')
+                {
+                    return add_error("invalid value: binary config 'nugettimeout' requires a valid integer");
+                }
+                if (timeout <= 0)
+                {
+                    return add_error("invalid value: binary config 'nugettimeout' requires integers greater than 0");
+                }
+
+                state->nugettimeout = std::to_string(timeout);
+            }
+            else if (segments[0].second == "default")
+            {
+                if (segments.size() > 2)
+                {
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresSingleArgument, msg::binary_source = "default"),
+                        segments[0].first);
+                }
+
+                const auto& maybe_home = default_cache_path();
+                if (!maybe_home)
+                {
+                    return add_error(maybe_home.error(), segments[0].first);
+                }
+
+                auto maybe_access = parse_readwrite(segments, 1);
+                if (maybe_access)
+                {
+                    state->object_providers.push_back(std::make_unique<FileObjectProvider>(
+                        maybe_access.value_or_exit(VCPKG_LINE_INFO), fs, Path(*maybe_home.get())));
+                }
+            }
+            else if (segments[0].second == "http")
+            {
+                // Scheme: http,<url_template>[,<readwrite>[,<header>]]
+                if (segments.size() < 2)
+                {
+                    return add_error(msg::format(msgInvalidArgumentRequiresPrefix, msg::binary_source = "http"),
+                                     segments[0].first);
+                }
+
+                if (!Strings::starts_with(segments[1].second, "http://") &&
+                    !Strings::starts_with(segments[1].second, "https://"))
+                {
+                    return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
+                                                 msg::base_url = "https://",
+                                                 msg::binary_source = "http"),
+                                     segments[1].first);
+                }
+
+                if (segments.size() > 4)
+                {
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresTwoOrThreeArguments, msg::binary_source = "http"),
+                        segments[3].first);
+                }
+
+                ExtendedUrlTemplate url_template{UrlTemplate{segments[1].second}};
+                if (auto err = url_template.valid(); !err.empty())
+                {
+                    return add_error(std::move(err), segments[1].first);
+                }
+                if (segments.size() == 4)
+                {
+                    url_template.headers_for_get.push_back(segments[3].second);
+                    url_template.headers_for_put.push_back(segments[3].second);
+                }
+
+                handle_readwrite(
+                    state->url_templates_to_get, state->url_templates_to_put, std::move(url_template), segments, 2);
+            }
+            else
+            {
+                ObjectCacheConfigParser::handle_segments(std::move(segments));
+            }
+
+            static const std::map<StringView, DefineMetric> metric_names{
+                {"x-aws", DefineMetric::BinaryCachingAws},
+                {"x-azblob", DefineMetric::BinaryCachingAzBlob},
+                {"x-cos", DefineMetric::BinaryCachingCos},
                 {"default", DefineMetric::BinaryCachingDefault},
                 {"files", DefineMetric::BinaryCachingFiles},
-                {"gcs", DefineMetric::BinaryCachingGcs},
+                {"x-gcs", DefineMetric::BinaryCachingGcs},
                 {"http", DefineMetric::BinaryCachingHttp},
                 {"nuget", DefineMetric::BinaryCachingNuget},
             };
 
             MetricsSubmission metrics;
-            for (const auto& cache_provider : state->binary_cache_providers)
+
+            auto it = metric_names.find(StringView(source.c_str()));
+            if (it != metric_names.end())
             {
-                auto it = metric_names.find(cache_provider);
-                if (it != metric_names.end())
-                {
-                    metrics.track_define(it->second);
-                }
+                metrics.track_define(it->second);
             }
 
             get_global_metrics_collector().track_submission(std::move(metrics));
         }
     };
 
-    struct AssetSourcesState
+    struct AssetSourcesParser : ObjectCacheConfigParser
     {
-        bool cleared = false;
-        bool block_origin = false;
-        std::vector<std::string> url_templates_to_get;
-        std::vector<std::string> azblob_templates_to_put;
-        std::vector<std::string> secrets;
-        Optional<std::string> script;
-
-        void clear()
-        {
-            cleared = true;
-            block_origin = false;
-            url_templates_to_get.clear();
-            azblob_templates_to_put.clear();
-            secrets.clear();
-            script = nullopt;
-        }
-    };
-
-    struct AssetSourcesParser : ConfigSegmentsParser
-    {
-        AssetSourcesParser(StringView text, StringView origin, AssetSourcesState* state)
-            : ConfigSegmentsParser(text, origin), state(state)
+        AssetSourcesParser(Filesystem& fs, StringView text, StringView origin, DownloadManagerConfig* state)
+            : ObjectCacheConfigParser(fs, text, origin, state), state(state)
         {
         }
 
-        AssetSourcesState* state;
-
-        void parse()
-        {
-            auto all_segments = parse_all_segments();
-            for (auto&& x : all_segments)
-            {
-                if (get_error()) return;
-                handle_segments(std::move(x));
-            }
-        }
+        DownloadManagerConfig* state;
 
         void handle_segments(std::vector<std::pair<SourceLoc, std::string>>&& segments)
         {
@@ -2146,16 +2059,6 @@ namespace
                                      segments[1].first);
                 }
                 state->block_origin = true;
-            }
-            else if (segments[0].second == "clear")
-            {
-                if (segments.size() != 1)
-                {
-                    return add_error("unexpected arguments: asset config 'clear' does not take arguments",
-                                     segments[1].first);
-                }
-
-                state->clear();
             }
             else if (segments[0].second == "x-azurl")
             {
@@ -2195,8 +2098,15 @@ namespace
                     // Note: the download manager does not currently respect secrets
                     state->secrets.push_back(segments[2].second);
                 }
-                handle_readwrite(
-                    state->url_templates_to_get, state->azblob_templates_to_put, std::move(p), segments, 3);
+                UrlTemplate url_template = {p};
+                auto headers = azure_blob_headers();
+                url_template.headers_for_put.assign(headers.begin(), headers.end());
+                auto maybe_access = parse_readwrite(segments, 3);
+                if (maybe_access)
+                {
+                    state->object_providers.push_back(std::make_unique<HttpObjectProvider>(
+                        maybe_access.value_or_exit(VCPKG_LINE_INFO), fs, std::move(url_template), state->secrets));
+                }
             }
             else if (segments[0].second == "x-script")
             {
@@ -2211,68 +2121,37 @@ namespace
             }
             else
             {
-                return add_error("unknown asset provider type: valid source types are 'x-azurl', "
-                                 "'x-script', 'x-block-origin', and 'clear'",
-                                 segments[0].first);
+                ObjectCacheConfigParser::handle_segments(std::move(segments));
             }
         }
     };
 }
 
-ExpectedS<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optional<std::string>& arg)
+void DownloadManagerConfig::clear()
+{
+    ObjectCacheConfig::clear();
+    block_origin = false;
+    script = nullopt;
+}
+ExpectedS<DownloadManagerConfig> vcpkg::parse_download_configuration(Filesystem& fs, const Optional<std::string>& arg)
 {
     if (!arg || arg.get()->empty()) return DownloadManagerConfig{};
 
     get_global_metrics_collector().track_define(DefineMetric::AssetSource);
 
-    AssetSourcesState s;
+    DownloadManagerConfig s;
     const auto source = Strings::concat("$", VcpkgCmdArguments::ASSET_SOURCES_ENV);
-    AssetSourcesParser parser(*arg.get(), source, &s);
+    AssetSourcesParser parser(fs, *arg.get(), source, &s);
     parser.parse();
     if (auto err = parser.get_error())
     {
         return Strings::concat(err->to_string(), "\nFor more information, see ", docs::assetcaching_url, "\n");
     }
-
-    if (s.azblob_templates_to_put.size() > 1)
-    {
-        return Strings::concat("Error: a maximum of one asset write url can be specified\n"
-                               "For more information, see ",
-                               docs::assetcaching_url,
-                               "\n");
-    }
-    if (s.url_templates_to_get.size() > 1)
-    {
-        return Strings::concat("Error: a maximum of one asset read url can be specified\n"
-                               "For more information, see ",
-                               docs::assetcaching_url,
-                               "\n");
-    }
-
-    Optional<std::string> get_url;
-    if (!s.url_templates_to_get.empty())
-    {
-        get_url = std::move(s.url_templates_to_get.back());
-    }
-    Optional<std::string> put_url;
-    std::vector<std::string> put_headers;
-    if (!s.azblob_templates_to_put.empty())
-    {
-        put_url = std::move(s.azblob_templates_to_put.back());
-        auto v = azure_blob_headers();
-        put_headers.assign(v.begin(), v.end());
-    }
-
-    return DownloadManagerConfig{std::move(get_url),
-                                 std::vector<std::string>{},
-                                 std::move(put_url),
-                                 std::move(put_headers),
-                                 std::move(s.secrets),
-                                 s.block_origin,
-                                 s.script};
+    return s;
 }
 
-ExpectedS<BinaryConfigParserState> vcpkg::create_binary_providers_from_configs_pure(const std::string& env_string,
+ExpectedS<BinaryConfigParserState> vcpkg::create_binary_providers_from_configs_pure(Filesystem& fs,
+                                                                                    const std::string& env_string,
                                                                                     View<std::string> args)
 {
     if (!env_string.empty())
@@ -2287,14 +2166,14 @@ ExpectedS<BinaryConfigParserState> vcpkg::create_binary_providers_from_configs_p
 
     BinaryConfigParserState s;
 
-    BinaryConfigParser default_parser("default,readwrite", "<defaults>", &s);
+    BinaryConfigParser default_parser(fs, "default,readwrite", "<defaults>", &s);
     default_parser.parse();
     if (auto err = default_parser.get_error())
     {
         return err->message;
     }
 
-    BinaryConfigParser env_parser(env_string, "VCPKG_BINARY_SOURCES", &s);
+    BinaryConfigParser env_parser(fs, env_string, "VCPKG_BINARY_SOURCES", &s);
     env_parser.parse();
     if (auto err = env_parser.get_error())
     {
@@ -2303,7 +2182,7 @@ ExpectedS<BinaryConfigParserState> vcpkg::create_binary_providers_from_configs_p
 
     for (auto&& arg : args)
     {
-        BinaryConfigParser arg_parser(arg, "<command>", &s);
+        BinaryConfigParser arg_parser(fs, arg, "<command>", &s);
         arg_parser.parse();
         if (auto err = arg_parser.get_error())
         {
@@ -2331,7 +2210,8 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
         }
     }
 
-    auto sRawHolder = create_binary_providers_from_configs_pure(env_string, args);
+    Filesystem& fs = paths.get_filesystem();
+    auto sRawHolder = create_binary_providers_from_configs_pure(fs, env_string, args);
     if (!sRawHolder)
     {
         return sRawHolder.error();
@@ -2339,37 +2219,11 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
 
     auto& s = sRawHolder.value_or_exit(VCPKG_LINE_INFO);
     std::vector<std::unique_ptr<IBinaryProvider>> providers;
-    if (!s.archives_to_read.empty() || !s.archives_to_write.empty() || !s.url_templates_to_put.empty())
-    {
-        providers.push_back(std::make_unique<ArchivesBinaryProvider>(paths,
-                                                                     std::move(s.archives_to_read),
-                                                                     std::move(s.archives_to_write),
-                                                                     std::move(s.url_templates_to_put),
-                                                                     s.secrets));
-    }
 
-    if (!s.gcs_read_prefixes.empty() || !s.gcs_write_prefixes.empty())
+    if (s.object_providers.size() > 0 || s.url_templates_to_put.size() > 0)
     {
-        providers.push_back(std::make_unique<GcsBinaryProvider>(
-            paths, std::move(s.gcs_read_prefixes), std::move(s.gcs_write_prefixes)));
-    }
-
-    if (!s.aws_read_prefixes.empty() || !s.aws_write_prefixes.empty())
-    {
-        providers.push_back(std::make_unique<AwsBinaryProvider>(
-            paths, std::move(s.aws_read_prefixes), std::move(s.aws_write_prefixes), s.aws_no_sign_request));
-    }
-
-    if (!s.cos_read_prefixes.empty() || !s.cos_write_prefixes.empty())
-    {
-        providers.push_back(std::make_unique<CosBinaryProvider>(
-            paths, std::move(s.cos_read_prefixes), std::move(s.cos_write_prefixes)));
-    }
-
-    if (!s.url_templates_to_get.empty())
-    {
-        providers.push_back(
-            std::make_unique<HttpGetBinaryProvider>(paths, std::move(s.url_templates_to_get), s.secrets));
+        providers.push_back(std::make_unique<BinaryObjectProvider>(
+            paths, std::move(s.object_providers), std::move(s.url_templates_to_put), s.secrets));
     }
 
     if (!s.sources_to_read.empty() || !s.sources_to_write.empty() || !s.configs_to_read.empty() ||

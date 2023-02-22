@@ -30,6 +30,11 @@ namespace
         CHECK(state.sources_to_read.size() == 1);
         CHECK(state.sources_to_read.front() == sources);
     }
+    static ExpectedS<BinaryConfigParserState> create_binary_providers_from_configs_pure(const std::string& env_string,
+                                                                                        View<std::string> args)
+    {
+        return vcpkg::create_binary_providers_from_configs_pure(get_real_filesystem(), env_string, args);
+    }
 }
 
 TEST_CASE ("BinaryConfigParser empty", "[binaryconfigparser]")

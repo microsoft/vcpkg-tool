@@ -143,7 +143,7 @@ namespace vcpkg
         msg::println(Color::warning, msgDownloadingVcpkgCeBundleLatest);
         const auto ce_uri = "https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-ce.tgz";
         const auto ce_tarball = paths.downloads / "vcpkg-ce-latest.tgz";
-        download_manager.download_file(fs, ce_uri, {}, ce_tarball, nullopt, null_sink);
+        download_manager.download_file(paths.get_tool_cache(), fs, ce_uri, {}, ce_tarball, nullopt, null_sink);
         extract_ce_tarball(paths, ce_tarball, node_path, node_modules);
 #endif // ^^^ !VCPKG_CE_SHA
 
