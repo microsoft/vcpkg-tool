@@ -1,5 +1,6 @@
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/parse.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.mac.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
@@ -124,7 +125,8 @@ namespace vcpkg
         }
 
         // output line was properly formatted
-        out = Strings::ascii_to_lowercase(Strings::replace_all(mac_address, "-", ":"));
+        std::replace(mac_address.begin(), mac_address.end(), '-', ':');
+        out = Strings::ascii_to_lowercase(std::move(mac_address));
         return true;
     }
 

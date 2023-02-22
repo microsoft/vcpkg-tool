@@ -1590,18 +1590,16 @@ namespace
             return std::move(path);
         }
 
-        return get_platform_cache_home()
-            .map_error([](const std::string& ls) { return LocalizedString::from_raw(ls); })
-            .then([](Path p) -> ExpectedL<Path> {
-                if (p.is_absolute())
-                {
-                    p /= "vcpkg/archives";
-                    p.make_preferred();
-                    return std::move(p);
-                }
+        return get_platform_cache_home().then([](Path p) -> ExpectedL<Path> {
+            if (p.is_absolute())
+            {
+                p /= "vcpkg/archives";
+                p.make_preferred();
+                return std::move(p);
+            }
 
-                return msg::format(msgDefaultBinaryCachePlatformCacheRequiresAbsolutePath, msg::path = p);
-            });
+            return msg::format(msgDefaultBinaryCachePlatformCacheRequiresAbsolutePath, msg::path = p);
+        });
     }
 
     const ExpectedL<Path>& default_cache_path()
