@@ -266,34 +266,40 @@ namespace vcpkg
         return result;
     }
 
-    const ExpectedS<Path>& get_home_dir() noexcept
+    const ExpectedL<Path>& get_home_dir() noexcept
     {
-        static ExpectedS<Path> s_home = []() -> ExpectedS<Path> {
+        static ExpectedL<Path> s_home = []() -> ExpectedL<Path> {
 #ifdef _WIN32
-#define HOMEVAR "%USERPROFILE%"
-            auto maybe_home = get_environment_variable("USERPROFILE");
-            if (!maybe_home.has_value() || maybe_home.get()->empty())
-                return {"unable to read " HOMEVAR, ExpectedRightTag{}};
-#else
-#define HOMEVAR "$HOME"
-            auto maybe_home = get_environment_variable("HOME");
-            if (!maybe_home.has_value() || maybe_home.get()->empty())
-                return {"unable to read " HOMEVAR, ExpectedRightTag{}};
-#endif
+            static constexpr StringLiteral HOMEVAR = "%USERPROFILE%";
+            static constexpr StringLiteral HOMEVARNAME = "USERPROFILE";
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            static constexpr StringLiteral HOMEVAR = "$HOME";
+            static constexpr StringLiteral HOMEVARNAME = "HOME";
+#endif // ^^^ !_WIN32
 
-            Path p = *maybe_home.get();
-            if (!p.is_absolute()) return {HOMEVAR " was not an absolute path", ExpectedRightTag{}};
+            auto maybe_home = get_environment_variable(HOMEVARNAME);
+            if (!maybe_home.has_value() || maybe_home.get()->empty())
+            {
+                return msg::format(msgUnableToReadEnvironmentVariable, msg::env_var = HOMEVAR);
+            }
 
-            return {std::move(p), ExpectedLeftTag{}};
+            Path p = std::move(*maybe_home.get());
+            if (!p.is_absolute())
+            {
+                return msg::format(msgEnvVarMustBeAbsolutePath, msg::path = p, msg::env_var = HOMEVAR);
+            }
+
+            return p;
         }();
+
         return s_home;
 #undef HOMEVAR
     }
 
 #ifdef _WIN32
-    const ExpectedS<Path>& get_appdata_local() noexcept
+    const ExpectedL<Path>& get_appdata_local() noexcept
     {
-        static ExpectedS<Path> s_home = []() -> ExpectedS<Path> {
+        static ExpectedL<Path> s_home = []() -> ExpectedL<Path> {
             auto maybe_home = get_environment_variable("LOCALAPPDATA");
             if (!maybe_home.has_value() || maybe_home.get()->empty())
             {
@@ -302,26 +308,33 @@ namespace vcpkg
                 maybe_home = get_environment_variable("APPDATA");
                 if (!maybe_home.has_value() || maybe_home.get()->empty())
                 {
-                    return {"unable to read %LOCALAPPDATA% or %APPDATA%", ExpectedRightTag{}};
+                    return msg::format(msgUnableToReadAppDatas);
                 }
 
                 auto p = Path(Path(*maybe_home.get()).parent_path());
                 p /= "Local";
-                if (!p.is_absolute()) return {"%APPDATA% was not an absolute path", ExpectedRightTag{}};
-                return {std::move(p), ExpectedLeftTag{}};
+                if (!p.is_absolute())
+                {
+                    return msg::format(msgEnvVarMustBeAbsolutePath, msg::path = p, msg::env_var = "%APPDATA%");
+                }
+
+                return p;
             }
 
             auto p = Path(*maybe_home.get());
-            if (!p.is_absolute()) return {"%LOCALAPPDATA% was not an absolute path", ExpectedRightTag{}};
+            if (!p.is_absolute())
+            {
+                return msg::format(msgEnvVarMustBeAbsolutePath, msg::path = p, msg::env_var = "%LOCALAPPDATA%");
+            }
 
-            return {std::move(p), ExpectedLeftTag{}};
+            return p;
         }();
         return s_home;
     }
 
-    const ExpectedS<Path>& get_system_root() noexcept
+    const ExpectedL<Path>& get_system_root() noexcept
     {
-        static const ExpectedS<Path> s_system_root = []() -> ExpectedS<Path> {
+        static const ExpectedL<Path> s_system_root = []() -> ExpectedL<Path> {
             auto env = get_environment_variable("SystemRoot");
             if (const auto p = env.get())
             {
@@ -329,40 +342,38 @@ namespace vcpkg
             }
             else
             {
-                return std::string("Expected the SystemRoot environment variable to be always set on Windows.");
+                return msg::format(msgSystemRootMustAlwaysBePresent);
             }
         }();
         return s_system_root;
     }
 
-    const ExpectedS<Path>& get_system32() noexcept
+    const ExpectedL<Path>& get_system32() noexcept
     {
         // This needs to be lowercase or msys-ish tools break. See https://github.com/microsoft/vcpkg-tool/pull/418/
-        static const ExpectedS<Path> s_system32 = get_system_root().map([](const Path& p) { return p / "system32"; });
+        static const ExpectedL<Path> s_system32 = get_system_root().map([](const Path& p) { return p / "system32"; });
         return s_system32;
     }
 #else
-    static const ExpectedS<Path>& get_xdg_cache_home() noexcept
+    static const ExpectedL<Path>& get_xdg_cache_home() noexcept
     {
-        static ExpectedS<Path> s_home = [] {
+        static ExpectedL<Path> s_home = []() -> ExpectedL<Path> {
             auto maybe_home = get_environment_variable("XDG_CACHE_HOME");
             if (auto p = maybe_home.get())
             {
-                return ExpectedS<Path>(Path(*p));
+                return Path(std::move(*p));
             }
-            else
-            {
-                return get_home_dir().map([](Path home) {
-                    home /= ".cache";
-                    return home;
-                });
-            }
+
+            return get_home_dir().map([](Path home) {
+                home /= ".cache";
+                return home;
+            });
         }();
         return s_home;
     }
 #endif
 
-    const ExpectedS<Path>& get_platform_cache_home() noexcept
+    const ExpectedL<Path>& get_platform_cache_home() noexcept
     {
 #ifdef _WIN32
         return get_appdata_local();
@@ -371,13 +382,13 @@ namespace vcpkg
 #endif
     }
 
-    const ExpectedS<Path>& get_user_configuration_home() noexcept
+    const ExpectedL<Path>& get_user_configuration_home() noexcept
     {
 #if defined(_WIN32)
-        static const ExpectedS<Path> result =
+        static const ExpectedL<Path> result =
             get_appdata_local().map([](const Path& appdata_local) { return appdata_local / "vcpkg"; });
 #else
-        static const ExpectedS<Path> result = Path(get_environment_variable("HOME").value_or("/var")) / ".vcpkg";
+        static const ExpectedL<Path> result = Path(get_environment_variable("HOME").value_or("/var")) / ".vcpkg";
 #endif
         return result;
     }

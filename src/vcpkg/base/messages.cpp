@@ -723,6 +723,7 @@ namespace vcpkg
     REGISTER_MESSAGE(EnvInvalidMaxConcurrency);
     REGISTER_MESSAGE(EnvStrFailedToExtract);
     REGISTER_MESSAGE(EnvPlatformNotSupported);
+    REGISTER_MESSAGE(EnvVarMustBeAbsolutePath);
     REGISTER_MESSAGE(ErrorDetectingCompilerInfo);
     REGISTER_MESSAGE(ErrorIndividualPackagesUnsupported);
     REGISTER_MESSAGE(ErrorInvalidClassicModeOption);
@@ -1109,12 +1110,15 @@ namespace vcpkg
     REGISTER_MESSAGE(SuggestUpdateVcpkg);
     REGISTER_MESSAGE(SupportedPort);
     REGISTER_MESSAGE(SystemApiErrorMessage);
+    REGISTER_MESSAGE(SystemRootMustAlwaysBePresent);
     REGISTER_MESSAGE(ToolFetchFailed);
     REGISTER_MESSAGE(ToolInWin10);
     REGISTER_MESSAGE(ToolOfVersionXNotFound);
     REGISTER_MESSAGE(ToRemovePackages);
     REGISTER_MESSAGE(TotalInstallTime);
     REGISTER_MESSAGE(TwoFeatureFlagsSpecified);
+    REGISTER_MESSAGE(UnableToReadAppDatas);
+    REGISTER_MESSAGE(UnableToReadEnvironmentVariable);
     REGISTER_MESSAGE(UndeterminedToolChainForTriplet);
     REGISTER_MESSAGE(UnexpectedCharExpectedCloseBrace);
     REGISTER_MESSAGE(UnexpectedCharExpectedColon);
@@ -1197,6 +1201,8 @@ namespace vcpkg
     REGISTER_MESSAGE(VcpkgRootRequired);
     REGISTER_MESSAGE(VcpkgRootsDir);
     REGISTER_MESSAGE(VcpkgSendMetricsButDisabled);
+    REGISTER_MESSAGE(VcvarsRunFailed);
+    REGISTER_MESSAGE(VcvarsRunFailedExitCode);
     REGISTER_MESSAGE(VersionCommandHeader);
     REGISTER_MESSAGE(VersionConflictXML);
     REGISTER_MESSAGE(VersionConstraintPortVersionMustBePositiveInteger);

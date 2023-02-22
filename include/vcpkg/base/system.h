@@ -13,18 +13,18 @@ namespace vcpkg
 
     std::string get_environment_variables();
 
-    const ExpectedS<Path>& get_home_dir() noexcept;
+    const ExpectedL<Path>& get_home_dir() noexcept;
 
-    const ExpectedS<Path>& get_platform_cache_home() noexcept;
+    const ExpectedL<Path>& get_platform_cache_home() noexcept;
 
-    const ExpectedS<Path>& get_user_configuration_home() noexcept;
+    const ExpectedL<Path>& get_user_configuration_home() noexcept;
 
 #ifdef _WIN32
-    const ExpectedS<Path>& get_appdata_local() noexcept;
+    const ExpectedL<Path>& get_appdata_local() noexcept;
 
-    const ExpectedS<Path>& get_system_root() noexcept;
+    const ExpectedL<Path>& get_system_root() noexcept;
 
-    const ExpectedS<Path>& get_system32() noexcept;
+    const ExpectedL<Path>& get_system32() noexcept;
 
     std::wstring get_username();
 

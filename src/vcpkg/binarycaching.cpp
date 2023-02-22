@@ -1571,40 +1571,43 @@ namespace
 {
     const ExpectedS<Path>& default_cache_path()
     {
-        static auto cachepath = get_platform_cache_home().then([](Path p) -> ExpectedS<Path> {
-            auto maybe_cachepath = get_environment_variable("VCPKG_DEFAULT_BINARY_CACHE");
-            if (auto p_str = maybe_cachepath.get())
-            {
-                get_global_metrics_collector().track_define(DefineMetric::VcpkgDefaultBinaryCache);
-                Path path = *p_str;
-                path.make_preferred();
-                if (!get_real_filesystem().is_directory(path))
-                {
-                    return {"Value of environment variable VCPKG_DEFAULT_BINARY_CACHE is not a directory: " +
-                                path.native(),
-                            expected_right_tag};
-                }
+        static auto cachepath =
+            get_platform_cache_home()
+                .map_error([](const LocalizedString& ls) { return ls.data(); })
+                .then([](Path p) -> ExpectedS<Path> {
+                    auto maybe_cachepath = get_environment_variable("VCPKG_DEFAULT_BINARY_CACHE");
+                    if (auto p_str = maybe_cachepath.get())
+                    {
+                        get_global_metrics_collector().track_define(DefineMetric::VcpkgDefaultBinaryCache);
+                        Path path = *p_str;
+                        path.make_preferred();
+                        if (!get_real_filesystem().is_directory(path))
+                        {
+                            return {"Value of environment variable VCPKG_DEFAULT_BINARY_CACHE is not a directory: " +
+                                        path.native(),
+                                    expected_right_tag};
+                        }
 
-                if (!path.is_absolute())
-                {
-                    return {"Value of environment variable VCPKG_DEFAULT_BINARY_CACHE is not absolute: " +
-                                path.native(),
-                            expected_right_tag};
-                }
+                        if (!path.is_absolute())
+                        {
+                            return {"Value of environment variable VCPKG_DEFAULT_BINARY_CACHE is not absolute: " +
+                                        path.native(),
+                                    expected_right_tag};
+                        }
 
-                return {std::move(path), expected_left_tag};
-            }
-            p /= "vcpkg/archives";
-            p.make_preferred();
-            if (p.is_absolute())
-            {
-                return {std::move(p), expected_left_tag};
-            }
-            else
-            {
-                return {"default path was not absolute: " + p.native(), expected_right_tag};
-            }
-        });
+                        return {std::move(path), expected_left_tag};
+                    }
+                    p /= "vcpkg/archives";
+                    p.make_preferred();
+                    if (p.is_absolute())
+                    {
+                        return {std::move(p), expected_left_tag};
+                    }
+                    else
+                    {
+                        return {"default path was not absolute: " + p.native(), expected_right_tag};
+                    }
+                });
         return cachepath;
     }
 
