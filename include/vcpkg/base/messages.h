@@ -657,6 +657,11 @@ namespace vcpkg
                     (msg::path),
                     "",
                     "baseline file at {path} was invalid (no \"default\" field)");
+    DECLARE_MESSAGE(BaselineGitShowFailed,
+                    (msg::commit_sha),
+                    "",
+                    "while checking out baseline from commit '{commit_sha}', failed to `git show` "
+                    "versions/baseline.json. This may be fixed by fetching commits with `git fetch`.");
     DECLARE_MESSAGE(BaselineMissingDefault,
                     (msg::commit_sha, msg::url),
                     "",
@@ -1087,10 +1092,11 @@ namespace vcpkg
                     "{actual} and {expected} are integers, curl is the name of a program, see curl.se",
                     "curl returned a different number of response codes than were expected for the request ({actual} "
                     "vs expected {expected}).");
-    DECLARE_MESSAGE(CurrentCommitBaseline,
-                    (msg::value),
-                    "{value} is a 40 hexadecimal character commit sha",
-                    "You can use the current commit as a baseline, which is:\n\t\"builtin-baseline\": \"{value}\"");
+    DECLARE_MESSAGE(
+        CurrentCommitBaseline,
+        (msg::commit_sha),
+        "",
+        "You can use the current commit as a baseline, which is:\n\t\"builtin-baseline\": \"{commit_sha}\"");
     DECLARE_MESSAGE(DateTableHeader, (), "", "Date");
     DECLARE_MESSAGE(DefaultBrowserLaunched, (msg::url), "", "Default browser launched to {url}.");
     DECLARE_MESSAGE(DefaultFlag, (msg::option), "", "Defaulting to --{option} being on.");
@@ -1191,6 +1197,10 @@ namespace vcpkg
                     "{env_var} is {value}, must be > 0");
     DECLARE_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:");
     DECLARE_MESSAGE(EnvPlatformNotSupported, (), "", "Build environment commands are not supported on this platform");
+    DECLARE_MESSAGE(EnvVarMustBeAbsolutePath,
+                    (msg::path, msg::env_var),
+                    "",
+                    "{env_var} ({path}) was not an absolute path");
     DECLARE_MESSAGE(ErrorDetectingCompilerInfo,
                     (msg::path),
                     "",
@@ -1471,6 +1481,14 @@ namespace vcpkg
     DECLARE_MESSAGE(GeneratingRepo, (msg::path), "", "Generating repository {path}...");
     DECLARE_MESSAGE(GetParseFailureInfo, (), "", "Use '--debug' to get more information about the parse failures.");
     DECLARE_MESSAGE(GitCommandFailed, (msg::command_line), "", "failed to execute: {command_line}");
+    DECLARE_MESSAGE(GitFailedToFetch,
+                    (msg::value, msg::url),
+                    "{value} is a git ref like 'origin/main'",
+                    "failed to fetch ref {value} from repository {url}");
+    DECLARE_MESSAGE(GitFailedToInitializeLocalRepository,
+                    (msg::path),
+                    "",
+                    "failed to initialize local repository {path}");
     DECLARE_MESSAGE(GitRegistryMustHaveBaseline,
                     (msg::package_name, msg::value),
                     "{value} is a commit sha",
@@ -1484,7 +1502,10 @@ namespace vcpkg
                     (msg::value),
                     "{value} is a single character indicating file status, for example: A, U, M, D",
                     "unknown file status: {value}");
-    DECLARE_MESSAGE(GitUnexpectedCommandOutput, (), "", "unexpected git output");
+    DECLARE_MESSAGE(GitUnexpectedCommandOutputCmd,
+                    (msg::command_line),
+                    "",
+                    "git produced unexpected output when running {command_line}");
     DECLARE_MESSAGE(
         HashFileFailureToRead,
         (msg::path),
@@ -2577,6 +2598,10 @@ namespace vcpkg
                     (msg::system_api, msg::exit_code, msg::error_msg),
                     "",
                     "calling {system_api} failed with {exit_code} ({error_msg})");
+    DECLARE_MESSAGE(SystemRootMustAlwaysBePresent,
+                    (),
+                    "",
+                    "Expected the SystemRoot environment variable to be always set on Windows.");
     DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
     DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
     DECLARE_MESSAGE(ToolOfVersionXNotFound,
@@ -2600,6 +2625,8 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is a feature flag.",
                     "Both '{value}' and -'{value}' were specified as feature flags.");
+    DECLARE_MESSAGE(UnableToReadAppDatas, (), "", "both %LOCALAPPDATA% and %APPDATA% were unreadable");
+    DECLARE_MESSAGE(UnableToReadEnvironmentVariable, (msg::env_var), "", "unable to read {env_var}");
     DECLARE_MESSAGE(UndeterminedToolChainForTriplet,
                     (msg::triplet, msg::system_name),
                     "",
@@ -2855,6 +2882,11 @@ namespace vcpkg
     DECLARE_MESSAGE(VcpkgRootRequired, (), "", "Setting VCPKG_ROOT is required for standalone bootstrap.");
     DECLARE_MESSAGE(VcpkgRootsDir, (msg::env_var), "", "Specify the vcpkg root directory.\n(default: '{env_var}')");
     DECLARE_MESSAGE(VcpkgSendMetricsButDisabled, (), "", "passed --sendmetrics, but metrics are disabled.");
+    DECLARE_MESSAGE(VcvarsRunFailed, (), "", "failed to run vcvarsall.bat to get a Visual Studio environment");
+    DECLARE_MESSAGE(VcvarsRunFailedExitCode,
+                    (msg::exit_code),
+                    "",
+                    "while trying to get a Visual Studio environment, vcvarsall.bat returned {exit_code}");
     DECLARE_MESSAGE(VersionCommandHeader,
                     (msg::version),
                     "",
@@ -2936,6 +2968,12 @@ namespace vcpkg
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
     DECLARE_MESSAGE(WarnOnParseConfig, (msg::path), "", "Found the following warnings in configuration {path}:");
+    DECLARE_MESSAGE(WhileCheckingOutBaseline, (msg::commit_sha), "", "while checking out baseline {commit_sha}");
+    DECLARE_MESSAGE(WhileCheckingOutPortTreeIsh,
+                    (msg::package_name, msg::commit_sha),
+                    "",
+                    "while checking out port {package_name} with git tree {commit_sha}");
+    DECLARE_MESSAGE(WhileGettingLocalTreeIshObjectsForPorts, (), "", "while getting local treeish objects for ports");
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}");

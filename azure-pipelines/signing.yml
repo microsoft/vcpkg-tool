@@ -47,6 +47,7 @@ jobs:
     # on the value; AzureDevOps appears to repeat evaluation of variables such that crossing UTC's day start
     # would make subsequent pipeline stages use a different day producing a broken build.
     # Note that pipeline.startTime seems to refer to the start of the *job*, not the overall pipeline run.
+    timeoutInMinutes: 120
     variables:
     - ${{ if eq(parameters.VcpkgBaseVersionOverride, 'default') }}:
       - name: VCPKG_INITIAL_BASE_VERSION
@@ -264,6 +265,7 @@ jobs:
         publishLocation: 'Container'
   - job: windows_and_sign
     displayName: 'Build Windows binaries and Sign'
+    timeoutInMinutes: 120
     dependsOn:
       - arch_independent
       - macos_build

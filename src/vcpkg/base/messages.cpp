@@ -606,6 +606,7 @@ namespace vcpkg
     REGISTER_MESSAGE(BaselineConflict);
     REGISTER_MESSAGE(BaselineFileNoDefaultField);
     REGISTER_MESSAGE(BaselineFileNoDefaultFieldPath);
+    REGISTER_MESSAGE(BaselineGitShowFailed);
     REGISTER_MESSAGE(BaselineMissingDefault);
     REGISTER_MESSAGE(AvailableArchitectureTriplets);
     REGISTER_MESSAGE(AvailableHelpTopics);
@@ -725,6 +726,7 @@ namespace vcpkg
     REGISTER_MESSAGE(EnvInvalidMaxConcurrency);
     REGISTER_MESSAGE(EnvStrFailedToExtract);
     REGISTER_MESSAGE(EnvPlatformNotSupported);
+    REGISTER_MESSAGE(EnvVarMustBeAbsolutePath);
     REGISTER_MESSAGE(ErrorDetectingCompilerInfo);
     REGISTER_MESSAGE(ErrorIndividualPackagesUnsupported);
     REGISTER_MESSAGE(ErrorInvalidClassicModeOption);
@@ -835,12 +837,14 @@ namespace vcpkg
     REGISTER_MESSAGE(GeneratingRepo);
     REGISTER_MESSAGE(GetParseFailureInfo);
     REGISTER_MESSAGE(GitCommandFailed);
+    REGISTER_MESSAGE(GitFailedToFetch);
+    REGISTER_MESSAGE(GitFailedToInitializeLocalRepository);
     REGISTER_MESSAGE(GitRegistryMustHaveBaseline);
     REGISTER_MESSAGE(GitStatusOutputExpectedFileName);
     REGISTER_MESSAGE(GitStatusOutputExpectedNewLine);
     REGISTER_MESSAGE(GitStatusOutputExpectedRenameOrNewline);
     REGISTER_MESSAGE(GitStatusUnknownFileStatus);
-    REGISTER_MESSAGE(GitUnexpectedCommandOutput);
+    REGISTER_MESSAGE(GitUnexpectedCommandOutputCmd);
     REGISTER_MESSAGE(HashFileFailureToRead);
     REGISTER_MESSAGE(HeaderOnlyUsage);
     REGISTER_MESSAGE(HelpAssetCaching);
@@ -1114,12 +1118,15 @@ namespace vcpkg
     REGISTER_MESSAGE(SuggestUpdateVcpkg);
     REGISTER_MESSAGE(SupportedPort);
     REGISTER_MESSAGE(SystemApiErrorMessage);
+    REGISTER_MESSAGE(SystemRootMustAlwaysBePresent);
     REGISTER_MESSAGE(ToolFetchFailed);
     REGISTER_MESSAGE(ToolInWin10);
     REGISTER_MESSAGE(ToolOfVersionXNotFound);
     REGISTER_MESSAGE(ToRemovePackages);
     REGISTER_MESSAGE(TotalInstallTime);
     REGISTER_MESSAGE(TwoFeatureFlagsSpecified);
+    REGISTER_MESSAGE(UnableToReadAppDatas);
+    REGISTER_MESSAGE(UnableToReadEnvironmentVariable);
     REGISTER_MESSAGE(UndeterminedToolChainForTriplet);
     REGISTER_MESSAGE(UnexpectedCharExpectedCloseBrace);
     REGISTER_MESSAGE(UnexpectedCharExpectedColon);
@@ -1202,6 +1209,8 @@ namespace vcpkg
     REGISTER_MESSAGE(VcpkgRootRequired);
     REGISTER_MESSAGE(VcpkgRootsDir);
     REGISTER_MESSAGE(VcpkgSendMetricsButDisabled);
+    REGISTER_MESSAGE(VcvarsRunFailed);
+    REGISTER_MESSAGE(VcvarsRunFailedExitCode);
     REGISTER_MESSAGE(VersionCommandHeader);
     REGISTER_MESSAGE(VersionConflictXML);
     REGISTER_MESSAGE(VersionConstraintPortVersionMustBePositiveInteger);
@@ -1226,6 +1235,9 @@ namespace vcpkg
     REGISTER_MESSAGE(WarningMessageMustUsePrintWarning);
     REGISTER_MESSAGE(WarningsTreatedAsErrors);
     REGISTER_MESSAGE(WarnOnParseConfig);
+    REGISTER_MESSAGE(WhileCheckingOutBaseline);
+    REGISTER_MESSAGE(WhileCheckingOutPortTreeIsh);
+    REGISTER_MESSAGE(WhileGettingLocalTreeIshObjectsForPorts);
     REGISTER_MESSAGE(WhileLookingForSpec);
     REGISTER_MESSAGE(WindowsOnlyCommand);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
