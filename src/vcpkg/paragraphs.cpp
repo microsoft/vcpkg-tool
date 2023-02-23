@@ -359,10 +359,10 @@ namespace vcpkg::Paragraphs
         std::string error;
         if (auto val = res.get())
         {
-            if (val->first.is_object())
+            if (val->value.is_object())
             {
                 return SourceControlFile::parse_port_manifest_object(
-                    origin, val->first.object(VCPKG_LINE_INFO), warning_sink);
+                    origin, val->value.object(VCPKG_LINE_INFO), warning_sink);
             }
 
             error = "Manifest files must have a top-level object";

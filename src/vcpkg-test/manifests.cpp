@@ -20,7 +20,7 @@ static Json::Object parse_json_object(StringView sv)
     // we're not testing json parsing here, so just fail on errors
     if (auto r = json.get())
     {
-        return std::move(r->first.object(VCPKG_LINE_INFO));
+        return std::move(r->value.object(VCPKG_LINE_INFO));
     }
     else
     {
@@ -797,7 +797,7 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
     auto maybe_as_json = Json::parse(raw);
     REQUIRE(maybe_as_json.has_value());
     auto as_json = *maybe_as_json.get();
-    check_json_eq(Json::Value::object(serialize_manifest(pgh)), as_json.first);
+    check_json_eq(Json::Value::object(serialize_manifest(pgh)), as_json.value);
 
     REQUIRE(pgh.core_paragraph->builtin_baseline == "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
     REQUIRE(pgh.core_paragraph->dependencies.size() == 3);
@@ -809,11 +809,9 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
     REQUIRE(pgh.core_paragraph->dependencies[2].constraint ==
             DependencyConstraint{VersionConstraintKind::Minimum, "2018-09-01", 0});
 
-    auto maybe_config = Json::parse(raw_config, "<test config>");
-    REQUIRE(maybe_config.has_value());
-    auto config = *maybe_config.get();
-    REQUIRE(config.first.is_object());
-    auto config_obj = config.first.object(VCPKG_LINE_INFO);
+    auto config = Json::parse(raw_config, "<test config>").value_or_exit(VCPKG_LINE_INFO).value;
+    REQUIRE(config.is_object());
+    auto config_obj = config.object(VCPKG_LINE_INFO);
     REQUIRE(pgh.core_paragraph->vcpkg_configuration.has_value());
     auto parsed_config_obj = *pgh.core_paragraph->vcpkg_configuration.get();
     REQUIRE(Json::stringify(parsed_config_obj) == Json::stringify(config_obj));

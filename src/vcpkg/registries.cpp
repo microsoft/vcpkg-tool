@@ -902,12 +902,12 @@ namespace
                                    port_name,
                                    maybe_versions_json.error()->to_string());
         }
-        if (!maybe_versions_json.get()->first.is_object())
+        if (!maybe_versions_json.get()->value.is_object())
         {
             return Strings::format("Error: versions file for `%s` does not have a top level object.", port_name);
         }
 
-        const auto& versions_object = maybe_versions_json.get()->first.object(VCPKG_LINE_INFO);
+        const auto& versions_object = maybe_versions_json.get()->value.object(VCPKG_LINE_INFO);
         auto maybe_versions_array = versions_object.get("versions");
         if (!maybe_versions_array || !maybe_versions_array->is_array())
         {
@@ -941,14 +941,14 @@ namespace
 
         auto& value = *maybe_value.get();
 
-        if (!value.first.is_object())
+        if (!value.value.is_object())
         {
             return Strings::concat("Error: baseline file ", origin, " does not have a top-level object");
         }
 
         auto real_baseline = baseline.size() == 0 ? "default" : baseline;
 
-        const auto& obj = value.first.object(VCPKG_LINE_INFO);
+        const auto& obj = value.value.object(VCPKG_LINE_INFO);
         auto baseline_value = obj.get(real_baseline);
         if (!baseline_value)
         {

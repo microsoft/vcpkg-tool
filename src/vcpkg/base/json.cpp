@@ -1001,8 +1001,7 @@ namespace vcpkg::Json
                 }
             }
 
-            static ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse(StringView json,
-                                                                                             StringView origin)
+            static ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse(StringView json, StringView origin)
             {
                 StatsTimer t(g_json_parsing_stats);
 
@@ -1022,7 +1021,7 @@ namespace vcpkg::Json
                 }
                 else
                 {
-                    return std::make_pair(std::move(val), parser.style());
+                    return ParsedJson{std::move(val), parser.style()};
                 }
             }
 
@@ -1115,9 +1114,9 @@ namespace vcpkg::Json
         return true;
     }
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse_file(const Filesystem& fs,
-                                                                                   const Path& json_file,
-                                                                                   std::error_code& ec)
+    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse_file(const Filesystem& fs,
+                                                                  const Path& json_file,
+                                                                  std::error_code& ec)
     {
         auto res = fs.read_contents(json_file, ec);
         if (ec)
@@ -1128,7 +1127,7 @@ namespace vcpkg::Json
         return parse(res, json_file);
     }
 
-    std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo li, const Filesystem& fs, const Path& json_file)
+    ParsedJson parse_file(vcpkg::LineInfo li, const Filesystem& fs, const Path& json_file)
     {
         std::error_code ec;
         auto ret = parse_file(fs, json_file, ec);
@@ -1147,7 +1146,7 @@ namespace vcpkg::Json
         return ret.value_or_exit(li);
     }
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse(StringView json, StringView origin)
+    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse(StringView json, StringView origin)
     {
         return Parser::parse(json, origin);
     }
@@ -1157,10 +1156,10 @@ namespace vcpkg::Json
         auto maybeValueIsh = parse(text, origin);
         if (auto asValueIsh = maybeValueIsh.get())
         {
-            auto& asValue = asValueIsh->first;
+            auto& asValue = asValueIsh->value;
             if (asValue.is_object())
             {
-                return std::move(asValue.object(VCPKG_LINE_INFO));
+                return std::move(asValue).object(VCPKG_LINE_INFO);
             }
 
             return msg::format(msgJsonErrorMustBeAnObject, msg::path = origin).extract_data();

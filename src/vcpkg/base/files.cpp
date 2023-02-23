@@ -1520,6 +1520,18 @@ namespace vcpkg
         return maybe_contents;
     }
 
+    ExpectedL<FileContents> Filesystem::try_read_contents(const Path& file_path) const
+    {
+        std::error_code ec;
+        auto maybe_contents = this->read_contents(file_path, ec);
+        if (ec)
+        {
+            return format_filesystem_call_error(ec, __func__, {file_path});
+        }
+
+        return FileContents{std::move(maybe_contents), file_path.native()};
+    }
+
     Path Filesystem::find_file_recursively_up(const Path& starting_dir, const Path& filename, LineInfo li) const
     {
         std::error_code ec;

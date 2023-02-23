@@ -806,7 +806,7 @@ namespace vcpkg
         auto maybe_vcpkg_recursive_data = get_environment_variable(RECURSIVE_DATA_ENV);
         if (auto vcpkg_recursive_data = maybe_vcpkg_recursive_data.get())
         {
-            auto rec_doc = Json::parse(*vcpkg_recursive_data).value_or_exit(VCPKG_LINE_INFO).first;
+            auto rec_doc = Json::parse(*vcpkg_recursive_data).value_or_exit(VCPKG_LINE_INFO).value;
             const auto& obj = rec_doc.object(VCPKG_LINE_INFO);
 
             if (auto entry = obj.get(VCPKG_ROOT_ARG_NAME))

@@ -227,7 +227,7 @@ namespace vcpkg::Commands
         Path path_to_artifact_messages = args.command_arguments[1];
 
         // parse file to get json obj
-        auto artifact_messages = Json::parse_file(VCPKG_LINE_INFO, fs, path_to_artifact_messages).first;
+        auto artifact_messages = Json::parse_file(VCPKG_LINE_INFO, fs, path_to_artifact_messages).value;
         auto artifact_obj = artifact_messages.object(VCPKG_LINE_INFO);
 
         for (auto&& it : artifact_obj)
