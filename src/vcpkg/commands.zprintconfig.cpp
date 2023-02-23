@@ -11,7 +11,7 @@
 namespace vcpkg::Commands::Z_PrintConfig
 {
     static const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("z-print-config"),
+        [] { return create_example_string("z-print-config"); },
         0,
         0,
         {{}, {}},

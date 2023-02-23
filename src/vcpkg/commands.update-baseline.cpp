@@ -17,7 +17,7 @@ namespace vcpkg::Commands
     };
 
     static const CommandStructure COMMAND_STRUCTURE{
-        create_example_string("x-update-baseline"),
+        [] { return create_example_string("x-update-baseline"); },
         0,
         0,
         {switches},

@@ -12,7 +12,7 @@
 namespace vcpkg::Commands
 {
     static const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("bootstrap-standalone"),
+        [] { return create_example_string("bootstrap-standalone"); },
         0,
         0,
         {{}, {}},

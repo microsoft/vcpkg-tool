@@ -44,7 +44,7 @@ namespace vcpkg::Commands::CIVerifyVersions
     };
 
     const CommandStructure COMMAND_STRUCTURE{
-        create_example_string(R"###(x-ci-verify-versions)###"),
+        [] { return create_example_string("x-ci-verify-versions"); },
         0,
         SIZE_MAX,
         {{VERIFY_VERSIONS_SWITCHES}, {VERIFY_VERSIONS_SETTINGS}, {}},

@@ -445,6 +445,10 @@ namespace vcpkg
                     (msg::command_line),
                     "",
                     "The first argument to '{command_line}' must be 'artifact' or 'port'.");
+    DECLARE_MESSAGE(AddHelp,
+                    (),
+                    "",
+                    "Adds the indicated port or artifact to the manifest associated with the current directory.");
     DECLARE_MESSAGE(AddingCompletionEntry, (msg::path), "", "Adding vcpkg completion entry to {path}.");
     DECLARE_MESSAGE(AdditionalPackagesToExport,
                     (),
@@ -484,14 +488,14 @@ namespace vcpkg
                     "ignoring --{option} since a port name argument was provided");
     DECLARE_MESSAGE(AddVersionLoadPortFailed, (msg::package_name), "", "can't load port {package_name}");
     DECLARE_MESSAGE(AddVersionNewFile, (), "", "(new file)");
-    DECLARE_MESSAGE(AddVersionNewShaIs, (msg::value), "{value} is a 40-digit hexadecimal SHA", "new SHA: {value}");
+    DECLARE_MESSAGE(AddVersionNewShaIs, (msg::commit_sha), "", "new SHA: {commit_sha}");
     DECLARE_MESSAGE(AddVersionNoFilesUpdated, (), "", "No files were updated");
     DECLARE_MESSAGE(AddVersionNoFilesUpdatedForPort,
                     (msg::package_name),
                     "",
                     "No files were updated for {package_name}");
     DECLARE_MESSAGE(AddVersionNoGitSha, (msg::package_name), "", "can't obtain SHA for port {package_name}");
-    DECLARE_MESSAGE(AddVersionOldShaIs, (msg::value), "{value} is a 40-digit hexadecimal SHA", "old SHA: {value}");
+    DECLARE_MESSAGE(AddVersionOldShaIs, (msg::commit_sha), "", "old SHA: {commit_sha}");
     DECLARE_MESSAGE(AddVersionOverwriteOptionSuggestion,
                     (msg::option),
                     "The -- before {option} must be preserved as they're part of the help message for the user.",
@@ -790,6 +794,11 @@ namespace vcpkg
                     (),
                     "",
                     "The following files were built for an incorrect architecture:");
+    DECLARE_MESSAGE(
+        CacheHelp,
+        (),
+        "",
+        "The argument should be a substring to search for, or no argument to display all cached libraries.");
     DECLARE_MESSAGE(ChecksFailedCheck, (), "", "vcpkg has crashed; no additional details are available.");
     DECLARE_MESSAGE(ChecksUnreachableCode, (), "", "unreachable code was reached");
     DECLARE_MESSAGE(ChecksUpdateVcpkg, (), "", "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.");
@@ -1013,6 +1022,7 @@ namespace vcpkg
                     "command:\n"
                     "{command_line}\n"
                     "failed with the following results:");
+    DECLARE_MESSAGE(Commands, (), "", "Commands:");
     DECLARE_MESSAGE(CommunityTriplets, (), "", "VCPKG community triplets:");
     DECLARE_MESSAGE(ComparingUtf8Decoders,
                     (),
@@ -1295,6 +1305,7 @@ namespace vcpkg
                     "while fetching baseline `\"{value}\"` from repo {package_name}:");
     DECLARE_MESSAGE(ErrorWhileParsing, (msg::path), "", "Errors occurred while parsing {path}.");
     DECLARE_MESSAGE(ErrorWhileWriting, (msg::path), "", "Error occured while writing {path}");
+    DECLARE_MESSAGE(Example, (), "", "example:");
     DECLARE_MESSAGE(ExceededRecursionDepth, (), "", "Recursion depth exceeded.");
     DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
     DECLARE_MESSAGE(ExcludedPackages, (), "", "The following packages are excluded:");
@@ -1436,6 +1447,11 @@ namespace vcpkg
         "followed by a list of found files.",
         "There should be no absolute paths, such as the following, in an installed package:");
     DECLARE_MESSAGE(FilesContainAbsolutePath2, (), "", "Absolute paths were found in the following files:");
+    DECLARE_MESSAGE(FindHelp,
+                    (),
+                    "'artifact' and 'port' are what the user must literally type.",
+                    "Searches for the indicated artifact or port. With no parameter after 'artifact' or 'port', "
+                    "displays everything.");
     DECLARE_MESSAGE(FieldKindDidNotHaveExpectedValue,
                     (msg::expected, msg::actual),
                     "{expected} is a list of literal kinds the user must type, separated by commas, {actual} is what "
@@ -1903,6 +1919,29 @@ namespace vcpkg
                     (msg::command_line),
                     "",
                     "You may be able to install this tool via your system package manager ({command_line}).");
+    DECLARE_MESSAGE(IntegrateBashHelp,
+                    (),
+                    "'bash' is a terminal program which should be unlocalized.",
+                    "Enable bash tab-completion.");
+    DECLARE_MESSAGE(IntegrateFishHelp,
+                    (),
+                    "'fish' is a terminal program which should be unlocalized.",
+                    "Enable fish tab-completion.");
+    DECLARE_MESSAGE(IntegrateInstallHelpLinux, (), "", "Make installed packages available user-wide.");
+    DECLARE_MESSAGE(IntegrateInstallHelpWindows,
+                    (),
+                    "",
+                    "Make installed packages available user-wide. Requires admin privileges on first use.");
+    DECLARE_MESSAGE(IntegratePowerShellHelp, (), "", "Enable PowerShell tab-completion.");
+    DECLARE_MESSAGE(IntegrateProjectHelp,
+                    (),
+                    "",
+                    "Generate a referencing NuGet package for individual VS project use.");
+    DECLARE_MESSAGE(IntegrateRemoveHelp, (), "", "Remove user-wide integration.");
+    DECLARE_MESSAGE(IntegrateZshHelp,
+                    (),
+                    "'zsh' is a terminal program which should be unlocalized.",
+                    "Enable zsh tab-completion.");
     DECLARE_MESSAGE(IntegrationFailed, (), "", "Integration was not applied.");
     DECLARE_MESSAGE(InternalCICommand,
                     (),
@@ -2113,6 +2152,11 @@ namespace vcpkg
     DECLARE_MESSAGE(LinkageDynamicRelease, (), "", "Dynamic Release (/MD)");
     DECLARE_MESSAGE(LinkageStaticDebug, (), "", "Static Debug (/MTd)");
     DECLARE_MESSAGE(LinkageStaticRelease, (), "", "Static Release (/MT)");
+    DECLARE_MESSAGE(
+        ListHelp,
+        (),
+        "",
+        "The argument should be a substring to search for, or no argument to display all installed libraries.");
     DECLARE_MESSAGE(ListOfValidFieldsForControlFiles,
                     (),
                     "",
@@ -2249,6 +2293,7 @@ namespace vcpkg
                     (),
                     "",
                     "unexpected arguments: binary config 'nugettimeout' expects a single positive integer argument");
+    DECLARE_MESSAGE(OptionalCommand, (), "", "optional command");
     DECLARE_MESSAGE(OptionMustBeInteger, (msg::option), "", "Value of --{option} must be an integer.");
     DECLARE_MESSAGE(OptionRequired, (msg::option), "", "--{option} option is required.");
     DECLARE_MESSAGE(OptionRequiresOption,
@@ -2260,6 +2305,7 @@ namespace vcpkg
     DECLARE_MESSAGE(OverlayTriplets, (msg::path), "", "Overlay triplets from {path} :");
     DECLARE_MESSAGE(OverwritingFile, (msg::path), "", "File {path} was already present and will be overwritten");
     DECLARE_MESSAGE(PackageAlreadyRemoved, (msg::spec), "", "unable to remove {spec}: already removed");
+    DECLARE_MESSAGE(PackageInfoHelp, (), "", "Display detailed information on packages.");
     DECLARE_MESSAGE(PackageFailedtWhileExtracting,
                     (msg::value, msg::path),
                     "'{value}' is either a tool name or a package name.",
@@ -2512,6 +2558,8 @@ namespace vcpkg
                     "",
                     "the baseline does not contain an entry for port {package_name}");
     DECLARE_MESSAGE(PortsAdded, (msg::count), "", "The following {count} ports were added:");
+    DECLARE_MESSAGE(PortsDiffHelp, (), "", "The argument should be a branch/tag/hash to checkout.");
+    DECLARE_MESSAGE(PortDoesNotExist, (msg::package_name), "", "{package_name} does not exist");
     DECLARE_MESSAGE(PortsNoDiff, (), "", "There were no changes in the ports between the two commits.");
     DECLARE_MESSAGE(PortsRemoved, (msg::count), "", "The following {count} ports were removed:");
     DECLARE_MESSAGE(PortsUpdated, (msg::count), "", "\nThe following {count} ports were updated:");
@@ -2537,6 +2585,7 @@ namespace vcpkg
                     "",
                     "Pushing {vendor} to \"{path}\" failed. Use --debug for more information.");
     DECLARE_MESSAGE(RegistryCreated, (msg::path), "", "Successfully created registry at {path}");
+    DECLARE_MESSAGE(RegeneratesArtifactRegistry, (), "", "Regenerates an artifact registry.");
     DECLARE_MESSAGE(RemoveDependencies,
                     (),
                     "",
@@ -2546,6 +2595,11 @@ namespace vcpkg
                     "",
                     "{spec} is not installed, but {package_name} is installed for {triplet}. Did you mean "
                     "{package_name}:{triplet}?");
+    DECLARE_MESSAGE(ResponseFileCode,
+                    (),
+                    "Explains to the user that they can use response files on the command line, 'response_file' must "
+                    "have no spaces and be a legal file name.",
+                    "@response_file");
     DECLARE_MESSAGE(RestoredPackage, (msg::path), "", "Restored package from \"{path}\"");
     DECLARE_MESSAGE(
         RestoredPackagesFromVendor,
@@ -2557,6 +2611,10 @@ namespace vcpkg
                     (),
                     "",
                     "expected arguments: asset config 'x-script' requires exactly the exec template as an argument");
+    DECLARE_MESSAGE(SearchHelp,
+                    (),
+                    "",
+                    "The argument should be a substring to search for, or no argument to display all libraries.");
     DECLARE_MESSAGE(SecretBanner, (), "", "*** SECRET ***");
     DECLARE_MESSAGE(SerializedBinParagraphHeader, (), "", "\nSerialized Binary Paragraph");
     DECLARE_MESSAGE(SettingEnvVar,

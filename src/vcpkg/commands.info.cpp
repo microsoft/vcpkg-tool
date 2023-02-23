@@ -24,8 +24,11 @@ namespace vcpkg::Commands::Info
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
-        Strings::format("Display detailed information on packages.\n%s",
-                        create_example_string("x-package-info zlib openssl:x64-windows")),
+        [] {
+            return msg::format(msgPackageInfoHelp)
+                .append_raw('\n')
+                .append(create_example_string("x-package-info zlib openssl:x64-windows"));
+        },
         1,
         SIZE_MAX,
         {INFO_SWITCHES, {}},

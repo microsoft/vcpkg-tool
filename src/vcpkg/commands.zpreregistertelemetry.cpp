@@ -31,7 +31,7 @@ namespace
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("z-preregister-telemetry"),
+        [] { return create_example_string("z-preregister-telemetry"); },
         0,
         0,
         {},

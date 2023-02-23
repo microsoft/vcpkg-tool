@@ -508,6 +508,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ADateVersionString);
     REGISTER_MESSAGE(AddArtifactOnlyOne);
     REGISTER_MESSAGE(AddCommandFirstArg);
+    REGISTER_MESSAGE(AddHelp);
     REGISTER_MESSAGE(AddFirstArgument);
     REGISTER_MESSAGE(AddingCompletionEntry);
     REGISTER_MESSAGE(APlatformExpression);
@@ -637,6 +638,7 @@ namespace vcpkg
     REGISTER_MESSAGE(BuildTroubleshootingMessage3);
     REGISTER_MESSAGE(BuildTroubleshootingMessage4);
     REGISTER_MESSAGE(BuiltInTriplets);
+    REGISTER_MESSAGE(CacheHelp);
     REGISTER_MESSAGE(ChecksFailedCheck);
     REGISTER_MESSAGE(ChecksUnreachableCode);
     REGISTER_MESSAGE(ChecksUpdateVcpkg);
@@ -658,6 +660,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ConflictingFiles);
     REGISTER_MESSAGE(CMakeUsingExportedLibs);
     REGISTER_MESSAGE(CommunityTriplets);
+    REGISTER_MESSAGE(Commands);
     REGISTER_MESSAGE(ComparingUtf8Decoders);
     REGISTER_MESSAGE(ConflictingValuesForOption);
     REGISTER_MESSAGE(ConstraintViolation);
@@ -752,6 +755,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ErrorWhileFetchingBaseline);
     REGISTER_MESSAGE(ErrorWhileParsing);
     REGISTER_MESSAGE(ErrorWhileWriting);
+    REGISTER_MESSAGE(Example);
     REGISTER_MESSAGE(ExceededRecursionDepth);
     REGISTER_MESSAGE(ExcludedPackage);
     REGISTER_MESSAGE(ExcludedPackages);
@@ -821,6 +825,7 @@ namespace vcpkg
     REGISTER_MESSAGE(FishCompletion);
     REGISTER_MESSAGE(FilesContainAbsolutePath1);
     REGISTER_MESSAGE(FilesContainAbsolutePath2);
+    REGISTER_MESSAGE(FindHelp);
     REGISTER_MESSAGE(FieldKindDidNotHaveExpectedValue);
     REGISTER_MESSAGE(FollowingPackagesMissingControl);
     REGISTER_MESSAGE(FollowingPackagesNotInstalled);
@@ -931,6 +936,14 @@ namespace vcpkg
     REGISTER_MESSAGE(InstallWithSystemManager);
     REGISTER_MESSAGE(InstallWithSystemManagerMono);
     REGISTER_MESSAGE(InstallWithSystemManagerPkg);
+    REGISTER_MESSAGE(IntegrateBashHelp);
+    REGISTER_MESSAGE(IntegrateFishHelp);
+    REGISTER_MESSAGE(IntegrateInstallHelpLinux);
+    REGISTER_MESSAGE(IntegrateInstallHelpWindows);
+    REGISTER_MESSAGE(IntegratePowerShellHelp);
+    REGISTER_MESSAGE(IntegrateProjectHelp);
+    REGISTER_MESSAGE(IntegrateRemoveHelp);
+    REGISTER_MESSAGE(IntegrateZshHelp);
     REGISTER_MESSAGE(IntegrationFailed);
     REGISTER_MESSAGE(InternalCICommand);
     REGISTER_MESSAGE(InvalidArgument);
@@ -1002,6 +1015,7 @@ namespace vcpkg
     REGISTER_MESSAGE(LinkageDynamicRelease);
     REGISTER_MESSAGE(LinkageStaticDebug);
     REGISTER_MESSAGE(LinkageStaticRelease);
+    REGISTER_MESSAGE(ListHelp);
     REGISTER_MESSAGE(ListOfValidFieldsForControlFiles);
     REGISTER_MESSAGE(LoadingCommunityTriplet);
     REGISTER_MESSAGE(LoadingDependencyInformation);
@@ -1047,6 +1061,7 @@ namespace vcpkg
     REGISTER_MESSAGE(NugetOutputNotCapturedBecauseInteractiveSpecified);
     REGISTER_MESSAGE(NugetPackageFileSucceededButCreationFailed);
     REGISTER_MESSAGE(NugetTimeoutExpectsSinglePositiveInteger);
+    REGISTER_MESSAGE(OptionalCommand);
     REGISTER_MESSAGE(OptionMustBeInteger);
     REGISTER_MESSAGE(OptionRequired);
     REGISTER_MESSAGE(OptionRequiresOption);
@@ -1055,6 +1070,7 @@ namespace vcpkg
     REGISTER_MESSAGE(OverlayTriplets);
     REGISTER_MESSAGE(OverwritingFile);
     REGISTER_MESSAGE(PackageAlreadyRemoved);
+    REGISTER_MESSAGE(PackageInfoHelp);
     REGISTER_MESSAGE(PackageFailedtWhileExtracting);
     REGISTER_MESSAGE(PackageRootDir);
     REGISTER_MESSAGE(PackagesToInstall);
@@ -1084,6 +1100,8 @@ namespace vcpkg
     REGISTER_MESSAGE(PortDependencyConflict);
     REGISTER_MESSAGE(PortNotInBaseline);
     REGISTER_MESSAGE(PortsAdded);
+    REGISTER_MESSAGE(PortsDiffHelp);
+    REGISTER_MESSAGE(PortDoesNotExist);
     REGISTER_MESSAGE(PortsNoDiff);
     REGISTER_MESSAGE(PortsRemoved);
     REGISTER_MESSAGE(PortsUpdated);
@@ -1093,12 +1111,15 @@ namespace vcpkg
     REGISTER_MESSAGE(ProvideExportType);
     REGISTER_MESSAGE(PushingVendorFailed);
     REGISTER_MESSAGE(RegistryCreated);
+    REGISTER_MESSAGE(RegeneratesArtifactRegistry);
     REGISTER_MESSAGE(RemoveDependencies);
     REGISTER_MESSAGE(RemovePackageConflict);
+    REGISTER_MESSAGE(ResponseFileCode);
     REGISTER_MESSAGE(RestoredPackage);
     REGISTER_MESSAGE(RestoredPackagesFromVendor);
     REGISTER_MESSAGE(ResultsHeader);
     REGISTER_MESSAGE(ScriptAssetCacheRequiresScript);
+    REGISTER_MESSAGE(SearchHelp);
     REGISTER_MESSAGE(SecretBanner);
     REGISTER_MESSAGE(SerializedBinParagraphHeader);
     REGISTER_MESSAGE(SettingEnvVar);

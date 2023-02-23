@@ -72,7 +72,7 @@ namespace vcpkg::Build
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("build zlib:x64-windows"),
+        [] { return create_example_string("build zlib:x64-windows"); },
         1,
         1,
         {{}, {}},
@@ -186,7 +186,7 @@ namespace vcpkg::Build
 
         BinaryCache binary_cache{args, paths};
         const FullPackageSpec spec = check_and_get_full_package_spec(
-            std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+            std::move(first_arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
         print_default_triplet_warning(args, {&args.command_arguments[0], 1});
 
         auto& fs = paths.get_filesystem();
