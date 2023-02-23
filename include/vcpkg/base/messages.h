@@ -2965,6 +2965,18 @@ namespace vcpkg
         (),
         "The names version, version-date, version-semver, and version-string are code and must not be localized",
         "expected a versioning field (one of version, version-date, version-semver, or version-string)");
+    DECLARE_MESSAGE(VersionRejectedDueToBaselineMissing,
+                    (msg::path, msg::json_field),
+                    "",
+                    "{path} was rejected because it uses \"{json_field}\" and does not have a \"builtin-baseline\". "
+                    "This can be fixed by removing the uses of \"{json_field}\" or adding a \"builtin-baseline\".\nSee "
+                    "`vcpkg help versioning` for more information.");
+    DECLARE_MESSAGE(VersionRejectedDueToFeatureFlagOff,
+                    (msg::path, msg::json_field),
+                    "",
+                    "{path} was rejected because it uses \"{json_field}\" and the `versions` feature flag is disabled. "
+                    "This can be fixed by removing \"{json_field}\" or enabling the `versions` feature flag.\nSee "
+                    "`vcpkg help versioning` for more information.");
     DECLARE_MESSAGE(VersionSharpMustBeFollowedByPortVersion,
                     (),
                     "",

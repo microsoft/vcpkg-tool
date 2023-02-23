@@ -1273,61 +1273,57 @@ namespace vcpkg
         return parse_manifest_object_impl<PortManifestDeserializer>(origin, manifest, warnings_sink);
     }
 
-    Optional<std::string> SourceControlFile::check_against_feature_flags(const Path& origin,
-                                                                         const FeatureFlagSettings& flags,
-                                                                         bool is_default_builtin_registry) const
+    ExpectedL<Unit> SourceControlFile::check_against_feature_flags(const Path& origin,
+                                                                   const FeatureFlagSettings& flags,
+                                                                   bool is_default_builtin_registry) const
     {
-        static constexpr StringLiteral s_extended_help = "See `vcpkg help versioning` for more information.";
-        auto format_error_message = [&](StringView manifest_field, StringView feature_flag) {
-            return Strings::format(" was rejected because it uses \"%s\" and the `%s` feature flag is disabled.\n"
-                                   "This can be fixed by removing \"%s\".\n",
-                                   manifest_field,
-                                   feature_flag,
-                                   manifest_field);
-        };
-
         if (!flags.versions)
         {
-            auto check_deps = [&](View<Dependency> deps) -> Optional<std::string> {
+            auto check_deps = [&](View<Dependency> deps) -> ExpectedL<Unit> {
                 for (auto&& dep : deps)
                 {
                     if (dep.constraint.type != VersionConstraintKind::None)
                     {
                         get_global_metrics_collector().track_define(DefineMetric::ErrorVersioningDisabled);
-                        return Strings::concat(
-                            origin,
-                            " was rejected because it uses constraints and the `",
-                            VcpkgCmdArguments::VERSIONS_FEATURE,
-                            "` feature flag is disabled.\nThis can be fixed by removing uses of \"version>=\".\n",
-                            s_extended_help);
+                        return msg::format_error(
+                            msgVersionRejectedDueToFeatureFlagOff, msg::path = origin, msg::json_field = "version>=");
                     }
                 }
-                return nullopt;
+
+                return Unit{};
             };
 
-            if (auto r = check_deps(core_paragraph->dependencies)) return r;
+            {
+                auto maybe_good = check_deps(core_paragraph->dependencies);
+                if (!maybe_good)
+                {
+                    return maybe_good;
+                }
+            }
 
             for (auto&& fpgh : feature_paragraphs)
             {
-                if (auto r = check_deps(fpgh->dependencies)) return r;
+                auto maybe_good = check_deps(fpgh->dependencies);
+                if (!maybe_good)
+                {
+                    return maybe_good;
+                }
             }
 
             if (core_paragraph->overrides.size() != 0)
             {
                 get_global_metrics_collector().track_define(DefineMetric::ErrorVersioningDisabled);
-                return Strings::concat(
-                    origin,
-                    format_error_message(ManifestDeserializer::OVERRIDES, VcpkgCmdArguments::VERSIONS_FEATURE),
-                    s_extended_help);
+                return msg::format_error(msgVersionRejectedDueToFeatureFlagOff,
+                                         msg::path = origin,
+                                         msg::json_field = ManifestDeserializer::OVERRIDES);
             }
 
             if (core_paragraph->builtin_baseline.has_value())
             {
                 get_global_metrics_collector().track_define(DefineMetric::ErrorVersioningDisabled);
-                return Strings::concat(
-                    origin,
-                    format_error_message(ManifestDeserializer::BUILTIN_BASELINE, VcpkgCmdArguments::VERSIONS_FEATURE),
-                    s_extended_help);
+                return msg::format_error(msgVersionRejectedDueToFeatureFlagOff,
+                                         msg::path = origin,
+                                         msg::json_field = ManifestDeserializer::BUILTIN_BASELINE);
             }
         }
         else
@@ -1341,23 +1337,20 @@ namespace vcpkg
                                 }))
                 {
                     get_global_metrics_collector().track_define(DefineMetric::ErrorVersioningNoBaseline);
-                    return Strings::concat(
-                        origin,
-                        " was rejected because it uses \"version>=\" and does not have a \"builtin-baseline\".\n",
-                        s_extended_help);
+                    return msg::format_error(
+                        msgVersionRejectedDueToBaselineMissing, msg::path = origin, msg::json_field = "version>=");
                 }
 
                 if (!core_paragraph->overrides.empty())
                 {
                     get_global_metrics_collector().track_define(DefineMetric::ErrorVersioningNoBaseline);
-                    return Strings::concat(
-                        origin,
-                        " was rejected because it uses \"overrides\" and does not have a \"builtin-baseline\".\n",
-                        s_extended_help);
+                    return msg::format_error(
+                        msgVersionRejectedDueToBaselineMissing, msg::path = origin, msg::json_field = "overrides");
                 }
             }
         }
-        return nullopt;
+
+        return Unit{};
     }
 
     std::string ParseControlErrorInfo::format_errors(View<std::unique_ptr<ParseControlErrorInfo>> error_info_list)

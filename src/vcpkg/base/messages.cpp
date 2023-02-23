@@ -1226,6 +1226,8 @@ namespace vcpkg
     REGISTER_MESSAGE(VersionInvalidRelaxed);
     REGISTER_MESSAGE(VersionInvalidSemver);
     REGISTER_MESSAGE(VersionMissing);
+    REGISTER_MESSAGE(VersionRejectedDueToBaselineMissing);
+    REGISTER_MESSAGE(VersionRejectedDueToFeatureFlagOff);
     REGISTER_MESSAGE(VersionSharpMustBeFollowedByPortVersion);
     REGISTER_MESSAGE(VersionSharpMustBeFollowedByPortVersionNonNegativeInteger);
     REGISTER_MESSAGE(VersionSpecMismatch);
