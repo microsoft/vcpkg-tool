@@ -500,7 +500,6 @@ namespace vcpkg
                     (msg::option),
                     "The -- before {option} must be preserved as they're part of the help message for the user.",
                     "Use --{option} to bypass this check");
-    DECLARE_MESSAGE(AddVersionPortDoesNotExist, (msg::package_name), "", "{package_name} does not exist");
     DECLARE_MESSAGE(AddVersionPortFilesShaChanged,
                     (msg::package_name),
                     "",

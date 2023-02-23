@@ -79,8 +79,6 @@
   "_AddVersionOldShaIs.comment": "An example of {commit_sha} is 7cfad47ae9f68b183983090afd6337cd60fd4949.",
   "AddVersionOverwriteOptionSuggestion": "Use --{option} to bypass this check",
   "_AddVersionOverwriteOptionSuggestion.comment": "The -- before {option} must be preserved as they're part of the help message for the user. An example of {option} is editable.",
-  "AddVersionPortDoesNotExist": "{package_name} does not exist",
-  "_AddVersionPortDoesNotExist.comment": "An example of {package_name} is zlib.",
   "AddVersionPortFilesShaChanged": "checked-in files for {package_name} have changed but the version was not updated",
   "_AddVersionPortFilesShaChanged.comment": "An example of {package_name} is zlib.",
   "AddVersionPortFilesShaUnchanged": "checked-in files for {package_name} are unchanged from version {version}",

@@ -533,7 +533,6 @@ namespace vcpkg
     REGISTER_MESSAGE(AddVersionNoGitSha);
     REGISTER_MESSAGE(AddVersionOldShaIs);
     REGISTER_MESSAGE(AddVersionOverwriteOptionSuggestion);
-    REGISTER_MESSAGE(AddVersionPortDoesNotExist);
     REGISTER_MESSAGE(AddVersionPortFilesShaChanged);
     REGISTER_MESSAGE(AddVersionPortFilesShaUnchanged);
     REGISTER_MESSAGE(AddVersionPortHasImproperFormat);
