@@ -917,6 +917,8 @@
   "VersionInvalidRelaxed": "“{version}”不是有效的宽松版本(具有任意数值元素计数的 semver)。",
   "VersionInvalidSemver": "“{version}”不是有效的语义版本，请参阅 <https://semver.org>。",
   "VersionMissing": "需要版本控制字段(版本、版本日期、版本-semver 或版本字符串)之一",
+  "VersionRejectedDueToBaselineMissing": "{path} was rejected because it uses \"{json_field}\" and does not have a \"builtin-baseline\". This can be fixed by removing the uses of \"{json_field}\" or adding a \"builtin-baseline\".\nSee `vcpkg help versioning` for more information.",
+  "VersionRejectedDueToFeatureFlagOff": "{path} was rejected because it uses \"{json_field}\" and the `versions` feature flag is disabled. This can be fixed by removing \"{json_field}\" or enabling the `versions` feature flag.\nSee `vcpkg help versioning` for more information.",
   "VersionSharpMustBeFollowedByPortVersion": "版本文本中的 \"#\" 必须后跟端口版本",
   "VersionSharpMustBeFollowedByPortVersionNonNegativeInteger": "版本文本中的 \"#\" 后面必须跟端口版本(非负整数)",
   "VersionSpecMismatch": "无法加载端口，因为版本不一致。文件“{path}”包含版本 {actual_version}，但版本数据库指示它应为 {expected_version}。",

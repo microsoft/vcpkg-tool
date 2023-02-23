@@ -917,6 +917,8 @@
   "VersionInvalidRelaxed": "`{version}`은(는) 올바른 완화 버전이 아닙니다(임의의 숫자 요소 개수가 있는 semver).",
   "VersionInvalidSemver": "'{version}'은(는) 올바른 의미 체계 버전이 아닙니다. <https://semver.org>를 참조하세요.",
   "VersionMissing": "버전 관리 필드(버전, 버전 날짜, 버전 셈버 또는 버전 문자열 중 하나)가 필요합니다.",
+  "VersionRejectedDueToBaselineMissing": "{path} was rejected because it uses \"{json_field}\" and does not have a \"builtin-baseline\". This can be fixed by removing the uses of \"{json_field}\" or adding a \"builtin-baseline\".\nSee `vcpkg help versioning` for more information.",
+  "VersionRejectedDueToFeatureFlagOff": "{path} was rejected because it uses \"{json_field}\" and the `versions` feature flag is disabled. This can be fixed by removing \"{json_field}\" or enabling the `versions` feature flag.\nSee `vcpkg help versioning` for more information.",
   "VersionSharpMustBeFollowedByPortVersion": "버전 텍스트의 '#' 다음에는 포트 버전이 와야 합니다.",
   "VersionSharpMustBeFollowedByPortVersionNonNegativeInteger": "버전 텍스트의 '#' 다음에는 포트 버전(음이 아닌 정수)이 와야 합니다.",
   "VersionSpecMismatch": "버전이 일치하지 않아 포트를 로드하지 못했습니다. 파일 \"{path}\"에 {actual_version} 버전이 포함되어 있지만 버전 데이터베이스는 {expected_version}이어야 한다고 표시합니다.",

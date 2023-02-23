@@ -917,6 +917,8 @@
   "VersionInvalidRelaxed": "'{version}' は有効な緩やかなバージョンではありません (任意の数値要素数を持つ semver)。",
   "VersionInvalidSemver": "'{version}' は有効なセマンティック バージョンではありません。<https://semver.org> を参照してください。",
   "VersionMissing": "バージョン管理フィールドが必要です (version、version-date、version-semver、version-string のいずれか)",
+  "VersionRejectedDueToBaselineMissing": "{path} was rejected because it uses \"{json_field}\" and does not have a \"builtin-baseline\". This can be fixed by removing the uses of \"{json_field}\" or adding a \"builtin-baseline\".\nSee `vcpkg help versioning` for more information.",
+  "VersionRejectedDueToFeatureFlagOff": "{path} was rejected because it uses \"{json_field}\" and the `versions` feature flag is disabled. This can be fixed by removing \"{json_field}\" or enabling the `versions` feature flag.\nSee `vcpkg help versioning` for more information.",
   "VersionSharpMustBeFollowedByPortVersion": "バージョン テキスト内の '#' の後にはポート バージョンが必要です",
   "VersionSharpMustBeFollowedByPortVersionNonNegativeInteger": "バージョン テキスト内の '#' の後にはポート バージョン (負でない整数) を指定する必要があります",
   "VersionSpecMismatch": "バージョンに一貫性がないため、ポートを読み込めませんでした。ファイル「{path}」にはバージョン {actual_version} が含まれていますが、バージョン データベースは {expected_version} であることを示しています。",

@@ -917,6 +917,8 @@
   "VersionInvalidRelaxed": "„{version}“ ist keine gültige gelockerte Version (SemVer mit beliebiger numerischer Elementanzahl).",
   "VersionInvalidSemver": "„{version}“ ist keine gültige semantische Version. Weitere Informationen finden Sie unter <https://semver.org>.",
   "VersionMissing": "Es wurde ein Versionsverwaltungsfeld erwartet (version, version-date, version-semver oder version-string).",
+  "VersionRejectedDueToBaselineMissing": "{path} was rejected because it uses \"{json_field}\" and does not have a \"builtin-baseline\". This can be fixed by removing the uses of \"{json_field}\" or adding a \"builtin-baseline\".\nSee `vcpkg help versioning` for more information.",
+  "VersionRejectedDueToFeatureFlagOff": "{path} was rejected because it uses \"{json_field}\" and the `versions` feature flag is disabled. This can be fixed by removing \"{json_field}\" or enabling the `versions` feature flag.\nSee `vcpkg help versioning` for more information.",
   "VersionSharpMustBeFollowedByPortVersion": "Auf \"#\" im Versionstext muss eine Portversion folgen.",
   "VersionSharpMustBeFollowedByPortVersionNonNegativeInteger": "Auf \"#\" im Versionstext muss eine Portversion folgen (eine nicht negative ganze Zahl).",
   "VersionSpecMismatch": "Fehler beim Laden des Ports, da die Versionen inkonsistent sind. Die Datei „{path}“ enthält die Version {actual_version}, aber die Versionsdatenbank gibt an, dass sie {expected_version} sein soll.",

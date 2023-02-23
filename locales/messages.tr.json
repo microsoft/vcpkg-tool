@@ -917,6 +917,8 @@
   "VersionInvalidRelaxed": "'{version}' geçerli bir esnek sürüm değil (rasgele sayısal öğe sayısına sahip semver).",
   "VersionInvalidSemver": "'{version}' geçerli bir anlamsal sürüm değil, <https://semver.org> adresine başvurun.",
   "VersionMissing": "sürüm oluşturma alanı bekleniyordu (version, version-date, version-semver veya version-string kodlarından biri)",
+  "VersionRejectedDueToBaselineMissing": "{path} was rejected because it uses \"{json_field}\" and does not have a \"builtin-baseline\". This can be fixed by removing the uses of \"{json_field}\" or adding a \"builtin-baseline\".\nSee `vcpkg help versioning` for more information.",
+  "VersionRejectedDueToFeatureFlagOff": "{path} was rejected because it uses \"{json_field}\" and the `versions` feature flag is disabled. This can be fixed by removing \"{json_field}\" or enabling the `versions` feature flag.\nSee `vcpkg help versioning` for more information.",
   "VersionSharpMustBeFollowedByPortVersion": "Sürüm metnindeki '#' karakterinden sonra bir bağlantı noktası sürümü gelmelidir",
   "VersionSharpMustBeFollowedByPortVersionNonNegativeInteger": "Sürüm metnindeki '#' karakterinden sonra bir bağlantı noktası sürümü (negatif olmayan bir tamsayı) gelmelidir",
   "VersionSpecMismatch": "Sürümler tutarsız olduğundan bağlantı noktası yüklenemedi. Dosya \"{path}\" {actual_version} sürümünü içeriyor, ancak sürüm veritabanı onun {expected_version} olması gerektiğini belirtiyor.",

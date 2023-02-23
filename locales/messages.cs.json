@@ -917,6 +917,8 @@
   "VersionInvalidRelaxed": "{version} není platná uvolněná verze (semver s počtem libovolných numerických prvků)",
   "VersionInvalidSemver": "{version} není platná sémantická verze, řiďte se <https://semver.org>.",
   "VersionMissing": "očekávalo se pole správy verzí (jedna verze, datum verze, verze semver nebo řetězec verze).",
+  "VersionRejectedDueToBaselineMissing": "{path} was rejected because it uses \"{json_field}\" and does not have a \"builtin-baseline\". This can be fixed by removing the uses of \"{json_field}\" or adding a \"builtin-baseline\".\nSee `vcpkg help versioning` for more information.",
+  "VersionRejectedDueToFeatureFlagOff": "{path} was rejected because it uses \"{json_field}\" and the `versions` feature flag is disabled. This can be fixed by removing \"{json_field}\" or enabling the `versions` feature flag.\nSee `vcpkg help versioning` for more information.",
   "VersionSharpMustBeFollowedByPortVersion": "Za # musí v textu verze následovat verze portu",
   "VersionSharpMustBeFollowedByPortVersionNonNegativeInteger": "Za # musí v textu verze následovat verze portu (nezáporné celé číslo)",
   "VersionSpecMismatch": "Nepodařilo se načíst port, protože verze jsou nekonzistentní. Soubor „{path}“ obsahuje verzi {actual_version}, ale databáze verzí uvádí, že by to měla být {expected_version}.",

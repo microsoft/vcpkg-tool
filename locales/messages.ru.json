@@ -917,6 +917,8 @@
   "VersionInvalidRelaxed": "\"{version}\" не является допустимой нестрогой версией (semver с произвольным количеством числовых элементов).",
   "VersionInvalidSemver": "\"{version}\" не является допустимой семантической версией, см. <https://semver.org>.",
   "VersionMissing": "ожидается поле управления версиями (один из вариантов: version, version-date, version-semver или version-string)",
+  "VersionRejectedDueToBaselineMissing": "{path} was rejected because it uses \"{json_field}\" and does not have a \"builtin-baseline\". This can be fixed by removing the uses of \"{json_field}\" or adding a \"builtin-baseline\".\nSee `vcpkg help versioning` for more information.",
+  "VersionRejectedDueToFeatureFlagOff": "{path} was rejected because it uses \"{json_field}\" and the `versions` feature flag is disabled. This can be fixed by removing \"{json_field}\" or enabling the `versions` feature flag.\nSee `vcpkg help versioning` for more information.",
   "VersionSharpMustBeFollowedByPortVersion": "после \"#\" в тексте версии должна следовать версия порта",
   "VersionSharpMustBeFollowedByPortVersionNonNegativeInteger": "после \"#\" в тексте версии должна следовать версия порта (неотрицательное целое число)",
   "VersionSpecMismatch": "Не удалось загрузить порт, так как версии не согласованы. Файл \"{path}\" содержит версию {actual_version}, но база данных версий указывает, что она должна быть {expected_version}.",
