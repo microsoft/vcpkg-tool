@@ -29,14 +29,6 @@ namespace
             metrics.track_string(metric.metric, metric.preregister_value);
         }
     }
-
-    const CommandStructure COMMAND_STRUCTURE = {
-        [] { return create_example_string("z-preregister-telemetry"); },
-        0,
-        0,
-        {},
-        nullptr,
-    };
 }
 
 namespace vcpkg::Commands
