@@ -77,6 +77,6 @@ namespace vcpkg::PlatformExpression
     };
 
     // platform expression parses a platform expression; the EBNF of such is defined in
-    // https://github.com/microsoft/vcpkg/blob/master/docs/maintainers/manifest-files.md#supports
+    // https://learn.microsoft.com/en-us/vcpkg/reference/vcpkg-json#platform-expression
     ExpectedS<Expr> parse_platform_expression(StringView expression, MultipleBinaryOperators multiple_binary_operators);
 }
