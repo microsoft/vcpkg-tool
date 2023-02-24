@@ -11,7 +11,7 @@ namespace vcpkg
         static constexpr StringLiteral assetcaching_url = "https://learn.microsoft.com/vcpkg/users/assetcaching";
         static constexpr StringLiteral binarycaching_url = "https://learn.microsoft.com/vcpkg/users/binarycaching";
         static constexpr StringLiteral versioning_url =
-            "https://github.com/Microsoft/vcpkg/tree/master/docs/users/versioning.md";
+            "https://learn.microsoft.com/vcpkg/users/versioning";
         static constexpr StringLiteral vcpkg_visual_studio_path_url =
             "https://learn.microsoft.com/vcpkg/users/triplets#VCPKG_VISUAL_STUDIO_PATH";
     }
