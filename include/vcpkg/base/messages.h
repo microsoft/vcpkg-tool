@@ -551,6 +551,14 @@ namespace vcpkg
                     "'HEAD' means the most recent version of source code",
                     "{spec} is already installed -- not building from HEAD");
     DECLARE_MESSAGE(AManifest, (), "", "a manifest");
+    DECLARE_MESSAGE(AMaximumOfOneAssetReadUrlCanBeSpecified,
+                    (),
+                    "",
+                    "a maximum of one asset read url can be specified.");
+    DECLARE_MESSAGE(AMaximumOfOneAssetWriteUrlCanBeSpecified,
+                    (),
+                    "",
+                    "a maximum of one asset write url can be specified.");
     DECLARE_MESSAGE(AmbiguousConfigDeleteConfigFile,
                     (msg::path),
                     "",
@@ -607,6 +615,10 @@ namespace vcpkg
                     "A registry path must start with `$` to mean the registry root; for example, `$/foo/bar`.");
     DECLARE_MESSAGE(ARelaxedVersionString, (), "", "a relaxed version string");
     DECLARE_MESSAGE(ArtifactsOptionIncompatibility, (msg::option), "", "--{option} has no effect on find artifact.");
+    DECLARE_MESSAGE(AssetCacheProviderAcceptsNoArguments,
+                    (msg::value),
+                    "{value} is a asset caching provider name such as azurl, clear, or x-block-origin",
+                    "unexpected arguments: '{value}' does not accept arguments");
     DECLARE_MESSAGE(AssetSourcesArg, (), "", "Add sources for asset caching. See 'vcpkg help assetcaching'.");
     DECLARE_MESSAGE(ASemanticVersionString, (), "", "a semantic version string");
     DECLARE_MESSAGE(ASetOfFeatures, (), "", "a set of features");
@@ -644,6 +656,14 @@ namespace vcpkg
     DECLARE_MESSAGE(AVersionObject, (), "", "a version object");
     DECLARE_MESSAGE(AVersionOfAnyType, (), "", "a version of any type");
     DECLARE_MESSAGE(AVersionConstraint, (), "", "a version constriant");
+    DECLARE_MESSAGE(AzUrlAssetCacheRequiresBaseUrl,
+                    (),
+                    "",
+                    "unexpected arguments: asset config 'azurl' requires a base url");
+    DECLARE_MESSAGE(AzUrlAssetCacheRequiresLessThanFour,
+                    (),
+                    "",
+                    "unexpected arguments: asset config 'azurl' requires fewer than 4 arguments");
     DECLARE_MESSAGE(BaselineConflict,
                     (),
                     "",
@@ -1098,6 +1118,18 @@ namespace vcpkg
         "",
         "You can use the current commit as a baseline, which is:\n\t\"builtin-baseline\": \"{commit_sha}\"");
     DECLARE_MESSAGE(DateTableHeader, (), "", "Date");
+    DECLARE_MESSAGE(DefaultBinaryCachePlatformCacheRequiresAbsolutePath,
+                    (msg::path),
+                    "",
+                    "Environment variable VCPKG_DEFAULT_BINARY_CACHE must be a directory (was: {path})");
+    DECLARE_MESSAGE(DefaultBinaryCacheRequiresAbsolutePath,
+                    (msg::path),
+                    "",
+                    "Environment variable VCPKG_DEFAULT_BINARY_CACHE must be absolute (was: {path})");
+    DECLARE_MESSAGE(DefaultBinaryCacheRequiresDirectory,
+                    (msg::path),
+                    "",
+                    "Environment variable VCPKG_DEFAULT_BINARY_CACHE must be a directory (was: {path})");
     DECLARE_MESSAGE(DefaultBrowserLaunched, (msg::url), "", "Default browser launched to {url}.");
     DECLARE_MESSAGE(DefaultFlag, (msg::option), "", "Defaulting to --{option} being on.");
     DECLARE_MESSAGE(DefaultRegistryIsArtifact, (), "", "The default registry cannot be an artifact registry.");
@@ -1293,6 +1325,7 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedOneVersioningField, (), "", "expected only one versioning field");
     DECLARE_MESSAGE(ExpectedPathToExist, (msg::path), "", "Expected {path} to exist after fetching");
     DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
+    DECLARE_MESSAGE(ExpectedReadWriteReadWrite, (), "", "unexpected argument: expected 'read', readwrite', or 'write'");
     DECLARE_MESSAGE(ExpectedStatusField, (), "", "Expected 'status' field in status paragraph");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
     DECLARE_MESSAGE(ExpectedValueForOption, (msg::option), "", "expected value after --{option}.");
@@ -2218,10 +2251,18 @@ namespace vcpkg
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
     DECLARE_MESSAGE(NoUrlsAndHashSpecified, (msg::sha), "", "No urls specified to download SHA: {sha}");
     DECLARE_MESSAGE(NoUrlsAndNoHashSpecified, (), "", "No urls specified and no hash specified.");
+    DECLARE_MESSAGE(NugetOutputNotCapturedBecauseInteractiveSpecified,
+                    (),
+                    "",
+                    "NuGet command failed and output was not captured because --interactive was specified");
     DECLARE_MESSAGE(NugetPackageFileSucceededButCreationFailed,
                     (msg::path),
                     "",
                     "NuGet package creation succeeded, but no .nupkg was produced. Expected: \"{path}\"");
+    DECLARE_MESSAGE(NugetTimeoutExpectsSinglePositiveInteger,
+                    (),
+                    "",
+                    "unexpected arguments: binary config 'nugettimeout' expects a single positive integer argument");
     DECLARE_MESSAGE(OptionMustBeInteger, (msg::option), "", "Value of --{option} must be an integer.");
     DECLARE_MESSAGE(OptionRequired, (msg::option), "", "--{option} option is required.");
     DECLARE_MESSAGE(OptionRequiresOption,
@@ -2526,6 +2567,10 @@ namespace vcpkg
         "{value} may be either a 'vendor' like 'Azure' or 'NuGet', or a file path like C:\\example or /usr/example",
         "Restored {count} package(s) from {value} in {elapsed}. Use --debug to see more details.");
     DECLARE_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
+    DECLARE_MESSAGE(ScriptAssetCacheRequiresScript,
+                    (),
+                    "",
+                    "expected arguments: asset config 'x-script' requires exactly the exec template as an argument");
     DECLARE_MESSAGE(SecretBanner, (), "", "*** SECRET ***");
     DECLARE_MESSAGE(SerializedBinParagraphHeader, (), "", "\nSerialized Binary Paragraph");
     DECLARE_MESSAGE(SettingEnvVar,
@@ -2625,6 +2670,7 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is a feature flag.",
                     "Both '{value}' and -'{value}' were specified as feature flags.");
+    DECLARE_MESSAGE(UnableToClearPath, (msg::path), "", "unable to delete {path}");
     DECLARE_MESSAGE(UnableToReadAppDatas, (), "", "both %LOCALAPPDATA% and %APPDATA% were unreadable");
     DECLARE_MESSAGE(UnableToReadEnvironmentVariable, (msg::env_var), "", "unable to read {env_var}");
     DECLARE_MESSAGE(UndeterminedToolChainForTriplet,
@@ -2633,6 +2679,11 @@ namespace vcpkg
                     "Unable to determine toolchain use for {triplet} with with CMAKE_SYSTEM_NAME {system_name}. Did "
                     "you mean to use "
                     "VCPKG_CHAINLOAD_TOOLCHAIN_FILE?");
+    DECLARE_MESSAGE(
+        UnexpectedAssetCacheProvider,
+        (),
+        "",
+        "unknown asset provider type: valid source types are 'x-azurl', 'x-script', 'x-block-origin', and 'clear'");
     DECLARE_MESSAGE(UnexpectedByteSize,
                     (msg::expected, msg::actual),
                     "{expected} is the expected byte size and {actual} is the actual byte size.",
@@ -2645,6 +2696,10 @@ namespace vcpkg
     DECLARE_MESSAGE(UnexpectedCharMidArray, (), "", "Unexpected character in middle of array");
     DECLARE_MESSAGE(UnexpectedCharMidKeyword, (), "", "Unexpected character in middle of keyword");
     DECLARE_MESSAGE(UnexpectedDigitsAfterLeadingZero, (), "", "Unexpected digits after a leading zero");
+    DECLARE_MESSAGE(UnexpectedEOFAfterBacktick,
+                    (),
+                    "",
+                    "unexpected eof: trailing unescaped backticks (`) are not allowed");
     DECLARE_MESSAGE(UnexpectedEOFAfterEscape, (), "", "Unexpected EOF after escape character");
     DECLARE_MESSAGE(UnexpectedEOFAfterMinus, (), "", "Unexpected EOF after minus sign");
     DECLARE_MESSAGE(UnexpectedEOFExpectedChar, (), "", "Unexpected character; expected EOF");
@@ -2942,6 +2997,18 @@ namespace vcpkg
                     (msg::expected, msg::actual),
                     "{expected} and {actual} are versions",
                     "{expected} not available, only {actual} is available");
+    DECLARE_MESSAGE(VersionRejectedDueToBaselineMissing,
+                    (msg::path, msg::json_field),
+                    "",
+                    "{path} was rejected because it uses \"{json_field}\" and does not have a \"builtin-baseline\". "
+                    "This can be fixed by removing the uses of \"{json_field}\" or adding a \"builtin-baseline\".\nSee "
+                    "`vcpkg help versioning` for more information.");
+    DECLARE_MESSAGE(VersionRejectedDueToFeatureFlagOff,
+                    (msg::path, msg::json_field),
+                    "",
+                    "{path} was rejected because it uses \"{json_field}\" and the `versions` feature flag is disabled. "
+                    "This can be fixed by removing \"{json_field}\" or enabling the `versions` feature flag.\nSee "
+                    "`vcpkg help versioning` for more information.");
     DECLARE_MESSAGE(VersionSharpMustBeFollowedByPortVersion,
                     (),
                     "",
