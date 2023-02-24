@@ -890,8 +890,9 @@ namespace
         auto versions_json = maybe_versions_json.get();
         if (!versions_json)
         {
-            return msg::format_error(msgFailedToParseJson, msg::path = versions_file_path);
+            return LocalizedString::from_raw(maybe_versions_json.error()->to_string());
         }
+
         if (!versions_json->first.is_object())
         {
             return msg::format_error(msgFailedToParseNoTopLevelObj, msg::path = versions_file_path);
@@ -925,13 +926,10 @@ namespace
         auto maybe_value = Json::parse(contents, origin);
         if (!maybe_value)
         {
-            return msg::format_error(msgFailedToParseBaseline, msg::path = origin)
-                .append_raw('\n')
-                .append_raw(maybe_value.error()->to_string());
+            return LocalizedString::from_raw(maybe_value.error()->to_string());
         }
 
         auto& value = *maybe_value.get();
-
         if (!value.first.is_object())
         {
             return msg::format_error(msgFailedToParseNoTopLevelObj, msg::path = origin);

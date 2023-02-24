@@ -798,14 +798,12 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedToParseBaseline);
     REGISTER_MESSAGE(FailedToParseConfig);
     REGISTER_MESSAGE(FailedToParseControl);
-    REGISTER_MESSAGE(FailedToParseJson);
     REGISTER_MESSAGE(FailedToParseManifest);
     REGISTER_MESSAGE(FailedToParseNoVersionsArray);
     REGISTER_MESSAGE(FailedToParseSerializedBinParagraph);
     REGISTER_MESSAGE(FailedToParseVersionsFile);
     REGISTER_MESSAGE(FailedToParseVersionXML);
     REGISTER_MESSAGE(FailedToProvisionCe);
-    REGISTER_MESSAGE(FailedToRead);
     REGISTER_MESSAGE(FailedToReadParagraph);
     REGISTER_MESSAGE(FailedToRemoveControl);
     REGISTER_MESSAGE(FailedToRunToolToDetermineVersion);

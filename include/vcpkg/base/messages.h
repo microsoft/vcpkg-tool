@@ -1403,7 +1403,6 @@ namespace vcpkg
     DECLARE_MESSAGE(FailedToParseBaseline, (msg::path), "", "Failed to parse baseline: {path}");
     DECLARE_MESSAGE(FailedToParseConfig, (msg::path), "", "Failed to parse configuration {path}");
     DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse control file: {path}");
-    DECLARE_MESSAGE(FailedToParseJson, (msg::path), "", "Failed to parse JSON file: {path}");
     DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: {path}");
     DECLARE_MESSAGE(FailedToParseNoTopLevelObj,
                     (msg::path),
@@ -1425,7 +1424,6 @@ namespace vcpkg
                     "",
                     "Could not parse version for tool {tool_name}. Version string was: {version}");
     DECLARE_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-artifacts.");
-    DECLARE_MESSAGE(FailedToRead, (msg::path, msg::error_msg), "", "Failed to read {path}: {error_msg}");
     DECLARE_MESSAGE(FailedToReadParagraph, (msg::path), "", "Failed to read paragraphs from {path}");
     DECLARE_MESSAGE(FailedToRemoveControl, (msg::path), "", "Failed to remove control file {path}");
     DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
