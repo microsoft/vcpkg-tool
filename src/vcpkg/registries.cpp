@@ -743,7 +743,10 @@ namespace
         auto it = std::find(port_versions.begin(), port_versions.end(), version);
         if (it == port_versions.end())
         {
-            return format_version_git_entry_missing(port_name, version, port_versions);
+            return format_version_git_entry_missing(port_name, version, port_versions)
+                .append_raw('\n')
+                .append(msg::msgNoteMessage)
+                .append(msgChecksUpdateVcpkg);
         }
 
         const auto& git_tree = git_trees[it - port_versions.begin()];
