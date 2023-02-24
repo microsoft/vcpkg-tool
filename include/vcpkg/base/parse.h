@@ -16,7 +16,7 @@ namespace vcpkg
 {
     struct ParseError
     {
-        ParseError(std::string origin, int row, int column, int caret_col, std::string line, std::string message)
+        ParseError(std::string origin, int row, int column, int caret_col, std::string line, LocalizedString message)
             : origin(std::move(origin))
             , row(row)
             , column(column)
@@ -31,7 +31,7 @@ namespace vcpkg
         const int column;
         const int caret_col;
         const std::string line;
-        const std::string message;
+        const LocalizedString message;
 
         std::string to_string() const;
     };
@@ -129,12 +129,10 @@ namespace vcpkg
         char32_t next();
         bool at_eof() const { return m_it == m_it.end(); }
 
-        void add_error(std::string message) { add_error(std::move(message), cur_loc()); }
-        void add_error(std::string message, const SourceLoc& loc);
-        void add_error(LocalizedString&& message) { add_error(message.extract_data(), cur_loc()); }
-        void add_error(LocalizedString&& message, const SourceLoc& loc) { add_error(message.extract_data(), loc); }
+        void add_error(LocalizedString&& message);
+        void add_error(LocalizedString&& message, const SourceLoc& loc);
 
-        void add_warning(LocalizedString&& message) { add_warning(std::move(message), cur_loc()); }
+        void add_warning(LocalizedString&& message);
         void add_warning(LocalizedString&& message, const SourceLoc& loc);
 
         const ParseError* get_error() const { return m_messages.error.get(); }

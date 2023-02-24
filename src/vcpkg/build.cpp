@@ -1599,7 +1599,7 @@ namespace vcpkg
 
     BuildInfo read_build_info(const Filesystem& fs, const Path& filepath)
     {
-        const ExpectedS<Paragraph> pghs = Paragraphs::get_single_paragraph(fs, filepath);
+        auto pghs = Paragraphs::get_single_paragraph(fs, filepath);
         if (!pghs)
         {
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgInvalidBuildInfo, msg::error_msg = pghs.error());
