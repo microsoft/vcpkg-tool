@@ -7,11 +7,12 @@ Param(
     [Parameter(Mandatory = $True)]
     [string]$TempDir,
     [Parameter()]
-    [switch]$ReadOnly,
+    [string]$Deployment,
     [Parameter(Mandatory = $True)]
     [string]$SignedFilesRoot
 )
 
+[bool]$ReadOnly = $Deployment -eq 'VisualStudio';
 $sha = Get-Content "$PSScriptRoot/vcpkg-scripts-sha.txt" -Raw
 $sha = $sha.Trim()
 
@@ -75,9 +76,10 @@ try {
     Copy-Item -Path "$SignedFilesRoot/posh-vcpkg.psm1" -Destination 'out/scripts/posh-vcpkg/0.0.1/posh-vcpkg.psm1'
 
     $bundleConfig = @{
-        'readonly'       = [bool]$ReadOnly;
+        'readonly'       = $ReadOnly;
         'usegitregistry' = $True;
-        'embeddedsha'    = $sha
+        'embeddedsha'    = $sha;
+        'deployment'     = $Deployment;
     }
 
     New-Item -Path "out/.vcpkg-root" -ItemType "File"
