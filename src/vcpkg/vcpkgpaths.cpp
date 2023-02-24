@@ -313,6 +313,8 @@ namespace
         {
             Debug::println("Bundle config: ", m_bundle.to_string());
             Debug::println("Using builtin-ports: ", m_builtin_ports);
+            get_global_metrics_collector().track_string(StringMetric::DeploymentKind,
+                                                        to_string_literal(m_bundle.deployment));
         }
 
         Filesystem& m_fs;
