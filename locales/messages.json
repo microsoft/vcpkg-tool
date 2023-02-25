@@ -1193,6 +1193,8 @@
   "RegeneratesArtifactRegistry": "Regenerates an artifact registry.",
   "RegistryCreated": "Successfully created registry at {path}",
   "_RegistryCreated.comment": "An example of {path} is /foo/bar.",
+  "RegistryValueWrongType": "The registry value {path} was an unexpected type.",
+  "_RegistryValueWrongType.comment": "An example of {path} is /foo/bar.",
   "RemoveDependencies": "To remove dependencies in manifest mode, edit your manifest (vcpkg.json) and run 'install'.",
   "RemovePackageConflict": "{spec} is not installed, but {package_name} is installed for {triplet}. Did you mean {package_name}:{triplet}?",
   "_RemovePackageConflict.comment": "An example of {package_name} is zlib. An example of {spec} is zlib:x64-windows. An example of {triplet} is x64-windows.",

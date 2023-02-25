@@ -1138,6 +1138,7 @@ namespace vcpkg
     REGISTER_MESSAGE(PushingVendorFailed);
     REGISTER_MESSAGE(RegistryCreated);
     REGISTER_MESSAGE(RegeneratesArtifactRegistry);
+    REGISTER_MESSAGE(RegistryValueWrongType);
     REGISTER_MESSAGE(RemoveDependencies);
     REGISTER_MESSAGE(RemovePackageConflict);
     REGISTER_MESSAGE(ResponseFileCode);
