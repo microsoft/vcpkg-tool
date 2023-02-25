@@ -107,6 +107,7 @@ jobs:
         pwsh: true
 - job: windows
   displayName: 'Windows'
+  timeoutInMinutes: 120
   pool:
     vmImage: 'windows-2022'
   variables:

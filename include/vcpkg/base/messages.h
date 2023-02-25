@@ -551,6 +551,14 @@ namespace vcpkg
                     "'HEAD' means the most recent version of source code",
                     "{spec} is already installed -- not building from HEAD");
     DECLARE_MESSAGE(AManifest, (), "", "a manifest");
+    DECLARE_MESSAGE(AMaximumOfOneAssetReadUrlCanBeSpecified,
+                    (),
+                    "",
+                    "a maximum of one asset read url can be specified.");
+    DECLARE_MESSAGE(AMaximumOfOneAssetWriteUrlCanBeSpecified,
+                    (),
+                    "",
+                    "a maximum of one asset write url can be specified.");
     DECLARE_MESSAGE(AmbiguousConfigDeleteConfigFile,
                     (msg::path),
                     "",
@@ -607,6 +615,10 @@ namespace vcpkg
                     "A registry path must start with `$` to mean the registry root; for example, `$/foo/bar`.");
     DECLARE_MESSAGE(ARelaxedVersionString, (), "", "a relaxed version string");
     DECLARE_MESSAGE(ArtifactsOptionIncompatibility, (msg::option), "", "--{option} has no effect on find artifact.");
+    DECLARE_MESSAGE(AssetCacheProviderAcceptsNoArguments,
+                    (msg::value),
+                    "{value} is a asset caching provider name such as azurl, clear, or x-block-origin",
+                    "unexpected arguments: '{value}' does not accept arguments");
     DECLARE_MESSAGE(AssetSourcesArg, (), "", "Add sources for asset caching. See 'vcpkg help assetcaching'.");
     DECLARE_MESSAGE(ASemanticVersionString, (), "", "a semantic version string");
     DECLARE_MESSAGE(ASetOfFeatures, (), "", "a set of features");
@@ -644,6 +656,14 @@ namespace vcpkg
     DECLARE_MESSAGE(AVersionObject, (), "", "a version object");
     DECLARE_MESSAGE(AVersionOfAnyType, (), "", "a version of any type");
     DECLARE_MESSAGE(AVersionConstraint, (), "", "a version constriant");
+    DECLARE_MESSAGE(AzUrlAssetCacheRequiresBaseUrl,
+                    (),
+                    "",
+                    "unexpected arguments: asset config 'azurl' requires a base url");
+    DECLARE_MESSAGE(AzUrlAssetCacheRequiresLessThanFour,
+                    (),
+                    "",
+                    "unexpected arguments: asset config 'azurl' requires fewer than 4 arguments");
     DECLARE_MESSAGE(BaselineConflict,
                     (),
                     "",
@@ -653,6 +673,11 @@ namespace vcpkg
                     (msg::commit_sha),
                     "",
                     "The baseline file at commit {commit_sha} was invalid (no \"default\" field).");
+    DECLARE_MESSAGE(BaselineGitShowFailed,
+                    (msg::commit_sha),
+                    "",
+                    "while checking out baseline from commit '{commit_sha}', failed to `git show` "
+                    "versions/baseline.json. This may be fixed by fetching commits with `git fetch`.");
     DECLARE_MESSAGE(BaselineMissingDefault,
                     (msg::commit_sha, msg::url),
                     "",
@@ -1079,11 +1104,24 @@ namespace vcpkg
                     "{actual} and {expected} are integers, curl is the name of a program, see curl.se",
                     "curl returned a different number of response codes than were expected for the request ({actual} "
                     "vs expected {expected}).");
-    DECLARE_MESSAGE(CurrentCommitBaseline,
-                    (msg::value),
-                    "{value} is a 40 hexadecimal character commit sha",
-                    "You can use the current commit as a baseline, which is:\n\t\"builtin-baseline\": \"{value}\"");
+    DECLARE_MESSAGE(
+        CurrentCommitBaseline,
+        (msg::commit_sha),
+        "",
+        "You can use the current commit as a baseline, which is:\n\t\"builtin-baseline\": \"{commit_sha}\"");
     DECLARE_MESSAGE(DateTableHeader, (), "", "Date");
+    DECLARE_MESSAGE(DefaultBinaryCachePlatformCacheRequiresAbsolutePath,
+                    (msg::path),
+                    "",
+                    "Environment variable VCPKG_DEFAULT_BINARY_CACHE must be a directory (was: {path})");
+    DECLARE_MESSAGE(DefaultBinaryCacheRequiresAbsolutePath,
+                    (msg::path),
+                    "",
+                    "Environment variable VCPKG_DEFAULT_BINARY_CACHE must be absolute (was: {path})");
+    DECLARE_MESSAGE(DefaultBinaryCacheRequiresDirectory,
+                    (msg::path),
+                    "",
+                    "Environment variable VCPKG_DEFAULT_BINARY_CACHE must be a directory (was: {path})");
     DECLARE_MESSAGE(DefaultBrowserLaunched, (msg::url), "", "Default browser launched to {url}.");
     DECLARE_MESSAGE(DefaultFlag, (msg::option), "", "Defaulting to --{option} being on.");
     DECLARE_MESSAGE(DefaultRegistryIsArtifact, (), "", "The default registry cannot be an artifact registry.");
@@ -1183,6 +1221,10 @@ namespace vcpkg
                     "{env_var} is {value}, must be > 0");
     DECLARE_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:");
     DECLARE_MESSAGE(EnvPlatformNotSupported, (), "", "Build environment commands are not supported on this platform");
+    DECLARE_MESSAGE(EnvVarMustBeAbsolutePath,
+                    (msg::path, msg::env_var),
+                    "",
+                    "{env_var} ({path}) was not an absolute path");
     DECLARE_MESSAGE(ErrorDetectingCompilerInfo,
                     (msg::path),
                     "",
@@ -1275,6 +1317,7 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedOneVersioningField, (), "", "expected only one versioning field");
     DECLARE_MESSAGE(ExpectedPathToExist, (msg::path), "", "Expected {path} to exist after fetching");
     DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
+    DECLARE_MESSAGE(ExpectedReadWriteReadWrite, (), "", "unexpected argument: expected 'read', readwrite', or 'write'");
     DECLARE_MESSAGE(ExpectedStatusField, (), "", "Expected 'status' field in status paragraph");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
     DECLARE_MESSAGE(ExpectedValueForOption, (msg::option), "", "expected value after --{option}.");
@@ -1457,6 +1500,14 @@ namespace vcpkg
     DECLARE_MESSAGE(GeneratingRepo, (msg::path), "", "Generating repository {path}...");
     DECLARE_MESSAGE(GetParseFailureInfo, (), "", "Use '--debug' to get more information about the parse failures.");
     DECLARE_MESSAGE(GitCommandFailed, (msg::command_line), "", "failed to execute: {command_line}");
+    DECLARE_MESSAGE(GitFailedToFetch,
+                    (msg::value, msg::url),
+                    "{value} is a git ref like 'origin/main'",
+                    "failed to fetch ref {value} from repository {url}");
+    DECLARE_MESSAGE(GitFailedToInitializeLocalRepository,
+                    (msg::path),
+                    "",
+                    "failed to initialize local repository {path}");
     DECLARE_MESSAGE(GitRegistryMustHaveBaseline,
                     (msg::package_name, msg::value),
                     "{value} is a commit sha",
@@ -1470,7 +1521,10 @@ namespace vcpkg
                     (msg::value),
                     "{value} is a single character indicating file status, for example: A, U, M, D",
                     "unknown file status: {value}");
-    DECLARE_MESSAGE(GitUnexpectedCommandOutput, (), "", "unexpected git output");
+    DECLARE_MESSAGE(GitUnexpectedCommandOutputCmd,
+                    (msg::command_line),
+                    "",
+                    "git produced unexpected output when running {command_line}");
     DECLARE_MESSAGE(
         HashFileFailureToRead,
         (msg::path),
@@ -2183,10 +2237,18 @@ namespace vcpkg
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
     DECLARE_MESSAGE(NoUrlsAndHashSpecified, (msg::sha), "", "No urls specified to download SHA: {sha}");
     DECLARE_MESSAGE(NoUrlsAndNoHashSpecified, (), "", "No urls specified and no hash specified.");
+    DECLARE_MESSAGE(NugetOutputNotCapturedBecauseInteractiveSpecified,
+                    (),
+                    "",
+                    "NuGet command failed and output was not captured because --interactive was specified");
     DECLARE_MESSAGE(NugetPackageFileSucceededButCreationFailed,
                     (msg::path),
                     "",
                     "NuGet package creation succeeded, but no .nupkg was produced. Expected: \"{path}\"");
+    DECLARE_MESSAGE(NugetTimeoutExpectsSinglePositiveInteger,
+                    (),
+                    "",
+                    "unexpected arguments: binary config 'nugettimeout' expects a single positive integer argument");
     DECLARE_MESSAGE(OptionMustBeInteger, (msg::option), "", "Value of --{option} must be an integer.");
     DECLARE_MESSAGE(OptionRequired, (msg::option), "", "--{option} option is required.");
     DECLARE_MESSAGE(OptionRequiresOption,
@@ -2491,6 +2553,10 @@ namespace vcpkg
         "{value} may be either a 'vendor' like 'Azure' or 'NuGet', or a file path like C:\\example or /usr/example",
         "Restored {count} package(s) from {value} in {elapsed}. Use --debug to see more details.");
     DECLARE_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
+    DECLARE_MESSAGE(ScriptAssetCacheRequiresScript,
+                    (),
+                    "",
+                    "expected arguments: asset config 'x-script' requires exactly the exec template as an argument");
     DECLARE_MESSAGE(SecretBanner, (), "", "*** SECRET ***");
     DECLARE_MESSAGE(SerializedBinParagraphHeader, (), "", "\nSerialized Binary Paragraph");
     DECLARE_MESSAGE(SettingEnvVar,
@@ -2563,6 +2629,10 @@ namespace vcpkg
                     (msg::system_api, msg::exit_code, msg::error_msg),
                     "",
                     "calling {system_api} failed with {exit_code} ({error_msg})");
+    DECLARE_MESSAGE(SystemRootMustAlwaysBePresent,
+                    (),
+                    "",
+                    "Expected the SystemRoot environment variable to be always set on Windows.");
     DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
     DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
     DECLARE_MESSAGE(ToolOfVersionXNotFound,
@@ -2586,12 +2656,20 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is a feature flag.",
                     "Both '{value}' and -'{value}' were specified as feature flags.");
+    DECLARE_MESSAGE(UnableToClearPath, (msg::path), "", "unable to delete {path}");
+    DECLARE_MESSAGE(UnableToReadAppDatas, (), "", "both %LOCALAPPDATA% and %APPDATA% were unreadable");
+    DECLARE_MESSAGE(UnableToReadEnvironmentVariable, (msg::env_var), "", "unable to read {env_var}");
     DECLARE_MESSAGE(UndeterminedToolChainForTriplet,
                     (msg::triplet, msg::system_name),
                     "",
                     "Unable to determine toolchain use for {triplet} with with CMAKE_SYSTEM_NAME {system_name}. Did "
                     "you mean to use "
                     "VCPKG_CHAINLOAD_TOOLCHAIN_FILE?");
+    DECLARE_MESSAGE(
+        UnexpectedAssetCacheProvider,
+        (),
+        "",
+        "unknown asset provider type: valid source types are 'x-azurl', 'x-script', 'x-block-origin', and 'clear'");
     DECLARE_MESSAGE(UnexpectedByteSize,
                     (msg::expected, msg::actual),
                     "{expected} is the expected byte size and {actual} is the actual byte size.",
@@ -2604,6 +2682,10 @@ namespace vcpkg
     DECLARE_MESSAGE(UnexpectedCharMidArray, (), "", "Unexpected character in middle of array");
     DECLARE_MESSAGE(UnexpectedCharMidKeyword, (), "", "Unexpected character in middle of keyword");
     DECLARE_MESSAGE(UnexpectedDigitsAfterLeadingZero, (), "", "Unexpected digits after a leading zero");
+    DECLARE_MESSAGE(UnexpectedEOFAfterBacktick,
+                    (),
+                    "",
+                    "unexpected eof: trailing unescaped backticks (`) are not allowed");
     DECLARE_MESSAGE(UnexpectedEOFAfterEscape, (), "", "Unexpected EOF after escape character");
     DECLARE_MESSAGE(UnexpectedEOFAfterMinus, (), "", "Unexpected EOF after minus sign");
     DECLARE_MESSAGE(UnexpectedEOFExpectedChar, (), "", "Unexpected character; expected EOF");
@@ -2841,6 +2923,11 @@ namespace vcpkg
     DECLARE_MESSAGE(VcpkgRootRequired, (), "", "Setting VCPKG_ROOT is required for standalone bootstrap.");
     DECLARE_MESSAGE(VcpkgRootsDir, (msg::env_var), "", "Specify the vcpkg root directory.\n(default: '{env_var}')");
     DECLARE_MESSAGE(VcpkgSendMetricsButDisabled, (), "", "passed --sendmetrics, but metrics are disabled.");
+    DECLARE_MESSAGE(VcvarsRunFailed, (), "", "failed to run vcvarsall.bat to get a Visual Studio environment");
+    DECLARE_MESSAGE(VcvarsRunFailedExitCode,
+                    (msg::exit_code),
+                    "",
+                    "while trying to get a Visual Studio environment, vcvarsall.bat returned {exit_code}");
     DECLARE_MESSAGE(VersionCommandHeader,
                     (msg::version),
                     "",
@@ -2904,6 +2991,12 @@ namespace vcpkg
                     "WarningMessage in code instead.");
     DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
     DECLARE_MESSAGE(WarnOnParseConfig, (msg::path), "", "Found the following warnings in configuration {path}:");
+    DECLARE_MESSAGE(WhileCheckingOutBaseline, (msg::commit_sha), "", "while checking out baseline {commit_sha}");
+    DECLARE_MESSAGE(WhileCheckingOutPortTreeIsh,
+                    (msg::package_name, msg::commit_sha),
+                    "",
+                    "while checking out port {package_name} with git tree {commit_sha}");
+    DECLARE_MESSAGE(WhileGettingLocalTreeIshObjectsForPorts, (), "", "while getting local treeish objects for ports");
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}");
