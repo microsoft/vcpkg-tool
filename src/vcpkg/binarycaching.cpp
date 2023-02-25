@@ -753,10 +753,10 @@ namespace
                 {
                     Path object_path = target_dir / objects[idx];
                     if (!fs.exists(object_path, IgnoreErrors{})) continue;
-                    jobs.push_back(decompress_zip_archive_cmd(paths.get_tool_cache(),
-                                                              stdout_sink,
-                                                              paths.package_dir(actions[object_indices[idx]].spec),
-                                                              object_path));
+                    auto pkg_path = paths.package_dir(actions[object_indices[idx]].spec);
+                    clean_prepare_dir(fs, pkg_path);
+                    jobs.push_back(
+                        decompress_zip_archive_cmd(paths.get_tool_cache(), stdout_sink, pkg_path, object_path));
                     idxs.push_back(idx);
                 }
 
