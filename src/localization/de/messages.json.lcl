@@ -9862,6 +9862,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";VersionRejectedDueToBaselineMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{path} was rejected because it uses "{json_field}" and does not have a "builtin-baseline". This can be fixed by removing the uses of "{json_field}" or adding a "builtin-baseline".]A;See `vcpkg help versioning` for more information.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} wurde abgelehnt, weil er „{json_field}“ verwendet wird und keine integrierte Baseline aufweist. Dies kann behoben werden, indem die Verwendung von „{json_field}“ entfernt oder eine „integrierte Baseline“ hinzugefügt wird.]A;Weitere Informationen finden Sie unter „Versionsverwaltung der vcpkg-Hilfe“.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionRejectedDueToFeatureFlagOff" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{path} was rejected because it uses "{json_field}" and the `versions` feature flag is disabled. This can be fixed by removing "{json_field}" or enabling the `versions` feature flag.]A;See `vcpkg help versioning` for more information.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} wurde abgelehnt, weil er „{json_field}“ verwendet wird und das Feature-Flag „versions“ deaktiviert ist. Dies kann behoben werden, indem „{json_field}“ entfernt oder das Feature-Flag „versions“ aktiviert wird.]A;Weitere Informationen finden Sie unter „Versionsverwaltung der vcpkg-Hilfe“.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";VersionSharpMustBeFollowedByPortVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA['#' in version text must be followed by a port version]]></Val>
