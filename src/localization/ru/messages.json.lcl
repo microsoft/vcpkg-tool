@@ -9865,6 +9865,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";VersionRejectedDueToBaselineMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{path} was rejected because it uses "{json_field}" and does not have a "builtin-baseline". This can be fixed by removing the uses of "{json_field}" or adding a "builtin-baseline".]A;See `vcpkg help versioning` for more information.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Путь {path} отклонен, поскольку в нем используется "{json_field}" и отсутствует "builtin-baseline". Чтобы исправить эту ошибку, удалите все вхождения "{json_field}" или добавьте "builtin-baseline".]A;Для получения дополнительных сведений см. "vcpkg help versioning".]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionRejectedDueToFeatureFlagOff" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{path} was rejected because it uses "{json_field}" and the `versions` feature flag is disabled. This can be fixed by removing "{json_field}" or enabling the `versions` feature flag.]A;See `vcpkg help versioning` for more information.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Путь {path} отклонен, поскольку в нем используется "{json_field}", а флаг функции "versions" отключен. Чтобы исправить эту ошибку, удалите "{json_field}" или включите флаг функции "versions".]A;Для получения дополнительных сведений см. "vcpkg help versioning".]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";VersionSharpMustBeFollowedByPortVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA['#' in version text must be followed by a port version]]></Val>

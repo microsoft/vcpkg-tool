@@ -229,6 +229,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AMaximumOfOneAssetReadUrlCanBeSpecified" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a maximum of one asset read url can be specified.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[最多可以指定一个资产读取 URL。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AMaximumOfOneAssetWriteUrlCanBeSpecified" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a maximum of one asset write url can be specified.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[最多可以指定一个资产写入 URL。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ANonNegativeInteger" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[a nonnegative integer]]></Val>
@@ -1126,6 +1144,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AssetCacheProviderAcceptsNoArguments" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unexpected arguments: '{value}' does not accept arguments]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[意外参数:“{value}”不接受参数]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AssetSourcesArg" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Add sources for asset caching. See 'vcpkg help assetcaching'.]]></Val>
@@ -1225,6 +1252,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AzUrlAssetCacheRequiresBaseUrl" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unexpected arguments: asset config 'azurl' requires a base url]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[意外参数: 资产配置“azurl”需要基 URL]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AzUrlAssetCacheRequiresLessThanFour" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unexpected arguments: asset config 'azurl' requires fewer than 4 arguments]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[意外参数: 资产配置 "azurl" 需要的参数少于 4 个]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";BaselineConflict" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Specifying vcpkg-configuration.default-registry in a manifest file conflicts with built-in baseline.]A;Please remove one of these conflicting settings.]]></Val>
@@ -1239,6 +1284,15 @@
           <Val><![CDATA[The baseline file at commit {commit_sha} was invalid (no "default" field).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[提交 {commit_sha} 处的基线文件无效(无“默认”字段)。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BaselineGitShowFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while checking out baseline from commit '{commit_sha}', failed to `git show` versions/baseline.json. This may be fixed by fetching commits with `git fetch`.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[提交 '{commit_sha}' 签出基线时，无法“git show”版本/基线.json。可以通过使用“git fetch”提取提交来修复此问题。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2880,10 +2934,13 @@
       </Item>
       <Item ItemId=";CurrentCommitBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[You can use the current commit as a baseline, which is:]A;	"builtin-baseline": "{value}"]]></Val>
+          <Val><![CDATA[You can use the current commit as a baseline, which is:]A;	"builtin-baseline": "{commit_sha}"]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[可以将当前提交用作基线，即:]A;	"builtin-baseline": "{value}"]]></Val>
+            <Val><![CDATA[可以将当前提交用作基线，即:]A;	"builtin-baseline": "{commit_sha}"]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[You can use the current commit as a baseline, which is:]A;	"builtin-baseline": "{value}"]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2919,6 +2976,33 @@
           <Val><![CDATA[Deactivating project ${p0}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[正在停用项目 ${p0}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DefaultBinaryCachePlatformCacheRequiresAbsolutePath" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Environment variable VCPKG_DEFAULT_BINARY_CACHE must be a directory (was: {path})]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[环境变量 VCPKG_DEFAULT_BINARY_CACHE 必须是目录(曾为: {path})]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DefaultBinaryCacheRequiresAbsolutePath" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Environment variable VCPKG_DEFAULT_BINARY_CACHE must be absolute (was: {path})]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[环境变量 VCPKG_DEFAULT_BINARY_CACHE 必须是绝对(曾为: {path})]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DefaultBinaryCacheRequiresDirectory" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Environment variable VCPKG_DEFAULT_BINARY_CACHE must be a directory (was: {path})]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[环境变量 VCPKG_DEFAULT_BINARY_CACHE 必须是目录(曾为: {path})]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3439,6 +3523,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";EnvVarMustBeAbsolutePath" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{env_var} ({path}) was not an absolute path]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{env_var} ({path}) 不是绝对路径]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ErrorDetectingCompilerInfo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[while detecting compiler information:]A;The log file content at "{path}" is:]]></Val>
@@ -3754,15 +3847,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ExpectedCascadeFailure" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Expected {expected} cascade failure, but there were {actual} cascade failures.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[预期级联失败次数为 {expected}，而实际级联失败次数为 {actual}。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ExpectedCharacterHere" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[expected '{expected}' here]]></Val>
@@ -3861,6 +3945,15 @@
           <Val><![CDATA[expected a port name here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[此处需要填写端口名称]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExpectedReadWriteReadWrite" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unexpected argument: expected 'read', readwrite', or 'write']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[意外参数: 应为“read”、“readwrite”或“write”]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4726,6 +4819,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";GitFailedToFetch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to fetch ref {value} from repository {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[无法从存储库 {url} 中提取引用 {value}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GitFailedToInitializeLocalRepository" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to initialize local repository {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[初始化本地存储库 {path} 失败]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";GitIsNotInstalled" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Git is not installed]]></Val>
@@ -4780,11 +4891,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";GitUnexpectedCommandOutput" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";GitUnexpectedCommandOutputCmd" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[unexpected git output]]></Val>
+          <Val><![CDATA[git produced unexpected output when running {command_line}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[意外的 git 输出]]></Val>
+            <Val><![CDATA[git 在运行 {command_line} 时生成了意外输出]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5841,24 +5952,6 @@
           <Val><![CDATA[Please open an issue at https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug with detailed steps to reproduce the problem.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[请在 https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug 打开一个包含重现问题的详细步骤的问题。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";InvalidArgMustBeAnInt" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[--{option} must be an integer.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[--{option} 必须是整数。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";InvalidArgMustBePositive" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[--{option} must be non-negative.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[--{option} 必须为非负值。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7048,11 +7141,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";NugetOutputNotCapturedBecauseInteractiveSpecified" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[NuGet command failed and output was not captured because --interactive was specified]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[NuGet 命令失败，未捕获输出，因为指定为交互式的]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";NugetPackageFileSucceededButCreationFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[NuGet package creation succeeded, but no .nupkg was produced. Expected: "{path}"]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[NuGet 包创建成功，但未生成 .nupkg。预期为:“{path}”]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";NugetTimeoutExpectsSinglePositiveInteger" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unexpected arguments: binary config 'nugettimeout' expects a single positive integer argument]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[意外参数: 二进制配置“nugettimeout”需要单个正整数参数]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8029,6 +8140,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ScriptAssetCacheRequiresScript" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected arguments: asset config 'x-script' requires exactly the exec template as an argument]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[应为参数: 资产配置 "x-script" 要求将 exec 模板精确用作参数]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";SecretBanner" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[*** SECRET ***]]></Val>
@@ -8296,6 +8416,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";SystemRootMustAlwaysBePresent" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Expected the SystemRoot environment variable to be always set on Windows.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[应始终在 Windows 上设置 SystemRoot 环境变量。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";TheInfoBlockIsDeprecatedForConsistencyWithVcpkgjsonMoveInfoMembersToTheOutside" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The info block is deprecated for consistency with vcpkg.json; move info members to the outside.]]></Val>
@@ -8548,6 +8677,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UnableToClearPath" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unable to delete {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[无法删除 {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UnableToDownloadRegistrySnapshot" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Unable to download registry snapshot]]></Val>
@@ -8602,6 +8740,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UnableToReadAppDatas" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[both %LOCALAPPDATA% and %APPDATA% were unreadable]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[%LOCALAPPDATA% 和 %APPDATA% 均不可读]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnableToReadEnvironmentVariable" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unable to read {env_var}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[无法读取 {env_var}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UnableToResolveDependency$In$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Unable to resolve dependency ${p0} in ${p1}.]]></Val>
@@ -8634,6 +8790,15 @@
           <Val><![CDATA[Unable to determine toolchain use for {triplet} with with CMAKE_SYSTEM_NAME {system_name}. Did you mean to use VCPKG_CHAINLOAD_TOOLCHAIN_FILE?]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[无法确定具有 CMAKE_SYSTEM_NAME {system_name} 的 {triplet} 的工具链使用。是否打算使用 VCPKG_CHAINLOAD_TOOLCHAIN_FILE?]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedAssetCacheProvider" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unknown asset provider type: valid source types are 'x-azurl', 'x-script', 'x-block-origin', and 'clear']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[未知资产提供程序类型: 有效的源类型为“x-azurl”、“x-script”、“x-block-origin”和“clear”]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8715,6 +8880,15 @@
           <Val><![CDATA[Unexpected digits after a leading zero]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[前导零后出现意外数字]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedEOFAfterBacktick" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unexpected eof: trailing unescaped backticks (`) are not allowed]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[意外的 eof: 不允许尾随的未转义反引号 (`)]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9592,6 +9766,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";VcvarsRunFailed" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to run vcvarsall.bat to get a Visual Studio environment]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[无法运行 vcvarsall.bat 以获取 Visual Studio 环境]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VcvarsRunFailedExitCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while trying to get a Visual Studio environment, vcvarsall.bat returned {exit_code}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[尝试获取 Visual Studio 环境时，vcvarsall.bat 返回了 {exit_code}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";Version" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Version]]></Val>
@@ -9669,6 +9861,24 @@
           <Val><![CDATA[expected a versioning field (one of version, version-date, version-semver, or version-string)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[需要版本控制字段(版本、版本日期、版本-semver 或版本字符串)之一]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionRejectedDueToBaselineMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{path} was rejected because it uses "{json_field}" and does not have a "builtin-baseline". This can be fixed by removing the uses of "{json_field}" or adding a "builtin-baseline".]A;See `vcpkg help versioning` for more information.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} 被拒绝，因为它使用了 "{json_field}"，并且没有“内置基线”。可以通过停止使用 "{json_field}" 或添加“内置基线”来修复此问题。]A;有关详细信息，请参阅 `vcpkg help versioning`。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionRejectedDueToFeatureFlagOff" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{path} was rejected because it uses "{json_field}" and the `versions` feature flag is disabled. This can be fixed by removing "{json_field}" or enabling the `versions` feature flag.]A;See `vcpkg help versioning` for more information.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} 被拒绝，因为它使用了 "{json_field}"，并且禁用了 `versions` 功能标志。可以通过停止使用 "{json_field}" 或启用 `versions` 功能标志来修复此问题。]A;有关详细信息，请参阅 `vcpkg help versioning`。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9762,6 +9972,33 @@
           <Val><![CDATA[previous warnings being interpreted as errors]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[以前被解释为错误的警告]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WhileCheckingOutBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while checking out baseline {commit_sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[签出基线 {commit_sha} 时]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WhileCheckingOutPortTreeIsh" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while checking out port {package_name} with git tree {commit_sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[用 git 树 {commit_sha} 签出端口 {package_name} 时]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WhileGettingLocalTreeIshObjectsForPorts" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while getting local treeish objects for ports]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[获取端口的本地树状对象时]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
