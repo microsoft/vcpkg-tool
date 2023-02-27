@@ -498,7 +498,7 @@ namespace vcpkg
     DECLARE_MESSAGE(AddVersionOldShaIs, (msg::commit_sha), "", "old SHA: {commit_sha}");
     DECLARE_MESSAGE(AddVersionOverwriteOptionSuggestion,
                     (msg::option),
-                    "The -- before {option} must be preserved as they're part of the help message for the user.",
+                    "The -- before {option} must be preserved as they're a part of the help message for the user.",
                     "Use --{option} to bypass this check");
     DECLARE_MESSAGE(AddVersionPortFilesShaChanged,
                     (msg::package_name),
@@ -797,11 +797,10 @@ namespace vcpkg
                     (),
                     "",
                     "The following files were built for an incorrect architecture:");
-    DECLARE_MESSAGE(
-        CacheHelp,
-        (),
-        "",
-        "The argument should be a substring to search for, or no argument to display all cached libraries.");
+    DECLARE_MESSAGE(CacheHelp,
+                    (),
+                    "",
+                    "The argument should be a substring to search for or no argument to display all cached libraries.");
     DECLARE_MESSAGE(ChecksFailedCheck, (), "", "vcpkg has crashed; no additional details are available.");
     DECLARE_MESSAGE(ChecksUnreachableCode, (), "", "unreachable code was reached");
     DECLARE_MESSAGE(ChecksUpdateVcpkg, (), "", "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.");
@@ -1311,7 +1310,7 @@ namespace vcpkg
                     "{value} is a commit sha.",
                     "while fetching baseline `\"{value}\"` from repo {package_name}:");
     DECLARE_MESSAGE(ErrorWhileParsing, (msg::path), "", "Errors occurred while parsing {path}.");
-    DECLARE_MESSAGE(ErrorWhileWriting, (msg::path), "", "Error occured while writing {path}");
+    DECLARE_MESSAGE(ErrorWhileWriting, (msg::path), "", "Error occurred while writing {path}.");
     DECLARE_MESSAGE(Example, (), "", "example:");
     DECLARE_MESSAGE(ExceededRecursionDepth, (), "", "Recursion depth exceeded.");
     DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
