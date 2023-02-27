@@ -318,8 +318,12 @@ namespace vcpkg
     static ZStringView to_vcvarsall_toolchain(StringView target_architecture, const Toolset& toolset, Triplet triplet)
     {
         auto maybe_target_arch = to_cpu_architecture(target_architecture);
-        Checks::check_maybe_upgrade(
-            VCPKG_LINE_INFO, maybe_target_arch.has_value(), "Invalid architecture string: %s", target_architecture);
+        if (!maybe_target_arch.has_value())
+        {
+            msg::println_error(msgInvalidArchitecture, msg::value = target_architecture);
+            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
+        }
+
         auto target_arch = maybe_target_arch.value_or_exit(VCPKG_LINE_INFO);
         // Ask for an arm64 compiler when targeting arm64ec; arm64ec is selected with a different flag on the compiler
         // command line.
@@ -1608,7 +1612,7 @@ namespace vcpkg
         return inner_create_buildinfo(*pghs.get());
     }
 
-    static ExpectedS<bool> from_cmake_bool(StringView value, StringView name)
+    static ExpectedL<bool> from_cmake_bool(StringView value, StringView name)
     {
         if (value == "1" || Strings::case_insensitive_ascii_equals(value, "on") ||
             Strings::case_insensitive_ascii_equals(value, "true"))
@@ -1622,11 +1626,7 @@ namespace vcpkg
         }
         else
         {
-            return Strings::concat("Error: Unknown boolean setting for ",
-                                   name,
-                                   ": \"",
-                                   value,
-                                   "\". Valid settings are '', '1', '0', 'ON', 'OFF', 'TRUE', and 'FALSE'.");
+            return msg::format(msgUnknownBooleanSetting, msg::option = name, msg::value = value);
         }
     }
 

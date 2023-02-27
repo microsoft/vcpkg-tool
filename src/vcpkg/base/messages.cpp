@@ -325,7 +325,7 @@ namespace vcpkg::msg
         }
     }
 
-    ExpectedS<MessageMapAndFile> get_message_map_from_lcid(int LCID)
+    ExpectedL<MessageMapAndFile> get_message_map_from_lcid(int LCID)
     {
         threadunsafe_initialize_context();
         auto embedded_filesystem = cmrc::cmakerc::get_filesystem();
@@ -340,7 +340,8 @@ namespace vcpkg::msg
                 });
         }
 
-        return std::string{"Unrecognized LCID"};
+        // this is called during localization setup so it can't be localized
+        return LocalizedString::from_raw("Unrecognized LCID");
     }
 
     Optional<std::string> get_locale_path(int LCID)
@@ -795,7 +796,10 @@ namespace vcpkg
     REGISTER_MESSAGE(ExportingPackage);
     REGISTER_MESSAGE(ExportPrefabRequiresAndroidTriplet);
     REGISTER_MESSAGE(ExportUnsupportedInManifest);
+    REGISTER_MESSAGE(FailedToAcquireMutant);
     REGISTER_MESSAGE(FailedToCheckoutRepo);
+    REGISTER_MESSAGE(FailedToDeleteDueToFile);
+    REGISTER_MESSAGE(FailedToDeleteInsideDueToFile);
     REGISTER_MESSAGE(FailedToDownloadFromMirrorSet);
     REGISTER_MESSAGE(FailedToFindBaseline);
     REGISTER_MESSAGE(FailedToFindPortFeature);
@@ -808,6 +812,7 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedToObtainDependencyVersion);
     REGISTER_MESSAGE(FailedToObtainLocalPortGitSha);
     REGISTER_MESSAGE(FailedToObtainPackageVersion);
+    REGISTER_MESSAGE(FailedToOpenAlgorithm);
     REGISTER_MESSAGE(FailedToParseCMakeConsoleOut);
     REGISTER_MESSAGE(FailedToParseBaseline);
     REGISTER_MESSAGE(FailedToParseConfig);
@@ -959,11 +964,13 @@ namespace vcpkg
     REGISTER_MESSAGE(IntegrateZshHelp);
     REGISTER_MESSAGE(IntegrationFailed);
     REGISTER_MESSAGE(InternalCICommand);
+    REGISTER_MESSAGE(InvalidArchitecture);
     REGISTER_MESSAGE(InvalidArgument);
     REGISTER_MESSAGE(InvalidArgumentRequiresAbsolutePath);
     REGISTER_MESSAGE(InvalidArgumentRequiresBaseUrl);
     REGISTER_MESSAGE(InvalidArgumentRequiresBaseUrlAndToken);
     REGISTER_MESSAGE(InvalidArgumentRequiresNoneArguments);
+    REGISTER_MESSAGE(InvalidArgumentRequiresNoWildcards);
     REGISTER_MESSAGE(InvalidArgumentRequiresOneOrTwoArguments);
     REGISTER_MESSAGE(InvalidArgumentRequiresPathArgument);
     REGISTER_MESSAGE(InvalidArgumentRequiresPrefix);
@@ -1175,6 +1182,7 @@ namespace vcpkg
     REGISTER_MESSAGE(SuggestUpdateVcpkg);
     REGISTER_MESSAGE(SupportedPort);
     REGISTER_MESSAGE(SystemApiErrorMessage);
+    REGISTER_MESSAGE(SystemTargetsInstallFailed);
     REGISTER_MESSAGE(SystemRootMustAlwaysBePresent);
     REGISTER_MESSAGE(ToolFetchFailed);
     REGISTER_MESSAGE(ToolInWin10);
@@ -1219,6 +1227,7 @@ namespace vcpkg
     REGISTER_MESSAGE(UnexpectedToolOutput);
     REGISTER_MESSAGE(UnknownBaselineFileContent);
     REGISTER_MESSAGE(UnknownBinaryProviderType);
+    REGISTER_MESSAGE(UnknownBooleanSetting);
     REGISTER_MESSAGE(UnknownOptions);
     REGISTER_MESSAGE(UnknownParameterForIntegrate);
     REGISTER_MESSAGE(UnknownPolicySetting);
@@ -1292,6 +1301,7 @@ namespace vcpkg
     REGISTER_MESSAGE(VersionInvalidSemver);
     REGISTER_MESSAGE(VersionMissing);
     REGISTER_MESSAGE(VersionMissingRequiredFeature);
+    REGISTER_MESSAGE(VersionNotFound);
     REGISTER_MESSAGE(VersionNotFoundDuringDiscovery);
     REGISTER_MESSAGE(VersionNotFoundInVersionsFile);
     REGISTER_MESSAGE(VersionRejectedDueToBaselineMissing);

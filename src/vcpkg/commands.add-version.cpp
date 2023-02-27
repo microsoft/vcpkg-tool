@@ -302,7 +302,7 @@ namespace
 
         msg::println_error(msg::format(msgAddVersionUnableToParseVersionsFile, msg::path = version_db_file_path)
                                .append_raw('\n')
-                               .append_raw(maybe_versions.error()));
+                               .append(maybe_versions.error()));
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 }

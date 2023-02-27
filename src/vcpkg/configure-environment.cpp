@@ -71,7 +71,7 @@ namespace
 
         if (!pparsed)
         {
-            Debug::println("Telemetry file couldn't be parsed: " + maybe_parsed.error());
+            Debug::println("Telemetry file couldn't be parsed: " + maybe_parsed.error().data());
             return;
         }
 

@@ -1147,7 +1147,7 @@ namespace vcpkg::Json
         return Parser::parse(json, origin);
     }
 
-    ExpectedS<Json::Object> parse_object(StringView text, StringView origin)
+    ExpectedL<Json::Object> parse_object(StringView text, StringView origin)
     {
         auto maybeValueIsh = parse(text, origin);
         if (auto asValueIsh = maybeValueIsh.get())
@@ -1158,10 +1158,10 @@ namespace vcpkg::Json
                 return std::move(asValue).object(VCPKG_LINE_INFO);
             }
 
-            return msg::format(msgJsonErrorMustBeAnObject, msg::path = origin).extract_data();
+            return msg::format(msgJsonErrorMustBeAnObject, msg::path = origin);
         }
 
-        return maybeValueIsh.error()->to_string();
+        return LocalizedString::from_raw(maybeValueIsh.error()->to_string());
     }
     // } auto parse()
 

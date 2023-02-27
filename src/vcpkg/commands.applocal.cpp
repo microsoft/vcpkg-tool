@@ -41,7 +41,7 @@ namespace
             }
             else
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO, "Failed to acquire mutant %s", name);
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgFailedToAcquireMutant, msg::path = name);
             }
         }
 
@@ -479,8 +479,9 @@ namespace
             }
             else
             {
-                Checks::exit_with_message(
-                    VCPKG_LINE_INFO, "Failed to deploy %s -> %s; error: %s\n", source, target, ec.message());
+                Checks::msg_exit_with_message(
+                    VCPKG_LINE_INFO,
+                    format_filesystem_call_error(ec, "copy_file", {source, target, "CopyOptions::update_existing"}));
             }
 
             if (m_tlog_file)

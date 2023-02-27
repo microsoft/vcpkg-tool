@@ -23,6 +23,6 @@ namespace vcpkg::msg
 
     Optional<std::string> get_locale_path(int LCID);
     Optional<StringLiteral> get_language_tag(int LCID);
-    ExpectedS<MessageMapAndFile> get_message_map_from_lcid(int LCID);
+    ExpectedL<MessageMapAndFile> get_message_map_from_lcid(int LCID);
     const Optional<cmrc::file> get_file();
 }
