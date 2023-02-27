@@ -25,7 +25,7 @@ namespace vcpkg
         if (!error.empty())
         {
             target.push_back('\n');
-            target.append(error);
+            target.append(error.data());
         }
 
         if (!other_errors.empty())
@@ -136,8 +136,8 @@ namespace vcpkg
         return nullptr;
     }
 
-    template<class T, class F>
-    static Optional<std::vector<T>> parse_list_until_eof(StringLiteral plural_item_name, ParserBase& parser, F f)
+    template<class T, class Message, class F>
+    static Optional<std::vector<T>> parse_list_until_eof(Message bad_comma_message, ParserBase& parser, F f)
     {
         std::vector<T> ret;
         parser.skip_whitespace();
@@ -151,7 +151,7 @@ namespace vcpkg
             if (parser.at_eof()) return {std::move(ret)};
             if (parser.cur() != ',')
             {
-                parser.add_error(Strings::concat("expected ',' or end of text in ", plural_item_name, " list"));
+                parser.add_error(msg::format(bad_comma_message));
                 return nullopt;
             }
             parser.next();
@@ -159,43 +159,46 @@ namespace vcpkg
         } while (true);
     }
 
-    ExpectedS<std::vector<std::string>> parse_default_features_list(const std::string& str,
+    ExpectedL<std::vector<std::string>> parse_default_features_list(const std::string& str,
                                                                     StringView origin,
                                                                     TextRowCol textrowcol)
     {
         auto parser = ParserBase(str, origin, textrowcol);
-        auto opt = parse_list_until_eof<std::string>("default features", parser, &parse_feature_name);
-        if (!opt) return {parser.get_error()->to_string(), expected_right_tag};
+        auto opt = parse_list_until_eof<std::string>(msgExpectedDefaultFeaturesList, parser, &parse_feature_name);
+        if (!opt) return {LocalizedString::from_raw(parser.get_error()->to_string()), expected_right_tag};
         return {std::move(opt).value_or_exit(VCPKG_LINE_INFO), expected_left_tag};
     }
-    ExpectedS<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
+    ExpectedL<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
                                                                                     StringView origin,
                                                                                     TextRowCol textrowcol)
     {
         auto parser = ParserBase(str, origin, textrowcol);
         auto opt = parse_list_until_eof<ParsedQualifiedSpecifier>(
-            "dependencies", parser, [](ParserBase& parser) { return parse_qualified_specifier(parser); });
-        if (!opt) return {parser.get_error()->to_string(), expected_right_tag};
+            msgExpectedDependenciesList, parser, [](ParserBase& parser) { return parse_qualified_specifier(parser); });
+        if (!opt) return {LocalizedString::from_raw(parser.get_error()->to_string()), expected_right_tag};
 
         return {std::move(opt).value_or_exit(VCPKG_LINE_INFO), expected_left_tag};
     }
-    ExpectedS<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
+    ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
                                                                StringView origin,
                                                                TextRowCol textrowcol)
     {
         auto parser = ParserBase(str, origin, textrowcol);
-        auto opt = parse_list_until_eof<Dependency>("dependencies", parser, [](ParserBase& parser) {
+        auto opt = parse_list_until_eof<Dependency>(msgExpectedDependenciesList, parser, [](ParserBase& parser) {
             auto loc = parser.cur_loc();
             return parse_qualified_specifier(parser).then([&](ParsedQualifiedSpecifier&& pqs) -> Optional<Dependency> {
-                if (pqs.triplet)
+                if (const auto triplet = pqs.triplet.get())
                 {
-                    parser.add_error("triplet specifier not allowed in this context", loc);
+                    parser.add_error(msg::format(msgAddTripletExpressionNotAllowed,
+                                                 msg::package_name = pqs.name,
+                                                 msg::triplet = *triplet),
+                                     loc);
                     return nullopt;
                 }
                 return Dependency{pqs.name, pqs.features.value_or({}), pqs.platform.value_or({})};
             });
         });
-        if (!opt) return {parser.get_error()->to_string(), expected_right_tag};
+        if (!opt) return {LocalizedString::from_raw(parser.get_error()->to_string()), expected_right_tag};
 
         return {std::move(opt).value_or_exit(VCPKG_LINE_INFO), expected_left_tag};
     }
@@ -218,7 +221,7 @@ namespace vcpkg::Paragraphs
 
                 if (cur() != ' ') return;
                 auto spacing = skip_tabs_spaces();
-                if (is_lineend(cur())) return add_error("unexpected end of line, to span a blank line use \"  .\"");
+                if (is_lineend(cur())) return add_error(msg::format(msgParagraphUnexpectedEndOfLine));
                 Strings::append(fieldvalue, "\n", spacing);
             } while (true);
         }
@@ -226,7 +229,7 @@ namespace vcpkg::Paragraphs
         void get_fieldname(std::string& fieldname)
         {
             fieldname = match_while(is_alphanumdash).to_string();
-            if (fieldname.empty()) return add_error("expected fieldname");
+            if (fieldname.empty()) return add_error(msg::format(msgParagraphExpectedFieldName));
         }
 
         void get_paragraph(Paragraph& fields)
@@ -244,8 +247,9 @@ namespace vcpkg::Paragraphs
 
                 auto loc = cur_loc();
                 get_fieldname(fieldname);
-                if (cur() != ':') return add_error("expected ':' after field name");
-                if (Util::Sets::contains(fields, fieldname)) return add_error("duplicate field", loc);
+                if (cur() != ':') return add_error(msg::format(msgParagraphExpectedColonAfterField));
+                if (Util::Sets::contains(fields, fieldname))
+                    return add_error(msg::format(msgParagraphDuplicateField), loc);
                 next();
                 skip_tabs_spaces();
                 auto rowcol = cur_rowcol();
@@ -258,7 +262,7 @@ namespace vcpkg::Paragraphs
     public:
         PghParser(StringView text, StringView origin) : ParserBase(text, origin) { }
 
-        ExpectedS<std::vector<Paragraph>> get_paragraphs()
+        ExpectedL<std::vector<Paragraph>> get_paragraphs()
         {
             std::vector<Paragraph> paragraphs;
 
@@ -269,13 +273,13 @@ namespace vcpkg::Paragraphs
                 get_paragraph(paragraphs.back());
                 match_while(is_lineend);
             }
-            if (get_error()) return get_error()->to_string();
+            if (get_error()) return LocalizedString::from_raw(get_error()->to_string());
 
             return paragraphs;
         }
     };
 
-    ExpectedS<Paragraph> parse_single_merged_paragraph(StringView str, StringView origin)
+    ExpectedL<Paragraph> parse_single_merged_paragraph(StringView str, StringView origin)
     {
         return PghParser(str, origin).get_paragraphs().map([](std::vector<Paragraph>&& paragraphs) {
             if (paragraphs.empty())
@@ -296,50 +300,47 @@ namespace vcpkg::Paragraphs
         });
     }
 
-    ExpectedS<Paragraph> parse_single_paragraph(StringView str, StringView origin)
+    ExpectedL<Paragraph> parse_single_paragraph(StringView str, StringView origin)
     {
-        return PghParser(str, origin).get_paragraphs().then([](std::vector<Paragraph>&& paragraphs) {
-            if (paragraphs.size() == 1)
-            {
-                return ExpectedS<Paragraph>{std::move(paragraphs.front())};
-            }
-            else
-            {
-                return ExpectedS<Paragraph>{"There should be exactly one paragraph"};
-            }
-        });
+        return PghParser(str, origin)
+            .get_paragraphs()
+            .then([](std::vector<Paragraph>&& paragraphs) -> ExpectedL<Paragraph> {
+                if (paragraphs.size() == 1)
+                {
+                    return std::move(paragraphs.front());
+                }
+                else
+                {
+                    return msg::format(msgParagraphExactlyOne);
+                }
+            });
     }
 
-    ExpectedS<Paragraph> get_single_paragraph(const Filesystem& fs, const Path& control_path)
+    ExpectedL<Paragraph> get_single_paragraph(const Filesystem& fs, const Path& control_path)
     {
         std::error_code ec;
         std::string contents = fs.read_contents(control_path, ec);
         if (ec)
         {
-            return ec.message();
+            return format_filesystem_call_error(ec, "read_contents", {control_path});
         }
 
         return parse_single_paragraph(contents, control_path);
     }
 
-    static ExpectedS<std::vector<Paragraph>> get_paragraphs_text(StringView text, StringView origin)
-    {
-        return parse_paragraphs(text, origin);
-    }
-
-    ExpectedS<std::vector<Paragraph>> get_paragraphs(const Filesystem& fs, const Path& control_path)
+    ExpectedL<std::vector<Paragraph>> get_paragraphs(const Filesystem& fs, const Path& control_path)
     {
         std::error_code ec;
         std::string contents = fs.read_contents(control_path, ec);
         if (ec)
         {
-            return ec.message();
+            return LocalizedString::from_raw(ec.message());
         }
 
         return parse_paragraphs(contents, control_path);
     }
 
-    ExpectedS<std::vector<Paragraph>> parse_paragraphs(StringView str, StringView origin)
+    ExpectedL<std::vector<Paragraph>> parse_paragraphs(StringView str, StringView origin)
     {
         return PghParser(str, origin).get_paragraphs();
     }
@@ -355,7 +356,7 @@ namespace vcpkg::Paragraphs
                                                                    MessageSink& warning_sink)
     {
         auto res = Json::parse(text, origin);
-        std::string error;
+        LocalizedString error;
         if (auto val = res.get())
         {
             if (val->first.is_object())
@@ -364,11 +365,11 @@ namespace vcpkg::Paragraphs
                     origin, val->first.object(VCPKG_LINE_INFO), warning_sink);
             }
 
-            error = "Manifest files must have a top-level object";
+            error = msg::format(msgJsonValueNotObject);
         }
         else
         {
-            error = res.error()->to_string();
+            error = LocalizedString::from_raw(res.error()->to_string());
         }
         auto error_info = std::make_unique<ParseControlErrorInfo>();
         error_info->name = origin.to_string();
@@ -388,7 +389,7 @@ namespace vcpkg::Paragraphs
             return try_load_manifest_text(text, origin, warning_sink);
         }
 
-        ExpectedS<std::vector<Paragraph>> pghs = get_paragraphs_text(text, origin);
+        ExpectedL<std::vector<Paragraph>> pghs = parse_paragraphs(StringView{text}, origin);
         if (auto vector_pghs = pghs.get())
         {
             return SourceControlFile::parse_control_file(origin, std::move(*vector_pghs));
@@ -414,8 +415,7 @@ namespace vcpkg::Paragraphs
             {
                 auto error_info = std::make_unique<ParseControlErrorInfo>();
                 error_info->name = port_name;
-                error_info->error =
-                    Strings::format("Failed to load manifest file for port: %s\n", manifest_path, ec.message());
+                error_info->error = msg::format_error(msgFailedToParseManifest, msg::path = manifest_path);
                 return error_info;
             }
         }
@@ -431,7 +431,7 @@ namespace vcpkg::Paragraphs
 
         if (fs.exists(control_path, IgnoreErrors{}))
         {
-            ExpectedS<std::vector<Paragraph>> pghs = get_paragraphs(fs, control_path);
+            ExpectedL<std::vector<Paragraph>> pghs = get_paragraphs(fs, control_path);
             if (auto vector_pghs = pghs.get())
             {
                 return SourceControlFile::parse_control_file(control_path, std::move(*vector_pghs));
@@ -446,23 +446,24 @@ namespace vcpkg::Paragraphs
         error_info->name = port_name;
         if (fs.exists(port_directory, IgnoreErrors{}))
         {
-            error_info->error = "Failed to find either a CONTROL file or vcpkg.json file.";
+            error_info->error =
+                msg::format_error(msgPortMissingManifest, msg::package_name = port_name, msg::path = port_directory);
         }
         else
         {
-            error_info->error = Strings::concat("The port directory (", port_directory, ") does not exist");
+            error_info->error = msg::format_error(msgPortDoesNotExist, msg::package_name = port_name);
         }
 
         return error_info;
     }
 
-    ExpectedS<BinaryControlFile> try_load_cached_package(const Filesystem& fs,
+    ExpectedL<BinaryControlFile> try_load_cached_package(const Filesystem& fs,
                                                          const Path& package_dir,
                                                          const PackageSpec& spec)
     {
         StatsTimer timer(g_load_ports_stats);
 
-        ExpectedS<std::vector<Paragraph>> pghs = get_paragraphs(fs, package_dir / "CONTROL");
+        ExpectedL<std::vector<Paragraph>> pghs = get_paragraphs(fs, package_dir / "CONTROL");
 
         if (auto p = pghs.get())
         {
@@ -475,12 +476,10 @@ namespace vcpkg::Paragraphs
 
             if (bcf.core_paragraph.spec != spec)
             {
-                return Strings::concat("Mismatched spec in package at ",
-                                       package_dir,
-                                       ": expected ",
-                                       spec,
-                                       ", actual ",
-                                       bcf.core_paragraph.spec);
+                return msg::format(msgMismatchedSpec,
+                                   msg::path = package_dir,
+                                   msg::expected = spec,
+                                   msg::actual = bcf.core_paragraph.spec);
             }
 
             return bcf;
