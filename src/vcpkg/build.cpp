@@ -973,8 +973,28 @@ namespace vcpkg
         }
 
         const BuildInfo build_info = read_build_info(fs, paths.build_info_file_path(action.spec));
-        const size_t error_count =
-            perform_post_build_lint_checks(action.spec, paths, pre_build_info, build_info, scfl.source_location);
+        const size_t error_count = [&]() {
+            struct FileSink : MessageSink
+            {
+                WriteFilePointer out_file;
+                StringView stdoutlog;
+                FileSink(Filesystem& fs, StringView stdoutlog)
+                    : out_file(fs.open_for_appending(stdoutlog, VCPKG_LINE_INFO)), stdoutlog(stdoutlog)
+                {
+                }
+                void print(Color c, StringView sv) override
+                {
+                    msg::write_unlocalized_text_to_stdout(c, sv);
+                    Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                           out_file.write(sv.data(), 1, sv.size()) == sv.size(),
+                                           msgErrorWhileWriting,
+                                           msg::path = stdoutlog);
+                }
+            };
+            FileSink file_sink{fs, stdoutlog};
+            return perform_post_build_lint_checks(
+                action.spec, paths, pre_build_info, build_info, scfl.source_location, file_sink);
+        }();
 
         auto find_itr = action.feature_dependencies.find("core");
         Checks::check_exit(VCPKG_LINE_INFO, find_itr != action.feature_dependencies.end());
