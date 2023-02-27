@@ -45,7 +45,7 @@ namespace vcpkg::Update
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("update"),
+        [] { return create_example_string("update"); },
         0,
         0,
         {},

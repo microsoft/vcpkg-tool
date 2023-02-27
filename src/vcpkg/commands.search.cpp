@@ -14,9 +14,7 @@ namespace vcpkg::Commands
         {{OPTION_FULLDESC, []() { return msg::format(msgHelpTextOptFullDesc); }}}};
 
     const CommandStructure SearchCommandStructure = {
-        Strings::format(
-            "The argument should be a substring to search for, or no argument to display all libraries.\n%s",
-            create_example_string("search png")),
+        [] { return msg::format(msgSearchHelp).append_raw('\n').append(create_example_string("search png")); },
         0,
         1,
         {SearchSwitches, {}},

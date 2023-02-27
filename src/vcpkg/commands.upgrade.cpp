@@ -34,7 +34,7 @@ namespace vcpkg::Commands::Upgrade
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("upgrade --no-dry-run"),
+        [] { return create_example_string("upgrade --no-dry-run"); },
         0,
         SIZE_MAX,
         {INSTALL_SWITCHES, {}},
@@ -93,7 +93,8 @@ namespace vcpkg::Commands::Upgrade
 
         // input sanitization
         const std::vector<PackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
-            return check_and_get_package_spec(std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+            return check_and_get_package_spec(
+                std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
         });
 
         ActionPlan action_plan;

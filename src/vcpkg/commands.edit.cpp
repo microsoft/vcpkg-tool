@@ -99,7 +99,7 @@ namespace vcpkg::Commands::Edit
          {OPTION_ALL, []() { return msg::format(msgCmdEditOptAll); }}}};
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("edit zlib"),
+        [] { return create_example_string("edit zlib"); },
         1,
         10,
         {EDIT_SWITCHES, {}},
