@@ -916,7 +916,8 @@ namespace vcpkg
 
     std::string parse_spdx_license_expression(StringView sv, ParseMessages& messages)
     {
-        auto parser = SpdxLicenseExpressionParser(sv, "<license string>");
+        auto license_string = msg::format(msgLicenseExpressionString); // must live through parse
+        auto parser = SpdxLicenseExpressionParser(sv, license_string);
         auto result = parser.parse();
         messages = parser.extract_messages();
         return result;

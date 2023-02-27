@@ -190,7 +190,7 @@ namespace vcpkg
                                    const StatusParagraphs& status_db,
                                    const CreateInstallPlanOptions& options = {Triplet{}});
 
-    ExpectedS<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& vprovider,
+    ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& vprovider,
                                                         const IBaselineProvider& bprovider,
                                                         const IOverlayProvider& oprovider,
                                                         const CMakeVars::CMakeVarProvider& var_provider,

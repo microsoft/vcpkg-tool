@@ -14,7 +14,7 @@ namespace vcpkg
     struct PortFileProvider
     {
         virtual ~PortFileProvider() = default;
-        virtual ExpectedS<const SourceControlFileAndLocation&> get_control_file(const std::string& src_name) const = 0;
+        virtual ExpectedL<const SourceControlFileAndLocation&> get_control_file(const std::string& src_name) const = 0;
         virtual std::vector<const SourceControlFileAndLocation*> load_all_control_files() const = 0;
     };
 
@@ -23,7 +23,7 @@ namespace vcpkg
         explicit MapPortFileProvider(const std::unordered_map<std::string, SourceControlFileAndLocation>& map);
         MapPortFileProvider(const MapPortFileProvider&) = delete;
         MapPortFileProvider& operator=(const MapPortFileProvider&) = delete;
-        ExpectedS<const SourceControlFileAndLocation&> get_control_file(const std::string& src_name) const override;
+        ExpectedL<const SourceControlFileAndLocation&> get_control_file(const std::string& src_name) const override;
         std::vector<const SourceControlFileAndLocation*> load_all_control_files() const override;
 
     private:
@@ -35,7 +35,7 @@ namespace vcpkg
         virtual View<Version> get_port_versions(StringView port_name) const = 0;
         virtual ~IVersionedPortfileProvider() = default;
 
-        virtual ExpectedS<const SourceControlFileAndLocation&> get_control_file(
+        virtual ExpectedL<const SourceControlFileAndLocation&> get_control_file(
             const VersionSpec& version_spec) const = 0;
         virtual void load_all_control_files(std::map<std::string, const SourceControlFileAndLocation*>& out) const = 0;
     };
@@ -58,7 +58,7 @@ namespace vcpkg
         explicit PathsPortFileProvider(const Filesystem& fs,
                                        const RegistrySet& registry_set,
                                        std::unique_ptr<IOverlayProvider>&& overlay);
-        ExpectedS<const SourceControlFileAndLocation&> get_control_file(const std::string& src_name) const override;
+        ExpectedL<const SourceControlFileAndLocation&> get_control_file(const std::string& src_name) const override;
         std::vector<const SourceControlFileAndLocation*> load_all_control_files() const override;
 
     private:

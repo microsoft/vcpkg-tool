@@ -685,6 +685,14 @@ namespace vcpkg
                     "",
                     "while checking out baseline from commit '{commit_sha}', failed to `git show` "
                     "versions/baseline.json. This may be fixed by fetching commits with `git fetch`.");
+    DECLARE_MESSAGE(BaselineMissing,
+                    (msg::package_name, msg::version),
+                    "",
+                    "Baseline version not found. Run:\n"
+                    "vcpkg x-add-version {package_name}\n"
+                    "git add versions\n"
+                    "git commit -m \"Update version database\"\n"
+                    "to set {version} as the baseline version.");
     DECLARE_MESSAGE(BaselineMissingDefault,
                     (msg::commit_sha, msg::url),
                     "",
@@ -801,6 +809,11 @@ namespace vcpkg
                     (),
                     "",
                     "The argument should be a substring to search for or no argument to display all cached libraries.");
+    DECLARE_MESSAGE(CheckedOutGitSha, (msg::commit_sha), "", "Checked out Git SHA: {commit_sha}");
+    DECLARE_MESSAGE(CheckedOutObjectMissingManifest,
+                    (),
+                    "",
+                    "The checked-out object does not contain a CONTROL file or vcpkg.json file.");
     DECLARE_MESSAGE(ChecksFailedCheck, (), "", "vcpkg has crashed; no additional details are available.");
     DECLARE_MESSAGE(ChecksUnreachableCode, (), "", "unreachable code was reached");
     DECLARE_MESSAGE(ChecksUpdateVcpkg, (), "", "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.");
@@ -1125,6 +1138,7 @@ namespace vcpkg
         (msg::commit_sha),
         "",
         "You can use the current commit as a baseline, which is:\n\t\"builtin-baseline\": \"{commit_sha}\"");
+    DECLARE_MESSAGE(CycleDetectedDuring, (msg::spec), "", "cycle detected during {spec}:");
     DECLARE_MESSAGE(DateTableHeader, (), "", "Date");
     DECLARE_MESSAGE(DefaultBinaryCachePlatformCacheRequiresAbsolutePath,
                     (msg::path),
@@ -2056,6 +2070,7 @@ namespace vcpkg
         (msg::system_name, msg::value),
         "'{value}' is the linkage type vcpkg would did not understand. (Correct values would be static ofr dynamic)",
         "Invalid {system_name} linkage type: [{value}]");
+    DECLARE_MESSAGE(InvalidNoVersions, (), "", "File contains no versions.");
     DECLARE_MESSAGE(InvalidOptionForRemove,
                     (),
                     "'remove' is a command that should not be changed.",
@@ -2089,6 +2104,7 @@ namespace vcpkg
                     "",
                     "A library archive member was too small to contain the expected data type.");
     DECLARE_MESSAGE(LibraryFirstLinkerMemberMissing, (), "", "Could not find first linker member name.");
+    DECLARE_MESSAGE(LicenseExpressionString, (), "", "<license string>");
     DECLARE_MESSAGE(LicenseExpressionContainsExtraPlus,
                     (),
                     "",
@@ -2996,6 +3012,15 @@ namespace vcpkg
                     (msg::exit_code),
                     "",
                     "while trying to get a Visual Studio environment, vcvarsall.bat returned {exit_code}");
+    DECLARE_MESSAGE(VersionBaselineMismatch,
+                    (msg::expected, msg::actual, msg::package_name),
+                    "{expected} and {actual} are versions",
+                    "The latest version is {expected}, but the baseline file contains {actual}.\n"
+                    "Run:\n"
+                    "vcpkg x-add-version {package_name}\n"
+                    "git add versions\n"
+                    "git commit -m \"Update version database\"\n"
+                    "to update the baseline version.");
     DECLARE_MESSAGE(VersionCommandHeader,
                     (msg::version),
                     "",
@@ -3009,11 +3034,25 @@ namespace vcpkg
                     (),
                     "",
                     "port-version (after the '#') in \"version>=\" must be a positive integer");
+    DECLARE_MESSAGE(VersionConstraintUnresolvable,
+                    (msg::package_name, msg::spec),
+                    "",
+                    "Cannot resolve a minimum constraint for dependency {package_name} from {spec}.\nThe dependency "
+                    "was not found in the baseline, indicating that the package did not exist at that time. This may "
+                    "be fixed by providing an explicit override version via the \"overrides\" field or by updating the "
+                    "baseline.\nSee `vcpkg help versioning` for more information.");
     DECLARE_MESSAGE(VersionConstraintViolated,
                     (msg::spec, msg::expected_version, msg::actual_version),
                     "",
                     "dependency {spec} was expected to be at least version "
                     "{expected_version}, but is currently {actual_version}.");
+    DECLARE_MESSAGE(VersionDatabaseFileMissing,
+                    (msg::package_name, msg::path),
+                    "",
+                    "{package_name} is missing a version database file at {path}\n"
+                    "Run:\n"
+                    "vcpkg x-add-version {package_name}\n"
+                    "to create the versions file.");
     DECLARE_MESSAGE(VersionBuiltinPortTreeEntryMissing,
                     (msg::package_name, msg::expected, msg::actual),
                     "{expected} and {actual} are versions like 1.0.",
@@ -3027,7 +3066,24 @@ namespace vcpkg
                     (msg::package_name, msg::version),
                     "A list of versions, 1 per line, are printed after this message.",
                     "no version database entry for {package_name} at {version}.\nAvailable versions:");
+    DECLARE_MESSAGE(VersionIncomparable1,
+                    (msg::spec, msg::package_name, msg::expected, msg::actual),
+                    "{expected} and {actual} are versions like 1.0",
+                    "version conflict on {spec}: {package_name} required {expected} but vcpkg could not compare it to "
+                    "{actual}.\nThe two versions used incomparable schemes:");
+    DECLARE_MESSAGE(VersionIncomparable2,
+                    (msg::version, msg::new_scheme),
+                    "",
+                    "\"{version}\" was of scheme {new_scheme}");
+    DECLARE_MESSAGE(VersionIncomparable3,
+                    (),
+                    "This precedes a JSON document describing the fix",
+                    "This can be resolved by adding an explicit override to the preferred version, for example:");
     DECLARE_MESSAGE(VersionIncomparable4, (), "", "See `vcpkg help versioning` for more information.");
+    DECLARE_MESSAGE(VersionInDeclarationDoesNotMatch,
+                    (msg::version),
+                    "",
+                    "The version declared in file does not match checked-out version: {version}");
     DECLARE_MESSAGE(
         VersionInvalidDate,
         (msg::version),
@@ -3047,10 +3103,27 @@ namespace vcpkg
         (),
         "The names version, version-date, version-semver, and version-string are code and must not be localized",
         "expected a versioning field (one of version, version-date, version-semver, or version-string)");
+    DECLARE_MESSAGE(VersionMissingRequiredFeature,
+                    (msg::spec, msg::version, msg::feature),
+                    "",
+                    "{spec}@{version} does not have required feature {feature}");
     DECLARE_MESSAGE(VersionNotFound,
                     (msg::expected, msg::actual),
                     "{expected} and {actual} are versions",
                     "{expected} not available, only {actual} is available");
+    DECLARE_MESSAGE(
+        VersionNotFoundDuringDiscovery,
+        (msg::spec, msg::version),
+        "",
+        "version was not found during discovery: {spec}@{version}\nThis is an internal vcpkg error. Please open "
+        "an issue on https://github.com/Microsoft/vcpkg with detailed steps to reproduce the problem.");
+    DECLARE_MESSAGE(VersionNotFoundInVersionsFile,
+                    (msg::version, msg::package_name),
+                    "",
+                    "Version {version} was not found in versions file.\n"
+                    "Run:\n"
+                    "vcpkg x-add-version {package_name}\n"
+                    "to add the new port version.");
     DECLARE_MESSAGE(VersionRejectedDueToBaselineMissing,
                     (msg::path, msg::json_field),
                     "",
@@ -3063,6 +3136,34 @@ namespace vcpkg
                     "{path} was rejected because it uses \"{json_field}\" and the `versions` feature flag is disabled. "
                     "This can be fixed by removing \"{json_field}\" or enabling the `versions` feature flag.\nSee "
                     "`vcpkg help versioning` for more information.");
+    DECLARE_MESSAGE(VersionSchemeMismatch,
+                    (msg::version, msg::expected, msg::actual, msg::path, msg::package_name),
+                    "{expected} and {actual} are version schemes; it here refers to the {version}",
+                    "The version database declares {version} as {expected}, but {path} declares it as {actual}. "
+                    "Versions must be unique, even if they are declared with different schemes.\n"
+                    "Run:\n"
+                    "vcpkg x-add-version {package_name} --overwrite-version\n"
+                    "to overwrite the scheme declared in the version database with that declared in the port.");
+    DECLARE_MESSAGE(VersionShaMismatch,
+                    (msg::version, msg::expected, msg::actual, msg::package_name),
+                    "{expected} and {actual} are git commit SHAs",
+                    "{version} is declared with {expected}, but the local port has a different SHA {actual}.\n"
+                    "Please update the port's version fields and then run:\n"
+                    "vcpkg x-add-version {package_name}\n"
+                    "git add versions\n"
+                    "git commit -m \"Update version database\"\n"
+                    "to add the new version.");
+    DECLARE_MESSAGE(VersionShaMissing,
+                    (msg::package_name, msg::path),
+                    "",
+                    "while validating {package_name}, missing Git SHA.\n"
+                    "Run:\n"
+                    "git add \"{path}\"\n"
+                    "git commit -m \"wip\"\n"
+                    "vcpkg x-add-version {package_name}\n"
+                    "git add versions\n"
+                    "git commit --amend -m \"[{package_name}] Add new port\"\n"
+                    "to commit the new port and create its version file.");
     DECLARE_MESSAGE(VersionSharpMustBeFollowedByPortVersion,
                     (),
                     "",
@@ -3077,6 +3178,10 @@ namespace vcpkg
                     "Failed to load port because versions are inconsistent. The file \"{path}\" contains the version "
                     "{actual_version}, but the version database indicates that it should be {expected_version}.");
     DECLARE_MESSAGE(VersionTableHeader, (), "", "Version");
+    DECLARE_MESSAGE(VersionVerifiedOK,
+                    (msg::package_name, msg::version, msg::commit_sha),
+                    "",
+                    "OK: {package_name}@{version} -> {commit_sha}");
     DECLARE_MESSAGE(VSExaminedInstances, (), "", "The following Visual Studio instances were considered:");
     DECLARE_MESSAGE(VSExaminedPaths, (), "", "The following paths were examined for Visual Studio instances:");
     DECLARE_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance");
@@ -3095,7 +3200,17 @@ namespace vcpkg
                     "",
                     "while checking out port {package_name} with git tree {commit_sha}");
     DECLARE_MESSAGE(WhileGettingLocalTreeIshObjectsForPorts, (), "", "while getting local treeish objects for ports");
+    DECLARE_MESSAGE(WhileLoadingLocalPort,
+                    (msg::package_name),
+                    "",
+                    "while attempting to load local port {package_name}");
+    DECLARE_MESSAGE(WhileLoadingPortFromGitTree, (msg::commit_sha), "", "while trying to load port from: {commit_sha}");
     DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:");
+    DECLARE_MESSAGE(WhileParsingVersionsForPort,
+                    (msg::package_name, msg::path),
+                    "",
+                    "while parsing versions for {package_name} from {path}");
+    DECLARE_MESSAGE(WhileValidatingVersion, (msg::version), "", "while validating version: {version}");
     DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.");
     DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}");
 }

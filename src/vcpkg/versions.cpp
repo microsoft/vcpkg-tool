@@ -1,3 +1,4 @@
+#include <vcpkg/base/format.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/stringview.h>
@@ -11,11 +12,20 @@ namespace vcpkg
     Version::Version(std::string&& value, int port_version) : m_text(std::move(value)), m_port_version(port_version) { }
     Version::Version(const std::string& value, int port_version) : m_text(value), m_port_version(port_version) { }
 
-    std::string Version::to_string() const { return Strings::concat(*this); }
+    std::string Version::to_string() const
+    {
+        std::string result;
+        to_string(result);
+        return result;
+    }
+
     void Version::to_string(std::string& out) const
     {
         out.append(m_text);
-        if (m_port_version) Strings::append(out, '#', m_port_version);
+        if (m_port_version)
+        {
+            fmt::format_to(std::back_inserter(out), "#{}", m_port_version);
+        }
     }
 
     bool operator==(const Version& left, const Version& right)
@@ -42,12 +52,9 @@ namespace vcpkg
     VersionDiff::VersionDiff() noexcept : left(), right() { }
     VersionDiff::VersionDiff(const Version& left, const Version& right) : left(left), right(right) { }
 
-    std::string VersionDiff::to_string() const
-    {
-        return Strings::format("%s -> %s", left.to_string(), right.to_string());
-    }
+    std::string VersionDiff::to_string() const { return fmt::format("{} -> {}", left, right); }
 
-    std::string VersionSpec::to_string() const { return Strings::concat(port_name, '@', version); }
+    std::string VersionSpec::to_string() const { return fmt::format("{}@{}", port_name, version); }
 
     namespace
     {
@@ -330,6 +337,13 @@ namespace vcpkg
         }
 
         return ret;
+    }
+
+    std::string to_string(VersionScheme scheme)
+    {
+        std::string result;
+        to_string(result, scheme);
+        return result;
     }
 
     void to_string(std::string& out, VersionScheme scheme)
