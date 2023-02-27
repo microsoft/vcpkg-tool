@@ -1067,11 +1067,10 @@ namespace vcpkg
             auto manifest_scf = std::move(maybe_manifest_scf).value_or_exit(VCPKG_LINE_INFO);
             const auto& manifest_core = *manifest_scf->core_paragraph;
             auto registry_set = paths.make_registry_set();
-            if (auto maybe_error = manifest_scf->check_against_feature_flags(
-                    manifest->path, paths.get_feature_flags(), registry_set->is_default_builtin_registry()))
-            {
-                Checks::exit_with_message(VCPKG_LINE_INFO, maybe_error.value_or_exit(VCPKG_LINE_INFO));
-            }
+            manifest_scf
+                ->check_against_feature_flags(
+                    manifest->path, paths.get_feature_flags(), registry_set->is_default_builtin_registry())
+                .value_or_exit(VCPKG_LINE_INFO);
 
             std::vector<std::string> features;
             auto manifest_feature_it = options.multisettings.find(OPTION_MANIFEST_FEATURE);
