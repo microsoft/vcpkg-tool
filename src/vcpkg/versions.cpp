@@ -339,38 +339,21 @@ namespace vcpkg
         return ret;
     }
 
-    std::string to_string(VersionScheme scheme)
+    StringLiteral to_string_literal(VersionScheme scheme)
     {
-        std::string result;
-        to_string(result, scheme);
-        return result;
-    }
-
-    void to_string(std::string& out, VersionScheme scheme)
-    {
-        if (scheme == VersionScheme::Missing)
+        static constexpr StringLiteral MISSING = "missing";
+        static constexpr StringLiteral STRING = "string";
+        static constexpr StringLiteral SEMVER = "semver";
+        static constexpr StringLiteral RELAXED = "relaxed";
+        static constexpr StringLiteral DATE = "date";
+        switch (scheme)
         {
-            out.append("missing");
-        }
-        else if (scheme == VersionScheme::String)
-        {
-            out.append("string");
-        }
-        else if (scheme == VersionScheme::Semver)
-        {
-            out.append("semver");
-        }
-        else if (scheme == VersionScheme::Relaxed)
-        {
-            out.append("relaxed");
-        }
-        else if (scheme == VersionScheme::Date)
-        {
-            out.append("date");
-        }
-        else
-        {
-            Checks::unreachable(VCPKG_LINE_INFO);
+            case VersionScheme::Missing: return MISSING;
+            case VersionScheme::String: return STRING;
+            case VersionScheme::Semver: return SEMVER;
+            case VersionScheme::Relaxed: return RELAXED;
+            case VersionScheme::Date: return DATE;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
 

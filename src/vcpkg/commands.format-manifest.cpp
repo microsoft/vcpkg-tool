@@ -34,7 +34,7 @@ namespace
             return nullopt;
         }
 
-        const auto& parsed_json = parsed_json_opt.value_or_exit(VCPKG_LINE_INFO).first;
+        const auto& parsed_json = parsed_json_opt.value_or_exit(VCPKG_LINE_INFO).value;
         if (!parsed_json.is_object())
         {
             msg::println_error(msgJsonErrorMustBeAnObject, msg::path = path_string);
