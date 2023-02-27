@@ -850,7 +850,6 @@ namespace vcpkg
         auto conf = Json::parse(contents, origin);
         if (!conf)
         {
-            messageSink.println(msgFailedToParseConfig, msg::path = origin);
             messageSink.println(Color::error, LocalizedString::from_raw(conf.error()->to_string()));
             return nullopt;
         }

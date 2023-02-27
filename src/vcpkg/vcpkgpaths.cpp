@@ -73,12 +73,10 @@ namespace
         if (!manifest_opt)
         {
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                           msg::format(msgFailedToLoadManifest, msg::path = manifest_dir)
-                                               .append_raw('\n')
-                                               .append_raw(manifest_opt.error()->to_string()));
+                                           LocalizedString::from_raw(manifest_opt.error()->to_string()));
         }
-        auto manifest_value = std::move(manifest_opt).value_or_exit(VCPKG_LINE_INFO);
 
+        auto manifest_value = std::move(manifest_opt).value_or_exit(VCPKG_LINE_INFO);
         if (!manifest_value.first.is_object())
         {
             msg::println_error(msgFailedToParseNoTopLevelObj, msg::path = manifest_path);
