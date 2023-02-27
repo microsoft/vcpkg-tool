@@ -355,7 +355,6 @@ namespace vcpkg::Paragraphs
                                                                    MessageSink& warning_sink)
     {
         auto res = Json::parse(text, origin);
-
         std::string error;
         if (auto val = res.get())
         {

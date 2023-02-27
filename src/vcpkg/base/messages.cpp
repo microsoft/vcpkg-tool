@@ -606,6 +606,7 @@ namespace vcpkg
     REGISTER_MESSAGE(AVersionConstraint);
     REGISTER_MESSAGE(BaselineConflict);
     REGISTER_MESSAGE(BaselineFileNoDefaultField);
+    REGISTER_MESSAGE(BaselineFileNoDefaultFieldPath);
     REGISTER_MESSAGE(BaselineGitShowFailed);
     REGISTER_MESSAGE(BaselineMissingDefault);
     REGISTER_MESSAGE(AvailableArchitectureTriplets);
@@ -673,6 +674,7 @@ namespace vcpkg
     REGISTER_MESSAGE(CouldNotFindBaselineForRepo);
     REGISTER_MESSAGE(CouldNotFindBaselineInCommit);
     REGISTER_MESSAGE(CouldNotFindGitTreeAtCommit);
+    REGISTER_MESSAGE(CouldNotFindVersionDatabaseFile);
     REGISTER_MESSAGE(CreatedNuGetPackage);
     REGISTER_MESSAGE(CreateFailureLogsDir);
     REGISTER_MESSAGE(Creating7ZipArchive);
@@ -793,14 +795,15 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedToObtainLocalPortGitSha);
     REGISTER_MESSAGE(FailedToObtainPackageVersion);
     REGISTER_MESSAGE(FailedToParseCMakeConsoleOut);
+    REGISTER_MESSAGE(FailedToParseBaseline);
     REGISTER_MESSAGE(FailedToParseConfig);
     REGISTER_MESSAGE(FailedToParseControl);
-    REGISTER_MESSAGE(FailedToParseJson);
     REGISTER_MESSAGE(FailedToParseManifest);
+    REGISTER_MESSAGE(FailedToParseNoVersionsArray);
     REGISTER_MESSAGE(FailedToParseSerializedBinParagraph);
+    REGISTER_MESSAGE(FailedToParseVersionsFile);
     REGISTER_MESSAGE(FailedToParseVersionXML);
     REGISTER_MESSAGE(FailedToProvisionCe);
-    REGISTER_MESSAGE(FailedToRead);
     REGISTER_MESSAGE(FailedToReadParagraph);
     REGISTER_MESSAGE(FailedToRemoveControl);
     REGISTER_MESSAGE(FailedToRunToolToDetermineVersion);
@@ -1222,6 +1225,10 @@ namespace vcpkg
     REGISTER_MESSAGE(VersionConflictXML);
     REGISTER_MESSAGE(VersionConstraintPortVersionMustBePositiveInteger);
     REGISTER_MESSAGE(VersionConstraintViolated);
+    REGISTER_MESSAGE(VersionBuiltinPortTreeEntryMissing);
+    REGISTER_MESSAGE(VersionDatabaseEntryMissing);
+    REGISTER_MESSAGE(VersionGitEntryMissing);
+    REGISTER_MESSAGE(VersionIncomparable4);
     REGISTER_MESSAGE(VersionInvalidDate);
     REGISTER_MESSAGE(VersionInvalidRelaxed);
     REGISTER_MESSAGE(VersionInvalidSemver);
