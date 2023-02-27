@@ -1110,6 +1110,7 @@ namespace vcpkg
     REGISTER_MESSAGE(PortsAdded);
     REGISTER_MESSAGE(PortsDiffHelp);
     REGISTER_MESSAGE(PortDoesNotExist);
+    REGISTER_MESSAGE(PortMissingManifest);
     REGISTER_MESSAGE(PortsNoDiff);
     REGISTER_MESSAGE(PortsRemoved);
     REGISTER_MESSAGE(PortsUpdated);
