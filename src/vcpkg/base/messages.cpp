@@ -1351,6 +1351,7 @@ namespace vcpkg
     REGISTER_MESSAGE(CISettingsExclude);
     REGISTER_MESSAGE(CmdDependInfoOptDot);
     REGISTER_MESSAGE(CmdDependInfoOptDGML);
+    REGISTER_MESSAGE(CmdDependInfoOptMermaid);
     REGISTER_MESSAGE(CmdDependInfoOptDepth);
     REGISTER_MESSAGE(CmdDependInfoOptMaxRecurse);
     REGISTER_MESSAGE(CmdDependInfoOptSort);

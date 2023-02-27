@@ -875,6 +875,7 @@ namespace vcpkg
     DECLARE_MESSAGE(CmdDependInfoOptDepth, (), "", "Show recursion depth in output");
     DECLARE_MESSAGE(CmdDependInfoOptDGML, (), "", "Creates graph on basis of dgml");
     DECLARE_MESSAGE(CmdDependInfoOptDot, (), "", "Creates graph on basis of dot");
+    DECLARE_MESSAGE(CmdDependInfoOptMermaid, (), "", "Creates graph on basis of mermaid");
     DECLARE_MESSAGE(CmdDependInfoOptMaxRecurse, (), "", "Set max recursion depth, a value of -1 indicates no limit");
     DECLARE_MESSAGE(CmdDependInfoOptSort,
                     (),

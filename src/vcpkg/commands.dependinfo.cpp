@@ -84,15 +84,17 @@ namespace vcpkg::Commands::DependInfo
 
         constexpr StringLiteral OPTION_DOT = "dot";
         constexpr StringLiteral OPTION_DGML = "dgml";
+        constexpr StringLiteral OPTION_MERMAID = "mermaid";
         constexpr StringLiteral OPTION_SHOW_DEPTH = "show-depth";
         constexpr StringLiteral OPTION_MAX_RECURSE = "max-recurse";
         constexpr StringLiteral OPTION_SORT = "sort";
 
         constexpr int NO_RECURSE_LIMIT_VALUE = -1;
 
-        constexpr std::array<CommandSwitch, 3> DEPEND_SWITCHES = {
+        constexpr std::array<CommandSwitch, 4> DEPEND_SWITCHES = {
             {{OPTION_DOT, []() { return msg::format(msgCmdDependInfoOptDot); }},
              {OPTION_DGML, []() { return msg::format(msgCmdDependInfoOptDGML); }},
+             {OPTION_MERMAID, []() { return msg::format(msgCmdDependInfoOptMermaid); }},
              {OPTION_SHOW_DEPTH, []() { return msg::format(msgCmdDependInfoOptDepth); }}}};
 
         constexpr std::array<CommandSetting, 2> DEPEND_SETTINGS = {
@@ -210,6 +212,22 @@ namespace vcpkg::Commands::DependInfo
             return s;
         }
 
+        std::string create_mermaid_as_string(const std::vector<PackageDependInfo>& depend_info)
+        {
+            std::string s;
+            s.append("flowchart TD;");
+
+            for (const auto& package : depend_info)
+            {
+                for (const auto& dependency : package.dependencies)
+                {
+                    s.append(Strings::format(" %s --> %s;", package.package, dependency));
+                }
+            }
+
+            return s;
+        }
+
         std::string create_graph_as_string(const std::set<std::string, std::less<>>& switches,
                                            const std::vector<PackageDependInfo>& depend_info)
         {
@@ -220,6 +238,10 @@ namespace vcpkg::Commands::DependInfo
             else if (Util::Sets::contains(switches, OPTION_DGML))
             {
                 return create_dgml_as_string(depend_info);
+            }
+            else if (Util::Sets::contains(switches, OPTION_MERMAID))
+            {
+                return create_mermaid_as_string(depend_info);
             }
             return {};
         }
@@ -333,7 +355,8 @@ namespace vcpkg::Commands::DependInfo
 
         std::vector<PackageDependInfo> depend_info = extract_depend_info(install_actions, max_depth);
 
-        if (Util::Sets::contains(options.switches, OPTION_DOT) || Util::Sets::contains(options.switches, OPTION_DGML))
+        if (Util::Sets::contains(options.switches, OPTION_DOT) || Util::Sets::contains(options.switches, OPTION_DGML) ||
+            Util::Sets::contains(options.switches, OPTION_MERMAID))
         {
             const std::vector<const SourceControlFile*> source_control_files =
                 Util::fmap(install_actions, [](const InstallPlanAction* install_action) {
