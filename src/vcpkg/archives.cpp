@@ -105,13 +105,12 @@ namespace
         static bool recursion_limiter_sevenzip = false;
         Checks::check_exit(VCPKG_LINE_INFO, !recursion_limiter_sevenzip);
         recursion_limiter_sevenzip = true;
-        const auto maybe_output =
-            flatten(cmd_execute_and_capture_output(Command{seven_zip}
-                                                       .string_arg("x")
-                                                       .string_arg(archive)
-                                                       .string_arg(Strings::format("-o%s", to_path))
-                                                       .string_arg("-y")),
-                    Tools::SEVEN_ZIP);
+        const auto maybe_output = flatten(cmd_execute_and_capture_output(Command{seven_zip}
+                                                                             .string_arg("x")
+                                                                             .string_arg(archive)
+                                                                             .string_arg(fmt::format("-o{}", to_path))
+                                                                             .string_arg("-y")),
+                                          Tools::SEVEN_ZIP);
 
         if (!maybe_output)
         {

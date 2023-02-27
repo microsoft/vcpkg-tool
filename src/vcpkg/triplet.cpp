@@ -88,7 +88,7 @@ namespace vcpkg
     static Triplet system_triplet()
     {
         auto host_proc = get_host_processor();
-        auto canonical_name = Strings::format("%s-%s", to_zstring_view(host_proc), get_host_os_name());
+        auto canonical_name = fmt::format("{}-{}", to_zstring_view(host_proc), get_host_os_name());
         return Triplet::from_canonical_name(std::move(canonical_name));
     }
 

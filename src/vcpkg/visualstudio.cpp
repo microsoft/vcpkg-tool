@@ -77,7 +77,7 @@ namespace vcpkg::VisualStudio
 
         std::string to_string() const
         {
-            return Strings::format("%s, %s, %s", root_path, version, release_type_to_string(release_type));
+            return fmt::format("{}, {}, {}", root_path, version, release_type_to_string(release_type));
         }
 
         std::string major_version() const { return version.substr(0, 2); }

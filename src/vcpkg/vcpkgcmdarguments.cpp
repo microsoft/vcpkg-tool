@@ -485,7 +485,7 @@ namespace vcpkg
             auto it = set.find(name);
             if (it == set.end() && !Strings::starts_with(name, "x-"))
             {
-                it = set.find(Strings::format("x-%s", name));
+                it = set.find(fmt::format("x-{}", name));
             }
 
             return it;
@@ -899,8 +899,8 @@ namespace vcpkg
                 msg::println_warning(
                     msgSpecifiedFeatureTurnedOff, msg::command_name = el.flag, msg::option = el.option);
                 msg::println_warning(msgDefaultFlag, msg::option = el.flag);
-                get_global_metrics_collector().track_string(
-                    StringMetric::Warning, Strings::format("warning %s alongside %s", el.flag, el.option));
+                get_global_metrics_collector().track_string(StringMetric::Warning,
+                                                            fmt::format("warning {} alongside {}", el.flag, el.option));
             }
         }
     }
