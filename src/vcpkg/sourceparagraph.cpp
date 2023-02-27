@@ -708,7 +708,7 @@ namespace vcpkg
 
     // The "license" field; either:
     // * a string, which must be an SPDX license expression.
-    //   EBNF located at: https://github.com/microsoft/vcpkg/blob/master/docs/maintainers/manifest-files.md#license
+    //   EBNF located at: https://learn.microsoft.com/vcpkg/reference/vcpkg-json#license
     // * `null`, for when the license of the package cannot be described by an SPDX expression
     struct SpdxLicenseExpressionParser : ParserBase
     {
