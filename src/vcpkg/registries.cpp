@@ -896,12 +896,12 @@ namespace
             return LocalizedString::from_raw(maybe_versions_json.error()->to_string());
         }
 
-        if (!versions_json->first.is_object())
+        if (!versions_json->value.is_object())
         {
             return msg::format_error(msgFailedToParseNoTopLevelObj, msg::path = versions_file_path);
         }
 
-        const auto& versions_object = versions_json->first.object(VCPKG_LINE_INFO);
+        const auto& versions_object = versions_json->value.object(VCPKG_LINE_INFO);
         auto maybe_versions_array = versions_object.get("versions");
         if (!maybe_versions_array || !maybe_versions_array->is_array())
         {
@@ -933,14 +933,14 @@ namespace
         }
 
         auto& value = *maybe_value.get();
-        if (!value.first.is_object())
+        if (!value.value.is_object())
         {
             return msg::format_error(msgFailedToParseNoTopLevelObj, msg::path = origin);
         }
 
         auto real_baseline = baseline.size() == 0 ? "default" : baseline;
 
-        const auto& obj = value.first.object(VCPKG_LINE_INFO);
+        const auto& obj = value.value.object(VCPKG_LINE_INFO);
         auto baseline_value = obj.get(real_baseline);
         if (!baseline_value)
         {
