@@ -112,7 +112,7 @@ namespace vcpkg::Commands::CI
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("ci --triplet=x64-windows"),
+        [] { return create_example_string("ci --triplet=x64-windows"); },
         0,
         0,
         {CI_SWITCHES, CI_SETTINGS},

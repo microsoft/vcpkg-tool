@@ -1133,15 +1133,11 @@ namespace vcpkg::Json
         auto ret = parse_file(fs, json_file, ec);
         if (ec)
         {
-            msg::println_error(msgFailedToRead, msg::path = json_file, msg::error_msg = ec);
-            Checks::exit_fail(li);
+            Checks::msg_exit_with_error(li, format_filesystem_call_error(ec, "read_contents", {json_file}));
         }
         else if (!ret)
         {
-            msg::println_error(msgFailedToParseJson, msg::path = json_file);
-            msg::write_unlocalized_text_to_stdout(Color::error, ret.error()->to_string());
-            msg::println();
-            Checks::exit_fail(li);
+            Checks::msg_exit_with_message(li, LocalizedString::from_raw(ret.error()->to_string()));
         }
         return ret.value_or_exit(li);
     }
@@ -1165,10 +1161,7 @@ namespace vcpkg::Json
             return msg::format(msgJsonErrorMustBeAnObject, msg::path = origin).extract_data();
         }
 
-        return msg::format(msgFailedToParseJson, msg::path = origin)
-            .append_raw('\n')
-            .append_raw(maybeValueIsh.error()->to_string())
-            .extract_data();
+        return maybeValueIsh.error()->to_string();
     }
     // } auto parse()
 

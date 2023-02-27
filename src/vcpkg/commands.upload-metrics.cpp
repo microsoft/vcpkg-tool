@@ -12,7 +12,7 @@ using namespace vcpkg;
 namespace vcpkg::Commands::UploadMetrics
 {
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("x-upload-metrics metrics.txt"),
+        [] { return create_example_string("x-upload-metrics metrics.txt"); },
         1,
         1,
     };

@@ -288,7 +288,7 @@ namespace vcpkg
         if (binary_paragraph != pgh)
         {
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                           msg::format(msgMissmatchedBinParagraphs)
+                                           msg::format(msgMismatchedBinParagraphs)
                                                .append(msgOriginalBinParagraphHeader)
                                                .append_raw(format_binary_paragraph(pgh))
                                                .append(msgSerializedBinParagraphHeader)

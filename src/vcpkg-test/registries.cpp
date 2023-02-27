@@ -395,15 +395,15 @@ TEST_CASE ("registries report pattern errors", "[registries]")
     CHECK(errors[0] ==
           "$.registries[0].packages[1] (a package pattern): \"\" is not a valid package pattern. Package patterns must "
           "use only one wildcard character (*) and it must be the last character in the pattern (see "
-          "https://github.com/Microsoft/vcpkg/tree/master/docs/users/registries.md for more information)");
+          "https://learn.microsoft.com/vcpkg/users/registries for more information)");
     CHECK(errors[1] ==
           "$.registries[0].packages[2] (a package pattern): \"a*a\" is not a valid package pattern. Package patterns "
           "must use only one wildcard character (*) and it must be the last character in the pattern (see "
-          "https://github.com/Microsoft/vcpkg/tree/master/docs/users/registries.md for more information)");
+          "https://learn.microsoft.com/vcpkg/users/registries for more information)");
     CHECK(errors[2] ==
           "$.registries[0].packages[3] (a package pattern): \"*a\" is not a valid package pattern. Package patterns "
           "must use only one wildcard character (*) and it must be the last character in the pattern (see "
-          "https://github.com/Microsoft/vcpkg/tree/master/docs/users/registries.md for more information)");
+          "https://learn.microsoft.com/vcpkg/users/registries for more information)");
 }
 
 TEST_CASE ("registries ignored patterns warning", "[registries]")
