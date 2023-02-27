@@ -18,7 +18,7 @@ namespace vcpkg::Commands::Version
 {
     constexpr StringLiteral version = version_init;
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("version"),
+        [] { return create_example_string("version"); },
         0,
         0,
         {},

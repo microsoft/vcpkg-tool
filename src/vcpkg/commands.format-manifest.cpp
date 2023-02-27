@@ -164,7 +164,7 @@ namespace vcpkg::Commands::FormatManifest
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string(R"###(format-manifest --all)###"),
+        [] { return create_example_string("format-manifest --all"); },
         0,
         SIZE_MAX,
         {FORMAT_SWITCHES, {}, {}},
