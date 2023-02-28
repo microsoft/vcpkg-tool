@@ -37,7 +37,7 @@ namespace
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string(R"###(new --name=example --version=1.0 --version-kind=relaxed)###"),
+        [] { return create_example_string("new --name=example --version=1.0 --version-kind=relaxed"); },
         0,
         0,
         {SWITCHES, SETTINGS, {}},

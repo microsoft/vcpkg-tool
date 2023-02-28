@@ -103,9 +103,9 @@ namespace vcpkg
         Optional<const std::vector<Dependency>&> find_dependencies_for_feature(const std::string& featurename) const;
         bool has_qualified_dependencies() const;
 
-        Optional<std::string> check_against_feature_flags(const Path& origin,
-                                                          const FeatureFlagSettings& flags,
-                                                          bool is_default_builtin_registry = true) const;
+        ExpectedL<Unit> check_against_feature_flags(const Path& origin,
+                                                    const FeatureFlagSettings& flags,
+                                                    bool is_default_builtin_registry = true) const;
 
         Version to_version() const { return core_paragraph->to_version(); }
         SchemedVersion to_schemed_version() const

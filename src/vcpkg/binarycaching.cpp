@@ -91,7 +91,7 @@ namespace
             }
             else
             {
-                add_error("unexpected argument: expected 'read', readwrite', or 'write'", segments[segment_idx].first);
+                add_error(msg::format(msgExpectedReadWriteReadWrite), segments[segment_idx].first);
                 return nullopt;
             }
         }

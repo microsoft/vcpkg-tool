@@ -89,7 +89,7 @@ TEST_CASE ("VcpkgCmdArguments from argument sequence with valued options", "[arg
     SECTION ("case 1")
     {
         std::array<CommandSetting, 1> settings = {{{"a", nullptr}}};
-        CommandStructure cmdstruct = {"", 0, SIZE_MAX, {{}, settings}, nullptr};
+        CommandStructure cmdstruct = {nullptr, 0, SIZE_MAX, {{}, settings}, nullptr};
 
         std::vector<std::string> t = {"--a=b", "command", "argument"};
         auto v = VcpkgCmdArguments::create_from_arg_sequence(t.data(), t.data() + t.size());
@@ -105,7 +105,7 @@ TEST_CASE ("VcpkgCmdArguments from argument sequence with valued options", "[arg
     {
         std::array<CommandSwitch, 2> switches = {{{"a", nullptr}, {"c", nullptr}}};
         std::array<CommandSetting, 2> settings = {{{"b", nullptr}, {"d", nullptr}}};
-        CommandStructure cmdstruct = {"", 0, SIZE_MAX, {switches, settings}, nullptr};
+        CommandStructure cmdstruct = {nullptr, 0, SIZE_MAX, {switches, settings}, nullptr};
 
         std::vector<std::string> t = {"--a", "--b=c"};
         auto v = VcpkgCmdArguments::create_from_arg_sequence(t.data(), t.data() + t.size());
