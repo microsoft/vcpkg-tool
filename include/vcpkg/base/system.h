@@ -29,9 +29,11 @@ namespace vcpkg
     std::wstring get_username();
 
     bool test_registry_key(void* base_hkey, StringView sub_key);
-#endif
 
-    Optional<std::string> get_registry_string(void* base_hkey, StringView subkey, StringView valuename);
+    ExpectedL<std::string> get_registry_string(void* base_hkey, StringView subkey, StringView valuename);
+
+    ExpectedL<std::uint32_t> get_registry_dword(void* base_hkey, StringView subkey, StringView valuename);
+#endif
 
     long get_process_id();
 

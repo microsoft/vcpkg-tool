@@ -22,7 +22,7 @@ namespace
 namespace vcpkg::Commands::Create
 {
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string(R"###(create zlib2 http://zlib.net/zlib1211.zip "zlib1211-2.zip")###"),
+        [] { return create_example_string(R"###(create zlib2 http://zlib.net/zlib1211.zip "zlib1211-2.zip")###"); },
         2,
         3,
         {},

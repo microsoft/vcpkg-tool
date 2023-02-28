@@ -7,8 +7,10 @@
 #include <vcpkg/base/setup-messages.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 
+#include <vcpkg/bundlesettings.h>
 #include <vcpkg/cgroup-parser.h>
 #include <vcpkg/commands.contact.h>
 #include <vcpkg/commands.h>
@@ -86,7 +88,7 @@ namespace
         return false;
     }
 
-    void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
+    void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args, const BundleSettings& bundle)
     {
         // track version on each invocation
         get_global_metrics_collector().track_string(StringMetric::VcpkgVersion, Commands::Version::version.to_string());
@@ -120,7 +122,7 @@ namespace
             return command_function->function->perform_and_exit(args, fs);
         }
 
-        const VcpkgPaths paths(fs, args);
+        const VcpkgPaths paths(fs, args, bundle);
         get_global_metrics_collector().track_bool(BoolMetric::FeatureFlagManifests, paths.manifest_mode_enabled());
         get_global_metrics_collector().track_bool(BoolMetric::OptionOverlayPorts, !paths.overlay_ports.empty());
 
@@ -298,25 +300,81 @@ int main(const int argc, const char* const* const argv)
         Debug::println("To include the environment variables in debug output, pass --debug-env");
     }
     args.check_feature_flag_consistency();
+    const auto current_exe_path = get_exe_path_of_current_process();
 
     bool to_enable_metrics = true;
-    auto disable_metrics_tag_file_path = get_exe_path_of_current_process();
-    disable_metrics_tag_file_path.replace_filename("vcpkg.disable-metrics");
-
-    std::error_code ec;
-    if (fs.exists(disable_metrics_tag_file_path, ec) || ec)
     {
-        to_enable_metrics = false;
+        auto disable_metrics_tag_file_path = current_exe_path;
+        disable_metrics_tag_file_path.replace_filename("vcpkg.disable-metrics");
+        std::error_code ec;
+        if (fs.exists(disable_metrics_tag_file_path, ec) || ec)
+        {
+            Debug::println("Disabling metrics because vcpkg.disable-metrics exists");
+            to_enable_metrics = false;
+        }
     }
 
-    if (auto p = args.disable_metrics.get())
+    auto bundle_path = current_exe_path;
+    bundle_path.replace_filename("vcpkg-bundle.json");
+    Debug::println("Trying to load bundleconfig from ", bundle_path);
+    auto bundle = fs.try_read_contents(bundle_path).then(&try_parse_bundle_settings).value_or(BundleSettings{});
+    Debug::println("Bundle config: ", bundle.to_string());
+
+    if (to_enable_metrics)
     {
-        to_enable_metrics = !*p;
+        if (auto p = args.disable_metrics.get())
+        {
+            if (*p)
+            {
+                Debug::println("Force disabling metrics with --disable-metrics");
+                to_enable_metrics = false;
+            }
+            else
+            {
+                Debug::println("Force enabling metrics with --no-disable-metrics");
+                to_enable_metrics = true;
+            }
+        }
+#ifdef _WIN32
+        else if (bundle.deployment == DeploymentKind::VisualStudio)
+        {
+            std::vector<std::string> opt_in_points;
+            opt_in_points.push_back(R"(SOFTWARE\Policies\Microsoft\VisualStudio\SQM)");
+            opt_in_points.push_back(R"(SOFTWARE\WOW6432Node\Policies\Microsoft\VisualStudio\SQM)");
+            if (auto vsversion = bundle.vsversion.get())
+            {
+                opt_in_points.push_back(fmt::format(R"(SOFTWARE\Microsoft\VSCommon\{}\SQM)", *vsversion));
+                opt_in_points.push_back(fmt::format(R"(SOFTWARE\WOW6432Node\Microsoft\VSCommon\{}\SQM)", *vsversion));
+            }
+
+            std::string* opted_in_at = nullptr;
+            for (auto&& opt_in_point : opt_in_points)
+            {
+                if (get_registry_dword(HKEY_LOCAL_MACHINE, opt_in_point, "OptIn").value_or(0) != 0)
+                {
+                    opted_in_at = &opt_in_point;
+                    break;
+                }
+            }
+
+            if (opted_in_at)
+            {
+                Debug::println("VS telemetry opted in at ", *opted_in_at, R"(\\OptIn)");
+            }
+            else
+            {
+                Debug::println("VS telemetry not opted in, disabling metrics");
+                to_enable_metrics = false;
+            }
+        }
+#endif // _WIN32
     }
 
     if (to_enable_metrics)
     {
         g_metrics_enabled = true;
+        Debug::println("Metrics enabled.");
+        get_global_metrics_collector().track_string(StringMetric::DeploymentKind, to_string_literal(bundle.deployment));
     }
 
     if (const auto p = args.print_metrics.get())
@@ -340,14 +398,14 @@ int main(const int argc, const char* const* const argv)
 
     if (Debug::g_debugging)
     {
-        inner(fs, args);
+        inner(fs, args, bundle);
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
     std::string exc_msg;
     try
     {
-        inner(fs, args);
+        inner(fs, args, bundle);
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
     catch (std::exception& e)

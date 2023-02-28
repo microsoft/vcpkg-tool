@@ -80,9 +80,7 @@ namespace vcpkg::Commands::List
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
-        Strings::format(
-            "The argument should be a substring to search for, or no argument to display all installed libraries.\n%s",
-            create_example_string("list png")),
+        [] { return msg::format(msgListHelp).append_raw('\n').append(create_example_string("list png")); },
         0,
         1,
         {LIST_SWITCHES, {}},

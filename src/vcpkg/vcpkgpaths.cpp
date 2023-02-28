@@ -12,6 +12,7 @@
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/binaryparagraph.h>
 #include <vcpkg/build.h>
+#include <vcpkg/bundlesettings.h>
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/configuration.h>
@@ -73,18 +74,16 @@ namespace
         if (!manifest_opt)
         {
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                           msg::format(msgFailedToLoadManifest, msg::path = manifest_dir)
-                                               .append_raw('\n')
-                                               .append_raw(manifest_opt.error()->to_string()));
+                                           LocalizedString::from_raw(manifest_opt.error()->to_string()));
         }
-        auto manifest_value = std::move(manifest_opt).value_or_exit(VCPKG_LINE_INFO);
 
-        if (!manifest_value.first.is_object())
+        auto manifest_value = std::move(manifest_opt).value_or_exit(VCPKG_LINE_INFO).value;
+        if (!manifest_value.is_object())
         {
             msg::println_error(msgFailedToParseNoTopLevelObj, msg::path = manifest_path);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
-        return {std::move(manifest_value.first.object(VCPKG_LINE_INFO)), std::move(manifest_path)};
+        return {std::move(manifest_value).object(VCPKG_LINE_INFO), std::move(manifest_path)};
     }
 
     static Optional<ManifestConfiguration> config_from_manifest(const Optional<ManifestAndPath>& manifest_doc)
@@ -201,55 +200,10 @@ namespace
         return ret;
     }
 
-    struct BundleSettings
-    {
-        bool m_readonly = false;
-        bool m_usegitregistry = false;
-        Optional<std::string> m_embedded_git_sha;
-    };
-
-    BundleSettings load_bundle_file(const Filesystem& fs, const Path& root)
-    {
-        BundleSettings ret;
-        const auto vcpkg_bundle_file = root / "vcpkg-bundle.json";
-        std::error_code ec;
-        auto bundle_file = fs.read_contents(vcpkg_bundle_file, ec);
-        if (!ec)
-        {
-            auto maybe_bundle_doc = Json::parse(bundle_file, bundle_file);
-            if (auto bundle_doc = maybe_bundle_doc.get())
-            {
-                const auto& first_object = bundle_doc->first.object(VCPKG_LINE_INFO);
-                if (auto v = first_object.get("readonly"))
-                {
-                    ret.m_readonly = v->boolean(VCPKG_LINE_INFO);
-                }
-
-                if (auto v = first_object.get("usegitregistry"))
-                {
-                    ret.m_usegitregistry = v->boolean(VCPKG_LINE_INFO);
-                }
-
-                if (auto v = first_object.get("embeddedsha"))
-                {
-                    ret.m_embedded_git_sha = v->string(VCPKG_LINE_INFO).to_string();
-                }
-            }
-            else
-            {
-                Checks::msg_exit_with_error(VCPKG_LINE_INFO,
-                                            msg::format(msgInvalidBundleDefinition)
-                                                .append_raw('\n')
-                                                .append_raw(maybe_bundle_doc.error()->to_string()));
-            }
-        }
-        return ret;
-    }
-
     Optional<Path> maybe_get_tmp_path(const Filesystem& fs,
-                                      const BundleSettings& bundle,
                                       const Optional<InstalledPaths>& installed,
                                       const Path& root,
+                                      bool root_read_only,
                                       const std::string* arg_path,
                                       StringLiteral root_subpath,
                                       StringLiteral readonly_subpath,
@@ -259,7 +213,7 @@ namespace
         {
             return fs.almost_canonical(*arg_path, li);
         }
-        else if (bundle.m_readonly)
+        else if (root_read_only)
         {
             if (auto i = installed.get())
             {
@@ -332,11 +286,15 @@ namespace
     // 2. Are const (and therefore initialized in the initializer list)
     struct VcpkgPathsImplStage1 : VcpkgPathsImplStage0
     {
-        VcpkgPathsImplStage1(Filesystem& fs, const VcpkgCmdArguments& args, const Path& root, const Path& original_cwd)
+        VcpkgPathsImplStage1(Filesystem& fs,
+                             const VcpkgCmdArguments& args,
+                             const BundleSettings& bundle,
+                             const Path& root,
+                             const Path& original_cwd)
             : m_fs(fs)
             , m_ff_settings(args.feature_flag_settings())
             , m_manifest_dir(compute_manifest_dir(fs, args, original_cwd))
-            , m_bundle(load_bundle_file(fs, root))
+            , m_bundle(bundle)
             , m_download_manager(std::make_shared<DownloadManager>(
                   parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)))
             , m_builtin_ports(process_output_directory(fs, args.builtin_ports_root_dir.get(), root / "ports"))
@@ -348,15 +306,7 @@ namespace
             , scripts(process_input_directory(fs, root, args.scripts_root_dir.get(), "scripts", VCPKG_LINE_INFO))
             , m_registries_cache(compute_registries_cache_root(fs, args))
         {
-            Debug::print("Bundle config: readonly=",
-                         m_bundle.m_readonly,
-                         ", usegitregistry=",
-                         m_bundle.m_usegitregistry,
-                         ", embeddedsha=",
-                         m_bundle.m_embedded_git_sha.value_or("nullopt"),
-                         "\n");
-
-            Debug::print("Using builtin-ports: ", m_builtin_ports, '\n');
+            Debug::println("Using builtin-ports: ", m_builtin_ports);
         }
 
         Filesystem& m_fs;
@@ -370,15 +320,12 @@ namespace
         const Path m_registries_cache;
     };
 
-    Optional<InstalledPaths> compute_installed(Filesystem& fs,
-                                               const VcpkgCmdArguments& args,
-                                               const Path& root,
-                                               const Path& manifest_dir,
-                                               const BundleSettings& bundle)
+    Optional<InstalledPaths> compute_installed(
+        Filesystem& fs, const VcpkgCmdArguments& args, const Path& root, bool root_read_only, const Path& manifest_dir)
     {
         if (manifest_dir.empty())
         {
-            if (!bundle.m_readonly)
+            if (!root_read_only)
             {
                 return InstalledPaths{process_output_directory(fs, args.install_root_dir.get(), root / "installed")};
             }
@@ -394,14 +341,14 @@ namespace
     Path compute_downloads_root(const Filesystem& fs,
                                 const VcpkgCmdArguments& args,
                                 const Path& root,
-                                const BundleSettings& bundle)
+                                bool root_read_only)
     {
         Path ret;
         if (auto downloads_root_dir = args.downloads_root_dir.get())
         {
             ret = *downloads_root_dir;
         }
-        else if (bundle.m_readonly)
+        else if (root_read_only)
         {
             ret = get_platform_cache_home().value_or_exit(VCPKG_LINE_INFO) / "vcpkg" / "downloads";
         }
@@ -533,7 +480,7 @@ namespace
         }
         else if (auto lock_contents = maybe_lock_contents.get())
         {
-            auto& doc = lock_contents->first;
+            auto& doc = lock_contents->value;
             if (!doc.is_object())
             {
                 Debug::print("Lockfile was not an object\n");
@@ -561,26 +508,36 @@ namespace vcpkg
 
     struct VcpkgPathsImpl : VcpkgPathsImplStage1
     {
-        VcpkgPathsImpl(Filesystem& fs, const VcpkgCmdArguments& args, const Path& root, const Path& original_cwd)
-            : VcpkgPathsImplStage1(fs, args, root, original_cwd)
+        VcpkgPathsImpl(Filesystem& fs,
+                       const VcpkgCmdArguments& args,
+                       const BundleSettings bundle,
+                       const Path& root,
+                       const Path& original_cwd)
+            : VcpkgPathsImplStage1(fs, args, bundle, root, original_cwd)
             , m_config_dir(m_manifest_dir.empty() ? root : m_manifest_dir)
             , m_manifest_path(m_manifest_dir.empty() ? Path{} : m_manifest_dir / "vcpkg.json")
             , m_registries_work_tree_dir(m_registries_cache / "git")
             , m_registries_dot_git_dir(m_registries_cache / "git" / ".git")
             , m_registries_git_trees(m_registries_cache / "git-trees")
-            , downloads(compute_downloads_root(fs, args, root, m_bundle))
+            , downloads(compute_downloads_root(fs, args, root, bundle.read_only))
             , tools(downloads / "tools")
-            , m_installed(compute_installed(fs, args, root, m_manifest_dir, m_bundle))
+            , m_installed(compute_installed(fs, args, root, bundle.read_only, m_manifest_dir))
             , buildtrees(maybe_get_tmp_path(fs,
-                                            m_bundle,
                                             m_installed,
                                             root,
+                                            m_bundle.read_only,
                                             args.buildtrees_root_dir.get(),
                                             "buildtrees",
                                             "blds",
                                             VCPKG_LINE_INFO))
-            , packages(maybe_get_tmp_path(
-                  fs, m_bundle, m_installed, root, args.packages_root_dir.get(), "packages", "pkgs", VCPKG_LINE_INFO))
+            , packages(maybe_get_tmp_path(fs,
+                                          m_installed,
+                                          root,
+                                          m_bundle.read_only,
+                                          args.packages_root_dir.get(),
+                                          "packages",
+                                          "pkgs",
+                                          VCPKG_LINE_INFO))
             , m_tool_cache(get_tool_cache(fs,
                                           m_download_manager,
                                           downloads,
@@ -654,11 +611,11 @@ namespace vcpkg
         ConfigurationAndSource m_config;
     };
 
-    VcpkgPaths::VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args)
+    VcpkgPaths::VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args, const BundleSettings& bundle)
         : original_cwd(preferred_current_path(filesystem))
         , root(determine_root(filesystem, original_cwd, args))
         // this is used during the initialization of the below public members
-        , m_pimpl(std::make_unique<VcpkgPathsImpl>(filesystem, args, root, original_cwd))
+        , m_pimpl(std::make_unique<VcpkgPathsImpl>(filesystem, args, bundle, root, original_cwd))
         , scripts(m_pimpl->scripts)
         , downloads(m_pimpl->downloads)
         , tools(m_pimpl->tools)
@@ -869,7 +826,7 @@ namespace vcpkg
     {
         std::string ret;
         Strings::append(ret, "    vcpkg-tool version: ", Commands::Version::version, "\n");
-        if (m_pimpl->m_bundle.m_readonly)
+        if (m_pimpl->m_bundle.read_only)
         {
             Strings::append(ret, "    vcpkg-readonly: true\n");
             const auto sha = get_current_git_sha();
@@ -936,7 +893,7 @@ namespace vcpkg
 
     ExpectedL<std::string> VcpkgPaths::get_current_git_sha() const
     {
-        if (auto sha = m_pimpl->m_bundle.m_embedded_git_sha.get())
+        if (auto sha = m_pimpl->m_bundle.embedded_git_sha.get())
         {
             return {*sha, expected_left_tag};
         }
@@ -1416,7 +1373,7 @@ namespace vcpkg
 
     const Path& VcpkgPaths::builtin_ports_directory() const { return m_pimpl->m_builtin_ports; }
 
-    bool VcpkgPaths::use_git_default_registry() const { return m_pimpl->m_bundle.m_usegitregistry; }
+    bool VcpkgPaths::use_git_default_registry() const { return m_pimpl->m_bundle.use_git_registry; }
 
     const Path& VcpkgPaths::artifacts() const { return m_pimpl->m_artifacts_dir; }
     const Path& VcpkgPaths::registries_cache() const { return m_pimpl->m_registries_cache; }
