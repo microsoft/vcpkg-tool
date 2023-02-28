@@ -24,7 +24,7 @@ namespace vcpkg
         std::vector<std::string> extra_fields;
         std::map<StringLiteral, LocalizedString, std::less<>> expected_types;
         std::vector<LocalizedString> other_errors;
-        std::string error;
+        LocalizedString error;
 
         bool has_error() const
         {
@@ -69,13 +69,13 @@ namespace vcpkg
         std::map<StringLiteral, LocalizedString, std::less<>> expected_types;
     };
 
-    ExpectedS<std::vector<std::string>> parse_default_features_list(const std::string& str,
+    ExpectedL<std::vector<std::string>> parse_default_features_list(const std::string& str,
                                                                     StringView origin = "<unknown>",
                                                                     TextRowCol textrowcol = {});
-    ExpectedS<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
+    ExpectedL<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
                                                                                     StringView origin = "<unknown>",
                                                                                     TextRowCol textrowcol = {});
-    ExpectedS<std::vector<Dependency>> parse_dependencies_list(
+    ExpectedL<std::vector<Dependency>> parse_dependencies_list(
         const std::string& str,
         StringView origin = "<unknown>",
         TextRowCol textrowcol = {},

@@ -5,6 +5,7 @@
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/file-contents.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/pragmas.h>
@@ -169,6 +170,8 @@ namespace vcpkg
     {
         virtual std::string read_contents(const Path& file_path, std::error_code& ec) const = 0;
         std::string read_contents(const Path& file_path, LineInfo li) const;
+
+        ExpectedL<FileContents> try_read_contents(const Path& file_path) const;
 
         virtual Path find_file_recursively_up(const Path& starting_dir,
                                               const Path& filename,

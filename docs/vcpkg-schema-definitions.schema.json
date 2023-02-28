@@ -754,7 +754,7 @@
       ]
     },
     "platform-expression": {
-      "description": "A specification of a set of platforms. See https://github.com/microsoft/vcpkg/blob/master/docs/specifications/manifests.md#definitions.",
+      "description": "A specification of a set of platforms. See https://learn.microsoft.com/vcpkg/reference/vcpkg-json#platform-expression.",
       "type": "string"
     },
     "port-version": {

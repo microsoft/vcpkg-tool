@@ -850,19 +850,18 @@ namespace vcpkg
         auto conf = Json::parse(contents, origin);
         if (!conf)
         {
-            messageSink.println(msgFailedToParseConfig, msg::path = origin);
             messageSink.println(Color::error, LocalizedString::from_raw(conf.error()->to_string()));
             return nullopt;
         }
 
-        auto conf_value = std::move(conf.value_or_exit(VCPKG_LINE_INFO));
-        if (!conf_value.first.is_object())
+        auto conf_value = std::move(conf).value_or_exit(VCPKG_LINE_INFO).value;
+        if (!conf_value.is_object())
         {
             messageSink.println(msgFailedToParseNoTopLevelObj, msg::path = origin);
             return nullopt;
         }
 
-        return parse_configuration(std::move(conf_value.first.object(VCPKG_LINE_INFO)), origin, messageSink);
+        return parse_configuration(std::move(conf_value).object(VCPKG_LINE_INFO), origin, messageSink);
     }
 
     Optional<Configuration> parse_configuration(const Json::Object& obj, StringView origin, MessageSink& messageSink)

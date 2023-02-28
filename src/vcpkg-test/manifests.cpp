@@ -20,7 +20,7 @@ static Json::Object parse_json_object(StringView sv)
     // we're not testing json parsing here, so just fail on errors
     if (auto r = json.get())
     {
-        return std::move(r->first.object(VCPKG_LINE_INFO));
+        return std::move(r->value.object(VCPKG_LINE_INFO));
     }
     else
     {
@@ -107,7 +107,7 @@ TEST_CASE ("manifest construct minimum", "[manifests]")
     REQUIRE(!pgh.core_paragraph->builtin_baseline.has_value());
     REQUIRE(!pgh.core_paragraph->vcpkg_configuration.has_value());
 
-    REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+    REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
 
     // name must be present:
     REQUIRE_FALSE(port_manifest_is_parsable(R"json({
@@ -445,8 +445,8 @@ TEST_CASE ("manifest constraints", "[manifests]")
 
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
-    REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
-    REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+    REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+    REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
     REQUIRE(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) == raw);
     REQUIRE(pgh.core_paragraph->dependencies.size() == 3);
     REQUIRE(pgh.core_paragraph->dependencies[0].name == "a");
@@ -484,8 +484,8 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
 
         REQUIRE(m_pgh.has_value());
         auto& pgh = **m_pgh.get();
-        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
-        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
         REQUIRE(pgh.core_paragraph->builtin_baseline.value_or("does not have a value") ==
                 "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
     }
@@ -502,8 +502,8 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
 
         REQUIRE(m_pgh.has_value());
         auto& pgh = **m_pgh.get();
-        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
-        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
         REQUIRE(pgh.core_paragraph->builtin_baseline.value_or("does not have a value") ==
                 "089FA4DE7DCA22C67DCAB631F618D5CD0697C8D4");
     }
@@ -521,8 +521,8 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
 
         REQUIRE(m_pgh.has_value());
         auto& pgh = **m_pgh.get();
-        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
-        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
         REQUIRE(pgh.core_paragraph->builtin_baseline.value_or("does not have a value") == "");
     }
 
@@ -560,8 +560,8 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
         REQUIRE(pgh.core_paragraph->overrides[0].port_version == 0);
         REQUIRE(pgh.core_paragraph->builtin_baseline.value_or("does not have a value") ==
                 "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
-        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
-        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
     }
 
     SECTION ("missing required baseline")
@@ -596,8 +596,8 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
         REQUIRE(pgh.core_paragraph->overrides[0].version == "abcd");
         REQUIRE(pgh.core_paragraph->overrides[0].port_version == 0);
         REQUIRE(!pgh.core_paragraph->builtin_baseline.has_value());
-        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
-        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
     }
 }
 
@@ -671,8 +671,8 @@ TEST_CASE ("manifest overrides", "[manifests]")
         REQUIRE(pgh.core_paragraph->overrides.size() == 1);
         REQUIRE(pgh.core_paragraph->overrides[0].version_scheme == std::get<1>(v));
         REQUIRE(pgh.core_paragraph->overrides[0].version == std::get<2>(v));
-        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
-        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
     }
 
     REQUIRE_FALSE(port_manifest_is_parsable(R"json({
@@ -727,8 +727,8 @@ TEST_CASE ("manifest overrides", "[manifests]")
     REQUIRE(pgh.core_paragraph->overrides[1].name == "abcd");
     REQUIRE(pgh.core_paragraph->overrides[1].port_version == 7);
 
-    REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
-    REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+    REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+    REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
 }
 
 TEST_CASE ("manifest embed configuration", "[manifests]")
@@ -791,13 +791,13 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
 
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
-    REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
-    REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+    REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+    REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
 
     auto maybe_as_json = Json::parse(raw);
     REQUIRE(maybe_as_json.has_value());
     auto as_json = *maybe_as_json.get();
-    check_json_eq(Json::Value::object(serialize_manifest(pgh)), as_json.first);
+    check_json_eq(Json::Value::object(serialize_manifest(pgh)), as_json.value);
 
     REQUIRE(pgh.core_paragraph->builtin_baseline == "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
     REQUIRE(pgh.core_paragraph->dependencies.size() == 3);
@@ -809,11 +809,9 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
     REQUIRE(pgh.core_paragraph->dependencies[2].constraint ==
             DependencyConstraint{VersionConstraintKind::Minimum, "2018-09-01", 0});
 
-    auto maybe_config = Json::parse(raw_config, "<test config>");
-    REQUIRE(maybe_config.has_value());
-    auto config = *maybe_config.get();
-    REQUIRE(config.first.is_object());
-    auto config_obj = config.first.object(VCPKG_LINE_INFO);
+    auto config = Json::parse(raw_config, "<test config>").value_or_exit(VCPKG_LINE_INFO).value;
+    REQUIRE(config.is_object());
+    auto config_obj = config.object(VCPKG_LINE_INFO);
     REQUIRE(pgh.core_paragraph->vcpkg_configuration.has_value());
     auto parsed_config_obj = *pgh.core_paragraph->vcpkg_configuration.get();
     REQUIRE(Json::stringify(parsed_config_obj) == Json::stringify(config_obj));

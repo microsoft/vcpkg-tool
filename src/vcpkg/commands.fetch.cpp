@@ -8,7 +8,7 @@ namespace vcpkg::Commands::Fetch
                                                     []() { return msg::format(msgCmdFetchOptXStderrStatus); }};
 
     const CommandStructure COMMAND_STRUCTURE = {
-        Strings::format("The argument should be a tool name\n%s", create_example_string("fetch cmake")),
+        [] { return create_example_string("fetch cmake"); },
         1,
         1,
         {{&STDERR_STATUS, 1}},

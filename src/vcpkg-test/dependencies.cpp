@@ -38,19 +38,19 @@ struct MockVersionedPortfileProvider : IVersionedPortfileProvider
 {
     mutable std::map<std::string, std::map<Version, SourceControlFileAndLocation, VersionMapLess>> v;
 
-    ExpectedS<const SourceControlFileAndLocation&> get_control_file(
+    ExpectedL<const SourceControlFileAndLocation&> get_control_file(
         const vcpkg::VersionSpec& versionspec) const override
     {
         return get_control_file(versionspec.port_name, versionspec.version);
     }
 
-    ExpectedS<const SourceControlFileAndLocation&> get_control_file(const std::string& name,
+    ExpectedL<const SourceControlFileAndLocation&> get_control_file(const std::string& name,
                                                                     const vcpkg::Version& version) const
     {
         auto it = v.find(name);
-        if (it == v.end()) return std::string("Unknown port name");
+        if (it == v.end()) return LocalizedString::from_raw("Unknown port name");
         auto it2 = it->second.find(version);
-        if (it2 == it->second.end()) return std::string("Unknown port version");
+        if (it2 == it->second.end()) return LocalizedString::from_raw("Unknown port version");
         return it2->second;
     }
 
@@ -224,7 +224,7 @@ private:
 
 static const MockOverlayProvider s_empty_mock_overlay;
 
-static ExpectedS<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& provider,
+static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& provider,
                                                            const IBaselineProvider& bprovider,
                                                            const CMakeVars::CMakeVarProvider& var_provider,
                                                            const std::vector<Dependency>& deps,
@@ -242,7 +242,7 @@ static ExpectedS<ActionPlan> create_versioned_install_plan(const IVersionedPortf
                                          UnsupportedPortAction::Error);
 }
 
-static ExpectedS<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& provider,
+static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& provider,
                                                            const IBaselineProvider& bprovider,
                                                            const IOverlayProvider& oprovider,
                                                            const CMakeVars::CMakeVarProvider& var_provider,
@@ -1057,9 +1057,9 @@ TEST_CASE ("version install diamond date", "[versionplan]")
     check_name_and_version(install_plan.install_actions[2], "a", {"2020-01-03", 0});
 }
 
-static void CHECK_LINES(const std::string& a, const std::string& b)
+static void CHECK_LINES(const LocalizedString& a, const std::string& b)
 {
-    auto as = Strings::split(a, '\n');
+    auto as = Strings::split(a.data(), '\n');
     auto bs = Strings::split(b, '\n');
     for (size_t i = 0; i < as.size() && i < bs.size(); ++i)
     {
@@ -1094,7 +1094,7 @@ TEST_CASE ("version install scheme failure", "[versionplan]")
         REQUIRE(!install_plan.error().empty());
         CHECK_LINES(
             install_plan.error(),
-            R"(Error: Version conflict on a:x86-windows: baseline required 1.0.0 but vcpkg could not compare it to 1.0.1
+            R"(error: version conflict on a:x86-windows: baseline required 1.0.0 but vcpkg could not compare it to 1.0.1.
 
 The two versions used incomparable schemes:
     "1.0.1" was of scheme string
@@ -1124,7 +1124,7 @@ See `vcpkg help versioning` for more information.)");
         REQUIRE(!install_plan.error().empty());
         CHECK_LINES(
             install_plan.error(),
-            R"(Error: Version conflict on a:x86-windows: baseline required 1.0.2 but vcpkg could not compare it to 1.0.1
+            R"(error: version conflict on a:x86-windows: baseline required 1.0.2 but vcpkg could not compare it to 1.0.1.
 
 The two versions used incomparable schemes:
     "1.0.1" was of scheme string

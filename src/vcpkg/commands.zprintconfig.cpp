@@ -10,14 +10,6 @@
 
 namespace vcpkg::Commands::Z_PrintConfig
 {
-    static const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("z-print-config"),
-        0,
-        0,
-        {{}, {}},
-        nullptr,
-    };
-
     static void opt_add(Json::Object& obj, StringLiteral key, const Optional<Path>& opt)
     {
         if (auto p = opt.get())

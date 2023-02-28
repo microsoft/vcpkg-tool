@@ -54,7 +54,7 @@ namespace vcpkg
 
     struct CommandStructure
     {
-        std::string example_text;
+        LocalizedString (*get_example_text)();
 
         size_t minimum_arity;
         size_t maximum_arity;
@@ -73,7 +73,7 @@ namespace vcpkg
     using CommandLineCharType = char;
 #endif
 
-    std::string create_example_string(const std::string& command_and_arguments);
+    LocalizedString create_example_string(StringView command_and_arguments);
 
     struct FeatureFlagSettings
     {

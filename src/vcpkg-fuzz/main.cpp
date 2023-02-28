@@ -189,11 +189,11 @@ namespace
 
         if (!res1)
         {
-            Checks::exit_with_message(VCPKG_LINE_INFO, res1.error());
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, res1.error());
         }
         if (!res2)
         {
-            Checks::exit_with_message(VCPKG_LINE_INFO, res2.error());
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, res2.error());
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
