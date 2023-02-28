@@ -2661,6 +2661,7 @@ namespace vcpkg
                     "Pushing {vendor} to \"{path}\" failed. Use --debug for more information.");
     DECLARE_MESSAGE(RegistryCreated, (msg::path), "", "Successfully created registry at {path}");
     DECLARE_MESSAGE(RegeneratesArtifactRegistry, (), "", "Regenerates an artifact registry.");
+    DECLARE_MESSAGE(RegistryValueWrongType, (msg::path), "", "The registry value {path} was an unexpected type.");
     DECLARE_MESSAGE(RemoveDependencies,
                     (),
                     "",

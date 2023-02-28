@@ -38,7 +38,7 @@ namespace
 
         for (auto&& keypath : REGKEYS)
         {
-            const Optional<std::string> code_installpath =
+            const ExpectedL<std::string> code_installpath =
                 get_registry_string(keypath.root, keypath.subkey, "InstallLocation");
             if (const auto c = code_installpath.get())
             {
