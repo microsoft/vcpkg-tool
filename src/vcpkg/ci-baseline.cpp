@@ -286,7 +286,7 @@ namespace vcpkg
             auto& spec = maybe_spec.value_or_exit(VCPKG_LINE_INFO);
             if (spec.platform.has_value() && spec.triplet.has_value())
             {
-                parser.add_error("You can not specify a platform expression and a triplet");
+                parser.add_error(msg::format(msgBaselineOnlyPlatformExpressionOrTriplet));
                 break;
             }
 

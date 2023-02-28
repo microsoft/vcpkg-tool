@@ -698,6 +698,10 @@ namespace vcpkg
                     "",
                     "The baseline.json from commit `\"{commit_sha}\"` in the repo {url} was invalid (did not "
                     "contain a \"default\" field).");
+    DECLARE_MESSAGE(BaselineOnlyPlatformExpressionOrTriplet,
+                    (),
+                    "",
+                    "You can not specify a platform expression and a triplet");
     DECLARE_MESSAGE(BinarySourcesArg, (), "", "Add sources for binary caching. See 'vcpkg help binarycaching'.");
     DECLARE_MESSAGE(BinaryWithInvalidArchitecture,
                     (msg::path, msg::expected, msg::actual),

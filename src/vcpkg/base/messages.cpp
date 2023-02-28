@@ -611,6 +611,7 @@ namespace vcpkg
     REGISTER_MESSAGE(BaselineGitShowFailed);
     REGISTER_MESSAGE(BaselineMissing);
     REGISTER_MESSAGE(BaselineMissingDefault);
+    REGISTER_MESSAGE(BaselineOnlyPlatformExpressionOrTriplet);
     REGISTER_MESSAGE(AvailableArchitectureTriplets);
     REGISTER_MESSAGE(AvailableHelpTopics);
     REGISTER_MESSAGE(AVcpkgRepositoryCommit);

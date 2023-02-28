@@ -164,6 +164,7 @@
   "_BaselineMissing.comment": "An example of {package_name} is zlib. An example of {version} is 1.3.8.",
   "BaselineMissingDefault": "The baseline.json from commit `\"{commit_sha}\"` in the repo {url} was invalid (did not contain a \"default\" field).",
   "_BaselineMissingDefault.comment": "An example of {commit_sha} is 7cfad47ae9f68b183983090afd6337cd60fd4949. An example of {url} is https://github.com/microsoft/vcpkg.",
+  "BaselineOnlyPlatformExpressionOrTriplet": "You can not specify a platform expression and a triplet",
   "BinarySourcesArg": "Add sources for binary caching. See 'vcpkg help binarycaching'.",
   "BinaryWithInvalidArchitecture": "{path}\n Expected: {expected}, but was {actual}",
   "_BinaryWithInvalidArchitecture.comment": "{expected} and {actual} are architectures An example of {path} is /foo/bar.",

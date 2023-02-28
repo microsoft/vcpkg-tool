@@ -29,8 +29,6 @@
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/xunitwriter.h>
 
-#include <stdio.h>
-
 using namespace vcpkg;
 
 namespace
@@ -140,7 +138,7 @@ namespace vcpkg::Commands::TestFeatures
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("test-features llvm"),
+        []() { return create_example_string("test-features llvm"); },
         0,
         SIZE_MAX,
         {CI_SWITCHES, CI_SETTINGS},
