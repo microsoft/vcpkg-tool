@@ -16,24 +16,24 @@ jobs:
       displayName: "Clone vcpkg repo to serve as root"
     - task: NodeTool@0
       inputs:
-        versionSpec: '16.x'
+        versionSpec: '18.x'
       displayName: 'Install Node.js'
     - script: |
         cd ce
 
-        npm install -g npm
+        npm install -g @microsoft/rush
         rc=$?; if [ $rc -ne 0 ]; then exit $rc ; fi
 
-        npx @microsoft/rush update
+        rush update
         rc=$?; if [ $rc -ne 0 ]; then exit $rc ; fi
 
-        npx @microsoft/rush rebuild
+        rush rebuild
         rc=$?; if [ $rc -ne 0 ]; then exit $rc ; fi
 
-        npx @microsoft/rush test
+        rush test
         rc=$?; if [ $rc -ne 0 ]; then exit $rc ; fi
 
-        npx @microsoft/rush lint
+        rush lint
         rc=$?; if [ $rc -ne 0 ]; then exit $rc ; fi
 
         if [ -n "$(git status --porcelain)" ]; then
@@ -81,7 +81,7 @@ jobs:
 - job: osx
   displayName: 'OSX'
   pool:
-    vmImage: 'macOS-11'
+    vmImage: 'macOS-12'
   variables:
     - name: 'VCPKG_ROOT'
       value: $(Build.SourcesDirectory)/vcpkg-root
@@ -97,6 +97,8 @@ jobs:
       failOnStderr: true
     - bash: build.amd64.debug/vcpkg-test
       displayName: 'Run vcpkg tests'
+    - bash: brew install pkg-config
+      displayName: 'Install pkgconfig'
     - task: PowerShell@2
       displayName: 'Run vcpkg end-to-end tests'
       inputs:
@@ -105,6 +107,7 @@ jobs:
         pwsh: true
 - job: windows
   displayName: 'Windows'
+  timeoutInMinutes: 120
   pool:
     vmImage: 'windows-2022'
   variables:
@@ -131,22 +134,10 @@ jobs:
       inputs:
         filePath: 'azure-pipelines/Format-CxxCode.ps1'
         pwsh: true
-    - task: Powershell@2
-      displayName: 'Create Diff'
-      inputs:
-        filePath: azure-pipelines/Create-PRDiff.ps1
-        arguments: '-DiffFile $(DiffFile)'
-        pwsh: true
-    - task: PublishBuildArtifacts@1
-      condition: failed()
-      displayName: 'Publish Format and Messages File Diff'
-      inputs:
-        PathtoPublish: '$(DiffFile)'
-        ArtifactName: 'format.diff'
     - task: UseNode@1
-      displayName: Use Node 16 or later
+      displayName: Use Node 18
       inputs:
-        version: "16.x"
+        version: "18.x"
     - task: npmAuthenticate@0
       inputs:
         workingFile: 'ce\common\config\rush\.npmrc'
@@ -167,6 +158,18 @@ jobs:
         failOnStderr: true
     - task: CodeQL3000Finalize@0
       displayName: 'CodeQL Finalize'
+    - task: Powershell@2
+      displayName: 'Create Diff'
+      inputs:
+        filePath: azure-pipelines/Create-PRDiff.ps1
+        arguments: '-DiffFile $(DiffFile)'
+        pwsh: true
+    - task: PublishBuildArtifacts@1
+      condition: failed()
+      displayName: 'Publish Format and Messages File Diff'
+      inputs:
+        PathtoPublish: '$(DiffFile)'
+        ArtifactName: 'format.diff'
     - script: build.x86.debug\vcpkg-test.exe
       displayName: "Run vcpkg tests"
       failOnStderr: true

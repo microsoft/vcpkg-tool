@@ -3,7 +3,6 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.applocal.h>
@@ -42,7 +41,7 @@ namespace
             }
             else
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO, "Failed to acquire mutant %s", name);
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgFailedToAcquireMutant, msg::path = name);
             }
         }
 
@@ -84,7 +83,7 @@ namespace
 
         void resolve(const Path& binary)
         {
-            vcpkg::printf("vcpkg applocal processing: %s\n", binary);
+            msg::println(msgApplocalProcessing, msg::path = binary);
             auto dll_file = m_fs.open_for_read(binary, VCPKG_LINE_INFO);
             const auto dll_metadata = vcpkg::try_read_dll_metadata(dll_file).value_or_exit(VCPKG_LINE_INFO);
             const auto imported_names =
@@ -467,22 +466,22 @@ namespace
             const bool did_deploy = m_fs.copy_file(source, target, CopyOptions::update_existing, ec);
             if (did_deploy)
             {
-                vcpkg::printf("%s -> %s done\n", source, target);
+                msg::println(msgInstallCopiedFile, msg::path_source = source, msg::path_destination = target);
             }
             else if (!ec)
             {
-                vcpkg::printf("%s -> %s skipped, up to date\n", source, target);
+                msg::println(msgInstallSkippedUpToDateFile, msg::path_source = source, msg::path_destination = target);
             }
             else if (ec == std::errc::no_such_file_or_directory)
             {
                 Debug::println("Attempted to deploy ", source, ", but it didn't exist");
-
                 return false;
             }
             else
             {
-                Checks::exit_with_message(
-                    VCPKG_LINE_INFO, "Failed to deploy %s -> %s; error: %s\n", source, target, ec.message());
+                Checks::msg_exit_with_message(
+                    VCPKG_LINE_INFO,
+                    format_filesystem_call_error(ec, "copy_file", {source, target, "CopyOptions::update_existing"}));
             }
 
             if (m_tlog_file)
@@ -537,8 +536,11 @@ namespace vcpkg::Commands
         };
 
         const CommandStructure COMMAND_STRUCTURE = {
-            "--target-binary=\"Path/to/binary\" --installed-bin-dir=\"Path/to/installed/bin\" --tlog-file="
-            "\"Path/to/tlog.tlog\" --copied-files-log=\"Path/to/copiedFilesLog.log\"",
+            [] {
+                return LocalizedString::from_raw(
+                    "--target-binary=\"Path/to/binary\" --installed-bin-dir=\"Path/to/installed/bin\" --tlog-file="
+                    "\"Path/to/tlog.tlog\" --copied-files-log=\"Path/to/copiedFilesLog.log\"");
+            },
             0,
             0,
             {{}, SETTINGS, {}},

@@ -2,7 +2,6 @@
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -321,10 +320,8 @@ namespace vcpkg::Commands::Integrate
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
 
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               fs.exists(SYSTEM_WIDE_TARGETS_FILE, IgnoreErrors{}),
-                               "Error: failed to copy targets file to %s",
-                               SYSTEM_WIDE_TARGETS_FILE);
+            Checks::msg_exit_with_error(
+                VCPKG_LINE_INFO, msgSystemTargetsInstallFailed, msg::path = SYSTEM_WIDE_TARGETS_FILE);
         }
     }
 #endif
@@ -589,54 +586,54 @@ namespace vcpkg::Commands::Integrate
     void append_helpstring(HelpTableFormatter& table)
     {
 #if defined(_WIN32)
-        table.format("vcpkg integrate install",
-                     "Make installed packages available user-wide. Requires admin privileges on first use.");
-        table.format("vcpkg integrate remove", "Remove user-wide integration");
-        table.format("vcpkg integrate project", "Generate a referencing nuget package for individual VS project use");
-        table.format("vcpkg integrate powershell", "Enable PowerShell tab-completion");
+        table.format("vcpkg integrate install", msg::format(msgIntegrateInstallHelpWindows));
+        table.format("vcpkg integrate remove", msg::format(msgIntegrateRemoveHelp));
+        table.format("vcpkg integrate project", msg::format(msgIntegrateProjectHelp));
+        table.format("vcpkg integrate powershell", msg::format(msgIntegratePowerShellHelp));
 #else  // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
-        table.format("vcpkg integrate install",
-                     "Make installed packages available user - wide.Requires admin privileges on first use");
-        table.format("vcpkg integrate remove", "Remove user-wide integration");
-        table.format("vcpkg integrate bash", "Enable bash tab-completion");
-        table.format("vcpkg integrate zsh", "Enable zsh tab-completion");
-        table.format("vcpkg integrate x-fish", "Enable fish tab-completion");
+        table.format("vcpkg integrate install", msg::format(msgIntegrateInstallHelpLinux));
+        table.format("vcpkg integrate remove", msg::format(msgIntegrateRemoveHelp));
+        table.format("vcpkg integrate bash", msg::format(msgIntegrateBashHelp));
+        table.format("vcpkg integrate zsh", msg::format(msgIntegrateZshHelp));
+        table.format("vcpkg integrate x-fish", msg::format(msgIntegrateFishHelp));
 #endif // ^^^ !defined(_WIN32)
     }
 
-    std::string get_helpstring()
+    LocalizedString get_helpstring()
     {
         HelpTableFormatter table;
         append_helpstring(table);
-        return std::move(table.m_str);
+        return msg::format(msgCommands).append_raw('\n').append_raw(table.m_str);
     }
 
     namespace Subcommand
     {
-        static const std::string INSTALL = "install";
-        static const std::string REMOVE = "remove";
-        static const std::string PROJECT = "project";
-        static const std::string POWERSHELL = "powershell";
-        static const std::string BASH = "bash";
-        static const std::string ZSH = "zsh";
-        static const std::string FISH = "x-fish";
+        static constexpr StringLiteral INSTALL = "install";
+        static constexpr StringLiteral REMOVE = "remove";
+#if defined(_WIN32)
+        static constexpr StringLiteral PROJECT = "project";
+        static constexpr StringLiteral POWERSHELL = "powershell";
+#endif // ^^^ _WIN32
+        static constexpr StringLiteral BASH = "bash";
+        static constexpr StringLiteral ZSH = "zsh";
+        static constexpr StringLiteral FISH = "x-fish";
     }
 
     static std::vector<std::string> valid_arguments(const VcpkgPaths&)
     {
         return
         {
-            Subcommand::INSTALL, Subcommand::REMOVE,
+            Subcommand::INSTALL.to_string(), Subcommand::REMOVE.to_string(),
 #if defined(_WIN32)
-                Subcommand::PROJECT, Subcommand::POWERSHELL,
+                Subcommand::PROJECT.to_string(), Subcommand::POWERSHELL.to_string(),
 #else
-                Subcommand::BASH, Subcommand::FISH,
+                Subcommand::BASH.to_string(), Subcommand::FISH.to_string(),
 #endif
         };
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
-        "Commands:\n" + get_helpstring(),
+        [] { return get_helpstring(); },
         1,
         1,
         {},

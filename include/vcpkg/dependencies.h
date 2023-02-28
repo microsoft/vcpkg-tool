@@ -113,11 +113,12 @@ namespace vcpkg
     {
         bool empty() const { return remove_actions.empty() && already_installed.empty() && install_actions.empty(); }
         size_t size() const { return remove_actions.size() + already_installed.size() + install_actions.size(); }
+        void print_unsupported_warnings();
 
         std::vector<RemovePlanAction> remove_actions;
         std::vector<InstallPlanAction> already_installed;
         std::vector<InstallPlanAction> install_actions;
-        std::vector<std::string> warnings;
+        std::map<FeatureSpec, PlatformExpression::Expr> unsupported_features;
     };
 
     enum class ExportPlanType
@@ -189,7 +190,7 @@ namespace vcpkg
                                    const StatusParagraphs& status_db,
                                    const CreateInstallPlanOptions& options = {Triplet{}});
 
-    ExpectedS<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& vprovider,
+    ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& vprovider,
                                                         const IBaselineProvider& bprovider,
                                                         const IOverlayProvider& oprovider,
                                                         const CMakeVars::CMakeVarProvider& var_provider,

@@ -1,5 +1,4 @@
 #include <vcpkg/base/chrono.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -17,7 +16,7 @@ namespace vcpkg::Commands::Contact
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("contact"),
+        [] { return create_example_string("contact"); },
         0,
         0,
         {SWITCHES, {}},

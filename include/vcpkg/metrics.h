@@ -57,6 +57,7 @@ namespace vcpkg
         CommandArgs,
         CommandContext,
         CommandName,
+        DeploymentKind,
         DetectedCiEnvironment,
         InstallPlan_1,
         ListFile,

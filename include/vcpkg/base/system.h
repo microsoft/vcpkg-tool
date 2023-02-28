@@ -13,25 +13,27 @@ namespace vcpkg
 
     std::string get_environment_variables();
 
-    const ExpectedS<Path>& get_home_dir() noexcept;
+    const ExpectedL<Path>& get_home_dir() noexcept;
 
-    const ExpectedS<Path>& get_platform_cache_home() noexcept;
+    const ExpectedL<Path>& get_platform_cache_home() noexcept;
 
-    const ExpectedS<Path>& get_user_configuration_home() noexcept;
+    const ExpectedL<Path>& get_user_configuration_home() noexcept;
 
 #ifdef _WIN32
-    const ExpectedS<Path>& get_appdata_local() noexcept;
+    const ExpectedL<Path>& get_appdata_local() noexcept;
 
-    const ExpectedS<Path>& get_system_root() noexcept;
+    const ExpectedL<Path>& get_system_root() noexcept;
 
-    const ExpectedS<Path>& get_system32() noexcept;
+    const ExpectedL<Path>& get_system32() noexcept;
 
     std::wstring get_username();
 
     bool test_registry_key(void* base_hkey, StringView sub_key);
-#endif
 
-    Optional<std::string> get_registry_string(void* base_hkey, StringView subkey, StringView valuename);
+    ExpectedL<std::string> get_registry_string(void* base_hkey, StringView subkey, StringView valuename);
+
+    ExpectedL<std::uint32_t> get_registry_dword(void* base_hkey, StringView subkey, StringView valuename);
+#endif
 
     long get_process_id();
 
@@ -44,6 +46,8 @@ namespace vcpkg
         ARM64EC,
         S390X,
         PPC64LE,
+        RISCV32,
+        RISCV64,
     };
 
     Optional<CPUArchitecture> to_cpu_architecture(StringView arch);

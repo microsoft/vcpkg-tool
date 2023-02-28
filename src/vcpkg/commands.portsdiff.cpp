@@ -1,5 +1,4 @@
 #include <vcpkg/base/sortedvector.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -83,10 +82,10 @@ namespace vcpkg::Commands::PortsDiff
         auto& fs = paths.get_filesystem();
         const auto dot_git_dir = paths.root / ".git";
         const auto ports_dir_name = paths.builtin_ports_directory().filename();
-        const auto temp_checkout_path = paths.root / Strings::format("%s-%s", ports_dir_name, git_commit_id);
+        const auto temp_checkout_path = paths.root / fmt::format("{}-{}", ports_dir_name, git_commit_id);
         fs.create_directory(temp_checkout_path, IgnoreErrors{});
         const auto checkout_this_dir =
-            Strings::format(R"(.\%s)", ports_dir_name); // Must be relative to the root of the repository
+            fmt::format(R"(.\{})", ports_dir_name); // Must be relative to the root of the repository
 
         auto cmd = paths.git_cmd_builder(dot_git_dir, temp_checkout_path)
                        .string_arg("checkout")
@@ -113,7 +112,7 @@ namespace vcpkg::Commands::PortsDiff
 
     static void check_commit_exists(const VcpkgPaths& paths, const std::string& git_commit_id)
     {
-        static const std::string VALID_COMMIT_OUTPUT = "commit\n";
+        static constexpr StringLiteral VALID_COMMIT_OUTPUT = "commit\n";
         auto cmd = paths.git_cmd_builder(paths.root / ".git", paths.root)
                        .string_arg("cat-file")
                        .string_arg("-t")
@@ -126,8 +125,11 @@ namespace vcpkg::Commands::PortsDiff
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
-        Strings::format("The argument should be a branch/tag/hash to checkout.\n%s",
-                        create_example_string("portsdiff mybranchname")),
+        [] {
+            return msg::format(msgPortsDiffHelp)
+                .append_raw('\n')
+                .append(create_example_string("portsdiff mybranchname"));
+        },
         1,
         2,
         {},

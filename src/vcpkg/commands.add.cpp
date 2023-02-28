@@ -2,7 +2,6 @@
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/strings.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.add.h>
 #include <vcpkg/configure-environment.h>
@@ -17,10 +16,13 @@ using namespace vcpkg;
 namespace
 {
     const CommandStructure AddCommandStructure = {
-        Strings::format(
-            "Adds the indicated port or artifact to the manifest associated with the current directory.\n%s\n%s",
-            create_example_string("add port png"),
-            create_example_string("add artifact cmake")),
+        [] {
+            return msg::format(msgAddHelp)
+                .append_raw('\n')
+                .append(create_example_string("add port png"))
+                .append_raw('\n')
+                .append(create_example_string("add artifact cmake"));
+        },
         2,
         SIZE_MAX,
         {{}, {}},

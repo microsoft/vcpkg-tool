@@ -6,7 +6,7 @@ namespace vcpkg
 {
     namespace BinaryParagraphRequiredField
     {
-        static const std::string STATUS = "Status";
+        static constexpr StringLiteral STATUS = "Status";
     }
 
     StatusParagraph::StatusParagraph() noexcept : want(Want::ERROR_STATE), state(InstallState::ERROR_STATE) { }

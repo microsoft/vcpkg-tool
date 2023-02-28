@@ -1,6 +1,5 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/archives.h>
 #include <vcpkg/commands.bootstrap-standalone.h>
@@ -12,14 +11,6 @@
 
 namespace vcpkg::Commands
 {
-    static const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("bootstrap-standalone"),
-        0,
-        0,
-        {{}, {}},
-        nullptr,
-    };
-
     void BootstrapStandaloneCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
     {
         DownloadManager download_manager{{}};

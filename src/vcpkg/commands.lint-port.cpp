@@ -4,7 +4,6 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/git.h>
 #include <vcpkg/base/json.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.lint-port.h>
 #include <vcpkg/configuration.h>
@@ -33,7 +32,7 @@ namespace vcpkg::Commands::LintPort
         {OPTION_INCREASE_VERSION, []() { return msg::format(msgCmdLintPortOptIncreaseVersion); }}};
 
     const CommandStructure COMMAND_STRUCTURE{
-        create_example_string(R"###(x-lint-port <port name>)###"),
+        []() { return create_example_string(R"###(x-lint-port <port name>)###"); },
         0,
         INT_MAX,
         {{COMMAND_SWITCHES}, {}, {}},

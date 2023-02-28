@@ -1,5 +1,4 @@
 #include <vcpkg/base/strings.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -39,7 +38,7 @@ namespace
 
         for (auto&& keypath : REGKEYS)
         {
-            const Optional<std::string> code_installpath =
+            const ExpectedL<std::string> code_installpath =
                 get_registry_string(keypath.root, keypath.subkey, "InstallLocation");
             if (const auto c = code_installpath.get())
             {
@@ -100,7 +99,7 @@ namespace vcpkg::Commands::Edit
          {OPTION_ALL, []() { return msg::format(msgCmdEditOptAll); }}}};
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("edit zlib"),
+        [] { return create_example_string("edit zlib"); },
         1,
         10,
         {EDIT_SWITCHES, {}},
@@ -161,8 +160,11 @@ namespace vcpkg::Commands::Edit
         for (auto&& port_name : ports)
         {
             const auto portpath = paths.builtin_ports_directory() / port_name;
-            Checks::check_maybe_upgrade(
-                VCPKG_LINE_INFO, fs.is_directory(portpath), R"(Could not find port named "%s")", port_name);
+            if (!fs.is_directory(portpath))
+            {
+                msg::println_error(msgPortDoesNotExist, msg::package_name = port_name);
+                Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
+            }
         }
 
         std::vector<Path> candidate_paths;

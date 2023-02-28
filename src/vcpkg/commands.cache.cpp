@@ -1,5 +1,4 @@
 #include <vcpkg/base/files.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/binaryparagraph.h>
 #include <vcpkg/commands.cache.h>
@@ -27,9 +26,7 @@ namespace vcpkg::Commands::Cache
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
-        Strings::format(
-            "The argument should be a substring to search for, or no argument to display all cached libraries.\n%s",
-            create_example_string("cache png")),
+        [] { return msg::format(msgCacheHelp).append_raw('\n').append(create_example_string("cache png")); },
         0,
         1,
         {},

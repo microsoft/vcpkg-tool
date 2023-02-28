@@ -1,5 +1,3 @@
-#include <vcpkg/base/system.print.h>
-
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/commands.setinstalled.h>
 #include <vcpkg/globalstate.h>
@@ -29,7 +27,7 @@ namespace vcpkg::Commands::SetInstalled
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string(R"(x-set-installed <package>...)"),
+        [] { return create_example_string("x-set-installed <package>..."); },
         0,
         SIZE_MAX,
         {INSTALL_SWITCHES, INSTALL_SETTINGS},
@@ -158,8 +156,9 @@ namespace vcpkg::Commands::SetInstalled
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
-                std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+                std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
         });
+        print_default_triplet_warning(args, args.command_arguments);
 
         BinaryCache binary_cache{args, paths};
 

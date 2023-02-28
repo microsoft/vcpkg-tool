@@ -47,6 +47,7 @@ jobs:
     # on the value; AzureDevOps appears to repeat evaluation of variables such that crossing UTC's day start
     # would make subsequent pipeline stages use a different day producing a broken build.
     # Note that pipeline.startTime seems to refer to the start of the *job*, not the overall pipeline run.
+    timeoutInMinutes: 120
     variables:
     - ${{ if eq(parameters.VcpkgBaseVersionOverride, 'default') }}:
       - name: VCPKG_INITIAL_BASE_VERSION
@@ -77,9 +78,9 @@ jobs:
         arguments: '-Destination "$(Build.BinariesDirectory)" -VcpkgBaseVersion $(VCPKG_INITIAL_BASE_VERSION)'
     # Build and test vcpkg-artifacts
     - task: UseNode@1
-      displayName: Use Node 16 or later
+      displayName: Use Node 18 or later
       inputs:
-        version: "16.x"
+        version: "18.x"
     - script: copy azure-pipelines\.npmrc-internal ce\common\config\rush\.npmrc
       displayName: Use internal .npmrc
     - task: npmAuthenticate@0
@@ -151,11 +152,11 @@ jobs:
         copy "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.BinariesDirectory)\vcpkg-init.cmd"
       displayName: 'Duplicate Install Scripts'
     - task: Powershell@2
-      displayName: 'Build vcpkg-standalone-bundle.tar.gz'
+      displayName: 'Build One-Liner vcpkg-standalone-bundle.tar.gz'
       inputs:
         pwsh: true
         filePath: vcpkg-init/mint-standalone-bundle.ps1
-        arguments: '-DestinationTarball "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" -TempDir standalone-temp -SignedFilesRoot "$(Build.BinariesDirectory)"'
+        arguments: '-DestinationTarball "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" -TempDir standalone-temp -SignedFilesRoot "$(Build.BinariesDirectory)" -Deployment OneLiner'
     - script: npm pack
       displayName: Create vcpkg-artifacts Pack
       workingDirectory: $(Build.BinariesDirectory)/ce
@@ -192,7 +193,7 @@ jobs:
     dependsOn:
       - arch_independent
     pool:
-      vmImage: macOS-11
+      vmImage: macOS-12
     variables:
       VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
       VCPKG_CE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_CE_SHA'] ]
@@ -264,6 +265,7 @@ jobs:
         publishLocation: 'Container'
   - job: windows_and_sign
     displayName: 'Build Windows binaries and Sign'
+    timeoutInMinutes: 120
     dependsOn:
       - arch_independent
       - macos_build
@@ -364,7 +366,7 @@ jobs:
       inputs:
         pwsh: true
         filePath: vcpkg-init/mint-standalone-bundle.ps1
-        arguments: '-DestinationDir "$(Build.ArtifactStagingDirectory)/vs-insertion/staging" -readonly -TempDir standalone-temp -SignedFilesRoot "$(Build.ArtifactStagingDirectory)\staging"'
+        arguments: '-DestinationDir "$(Build.ArtifactStagingDirectory)/vs-insertion/staging" -TempDir standalone-temp -SignedFilesRoot "$(Build.ArtifactStagingDirectory)\staging" -Deployment "VisualStudio"'
     - task: CmdLine@2
       displayName: 'Arrange Drop'
       inputs:
@@ -399,6 +401,13 @@ jobs:
           move "$(Build.ArtifactStagingDirectory)\staging\macos\vcpkg" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-macos"
 
           copy "$(Build.SourcesDirectory)\azure-pipelines\vs-insertion\vcpkg.nuspec" "$(Build.ArtifactStagingDirectory)\vs-insertion\staging\vcpkg.nuspec"
+    - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
+      displayName: 'Generate SBOMs'
+      inputs:
+        BuildDropPath: '$(Build.ArtifactStagingDirectory)/drop'
+        ManifestDirPath: '$(Build.ArtifactStagingDirectory)/drop'
+        PackageName: vcpkg
+        PackageVersion: '$(VCPKG_BASE_VERSION)'
     - task: CmdLine@2
       displayName: 'Add Drop PGP Signatures (real sign only)'
       condition: and(eq(variables.SignType, 'real'), succeeded())

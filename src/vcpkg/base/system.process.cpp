@@ -246,18 +246,24 @@ namespace vcpkg
     }
 
     CMakeVariable::CMakeVariable(const StringView varname, const char* varvalue)
-        : s(Strings::format("-D%s=%s", varname, varvalue))
+        : s(format_cmake_variable(varname, varvalue))
     {
     }
     CMakeVariable::CMakeVariable(const StringView varname, const std::string& varvalue)
-        : CMakeVariable(varname, varvalue.c_str())
+        : s(format_cmake_variable(varname, varvalue))
+    {
+    }
+    CMakeVariable::CMakeVariable(const StringView varname, StringLiteral varvalue)
+        : s(format_cmake_variable(varname, varvalue))
     {
     }
     CMakeVariable::CMakeVariable(const StringView varname, const Path& varvalue)
-        : CMakeVariable(varname, varvalue.generic_u8string())
+        : s(format_cmake_variable(varname, varvalue.generic_u8string()))
     {
     }
-    CMakeVariable::CMakeVariable(std::string var) : s(std::move(var)) { }
+    CMakeVariable::CMakeVariable(const std::string& var) : s(var) { }
+
+    std::string format_cmake_variable(StringView key, StringView value) { return fmt::format("-D{}={}", key, value); }
 
     Command make_basic_cmake_cmd(const Path& cmake_tool_path,
                                  const Path& cmake_script,
@@ -415,7 +421,10 @@ namespace vcpkg
         }
 
         if (extra_env.find("PATH") != extra_env.end())
-            new_path += Strings::format(";%s", extra_env.find("PATH")->second);
+        {
+            new_path.push_back(';');
+            new_path += extra_env.find("PATH")->second;
+        }
         env.add_entry("PATH", new_path);
         // NOTE: we support VS's without the english language pack,
         // but we still want to default to english just in case your specific
@@ -669,7 +678,7 @@ namespace vcpkg
                 vcpkg::Checks::unreachable(VCPKG_LINE_INFO);
             }
 
-            Debug::print("ReadFile() finished with GetLastError(): ", GetLastError(), '\n');
+            Debug::print(fmt::format("ReadFile() finished with GetLastError(): {}\n", GetLastError()));
             CloseHandle(child_stdout);
             return proc_info.wait();
         }
@@ -797,15 +806,16 @@ namespace vcpkg
         auto maybe_rc_output = cmd_execute_and_capture_output(actual_cmd_line, default_working_directory, env);
         if (!maybe_rc_output)
         {
-            Checks::exit_with_message(
-                VCPKG_LINE_INFO, "Failed to run vcvarsall.bat to get Visual Studio env: ", maybe_rc_output.error());
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgVcvarsRunFailed);
         }
 
         auto& rc_output = maybe_rc_output.value_or_exit(VCPKG_LINE_INFO);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           rc_output.exit_code == 0,
-                           "Run vcvarsall.bat to get Visual Studio env failed with exit code %d",
-                           rc_output.exit_code);
+        if (rc_output.exit_code != 0)
+        {
+            Checks::msg_exit_with_error(
+                VCPKG_LINE_INFO, msgVcvarsRunFailedExitCode, msg::exit_code = rc_output.exit_code);
+        }
+
         Debug::print(rc_output.output, "\n");
 
         auto it = Strings::search(rc_output.output, magic_string);
@@ -923,11 +933,11 @@ namespace vcpkg
         g_subprocess_stats += elapsed;
         if (auto result = maybe_result.get())
         {
-            Debug::print("cmd_execute() returned ", *result, " after ", elapsed, " us\n");
+            Debug::print(fmt::format("cmd_execute() returned {} after {} us\n", *result, elapsed));
         }
         else
         {
-            Debug::print("cmd_execute() returned (", maybe_result.error(), ") after ", elapsed, " us\n");
+            Debug::print(fmt::format("cmd_execute() returned ({}) after {} us\n", maybe_result.error(), elapsed));
         }
 
         return maybe_result;
@@ -955,7 +965,7 @@ namespace vcpkg
     {
         const ElapsedTimer timer;
         static std::atomic_int32_t id_counter{1000};
-        const auto id = Strings::format("%4i", id_counter.fetch_add(1, std::memory_order_relaxed));
+        const auto id = fmt::format("{:4}", id_counter.fetch_add(1, std::memory_order_relaxed));
 #if defined(_WIN32)
         using vcpkg::g_ctrl_c_state;
 
@@ -971,7 +981,7 @@ namespace vcpkg
         std::string actual_cmd_line;
         if (wd.working_directory.empty())
         {
-            actual_cmd_line = Strings::format(R"(%s %s 2>&1)", env.get(), cmd_line.command_line());
+            actual_cmd_line = fmt::format(R"({} {} 2>&1)", env.get(), cmd_line.command_line());
         }
         else
         {
@@ -1051,12 +1061,10 @@ namespace vcpkg
         g_subprocess_stats += elapsed;
         if (const auto pec = exit_code.get())
         {
-            Debug::print(id,
-                         ": cmd_execute_and_stream_data() returned ",
-                         *pec,
-                         " after ",
-                         Strings::format("%8llu", static_cast<unsigned long long>(elapsed)),
-                         " us\n");
+            Debug::print(fmt::format("{}: cmd_execute_and_stream_data() returned {} after {:8} us\n",
+                                     id,
+                                     *pec,
+                                     static_cast<unsigned long long>(elapsed)));
         }
 
         return exit_code;

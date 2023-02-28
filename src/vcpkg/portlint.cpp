@@ -1,12 +1,10 @@
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/packagespec.h>
 #include <vcpkg/portlint.h>
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/versions.h>
-
-#include "vcpkg/base/system.print.h"
-#include "vcpkg/base/util.h"
 
 namespace vcpkg::Lint
 {

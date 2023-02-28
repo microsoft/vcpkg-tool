@@ -1,5 +1,4 @@
 #include <vcpkg/base/messages.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binarycaching.h>
@@ -35,7 +34,7 @@ namespace vcpkg::Commands::Upgrade
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("upgrade --no-dry-run"),
+        [] { return create_example_string("upgrade --no-dry-run"); },
         0,
         SIZE_MAX,
         {INSTALL_SWITCHES, {}},
@@ -94,7 +93,8 @@ namespace vcpkg::Commands::Upgrade
 
         // input sanitization
         const std::vector<PackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
-            return check_and_get_package_spec(std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+            return check_and_get_package_spec(
+                std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
         });
 
         ActionPlan action_plan;
@@ -118,6 +118,8 @@ namespace vcpkg::Commands::Upgrade
         }
         else
         {
+            print_default_triplet_warning(args, args.command_arguments);
+
             std::vector<PackageSpec> not_installed;
             std::vector<PackageSpec> no_control_file;
             std::vector<PackageSpec> to_upgrade;
@@ -198,10 +200,7 @@ namespace vcpkg::Commands::Upgrade
         }
 
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty());
-        for (const auto& warning : action_plan.warnings)
-        {
-            msg::write_unlocalized_text_to_stdout(Color::warning, warning + "\n");
-        }
+        action_plan.print_unsupported_warnings();
         // Set build settings for all install actions
         for (auto&& action : action_plan.install_actions)
         {

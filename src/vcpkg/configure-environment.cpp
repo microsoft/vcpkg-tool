@@ -3,7 +3,6 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/setup-messages.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 
 #include <vcpkg/archives.h>
@@ -72,7 +71,7 @@ namespace
 
         if (!pparsed)
         {
-            Debug::println("Telemetry file couldn't be parsed: " + maybe_parsed.error());
+            Debug::println("Telemetry file couldn't be parsed: " + maybe_parsed.error().data());
             return;
         }
 

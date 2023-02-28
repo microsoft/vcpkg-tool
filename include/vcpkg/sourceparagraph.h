@@ -23,22 +23,6 @@ namespace vcpkg
                                                      const std::unordered_map<std::string, std::string>& cmake_vars,
                                                      ImplicitDefault id);
 
-    struct Type
-    {
-        enum
-        {
-            UNKNOWN,
-            PORT,
-            ALIAS,
-        } type;
-
-        static std::string to_string(const Type&);
-        static Type from_string(const std::string&);
-    };
-
-    bool operator==(const Type&, const Type&);
-    bool operator!=(const Type&, const Type&);
-
     /// <summary>
     /// Port metadata of additional feature in a package (part of CONTROL file)
     /// </summary>
@@ -83,7 +67,6 @@ namespace vcpkg
         // Currently contacts is only a Json::Object but it will eventually be unified with maintainers
         Json::Object contacts;
 
-        Type type = {Type::PORT};
         PlatformExpression::Expr supports_expression;
 
         Json::Object extra_info;
@@ -120,9 +103,9 @@ namespace vcpkg
         Optional<const std::vector<Dependency>&> find_dependencies_for_feature(const std::string& featurename) const;
         bool has_qualified_dependencies() const;
 
-        Optional<std::string> check_against_feature_flags(const Path& origin,
-                                                          const FeatureFlagSettings& flags,
-                                                          bool is_default_builtin_registry = true) const;
+        ExpectedL<Unit> check_against_feature_flags(const Path& origin,
+                                                    const FeatureFlagSettings& flags,
+                                                    bool is_default_builtin_registry = true) const;
 
         Version to_version() const { return core_paragraph->to_version(); }
         SchemedVersion to_schemed_version() const

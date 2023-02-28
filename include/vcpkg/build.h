@@ -65,7 +65,8 @@ namespace vcpkg
                               Triplet host_triplet);
     } // namespace vcpkg::Build
 
-    const std::string& to_string(DownloadTool tool);
+    StringLiteral to_string_view(DownloadTool tool);
+    std::string to_string(DownloadTool tool);
 
     struct BuildPackageOptions
     {
@@ -211,7 +212,8 @@ namespace vcpkg
     // could be constexpr, but we want to generate this and that's not constexpr in C++14
     extern const std::array<BuildPolicy, size_t(BuildPolicy::COUNT)> ALL_POLICIES;
 
-    const std::string& to_string(BuildPolicy policy);
+    StringLiteral to_string_view(BuildPolicy policy);
+    std::string to_string(BuildPolicy policy);
     ZStringView to_cmake_variable(BuildPolicy policy);
 
     struct BuildPolicies
