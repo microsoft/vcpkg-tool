@@ -1,5 +1,7 @@
 #include <catch2/catch.hpp>
 
+#include <vcpkg/base/fwd/message_sinks.h>
+
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/util.h>
 

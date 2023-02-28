@@ -466,50 +466,8 @@ namespace vcpkg::msg
     }
 }
 
-namespace
-{
-    struct NullMessageSink : MessageSink
-    {
-        virtual void print(Color, StringView) override { }
-    };
-
-    NullMessageSink null_sink_instance;
-
-    struct StdOutMessageSink : MessageSink
-    {
-        virtual void print(Color c, StringView sv) override { msg::write_unlocalized_text_to_stdout(c, sv); }
-    };
-
-    StdOutMessageSink stdout_sink_instance;
-
-    struct StdErrMessageSink : MessageSink
-    {
-        virtual void print(Color c, StringView sv) override { msg::write_unlocalized_text_to_stderr(c, sv); }
-    };
-
-    StdErrMessageSink stderr_sink_instance;
-}
-
 namespace vcpkg
 {
-
-    void MessageSink::println_warning(const LocalizedString& s)
-    {
-        println(Color::warning, msg::format_warning(s));
-    }
-
-    void MessageSink::println_error(const LocalizedString& s)
-    {
-        println(Color::error, msg::format_error(s));
-    }
-}
-
-namespace vcpkg
-{
-
-    MessageSink& null_sink = null_sink_instance;
-    MessageSink& stderr_sink = stderr_sink_instance;
-    MessageSink& stdout_sink = stdout_sink_instance;
 
     REGISTER_MESSAGE(ABaseline);
     REGISTER_MESSAGE(ABoolean);

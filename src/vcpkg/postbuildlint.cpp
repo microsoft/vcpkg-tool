@@ -1,5 +1,6 @@
 #include <vcpkg/base/cofffilereader.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.process.h>

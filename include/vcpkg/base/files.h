@@ -140,13 +140,14 @@ namespace vcpkg
         ExpectedL<Unit> try_read_all_from(long long offset, void* buffer, std::uint32_t size);
     };
 
+    enum class Append
+    {
+        NO = 0,
+        YES,
+    };
+
     struct WriteFilePointer : FilePointer
     {
-        enum class Append
-        {
-            NO = 0,
-            YES,
-        };
         WriteFilePointer() noexcept;
         WriteFilePointer(WriteFilePointer&&) noexcept;
         explicit WriteFilePointer(const Path& file_path, Append append, std::error_code& ec);
@@ -325,13 +326,10 @@ namespace vcpkg
         ReadFilePointer open_for_read(const Path& file_path, LineInfo li) const;
         ExpectedL<ReadFilePointer> try_open_for_read(const Path& file_path) const;
 
-        virtual WriteFilePointer open_for_write(const Path& file_path,
-                                                WriteFilePointer::Append append,
-                                                std::error_code& ec) = 0;
+        virtual WriteFilePointer open_for_write(const Path& file_path, Append append, std::error_code& ec) = 0;
+        WriteFilePointer open_for_write(const Path& file_path, Append append, LineInfo li);
         WriteFilePointer open_for_write(const Path& file_path, std::error_code& ec);
         WriteFilePointer open_for_write(const Path& file_path, LineInfo li);
-        virtual WriteFilePointer open_for_append(const Path& file_path, std::error_code& ec);
-        WriteFilePointer open_for_append(const Path& file_path, LineInfo li);
     };
 
     Filesystem& get_real_filesystem();

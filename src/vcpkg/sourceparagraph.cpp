@@ -1,6 +1,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>

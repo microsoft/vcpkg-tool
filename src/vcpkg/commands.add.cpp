@@ -1,3 +1,5 @@
+#include <vcpkg/base/fwd/message_sinks.h>
+
 #include <vcpkg/base/basic-checks.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/messages.h>
