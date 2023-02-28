@@ -25,10 +25,11 @@ namespace
     void extract_ce_tarball(const VcpkgPaths& paths,
                             const Path& ce_tarball,
                             const Path& node_path,
-                            const Path& node_modules)
+                            const Path& ce_base_path)
     {
         auto& fs = paths.get_filesystem();
-        fs.remove_all(node_modules, VCPKG_LINE_INFO);
+        fs.remove_all(ce_base_path, VCPKG_LINE_INFO);
+        fs.create_directories(ce_base_path, VCPKG_LINE_INFO);
         Path node_root = node_path.parent_path();
         auto npm_path = node_root / "node_modules" / "npm" / "bin" / "npm-cli.js";
         if (!fs.exists(npm_path, VCPKG_LINE_INFO))
@@ -46,11 +47,11 @@ namespace
         cmd_provision.string_arg("--silent");
         cmd_provision.string_arg(ce_tarball);
         auto env = get_modified_clean_environment({}, node_root);
-        const auto provision_status = cmd_execute(cmd_provision, WorkingDirectory{paths.root}, env);
+        const auto provision_status = cmd_execute(cmd_provision, WorkingDirectory{ce_base_path}, env);
         fs.remove(ce_tarball, VCPKG_LINE_INFO);
         if (!succeeded(provision_status))
         {
-            fs.remove_all(node_modules, VCPKG_LINE_INFO);
+            fs.remove_all(ce_base_path, VCPKG_LINE_INFO);
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgFailedToProvisionCe);
         }
     }
@@ -101,23 +102,13 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         auto& download_manager = paths.get_download_manager();
         auto node_path = paths.get_tool_exe(Tools::NODE, stdout_sink);
-        auto node_modules = paths.root / "node_modules";
-        auto ce_path = node_modules / "vcpkg-ce";
-        auto ce_sha_path = node_modules / "ce-sha.txt";
 
 #if defined(VCPKG_CE_SHA)
+        auto base_path =
+            get_platform_cache_home().value_or_exit(VCPKG_LINE_INFO) / "vcpkg" / "vcpkg-artifacts-" VCPKG_BASE_VERSION_AS_STRING;
+        Debug::println("vcpkg-artifacts base path: ", base_path);
+        auto ce_path = base_path / "node_modules" / "vcpkg-ce";
         bool needs_provisioning = !fs.is_directory(ce_path);
-        if (!needs_provisioning)
-        {
-            auto installed_ce_sha = fs.read_contents(ce_sha_path, IgnoreErrors{});
-            if (installed_ce_sha != VCPKG_CE_SHA_AS_STRING)
-            {
-                fs.remove(ce_sha_path, VCPKG_LINE_INFO);
-                fs.remove_all(ce_path, VCPKG_LINE_INFO);
-                needs_provisioning = true;
-            }
-        }
-
         if (needs_provisioning)
         {
             msg::println(msgDownloadingVcpkgCeBundle, msg::version = VCPKG_BASE_VERSION_AS_STRING);
@@ -126,8 +117,7 @@ namespace vcpkg
                 "/vcpkg-ce.tgz";
             const auto ce_tarball = paths.downloads / "vcpkg-ce-" VCPKG_BASE_VERSION_AS_STRING ".tgz";
             download_manager.download_file(fs, ce_uri, {}, ce_tarball, VCPKG_CE_SHA_AS_STRING, null_sink);
-            extract_ce_tarball(paths, ce_tarball, node_path, node_modules);
-            fs.write_contents(ce_sha_path, VCPKG_CE_SHA_AS_STRING, VCPKG_LINE_INFO);
+            extract_ce_tarball(paths, ce_tarball, node_path, base_path);
         }
 #elif defined(VCPKG_ARTIFACTS_PATH)
         // use hard coded in-source copy
@@ -138,13 +128,15 @@ namespace vcpkg
         msg::println(Color::warning,
                      LocalizedString::from_raw("Using in-development vcpkg-artifacts built at: ").append_raw(ce_path));
 #else  // ^^^ VCPKG_ARTIFACTS_PATH / give up and always download latest vvv
-        fs.remove(ce_sha_path, VCPKG_LINE_INFO);
-        fs.remove_all(ce_path, VCPKG_LINE_INFO);
+        auto base_path = paths.root / "artifacts";
+        Debug::println("vcpkg-artifacts base path: ", base_path);
+        auto node_modules = base_path / "node_modules";
+        auto ce_path = node_modules / "vcpkg-ce";
         msg::println(Color::warning, msgDownloadingVcpkgCeBundleLatest);
         const auto ce_uri = "https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-ce.tgz";
         const auto ce_tarball = paths.downloads / "vcpkg-ce-latest.tgz";
         download_manager.download_file(fs, ce_uri, {}, ce_tarball, nullopt, null_sink);
-        extract_ce_tarball(paths, ce_tarball, node_path, node_modules);
+        extract_ce_tarball(paths, ce_tarball, node_path, base_path);
 #endif // ^^^ !VCPKG_CE_SHA
 
         Command cmd_run(node_path);
@@ -179,8 +171,6 @@ namespace vcpkg
             fs.write_contents(temp_file, StringView{file->begin(), file->end()}, VCPKG_LINE_INFO);
             cmd_run.string_arg("--language").string_arg(temp_file);
         }
-
-        Debug::println("Running configure-environment with ", cmd_run.command_line());
 
         auto result = cmd_execute(cmd_run, WorkingDirectory{paths.original_cwd}).value_or_exit(VCPKG_LINE_INFO);
         if (auto telemetry_file_path = maybe_telemetry_file_path.get())
