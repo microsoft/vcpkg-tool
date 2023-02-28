@@ -253,7 +253,7 @@ namespace vcpkg::Commands::DependInfo
             {
                 for (const auto& dependency : package.dependencies)
                 {
-                    s.append(Strings::format(" %s --> %s;", package.package, dependency));
+                    s.append(fmt::format(" {} --> {};", package.package, dependency));
                 }
             }
 
