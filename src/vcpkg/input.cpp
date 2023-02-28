@@ -23,7 +23,7 @@ namespace vcpkg
         }
 
         // Intentionally show the lowercased string
-        msg::write_unlocalized_text_to_stdout(Color::error, expected_spec.error());
+        msg::println(Color::error, expected_spec.error());
         msg::println(Color::none, example_text);
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
@@ -53,7 +53,7 @@ namespace vcpkg
         }
 
         // Intentionally show the lowercased string
-        msg::write_unlocalized_text_to_stdout(Color::error, expected_spec.error());
+        msg::println(Color::error, expected_spec.error());
         msg::println(Color::none, example_text);
         Checks::exit_fail(VCPKG_LINE_INFO);
     }

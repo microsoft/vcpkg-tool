@@ -160,8 +160,11 @@ namespace vcpkg::Commands::Edit
         for (auto&& port_name : ports)
         {
             const auto portpath = paths.builtin_ports_directory() / port_name;
-            Checks::check_maybe_upgrade(
-                VCPKG_LINE_INFO, fs.is_directory(portpath), R"(Could not find port named "%s")", port_name);
+            if (!fs.is_directory(portpath))
+            {
+                msg::println_error(msgPortDoesNotExist, msg::package_name = port_name);
+                Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
+            }
         }
 
         std::vector<Path> candidate_paths;

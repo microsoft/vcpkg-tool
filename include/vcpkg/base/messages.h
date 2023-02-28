@@ -1385,10 +1385,24 @@ namespace vcpkg
                     "",
                     "Found {count} post-build check problem(s). To submit these ports to curated catalogs, please "
                     "first correct the portfile: {path}");
+    DECLARE_MESSAGE(FailedToAcquireMutant,
+                    (msg::path),
+                    "'mutant' is the Windows kernel object returned by CreateMutexW",
+                    "failed to acquire mutant {path}");
     DECLARE_MESSAGE(FailedToCheckoutRepo,
                     (msg::package_name),
                     "",
                     "failed to check out `versions` from repo {package_name}");
+    DECLARE_MESSAGE(FailedToDeleteDueToFile,
+                    (msg::value, msg::path),
+                    "{value} is the parent path of {path} we tried to delete; the underlying Windows error message is "
+                    "printed after this",
+                    "failed to remove_all({value}) due to {path}: ");
+    DECLARE_MESSAGE(FailedToDeleteInsideDueToFile,
+                    (msg::value, msg::path),
+                    "{value} is the parent path of {path} we tried to delete; the underlying Windows error message is "
+                    "printed after this",
+                    "failed to remove_all_inside({value}) due to {path}: ");
     DECLARE_MESSAGE(FailedToDetermineArchitecture,
                     (msg::path, msg::command_line),
                     "",
@@ -1426,6 +1440,10 @@ namespace vcpkg
     DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.");
     DECLARE_MESSAGE(FailedToObtainLocalPortGitSha, (), "", "Failed to obtain git SHAs for local ports.");
     DECLARE_MESSAGE(FailedToObtainPackageVersion, (), "", "Cannot find desired package version.");
+    DECLARE_MESSAGE(FailedToOpenAlgorithm,
+                    (msg::value),
+                    "{value} is a crypto algorithm like SHA-1 or SHA-512",
+                    "failed to open {value}");
     DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
                     (),
                     "",
@@ -1978,6 +1996,10 @@ namespace vcpkg
                     (),
                     "",
                     "vcpkg ci is an internal command which will change incompatibly or be removed at any time.");
+    DECLARE_MESSAGE(InvalidArchitecture,
+                    (msg::value),
+                    "{value} is what the user entered that we did not understand",
+                    "invalid architecture: {value}");
     DECLARE_MESSAGE(InvalidArgument, (), "", "invalid argument");
     DECLARE_MESSAGE(
         InvalidArgumentRequiresAbsolutePath,
@@ -1997,6 +2019,10 @@ namespace vcpkg
                     (msg::binary_source),
                     "",
                     "invalid argument: binary config '{binary_source}' does not take arguments");
+    DECLARE_MESSAGE(InvalidArgumentRequiresNoWildcards,
+                    (msg::path),
+                    "",
+                    "cannot fix Windows path case for path containing wildcards: {path}");
     DECLARE_MESSAGE(InvalidArgumentRequiresOneOrTwoArguments,
                     (msg::binary_source),
                     "",
@@ -2767,6 +2793,7 @@ namespace vcpkg
                     (),
                     "",
                     "Expected the SystemRoot environment variable to be always set on Windows.");
+    DECLARE_MESSAGE(SystemTargetsInstallFailed, (msg::path), "", "failed to install system targets file to {path}");
     DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.");
     DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.");
     DECLARE_MESSAGE(ToolOfVersionXNotFound,
@@ -2868,6 +2895,11 @@ namespace vcpkg
                     "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', "
                     "'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', "
                     "'x-aws-config', 'http', and 'files'");
+    DECLARE_MESSAGE(UnknownBooleanSetting,
+                    (msg::option, msg::value),
+                    "{value} is what {option} is set to",
+                    "unknown boolean setting for {option}: \"{value}\". Valid values are '', '1', '0', 'ON', 'OFF', "
+                    "'TRUE', and 'FALSE'.");
     DECLARE_MESSAGE(UnknownOptions, (msg::command_name), "", "Unknown option(s) for command '{command_name}':");
     DECLARE_MESSAGE(UnknownParameterForIntegrate,
                     (msg::value),
