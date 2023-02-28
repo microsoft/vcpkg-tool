@@ -144,8 +144,8 @@ namespace vcpkg
     {
         enum class Append
         {
+            NO = 0,
             YES,
-            NO,
         };
         WriteFilePointer() noexcept;
         WriteFilePointer(WriteFilePointer&&) noexcept;
@@ -328,10 +328,10 @@ namespace vcpkg
         virtual WriteFilePointer open_for_write(const Path& file_path,
                                                 WriteFilePointer::Append append,
                                                 std::error_code& ec) = 0;
-        virtual WriteFilePointer open_for_write(const Path& file_path, std::error_code& ec);
+        WriteFilePointer open_for_write(const Path& file_path, std::error_code& ec);
         WriteFilePointer open_for_write(const Path& file_path, LineInfo li);
-        virtual WriteFilePointer open_for_appending(const Path& file_path, std::error_code& ec);
-        WriteFilePointer open_for_appending(const Path& file_path, LineInfo li);
+        virtual WriteFilePointer open_for_append(const Path& file_path, std::error_code& ec);
+        WriteFilePointer open_for_append(const Path& file_path, LineInfo li);
     };
 
     Filesystem& get_real_filesystem();

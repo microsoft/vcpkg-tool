@@ -495,12 +495,12 @@ namespace vcpkg
 
     void MessageSink::println_warning(const LocalizedString& s)
     {
-        print(Color::warning, msg::format(msg::msgWarningMessage).append(s).append_raw('\n'));
+        println(Color::warning, msg::format_warning(s));
     }
 
     void MessageSink::println_error(const LocalizedString& s)
     {
-        print(Color::error, msg::format(msg::msgErrorMessage).append(s).append_raw('\n'));
+        println(Color::error, msg::format_error(s));
     }
 }
 

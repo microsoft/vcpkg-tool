@@ -977,9 +977,9 @@ namespace vcpkg
             struct FileSink : MessageSink
             {
                 WriteFilePointer out_file;
-                StringView stdoutlog;
+                Path stdoutlog;
                 FileSink(Filesystem& fs, StringView stdoutlog)
-                    : out_file(fs.open_for_appending(stdoutlog, VCPKG_LINE_INFO)), stdoutlog(stdoutlog)
+                    : m_stdoutlog(stdoutlog), m_out_file(fs.open_for_appending(m_stdoutlog, VCPKG_LINE_INFO))
                 {
                 }
                 void print(Color c, StringView sv) override
