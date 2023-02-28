@@ -6,7 +6,7 @@
 namespace vcpkg::Commands::InitRegistry
 {
     static const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string(R"(x-init-registry .)"),
+        [] { return create_example_string(R"(x-init-registry .)"); },
         1,
         1,
         {{}, {}, {}},

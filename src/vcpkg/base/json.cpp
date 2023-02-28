@@ -1001,8 +1001,7 @@ namespace vcpkg::Json
                 }
             }
 
-            static ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse(StringView json,
-                                                                                             StringView origin)
+            static ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse(StringView json, StringView origin)
             {
                 StatsTimer t(g_json_parsing_stats);
 
@@ -1022,7 +1021,7 @@ namespace vcpkg::Json
                 }
                 else
                 {
-                    return std::make_pair(std::move(val), parser.style());
+                    return ParsedJson{std::move(val), parser.style()};
                 }
             }
 
@@ -1115,9 +1114,9 @@ namespace vcpkg::Json
         return true;
     }
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse_file(const Filesystem& fs,
-                                                                                   const Path& json_file,
-                                                                                   std::error_code& ec)
+    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse_file(const Filesystem& fs,
+                                                                  const Path& json_file,
+                                                                  std::error_code& ec)
     {
         auto res = fs.read_contents(json_file, ec);
         if (ec)
@@ -1128,48 +1127,41 @@ namespace vcpkg::Json
         return parse(res, json_file);
     }
 
-    std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo li, const Filesystem& fs, const Path& json_file)
+    ParsedJson parse_file(vcpkg::LineInfo li, const Filesystem& fs, const Path& json_file)
     {
         std::error_code ec;
         auto ret = parse_file(fs, json_file, ec);
         if (ec)
         {
-            msg::println_error(msgFailedToRead, msg::path = json_file, msg::error_msg = ec);
-            Checks::exit_fail(li);
+            Checks::msg_exit_with_error(li, format_filesystem_call_error(ec, "read_contents", {json_file}));
         }
         else if (!ret)
         {
-            msg::println_error(msgFailedToParseJson, msg::path = json_file);
-            msg::write_unlocalized_text_to_stdout(Color::error, ret.error()->to_string());
-            msg::println();
-            Checks::exit_fail(li);
+            Checks::msg_exit_with_message(li, LocalizedString::from_raw(ret.error()->to_string()));
         }
         return ret.value_or_exit(li);
     }
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse(StringView json, StringView origin)
+    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse(StringView json, StringView origin)
     {
         return Parser::parse(json, origin);
     }
 
-    ExpectedS<Json::Object> parse_object(StringView text, StringView origin)
+    ExpectedL<Json::Object> parse_object(StringView text, StringView origin)
     {
         auto maybeValueIsh = parse(text, origin);
         if (auto asValueIsh = maybeValueIsh.get())
         {
-            auto& asValue = asValueIsh->first;
+            auto& asValue = asValueIsh->value;
             if (asValue.is_object())
             {
-                return std::move(asValue.object(VCPKG_LINE_INFO));
+                return std::move(asValue).object(VCPKG_LINE_INFO);
             }
 
-            return msg::format(msgJsonErrorMustBeAnObject, msg::path = origin).extract_data();
+            return msg::format(msgJsonErrorMustBeAnObject, msg::path = origin);
         }
 
-        return msg::format(msgFailedToParseJson, msg::path = origin)
-            .append_raw('\n')
-            .append_raw(maybeValueIsh.error()->to_string())
-            .extract_data();
+        return LocalizedString::from_raw(maybeValueIsh.error()->to_string());
     }
     // } auto parse()
 

@@ -64,7 +64,7 @@ namespace vcpkg
     {
         virtual View<Version> get_port_versions() const = 0;
 
-        virtual ExpectedS<PathAndLocation> get_version(const Version& version) const = 0;
+        virtual ExpectedL<PathAndLocation> get_version(const Version& version) const = 0;
 
         virtual ~RegistryEntry() = default;
     };
@@ -152,10 +152,10 @@ namespace vcpkg
                                                                      Path path,
                                                                      std::string baseline);
 
-    ExpectedS<std::vector<std::pair<SchemedVersion, std::string>>> get_builtin_versions(const VcpkgPaths& paths,
+    ExpectedL<std::vector<std::pair<SchemedVersion, std::string>>> get_builtin_versions(const VcpkgPaths& paths,
                                                                                         StringView port_name);
 
-    ExpectedS<std::map<std::string, Version, std::less<>>> get_builtin_baseline(const VcpkgPaths& paths);
+    ExpectedL<std::map<std::string, Version, std::less<>>> get_builtin_baseline(const VcpkgPaths& paths);
 
     bool is_git_commit_sha(StringView sv);
 
