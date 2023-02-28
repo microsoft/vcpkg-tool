@@ -873,9 +873,6 @@ namespace vcpkg
     DECLARE_MESSAGE(CmdAddVersionOptVerbose, (), "", "Print success messages instead of just errors.");
     DECLARE_MESSAGE(CmdContactOptSurvey, (), "", "Launch default browser to the current vcpkg survey");
     DECLARE_MESSAGE(CmdDependInfoOptDepth, (), "", "Show recursion depth in output");
-    DECLARE_MESSAGE(CmdDependInfoOptDGML, (), "", "Creates graph on basis of dgml");
-    DECLARE_MESSAGE(CmdDependInfoOptDot, (), "", "Creates graph on basis of dot");
-    DECLARE_MESSAGE(CmdDependInfoOptMermaid, (), "", "Creates graph on basis of mermaid");
     DECLARE_MESSAGE(CmdDependInfoOptMaxRecurse, (), "", "Set max recursion depth, a value of -1 indicates no limit");
     DECLARE_MESSAGE(CmdDependInfoOptSort,
                     (),
@@ -883,6 +880,10 @@ namespace vcpkg
                     "Set sort order for the list of dependencies, accepted values are: lexicographical, topological "
                     "(default), x-tree, "
                     "reverse");
+    DECLARE_MESSAGE(CmdDependInfoOptFormat,
+                    (),
+                    "",
+                    "Set output format, accepted values are: list (default), dot, dgml, mermaid");
     DECLARE_MESSAGE(CmdEditOptAll,
                     (),
                     "",
@@ -1974,6 +1975,10 @@ namespace vcpkg
                     (),
                     "",
                     "Value of --sort must be one of 'lexicographical', 'topological', 'reverse'.");
+    DECLARE_MESSAGE(InvalidCommandArgFormat,
+                    (),
+                    "",
+                    "Value of --format must be one of 'list', 'dot', 'dgml', 'mermaid'.");
     DECLARE_MESSAGE(
         InvalidCommentStyle,
         (),

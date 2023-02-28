@@ -952,6 +952,7 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidCodePoint);
     REGISTER_MESSAGE(InvalidCodeUnit);
     REGISTER_MESSAGE(InvalidCommandArgSort);
+    REGISTER_MESSAGE(InvalidCommandArgFormat);
     REGISTER_MESSAGE(InvalidCommitId);
     REGISTER_MESSAGE(InvalidDependency);
     REGISTER_MESSAGE(InvalidFeature);
@@ -1349,12 +1350,10 @@ namespace vcpkg
     REGISTER_MESSAGE(CISettingsVerifyVersion);
     REGISTER_MESSAGE(CISettingsVerifyGitTree);
     REGISTER_MESSAGE(CISettingsExclude);
-    REGISTER_MESSAGE(CmdDependInfoOptDot);
-    REGISTER_MESSAGE(CmdDependInfoOptDGML);
-    REGISTER_MESSAGE(CmdDependInfoOptMermaid);
     REGISTER_MESSAGE(CmdDependInfoOptDepth);
     REGISTER_MESSAGE(CmdDependInfoOptMaxRecurse);
     REGISTER_MESSAGE(CmdDependInfoOptSort);
+    REGISTER_MESSAGE(CmdDependInfoOptFormat);
     REGISTER_MESSAGE(CmdEditOptBuildTrees);
     REGISTER_MESSAGE(CmdEditOptAll);
     REGISTER_MESSAGE(CmdEnvOptions);

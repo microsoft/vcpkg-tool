@@ -82,24 +82,20 @@ namespace vcpkg::Commands::DependInfo
             }
         }
 
-        constexpr StringLiteral OPTION_DOT = "dot";
-        constexpr StringLiteral OPTION_DGML = "dgml";
-        constexpr StringLiteral OPTION_MERMAID = "mermaid";
         constexpr StringLiteral OPTION_SHOW_DEPTH = "show-depth";
         constexpr StringLiteral OPTION_MAX_RECURSE = "max-recurse";
         constexpr StringLiteral OPTION_SORT = "sort";
+        constexpr StringLiteral OPTION_FORMAT = "format";
 
         constexpr int NO_RECURSE_LIMIT_VALUE = -1;
 
-        constexpr std::array<CommandSwitch, 4> DEPEND_SWITCHES = {
-            {{OPTION_DOT, []() { return msg::format(msgCmdDependInfoOptDot); }},
-             {OPTION_DGML, []() { return msg::format(msgCmdDependInfoOptDGML); }},
-             {OPTION_MERMAID, []() { return msg::format(msgCmdDependInfoOptMermaid); }},
-             {OPTION_SHOW_DEPTH, []() { return msg::format(msgCmdDependInfoOptDepth); }}}};
+        constexpr std::array<CommandSwitch, 1> DEPEND_SWITCHES = {
+            {{OPTION_SHOW_DEPTH, []() { return msg::format(msgCmdDependInfoOptDepth); }}}};
 
-        constexpr std::array<CommandSetting, 2> DEPEND_SETTINGS = {
+        constexpr std::array<CommandSetting, 3> DEPEND_SETTINGS = {
             {{OPTION_MAX_RECURSE, []() { return msg::format(msgCmdDependInfoOptMaxRecurse); }},
-             {OPTION_SORT, []() { return msg::format(msgCmdDependInfoOptSort); }}}};
+             {OPTION_SORT, []() { return msg::format(msgCmdDependInfoOptSort); }},
+             {OPTION_FORMAT, []() { return msg::format(msgCmdDependInfoOptFormat); }}}};
 
         enum SortMode
         {
@@ -108,6 +104,14 @@ namespace vcpkg::Commands::DependInfo
             ReverseTopological,
             Treelogical,
             Default = Topological
+        };
+
+        enum OutputFormat
+        {
+            List = 0,
+            Dot,
+            Dgml,
+            Mermaid
         };
 
         int get_max_depth(const ParsedArguments& options)
@@ -155,6 +159,34 @@ namespace vcpkg::Commands::DependInfo
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidCommandArgSort);
             }
             return Default;
+        }
+
+        OutputFormat get_output_format(const ParsedArguments& options)
+        {
+            constexpr StringLiteral OPTION_FORMAT_LIST = "list";
+            constexpr StringLiteral OPTION_FORMAT_DOT = "dot";
+            constexpr StringLiteral OPTION_FORMAT_DGML = "dgml";
+            constexpr StringLiteral OPTION_FORMAT_MERMAID = "mermaid";
+
+            static const std::map<StringLiteral, OutputFormat, std::less<>> outputFormatMap{
+                {OPTION_FORMAT_LIST, List},
+                {OPTION_FORMAT_DOT, Dot},
+                {OPTION_FORMAT_DGML, Dgml},
+                {OPTION_FORMAT_MERMAID, Mermaid},
+            };
+
+            auto iter = options.settings.find(OPTION_FORMAT);
+            if (iter != options.settings.end())
+            {
+                const std::string value = Strings::ascii_to_lowercase(std::string{iter->second});
+                auto it = outputFormatMap.find(value);
+                if (it != outputFormatMap.end())
+                {
+                    return it->second;
+                }
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidCommandArgFormat);
+            }
+            return List;
         }
 
         std::string create_dot_as_string(const std::vector<PackageDependInfo>& depend_info)
@@ -228,18 +260,18 @@ namespace vcpkg::Commands::DependInfo
             return s;
         }
 
-        std::string create_graph_as_string(const std::set<std::string, std::less<>>& switches,
+        std::string create_graph_as_string(OutputFormat output_format,
                                            const std::vector<PackageDependInfo>& depend_info)
         {
-            if (Util::Sets::contains(switches, OPTION_DOT))
+            if (output_format == Dot)
             {
                 return create_dot_as_string(depend_info);
             }
-            else if (Util::Sets::contains(switches, OPTION_DGML))
+            else if (output_format == Dgml)
             {
                 return create_dgml_as_string(depend_info);
             }
-            else if (Util::Sets::contains(switches, OPTION_MERMAID))
+            else if (output_format == Mermaid)
             {
                 return create_mermaid_as_string(depend_info);
             }
@@ -355,8 +387,8 @@ namespace vcpkg::Commands::DependInfo
 
         std::vector<PackageDependInfo> depend_info = extract_depend_info(install_actions, max_depth);
 
-        if (Util::Sets::contains(options.switches, OPTION_DOT) || Util::Sets::contains(options.switches, OPTION_DGML) ||
-            Util::Sets::contains(options.switches, OPTION_MERMAID))
+        const OutputFormat output_format = get_output_format(options);
+        if (output_format != List)
         {
             const std::vector<const SourceControlFile*> source_control_files =
                 Util::fmap(install_actions, [](const InstallPlanAction* install_action) {
@@ -365,7 +397,7 @@ namespace vcpkg::Commands::DependInfo
                     return const_cast<const SourceControlFile*>(scfl.source_control_file.get());
                 });
 
-            std::string graph_as_string = create_graph_as_string(options.switches, depend_info);
+            std::string graph_as_string = create_graph_as_string(output_format, depend_info);
             graph_as_string.push_back('\n');
             msg::write_unlocalized_text_to_stdout(Color::none, graph_as_string);
             Checks::exit_success(VCPKG_LINE_INFO);
