@@ -18,11 +18,11 @@ TEST_CASE ("Parse git status output", "[git]")
                                                  "ports/testport/vcpkg.json";
     static constexpr StringLiteral bad_output3 = "A* ports/testport/vcpkg.json";
 
-    auto maybe_empty_results = parse_git_status_output(empty_output);
+    auto maybe_empty_results = parse_git_status_output(empty_output, "git status");
     REQUIRE(maybe_empty_results.has_value());
     CHECK(maybe_empty_results.value_or_exit(VCPKG_LINE_INFO).empty());
 
-    auto maybe_good_results = parse_git_status_output(good_output);
+    auto maybe_good_results = parse_git_status_output(good_output, "git status");
     REQUIRE(maybe_good_results.has_value());
     auto good_results = maybe_good_results.value_or_exit(VCPKG_LINE_INFO);
     REQUIRE(good_results.size() == 4);
@@ -47,13 +47,13 @@ TEST_CASE ("Parse git status output", "[git]")
     CHECK(good_results[3].path == "ports/testport/fix-cmake-config.patch");
     CHECK(good_results[3].old_path == "ports/testport/fix.patch");
 
-    auto maybe_bad_results = parse_git_status_output(bad_output);
+    auto maybe_bad_results = parse_git_status_output(bad_output, "git status");
     REQUIRE(!maybe_bad_results.has_value());
 
-    auto maybe_bad_results2 = parse_git_status_output(bad_output2);
+    auto maybe_bad_results2 = parse_git_status_output(bad_output2, "git status");
     REQUIRE(!maybe_bad_results2.has_value());
 
-    auto maybe_bad_results3 = parse_git_status_output(bad_output3);
+    auto maybe_bad_results3 = parse_git_status_output(bad_output3, "git status");
     REQUIRE(!maybe_bad_results3.has_value());
 }
 

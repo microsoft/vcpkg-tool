@@ -64,7 +64,7 @@ namespace vcpkg
     {
         virtual View<Version> get_port_versions() const = 0;
 
-        virtual ExpectedS<PathAndLocation> get_version(const Version& version) const = 0;
+        virtual ExpectedL<PathAndLocation> get_version(const Version& version) const = 0;
 
         virtual ~RegistryEntry() = default;
     };
@@ -152,10 +152,10 @@ namespace vcpkg
                                                                      Path path,
                                                                      std::string baseline);
 
-    ExpectedS<std::vector<std::pair<SchemedVersion, std::string>>> get_builtin_versions(const VcpkgPaths& paths,
+    ExpectedL<std::vector<std::pair<SchemedVersion, std::string>>> get_builtin_versions(const VcpkgPaths& paths,
                                                                                         StringView port_name);
 
-    ExpectedS<std::map<std::string, Version, std::less<>>> get_builtin_baseline(const VcpkgPaths& paths);
+    ExpectedL<std::map<std::string, Version, std::less<>>> get_builtin_baseline(const VcpkgPaths& paths);
 
     bool is_git_commit_sha(StringView sv);
 
@@ -182,9 +182,9 @@ namespace vcpkg
         static constexpr StringLiteral GIT_TREE = "git-tree";
         static constexpr StringLiteral PATH = "path";
 
-        StringView type_name() const override;
+        LocalizedString type_name() const override;
         View<StringView> valid_fields() const override;
-        Optional<VersionDbEntry> visit_object(Json::Reader& r, const Json::Object& obj) override;
+        Optional<VersionDbEntry> visit_object(Json::Reader& r, const Json::Object& obj) const override;
         VersionDbEntryDeserializer(VersionDbType type, const Path& root) : type(type), registry_root(root) { }
 
     private:
@@ -194,8 +194,9 @@ namespace vcpkg
 
     struct VersionDbEntryArrayDeserializer final : Json::IDeserializer<std::vector<VersionDbEntry>>
     {
-        virtual StringView type_name() const override;
-        virtual Optional<std::vector<VersionDbEntry>> visit_array(Json::Reader& r, const Json::Array& arr) override;
+        virtual LocalizedString type_name() const override;
+        virtual Optional<std::vector<VersionDbEntry>> visit_array(Json::Reader& r,
+                                                                  const Json::Array& arr) const override;
         VersionDbEntryArrayDeserializer(VersionDbType type, const Path& root) : underlying{type, root} { }
 
     private:
