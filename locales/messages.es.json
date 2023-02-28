@@ -824,6 +824,7 @@
   "PushingVendorFailed": "Error al insertar {vendor} en \"{path}\". Use --debug para obtener más información.",
   "RegeneratesArtifactRegistry": "Regenerates an artifact registry.",
   "RegistryCreated": "El registro se creó correctamente en {path}",
+  "RegistryValueWrongType": "The registry value {path} was an unexpected type.",
   "RemoveDependencies": "Para quitar dependencias en modo de manifiesto, edite el manifiesto (vcpkg.json) y ejecute 'install'.",
   "RemovePackageConflict": "{spec} no está instalado, pero {package_name} está instalado para {triplet}. ¿Quiso decir {package_name}:{triplet}?",
   "RemovingPackage": "Quitando {action_index}/{count} {spec}",

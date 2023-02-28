@@ -824,6 +824,7 @@
   "PushingVendorFailed": "Nepodařilo se nasdílet změny {vendor} do cesty {path}. Pro další informace použijte --debug.",
   "RegeneratesArtifactRegistry": "Regenerates an artifact registry.",
   "RegistryCreated": "Registr na cestě {path} se úspěšně vytvořil.",
+  "RegistryValueWrongType": "The registry value {path} was an unexpected type.",
   "RemoveDependencies": "Pokud chcete odebrat závislosti v režimu manifestu, upravte manifest (vcpkg.json) a spusťte install.",
   "RemovePackageConflict": "{spec} není nainstalovaný, ale {package_name} je nainstalovaný pro {triplet}. Měli jste na mysli {package_name}:{triplet}?",
   "RemovingPackage": "Odebírá se {action_index}/{count} {spec}",

@@ -824,6 +824,7 @@
   "PushingVendorFailed": "Сбой отправки {vendor} в \"{path}\". Для получения дополнительных сведений, используйте --debug.",
   "RegeneratesArtifactRegistry": "Regenerates an artifact registry.",
   "RegistryCreated": "Реестр успешно создан в {path}",
+  "RegistryValueWrongType": "The registry value {path} was an unexpected type.",
   "RemoveDependencies": "Чтобы удалить зависимости в режиме манифеста, измените манифест (vcpkg.json) и выполните команду \"install\".",
   "RemovePackageConflict": "{spec} не установлено, но {package_name} установлено для {triplet}. Вы имели в виду {package_name}:{triplet}?",
   "RemovingPackage": "Выполняется удаление {action_index}/{count} {spec}",

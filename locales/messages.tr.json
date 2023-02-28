@@ -824,6 +824,7 @@
   "PushingVendorFailed": "\"{path}\" yoluna {vendor} gönderimi yapılamadı. Daha fazla bilgi için --debug kullanın.",
   "RegeneratesArtifactRegistry": "Regenerates an artifact registry.",
   "RegistryCreated": "Kayıt defteri {path} yolunda başarıyla oluşturuldu",
+  "RegistryValueWrongType": "The registry value {path} was an unexpected type.",
   "RemoveDependencies": "Bildirim modunda bağımlılıkları kaldırmak için bildiriminizi (vcpkg.json) düzenleyip 'install' komutunu çalıştırın.",
   "RemovePackageConflict": "{spec} yüklü değil, ancak {package_name}, {triplet} için yüklendi. Şunu mu demek istediniz: {package_name}:{triplet}?",
   "RemovingPackage": "{action_index}/{count} {spec} kaldırılıyor",

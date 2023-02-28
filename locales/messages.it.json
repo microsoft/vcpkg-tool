@@ -824,6 +824,7 @@
   "PushingVendorFailed": "Il push di {vendor} in \"{path}\" non è riuscito. Per altre informazioni, usare --debug.",
   "RegeneratesArtifactRegistry": "Regenerates an artifact registry.",
   "RegistryCreated": "Il Registro di sistema è stato creato in {path}",
+  "RegistryValueWrongType": "The registry value {path} was an unexpected type.",
   "RemoveDependencies": "Per rimuovere le dipendenze in modalità manifesto, modificare il manifesto (vcpkg.json) ed eseguire 'install'.",
   "RemovePackageConflict": "{spec} non è installato, ma {package_name} è installato per {triplet}. Intendevi {package_name}:{triplet}?",
   "RemovingPackage": "Rimozione di {action_index}/{count} {spec}",

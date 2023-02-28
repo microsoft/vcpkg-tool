@@ -824,6 +824,7 @@
   "PushingVendorFailed": "{vendor}를 \"{path}\"(으)로 푸시하지 못했습니다. 자세한 내용은 --debug를 사용하세요.",
   "RegeneratesArtifactRegistry": "Regenerates an artifact registry.",
   "RegistryCreated": "{path}에 레지스트리를 만들었습니다.",
+  "RegistryValueWrongType": "The registry value {path} was an unexpected type.",
   "RemoveDependencies": "매니페스트 모드에서 종속성을 제거하려면 매니페스트(vcpkg.json)을(를) 편집하고 'install'을 실행합니다.",
   "RemovePackageConflict": "{spec}이(가) 설치되지 않았지만 {triplet}용으로 {package_name}이(가) 설치되었습니다. {package_name}:{triplet}을(를) 의미했나요?",
   "RemovingPackage": "{action_index}/{count} {spec}을(를) 제거하는 중",

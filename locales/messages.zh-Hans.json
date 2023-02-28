@@ -824,6 +824,7 @@
   "PushingVendorFailed": "将 {vendor} 推送到“{path}”失败。请使用 --debug 获取详细信息。",
   "RegeneratesArtifactRegistry": "Regenerates an artifact registry.",
   "RegistryCreated": "已在 {path} 下成功创建注册表",
+  "RegistryValueWrongType": "The registry value {path} was an unexpected type.",
   "RemoveDependencies": "要在清单模式下移除依赖项，请编辑清单(vcpkg.json)并运行 “install”。",
   "RemovePackageConflict": "{spec} 未安装，但为 {triplet} 安装了 {package_name}。你是否指的是 {package_name}: {triplet}?",
   "RemovingPackage": "正在删除 {action_index}/{count} 个 {spec}",

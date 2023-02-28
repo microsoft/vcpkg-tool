@@ -824,6 +824,7 @@
   "PushingVendorFailed": "Fehler beim Pushen von {vendor} nach „{path}“. Verwenden Sie „--debug“, um weitere Informationen zu erhalten.",
   "RegeneratesArtifactRegistry": "Regenerates an artifact registry.",
   "RegistryCreated": "Die Registrierung wurde erfolgreich unter {path} erstellt",
+  "RegistryValueWrongType": "The registry value {path} was an unexpected type.",
   "RemoveDependencies": "Um Abhängigkeiten im Manifestmodus zu entfernen, bearbeiten Sie Ihr Manifest (vcpkg.json), und führen Sie „install“ aus.",
   "RemovePackageConflict": "{spec} ist nicht installiert, {package_name} ist jedoch für {triplet} installiert. Meinten Sie {package_name}:{triplet}?",
   "RemovingPackage": "{action_index}/{count} {spec} wird entfernt.",

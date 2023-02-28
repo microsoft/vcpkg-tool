@@ -824,6 +824,7 @@
   "PushingVendorFailed": "Wypychanie dostawcy {vendor} do lokalizacji \"{path}\" nie powiodło się. Aby uzyskać więcej informacji, użyj parametru --debug.",
   "RegeneratesArtifactRegistry": "Regenerates an artifact registry.",
   "RegistryCreated": "Pomyślnie utworzono rejestr w lokalizacji {path}",
+  "RegistryValueWrongType": "The registry value {path} was an unexpected type.",
   "RemoveDependencies": "Aby usunąć zależności w trybie manifestu, edytuj manifest (vcpkg.json) i uruchom polecenie „instaluj”.",
   "RemovePackageConflict": "Element {spec} nie jest zainstalowany, ale pakiet {package_name} jest zainstalowany dla {triplet}. Czy chodziło Ci o {package_name}:{triplet}?",
   "RemovingPackage": "Usuwanie {action_index}/{count} {spec}",

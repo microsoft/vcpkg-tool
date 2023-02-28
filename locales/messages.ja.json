@@ -824,6 +824,7 @@
   "PushingVendorFailed": "{vendor} を \"{path}\" にプッシュできませんでした。詳細については、--debug を使用してください。",
   "RegeneratesArtifactRegistry": "Regenerates an artifact registry.",
   "RegistryCreated": "{path} にレジストリが正常に作成されました",
+  "RegistryValueWrongType": "The registry value {path} was an unexpected type.",
   "RemoveDependencies": "マニフェスト モードで依存関係を削除するには、マニフェスト (vcpkg.json) を編集して 'インストール' を実行します。",
   "RemovePackageConflict": "{spec} はインストールされていませんが、{triplet} の {package_name} がインストールされています。{package_name}:{triplet} のことですか?",
   "RemovingPackage": "{action_index}/{count} {spec} を削除しています",
