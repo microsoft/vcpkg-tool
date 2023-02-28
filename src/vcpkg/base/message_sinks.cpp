@@ -31,7 +31,7 @@ namespace vcpkg
 
     void MessageSink::println_warning(const LocalizedString& s)
     {
-        println(Color::warning, format(msg::msgErrorMessage).append(s));
+        println(Color::warning, format(msg::msgWarningMessage).append(s));
     }
 
     void MessageSink::println_error(const LocalizedString& s)
