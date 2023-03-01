@@ -224,10 +224,9 @@ namespace vcpkg
                 {
                     auto error_info = std::make_unique<ParseControlErrorInfo>();
                     error_info->name = scf.core_paragraph->name;
-                    error_info->error = Strings::format(R"(Multiple features with the same name for port %s: %s
-    This is invalid; please make certain that features have distinct names.)",
-                                                        scf.core_paragraph->name,
-                                                        (*adjacent_equal)->name);
+                    error_info->error = msg::format_error(msgMultipleFeatures,
+                                                          msg::package_name = scf.core_paragraph->name,
+                                                          msg::feature = (*adjacent_equal)->name);
                     return error_info;
                 }
                 return nullptr;
@@ -404,7 +403,7 @@ namespace vcpkg
             }
             else
             {
-                r.add_generic_error(type_name(), LocalizedString::from_raw(std::move(opt).error()));
+                r.add_generic_error(type_name(), std::move(opt).error());
                 return PlatformExpression::Expr::Empty();
             }
         }
@@ -708,7 +707,7 @@ namespace vcpkg
 
     // The "license" field; either:
     // * a string, which must be an SPDX license expression.
-    //   EBNF located at: https://github.com/microsoft/vcpkg/blob/master/docs/maintainers/manifest-files.md#license
+    //   EBNF located at: https://learn.microsoft.com/vcpkg/reference/vcpkg-json#license
     // * `null`, for when the license of the package cannot be described by an SPDX expression
     struct SpdxLicenseExpressionParser : ParserBase
     {
@@ -916,7 +915,8 @@ namespace vcpkg
 
     std::string parse_spdx_license_expression(StringView sv, ParseMessages& messages)
     {
-        auto parser = SpdxLicenseExpressionParser(sv, "<license string>");
+        auto license_string = msg::format(msgLicenseExpressionString); // must live through parse
+        auto parser = SpdxLicenseExpressionParser(sv, license_string);
         auto result = parser.parse();
         messages = parser.extract_messages();
         return result;
@@ -1073,7 +1073,7 @@ namespace vcpkg
 
             if (auto maybe_error = canonicalize(*control_file))
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO, maybe_error->error);
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, maybe_error->error);
             }
 
             return std::move(control_file); // gcc-7 bug workaround redundant move

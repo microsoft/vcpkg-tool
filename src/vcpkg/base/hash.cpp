@@ -89,7 +89,8 @@ namespace vcpkg::Hash
             auto error = BCryptOpenAlgorithmProvider(&result, algorithm_identifier, nullptr, 0);
             if (!NT_SUCCESS(error))
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO, "Failure to open algorithm: %ls", algorithm_identifier);
+                Checks::msg_exit_with_error(
+                    VCPKG_LINE_INFO, msgFailedToOpenAlgorithm, msg::value = Strings::to_utf8(algorithm_identifier));
             }
 
             return result;

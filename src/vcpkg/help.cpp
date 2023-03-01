@@ -33,15 +33,12 @@ namespace vcpkg::Help
         print_usage(S);
     }
 
-    static void integrate_topic_fn(const VcpkgPaths&)
-    {
-        msg::write_unlocalized_text_to_stdout(Color::none, "Commands:\n" + Commands::Integrate::get_helpstring());
-    }
+    static void integrate_topic_fn(const VcpkgPaths&) { msg::println(Commands::Integrate::get_helpstring()); }
 
     static void help_topics(const VcpkgPaths&);
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("help"),
+        [] { return create_example_string("help"); },
         0,
         1,
         {},

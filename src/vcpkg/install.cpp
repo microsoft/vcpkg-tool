@@ -635,7 +635,7 @@ namespace vcpkg
     }
 
     const CommandStructure Install::COMMAND_STRUCTURE = {
-        create_example_string("install zlib zlib:x64-windows curl boost"),
+        [] { return create_example_string("install zlib zlib:x64-windows curl boost"); },
         0,
         SIZE_MAX,
         {INSTALL_SWITCHES, INSTALL_SETTINGS, INSTALL_MULTISETTINGS},
@@ -645,7 +645,7 @@ namespace vcpkg
     // This command structure must share "critical" values (switches, number of arguments). It exists only to provide a
     // better example string.
     const CommandStructure MANIFEST_COMMAND_STRUCTURE = {
-        create_example_string("install --triplet x64-windows"),
+        [] { return create_example_string("install --triplet x64-windows"); },
         0,
         SIZE_MAX,
         {INSTALL_SWITCHES, INSTALL_SETTINGS, INSTALL_MULTISETTINGS},
@@ -1186,7 +1186,7 @@ namespace vcpkg
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
-                std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+                std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
         });
         print_default_triplet_warning(args, args.command_arguments);
 

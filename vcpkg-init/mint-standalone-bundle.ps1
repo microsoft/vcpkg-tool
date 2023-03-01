@@ -7,10 +7,27 @@ Param(
     [Parameter(Mandatory = $True)]
     [string]$TempDir,
     [Parameter()]
-    [switch]$ReadOnly,
+    [string]$Deployment,
     [Parameter(Mandatory = $True)]
     [string]$SignedFilesRoot
 )
+
+if ($Deployment -eq 'VisualStudio') {
+    $BundleConfig = @{
+        'readonly'       = $True;
+        'usegitregistry' = $True;
+        'embeddedsha'    = $sha;
+        'deployment'     = $Deployment;
+        'vsversion'      = "17.0";
+    }
+} else {
+    $BundleConfig = @{
+        'readonly'       = $False;
+        'usegitregistry' = $True;
+        'embeddedsha'    = $sha;
+        'deployment'     = $Deployment;
+    }
+}
 
 $sha = Get-Content "$PSScriptRoot/vcpkg-scripts-sha.txt" -Raw
 $sha = $sha.Trim()
@@ -74,15 +91,9 @@ try {
     New-Item -Path 'out/scripts/posh-vcpkg/0.0.1' -ItemType 'Directory' -Force
     Copy-Item -Path "$SignedFilesRoot/posh-vcpkg.psm1" -Destination 'out/scripts/posh-vcpkg/0.0.1/posh-vcpkg.psm1'
 
-    $bundleConfig = @{
-        'readonly'       = [bool]$ReadOnly;
-        'usegitregistry' = $True;
-        'embeddedsha'    = $sha
-    }
-
     New-Item -Path "out/.vcpkg-root" -ItemType "File"
     Set-Content -Path "out/vcpkg-bundle.json" `
-        -Value (ConvertTo-Json -InputObject $bundleConfig) `
+        -Value (ConvertTo-Json -InputObject $BundleConfig) `
         -Encoding Ascii
 
     if (-not [String]::IsNullOrEmpty($DestinationTarball)) {

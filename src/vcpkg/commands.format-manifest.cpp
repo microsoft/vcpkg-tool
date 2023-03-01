@@ -30,13 +30,11 @@ namespace
         auto parsed_json_opt = Json::parse(contents, manifest_path);
         if (!parsed_json_opt)
         {
-            msg::println_error(msg::format(msgFailedToParseJson, msg::path = path_string)
-                                   .append_raw(": ")
-                                   .append_raw(parsed_json_opt.error()->to_string()));
+            msg::println(Color::error, LocalizedString::from_raw(parsed_json_opt.error()->to_string()));
             return nullopt;
         }
 
-        const auto& parsed_json = parsed_json_opt.value_or_exit(VCPKG_LINE_INFO).first;
+        const auto& parsed_json = parsed_json_opt.value_or_exit(VCPKG_LINE_INFO).value;
         if (!parsed_json.is_object())
         {
             msg::println_error(msgJsonErrorMustBeAnObject, msg::path = path_string);
@@ -166,7 +164,7 @@ namespace vcpkg::Commands::FormatManifest
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string(R"###(format-manifest --all)###"),
+        [] { return create_example_string("format-manifest --all"); },
         0,
         SIZE_MAX,
         {FORMAT_SWITCHES, {}, {}},
