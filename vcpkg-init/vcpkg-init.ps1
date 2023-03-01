@@ -30,29 +30,28 @@ function download($url, $path) {
 
 # Determine VCPKG_ROOT
 if (Test-Path "$PSScriptRoot/.vcpkg-root") {
-  $env:VCPKG_ROOT = "$PSScriptRoot/.vcpkg-root"
-} else if (-Not Test-Path env:VCPKG_ROOT) {
+  $env:VCPKG_ROOT = "$PSScriptRoot"
+} elseif (-Not (Test-Path env:VCPKG_ROOT)) {
   $env:VCPKG_ROOT = "$HOME/.vcpkg"
 }
 
-$VCPKG = "${$env:VCPKG_ROOT}/vcpkg"
+$VCPKG = Join-Path $env:VCPKG_ROOT vcpkg
 if ($IsWindows) {
   $VCPKG += '.exe'
 }
 
-$SCRIPT:VCPKG_VERSION_MARKER = "${$env:VCPKG_ROOT}/vcpkg-version.txt"
+$SCRIPT:VCPKG_VERSION_MARKER = Join-Path $env:VCPKG_ROOT vcpkg-version.txt
 $SCRIPT:VCPKG_INIT_VERSION = 'latest'
 
 function bootstrap-vcpkg {
-  if (-Not ($VCPKG_INIT_VERSION -eq 'latest')
-    -And (Test-Path $VCPKG_VERSION_MARKER)
-    -And ((Get-Content -Path $VCPKG_VERSION_MARKER -Raw).Trim() -eq $VCPKG_INIT_VERSION)
-    ) {
+  if (-Not ($VCPKG_INIT_VERSION -eq 'latest') `
+    -And (Test-Path $VCPKG_VERSION_MARKER) `
+    -And ((Get-Content -Path $VCPKG_VERSION_MARKER -Raw).Trim() -eq $VCPKG_INIT_VERSION)) {
         return $True
   }
 
-  Write-Host "Installing vcpkg to $VCPKG_ROOT"
-  New-Item -ItemType Directory -Force $VCPKG_ROOT | Out-Null
+  Write-Host "Installing vcpkg to $env:VCPKG_ROOT"
+  New-Item -ItemType Directory -Force $env:VCPKG_ROOT | Out-Null
 
   if ($IsWindows) {
     download https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg.exe $VCPKG
@@ -65,12 +64,12 @@ function bootstrap-vcpkg {
   }
 
   & $VCPKG bootstrap-standalone
-  if($?) {
+  if(-Not $?) {
     Write-Error "Bootstrap failed."
     return $False
   }
 
-  Write-Host "Bootstrapped vcpkg: ${VCPKG_ROOT}"
+  Write-Host "Bootstrapped vcpkg: $env:VCPKG_ROOT"
   return $True
 }
 
@@ -79,14 +78,13 @@ if(-Not (bootstrap-vcpkg)) {
 }
 
 # Export vcpkg to the current shell.
-New-Module -name vcpkg -ArgumentList @($VCPKG,$VCPKG_ROOT) -ScriptBlock {
-  param($VCPKG,$VCPKG_ROOT)
+New-Module -name vcpkg -ArgumentList @($VCPKG) -ScriptBlock {
+  param($VCPKG)
   function vcpkg() {
     # setup the postscript file
     # Generate 31 bits of randomness, to avoid clashing with concurrent executions.
-    $env:Z_VCPKG_POSTSCRIPT = [System.IO.Path]::GetTempPath() + "/VCPKG_tmp_$(Get-Random -SetSeed $PID).ps1"
+    $env:Z_VCPKG_POSTSCRIPT = Join-Path [System.IO.Path]::GetTempPath() "VCPKG_tmp_$(Get-Random -SetSeed $PID).ps1"
     & $VCPKG @args
-    $exitcode = $?
     # dot-source the postscript file to modify the environment
     if (Test-Path $env:Z_VCPKG_POSTSCRIPT) {
       $postscr = Get-Content -Raw $env:Z_VCPKG_POSTSCRIPT
@@ -96,8 +94,6 @@ New-Module -name vcpkg -ArgumentList @($VCPKG,$VCPKG_ROOT) -ScriptBlock {
 
       Remove-Item -Force -ea 0 $env:Z_VCPKG_POSTSCRIPT,env:Z_VCPKG_POSTSCRIPT
     }
-
-    return $exitcode
   }
 } | Out-Null
 
