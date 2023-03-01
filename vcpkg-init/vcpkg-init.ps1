@@ -118,7 +118,7 @@ FOR %%i IN (pwsh.exe powershell.exe) DO (
 )
 
 :gotpwsh
-"%Z_POWERSHELL_EXE%" -NoProfile -ExecutionPolicy Unrestricted -Command "iex (get-content %~dfp0 -raw)#"
+"%Z_POWERSHELL_EXE%" -NoProfile -ExecutionPolicy Unrestricted -Command "iex (get-content \"%~dfp0\" -raw)#"
 IF ERRORLEVEL 1 (
   :: leak VCPKG_ROOT
   SET Z_POWERSHELL_EXE=
