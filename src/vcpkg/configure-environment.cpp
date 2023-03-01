@@ -165,6 +165,7 @@ namespace vcpkg
         cmd_run.string_arg("--z-vcpkg-registries-cache").string_arg(paths.registries_cache());
         cmd_run.string_arg("--z-next-previous-environment")
             .string_arg(temp_directory / (generate_random_UUID() + "_previous_environment.txt"));
+        cmd_run.string_arg("--z-global-config").string_arg(paths.global_config());
 
         if (auto maybe_file = msg::get_file())
         {
