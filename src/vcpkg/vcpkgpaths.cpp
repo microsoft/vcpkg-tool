@@ -514,6 +514,9 @@ namespace vcpkg
                        const Path& root,
                        const Path& original_cwd)
             : VcpkgPathsImplStage1(fs, args, bundle, root, original_cwd)
+            , m_global_config(bundle.read_only ? get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO) /
+                                                     "vcpkg-configuration.json"
+                                               : root / "vcpkg-configuration.json")
             , m_config_dir(m_manifest_dir.empty() ? root : m_manifest_dir)
             , m_manifest_path(m_manifest_dir.empty() ? Path{} : m_manifest_dir / "vcpkg.json")
             , m_registries_work_tree_dir(m_registries_cache / "git")
@@ -590,6 +593,7 @@ namespace vcpkg
             }
         }
 
+        const Path m_global_config;
         const Path m_config_dir;
         const Path m_manifest_path;
         const Path m_registries_work_tree_dir;
@@ -788,6 +792,8 @@ namespace vcpkg
     const Optional<InstalledPaths>& VcpkgPaths::maybe_installed() const { return m_pimpl->m_installed; }
     const Optional<Path>& VcpkgPaths::maybe_buildtrees() const { return m_pimpl->buildtrees; }
     const Optional<Path>& VcpkgPaths::maybe_packages() const { return m_pimpl->packages; }
+
+    const Path& VcpkgPaths::global_config() const { return m_pimpl->m_global_config; }
 
     const InstalledPaths& VcpkgPaths::installed() const
     {

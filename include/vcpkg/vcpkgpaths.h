@@ -84,6 +84,7 @@ namespace vcpkg
         const Optional<Path>& maybe_buildtrees() const;
         const Optional<Path>& maybe_packages() const;
 
+        const Path& global_config() const;
         const InstalledPaths& installed() const;
         const Path& buildtrees() const;
         const Path& packages() const;
