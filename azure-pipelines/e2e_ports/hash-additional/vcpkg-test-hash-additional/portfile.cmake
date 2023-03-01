@@ -1,7 +1,7 @@
 file(STRINGS "${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}.vcpkg_abi_info.txt" lines)
 list(GET lines 0 first_line)
 
-set(expected "additional_abi_file.txt 61ba0c7fc1f696e28c1b7aa9460980a571025ff8c97bb90a57e990463aa25660")
+set(expected "additional_file_0 61ba0c7fc1f696e28c1b7aa9460980a571025ff8c97bb90a57e990463aa25660")
 
 if(first_line STREQUAL "${expected}")
     message(STATUS "Test succesful!")
