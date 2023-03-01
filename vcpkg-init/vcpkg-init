@@ -55,7 +55,6 @@ Z_VCPKG_bootstrap() {
 
   chmod +x "${VCPKG_ROOT}/vcpkg"
   "${VCPKG_ROOT}/vcpkg" bootstrap-standalone
-  echo $VCPKG_BASE_VERSION > "${VCPKG_ROOT}/vcpkg-version.txt"
   return 0;
 }
 
