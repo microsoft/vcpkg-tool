@@ -14,6 +14,9 @@ Param(
     [string]$VcpkgBaseVersion
 )
 
+$sha = Get-Content "$PSScriptRoot/vcpkg-scripts-sha.txt" -Raw
+$sha = $sha.Trim()
+
 if ($Deployment -eq 'VisualStudio') {
     $BundleConfig = @{
         'readonly'       = $True;
@@ -30,9 +33,6 @@ if ($Deployment -eq 'VisualStudio') {
         'deployment'     = $Deployment;
     }
 }
-
-$sha = Get-Content "$PSScriptRoot/vcpkg-scripts-sha.txt" -Raw
-$sha = $sha.Trim()
 
 $scripts_dependencies = @(
     'build_info.cmake',
