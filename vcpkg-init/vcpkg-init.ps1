@@ -175,7 +175,7 @@ $shh = New-Module -name vcpkg -ArgumentList @($VCPKG,$VCPKG_ROOT) -ScriptBlock {
 
     # setup the postscript file
     # Generate 31 bits of randomness, to avoid clashing with concurrent executions.
-    $env:Z_VCPKG_POSTSCRIPT = z-vcpkg-resolve "${VCPKG_ROOT}/VCPKG_tmp_$(Get-Random -SetSeed $PID).ps1"
+    $env:Z_VCPKG_POSTSCRIPT = z-vcpkg-resolve ([System.IO.Path]::GetTempPath() + "/VCPKG_tmp_$(Get-Random -SetSeed $PID).ps1")
 
     & $VCPKG @args
 
@@ -236,7 +236,7 @@ goto :eof
 :INVOKE
 :: Generate 30 bits of randomness, to avoid clashing with concurrent executions.
 SET /A Z_VCPKG_POSTSCRIPT=%RANDOM% * 32768 + %RANDOM%
-SET Z_VCPKG_POSTSCRIPT=%VCPKG_ROOT%\VCPKG_tmp_%Z_VCPKG_POSTSCRIPT%.cmd
+SET Z_VCPKG_POSTSCRIPT=%TEMP%\VCPKG_tmp_%Z_VCPKG_POSTSCRIPT%.cmd
 
 :: call the program
 "%Z_VCPKG_EXE%" %*
