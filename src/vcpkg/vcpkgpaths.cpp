@@ -275,7 +275,7 @@ namespace
         }
         else
         {
-            ret = get_platform_cache_home().value_or_exit(VCPKG_LINE_INFO) / "vcpkg" / "registries";
+            ret = get_platform_cache_vcpkg().value_or_exit(VCPKG_LINE_INFO) / "registries";
         }
 
         return fs.almost_canonical(ret, VCPKG_LINE_INFO);
@@ -350,7 +350,7 @@ namespace
         }
         else if (root_read_only)
         {
-            ret = get_platform_cache_home().value_or_exit(VCPKG_LINE_INFO) / "vcpkg" / "downloads";
+            ret = get_platform_cache_vcpkg().value_or_exit(VCPKG_LINE_INFO) / "downloads";
         }
         else
         {

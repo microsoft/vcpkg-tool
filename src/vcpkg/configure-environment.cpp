@@ -102,10 +102,18 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         auto& download_manager = paths.get_download_manager();
         auto node_path = paths.get_tool_exe(Tools::NODE, stdout_sink);
-
+#if defined(VCPKG_ARTIFACTS_PATH)
+        // use hard coded in-source copy
+        (void)fs;
+        (void)download_manager;
+        Path ce_path = MACRO_TO_STRING(VCPKG_ARTIFACTS_PATH);
+        // development support: intentionally unlocalized
+        msg::println(Color::warning,
+                     LocalizedString::from_raw("Using in-development vcpkg-artifacts built at: ").append_raw(ce_path));
+#else // ^^^ VCPKG_ARTIFACTS_PATH / might need to download vvv
 #if defined(VCPKG_CE_SHA)
         auto base_path =
-            get_platform_cache_home().value_or_exit(VCPKG_LINE_INFO) / "vcpkg" / "vcpkg-artifacts-" VCPKG_BASE_VERSION_AS_STRING;
+            get_platform_cache_vcpkg().value_or_exit(VCPKG_LINE_INFO) / "artifacts-" VCPKG_BASE_VERSION_AS_STRING;
         Debug::println("vcpkg-artifacts base path: ", base_path);
         auto ce_path = base_path / "node_modules" / "vcpkg-ce";
         bool needs_provisioning = !fs.is_directory(ce_path);
@@ -119,24 +127,16 @@ namespace vcpkg
             download_manager.download_file(fs, ce_uri, {}, ce_tarball, VCPKG_CE_SHA_AS_STRING, null_sink);
             extract_ce_tarball(paths, ce_tarball, node_path, base_path);
         }
-#elif defined(VCPKG_ARTIFACTS_PATH)
-        // use hard coded in-source copy
-        (void)fs;
-        (void)download_manager;
-        ce_path = MACRO_TO_STRING(VCPKG_ARTIFACTS_PATH);
-        // development support: intentionally unlocalized
-        msg::println(Color::warning,
-                     LocalizedString::from_raw("Using in-development vcpkg-artifacts built at: ").append_raw(ce_path));
-#else  // ^^^ VCPKG_ARTIFACTS_PATH / give up and always download latest vvv
-        auto base_path = paths.root / "artifacts";
+#else  // ^^^ VCPKG_CE_SHA (official build) // always get latest vvv
+        auto base_path = get_platform_cache_vcpkg().value_or_exit(VCPKG_LINE_INFO) / "artifacts-latest";
         Debug::println("vcpkg-artifacts base path: ", base_path);
-        auto node_modules = base_path / "node_modules";
-        auto ce_path = node_modules / "vcpkg-ce";
+        auto ce_path = base_path / "node_modules" / "vcpkg-ce";
         msg::println(Color::warning, msgDownloadingVcpkgCeBundleLatest);
         const auto ce_uri = "https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-ce.tgz";
         const auto ce_tarball = paths.downloads / "vcpkg-ce-latest.tgz";
         download_manager.download_file(fs, ce_uri, {}, ce_tarball, nullopt, null_sink);
         extract_ce_tarball(paths, ce_tarball, node_path, base_path);
+#endif // ^^^ always get latest
 #endif // ^^^ !VCPKG_CE_SHA
 
         Command cmd_run(node_path);
