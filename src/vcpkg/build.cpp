@@ -1095,12 +1095,12 @@ namespace vcpkg
         std::string portfile_cmake_contents;
         std::vector<Path> files;
         std::vector<std::string> hashes;
-
+        size_t i = 0;
         for (auto& file : abi_info.pre_build_info->hash_additional_files)
         {
             const auto hash =
                 vcpkg::Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO);
-            abi_tag_entries.emplace_back(Path(file).filename(), hash);
+            abi_tag_entries.emplace_back(fmt::format("additional_file_{}", i++), hash);
         }
 
         auto&& port_dir = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_location;
@@ -1720,7 +1720,7 @@ namespace vcpkg
                     public_abi_override = variable_value.empty() ? nullopt : Optional<std::string>{variable_value};
                     break;
                 case VcpkgTripletVar::HASH_ADDITIONAL_FILES:
-                    Util::Vectors::append(&hash_additional_files, Strings::split(variable_value, ';'));
+                    hash_additional_files = Strings::split(variable_value, ';');
                     break;
                 case VcpkgTripletVar::LOAD_VCVARS_ENV:
                     if (variable_value.empty())
