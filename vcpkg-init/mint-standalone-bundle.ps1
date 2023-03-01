@@ -84,7 +84,7 @@ try {
         Pop-Location
     }
 
-    Set-Content -Path "$Destination\vcpkg-version.txt" -Value $VcpkgBaseVersion -NoNewLine -Encoding Ascii
+    Set-Content -Path "out/vcpkg-version.txt" -Value $VcpkgBaseVersion -NoNewLine -Encoding Ascii
     Copy-Item -Path "$PSScriptRoot/vcpkg-cmd.cmd" -Destination 'out/vcpkg-cmd.cmd'
     Copy-Item -Path "$SignedFilesRoot/vcpkg-init" -Destination 'out/vcpkg-init'
     Copy-Item -Path "$SignedFilesRoot/vcpkg-init.ps1" -Destination 'out/vcpkg-init.ps1'
