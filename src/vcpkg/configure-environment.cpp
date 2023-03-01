@@ -139,6 +139,8 @@ namespace vcpkg
 #endif // ^^^ always get latest
 #endif // ^^^ !VCPKG_CE_SHA
 
+        auto temp_directory = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
+
         Command cmd_run(node_path);
         cmd_run.string_arg(ce_path);
         cmd_run.forwarded_args(args);
@@ -150,9 +152,8 @@ namespace vcpkg
         Optional<Path> maybe_telemetry_file_path;
         if (g_metrics_enabled.load())
         {
-            auto& p =
-                maybe_telemetry_file_path.emplace(fs.create_or_get_temp_directory(VCPKG_LINE_INFO) /
-                                                  ("vcpkg_" + generate_random_UUID() + "_artifacts_telemetry.txt"));
+            auto& p = maybe_telemetry_file_path.emplace(temp_directory /
+                                                        (generate_random_UUID() + "_artifacts_telemetry.txt"));
             cmd_run.string_arg("--z-telemetry-file").string_arg(p);
         }
 
@@ -162,12 +163,13 @@ namespace vcpkg
         cmd_run.string_arg("--z-vcpkg-artifacts-root").string_arg(paths.artifacts());
         cmd_run.string_arg("--z-vcpkg-downloads").string_arg(paths.downloads);
         cmd_run.string_arg("--z-vcpkg-registries-cache").string_arg(paths.registries_cache());
+        cmd_run.string_arg("--z-next-previous-environment")
+            .string_arg(temp_directory / (generate_random_UUID() + "_previous_environment.txt"));
 
         if (auto maybe_file = msg::get_file())
         {
             auto file = maybe_file.get();
-            auto temp_dir = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
-            auto temp_file = temp_dir / "messages.json";
+            auto temp_file = temp_directory / "messages.json";
             fs.write_contents(temp_file, StringView{file->begin(), file->end()}, VCPKG_LINE_INFO);
             cmd_run.string_arg("--language").string_arg(temp_file);
         }
