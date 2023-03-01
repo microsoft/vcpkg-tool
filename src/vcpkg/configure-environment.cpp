@@ -137,7 +137,7 @@ namespace vcpkg
         download_manager.download_file(fs, ce_uri, {}, ce_tarball, nullopt, null_sink);
         extract_ce_tarball(paths, ce_tarball, node_path, base_path);
 #endif // ^^^ always get latest
-#endif // ^^^ !VCPKG_CE_SHA
+#endif // ^^^ might need to download
 
         auto temp_directory = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
 
