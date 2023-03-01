@@ -125,7 +125,7 @@ vcpkg() {
 
   # set the response file
   # Generate 32 bits of randomness, to avoid clashing with concurrent executions.
-  export Z_VCPKG_POSTSCRIPT="${VCPKG_ROOT}/VCPKG_tmp_$(dd if=/dev/urandom count=1 2> /dev/null | cksum | cut -f1 -d" ").sh"
+  export Z_VCPKG_POSTSCRIPT="$(mktemp).sh"
 
   # call vcpkg
   # it picks up the Z_VCPKG_POSTSCRIPT environment variable to know where to dump the postscript
