@@ -83,7 +83,7 @@ New-Module -name vcpkg -ArgumentList @($VCPKG) -ScriptBlock {
   function vcpkg() {
     # setup the postscript file
     # Generate 31 bits of randomness, to avoid clashing with concurrent executions.
-    $env:Z_VCPKG_POSTSCRIPT = Join-Path [System.IO.Path]::GetTempPath() "VCPKG_tmp_$(Get-Random -SetSeed $PID).ps1"
+    $env:Z_VCPKG_POSTSCRIPT = Join-Path ([System.IO.Path]::GetTempPath()) "VCPKG_tmp_$(Get-Random -SetSeed $PID).ps1"
     & $VCPKG @args
     # dot-source the postscript file to modify the environment
     if (Test-Path $env:Z_VCPKG_POSTSCRIPT) {
@@ -108,7 +108,7 @@ return
 IF EXIST $null DEL $null
 
 :: Figure out where VCPKG_ROOT is
-IF EXIST "%~dp0\.vcpkg-root" SET VCPKG_ROOT="%~dp0"
+IF EXIST "%~dp0\.vcpkg-root" SET VCPKG_ROOT=%~dp0
 IF "%VCPKG_ROOT%"=="" SET VCPKG_ROOT=%USERPROFILE%\.vcpkg
 
 :: Call powershell which may or may not invoke bootstrap if there's a version mismatch
@@ -131,7 +131,9 @@ SET Z_POWERSHELL_EXE=
 DOSKEY vcpkg="%VCPKG_ROOT%\vcpkg-cmd.cmd" $*
 
 :: If there were any arguments, also invoke vcpkg with them
-IF NOT "%1"=="" GOTO fin
-call "%VCPKG_ROOT%\vcpkg-init.cmd" %*
+IF "%1"=="" GOTO fin
+CALL "%VCPKG_ROOT%\vcpkg-cmd.cmd" %*
 :fin
+
+EXIT /B
 #>

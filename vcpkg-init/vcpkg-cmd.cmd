@@ -7,7 +7,7 @@ SET Z_VCPKG_POSTSCRIPT=%TEMP%\VCPKG_tmp_%Z_VCPKG_POSTSCRIPT%.cmd
 "%~dp0\vcpkg.exe" %*
 SET Z_VCPKG_ERRORLEVEL=%ERRORLEVEL%
 :: If vcpkg wanted to make any environment changes, make them
-IF EXIST "%Z_VCPKG_POSTSCRIPT" (
+IF EXIST "%Z_VCPKG_POSTSCRIPT%" (
     CALL "%Z_VCPKG_POSTSCRIPT%"
     DEL "%Z_VCPKG_POSTSCRIPT%"
 )
