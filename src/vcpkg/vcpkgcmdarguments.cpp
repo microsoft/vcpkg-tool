@@ -1,6 +1,5 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -345,7 +344,14 @@ namespace vcpkg
                 command, command_structure.minimum_arity, command_structure.maximum_arity);
         }
 
-        cmd_parser.exit_with_errors(LocalizedString::from_raw(command_structure.example_text));
+        LocalizedString example_text;
+        const auto get_example_text = command_structure.get_example_text;
+        if (get_example_text)
+        {
+            example_text = get_example_text();
+        }
+
+        cmd_parser.exit_with_errors(example_text);
         return output;
     }
 
@@ -390,7 +396,7 @@ namespace vcpkg
         table.format("vcpkg version", msg::format(msgHelpVersionCommand));
         table.format("vcpkg contact", msg::format(msgHelpContactCommand));
         table.blank();
-        table.format("@response_file", msg::format(msgHelpResponseFileCommand));
+        table.format(msg::format(msgResponseFileCode), msg::format(msgHelpResponseFileCommand));
         table.blank();
         table.example(msg::format(msgHelpExampleCommand));
 
@@ -402,8 +408,17 @@ namespace vcpkg
         auto with_common_options = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
         ParsedArguments throwaway;
         maybe_parse_cmd_arguments(with_common_options.parser, throwaway, command_structure);
+        LocalizedString result;
+        const auto get_example_text = command_structure.get_example_text;
+        if (get_example_text)
+        {
+            auto example_text = get_example_text();
+            if (!example_text.empty())
+            {
+                result.append(example_text).append_raw('\n');
+            }
+        }
 
-        auto result = LocalizedString::from_raw(command_structure.example_text);
         with_common_options.parser.append_options_table(result);
         msg::println(result);
     }
@@ -506,7 +521,7 @@ namespace vcpkg
         auto maybe_vcpkg_recursive_data = get_environment_variable(RECURSIVE_DATA_ENV);
         if (auto vcpkg_recursive_data = maybe_vcpkg_recursive_data.get())
         {
-            auto rec_doc = Json::parse(*vcpkg_recursive_data).value_or_exit(VCPKG_LINE_INFO).first;
+            auto rec_doc = Json::parse(*vcpkg_recursive_data).value_or_exit(VCPKG_LINE_INFO).value;
             const auto& obj = rec_doc.object(VCPKG_LINE_INFO);
 
             if (auto entry = obj.get(VCPKG_ROOT_ARG_NAME))
@@ -657,12 +672,13 @@ namespace vcpkg
         return Optional<std::string>(std::move(asset_sources_template));
     }
 
-    std::string create_example_string(const std::string& command_and_arguments)
+    LocalizedString create_example_string(StringView command_and_arguments)
     {
-        std::string cs = Strings::format("Example:\n"
-                                         "  vcpkg %s\n",
-                                         command_and_arguments);
-        return cs;
+        return msg::format(msgExample)
+            .append_raw('\n')
+            .append_indent()
+            .append_raw("vcpkg ")
+            .append_raw(command_and_arguments);
     }
 
     // out-of-line definitions since C++14 doesn't allow inline constexpr static variables

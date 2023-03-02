@@ -2,7 +2,6 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -838,6 +837,9 @@ namespace vcpkg
         {
             if (!Strings::ends_with(path, ".pc")) continue;
             const auto parent_path = Path(path.parent_path());
+            // Always allow .pc files at 'lib/pkgconfig' and 'debug/lib/pkgconfig'
+            if (parent_path == lib_dir || parent_path == debug_dir) continue;
+
             const bool contains_libs =
                 Util::any_of(fs.read_lines(path).value_or_exit(VCPKG_LINE_INFO), [](const std::string& line) {
                     if (Strings::starts_with(line, "Libs"))
@@ -861,13 +863,11 @@ namespace vcpkg
             const bool is_debug = Strings::starts_with(path, Path(dir) / "debug");
             if (is_debug)
             {
-                if (parent_path == debug_dir) continue;
                 misplaced_pkgconfig_files.push_back({std::move(path), MisplacedFile::Type::Debug});
                 contains_debug = true;
             }
             else
             {
-                if (parent_path == lib_dir) continue;
                 misplaced_pkgconfig_files.push_back({std::move(path), MisplacedFile::Type::Release});
                 contains_release = true;
             }

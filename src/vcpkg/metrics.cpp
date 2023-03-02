@@ -131,6 +131,7 @@ namespace vcpkg
         {StringMetric::CommandArgs, "command_args", "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff"},
         {StringMetric::CommandContext, "command_context", "artifact"},
         {StringMetric::CommandName, "command_name", "z-preregister-telemetry"},
+        {StringMetric::DeploymentKind, "deployment_kind", "Git"},
         {StringMetric::DetectedCiEnvironment, "detected_ci_environment", "Generic"},
         // spec:triplet:version,...
         {StringMetric::InstallPlan_1, "installplan_1", plan_example},

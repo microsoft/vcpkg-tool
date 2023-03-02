@@ -1,5 +1,4 @@
 #include <vcpkg/base/files.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.init-registry.h>
 #include <vcpkg/vcpkgcmdarguments.h>
@@ -7,7 +6,7 @@
 namespace vcpkg::Commands::InitRegistry
 {
     static const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string(R"(x-init-registry .)"),
+        [] { return create_example_string(R"(x-init-registry .)"); },
         1,
         1,
         {{}, {}, {}},

@@ -1,7 +1,6 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/strings.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/cmakevars.h>
@@ -21,7 +20,7 @@ namespace vcpkg::Commands
         {{OPTION_JSON, []() { return msg::format(msgJsonSwitch); }}}};
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string(R"(x-check-support <package>...)"),
+        [] { return create_example_string("x-check-support <package>..."); },
         1,
         SIZE_MAX,
         {CHECK_SUPPORT_SWITCHES},
@@ -61,8 +60,8 @@ namespace vcpkg::Commands
         void print_port_supported(const Port& p, bool is_top_level_supported, View<Port> reasons)
         {
             const auto full_port_name = [](const Port& port) {
-                return Strings::format(
-                    "%s[%s]:%s", port.port_name, Strings::join(",", port.features), port.triplet.to_string());
+                return fmt::format(
+                    "{}[{}]:{}", port.port_name, Strings::join(",", port.features), port.triplet.to_string());
             };
 
             if (reasons.size() == 0)
@@ -115,8 +114,10 @@ namespace vcpkg::Commands
 
         const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
-                std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+                std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
         });
+
+        print_default_triplet_warning(args, options.command_arguments);
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
@@ -193,7 +194,7 @@ namespace vcpkg::Commands
 
         if (use_json)
         {
-            print2(Json::stringify(json_to_print));
+            msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(json_to_print));
         }
     }
 

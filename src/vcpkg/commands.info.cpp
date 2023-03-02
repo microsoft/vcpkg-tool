@@ -3,7 +3,6 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.info.h>
 #include <vcpkg/input.h>
@@ -27,8 +26,11 @@ namespace vcpkg::Commands::Info
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
-        Strings::format("Display detailed information on packages.\n%s",
-                        create_example_string("x-package-info zlib openssl:x64-windows")),
+        [] {
+            return msg::format(msgPackageInfoHelp)
+                .append_raw('\n')
+                .append(create_example_string("x-package-info zlib openssl:x64-windows"));
+        },
         1,
         SIZE_MAX,
         {INFO_SWITCHES, {}},
@@ -66,19 +68,19 @@ namespace vcpkg::Commands::Info
                 auto maybe_qpkg = parse_qualified_specifier(parser);
                 if (!parser.at_eof() || !maybe_qpkg)
                 {
-                    parser.add_error("expected a package specifier");
+                    parser.add_error(msg::format(msgExpectedPackageSpecifier));
                 }
                 else if (!maybe_qpkg.get()->triplet)
                 {
-                    parser.add_error("expected an explicit triplet");
+                    parser.add_error(msg::format(msgExpectedExplicitTriplet));
                 }
                 else if (maybe_qpkg.get()->features)
                 {
-                    parser.add_error("unexpected list of features");
+                    parser.add_error(msg::format(msgUnexpectedFeatureList));
                 }
                 else if (maybe_qpkg.get()->platform)
                 {
-                    parser.add_error("unexpected qualifier");
+                    parser.add_error(msg::format(msgUnexpectedPlatformExpression));
                 }
                 if (auto err = parser.get_error())
                 {
@@ -127,7 +129,7 @@ namespace vcpkg::Commands::Info
                 auto maybe_pkg = parse_package_name(parser);
                 if (!parser.at_eof() || !maybe_pkg)
                 {
-                    parser.add_error("expected only a package identifier");
+                    parser.add_error(msg::format(msgExpectedPortName));
                 }
                 if (auto err = parser.get_error())
                 {

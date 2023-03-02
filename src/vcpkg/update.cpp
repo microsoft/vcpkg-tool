@@ -1,5 +1,3 @@
-#include <vcpkg/base/system.print.h>
-
 #include <vcpkg/commands.h>
 #include <vcpkg/help.h>
 #include <vcpkg/paragraphs.h>
@@ -47,7 +45,7 @@ namespace vcpkg::Update
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("update"),
+        [] { return create_example_string("update"); },
         0,
         0,
         {},

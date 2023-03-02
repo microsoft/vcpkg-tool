@@ -7,7 +7,6 @@
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
@@ -73,7 +72,7 @@ namespace vcpkg::Build
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("build zlib:x64-windows"),
+        [] { return create_example_string("build zlib:x64-windows"); },
         1,
         1,
         {{}, {}},
@@ -187,7 +186,8 @@ namespace vcpkg::Build
 
         BinaryCache binary_cache{args, paths};
         const FullPackageSpec spec = check_and_get_full_package_spec(
-            std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+            std::move(first_arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
+        print_default_triplet_warning(args, {&options.command_arguments[0], 1});
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
@@ -318,8 +318,12 @@ namespace vcpkg
     static ZStringView to_vcvarsall_toolchain(StringView target_architecture, const Toolset& toolset, Triplet triplet)
     {
         auto maybe_target_arch = to_cpu_architecture(target_architecture);
-        Checks::check_maybe_upgrade(
-            VCPKG_LINE_INFO, maybe_target_arch.has_value(), "Invalid architecture string: %s", target_architecture);
+        if (!maybe_target_arch.has_value())
+        {
+            msg::println_error(msgInvalidArchitecture, msg::value = target_architecture);
+            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
+        }
+
         auto target_arch = maybe_target_arch.value_or_exit(VCPKG_LINE_INFO);
         // Ask for an arm64 compiler when targeting arm64ec; arm64ec is selected with a different flag on the compiler
         // command line.
@@ -1600,7 +1604,7 @@ namespace vcpkg
 
     BuildInfo read_build_info(const Filesystem& fs, const Path& filepath)
     {
-        const ExpectedS<Paragraph> pghs = Paragraphs::get_single_paragraph(fs, filepath);
+        auto pghs = Paragraphs::get_single_paragraph(fs, filepath);
         if (!pghs)
         {
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgInvalidBuildInfo, msg::error_msg = pghs.error());
@@ -1609,7 +1613,7 @@ namespace vcpkg
         return inner_create_buildinfo(*pghs.get());
     }
 
-    static ExpectedS<bool> from_cmake_bool(StringView value, StringView name)
+    static ExpectedL<bool> from_cmake_bool(StringView value, StringView name)
     {
         if (value == "1" || Strings::case_insensitive_ascii_equals(value, "on") ||
             Strings::case_insensitive_ascii_equals(value, "true"))
@@ -1623,11 +1627,7 @@ namespace vcpkg
         }
         else
         {
-            return Strings::concat("Error: Unknown boolean setting for ",
-                                   name,
-                                   ": \"",
-                                   value,
-                                   "\". Valid settings are '', '1', '0', 'ON', 'OFF', 'TRUE', and 'FALSE'.");
+            return msg::format(msgUnknownBooleanSetting, msg::option = name, msg::value = value);
         }
     }
 

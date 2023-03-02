@@ -28,22 +28,13 @@ if [ $sourced -eq 0 ]; then
   exit
 fi
 
-Z_VCPKG_init() {
-  # find important cmdline args
-  Z_VCPKG_ARGS=()
-  for each in "$@"; do case $each in
-    --remove-vcpkg) Z_VCPKG_REMOVE=TRUE;;
-    *) Z_VCPKG_ARGS+=("$each");;
-  esac ;done
-}
-
 Z_VCPKG_bootstrap() {
   VCPKG_BASE_VERSION='latest'
 
   if [ $VCPKG_BASE_VERSION != 'latest' ] \
       && [ -f "${VCPKG_ROOT}/vcpkg" ] \
-      && [ -f "${VCPKG_ROOT}/vcpkg-one-liner-version.txt" ] \
-      && [ "$(cat "${VCPKG_ROOT}/vcpkg-one-liner-version.txt")" = $VCPKG_BASE_VERSION ]; then
+      && [ -f "${VCPKG_ROOT}/vcpkg-version.txt" ] \
+      && [ "$(cat "${VCPKG_ROOT}/vcpkg-version.txt")" = $VCPKG_BASE_VERSION ]; then
     return 0;
   fi
 
@@ -64,35 +55,17 @@ Z_VCPKG_bootstrap() {
 
   chmod +x "${VCPKG_ROOT}/vcpkg"
   "${VCPKG_ROOT}/vcpkg" bootstrap-standalone
-  echo $VCPKG_BASE_VERSION > "${VCPKG_ROOT}/vcpkg-one-liner-version.txt"
   return 0;
 }
 
 Z_VCPKG_cleanup() {
   # clear things that we're not going to need for the long term
-  unset Z_VCPKG_REMOVE
-  unset Z_VCPKG_ARGS
   if [ -f "${Z_VCPKG_POSTSCRIPT}" ]; then
     command rm "${Z_VCPKG_POSTSCRIPT}"
   fi
   unset Z_VCPKG_POSTSCRIPT
   unset -f Z_VCPKG_bootstrap > /dev/null 2>&1
 }
-
-Z_VCPKG_remove() {
-  Z_VCPKG_cleanup
-  if [ -d "$VCPKG_ROOT" ]; then
-    rm -rf "$VCPKG_ROOT"
-  fi
-
-  unset -f Z_VCPKG_init > /dev/null 2>&1
-  unset -f Z_VCPKG_cleanup > /dev/null 2>&1
-  unset -f Z_VCPKG_remove > /dev/null 2>&1
-  unset -f vcpkg > /dev/null 2>&1
-}
-
-Z_VCPKG_init "$@"
-shift $#
 
 if [ -n "$VCPKG_ROOT" ]; then
   export VCPKG_ROOT=$VCPKG_ROOT
@@ -102,12 +75,6 @@ fi;
 
 mkdir -p "$VCPKG_ROOT"
 
-if [ ! -z "$Z_VCPKG_REMOVE" ]; then
-  Z_VCPKG_remove
-  return
-fi
-
-
 Z_VCPKG_bootstrap
 if [ $? -eq 1 ]; then
   Z_VCPKG_cleanup
@@ -116,20 +83,13 @@ fi
 
 # So, we're the real script then.
 vcpkg() {
-  Z_VCPKG_init "$@"
-
-  if [ ! -z "$Z_VCPKG_REMOVE" ]; then
-    Z_VCPKG_remove
-    return;
-  fi
-
   # set the response file
   # Generate 32 bits of randomness, to avoid clashing with concurrent executions.
-  export Z_VCPKG_POSTSCRIPT="${VCPKG_ROOT}/VCPKG_tmp_$(dd if=/dev/urandom count=1 2> /dev/null | cksum | cut -f1 -d" ").sh"
+  export Z_VCPKG_POSTSCRIPT="$(mktemp).sh"
 
   # call vcpkg
   # it picks up the Z_VCPKG_POSTSCRIPT environment variable to know where to dump the postscript
-  "${VCPKG_ROOT}/vcpkg" ${Z_VCPKG_ARGS[@]}
+  "${VCPKG_ROOT}/vcpkg" $@
 
   # Call the post-invocation script if it is present, then delete it.
   # This allows the invocation to potentially modify the caller's environment (e.g. PATH)
@@ -143,8 +103,8 @@ vcpkg() {
 }
 
 # did they dotsource and have args go ahead and run it then!
-if [ -n "$Z_VCPKG_ARGS" ]; then
-  vcpkg "${Z_VCPKG_ARGS[@]}"
+if [ "$#" -gt "0" ]; then
+  vcpkg $@
 fi
 
 Z_VCPKG_cleanup

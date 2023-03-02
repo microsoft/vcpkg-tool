@@ -1,5 +1,4 @@
 #include <vcpkg/base/checks.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binaryparagraph.h>
@@ -56,7 +55,7 @@ namespace vcpkg
             }
             else
             {
-                parser.add_type_error(Fields::PORT_VERSION, "a non-negative integer");
+                parser.add_type_error(Fields::PORT_VERSION, msg::format(msgANonNegativeInteger));
             }
         }
 
@@ -289,7 +288,7 @@ namespace vcpkg
         if (binary_paragraph != pgh)
         {
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                           msg::format(msgMissmatchedBinParagraphs)
+                                           msg::format(msgMismatchedBinParagraphs)
                                                .append(msgOriginalBinParagraphHeader)
                                                .append_raw(format_binary_paragraph(pgh))
                                                .append(msgSerializedBinParagraphHeader)

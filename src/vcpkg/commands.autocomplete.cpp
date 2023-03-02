@@ -1,5 +1,3 @@
-#include <vcpkg/base/system.print.h>
-
 #include <vcpkg/commands.autocomplete.h>
 #include <vcpkg/commands.edit.h>
 #include <vcpkg/commands.integrate.h>

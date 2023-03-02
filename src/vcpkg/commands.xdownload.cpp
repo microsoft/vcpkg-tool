@@ -2,7 +2,6 @@
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binarycaching.h>
@@ -31,9 +30,11 @@ namespace vcpkg::Commands::X_Download
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
-        Strings::format("%s\n%s",
-                        create_example_string("x-download <filepath> [--sha512=]<sha512> [--url=https://...]..."),
-                        create_example_string("x-download <filepath> --skip-sha512 [--url=https://...]...")),
+        [] {
+            return create_example_string("x-download <filepath> [--sha512=]<sha512> [--url=https://...]...")
+                .append_raw('\n')
+                .append(create_example_string("x-download <filepath> --skip-sha512 [--url=https://...]..."));
+        },
         1,
         2,
         {FETCH_SWITCHES, FETCH_SETTINGS, FETCH_MULTISETTINGS},

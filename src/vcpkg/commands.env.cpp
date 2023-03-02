@@ -30,7 +30,10 @@ namespace vcpkg::Commands::Env
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("env <optional command> --triplet x64-windows"),
+        [] {
+            return create_example_string(
+                fmt::format("env <{}> --triplet x64-windows", msg::format(msgOptionalCommand)));
+        },
         0,
         1,
         {SWITCHES, {}},

@@ -2,7 +2,6 @@
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binarycaching.h>
@@ -75,7 +74,7 @@ namespace vcpkg
             const auto status = fs.symlink_status(file, ec);
             if (ec)
             {
-                print2(Color::error, "failed: ", file, ": ", ec.message(), "\n");
+                msg::println_warning(format_filesystem_call_error(ec, "symlink_status", {file}));
                 continue;
             }
 
@@ -636,7 +635,7 @@ namespace vcpkg
     }
 
     const CommandStructure Install::COMMAND_STRUCTURE = {
-        create_example_string("install zlib zlib:x64-windows curl boost"),
+        [] { return create_example_string("install zlib zlib:x64-windows curl boost"); },
         0,
         SIZE_MAX,
         {INSTALL_SWITCHES, INSTALL_SETTINGS, INSTALL_MULTISETTINGS},
@@ -646,7 +645,7 @@ namespace vcpkg
     // This command structure must share "critical" values (switches, number of arguments). It exists only to provide a
     // better example string.
     const CommandStructure MANIFEST_COMMAND_STRUCTURE = {
-        create_example_string("install --triplet x64-windows"),
+        [] { return create_example_string("install --triplet x64-windows"); },
         0,
         SIZE_MAX,
         {INSTALL_SWITCHES, INSTALL_SETTINGS, INSTALL_MULTISETTINGS},
@@ -989,10 +988,10 @@ namespace vcpkg
             if (failure)
             {
                 msg::println(msgUsingManifestAt, msg::path = p->path);
-                print2("\n");
                 print_usage(MANIFEST_COMMAND_STRUCTURE);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
+            print_default_triplet_warning(args, {});
         }
         else
         {
@@ -1014,7 +1013,6 @@ namespace vcpkg
             }
             if (failure)
             {
-                print2("\n");
                 print_usage(COMMAND_STRUCTURE);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
@@ -1069,11 +1067,10 @@ namespace vcpkg
             auto manifest_scf = std::move(maybe_manifest_scf).value_or_exit(VCPKG_LINE_INFO);
             const auto& manifest_core = *manifest_scf->core_paragraph;
             auto registry_set = paths.make_registry_set();
-            if (auto maybe_error = manifest_scf->check_against_feature_flags(
-                    manifest->path, paths.get_feature_flags(), registry_set->is_default_builtin_registry()))
-            {
-                Checks::exit_with_message(VCPKG_LINE_INFO, maybe_error.value_or_exit(VCPKG_LINE_INFO));
-            }
+            manifest_scf
+                ->check_against_feature_flags(
+                    manifest->path, paths.get_feature_flags(), registry_set->is_default_builtin_registry())
+                .value_or_exit(VCPKG_LINE_INFO);
 
             std::vector<std::string> features;
             auto manifest_feature_it = options.multisettings.find(OPTION_MANIFEST_FEATURE);
@@ -1189,8 +1186,10 @@ namespace vcpkg
 
         const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
-                std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+                std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
         });
+
+        print_default_triplet_warning(args, options.command_arguments);
 
         // create the plan
         msg::println(msgComputingInstallPlan);

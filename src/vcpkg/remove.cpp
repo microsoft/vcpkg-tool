@@ -1,4 +1,3 @@
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.h>
@@ -178,7 +177,7 @@ namespace vcpkg::Remove
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("remove zlib zlib:x64-windows curl boost"),
+        [] { return create_example_string("remove zlib zlib:x64-windows curl boost"); },
         0,
         SIZE_MAX,
         {SWITCHES, {}},
@@ -227,8 +226,10 @@ namespace vcpkg::Remove
             }
             specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
                 return check_and_get_package_spec(
-                    std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+                    std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
             });
+
+            print_default_triplet_warning(args, options.command_arguments);
         }
 
         const Purge purge = Util::Sets::contains(options.switches, OPTION_PURGE) ? Purge::YES : Purge::NO;

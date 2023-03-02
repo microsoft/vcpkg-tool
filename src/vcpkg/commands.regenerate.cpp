@@ -25,7 +25,11 @@ namespace
     }};
 
     static const CommandStructure command_structure = {
-        Strings::format("Regenerates an artifact registry.\n%s\n", create_example_string("x-regenerate")),
+        [] {
+            return msg::format(msgRegeneratesArtifactRegistry)
+                .append_raw('\n')
+                .append(create_example_string("x-regenerate"));
+        },
         1,
         1,
         {command_switches},

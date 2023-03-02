@@ -1,5 +1,4 @@
 #include <vcpkg/base/hash.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.find.h>
 #include <vcpkg/configure-environment.h>
@@ -106,10 +105,13 @@ namespace
     }};
 
     const CommandStructure FindCommandStructure = {
-        Strings::format("Searches for the indicated artifact or port. With no parameter after 'artifact' or 'port', "
-                        "displays everything.\n%s\n%s",
-                        create_example_string("find port png"),
-                        create_example_string("find artifact cmake")),
+        [] {
+            return msg::format(msgFindHelp)
+                .append_raw('\n')
+                .append(create_example_string("find port png"))
+                .append_raw('\n')
+                .append(create_example_string("find artifact cmake"));
+        },
         1,
         2,
         {FindSwitches, {}},
