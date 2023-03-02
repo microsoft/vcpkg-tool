@@ -179,7 +179,7 @@ namespace vcpkg::Remove
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("remove zlib zlib:x64-windows curl boost"),
+        [] { return create_example_string("remove zlib zlib:x64-windows curl boost"); },
         0,
         SIZE_MAX,
         {SWITCHES, {}},
@@ -228,15 +228,16 @@ namespace vcpkg::Remove
             }
             specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
                 return check_and_get_package_spec(
-                    std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+                    std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
             });
+            print_default_triplet_warning(args, args.command_arguments);
         }
 
         const bool no_purge = Util::Sets::contains(options.switches, OPTION_NO_PURGE);
         if (no_purge && Util::Sets::contains(options.switches, OPTION_PURGE))
         {
             msg::println_error(msgMutuallyExclusiveOption, msg::value = "no-purge", msg::option = "purge");
-            msg::write_unlocalized_text_to_stdout(Color::none, COMMAND_STRUCTURE.example_text);
+            msg::write_unlocalized_text_to_stdout(Color::none, COMMAND_STRUCTURE.get_example_text());
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
         const Purge purge = no_purge ? Purge::NO : Purge::YES;

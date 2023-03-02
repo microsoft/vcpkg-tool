@@ -47,6 +47,26 @@ namespace fmt
     };
 
     template<>
+    struct formatter<vcpkg::ZStringView, char> : formatter<string_view, char>
+    {
+        template<class FormatContext>
+        auto format(vcpkg::ZStringView sv, FormatContext& ctx) const -> decltype(ctx.out())
+        {
+            return formatter<string_view, char>::format(string_view(sv.data(), sv.size()), ctx);
+        }
+    };
+
+    template<>
+    struct formatter<vcpkg::StringLiteral, char> : formatter<string_view, char>
+    {
+        template<class FormatContext>
+        auto format(vcpkg::StringLiteral sv, FormatContext& ctx) const -> decltype(ctx.out())
+        {
+            return formatter<string_view, char>::format(string_view(sv.data(), sv.size()), ctx);
+        }
+    };
+
+    template<>
     struct formatter<std::error_code, char> : formatter<std::string, char>
     {
         constexpr auto parse(format_parse_context& ctx) const -> decltype(ctx.begin())

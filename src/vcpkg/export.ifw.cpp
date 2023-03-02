@@ -95,10 +95,12 @@ namespace vcpkg::Export::IFW
             // 10 characters + 1 null terminating character will be written for a total of 11 chars
             char mbstr[11];
             const size_t bytes_written = std::strftime(mbstr, sizeof(mbstr), "%Y-%m-%d", &date_time);
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               bytes_written == 10,
-                               "Expected 10 bytes to be written, but %u were written",
-                               bytes_written);
+            if (bytes_written != 10)
+            {
+                Checks::unreachable(VCPKG_LINE_INFO,
+                                    fmt::format("Formatting a year used {} bytes rather than 10.", bytes_written));
+            }
+
             const std::string date_time_as_string(mbstr);
             return date_time_as_string;
         }

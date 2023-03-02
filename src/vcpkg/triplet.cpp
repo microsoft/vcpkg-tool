@@ -1,5 +1,6 @@
 #include <vcpkg/base/strings.h>
 
+#include <vcpkg/packagespec.h>
 #include <vcpkg/triplet.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
@@ -111,5 +112,32 @@ namespace vcpkg
             return Triplet::from_canonical_name(*host_triplet);
         }
         return system_triplet();
+    }
+
+    void print_default_triplet_warning(const VcpkgCmdArguments& args, View<std::string> specs)
+    {
+        (void)args;
+        (void)specs;
+#if defined(_WIN32)
+        // The triplet is not set by --triplet or VCPKG_DEFAULT_TRIPLET
+        if (!args.triplet.has_value())
+        {
+            if (specs.size() == 0)
+            {
+                msg::println_warning(msgDefaultTriplet, msg::triplet = default_host_triplet(args));
+                return;
+            }
+            for (auto&& arg : specs)
+            {
+                const std::string as_lowercase = Strings::ascii_to_lowercase(std::string{arg});
+                auto maybe_qpkg = parse_qualified_specifier(as_lowercase);
+                if (maybe_qpkg.has_value() && !maybe_qpkg.get()->triplet.has_value())
+                {
+                    msg::println_warning(msgDefaultTriplet, msg::triplet = default_host_triplet(args));
+                    return;
+                }
+            }
+        }
+#endif
     }
 }

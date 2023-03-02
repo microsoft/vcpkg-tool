@@ -283,7 +283,7 @@ namespace vcpkg::Commands::DependInfo
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("depend-info sqlite3"),
+        [] { return create_example_string("depend-info sqlite3"); },
         1,
         1,
         {DEPEND_SWITCHES, DEPEND_SETTINGS},
@@ -302,8 +302,9 @@ namespace vcpkg::Commands::DependInfo
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
-                std::string{arg}, default_triplet, COMMAND_STRUCTURE.example_text, paths);
+                std::string{arg}, default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
         });
+        print_default_triplet_warning(args, args.command_arguments);
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
