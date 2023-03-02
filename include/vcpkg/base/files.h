@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/format.h>
 #include <vcpkg/base/fwd/span.h>
 
@@ -138,12 +139,6 @@ namespace vcpkg
         ExpectedL<Unit> try_read_all(void* buffer, std::uint32_t size);
         ExpectedL<char> try_getc();
         ExpectedL<Unit> try_read_all_from(long long offset, void* buffer, std::uint32_t size);
-    };
-
-    enum class Append
-    {
-        NO = 0,
-        YES,
     };
 
     struct WriteFilePointer : FilePointer
