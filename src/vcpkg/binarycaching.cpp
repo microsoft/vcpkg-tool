@@ -1439,7 +1439,7 @@ namespace vcpkg
                 nuspec = generate_nuspec(package_dir, action, nuget_ref);
             }
             std::unique_lock<std::mutex> lock(actions_to_push_mutex);
-            actions_to_push.push(ActionToPush{
+            actions_to_push.push_back(ActionToPush{
                 BinaryProviderPushRequest{BinaryPackageInformation{action, std::move(nuspec)}, package_dir},
                 clean_packages});
             actions_to_push_notifier.notify_all();
@@ -1517,17 +1517,20 @@ namespace vcpkg
 
                 std::swap(my_tasks, actions_to_push);
             }
-            // Now, consume all of `my_tasks` before taking the lock again. Make sure to call my_tasks.clear()!
-
-            for (auto&& provider : m_providers)
+            // Now, consume all of `my_tasks` before taking the lock again.
+            for (auto& action_to_push : my_tasks)
             {
-                provider->push_success(entry.request, stdout_sink);
-            }
-            if (entry.clean_after_push)
-            {
-                filesystem.remove_all(entry.request.package_dir, VCPKG_LINE_INFO);
+                for (auto&& provider : m_providers)
+                {
+                    provider->push_success(action_to_push.request, stdout_sink);
+                }
+                if (action_to_push.clean_after_push)
+                {
+                    filesystem.remove_all(action_to_push.request.package_dir, VCPKG_LINE_INFO);
+                }
             }
             actions_to_push_notifier.notify_all();
+            my_tasks.clear();
         }
     }
 

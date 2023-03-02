@@ -184,7 +184,7 @@ namespace vcpkg
         bool needs_nuspec_data = false;
         std::condition_variable actions_to_push_notifier;
         std::mutex actions_to_push_mutex;
-        std::queue<ActionToPush> actions_to_push;
+        std::vector<ActionToPush> actions_to_push;
         std::thread push_thread;
         std::atomic_bool end_push_thread;
         Filesystem& filesystem;
