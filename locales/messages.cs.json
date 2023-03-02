@@ -932,8 +932,6 @@
   "UnsupportedPort": "Nepodporuje se {package_name} portu.",
   "UnsupportedPortDependency": "- {value} závislostí se nepodporuje.",
   "UnsupportedShortOptions": "krátké možnosti se nepodporují: {value}",
-  "UnsupportedSupportsExpression": "{package_name} se podporuje jenom u {supports_expression}, která neodpovídá {triplet}. To obvykle znamená, že při sestavování jiných platforem dochází ke známým selháním sestavení nebo problémům s moduly runtime. Pokud to chcete ignorovat a přesto se pokusit {package_name} sestavit, spusťte znovu soubor vcpkg s parametrem --allow-unsupported.",
-  "UnsupportedSupportsExpressionWarning": "{package_name} se podporuje jenom u {supports_expression}, která neodpovídá {triplet}. To obvykle znamená, že při sestavování jiných platforem dochází ke známým selháním sestavení nebo problémům s moduly runtime. Přesto probíhá kvůli --allow-unsupported.",
   "UnsupportedSyntaxInCDATA": "]]> se v bloku CDATA nepodporuje.",
   "UnsupportedSystemName": "Nepovedlo se namapovat VCPKG_CMAKE_SYSTEM_NAME {system_name} na platformu vcvarsall. Podporované názvy systémů jsou „“, „Windows“ a „WindowsStore“.",
   "UnsupportedToolchain": "v trojitém {triplet}: Nepovedlo se najít platnou sadu nástrojů pro požadovanou cílovou architekturu {arch}.\nVybraná instance Visual Studio je na: {path}\nDostupné kombinace sad nástrojů: {list}",

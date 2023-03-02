@@ -932,8 +932,6 @@
   "UnsupportedPort": "Port {package_name} nie jest obsługiwany.",
   "UnsupportedPortDependency": "- zależność {value} nie jest obsługiwana.",
   "UnsupportedShortOptions": "opcje krótkie nie są obsługiwane: „{value}”",
-  "UnsupportedSupportsExpression": "Pakiet {package_name} jest obsługiwany tylko na „{supports_expression}”, który nie jest zgodny z {triplet}. Zwykle oznacza to, że podczas tworzenia innych platform występują znane błędy kompilacji lub problemy ze środowiskami uruchomieniowymi. Aby zignorować ten element i mimo to spróbować skompilować pakiet {package_name}, uruchom ponownie narzędzie vcpkg z parametrem `--allow-unsupported`.",
-  "UnsupportedSupportsExpressionWarning": "Pakiet {package_name} jest obsługiwany tylko na „{supports_expression}”, który nie jest zgodny z {triplet}. Zwykle oznacza to, że podczas tworzenia innych platform występują znane błędy kompilacji lub problemy ze środowiskami uruchomieniowymi. Kontynuowanie mimo to z powodu `--allow-unsupported`.",
   "UnsupportedSyntaxInCDATA": "]]> nie jest obsługiwane w bloku CDATA",
   "UnsupportedSystemName": "Nie można zmapować VCPKG_CMAKE_SYSTEM_NAME „{system_name}” na platformę vcvarsall. Obsługiwane nazwy systemów to „Windows” i „WindowsStore”.",
   "UnsupportedToolchain": "W potrójnym {triplet}: nie można odnaleźć prawidłowego łańcucha narzędzi dla żądanej architektury docelowej {arch}.\nWybrane wystąpienie programu Visual Studio znajduje się w lokalizacji: {path}\nDostępne kombinacje łańcucha narzędzi to: {list}",

@@ -932,8 +932,6 @@
   "UnsupportedPort": "ポート {package_name} はサポートされていません。",
   "UnsupportedPortDependency": "- 依存関係 {value} はサポートされていません。",
   "UnsupportedShortOptions": "短いオプションはサポートされていません: '{value}'",
-  "UnsupportedSupportsExpression": "{package_name} は '{supports_expression}' でのみサポートされていますが、これは {triplet} と一致しません。これは通常、他のプラットフォームをビルドする際に既知のビルド エラーまたは実行時の問題があることを意味します。これを無視して {package_name} のビルドを試みるには、vcpkg を `--allow-unsupported` で再実行してください。",
-  "UnsupportedSupportsExpressionWarning": "{package_name} は '{supports_expression}' でのみサポートされていますが、これは {triplet} と一致しません。これは通常、他のプラットフォームをビルドする際に既知のビルド エラーまたは実行時の問題があることを意味します。`--allow-unsupported` であるため、とにかく続行します。",
   "UnsupportedSyntaxInCDATA": "]]> は CDATA ブロックでサポートされていません",
   "UnsupportedSystemName": "VCPKG_CMAKE_SYSTEM_NAME「{system_name}」を vcvarsall プラットフォームにマップできませんでした。サポートされているシステム名は、「」、「Windows」、および「WindowsStore」です。",
   "UnsupportedToolchain": "トリプレット内 {triplet}: 要求されたターゲットアーキテクチャ {arch} に対して有効なツールチェーンが見つかりません。\n選択された Visual Studio インスタンスは {path} にあり、\n利用可能なツールチェインの組み合わせは以下の通りです: {list}",

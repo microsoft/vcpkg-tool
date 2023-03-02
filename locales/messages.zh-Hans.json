@@ -932,8 +932,6 @@
   "UnsupportedPort": "不支持端口 {package_name}。",
   "UnsupportedPortDependency": "- 不支持依赖项 {value}。",
   "UnsupportedShortOptions": "不支持短选项:“{value}”",
-  "UnsupportedSupportsExpression": "{package_name} 仅在“{supports_expression}”上受支持，这与 {triplet} 不匹配。这通常意味着在生成其他平台时存在已知的生成失败或运行时问题。要忽略此项并且仍然尝试生成 {package_name}，请使用 `--allow-uns supported` 重新运行 vcpkg。",
-  "UnsupportedSupportsExpressionWarning": "{package_name} 仅在“{supports_expression}”上受支持，这与 {triplet} 不匹配。这通常意味着在生成其他平台时存在已知的生成失败或运行时问题。但由于 `--allow-unsported`，请仍然继续操作。",
   "UnsupportedSyntaxInCDATA": "]]> 在 CDATA 块中不受支持",
   "UnsupportedSystemName": "无法将 VCPKG_CMAKE_SYSTEM_NAME “{system_name}” 映射到 vcvarsall 平台。支持的系统名称为 ''、“Windows” 和 “WindowsStore”。",
   "UnsupportedToolchain": "在三元组 {triplet} 中: 无法为请求的目标体系结构 {arch} 找到有效的工具链。\n所选 Visual Studio 实例位于: {path}\n可用的工具链组合为 {list}",

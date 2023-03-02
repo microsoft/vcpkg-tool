@@ -932,8 +932,6 @@
   "UnsupportedPort": "Não há suporte para a porta {package_name}.",
   "UnsupportedPortDependency": "- não há suporte para a dependência {value}.",
   "UnsupportedShortOptions": "não há suporte para opções curtas: '{value}'",
-  "UnsupportedSupportsExpression": "{package_name} só tem suporte em '{supports_expression}', que não corresponde a {triplet}. Isso geralmente significa que há falhas de build conhecidas ou problemas de runtime ao compilar outras plataformas. Para ignorar isso e tentar compilar {package_name} mesmo assim, execute o vcpkg novamente com `--allow-unsupported`.",
-  "UnsupportedSupportsExpressionWarning": "{package_name} só tem suporte em '{supports_expression}', que não corresponde a {triplet}. Isso geralmente significa que há falhas de build conhecidas ou problemas de runtime ao compilar outras plataformas. Continuando mesmo assim devido a '--allow-unsupported`.",
   "UnsupportedSyntaxInCDATA": "]]> não há suporte no bloco CDATA",
   "UnsupportedSystemName": "Não foi possível mapear VCPKG_CMAKE_SYSTEM_NAME '{system_name}' para uma plataforma vcvarsall. Os nomes de sistema suportados são '', 'Windows' e 'WindowsStore'.",
   "UnsupportedToolchain": "no triplo {triplet}: não é possível encontrar uma cadeia de ferramentas válida para a arquitetura de destino solicitada {arch}.\nA instância do Visual Studio selecionada está em: {path}\nAs combinações da cadeia de ferramentas disponíveis são: {list}",

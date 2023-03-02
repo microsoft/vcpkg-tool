@@ -932,8 +932,6 @@
   "UnsupportedPort": "Порт {package_name} не поддерживается.",
   "UnsupportedPortDependency": "- зависимость {value} не поддерживается.",
   "UnsupportedShortOptions": "краткие параметры не поддерживаются: '{value}'",
-  "UnsupportedSupportsExpression": "{package_name} поддерживается только в \"{supports_expression}\", что не соответствует {triplet}. Обычно это означает, что при сборке других платформ возникают известные сбои сборки или проблемы во время выполнения. Чтобы игнорировать это и попытаться выполнить сборку {package_name}, перезапустите vcpkg с параметром \"--allow-unsupported\".",
-  "UnsupportedSupportsExpressionWarning": "{package_name} поддерживается только в \"{supports_expression}\", что не соответствует {triplet}. Обычно это означает, что при сборке других платформ возникают известные сбои сборки или проблемы во время выполнения. В любом случае выполняется продолжение из-за параметра \"--allow-unsupported\".",
   "UnsupportedSyntaxInCDATA": "]]> не поддерживается в блоке CDATA",
   "UnsupportedSystemName": "Не удалось сопоставить VCPKG_CMAKE_SYSTEM_NAME \"{system_name}\" с платформой vcvarsall. Поддерживаемые имена систем: \"\", \"Windows\" и \"WindowsStore\".",
   "UnsupportedToolchain": "в триплете {triplet}: Не удалось найти допустимую цепочку инструментов для запрошенной целевой архитектуры {arch}.\nВыбранный экземпляр Visual Studio находится в: {path}\nДоступные сочетания наборов инструментов: {list}",

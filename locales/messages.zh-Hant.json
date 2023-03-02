@@ -932,8 +932,6 @@
   "UnsupportedPort": "不支援連接埠 {package_name}。",
   "UnsupportedPortDependency": "- 不支援相依性 {value}。",
   "UnsupportedShortOptions": "不支援簡短選項: '{value}'",
-  "UnsupportedSupportsExpression": "僅在 '{supports_expression}' 上支援 {package_name}，其不符合 {triplet}。這通常表示建置其他平台時，有已知的建置失敗或執行階段問題。若要忽略此情況並仍嘗試建置 {package_name}，請重新執行 vcpkg 搭配 `--allow-unsupported`。",
-  "UnsupportedSupportsExpressionWarning": "僅在 '{supports_expression}' 上支援 {package_name}，其不符合 {triplet}。這通常表示建置其他平台時，有已知的建置失敗或執行階段問題。由於 `--allow-unsupported`，仍要繼續。",
   "UnsupportedSyntaxInCDATA": "CDATA 區塊中不支援 ]]>",
   "UnsupportedSystemName": "無法將 VCPKG_CMAKE_SYSTEM_NAME '{system_name}' 與 vcvarsall 平台進行比對。支援的系統名稱為 ''、'Windows' 和 'WindowsStore'。",
   "UnsupportedToolchain": "在三個二進制元素位元組 {triplet} 中: 找不到有效的工具鏈。要求的目標架構為 {arch}。\n選取的 Visual Studio 執行個體位於: {path}\n可用的工具鏈組合為: {list}",

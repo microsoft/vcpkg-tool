@@ -932,8 +932,6 @@
   "UnsupportedPort": "Le port {package_name} n’est pas pris en charge.",
   "UnsupportedPortDependency": "- la dépendance {value} n’est pas prise en charge.",
   "UnsupportedShortOptions": "les options courtes ne sont pas prises en charge : '{value}'",
-  "UnsupportedSupportsExpression": "{package_name} est uniquement pris en charge sur '{supports_expression}', ce qui ne correspond pas à {triplet}. Cela signifie généralement qu’il existe des échecs de build connus ou des problèmes d’exécution lors de la génération d’autres plateformes. Pour ignorer cela et tenter de générer {package_name} quand même, réexécutez vcpkg avec `--allow-unsupported`.",
-  "UnsupportedSupportsExpressionWarning": "{package_name} est uniquement pris en charge sur '{supports_expression}', ce qui ne correspond pas à {triplet}. Cela signifie généralement qu’il existe des échecs de build connus ou des problèmes d’exécution lors de la génération d’autres plateformes. Poursuite de l’opération en raison de `--allow-unsupported`.",
   "UnsupportedSyntaxInCDATA": "]]> n’est pas pris en charge dans le bloc CDATA",
   "UnsupportedSystemName": "Impossible de mapper VCPKG_CMAKE_SYSTEM_NAME '{system_name}' à une plateforme vcvarsall. Les noms de système pris en charge sont ' '', 'Windows' et 'WindowsStore'.",
   "UnsupportedToolchain": "Dans le {triplet} triplet : chaînes d’outils valide introuvablepour l’architecture cible demandée {arch}\n. L’instance de Visual Studio sélectionnée est à : {path}\n. Les combinaisons de chaînes d’outils disponibles sont : {list}.",

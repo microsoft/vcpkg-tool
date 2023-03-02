@@ -932,8 +932,6 @@
   "UnsupportedPort": "Port {package_name} wird nicht unterstützt.",
   "UnsupportedPortDependency": "- Abhängigkeits-{value} wird nicht unterstützt.",
   "UnsupportedShortOptions": "Kurze Optionen werden nicht unterstützt: „{value}“",
-  "UnsupportedSupportsExpression": "{package_name} wird nur für den Ausdruck „{supports_expression}“ unterstützt, der nicht mit {triplet} übereinstimmt. Dies bedeutet in der Regel, dass beim Erstellen anderer Plattformen bekannte Buildfehler oder Laufzeitprobleme auftreten. Um dies zu ignorieren und dennoch zu versuchen, {package_name} zu erstellen, führen Sie vcpkg erneut mit „--allow-unsupported“ aus.",
-  "UnsupportedSupportsExpressionWarning": "{package_name} wird nur für den Ausdruck „{supports_expression}“ unterstützt, der nicht mit {triplet} übereinstimmt. Dies bedeutet in der Regel, dass beim Erstellen anderer Plattformen bekannte Buildfehler oder Laufzeitprobleme auftreten. Der Vorgang wird trotzdem fortgesetzt, weil „--allow-unsupported“ angegeben ist.",
   "UnsupportedSyntaxInCDATA": "]]> wird im CDATA-Block nicht unterstützt.",
   "UnsupportedSystemName": "VCPKG_CMAKE_SYSTEM_NAME „{system_name}“ konnte keiner „vcvarsall“-Plattform zugeordnet werden. Unterstützte Systemnamen sind „Windows“ und „WindowsStore“.",
   "UnsupportedToolchain": "in Triplet {triplet}: Es wurde keine gültige Toolkette für die angeforderte Zielarchitektur „{arch}“ gefunden.\nDie ausgewählte Visual Studio-Instanz befindet sich unter: {path}\nDie verfügbaren Toolkettenkombinationen sind: {list}",

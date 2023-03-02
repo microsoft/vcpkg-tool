@@ -932,8 +932,6 @@
   "UnsupportedPort": "{package_name} bağlantı noktası desteklenmiyor.",
   "UnsupportedPortDependency": "- bağımlılık {value} desteklenmiyor.",
   "UnsupportedShortOptions": "kısa seçenekler desteklenmiyor: '{value}'",
-  "UnsupportedSupportsExpression": "{package_name}, yalnızca {triplet} ile eşleşmeyen '{supports_expression}' üzerinde desteklenir. Bu genellikle diğer platformları oluştururken bilinen derleme hataları veya çalışma zamanı sorunları olduğu anlamına gelir. Yine de bunu yoksaymak ve {package_name} paketini derlemeyi denemek için vcpkg'yi '--allow-unsupported' ile yeniden çalıştırın.",
-  "UnsupportedSupportsExpressionWarning": "{package_name}, yalnızca {triplet} ile eşleşmeyen '{supports_expression}' üzerinde desteklenir. Bu genellikle diğer platformları oluştururken bilinen derleme hataları veya çalışma zamanı sorunları olduğu anlamına gelir. '--allow-unsupported' nedeniyle yine de devam ediliyor.",
   "UnsupportedSyntaxInCDATA": "]]> CDATA bloğunda desteklenmiyor",
   "UnsupportedSystemName": "VCPKG_CMAKE_SYSTEM_NAME '{system_name}', vcvarsall platformuna eşlenemedi. Desteklenen sistem adları: '', 'Windows' ve 'WindowsStore'.",
   "UnsupportedToolchain": "{triplet} üçlüsünde: İstenen hedef mimari {arch} için geçerli araç zinciri bulunamıyor.\nSeçili Visual Studio örneği {path} konumunda\nKullanılabilir araç zinciri bileşimleri: {list}",
