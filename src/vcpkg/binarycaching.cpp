@@ -1529,7 +1529,6 @@ namespace vcpkg
                     filesystem.remove_all(action_to_push.request.package_dir, VCPKG_LINE_INFO);
                 }
             }
-            actions_to_push_notifier.notify_all();
             my_tasks.clear();
         }
     }
