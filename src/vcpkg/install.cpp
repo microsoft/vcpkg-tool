@@ -380,7 +380,8 @@ namespace vcpkg
             if (restore != RestoreResult::restored)
             {
                 binary_cache.push_success(action, paths.package_dir(action.spec));
-            } else if (action.build_options.clean_packages == CleanPackages::YES)
+            }
+            else if (action.build_options.clean_packages == CleanPackages::YES)
             {
                 fs.remove_all(paths.package_dir(action.spec), VCPKG_LINE_INFO);
             }
