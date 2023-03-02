@@ -1668,10 +1668,10 @@ namespace
             return std::move(path);
         }
 
-        return get_platform_cache_home().then([](Path p) -> ExpectedL<Path> {
+        return get_platform_cache_vcpkg().then([](Path p) -> ExpectedL<Path> {
             if (p.is_absolute())
             {
-                p /= "vcpkg/archives";
+                p /= "archives";
                 p.make_preferred();
                 return std::move(p);
             }

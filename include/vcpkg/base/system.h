@@ -15,7 +15,7 @@ namespace vcpkg
 
     const ExpectedL<Path>& get_home_dir() noexcept;
 
-    const ExpectedL<Path>& get_platform_cache_home() noexcept;
+    const ExpectedL<Path>& get_platform_cache_vcpkg() noexcept;
 
     const ExpectedL<Path>& get_user_configuration_home() noexcept;
 
