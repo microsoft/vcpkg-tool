@@ -885,7 +885,8 @@ namespace vcpkg
 
     static ExtendedBuildResult do_build_package(const VcpkgCmdArguments& args,
                                                 const VcpkgPaths& paths,
-                                                const InstallPlanAction& action)
+                                                const InstallPlanAction& action,
+                                                bool all_dependencies_satisfied)
     {
         const auto& pre_build_info = action.pre_build_info(VCPKG_LINE_INFO);
 
@@ -963,6 +964,11 @@ namespace vcpkg
                                 buildtimeus);
 
         get_global_metrics_collector().track_submission(std::move(metrics));
+        if (!all_dependencies_satisfied)
+        {
+            return ExtendedBuildResult{BuildResult::DOWNLOADED};
+        }
+
         if (build_failed)
         {
             const auto logs = buildpath / Strings::concat("error-logs-", action.spec.triplet(), ".txt");
@@ -1012,9 +1018,10 @@ namespace vcpkg
 
     static ExtendedBuildResult do_build_package_and_clean_buildtrees(const VcpkgCmdArguments& args,
                                                                      const VcpkgPaths& paths,
-                                                                     const InstallPlanAction& action)
+                                                                     const InstallPlanAction& action,
+                                                                     bool all_dependencies_satisfied)
     {
-        auto result = do_build_package(args, paths, action);
+        auto result = do_build_package(args, paths, action, all_dependencies_satisfied);
 
         if (action.build_options.clean_buildtrees == CleanBuildtrees::YES)
         {
@@ -1298,7 +1305,8 @@ namespace vcpkg
             }
         }
 
-        if (!missing_fspecs.empty() && !Util::Enum::to_bool(action.build_options.only_downloads))
+        const bool all_dependencies_satisfied = missing_fspecs.empty();
+        if (!all_dependencies_satisfied && !Util::Enum::to_bool(action.build_options.only_downloads))
         {
             return {BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES, std::move(missing_fspecs)};
         }
@@ -1319,7 +1327,7 @@ namespace vcpkg
         auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
         if (!abi_info.abi_tag_file)
         {
-            return do_build_package_and_clean_buildtrees(args, paths, action);
+            return do_build_package_and_clean_buildtrees(args, paths, action, all_dependencies_satisfied);
         }
 
         auto& abi_file = *abi_info.abi_tag_file.get();
@@ -1327,7 +1335,8 @@ namespace vcpkg
         const auto abi_package_dir = paths.package_dir(spec) / "share" / spec.name();
         const auto abi_file_in_package = abi_package_dir / "vcpkg_abi_info.txt";
 
-        ExtendedBuildResult result = do_build_package_and_clean_buildtrees(args, paths, action);
+        ExtendedBuildResult result =
+            do_build_package_and_clean_buildtrees(args, paths, action, all_dependencies_satisfied);
         build_logs_recorder.record_build_result(paths, spec, result.code);
 
         filesystem.create_directories(abi_package_dir, VCPKG_LINE_INFO);
