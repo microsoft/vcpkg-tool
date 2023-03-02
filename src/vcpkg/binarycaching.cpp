@@ -313,7 +313,7 @@ namespace
             const auto archive_subpath = make_archive_subpath(abi_tag);
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
             auto compress_result =
-                compress_directory_to_zip(fs, paths.get_tool_cache(), stdout_sink, packages_dir, tmp_archive_path);
+                compress_directory_to_zip(fs, paths.get_tool_cache(), msg_sink, packages_dir, tmp_archive_path);
             if (!compress_result)
             {
                 msg_sink.println(Color::warning,
@@ -1018,7 +1018,7 @@ namespace
             auto& spec = info.spec;
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
             auto compression_result = compress_directory_to_zip(
-                paths.get_filesystem(), paths.get_tool_cache(), stdout_sink, packages_dir, tmp_archive_path);
+                paths.get_filesystem(), paths.get_tool_cache(), msg_sink, packages_dir, tmp_archive_path);
             if (!compression_result)
             {
                 msg_sink.println(Color::warning,
@@ -2443,7 +2443,7 @@ std::string vcpkg::generate_nuspec(const Path& package_dir,
 {
     auto& spec = info.spec;
     auto& scf = info.source_control_file;
-    auto& version = scf.core_paragraph->raw_version;
+    auto& version = info.raw_version;
     std::string description =
         Strings::concat("NOT FOR DIRECT USE. Automatically generated cache package.\n\n",
                         Strings::join("\n    ", scf.core_paragraph->description),

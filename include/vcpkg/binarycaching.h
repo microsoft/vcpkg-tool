@@ -172,7 +172,6 @@ namespace vcpkg
         {
             BinaryPackageInformation info;
             bool clean_after_push;
-            Path packages_dir;
         };
         void push_thread_main();
 
