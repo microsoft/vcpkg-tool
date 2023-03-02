@@ -3,6 +3,8 @@
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
 
+#include <vcpkg/binarycaching.h>
+
 #include <stdlib.h>
 
 namespace
@@ -61,6 +63,8 @@ namespace vcpkg
 
     [[noreturn]] void Checks::exit_with_code(const LineInfo& line_info, const int exit_code)
     {
+        BinaryCache::wait_for_async_complete();
+
         Debug::println(locale_invariant_lineinfo(line_info));
         final_cleanup_and_exit(exit_code);
     }

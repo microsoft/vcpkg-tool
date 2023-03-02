@@ -1314,12 +1314,13 @@ namespace vcpkg
     {
         if (current_instance)
         {
-            msg::write_unlocalized_text_to_stdout(Color::none, "Wait for end\n");
-            current_instance->end_push_thread = true;
-            current_instance->actions_to_push_notifier.notify_all();
-            current_instance->push_thread.join();
-            msg::write_unlocalized_text_to_stdout(Color::none, "Wait for end done \n");
+            auto instance = current_instance;
             current_instance = nullptr;
+            msg::write_unlocalized_text_to_stdout(Color::none, "Wait for end\n");
+            instance->end_push_thread = true;
+            instance->actions_to_push_notifier.notify_all();
+            instance->push_thread.join();
+            msg::write_unlocalized_text_to_stdout(Color::none, "Wait for end done \n");
         }
     }
 
