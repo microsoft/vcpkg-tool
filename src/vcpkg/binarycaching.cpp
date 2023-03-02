@@ -1503,19 +1503,21 @@ namespace vcpkg
 
     void BinaryCache::push_thread_main()
     {
+        decltype(actions_to_push) my_tasks;
         while (true)
         {
-            std::unique_lock<std::mutex> lock(actions_to_push_mutex);
-            actions_to_push_notifier.wait(lock, [this]() { return !actions_to_push.empty() || end_push_thread; });
-            if (actions_to_push.empty())
             {
-                if (end_push_thread) break;
-                continue;
-            }
+                std::unique_lock<std::mutex> lock(actions_to_push_mutex);
+                actions_to_push_notifier.wait(lock, [this]() { return !actions_to_push.empty() || end_push_thread; });
+                if (actions_to_push.empty())
+                {
+                    if (end_push_thread) break;
+                    continue;
+                }
 
-            auto entry = std::move(actions_to_push.front());
-            actions_to_push.pop();
-            lock.unlock(); // we don't touch actions_to_push anymore
+                std::swap(my_tasks, actions_to_push);
+            }
+            // Now, consume all of `my_tasks` before taking the lock again. Make sure to call my_tasks.clear()!
 
             for (auto&& provider : m_providers)
             {
