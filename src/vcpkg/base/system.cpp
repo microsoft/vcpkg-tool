@@ -21,6 +21,117 @@
 extern char** environ;
 #endif
 
+namespace
+{
+    using namespace vcpkg;
+#ifdef _WIN32
+    struct RegistryValue
+    {
+        DWORD type;
+        std::vector<unsigned char> data;
+    };
+
+    const HKEY INVALID_HKEY_VALUE = ((HKEY)(ULONG_PTR)((LONG)0xFFFFFFFF));
+    struct HKey
+    {
+        HKEY hkey = INVALID_HKEY_VALUE;
+
+        static ExpectedL<HKey> open(void* base_hkey, StringView sub_key, DWORD desired_access)
+        {
+            HKEY constructed_hkey = nullptr;
+            const LSTATUS ec = RegOpenKeyExW(reinterpret_cast<HKEY>(base_hkey),
+                                             Strings::to_utf16(sub_key).c_str(),
+                                             0,
+                                             desired_access,
+                                             &constructed_hkey);
+            if (ec == ERROR_SUCCESS)
+            {
+                return HKey{constructed_hkey};
+            }
+            else
+            {
+                return LocalizedString::from_raw(std::system_category().message(static_cast<int>(ec)));
+            }
+        }
+
+        HKey(HKey&& other) : hkey(std::exchange(other.hkey, INVALID_HKEY_VALUE)) { }
+        HKey& operator=(HKey&& other)
+        {
+            HKey moved{std::move(other)};
+            std::swap(hkey, moved.hkey);
+            return *this;
+        }
+        ~HKey()
+        {
+            if (hkey != INVALID_HKEY_VALUE)
+            {
+                RegCloseKey(hkey);
+            }
+        }
+
+        ExpectedL<RegistryValue> query_value(StringView valuename) const
+        {
+            if (hkey == INVALID_HKEY_VALUE)
+            {
+                Checks::unreachable(VCPKG_LINE_INFO, "Tried to query invalid key");
+            }
+
+            auto w_valuename = Strings::to_utf16(valuename);
+            RegistryValue result;
+            DWORD dw_buffer_size = 4;
+            for (;;)
+            {
+                result.data.resize(dw_buffer_size);
+                LSTATUS attempt_result = ::RegQueryValueExW(
+                    hkey, w_valuename.c_str(), nullptr, &result.type, result.data.data(), &dw_buffer_size);
+                switch (attempt_result)
+                {
+                    case ERROR_SUCCESS: result.data.resize(dw_buffer_size); return result;
+                    case ERROR_MORE_DATA: continue;
+                    default: return LocalizedString::from_raw(std::system_category().message(attempt_result));
+                }
+            }
+        }
+
+        explicit operator bool() const noexcept { return hkey != INVALID_HKEY_VALUE; }
+
+    private:
+        explicit HKey(HKEY constructed_hkey) : hkey(constructed_hkey) { }
+    };
+
+    StringLiteral format_base_hkey_name(void* base_hkey)
+    {
+        // copied these values out of winreg.h because HKEY can't be used as a switch/case as it isn't integral
+        switch (reinterpret_cast<std::uintptr_t>(base_hkey))
+        {
+            case 0x80000000u: return "HKEY_CLASSES_ROOT";
+            case 0x80000001u: return "HKEY_CURRENT_USER";
+            case 0x80000002u: return "HKEY_LOCAL_MACHINE";
+            case 0x80000003u: return "HKEY_USERS";
+            case 0x80000004u: return "HKEY_PERFORMANCE_DATA";
+            case 0x80000005u: return "HKEY_CURRENT_CONFIG";
+            case 0x80000050u: return "HKEY_PERFORMANCE_TEXT";
+            case 0x80000060u: return "HKEY_PERFORMANCE_NLSTEXT";
+            default: return "UNKNOWN_BASE_HKEY";
+        }
+    }
+
+    std::string format_registry_value_name(void* base_hkey, StringView sub_key, StringView valuename)
+    {
+        auto result = format_base_hkey_name(base_hkey).to_string();
+        if (!sub_key.empty())
+        {
+            result.push_back('\\');
+            result.append(sub_key.data(), sub_key.size());
+        }
+
+        result.append(2, '\\');
+        result.append(valuename.data(), valuename.size());
+        return result;
+    }
+#endif // ^^^ _WIN32
+}
+
 namespace vcpkg
 {
     long get_process_id()
@@ -373,13 +484,16 @@ namespace vcpkg
     }
 #endif
 
-    const ExpectedL<Path>& get_platform_cache_home() noexcept
+    const ExpectedL<Path>& get_platform_cache_vcpkg() noexcept
     {
+        static ExpectedL<Path> s_vcpkg =
 #ifdef _WIN32
-        return get_appdata_local();
+            get_appdata_local()
 #else
-        return get_xdg_cache_home();
+            get_xdg_cache_home()
 #endif
+                .map([](const Path& p) { return p / "vcpkg"; });
+        return s_vcpkg;
     }
 
     const ExpectedL<Path>& get_user_configuration_home() noexcept
@@ -394,11 +508,6 @@ namespace vcpkg
     }
 
 #if defined(_WIN32)
-    static bool is_string_keytype(const DWORD hkey_type)
-    {
-        return hkey_type == REG_SZ || hkey_type == REG_MULTI_SZ || hkey_type == REG_EXPAND_SZ;
-    }
-
     std::wstring get_username()
     {
         DWORD buffer_size = UNLEN + 1;
@@ -411,40 +520,68 @@ namespace vcpkg
 
     bool test_registry_key(void* base_hkey, StringView sub_key)
     {
-        HKEY k = nullptr;
-        const LSTATUS ec =
-            RegOpenKeyExW(reinterpret_cast<HKEY>(base_hkey), Strings::to_utf16(sub_key).c_str(), 0, KEY_READ, &k);
-        return (ERROR_SUCCESS == ec);
+        return HKey::open(base_hkey, sub_key, KEY_QUERY_VALUE).has_value();
     }
 
-    Optional<std::string> get_registry_string(void* base_hkey, StringView sub_key, StringView valuename)
+    ExpectedL<std::string> get_registry_string(void* base_hkey, StringView sub_key, StringView valuename)
     {
-        HKEY k = nullptr;
-        const LSTATUS ec =
-            RegOpenKeyExW(reinterpret_cast<HKEY>(base_hkey), Strings::to_utf16(sub_key).c_str(), 0, KEY_READ, &k);
-        if (ec != ERROR_SUCCESS) return nullopt;
+        auto maybe_k = HKey::open(base_hkey, sub_key, KEY_QUERY_VALUE);
+        if (auto k = maybe_k.get())
+        {
+            auto maybe_value = k->query_value(valuename);
+            if (auto value = maybe_value.get())
+            {
+                switch (value->type)
+                {
+                    case REG_SZ:
+                    case REG_EXPAND_SZ:
+                        // remove trailing nulls
+                        while (!value->data.empty() && !value->data.back())
+                        {
+                            value->data.pop_back();
+                        }
 
-        auto w_valuename = Strings::to_utf16(valuename);
+                        {
+                            auto length_in_wchar_ts = value->data.size() >> 1;
+                            return Strings::to_utf8(reinterpret_cast<const wchar_t*>(value->data.data()),
+                                                    length_in_wchar_ts);
+                        }
+                    default:
+                        return msg::format_error(msgRegistryValueWrongType,
+                                                 msg::path = format_registry_value_name(base_hkey, sub_key, valuename));
+                }
+            }
 
-        DWORD dw_buffer_size = 0;
-        DWORD dw_type = 0;
-        auto rc = RegQueryValueExW(k, w_valuename.c_str(), nullptr, &dw_type, nullptr, &dw_buffer_size);
-        if (rc != ERROR_SUCCESS || !is_string_keytype(dw_type) || dw_buffer_size == 0 ||
-            dw_buffer_size % sizeof(wchar_t) != 0)
-            return nullopt;
-        std::wstring ret;
-        ret.resize(dw_buffer_size / sizeof(wchar_t));
+            return std::move(maybe_value).error();
+        }
 
-        rc = RegQueryValueExW(
-            k, w_valuename.c_str(), nullptr, &dw_type, reinterpret_cast<LPBYTE>(ret.data()), &dw_buffer_size);
-        if (rc != ERROR_SUCCESS || !is_string_keytype(dw_type) || dw_buffer_size != sizeof(wchar_t) * ret.size())
-            return nullopt;
-
-        ret.pop_back(); // remove extra trailing null byte
-        return Strings::to_utf8(ret);
+        return std::move(maybe_k).error();
     }
-#else
-    Optional<std::string> get_registry_string(void*, StringView, StringView) { return nullopt; }
+
+    ExpectedL<std::uint32_t> get_registry_dword(void* base_hkey, StringView sub_key, StringView valuename)
+    {
+        auto maybe_k = HKey::open(base_hkey, sub_key, KEY_QUERY_VALUE);
+        if (auto k = maybe_k.get())
+        {
+            auto maybe_value = k->query_value(valuename);
+            if (auto value = maybe_value.get())
+            {
+                if (value->type == REG_DWORD && value->data.size() >= sizeof(DWORD))
+                {
+                    DWORD result{};
+                    ::memcpy(&result, value->data.data(), sizeof(DWORD));
+                    return result;
+                }
+
+                return msg::format_error(msgRegistryValueWrongType,
+                                         msg::path = format_registry_value_name(base_hkey, sub_key, valuename));
+            }
+
+            return std::move(maybe_value).error();
+        }
+
+        return std::move(maybe_k).error();
+    }
 #endif
 
     static const Optional<Path>& get_program_files()

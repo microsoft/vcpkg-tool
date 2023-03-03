@@ -6,6 +6,7 @@
 
 #include <vcpkg/fwd/binaryparagraph.h>
 #include <vcpkg/fwd/build.h>
+#include <vcpkg/fwd/bundlesettings.h>
 #include <vcpkg/fwd/configuration.h>
 #include <vcpkg/fwd/installedpaths.h>
 #include <vcpkg/fwd/registries.h>
@@ -59,7 +60,7 @@ namespace vcpkg
 
     struct VcpkgPaths
     {
-        VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args);
+        VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args, const BundleSettings& bundle);
         VcpkgPaths(const VcpkgPaths&) = delete;
         VcpkgPaths& operator=(const VcpkgPaths&) = delete;
         ~VcpkgPaths();
@@ -83,6 +84,7 @@ namespace vcpkg
         const Optional<Path>& maybe_buildtrees() const;
         const Optional<Path>& maybe_packages() const;
 
+        const Path& global_config() const;
         const InstalledPaths& installed() const;
         const Path& buildtrees() const;
         const Path& packages() const;

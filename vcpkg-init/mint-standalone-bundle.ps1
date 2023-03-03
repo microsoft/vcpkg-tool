@@ -6,15 +6,33 @@ Param(
     [string]$DestinationDir,
     [Parameter(Mandatory = $True)]
     [string]$TempDir,
-    [Parameter()]
+    [Parameter(Mandatory = $True)]
     [string]$Deployment,
     [Parameter(Mandatory = $True)]
-    [string]$SignedFilesRoot
+    [string]$SignedFilesRoot,
+    [Parameter(Mandatory = $true)]
+    [string]$VcpkgBaseVersion
 )
 
-[bool]$ReadOnly = $Deployment -eq 'VisualStudio';
 $sha = Get-Content "$PSScriptRoot/vcpkg-scripts-sha.txt" -Raw
 $sha = $sha.Trim()
+
+if ($Deployment -eq 'VisualStudio') {
+    $BundleConfig = @{
+        'readonly'       = $True;
+        'usegitregistry' = $True;
+        'embeddedsha'    = $sha;
+        'deployment'     = $Deployment;
+        'vsversion'      = "17.0";
+    }
+} else {
+    $BundleConfig = @{
+        'readonly'       = $False;
+        'usegitregistry' = $True;
+        'embeddedsha'    = $sha;
+        'deployment'     = $Deployment;
+    }
+}
 
 $scripts_dependencies = @(
     'build_info.cmake',
@@ -66,6 +84,8 @@ try {
         Pop-Location
     }
 
+    Set-Content -Path "out/vcpkg-version.txt" -Value $VcpkgBaseVersion -NoNewLine -Encoding Ascii
+    Copy-Item -Path "$PSScriptRoot/vcpkg-cmd.cmd" -Destination 'out/vcpkg-cmd.cmd'
     Copy-Item -Path "$SignedFilesRoot/vcpkg-init" -Destination 'out/vcpkg-init'
     Copy-Item -Path "$SignedFilesRoot/vcpkg-init.ps1" -Destination 'out/vcpkg-init.ps1'
     Copy-Item -Path "$SignedFilesRoot/vcpkg-init.cmd" -Destination 'out/vcpkg-init.cmd'
@@ -75,16 +95,9 @@ try {
     New-Item -Path 'out/scripts/posh-vcpkg/0.0.1' -ItemType 'Directory' -Force
     Copy-Item -Path "$SignedFilesRoot/posh-vcpkg.psm1" -Destination 'out/scripts/posh-vcpkg/0.0.1/posh-vcpkg.psm1'
 
-    $bundleConfig = @{
-        'readonly'       = $ReadOnly;
-        'usegitregistry' = $True;
-        'embeddedsha'    = $sha;
-        'deployment'     = $Deployment;
-    }
-
     New-Item -Path "out/.vcpkg-root" -ItemType "File"
     Set-Content -Path "out/vcpkg-bundle.json" `
-        -Value (ConvertTo-Json -InputObject $bundleConfig) `
+        -Value (ConvertTo-Json -InputObject $BundleConfig) `
         -Encoding Ascii
 
     if (-not [String]::IsNullOrEmpty($DestinationTarball)) {

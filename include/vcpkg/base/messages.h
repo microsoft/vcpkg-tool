@@ -367,6 +367,8 @@ namespace vcpkg::msg
     {
         return format(msgErrorMessage).append(m, args...);
     }
+
+    inline LocalizedString format_error(const LocalizedString& msg) { return format(msgErrorMessage).append(msg); }
 }
 
 namespace vcpkg
@@ -2687,6 +2689,7 @@ namespace vcpkg
                     "Pushing {vendor} to \"{path}\" failed. Use --debug for more information.");
     DECLARE_MESSAGE(RegistryCreated, (msg::path), "", "Successfully created registry at {path}");
     DECLARE_MESSAGE(RegeneratesArtifactRegistry, (), "", "Regenerates an artifact registry.");
+    DECLARE_MESSAGE(RegistryValueWrongType, (msg::path), "", "The registry value {path} was an unexpected type.");
     DECLARE_MESSAGE(RemoveDependencies,
                     (),
                     "",
@@ -2954,20 +2957,6 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is the name of a port dependency.",
                     "- dependency {value} is not supported.");
-    DECLARE_MESSAGE(UnsupportedSupportsExpression,
-                    (msg::package_name, msg::supports_expression, msg::triplet),
-                    "",
-                    "{package_name} is only supported on '{supports_expression}', "
-                    "which does not match {triplet}. This usually means that there are known "
-                    "build failures, or runtime problems, when building other platforms. To ignore this and attempt to "
-                    "build {package_name} anyway, rerun vcpkg with `--allow-unsupported`.");
-    DECLARE_MESSAGE(
-        UnsupportedSupportsExpressionWarning,
-        (msg::package_name, msg::supports_expression, msg::triplet),
-        "",
-        "{package_name} is only supported on '{supports_expression}', "
-        "which does not match {triplet}. This usually means that there are known build failures, "
-        "or runtime problems, when building other platforms. Proceeding anyway due to `--allow-unsupported`.");
     DECLARE_MESSAGE(UnsupportedShortOptions,
                     (msg::value),
                     "'{value}' is the short option given",

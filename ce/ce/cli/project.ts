@@ -17,11 +17,10 @@ export interface ActivationOptions {
   json?: Uri;
 }
 
-export async function activate(session: Session, artifacts: Array<ResolvedArtifact>, registries: RegistryDisplayContext, createUndoFile: boolean, options?: ActivationOptions) {
+export async function activate(session: Session, artifacts: Array<ResolvedArtifact>, registries: RegistryDisplayContext, options?: ActivationOptions) {
   // install the items in the project
   const success = await acquireArtifacts(session, artifacts, registries, options);
   if (success) {
-    const backupFile = createUndoFile ? session.tmpFolder.join(`previous-environment-${Date.now().toFixed()}.json`) : undefined;
     const activation = new Activation(session);
     for (const artifact of artifacts) {
       if (!await artifact.artifact.loadActivationSettings(activation)) {
@@ -30,7 +29,7 @@ export async function activate(session: Session, artifacts: Array<ResolvedArtifa
       }
     }
 
-    await activation.activate(backupFile, options?.msbuildProps, options?.json);
+    await activation.activate(session.nextPreviousEnvironment, options?.msbuildProps, options?.json);
   }
 
   return success;

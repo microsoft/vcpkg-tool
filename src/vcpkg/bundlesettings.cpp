@@ -64,11 +64,12 @@ namespace vcpkg
 
     std::string BundleSettings::to_string() const
     {
-        return fmt::format("readonly={}, usegitregistry={}, embeddedsha={}, deployment={}",
+        return fmt::format("readonly={}, usegitregistry={}, embeddedsha={}, deployment={}, vsversion={}",
                            read_only,
                            use_git_registry,
                            embedded_git_sha.value_or("nullopt"),
-                           deployment);
+                           deployment,
+                           vsversion.value_or("nullopt"));
     }
 
     ExpectedL<BundleSettings> try_parse_bundle_settings(const FileContents& bundle_contents)
@@ -85,7 +86,8 @@ namespace vcpkg
         if (!parse_optional_json_bool(*doc, "readonly", ret.read_only) ||
             !parse_optional_json_bool(*doc, "usegitregistry", ret.use_git_registry) ||
             !parse_optional_json_string(*doc, "embeddedsha", ret.embedded_git_sha) ||
-            !parse_optional_json_string(*doc, "deployment", maybe_deployment_string))
+            !parse_optional_json_string(*doc, "deployment", maybe_deployment_string) ||
+            !parse_optional_json_string(*doc, "vsversion", ret.vsversion))
         {
             return msg::format(msgInvalidBundleDefinition);
         }

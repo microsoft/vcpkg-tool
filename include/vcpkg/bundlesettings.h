@@ -22,6 +22,7 @@ namespace vcpkg
         bool use_git_registry = false;
         Optional<std::string> embedded_git_sha;
         DeploymentKind deployment = DeploymentKind::Git;
+        Optional<std::string> vsversion;
 
         std::string to_string() const;
     };

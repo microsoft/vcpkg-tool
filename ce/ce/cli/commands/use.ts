@@ -57,7 +57,7 @@ export class UseCommand extends Command {
       return false;
     }
 
-    const success = await activate(session, artifacts, resolver, false, { force: this.commandLine.force, language: this.commandLine.language, allLanguages: this.commandLine.allLanguages });
+    const success = await activate(session, artifacts, resolver, { force: this.commandLine.force, language: this.commandLine.language, allLanguages: this.commandLine.allLanguages });
     if (success) {
       log(i`Activating individual artifacts`);
     } else {

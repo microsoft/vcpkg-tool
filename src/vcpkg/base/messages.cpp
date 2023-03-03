@@ -1151,6 +1151,7 @@ namespace vcpkg
     REGISTER_MESSAGE(PushingVendorFailed);
     REGISTER_MESSAGE(RegistryCreated);
     REGISTER_MESSAGE(RegeneratesArtifactRegistry);
+    REGISTER_MESSAGE(RegistryValueWrongType);
     REGISTER_MESSAGE(RemoveDependencies);
     REGISTER_MESSAGE(RemovePackageConflict);
     REGISTER_MESSAGE(ResponseFileCode);
@@ -1243,8 +1244,6 @@ namespace vcpkg
     REGISTER_MESSAGE(UnsupportedPort);
     REGISTER_MESSAGE(UnsupportedPortDependency);
     REGISTER_MESSAGE(UnsupportedShortOptions);
-    REGISTER_MESSAGE(UnsupportedSupportsExpression);
-    REGISTER_MESSAGE(UnsupportedSupportsExpressionWarning);
     REGISTER_MESSAGE(UnsupportedSyntaxInCDATA);
     REGISTER_MESSAGE(UnsupportedSystemName);
     REGISTER_MESSAGE(UnsupportedToolchain);
