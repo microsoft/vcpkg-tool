@@ -320,13 +320,14 @@ namespace
                                      .append_raw(compress_result.error()));
                 return;
             }
+            size_t http_remotes_pushed = 0;
             for (auto&& put_url_template : m_put_url_templates)
             {
                 auto url = put_url_template.instantiate_variables(request.info);
                 auto maybe_success = put_file(fs, url, m_secrets, put_url_template.headers_for_put, tmp_archive_path);
                 if (maybe_success)
                 {
-                    m_http_remotes_pushed++;
+                    http_remotes_pushed++;
                     continue;
                 }
 
@@ -362,17 +363,9 @@ namespace
             }
             if (!m_put_url_templates.empty())
             {
-                msg_sink.println(msgUploadedBinaries, msg::count = m_http_remotes_pushed, msg::vendor = "HTTP remotes");
+                msg_sink.println(msgUploadedBinaries, msg::count = http_remotes_pushed, msg::vendor = "HTTP remotes");
             }
         }
-
-        /*void print_upload_statistics(MessageSink& msg_sink) override
-        {
-            if (!m_put_url_templates.empty())
-            {
-                msg_sink.println(msgUploadedBinaries, msg::count = m_http_remotes_pushed, msg::vendor = "HTTP remotes");
-            }
-        };*/
 
         void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
@@ -414,7 +407,6 @@ namespace
         std::vector<Path> m_write_dirs;
         std::vector<UrlTemplate> m_put_url_templates;
         std::vector<std::string> m_secrets;
-        size_t m_http_remotes_pushed = 0;
     };
     struct HttpGetBinaryProvider : IBinaryProvider
     {
