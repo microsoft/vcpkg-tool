@@ -92,7 +92,7 @@ namespace vcpkg::CMakeVars
         std::string extraction_file;
 
         extraction_file.append("cmake_minimum_required(VERSION 3.5)\n"
-                               "macro(vcpkg_triplet_file VCPKG_TRIPLET_ID)\n",
+                               "macro(vcpkg_triplet_file VCPKG_TRIPLET_ID)\n"
                                "set(_vcpkg_triplet_file_BACKUP_CURRENT_LIST_FILE \"${CMAKE_CURRENT_LIST_FILE}\")\n");
 
         for (auto&& p : emitted_triplets)
@@ -101,7 +101,7 @@ namespace vcpkg::CMakeVars
             fmt::format_to(std::back_inserter(extraction_file),
                            "if(VCPKG_TRIPLET_ID EQUAL {})\n"
                            "set(CMAKE_CURRENT_LIST_FILE \"{}\")\n"
-                           "get_filename_component(CMAKE_CURRENT_LIST_DIR \"${CMAKE_CURRENT_LIST_FILE}\" DIRECTORY)\n"
+                           "get_filename_component(CMAKE_CURRENT_LIST_DIR \"${{CMAKE_CURRENT_LIST_FILE}}\" DIRECTORY)\n"
                            "{}\n"
                            "endif()\n",
                            p.second,
