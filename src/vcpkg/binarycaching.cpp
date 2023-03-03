@@ -1317,6 +1317,7 @@ namespace vcpkg
             auto instance = current_instance;
             current_instance = nullptr;
             msg::write_unlocalized_text_to_stdout(Color::none, "Wait for end\n");
+            instance->bg_msg_sink.publish_directly_to_out_sink();
             instance->end_push_thread = true;
             instance->actions_to_push_notifier.notify_all();
             instance->push_thread.join();
@@ -1325,7 +1326,11 @@ namespace vcpkg
     }
 
     BinaryCache::BinaryCache(Filesystem& filesystem)
-        : push_thread([this]() { push_thread_main(); }), end_push_thread{false}, filesystem(filesystem)
+        : bg_msg_sink(stdout_sink)
+        , push_thread([this]() { push_thread_main(); })
+        , end_push_thread{false}
+        , filesystem(filesystem)
+
     {
         Checks::check_exit(VCPKG_LINE_INFO, current_instance == nullptr);
         current_instance = this;
@@ -1447,6 +1452,8 @@ namespace vcpkg
         }
     }
 
+    void BinaryCache::print_push_success_messages() { bg_msg_sink.print_published(); }
+
     void BinaryCache::prefetch(View<InstallPlanAction> actions)
     {
         std::vector<CacheStatus*> cache_status{actions.size()};
@@ -1523,7 +1530,7 @@ namespace vcpkg
             {
                 for (auto&& provider : m_providers)
                 {
-                    provider->push_success(action_to_push.request, stdout_sink);
+                    provider->push_success(action_to_push.request, bg_msg_sink);
                 }
                 if (action_to_push.clean_after_push)
                 {

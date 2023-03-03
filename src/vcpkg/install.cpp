@@ -546,6 +546,7 @@ namespace vcpkg
         binary_cache.prefetch(action_plan.install_actions);
         for (auto&& action : action_plan.install_actions)
         {
+            binary_cache.print_push_success_messages();
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
             auto result =
                 perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder);

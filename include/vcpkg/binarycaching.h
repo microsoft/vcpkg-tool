@@ -162,6 +162,8 @@ namespace vcpkg
         /// Called upon a successful build of `action` to store those contents in the binary cache.
         void push_success(const InstallPlanAction& action, Path package_dir);
 
+        void print_push_success_messages();
+
         /// Gives the IBinaryProvider an opportunity to batch any downloading or server communication for
         /// executing `actions`.
         void prefetch(View<InstallPlanAction> actions);
@@ -179,6 +181,7 @@ namespace vcpkg
         };
         void push_thread_main();
 
+        BGMessageSink bg_msg_sink;
         std::unordered_map<std::string, CacheStatus> m_status;
         std::vector<std::unique_ptr<IBinaryProvider>> m_providers;
         bool needs_nuspec_data = false;
