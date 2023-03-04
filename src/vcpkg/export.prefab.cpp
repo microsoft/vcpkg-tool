@@ -509,7 +509,7 @@ namespace vcpkg::Export::Prefab
             for (const auto& triplet : triplets)
             {
                 const auto listfile =
-                    paths.installed().vcpkg_dir_info() / fmt::format("{}_{}_{}", name, norm_version, triplet) + ".list";
+                    paths.installed().vcpkg_dir_info() / fmt::format("{}_{}_{}.list", name, norm_version, triplet);
                 const auto installed_dir = paths.packages() / fmt::format("{}_{}", name, triplet);
                 if (!(utils.exists(listfile, IgnoreErrors{})))
                 {
