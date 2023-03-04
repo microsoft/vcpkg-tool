@@ -1567,7 +1567,7 @@ namespace vcpkg
                     auto s = dep.constraint.value;
                     if (dep.constraint.port_version != 0)
                     {
-                        Strings::append(s, '#', dep.constraint.port_version);
+                        fmt::format_to(std::back_inserter(s), "#{}", dep.constraint.port_version);
                     }
                     dep_obj.insert(DependencyDeserializer::VERSION_GE, std::move(s));
                 }

@@ -76,10 +76,10 @@ namespace
 
         auto rootblock_ffi = static_cast<VS_FIXEDFILEINFO*>(rootblock);
 
-        return Strings::format("%d.%d.%d",
-                               static_cast<int>(HIWORD(rootblock_ffi->dwProductVersionMS)),
-                               static_cast<int>(LOWORD(rootblock_ffi->dwProductVersionMS)),
-                               static_cast<int>(HIWORD(rootblock_ffi->dwProductVersionLS)));
+        return fmt::format("{}.{}.{}",
+                           static_cast<int>(HIWORD(rootblock_ffi->dwProductVersionMS)),
+                           static_cast<int>(LOWORD(rootblock_ffi->dwProductVersionMS)),
+                           static_cast<int>(HIWORD(rootblock_ffi->dwProductVersionLS)));
 #else
         return "unknown";
 #endif

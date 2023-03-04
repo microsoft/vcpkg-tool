@@ -16,8 +16,10 @@
 
 #include <initializer_list>
 #include <memory>
+#include <string>
 #include <system_error>
 #include <utility>
+#include <vector>
 
 #if defined(_WIN32)
 #define VCPKG_PREFERRED_SEPARATOR "\\"
