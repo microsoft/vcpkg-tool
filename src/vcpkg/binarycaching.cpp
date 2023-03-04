@@ -1313,11 +1313,21 @@ namespace vcpkg
                 // Don't join yourself
                 return;
             }
+            bool have_remaining_packages = instance->remaining_packages_to_push > 0;
+            if (have_remaining_packages)
+            {
+                msg::write_unlocalized_text_to_stdout(Color::none,
+                                                      fmt::format("Wait until the remaining {} packages are uploaded\n",
+                                                                  instance->remaining_packages_to_push));
+            }
             instance->bg_msg_sink.publish_directly_to_out_sink();
             instance->end_push_thread = true;
             instance->actions_to_push_notifier.notify_all();
             instance->push_thread.join();
-            msg::write_unlocalized_text_to_stdout(Color::none, "Wait for end done \n");
+            if (have_remaining_packages)
+            {
+                msg::write_unlocalized_text_to_stdout(Color::none, "All packages uploaded\n");
+            }
         }
     }
 
@@ -1441,6 +1451,7 @@ namespace vcpkg
                 nuspec = generate_nuspec(package_dir, action, nuget_ref);
             }
             std::unique_lock<std::mutex> lock(actions_to_push_mutex);
+            remaining_packages_to_push++;
             actions_to_push.push_back(ActionToPush{
                 BinaryProviderPushRequest{BinaryPackageInformation{action, std::move(nuspec)}, package_dir},
                 clean_packages});
@@ -1524,6 +1535,11 @@ namespace vcpkg
             // Now, consume all of `my_tasks` before taking the lock again.
             for (auto& action_to_push : my_tasks)
             {
+                if (end_push_thread)
+                {
+                    msg::write_unlocalized_text_to_stdout(
+                        Color::none, fmt::format("Upload remaining {} package(s)\n", remaining_packages_to_push));
+                }
                 for (auto&& provider : m_providers)
                 {
                     provider->push_success(action_to_push.request, bg_msg_sink);
@@ -1532,6 +1548,7 @@ namespace vcpkg
                 {
                     filesystem.remove_all(action_to_push.request.package_dir, VCPKG_LINE_INFO);
                 }
+                remaining_packages_to_push--;
             }
             my_tasks.clear();
         }

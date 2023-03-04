@@ -190,6 +190,7 @@ namespace vcpkg
         std::vector<ActionToPush> actions_to_push;
         std::thread push_thread;
         std::atomic_bool end_push_thread;
+        std::atomic_int remaining_packages_to_push = 0;
         Filesystem& filesystem;
     };
 
