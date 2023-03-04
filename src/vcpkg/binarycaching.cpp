@@ -1308,7 +1308,11 @@ namespace vcpkg
         {
             auto instance = current_instance;
             current_instance = nullptr;
-            msg::write_unlocalized_text_to_stdout(Color::none, "Wait for end\n");
+            if (std::this_thread::get_id() == instance->push_thread.get_id())
+            {
+                // Don't join yourself
+                return;
+            }
             instance->bg_msg_sink.publish_directly_to_out_sink();
             instance->end_push_thread = true;
             instance->actions_to_push_notifier.notify_all();
