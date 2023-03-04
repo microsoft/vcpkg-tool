@@ -304,7 +304,7 @@ namespace vcpkg::Export::IFW
     <Name>vcpkg</Name>
     <Version>1.0.0</Version>
     <StartMenuDir>vcpkg</StartMenuDir>
-    <TargetDir>@RootDir@/src/vcpkg</TargetDir>{%s}
+    <TargetDir>@RootDir@/src/vcpkg</TargetDir>{}
 </Installer>
 )###",
                                   formatted_repo_url),
