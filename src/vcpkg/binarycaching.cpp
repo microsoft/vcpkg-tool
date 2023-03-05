@@ -1300,33 +1300,21 @@ namespace vcpkg
             .value_or_exit(VCPKG_LINE_INFO);
     }
 
-    BinaryCache* BinaryCache::current_instance;
-
     void BinaryCache::wait_for_async_complete()
     {
-        if (current_instance)
+        bool have_remaining_packages = remaining_packages_to_push > 0;
+        if (have_remaining_packages)
         {
-            auto instance = current_instance;
-            current_instance = nullptr;
-            if (std::this_thread::get_id() == instance->push_thread.get_id())
-            {
-                // Don't join yourself
-                return;
-            }
-            bool have_remaining_packages = instance->remaining_packages_to_push > 0;
-            if (have_remaining_packages)
-            {
-                instance->bg_msg_sink.print_published();
-                msg::println(msgWaitUntilPackagesUploaded, msg::count = instance->remaining_packages_to_push);
-            }
-            instance->bg_msg_sink.publish_directly_to_out_sink();
-            instance->end_push_thread = true;
-            instance->actions_to_push_notifier.notify_all();
-            instance->push_thread.join();
-            if (have_remaining_packages)
-            {
-                msg::println(msgAllPackagesUploaded);
-            }
+            bg_msg_sink.print_published();
+            msg::println(msgWaitUntilPackagesUploaded, msg::count = remaining_packages_to_push);
+        }
+        bg_msg_sink.publish_directly_to_out_sink();
+        end_push_thread = true;
+        actions_to_push_notifier.notify_all();
+        push_thread.join();
+        if (have_remaining_packages)
+        {
+            msg::println(msgAllPackagesUploaded);
         }
     }
 
@@ -1337,8 +1325,6 @@ namespace vcpkg
         , filesystem(filesystem)
 
     {
-        Checks::check_exit(VCPKG_LINE_INFO, current_instance == nullptr);
-        current_instance = this;
     }
 
     BinaryCache::BinaryCache(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
@@ -1347,7 +1333,7 @@ namespace vcpkg
         install_providers_for(args, paths);
     }
 
-    BinaryCache::~BinaryCache() { BinaryCache::wait_for_async_complete(); }
+    BinaryCache::~BinaryCache() { wait_for_async_complete(); }
 
     void BinaryCache::install_providers(std::vector<std::unique_ptr<IBinaryProvider>>&& providers)
     {

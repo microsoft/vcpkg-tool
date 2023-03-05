@@ -146,8 +146,6 @@ namespace vcpkg
 
     struct BinaryCache
     {
-        static BinaryCache* current_instance;
-        static void wait_for_async_complete();
         BinaryCache(Filesystem& filesystem);
         explicit BinaryCache(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 
@@ -172,6 +170,8 @@ namespace vcpkg
         /// missing packages.
         /// Returns a vector where each index corresponds to the matching index in `actions`.
         std::vector<CacheAvailability> precheck(View<InstallPlanAction> actions);
+
+        void wait_for_async_complete();
 
     private:
         struct ActionToPush

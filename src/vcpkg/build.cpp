@@ -66,9 +66,9 @@ namespace vcpkg::Build
                              const IBuildLogsRecorder& build_logs_recorder,
                              const VcpkgPaths& paths)
     {
-        Checks::exit_with_code(
-            VCPKG_LINE_INFO,
-            perform_ex(args, full_spec, host_triplet, provider, binary_cache, build_logs_recorder, paths));
+        auto code = perform_ex(args, full_spec, host_triplet, provider, binary_cache, build_logs_recorder, paths);
+        binary_cache.wait_for_async_complete();
+        Checks::exit_with_code(VCPKG_LINE_INFO, code);
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
