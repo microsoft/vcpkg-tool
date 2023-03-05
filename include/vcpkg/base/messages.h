@@ -3303,7 +3303,7 @@ namespace vcpkg
     DECLARE_MESSAGE(WaitUntilPackagesUploaded,
                     (msg::count),
                     "",
-                    "Wait until the remaining {count} packages are uploaded");
+                    "Wait until the remaining packages ({count}) are uploaded");
     DECLARE_MESSAGE(WarningMessageMustUsePrintWarning,
                     (msg::value),
                     "{value} is is a localized message name like WarningMessageMustUsePrintWarning",

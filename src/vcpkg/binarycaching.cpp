@@ -1316,6 +1316,7 @@ namespace vcpkg
             bool have_remaining_packages = instance->remaining_packages_to_push > 0;
             if (have_remaining_packages)
             {
+                instance->bg_msg_sink.print_published();
                 msg::println(msgWaitUntilPackagesUploaded, msg::count = instance->remaining_packages_to_push);
             }
             instance->bg_msg_sink.publish_directly_to_out_sink();
