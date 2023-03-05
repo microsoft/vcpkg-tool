@@ -1316,9 +1316,7 @@ namespace vcpkg
             bool have_remaining_packages = instance->remaining_packages_to_push > 0;
             if (have_remaining_packages)
             {
-                msg::write_unlocalized_text_to_stdout(Color::none,
-                                                      fmt::format("Wait until the remaining {} packages are uploaded\n",
-                                                                  instance->remaining_packages_to_push));
+                msg::println(msgWaitUntilPackagesUploaded, msg::count = instance->remaining_packages_to_push);
             }
             instance->bg_msg_sink.publish_directly_to_out_sink();
             instance->end_push_thread = true;
@@ -1326,7 +1324,7 @@ namespace vcpkg
             instance->push_thread.join();
             if (have_remaining_packages)
             {
-                msg::write_unlocalized_text_to_stdout(Color::none, "All packages uploaded\n");
+                msg::println(msgAllPackagesUploaded);
             }
         }
     }
@@ -1537,8 +1535,7 @@ namespace vcpkg
             {
                 if (end_push_thread)
                 {
-                    msg::write_unlocalized_text_to_stdout(
-                        Color::none, fmt::format("Upload remaining {} package(s)\n", remaining_packages_to_push));
+                    msg::println(msgUploadRemainingPackages, msg::count = remaining_packages_to_push);
                 }
                 for (auto&& provider : m_providers)
                 {
