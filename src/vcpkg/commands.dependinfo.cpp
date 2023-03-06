@@ -171,15 +171,15 @@ namespace vcpkg::Commands::DependInfo
                 }
 
                 const std::string name = Strings::replace_all(std::string{package.package}, "-", "_");
-                s.append(Strings::format("%s;", name));
+                fmt::format_to(std::back_inserter(s), "{};", name);
                 for (const auto& d : package.dependencies)
                 {
                     const std::string dependency_name = Strings::replace_all(std::string{d}, "-", "_");
-                    s.append(Strings::format("%s -> %s;", name, dependency_name));
+                    fmt::format_to(std::back_inserter(s), "{} -> {};", name, dependency_name);
                 }
             }
 
-            s.append(Strings::format("empty [label=\"%d singletons...\"]; }", empty_node_count));
+            fmt::format_to(std::back_inserter(s), "empty [label=\"{} singletons...\"]; }", empty_node_count);
             return s;
         }
 
@@ -193,19 +193,17 @@ namespace vcpkg::Commands::DependInfo
             for (const auto& package : depend_info)
             {
                 const std::string name = package.package;
-                nodes.append(Strings::format("<Node Id=\"%s\" />", name));
+                fmt::format_to(std::back_inserter(nodes), "<Node Id=\"{}\" />", name);
 
                 // Iterate over dependencies.
                 for (const auto& d : package.dependencies)
                 {
-                    links.append(Strings::format("<Link Source=\"%s\" Target=\"%s\" />", name, d));
+                    fmt::format_to(std::back_inserter(links), "<Link Source=\"{}\" Target=\"{}\" />", name, d);
                 }
             }
 
-            s.append(Strings::format("<Nodes>%s</Nodes>", nodes));
-
-            s.append(Strings::format("<Links>%s</Links>", links));
-
+            fmt::format_to(std::back_inserter(s), "<Nodes>{}</Nodes>", nodes);
+            fmt::format_to(std::back_inserter(s), "<Links>{}</Links>", links);
             s.append("</DirectedGraph>");
             return s;
         }
@@ -283,7 +281,7 @@ namespace vcpkg::Commands::DependInfo
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("depend-info sqlite3"),
+        [] { return create_example_string("depend-info sqlite3"); },
         1,
         1,
         {DEPEND_SWITCHES, DEPEND_SETTINGS},
@@ -302,7 +300,7 @@ namespace vcpkg::Commands::DependInfo
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
-                std::string{arg}, default_triplet, COMMAND_STRUCTURE.example_text, paths);
+                std::string{arg}, default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
         });
         print_default_triplet_warning(args, args.command_arguments);
 

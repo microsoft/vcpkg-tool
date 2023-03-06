@@ -8,7 +8,7 @@
 namespace vcpkg::Commands::Hash
 {
     const CommandStructure COMMAND_STRUCTURE = {
-        Strings::format("The argument should be a file path\n%s", create_example_string("hash boost_1_62_0.tar.bz2")),
+        [] { return create_example_string("hash boost_1_62_0.tar.bz2"); },
         1,
         2,
         {},

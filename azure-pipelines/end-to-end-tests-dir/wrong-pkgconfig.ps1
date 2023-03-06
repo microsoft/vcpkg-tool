@@ -8,6 +8,10 @@ Run-Vcpkg @commonArgs install "wrong-pkgconfig[header-only-good]"
 Throw-IfFailed
 Remove-Item -Recurse -Force $installRoot
 
+Run-Vcpkg @commonArgs install "wrong-pkgconfig[header-only-in-lib]"
+Throw-IfFailed
+Remove-Item -Recurse -Force $installRoot
+
 Run-Vcpkg @commonArgs install "wrong-pkgconfig[header-only-bad]"
 Throw-IfNotFailed
 Remove-Item -Recurse -Force $installRoot

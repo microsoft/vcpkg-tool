@@ -6,7 +6,7 @@ import { createHash } from 'crypto';
 import { MetadataFile } from './amf/metadata-file';
 import { deactivate } from './artifacts/activation';
 import { Artifact, InstalledArtifact } from './artifacts/artifact';
-import { configurationName, defaultConfig, globalConfigurationFile, postscriptVariable, undo } from './constants';
+import { configurationName, defaultConfig, postscriptVariable, undo } from './constants';
 import { FileSystem } from './fs/filesystem';
 import { HttpsFileSystem } from './fs/http-filesystem';
 import { LocalFileSystem } from './fs/local-filesystem';
@@ -56,6 +56,8 @@ export type SessionSettings = {
   readonly vcpkgDownloads?: string;
   readonly vcpkgRegistriesCache?: string;
   readonly telemetryFile?: string;
+  readonly nextPreviousEnvironment?: string;
+  readonly globalConfig?: string;
 }
 
 interface AcquiredArtifactEntry {
@@ -86,7 +88,7 @@ export class Session {
   readonly fileSystem: FileSystem;
   readonly channels: Channels;
   readonly homeFolder: Uri;
-  readonly tmpFolder: Uri;
+  readonly nextPreviousEnvironment: Uri;
   readonly installFolder: Uri;
   readonly registryFolder: Uri;
   readonly telemetryFile: Uri | undefined;
@@ -128,12 +130,11 @@ export class Session {
 
     this.homeFolder = this.fileSystem.file(settings.homeFolder);
     this.downloads = this.processVcpkgArg(settings.vcpkgDownloads, 'downloads');
-    this.globalConfig = this.homeFolder.join(globalConfigurationFile);
-
-    this.tmpFolder = this.homeFolder.join('tmp');
+    this.globalConfig = this.processVcpkgArg(settings.globalConfig, configurationName);
 
     this.registryFolder = this.processVcpkgArg(settings.vcpkgRegistriesCache, 'registries').join('artifact');
     this.installFolder = this.processVcpkgArg(settings.vcpkgArtifactsRoot, 'artifacts');
+    this.nextPreviousEnvironment = this.processVcpkgArg(settings.nextPreviousEnvironment, `previous-environment-${Date.now().toFixed()}.json`);
 
     const postscriptFileName = this.environment[postscriptVariable];
     this.postscriptFile = postscriptFileName ? this.fileSystem.file(postscriptFileName) : undefined;
