@@ -63,7 +63,7 @@ export class ActivateCommand extends Command {
       return false;
     }
 
-    if (await activate(session, resolved, projectResolver, true, options)) {
+    if (await activate(session, resolved, projectResolver, options)) {
       session.channels.message(i`Project ${projectFile(projectManifest.metadata.file.parent)} activated`);
       return true;
     }

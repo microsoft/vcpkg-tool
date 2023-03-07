@@ -262,9 +262,9 @@ namespace
                             .append_raw('\n')
                             .append(msgAddVersionVersionIs, msg::version = port_version.version)
                             .append_raw('\n')
-                            .append(msgAddVersionOldShaIs, msg::value = it->second)
+                            .append(msgAddVersionOldShaIs, msg::commit_sha = it->second)
                             .append_raw('\n')
-                            .append(msgAddVersionNewShaIs, msg::value = git_tree)
+                            .append(msgAddVersionNewShaIs, msg::commit_sha = git_tree)
                             .append_raw('\n')
                             .append(msgAddVersionUpdateVersionReminder)
                             .append_raw('\n')
@@ -302,7 +302,7 @@ namespace
 
         msg::println_error(msg::format(msgAddVersionUnableToParseVersionsFile, msg::path = version_db_file_path)
                                .append_raw('\n')
-                               .append_raw(maybe_versions.error()));
+                               .append(maybe_versions.error()));
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 }
@@ -318,7 +318,7 @@ namespace vcpkg::Commands::AddVersion
     };
 
     const CommandStructure COMMAND_STRUCTURE{
-        create_example_string(R"###(x-add-version <port name>)###"),
+        [] { return create_example_string("x-add-version <port name>"); },
         0,
         1,
         {{COMMAND_SWITCHES}, {}, {}},
@@ -398,7 +398,7 @@ namespace vcpkg::Commands::AddVersion
 
             if (!fs.exists(port_dir, IgnoreErrors{}))
             {
-                msg::println_error(msgAddVersionPortDoesNotExist, msg::package_name = port_name);
+                msg::println_error(msgPortDoesNotExist, msg::package_name = port_name);
                 Checks::check_exit(VCPKG_LINE_INFO, !add_all);
                 continue;
             }

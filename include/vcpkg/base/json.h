@@ -250,13 +250,21 @@ namespace vcpkg::Json
         Value& operator[](StringView key) noexcept
         {
             auto res = this->get(key);
-            vcpkg::Checks::check_exit(VCPKG_LINE_INFO, res != nullptr, "missing key: \"%s\"", key);
+            if (res == nullptr)
+            {
+                Checks::unreachable(VCPKG_LINE_INFO, fmt::format("JSON object missing key {}", key));
+            }
+
             return *res;
         }
         const Value& operator[](StringView key) const noexcept
         {
             auto res = this->get(key);
-            vcpkg::Checks::check_exit(VCPKG_LINE_INFO, res != nullptr, "missing key: \"%s\"", key);
+            if (res == nullptr)
+            {
+                Checks::unreachable(VCPKG_LINE_INFO, fmt::format("JSON object missing key {}", key));
+            }
+
             return *res;
         }
 
@@ -312,12 +320,16 @@ namespace vcpkg::Json
         underlying_t underlying_;
     };
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse_file(const Filesystem&,
-                                                                                   const Path&,
-                                                                                   std::error_code& ec);
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse(StringView text, StringView origin = {});
-    std::pair<Value, JsonStyle> parse_file(LineInfo li, const Filesystem&, const Path&);
-    ExpectedS<Json::Object> parse_object(StringView text, StringView origin = {});
+    struct ParsedJson
+    {
+        Value value;
+        JsonStyle style;
+    };
+
+    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse_file(const Filesystem&, const Path&, std::error_code& ec);
+    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse(StringView text, StringView origin = {});
+    ParsedJson parse_file(LineInfo li, const Filesystem&, const Path&);
+    ExpectedL<Json::Object> parse_object(StringView text, StringView origin = {});
 
     std::string stringify(const Value&);
     std::string stringify(const Value&, JsonStyle style);

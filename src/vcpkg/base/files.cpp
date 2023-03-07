@@ -1520,6 +1520,18 @@ namespace vcpkg
         return maybe_contents;
     }
 
+    ExpectedL<FileContents> Filesystem::try_read_contents(const Path& file_path) const
+    {
+        std::error_code ec;
+        auto maybe_contents = this->read_contents(file_path, ec);
+        if (ec)
+        {
+            return format_filesystem_call_error(ec, __func__, {file_path});
+        }
+
+        return FileContents{std::move(maybe_contents), file_path.native()};
+    }
+
     Path Filesystem::find_file_recursively_up(const Path& starting_dir, const Path& filename, LineInfo li) const
     {
         std::error_code ec;
@@ -1888,8 +1900,11 @@ namespace vcpkg
 
         if (ec)
         {
-            Checks::exit_with_message(
-                li, "Failure to remove_all(\"%s\") due to file \"%s\": %s", base, failure_point, ec.message());
+            Checks::msg_exit_with_error(
+                li,
+                msg::format(msgFailedToDeleteDueToFile, msg::value = base, msg::path = failure_point)
+                    .append_raw(' ')
+                    .append_raw(ec.message()));
         }
     }
 
@@ -1936,8 +1951,11 @@ namespace vcpkg
 
         if (ec)
         {
-            Checks::exit_with_message(
-                li, "Failure to remove_all_inside(\"%s\") due to file \"%s\": %s", base, failure_point, ec.message());
+            Checks::msg_exit_with_error(
+                li,
+                msg::format(msgFailedToDeleteInsideDueToFile, msg::value = base, msg::path = failure_point)
+                    .append_raw(' ')
+                    .append_raw(ec.message()));
         }
     }
 
@@ -3656,8 +3674,7 @@ namespace vcpkg
         auto is_wildcard = [](char c) { return c == '?' || c == '*'; };
         if (std::any_of(first, last, is_wildcard))
         {
-            Checks::exit_with_message(
-                VCPKG_LINE_INFO, "Attempt to fix case of a path containing wildcards: %s", source);
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgInvalidArgumentRequiresNoWildcards, msg::path = source);
         }
 
         std::string in_progress;

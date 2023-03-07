@@ -5,7 +5,7 @@
 using vcpkg::StringView;
 using namespace vcpkg::PlatformExpression;
 
-static vcpkg::ExpectedS<Expr> parse_expr(StringView s)
+static vcpkg::ExpectedL<Expr> parse_expr(StringView s)
 {
     return parse_platform_expression(s, MultipleBinaryOperators::Deny);
 }

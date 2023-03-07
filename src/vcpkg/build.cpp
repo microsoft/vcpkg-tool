@@ -72,7 +72,7 @@ namespace vcpkg::Build
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("build zlib:x64-windows"),
+        [] { return create_example_string("build zlib:x64-windows"); },
         1,
         1,
         {{}, {}},
@@ -186,7 +186,7 @@ namespace vcpkg::Build
 
         BinaryCache binary_cache{args, paths};
         const FullPackageSpec spec = check_and_get_full_package_spec(
-            std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+            std::move(first_arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
         print_default_triplet_warning(args, {&args.command_arguments[0], 1});
 
         auto& fs = paths.get_filesystem();
@@ -318,8 +318,12 @@ namespace vcpkg
     static ZStringView to_vcvarsall_toolchain(StringView target_architecture, const Toolset& toolset, Triplet triplet)
     {
         auto maybe_target_arch = to_cpu_architecture(target_architecture);
-        Checks::check_maybe_upgrade(
-            VCPKG_LINE_INFO, maybe_target_arch.has_value(), "Invalid architecture string: %s", target_architecture);
+        if (!maybe_target_arch.has_value())
+        {
+            msg::println_error(msgInvalidArchitecture, msg::value = target_architecture);
+            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
+        }
+
         auto target_arch = maybe_target_arch.value_or_exit(VCPKG_LINE_INFO);
         // Ask for an arm64 compiler when targeting arm64ec; arm64ec is selected with a different flag on the compiler
         // command line.
@@ -692,13 +696,12 @@ namespace vcpkg
         const auto arch = to_vcvarsall_toolchain(pre_build_info.target_architecture, toolset, pre_build_info.triplet);
         const auto target = to_vcvarsall_target(pre_build_info.cmake_system_name);
 
-        return vcpkg::Command{"cmd"}.string_arg("/c").raw_arg(
-            Strings::format(R"("%s" %s %s %s %s 2>&1 <NUL)",
-                            toolset.vcvarsall,
-                            Strings::join(" ", toolset.vcvarsall_options),
-                            arch,
-                            target,
-                            tonull));
+        return vcpkg::Command{"cmd"}.string_arg("/c").raw_arg(fmt::format(R"("{}" {} {} {} {} 2>&1 <NUL)",
+                                                                          toolset.vcvarsall,
+                                                                          Strings::join(" ", toolset.vcvarsall_options),
+                                                                          arch,
+                                                                          target,
+                                                                          tonull));
 #endif
     }
 
@@ -1749,7 +1752,7 @@ ${CMAKE_CXX_COMPILER}")
 
     BuildInfo read_build_info(const Filesystem& fs, const Path& filepath)
     {
-        const ExpectedS<Paragraph> pghs = Paragraphs::get_single_paragraph(fs, filepath);
+        auto pghs = Paragraphs::get_single_paragraph(fs, filepath);
         if (!pghs)
         {
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgInvalidBuildInfo, msg::error_msg = pghs.error());
@@ -1758,7 +1761,7 @@ ${CMAKE_CXX_COMPILER}")
         return inner_create_buildinfo(*pghs.get());
     }
 
-    static ExpectedS<bool> from_cmake_bool(StringView value, StringView name)
+    static ExpectedL<bool> from_cmake_bool(StringView value, StringView name)
     {
         if (value == "1" || Strings::case_insensitive_ascii_equals(value, "on") ||
             Strings::case_insensitive_ascii_equals(value, "true"))
@@ -1772,11 +1775,7 @@ ${CMAKE_CXX_COMPILER}")
         }
         else
         {
-            return Strings::concat("Error: Unknown boolean setting for ",
-                                   name,
-                                   ": \"",
-                                   value,
-                                   "\". Valid settings are '', '1', '0', 'ON', 'OFF', 'TRUE', and 'FALSE'.");
+            return msg::format(msgUnknownBooleanSetting, msg::option = name, msg::value = value);
         }
     }
 

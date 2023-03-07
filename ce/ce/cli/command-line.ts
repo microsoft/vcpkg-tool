@@ -119,6 +119,14 @@ export class CommandLine {
     return this.switches['z-telemetry-file']?.[0];
   }
 
+  get nextPreviousEnvironment() {
+    return this.switches['z-next-previous-environment']?.[0];
+  }
+
+  get globalConfig() {
+    return this.switches['z-global-config']?.[0];
+  }
+
   get language() {
     const l = this.switches['language'] || [];
     strict.ok((l?.length || 0) < 2, i`Expected a single value for ${cmdSwitch('language')} - found multiple`);

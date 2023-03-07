@@ -485,7 +485,7 @@ namespace vcpkg
             auto it = set.find(name);
             if (it == set.end() && !Strings::starts_with(name, "x-"))
             {
-                it = set.find(Strings::format("x-%s", name));
+                it = set.find(fmt::format("x-{}", name));
             }
 
             return it;
@@ -637,7 +637,7 @@ namespace vcpkg
         table.header("Options");
         VcpkgCmdArguments::append_common_options(table);
         table.blank();
-        table.format("@response_file", msg::format(msgHelpResponseFileCommand));
+        table.format(msg::format(msgResponseFileCode), msg::format(msgHelpResponseFileCommand));
         table.blank();
         table.example(msg::format(msgHelpExampleCommand));
 
@@ -647,9 +647,14 @@ namespace vcpkg
     void print_usage(const CommandStructure& command_structure)
     {
         HelpTableFormatter table;
-        if (!command_structure.example_text.empty())
+        const auto get_example_text = command_structure.get_example_text;
+        if (get_example_text)
         {
-            table.example(command_structure.example_text);
+            auto example_text = get_example_text();
+            if (!example_text.empty())
+            {
+                table.example(example_text.data());
+            }
         }
 
         table.header("Options");
@@ -658,7 +663,7 @@ namespace vcpkg
             auto helpmsg = option.helpmsg;
             if (helpmsg)
             {
-                table.format(Strings::format("--%s", option.name), helpmsg());
+                table.format(fmt::format("--{}", option.name), helpmsg());
             }
         }
         for (auto&& option : command_structure.options.settings)
@@ -666,7 +671,7 @@ namespace vcpkg
             auto helpmsg = option.helpmsg;
             if (helpmsg)
             {
-                table.format(Strings::format("--%s=...", option.name), helpmsg());
+                table.format(fmt::format("--{}=...", option.name), helpmsg());
             }
         }
         for (auto&& option : command_structure.options.multisettings)
@@ -674,7 +679,7 @@ namespace vcpkg
             auto helpmsg = option.helpmsg;
             if (helpmsg)
             {
-                table.format(Strings::format("--%s=...", option.name), helpmsg());
+                table.format(fmt::format("--{}=...", option.name), helpmsg());
             }
         }
 
@@ -806,7 +811,7 @@ namespace vcpkg
         auto maybe_vcpkg_recursive_data = get_environment_variable(RECURSIVE_DATA_ENV);
         if (auto vcpkg_recursive_data = maybe_vcpkg_recursive_data.get())
         {
-            auto rec_doc = Json::parse(*vcpkg_recursive_data).value_or_exit(VCPKG_LINE_INFO).first;
+            auto rec_doc = Json::parse(*vcpkg_recursive_data).value_or_exit(VCPKG_LINE_INFO).value;
             const auto& obj = rec_doc.object(VCPKG_LINE_INFO);
 
             if (auto entry = obj.get(VCPKG_ROOT_ARG_NAME))
@@ -894,8 +899,8 @@ namespace vcpkg
                 msg::println_warning(
                     msgSpecifiedFeatureTurnedOff, msg::command_name = el.flag, msg::option = el.option);
                 msg::println_warning(msgDefaultFlag, msg::option = el.flag);
-                get_global_metrics_collector().track_string(
-                    StringMetric::Warning, Strings::format("warning %s alongside %s", el.flag, el.option));
+                get_global_metrics_collector().track_string(StringMetric::Warning,
+                                                            fmt::format("warning {} alongside {}", el.flag, el.option));
             }
         }
     }
@@ -957,12 +962,13 @@ namespace vcpkg
         return Optional<std::string>(std::move(asset_sources_template));
     }
 
-    std::string create_example_string(const std::string& command_and_arguments)
+    LocalizedString create_example_string(StringView command_and_arguments)
     {
-        std::string cs = Strings::format("Example:\n"
-                                         "  vcpkg %s\n",
-                                         command_and_arguments);
-        return cs;
+        return msg::format(msgExample)
+            .append_raw('\n')
+            .append_indent()
+            .append_raw("vcpkg ")
+            .append_raw(command_and_arguments);
     }
 
     // out-of-line definitions since C++14 doesn't allow inline constexpr static variables
