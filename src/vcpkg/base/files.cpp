@@ -1893,6 +1893,16 @@ namespace vcpkg
         return result;
     }
 
+    void Filesystem::last_access_time(const Path& target, int64_t new_time, vcpkg::LineInfo li) const noexcept
+    {
+        std::error_code ec;
+        this->last_access_time(target, new_time, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {target});
+        }
+    }
+
     void Filesystem::write_lines(const Path& file_path, const std::vector<std::string>& lines, LineInfo li)
     {
         std::error_code ec;
@@ -3360,8 +3370,71 @@ namespace vcpkg
         virtual int64_t last_access_time(const Path& target, std::error_code& ec) const override
         {
 #if defined(_WIN32)
-            auto result = stdfs::last_write_time(to_stdfs_path(target), ec);
-            return result.time_since_epoch().count();
+            auto wide_path = Strings::to_utf16(target.native());
+            FileHandle fh(wide_path.c_str(),
+                          GENERIC_READ,
+                          FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
+                          OPEN_EXISTING,
+                          0,
+                          ec);
+            if (ec)
+            {
+                return {};
+            }
+            FILETIME last_access_time;
+            if (!GetFileTime(fh.h_file, nullptr, &last_access_time, nullptr))
+            {
+                ec.assign(GetLastError(), std::system_category());
+                return {};
+            }
+            ULARGE_INTEGER large_integer;
+            large_integer.HighPart = last_access_time.dwHighDateTime;
+            large_integer.LowPart = last_access_time.dwLowDateTime;
+            // Contains a 64-bit value representing the number of 100-nanosecond intervals since January 1, 1601 (UTC).
+            return large_integer.QuadPart * 100;
+#else // ^^^ _WIN32 // !_WIN32 vvv
+            struct stat s;
+            if (::lstat(target.c_str(), &s) == 0)
+            {
+                ec.clear();
+#ifdef __APPLE__
+                return s.st_atimespec.tv_sec * 1'000'000'000 + s.st_atimespec.tv_nsec;
+#else
+                return s.st_atim.tv_sec * 1'000'000'000 + s.st_atim.tv_nsec;
+#endif
+            }
+
+            ec.assign(errno, std::generic_category());
+            return {};
+#endif // ^^^ !_WIN32
+        }
+
+        virtual void last_access_time(const Path& target, int64_t new_time, std::error_code& ec) const override
+        {
+#if defined(_WIN32)
+            auto wide_path = Strings::to_utf16(target.native());
+            FileHandle fh(wide_path.c_str(),
+                          FILE_WRITE_ATTRIBUTES,
+                          FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
+                          OPEN_EXISTING,
+                          0,
+                          ec);
+            if (ec)
+            {
+                return;
+            }
+            ULARGE_INTEGER large_integer;
+            FILETIME new_last_access_time;
+            // Contains a 64-bit value representing the number of 100-nanosecond intervals since January 1, 1601
+            // (UTC).
+            large_integer.QuadPart = new_time / 100;
+            new_last_access_time.dwHighDateTime = large_integer.HighPart;
+            new_last_access_time.dwLowDateTime = large_integer.LowPart;
+            if (!SetFileTime(fh.h_file, nullptr, &new_last_access_time, nullptr))
+            {
+                ec.assign(GetLastError(), std::system_category());
+            }
+            return;
 #else // ^^^ _WIN32 // !_WIN32 vvv
             struct stat s;
             if (::lstat(target.c_str(), &s) == 0)
