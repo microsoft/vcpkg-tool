@@ -1323,26 +1323,20 @@ namespace vcpkg
         }
 
         auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
-        if (!abi_info.abi_tag_file)
-        {
-            return do_build_package_and_clean_buildtrees(args, paths, action, all_dependencies_satisfied);
-        }
-
-        auto& abi_file = *abi_info.abi_tag_file.get();
-
-        const auto abi_package_dir = paths.package_dir(spec) / "share" / spec.name();
-        const auto abi_file_in_package = abi_package_dir / "vcpkg_abi_info.txt";
-
         ExtendedBuildResult result =
             do_build_package_and_clean_buildtrees(args, paths, action, all_dependencies_satisfied);
-        build_logs_recorder.record_build_result(paths, spec, result.code);
-
-        filesystem.create_directories(abi_package_dir, VCPKG_LINE_INFO);
-        filesystem.copy_file(abi_file, abi_file_in_package, CopyOptions::none, VCPKG_LINE_INFO);
-
-        if (result.code == BuildResult::SUCCEEDED)
+        if (abi_info.abi_tag_file)
         {
-            binary_cache.push_success(action);
+            auto& abi_file = *abi_info.abi_tag_file.get();
+            const auto abi_package_dir = paths.package_dir(spec) / "share" / spec.name();
+            const auto abi_file_in_package = abi_package_dir / "vcpkg_abi_info.txt";
+            build_logs_recorder.record_build_result(paths, spec, result.code);
+            filesystem.create_directories(abi_package_dir, VCPKG_LINE_INFO);
+            filesystem.copy_file(abi_file, abi_file_in_package, CopyOptions::none, VCPKG_LINE_INFO);
+            if (result.code == BuildResult::SUCCEEDED)
+            {
+                binary_cache.push_success(action);
+            }
         }
 
         return result;
