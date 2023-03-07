@@ -1869,6 +1869,30 @@ namespace vcpkg
         return result;
     }
 
+    int64_t Filesystem::last_write_time(const Path& target, vcpkg::LineInfo li) const noexcept
+    {
+        std::error_code ec;
+        auto result = this->last_write_time(target, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {target});
+        }
+
+        return result;
+    }
+
+    int64_t Filesystem::last_access_time(const Path& target, vcpkg::LineInfo li) const noexcept
+    {
+        std::error_code ec;
+        auto result = this->last_access_time(target, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {target});
+        }
+
+        return result;
+    }
+
     void Filesystem::write_lines(const Path& file_path, const std::vector<std::string>& lines, LineInfo li)
     {
         std::error_code ec;
@@ -3310,6 +3334,51 @@ namespace vcpkg
             return FileType::unknown;
 #endif // ^^^ !_WIN32
         }
+
+        virtual int64_t last_write_time(const Path& target, std::error_code& ec) const override
+        {
+#if defined(_WIN32)
+            auto result = stdfs::last_write_time(to_stdfs_path(target), ec);
+            return result.time_since_epoch().count();
+#else // ^^^ _WIN32 // !_WIN32 vvv
+            struct stat s;
+            if (::lstat(target.c_str(), &s) == 0)
+            {
+                ec.clear();
+#ifdef __APPLE__
+                return s.st_mtimespec.tv_sec * 1'000'000'000 + s.st_mtimespec.tv_nsec;
+#else
+                return s.st_mtim.tv_sec * 1'000'000'000 + s.st_mtim.tv_nsec;
+#endif
+            }
+
+            ec.assign(errno, std::generic_category());
+            return {};
+#endif // ^^^ !_WIN32
+        }
+
+        virtual int64_t last_access_time(const Path& target, std::error_code& ec) const override
+        {
+#if defined(_WIN32)
+            auto result = stdfs::last_write_time(to_stdfs_path(target), ec);
+            return result.time_since_epoch().count();
+#else // ^^^ _WIN32 // !_WIN32 vvv
+            struct stat s;
+            if (::lstat(target.c_str(), &s) == 0)
+            {
+                ec.clear();
+#ifdef __APPLE__
+                return s.st_atimespec.tv_sec * 1'000'000'000 + s.st_atimespec.tv_nsec;
+#else
+                return s.st_atim.tv_sec * 1'000'000'000 + s.st_atim.tv_nsec;
+#endif
+            }
+
+            ec.assign(errno, std::generic_category());
+            return {};
+#endif // ^^^ !_WIN32
+        }
+
         virtual void write_contents(const Path& file_path, StringView data, std::error_code& ec) override
         {
             StatsTimer t(g_us_filesystem_stats);

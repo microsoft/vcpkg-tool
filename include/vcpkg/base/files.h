@@ -285,6 +285,12 @@ namespace vcpkg
         virtual FileType symlink_status(const Path& target, std::error_code& ec) const = 0;
         FileType symlink_status(const Path& target, LineInfo li) const noexcept;
 
+        virtual int64_t last_write_time(const Path& target, std::error_code& ec) const = 0;
+        int64_t last_write_time(const Path& target, LineInfo li) const noexcept;
+
+        virtual int64_t last_access_time(const Path& target, std::error_code& ec) const = 0;
+        int64_t last_access_time(const Path& target, LineInfo li) const noexcept;
+
         virtual Path absolute(const Path& target, std::error_code& ec) const = 0;
         Path absolute(const Path& target, LineInfo li) const;
 
