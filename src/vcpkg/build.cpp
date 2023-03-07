@@ -950,8 +950,6 @@ namespace vcpkg
                 // If an unintended error occurs then return a BuildResult::DOWNLOAD_FAILURE status.
                 return ExtendedBuildResult{BuildResult::DOWNLOADED};
             }
-
-            metrics.track_string(StringMetric::BuildError, spec_string);
         }
 
         metrics.track_buildtime(Hash::get_string_hash(spec_string, Hash::Algorithm::Sha256) + ":[" +
