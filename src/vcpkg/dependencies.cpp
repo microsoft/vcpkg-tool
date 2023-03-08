@@ -539,26 +539,31 @@ namespace vcpkg
     {
     }
 
+    template<class Message>
+    static LocalizedString create_unsupported_message(Message m,
+                                                      const FeatureSpec& spec,
+                                                      const PlatformExpression::Expr& expr)
+    {
+        const auto feature_spec =
+            (spec.feature() == "core" ? spec.port() : format_name_only_feature_spec(spec.port(), spec.feature()));
+        return msg::format(m,
+                           msg::package_name = spec.port(),
+                           msg::feature_spec = feature_spec,
+                           msg::supports_expression = to_string(expr),
+                           msg::triplet = spec.triplet());
+    }
+
     void ActionPlan::print_unsupported_warnings()
     {
         for (const auto& entry : unsupported_features)
         {
-            if (entry.first.feature() == "core")
-            {
-                msg::println_warning(msgUnsupportedSupportsExpressionWarning,
-                                     msg::package_name = entry.first.port(),
-                                     msg::supports_expression = to_string(entry.second),
-                                     msg::triplet = entry.first.triplet());
-            }
-            else
-            {
-                const auto feature_spec = format_name_only_feature_spec(entry.first.port(), entry.first.feature());
-                msg::println_warning(msgUnsupportedFeatureSupportsExpression,
-                                     msg::package_name = entry.first.port(),
-                                     msg::feature_spec = feature_spec,
-                                     msg::supports_expression = to_string(entry.second),
-                                     msg::triplet = entry.first.triplet());
-            }
+            const auto& spec = entry.first;
+            const auto feature_spec =
+                (spec.feature() == "core" ? spec.port() : format_name_only_feature_spec(spec.port(), spec.feature()));
+            msg::println_warning(msgUnsupportedFeatureSupportsExpressionWarning,
+                                 msg::feature_spec = feature_spec,
+                                 msg::supports_expression = to_string(entry.second),
+                                 msg::triplet = spec.triplet());
         }
     }
 
@@ -844,11 +849,10 @@ namespace vcpkg
                             const auto supports_expression_text = to_string(*supports_expression);
                             if (unsupported_port_action == UnsupportedPortAction::Error)
                             {
-                                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                                              msgUnsupportedSupportsExpression,
-                                                              msg::package_name = spec.port(),
-                                                              msg::supports_expression = supports_expression_text,
-                                                              msg::triplet = spec.triplet());
+                                Checks::msg_exit_with_message(
+                                    VCPKG_LINE_INFO,
+                                    create_unsupported_message(
+                                        msgUnsupportedFeatureSupportsExpression, spec, *supports_expression));
                             }
                             else
                             {
@@ -1896,13 +1900,12 @@ namespace vcpkg
                     {
                         if (!supports_expr.evaluate(m_var_provider.get_or_load_dep_info_vars(spec, m_host_triplet)))
                         {
-                            const auto supports_expression_text = to_string(supports_expr);
+                            FeatureSpec feature_spec(spec, "core");
+
                             if (unsupported_port_action == UnsupportedPortAction::Error)
                             {
-                                return msg::format_error(msgUnsupportedSupportsExpression,
-                                                         msg::package_name = spec.name(),
-                                                         msg::supports_expression = supports_expression_text,
-                                                         msg::triplet = spec.triplet());
+                                return msg::format_error(create_unsupported_message(
+                                    msgUnsupportedFeatureSupportsExpression, feature_spec, supports_expr));
                             }
 
                             ret.unsupported_features.insert({FeatureSpec(spec, "core"), supports_expr});

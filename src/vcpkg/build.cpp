@@ -581,13 +581,12 @@ namespace vcpkg
         const auto arch = to_vcvarsall_toolchain(pre_build_info.target_architecture, toolset, pre_build_info.triplet);
         const auto target = to_vcvarsall_target(pre_build_info.cmake_system_name);
 
-        return vcpkg::Command{"cmd"}.string_arg("/c").raw_arg(
-            Strings::format(R"("%s" %s %s %s %s 2>&1 <NUL)",
-                            toolset.vcvarsall,
-                            Strings::join(" ", toolset.vcvarsall_options),
-                            arch,
-                            target,
-                            tonull));
+        return vcpkg::Command{"cmd"}.string_arg("/c").raw_arg(fmt::format(R"("{}" {} {} {} {} 2>&1 <NUL)",
+                                                                          toolset.vcvarsall,
+                                                                          Strings::join(" ", toolset.vcvarsall_options),
+                                                                          arch,
+                                                                          target,
+                                                                          tonull));
 #endif
     }
 
@@ -886,7 +885,8 @@ namespace vcpkg
 
     static ExtendedBuildResult do_build_package(const VcpkgCmdArguments& args,
                                                 const VcpkgPaths& paths,
-                                                const InstallPlanAction& action)
+                                                const InstallPlanAction& action,
+                                                bool all_dependencies_satisfied)
     {
         const auto& pre_build_info = action.pre_build_info(VCPKG_LINE_INFO);
 
@@ -937,18 +937,21 @@ namespace vcpkg
                 env);
         } // close out_file
 
-        // With the exception of empty packages, builds in "Download Mode" always result in failure.
-        if (action.build_options.only_downloads == OnlyDownloads::YES)
-        {
-            // TODO: Capture executed command output and evaluate whether the failure was intended.
-            // If an unintended error occurs then return a BuildResult::DOWNLOAD_FAILURE status.
-            return ExtendedBuildResult{BuildResult::DOWNLOADED};
-        }
-
         const auto buildtimeus = timer.microseconds();
         const auto spec_string = action.spec.to_string();
-
+        const bool build_failed = !succeeded(return_code);
         MetricsSubmission metrics;
+        if (build_failed)
+        {
+            // With the exception of empty or helper ports, builds in "Download Mode" result in failure.
+            if (action.build_options.only_downloads == OnlyDownloads::YES)
+            {
+                // TODO: Capture executed command output and evaluate whether the failure was intended.
+                // If an unintended error occurs then return a BuildResult::DOWNLOAD_FAILURE status.
+                return ExtendedBuildResult{BuildResult::DOWNLOADED};
+            }
+        }
+
         metrics.track_buildtime(Hash::get_string_hash(spec_string, Hash::Algorithm::Sha256) + ":[" +
                                     Strings::join(",",
                                                   action.feature_list,
@@ -958,13 +961,12 @@ namespace vcpkg
                                     "]",
                                 buildtimeus);
 
-        const bool build_failed = !succeeded(return_code);
-        if (build_failed)
+        get_global_metrics_collector().track_submission(std::move(metrics));
+        if (!all_dependencies_satisfied)
         {
-            metrics.track_string(StringMetric::BuildError, spec_string);
+            return ExtendedBuildResult{BuildResult::DOWNLOADED};
         }
 
-        get_global_metrics_collector().track_submission(std::move(metrics));
         if (build_failed)
         {
             const auto logs = buildpath / Strings::concat("error-logs-", action.spec.triplet(), ".txt");
@@ -1014,9 +1016,10 @@ namespace vcpkg
 
     static ExtendedBuildResult do_build_package_and_clean_buildtrees(const VcpkgCmdArguments& args,
                                                                      const VcpkgPaths& paths,
-                                                                     const InstallPlanAction& action)
+                                                                     const InstallPlanAction& action,
+                                                                     bool all_dependencies_satisfied)
     {
-        auto result = do_build_package(args, paths, action);
+        auto result = do_build_package(args, paths, action, all_dependencies_satisfied);
 
         if (action.build_options.clean_buildtrees == CleanBuildtrees::YES)
         {
@@ -1299,7 +1302,8 @@ namespace vcpkg
             }
         }
 
-        if (!missing_fspecs.empty() && !Util::Enum::to_bool(action.build_options.only_downloads))
+        const bool all_dependencies_satisfied = missing_fspecs.empty();
+        if (!all_dependencies_satisfied && !Util::Enum::to_bool(action.build_options.only_downloads))
         {
             return {BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES, std::move(missing_fspecs)};
         }
@@ -1318,21 +1322,17 @@ namespace vcpkg
         }
 
         auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
-        if (!abi_info.abi_tag_file)
+        ExtendedBuildResult result =
+            do_build_package_and_clean_buildtrees(args, paths, action, all_dependencies_satisfied);
+        if (abi_info.abi_tag_file)
         {
-            return do_build_package_and_clean_buildtrees(args, paths, action);
+            auto& abi_file = *abi_info.abi_tag_file.get();
+            const auto abi_package_dir = paths.package_dir(spec) / "share" / spec.name();
+            const auto abi_file_in_package = abi_package_dir / "vcpkg_abi_info.txt";
+            build_logs_recorder.record_build_result(paths, spec, result.code);
+            filesystem.create_directories(abi_package_dir, VCPKG_LINE_INFO);
+            filesystem.copy_file(abi_file, abi_file_in_package, CopyOptions::none, VCPKG_LINE_INFO);
         }
-
-        auto& abi_file = *abi_info.abi_tag_file.get();
-
-        const auto abi_package_dir = paths.package_dir(spec) / "share" / spec.name();
-        const auto abi_file_in_package = abi_package_dir / "vcpkg_abi_info.txt";
-
-        ExtendedBuildResult result = do_build_package_and_clean_buildtrees(args, paths, action);
-        build_logs_recorder.record_build_result(paths, spec, result.code);
-
-        filesystem.create_directories(abi_package_dir, VCPKG_LINE_INFO);
-        filesystem.copy_file(abi_file, abi_file_in_package, CopyOptions::none, VCPKG_LINE_INFO);
 
         return result;
     }

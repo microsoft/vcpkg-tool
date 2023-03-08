@@ -1300,8 +1300,6 @@ namespace vcpkg
     REGISTER_MESSAGE(UnsupportedPort);
     REGISTER_MESSAGE(UnsupportedPortDependency);
     REGISTER_MESSAGE(UnsupportedShortOptions);
-    REGISTER_MESSAGE(UnsupportedSupportsExpression);
-    REGISTER_MESSAGE(UnsupportedSupportsExpressionWarning);
     REGISTER_MESSAGE(UnsupportedSyntaxInCDATA);
     REGISTER_MESSAGE(UnsupportedSystemName);
     REGISTER_MESSAGE(UnsupportedToolchain);
