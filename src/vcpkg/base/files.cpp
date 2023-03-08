@@ -3435,20 +3435,20 @@ namespace vcpkg
                 ec.assign(GetLastError(), std::system_category());
             }
             return;
-#else // ^^^ _WIN32 // !_WIN32 vvv
-            struct stat s;
-            if (::lstat(target.c_str(), &s) == 0)
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            PosixFd fd(target.c_str(), O_WRONLY, ec);
+            if (ec)
             {
-                ec.clear();
-#ifdef __APPLE__
-                return s.st_atimespec.tv_sec * 1'000'000'000 + s.st_atimespec.tv_nsec;
-#else
-                return s.st_atim.tv_sec * 1'000'000'000 + s.st_atim.tv_nsec;
-#endif
+                return;
             }
-
-            ec.assign(errno, std::generic_category());
-            return {};
+            timespec times[2]; // last access and modification time
+            times[0].tv_nsec = new_time % 1'000'000'000;
+            times[0].tv_sec = new_time / 1'000'000'000;
+            times[1].tv_nsec = UTIME_OMIT;
+            if (futimens(fd.get(), times))
+            {
+                ec.assign(errno, std::system_category());
+            }
 #endif // ^^^ !_WIN32
         }
 
