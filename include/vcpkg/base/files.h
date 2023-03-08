@@ -294,6 +294,9 @@ namespace vcpkg
         virtual void last_access_time(const Path& target, int64_t new_time, std::error_code& ec) const = 0;
         void last_access_time(const Path& target, int64_t new_time, LineInfo li) const noexcept;
 
+        virtual int64_t file_size(const Path& target, std::error_code& ec) const = 0;
+        int64_t file_size(const Path& target, LineInfo li) const noexcept;
+
         virtual Path absolute(const Path& target, std::error_code& ec) const = 0;
         Path absolute(const Path& target, LineInfo li) const;
 

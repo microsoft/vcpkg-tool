@@ -20,6 +20,7 @@
 #include <vcpkg/vcpkgpaths.h>
 
 #include <iterator>
+#include <queue>
 
 using namespace vcpkg;
 
@@ -176,6 +177,125 @@ namespace
 
     struct ArchivesBinaryProvider : IBinaryProvider
     {
+        struct FolderSettings
+        {
+            double max_size_in_gb = 0;
+            double max_size_in_bytes = 0;    // TODO handle update:
+            double keep_free_percentage = 4; // TODO handle
+            enum class DeletePolicy
+            {
+                None,
+                OldestAccessDate,
+                OldestCreationDate,
+                OldestModificationDate,
+            };
+            DeletePolicy delete_policy = DeletePolicy::None;
+            std::chrono::seconds modification_date_update_interval = std::chrono::hours{24};
+        };
+
+        static StringView to_string(FolderSettings::DeletePolicy policy)
+        {
+            switch (policy)
+            {
+                case FolderSettings::DeletePolicy::None: return "None";
+                case FolderSettings::DeletePolicy::OldestAccessDate: return "OldestAccessDate";
+                case FolderSettings::DeletePolicy::OldestCreationDate: return "OldestCreationDate";
+                case FolderSettings::DeletePolicy::OldestModificationDate: return "OldestModificationDate";
+            }
+            Checks::unreachable(VCPKG_LINE_INFO);
+        }
+
+        struct DeletePolicyDeserializer final : Json::IDeserializer<FolderSettings::DeletePolicy>
+        {
+            LocalizedString type_name() const override { return LocalizedString::from_raw("er"); }
+            Optional<FolderSettings::DeletePolicy> visit_string(Json::Reader& r, StringView value) const override
+            {
+                if (value == "None")
+                {
+                    return FolderSettings::DeletePolicy::None;
+                }
+                else if (value == "OldestAccessDate")
+                {
+                    return FolderSettings::DeletePolicy::OldestAccessDate;
+                }
+                else if (value == "OldestCreationDate")
+                {
+                    return FolderSettings::DeletePolicy::OldestCreationDate;
+                }
+                else if (value == "OldestModificationDate")
+                {
+                    return FolderSettings::DeletePolicy::OldestModificationDate;
+                }
+                r.add_generic_error(type_name(), LocalizedString::from_raw("Unexped DeletePolicy"));
+                return nullopt;
+            }
+            static const DeletePolicyDeserializer instance;
+        };
+
+        struct FolderSettingsDeserializer : Json::IDeserializer<FolderSettings>
+        {
+            LocalizedString type_name() const override { return LocalizedString::from_raw("FolderSettings"); }
+
+            constexpr static StringLiteral MAX_SIZE_GB = "max-size-in-gb";
+            constexpr static StringLiteral KEEP_FREE_PERCENTAGE = "keep-free-in-percentage";
+            constexpr static StringLiteral DELETE_POLICY = "delete-policy";
+            constexpr static StringLiteral MODIFICATION_DATE_UPDATE_INTERVAL = "modification-date-update-interval";
+
+            Optional<FolderSettings> visit_object(Json::Reader& r, const Json::Object& obj) const override
+            {
+                FolderSettings folder_settings;
+
+                r.optional_object_field(
+                    obj, MAX_SIZE_GB, folder_settings.max_size_in_gb, Json::PositiveNumberDeserializer::instance);
+                r.required_object_field(LocalizedString::from_raw(DELETE_POLICY),
+                                        obj,
+                                        DELETE_POLICY,
+                                        folder_settings.delete_policy,
+                                        DeletePolicyDeserializer::instance);
+                static const StringView valid_fields[] = {
+                    MAX_SIZE_GB, KEEP_FREE_PERCENTAGE, DELETE_POLICY, MODIFICATION_DATE_UPDATE_INTERVAL};
+                for (const auto& key_value : obj)
+                {
+                    if (key_value.first.front() != '$' && !Util::Vectors::contains(valid_fields, key_value.first))
+                    {
+                        r.add_warning(LocalizedString::from_raw("test"), "unexpected field ");
+                    }
+                }
+
+                return folder_settings;
+            }
+            static FolderSettingsDeserializer instance;
+
+            static Json::Object serialize(const FolderSettings& folder_settings)
+            {
+                Json::Object obj;
+                if (folder_settings.max_size_in_gb)
+                {
+                    obj.insert(MAX_SIZE_GB, Json::Value::number(folder_settings.max_size_in_gb));
+                }
+                obj.insert(DELETE_POLICY, to_string(folder_settings.delete_policy));
+
+                return obj;
+            }
+        };
+
+        struct FileData
+        {
+            Path path;
+            int64_t file_size;
+            int64_t time;
+            bool operator<(const FileData& other) { return time < other.time; }
+        };
+        struct FileCacheData
+        {
+            FolderSettings folder_settings;
+            std::priority_queue<FileData> file_data;
+            int free = 0;
+            int cap = 0;
+            int64_t current_size = 0;
+        };
+        mutable std::vector<FileCacheData> file_cache_data;
+
         ArchivesBinaryProvider(const VcpkgPaths& paths,
                                std::vector<Path>&& read_dirs,
                                std::vector<Path>&& write_dirs,
@@ -339,10 +459,102 @@ namespace
                 msg::println(msgUploadedBinaries, msg::count = http_remotes_pushed, msg::vendor = "HTTP remotes");
             }
 
+            size_t index = 0;
+            int64_t file_size = -1;
             for (const auto& archives_root_dir : m_write_dirs)
             {
                 const auto archive_path = archives_root_dir / archive_subpath;
                 fs.create_directories(archive_path.parent_path(), IgnoreErrors{});
+                if (index >= file_cache_data.size())
+                {
+                    Optional<FolderSettings> maybe_settings;
+                    auto settings_path = archives_root_dir / "settings.json";
+                    if (fs.exists(settings_path, IgnoreErrors{}))
+                    {
+                        std::error_code ec;
+                        auto obj = Json::parse_file(fs, settings_path, ec);
+                        if (ec)
+                        {
+                            fmt::print("Failed to read settings file {}", ec);
+                            // TODO handle errors:
+                        }
+                        else if (!obj.has_value())
+                        {
+                            fmt::print("Failed to read settings file {}", obj.error()->to_string());
+                            // TODO handle errors:
+                        }
+                        else
+                        {
+                            Json::Reader reader;
+                            maybe_settings = reader.visit(obj.get()->value, FolderSettingsDeserializer::instance);
+                            if (maybe_settings.has_value())
+                            {
+                                fmt::print("");
+                            }
+                            else
+                            {
+                                // TODO handle errors:
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // TODO handle detection of last access enabled
+                        maybe_settings.emplace();
+                        maybe_settings.get()->delete_policy = FolderSettings::DeletePolicy::OldestAccessDate;
+                        auto obj = FolderSettingsDeserializer::serialize(*maybe_settings.get());
+                        obj.insert("$schema",
+                                   "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/"
+                                   "file-cache-settings.schema.json");
+                        std::error_code ec;
+                        fs.write_contents(settings_path, Json::stringify(obj), ec);
+                        if (ec)
+                        {
+                            fmt::print("Failed to write settings file {}", ec);
+                            // TODO handle errors:
+                        }
+                    }
+                    file_cache_data.emplace_back(maybe_settings.value_or({}));
+                    if (file_cache_data.back().folder_settings.delete_policy != FolderSettings::DeletePolicy::None)
+                    {
+                        for (auto& path : fs.get_regular_files_recursive(archive_path, IgnoreErrors{}))
+                        {
+                            auto time = fs.last_access_time(path, IgnoreErrors{});
+                            auto size = fs.file_size(path, IgnoreErrors{});
+                            file_cache_data.back().file_data.emplace(path, size, time);
+                            file_cache_data.back().current_size += size;
+                        }
+                    }
+                }
+                ++index;
+                auto& cache = file_cache_data.back();
+                if (cache.folder_settings.delete_policy != FolderSettings::DeletePolicy::None)
+                {
+                    if (file_size == -1)
+                    {
+                        file_size = fs.file_size(tmp_archive_path, IgnoreErrors{});
+                    }
+                    while (cache.current_size + file_size > cache.folder_settings.max_size_in_bytes &&
+                           !cache.file_data.empty())
+                    {
+                        auto entry = cache.file_data.top();
+                        // check if the file was not used in the meantime
+                        auto last_time = fs.last_access_time(entry.path, IgnoreErrors{});
+                        if (last_time != entry.time)
+                        {
+                            entry.time = last_time;
+                            cache.file_data.push(std::move(entry));
+                            cache.file_data.pop();
+                            continue;
+                        }
+                        if (fs.remove(entry.path, IgnoreErrors{}))
+                        {
+                            cache.current_size -= entry.file_size;
+                        }
+                        cache.file_data.pop();
+                    }
+                }
+
                 std::error_code ec;
                 if (m_write_dirs.size() > 1)
                 {

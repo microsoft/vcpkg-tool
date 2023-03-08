@@ -1,0 +1,38 @@
+{
+  "$id": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/file-cache-settings.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "delete-policy"
+  ],
+  "properties": {
+    "delete-policy": {
+      "description": "After which policy objects should be deleted.",
+      "enum": [
+        "None",
+        "OldestAccessDate",
+        "OldestCreationDate",
+        "OldestModificationDate"
+      ]
+    },
+    "max-size-in-gb": {
+      "description": "The maximum size of the cache in gigabytes.",
+      "type": "number",
+      "minimum": 0
+    },
+    "max-age-in-days": {
+      "description": "The maximum age of the cache in days.",
+      "type": "number",
+      "minimum": 0
+    },
+    "modification-date-update-interval-in-hours": {
+      "description": "The interval in hours at which the modification date of a cache object should be updated when used.",
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "patternProperties": {
+    "^\\$": {}
+  },
+  "additionalProperties": false
+}

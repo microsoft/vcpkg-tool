@@ -1057,6 +1057,19 @@ namespace vcpkg::Json
 
     const NaturalNumberDeserializer NaturalNumberDeserializer::instance;
 
+    LocalizedString PositiveNumberDeserializer::type_name() const { return msg::format(msgANonNegativeInteger); }
+
+    Optional<double> PositiveNumberDeserializer::visit_number(Reader&, double value) const
+    {
+        if (value <= 0)
+        {
+            return nullopt;
+        }
+        return value;
+    }
+
+    const PositiveNumberDeserializer PositiveNumberDeserializer::instance;
+
     LocalizedString BooleanDeserializer::type_name() const { return msg::format(msgABoolean); }
 
     Optional<bool> BooleanDeserializer::visit_boolean(Reader&, bool b) const { return b; }

@@ -1903,6 +1903,17 @@ namespace vcpkg
         }
     }
 
+    int64_t Filesystem::file_size(const Path& target, vcpkg::LineInfo li) const noexcept
+    {
+        std::error_code ec;
+        auto result = this->file_size(target, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {target});
+        }
+        return result;
+    }
+
     void Filesystem::write_lines(const Path& file_path, const std::vector<std::string>& lines, LineInfo li)
     {
         std::error_code ec;
@@ -3468,6 +3479,22 @@ namespace vcpkg
             {
                 ec.assign(errno, std::system_category());
             }
+#endif // ^^^ !_WIN32
+        }
+
+        virtual int64_t file_size(const Path& target, std::error_code& ec) const override
+        {
+#if defined(_WIN32)
+            return stdfs::file_size(to_stdfs_path(target), ec);
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            struct stat s;
+            if (::lstat(target.c_str(), &s) == 0)
+            {
+                return s.st_size;
+            }
+
+            ec.assign(errno, std::generic_category());
+            return {};
 #endif // ^^^ !_WIN32
         }
 
