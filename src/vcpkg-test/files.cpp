@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <random>
+#include <thread>
 #include <vector>
 
 #include <vcpkg-test/util.h>
@@ -964,11 +965,14 @@ TEST_CASE ("file times", "[files]")
     fs.write_contents(temp_file, "some file contents", VCPKG_LINE_INFO);
     auto last_write = fs.last_write_time(temp_file, ec);
     CHECK_EC_ON_FILE(temp_file, ec);
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    fs.write_contents(temp_file, "new file content", VCPKG_LINE_INFO);
+    auto last_write_new = fs.last_write_time(temp_file, ec);
+    CHECK_EC_ON_FILE(temp_file, ec);
+    REQUIRE(last_write <= last_write_new);
     auto last_access = fs.last_access_time(temp_file, ec);
     CHECK_EC_ON_FILE(temp_file, ec);
     using namespace std::chrono;
-    REQUIRE((nanoseconds(last_access) >= nanoseconds(last_write) - 1s &&
-             nanoseconds(last_access) <= nanoseconds(last_write) + 1s));
     last_access -= duration_cast<nanoseconds>(hours(50)).count();
     fs.last_access_time(temp_file, last_access, ec);
     CHECK_EC_ON_FILE(temp_file, ec);

@@ -3367,6 +3367,35 @@ namespace vcpkg
 #endif // ^^^ !_WIN32
         }
 
+#if defined(_WIN32)
+        // FILETIME contains a 64-bit value representing the number of 100-nanosecond intervals since January 1, 1601
+        // (UTC). shift epoch by 400 years to fit into int64_t (can hold 292 years)
+        static constexpr uint64_t epoch_shift =
+            std::chrono::duration_cast<std::chrono::duration<uint64_t, std::nano>>(std::chrono::hours{24 * 365 * 400})
+                .count() /
+            100;
+
+        static int64_t filetime_to_int64(FILETIME filetime)
+        {
+            ULARGE_INTEGER large_integer;
+            large_integer.HighPart = filetime.dwHighDateTime;
+            large_integer.LowPart = filetime.dwLowDateTime;
+            large_integer.QuadPart -= epoch_shift;
+            return large_integer.QuadPart * 100;
+        }
+
+        static FILETIME int64_to_filetime(int64_t value)
+        {
+            ULARGE_INTEGER large_integer;
+            FILETIME filetime;
+            large_integer.QuadPart = static_cast<uint64_t>(value / 100);
+            large_integer.QuadPart += epoch_shift;
+            filetime.dwHighDateTime = large_integer.HighPart;
+            filetime.dwLowDateTime = large_integer.LowPart;
+            return filetime;
+        }
+#endif
+
         virtual int64_t last_access_time(const Path& target, std::error_code& ec) const override
         {
 #if defined(_WIN32)
@@ -3387,11 +3416,7 @@ namespace vcpkg
                 ec.assign(GetLastError(), std::system_category());
                 return {};
             }
-            ULARGE_INTEGER large_integer;
-            large_integer.HighPart = last_access_time.dwHighDateTime;
-            large_integer.LowPart = last_access_time.dwLowDateTime;
-            // Contains a 64-bit value representing the number of 100-nanosecond intervals since January 1, 1601 (UTC).
-            return large_integer.QuadPart * 100;
+            return filetime_to_int64(last_access_time);
 #else // ^^^ _WIN32 // !_WIN32 vvv
             struct stat s;
             if (::lstat(target.c_str(), &s) == 0)
@@ -3423,13 +3448,7 @@ namespace vcpkg
             {
                 return;
             }
-            ULARGE_INTEGER large_integer;
-            FILETIME new_last_access_time;
-            // Contains a 64-bit value representing the number of 100-nanosecond intervals since January 1, 1601
-            // (UTC).
-            large_integer.QuadPart = new_time / 100;
-            new_last_access_time.dwHighDateTime = large_integer.HighPart;
-            new_last_access_time.dwLowDateTime = large_integer.LowPart;
+            auto new_last_access_time = int64_to_filetime(new_time);
             if (!SetFileTime(fh.h_file, nullptr, &new_last_access_time, nullptr))
             {
                 ec.assign(GetLastError(), std::system_category());
