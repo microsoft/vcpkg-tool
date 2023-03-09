@@ -1,5 +1,7 @@
 #include <catch2/catch.hpp>
 
+#include <vcpkg/base/strings.h>
+
 #include <vcpkg/vcpkgcmdarguments.h>
 
 #include <map>

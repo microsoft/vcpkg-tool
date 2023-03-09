@@ -18,7 +18,7 @@ namespace vcpkg
     void FeatureSpec::to_string(std::string& out) const
     {
         if (feature().empty()) return spec().to_string(out);
-        Strings::append(out, port(), '[', feature(), "]:", triplet());
+        fmt::format_to(std::back_inserter(out), "{}[{}]:{}", port(), feature(), triplet());
     }
 
     std::string format_name_only_feature_spec(StringView package_name, StringView feature_name)
@@ -38,10 +38,13 @@ namespace vcpkg
 
     Triplet PackageSpec::triplet() const { return this->m_triplet; }
 
-    std::string PackageSpec::dir() const { return Strings::format("%s_%s", this->m_name, this->m_triplet); }
+    std::string PackageSpec::dir() const { return fmt::format("{}_{}", this->m_name, this->m_triplet); }
 
-    std::string PackageSpec::to_string() const { return Strings::format("%s:%s", this->name(), this->triplet()); }
-    void PackageSpec::to_string(std::string& s) const { Strings::append(s, this->name(), ':', this->triplet()); }
+    std::string PackageSpec::to_string() const { return fmt::format("{}:{}", this->name(), this->triplet()); }
+    void PackageSpec::to_string(std::string& s) const
+    {
+        fmt::format_to(std::back_inserter(s), "{}:{}", this->name(), this->triplet());
+    }
 
     bool operator==(const PackageSpec& left, const PackageSpec& right)
     {
