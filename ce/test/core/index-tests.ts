@@ -3,7 +3,6 @@
 
 
 import { Index, IndexSchema, SemverKey, StringKey } from '@microsoft/vcpkg-ce/dist/registries/indexer';
-import { Record } from '@microsoft/vcpkg-ce/dist/util/linq';
 import { strict } from 'assert';
 import { describe, it } from 'mocha';
 import { SemVer } from 'semver';

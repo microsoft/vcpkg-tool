@@ -7,7 +7,7 @@ import { VersionReference } from '../interfaces/metadata/version-reference';
 import { parseQuery } from '../mediaquery/media-query';
 import { Session } from '../session';
 import { MultipleInstallsMatched } from '../util/exceptions';
-import { linq, Record } from '../util/linq';
+import { linq } from '../util/linq';
 
 
 export class SetOfDemands {
@@ -51,7 +51,7 @@ export class SetOfDemands {
   get requires() {
     const d = this._demands;
     const rq1 = linq.values(d).selectNonNullable(d => d.requires).toArray();
-    const result = new Record<string,VersionReference>();
+    const result : Record<string, VersionReference> = {};
     for (const dict of rq1) {
       for (const [query, demands] of dict) {
         result[query] = demands;
