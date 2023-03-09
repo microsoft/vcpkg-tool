@@ -1,3 +1,4 @@
+#include <vcpkg/base/checks.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/xmlserializer.h>
 
@@ -35,19 +36,19 @@ namespace vcpkg
         }
         Strings::append(buf, name, "=\"");
         text(content);
-        Strings::append(buf, '"');
+        buf.push_back('"');
         return *this;
     }
     XmlSerializer& XmlSerializer::finish_complex_open_tag()
     {
         emit_pending_indent();
-        Strings::append(buf, '>');
+        buf.push_back('>');
         return *this;
     }
     XmlSerializer& XmlSerializer::finish_self_closing_complex_tag()
     {
         emit_pending_indent();
-        Strings::append(buf, "/>");
+        buf.append("/>");
         m_indent -= 2;
         return *this;
     }
@@ -93,8 +94,7 @@ namespace vcpkg
     XmlSerializer& XmlSerializer::cdata(StringView sv)
     {
         emit_pending_indent();
-        Checks::check_exit(
-            VCPKG_LINE_INFO, Strings::search(sv, "]]>") == sv.end(), "]]> is not supported in a CDATA block");
+        Checks::msg_check_exit(VCPKG_LINE_INFO, Strings::search(sv, "]]>") == sv.end(), msgUnsupportedSyntaxInCDATA);
         buf.append("<![CDATA[");
         buf.append(sv.begin(), sv.size());
         buf.append("]]>");

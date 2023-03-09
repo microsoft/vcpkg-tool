@@ -11,7 +11,7 @@ waiting.catch(() => { /** */ });
 /**
  * Does a Promise.any(), and accept the one that first matches the predicate, or if all resolve, and none match, the first.
  *
- * @remarks WARNING - this requires Node 15+ or node 14.12+ with --harmony
+ * @remarks WARNING - this requires Node 15+
  * @param from
  * @param predicate
  */
@@ -141,4 +141,3 @@ export class Queue {
   }
 
 }
-

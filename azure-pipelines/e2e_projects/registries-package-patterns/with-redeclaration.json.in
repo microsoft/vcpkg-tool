@@ -1,0 +1,32 @@
+{
+  "vcpkg-configuration": {
+    "default-registry": {
+      "kind": "git",
+      "repository": "$E2ERegistryPath",
+      "baseline": "$E2ERegistryBaseline"
+    },
+    "registries": [
+      {
+        "kind": "git",
+        "repository": "$E2ERegistryPath",
+        "baseline": "$E2ERegistryBaseline",
+        "packages": [
+          "b*"
+        ]
+      },
+      {
+        "kind": "git",
+        "repository": "$E2ERegistryPath",
+        "baseline": "$E2ERegistryBaseline",
+        "packages": [
+          "b*"
+        ]
+      }
+    ]
+  },
+  "dependencies": [
+    "bar",
+    "baz",
+    "foo"
+  ]
+}

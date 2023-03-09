@@ -1,0 +1,8 @@
+{
+  "id": "a/b",
+  "version": "1.0",
+  "requires": {
+    "compilers/arm/gcc": "2020.10.0",
+    "tools/kitware/cmake": "3.20.1"
+  }
+}

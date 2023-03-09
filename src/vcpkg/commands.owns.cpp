@@ -1,5 +1,3 @@
-#include <vcpkg/base/system.print.h>
-
 #include <vcpkg/commands.owns.h>
 #include <vcpkg/help.h>
 #include <vcpkg/vcpkgcmdarguments.h>
@@ -22,13 +20,14 @@ namespace vcpkg::Commands::Owns
             {
                 if (file.find(file_substr) != std::string::npos)
                 {
-                    print2(pgh.package.displayname(), ": ", file, '\n');
+                    msg::write_unlocalized_text_to_stdout(Color::none,
+                                                          fmt::format("{}: {}\n", pgh.package.displayname(), file));
                 }
             }
         }
     }
     const CommandStructure COMMAND_STRUCTURE = {
-        Strings::format("The argument should be a pattern to search for. %s", create_example_string("owns zlib.dll")),
+        [] { return create_example_string("owns zlib.dll"); },
         1,
         1,
         {},

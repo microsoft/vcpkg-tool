@@ -1,11 +1,10 @@
 #include <vcpkg/base/chrono.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.contact.h>
 #include <vcpkg/help.h>
-#include <vcpkg/userconfig.h>
+#include <vcpkg/metrics.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
 namespace vcpkg::Commands::Contact
@@ -13,11 +12,11 @@ namespace vcpkg::Commands::Contact
     static constexpr StringLiteral OPTION_SURVEY = "survey";
 
     static constexpr std::array<CommandSwitch, 1> SWITCHES = {{
-        {OPTION_SURVEY, "Launch default browser to the current vcpkg survey"},
+        {OPTION_SURVEY, []() { return msg::format(msgCmdContactOptSurvey); }},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("contact"),
+        [] { return create_example_string("contact"); },
         0,
         0,
         {SWITCHES, {}},
@@ -30,25 +29,26 @@ namespace vcpkg::Commands::Contact
 
         if (Util::Sets::contains(parsed_args.switches, SWITCHES[0].name))
         {
-            auto maybe_now = CTime::get_current_date_time();
+            auto maybe_now = CTime::now();
             if (const auto p_now = maybe_now.get())
             {
-                auto config = UserConfig::try_read_data(fs);
+                auto config = try_read_metrics_user(fs);
                 config.last_completed_survey = p_now->to_string();
-                config.try_write_data(fs);
+                config.try_write(fs);
             }
 
 #if defined(_WIN32)
             cmd_execute(Command("start").string_arg("https://aka.ms/NPS_vcpkg"));
-            print2("Default browser launched to https://aka.ms/NPS_vcpkg; thank you for your feedback!\n");
+            msg::println(msgDefaultBrowserLaunched, msg::url = "https://aka.ms/NPS_vcpkg");
+            msg::println(msgFeedbackAppreciated);
 #else
-            print2("Please navigate to https://aka.ms/NPS_vcpkg in your preferred browser. Thank you for your "
-                   "feedback!\n");
+            msg::println(msgNavigateToNPS, msg::url = "https://aka.ms/NPS_vcpkg");
+            msg::println(msgFeedbackAppreciated);
 #endif
         }
         else
         {
-            print2("Send an email to vcpkg@microsoft.com with any feedback.\n");
+            msg::println(msgEmailVcpkgTeam, msg::url = "vcpkg@microsoft.com");
         }
         Checks::exit_success(VCPKG_LINE_INFO);
     }

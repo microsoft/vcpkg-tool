@@ -2,7 +2,6 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.format-manifest.h>
 #include <vcpkg/paragraphs.h>
@@ -25,20 +24,20 @@ namespace
 
     Optional<ToWrite> read_manifest(Filesystem& fs, Path&& manifest_path)
     {
-        auto path_string = manifest_path.native();
-        Debug::print("Reading ", path_string, "\n");
+        const auto& path_string = manifest_path.native();
+        Debug::println("Reading ", path_string);
         auto contents = fs.read_contents(manifest_path, VCPKG_LINE_INFO);
         auto parsed_json_opt = Json::parse(contents, manifest_path);
         if (!parsed_json_opt)
         {
-            vcpkg::printf(Color::error, "Failed to parse %s: %s\n", path_string, parsed_json_opt.error()->to_string());
+            msg::println(Color::error, LocalizedString::from_raw(parsed_json_opt.error()->to_string()));
             return nullopt;
         }
 
-        const auto& parsed_json = parsed_json_opt.value_or_exit(VCPKG_LINE_INFO).first;
+        const auto& parsed_json = parsed_json_opt.value_or_exit(VCPKG_LINE_INFO).value;
         if (!parsed_json.is_object())
         {
-            vcpkg::printf(Color::error, "The file %s is not an object\n", path_string);
+            msg::println_error(msgJsonErrorMustBeAnObject, msg::path = path_string);
             return nullopt;
         }
 
@@ -47,7 +46,7 @@ namespace
         auto scf = SourceControlFile::parse_project_manifest_object(path_string, parsed_json_obj, stdout_sink);
         if (!scf)
         {
-            vcpkg::printf(Color::error, "Failed to parse manifest file: %s\n", path_string);
+            msg::println_error(msgFailedToParseManifest, msg::path = path_string);
             print_error_message(scf.error());
             return nullopt;
         }
@@ -62,7 +61,7 @@ namespace
 
     Optional<ToWrite> read_control_file(Filesystem& fs, Path&& control_path)
     {
-        Debug::print("Reading ", control_path, "\n");
+        Debug::println("Reading ", control_path);
 
         auto manifest_path = Path(control_path.parent_path()) / "vcpkg.json";
         auto contents = fs.read_contents(control_path, VCPKG_LINE_INFO);
@@ -70,14 +69,16 @@ namespace
 
         if (!paragraphs)
         {
-            vcpkg::printf(Color::error, "Failed to read paragraphs from %s: %s\n", control_path, paragraphs.error());
+            msg::println_error(msg::format(msgFailedToReadParagraph, msg::path = control_path)
+                                   .append_raw(": ")
+                                   .append_raw(paragraphs.error()));
             return {};
         }
         auto scf_res =
             SourceControlFile::parse_control_file(control_path, std::move(paragraphs).value_or_exit(VCPKG_LINE_INFO));
         if (!scf_res)
         {
-            vcpkg::printf(Color::error, "Failed to parse control file: %s\n", control_path);
+            msg::println_error(msgFailedToParseControl, msg::path = control_path);
             print_error_message(scf_res.error());
             return {};
         }
@@ -96,55 +97,36 @@ namespace
         const auto& file_to_write_string = data.file_to_write.native();
         if (data.file_to_write == data.original_path)
         {
-            Debug::print("Formatting ", file_to_write_string, "\n");
+            Debug::println("Formatting ", file_to_write_string);
         }
         else
         {
-            Debug::print("Converting ", file_to_write_string, " -> ", original_path_string, "\n");
+            Debug::println("Converting ", file_to_write_string, " -> ", original_path_string);
         }
+
         auto res = serialize_manifest(data.scf);
 
-        auto check = SourceControlFile::parse_project_manifest_object(StringView{}, res, null_sink);
-        if (!check)
+        // reparse res to ensure no semantic changes were made
+        auto maybe_reparsed = SourceControlFile::parse_project_manifest_object(StringView{}, res, null_sink);
+        bool reparse_matches;
+        if (auto reparsed = maybe_reparsed.get())
         {
-            vcpkg::printf(Color::error,
-                          R"([correctness check] Failed to parse serialized manifest file of %s
-Please open an issue at https://github.com/microsoft/vcpkg, with the following output:
-Error:)",
-                          data.scf.core_paragraph->name);
-            print_error_message(check.error());
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                       R"(
-=== Serialized manifest file ===
-%s
-)",
-                                       Json::stringify(res));
+            reparse_matches = **reparsed == data.scf;
+        }
+        else
+        {
+            // if we failed to reparse clearly it differs
+            reparse_matches = false;
         }
 
-        auto check_scf = std::move(check).value_or_exit(VCPKG_LINE_INFO);
-        if (*check_scf != data.scf)
+        if (!reparse_matches)
         {
-            Checks::exit_maybe_upgrade(
+            Checks::msg_exit_maybe_upgrade(
                 VCPKG_LINE_INFO,
-                R"([correctness check] The serialized manifest SCF was different from the original SCF.
-Please open an issue at https://github.com/microsoft/vcpkg, with the following output:
-
-=== Original File ===
-%s
-
-=== Serialized File ===
-%s
-
-=== Original SCF ===
-%s
-
-=== Serialized SCF ===
-%s
-)",
-                data.original_source,
-                Json::stringify(res, {}),
-                Json::stringify(serialize_debug_manifest(data.scf)),
-                Json::stringify(serialize_debug_manifest(*check_scf)));
+                msg::format(msgMismatchedManifestAfterReserialize)
+                    .append_raw(fmt::format("\n=== Original File ===\n{}\n=== Serialized File ===\n{}\n",
+                                            data.original_source,
+                                            Json::stringify(res, {}))));
         }
 
         // the manifest scf is correct
@@ -152,16 +134,20 @@ Please open an issue at https://github.com/microsoft/vcpkg, with the following o
         fs.write_contents(data.file_to_write, Json::stringify(res), ec);
         if (ec)
         {
-            Checks::exit_with_message(
-                VCPKG_LINE_INFO, "Failed to write manifest file %s: %s\n", file_to_write_string, ec.message());
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                        msg::format(msgFailedToWriteManifest, msg::path = file_to_write_string)
+                                            .append_raw(": ")
+                                            .append_raw(ec.message()));
         }
         if (data.original_path != data.file_to_write)
         {
             fs.remove(data.original_path, ec);
             if (ec)
             {
-                Checks::exit_with_message(
-                    VCPKG_LINE_INFO, "Failed to remove control file %s: %s\n", original_path_string, ec.message());
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                            msg::format(msgFailedToRemoveControl, msg::path = original_path_string)
+                                                .append_raw(": ")
+                                                .append_raw(ec.message()));
             }
         }
     }
@@ -173,12 +159,12 @@ namespace vcpkg::Commands::FormatManifest
     static constexpr StringLiteral OPTION_CONVERT_CONTROL = "convert-control";
 
     const CommandSwitch FORMAT_SWITCHES[] = {
-        {OPTION_ALL, "Format all ports' manifest files."},
-        {OPTION_CONVERT_CONTROL, "Convert CONTROL files to manifest files."},
+        {OPTION_ALL, []() { return msg::format(msgCmdFormatManifestOptAll); }},
+        {OPTION_CONVERT_CONTROL, []() { return msg::format(msgCmdFormatManifestOptConvertControl); }},
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string(R"###(format-manifest --all)###"),
+        [] { return create_example_string("format-manifest --all"); },
         0,
         SIZE_MAX,
         {FORMAT_SWITCHES, {}, {}},
@@ -197,25 +183,25 @@ namespace vcpkg::Commands::FormatManifest
 
         if (!format_all && convert_control)
         {
-            print2(Color::warning, R"(format-manifest was passed '--convert-control' without '--all'.
-    This doesn't do anything:
-    we will automatically convert all control files passed explicitly.)");
+            msg::println_warning(msgMissingArgFormatManifest);
         }
 
         if (!format_all && args.command_arguments.empty())
         {
-            Checks::exit_with_message(
-                VCPKG_LINE_INFO,
-                "No files to format; please pass either --all, or the explicit files to format or convert.");
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgFailedToFormatMissingFile);
         }
 
         std::vector<ToWrite> to_write;
 
         const auto add_file = [&to_write, &has_error](Optional<ToWrite>&& opt) {
             if (auto t = opt.get())
+            {
                 to_write.push_back(std::move(*t));
+            }
             else
+            {
                 has_error = true;
+            }
         };
 
         for (Path path : args.command_arguments)
@@ -244,10 +230,10 @@ namespace vcpkg::Commands::FormatManifest
                 auto manifest_exists = fs.exists(manifest_path, IgnoreErrors{});
                 auto control_exists = fs.exists(control_path, IgnoreErrors{});
 
-                Checks::check_exit(VCPKG_LINE_INFO,
-                                   !manifest_exists || !control_exists,
-                                   "Both a manifest file and a CONTROL file exist in port directory: %s",
-                                   dir);
+                if (manifest_exists && control_exists)
+                {
+                    Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgControlAndManifestFilesPresent, msg::path = dir);
+                }
 
                 if (manifest_exists)
                 {
@@ -271,7 +257,7 @@ namespace vcpkg::Commands::FormatManifest
         }
         else
         {
-            print2("Succeeded in formatting the manifest files.\n");
+            msg::println(msgManifestFormatCompleted);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
     }

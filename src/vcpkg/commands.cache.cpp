@@ -1,5 +1,4 @@
 #include <vcpkg/base/files.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/binaryparagraph.h>
 #include <vcpkg/commands.cache.h>
@@ -27,9 +26,7 @@ namespace vcpkg::Commands::Cache
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
-        Strings::format(
-            "The argument should be a substring to search for, or no argument to display all cached libraries.\n%s",
-            create_example_string("cache png")),
+        [] { return msg::format(msgCacheHelp).append_raw('\n').append(create_example_string("cache png")); },
         0,
         1,
         {},
@@ -43,7 +40,7 @@ namespace vcpkg::Commands::Cache
         const std::vector<BinaryParagraph> binary_paragraphs = read_all_binary_paragraphs(paths);
         if (binary_paragraphs.empty())
         {
-            print2("No packages are cached.\n");
+            msg::println(msgNoCachedPackages);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
@@ -51,7 +48,7 @@ namespace vcpkg::Commands::Cache
         {
             for (const BinaryParagraph& binary_paragraph : binary_paragraphs)
             {
-                print2(binary_paragraph.displayname(), '\n');
+                msg::write_unlocalized_text_to_stdout(Color::none, binary_paragraph.displayname() + '\n');
             }
         }
         else
@@ -64,8 +61,7 @@ namespace vcpkg::Commands::Cache
                 {
                     continue;
                 }
-
-                print2(displayname, '\n');
+                msg::write_unlocalized_text_to_stdout(Color::none, displayname + '\n');
             }
         }
 

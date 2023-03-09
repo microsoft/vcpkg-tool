@@ -3,7 +3,7 @@
 
 /* eslint-disable @typescript-eslint/ban-types */
 
-import { EventEmitter } from 'ee-ts';
+import { EventEmitter } from 'node:events';
 import { Readable, Writable } from 'stream';
 import { Session } from '../session';
 import { Uri } from '../util/uri';
@@ -196,7 +196,7 @@ async function* asyncIterableOverHandle(start: number, end: number, handle: Read
   }
 }
 
-export abstract class FileSystem extends EventEmitter<FileSystemEvents> {
+export abstract class FileSystem extends EventEmitter {
 
   protected baseUri?: Uri;
 
@@ -229,7 +229,7 @@ export abstract class FileSystem extends EventEmitter<FileSystemEvents> {
  *
  * @param value A string which represents an URI (see `URI#toString`).
  */
-  parse(value: string, _strict?: boolean): Uri {
+  parseUri(value: string, _strict?: boolean): Uri {
     return Uri.parse(this, value, _strict);
   }
 

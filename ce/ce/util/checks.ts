@@ -4,7 +4,7 @@
 import { isScalar, isSeq, YAMLMap } from 'yaml';
 import { i } from '../i18n';
 import { ErrorKind } from '../interfaces/error-kind';
-import { ValidationError } from '../interfaces/validation-error';
+import { ValidationMessage } from '../interfaces/validation-message';
 import { Uri } from './uri';
 
 /** @internal */
@@ -19,8 +19,8 @@ export function isPrimitive(value: any): value is (string | number | boolean) {
 }
 
 /** @internal */
-export function isNullish(value: any): value is null | undefined {
-  return value === null || value === undefined || value === '';
+export function isNullish(value: any): value is null | undefined | '' | 0 {
+  return value === null || value === undefined || value === '' || value === 0;
 }
 
 /** @internal */
@@ -28,7 +28,7 @@ export function isIterable<T>(source: any): source is Iterable<T> {
   return !!source && typeof (source) !== 'string' && !!source[Symbol.iterator];
 }
 
-export function* checkOptionalString(parent: YAMLMap, range: [number, number, number], name: string): Iterable<ValidationError> {
+export function* checkOptionalString(parent: YAMLMap, range: [number, number, number], name: string): Iterable<ValidationMessage> {
   switch (typeof parent.get(name)) {
     case 'string':
     case 'undefined':
@@ -38,7 +38,7 @@ export function* checkOptionalString(parent: YAMLMap, range: [number, number, nu
   }
 }
 
-export function* checkOptionalBool(parent: YAMLMap, range: [number, number, number], name: string): Iterable<ValidationError> {
+export function* checkOptionalBool(parent: YAMLMap, range: [number, number, number], name: string): Iterable<ValidationMessage> {
   switch (typeof parent.get(name)) {
     case 'boolean':
     case 'undefined':
@@ -63,7 +63,7 @@ function checkOptionalArrayOfStringsImpl(parent: YAMLMap, range: [number, number
   return false;
 }
 
-export function* checkOptionalArrayOfStrings(parent: YAMLMap, range: [number, number, number], name: string): Iterable<ValidationError> {
+export function* checkOptionalArrayOfStrings(parent: YAMLMap, range: [number, number, number], name: string): Iterable<ValidationMessage> {
   if (checkOptionalArrayOfStringsImpl(parent, range, name)) {
     yield { message: i`${name} must be an array of strings, or unset`, range: range, category: ErrorKind.IncorrectType };
   }

@@ -1,16 +1,16 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { EventEmitter } from 'ee-ts';
+import { EventEmitter } from 'node:events';
 import { Session } from '../session';
 
 /** Event defintions for channel events */
 export interface ChannelEvents {
-  warning(text: string, context: any, msec: number): void;
-  error(text: string, context: any, msec: number): void;
-  message(text: string, context: any, msec: number): void;
-  debug(text: string, context: any, msec: number): void;
-  verbose(text: string, context: any, msec: number): void;
+  warning(text: string, msec: number): void;
+  error(text: string, msec: number): void;
+  message(text: string, msec: number): void;
+  debug(text: string, msec: number): void;
+  verbose(text: string, msec: number): void;
 }
 
 /**
@@ -40,24 +40,21 @@ export class Stopwatch {
  *
  * Warning, Error, Message, Debug
  */
-export class Channels extends EventEmitter<ChannelEvents> {
+export class Channels extends EventEmitter {
   /** @internal */
   readonly stopwatch: Stopwatch;
 
-  warning(text: string | Array<string>, context?: any) {
-    typeof text === 'string' ? this.emit('warning', text, context, this.stopwatch.total) : text.forEach(t => this.emit('warning', t, context, this.stopwatch.total));
+  warning(text: string | Array<string>) {
+    typeof text === 'string' ? this.emit('warning', text, this.stopwatch.total) : text.forEach(t => this.emit('warning', t, this.stopwatch.total));
   }
-  error(text: string | Array<string>, context?: any) {
-    typeof text === 'string' ? this.emit('error', text, context, this.stopwatch.total) : text.forEach(t => this.emit('error', t, context, this.stopwatch.total));
+  error(text: string | Array<string>) {
+    typeof text === 'string' ? this.emit('error', text, this.stopwatch.total) : text.forEach(t => this.emit('error', t, this.stopwatch.total));
   }
-  message(text: string | Array<string>, context?: any) {
-    typeof text === 'string' ? this.emit('message', text, context, this.stopwatch.total) : text.forEach(t => this.emit('message', t, context, this.stopwatch.total));
+  message(text: string | Array<string>) {
+    typeof text === 'string' ? this.emit('message', text, this.stopwatch.total) : text.forEach(t => this.emit('message', t, this.stopwatch.total));
   }
-  debug(text: string | Array<string>, context?: any) {
-    typeof text === 'string' ? this.emit('debug', text, context, this.stopwatch.total) : text.forEach(t => this.emit('debug', t, context, this.stopwatch.total));
-  }
-  verbose(text: string | Array<string>, context?: any) {
-    typeof text === 'string' ? this.emit('verbose', text, context, this.stopwatch.total) : text.forEach(t => this.emit('verbose', t, context, this.stopwatch.total));
+  debug(text: string | Array<string>) {
+    typeof text === 'string' ? this.emit('debug', text, this.stopwatch.total) : text.forEach(t => this.emit('debug', t, this.stopwatch.total));
   }
   constructor(session: Session) {
     super();

@@ -1,39 +1,190 @@
 #pragma once
 
 #include <vcpkg/base/files.h>
-#include <vcpkg/base/lockguarded.h>
-#include <vcpkg/base/util.h>
+#include <vcpkg/base/stringview.h>
 
+#include <array>
+#include <atomic>
+#include <map>
+#include <mutex>
+#include <set>
 #include <string>
 
 namespace vcpkg
 {
-    struct Metrics
+    enum class DefineMetric
     {
-        Metrics() = default;
-        Metrics(const Metrics&) = delete;
-        Metrics& operator=(const Metrics&) = delete;
-
-        void set_send_metrics(bool should_send_metrics);
-        void set_print_metrics(bool should_print_metrics);
-
-        // This function is static and must be called outside the g_metrics lock.
-        static void enable();
-
-        void track_metric(const std::string& name, double value);
-        void track_buildtime(const std::string& name, double value);
-        void track_property(const std::string& name, const std::string& value);
-        void track_property(const std::string& name, bool value);
-        void track_feature(const std::string& feature, bool value);
-        void track_option(const std::string& option, bool value);
-
-        bool metrics_enabled();
-
-        void upload(const std::string& payload);
-        void flush(Filesystem& fs);
+        AssetSource,
+        BinaryCachingAws,
+        BinaryCachingAzBlob,
+        BinaryCachingCos,
+        BinaryCachingDefault,
+        BinaryCachingFiles,
+        BinaryCachingGcs,
+        BinaryCachingHttp,
+        BinaryCachingNuget,
+        BinaryCachingSource,
+        ErrorVersioningDisabled,
+        ErrorVersioningNoBaseline,
+        GitHubRepository,
+        ManifestBaseline,
+        ManifestOverrides,
+        ManifestVersionConstraint,
+        RegistriesErrorCouldNotFindBaseline,
+        RegistriesErrorNoVersionsAtCommit,
+        VcpkgBinarySources,
+        VcpkgDefaultBinaryCache,
+        VcpkgNugetRepository,
+        VersioningErrorBaseline,
+        VersioningErrorVersion,
+        X_VcpkgRegistriesCache,
+        X_WriteNugetPackagesConfig,
+        COUNT // always keep COUNT last
     };
 
-    Optional<StringView> find_first_nonzero_mac(StringView sv);
+    struct DefineMetricEntry
+    {
+        DefineMetric metric;
+        StringLiteral name;
+    };
 
-    extern LockGuarded<Metrics> g_metrics;
+    extern const std::array<DefineMetricEntry, static_cast<size_t>(DefineMetric::COUNT)> all_define_metrics;
+
+    enum class StringMetric
+    {
+        AcquiredArtifacts,
+        CommandArgs,
+        CommandContext,
+        CommandName,
+        DeploymentKind,
+        DetectedCiEnvironment,
+        InstallPlan_1,
+        ListFile,
+        RegistriesDefaultRegistryKind,
+        RegistriesKindsUsed,
+        Title,
+        UserMac,
+        VcpkgVersion,
+        Warning,
+        COUNT // always keep COUNT last
+    };
+
+    struct StringMetricEntry
+    {
+        StringMetric metric;
+        StringLiteral name;
+        StringLiteral preregister_value; // mock values
+    };
+
+    extern const std::array<StringMetricEntry, static_cast<size_t>(StringMetric::COUNT)> all_string_metrics;
+
+    enum class BoolMetric
+    {
+        DetectedContainer,
+        FeatureFlagBinaryCaching,
+        FeatureFlagCompilerTracking,
+        FeatureFlagManifests,
+        FeatureFlagRegistries,
+        FeatureFlagVersions,
+        InstallManifestMode,
+        OptionOverlayPorts,
+        COUNT // always keep COUNT last
+    };
+
+    struct BoolMetricEntry
+    {
+        BoolMetric metric;
+        StringLiteral name;
+    };
+
+    extern const std::array<BoolMetricEntry, static_cast<size_t>(BoolMetric::COUNT)> all_bool_metrics;
+
+    // Batches metrics changes so they can be submitted under a single lock acquisition or
+    // in a single JSON payload.
+    struct MetricsSubmission
+    {
+        void track_elapsed_us(double value);
+        void track_buildtime(StringView name, double value);
+        void track_define(DefineMetric metric);
+        void track_string(StringMetric metric, StringView value);
+        void track_bool(BoolMetric metric, bool value);
+        void merge(MetricsSubmission&& other);
+
+        double elapsed_us = 0.0;
+        std::map<std::string, double, std::less<>> buildtimes;
+        std::set<DefineMetric> defines;
+        std::map<StringMetric, std::string> strings;
+        std::map<BoolMetric, bool> bools;
+    };
+
+    // Collects metrics, potentially from multiple threads.
+    // Member functions of this type are safe to call from multiple threads, and will
+    // be observed in a total order.
+    struct MetricsCollector
+    {
+        MetricsCollector() = default;
+        MetricsCollector(const MetricsCollector&) = delete;
+        MetricsCollector& operator=(const MetricsCollector&) = delete;
+        ~MetricsCollector() = default;
+
+        // Track
+        void track_elapsed_us(double value);
+        void track_buildtime(StringView name, double value);
+        void track_define(DefineMetric metric);
+        void track_string(StringMetric metric, StringView value);
+        void track_bool(BoolMetric metric, bool value);
+        void track_submission(MetricsSubmission&& submission_);
+
+        // Consume
+        MetricsSubmission get_submission() const;
+
+    private:
+        mutable std::mutex mtx;
+        MetricsSubmission submission;
+    };
+
+    MetricsCollector& get_global_metrics_collector() noexcept; // Meyers singleton
+
+    struct MetricsUserConfig
+    {
+        std::string user_id;
+        std::string user_time;
+        std::string user_mac;
+
+        std::string last_completed_survey;
+
+        void to_string(std::string&) const;
+        std::string to_string() const;
+        void try_write(Filesystem& fs) const;
+
+        // If *this is missing data normally provided by the system, fill it in;
+        // otherwise, no effects.
+        // Returns whether any values needed to be modified.
+        bool fill_in_system_values();
+    };
+
+    MetricsUserConfig try_parse_metrics_user(StringView content);
+    MetricsUserConfig try_read_metrics_user(const Filesystem& fs);
+
+    struct MetricsSessionData
+    {
+        std::string submission_time;
+        std::string os_version;
+        std::string session_id;
+
+        static MetricsSessionData from_system();
+    };
+
+    std::string format_metrics_payload(const MetricsUserConfig& user,
+                                       const MetricsSessionData& session,
+                                       const MetricsSubmission& submission);
+
+    extern std::atomic<bool> g_metrics_enabled;
+    extern std::atomic<bool> g_should_print_metrics;
+    extern std::atomic<bool> g_should_send_metrics;
+
+    void flush_global_metrics(Filesystem&);
+#if defined(_WIN32)
+    void winhttp_upload_metrics(StringView payload);
+#endif // ^^^ _WIN32
 }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/view.h>
+#include <vcpkg/base/span.h>
 
 #include <algorithm>
 #include <functional>
@@ -24,12 +24,23 @@ namespace vcpkg::Util
         {
             augend->insert(augend->end(), addend.begin(), addend.end());
         }
+        template<class Vec, class Key, class KeyEqual>
+        bool contains(const Vec& container, const Key& item, KeyEqual key_equal)
+        {
+            for (auto&& citem : container)
+            {
+                if (key_equal(citem, item))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
         template<class Vec, class Key>
         bool contains(const Vec& container, const Key& item)
         {
-            using std::begin;
-            using std::end;
-            return std::find(begin(container), end(container), item) != end(container);
+            return std::find(container.begin(), container.end(), item) != container.end();
         }
         template<class T>
         std::vector<T> concat(View<T> r1, View<T> r2)
@@ -49,6 +60,39 @@ namespace vcpkg::Util
         {
             return container.find(item) != container.end();
         }
+    }
+
+    // Treats the range [first, last) a range sorted by cmp, and copies any duplicate elements to
+    // the output range out.
+    template<class FwdIt, class OutIt, class Cmp>
+    void set_duplicates(FwdIt first, FwdIt last, OutIt out, Cmp cmp)
+    {
+        // pre: [first, last) is sorted according to cmp
+        if (first != last)
+        {
+            for (auto next = first; ++next != last; first = next)
+            {
+                if (!(cmp(*first, *next)))
+                {
+                    *out = *first;
+                    ++out;
+                    do
+                    {
+                        ++next;
+                        if (next == last)
+                        {
+                            return;
+                        }
+                    } while (!(cmp(*first, *next)));
+                }
+            }
+        }
+    }
+
+    template<class FwdIt, class OutIt>
+    void set_duplicates(FwdIt first, FwdIt last, OutIt out)
+    {
+        return set_duplicates(first, last, out, std::less<>{});
     }
 
     namespace Maps
@@ -231,6 +275,13 @@ namespace vcpkg::Util
         using std::begin;
         using std::end;
         return std::find(begin(cont), end(cont), v);
+    }
+
+    template<class Range, class T>
+    bool contains(const Range& r, const T& el)
+    {
+        using std::end;
+        return Util::find(r, el) != end(r);
     }
 
     template<class Container, class Pred>

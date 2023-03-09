@@ -43,11 +43,15 @@ namespace vcpkg
     std::string try_extract_port_name_from_path(StringView path);
 
     // Attempts to parse the git status output returns a parsing error message on failure
-    ExpectedL<std::vector<GitStatusLine>> parse_git_status_output(StringView git_status_output);
+    ExpectedL<std::vector<GitStatusLine>> parse_git_status_output(StringView git_status_output,
+                                                                  StringView git_command_line);
 
     // Run git status on a repository, optionaly a specific subpath can be queried
     ExpectedL<std::vector<GitStatusLine>> git_status(const GitConfig& config, StringView path = "");
 
     // Returns a list of ports that have uncommitted/unmerged changes
     ExpectedL<std::set<std::string>> git_ports_with_uncommitted_changes(const GitConfig& config);
+
+    // Check whether a repository is a shallow clone
+    ExpectedL<bool> is_shallow_clone(const GitConfig& config);
 }

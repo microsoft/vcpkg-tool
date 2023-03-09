@@ -29,7 +29,7 @@ $privateCommands = @(
 )
 
 function getOptionsForPrefix($prefix, $commands) {
-    $commands | Sort-Object | ? { $_.StartsWith($prefix) }
+    ($commands | Sort-Object | ? { $_.StartsWith($prefix) }) -join '`n'
 }
 function arraysEqual($arr1, $arr2) {
     if ($arr1.Length -ne $arr2.Length) {
@@ -66,9 +66,9 @@ $privatePrefixesToTest = @(
 function testPrefixes($toTest, $commands) {
     $toTest | % {
         $expected = getOptionsForPrefix $_ $commands
-        $found = Run-Vcpkg autocomplete $_
+        $found = Run-VcpkgAndCaptureOutput autocomplete $_
         Throw-IfFailed
-        if (-not (arraysEqual @($expected) @($found))) {
+        if (-not $expected -eq $found) {
             Write-Host "unexpected result from vcpkg autocomplete:
         expected: `"$($expected -join '" "')`"
         found   : `"$($found -join '" "')`""

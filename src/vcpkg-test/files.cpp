@@ -1,4 +1,4 @@
-#include <vcpkg/base/system_headers.h>
+#include <vcpkg/base/system-headers.h>
 
 #include <catch2/catch.hpp>
 
@@ -131,7 +131,7 @@ namespace
             // regular directory
             fs.create_directory(base, ec);
             CHECK_EC_ON_FILE(base, ec);
-            for (int i = 0; i < 5; ++i)
+            for (unsigned int i = 0; i < 5; ++i)
             {
                 create_directory_tree(urbg, fs, base / get_random_filename(urbg), remaining_depth - 1);
             }
@@ -140,6 +140,15 @@ namespace
             if (urbg() & 1u)
             {
                 const auto chmod_result = ::chmod(base.c_str(), 0444);
+                if (chmod_result != 0)
+                {
+                    const auto failure_message = std::generic_category().message(errno);
+                    FAIL("chmod failed with " << failure_message);
+                }
+            }
+            if (urbg() & 2u)
+            {
+                const auto chmod_result = ::chmod(base.c_str(), 0000); // e.g. bazel sandbox
                 if (chmod_result != 0)
                 {
                     const auto failure_message = std::generic_category().message(errno);
@@ -256,7 +265,6 @@ TEST_CASE ("vcpkg Path conversions", "[filesystem][files]")
     CHECK(Path(str).native() == "some string");
     CHECK(Path(std::move(moved_from)).native() == "moved from");
     CHECK(Path(ntbs).native() == "some utf-8");
-    CHECK(Path(str.begin(), str.end()).native() == "some string");
     CHECK(Path(str.data(), str.size()).native() == "some string");
 
     Path p("convert from");

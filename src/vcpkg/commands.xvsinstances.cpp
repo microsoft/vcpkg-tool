@@ -1,5 +1,3 @@
-#include <vcpkg/base/system.print.h>
-
 #include <vcpkg/commands.xvsinstances.h>
 #include <vcpkg/help.h>
 #include <vcpkg/vcpkgcmdarguments.h>
@@ -9,7 +7,7 @@
 namespace vcpkg::Commands::X_VSInstances
 {
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("x-vsinstances"),
+        [] { return create_example_string("x-vsinstances"); },
         0,
         0,
         {{}, {}},
@@ -24,14 +22,14 @@ namespace vcpkg::Commands::X_VSInstances
         const auto instances = vcpkg::VisualStudio::get_visual_studio_instances(paths.get_filesystem());
         for (const std::string& instance : instances)
         {
-            print2(instance, '\n');
+            msg::write_unlocalized_text_to_stdout(Color::none, instance + "\n");
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
 #else
         (void)args;
         (void)paths;
-        Checks::exit_with_message(VCPKG_LINE_INFO, "This command is not supported on non-windows platforms.");
+        Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgWindowsOnlyCommand);
 #endif
     }
 

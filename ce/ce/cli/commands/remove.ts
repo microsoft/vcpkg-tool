@@ -4,17 +4,14 @@
 import { i } from '../../i18n';
 import { session } from '../../main';
 import { Command } from '../command';
-import { activateProject } from '../project';
 import { error, log } from '../styling';
 import { Project } from '../switches/project';
-import { WhatIf } from '../switches/whatIf';
 
 export class RemoveCommand extends Command {
   readonly command = 'remove';
   readonly aliases = [];
   seeAlso = [];
   argumentsHelp = [];
-  whatIf = new WhatIf(this);
   project: Project = new Project(this);
 
   get summary() {
@@ -54,7 +51,6 @@ export class RemoveCommand extends Command {
 
     // write the file out.
     await projectManifest.metadata.save();
-
-    return await activateProject(projectManifest, this.commandLine);
+    return true;
   }
 }

@@ -1,11 +1,12 @@
 {
+  "$schema": "https://json.schemastore.org/component-detection-manifest.json",
   "Registrations": [
     {
       "Component": {
         "Type": "git",
         "git": {
           "RepositoryUrl": "https://github.com/catchorg/Catch2",
-          "CommitHash": "c4e3767e265808590986d5db6ca1b5532a7f3d13"
+          "CommitHash": "62fd660583d3ae7a7886930b413c3c570e89786c"
         }
       },
       "DevelopmentDependency": true,
@@ -16,7 +17,7 @@
         "Type": "git",
         "git": {
           "RepositoryUrl": "https://github.com/fmtlib/fmt",
-          "CommitHash": "b6f4ceaed0a0a24ccf575fab6c56dd50ccf6f1a9"
+          "CommitHash": "a33701196adfad74917046096bf5a2aa0ab0bb50"
         }
       },
       "DevelopmentDependency": false,

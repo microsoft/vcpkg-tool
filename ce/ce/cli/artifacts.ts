@@ -2,61 +2,79 @@
 // Licensed under the MIT License.
 
 import { MultiBar, SingleBar } from 'cli-progress';
-import { Artifact, ArtifactMap } from '../artifacts/artifact';
+import { Artifact, ArtifactBase, InstallStatus, ResolvedArtifact, resolveDependencies, Selections } from '../artifacts/artifact';
 import { i } from '../i18n';
-import { trackAcquire } from '../insights';
-import { Registries } from '../registries/registries';
+import { FileEntry, InstallEvents } from '../interfaces/events';
+import { getArtifact, RegistryDisplayContext, RegistryResolver } from '../registries/registries';
 import { Session } from '../session';
-import { artifactIdentity, artifactReference } from './format';
-import { Table } from './markdown-table';
+import { Channels } from '../util/channels';
+import { Uri } from '../util/uri';
+import { Table } from './console-table';
+import { addVersionToArtifactIdentity, artifactIdentity } from './format';
 import { debug, error, log } from './styling';
 
-export async function showArtifacts(artifacts: Iterable<Artifact>, options?: { force?: boolean }) {
+export async function showArtifacts(artifacts: Iterable<ResolvedArtifact>, registries: RegistryDisplayContext, options?: { force?: boolean }) {
   let failing = false;
   const table = new Table(i`Artifact`, i`Version`, i`Status`, i`Dependency`, i`Summary`);
-  for (const artifact of artifacts) {
-    const name = artifactIdentity(artifact.registryId, artifact.id, artifact.shortName);
-    if (!artifact.metadata.isValid) {
-      failing = true;
-      for (const err of artifact.metadata.validationErrors) {
-        error(err);
+  for (const resolved of artifacts) {
+    const artifact = resolved.artifact;
+    if (artifact instanceof Artifact) {
+      const name = artifactIdentity(registries.getRegistryDisplayName(artifact.registryUri), artifact.id, artifact.shortName);
+      for (const err of artifact.metadata.validate()) {
+        failing = true;
+        error(artifact.metadata.formatVMessage(err));
       }
+      table.push(name, artifact.version, options?.force || await artifact.isInstalled ? 'installed' : 'will install', resolved.initialSelection ? ' ' : '*', artifact.metadata.summary || '');
     }
-    table.push(name, artifact.version, options?.force || await artifact.isInstalled ? 'installed' : 'will install', artifact.isPrimary ? ' ' : '*', artifact.metadata.info.summary || '');
   }
+
   log(table.toString());
   log();
-
   return !failing;
 }
 
-export type Selections = Map<string, string>;
+export interface SelectedArtifact extends ResolvedArtifact {
+  requestedVersion: string | undefined;
+}
 
-export async function selectArtifacts(selections: Selections, registries: Registries): Promise<false | ArtifactMap> {
-  const artifacts = new ArtifactMap();
-
-  for (const [identity, version] of selections) {
-    const [registry, id, artifact] = await registries.getArtifact(identity, version) || [];
+export async function selectArtifacts(session: Session, selections: Selections, registries: RegistryResolver, dependencyDepth: number): Promise<false | Array<SelectedArtifact>> {
+  const userSelectedArtifacts = new Map<string, ArtifactBase>();
+  const userSelectedVersions = new Map<string, string>();
+  for (const [idOrShortName, version] of selections) {
+    const [, artifact] = await getArtifact(registries, idOrShortName, version) || [];
 
     if (!artifact) {
-      error(`Unable to resolve artifact: ${artifactReference('', identity, version)}`);
+      error(`Unable to resolve artifact: ${addVersionToArtifactIdentity(idOrShortName, version)}`);
 
-      const results = await registries.search({ keyword: identity, version: version });
+      const results = await registries.search({ keyword: idOrShortName, version: version });
       if (results.length) {
-        log('\nPossible matches:');
-        for (const [reg, key, arts] of results) {
-          log(`  ${artifactReference(registries.getRegistryName(reg), key, '')}`);
+        log('Possible matches:');
+        for (const [artifactDisplay, artifactVersions] of results) {
+          for (const artifactVersion of artifactVersions) {
+            log(`  ${addVersionToArtifactIdentity(artifactDisplay, artifactVersion.version)}`);
+          }
         }
       }
 
       return false;
     }
 
-    artifacts.set(artifact.uniqueId, [artifact, identity, version]);
-    artifact.isPrimary = true;
-    await artifact.resolveDependencies(artifacts);
+    userSelectedArtifacts.set(artifact.uniqueId, artifact);
+    userSelectedVersions.set(artifact.uniqueId, version);
   }
-  return artifacts;
+
+  const allResolved = await resolveDependencies(session, registries, Array.from(userSelectedArtifacts.values()), dependencyDepth);
+  const results = new Array<SelectedArtifact>();
+  for (const resolved of allResolved) {
+    results.push({...resolved, 'requestedVersion': userSelectedVersions.get(resolved.uniqueId)});
+  }
+
+  return results;
+}
+
+interface ProgressRenderer extends InstallEvents {
+  setArtifactIndex(index: number, displayName: string): void;
+  stop(): void;
 }
 
 enum TaggedProgressKind {
@@ -93,7 +111,7 @@ class TaggedProgressBar {
       this.bar.update(currentValue, payload);
     } else {
       this.kind = kind;
-      this.bar = this.multiBar.create(total, currentValue, payload, { format: '{bar}\u25A0 {percentage}% {suffix}' });
+      this.bar = this.multiBar.create(total, currentValue, payload, { format: '{bar} {percentage}% {suffix}' });
     }
   }
 
@@ -108,70 +126,148 @@ class TaggedProgressBar {
       const prefixSpaces = Math.floor(totalSpaces / 2);
       const suffixSpaces = totalSpaces - prefixSpaces;
       const prettyProgressUnknown = Array(prefixSpaces).join(' ') + progressUnknown + Array(suffixSpaces).join(' ');
-      this.bar = this.multiBar.create(0, 0, payload, { format: '\u25A0' + prettyProgressUnknown + '\u25A0 {suffix}' });
+      this.bar = this.multiBar.create(0, 0, payload, { format: '*' + prettyProgressUnknown + '* {suffix}' });
     }
   }
 }
 
-export async function installArtifacts(session: Session, artifacts: Array<Artifact>, options?: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<[boolean, Map<Artifact, boolean>]> {
-  // resolve the full set of artifacts to install.
-  const installed = new Map<Artifact, boolean>();
-  const bar = new MultiBar({
-    clearOnComplete: true, hideCursor: true,
-    barCompleteChar: '\u25A0',
+class TtyProgressRenderer implements Partial<ProgressRenderer> {
+  readonly #bar = new MultiBar({
+    clearOnComplete: true,
+    hideCursor: true,
+    barCompleteChar: '*',
     barIncompleteChar: ' ',
     etaBuffer: 40
   });
+  readonly #overallProgress : SingleBar;
+  readonly #individualProgress : TaggedProgressBar;
 
-  const overallProgress = bar.create(artifacts.length, 0, { name: '' }, { format: '{bar}\u25A0 [{value}/{total}] {name}', emptyOnZero: true });
-  const individualProgress = new TaggedProgressBar(bar);
+  constructor(totalArtifactCount: number) {
+    this.#overallProgress = this.#bar.create(totalArtifactCount, 0, { name: '' }, { format: `{bar} [{value}/${totalArtifactCount - 1}] {name}`, emptyOnZero: true });
+    this.#individualProgress = new TaggedProgressBar(this.#bar);
+  }
 
-  const spinnerValue = 0;
+  setArtifactIndex(index: number, displayName: string): void {
+    this.#overallProgress.update(index, { name: displayName });
+  }
 
-  for (let idx = 0; idx < artifacts.length; ++idx) {
-    const artifact = artifacts[idx];
-    const id = artifact.id;
-    const registryName = artifact.registryId;
-    overallProgress.update(idx, { name: artifactIdentity(registryName, id) });
-    try {
-      const actuallyInstalled = await artifact.install({
-        verifying: (current, percent) => {
-          individualProgress.startOrUpdate(TaggedProgressKind.Verifying, 100, percent, i`verifying` + ' ' + current);
-        },
-        download: (current, percent) => {
-          individualProgress.startOrUpdate(TaggedProgressKind.Downloading, 100, percent, i`downloading` + ' ' + current);
-        },
-        fileProgress: (entry) => {
-          let suffix = entry.extractPath;
-          if (suffix) {
-            suffix = ' ' + suffix;
-          } else {
-            suffix = '';
-          }
+  hashVerifyProgress(file: string, percent: number) {
+    this.#individualProgress.startOrUpdate(TaggedProgressKind.Verifying, 100, percent, i`verifying` + ' ' + file);
+  }
 
-          individualProgress.startOrUpdate(TaggedProgressKind.GenericProgress, 100, individualProgress.lastCurrentValue, i`unpacking` + suffix);
-        },
-        progress: (percent: number) => {
-          individualProgress.startOrUpdate(TaggedProgressKind.GenericProgress, 100, percent, i`unpacking`);
-        },
-        heartbeat: (text: string) => {
-          individualProgress.heartbeat(text);
-        }
-      }, options || {});
-      // remember what was actually installed
-      installed.set(artifact, actuallyInstalled);
-      if (actuallyInstalled) {
-        trackAcquire(artifact.id, artifact.version);
-      }
-    } catch (e: any) {
-      bar.stop();
-      debug(e);
-      debug(e.stack);
-      error(i`Error installing ${artifactIdentity(registryName, id)} - ${e} `);
-      return [false, installed];
+  downloadProgress(uri: Uri, destination: string, percent: number) {
+    this.#individualProgress.startOrUpdate(TaggedProgressKind.Downloading, 100, percent, i`downloading ${uri.toString()} -> ${destination}`);
+  }
+
+  unpackFileProgress(entry: Readonly<FileEntry>) {
+    let suffix = entry.extractPath;
+    if (suffix) {
+      suffix = ' ' + suffix;
+    } else {
+      suffix = '';
+    }
+
+    this.#individualProgress.startOrUpdate(TaggedProgressKind.GenericProgress, 100, this.#individualProgress.lastCurrentValue, i`unpacking` + suffix);
+  }
+
+  unpackArchiveProgress(archiveUri: Uri, percent: number) {
+    this.#individualProgress.startOrUpdate(TaggedProgressKind.GenericProgress, 100, percent, i`unpacking ${archiveUri.fsPath}`);
+  }
+
+  unpackArchiveHeartbeat(text: string) {
+    this.#individualProgress.heartbeat(text);
+  }
+
+  stop() {
+    this.#bar.stop();
+  }
+}
+
+const downloadUpdateRateMs = 10 * 1000;
+
+class NoTtyProgressRenderer implements Partial<ProgressRenderer> {
+  #currentIndex = 0;
+  #downloadPrecent = 0;
+  #downloadTimeoutId: NodeJS.Timeout | undefined;
+  constructor(private readonly channels: Channels, private readonly totalArtifactCount: number) {}
+
+  setArtifactIndex(index: number): void {
+    this.#currentIndex = index;
+  }
+
+  startInstallArtifact(displayName: string) {
+    this.channels.message(`[${this.#currentIndex + 1}/${this.totalArtifactCount - 1}] ` + i`Installing ${displayName}...`);
+  }
+
+  alreadyInstalledArtifact(displayName: string) {
+    this.channels.message(`[${this.#currentIndex + 1}/${this.totalArtifactCount - 1}] ` + i`${displayName} already installed.`);
+  }
+
+  downloadStart(uris: Array<Uri>, destination: string) {
+    let displayUri: string;
+    if (uris.length === 1) {
+      displayUri = uris[0].toString();
+    } else {
+      displayUri = JSON.stringify(uris.map(uri => uri.toString()));
+    }
+
+    this.channels.message(i`Downloading ${displayUri}...`);
+    this.#downloadTimeoutId = setTimeout(this.downloadProgressDisplay.bind(this), downloadUpdateRateMs);
+  }
+
+  downloadProgress(uri: Uri, destination: string, percent: number): void {
+    this.#downloadPrecent = percent;
+  }
+
+  downloadProgressDisplay() {
+    this.channels.message(`${this.#downloadPrecent}%`);
+    this.#downloadTimeoutId = setTimeout(this.downloadProgressDisplay.bind(this), downloadUpdateRateMs);
+  }
+
+  downloadComplete(): void {
+    if (this.#downloadTimeoutId) {
+      clearTimeout(this.#downloadTimeoutId);
     }
   }
 
-  bar.stop();
-  return [true, installed];
+  unpackArchiveStart(archiveUri: Uri, outputUri: Uri) {
+    this.channels.message(i`Unpacking ${archiveUri.fsPath}...`);
+  }
+}
+
+export async function acquireArtifacts(session: Session, resolved: Array<ResolvedArtifact>, registries: RegistryDisplayContext, options?: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<boolean> {
+  // resolve the full set of artifacts to install.
+  const isTty = process.stdout.isTTY === true;
+  const progressRenderer : Partial<ProgressRenderer> = isTty ? new TtyProgressRenderer(resolved.length) : new NoTtyProgressRenderer(session.channels, resolved.length);
+  for (let idx = 0; idx < resolved.length; ++idx) {
+    const artifact = resolved[idx].artifact;
+    if (artifact instanceof Artifact) {
+      const id = artifact.id;
+      const registryName = registries.getRegistryDisplayName(artifact.registryUri);
+      const artifactDisplayName = artifactIdentity(registryName, id, artifact.shortName);
+      progressRenderer.setArtifactIndex?.(idx, artifactDisplayName);
+      try {
+        const installStatus = await artifact.install(artifactDisplayName, progressRenderer, options || {});
+        switch (installStatus) {
+          case InstallStatus.Installed:
+            session.trackAcquire(artifact.registryUri.toString(), id, artifact.version);
+            break;
+          case InstallStatus.AlreadyInstalled:
+            break;
+          case InstallStatus.Failed:
+            progressRenderer.stop?.();
+            return false;
+        }
+      } catch (e: any) {
+        progressRenderer.stop?.();
+        debug(e);
+        debug(e.stack);
+        error(i`Error installing ${artifactDisplayName} - ${e}`);
+        return false;
+      }
+    }
+  }
+
+  progressRenderer.stop?.();
+  return true;
 }

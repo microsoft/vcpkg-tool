@@ -1,5 +1,5 @@
 #include <vcpkg/base/strings.h>
-#include <vcpkg/base/system.print.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/cmakevars.h>
@@ -34,7 +34,7 @@ namespace vcpkg::Commands::DependInfo
         {
             if (prefix_buf.size() > 400)
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO, "Recursion depth exceeded.");
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgExceededRecursionDepth);
             }
             auto currPos = std::find_if(
                 allDepends.begin(), allDepends.end(), [&currDepend](const auto& p) { return p.package == currDepend; });
@@ -50,7 +50,7 @@ namespace vcpkg::Commands::DependInfo
             {
                 // If we've already printed the set of dependencies, print an elipsis instead
                 Strings::append(prefix_buf, "+- ...\n");
-                print2(prefix_buf);
+                msg::write_unlocalized_text_to_stdout(Color::none, prefix_buf);
                 prefix_buf.resize(original_size);
             }
             else
@@ -61,7 +61,7 @@ namespace vcpkg::Commands::DependInfo
                 {
                     // Print the current level
                     Strings::append(prefix_buf, "+-- ", *i, "\n");
-                    print2(prefix_buf);
+                    msg::write_unlocalized_text_to_stdout(Color::none, prefix_buf);
                     prefix_buf.resize(original_size);
 
                     // Recurse
@@ -72,7 +72,7 @@ namespace vcpkg::Commands::DependInfo
 
                 // Print the last of the current level
                 Strings::append(prefix_buf, "+-- ", currPos->dependencies.back(), "\n");
-                print2(prefix_buf);
+                msg::write_unlocalized_text_to_stdout(Color::none, prefix_buf);
                 prefix_buf.resize(original_size);
 
                 // Recurse
@@ -91,16 +91,13 @@ namespace vcpkg::Commands::DependInfo
         constexpr int NO_RECURSE_LIMIT_VALUE = -1;
 
         constexpr std::array<CommandSwitch, 3> DEPEND_SWITCHES = {
-            {{OPTION_DOT, "Creates graph on basis of dot"},
-             {OPTION_DGML, "Creates graph on basis of dgml"},
-             {OPTION_SHOW_DEPTH, "Show recursion depth in output"}}};
+            {{OPTION_DOT, []() { return msg::format(msgCmdDependInfoOptDot); }},
+             {OPTION_DGML, []() { return msg::format(msgCmdDependInfoOptDGML); }},
+             {OPTION_SHOW_DEPTH, []() { return msg::format(msgCmdDependInfoOptDepth); }}}};
 
         constexpr std::array<CommandSetting, 2> DEPEND_SETTINGS = {
-            {{OPTION_MAX_RECURSE, "Set max recursion depth, a value of -1 indicates no limit"},
-             {OPTION_SORT,
-              "Set sort order for the list of dependencies, accepted values are: lexicographical, topological "
-              "(default), x-tree, "
-              "reverse"}}};
+            {{OPTION_MAX_RECURSE, []() { return msg::format(msgCmdDependInfoOptMaxRecurse); }},
+             {OPTION_SORT, []() { return msg::format(msgCmdDependInfoOptSort); }}}};
 
         enum SortMode
         {
@@ -119,11 +116,11 @@ namespace vcpkg::Commands::DependInfo
                 std::string value = iter->second;
                 try
                 {
-                    return std::stoi(value);
+                    return std::max(std::stoi(value), NO_RECURSE_LIMIT_VALUE);
                 }
                 catch (std::exception&)
                 {
-                    Checks::exit_with_message(VCPKG_LINE_INFO, "Value of --max-depth must be an integer");
+                    Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgOptionMustBeInteger, msg::option = "max-depth");
                 }
             }
             // No --max-depth set, default to no limit.
@@ -153,11 +150,7 @@ namespace vcpkg::Commands::DependInfo
                 {
                     return it->second;
                 }
-                Checks::exit_with_message(VCPKG_LINE_INFO,
-                                          "Value of --sort must be one of `%s`, `%s`, or `%s`",
-                                          OPTION_SORT_LEXICOGRAPHICAL,
-                                          OPTION_SORT_TOPOLOGICAL,
-                                          OPTION_SORT_REVERSE);
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidCommandArgSort);
             }
             return Default;
         }
@@ -178,15 +171,15 @@ namespace vcpkg::Commands::DependInfo
                 }
 
                 const std::string name = Strings::replace_all(std::string{package.package}, "-", "_");
-                s.append(Strings::format("%s;", name));
+                fmt::format_to(std::back_inserter(s), "{};", name);
                 for (const auto& d : package.dependencies)
                 {
                     const std::string dependency_name = Strings::replace_all(std::string{d}, "-", "_");
-                    s.append(Strings::format("%s -> %s;", name, dependency_name));
+                    fmt::format_to(std::back_inserter(s), "{} -> {};", name, dependency_name);
                 }
             }
 
-            s.append(Strings::format("empty [label=\"%d singletons...\"]; }", empty_node_count));
+            fmt::format_to(std::back_inserter(s), "empty [label=\"{} singletons...\"]; }", empty_node_count);
             return s;
         }
 
@@ -200,19 +193,17 @@ namespace vcpkg::Commands::DependInfo
             for (const auto& package : depend_info)
             {
                 const std::string name = package.package;
-                nodes.append(Strings::format("<Node Id=\"%s\" />", name));
+                fmt::format_to(std::back_inserter(nodes), "<Node Id=\"{}\" />", name);
 
                 // Iterate over dependencies.
                 for (const auto& d : package.dependencies)
                 {
-                    links.append(Strings::format("<Link Source=\"%s\" Target=\"%s\" />", name, d));
+                    fmt::format_to(std::back_inserter(links), "<Link Source=\"{}\" Target=\"{}\" />", name, d);
                 }
             }
 
-            s.append(Strings::format("<Nodes>%s</Nodes>", nodes));
-
-            s.append(Strings::format("<Links>%s</Links>", links));
-
+            fmt::format_to(std::back_inserter(s), "<Nodes>{}</Nodes>", nodes);
+            fmt::format_to(std::back_inserter(s), "<Links>{}</Links>", links);
             s.append("</DirectedGraph>");
             return s;
         }
@@ -228,7 +219,7 @@ namespace vcpkg::Commands::DependInfo
             {
                 return create_dgml_as_string(depend_info);
             }
-            return "";
+            return {};
         }
 
         void assign_depth_to_dependencies(const std::string& package,
@@ -237,8 +228,11 @@ namespace vcpkg::Commands::DependInfo
                                           std::map<std::string, PackageDependInfo>& dependencies_map)
         {
             auto iter = dependencies_map.find(package);
-            Checks::check_exit(
-                VCPKG_LINE_INFO, iter != dependencies_map.end(), "Package not found in dependency graph");
+            if (iter == dependencies_map.end())
+            {
+                Debug::println("Not found in dependency graph: ", package);
+                Checks::unreachable(VCPKG_LINE_INFO);
+            }
 
             PackageDependInfo& info = iter->second;
 
@@ -287,7 +281,7 @@ namespace vcpkg::Commands::DependInfo
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("depend-info sqlite3"),
+        [] { return create_example_string("depend-info sqlite3"); },
         1,
         1,
         {DEPEND_SWITCHES, DEPEND_SETTINGS},
@@ -306,10 +300,14 @@ namespace vcpkg::Commands::DependInfo
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
-                std::string{arg}, default_triplet, COMMAND_STRUCTURE.example_text, paths);
+                std::string{arg}, default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
         });
+        print_default_triplet_warning(args, args.command_arguments);
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
+        auto& fs = paths.get_filesystem();
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(
+            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
@@ -318,12 +316,14 @@ namespace vcpkg::Commands::DependInfo
         StatusParagraphs status_db;
         auto action_plan = create_feature_install_plan(
             provider, var_provider, specs, status_db, {host_triplet, UnsupportedPortAction::Warn});
-        for (const auto& warning : action_plan.warnings)
+        action_plan.print_unsupported_warnings();
+
+        if (!action_plan.remove_actions.empty())
         {
-            print2(Color::warning, warning, '\n');
+            Debug::println("Only install actions should exist in the plan");
+            Checks::unreachable(VCPKG_LINE_INFO);
         }
-        Checks::check_exit(
-            VCPKG_LINE_INFO, action_plan.remove_actions.empty(), "Only install actions should exist in the plan");
+
         std::vector<const InstallPlanAction*> install_actions =
             Util::fmap(action_plan.already_installed, [&](const auto& action) { return &action; });
         for (auto&& action : action_plan.install_actions)
@@ -340,8 +340,9 @@ namespace vcpkg::Commands::DependInfo
                     return const_cast<const SourceControlFile*>(scfl.source_control_file.get());
                 });
 
-            const std::string graph_as_string = create_graph_as_string(options.switches, depend_info);
-            print2(graph_as_string, '\n');
+            std::string graph_as_string = create_graph_as_string(options.switches, depend_info);
+            graph_as_string.push_back('\n');
+            msg::write_unlocalized_text_to_stdout(Color::none, graph_as_string);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
@@ -372,16 +373,14 @@ namespace vcpkg::Commands::DependInfo
 
             if (show_depth)
             {
-                print2(Color::error, "(", first->depth, ") ");
+                msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("({})", first->depth));
             }
-            print2(Color::success, first->package);
+            msg::write_unlocalized_text_to_stdout(Color::success, first->package);
             if (!features.empty())
             {
-                print2("[");
-                print2(Color::warning, features);
-                print2("]");
+                msg::write_unlocalized_text_to_stdout(Color::warning, "[" + features + "]");
             }
-            print2("\n");
+            msg::write_unlocalized_text_to_stdout(Color::none, "\n");
             std::set<std::string> printed;
             std::string prefix_buf;
             print_dep_tree(prefix_buf, first->package, depend_info, printed);
@@ -397,16 +396,14 @@ namespace vcpkg::Commands::DependInfo
 
                     if (show_depth)
                     {
-                        print2(Color::error, "(", info.depth, ") ");
+                        msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("({})", info.depth));
                     }
-                    print2(Color::success, info.package);
+                    msg::write_unlocalized_text_to_stdout(Color::success, info.package);
                     if (!features.empty())
                     {
-                        print2("[");
-                        print2(Color::warning, features);
-                        print2("]");
+                        msg::write_unlocalized_text_to_stdout(Color::warning, "[" + features + "]");
                     }
-                    print2(": ", dependencies, "\n");
+                    msg::write_unlocalized_text_to_stdout(Color::none, ": " + dependencies + "\n");
                 }
             }
         }

@@ -1,5 +1,3 @@
-#include <vcpkg/base/system.print.h>
-
 #include <vcpkg/commands.autocomplete.h>
 #include <vcpkg/commands.edit.h>
 #include <vcpkg/commands.integrate.h>
@@ -18,7 +16,7 @@ namespace vcpkg::Commands::Autocomplete
                                                             std::vector<std::string>&& results)
     {
         const SortedVector<std::string> sorted_results(results);
-        print2(Strings::join("\n", sorted_results), '\n');
+        msg::write_unlocalized_text_to_stdout(Color::none, Strings::join("\n", sorted_results));
 
         Checks::exit_success(line_info);
     }
@@ -26,13 +24,12 @@ namespace vcpkg::Commands::Autocomplete
     static std::vector<std::string> combine_port_with_triplets(StringView port,
                                                                const std::vector<std::string>& triplets)
     {
-        return Util::fmap(triplets,
-                          [&](const std::string& triplet) { return Strings::format("%s:%s", port, triplet); });
+        return Util::fmap(triplets, [&](const std::string& triplet) { return fmt::format("{}:{}", port, triplet); });
     }
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        LockGuardPtr<Metrics>(g_metrics)->set_send_metrics(false);
+        g_should_send_metrics = false;
 
         // Handles vcpkg <command>
         if (args.command_arguments.size() <= 1)

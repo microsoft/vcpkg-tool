@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 
-#include <vcpkg/base/basic_checks.h>
+#include <vcpkg/base/basic-checks.h>
 #include <vcpkg/base/parse.h>
 
 #include <vcpkg/build.h>
@@ -268,24 +268,26 @@ TEST_CASE ("Parse Errors", "[ci-baseline]")
     on expression: hello
                         ^)");
 
-    check_error("?example:x64-windows=fail", R"(test:1:1: error: expected a port name here
+    check_error("?example:x64-windows=fail",
+                R"(test:1:1: error: expected a port name here (must be lowercase, digits, '-')
     on expression: ?example:x64-windows=fail
                    ^)");
 
-    check_error("x64-windows:", R"(test:1:13: error: expected a triplet name here
+    check_error("x64-windows:", R"(test:1:13: error: expected a triplet name here (must be lowercase, digits, '-')
     on expression: x64-windows:
                               ^)");
 
-    check_error("x64-windows:\nport:x64-windows=skip", R"(test:1:13: error: expected a triplet name here
+    check_error("x64-windows:\nport:x64-windows=skip",
+                R"(test:1:13: error: expected a triplet name here (must be lowercase, digits, '-')
     on expression: x64-windows:
                                ^)");
 
-    check_error("x64-windows:#", R"(test:1:13: error: expected a triplet name here
+    check_error("x64-windows:#", R"(test:1:13: error: expected a triplet name here (must be lowercase, digits, '-')
     on expression: x64-windows:#
                                ^)");
 
     // clang-format off
-    check_error("   \tx64-windows:", R"(test:1:21: error: expected a triplet name here
+    check_error("   \tx64-windows:", R"(test:1:21: error: expected a triplet name here (must be lowercase, digits, '-')
     on expression:    )" "\t" R"(x64-windows:
                       )" "\t" R"(           ^)");
     // clang-format on
@@ -329,9 +331,9 @@ TEST_CASE ("format_ci_result 1", "[ci-baseline]")
     cidata.required_success = {
         PackageSpec{"pass", Test::X64_UWP},
     };
-    const char* failmsg = "REGRESSION: {0} failed with BUILD_FAILED. If expected, add {0}=fail to cifile.";
-    const char* cascademsg = "REGRESSION: {0} cascaded, but it is required to pass. (cifile).";
-    const char* passmsg = "PASSING, REMOVE FROM FAIL LIST: {0} (cifile).";
+    constexpr const char failmsg[] = "REGRESSION: {0} failed with BUILD_FAILED. If expected, add {0}=fail to cifile.";
+    constexpr const char cascademsg[] = "REGRESSION: {0} cascaded, but it is required to pass. (cifile).";
+    constexpr const char passmsg[] = "PASSING, REMOVE FROM FAIL LIST: {0} (cifile).";
 
     SECTION ("SUCCEEDED")
     {

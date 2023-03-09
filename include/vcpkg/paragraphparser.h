@@ -22,9 +22,9 @@ namespace vcpkg
         std::string name;
         std::vector<std::string> missing_fields;
         std::vector<std::string> extra_fields;
-        std::map<std::string, std::string> expected_types;
-        std::vector<std::string> other_errors;
-        std::string error;
+        std::map<StringLiteral, LocalizedString, std::less<>> expected_types;
+        std::vector<LocalizedString> other_errors;
+        LocalizedString error;
 
         bool has_error() const
         {
@@ -46,36 +46,36 @@ namespace vcpkg
     template<class P>
     using ParseExpected = vcpkg::ExpectedT<std::unique_ptr<P>, std::unique_ptr<ParseControlErrorInfo>>;
 
-    using Paragraph = std::unordered_map<std::string, std::pair<std::string, TextRowCol>>;
+    using Paragraph = std::map<std::string, std::pair<std::string, TextRowCol>, std::less<>>;
 
     struct ParagraphParser
     {
         ParagraphParser(Paragraph&& fields) : fields(std::move(fields)) { }
 
-        std::string required_field(StringView fieldname);
-        void required_field(StringView fieldname, std::string& out);
-        void required_field(StringView fieldname, std::pair<std::string&, TextRowCol&> out);
+        std::string required_field(StringLiteral fieldname);
+        void required_field(StringLiteral fieldname, std::string& out);
+        void required_field(StringLiteral fieldname, std::pair<std::string&, TextRowCol&> out);
 
-        std::string optional_field(StringView fieldname);
-        void optional_field(StringView fieldname, std::pair<std::string&, TextRowCol&> out);
+        std::string optional_field(StringLiteral fieldname);
+        void optional_field(StringLiteral fieldname, std::pair<std::string&, TextRowCol&> out);
 
-        void add_type_error(const std::string& fieldname, const char* type) { expected_types[fieldname] = type; }
+        void add_type_error(StringLiteral fieldname, const LocalizedString& type) { expected_types[fieldname] = type; }
 
         std::unique_ptr<ParseControlErrorInfo> error_info(StringView name) const;
 
     private:
         Paragraph&& fields;
         std::vector<std::string> missing_fields;
-        std::map<std::string, std::string> expected_types;
+        std::map<StringLiteral, LocalizedString, std::less<>> expected_types;
     };
 
-    ExpectedS<std::vector<std::string>> parse_default_features_list(const std::string& str,
+    ExpectedL<std::vector<std::string>> parse_default_features_list(const std::string& str,
                                                                     StringView origin = "<unknown>",
                                                                     TextRowCol textrowcol = {});
-    ExpectedS<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
+    ExpectedL<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
                                                                                     StringView origin = "<unknown>",
                                                                                     TextRowCol textrowcol = {});
-    ExpectedS<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
+    ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
                                                                StringView origin = "<unknown>",
                                                                TextRowCol textrowcol = {});
 }

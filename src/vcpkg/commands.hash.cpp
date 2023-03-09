@@ -1,5 +1,4 @@
 #include <vcpkg/base/hash.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.hash.h>
@@ -9,7 +8,7 @@
 namespace vcpkg::Commands::Hash
 {
     const CommandStructure COMMAND_STRUCTURE = {
-        Strings::format("The argument should be a file path\n%s", create_example_string("hash boost_1_62_0.tar.bz2")),
+        [] { return create_example_string("hash boost_1_62_0.tar.bz2"); },
         1,
         2,
         {},
@@ -29,7 +28,7 @@ namespace vcpkg::Commands::Hash
         }
 
         const std::string hash = vcpkg::Hash::get_file_hash(fs, file_to_hash, algorithm).value_or_exit(VCPKG_LINE_INFO);
-        print2(hash, '\n');
+        msg::write_unlocalized_text_to_stdout(Color::none, hash + '\n');
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 }

@@ -16,9 +16,9 @@ tracking, and edits to which libraries are available.
 This repository contains the contents formerly at https://github.com/microsoft/vcpkg in the
 "toolsrc" tree, and build support.
 
-# Vcpkg-ce: "Configure Environment" / artifacts
+# vcpkg-artifacts
 
-Parts of vcpkg powered by "ce" are currently in 'preview' -- there will most certainly be changes between now
+vcpkg-artifacts are currently in 'preview' -- there will most certainly be changes between now
 and when the tool is 'released' based on feedback.
 
 You can use it, but be forewarned that we may change formats, commands, etc.
@@ -32,9 +32,9 @@ It
 
 ## Installation
 
-While the usage of `ce` is the same on all platforms, the installation/loading/removal is slightly different depending on the platform you're using.
+While the usage of `vcpkg-artifacts` is the same on all platforms, the installation/loading/removal is slightly different depending on the platform you're using.
 
-`ce` doesn't persist any changes to the environment, nor does it automatically add itself to the start-up environment. If you wish to make it load in a window, you can just execute the script. Manually adding that in your profile will load it in every new window.
+`vcpkg-artifacts` don't persist any changes to the environment, nor do they automatically add themselves to the start-up environment. If you wish to make it load in a window, you can just execute the script. Manually adding that in your profile will load it in every new window.
 
 <hr>
 
@@ -54,8 +54,6 @@ While the usage of `ce` is the same on all platforms, the installation/loading/r
 | `artifact metadata` | A description of the locations one or more artifacts describing rules for which ones are deployed given selection of a host architecture, target architecture, or other properties|
 | `artifact identity` | A short string that uniquely describes a moniker that a given artifact (and its metadata) can be referenced by. They can have one of the following forms:<br> `full/identity/path` - the full identity of an artifact that is in the built-in artifact source<br>`sourcename:full/identity/path` - the full identity of an artifact that is in the artifact source specified by the sourcename prefix<br>`shortname` - the shortened unique name of an artifact that is in the built-in artifact source<br>`sourcename:shortname` - the shortened unique name of an artifact that is in the artifact source specified by the sourcename prefix<br>Shortened names are generated based off the shortest unique identity path in the given source. |
 | `artifact source` | Also known as a “feed”. An Artifact Source is a location that hosts metadata to locate artifacts. (_There is only one source currently_) |
-| `project profile` | The per-project configuration file (`environment.yaml` or `environment.json`)
-| `AMF`&nbsp;or&nbsp;`Metadata`&nbsp;`Format` | The schema / format of the YAML/JSON files for project profiles, global settings, and artifacts metadata. |
 | `activation` | The process by which a particular set of artifacts are acquired and enabled for use in a calling command program.|
 | `versions` | Version numbers are specified using the Semver format. If a version for a particular operation isn't specified, a range for the latest version ( `*` ) is assumed. A version or version range can be specified using the npm semver matching syntax. When a version is stored, it can be stored using the version range specified, a space and then the version found. (ie, the first version is what was asked for, the second is what was installed. No need for a separate lock file.) |
 
@@ -111,5 +109,5 @@ You can opt-out of telemetry by re-running the bootstrap-vcpkg script with -disa
 passing --disable-metrics to vcpkg on the command line,
 or by setting the VCPKG_DISABLE_METRICS environment variable.
 
-Read more about vcpkg telemetry at [docs/about/privacy.md](https://github.com/microsoft/vcpkg/blob/master/docs/about/privacy.md)
+Read more about vcpkg telemetry at https://learn.microsoft.com/vcpkg/about/privacy
 in the main repository

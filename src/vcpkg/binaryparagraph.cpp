@@ -1,5 +1,4 @@
 #include <vcpkg/base/checks.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binaryparagraph.h>
@@ -10,22 +9,21 @@ namespace vcpkg
 {
     namespace Fields
     {
-        static const std::string PACKAGE = "Package";
-        static const std::string VERSION = "Version";
-        static const std::string PORT_VERSION = "Port-Version";
-        static const std::string ARCHITECTURE = "Architecture";
-        static const std::string MULTI_ARCH = "Multi-Arch";
+        static constexpr StringLiteral PACKAGE = "Package";
+        static constexpr StringLiteral VERSION = "Version";
+        static constexpr StringLiteral PORT_VERSION = "Port-Version";
+        static constexpr StringLiteral ARCHITECTURE = "Architecture";
+        static constexpr StringLiteral MULTI_ARCH = "Multi-Arch";
     }
 
     namespace Fields
     {
-        static const std::string ABI = "Abi";
-        static const std::string FEATURE = "Feature";
-        static const std::string DESCRIPTION = "Description";
-        static const std::string MAINTAINER = "Maintainer";
-        static const std::string DEPENDS = "Depends";
-        static const std::string DEFAULT_FEATURES = "Default-Features";
-        static const std::string TYPE = "Type";
+        static constexpr StringLiteral ABI = "Abi";
+        static constexpr StringLiteral FEATURE = "Feature";
+        static constexpr StringLiteral DESCRIPTION = "Description";
+        static constexpr StringLiteral MAINTAINER = "Maintainer";
+        static constexpr StringLiteral DEPENDS = "Depends";
+        static constexpr StringLiteral DEFAULT_FEATURES = "Default-Features";
     }
 
     BinaryParagraph::BinaryParagraph() = default;
@@ -57,7 +55,7 @@ namespace vcpkg
             }
             else
             {
-                parser.add_type_error(Fields::PORT_VERSION, "a non-negative integer");
+                parser.add_type_error(Fields::PORT_VERSION, msg::format(msgANonNegativeInteger));
             }
         }
 
@@ -86,17 +84,17 @@ namespace vcpkg
                                          .value_or_exit(VCPKG_LINE_INFO);
         }
 
-        this->type = Type::from_string(parser.optional_field(Fields::TYPE));
-
+        // This is leftover from a previous attempt to add "alias ports", not currently used.
+        (void)parser.optional_field("Type");
         if (const auto err = parser.error_info(this->spec.to_string()))
         {
-            print2(Color::error, "Error: while parsing the Binary Paragraph for ", this->spec, '\n');
+            msg::println_error(msgErrorParsingBinaryParagraph, msg::spec = this->spec);
             print_error_message(err);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
         // prefer failing above when possible because it gives better information
-        Checks::check_exit(VCPKG_LINE_INFO, multi_arch == "same", "Multi-Arch must be 'same' but was %s", multi_arch);
+        Checks::msg_check_exit(VCPKG_LINE_INFO, multi_arch == "same", msgMultiArch, msg::option = multi_arch);
 
         canonicalize();
     }
@@ -114,7 +112,6 @@ namespace vcpkg
         , default_features(spgh.default_features)
         , dependencies()
         , abi(abi_tag)
-        , type(spgh.type)
     {
         this->dependencies = Util::fmap(deps, [](const FeatureSpec& spec) { return spec.spec(); });
         canonicalize();
@@ -133,7 +130,6 @@ namespace vcpkg
         , default_features()
         , dependencies()
         , abi()
-        , type(spgh.type)
     {
         this->dependencies = Util::fmap(deps, [](const FeatureSpec& spec) { return spec.spec(); });
         canonicalize();
@@ -169,15 +165,18 @@ namespace vcpkg
     std::string BinaryParagraph::displayname() const
     {
         if (!this->is_feature() || this->feature == "core")
-            return Strings::format("%s:%s", this->spec.name(), this->spec.triplet());
-        return Strings::format("%s[%s]:%s", this->spec.name(), this->feature, this->spec.triplet());
+        {
+            return fmt::format("{}:{}", this->spec.name(), this->spec.triplet());
+        }
+
+        return fmt::format("{}[{}]:{}", this->spec.name(), this->feature, this->spec.triplet());
     }
 
     std::string BinaryParagraph::dir() const { return this->spec.dir(); }
 
     std::string BinaryParagraph::fullstem() const
     {
-        return Strings::format("%s_%s_%s", this->spec.name(), this->version, this->spec.triplet());
+        return fmt::format("{}_{}_{}", this->spec.name(), this->version, this->spec.triplet());
     }
 
     bool operator==(const BinaryParagraph& lhs, const BinaryParagraph& rhs)
@@ -191,7 +190,6 @@ namespace vcpkg
         if (lhs.default_features != rhs.default_features) return false;
         if (lhs.dependencies != rhs.dependencies) return false;
         if (lhs.abi != rhs.abi) return false;
-        if (lhs.type != rhs.type) return false;
 
         return true;
     }
@@ -249,7 +247,10 @@ namespace vcpkg
         serialize_string(Fields::VERSION, pgh.version, out_str);
         if (pgh.port_version != 0)
         {
-            out_str.append(Fields::PORT_VERSION).append(": ").append(std::to_string(pgh.port_version)).push_back('\n');
+            out_str.append(Fields::PORT_VERSION.data(), Fields::PORT_VERSION.size())
+                .append(": ")
+                .append(std::to_string(pgh.port_version))
+                .push_back('\n');
         }
 
         if (pgh.is_feature())
@@ -271,7 +272,6 @@ namespace vcpkg
 
         serialize_paragraph(Fields::DESCRIPTION, pgh.description, out_str);
 
-        serialize_string(Fields::TYPE, Type::to_string(pgh.type), out_str);
         serialize_array(Fields::DEFAULT_FEATURES, pgh.default_features, out_str);
 
         // sanity check the serialized data
@@ -280,71 +280,39 @@ namespace vcpkg
             out_str.substr(initial_end), "vcpkg::serialize(const BinaryParagraph&, std::string&)");
         if (!parsed_paragraph)
         {
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                       R"([sanity check] Failed to parse a serialized binary paragraph.
-Please open an issue at https://github.com/microsoft/vcpkg, with the following output:
-    Error: %s
-
-=== Serialized BinaryParagraph ===
-%s
-            )",
-                                       parsed_paragraph.error(),
-                                       my_paragraph);
+            Checks::msg_exit_maybe_upgrade(
+                VCPKG_LINE_INFO,
+                msg::format(msgFailedToParseSerializedBinParagraph, msg::error_msg = parsed_paragraph.error())
+                    .append_raw('\n')
+                    .append_raw(my_paragraph));
         }
 
         auto binary_paragraph = BinaryParagraph(*parsed_paragraph.get());
         if (binary_paragraph != pgh)
         {
-            const auto& join_str = R"(", ")";
-            Checks::exit_maybe_upgrade(
-                VCPKG_LINE_INFO,
-                R"([sanity check] The serialized binary paragraph was different from the original binary paragraph.
-Please open an issue at https://github.com/microsoft/vcpkg, with the following output:
-
-=== Original BinaryParagraph ===
-spec: "%s"
-version: "%s"
-port_version: %d
-description: ["%s"]
-maintainers: ["%s"]
-feature: "%s"
-default_features: ["%s"]
-dependencies: ["%s"]
-abi: "%s"
-type: %s
-
-=== Serialized BinaryParagraph ===
-spec: "%s"
-version: "%s"
-port_version: %d
-description: ["%s"]
-maintainers: ["%s"]
-feature: "%s"
-default_features: ["%s"]
-dependencies: ["%s"]
-abi: "%s"
-type: %s
-)",
-                pgh.spec.to_string(),
-                pgh.version,
-                pgh.port_version,
-                Strings::join(join_str, pgh.description),
-                Strings::join(join_str, pgh.maintainers),
-                pgh.feature,
-                Strings::join(join_str, pgh.default_features),
-                Strings::join(join_str, pgh.dependencies),
-                pgh.abi,
-                Type::to_string(pgh.type),
-                binary_paragraph.spec.to_string(),
-                binary_paragraph.version,
-                binary_paragraph.port_version,
-                Strings::join(join_str, binary_paragraph.description),
-                Strings::join(join_str, binary_paragraph.maintainers),
-                binary_paragraph.feature,
-                Strings::join(join_str, binary_paragraph.default_features),
-                Strings::join(join_str, binary_paragraph.dependencies),
-                binary_paragraph.abi,
-                Type::to_string(binary_paragraph.type));
+            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                           msg::format(msgMismatchedBinParagraphs)
+                                               .append(msgOriginalBinParagraphHeader)
+                                               .append_raw(format_binary_paragraph(pgh))
+                                               .append(msgSerializedBinParagraphHeader)
+                                               .append_raw(format_binary_paragraph(binary_paragraph)));
         }
+    }
+
+    std::string format_binary_paragraph(BinaryParagraph paragraph)
+    {
+        constexpr StringLiteral join_str = R"(", ")";
+        return fmt::format(
+            "\nspec: \"{}\"\nversion: \"{}\"\nport_version: {}\ndescription: [\"{}\"]\nmaintainers: [\"{}\"]\nfeature: "
+            "\"{}\"\ndefault_features: [\"{}\"]\ndependencies: [\"{}\"]\nabi: \"{}\"",
+            paragraph.spec.to_string(),
+            paragraph.version,
+            paragraph.port_version,
+            Strings::join(join_str, paragraph.description),
+            Strings::join(join_str, paragraph.maintainers),
+            paragraph.feature,
+            Strings::join(join_str, paragraph.default_features),
+            Strings::join(join_str, paragraph.dependencies),
+            paragraph.abi);
     }
 }

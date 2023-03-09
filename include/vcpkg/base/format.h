@@ -32,7 +32,7 @@ namespace fmt
         template<class FormatContext>
         auto format(const vcpkg::LineInfo& li, FormatContext& ctx) const -> decltype(ctx.out())
         {
-            return format_to(ctx.out(), "{}({})", li.file_name, li.line_number);
+            return fmt::format_to(ctx.out(), "{}({})", li.file_name, li.line_number);
         }
     };
 
@@ -41,6 +41,26 @@ namespace fmt
     {
         template<class FormatContext>
         auto format(vcpkg::StringView sv, FormatContext& ctx) const -> decltype(ctx.out())
+        {
+            return formatter<string_view, char>::format(string_view(sv.data(), sv.size()), ctx);
+        }
+    };
+
+    template<>
+    struct formatter<vcpkg::ZStringView, char> : formatter<string_view, char>
+    {
+        template<class FormatContext>
+        auto format(vcpkg::ZStringView sv, FormatContext& ctx) const -> decltype(ctx.out())
+        {
+            return formatter<string_view, char>::format(string_view(sv.data(), sv.size()), ctx);
+        }
+    };
+
+    template<>
+    struct formatter<vcpkg::StringLiteral, char> : formatter<string_view, char>
+    {
+        template<class FormatContext>
+        auto format(vcpkg::StringLiteral sv, FormatContext& ctx) const -> decltype(ctx.out())
         {
             return formatter<string_view, char>::format(string_view(sv.data(), sv.size()), ctx);
         }

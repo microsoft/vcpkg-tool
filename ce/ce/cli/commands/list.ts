@@ -4,8 +4,8 @@
 import { i } from '../../i18n';
 import { session } from '../../main';
 import { Command } from '../command';
+import { Table } from '../console-table';
 import { artifactIdentity } from '../format';
-import { Table } from '../markdown-table';
 import { log } from '../styling';
 import { Installed } from '../switches/installed';
 
@@ -32,9 +32,8 @@ export class ListCommand extends Command {
       const table = new Table('Artifact', 'Version', 'Summary');
 
       for (const { artifact, id, folder } of artifacts) {
-
-        const name = artifactIdentity('<registry-name-goes-here>', id); //todo: fixme
-        table.push(name, artifact.version, artifact.metadata.info.summary || '');
+        const name = artifactIdentity('<registry-name-goes-here>', id, artifact.shortName); //todo: fixme
+        table.push(name, artifact.version, artifact.metadata.summary || '');
       }
       log(table.toString());
       log();

@@ -6,6 +6,8 @@
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.process.h>
 
+#include <vcpkg/tools.h>
+
 namespace
 {
     using namespace vcpkg;
@@ -44,7 +46,7 @@ namespace vcpkg
         return {};
     }
 
-    ExpectedL<std::vector<GitStatusLine>> parse_git_status_output(StringView output)
+    ExpectedL<std::vector<GitStatusLine>> parse_git_status_output(StringView output, StringView cmd_line)
     {
         // Output of git status --porcelain=v1 is in the form:
         //
@@ -137,7 +139,9 @@ namespace vcpkg
 
         if (auto error = parser.get_error())
         {
-            return msg::format(msgGitUnexpectedCommandOutput).append_raw('\n').append_raw(error->to_string());
+            return msg::format(msgGitUnexpectedCommandOutputCmd, msg::command_line = cmd_line)
+                .append_raw('\n')
+                .append_raw(error->to_string());
         }
 
         return results;
@@ -161,7 +165,7 @@ namespace vcpkg
                     .append_raw(output->output);
             }
 
-            return parse_git_status_output(output->output);
+            return parse_git_status_output(output->output, cmd.command_line());
         }
 
         return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
@@ -185,6 +189,14 @@ namespace vcpkg
             }
             return ret;
         }
-        return std::move(maybe_results.error());
+        return std::move(maybe_results).error();
+    }
+
+    ExpectedL<bool> is_shallow_clone(const GitConfig& config)
+    {
+        auto cmd = git_cmd_builder(config).string_arg("rev-parse").string_arg("--is-shallow-repository");
+        return flatten_out(cmd_execute_and_capture_output(cmd), Tools::GIT).map([](std::string&& output) {
+            return "true" == Strings::trim(std::move(output));
+        });
     }
 }

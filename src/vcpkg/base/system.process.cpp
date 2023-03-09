@@ -1,4 +1,4 @@
-#include <vcpkg/base/system_headers.h>
+#include <vcpkg/base/system-headers.h>
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
@@ -12,16 +12,20 @@
 #include <future>
 
 #if defined(__APPLE__)
+extern char** environ;
 #include <mach-o/dyld.h>
 #endif
 
 #if defined(__FreeBSD__)
+extern char** environ;
 #include <sys/sysctl.h>
 #include <sys/wait.h>
 #endif
 
 #if defined(_WIN32)
 #pragma comment(lib, "Advapi32")
+#else
+#include <spawn.h>
 #endif
 
 namespace
@@ -41,13 +45,13 @@ namespace
                                  msg::exit_code = error_value,
                                  msg::error_msg = std::system_category().message(static_cast<int>(error_value)));
     }
-}
+} // unnamed namespace
 
 namespace vcpkg
 {
     void append_shell_escaped(std::string& target, StringView content)
     {
-        if (Strings::find_first_of(content, " \t\n\r\"\\,;&`^|'") != content.end())
+        if (Strings::find_first_of(content, " \t\n\r\"\\`$,;&^|'()") != content.end())
         {
             // TODO: improve this to properly handle all escaping
 #if _WIN32
@@ -75,11 +79,12 @@ namespace vcpkg
             target.push_back('"');
 #else
             // On non-Windows, `\` is the escape character and always requires doubling. Inner double-quotes must be
-            // escaped.
+            // escaped. Additionally, '`' and '$' must be escaped or they will retain their special meaning in the
+            // shell.
             target.push_back('"');
             for (auto ch : content)
             {
-                if (ch == '\\' || ch == '"') target.push_back('\\');
+                if (ch == '\\' || ch == '"' || ch == '`' || ch == '$') target.push_back('\\');
                 target.push_back(ch);
             }
             target.push_back('"');
@@ -222,10 +227,10 @@ namespace vcpkg
         int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
         char exePath[2048];
         size_t len = sizeof(exePath);
-        auto rcode = sysctl(mib, 4, exePath, &len, NULL, 0);
+        auto rcode = sysctl(mib, 4, exePath, &len, nullptr, 0);
         Checks::check_exit(VCPKG_LINE_INFO, rcode == 0, "Could not determine current executable path.");
         Checks::check_exit(VCPKG_LINE_INFO, len > 0, "Could not determine current executable path.");
-        return Path(exePath, exePath + len - 1);
+        return Path(exePath, len - 1);
 #elif defined(__OpenBSD__)
         const char* progname = getprogname();
         char resolved_path[PATH_MAX];
@@ -236,23 +241,29 @@ namespace vcpkg
         std::array<char, 1024 * 4> buf{};
         auto written = readlink("/proc/self/exe", buf.data(), buf.size());
         Checks::check_exit(VCPKG_LINE_INFO, written != -1, "Could not determine current executable path.");
-        return Path(buf.data(), buf.data() + written);
+        return Path(buf.data(), written);
 #endif
     }
 
     CMakeVariable::CMakeVariable(const StringView varname, const char* varvalue)
-        : s(Strings::format("-D%s=%s", varname, varvalue))
+        : s(format_cmake_variable(varname, varvalue))
     {
     }
     CMakeVariable::CMakeVariable(const StringView varname, const std::string& varvalue)
-        : CMakeVariable(varname, varvalue.c_str())
+        : s(format_cmake_variable(varname, varvalue))
+    {
+    }
+    CMakeVariable::CMakeVariable(const StringView varname, StringLiteral varvalue)
+        : s(format_cmake_variable(varname, varvalue))
     {
     }
     CMakeVariable::CMakeVariable(const StringView varname, const Path& varvalue)
-        : CMakeVariable(varname, varvalue.generic_u8string())
+        : s(format_cmake_variable(varname, varvalue.generic_u8string()))
     {
     }
-    CMakeVariable::CMakeVariable(std::string var) : s(std::move(var)) { }
+    CMakeVariable::CMakeVariable(const std::string& var) : s(var) { }
+
+    std::string format_cmake_variable(StringView key, StringView value) { return fmt::format("-D{}={}", key, value); }
 
     Command make_basic_cmake_cmd(const Path& cmake_tool_path,
                                  const Path& cmake_script,
@@ -385,7 +396,16 @@ namespace vcpkg
 
             for (auto&& var : vars)
             {
-                env_strings.push_back(var);
+                if (Strings::case_insensitive_ascii_equals(var, "PATH"))
+                {
+                    new_path.assign(prepend_to_path.data(), prepend_to_path.size());
+                    if (!new_path.empty()) new_path.push_back(';');
+                    new_path.append(get_environment_variable("PATH").value_or(""));
+                }
+                else
+                {
+                    env_strings.push_back(var);
+                }
             }
         }
 
@@ -401,7 +421,10 @@ namespace vcpkg
         }
 
         if (extra_env.find("PATH") != extra_env.end())
-            new_path += Strings::format(";%s", extra_env.find("PATH")->second);
+        {
+            new_path.push_back(';');
+            new_path += extra_env.find("PATH")->second;
+        }
         env.add_entry("PATH", new_path);
         // NOTE: we support VS's without the english language pack,
         // but we still want to default to english just in case your specific
@@ -463,8 +486,8 @@ namespace vcpkg
                                                                                       const WorkingDirectory& wd,
                                                                                       const Environment& env)
     {
-        std::vector<ExpectedL<ExitCodeAndOutput>> res(cmd_lines.size(), LocalizedString());
-        if (cmd_lines.size() == 0)
+        std::vector<ExpectedL<ExitCodeAndOutput>> res(cmd_lines.size(), LocalizedString{});
+        if (cmd_lines.empty())
         {
             return res;
         }
@@ -477,7 +500,7 @@ namespace vcpkg
 
         std::atomic<size_t> work_item{0};
         const auto num_threads =
-            static_cast<size_t>(std::max(1, std::min(get_concurrency(), static_cast<int>(cmd_lines.size()))));
+            std::max(static_cast<size_t>(1), std::min(static_cast<size_t>(get_concurrency()), cmd_lines.size()));
 
         auto work = [&]() {
             std::size_t item;
@@ -488,6 +511,7 @@ namespace vcpkg
         };
 
         std::vector<std::future<void>> workers;
+        workers.reserve(num_threads - 1);
         for (size_t x = 0; x < num_threads - 1; ++x)
         {
             workers.emplace_back(std::async(std::launch::async | std::launch::deferred, work));
@@ -562,7 +586,7 @@ namespace vcpkg
                                                          const WorkingDirectory& wd,
                                                          const Environment& env,
                                                          DWORD dwCreationFlags,
-                                                         STARTUPINFOW& startup_info) noexcept
+                                                         STARTUPINFOEXW& startup_info) noexcept
     {
         ProcessInfo process_info;
         Debug::print("CreateProcessW(", cmd_line, ")\n");
@@ -589,10 +613,11 @@ namespace vcpkg
                            nullptr,
                            nullptr,
                            TRUE,
-                           IDLE_PRIORITY_CLASS | CREATE_UNICODE_ENVIRONMENT | dwCreationFlags,
-                           env.get().empty() ? nullptr : &environment_block[0],
+                           IDLE_PRIORITY_CLASS | CREATE_UNICODE_ENVIRONMENT | EXTENDED_STARTUPINFO_PRESENT |
+                               dwCreationFlags,
+                           env.get().empty() ? nullptr : environment_block.data(),
                            working_directory.empty() ? nullptr : working_directory.data(),
-                           &startup_info,
+                           &startup_info.StartupInfo,
                            &process_info.proc_info))
         {
             return process_info;
@@ -606,13 +631,13 @@ namespace vcpkg
                                                                     const Environment& env,
                                                                     DWORD dwCreationFlags) noexcept
     {
-        STARTUPINFOW startup_info;
-        memset(&startup_info, 0, sizeof(STARTUPINFOW));
-        startup_info.cb = sizeof(STARTUPINFOW);
-        startup_info.dwFlags = STARTF_USESHOWWINDOW;
-        startup_info.wShowWindow = SW_HIDE;
+        STARTUPINFOEXW startup_info_ex;
+        memset(&startup_info_ex, 0, sizeof(STARTUPINFOEXW));
+        startup_info_ex.StartupInfo.cb = sizeof(STARTUPINFOEXW);
+        startup_info_ex.StartupInfo.dwFlags = STARTF_USESHOWWINDOW;
+        startup_info_ex.StartupInfo.wShowWindow = SW_HIDE;
 
-        return windows_create_process(cmd_line, wd, env, dwCreationFlags, startup_info);
+        return windows_create_process(cmd_line, wd, env, dwCreationFlags, startup_info_ex);
     }
 
     struct ProcessInfoAndPipes
@@ -653,7 +678,7 @@ namespace vcpkg
                 vcpkg::Checks::unreachable(VCPKG_LINE_INFO);
             }
 
-            Debug::print("ReadFile() finished with GetLastError(): ", GetLastError(), '\n');
+            Debug::print(fmt::format("ReadFile() finished with GetLastError(): {}\n", GetLastError()));
             CloseHandle(child_stdout);
             return proc_info.wait();
         }
@@ -666,10 +691,10 @@ namespace vcpkg
     {
         ProcessInfoAndPipes ret;
 
-        STARTUPINFOW startup_info;
-        memset(&startup_info, 0, sizeof(STARTUPINFOW));
-        startup_info.cb = sizeof(STARTUPINFOW);
-        startup_info.dwFlags |= STARTF_USESTDHANDLES;
+        STARTUPINFOEXW startup_info_ex;
+        memset(&startup_info_ex, 0, sizeof(STARTUPINFOEXW));
+        startup_info_ex.StartupInfo.cb = sizeof(STARTUPINFOEXW);
+        startup_info_ex.StartupInfo.dwFlags |= STARTF_USESTDHANDLES;
 
         SECURITY_ATTRIBUTES saAttr;
         memset(&saAttr, 0, sizeof(SECURITY_ATTRIBUTES));
@@ -678,35 +703,86 @@ namespace vcpkg
         saAttr.lpSecurityDescriptor = NULL;
 
         // Create a pipe for the child process's STDOUT.
-        if (!CreatePipe(&ret.child_stdout, &startup_info.hStdOutput, &saAttr, 0))
+        if (!CreatePipe(&ret.child_stdout, &startup_info_ex.StartupInfo.hStdOutput, &saAttr, 0))
         {
             return format_system_error_message("CreatePipe stdout", GetLastError());
         }
 
-        // Ensure the read handle to the pipe for STDOUT is not inherited.
-        if (!SetHandleInformation(ret.child_stdout, HANDLE_FLAG_INHERIT, 0))
-        {
-            return format_system_error_message("SetHandleInformation stdout", GetLastError());
-        }
-
         // Create a pipe for the child process's STDIN.
-        if (!CreatePipe(&startup_info.hStdInput, &ret.child_stdin, &saAttr, 0))
+        if (!CreatePipe(&startup_info_ex.StartupInfo.hStdInput, &ret.child_stdin, &saAttr, 0))
         {
             return format_system_error_message("CreatePipe stdin", GetLastError());
         }
 
-        // Ensure the write handle to the pipe for STDIN is not inherited.
-        if (!SetHandleInformation(ret.child_stdin, HANDLE_FLAG_INHERIT, 0))
+        startup_info_ex.StartupInfo.hStdError = startup_info_ex.StartupInfo.hStdOutput;
+
+        // Ensure that only the write handle to STDOUT and the read handle to STDIN are inherited.
+        // from https://devblogs.microsoft.com/oldnewthing/20111216-00/?p=8873
+        struct ProcAttributeList
         {
-            return format_system_error_message("SetHandleInformation stdin", GetLastError());
+            static ExpectedL<ProcAttributeList> create(DWORD dwAttributeCount)
+            {
+                SIZE_T size = 0;
+                if (InitializeProcThreadAttributeList(nullptr, dwAttributeCount, 0, &size) ||
+                    GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+                {
+                    return format_system_error_message("InitializeProcThreadAttributeList nullptr", GetLastError());
+                }
+                Checks::check_exit(VCPKG_LINE_INFO, size > 0);
+                ASSUME(size > 0);
+                std::vector<unsigned char> buffer(size, 0);
+                if (!InitializeProcThreadAttributeList(
+                        reinterpret_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(buffer.data()), dwAttributeCount, 0, &size))
+                {
+                    return format_system_error_message("InitializeProcThreadAttributeList attribute_list",
+                                                       GetLastError());
+                }
+                return ProcAttributeList(std::move(buffer));
+            }
+            ExpectedL<Unit> update_attribute(DWORD_PTR Attribute, PVOID lpValue, SIZE_T cbSize)
+            {
+                if (!UpdateProcThreadAttribute(get(), 0, Attribute, lpValue, cbSize, nullptr, nullptr))
+                {
+                    return format_system_error_message("InitializeProcThreadAttributeList attribute_list",
+                                                       GetLastError());
+                }
+                return Unit{};
+            }
+            ~ProcAttributeList() { DeleteProcThreadAttributeList(get()); }
+            LPPROC_THREAD_ATTRIBUTE_LIST get() noexcept
+            {
+                return reinterpret_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(buffer.data());
+            }
+
+            ProcAttributeList(const ProcAttributeList&) = delete;
+            ProcAttributeList& operator=(const ProcAttributeList&) = delete;
+            ProcAttributeList(ProcAttributeList&&) = default;
+            ProcAttributeList& operator=(ProcAttributeList&&) = default;
+
+        private:
+            explicit ProcAttributeList(std::vector<unsigned char>&& buffer) : buffer(std::move(buffer)) { }
+            std::vector<unsigned char> buffer;
+        };
+
+        ExpectedL<ProcAttributeList> proc_attribute_list = ProcAttributeList::create(1);
+        if (!proc_attribute_list.has_value())
+        {
+            return proc_attribute_list.error();
         }
+        std::vector<HANDLE> handles_to_inherit = {
+            {startup_info_ex.StartupInfo.hStdOutput, startup_info_ex.StartupInfo.hStdInput}};
+        auto maybe_error = proc_attribute_list.get()->update_attribute(
+            PROC_THREAD_ATTRIBUTE_HANDLE_LIST, handles_to_inherit.data(), handles_to_inherit.size() * sizeof(HANDLE));
+        if (!maybe_error.has_value())
+        {
+            return maybe_error.error();
+        }
+        startup_info_ex.lpAttributeList = proc_attribute_list.get()->get();
 
-        startup_info.hStdError = startup_info.hStdOutput;
+        auto maybe_proc_info = windows_create_process(cmd_line, wd, env, dwCreationFlags, startup_info_ex);
 
-        auto maybe_proc_info = windows_create_process(cmd_line, wd, env, dwCreationFlags, startup_info);
-
-        CloseHandle(startup_info.hStdInput);
-        CloseHandle(startup_info.hStdOutput);
+        CloseHandle(startup_info_ex.StartupInfo.hStdInput);
+        CloseHandle(startup_info_ex.StartupInfo.hStdOutput);
 
         if (auto proc_info = maybe_proc_info.get())
         {
@@ -719,23 +795,6 @@ namespace vcpkg
 #endif
 
 #if defined(_WIN32)
-    void cmd_execute_background(const Command& cmd_line)
-    {
-        auto timer = ElapsedTimer::create_started();
-
-        auto process_info =
-            windows_create_windowless_process(cmd_line.command_line(),
-                                              default_working_directory,
-                                              default_environment,
-                                              CREATE_NEW_CONSOLE | CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB);
-        if (!process_info)
-        {
-            Debug::print("cmd_execute_background() failed: ", process_info.error(), "\n");
-        }
-
-        Debug::print("cmd_execute_background() took ", static_cast<int>(timer.microseconds()), " us\n");
-    }
-
     Environment cmd_execute_and_capture_environment(const Command& cmd_line, const Environment& env)
     {
         static StringLiteral magic_string = "cdARN4xjKueKScMy9C6H";
@@ -747,15 +806,16 @@ namespace vcpkg
         auto maybe_rc_output = cmd_execute_and_capture_output(actual_cmd_line, default_working_directory, env);
         if (!maybe_rc_output)
         {
-            Checks::exit_with_message(
-                VCPKG_LINE_INFO, "Failed to run vcvarsall.bat to get Visual Studio env: ", maybe_rc_output.error());
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgVcvarsRunFailed);
         }
 
         auto& rc_output = maybe_rc_output.value_or_exit(VCPKG_LINE_INFO);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           rc_output.exit_code == 0,
-                           "Run vcvarsall.bat to get Visual Studio env failed with exit code %d",
-                           rc_output.exit_code);
+        if (rc_output.exit_code != 0)
+        {
+            Checks::msg_exit_with_error(
+                VCPKG_LINE_INFO, msgVcvarsRunFailedExitCode, msg::exit_code = rc_output.exit_code);
+        }
+
         Debug::print(rc_output.output, "\n");
 
         auto it = Strings::search(rc_output.output, magic_string);
@@ -786,6 +846,46 @@ namespace vcpkg
         return new_env;
     }
 #endif
+
+    void cmd_execute_background(const Command& cmd_line)
+    {
+        Debug::println("cmd_execute_background: ", cmd_line.command_line());
+#if defined(_WIN32)
+        auto process_info =
+            windows_create_windowless_process(cmd_line.command_line(),
+                                              default_working_directory,
+                                              default_environment,
+                                              CREATE_NEW_CONSOLE | CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB);
+        if (!process_info)
+        {
+            Debug::println("cmd_execute_background() failed: ", process_info.error());
+        }
+#else  // ^^^ _WIN32 // !_WIN32
+        pid_t pid;
+
+        std::vector<std::string> argv_builder; // as if by system()
+        argv_builder.reserve(3);
+        argv_builder.emplace_back("sh");
+        argv_builder.emplace_back("-c");
+        StringView command_line = cmd_line.command_line();
+        argv_builder.emplace_back(command_line.data(), command_line.size());
+
+        std::vector<char*> argv;
+        argv.reserve(argv_builder.size() + 1);
+        for (std::string& arg : argv_builder)
+        {
+            argv.emplace_back(arg.data());
+        }
+
+        argv.emplace_back(nullptr);
+
+        int error = posix_spawn(&pid, "/bin/sh", nullptr /*file_actions*/, nullptr /*attrp*/, argv.data(), environ);
+        if (error)
+        {
+            Debug::println(fmt::format("cmd_execute_background() failed: {}", error));
+        }
+#endif // ^^^ !_WIN32
+    }
 
     static ExpectedL<int> cmd_execute_impl(const Command& cmd_line, const WorkingDirectory& wd, const Environment& env)
     {
@@ -827,17 +927,17 @@ namespace vcpkg
 
     ExpectedL<int> cmd_execute(const Command& cmd_line, const WorkingDirectory& wd, const Environment& env)
     {
-        auto timer = ElapsedTimer::create_started();
+        const ElapsedTimer timer;
         auto maybe_result = cmd_execute_impl(cmd_line, wd, env);
         const auto elapsed = timer.us_64();
         g_subprocess_stats += elapsed;
         if (auto result = maybe_result.get())
         {
-            Debug::print("cmd_execute() returned ", *result, " after ", elapsed, " us\n");
+            Debug::print(fmt::format("cmd_execute() returned {} after {} us\n", *result, elapsed));
         }
         else
         {
-            Debug::print("cmd_execute() returned (", maybe_result.error(), ") after ", elapsed, " us\n");
+            Debug::print(fmt::format("cmd_execute() returned ({}) after {} us\n", maybe_result.error(), elapsed));
         }
 
         return maybe_result;
@@ -863,9 +963,10 @@ namespace vcpkg
                                                const Environment& env,
                                                Encoding encoding)
     {
-        const auto timer = ElapsedTimer::create_started();
+        const ElapsedTimer timer;
+        static std::atomic_int32_t id_counter{1000};
+        const auto id = fmt::format("{:4}", id_counter.fetch_add(1, std::memory_order_relaxed));
 #if defined(_WIN32)
-        const auto proc_id = std::to_string(::GetCurrentProcessId());
         using vcpkg::g_ctrl_c_state;
 
         g_ctrl_c_state.transition_to_spawn_process();
@@ -874,14 +975,13 @@ namespace vcpkg
                 return output.wait_and_stream_output(data_cb, encoding);
             });
         g_ctrl_c_state.transition_from_spawn_process();
-#else  // ^^^ _WIN32 // !_WIN32 vvv
+#else // ^^^ _WIN32 // !_WIN32 vvv
         Checks::check_exit(VCPKG_LINE_INFO, encoding == Encoding::Utf8);
-        const auto proc_id = std::to_string(::getpid());
 
         std::string actual_cmd_line;
         if (wd.working_directory.empty())
         {
-            actual_cmd_line = Strings::format(R"(%s %s 2>&1)", env.get(), cmd_line.command_line());
+            actual_cmd_line = fmt::format(R"({} {} 2>&1)", env.get(), cmd_line.command_line());
         }
         else
         {
@@ -894,11 +994,27 @@ namespace vcpkg
                                   .extract();
         }
 
-        Debug::print(proc_id, ": popen(", actual_cmd_line, ")\n");
+        Debug::print(id, ": popen(", actual_cmd_line, ")\n");
         // Flush stdout before launching external process
         fflush(stdout);
 
-        const auto pipe = popen(actual_cmd_line.c_str(), "r");
+        FILE* pipe = nullptr;
+#if defined(__APPLE__)
+        static std::mutex mtx;
+#endif
+
+        // Scope for lock guard
+        {
+#if defined(__APPLE__)
+            // `popen` sometimes returns 127 on OSX when executed in parallel.
+            // Related: https://github.com/microsoft/vcpkg-tool/pull/695#discussion_r973364608
+
+            std::lock_guard guard(mtx);
+#endif
+
+            pipe = popen(actual_cmd_line.c_str(), "r");
+        }
+
         if (pipe == nullptr)
         {
             return format_system_error_message("popen", errno);
@@ -916,7 +1032,15 @@ namespace vcpkg
             return format_system_error_message("feof", errno);
         }
 
-        int ec = pclose(pipe);
+        int ec;
+        // Scope for lock guard
+        {
+#if defined(__APPLE__)
+            // See the comment above at the call to `popen`.
+            std::lock_guard guard(mtx);
+#endif
+            ec = pclose(pipe);
+        }
         if (WIFEXITED(ec))
         {
             ec = WEXITSTATUS(ec);
@@ -937,12 +1061,10 @@ namespace vcpkg
         g_subprocess_stats += elapsed;
         if (const auto pec = exit_code.get())
         {
-            Debug::print(proc_id,
-                         ": cmd_execute_and_stream_data() returned ",
-                         *pec,
-                         " after ",
-                         Strings::format("%8llu", static_cast<unsigned long long>(elapsed)),
-                         " us\n");
+            Debug::print(fmt::format("{}: cmd_execute_and_stream_data() returned {} after {:8} us\n",
+                                     id,
+                                     *pec,
+                                     static_cast<unsigned long long>(elapsed)));
         }
 
         return exit_code;

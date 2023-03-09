@@ -1,4 +1,4 @@
-#include <vcpkg/base/system.print.h>
+#include <vcpkg/base/strings.h>
 
 #include <vcpkg/commands.h>
 #include <vcpkg/help.h>
@@ -11,7 +11,7 @@ namespace vcpkg
 {
     PackageSpec check_and_get_package_spec(std::string&& spec_string,
                                            Triplet default_triplet,
-                                           ZStringView example_text,
+                                           const LocalizedString& example_text,
                                            const VcpkgPaths& paths)
     {
         const std::string as_lowercase = Strings::ascii_to_lowercase(std::move(spec_string));
@@ -25,8 +25,8 @@ namespace vcpkg
         }
 
         // Intentionally show the lowercased string
-        print2(Color::error, expected_spec.error());
-        print2(example_text);
+        msg::println(Color::error, expected_spec.error());
+        msg::println(Color::none, example_text);
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
@@ -34,8 +34,7 @@ namespace vcpkg
     {
         if (!paths.is_valid_triplet(t))
         {
-            print2(Color::error, "Error: invalid triplet: ", t, '\n');
-            LockGuardPtr<Metrics>(g_metrics)->track_property("error", "invalid triplet: " + t.to_string());
+            msg::println_error(msgInvalidTriplet, msg::triplet = t);
             Help::help_topic_valid_triplet(paths);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -43,7 +42,7 @@ namespace vcpkg
 
     FullPackageSpec check_and_get_full_package_spec(std::string&& full_package_spec_as_string,
                                                     Triplet default_triplet,
-                                                    ZStringView example_text,
+                                                    const LocalizedString& example_text,
                                                     const VcpkgPaths& paths)
     {
         const std::string as_lowercase = Strings::ascii_to_lowercase(std::move(full_package_spec_as_string));
@@ -56,8 +55,8 @@ namespace vcpkg
         }
 
         // Intentionally show the lowercased string
-        print2(Color::error, expected_spec.error());
-        print2(example_text);
+        msg::println(Color::error, expected_spec.error());
+        msg::println(Color::none, example_text);
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 }

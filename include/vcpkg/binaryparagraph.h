@@ -43,7 +43,6 @@ namespace vcpkg
         std::vector<std::string> default_features;
         std::vector<PackageSpec> dependencies;
         std::string abi;
-        Type type = {Type::PORT};
     };
 
     bool operator==(const BinaryParagraph&, const BinaryParagraph&);
@@ -56,4 +55,5 @@ namespace vcpkg
     };
 
     void serialize(const BinaryParagraph& pgh, std::string& out_str);
+    std::string format_binary_paragraph(BinaryParagraph paragraph);
 }

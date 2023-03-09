@@ -2,7 +2,6 @@
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binarycaching.h>
@@ -16,23 +15,26 @@ namespace vcpkg::Commands::X_Download
     static constexpr StringLiteral OPTION_SHA512 = "sha512";
     static constexpr StringLiteral OPTION_URL = "url";
     static constexpr StringLiteral OPTION_HEADER = "header";
+    static constexpr StringLiteral OPTION_MACHINE_PROGRESS = "z-machine-readable-progress";
 
     static constexpr CommandSwitch FETCH_SWITCHES[] = {
-        {OPTION_STORE, "Indicates the file should be stored instead of fetched"},
-        {OPTION_SKIP_SHA512, "Do not check the SHA512 of the downloaded file"},
-    };
+        {OPTION_STORE, []() { return msg::format(msgCmdXDownloadOptStore); }},
+        {OPTION_SKIP_SHA512, []() { return msg::format(msgCmdXDownloadOptSkipSha); }},
+        {OPTION_MACHINE_PROGRESS, nullptr}};
     static constexpr CommandSetting FETCH_SETTINGS[] = {
-        {OPTION_SHA512, "The hash of the file to be downloaded"},
+        {OPTION_SHA512, []() { return msg::format(msgCmdXDownloadOptSha); }},
     };
     static constexpr CommandMultiSetting FETCH_MULTISETTINGS[] = {
-        {OPTION_URL, "URL to download and store if missing from cache"},
-        {OPTION_HEADER, "Additional header to use when fetching from URLs"},
+        {OPTION_URL, []() { return msg::format(msgCmdXDownloadOptUrl); }},
+        {OPTION_HEADER, []() { return msg::format(msgCmdXDownloadOptHeader); }},
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
-        Strings::format("%s\n%s",
-                        create_example_string("x-download <filepath> [--sha512=]<sha512> [--url=https://...]..."),
-                        create_example_string("x-download <filepath> --skip-sha512 [--url=https://...]...")),
+        [] {
+            return create_example_string("x-download <filepath> [--sha512=]<sha512> [--url=https://...]...")
+                .append_raw('\n')
+                .append(create_example_string("x-download <filepath> --skip-sha512 [--url=https://...]..."));
+        },
         1,
         2,
         {FETCH_SWITCHES, FETCH_SETTINGS, FETCH_MULTISETTINGS},
@@ -50,9 +52,7 @@ namespace vcpkg::Commands::X_Download
         {
             if (sha_it != parsed.settings.end())
             {
-                Checks::exit_with_message(
-                    VCPKG_LINE_INFO,
-                    "Error: SHA512 passed as both an argument and as an option. Only pass one of these.");
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgShaPassedAsArgAndOption);
             }
             sha = args.command_arguments[1];
         }
@@ -65,20 +65,19 @@ namespace vcpkg::Commands::X_Download
         {
             if (sha.has_value())
             {
-                Checks::exit_with_message(
-                    VCPKG_LINE_INFO, "SHA512 passed, but --skip-sha512 was also passed; only do one or the other.");
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgShaPassedWithConflict);
             }
         }
         else if (!sha.has_value())
         {
-            Checks::exit_with_message(VCPKG_LINE_INFO, "Required argument --sha512 was not passed.");
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgMissingOption, msg::option = "sha512");
         }
 
         if (auto p = sha.get())
         {
             if (!is_sha512(*p))
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO, "Error: SHA512's must be 128 hex characters: '%s'", *p);
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgImproperShaLength, msg::value = *p);
             }
             Strings::ascii_to_lowercase(p->data(), p->data() + p->size());
         }
@@ -101,18 +100,20 @@ namespace vcpkg::Commands::X_Download
             auto hash = sha.get();
             if (!hash)
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO, "--store option is invalid without a sha512.");
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgStoreOptionMissingSha);
             }
 
             auto s = fs.status(file, VCPKG_LINE_INFO);
             if (s != FileType::regular)
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO, "Error: path was not a regular file: %s", file);
+                msg::println_error(msgIrregularFile, msg::path = file);
+                Checks::unreachable(VCPKG_LINE_INFO);
             }
             auto actual_hash = Hash::get_file_hash(fs, file, Hash::Algorithm::Sha512).value_or_exit(VCPKG_LINE_INFO);
             if (!Strings::case_insensitive_ascii_equals(*hash, actual_hash))
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO, "Error: file to store does not match hash");
+                msg::println_error(msgMismatchedFiles);
+                Checks::unreachable(VCPKG_LINE_INFO);
             }
             download_manager.put_file_to_mirror(fs, file, actual_hash).value_or_exit(VCPKG_LINE_INFO);
             Checks::exit_success(VCPKG_LINE_INFO);
@@ -134,7 +135,13 @@ namespace vcpkg::Commands::X_Download
                 urls = it_urls->second;
             }
 
-            download_manager.download_file(fs, urls, headers, file, sha);
+            download_manager.download_file(fs,
+                                           urls,
+                                           headers,
+                                           file,
+                                           sha,
+                                           Util::Sets::contains(parsed.switches, OPTION_MACHINE_PROGRESS) ? stdout_sink
+                                                                                                          : null_sink);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
     }

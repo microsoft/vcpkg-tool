@@ -35,7 +35,7 @@ namespace vcpkg::Hash
     }
 
     template<class UIntTy>
-    auto top_bits(UIntTy x) -> std::enable_if_t<std::is_unsigned<UIntTy>::value, uchar>
+    auto top_bits(UIntTy x) -> std::enable_if_t<std::is_unsigned_v<UIntTy>, uchar>
     {
         return static_cast<uchar>(x >> ((sizeof(x) - 1) * 8));
     }
@@ -89,7 +89,8 @@ namespace vcpkg::Hash
             auto error = BCryptOpenAlgorithmProvider(&result, algorithm_identifier, nullptr, 0);
             if (!NT_SUCCESS(error))
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO, "Failure to open algorithm: %ls", algorithm_identifier);
+                Checks::msg_exit_with_error(
+                    VCPKG_LINE_INFO, msgFailedToOpenAlgorithm, msg::value = Strings::to_utf8(algorithm_identifier));
             }
 
             return result;

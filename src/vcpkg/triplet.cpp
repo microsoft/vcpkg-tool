@@ -1,5 +1,6 @@
 #include <vcpkg/base/strings.h>
 
+#include <vcpkg/packagespec.h>
 #include <vcpkg/triplet.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
@@ -31,7 +32,7 @@ namespace vcpkg
     Triplet Triplet::from_canonical_name(std::string triplet_as_string)
     {
         static std::unordered_set<TripletInstance> g_triplet_instances;
-        Strings::ascii_to_lowercase(&triplet_as_string[0], &triplet_as_string[0] + triplet_as_string.size());
+        Strings::ascii_to_lowercase(triplet_as_string.data(), triplet_as_string.data() + triplet_as_string.size());
         const auto p = g_triplet_instances.emplace(std::move(triplet_as_string));
         return &*p.first;
     }
@@ -72,6 +73,14 @@ namespace vcpkg
         {
             return CPUArchitecture::PPC64LE;
         }
+        if (Strings::starts_with(this->canonical_name(), "riscv32-"))
+        {
+            return CPUArchitecture::RISCV32;
+        }
+        if (Strings::starts_with(this->canonical_name(), "riscv64-"))
+        {
+            return CPUArchitecture::RISCV64;
+        }
 
         return nullopt;
     }
@@ -79,15 +88,15 @@ namespace vcpkg
     static Triplet system_triplet()
     {
         auto host_proc = get_host_processor();
-        auto canonical_name = Strings::format("%s-%s", to_zstring_view(host_proc), get_host_os_name());
+        auto canonical_name = fmt::format("{}-{}", to_zstring_view(host_proc), get_host_os_name());
         return Triplet::from_canonical_name(std::move(canonical_name));
     }
 
     Triplet default_triplet(const VcpkgCmdArguments& args)
     {
-        if (args.triplet != nullptr)
+        if (auto triplet = args.triplet.get())
         {
-            return Triplet::from_canonical_name(std::string(*args.triplet));
+            return Triplet::from_canonical_name(*triplet);
         }
 #if defined(_WIN32)
         return Triplet::from_canonical_name("x64-windows");
@@ -98,10 +107,37 @@ namespace vcpkg
 
     Triplet default_host_triplet(const VcpkgCmdArguments& args)
     {
-        if (args.host_triplet != nullptr)
+        if (auto host_triplet = args.host_triplet.get())
         {
-            return Triplet::from_canonical_name(std::string(*args.host_triplet));
+            return Triplet::from_canonical_name(*host_triplet);
         }
         return system_triplet();
+    }
+
+    void print_default_triplet_warning(const VcpkgCmdArguments& args, View<std::string> specs)
+    {
+        (void)args;
+        (void)specs;
+#if defined(_WIN32)
+        // The triplet is not set by --triplet or VCPKG_DEFAULT_TRIPLET
+        if (!args.triplet.has_value())
+        {
+            if (specs.size() == 0)
+            {
+                msg::println_warning(msgDefaultTriplet, msg::triplet = default_host_triplet(args));
+                return;
+            }
+            for (auto&& arg : specs)
+            {
+                const std::string as_lowercase = Strings::ascii_to_lowercase(std::string{arg});
+                auto maybe_qpkg = parse_qualified_specifier(as_lowercase);
+                if (maybe_qpkg.has_value() && !maybe_qpkg.get()->triplet.has_value())
+                {
+                    msg::println_warning(msgDefaultTriplet, msg::triplet = default_host_triplet(args));
+                    return;
+                }
+            }
+        }
+#endif
     }
 }

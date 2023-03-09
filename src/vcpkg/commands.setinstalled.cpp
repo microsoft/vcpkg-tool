@@ -1,5 +1,3 @@
-#include <vcpkg/base/system.print.h>
-
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/commands.setinstalled.h>
 #include <vcpkg/globalstate.h>
@@ -19,18 +17,19 @@ namespace vcpkg::Commands::SetInstalled
     static constexpr StringLiteral OPTION_KEEP_GOING = "keep-going";
     static constexpr StringLiteral OPTION_ONLY_DOWNLOADS = "only-downloads";
     static constexpr StringLiteral OPTION_WRITE_PACKAGES_CONFIG = "x-write-nuget-packages-config";
+    static constexpr StringLiteral OPTION_NO_PRINT_USAGE = "no-print-usage";
 
     static constexpr CommandSwitch INSTALL_SWITCHES[] = {
-        {OPTION_DRY_RUN, "Do not actually build or install"},
+        {OPTION_DRY_RUN, []() { return msg::format(msgCmdSetInstalledOptDryRun); }},
+        {OPTION_NO_PRINT_USAGE, []() { return msg::format(msgCmdSetInstalledOptNoUsage); }},
+        {OPTION_ONLY_DOWNLOADS, []() { return msg::format(msgHelpTxtOptOnlyDownloads); }},
     };
     static constexpr CommandSetting INSTALL_SETTINGS[] = {
-        {OPTION_WRITE_PACKAGES_CONFIG,
-         "Writes out a NuGet packages.config-formatted file for use with external binary caching.\n"
-         "See `vcpkg help binarycaching` for more information."},
+        {OPTION_WRITE_PACKAGES_CONFIG, []() { return msg::format(msgCmdSetInstalledOptWritePkgConfig); }},
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string(R"(x-set-installed <package>...)"),
+        [] { return create_example_string("x-set-installed <package>..."); },
         0,
         SIZE_MAX,
         {INSTALL_SWITCHES, INSTALL_SETTINGS},
@@ -46,7 +45,9 @@ namespace vcpkg::Commands::SetInstalled
                              DryRun dry_run,
                              const Optional<Path>& maybe_pkgsconfig,
                              Triplet host_triplet,
-                             const KeepGoing keep_going)
+                             const KeepGoing keep_going,
+                             const bool only_downloads,
+                             const PrintUsage print_cmake_usage)
     {
         auto& fs = paths.get_filesystem();
 
@@ -107,7 +108,7 @@ namespace vcpkg::Commands::SetInstalled
             auto pkgsconfig_path = paths.original_cwd / *p_pkgsconfig;
             auto pkgsconfig_contents = generate_nuget_packages_config(action_plan);
             fs.write_contents(pkgsconfig_path, pkgsconfig_contents, VCPKG_LINE_INFO);
-            print2("Wrote NuGet packages config information to ", pkgsconfig_path, "\n");
+            msg::println(msgWroteNuGetPkgConfInfo, msg::path = pkgsconfig_path);
         }
 
         if (dry_run == DryRun::Yes)
@@ -122,15 +123,25 @@ namespace vcpkg::Commands::SetInstalled
         const auto summary = Install::perform(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), cmake_vars);
 
-        print2("\nTotal elapsed time: ", GlobalState::timer.to_string(), "\n\n");
-
-        std::set<std::string> printed_usages;
-        for (auto&& ur_spec : user_requested_specs)
+        if (keep_going == KeepGoing::YES && summary.failed())
         {
-            auto it = status_db.find_installed(ur_spec);
-            if (it != status_db.end())
+            summary.print_failed();
+            if (!only_downloads)
             {
-                Install::print_usage_information(it->get()->package, printed_usages, fs, paths.installed());
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
+
+        if (print_cmake_usage == PrintUsage::YES)
+        {
+            std::set<std::string> printed_usages;
+            for (auto&& ur_spec : user_requested_specs)
+            {
+                auto it = status_db.find_installed(ur_spec);
+                if (it != status_db.end())
+                {
+                    Install::print_usage_information(it->get()->package, printed_usages, fs, paths.installed());
+                }
             }
         }
 
@@ -147,8 +158,9 @@ namespace vcpkg::Commands::SetInstalled
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
-                std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+                std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
         });
+        print_default_triplet_warning(args, args.command_arguments);
 
         BinaryCache binary_cache{args, paths};
 
@@ -157,15 +169,20 @@ namespace vcpkg::Commands::SetInstalled
         const KeepGoing keep_going = Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads
                                          ? KeepGoing::YES
                                          : KeepGoing::NO;
+        const PrintUsage print_cmake_usage =
+            Util::Sets::contains(options.switches, OPTION_NO_PRINT_USAGE) ? PrintUsage::NO : PrintUsage::YES;
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
+        auto& fs = paths.get_filesystem();
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(
+            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
 
         Optional<Path> pkgsconfig;
         auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
         if (it_pkgsconfig != options.settings.end())
         {
-            LockGuardPtr<Metrics>(g_metrics)->track_property("x-write-nuget-packages-config", "defined");
+            get_global_metrics_collector().track_define(DefineMetric::X_WriteNugetPackagesConfig);
             pkgsconfig = it_pkgsconfig->second;
         }
 
@@ -188,7 +205,9 @@ namespace vcpkg::Commands::SetInstalled
                             dry_run ? DryRun::Yes : DryRun::No,
                             pkgsconfig,
                             host_triplet,
-                            keep_going);
+                            keep_going,
+                            only_downloads,
+                            print_cmake_usage);
     }
 
     void SetInstalledCommand::perform_and_exit(const VcpkgCmdArguments& args,
