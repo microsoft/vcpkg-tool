@@ -230,7 +230,6 @@ namespace vcpkg::Remove
                 return check_and_get_package_spec(
                     std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
             });
-            print_default_triplet_warning(args, args.command_arguments);
         }
 
         const bool no_purge = Util::Sets::contains(options.switches, OPTION_NO_PURGE);

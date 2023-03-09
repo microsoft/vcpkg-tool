@@ -418,7 +418,6 @@ namespace vcpkg::Export
                 return check_and_get_package_spec(
                     std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
             });
-            print_default_triplet_warning(args, args.command_arguments);
         }
 
         if (!ret.raw && !ret.nuget && !ret.ifw && !ret.zip && !ret.seven_zip && !ret.dry_run && !ret.chocolatey &&

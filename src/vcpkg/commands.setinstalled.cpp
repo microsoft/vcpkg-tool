@@ -160,7 +160,6 @@ namespace vcpkg::Commands::SetInstalled
             return check_and_get_full_package_spec(
                 std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
         });
-        print_default_triplet_warning(args, args.command_arguments);
 
         BinaryCache binary_cache{args, paths};
 
