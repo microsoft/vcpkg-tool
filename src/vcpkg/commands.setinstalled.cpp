@@ -1,5 +1,3 @@
-#include <vcpkg/base/system.print.h>
-
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/commands.setinstalled.h>
 #include <vcpkg/globalstate.h>
@@ -22,16 +20,16 @@ namespace vcpkg::Commands::SetInstalled
     static constexpr StringLiteral OPTION_NO_PRINT_USAGE = "no-print-usage";
 
     static constexpr CommandSwitch INSTALL_SWITCHES[] = {
-        {OPTION_DRY_RUN, "Do not actually build or install"},
-        {OPTION_NO_PRINT_USAGE, "Don't print cmake usage information after install."}};
+        {OPTION_DRY_RUN, []() { return msg::format(msgCmdSetInstalledOptDryRun); }},
+        {OPTION_NO_PRINT_USAGE, []() { return msg::format(msgCmdSetInstalledOptNoUsage); }},
+        {OPTION_ONLY_DOWNLOADS, []() { return msg::format(msgHelpTxtOptOnlyDownloads); }},
+    };
     static constexpr CommandSetting INSTALL_SETTINGS[] = {
-        {OPTION_WRITE_PACKAGES_CONFIG,
-         "Writes out a NuGet packages.config-formatted file for use with external binary caching.\n"
-         "See `vcpkg help binarycaching` for more information."},
+        {OPTION_WRITE_PACKAGES_CONFIG, []() { return msg::format(msgCmdSetInstalledOptWritePkgConfig); }},
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string(R"(x-set-installed <package>...)"),
+        [] { return create_example_string("x-set-installed <package>..."); },
         0,
         SIZE_MAX,
         {INSTALL_SWITCHES, INSTALL_SETTINGS},
@@ -160,8 +158,9 @@ namespace vcpkg::Commands::SetInstalled
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
-                std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+                std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
         });
+        print_default_triplet_warning(args, args.command_arguments);
 
         BinaryCache binary_cache{args, paths};
 
@@ -173,7 +172,10 @@ namespace vcpkg::Commands::SetInstalled
         const PrintUsage print_cmake_usage =
             Util::Sets::contains(options.switches, OPTION_NO_PRINT_USAGE) ? PrintUsage::NO : PrintUsage::YES;
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
+        auto& fs = paths.get_filesystem();
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(
+            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
 
         Optional<Path> pkgsconfig;

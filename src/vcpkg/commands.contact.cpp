@@ -1,5 +1,4 @@
 #include <vcpkg/base/chrono.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -13,11 +12,11 @@ namespace vcpkg::Commands::Contact
     static constexpr StringLiteral OPTION_SURVEY = "survey";
 
     static constexpr std::array<CommandSwitch, 1> SWITCHES = {{
-        {OPTION_SURVEY, "Launch default browser to the current vcpkg survey"},
+        {OPTION_SURVEY, []() { return msg::format(msgCmdContactOptSurvey); }},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("contact"),
+        [] { return create_example_string("contact"); },
         0,
         0,
         {SWITCHES, {}},

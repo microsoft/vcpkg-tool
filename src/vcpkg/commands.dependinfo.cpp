@@ -1,6 +1,5 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/cmakevars.h>
@@ -92,16 +91,13 @@ namespace vcpkg::Commands::DependInfo
         constexpr int NO_RECURSE_LIMIT_VALUE = -1;
 
         constexpr std::array<CommandSwitch, 3> DEPEND_SWITCHES = {
-            {{OPTION_DOT, "Creates graph on basis of dot"},
-             {OPTION_DGML, "Creates graph on basis of dgml"},
-             {OPTION_SHOW_DEPTH, "Show recursion depth in output"}}};
+            {{OPTION_DOT, []() { return msg::format(msgCmdDependInfoOptDot); }},
+             {OPTION_DGML, []() { return msg::format(msgCmdDependInfoOptDGML); }},
+             {OPTION_SHOW_DEPTH, []() { return msg::format(msgCmdDependInfoOptDepth); }}}};
 
         constexpr std::array<CommandSetting, 2> DEPEND_SETTINGS = {
-            {{OPTION_MAX_RECURSE, "Set max recursion depth, a value of -1 indicates no limit"},
-             {OPTION_SORT,
-              "Set sort order for the list of dependencies, accepted values are: lexicographical, topological "
-              "(default), x-tree, "
-              "reverse"}}};
+            {{OPTION_MAX_RECURSE, []() { return msg::format(msgCmdDependInfoOptMaxRecurse); }},
+             {OPTION_SORT, []() { return msg::format(msgCmdDependInfoOptSort); }}}};
 
         enum SortMode
         {
@@ -120,7 +116,7 @@ namespace vcpkg::Commands::DependInfo
                 std::string value = iter->second;
                 try
                 {
-                    return std::stoi(value);
+                    return std::max(std::stoi(value), NO_RECURSE_LIMIT_VALUE);
                 }
                 catch (std::exception&)
                 {
@@ -175,15 +171,15 @@ namespace vcpkg::Commands::DependInfo
                 }
 
                 const std::string name = Strings::replace_all(std::string{package.package}, "-", "_");
-                s.append(Strings::format("%s;", name));
+                fmt::format_to(std::back_inserter(s), "{};", name);
                 for (const auto& d : package.dependencies)
                 {
                     const std::string dependency_name = Strings::replace_all(std::string{d}, "-", "_");
-                    s.append(Strings::format("%s -> %s;", name, dependency_name));
+                    fmt::format_to(std::back_inserter(s), "{} -> {};", name, dependency_name);
                 }
             }
 
-            s.append(Strings::format("empty [label=\"%d singletons...\"]; }", empty_node_count));
+            fmt::format_to(std::back_inserter(s), "empty [label=\"{} singletons...\"]; }", empty_node_count);
             return s;
         }
 
@@ -197,19 +193,17 @@ namespace vcpkg::Commands::DependInfo
             for (const auto& package : depend_info)
             {
                 const std::string name = package.package;
-                nodes.append(Strings::format("<Node Id=\"%s\" />", name));
+                fmt::format_to(std::back_inserter(nodes), "<Node Id=\"{}\" />", name);
 
                 // Iterate over dependencies.
                 for (const auto& d : package.dependencies)
                 {
-                    links.append(Strings::format("<Link Source=\"%s\" Target=\"%s\" />", name, d));
+                    fmt::format_to(std::back_inserter(links), "<Link Source=\"{}\" Target=\"{}\" />", name, d);
                 }
             }
 
-            s.append(Strings::format("<Nodes>%s</Nodes>", nodes));
-
-            s.append(Strings::format("<Links>%s</Links>", links));
-
+            fmt::format_to(std::back_inserter(s), "<Nodes>{}</Nodes>", nodes);
+            fmt::format_to(std::back_inserter(s), "<Links>{}</Links>", links);
             s.append("</DirectedGraph>");
             return s;
         }
@@ -287,7 +281,7 @@ namespace vcpkg::Commands::DependInfo
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("depend-info sqlite3"),
+        [] { return create_example_string("depend-info sqlite3"); },
         1,
         1,
         {DEPEND_SWITCHES, DEPEND_SETTINGS},
@@ -306,10 +300,14 @@ namespace vcpkg::Commands::DependInfo
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
-                std::string{arg}, default_triplet, COMMAND_STRUCTURE.example_text, paths);
+                std::string{arg}, default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
         });
+        print_default_triplet_warning(args, args.command_arguments);
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
+        auto& fs = paths.get_filesystem();
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(
+            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
@@ -318,10 +316,7 @@ namespace vcpkg::Commands::DependInfo
         StatusParagraphs status_db;
         auto action_plan = create_feature_install_plan(
             provider, var_provider, specs, status_db, {host_triplet, UnsupportedPortAction::Warn});
-        for (const auto& warning : action_plan.warnings)
-        {
-            msg::write_unlocalized_text_to_stdout(Color::warning, warning + '\n');
-        }
+        action_plan.print_unsupported_warnings();
 
         if (!action_plan.remove_actions.empty())
         {

@@ -3,7 +3,6 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.info.h>
 #include <vcpkg/input.h>
@@ -20,13 +19,16 @@ namespace vcpkg::Commands::Info
     static constexpr StringLiteral OPTION_INSTALLED = "x-installed";
 
     static constexpr CommandSwitch INFO_SWITCHES[] = {
-        {OPTION_INSTALLED, "(experimental) Report on installed packages instead of available"},
-        {OPTION_TRANSITIVE, "(experimental) Also report on dependencies of installed packages"},
+        {OPTION_INSTALLED, []() { return msg::format(msgCmdInfoOptInstalled); }},
+        {OPTION_TRANSITIVE, []() { return msg::format(msgCmdInfoOptTransitive); }},
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
-        Strings::format("Display detailed information on packages.\n%s",
-                        create_example_string("x-package-info zlib openssl:x64-windows")),
+        [] {
+            return msg::format(msgPackageInfoHelp)
+                .append_raw('\n')
+                .append(create_example_string("x-package-info zlib openssl:x64-windows"));
+        },
         1,
         SIZE_MAX,
         {INFO_SWITCHES, {}},
@@ -53,9 +55,10 @@ namespace vcpkg::Commands::Info
                                           msg::option = OPTION_INSTALLED);
         }
 
+        auto& fs = paths.get_filesystem();
         if (installed)
         {
-            const StatusParagraphs status_paragraphs = database_load_check(paths.get_filesystem(), paths.installed());
+            const StatusParagraphs status_paragraphs = database_load_check(fs, paths.installed());
             std::set<PackageSpec> specs_written;
             std::vector<PackageSpec> specs_to_write;
             for (auto&& arg : args.command_arguments)
@@ -64,19 +67,19 @@ namespace vcpkg::Commands::Info
                 auto maybe_qpkg = parse_qualified_specifier(parser);
                 if (!parser.at_eof() || !maybe_qpkg)
                 {
-                    parser.add_error("expected a package specifier");
+                    parser.add_error(msg::format(msgExpectedPackageSpecifier));
                 }
                 else if (!maybe_qpkg.get()->triplet)
                 {
-                    parser.add_error("expected an explicit triplet");
+                    parser.add_error(msg::format(msgExpectedExplicitTriplet));
                 }
                 else if (maybe_qpkg.get()->features)
                 {
-                    parser.add_error("unexpected list of features");
+                    parser.add_error(msg::format(msgUnexpectedFeatureList));
                 }
                 else if (maybe_qpkg.get()->platform)
                 {
-                    parser.add_error("unexpected qualifier");
+                    parser.add_error(msg::format(msgUnexpectedPlatformExpression));
                 }
                 if (auto err = parser.get_error())
                 {
@@ -115,7 +118,9 @@ namespace vcpkg::Commands::Info
         {
             Json::Object response;
             Json::Object results;
-            PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
+            auto registry_set = paths.make_registry_set();
+            PathsPortFileProvider provider(
+                fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
 
             for (auto&& arg : args.command_arguments)
             {
@@ -123,7 +128,7 @@ namespace vcpkg::Commands::Info
                 auto maybe_pkg = parse_package_name(parser);
                 if (!parser.at_eof() || !maybe_pkg)
                 {
-                    parser.add_error("expected only a package identifier");
+                    parser.add_error(msg::format(msgExpectedPortName));
                 }
                 if (auto err = parser.get_error())
                 {

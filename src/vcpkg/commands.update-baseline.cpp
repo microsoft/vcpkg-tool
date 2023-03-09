@@ -12,12 +12,12 @@ namespace vcpkg::Commands
     static constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
 
     static constexpr CommandSwitch switches[] = {
-        {OPTION_ADD_INITIAL_BASELINE, "add a `builtin-baseline` to a vcpkg.json that doesn't already have it"},
-        {OPTION_DRY_RUN, "Print out plan without execution"},
+        {OPTION_ADD_INITIAL_BASELINE, []() { return msg::format(msgCmdUpdateBaselineOptInitial); }},
+        {OPTION_DRY_RUN, []() { return msg::format(msgCmdUpdateBaselineOptDryRun); }},
     };
 
     static const CommandStructure COMMAND_STRUCTURE{
-        create_example_string("x-update-baseline"),
+        [] { return create_example_string("x-update-baseline"); },
         0,
         0,
         {switches},

@@ -1,8 +1,11 @@
-#include <vcpkg/base/system_headers.h>
+#pragma once
+
+#include <vcpkg/base/system-headers.h>
 
 #include <catch2/catch.hpp>
 
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/format.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/pragmas.h>
 #include <vcpkg/base/sortedvector.h>
@@ -29,11 +32,10 @@ namespace Catch
     {
         static std::string convert(vcpkg::FullPackageSpec const& value)
         {
-            return vcpkg::Strings::concat(value.package_spec.name(),
-                                          '[',
-                                          vcpkg::Strings::join(",", value.features),
-                                          "]:",
-                                          value.package_spec.triplet());
+            return fmt::format("{}[{}]:{}",
+                               value.package_spec.name(),
+                               vcpkg::Strings::join(",", value.features),
+                               value.package_spec.triplet());
         }
     };
 
@@ -42,7 +44,7 @@ namespace Catch
     {
         static std::string convert(vcpkg::FeatureSpec const& value)
         {
-            return vcpkg::Strings::concat(value.spec().name(), '[', value.feature(), "]:", value.spec().triplet());
+            return fmt::format("{}[{}]:{}", value.port(), value.feature(), value.triplet());
         }
     };
 

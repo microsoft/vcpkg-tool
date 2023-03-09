@@ -179,7 +179,7 @@ namespace vcpkg::Test
         const size_t orig_path_len = path.size();
         for (size_t i = 0; i < l.size() && i < r.size(); ++i)
         {
-            Strings::append(path, '[', i, ']');
+            fmt::format_to(std::back_inserter(path), "[{}]", i);
             check_json_eq(r[i], l[i], path, ordered);
             path.resize(orig_path_len);
         }

@@ -1,5 +1,3 @@
-#include <vcpkg/base/system.print.h>
-
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/commands.create.h>
 #include <vcpkg/commands.dependinfo.h>
@@ -35,15 +33,12 @@ namespace vcpkg::Help
         print_usage(S);
     }
 
-    static void integrate_topic_fn(const VcpkgPaths&)
-    {
-        msg::write_unlocalized_text_to_stdout(Color::none, "Commands:\n" + Commands::Integrate::get_helpstring());
-    }
+    static void integrate_topic_fn(const VcpkgPaths&) { msg::println(Commands::Integrate::get_helpstring()); }
 
     static void help_topics(const VcpkgPaths&);
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("help"),
+        [] { return create_example_string("help"); },
         0,
         1,
         {},
@@ -97,8 +92,8 @@ namespace vcpkg::Help
     }
 
     static constexpr std::array<Topic, 17> topics = {{
-        {"binarycaching", help_topic_binary_caching},
-        {"assetcaching", help_topic_asset_caching},
+        {"assetcaching", [](const VcpkgPaths&) { msg::println(format_help_topic_asset_caching()); }},
+        {"binarycaching", [](const VcpkgPaths&) { msg::println(format_help_topic_binary_caching()); }},
         {"create", command_topic_fn<Commands::Create::COMMAND_STRUCTURE>},
         {"depend-info", command_topic_fn<Commands::DependInfo::COMMAND_STRUCTURE>},
         {"edit", command_topic_fn<Commands::Edit::COMMAND_STRUCTURE>},
@@ -128,11 +123,10 @@ namespace vcpkg::Help
 
     void help_topic_valid_triplet(const VcpkgPaths& paths)
     {
-        std::map<StringView, std::vector<const VcpkgPaths::TripletFile*>> triplets_per_location;
-        vcpkg::Util::group_by(
-            paths.get_available_triplets(),
-            &triplets_per_location,
-            [](const VcpkgPaths::TripletFile& triplet_file) -> StringView { return triplet_file.location; });
+        std::map<StringView, std::vector<const TripletFile*>> triplets_per_location;
+        vcpkg::Util::group_by(paths.get_available_triplets(),
+                              &triplets_per_location,
+                              [](const TripletFile& triplet_file) -> StringView { return triplet_file.location; });
 
         msg::println(msgAvailableArchitectureTriplets);
         msg::println(msgBuiltInTriplets);

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <vcpkg/base/fwd/system.process.h>
+
+#include <vcpkg/fwd/binarycaching.h>
 #include <vcpkg/fwd/cmakevars.h>
 #include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/portfileprovider.h>
@@ -24,23 +27,7 @@
 
 namespace vcpkg
 {
-    struct BinaryCache;
-    struct Environment;
-
     DECLARE_MESSAGE(ElapsedForPackage, (msg::spec, msg::elapsed), "", "Elapsed time to handle {spec}: {elapsed}");
-
-    enum class BuildResult
-    {
-        SUCCEEDED,
-        BUILD_FAILED,
-        POST_BUILD_CHECKS_FAILED,
-        FILE_CONFLICTS,
-        CASCADED_DUE_TO_MISSING_DEPENDENCIES,
-        EXCLUDED,
-        CACHE_MISSING,
-        DOWNLOADED,
-        REMOVED
-    };
 
     struct IBuildLogsRecorder
     {
@@ -78,83 +65,8 @@ namespace vcpkg
                               Triplet host_triplet);
     } // namespace vcpkg::Build
 
-    enum class UseHeadVersion
-    {
-        NO = 0,
-        YES
-    };
-
-    enum class AllowDownloads
-    {
-        NO = 0,
-        YES
-    };
-
-    enum class OnlyDownloads
-    {
-        NO = 0,
-        YES
-    };
-
-    enum class CleanBuildtrees
-    {
-        NO = 0,
-        YES
-    };
-
-    enum class CleanPackages
-    {
-        NO = 0,
-        YES
-    };
-
-    enum class CleanDownloads
-    {
-        NO = 0,
-        YES
-    };
-
-    enum class ConfigurationType
-    {
-        DEBUG,
-        RELEASE,
-    };
-
-    enum class DownloadTool
-    {
-        BUILT_IN,
-        ARIA2,
-    };
-    const std::string& to_string(DownloadTool tool);
-    enum class PurgeDecompressFailure
-    {
-        NO = 0,
-        YES
-    };
-
-    enum class Editable
-    {
-        NO = 0,
-        YES
-    };
-
-    enum class BackcompatFeatures
-    {
-        ALLOW = 0,
-        PROHIBIT
-    };
-
-    enum class BuildMissing
-    {
-        NO = 0,
-        YES
-    };
-
-    enum class PrintUsage
-    {
-        YES = 0,
-        NO
-    };
+    StringLiteral to_string_view(DownloadTool tool);
+    std::string to_string(DownloadTool tool);
 
     struct BuildPackageOptions
     {
@@ -297,28 +209,11 @@ namespace vcpkg
                                       const IBuildLogsRecorder& build_logs_recorder,
                                       const StatusParagraphs& status_db);
 
-    enum class BuildPolicy
-    {
-        EMPTY_PACKAGE,
-        DLLS_WITHOUT_LIBS,
-        DLLS_WITHOUT_EXPORTS,
-        DLLS_IN_STATIC_LIBRARY,
-        MISMATCHED_NUMBER_OF_BINARIES,
-        ONLY_RELEASE_CRT,
-        EMPTY_INCLUDE_FOLDER,
-        ALLOW_OBSOLETE_MSVCRT,
-        ALLOW_RESTRICTED_HEADERS,
-        SKIP_DUMPBIN_CHECKS,
-        SKIP_ARCHITECTURE_CHECK,
-        CMAKE_HELPER_PORT,
-        // Must be last
-        COUNT,
-    };
-
     // could be constexpr, but we want to generate this and that's not constexpr in C++14
     extern const std::array<BuildPolicy, size_t(BuildPolicy::COUNT)> ALL_POLICIES;
 
-    const std::string& to_string(BuildPolicy policy);
+    StringLiteral to_string_view(BuildPolicy policy);
+    std::string to_string(BuildPolicy policy);
     ZStringView to_cmake_variable(BuildPolicy policy);
 
     struct BuildPolicies

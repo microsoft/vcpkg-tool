@@ -1,6 +1,5 @@
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -106,13 +105,12 @@ namespace
         static bool recursion_limiter_sevenzip = false;
         Checks::check_exit(VCPKG_LINE_INFO, !recursion_limiter_sevenzip);
         recursion_limiter_sevenzip = true;
-        const auto maybe_output =
-            flatten(cmd_execute_and_capture_output(Command{seven_zip}
-                                                       .string_arg("x")
-                                                       .string_arg(archive)
-                                                       .string_arg(Strings::format("-o%s", to_path))
-                                                       .string_arg("-y")),
-                    Tools::SEVEN_ZIP);
+        const auto maybe_output = flatten(cmd_execute_and_capture_output(Command{seven_zip}
+                                                                             .string_arg("x")
+                                                                             .string_arg(archive)
+                                                                             .string_arg(fmt::format("-o{}", to_path))
+                                                                             .string_arg("-y")),
+                                          Tools::SEVEN_ZIP);
 
         if (!maybe_output)
         {
@@ -372,22 +370,6 @@ namespace vcpkg
     {
         auto results =
             cmd_execute_and_capture_output_parallel(jobs, default_working_directory, get_clean_environment());
-#ifdef __APPLE__
-        size_t i = 0;
-        for (auto& maybe_result : results)
-        {
-            if (const auto result = maybe_result.get())
-            {
-                if (result->exit_code == 127 && result->output.empty())
-                {
-                    Debug::print(jobs[i].command_line(), ": pclose returned 127, try again \n");
-                    maybe_result =
-                        cmd_execute_and_capture_output(jobs[i], default_working_directory, get_clean_environment());
-                }
-            }
-            ++i;
-        }
-#endif
 
         std::vector<ExpectedL<Unit>> filtered_results;
         filtered_results.reserve(jobs.size());

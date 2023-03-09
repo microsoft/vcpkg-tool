@@ -1,6 +1,5 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.zprintconfig.h>
 #include <vcpkg/installedpaths.h>
@@ -11,14 +10,6 @@
 
 namespace vcpkg::Commands::Z_PrintConfig
 {
-    static const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("z-print-config"),
-        0,
-        0,
-        {{}, {}},
-        nullptr,
-    };
-
     static void opt_add(Json::Object& obj, StringLiteral key, const Optional<Path>& opt)
     {
         if (auto p = opt.get())

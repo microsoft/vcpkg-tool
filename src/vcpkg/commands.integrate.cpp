@@ -2,7 +2,6 @@
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -111,13 +110,13 @@ namespace vcpkg::Commands::Integrate
 #if defined(_WIN32)
     static std::string create_appdata_shortcut(StringView target_path) noexcept
     {
-        return Strings::format(R"###(
+        return fmt::format(R"###(
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Condition="Exists('%s') and '$(VCPkgLocalAppDataDisabled)' == ''" Project="%s" />
+  <Import Condition="Exists('{}') and '$(VCPkgLocalAppDataDisabled)' == ''" Project="{}" />
 </Project>
 )###",
-                               target_path,
-                               target_path);
+                           target_path,
+                           target_path);
     }
 #endif
 
@@ -140,16 +139,16 @@ namespace vcpkg::Commands::Integrate
 #if defined(_WIN32)
     static std::string create_nuget_targets_file_contents(const Path& msbuild_vcpkg_targets_file) noexcept
     {
-        return Strings::format(R"###(
+        return fmt::format(R"###(
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="%s" Condition="Exists('%s')" />
+  <Import Project="{}" Condition="Exists('{}')" />
   <Target Name="CheckValidPlatform" BeforeTargets="Build">
     <Error Text="Unsupported architecture combination. Remove the 'vcpkg' nuget package." Condition="'$(VCPkgEnabled)' != 'true' and '$(VCPkgDisableError)' == ''"/>
   </Target>
 </Project>
 )###",
-                               msbuild_vcpkg_targets_file,
-                               msbuild_vcpkg_targets_file);
+                           msbuild_vcpkg_targets_file,
+                           msbuild_vcpkg_targets_file);
     }
 #endif
 
@@ -259,31 +258,25 @@ namespace vcpkg::Commands::Integrate
     }
 #endif
 
-    static const ExpectedS<Path>& get_path_txt_path() noexcept
-    {
-        static const ExpectedS<Path> result = get_user_configuration_home().map(
-            [](const Path& user_configuration_home) { return user_configuration_home / "vcpkg.path.txt"; });
-        return result;
-    }
+    static constexpr StringLiteral vcpkg_path_txt_name = "vcpkg.path.txt";
 
 #if defined(_WIN32)
     static void integrate_install_msbuild14(Filesystem& fs, const Path& tmp_dir)
     {
-        static const std::array<Path, 2> OLD_SYSTEM_TARGET_FILES = {
+        std::array<Path, 2> OLD_SYSTEM_TARGET_FILES = {
             get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO) /
                 "MSBuild/14.0/Microsoft.Common.Targets/ImportBefore/vcpkg.nuget.targets",
             get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO) /
                 "MSBuild/14.0/Microsoft.Common.Targets/ImportBefore/vcpkg.system.targets"};
-        static const Path SYSTEM_WIDE_TARGETS_FILE =
-            get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO) /
-            "MSBuild/Microsoft.Cpp/v4.0/V140/ImportBefore/Default/vcpkg.system.props";
+        Path SYSTEM_WIDE_TARGETS_FILE = get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO) /
+                                        "MSBuild/Microsoft.Cpp/v4.0/V140/ImportBefore/Default/vcpkg.system.props";
 
         // TODO: This block of code should eventually be removed
         for (auto&& old_system_wide_targets_file : OLD_SYSTEM_TARGET_FILES)
         {
             if (fs.exists(old_system_wide_targets_file, IgnoreErrors{}))
             {
-                const std::string param = Strings::format(R"(/c "DEL "%s" /Q > nul")", old_system_wide_targets_file);
+                const std::string param = fmt::format(R"(/c "DEL "{}" /Q > nul")", old_system_wide_targets_file);
                 const ElevationPromptChoice user_choice = elevated_cmd_execute(param);
                 switch (user_choice)
                 {
@@ -312,10 +305,10 @@ namespace vcpkg::Commands::Integrate
             const auto sys_src_path = tmp_dir / "vcpkg.system.targets";
             fs.write_contents(sys_src_path, create_system_targets_shortcut(), VCPKG_LINE_INFO);
 
-            const std::string param = Strings::format(R"(/c "mkdir "%s" & copy "%s" "%s" /Y > nul")",
-                                                      SYSTEM_WIDE_TARGETS_FILE.parent_path(),
-                                                      sys_src_path,
-                                                      SYSTEM_WIDE_TARGETS_FILE);
+            const std::string param = fmt::format(R"(/c "mkdir "{}" & copy "{}" "{}" /Y > nul")",
+                                                  SYSTEM_WIDE_TARGETS_FILE.parent_path(),
+                                                  sys_src_path,
+                                                  SYSTEM_WIDE_TARGETS_FILE);
             const ElevationPromptChoice user_choice = elevated_cmd_execute(param);
             switch (user_choice)
             {
@@ -326,10 +319,8 @@ namespace vcpkg::Commands::Integrate
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
 
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               fs.exists(SYSTEM_WIDE_TARGETS_FILE, IgnoreErrors{}),
-                               "Error: failed to copy targets file to %s",
-                               SYSTEM_WIDE_TARGETS_FILE);
+            Checks::msg_exit_with_error(
+                VCPKG_LINE_INFO, msgSystemTargetsInstallFailed, msg::path = SYSTEM_WIDE_TARGETS_FILE);
         }
     }
 #endif
@@ -365,9 +356,12 @@ namespace vcpkg::Commands::Integrate
         }
 #endif
 
+        auto user_configuration_home = get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO);
+        fs.create_directories(user_configuration_home, IgnoreErrors{});
         fs.write_contents(
-            get_path_txt_path().value_or_exit(VCPKG_LINE_INFO), paths.root.generic_u8string(), VCPKG_LINE_INFO);
+            user_configuration_home / vcpkg_path_txt_name, paths.root.generic_u8string(), VCPKG_LINE_INFO);
         msg::println(Color::success, msgAppliedUserIntegration);
+
         const auto cmake_toolchain = paths.buildsystems / "vcpkg.cmake";
 
 #if defined(_WIN32)
@@ -389,11 +383,8 @@ namespace vcpkg::Commands::Integrate
         was_deleted |= fs.remove(get_appdata_props_path(), VCPKG_LINE_INFO);
 #endif
 
-        const auto& maybe_pathtxt = get_path_txt_path();
-        if (auto pathtxt = maybe_pathtxt.get())
-        {
-            was_deleted |= fs.remove(*pathtxt, VCPKG_LINE_INFO);
-        }
+        auto user_configuration_home = get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO);
+        was_deleted |= fs.remove(user_configuration_home / vcpkg_path_txt_name, VCPKG_LINE_INFO);
 
         if (was_deleted)
         {
@@ -448,7 +439,7 @@ namespace vcpkg::Commands::Integrate
             Checks::unreachable(VCPKG_LINE_INFO);
         }
 
-        const auto nuget_package = buildsystems_dir / Strings::format("%s.%s.nupkg", nuget_id, nupkg_version);
+        const auto nuget_package = buildsystems_dir / fmt::format("{}.{}.nupkg", nuget_id, nupkg_version);
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                fs.exists(nuget_package, IgnoreErrors{}),
                                msgNugetPackageFileSucceededButCreationFailed,
@@ -474,7 +465,7 @@ namespace vcpkg::Commands::Integrate
                        .string_arg("-ExecutionPolicy")
                        .string_arg("Bypass")
                        .string_arg("-Command")
-                       .string_arg(Strings::format("& {& '%s' }", script_path));
+                       .string_arg(fmt::format("& {& '{}' }", script_path));
         const int rc = cmd_execute(cmd).value_or_exit(VCPKG_LINE_INFO);
         if (rc)
         {
@@ -594,54 +585,54 @@ namespace vcpkg::Commands::Integrate
     void append_helpstring(HelpTableFormatter& table)
     {
 #if defined(_WIN32)
-        table.format("vcpkg integrate install",
-                     "Make installed packages available user-wide. Requires admin privileges on first use.");
-        table.format("vcpkg integrate remove", "Remove user-wide integration");
-        table.format("vcpkg integrate project", "Generate a referencing nuget package for individual VS project use");
-        table.format("vcpkg integrate powershell", "Enable PowerShell tab-completion");
+        table.format("vcpkg integrate install", msg::format(msgIntegrateInstallHelpWindows));
+        table.format("vcpkg integrate remove", msg::format(msgIntegrateRemoveHelp));
+        table.format("vcpkg integrate project", msg::format(msgIntegrateProjectHelp));
+        table.format("vcpkg integrate powershell", msg::format(msgIntegratePowerShellHelp));
 #else  // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
-        table.format("vcpkg integrate install",
-                     "Make installed packages available user - wide.Requires admin privileges on first use");
-        table.format("vcpkg integrate remove", "Remove user-wide integration");
-        table.format("vcpkg integrate bash", "Enable bash tab-completion");
-        table.format("vcpkg integrate zsh", "Enable zsh tab-completion");
-        table.format("vcpkg integrate x-fish", "Enable fish tab-completion");
+        table.format("vcpkg integrate install", msg::format(msgIntegrateInstallHelpLinux));
+        table.format("vcpkg integrate remove", msg::format(msgIntegrateRemoveHelp));
+        table.format("vcpkg integrate bash", msg::format(msgIntegrateBashHelp));
+        table.format("vcpkg integrate zsh", msg::format(msgIntegrateZshHelp));
+        table.format("vcpkg integrate x-fish", msg::format(msgIntegrateFishHelp));
 #endif // ^^^ !defined(_WIN32)
     }
 
-    std::string get_helpstring()
+    LocalizedString get_helpstring()
     {
         HelpTableFormatter table;
         append_helpstring(table);
-        return std::move(table.m_str);
+        return msg::format(msgCommands).append_raw('\n').append_raw(table.m_str);
     }
 
     namespace Subcommand
     {
-        static const std::string INSTALL = "install";
-        static const std::string REMOVE = "remove";
-        static const std::string PROJECT = "project";
-        static const std::string POWERSHELL = "powershell";
-        static const std::string BASH = "bash";
-        static const std::string ZSH = "zsh";
-        static const std::string FISH = "x-fish";
+        static constexpr StringLiteral INSTALL = "install";
+        static constexpr StringLiteral REMOVE = "remove";
+#if defined(_WIN32)
+        static constexpr StringLiteral PROJECT = "project";
+        static constexpr StringLiteral POWERSHELL = "powershell";
+#endif // ^^^ _WIN32
+        static constexpr StringLiteral BASH = "bash";
+        static constexpr StringLiteral ZSH = "zsh";
+        static constexpr StringLiteral FISH = "x-fish";
     }
 
     static std::vector<std::string> valid_arguments(const VcpkgPaths&)
     {
         return
         {
-            Subcommand::INSTALL, Subcommand::REMOVE,
+            Subcommand::INSTALL.to_string(), Subcommand::REMOVE.to_string(),
 #if defined(_WIN32)
-                Subcommand::PROJECT, Subcommand::POWERSHELL,
+                Subcommand::PROJECT.to_string(), Subcommand::POWERSHELL.to_string(),
 #else
-                Subcommand::BASH, Subcommand::FISH,
+                Subcommand::BASH.to_string(), Subcommand::FISH.to_string(),
 #endif
         };
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
-        "Commands:\n" + get_helpstring(),
+        [] { return get_helpstring(); },
         1,
         1,
         {},

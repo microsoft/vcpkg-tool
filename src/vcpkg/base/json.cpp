@@ -343,13 +343,23 @@ namespace vcpkg::Json
     Value& Object::insert(StringView key, std::string&& value) { return insert(key, Value::string(std::move(value))); }
     Value& Object::insert(StringView key, Value&& value)
     {
-        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, !contains(key), "key '%s' already exists in object", key);
+        if (contains(key))
+        {
+            Checks::unreachable(VCPKG_LINE_INFO,
+                                fmt::format("attempted to insert duplicate key {} into JSON object", key));
+        }
+
         underlying_.emplace_back(key.to_string(), std::move(value));
         return underlying_.back().second;
     }
     Value& Object::insert(StringView key, const Value& value)
     {
-        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, !contains(key), "key '%s' already exists in object", key);
+        if (contains(key))
+        {
+            Checks::unreachable(VCPKG_LINE_INFO,
+                                fmt::format("attempted to insert duplicate key {} into JSON object", key));
+        }
+
         underlying_.emplace_back(key.to_string(), value);
         return underlying_.back().second;
     }
@@ -825,10 +835,8 @@ namespace vcpkg::Json
                     }
                     else if (current == '/')
                     {
-                        add_error(msg::format(msgUnexpectedCharMidArray)
-                                      .append_raw('\n')
-                                      .append(msgInvalidCommentStyle)
-                                      .extract_data());
+                        add_error(std::move(
+                            msg::format(msgUnexpectedCharMidArray).append_raw('\n').append(msgInvalidCommentStyle)));
                     }
                     else
                     {
@@ -873,10 +881,8 @@ namespace vcpkg::Json
                 }
                 else if (current == '/')
                 {
-                    add_error(msg::format(msgUnexpectedCharExpectedColon)
-                                  .append_raw('\n')
-                                  .append(msgInvalidCommentStyle)
-                                  .extract_data());
+                    add_error(std::move(
+                        msg::format(msgUnexpectedCharExpectedColon).append_raw('\n').append(msgInvalidCommentStyle)));
                     return res;
                 }
                 else
@@ -937,10 +943,9 @@ namespace vcpkg::Json
                     }
                     else if (current == '/')
                     {
-                        add_error(msg::format(msgUnexpectedCharExpectedColon)
-                                      .append_raw('\n')
-                                      .append(msgInvalidCommentStyle)
-                                      .extract_data());
+                        add_error(std::move(msg::format(msgUnexpectedCharExpectedColon)
+                                                .append_raw('\n')
+                                                .append(msgInvalidCommentStyle)));
                     }
                     else
                     {
@@ -978,10 +983,9 @@ namespace vcpkg::Json
                     case 'f': return parse_keyword();
                     case '/':
                     {
-                        add_error(msg::format(msgUnexpectedCharExpectedValue)
-                                      .append_raw('\n')
-                                      .append(msgInvalidCommentStyle)
-                                      .extract_data());
+                        add_error(std::move(msg::format(msgUnexpectedCharExpectedValue)
+                                                .append_raw('\n')
+                                                .append(msgInvalidCommentStyle)));
                         return Value();
                     }
                     default:
@@ -997,8 +1001,7 @@ namespace vcpkg::Json
                 }
             }
 
-            static ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse(StringView json,
-                                                                                             StringView origin)
+            static ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse(StringView json, StringView origin)
             {
                 StatsTimer t(g_json_parsing_stats);
 
@@ -1018,7 +1021,7 @@ namespace vcpkg::Json
                 }
                 else
                 {
-                    return std::make_pair(std::move(val), parser.style());
+                    return ParsedJson{std::move(val), parser.style()};
                 }
             }
 
@@ -1029,13 +1032,36 @@ namespace vcpkg::Json
         };
     }
 
-    NaturalNumberDeserializer NaturalNumberDeserializer::instance;
-    BooleanDeserializer BooleanDeserializer::instance;
-    ParagraphDeserializer ParagraphDeserializer::instance;
-    IdentifierDeserializer IdentifierDeserializer::instance;
-    IdentifierArrayDeserializer IdentifierArrayDeserializer::instance;
-    PackageNameDeserializer PackageNameDeserializer::instance;
-    PathDeserializer PathDeserializer::instance;
+    Optional<std::string> StringDeserializer::visit_string(Reader&, StringView sv) const { return sv.to_string(); }
+
+    LocalizedString UntypedStringDeserializer::type_name() const { return msg::format(msgAString); }
+
+    const UntypedStringDeserializer UntypedStringDeserializer::instance;
+
+    LocalizedString PathDeserializer::type_name() const { return msg::format(msgAPath); }
+    Optional<Path> PathDeserializer::visit_string(Reader&, StringView sv) const { return sv; }
+
+    const PathDeserializer PathDeserializer::instance;
+
+    LocalizedString NaturalNumberDeserializer::type_name() const { return msg::format(msgANonNegativeInteger); }
+
+    Optional<int> NaturalNumberDeserializer::visit_integer(Reader&, int64_t value) const
+    {
+        if (value > std::numeric_limits<int>::max() || value < 0)
+        {
+            return nullopt;
+        }
+
+        return static_cast<int>(value);
+    }
+
+    const NaturalNumberDeserializer NaturalNumberDeserializer::instance;
+
+    LocalizedString BooleanDeserializer::type_name() const { return msg::format(msgABoolean); }
+
+    Optional<bool> BooleanDeserializer::visit_boolean(Reader&, bool b) const { return b; }
+
+    const BooleanDeserializer BooleanDeserializer::instance;
 
     static constexpr bool is_lower_digit(char ch)
     {
@@ -1088,9 +1114,9 @@ namespace vcpkg::Json
         return true;
     }
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse_file(const Filesystem& fs,
-                                                                                   const Path& json_file,
-                                                                                   std::error_code& ec)
+    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse_file(const Filesystem& fs,
+                                                                  const Path& json_file,
+                                                                  std::error_code& ec)
     {
         auto res = fs.read_contents(json_file, ec);
         if (ec)
@@ -1101,48 +1127,41 @@ namespace vcpkg::Json
         return parse(res, json_file);
     }
 
-    std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo li, const Filesystem& fs, const Path& json_file)
+    ParsedJson parse_file(vcpkg::LineInfo li, const Filesystem& fs, const Path& json_file)
     {
         std::error_code ec;
         auto ret = parse_file(fs, json_file, ec);
         if (ec)
         {
-            msg::println_error(msgFailedToRead, msg::path = json_file, msg::error_msg = ec);
-            Checks::exit_fail(li);
+            Checks::msg_exit_with_error(li, format_filesystem_call_error(ec, "read_contents", {json_file}));
         }
         else if (!ret)
         {
-            msg::println_error(msgFailedToParseJson, msg::path = json_file);
-            msg::write_unlocalized_text_to_stdout(Color::error, ret.error()->to_string());
-            msg::println();
-            Checks::exit_fail(li);
+            Checks::msg_exit_with_message(li, LocalizedString::from_raw(ret.error()->to_string()));
         }
         return ret.value_or_exit(li);
     }
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse(StringView json, StringView origin)
+    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse(StringView json, StringView origin)
     {
         return Parser::parse(json, origin);
     }
 
-    ExpectedS<Json::Object> parse_object(StringView text, StringView origin)
+    ExpectedL<Json::Object> parse_object(StringView text, StringView origin)
     {
         auto maybeValueIsh = parse(text, origin);
         if (auto asValueIsh = maybeValueIsh.get())
         {
-            auto& asValue = asValueIsh->first;
+            auto& asValue = asValueIsh->value;
             if (asValue.is_object())
             {
-                return std::move(asValue.object(VCPKG_LINE_INFO));
+                return std::move(asValue).object(VCPKG_LINE_INFO);
             }
 
-            return msg::format(msgJsonErrorMustBeAnObject, msg::path = origin).extract_data();
+            return msg::format(msgJsonErrorMustBeAnObject, msg::path = origin);
         }
 
-        return msg::format(msgFailedToParseJson, msg::path = origin)
-            .append_raw('\n')
-            .append_raw(maybeValueIsh.error()->to_string())
-            .extract_data();
+        return LocalizedString::from_raw(maybeValueIsh.error()->to_string());
     }
     // } auto parse()
 
@@ -1351,6 +1370,8 @@ namespace vcpkg::Json
     }
     // } auto stringify()
 
+    uint64_t get_json_parsing_stats() { return g_json_parsing_stats.load(); }
+
     static std::vector<std::string> invalid_json_fields(const Json::Object& obj,
                                                         Span<const StringView> known_fields) noexcept
     {
@@ -1381,27 +1402,34 @@ namespace vcpkg::Json
 
     uint64_t Reader::get_reader_stats() { return g_json_reader_stats.load(); }
 
-    void Reader::add_missing_field_error(StringView type, StringView key, StringView key_type)
+    void Reader::add_missing_field_error(const LocalizedString& type, StringView key, const LocalizedString& key_type)
     {
-        add_generic_error(type, "missing required field '", key, "' (", key_type, ")");
+        add_generic_error(type, msg::format(msgMissingRequiredField, msg::json_field = key, msg::json_type = key_type));
     }
-    void Reader::add_expected_type_error(StringView expected_type)
+    void Reader::add_expected_type_error(const LocalizedString& expected_type)
     {
-        m_errors.push_back(Strings::concat(path(), ": mismatched type: expected ", expected_type));
+        m_errors.push_back(msg::format(msgMismatchedType, msg::json_field = path(), msg::json_type = expected_type));
     }
-    void Reader::add_extra_field_error(StringView type, StringView field, StringView suggestion)
+    void Reader::add_extra_field_error(const LocalizedString& type, StringView field, StringView suggestion)
     {
         if (suggestion.size() > 0)
         {
-            add_generic_error(type, "unexpected field '", field, "\', did you mean \'", suggestion, "\'?");
+            add_generic_error(type,
+                              msg::format(msgUnexpectedFieldSuggest, msg::json_field = field, msg::value = suggestion));
         }
         else
         {
-            add_generic_error(type, "unexpected field '", field, '\'');
+            add_generic_error(type, msg::format(msgUnexpectedField, msg::json_field = field));
         }
     }
+    void Reader::add_generic_error(const LocalizedString& type, LocalizedString&& message)
+    {
+        m_errors.push_back(LocalizedString::from_raw(Strings::concat(path(), " (", type, "): ", message)));
+    }
 
-    void Reader::check_for_unexpected_fields(const Object& obj, View<StringView> valid_fields, StringView type_name)
+    void Reader::check_for_unexpected_fields(const Object& obj,
+                                             View<StringView> valid_fields,
+                                             const LocalizedString& type_name)
     {
         if (valid_fields.size() == 0)
         {
@@ -1422,13 +1450,14 @@ namespace vcpkg::Json
                     best_it = i;
                 }
             }
-            add_extra_field_error(type_name.to_string(), f, *best_it);
+            add_extra_field_error(type_name, f, *best_it);
         }
     }
 
-    void Reader::add_warning(StringView type, StringView msg)
+    void Reader::add_warning(LocalizedString type, StringView msg)
     {
-        m_warnings.push_back(LocalizedString::from_raw(Strings::concat(path(), " (", type, "): ", msg)));
+        m_warnings.push_back(std::move(
+            LocalizedString::from_raw(path()).append_raw(" (").append(type).append_raw("): ").append_raw(msg)));
     }
 
     std::string Reader::path() const noexcept
@@ -1437,69 +1466,149 @@ namespace vcpkg::Json
         for (auto&& s : m_path)
         {
             if (s.index < 0)
-                Strings::append(p, '.', s.field);
+            {
+                p.push_back('.');
+                p.append(s.field.data(), s.field.size());
+            }
             else
-                Strings::append(p, '[', s.index, ']');
+            {
+                fmt::format_to(std::back_inserter(p), "[{}]", s.index);
+            }
         }
         return p;
     }
 
-    Optional<std::vector<std::string>> ParagraphDeserializer::visit_string(Reader&, StringView sv)
+    LocalizedString ParagraphDeserializer::type_name() const { return msg::format(msgAStringOrArrayOfStrings); }
+
+    Optional<std::vector<std::string>> ParagraphDeserializer::visit_string(Reader&, StringView sv) const
     {
         std::vector<std::string> out;
         out.push_back(sv.to_string());
         return out;
     }
 
-    Optional<std::vector<std::string>> ParagraphDeserializer::visit_array(Reader& r, const Array& arr)
+    Optional<std::vector<std::string>> ParagraphDeserializer::visit_array(Reader& r, const Array& arr) const
     {
-        static StringDeserializer d{"a string"};
-        return r.array_elements(arr, d);
+        return r.array_elements(arr, UntypedStringDeserializer::instance);
     }
 
-    Optional<std::string> IdentifierDeserializer::visit_string(Json::Reader& r, StringView sv)
+    const ParagraphDeserializer ParagraphDeserializer::instance;
+
+    LocalizedString IdentifierDeserializer::type_name() const { return msg::format(msgAnIdentifer); }
+
+    Optional<std::string> IdentifierDeserializer::visit_string(Json::Reader& r, StringView sv) const
     {
         if (!is_ident(sv))
         {
             r.add_generic_error(type_name(),
-                                Strings::concat("must be lowercase alphanumeric+hyphens and not reserved (see ",
-                                                vcpkg::docs::manifests_url,
-                                                " for more information)"));
+                                msg::format(msgParseIdentifierError, msg::value = sv, msg::url = docs::manifests_url));
         }
         return sv.to_string();
     }
 
-    Optional<std::vector<std::string>> IdentifierArrayDeserializer::visit_array(Reader& r, const Array& arr)
+    const IdentifierDeserializer IdentifierDeserializer::instance;
+
+    LocalizedString IdentifierArrayDeserializer::type_name() const { return msg::format(msgAnArrayOfIdentifers); }
+
+    Optional<std::vector<std::string>> IdentifierArrayDeserializer::visit_array(Reader& r, const Array& arr) const
     {
         return r.array_elements(arr, IdentifierDeserializer::instance);
     }
 
-    bool PackageNameDeserializer::is_package_name(StringView sv)
+    const IdentifierArrayDeserializer IdentifierArrayDeserializer::instance;
+
+    LocalizedString PackageNameDeserializer::type_name() const { return msg::format(msgAPackageName); }
+
+    Optional<std::string> PackageNameDeserializer::visit_string(Json::Reader& r, StringView sv) const
     {
-        if (sv.size() == 0)
+        if (!IdentifierDeserializer::is_ident(sv))
         {
-            return false;
-        }
-
-        for (const auto& ident : Strings::split(sv, '.'))
-        {
-            if (!IdentifierDeserializer::is_ident(ident))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    uint64_t get_json_parsing_stats() { return g_json_parsing_stats.load(); }
-
-    Optional<std::string> PackageNameDeserializer::visit_string(Json::Reader&, StringView sv)
-    {
-        if (!is_package_name(sv))
-        {
-            return nullopt;
+            r.add_generic_error(
+                type_name(),
+                msg::format(msgParsePackageNameError, msg::package_name = sv, msg::url = docs::manifests_url));
         }
         return sv.to_string();
     }
+
+    const PackageNameDeserializer PackageNameDeserializer::instance;
+
+    LocalizedString PackagePatternDeserializer::type_name() const { return msg::format(msgAPackagePattern); }
+
+    Optional<PackagePatternDeclaration> PackagePatternDeserializer::visit_string(Json::Reader& r, StringView sv) const
+    {
+        if (!is_package_pattern(sv))
+        {
+            r.add_generic_error(
+                type_name(),
+                msg::format(msgParsePackagePatternError, msg::package_name = sv, msg::url = docs::registries_url));
+        }
+
+        return PackagePatternDeclaration{
+            sv.to_string(),
+            r.path(),
+        };
+    }
+
+    bool PackagePatternDeserializer::is_package_pattern(StringView sv)
+    {
+        if (IdentifierDeserializer::is_ident(sv))
+        {
+            return true;
+        }
+
+        /*if (sv == "*")
+        {
+            return true;
+        }*/
+
+        // ([a-z0-9]+(-[a-z0-9]+)*)(\*?)
+        auto cur = sv.begin();
+        const auto last = sv.end();
+        for (;;)
+        {
+            // [a-z0-9]+
+            if (cur == last)
+            {
+                return false;
+            }
+
+            if (!is_lower_digit(*cur))
+            {
+                if (*cur != '*')
+                {
+                    return false;
+                }
+
+                return ++cur == last;
+            }
+
+            do
+            {
+                ++cur;
+                if (cur == last)
+                {
+                    return true;
+                }
+            } while (is_lower_digit(*cur));
+
+            switch (*cur)
+            {
+                case '-':
+                    // repeat outer [a-z0-9]+ again to match -[a-z0-9]+
+                    ++cur;
+                    continue;
+                case '*':
+                    // match last optional *
+                    ++cur;
+                    return cur == last;
+                default: return false;
+            }
+        }
+    }
+
+    const PackagePatternDeserializer PackagePatternDeserializer::instance;
+
+    LocalizedString PackagePatternArrayDeserializer::type_name() const { return msg::format(msgAPackagePatternArray); }
+
+    const PackagePatternArrayDeserializer PackagePatternArrayDeserializer::instance;
 }

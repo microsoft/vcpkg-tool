@@ -1,5 +1,4 @@
 #include <vcpkg/base/messages.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binarycaching.h>
@@ -28,14 +27,14 @@ namespace vcpkg::Commands::Upgrade
     static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
 
     static constexpr std::array<CommandSwitch, 4> INSTALL_SWITCHES = {{
-        {OPTION_NO_DRY_RUN, "Actually upgrade"},
-        {OPTION_KEEP_GOING, ""},
-        {OPTION_NO_KEEP_GOING, "Stop installing packages on failure"},
-        {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
+        {OPTION_NO_DRY_RUN, []() { return msg::format(msgCmdUpgradeOptNoDryRun); }},
+        {OPTION_KEEP_GOING, nullptr},
+        {OPTION_NO_KEEP_GOING, []() { return msg::format(msgCmdUpgradeOptNoKeepGoing); }},
+        {OPTION_ALLOW_UNSUPPORTED_PORT, []() { return msg::format(msgCmdUpgradeOptAllowUnsupported); }},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("upgrade --no-dry-run"),
+        [] { return create_example_string("upgrade --no-dry-run"); },
         0,
         SIZE_MAX,
         {INSTALL_SWITCHES, {}},
@@ -85,13 +84,17 @@ namespace vcpkg::Commands::Upgrade
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
         // Load ports from ports dirs
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
+        auto& fs = paths.get_filesystem();
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(
+            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
         // input sanitization
         const std::vector<PackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
-            return check_and_get_package_spec(std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+            return check_and_get_package_spec(
+                std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
         });
 
         ActionPlan action_plan;
@@ -115,6 +118,8 @@ namespace vcpkg::Commands::Upgrade
         }
         else
         {
+            print_default_triplet_warning(args, args.command_arguments);
+
             std::vector<PackageSpec> not_installed;
             std::vector<PackageSpec> no_control_file;
             std::vector<PackageSpec> to_upgrade;
@@ -195,10 +200,7 @@ namespace vcpkg::Commands::Upgrade
         }
 
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty());
-        for (const auto& warning : action_plan.warnings)
-        {
-            msg::write_unlocalized_text_to_stdout(Color::warning, warning + "\n");
-        }
+        action_plan.print_unsupported_warnings();
         // Set build settings for all install actions
         for (auto&& action : action_plan.install_actions)
         {

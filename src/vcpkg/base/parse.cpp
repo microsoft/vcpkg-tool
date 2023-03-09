@@ -27,7 +27,7 @@ namespace vcpkg
         auto decoder = Unicode::Utf8Decoder(line.data(), line.data() + line.size());
         ParseMessage as_message;
         as_message.location = SourceLoc{std::next(decoder, caret_col), decoder, row, column};
-        as_message.message = LocalizedString::from_raw(std::string(message));
+        as_message.message = message;
         return as_message.format(origin, MessageKind::Error).extract_data();
     }
 
@@ -184,12 +184,9 @@ namespace vcpkg
         return cur();
     }
 
-    void ParserBase::add_warning(LocalizedString&& message, const SourceLoc& loc)
-    {
-        m_messages.warnings.push_back(ParseMessage{loc, std::move(message)});
-    }
+    void ParserBase::add_error(LocalizedString&& message) { add_error(std::move(message), cur_loc()); }
 
-    void ParserBase::add_error(std::string message, const SourceLoc& loc)
+    void ParserBase::add_error(LocalizedString&& message, const SourceLoc& loc)
     {
         // avoid cascading errors by only saving the first
         if (!m_messages.error)
@@ -211,5 +208,12 @@ namespace vcpkg
 
         // Avoid error loops by skipping to the end
         skip_to_eof();
+    }
+
+    void ParserBase::add_warning(LocalizedString&& message) { add_warning(std::move(message), cur_loc()); }
+
+    void ParserBase::add_warning(LocalizedString&& message, const SourceLoc& loc)
+    {
+        m_messages.warnings.push_back(ParseMessage{loc, std::move(message)});
     }
 }

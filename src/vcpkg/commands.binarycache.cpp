@@ -1,6 +1,5 @@
-#include <vcpkg/base/basic_checks.h>
+#include <vcpkg/base/checks.h>
 #include <vcpkg/base/strings.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -18,10 +17,12 @@ using namespace vcpkg;
 namespace
 {
     const CommandStructure BinaryCacheCommandStructure = {
-        Strings::format(
-            "Adds the indicated port or artifact to the manifest associated with the current directory.\n%s\n%s",
-            create_example_string("binarycache list"),
-            create_example_string("binarycache remove --outdated-versions")),
+        []() {
+            return LocalizedString::from_raw(fmt::format(
+                "Adds the indicated port or artifact to the manifest associated with the current directory.\n%s\n%s",
+                create_example_string("binarycache list"),
+                create_example_string("binarycache remove --outdated-versions")));
+        },
         1,
         INT_MAX,
         {{}, {}},
@@ -155,9 +156,10 @@ namespace
                                                      {"CONTROL", "share/*/vcpkg_abi_info.txt"},
                                                      root_dir / get_filename(abi_hash, "_files")));
             }
-            print2("Extracting ", missing_abi_hashes.size(), " archives...");
+            msg::write_unlocalized_text_to_stdout(
+                Color::none, Strings::concat("Extracting ", missing_abi_hashes.size(), " archives..."));
             decompress_in_parallel(VCPKG_LINE_INFO, jobs);
-            print2(" Done.\n");
+            msg::write_unlocalized_text_to_stdout(Color::none, " Done.\n");
         }
 
         std::vector<BinaryPackageInfo> output;
@@ -266,7 +268,7 @@ namespace vcpkg
                 {
                     auto abi_entries = Util::fmap(e.second, [](auto e) { return e->abi_entries; });
                     auto differences = find_differences(abi_entries);
-                    print2(e.first, "\n");
+                    msg::write_unlocalized_text_to_stdout(Color::none, Strings::concat(e.first, "\n"));
                     size_t i = 0;
                     for (auto& difference : differences)
                     {
@@ -276,7 +278,9 @@ namespace vcpkg
                                 return Strings::concat("    ", diff.first, ": ", diff.second);
                             return Strings::concat("    ", diff.first, ": ", version_iter->second, " ", diff.second);
                         });
-                        print2("  Version: ", e.second[i]->abi, "\n", Strings::join("\n", diff), "\n\n");
+                        msg::write_unlocalized_text_to_stdout(
+                            Color::none,
+                            Strings::concat("  Version: ", e.second[i]->abi, "\n", Strings::join("\n", diff), "\n\n"));
                         ++i;
                     }
                 }
@@ -309,7 +313,8 @@ namespace vcpkg
                     remove_recusive(graph, args.command_arguments[i], [&](const auto& abi) {
                         auto port = abi_names.find(abi);
                         auto name = (port != abi_names.end()) ? port->second.full_name() : "unknown";
-                        print2("Delete package ", name, " ", abi, "\n");
+                        msg::write_unlocalized_text_to_stdout(Color::none,
+                                                              Strings::concat("Delete package ", name, " ", abi, "\n"));
 
                         delete_package(
                             paths.get_filesystem(), default_cache_path().value_or_exit(VCPKG_LINE_INFO), abi);
@@ -328,7 +333,8 @@ namespace vcpkg
                     auto iter = port.abi_entries.find(args.command_arguments[1]);
                     if (iter != port.abi_entries.end() && iter->second == args.command_arguments[2])
                     {
-                        print2("Delete package ", port.full_name(), "\n");
+                        msg::write_unlocalized_text_to_stdout(
+                            Color::none, Strings::concat("Delete package ", port.full_name(), "\n"));
                         delete_package(
                             paths.get_filesystem(), default_cache_path().value_or_exit(VCPKG_LINE_INFO), port.abi);
                     }

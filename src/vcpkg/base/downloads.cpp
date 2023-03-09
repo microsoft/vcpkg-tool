@@ -1,8 +1,9 @@
-#include <vcpkg/base/api_stable_format.h>
+#include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/parse.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
@@ -11,100 +12,234 @@
 
 namespace vcpkg
 {
-#if defined(_WIN32)
-    struct WinHttpHandleDeleter
+    static std::string replace_secrets(std::string input, View<std::string> secrets)
     {
-        void operator()(HINTERNET h) const { WinHttpCloseHandle(h); }
+        const auto replacement = msg::format(msgSecretBanner);
+        for (const auto& secret : secrets)
+        {
+            Strings::inplace_replace_all(input, secret, replacement);
+        }
+
+        return input;
+    }
+
+#if defined(_WIN32)
+    struct WinHttpHandle
+    {
+        HINTERNET h;
+
+        WinHttpHandle() : h(0) { }
+        explicit WinHttpHandle(HINTERNET h_) : h(h_) { }
+        WinHttpHandle(const WinHttpHandle&) = delete;
+        WinHttpHandle(WinHttpHandle&& other) : h(other.h) { other.h = 0; }
+        WinHttpHandle& operator=(const WinHttpHandle&) = delete;
+        WinHttpHandle& operator=(WinHttpHandle&& other)
+        {
+            auto cpy = std::move(other);
+            std::swap(h, cpy.h);
+            return *this;
+        }
+
+        ~WinHttpHandle()
+        {
+            if (h)
+            {
+                WinHttpCloseHandle(h);
+            }
+        }
     };
+
+    static LocalizedString format_winhttp_last_error_message(StringLiteral api_name, StringView url, DWORD last_error)
+    {
+        return msg::format_error(
+            msgDownloadWinHttpError, msg::system_api = api_name, msg::exit_code = last_error, msg::url = url);
+    }
+
+    static LocalizedString format_winhttp_last_error_message(StringLiteral api_name, StringView url)
+    {
+        return format_winhttp_last_error_message(api_name, url, GetLastError());
+    }
+
+    static void maybe_emit_winhttp_progress(const Optional<unsigned long long>& maybe_content_length,
+                                            std::chrono::steady_clock::time_point& last_write,
+                                            unsigned long long total_downloaded_size,
+                                            MessageSink& progress_sink)
+    {
+        if (const auto content_length = maybe_content_length.get())
+        {
+            const auto now = std::chrono::steady_clock::now();
+            if ((now - last_write) >= std::chrono::milliseconds(100))
+            {
+                const double percent =
+                    (static_cast<double>(total_downloaded_size) / static_cast<double>(*content_length)) * 100;
+                progress_sink.print(Color::none, fmt::format("{:.2f}%\n", percent));
+                last_write = now;
+            }
+        }
+    }
 
     struct WinHttpRequest
     {
-        static ExpectedS<WinHttpRequest> make(HINTERNET hConnect,
+        static ExpectedL<WinHttpRequest> make(HINTERNET hConnect,
                                               StringView url_path,
+                                              StringView sanitized_url,
                                               bool https,
                                               const wchar_t* method = L"GET")
         {
             WinHttpRequest ret;
+            ret.m_sanitized_url.assign(sanitized_url.data(), sanitized_url.size());
             // Create an HTTP request handle.
-            auto h = WinHttpOpenRequest(hConnect,
-                                        method,
-                                        Strings::to_utf16(url_path).c_str(),
-                                        nullptr,
-                                        WINHTTP_NO_REFERER,
-                                        WINHTTP_DEFAULT_ACCEPT_TYPES,
-                                        https ? WINHTTP_FLAG_SECURE : 0);
-            if (!h) return Strings::concat("WinHttpOpenRequest() failed: ", GetLastError());
-            ret.m_hRequest.reset(h);
+            {
+                auto h = WinHttpOpenRequest(hConnect,
+                                            method,
+                                            Strings::to_utf16(url_path).c_str(),
+                                            nullptr,
+                                            WINHTTP_NO_REFERER,
+                                            WINHTTP_DEFAULT_ACCEPT_TYPES,
+                                            https ? WINHTTP_FLAG_SECURE : 0);
+                if (!h)
+                {
+                    return format_winhttp_last_error_message("WinHttpOpenRequest", sanitized_url);
+                }
+
+                ret.m_hRequest = WinHttpHandle{h};
+            }
 
             // Send a request.
             auto bResults = WinHttpSendRequest(
-                ret.m_hRequest.get(), WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0);
+                ret.m_hRequest.h, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0);
 
-            if (!bResults) return Strings::concat("WinHttpSendRequest() failed: ", GetLastError());
+            if (!bResults)
+            {
+                return format_winhttp_last_error_message("WinHttpSendRequest", sanitized_url);
+            }
 
             // End the request.
-            bResults = WinHttpReceiveResponse(ret.m_hRequest.get(), NULL);
-            if (!bResults) return Strings::concat("WinHttpReceiveResponse() failed: ", GetLastError());
+            bResults = WinHttpReceiveResponse(ret.m_hRequest.h, NULL);
+            if (!bResults)
+            {
+                return format_winhttp_last_error_message("WinHttpReceiveResponse", sanitized_url);
+            }
 
             return ret;
         }
 
-        ExpectedS<int> query_status() const
+        ExpectedL<int> query_status() const
         {
-            DWORD dwStatusCode = 0;
-            DWORD dwSize = sizeof(dwStatusCode);
+            DWORD status_code;
+            DWORD size = sizeof(status_code);
 
-            auto bResults = WinHttpQueryHeaders(m_hRequest.get(),
-                                                WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
-                                                WINHTTP_HEADER_NAME_BY_INDEX,
-                                                &dwStatusCode,
-                                                &dwSize,
-                                                WINHTTP_NO_HEADER_INDEX);
-            if (!bResults) return Strings::concat("WinHttpQueryHeaders() failed: ", GetLastError());
-            return dwStatusCode;
-        }
-
-        template<class F>
-        ExpectedS<int> forall_data(F f)
-        {
-            std::vector<char> buf;
-
-            size_t total_downloaded_size = 0;
-            DWORD dwSize = 0;
-            do
+            auto succeeded = WinHttpQueryHeaders(m_hRequest.h,
+                                                 WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+                                                 WINHTTP_HEADER_NAME_BY_INDEX,
+                                                 &status_code,
+                                                 &size,
+                                                 WINHTTP_NO_HEADER_INDEX);
+            if (succeeded)
             {
-                DWORD downloaded_size = 0;
-                auto bResults = WinHttpQueryDataAvailable(m_hRequest.get(), &dwSize);
-                if (!bResults) return Strings::concat("WinHttpQueryDataAvailable() failed: ", GetLastError());
+                return status_code;
+            }
 
-                if (buf.size() < dwSize) buf.resize(static_cast<size_t>(dwSize) * 2);
-
-                bResults = WinHttpReadData(m_hRequest.get(), (LPVOID)buf.data(), dwSize, &downloaded_size);
-                if (!bResults) return Strings::concat("WinHttpReadData() failed: ", GetLastError());
-                f(Span<char>(buf.data(), downloaded_size));
-
-                total_downloaded_size += downloaded_size;
-            } while (dwSize > 0);
-            return 1;
+            return format_winhttp_last_error_message("WinHttpQueryHeaders", m_sanitized_url);
         }
 
-        std::unique_ptr<void, WinHttpHandleDeleter> m_hRequest;
+        ExpectedL<Optional<unsigned long long>> query_content_length() const
+        {
+            static constexpr DWORD buff_characters = 21; // 18446744073709551615
+            wchar_t buff[buff_characters];
+            DWORD size = sizeof(buff);
+            auto succeeded = WinHttpQueryHeaders(m_hRequest.h,
+                                                 WINHTTP_QUERY_CONTENT_LENGTH,
+                                                 WINHTTP_HEADER_NAME_BY_INDEX,
+                                                 buff,
+                                                 &size,
+                                                 WINHTTP_NO_HEADER_INDEX);
+            if (succeeded)
+            {
+                return Strings::strto<unsigned long long>(Strings::to_utf8(buff, size >> 1));
+            }
+
+            const DWORD last_error = GetLastError();
+            if (last_error == ERROR_WINHTTP_HEADER_NOT_FOUND)
+            {
+                return Optional<unsigned long long>{nullopt};
+            }
+
+            return format_winhttp_last_error_message("WinHttpQueryHeaders", m_sanitized_url, last_error);
+        }
+
+        ExpectedL<Unit> write_response_body(WriteFilePointer& file, MessageSink& progress_sink)
+        {
+            static constexpr DWORD buff_size = 65535;
+            std::unique_ptr<char[]> buff{new char[buff_size]};
+            Optional<unsigned long long> maybe_content_length;
+            auto last_write = std::chrono::steady_clock::now();
+
+            {
+                auto maybe_maybe_content_length = query_content_length();
+                if (const auto p = maybe_maybe_content_length.get())
+                {
+                    maybe_content_length = *p;
+                }
+                else
+                {
+                    return std::move(maybe_maybe_content_length).error();
+                }
+            }
+
+            unsigned long long total_downloaded_size = 0;
+            for (;;)
+            {
+                DWORD this_read;
+                if (!WinHttpReadData(m_hRequest.h, buff.get(), buff_size, &this_read))
+                {
+                    return format_winhttp_last_error_message("WinHttpReadData", m_sanitized_url);
+                }
+
+                if (this_read == 0)
+                {
+                    return Unit{};
+                }
+
+                do
+                {
+                    const auto this_write = static_cast<DWORD>(file.write(buff.get(), 1, this_read));
+                    if (this_write == 0)
+                    {
+                        return format_winhttp_last_error_message("fwrite", m_sanitized_url);
+                    }
+
+                    maybe_emit_winhttp_progress(maybe_content_length, last_write, total_downloaded_size, progress_sink);
+                    this_read -= this_write;
+                    total_downloaded_size += this_write;
+                } while (this_read > 0);
+            }
+        }
+
+        WinHttpHandle m_hRequest;
+        std::string m_sanitized_url;
     };
 
     struct WinHttpSession
     {
-        static ExpectedS<WinHttpSession> make()
+        static ExpectedL<WinHttpSession> make(StringView sanitized_url)
         {
-            auto h = WinHttpOpen(
-                L"vcpkg/1.0", WINHTTP_ACCESS_TYPE_NO_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
-            if (!h) return Strings::concat("WinHttpOpen() failed: ", GetLastError());
             WinHttpSession ret;
-            ret.m_hSession.reset(h);
+            {
+                auto h = WinHttpOpen(
+                    L"vcpkg/1.0", WINHTTP_ACCESS_TYPE_NO_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+                if (!h)
+                {
+                    return format_winhttp_last_error_message("WinHttpOpen", sanitized_url);
+                }
+
+                ret.m_hSession = WinHttpHandle{h};
+            }
 
             // Increase default timeouts to help connections behind proxies
             // WinHttpSetTimeouts(HINTERNET hInternet, int nResolveTimeout, int nConnectTimeout, int nSendTimeout, int
             // nReceiveTimeout);
-            WinHttpSetTimeouts(h, 0, 120000, 120000, 120000);
+            WinHttpSetTimeouts(ret.m_hSession.h, 0, 120000, 120000, 120000);
 
             // If the environment variable HTTPS_PROXY is set
             // use that variable as proxy. This situation might exist when user is in a company network
@@ -118,7 +253,7 @@ namespace vcpkg
                 proxy.lpszProxy = env_proxy_settings.data();
                 proxy.lpszProxyBypass = nullptr;
 
-                WinHttpSetOption(ret.m_hSession.get(), WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy));
+                WinHttpSetOption(ret.m_hSession.h, WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy));
             }
             // IE Proxy fallback, this works on Windows 10
             else
@@ -132,7 +267,7 @@ namespace vcpkg
                     proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
                     proxy.lpszProxy = ieProxy.get()->server.data();
                     proxy.lpszProxyBypass = ieProxy.get()->bypass.data();
-                    WinHttpSetOption(ret.m_hSession.get(), WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy));
+                    WinHttpSetOption(ret.m_hSession.h, WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy));
                 }
             }
 
@@ -140,72 +275,61 @@ namespace vcpkg
             DWORD secure_protocols(WINHTTP_FLAG_SECURE_PROTOCOL_TLS1 | WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_1 |
                                    WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2);
             WinHttpSetOption(
-                ret.m_hSession.get(), WINHTTP_OPTION_SECURE_PROTOCOLS, &secure_protocols, sizeof(secure_protocols));
+                ret.m_hSession.h, WINHTTP_OPTION_SECURE_PROTOCOLS, &secure_protocols, sizeof(secure_protocols));
 
             // Many open source mirrors such as https://download.gnome.org/ will redirect to http mirrors.
             // `curl.exe -L` does follow https -> http redirection.
             // Additionally, vcpkg hash checks the resulting archive.
             DWORD redirect_policy(WINHTTP_OPTION_REDIRECT_POLICY_ALWAYS);
             WinHttpSetOption(
-                ret.m_hSession.get(), WINHTTP_OPTION_REDIRECT_POLICY, &redirect_policy, sizeof(redirect_policy));
+                ret.m_hSession.h, WINHTTP_OPTION_REDIRECT_POLICY, &redirect_policy, sizeof(redirect_policy));
 
             return ret;
         }
 
-        std::unique_ptr<void, WinHttpHandleDeleter> m_hSession;
+        WinHttpHandle m_hSession;
     };
 
     struct WinHttpConnection
     {
-        static ExpectedS<WinHttpConnection> make(HINTERNET hSession, StringView hostname, INTERNET_PORT port)
+        static ExpectedL<WinHttpConnection> make(HINTERNET hSession,
+                                                 StringView hostname,
+                                                 INTERNET_PORT port,
+                                                 StringView sanitized_url)
         {
             // Specify an HTTP server.
             auto h = WinHttpConnect(hSession, Strings::to_utf16(hostname).c_str(), port, 0);
-            if (!h) return Strings::concat("WinHttpConnect() failed: ", GetLastError());
-            WinHttpConnection ret;
-            ret.m_hConnect.reset(h);
-            return ret;
+            if (!h)
+            {
+                return format_winhttp_last_error_message("WinHttpConnect", sanitized_url);
+            }
+
+            return WinHttpConnection{WinHttpHandle{h}};
         }
 
-        std::unique_ptr<void, WinHttpHandleDeleter> m_hConnect;
+        WinHttpHandle m_hConnect;
     };
 #endif
 
-    ExpectedS<details::SplitURIView> details::split_uri_view(StringView uri)
+    ExpectedL<SplitURIView> split_uri_view(StringView uri)
     {
         auto sep = std::find(uri.begin(), uri.end(), ':');
-        if (sep == uri.end()) return Strings::concat("Error: unable to parse uri: '", uri, "'");
+        if (sep == uri.end()) return msg::format_error(msgInvalidUri, msg::value = uri);
 
         StringView scheme(uri.begin(), sep);
         if (Strings::starts_with({sep + 1, uri.end()}, "//"))
         {
             auto path_start = std::find(sep + 3, uri.end(), '/');
-            return details::SplitURIView{scheme, StringView{sep + 1, path_start}, {path_start, uri.end()}};
+            return SplitURIView{scheme, StringView{sep + 1, path_start}, {path_start, uri.end()}};
         }
         // no authority
-        return details::SplitURIView{scheme, {}, {sep + 1, uri.end()}};
+        return SplitURIView{scheme, {}, {sep + 1, uri.end()}};
     }
 
-    static std::string format_hash_mismatch(StringView url,
-                                            const Path& downloaded_path,
-                                            StringView expected,
-                                            StringView actual)
-    {
-        return Strings::format("File does not have the expected hash:\n"
-                               "             url : [ %s ]\n"
-                               "       File path : [ %s ]\n"
-                               "   Expected hash : [ %s ]\n"
-                               "     Actual hash : [ %s ]\n",
-                               url,
-                               downloaded_path,
-                               expected,
-                               actual);
-    }
-
-    static Optional<std::string> try_verify_downloaded_file_hash(const Filesystem& fs,
-                                                                 StringView sanitized_url,
-                                                                 const Path& downloaded_path,
-                                                                 StringView sha512)
+    static ExpectedL<Unit> try_verify_downloaded_file_hash(const Filesystem& fs,
+                                                           StringView sanitized_url,
+                                                           const Path& downloaded_path,
+                                                           StringView sha512)
     {
         std::string actual_hash =
             vcpkg::Hash::get_file_hash(fs, downloaded_path, Hash::Algorithm::Sha512).value_or_exit(VCPKG_LINE_INFO);
@@ -223,9 +347,14 @@ namespace vcpkg
 
         if (!Strings::case_insensitive_ascii_equals(sha512, actual_hash))
         {
-            return format_hash_mismatch(sanitized_url, downloaded_path, sha512, actual_hash);
+            return msg::format_error(msgDownloadFailedHashMismatch,
+                                     msg::url = sanitized_url,
+                                     msg::path = downloaded_path,
+                                     msg::expected = sha512,
+                                     msg::actual = actual_hash);
         }
-        return nullopt;
+
+        return Unit{};
     }
 
     void verify_downloaded_file_hash(const Filesystem& fs,
@@ -233,25 +362,21 @@ namespace vcpkg
                                      const Path& downloaded_path,
                                      StringView sha512)
     {
-        auto maybe_error = try_verify_downloaded_file_hash(fs, url, downloaded_path, sha512);
-        if (auto err = maybe_error.get())
-        {
-            Checks::exit_with_message(VCPKG_LINE_INFO, *err);
-        }
+        try_verify_downloaded_file_hash(fs, url, downloaded_path, sha512).value_or_exit(VCPKG_LINE_INFO);
     }
 
     static bool check_downloaded_file_hash(Filesystem& fs,
                                            const Optional<std::string>& hash,
                                            StringView sanitized_url,
                                            const Path& download_part_path,
-                                           std::string& errors)
+                                           std::vector<LocalizedString>& errors)
     {
         if (auto p = hash.get())
         {
-            auto maybe_error = try_verify_downloaded_file_hash(fs, sanitized_url, download_part_path, *p);
-            if (auto err = maybe_error.get())
+            auto maybe_success = try_verify_downloaded_file_hash(fs, sanitized_url, download_part_path, *p);
+            if (!maybe_success.has_value())
             {
-                Strings::append(errors, *err, '\n');
+                errors.push_back(std::move(maybe_success).error());
                 return false;
             }
         }
@@ -272,7 +397,7 @@ namespace vcpkg
             .string_arg("--head")
             .string_arg("--location")
             .string_arg("-w")
-            .string_arg(Strings::concat(guid_marker, " %{http_code}\\n"));
+            .string_arg(guid_marker.to_string() + " %{http_code}\\n");
         for (auto&& header : headers)
         {
             cmd.string_arg("-H").string_arg(header);
@@ -323,17 +448,6 @@ namespace vcpkg
         return ret;
     }
 
-    std::string replace_secrets(std::string input, View<std::string> secrets)
-    {
-        static constexpr StringLiteral replacement{"*** SECRET ***"};
-        for (const auto& secret : secrets)
-        {
-            Strings::inplace_replace_all(input, secret, replacement);
-        }
-
-        return input;
-    }
-
     static void download_files_inner(Filesystem&,
                                      View<std::pair<std::string, Path>> url_pairs,
                                      View<std::string> headers,
@@ -349,7 +463,7 @@ namespace vcpkg
                 .string_arg("--create-dirs")
                 .string_arg("--location")
                 .string_arg("-w")
-                .string_arg(Strings::concat(guid_marker, " %{http_code}\\n"));
+                .string_arg(guid_marker.to_string() + " %{http_code}\\n");
             for (StringView header : headers)
             {
                 cmd.string_arg("-H").string_arg(header);
@@ -408,7 +522,11 @@ namespace vcpkg
         return ret;
     }
 
-    ExpectedS<int> put_file(const Filesystem&, StringView url, View<std::string> headers, const Path& file)
+    ExpectedL<int> put_file(const Filesystem&,
+                            StringView url,
+                            const std::vector<std::string>& secrets,
+                            View<std::string> headers,
+                            const Path& file)
     {
         static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
 
@@ -428,11 +546,12 @@ namespace vcpkg
                 }
 
                 Debug::print(res->output, '\n');
-                return Strings::concat(
-                    "Error: curl failed to put file to ", url, " with exit code: ", res->exit_code, '\n');
+                return msg::format_error(msgCurlFailedToPut,
+                                         msg::exit_code = res->exit_code,
+                                         msg::url = replace_secrets(url.to_string(), secrets));
             }
 
-            return Strings::concat("Error: launching curl failed: ", maybe_res.error());
+            return std::move(maybe_res).error();
         }
 
         Command cmd;
@@ -441,27 +560,23 @@ namespace vcpkg
         {
             cmd.string_arg("-H").string_arg(header);
         }
-        cmd.string_arg("-w").string_arg(Strings::concat("\\n", guid_marker, "%{http_code}"));
+        cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
         cmd.string_arg(url);
         cmd.string_arg("-T").string_arg(file);
         int code = 0;
         auto res = cmd_execute_and_stream_lines(cmd, [&code](StringView line) {
-                       if (Strings::starts_with(line, guid_marker))
-                       {
-                           code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
-                       }
-                   }).map_error([](LocalizedString&& ls) { return ls.extract_data(); });
+            if (Strings::starts_with(line, guid_marker))
+            {
+                code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
+            }
+        });
+
         if (auto pres = res.get())
         {
             if (*pres != 0 || (code >= 100 && code < 200) || code >= 300)
             {
-                res = Strings::concat("Error: curl failed to put file to ",
-                                      url,
-                                      " with exit code '",
-                                      *pres,
-                                      "' and http code '",
-                                      code,
-                                      "'\n");
+                return msg::format_error(
+                    msgCurlFailedToPutHttp, msg::exit_code = *pres, msg::url = url, msg::value = code);
             }
         }
 
@@ -469,92 +584,121 @@ namespace vcpkg
     }
 
 #if defined(_WIN32)
-    namespace
+    enum class WinHttpTrialResult
     {
-        /// <summary>
-        /// Download a file using WinHTTP -- only supports HTTP and HTTPS
-        /// </summary>
-        static bool download_winhttp(Filesystem& fs,
-                                     const Path& download_path_part_path,
-                                     details::SplitURIView split_uri,
-                                     const std::string& url,
-                                     const std::vector<std::string>& secrets,
-                                     std::string& errors)
+        failed,
+        succeeded,
+        retry
+    };
+
+    static WinHttpTrialResult download_winhttp_trial(Filesystem& fs,
+                                                     WinHttpSession& s,
+                                                     const Path& download_path_part_path,
+                                                     SplitURIView split_uri,
+                                                     StringView hostname,
+                                                     INTERNET_PORT port,
+                                                     StringView sanitized_url,
+                                                     std::vector<LocalizedString>& errors,
+                                                     MessageSink& progress_sink)
+    {
+        auto maybe_conn = WinHttpConnection::make(s.m_hSession.h, hostname, port, sanitized_url);
+        const auto conn = maybe_conn.get();
+        if (!conn)
         {
-            // `download_winhttp` does not support user or port syntax in authorities
-            auto hostname = split_uri.authority.value_or_exit(VCPKG_LINE_INFO).substr(2);
-            INTERNET_PORT port;
-            if (split_uri.scheme == "https")
-            {
-                port = INTERNET_DEFAULT_HTTPS_PORT;
-            }
-            else if (split_uri.scheme == "http")
-            {
-                port = INTERNET_DEFAULT_HTTP_PORT;
-            }
-            else
-            {
-                Checks::unreachable(VCPKG_LINE_INFO);
-            }
-
-            // Make sure the directories are present, otherwise fopen_s fails
-            const auto dir = download_path_part_path.parent_path();
-            fs.create_directories(dir, VCPKG_LINE_INFO);
-
-            const auto sanitized_url = replace_secrets(url, secrets);
-            msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("Downloading {}\n", sanitized_url));
-            static auto s = WinHttpSession::make().value_or_exit(VCPKG_LINE_INFO);
-            for (size_t trials = 0; trials < 4; ++trials)
-            {
-                if (trials > 0)
-                {
-                    // 1s, 2s, 4s
-                    msg::write_unlocalized_text_to_stdout(
-                        Color::none, fmt::format("Download failed -- retrying after {}ms.", 500 << trials));
-                    std::this_thread::sleep_for(std::chrono::milliseconds(500 << trials));
-                }
-                auto conn = WinHttpConnection::make(s.m_hSession.get(), hostname, port);
-                if (!conn)
-                {
-                    Strings::append(errors, sanitized_url, ": ", conn.error(), '\n');
-                    continue;
-                }
-                auto req = WinHttpRequest::make(
-                    conn.get()->m_hConnect.get(), split_uri.path_query_fragment, split_uri.scheme == "https");
-                if (!req)
-                {
-                    Strings::append(errors, sanitized_url, ": ", req.error(), '\n');
-                    continue;
-                }
-
-                auto maybe_status = req.get()->query_status();
-                if (auto status = maybe_status.get())
-                {
-                    if (*status < 200 || *status >= 300)
-                    {
-                        Strings::append(errors, sanitized_url, ": failed: status code ", *status, '\n');
-                        return false;
-                    }
-                }
-                else
-                {
-                    Strings::append(errors, sanitized_url, ": ", maybe_status.error(), '\n');
-                    continue;
-                }
-
-                const auto f = fs.open_for_write(download_path_part_path, VCPKG_LINE_INFO);
-
-                auto forall_data =
-                    req.get()->forall_data([&f](Span<char> span) { f.write(span.data(), 1, span.size()); });
-                if (!forall_data)
-                {
-                    Strings::append(errors, sanitized_url, ": ", forall_data.error(), '\n');
-                    continue;
-                }
-                return true;
-            }
-            return false;
+            errors.push_back(std::move(maybe_conn).error());
+            return WinHttpTrialResult::retry;
         }
+
+        auto maybe_req = WinHttpRequest::make(
+            conn->m_hConnect.h, split_uri.path_query_fragment, sanitized_url, split_uri.scheme == "https");
+        const auto req = maybe_req.get();
+        if (!req)
+        {
+            errors.push_back(std::move(maybe_req).error());
+            return WinHttpTrialResult::retry;
+        }
+
+        auto maybe_status = req->query_status();
+        const auto status = maybe_status.get();
+        if (!status)
+        {
+            errors.push_back(std::move(maybe_status).error());
+            return WinHttpTrialResult::retry;
+        }
+
+        if (*status < 200 || *status >= 300)
+        {
+            errors.push_back(
+                msg::format_error(msgDownloadFailedStatusCode, msg::url = sanitized_url, msg::value = *status));
+            return WinHttpTrialResult::failed;
+        }
+
+        auto f = fs.open_for_write(download_path_part_path, VCPKG_LINE_INFO);
+        auto maybe_write = req->write_response_body(f, progress_sink);
+        const auto write = maybe_write.get();
+        if (!write)
+        {
+            errors.push_back(std::move(maybe_write).error());
+            return WinHttpTrialResult::retry;
+        }
+
+        return WinHttpTrialResult::succeeded;
+    }
+
+    /// <summary>
+    /// Download a file using WinHTTP -- only supports HTTP and HTTPS
+    /// </summary>
+    static bool download_winhttp(Filesystem& fs,
+                                 const Path& download_path_part_path,
+                                 SplitURIView split_uri,
+                                 const std::string& url,
+                                 const std::vector<std::string>& secrets,
+                                 std::vector<LocalizedString>& errors,
+                                 MessageSink& progress_sink)
+    {
+        // `download_winhttp` does not support user or port syntax in authorities
+        auto hostname = split_uri.authority.value_or_exit(VCPKG_LINE_INFO).substr(2);
+        INTERNET_PORT port;
+        if (split_uri.scheme == "https")
+        {
+            port = INTERNET_DEFAULT_HTTPS_PORT;
+        }
+        else if (split_uri.scheme == "http")
+        {
+            port = INTERNET_DEFAULT_HTTP_PORT;
+        }
+        else
+        {
+            Checks::unreachable(VCPKG_LINE_INFO);
+        }
+
+        // Make sure the directories are present, otherwise fopen_s fails
+        const auto dir = download_path_part_path.parent_path();
+        fs.create_directories(dir, VCPKG_LINE_INFO);
+
+        const auto sanitized_url = replace_secrets(url, secrets);
+        msg::println(msgDownloadingUrl, msg::url = sanitized_url);
+        static auto s = WinHttpSession::make(sanitized_url).value_or_exit(VCPKG_LINE_INFO);
+        for (size_t trials = 0; trials < 4; ++trials)
+        {
+            if (trials > 0)
+            {
+                // 1s, 2s, 4s
+                const auto trialMs = 500 << trials;
+                msg::println_warning(msgDownloadFailedRetrying, msg::value = trialMs);
+                std::this_thread::sleep_for(std::chrono::milliseconds(trialMs));
+            }
+
+            switch (download_winhttp_trial(
+                fs, s, download_path_part_path, split_uri, hostname, port, sanitized_url, errors, progress_sink))
+            {
+                case WinHttpTrialResult::failed: return false;
+                case WinHttpTrialResult::succeeded: return true;
+                case WinHttpTrialResult::retry: break;
+            }
+        }
+
+        return false;
     }
 #endif
 
@@ -564,7 +708,8 @@ namespace vcpkg
                                   const Path& download_path,
                                   const Optional<std::string>& sha512,
                                   const std::vector<std::string>& secrets,
-                                  std::string& errors)
+                                  std::vector<LocalizedString>& errors,
+                                  MessageSink& progress_sink)
     {
         auto download_path_part_path = download_path;
         download_path_part_path += ".";
@@ -578,14 +723,14 @@ namespace vcpkg
 #if defined(_WIN32)
         if (headers.size() == 0)
         {
-            auto split_uri = details::split_uri_view(url).value_or_exit(VCPKG_LINE_INFO);
+            auto split_uri = split_uri_view(url).value_or_exit(VCPKG_LINE_INFO);
             auto authority = split_uri.authority.value_or_exit(VCPKG_LINE_INFO).substr(2);
             if (split_uri.scheme == "https" || split_uri.scheme == "http")
             {
                 // This check causes complex URLs (non-default port, embedded basic auth) to be passed down to curl.exe
                 if (Strings::find_first_of(authority, ":@") == authority.end())
                 {
-                    if (download_winhttp(fs, download_path_part_path, split_uri, url, secrets, errors))
+                    if (download_winhttp(fs, download_path_part_path, split_uri, url, secrets, errors, progress_sink))
                     {
                         if (check_downloaded_file_hash(fs, sha512, url, download_path_part_path, errors))
                         {
@@ -610,13 +755,33 @@ namespace vcpkg
         {
             cmd.string_arg("-H").string_arg(header);
         }
-        const auto maybe_out = cmd_execute_and_capture_output(cmd);
+
+        std::string non_progress_lines;
+        const auto maybe_exit_code = cmd_execute_and_stream_lines(
+            cmd,
+            [&](StringView line) {
+                const auto maybe_parsed = try_parse_curl_progress_data(line);
+                if (const auto parsed = maybe_parsed.get())
+                {
+                    progress_sink.print(Color::none, fmt::format("{}%\n", parsed->total_percent));
+                }
+                else
+                {
+                    non_progress_lines.append(line.data(), line.size());
+                    non_progress_lines.push_back('\n');
+                }
+            },
+            default_working_directory,
+            default_environment,
+            Encoding::Utf8);
+
         const auto sanitized_url = replace_secrets(url, secrets);
-        if (const auto out = maybe_out.get())
+        if (const auto exit_code = maybe_exit_code.get())
         {
-            if (out->exit_code != 0)
+            if (*exit_code != 0)
             {
-                Strings::append(errors, sanitized_url, ": ", out->output, '\n');
+                errors.push_back(
+                    msg::format_error(msgDownloadFailedCurl, msg::url = sanitized_url, msg::exit_code = *exit_code));
                 return false;
             }
 
@@ -628,24 +793,29 @@ namespace vcpkg
         }
         else
         {
-            Strings::append(errors, sanitized_url, ": ", maybe_out.error(), '\n');
+            errors.push_back(std::move(maybe_exit_code).error());
         }
 
         return false;
     }
 
-    static Optional<const std::string&> try_download_files(vcpkg::Filesystem& fs,
-                                                           View<std::string> urls,
-                                                           View<std::string> headers,
-                                                           const Path& download_path,
-                                                           const Optional<std::string>& sha512,
-                                                           const std::vector<std::string>& secrets,
-                                                           std::string& errors)
+    static Optional<const std::string&> try_download_file(vcpkg::Filesystem& fs,
+                                                          View<std::string> urls,
+                                                          View<std::string> headers,
+                                                          const Path& download_path,
+                                                          const Optional<std::string>& sha512,
+                                                          const std::vector<std::string>& secrets,
+                                                          std::vector<LocalizedString>& errors,
+                                                          MessageSink& progress_sink)
     {
         for (auto&& url : urls)
         {
-            if (try_download_file(fs, url, headers, download_path, sha512, secrets, errors)) return url;
+            if (try_download_file(fs, url, headers, download_path, sha512, secrets, errors, progress_sink))
+            {
+                return url;
+            }
         }
+
         return nullopt;
     }
 
@@ -659,36 +829,45 @@ namespace vcpkg
                                         const std::string& url,
                                         View<std::string> headers,
                                         const Path& download_path,
-                                        const Optional<std::string>& sha512) const
+                                        const Optional<std::string>& sha512,
+                                        MessageSink& progress_sink) const
     {
-        this->download_file(fs, View<std::string>(&url, 1), headers, download_path, sha512);
+        this->download_file(fs, View<std::string>(&url, 1), headers, download_path, sha512, progress_sink);
     }
 
     std::string DownloadManager::download_file(Filesystem& fs,
                                                View<std::string> urls,
                                                View<std::string> headers,
                                                const Path& download_path,
-                                               const Optional<std::string>& sha512) const
+                                               const Optional<std::string>& sha512,
+                                               MessageSink& progress_sink) const
     {
-        std::string errors;
+        std::vector<LocalizedString> errors;
         if (urls.size() == 0)
         {
             if (auto hash = sha512.get())
             {
-                Strings::append(errors, "Error: No urls specified to download SHA: ", *hash);
+                errors.push_back(msg::format_error(msgNoUrlsAndHashSpecified, msg::sha = *hash));
             }
             else
             {
-                Strings::append(errors, "Error: No urls specified and no hash specified.");
+                errors.push_back(msg::format_error(msgNoUrlsAndNoHashSpecified));
             }
         }
+
         if (auto hash = sha512.get())
         {
             if (auto read_template = m_config.m_read_url_template.get())
             {
                 auto read_url = Strings::replace_all(*read_template, "<SHA>", *hash);
-                if (try_download_file(
-                        fs, read_url, m_config.m_read_headers, download_path, sha512, m_config.m_secrets, errors))
+                if (try_download_file(fs,
+                                      read_url,
+                                      m_config.m_read_headers,
+                                      download_path,
+                                      sha512,
+                                      m_config.m_secrets,
+                                      errors,
+                                      progress_sink))
                 {
                     return read_url;
                 }
@@ -697,13 +876,10 @@ namespace vcpkg
             {
                 if (urls.size() != 0)
                 {
-                    const auto download_path_part_path =
-                        download_path + Strings::concat(".", get_process_id(), ".part");
-
+                    const auto download_path_part_path = download_path + fmt::format(".{}.part", get_process_id());
                     const auto escaped_url = Command(urls[0]).extract();
                     const auto escaped_sha512 = Command(*hash).extract();
                     const auto escaped_dpath = Command(download_path_part_path).extract();
-
                     auto cmd = api_stable_format(*script, [&](std::string& out, StringView key) {
                                    if (key == "url")
                                    {
@@ -728,21 +904,19 @@ namespace vcpkg
 
                     if (maybe_res)
                     {
-                        auto maybe_error =
+                        auto maybe_success =
                             try_verify_downloaded_file_hash(fs, "<mirror-script>", download_path_part_path, *hash);
-                        if (auto err = maybe_error.get())
-                        {
-                            Strings::append(errors, *err);
-                        }
-                        else
+                        if (maybe_success)
                         {
                             fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
                             return urls[0];
                         }
+
+                        errors.push_back(std::move(maybe_success).error());
                     }
                     else
                     {
-                        Strings::append(errors, maybe_res.error(), '\n');
+                        errors.push_back(std::move(maybe_res).error());
                     }
                 }
             }
@@ -752,8 +926,8 @@ namespace vcpkg
         {
             if (urls.size() != 0)
             {
-                auto maybe_url =
-                    try_download_files(fs, urls, headers, download_path, sha512, m_config.m_secrets, errors);
+                auto maybe_url = try_download_file(
+                    fs, urls, headers, download_path, sha512, m_config.m_secrets, errors, progress_sink);
                 if (auto url = maybe_url.get())
                 {
                     if (auto hash = sha512.get())
@@ -762,27 +936,162 @@ namespace vcpkg
                         if (!maybe_push)
                         {
                             msg::println_warning(msgFailedToStoreBackToMirror);
-                            msg::write_unlocalized_text_to_stdout(Color::warning, maybe_push.error());
+                            msg::println(maybe_push.error());
                         }
                     }
+
                     return *url;
                 }
             }
         }
         msg::println_error(msgFailedToDownloadFromMirrorSet);
-        msg::println_error(LocalizedString::from_raw(errors));
+        for (LocalizedString& error : errors)
+        {
+            msg::println(error);
+        }
+
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
-    ExpectedS<int> DownloadManager::put_file_to_mirror(const Filesystem& fs,
+    ExpectedL<int> DownloadManager::put_file_to_mirror(const Filesystem& fs,
                                                        const Path& file_to_put,
                                                        StringView sha512) const
     {
         auto maybe_mirror_url = Strings::replace_all(m_config.m_write_url_template.value_or(""), "<SHA>", sha512);
         if (!maybe_mirror_url.empty())
         {
-            return put_file(fs, maybe_mirror_url, m_config.m_write_headers, file_to_put);
+            return put_file(fs, maybe_mirror_url, m_config.m_secrets, m_config.m_write_headers, file_to_put);
         }
         return 0;
+    }
+
+    Optional<unsigned long long> try_parse_curl_max5_size(StringView sv)
+    {
+        // \d+(\.\d{1, 2})?[kMGTP]?
+        std::size_t idx = 0;
+        while (idx < sv.size() && ParserBase::is_ascii_digit(sv[idx]))
+        {
+            ++idx;
+        }
+
+        if (idx == 0)
+        {
+            return nullopt;
+        }
+
+        unsigned long long accumulator;
+        {
+            const auto maybe_first_digits = Strings::strto<unsigned long long>(sv.substr(0, idx));
+            if (auto p = maybe_first_digits.get())
+            {
+                accumulator = *p;
+            }
+            else
+            {
+                return nullopt;
+            }
+        }
+
+        unsigned long long after_digits = 0;
+        if (idx < sv.size() && sv[idx] == '.')
+        {
+            ++idx;
+            if (idx >= sv.size() || !ParserBase::is_ascii_digit(sv[idx]))
+            {
+                return nullopt;
+            }
+
+            after_digits = (sv[idx] - '0') * 10u;
+            ++idx;
+            if (idx < sv.size() && ParserBase::is_ascii_digit(sv[idx]))
+            {
+                after_digits += sv[idx] - '0';
+                ++idx;
+            }
+        }
+
+        if (idx == sv.size())
+        {
+            return accumulator;
+        }
+
+        if (idx + 1 != sv.size())
+        {
+            return nullopt;
+        }
+
+        switch (sv[idx])
+        {
+            case 'k': return (accumulator << 10) + (after_digits << 10) / 100;
+            case 'M': return (accumulator << 20) + (after_digits << 20) / 100;
+            case 'G': return (accumulator << 30) + (after_digits << 30) / 100;
+            case 'T': return (accumulator << 40) + (after_digits << 40) / 100;
+            case 'P': return (accumulator << 50) + (after_digits << 50) / 100;
+            default: return nullopt;
+        }
+    }
+
+    static bool parse_curl_uint_impl(unsigned int& target, const char*& first, const char* const last)
+    {
+        first = std::find_if_not(first, last, ParserBase::is_whitespace);
+        const auto start = first;
+        first = std::find_if(first, last, ParserBase::is_whitespace);
+        const auto maybe_parsed = Strings::strto<unsigned int>(StringView{start, first});
+        if (const auto parsed = maybe_parsed.get())
+        {
+            target = *parsed;
+            return false;
+        }
+
+        return true;
+    }
+
+    static bool parse_curl_max5_impl(unsigned long long& target, const char*& first, const char* const last)
+    {
+        first = std::find_if_not(first, last, ParserBase::is_whitespace);
+        const auto start = first;
+        first = std::find_if(first, last, ParserBase::is_whitespace);
+        const auto maybe_parsed = try_parse_curl_max5_size(StringView{start, first});
+        if (const auto parsed = maybe_parsed.get())
+        {
+            target = *parsed;
+            return false;
+        }
+
+        return true;
+    }
+
+    static bool skip_curl_time_impl(const char*& first, const char* const last)
+    {
+        first = std::find_if_not(first, last, ParserBase::is_whitespace);
+        first = std::find_if(first, last, ParserBase::is_whitespace);
+        return false;
+    }
+
+    Optional<CurlProgressData> try_parse_curl_progress_data(StringView curl_progress_line)
+    {
+        // Curl's maintainer Daniel Stenberg clarified that this output is semi-contractual
+        // here: https://twitter.com/bagder/status/1600615752725307400
+        //  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+        //                                 Dload  Upload   Total   Spent    Left  Speed
+        // https://github.com/curl/curl/blob/5ccddf64398c1186deb5769dac086d738e150e09/lib/progress.c#L546
+        CurlProgressData result;
+        auto first = curl_progress_line.begin();
+        const auto last = curl_progress_line.end();
+        if (parse_curl_uint_impl(result.total_percent, first, last) ||
+            parse_curl_max5_impl(result.total_size, first, last) ||
+            parse_curl_uint_impl(result.recieved_percent, first, last) ||
+            parse_curl_max5_impl(result.recieved_size, first, last) ||
+            parse_curl_uint_impl(result.transfer_percent, first, last) ||
+            parse_curl_max5_impl(result.transfer_size, first, last) ||
+            parse_curl_max5_impl(result.average_download_speed, first, last) ||
+            parse_curl_max5_impl(result.average_upload_speed, first, last) || skip_curl_time_impl(first, last) ||
+            skip_curl_time_impl(first, last) || skip_curl_time_impl(first, last) ||
+            parse_curl_max5_impl(result.current_speed, first, last))
+        {
+            return nullopt;
+        }
+
+        return result;
     }
 }

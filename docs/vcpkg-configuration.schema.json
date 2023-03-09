@@ -20,6 +20,20 @@
       "type": "string",
       "description": "A message to print if this entry is evaluated."
     },
+    "overlay-ports": {
+      "type": "array",
+      "description": "An array of port overlay paths.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "overlay-triplets": {
+      "type": "array",
+      "description": "An array of triplet overlay paths.",
+      "items": {
+        "type": "string"
+      }
+    },
     "requires": {
       "description": "Artifacts that are required for this package to function.",
       "$ref": "vcpkg-schema-definitions.schema.json#/definitions/artifact-references"

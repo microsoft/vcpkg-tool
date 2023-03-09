@@ -1,4 +1,3 @@
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.h>
@@ -38,15 +37,15 @@ namespace vcpkg::Remove
             write_update(fs, installed, spgh);
         }
 
-        std::error_code ec;
-        auto lines = fs.read_lines(installed.listfile_path(ipv.core->package), ec);
-        if (!ec)
+        auto maybe_lines = fs.read_lines(installed.listfile_path(ipv.core->package));
+        if (auto lines = maybe_lines.get())
         {
             std::vector<Path> dirs_touched;
-            for (auto&& suffix : lines)
+            for (auto&& suffix : *lines)
             {
                 auto target = installed.root() / suffix;
 
+                std::error_code ec;
                 const auto status = fs.symlink_status(target, ec);
                 if (ec)
                 {
@@ -82,6 +81,7 @@ namespace vcpkg::Remove
             {
                 if (fs.is_empty(*b, IgnoreErrors{}))
                 {
+                    std::error_code ec;
                     fs.remove(*b, ec);
                     if (ec)
                     {
@@ -163,11 +163,11 @@ namespace vcpkg::Remove
     static constexpr StringLiteral OPTION_OUTDATED = "outdated";
 
     static constexpr std::array<CommandSwitch, 5> SWITCHES = {{
-        {OPTION_PURGE, ""},
-        {OPTION_NO_PURGE, ""},
-        {OPTION_RECURSE, "Allow removal of packages not explicitly specified on the command line"},
-        {OPTION_DRY_RUN, "Print the packages to be removed, but do not remove them"},
-        {OPTION_OUTDATED, "Select all packages with versions that do not match the portfiles"},
+        {OPTION_PURGE, nullptr},
+        {OPTION_NO_PURGE, nullptr},
+        {OPTION_RECURSE, []() { return msg::format(msgCmdRemoveOptRecurse); }},
+        {OPTION_DRY_RUN, []() { return msg::format(msgCmdRemoveOptDryRun); }},
+        {OPTION_OUTDATED, []() { return msg::format(msgCmdRemoveOptOutdated); }},
     }};
 
     static std::vector<std::string> valid_arguments(const VcpkgPaths& paths)
@@ -179,7 +179,7 @@ namespace vcpkg::Remove
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("remove zlib zlib:x64-windows curl boost"),
+        [] { return create_example_string("remove zlib zlib:x64-windows curl boost"); },
         0,
         SIZE_MAX,
         {SWITCHES, {}},
@@ -205,7 +205,10 @@ namespace vcpkg::Remove
             }
 
             // Load ports from ports dirs
-            PathsPortFileProvider provider(paths, make_overlay_provider(paths, paths.overlay_ports));
+            auto& fs = paths.get_filesystem();
+            auto registry_set = paths.make_registry_set();
+            PathsPortFileProvider provider(
+                fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
 
             specs = Util::fmap(Update::find_outdated_packages(provider, status_db),
                                [](auto&& outdated) { return outdated.spec; });
@@ -225,15 +228,16 @@ namespace vcpkg::Remove
             }
             specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
                 return check_and_get_package_spec(
-                    std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+                    std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
             });
+            print_default_triplet_warning(args, args.command_arguments);
         }
 
         const bool no_purge = Util::Sets::contains(options.switches, OPTION_NO_PURGE);
         if (no_purge && Util::Sets::contains(options.switches, OPTION_PURGE))
         {
             msg::println_error(msgMutuallyExclusiveOption, msg::value = "no-purge", msg::option = "purge");
-            msg::write_unlocalized_text_to_stdout(Color::none, COMMAND_STRUCTURE.example_text);
+            msg::write_unlocalized_text_to_stdout(Color::none, COMMAND_STRUCTURE.get_example_text());
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
         const Purge purge = no_purge ? Purge::NO : Purge::YES;
@@ -274,12 +278,17 @@ namespace vcpkg::Remove
             {
                 // The user requested removing a package that was not installed. If the port is installed for another
                 // triplet, warn the user that they may have meant that other package.
+                const auto& action_spec = action.spec;
+                const auto& action_package_name = action_spec.name();
                 for (const auto& package : status_db)
                 {
                     if (package->is_installed() && !package->package.is_feature() &&
-                        package->package.spec.name() == action.spec.name())
+                        package->package.spec.name() == action_package_name)
                     {
-                        msg::println_warning(msgRemovePackageConflict, msg::spec = package->package.spec);
+                        msg::println_warning(msgRemovePackageConflict,
+                                             msg::package_name = action_package_name,
+                                             msg::spec = action.spec,
+                                             msg::triplet = package->package.spec.triplet());
                     }
                 }
             }

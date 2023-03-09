@@ -1,5 +1,3 @@
-#include <vcpkg/base/system.print.h>
-
 #include <vcpkg/commands.version.h>
 #include <vcpkg/help.h>
 #include <vcpkg/metrics.h>
@@ -20,7 +18,7 @@ namespace vcpkg::Commands::Version
 {
     constexpr StringLiteral version = version_init;
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("version"),
+        [] { return create_example_string("version"); },
         0,
         0,
         {},

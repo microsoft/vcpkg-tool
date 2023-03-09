@@ -1,17 +1,14 @@
-#include <vcpkg/base/system.print.h>
-
 #include <vcpkg/commands.fetch.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg::Commands::Fetch
 {
-    static constexpr CommandSwitch STDERR_STATUS = {
-        "x-stderr-status",
-        "Direct status/downloading messages to stderr rather than stdout. (Errors/failures still go to stdout)"};
+    static constexpr CommandSwitch STDERR_STATUS = {"x-stderr-status",
+                                                    []() { return msg::format(msgCmdFetchOptXStderrStatus); }};
 
     const CommandStructure COMMAND_STRUCTURE = {
-        Strings::format("The argument should be a tool name\n%s", create_example_string("fetch cmake")),
+        [] { return create_example_string("fetch cmake"); },
         1,
         1,
         {{&STDERR_STATUS, 1}},

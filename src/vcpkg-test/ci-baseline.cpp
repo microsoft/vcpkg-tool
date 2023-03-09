@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 
-#include <vcpkg/base/basic_checks.h>
+#include <vcpkg/base/basic-checks.h>
 #include <vcpkg/base/parse.h>
 
 #include <vcpkg/build.h>
@@ -268,24 +268,26 @@ TEST_CASE ("Parse Errors", "[ci-baseline]")
     on expression: hello
                         ^)");
 
-    check_error("?example:x64-windows=fail", R"(test:1:1: error: expected a port name here
+    check_error("?example:x64-windows=fail",
+                R"(test:1:1: error: expected a port name here (must be lowercase, digits, '-')
     on expression: ?example:x64-windows=fail
                    ^)");
 
-    check_error("x64-windows:", R"(test:1:13: error: expected a triplet name here
+    check_error("x64-windows:", R"(test:1:13: error: expected a triplet name here (must be lowercase, digits, '-')
     on expression: x64-windows:
                               ^)");
 
-    check_error("x64-windows:\nport:x64-windows=skip", R"(test:1:13: error: expected a triplet name here
+    check_error("x64-windows:\nport:x64-windows=skip",
+                R"(test:1:13: error: expected a triplet name here (must be lowercase, digits, '-')
     on expression: x64-windows:
                                ^)");
 
-    check_error("x64-windows:#", R"(test:1:13: error: expected a triplet name here
+    check_error("x64-windows:#", R"(test:1:13: error: expected a triplet name here (must be lowercase, digits, '-')
     on expression: x64-windows:#
                                ^)");
 
     // clang-format off
-    check_error("   \tx64-windows:", R"(test:1:21: error: expected a triplet name here
+    check_error("   \tx64-windows:", R"(test:1:21: error: expected a triplet name here (must be lowercase, digits, '-')
     on expression:    )" "\t" R"(x64-windows:
                       )" "\t" R"(           ^)");
     // clang-format on

@@ -1,11 +1,11 @@
 #include <vcpkg/base/strings.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.edit.h>
 #include <vcpkg/help.h>
 #include <vcpkg/paragraphs.h>
+#include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
@@ -38,7 +38,7 @@ namespace
 
         for (auto&& keypath : REGKEYS)
         {
-            const Optional<std::string> code_installpath =
+            const ExpectedL<std::string> code_installpath =
                 get_registry_string(keypath.root, keypath.subkey, "InstallLocation");
             if (const auto c = code_installpath.get())
             {
@@ -88,18 +88,18 @@ namespace vcpkg::Commands::Edit
 
     static std::vector<std::string> valid_arguments(const VcpkgPaths& paths)
     {
-        auto sources_and_errors =
-            Paragraphs::try_load_all_registry_ports(paths.get_filesystem(), paths.get_registry_set());
+        auto registry_set = paths.make_registry_set();
+        auto sources_and_errors = Paragraphs::try_load_all_registry_ports(paths.get_filesystem(), *registry_set);
 
         return Util::fmap(sources_and_errors.paragraphs, Paragraphs::get_name_of_control_file);
     }
 
     static constexpr std::array<CommandSwitch, 2> EDIT_SWITCHES = {
-        {{OPTION_BUILDTREES, "Open editor into the port-specific buildtree subfolder"},
-         {OPTION_ALL, "Open editor into the port as well as the port-specific buildtree subfolder"}}};
+        {{OPTION_BUILDTREES, []() { return msg::format(msgCmdEditOptBuildTrees); }},
+         {OPTION_ALL, []() { return msg::format(msgCmdEditOptAll); }}}};
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("edit zlib"),
+        [] { return create_example_string("edit zlib"); },
         1,
         10,
         {EDIT_SWITCHES, {}},
@@ -127,26 +127,26 @@ namespace vcpkg::Commands::Edit
                 {
                     if (Strings::case_insensitive_ascii_starts_with(package.filename(), pattern))
                     {
-                        package_paths.append(Strings::format(" \"%s\"", package));
+                        package_paths.append(fmt::format(" \"{}\"", package));
                     }
                 }
 
-                return Strings::format(
-                    R"###("%s" "%s" "%s"%s)###", portpath, portfile, buildtrees_current_dir, package_paths);
+                return fmt::format(
+                    R"###("{}" "{}" "{}"{})###", portpath, portfile, buildtrees_current_dir, package_paths);
             });
         }
 
         if (Util::Sets::contains(options.switches, OPTION_BUILDTREES))
         {
             return Util::fmap(ports, [&](const std::string& port_name) -> std::string {
-                return Strings::format(R"###("%s")###", paths.build_dir(port_name));
+                return fmt::format(R"###("{}")###", paths.build_dir(port_name));
             });
         }
 
         return Util::fmap(ports, [&](const std::string& port_name) -> std::string {
             const auto portpath = paths.builtin_ports_directory() / port_name;
             const auto portfile = portpath / "portfile.cmake";
-            return Strings::format(R"###("%s" "%s")###", portpath, portfile);
+            return fmt::format(R"###("{}" "{}")###", portpath, portfile);
         });
     }
 
@@ -160,8 +160,11 @@ namespace vcpkg::Commands::Edit
         for (auto&& port_name : ports)
         {
             const auto portpath = paths.builtin_ports_directory() / port_name;
-            Checks::check_maybe_upgrade(
-                VCPKG_LINE_INFO, fs.is_directory(portpath), R"(Could not find port named "%s")", port_name);
+            if (!fs.is_directory(portpath))
+            {
+                msg::println_error(msgPortDoesNotExist, msg::package_name = port_name);
+                Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
+            }
         }
 
         std::vector<Path> candidate_paths;
@@ -209,7 +212,7 @@ namespace vcpkg::Commands::Edit
             const auto last = full_path.end();
             first = std::find_if_not(first, last, [](const char c) { return c == '@'; });
             const auto comma = std::find(first, last, ',');
-            candidate_paths.emplace_back(first, comma);
+            candidate_paths.emplace_back(&*first, comma - first);
         }
 #elif defined(__APPLE__)
         candidate_paths.emplace_back("/Applications/Visual Studio Code - Insiders.app/Contents/Resources/app/bin/code");

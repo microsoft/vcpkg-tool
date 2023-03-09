@@ -1,5 +1,3 @@
-#include <vcpkg/base/system.print.h>
-
 #include <vcpkg/commands.autocomplete.h>
 #include <vcpkg/commands.edit.h>
 #include <vcpkg/commands.integrate.h>
@@ -26,8 +24,7 @@ namespace vcpkg::Commands::Autocomplete
     static std::vector<std::string> combine_port_with_triplets(StringView port,
                                                                const std::vector<std::string>& triplets)
     {
-        return Util::fmap(triplets,
-                          [&](const std::string& triplet) { return Strings::format("%s:%s", port, triplet); });
+        return Util::fmap(triplets, [&](const std::string& triplet) { return fmt::format("{}:{}", port, triplet); });
     }
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)

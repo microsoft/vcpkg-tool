@@ -6,7 +6,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/to_string.h>
+#include <vcpkg/base/to-string.h>
 
 #include <functional>
 #include <system_error>
@@ -220,7 +220,7 @@ namespace vcpkg
             return std::move(m_error);
         }
 
-        typename ExpectedHolder<T>::const_pointer get() const
+        typename ExpectedHolder<T>::const_pointer get() const noexcept
         {
             if (value_is_error)
             {
@@ -230,7 +230,7 @@ namespace vcpkg
             return m_t.get();
         }
 
-        typename ExpectedHolder<T>::pointer get()
+        typename ExpectedHolder<T>::pointer get() noexcept
         {
             if (value_is_error)
             {
@@ -370,7 +370,4 @@ namespace vcpkg
 
         bool value_is_error;
     };
-
-    template<class T>
-    using ExpectedS = ExpectedT<T, std::string>;
 }

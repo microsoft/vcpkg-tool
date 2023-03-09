@@ -261,7 +261,8 @@ namespace vcpkg::Unicode
         const auto err = next();
         if (err != utf8_errc::NoError)
         {
-            vcpkg::Checks::exit_with_message(VCPKG_LINE_INFO, "utf-8 error: %s", std::error_code(err).message());
+            Checks::msg_exit_with_error(
+                VCPKG_LINE_INFO, msg::format(msgUtf8ConversionFailed).append_raw(std::error_code(err).message()));
         }
 
         return *this;

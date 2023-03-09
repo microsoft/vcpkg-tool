@@ -5,6 +5,7 @@
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
+#include <vcpkg/base/cmd-parser.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
@@ -28,35 +29,20 @@ namespace vcpkg
 
     struct CommandSwitch
     {
-        constexpr CommandSwitch(const StringLiteral& name, const StringLiteral& short_help_text)
-            : name(name), short_help_text(short_help_text)
-        {
-        }
-
         StringLiteral name;
-        StringLiteral short_help_text;
+        LocalizedString (*helpmsg)();
     };
 
     struct CommandSetting
     {
-        constexpr CommandSetting(const StringLiteral& name, const StringLiteral& short_help_text)
-            : name(name), short_help_text(short_help_text)
-        {
-        }
-
         StringLiteral name;
-        StringLiteral short_help_text;
+        LocalizedString (*helpmsg)();
     };
 
     struct CommandMultiSetting
     {
-        constexpr CommandMultiSetting(const StringLiteral& name, const StringLiteral& short_help_text)
-            : name(name), short_help_text(short_help_text)
-        {
-        }
-
         StringLiteral name;
-        StringLiteral short_help_text;
+        LocalizedString (*helpmsg)();
     };
 
     struct CommandOptionsStructure
@@ -68,7 +54,7 @@ namespace vcpkg
 
     struct CommandStructure
     {
-        std::string example_text;
+        LocalizedString (*get_example_text)();
 
         size_t minimum_arity;
         size_t maximum_arity;
@@ -87,18 +73,7 @@ namespace vcpkg
     using CommandLineCharType = char;
 #endif
 
-    std::string create_example_string(const std::string& command_and_arguments);
-
-    struct HelpTableFormatter
-    {
-        void format(StringView col1, StringView col2);
-        void example(StringView example_text);
-        void header(StringView name);
-        void blank();
-        void text(StringView text, int indent = 0);
-
-        std::string m_str;
-    };
+    LocalizedString create_example_string(StringView command_and_arguments);
 
     struct FeatureFlagSettings
     {
@@ -110,7 +85,7 @@ namespace vcpkg
 
     struct VcpkgCmdArguments
     {
-        static VcpkgCmdArguments create_from_command_line(const Filesystem& fs,
+        static VcpkgCmdArguments create_from_command_line(const ILineReader& fs,
                                                           const int argc,
                                                           const CommandLineCharType* const* const argv);
         static VcpkgCmdArguments create_from_arg_sequence(const std::string* arg_begin, const std::string* arg_end);
