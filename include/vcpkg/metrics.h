@@ -53,10 +53,10 @@ namespace vcpkg
     enum class StringMetric
     {
         AcquiredArtifacts,
-        BuildError,
         CommandArgs,
         CommandContext,
         CommandName,
+        DeploymentKind,
         DetectedCiEnvironment,
         InstallPlan_1,
         ListFile,

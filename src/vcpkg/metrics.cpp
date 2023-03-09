@@ -76,10 +76,10 @@ namespace
 
         auto rootblock_ffi = static_cast<VS_FIXEDFILEINFO*>(rootblock);
 
-        return Strings::format("%d.%d.%d",
-                               static_cast<int>(HIWORD(rootblock_ffi->dwProductVersionMS)),
-                               static_cast<int>(LOWORD(rootblock_ffi->dwProductVersionMS)),
-                               static_cast<int>(HIWORD(rootblock_ffi->dwProductVersionLS)));
+        return fmt::format("{}.{}.{}",
+                           static_cast<int>(HIWORD(rootblock_ffi->dwProductVersionMS)),
+                           static_cast<int>(LOWORD(rootblock_ffi->dwProductVersionMS)),
+                           static_cast<int>(HIWORD(rootblock_ffi->dwProductVersionLS)));
 #else
         return "unknown";
 #endif
@@ -127,10 +127,10 @@ namespace vcpkg
     const constexpr std::array<StringMetricEntry, static_cast<size_t>(StringMetric::COUNT)> all_string_metrics{{
         // registryUri:id:version,...
         {StringMetric::AcquiredArtifacts, "acquired_artifacts", plan_example},
-        {StringMetric::BuildError, "build_error", "gsl:x64-windows"},
         {StringMetric::CommandArgs, "command_args", "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff"},
         {StringMetric::CommandContext, "command_context", "artifact"},
         {StringMetric::CommandName, "command_name", "z-preregister-telemetry"},
+        {StringMetric::DeploymentKind, "deployment_kind", "Git"},
         {StringMetric::DetectedCiEnvironment, "detected_ci_environment", "Generic"},
         // spec:triplet:version,...
         {StringMetric::InstallPlan_1, "installplan_1", plan_example},

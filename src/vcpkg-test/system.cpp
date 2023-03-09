@@ -151,8 +151,7 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
 #if defined(_WIN32)
         vcpkg::Command cmd("cmd.exe");
         cmd.string_arg("/c");
-        const auto cmd_str = "echo " + std::to_string(i);
-        cmd.string_arg(cmd_str);
+        cmd.string_arg(fmt::format("echo {}", i));
 #else
         vcpkg::Command cmd("echo");
         const auto cmd_str = std::string(i, 'a');
@@ -170,7 +169,7 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
         REQUIRE(out->exit_code == 0);
 
 #if defined(_WIN32)
-        REQUIRE(out->output == (std::to_string(i) + "\r\n"));
+        REQUIRE(out->output == (fmt::format("{}\r\n", i)));
 #else
         REQUIRE(out->output == (std::string(i, 'a') + "\n"));
 #endif

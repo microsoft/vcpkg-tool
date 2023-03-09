@@ -557,7 +557,7 @@ namespace vcpkg
             case MachineType::THUMB: return "thumb";
             case MachineType::WCEMIPSV2: return "mips-le-wce-v2";
             case MachineType::LLVM_BITCODE: return "llvm-bitcode";
-            default: return "unknown-" + std::to_string(static_cast<uint16_t>(machine_type));
+            default: return fmt::format("unknown-{}", static_cast<uint16_t>(machine_type));
         }
     }
 

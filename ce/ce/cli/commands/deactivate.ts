@@ -27,13 +27,11 @@ export class DeactivateCommand extends Command {
 
   override async run() {
     const project = await this.project.resolvedValue;
-    if (!project) {
-      return false;
+    if (project) {
+      log(i`Deactivating project ${projectFile(project)}`);
     }
 
-    log(i`Deactivating project ${projectFile(project)}`);
     await session.deactivate();
-
     return true;
   }
 }
