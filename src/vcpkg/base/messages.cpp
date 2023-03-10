@@ -823,6 +823,8 @@ namespace vcpkg
     REGISTER_MESSAGE(FailedToParseVersionsFile);
     REGISTER_MESSAGE(FailedToParseVersionXML);
     REGISTER_MESSAGE(FailedToProvisionCe);
+    REGISTER_MESSAGE(FailedToWriteFile);
+    REGISTER_MESSAGE(FailedToReadFile);
     REGISTER_MESSAGE(FailedToReadParagraph);
     REGISTER_MESSAGE(FailedToRemoveControl);
     REGISTER_MESSAGE(FailedToRunToolToDetermineVersion);

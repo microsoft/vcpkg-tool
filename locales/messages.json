@@ -622,6 +622,8 @@
   "FailedToParseVersionsFile": "failed to parse versions file {path}",
   "_FailedToParseVersionsFile.comment": "An example of {path} is /foo/bar.",
   "FailedToProvisionCe": "Failed to provision vcpkg-artifacts.",
+  "FailedToReadFile": "Failed to read file {path}: {error_msg}",
+  "_FailedToReadFile.comment": "An example of {path} is /foo/bar. An example of {error_msg} is File Not Found.",
   "FailedToReadParagraph": "Failed to read paragraphs from {path}",
   "_FailedToReadParagraph.comment": "An example of {path} is /foo/bar.",
   "FailedToRemoveControl": "Failed to remove control file {path}",

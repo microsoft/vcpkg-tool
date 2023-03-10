@@ -179,8 +179,7 @@ namespace
     {
         struct FolderSettings
         {
-            double max_size_in_gb = 0;
-            double max_size_in_bytes = 0;    // TODO handle update:
+            double max_size_in_bytes = 0;
             double keep_free_percentage = 4; // TODO handle
             enum class DeletePolicy
             {
@@ -229,7 +228,6 @@ namespace
                 r.add_generic_error(type_name(), LocalizedString::from_raw("Unexped DeletePolicy"));
                 return nullopt;
             }
-            static const DeletePolicyDeserializer instance;
         };
 
         struct FolderSettingsDeserializer : Json::IDeserializer<FolderSettings>
@@ -244,34 +242,35 @@ namespace
             Optional<FolderSettings> visit_object(Json::Reader& r, const Json::Object& obj) const override
             {
                 FolderSettings folder_settings;
-
-                r.optional_object_field(
-                    obj, MAX_SIZE_GB, folder_settings.max_size_in_gb, Json::PositiveNumberDeserializer::instance);
+                double gb = 0;
+                r.optional_object_field(obj, MAX_SIZE_GB, gb, Json::PositiveNumberDeserializer::instance);
+                folder_settings.max_size_in_bytes = gb * std::giga::num;
+                DeletePolicyDeserializer instance;
                 r.required_object_field(LocalizedString::from_raw(DELETE_POLICY),
                                         obj,
                                         DELETE_POLICY,
                                         folder_settings.delete_policy,
-                                        DeletePolicyDeserializer::instance);
-                static const StringView valid_fields[] = {
+                                        instance);
+                static const std::array<StringView, 4> valid_fields = {
                     MAX_SIZE_GB, KEEP_FREE_PERCENTAGE, DELETE_POLICY, MODIFICATION_DATE_UPDATE_INTERVAL};
                 for (const auto& key_value : obj)
                 {
                     if (key_value.first.front() != '$' && !Util::Vectors::contains(valid_fields, key_value.first))
                     {
-                        r.add_warning(LocalizedString::from_raw("test"), "unexpected field ");
+                        r.add_warning(LocalizedString::from_raw("test"), "unexpected field "); // TODO
                     }
                 }
 
                 return folder_settings;
             }
-            static FolderSettingsDeserializer instance;
 
             static Json::Object serialize(const FolderSettings& folder_settings)
             {
                 Json::Object obj;
-                if (folder_settings.max_size_in_gb)
+                if (folder_settings.max_size_in_bytes)
                 {
-                    obj.insert(MAX_SIZE_GB, Json::Value::number(folder_settings.max_size_in_gb));
+                    obj.insert(MAX_SIZE_GB,
+                               Json::Value::number(folder_settings.max_size_in_bytes / double(std::giga::num)));
                 }
                 obj.insert(DELETE_POLICY, to_string(folder_settings.delete_policy));
 
@@ -284,13 +283,13 @@ namespace
             Path path;
             int64_t file_size;
             int64_t time;
-            bool operator<(const FileData& other) { return time < other.time; }
+            bool operator<(const FileData& other) const { return time < other.time; }
         };
         struct FileCacheData
         {
             FolderSettings folder_settings;
             std::priority_queue<FileData> file_data;
-            int free = 0;
+            int free = 0; // TODO
             int cap = 0;
             int64_t current_size = 0;
         };
@@ -475,8 +474,7 @@ namespace
                         auto obj = Json::parse_file(fs, settings_path, ec);
                         if (ec)
                         {
-                            fmt::print("Failed to read settings file {}", ec);
-                            // TODO handle errors:
+                            msg::println_error(msgFailedToReadFile, msg::path = settings_path, msg::error_msg = ec);
                         }
                         else if (!obj.has_value())
                         {
@@ -485,8 +483,9 @@ namespace
                         }
                         else
                         {
+                            FolderSettingsDeserializer instance;
                             Json::Reader reader;
-                            maybe_settings = reader.visit(obj.get()->value, FolderSettingsDeserializer::instance);
+                            maybe_settings = reader.visit(obj.get()->value, instance);
                             if (maybe_settings.has_value())
                             {
                                 fmt::print("");
@@ -510,18 +509,17 @@ namespace
                         fs.write_contents(settings_path, Json::stringify(obj), ec);
                         if (ec)
                         {
-                            fmt::print("Failed to write settings file {}", ec);
-                            // TODO handle errors:
+                            msg::println_error(msgFailedToWriteFile, msg::path = settings_path, msg::error_msg = ec);
                         }
                     }
-                    file_cache_data.emplace_back(maybe_settings.value_or({}));
+                    file_cache_data.push_back(FileCacheData{maybe_settings.value_or({})});
                     if (file_cache_data.back().folder_settings.delete_policy != FolderSettings::DeletePolicy::None)
                     {
                         for (auto& path : fs.get_regular_files_recursive(archive_path, IgnoreErrors{}))
                         {
                             auto time = fs.last_access_time(path, IgnoreErrors{});
                             auto size = fs.file_size(path, IgnoreErrors{});
-                            file_cache_data.back().file_data.emplace(path, size, time);
+                            file_cache_data.back().file_data.push(FileData{path, size, time});
                             file_cache_data.back().current_size += size;
                         }
                     }
