@@ -981,7 +981,7 @@ namespace
             return cmd;
         }
 
-        std::string lookup_cache_entry( const std::string& abi) const
+        std::string lookup_cache_entry(const std::string& abi) const
         {
             auto cmd = command()
                            .string_arg(m_read_url)
@@ -2568,8 +2568,7 @@ ExpectedL<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
 
     if (s.gha_read || s.gha_write)
     {
-        providers.push_back(std::make_unique<GHABinaryProvider>(
-            paths, std::move(s.gha_read), std::move(s.gha_write)));
+        providers.push_back(std::make_unique<GHABinaryProvider>(paths, s.gha_read, s.gha_write));
     }
 
     if (!s.url_templates_to_get.empty())
