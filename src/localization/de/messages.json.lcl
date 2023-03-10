@@ -5565,10 +5565,13 @@
       </Item>
       <Item ItemId=";HelpTextOptFullDesc" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Do not truncate long text]]></Val>
+          <Val><![CDATA[Do not truncate long text.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Langen Text nicht abschneiden]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Do not truncate long text]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5601,37 +5604,49 @@
       </Item>
       <Item ItemId=";HelpTxtOptCleanAfterBuild" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Clean buildtrees, packages and downloads after building each package]]></Val>
+          <Val><![CDATA[Clean buildtrees, packages and downloads after building each package.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Bereinigen von Buildstrukturen, Paketen und Downloads nach dem Erstellen der einzelnen Pakete]]></Val>
+            <Val><![CDATA[Buildstrukturen, Pakete und Downloads nach dem Erstellen der einzelnen Pakete bereinigen]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Clean buildtrees, packages and downloads after building each package]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptCleanBuildTreesAfterBuild" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Clean buildtrees after building each package]]></Val>
+          <Val><![CDATA[Clean buildtrees after building each package.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Bereinigen von Buildstrukturen nach dem Erstellen der einzelnen Pakete]]></Val>
+            <Val><![CDATA[Buildstrukturen nach dem Erstellen der einzelnen Pakete bereinigen]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Clean buildtrees after building each package]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptCleanDownloadsAfterBuild" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Clean downloads after building each package]]></Val>
+          <Val><![CDATA[Clean downloads after building each package.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Downloads nach der Erstellung jedes Pakets bereinigen]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Clean downloads after building each package]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptCleanPkgAfterBuild" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Clean packages after building each package]]></Val>
+          <Val><![CDATA[Clean packages after building each package.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Pakete nach der Erstellung jedes Pakets bereinigen]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Clean packages after building each package]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5664,10 +5679,13 @@
       </Item>
       <Item ItemId=";HelpTxtOptKeepGoing" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Continue installing packages on failure]]></Val>
+          <Val><![CDATA[Continue installing packages on failure.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Installation von Paketen bei einem Fehler fortsetzen]]></Val>
+            <Val><![CDATA[Mit der Installation von Paketen fortfahren, wenn ein Fehler auftritt.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Continue installing packages on failure]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5691,10 +5709,13 @@
       </Item>
       <Item ItemId=";HelpTxtOptNoDownloads" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Do not download new sources]]></Val>
+          <Val><![CDATA[Do not download new sources.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Keine neuen Quellen herunterladen]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Do not download new sources]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5709,46 +5730,61 @@
       </Item>
       <Item ItemId=";HelpTxtOptOnlyBinCache" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Fail if cached binaries are not available]]></Val>
+          <Val><![CDATA[Fail if cached binaries are not available.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Fehler, wenn zwischengespeicherte Binärdateien nicht verfügbar sind]]></Val>
+            <Val><![CDATA[Fehler, wenn zwischengespeicherte Binärdateien nicht verfügbar sind.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Fail if cached binaries are not available]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptOnlyDownloads" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Download sources but don't build packages]]></Val>
+          <Val><![CDATA[Make a best-effort attempt to download sources without building.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Quellen herunterladen, aber keine Pakete erstellen]]></Val>
+            <Val><![CDATA[Best-Effort-Versuch durchführen, um Quellen ohne Erstellung herunterzuladen.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Download sources but don't build packages]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptRecurse" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Allow removal of packages as part of installation]]></Val>
+          <Val><![CDATA[Allow removal of packages as part of installation.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Entfernen von Paketen im Rahmen der Installation zulassen]]></Val>
+            <Val><![CDATA[Entfernen von Paketen im Rahmen der Installation zulassen.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Allow removal of packages as part of installation]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptUseAria2" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Use aria2 to perform download tasks]]></Val>
+          <Val><![CDATA[Use aria2 to perform download tasks.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Verwenden von aria2 zum Ausführen von Downloadaufgaben]]></Val>
+            <Val><![CDATA[Aria2 verwenden, um Downloadaufgaben auszuführen.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Use aria2 to perform download tasks]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptUseHeadVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Install the libraries on the command line using the latest upstream sources (classic mode)]]></Val>
+          <Val><![CDATA[Install the libraries on the command line using the latest upstream sources (classic mode).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Installieren Sie die Bibliotheken in der Befehlszeile mithilfe der neuesten Upstreamquellen (klassischer Modus)]]></Val>
+            <Val><![CDATA[Bibliotheken über die Befehlszeile mit den neuesten Upstreamquellen (klassischer Modus) installieren.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Install the libraries on the command line using the latest upstream sources (classic mode)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9894,24 +9930,6 @@
           <Val><![CDATA[short options are not supported: '{value}']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Kurze Optionen werden nicht unterstützt: „{value}“]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UnsupportedSupportsExpression" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{package_name} is only supported on '{supports_expression}', which does not match {triplet}. This usually means that there are known build failures, or runtime problems, when building other platforms. To ignore this and attempt to build {package_name} anyway, rerun vcpkg with `--allow-unsupported`.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name} wird nur für den Ausdruck „{supports_expression}“ unterstützt, der nicht mit {triplet} übereinstimmt. Dies bedeutet in der Regel, dass beim Erstellen anderer Plattformen bekannte Buildfehler oder Laufzeitprobleme auftreten. Um dies zu ignorieren und dennoch zu versuchen, {package_name} zu erstellen, führen Sie vcpkg erneut mit „--allow-unsupported“ aus.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UnsupportedSupportsExpressionWarning" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{package_name} is only supported on '{supports_expression}', which does not match {triplet}. This usually means that there are known build failures, or runtime problems, when building other platforms. Proceeding anyway due to `--allow-unsupported`.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name} wird nur für den Ausdruck „{supports_expression}“ unterstützt, der nicht mit {triplet} übereinstimmt. Dies bedeutet in der Regel, dass beim Erstellen anderer Plattformen bekannte Buildfehler oder Laufzeitprobleme auftreten. Der Vorgang wird trotzdem fortgesetzt, weil „--allow-unsupported“ angegeben ist.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
