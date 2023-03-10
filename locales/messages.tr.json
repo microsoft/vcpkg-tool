@@ -975,7 +975,7 @@
   "VersionBuiltinPortTreeEntryMissing": "({actual}) kullanıma alınmış bağlantı noktaları ağacı sürümü kullanan {expected} öğesinde {package_name} için sürüm veritabanı girişi yok.",
   "VersionCommandHeader": "vcpkg paket yönetimi programı sürüm {version}\n\nLisans bilgileri için bkz. LICENSE.txt.",
   "VersionConflictXML": "{path} sürümü: [{expected_version}] bekleniyordu, ancak sürüm şuydu: [{actual_version}]. Lütfen bootstrap-vcpkg'yi yeniden çalıştırın.",
-  "VersionConstraintPortVersionMustBePositiveInteger": "\"version>=\" içinde ('#' karakterinden sonra gelen) port-version pozitif bir tamsayı olmalıdır",
+  "VersionConstraintPortVersionMustBePositiveInteger": "port-version (after the '#') in \"version>=\" must be a non-negative integer",
   "VersionConstraintUnresolvable": "{spec} öğesinden {package_name} bağımlılığı için minimum kısıtlama çözümlenemiyor.\nBağımlılık, paketin o anda var olmadığını gösteren temelde bulunamadı. Bu, \"geçersiz kılmalar\" alanı aracılığıyla ya da temelin güncelleştirilmesi yoluyla açık bir geçersiz kılma sürümü sağlanarak düzeltilebilir.\nDaha fazla bilgi için 'vcpkg yardım sürümü oluşturma' bölümüne bakın.",
   "VersionConstraintViolated": "{spec} bağımlılığının en az {expected_version} sürümü olması bekleniyordu, ancak şu anda {actual_version}.",
   "VersionDatabaseEntryMissing": "{version} öğesinde {package_name} için sürüm girdisi yok.",

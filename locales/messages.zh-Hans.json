@@ -975,7 +975,7 @@
   "VersionBuiltinPortTreeEntryMissing": "{expected} 处没有 {package_name} 的版本数据库条目；使用签出的端口树版本 ({actual})。",
   "VersionCommandHeader": "vcpkg 包管理程序版本 {version}\n\n查看 LICENSE.txt 获取许可证信息。",
   "VersionConflictXML": "{path} 版本应为 [{expected_version}]，但实际为 [{actual_version}]。请重新运行 bootstrap-vcpkg。",
-  "VersionConstraintPortVersionMustBePositiveInteger": "\"version>=\" 中的 port-version (在“#”之后)必须是正整数",
+  "VersionConstraintPortVersionMustBePositiveInteger": "port-version (after the '#') in \"version>=\" must be a non-negative integer",
   "VersionConstraintUnresolvable": "无法从 {spec} 解析依赖项 {package_name} 的最小约束。\n基线中找不到依赖项，表示该包当时不存在。可以通过“替代”字段或通过更新基线来提供显式替代版本，从而修复此问题。\n有关详细信息，请参阅“vcpkg 帮助版本控制”。",
   "VersionConstraintViolated": "依赖项 {spec} 应至少为 {expected_version} 版本，但目前为 {actual_version}。",
   "VersionDatabaseEntryMissing": "{version} 处没有 {package_name} 的版本条目。",

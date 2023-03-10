@@ -975,7 +975,7 @@
   "VersionBuiltinPortTreeEntryMissing": "отсутствует запись базы данных версий для {package_name} в {expected}; с использованием извлеченной версией дерева портов ({actual}).",
   "VersionCommandHeader": "Версия программы управления пакетами vcpkg {version}\n\nСм. LICENSE.txt для получения сведений о лицензии.",
   "VersionConflictXML": "Ожидаемая версия {path}: [{expected_version}], но была [{actual_version}]. Повторно запустите bootstrap-vcpkg.",
-  "VersionConstraintPortVersionMustBePositiveInteger": "port-version (после \"#\") в \"version>=\" должен быть положительным целым числом",
+  "VersionConstraintPortVersionMustBePositiveInteger": "port-version (after the '#') in \"version>=\" must be a non-negative integer",
   "VersionConstraintUnresolvable": "Не удается разрешить минимальное ограничение для зависимости {package_name} от {spec}.\nЗависимость не была найдена в базовой версии, что указывает на то, что пакет в то время не существовал. Это можно исправить, предоставив явную версию переопределения через поле \"переопределения\" или обновив базовый план.\nСм. \"vcpkg help versioning\" для получения дополнительных сведений.",
   "VersionConstraintViolated": "ожидалось, что версия зависимости {spec} будет не менее {expected_version}, но текущая версия — {actual_version}.",
   "VersionDatabaseEntryMissing": "отсутствует запись версии для {package_name} в {version}.",

@@ -975,7 +975,7 @@
   "VersionBuiltinPortTreeEntryMissing": "brak wpisu bazy danych wersji dla pakietu {package_name} w {expected}; używanie wersji wyewidencjonowanego drzewa portów ({actual}).",
   "VersionCommandHeader": "wersja programu do zarządzania pakietami vcpkg {version}\n\nZobacz plik LICENSE.txt, aby uzyskać informacje o licencji.",
   "VersionConflictXML": "Oczekiwano wersji {path}: [{expected_version}], ale była [{actual_version}]. Uruchom ponownie polecenie bootstrap-vcpkg.",
-  "VersionConstraintPortVersionMustBePositiveInteger": "port-version (po znaku „#”) w ścieżce „version>=” musi być dodatnią liczbą całkowitą",
+  "VersionConstraintPortVersionMustBePositiveInteger": "port-version (after the '#') in \"version>=\" must be a non-negative integer",
   "VersionConstraintUnresolvable": "Nie można rozpoznać minimalnego ograniczenia dla pakietu {package_name} zależności z {spec}.\nNie znaleziono zależności w punkcie odniesienia, co wskazuje, że pakiet nie istniał w tym momencie. Ten problem można naprawić, podając jawną wersję zastąpienia za pomocą pola „overrides” lub aktualizując punkt odniesienia.\nAby uzyskać więcej informacji, zobacz sekcję „vcpkg help versioning”.",
   "VersionConstraintViolated": "zależność {spec} powinna być co najmniej wersją {expected_version}, ale obecnie jest w wersji {actual_version}.",
   "VersionDatabaseEntryMissing": "brak wpisu wersji dla pakietu {package_name} w wersji {version}.",

@@ -975,7 +975,7 @@
   "VersionBuiltinPortTreeEntryMissing": "{expected} で {package_name} のバージョン データベース エントリがありません。チェックアウトされたポートのツリー バージョン ({actual}) を使用しています。",
   "VersionCommandHeader": "vcpkg パッケージ管理プログラムのバージョン {version}\n\nライセンス情報については、LICENSE.txt を参照してください。",
   "VersionConflictXML": "{path} バージョン: [{expected_version}] が必要でしたが、[{actual_version}] でした。 bootstrap-vcpkg を再実行してください。",
-  "VersionConstraintPortVersionMustBePositiveInteger": "\"version>=\" 内の port-version ('#' の後) は正の整数である必要があります",
+  "VersionConstraintPortVersionMustBePositiveInteger": "port-version (after the '#') in \"version>=\" must be a non-negative integer",
   "VersionConstraintUnresolvable": "{spec} から依存関係 {package_name} の最小制約を解決できません。\n依存関係がベースラインに見つかりませんでした。これは、その時点でパッケージが存在しなかったことを示しています。これは、明示的なオーバーライド バージョンを \"overrides\" フィールドで指定するか、ベースラインを更新することで修正できます。\n詳細については、`vcpkg help versioning` を参照してください。",
   "VersionConstraintViolated": "依存関係 {spec} が少なくともバージョン {expected_version} であることが必要でしたが、現在は {actual_version} です。",
   "VersionDatabaseEntryMissing": "{version} に {package_name} のバージョン エントリがありません。",

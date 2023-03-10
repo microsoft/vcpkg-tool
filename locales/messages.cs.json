@@ -975,7 +975,7 @@
   "VersionBuiltinPortTreeEntryMissing": "žádná položka databáze verzí pro {package_name} v {expected}; pomocí verze stromové struktury rezervovaných portů ({actual}).",
   "VersionCommandHeader": "Verze {version} programu pro správu balíčků vcpkg\n\nInformace o licenci najdete v LICENSE.txt.",
   "VersionConflictXML": "Byla očekávána verze {path}: [{expected_version}], ale byla [{actual_version}]. Spusťte prosím znovu bootstrap-vcpkg.",
-  "VersionConstraintPortVersionMustBePositiveInteger": "portport-version (za #) v version>= musí být kladné celé číslo.",
+  "VersionConstraintPortVersionMustBePositiveInteger": "port-version (after the '#') in \"version>=\" must be a non-negative integer",
   "VersionConstraintUnresolvable": "Nelze přeložit minimální omezení pro závislost {package_name} ze specifikace {spec}.\nZávislost nebyla ve směrném plánu nalezena, což znamená, že balíček v té době neexistoval. To může být opraveno zadáním verze explicitního přepsání v poli „overrides“ nebo aktualizací směrného plánu.\nDalší informace najdete v nápovědě k „správě verzí vcpkg“.",
   "VersionConstraintViolated": "Očekávalo se, že závislost {spec} bude alespoň verze {expected_version}, ale aktuálně je {actual_version}.",
   "VersionDatabaseEntryMissing": "ve verzi {version} není pro {package_name} žádná položka verze.",
