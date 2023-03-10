@@ -2219,12 +2219,12 @@ namespace
             }
             else if (segments[0].second == "x-gha")
             {
-                // Scheme: x-gha,<prefix>[,<readwrite>]
+                // Scheme: x-gha[,<readwrite>]
                 if (segments.size() > 2)
                 {
                     return add_error(
-                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "gha"),
-                        segments[3].first);
+                        msg::format(msgInvalidArgumentRequiresZeroOrOneArgument, msg::binary_source = "gha"),
+                        segments[2].first);
                 }
 
                 handle_readwrite(state->gha_read, state->gha_write, segments, 1);
