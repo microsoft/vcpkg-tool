@@ -7,6 +7,7 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/message_sinks.h>
 
 #include <vcpkg/packagespec.h>
 #include <vcpkg/sourceparagraph.h>

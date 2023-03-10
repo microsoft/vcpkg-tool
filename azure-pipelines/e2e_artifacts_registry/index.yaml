@@ -1,0 +1,37 @@
+items:
+  [
+    vcpkg-test-artifact-1/vcpkg-test-artifact-1-1.0.0.json,
+    vcpkg-test-artifact-3/vcpkg-test-artifact-3-1.0.0.json,
+    vcpkg-test-artifact-2/vcpkg-test-artifact-2-1.0.0.json
+  ]
+indexes:
+  IdentityKey/id:
+    keys:
+      vcpkg-test-artifact-1: [ 0 ]
+      vcpkg-test-artifact-2: [ 2 ]
+      vcpkg-test-artifact-3: [ 1 ]
+    words:
+      "1": [ 0 ]
+      "2": [ 2 ]
+      "3": [ 1 ]
+      artifact: [ 0, 1, 2 ]
+      artifact-1: [ 0 ]
+      artifact-2: [ 2 ]
+      artifact-3: [ 1 ]
+      test: [ 0, 1, 2 ]
+      test-artifact: [ 0, 1, 2 ]
+      test-artifact-1: [ 0 ]
+      test-artifact-2: [ 2 ]
+      test-artifact-3: [ 1 ]
+      vcpkg: [ 0, 1, 2 ]
+      vcpkg-test: [ 0, 1, 2 ]
+      vcpkg-test-artifact: [ 0, 1, 2 ]
+      vcpkg-test-artifact-1: [ 0 ]
+      vcpkg-test-artifact-2: [ 2 ]
+      vcpkg-test-artifact-3: [ 1 ]
+  SemverKey/version:
+    keys:
+      1.0.0: [ 0, 1, 2 ]
+  StringKey/summary:
+    keys: {}
+    words: {}
