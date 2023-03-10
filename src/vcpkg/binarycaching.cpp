@@ -958,7 +958,7 @@ namespace
             auto token = get_environment_variable("ACTIONS_RUNTIME_TOKEN");
             if (!url.has_value() || !token.has_value())
             {
-                msg::println(Color::error, msgGHAParametersMissing);
+                msg::println(Color::error, msgGHAParametersMissing, msg::url = "https://learn.microsoft.com/en-us/vcpkg/users/binarycaching#gha");
                 return;
             }
 
