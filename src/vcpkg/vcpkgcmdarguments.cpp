@@ -365,6 +365,7 @@ namespace vcpkg
                 {IGNORE_LOCK_FAILURES_SWITCH, &VcpkgCmdArguments::ignore_lock_failures},
                 {JSON_SWITCH, &VcpkgCmdArguments::json},
                 {EXACT_ABI_TOOLS_VERSIONS_SWITCH, &VcpkgCmdArguments::exact_abi_tools_versions},
+                {BINARY_CACHE_GHA_ARG, &VcpkgCmdArguments::use_gha_binary_cache},
             };
 
             Optional<StringView> lookahead;

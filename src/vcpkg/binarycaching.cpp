@@ -958,7 +958,9 @@ namespace
             auto token = get_environment_variable("ACTIONS_RUNTIME_TOKEN");
             if (!url.has_value() || !token.has_value())
             {
-                msg::println(Color::error, msgGHAParametersMissing, msg::url = "https://learn.microsoft.com/en-us/vcpkg/users/binarycaching#gha");
+                msg::println(Color::error,
+                             msgGHAParametersMissing,
+                             msg::url = "https://learn.microsoft.com/en-us/vcpkg/users/binarycaching#gha");
                 return;
             }
 
@@ -1596,8 +1598,11 @@ namespace vcpkg
     {
         if (args.binary_caching_enabled())
         {
+            std::vector<std::string> gha_binary_cache_args{"clear", "x-gha,readwrite"};
+            bool use_gha = args.use_gha_binary_cache && args.binary_sources.empty();
             install_providers(
-                create_binary_providers_from_configs(paths, args.binary_sources).value_or_exit(VCPKG_LINE_INFO));
+                create_binary_providers_from_configs(paths, use_gha ? gha_binary_cache_args : args.binary_sources)
+                    .value_or_exit(VCPKG_LINE_INFO));
         }
     }
 
