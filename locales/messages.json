@@ -1442,7 +1442,7 @@
   "_VersionCommandHeader.comment": "An example of {version} is 1.3.8.",
   "VersionConflictXML": "Expected {path} version: [{expected_version}], but was [{actual_version}]. Please re-run bootstrap-vcpkg.",
   "_VersionConflictXML.comment": "An example of {path} is /foo/bar. An example of {expected_version} is 1.3.8. An example of {actual_version} is 1.3.8.",
-  "VersionConstraintPortVersionMustBePositiveInteger": "port-version (after the '#') in \"version>=\" must be a positive integer",
+  "VersionConstraintPortVersionMustBePositiveInteger": "port-version (after the '#') in \"version>=\" must be a non-negative integer",
   "VersionConstraintUnresolvable": "Cannot resolve a minimum constraint for dependency {package_name} from {spec}.\nThe dependency was not found in the baseline, indicating that the package did not exist at that time. This may be fixed by providing an explicit override version via the \"overrides\" field or by updating the baseline.\nSee `vcpkg help versioning` for more information.",
   "_VersionConstraintUnresolvable.comment": "An example of {package_name} is zlib. An example of {spec} is zlib:x64-windows.",
   "VersionConstraintViolated": "dependency {spec} was expected to be at least version {expected_version}, but is currently {actual_version}.",

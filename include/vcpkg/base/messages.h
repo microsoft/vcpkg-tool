@@ -3054,7 +3054,7 @@ namespace vcpkg
     DECLARE_MESSAGE(VersionConstraintPortVersionMustBePositiveInteger,
                     (),
                     "",
-                    "port-version (after the '#') in \"version>=\" must be a positive integer");
+                    "port-version (after the '#') in \"version>=\" must be a non-negative integer");
     DECLARE_MESSAGE(VersionConstraintUnresolvable,
                     (msg::package_name, msg::spec),
                     "",
