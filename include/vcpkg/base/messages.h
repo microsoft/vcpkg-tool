@@ -1566,6 +1566,7 @@ namespace vcpkg
     DECLARE_MESSAGE(GeneratingInstaller, (msg::path), "", "Generating installer {path}...");
     DECLARE_MESSAGE(GeneratingRepo, (msg::path), "", "Generating repository {path}...");
     DECLARE_MESSAGE(GetParseFailureInfo, (), "", "Use '--debug' to get more information about the parse failures.");
+    DECLARE_MESSAGE(GHAParametersMissing, (), "", "The GHA binary source requires the ACTIONS_RUNTIME_TOKEN and ACTIONS_RUNTIME_URL environment variables to be set. See https://learn.microsoft.com/en-us/vcpkg/users/binarycaching#gha for details.");
     DECLARE_MESSAGE(GitCommandFailed, (msg::command_line), "", "failed to execute: {command_line}");
     DECLARE_MESSAGE(GitFailedToFetch,
                     (msg::value, msg::url),

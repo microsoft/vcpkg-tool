@@ -860,6 +860,7 @@ namespace vcpkg
     REGISTER_MESSAGE(GeneratingInstaller);
     REGISTER_MESSAGE(GeneratingRepo);
     REGISTER_MESSAGE(GetParseFailureInfo);
+    REGISTER_MESSAGE(GHAParametersMissing);
     REGISTER_MESSAGE(GitCommandFailed);
     REGISTER_MESSAGE(GitFailedToFetch);
     REGISTER_MESSAGE(GitFailedToInitializeLocalRepository);

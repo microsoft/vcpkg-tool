@@ -66,6 +66,38 @@ namespace
                 return add_error(msg::format(msgExpectedReadWriteReadWrite), segments[segment_idx].first);
             }
         }
+
+        void handle_readwrite(bool& read,
+                              bool& write,
+                              const std::vector<std::pair<SourceLoc, std::string>>& segments,
+                              size_t segment_idx)
+        {
+            if (segment_idx >= segments.size())
+            {
+                read = true;
+                return;
+            }
+
+            auto& mode = segments[segment_idx].second;
+
+            if (mode == "read")
+            {
+                read = true;
+            }
+            else if (mode == "write")
+            {
+                write = true;
+            }
+            else if (mode == "readwrite")
+            {
+                read = true;
+                write = true;
+            }
+            else
+            {
+                return add_error(msg::format(msgExpectedReadWriteReadWrite), segments[segment_idx].first);
+            }
+        }
     };
 
     void ConfigSegmentsParser::parse_segments(std::vector<std::pair<SourceLoc, std::string>>& segments)
@@ -917,17 +949,22 @@ namespace
     };
     struct GHABinaryProvider : IBinaryProvider
     {
-        GHABinaryProvider(const VcpkgPaths& paths,
-                          std::vector<std::string>&& read_prefixes,
-                          std::vector<std::string>&& write_prefixes)
-            : paths(paths), m_read_prefixes(std::move(read_prefixes)), m_write_prefixes(std::move(write_prefixes))
+        GHABinaryProvider(const VcpkgPaths& paths, bool read, bool write) : paths(paths)
         {
             m_read_cache_key = get_environment_variable("VCPKG_GHA_READ_KEY").value_or("vcpkg");
             m_write_cache_key = get_environment_variable("VCPKG_GHA_WRITE_KEY").value_or("vcpkg");
 
-            auto token = get_environment_variable("VCPKG_ACTIONS_RUNTIME_TOKEN")
-                             .value_or(get_environment_variable("ACTIONS_RUNTIME_TOKEN").value_or(""));
-            m_token_header = "Authorization: Bearer " + token;
+            auto url = get_environment_variable("ACTIONS_RUNTIME_URL");
+            auto token = get_environment_variable("ACTIONS_RUNTIME_TOKEN");
+            if (!url.has_value() || !token.has_value())
+            {
+                msg::println(Color::error, msgGHAParametersMissing);
+                return;
+            }
+
+            if (read) m_read_url = url.value_or_exit(VCPKG_LINE_INFO) + "_apis/artifactcache/cache";
+            if (write) m_write_url = url.value_or_exit(VCPKG_LINE_INFO) + "_apis/artifactcache/caches";
+            m_token_header = "Authorization: Bearer " + token.value_or_exit(VCPKG_LINE_INFO);
         }
 
         Command command() const
@@ -944,11 +981,10 @@ namespace
             return cmd;
         }
 
-        std::string lookup_cache_entry(const std::string& prefix, const std::string& abi) const
+        std::string lookup_cache_entry( const std::string& abi) const
         {
-            auto url = build_read_url(prefix);
             auto cmd = command()
-                           .string_arg(url)
+                           .string_arg(m_read_url)
                            .string_arg("-G")
                            .string_arg("-d")
                            .string_arg("keys=" + m_read_cache_key)
@@ -963,16 +999,13 @@ namespace
             return json.get()->get("archiveLocation")->string(VCPKG_LINE_INFO).to_string();
         }
 
-        Optional<int64_t> reserve_cache_entry(const std::string& prefix,
-                                              const std::string& abi,
-                                              int64_t cacheSize) const
+        Optional<int64_t> reserve_cache_entry(const std::string& abi, int64_t cacheSize) const
         {
             Json::Object payload;
             payload.insert("key", m_write_cache_key);
             payload.insert("version", abi);
             payload.insert("cacheSize", Json::Value::integer(cacheSize));
-            auto url = build_write_url(prefix);
-            auto cmd = command().string_arg(url).string_arg("-d").string_arg(stringify(payload));
+            auto cmd = command().string_arg(m_write_url).string_arg("-d").string_arg(stringify(payload));
 
             auto res = cmd_execute_and_capture_output(cmd);
             if (!res.has_value() || res.get()->exit_code) return {};
@@ -981,23 +1014,16 @@ namespace
             return json.get()->get("cacheId")->integer(VCPKG_LINE_INFO);
         }
 
-        std::string build_read_url(std::string prefix) const { return std::move(prefix) + "_apis/artifactcache/cache"; }
-        std::string build_write_url(std::string prefix) const
-        {
-            return std::move(prefix) + "_apis/artifactcache/caches";
-        }
-
         void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             auto& fs = paths.get_filesystem();
 
             const ElapsedTimer timer;
             size_t restored_count = 0;
-            for (const auto& prefix : m_read_prefixes)
+            std::vector<std::pair<std::string, Path>> url_paths;
+            std::vector<size_t> url_indices;
+            if (!m_read_url.empty())
             {
-                std::vector<std::pair<std::string, Path>> url_paths;
-                std::vector<size_t> url_indices;
-
                 for (size_t idx = 0; idx < cache_status.size(); ++idx)
                 {
                     const auto this_cache_status = cache_status[idx];
@@ -1007,16 +1033,17 @@ namespace
                     }
 
                     auto&& action = actions[idx];
-                    auto url = lookup_cache_entry(prefix, action.package_abi().value_or_exit(VCPKG_LINE_INFO));
+                    auto url = lookup_cache_entry(action.package_abi().value_or_exit(VCPKG_LINE_INFO));
                     if (url.empty()) continue;
 
                     clean_prepare_dir(fs, paths.package_dir(action.spec));
                     url_paths.emplace_back(std::move(url), make_temp_archive_path(paths.buildtrees(), action.spec));
                     url_indices.push_back(idx);
                 }
+            }
 
-                if (url_paths.empty()) break;
-
+            if (!url_paths.empty())
+            {
                 msg::println(
                     msgAttemptingToFetchPackagesFromVendor, msg::count = url_paths.size(), msg::vendor = "GHA");
 
@@ -1061,7 +1088,7 @@ namespace
 
         void push_success(const InstallPlanAction& action) const override
         {
-            if (m_write_prefixes.empty()) return;
+            if (m_write_url.empty()) return;
             const ElapsedTimer timer;
             auto& fs = paths.get_filesystem();
             const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
@@ -1086,30 +1113,30 @@ namespace
             }
 
             size_t upload_count = 0;
-            for (const auto& prefix : m_write_prefixes)
+            if (!m_write_url.empty())
             {
-                auto cacheId = reserve_cache_entry(prefix, abi, cache_size);
-                if (!cacheId) continue;
-
-                std::vector<std::string> headers{
-                    m_token_header,
-                    m_accept_header.to_string(),
-                    "Content-Type: application/octet-stream",
-                    "Content-Range: bytes 0-" + std::to_string(cache_size) + "/*",
-                };
-                auto url = build_write_url(prefix) + "/" + std::to_string(*cacheId.get());
-                if (!put_file(fs, url, {}, headers, tmp_archive_path, "PATCH"))
+                if (auto cacheId = reserve_cache_entry(abi, cache_size))
                 {
-                    continue;
+                    std::vector<std::string> headers{
+                        m_token_header,
+                        m_accept_header.to_string(),
+                        "Content-Type: application/octet-stream",
+                        "Content-Range: bytes 0-" + std::to_string(cache_size) + "/*",
+                    };
+                    auto url = m_write_url + "/" + std::to_string(*cacheId.get());
+                    if (put_file(fs, url, {}, headers, tmp_archive_path, "PATCH"))
+                    {
+                        Json::Object commit;
+                        commit.insert("size", std::to_string(cache_size));
+                        auto cmd = command().string_arg(url).string_arg("-d").string_arg(stringify(commit));
+
+                        auto res = cmd_execute_and_capture_output(cmd);
+                        if (res.has_value() && !res.get()->exit_code)
+                        {
+                            ++upload_count;
+                        }
+                    }
                 }
-
-                Json::Object commit;
-                commit.insert("size", std::to_string(cache_size));
-                auto cmd = command().string_arg(url).string_arg("-d").string_arg(stringify(commit));
-
-                auto res = cmd_execute_and_capture_output(cmd);
-                if (!res.has_value() || res.get()->exit_code) continue;
-                ++upload_count;
             }
 
             msg::println(msgUploadedPackagesToVendor,
@@ -1121,7 +1148,7 @@ namespace
         void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             std::vector<CacheAvailability> actions_availability{actions.size()};
-            for (const auto& prefix : m_read_prefixes)
+            if (!m_read_url.empty())
             {
                 for (size_t idx = 0; idx < actions.size(); ++idx)
                 {
@@ -1132,7 +1159,7 @@ namespace
                         continue;
                     }
 
-                    if (!lookup_cache_entry(prefix, abi).empty())
+                    if (!lookup_cache_entry(abi).empty())
                     {
                         actions_availability[idx] = CacheAvailability::available;
                         cache_status[idx]->mark_available(this);
@@ -1156,9 +1183,10 @@ namespace
         std::string m_read_cache_key;
         std::string m_write_cache_key;
 
+        std::string m_read_url;
+        std::string m_write_url;
+
         const VcpkgPaths& paths;
-        std::vector<std::string> m_read_prefixes;
-        std::vector<std::string> m_write_prefixes;
     };
 
     struct ObjectStorageProvider : IBinaryProvider
@@ -1799,8 +1827,8 @@ namespace vcpkg
         aws_no_sign_request = false;
         cos_read_prefixes.clear();
         cos_write_prefixes.clear();
-        gha_read_prefixes.clear();
-        gha_write_prefixes.clear();
+        gha_read = false;
+        gha_write = false;
         sources_to_read.clear();
         sources_to_write.clear();
         configs_to_read.clear();
@@ -2187,26 +2215,14 @@ namespace
             else if (segments[0].second == "x-gha")
             {
                 // Scheme: x-gha,<prefix>[,<readwrite>]
-                if (segments.size() < 2)
-                {
-                    return add_error(msg::format(msgInvalidArgumentRequiresPrefix, msg::binary_source = "gha"),
-                                     segments[0].first);
-                }
-
-                if (segments.size() > 3)
+                if (segments.size() > 2)
                 {
                     return add_error(
                         msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "gha"),
                         segments[3].first);
                 }
 
-                auto p = segments[1].second;
-                if (p.back() != '/')
-                {
-                    p.push_back('/');
-                }
-
-                handle_readwrite(state->gha_read_prefixes, state->gha_write_prefixes, std::move(p), segments, 2);
+                handle_readwrite(state->gha_read, state->gha_write, segments, 1);
 
                 state->binary_cache_providers.insert("gha");
             }
@@ -2550,10 +2566,10 @@ ExpectedL<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
             paths, std::move(s.cos_read_prefixes), std::move(s.cos_write_prefixes)));
     }
 
-    if (!s.gha_read_prefixes.empty() || !s.gha_write_prefixes.empty())
+    if (s.gha_read || s.gha_write)
     {
         providers.push_back(std::make_unique<GHABinaryProvider>(
-            paths, std::move(s.gha_read_prefixes), std::move(s.gha_write_prefixes)));
+            paths, std::move(s.gha_read), std::move(s.gha_write)));
     }
 
     if (!s.url_templates_to_get.empty())
