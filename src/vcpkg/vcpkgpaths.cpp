@@ -1,3 +1,5 @@
+#include <vcpkg/base/fwd/message_sinks.h>
+
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>

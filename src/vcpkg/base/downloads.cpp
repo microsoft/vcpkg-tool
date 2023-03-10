@@ -3,6 +3,7 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>

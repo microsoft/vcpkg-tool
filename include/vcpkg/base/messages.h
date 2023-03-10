@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#include <vcpkg/base/fwd/files.h>
-#include <vcpkg/base/fwd/json.h>
 #include <vcpkg/base/fwd/messages.h>
 #include <vcpkg/base/fwd/span.h>
 
@@ -373,58 +371,6 @@ namespace vcpkg::msg
 
 namespace vcpkg
 {
-    struct MessageSink
-    {
-        virtual void print(Color c, StringView sv) = 0;
-
-        void println() { this->print(Color::none, "\n"); }
-        void print(const LocalizedString& s) { this->print(Color::none, s); }
-        void println(Color c, const LocalizedString& s)
-        {
-            this->print(c, s);
-            this->print(Color::none, "\n");
-        }
-        inline void println(const LocalizedString& s)
-        {
-            this->print(Color::none, s);
-            this->print(Color::none, "\n");
-        }
-
-        template<class Message, class... Ts>
-        typename Message::is_message_type print(Message m, Ts... args)
-        {
-            this->print(Color::none, msg::format(m, args...));
-        }
-
-        template<class Message, class... Ts>
-        typename Message::is_message_type println(Message m, Ts... args)
-        {
-            this->print(Color::none, msg::format(m, args...).append_raw('\n'));
-        }
-
-        template<class Message, class... Ts>
-        typename Message::is_message_type print(Color c, Message m, Ts... args)
-        {
-            this->print(c, msg::format(m, args...));
-        }
-
-        template<class Message, class... Ts>
-        typename Message::is_message_type println(Color c, Message m, Ts... args)
-        {
-            this->print(c, msg::format(m, args...).append_raw('\n'));
-        }
-
-        MessageSink(const MessageSink&) = delete;
-        MessageSink& operator=(const MessageSink&) = delete;
-
-    protected:
-        MessageSink() = default;
-        ~MessageSink() = default;
-    };
-
-    extern MessageSink& null_sink;
-    extern MessageSink& stdout_sink;
-    extern MessageSink& stderr_sink;
 
     DECLARE_MESSAGE(ABaseline, (), "", "a baseline");
     DECLARE_MESSAGE(ABaselineObject, (), "", "a baseline object");
