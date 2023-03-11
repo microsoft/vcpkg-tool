@@ -954,7 +954,7 @@ namespace
             m_read_cache_key = get_environment_variable("VCPKG_GHA_READ_KEY").value_or("vcpkg");
             m_write_cache_key = get_environment_variable("VCPKG_GHA_WRITE_KEY").value_or("vcpkg");
 
-            auto url = get_environment_variable("ACTIONS_RUNTIME_URL");
+            auto url = get_environment_variable("ACTIONS_CACHE_URL");
             auto token = get_environment_variable("ACTIONS_RUNTIME_TOKEN");
             if (!url.has_value() || !token.has_value())
             {
