@@ -139,9 +139,6 @@ namespace vcpkg
         std::vector<std::string> cli_overlay_triplets;
         std::vector<std::string> env_overlay_triplets;
 
-        constexpr static StringLiteral BINARY_CACHE_GHA_ARG = "x-binary-cache-github-actions";
-        Optional<bool> use_gha_binary_cache = nullopt;
-
         constexpr static StringLiteral BINARY_SOURCES_ARG = "binarysource";
         std::vector<std::string> binary_sources;
 
