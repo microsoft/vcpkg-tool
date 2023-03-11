@@ -490,11 +490,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ActivatingIndividualArtifacts" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";Activating$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Activating individual artifacts]]></Val>
+          <Val><![CDATA[Activating: ${p0}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Einzelne Artefakte aktivieren]]></Val>
+            <Val><![CDATA[Wird aktiviert: ${p0}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3040,20 +3040,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DeactivatingProject" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";Deactivating$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Deactivating project]]></Val>
+          <Val><![CDATA[Deactivating: ${p0}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Projekt wird deaktiviert]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DeactivatingProject$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Deactivating project ${p0}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Projekt ${p0} wird deaktiviert.]]></Val>
+            <Val><![CDATA[Deaktivieren: ${p0}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4260,15 +4251,6 @@
           <Val><![CDATA[failed to acquire mutant {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Fehler beim Abrufen des Mutant-Objekts {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToActivateProject$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to activate project ${p0}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Fehler beim Aktivieren des Projekts "${p0}".]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8530,15 +8512,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";Project$Activated" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Project ${p0} activated]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Projekt ${p0} aktiviert]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ProvideExportType" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[At least one of the following options are required: --raw --nuget --ifw --zip --7zip --chocolatey --prefab.]]></Val>
@@ -10267,14 +10240,14 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VcpkgCeIsExperimental" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";VcpkgCeIsExperimental" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[vcpkg-ce ('configure environment') is experimental and may change at any time.]]></Val>
+          <Val><![CDATA[vcpkg-artifacts is experimental and may change at any time.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg-ce ("Umgebung konfigurieren") ist experimentell und kann sich jederzeit ändern.]]></Val>
+            <Val><![CDATA[Vcpkg-artifacts ist experimentell und kann sich jederzeit ändern.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[vcpkg-artifacts are experimental and may change at any time.]]></Val>
+            <Val><![CDATA[vcpkg-ce ('configure environment') is experimental and may change at any time.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -10443,10 +10416,13 @@
       </Item>
       <Item ItemId=";VersionConstraintPortVersionMustBePositiveInteger" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[port-version (after the '#') in "version>=" must be a positive integer]]></Val>
+          <Val><![CDATA[port-version (after the '#') in "version>=" must be a non-negative integer]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Portversion (nach "#") in "version>=" muss eine positive ganze Zahl sein.]]></Val>
+            <Val><![CDATA[Portversion (nach "#") in "version>=" muss eine nicht negative ganze Zahl sein.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[port-version (after the '#') in "version>=" must be a positive integer]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10942,6 +10918,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";error" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[error:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Fehler:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";error$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[error ${p0}: ]]></Val>
@@ -11055,6 +11040,24 @@
           <Val><![CDATA[may not rename across filesystems]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[kann nicht über Dateisysteme hinweg umbenannt werden.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";noPostscriptFileRerunWithTheVcpkgShellFunctionRatherThanExecutable" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[no postscript file: rerun with the vcpkg shell function rather than executable]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[keine Postscript-Datei: Führen Sie die Ausführung mit der vcpkg-Shellfunktion statt mit der ausführbaren Datei erneut aus.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";nothingIsActivatedNoChangesHaveBeenMade" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[nothing is activated, no changes have been made]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nichts ist aktiviert. Es wurden keine Änderungen vorgenommen.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11244,6 +11247,15 @@
           <Val><![CDATA[version should be of type 'string', found '${p0}']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Die Version muss vom Typ "string" sein, gefunden wurde "${p0}".]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";warning" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[warning:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Warnung:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
