@@ -635,6 +635,8 @@
   "_FailedToStoreBinaryCache.comment": "An example of {path} is /foo/bar.",
   "FailedToTakeFileSystemLock": "Failed to take the filesystem lock on {path}",
   "_FailedToTakeFileSystemLock.comment": "An example of {path} is /foo/bar.",
+  "FailedToWriteFile": "Failed to write file {path}: {error_msg}",
+  "_FailedToWriteFile.comment": "An example of {path} is /foo/bar. An example of {error_msg} is File Not Found.",
   "FailedToWriteManifest": "Failed to write manifest file {path}",
   "_FailedToWriteManifest.comment": "An example of {path} is /foo/bar.",
   "FailedVendorAuthentication": "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details on how to provide credentials.",

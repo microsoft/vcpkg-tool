@@ -1477,7 +1477,7 @@ namespace vcpkg
     DECLARE_MESSAGE(FailedToWriteFile, (msg::path, msg::error_msg), "", "Failed to write file {path}: {error_msg}");
     DECLARE_MESSAGE(FailedToReadFile, (msg::path, msg::error_msg), "", "Failed to read file {path}: {error_msg}");
     DECLARE_MESSAGE(FailedToReadParagraph, (msg::path), "", "Failed to read paragraphs from {path}");
-    DECLARE_MESSAGE(FailedToRemoveControl, (msg::path), "", "Failed to remove control file {path}");   
+    DECLARE_MESSAGE(FailedToRemoveControl, (msg::path), "", "Failed to remove control file {path}");
     DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                     (msg::tool_name, msg::path),
                     "Additional information, such as the command line output, if any, will be appended on "

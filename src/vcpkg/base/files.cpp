@@ -18,6 +18,7 @@
 
 #include <sys/file.h>
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 #endif // !_WIN32
 
 #if defined(__linux__)
@@ -1903,6 +1904,17 @@ namespace vcpkg
         }
     }
 
+    space_info Filesystem::space(const Path& target, vcpkg::LineInfo li) const noexcept
+    {
+        std::error_code ec;
+        auto result = this->space(target, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {target});
+        }
+        return result;
+    }
+
     int64_t Filesystem::file_size(const Path& target, vcpkg::LineInfo li) const noexcept
     {
         std::error_code ec;
@@ -3356,6 +3368,17 @@ namespace vcpkg
 #endif // ^^^ !_WIN32
         }
 
+        virtual int64_t last_write_time_now() const override
+        {
+#if defined(_WIN32)
+            return stdfs::file_time_type::clock::now().time_since_epoch().count();
+#else // ^^^ _WIN32 // !_WIN32 vvv
+            struct timespec ts;
+            clock_gettime(CLOCK_REALTIME, &ts);
+            return ts.tv_sec * 1'000'000'000 + ts.tv_nsec;
+#endif
+        }
+
         virtual int64_t last_write_time(const Path& target, std::error_code& ec) const override
         {
 #if defined(_WIN32)
@@ -3406,6 +3429,20 @@ namespace vcpkg
             return filetime;
         }
 #endif
+        virtual int64_t last_access_time_now() const override
+        {
+#if defined(_WIN32)
+            FILETIME ft;
+            SYSTEMTIME st;
+            GetSystemTime(&st);
+            SystemTimeToFileTime(&st, &ft);
+            return filetime_to_int64(ft);
+#else // ^^^ _WIN32 // !_WIN32 vvv
+            struct timespec ts;
+            clock_gettime(CLOCK_REALTIME, &ts);
+            return ts.tv_sec * 1'000'000'000 + ts.tv_nsec;
+#endif
+        }
 
         virtual int64_t last_access_time(const Path& target, std::error_code& ec) const override
         {
@@ -3479,6 +3516,27 @@ namespace vcpkg
             {
                 ec.assign(errno, std::system_category());
             }
+#endif // ^^^ !_WIN32
+        }
+
+        virtual space_info space(const Path& target, std::error_code& ec) const override
+        {
+#if defined(_WIN32)
+            auto result = stdfs::space(to_stdfs_path(target), ec);
+            space_info info;
+            info.capacity = result.capacity;
+            info.free = result.free;
+            info.available = result.available;
+            return info;
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            struct statvfs buf;
+            if (statvfs(target.c_str(), &buf))
+            {
+                ec.assign(errno, std::system_category());
+                constexpr auto err = static_cast<std::uintmax_t>(-1);
+                return {err, err, err};
+            }
+            return {buf.f_blocks * buf.f_frsize, buf.f_bfree * buf.f_frsize, buf.f_bavail * buf.f_frsize};
 #endif // ^^^ !_WIN32
         }
 

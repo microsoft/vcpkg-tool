@@ -168,6 +168,13 @@ namespace vcpkg
         ~ILineReader();
     };
 
+    struct space_info
+    {
+        std::uintmax_t capacity;
+        std::uintmax_t free;
+        std::uintmax_t available;
+    };
+
     struct Filesystem : ILineReader
     {
         virtual std::string read_contents(const Path& file_path, std::error_code& ec) const = 0;
@@ -285,14 +292,21 @@ namespace vcpkg
         virtual FileType symlink_status(const Path& target, std::error_code& ec) const = 0;
         FileType symlink_status(const Path& target, LineInfo li) const noexcept;
 
+        virtual int64_t last_write_time_now() const = 0;
+
         virtual int64_t last_write_time(const Path& target, std::error_code& ec) const = 0;
         int64_t last_write_time(const Path& target, LineInfo li) const noexcept;
+
+        virtual int64_t last_access_time_now() const = 0;
 
         virtual int64_t last_access_time(const Path& target, std::error_code& ec) const = 0;
         int64_t last_access_time(const Path& target, LineInfo li) const noexcept;
 
         virtual void last_access_time(const Path& target, int64_t new_time, std::error_code& ec) const = 0;
         void last_access_time(const Path& target, int64_t new_time, LineInfo li) const noexcept;
+
+        virtual space_info space(const Path& target, std::error_code& ec) const = 0;
+        space_info space(const Path& target, LineInfo li) const noexcept;
 
         virtual int64_t file_size(const Path& target, std::error_code& ec) const = 0;
         int64_t file_size(const Path& target, LineInfo li) const noexcept;

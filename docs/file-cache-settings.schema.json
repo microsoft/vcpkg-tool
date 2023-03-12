@@ -11,8 +11,8 @@
       "enum": [
         "None",
         "OldestAccessDate",
-        "OldestCreationDate",
-        "OldestModificationDate"
+        "OldestModificationDate",
+        "OldestModificationDateUpdateOnAccess"
       ]
     },
     "max-size-in-gb": {
@@ -23,11 +23,6 @@
     "max-age-in-days": {
       "description": "The maximum age of the cache in days.",
       "type": "number",
-      "minimum": 0
-    },
-    "modification-date-update-interval-in-hours": {
-      "description": "The interval in hours at which the modification date of a cache object should be updated when used.",
-      "type": "integer",
       "minimum": 0
     }
   },

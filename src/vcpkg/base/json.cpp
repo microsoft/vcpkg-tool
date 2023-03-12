@@ -11,6 +11,8 @@
 
 #include <memory>
 
+#include <fmt/compile.h>
+
 namespace vcpkg::Json
 {
     static std::atomic<uint64_t> g_json_parsing_stats(0);
@@ -1335,8 +1337,15 @@ namespace vcpkg::Json
                         break;
                     }
                     // TODO: switch to `to_chars` once we are able to remove support for old compilers
-                    case VK::Integer: buffer.append(std::to_string(value.integer(VCPKG_LINE_INFO))); break;
-                    case VK::Number: buffer.append(std::to_string(value.number(VCPKG_LINE_INFO))); break;
+                    case VK::Integer:
+                    {
+                        fmt::format_int str(value.integer(VCPKG_LINE_INFO));
+                        buffer.append(str.data(), str.size());
+                        break;
+                    }
+                    case VK::Number:
+                        fmt::format_to(std::back_inserter(buffer), FMT_COMPILE("{}"), value.number(VCPKG_LINE_INFO));
+                        break;
                     case VK::String:
                     {
                         append_quoted_json_string(value.string(VCPKG_LINE_INFO));
