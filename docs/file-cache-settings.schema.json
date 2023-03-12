@@ -24,6 +24,11 @@
       "description": "The maximum age of the cache in days.",
       "type": "number",
       "minimum": 0
+    },
+    "keep-available-in-percentage": {
+      "description": "How much space should be kept available on the disk in percentage.",
+      "type": "number",
+      "minimum": 0
     }
   },
   "patternProperties": {
