@@ -588,11 +588,7 @@ namespace vcpkg::Hash
             } while (!file.eof());
 
             auto result_hash = hasher.get_hash();
-            if (Debug::g_debugging)
-            {
-                Debug::print(fmt::format("{} has hash {}\n", path, result_hash));
-            }
-
+            Debug::print(fmt::format("{} has hash {}\n", path, result_hash));
             return result_hash;
         });
     }
