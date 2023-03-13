@@ -679,38 +679,6 @@ export class Activation {
     }
   }
 
-
-  /** produces an environment block that can be passed to child processes to leverage dependent artifacts during installation/activation. */
-  async getEnvironmentBlock(): Promise<NodeJS.ProcessEnv> {
-    const result = { ... this.#session.environment };
-
-    // add environment variables
-    for await (const [k, v] of this.environmentVariables) {
-      result[k] = linq.join(v, ' ');
-    }
-
-    // update environment path variables
-    for await (const [pathVariable, locations] of this.paths) {
-      if (locations.size) {
-        const originalVariable = linq.find(result, pathVariable) || '';
-        if (originalVariable) {
-          for (const p of originalVariable.split(delimiter)) {
-            if (p) {
-              locations.add(p);
-            }
-          }
-        }
-        result[pathVariable] = linq.join(locations, delimiter);
-      }
-    }
-
-    // define tool environment variables
-    for await (const [toolName, toolLocation] of this.tools) {
-      result[toolName] = toolLocation;
-    }
-
-    return result;
-  }
 }
 
 function generateCmdScript(variables: Record<string, string | undefined>, aliases: Record<string, string>): string {
