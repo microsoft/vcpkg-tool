@@ -47,7 +47,6 @@
   "dependencies": {
     "@microsoft/vcpkg-ce": "~0.8.0",
     "yaml": "2.0.0-10",
-    "semver": "7.3.5",
-    "txtgen": "2.2.8"
+    "semver": "7.3.5"
   }
 }
