@@ -1,10 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-export class Record<K extends string, T> implements Record<K, T> {
-  [key: string]: T;
-}
-
 export type IndexOf<T> = T extends Map<T, infer V> ? T : T extends Array<infer V> ? number : string;
 
 /** performs a truthy check on the value, and calls onTrue when the condition is true,and onFalse when it's not */
@@ -363,7 +359,7 @@ function toArray<T>(this: Iterable<T>): Array<T> {
 }
 
 function toObject<T, V>(this: Iterable<T>, selector: (each: T) => [string, V]): Record<string, V> {
-  const result = new Record<string, V>();
+  const result : Record<string, V> = {};
   for (const each of this) {
     const [key, value] = selector(each);
     result[key] = value;
@@ -389,7 +385,7 @@ function bifurcate<T>(this: Iterable<T>, predicate: (each: T) => boolean): Array
 }
 
 function distinct<T>(this: Iterable<T>, selector?: (each: T) => any): IterableWithLinq<T> {
-  const hash = new Record<string, boolean>();
+  const hash: Record<string, boolean> = {};
   return linqify(function* (this: Iterable<T>) {
 
     if (!selector) {
@@ -406,7 +402,7 @@ function distinct<T>(this: Iterable<T>, selector?: (each: T) => any): IterableWi
 }
 
 function duplicates<T>(this: Iterable<T>, selector?: (each: T) => any): IterableWithLinq<T> {
-  const hash = new Record<string, boolean>();
+  const hash: Record<string, boolean> = {};
   return linqify(function* (this: Iterable<T>) {
 
     if (!selector) {
@@ -462,4 +458,3 @@ export function countWhere<T>(from: Iterable<T>, predicate: (e: T) => boolean | 
   }
   return v;
 }
-

@@ -21,7 +21,9 @@ namespace vcpkg::Commands::SetInstalled
 
     static constexpr CommandSwitch INSTALL_SWITCHES[] = {
         {OPTION_DRY_RUN, []() { return msg::format(msgCmdSetInstalledOptDryRun); }},
-        {OPTION_NO_PRINT_USAGE, []() { return msg::format(msgCmdSetInstalledOptNoUsage); }}};
+        {OPTION_NO_PRINT_USAGE, []() { return msg::format(msgCmdSetInstalledOptNoUsage); }},
+        {OPTION_ONLY_DOWNLOADS, []() { return msg::format(msgHelpTxtOptOnlyDownloads); }},
+    };
     static constexpr CommandSetting INSTALL_SETTINGS[] = {
         {OPTION_WRITE_PACKAGES_CONFIG, []() { return msg::format(msgCmdSetInstalledOptWritePkgConfig); }},
     };
@@ -126,6 +128,7 @@ namespace vcpkg::Commands::SetInstalled
             summary.print_failed();
             if (!only_downloads)
             {
+                binary_cache.wait_for_async_complete();
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
@@ -142,7 +145,7 @@ namespace vcpkg::Commands::SetInstalled
                 }
             }
         }
-
+        binary_cache.wait_for_async_complete();
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 

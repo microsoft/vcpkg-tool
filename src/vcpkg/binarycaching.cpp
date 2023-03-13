@@ -1,3 +1,5 @@
+#include <vcpkg/base/fwd/message_sinks.h>
+
 #include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/downloads.h>
@@ -581,21 +583,27 @@ namespace
 
         RestoreResult try_restore(const InstallPlanAction&) const override { return RestoreResult::unavailable; }
 
-        void push_success(const BinaryPackageInformation& info,
-                          const Path& packages_dir,
-                          MessageSink& msg_sink) override
+        bool needs_nuspec_data() const override { return !m_write_sources.empty() || !m_write_configs.empty(); }
+
+        void push_success(const BinaryProviderPushRequest& request, MessageSink& msg_sink) override
         {
             if (m_write_sources.empty() && m_write_configs.empty())
             {
                 return;
             }
+            if (request.info.nuspec.empty())
+            {
+                Checks::unreachable(
+                    VCPKG_LINE_INFO,
+                    "request.info.nuspec must be non empty because needs_nuspec_data() should return true");
+            }
 
-            auto& spec = info.spec;
+            auto& spec = request.info.spec;
 
-            NugetReference nuget_ref = make_nugetref(info, get_nuget_prefix());
+            NugetReference nuget_ref = make_nugetref(request.info, get_nuget_prefix());
             auto nuspec_path = paths.buildtrees() / spec.name() / (spec.triplet().to_string() + ".nuspec");
             auto& fs = paths.get_filesystem();
-            fs.write_contents(nuspec_path, generate_nuspec(packages_dir, info, nuget_ref), VCPKG_LINE_INFO);
+            fs.write_contents(nuspec_path, request.info.nuspec, VCPKG_LINE_INFO);
 
             const auto& nuget_exe = paths.get_tool_exe("nuget", stdout_sink);
             Command cmdline;
@@ -793,20 +801,18 @@ namespace
             return status.is_restored() ? RestoreResult::restored : RestoreResult::unavailable;
         }
 
-        void push_success(const BinaryPackageInformation& info,
-                          const Path& packages_dir,
-                          MessageSink& msg_sink) override
+        void push_success(const BinaryProviderPushRequest& request, MessageSink& msg_sink) override
         {
             const ElapsedTimer timer;
-            const auto& abi = info.package_abi;
-            auto& spec = info.spec;
+            const auto& abi = request.info.package_abi;
+            auto& spec = request.info.spec;
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
             auto compression_result = compress_directory_to_zip(
-                paths.get_filesystem(), paths.get_tool_cache(), stdout_sink, packages_dir, tmp_archive_path);
+                paths.get_filesystem(), paths.get_tool_cache(), msg_sink, request.package_dir, tmp_archive_path);
             if (!compression_result)
             {
                 msg_sink.println(Color::warning,
-                                 msg::format_warning(msgCompressFolderFailed, msg::path = packages_dir)
+                                 msg::format_warning(msgCompressFolderFailed, msg::path = request.package_dir)
                                      .append_raw(' ')
                                      .append_raw(compression_result.error()));
                 return;
@@ -822,7 +828,7 @@ namespace
             }
             for (auto&& put_url_template : m_put_url_templates)
             {
-                auto url = put_url_template.instantiate_variables(info);
+                auto url = put_url_template.instantiate_variables(request.info);
                 auto maybe_success = put_file(
                     paths.get_filesystem(), url, m_secrets, put_url_template.headers_for_put, tmp_archive_path);
                 if (maybe_success)
@@ -1163,26 +1169,31 @@ namespace vcpkg
             .value_or_exit(VCPKG_LINE_INFO);
     }
 
-    BinaryCache* BinaryCache::current_instance;
-
     void BinaryCache::wait_for_async_complete()
     {
-        if (current_instance)
+        bool have_remaining_packages = remaining_packages_to_push > 0;
+        if (have_remaining_packages)
         {
-            msg::write_unlocalized_text_to_stdout(Color::none, "Wait for end\n");
-            current_instance->end_push_thread = true;
-            current_instance->actions_to_push_notifier.notify_all();
-            current_instance->push_thread.join();
-            msg::write_unlocalized_text_to_stdout(Color::none, "Wait for end done \n");
-            current_instance = nullptr;
+            bg_msg_sink.print_published();
+            msg::println(msgWaitUntilPackagesUploaded, msg::count = remaining_packages_to_push);
+        }
+        bg_msg_sink.publish_directly_to_out_sink();
+        end_push_thread = true;
+        actions_to_push_notifier.notify_all();
+        push_thread.join();
+        if (have_remaining_packages)
+        {
+            msg::println(msgAllPackagesUploaded);
         }
     }
 
     BinaryCache::BinaryCache(Filesystem& filesystem)
-        : push_thread([this]() { push_thread_main(); }), end_push_thread{false}, filesystem(filesystem)
+        : bg_msg_sink(stdout_sink)
+        , push_thread([this]() { push_thread_main(); })
+        , end_push_thread{false}
+        , filesystem(filesystem)
+
     {
-        Checks::check_exit(VCPKG_LINE_INFO, current_instance == nullptr);
-        current_instance = this;
     }
 
     BinaryCache::BinaryCache(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
@@ -1191,7 +1202,7 @@ namespace vcpkg
         install_providers_for(args, paths);
     }
 
-    BinaryCache::~BinaryCache() { BinaryCache::wait_for_async_complete(); }
+    BinaryCache::~BinaryCache() { wait_for_async_complete(); }
 
     void BinaryCache::install_providers(std::vector<std::unique_ptr<IBinaryProvider>>&& providers)
     {
@@ -1207,6 +1218,7 @@ namespace vcpkg
                                std::make_move_iterator(providers.begin()),
                                std::make_move_iterator(providers.end()));
         }
+        needs_nuspec_data = Util::any_of(m_providers, [](auto& provider) { return provider->needs_nuspec_data(); });
     }
 
     void BinaryCache::install_providers_for(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
@@ -1286,11 +1298,22 @@ namespace vcpkg
                 package_dir = new_packaged_dir;
             }
 
+            std::string nuspec;
+            if (needs_nuspec_data)
+            {
+                NugetReference nuget_ref = make_nugetref(action, get_nuget_prefix());
+                nuspec = generate_nuspec(package_dir, action, nuget_ref);
+            }
             std::unique_lock<std::mutex> lock(actions_to_push_mutex);
-            actions_to_push.push(ActionToPush{BinaryPackageInformation{action}, clean_packages, package_dir});
+            remaining_packages_to_push++;
+            actions_to_push.push_back(ActionToPush{
+                BinaryProviderPushRequest{BinaryPackageInformation{action, std::move(nuspec)}, package_dir},
+                clean_packages});
             actions_to_push_notifier.notify_all();
         }
     }
+
+    void BinaryCache::print_push_success_messages() { bg_msg_sink.print_published(); }
 
     void BinaryCache::prefetch(View<InstallPlanAction> actions)
     {
@@ -1349,29 +1372,38 @@ namespace vcpkg
 
     void BinaryCache::push_thread_main()
     {
+        decltype(actions_to_push) my_tasks;
         while (true)
         {
-            std::unique_lock<std::mutex> lock(actions_to_push_mutex);
-            actions_to_push_notifier.wait(lock, [this]() { return !actions_to_push.empty() || end_push_thread; });
-            if (actions_to_push.empty())
             {
-                if (end_push_thread) break;
-                continue;
-            }
+                std::unique_lock<std::mutex> lock(actions_to_push_mutex);
+                actions_to_push_notifier.wait(lock, [this]() { return !actions_to_push.empty() || end_push_thread; });
+                if (actions_to_push.empty())
+                {
+                    if (end_push_thread) break;
+                    continue;
+                }
 
-            auto entry = std::move(actions_to_push.front());
-            actions_to_push.pop();
-            lock.unlock(); // we don't touch actions_to_push anymore
-
-            for (auto&& provider : m_providers)
-            {
-                provider->push_success(entry.info, entry.packages_dir, stdout_sink);
+                std::swap(my_tasks, actions_to_push);
             }
-            if (entry.clean_after_push)
+            // Now, consume all of `my_tasks` before taking the lock again.
+            for (auto& action_to_push : my_tasks)
             {
-                filesystem.remove_all(entry.packages_dir, VCPKG_LINE_INFO);
+                if (end_push_thread)
+                {
+                    msg::println(msgUploadRemainingPackages, msg::count = remaining_packages_to_push);
+                }
+                for (auto&& provider : m_providers)
+                {
+                    provider->push_success(action_to_push.request, bg_msg_sink);
+                }
+                if (action_to_push.clean_after_push)
+                {
+                    filesystem.remove_all(action_to_push.request.package_dir, VCPKG_LINE_INFO);
+                }
+                remaining_packages_to_push--;
             }
-            actions_to_push_notifier.notify_all();
+            my_tasks.clear();
         }
     }
 
@@ -1476,18 +1508,12 @@ namespace vcpkg
         secrets.clear();
     }
 
-    BinaryPackageInformation::BinaryPackageInformation(const InstallPlanAction& action)
+    BinaryPackageInformation::BinaryPackageInformation(const InstallPlanAction& action, std::string&& nuspec)
         : package_abi(action.package_abi().value_or_exit(VCPKG_LINE_INFO))
         , spec(action.spec)
-        , source_control_file(
-              *action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file)
-        , raw_version(source_control_file.core_paragraph->raw_version)
-        , compiler_id(action.abi_info.value_or_exit(VCPKG_LINE_INFO).compiler_info.value_or_exit(VCPKG_LINE_INFO).id)
-        , compiler_version(
-              action.abi_info.value_or_exit(VCPKG_LINE_INFO).compiler_info.value_or_exit(VCPKG_LINE_INFO).version)
-        , triplet_abi(action.abi_info.value_or_exit(VCPKG_LINE_INFO).triplet_abi.value_or_exit(VCPKG_LINE_INFO))
-        , feature_list(action.feature_list)
-        , package_dependencies(action.package_dependencies)
+        , raw_version(action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
+                          .source_control_file->core_paragraph->raw_version)
+        , nuspec(std::move(nuspec))
     {
     }
 
@@ -1521,10 +1547,10 @@ namespace
             return std::move(path);
         }
 
-        return get_platform_cache_home().then([](Path p) -> ExpectedL<Path> {
+        return get_platform_cache_vcpkg().then([](Path p) -> ExpectedL<Path> {
             if (p.is_absolute())
             {
-                p /= "vcpkg/archives";
+                p /= "archives";
                 p.make_preferred();
                 return std::move(p);
             }
@@ -2284,13 +2310,15 @@ details::NuGetRepoInfo details::get_nuget_repo_info_from_env()
 }
 
 std::string vcpkg::generate_nuspec(const Path& package_dir,
-                                   const BinaryPackageInformation& info,
+                                   const InstallPlanAction& action,
                                    const vcpkg::NugetReference& ref,
                                    details::NuGetRepoInfo rinfo)
 {
-    auto& spec = info.spec;
-    auto& scf = info.source_control_file;
+    auto& spec = action.spec;
+    auto& scf = *action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
     auto& version = scf.core_paragraph->raw_version;
+    const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
+    const auto& compiler_info = abi_info.compiler_info.value_or_exit(VCPKG_LINE_INFO);
     std::string description =
         Strings::concat("NOT FOR DIRECT USE. Automatically generated cache package.\n\n",
                         Strings::join("\n    ", scf.core_paragraph->description),
@@ -2299,16 +2327,16 @@ std::string vcpkg::generate_nuspec(const Path& package_dir,
                         "\nTriplet: ",
                         spec.triplet().to_string(),
                         "\nCXX Compiler id: ",
-                        info.compiler_id,
+                        compiler_info.id,
                         "\nCXX Compiler version: ",
-                        info.compiler_version,
+                        compiler_info.version,
                         "\nTriplet/Compiler hash: ",
-                        info.triplet_abi,
+                        abi_info.triplet_abi.value_or_exit(VCPKG_LINE_INFO),
                         "\nFeatures:",
-                        Strings::join(",", info.feature_list, [](const std::string& s) { return " " + s; }),
+                        Strings::join(",", action.feature_list, [](const std::string& s) { return " " + s; }),
                         "\nDependencies:\n");
 
-    for (auto&& dep : info.package_dependencies)
+    for (auto&& dep : action.package_dependencies)
     {
         Strings::append(description, "    ", dep.name(), '\n');
     }

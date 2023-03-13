@@ -9,6 +9,7 @@
 
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/message_sinks.h>
 
 #include <vcpkg/packagespec.h>
 #include <vcpkg/sourceparagraph.h>
@@ -50,17 +51,21 @@ namespace vcpkg
 
     struct BinaryPackageInformation
     {
-        explicit BinaryPackageInformation(const InstallPlanAction& action);
+        explicit BinaryPackageInformation(const InstallPlanAction& action, std::string&& nuspec = "");
         std::string package_abi;
-        // The following fields are only needed for the nuget binary cache
         PackageSpec spec;
-        SourceControlFile& source_control_file;
-        std::string& raw_version;
-        std::string compiler_id;
-        std::string compiler_version;
-        std::string triplet_abi;
-        InternalFeatureSet feature_list;
-        std::vector<PackageSpec> package_dependencies;
+        std::string raw_version;
+        std::string nuspec; // only filled if BinaryCache has a provider that returns true for needs_nuspec_data()
+    };
+
+    struct BinaryProviderPushRequest
+    {
+        BinaryProviderPushRequest(BinaryPackageInformation&& info, Path package_dir)
+            : info(std::move(info)), package_dir(std::move(package_dir))
+        {
+        }
+        BinaryPackageInformation info;
+        Path package_dir;
     };
 
     struct IObjectProvider
@@ -103,9 +108,7 @@ namespace vcpkg
 
         /// Called upon a successful build of `action` to store those contents in the binary cache.
         /// Prerequisite: action has a package_abi()
-        virtual void push_success(const BinaryPackageInformation& info,
-                                  const Path& packages_dir,
-                                  MessageSink& msg_sink) = 0;
+        virtual void push_success(const BinaryProviderPushRequest& request, MessageSink& msg_sink) = 0;
 
         /// Gives the IBinaryProvider an opportunity to batch any downloading or server communication for
         /// executing `actions`.
@@ -121,6 +124,8 @@ namespace vcpkg
         /// to the action at the same index in `actions`. The provider must mark the cache status as appropriate.
         /// Prerequisite: `actions` have package ABIs.
         virtual void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const = 0;
+
+        virtual bool needs_nuspec_data() const { return false; }
     };
 
     struct UrlTemplate
@@ -191,8 +196,6 @@ namespace vcpkg
 
     struct BinaryCache
     {
-        static BinaryCache* current_instance;
-        static void wait_for_async_complete();
         BinaryCache(Filesystem& filesystem);
         explicit BinaryCache(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 
@@ -207,6 +210,8 @@ namespace vcpkg
         /// Called upon a successful build of `action` to store those contents in the binary cache.
         void push_success(const InstallPlanAction& action, Path package_dir);
 
+        void print_push_success_messages();
+
         /// Gives the IBinaryProvider an opportunity to batch any downloading or server communication for
         /// executing `actions`.
         void prefetch(View<InstallPlanAction> actions);
@@ -216,22 +221,26 @@ namespace vcpkg
         /// Returns a vector where each index corresponds to the matching index in `actions`.
         std::vector<CacheAvailability> precheck(View<InstallPlanAction> actions);
 
+        void wait_for_async_complete();
+
     private:
         struct ActionToPush
         {
-            BinaryPackageInformation info;
-            bool clean_after_push;
-            Path packages_dir;
+            BinaryProviderPushRequest request;
+            bool clean_after_push = false;
         };
         void push_thread_main();
 
+        BGMessageSink bg_msg_sink;
         std::unordered_map<std::string, CacheStatus> m_status;
         std::vector<std::unique_ptr<IBinaryProvider>> m_providers;
+        bool needs_nuspec_data = false;
         std::condition_variable actions_to_push_notifier;
         std::mutex actions_to_push_mutex;
-        std::queue<ActionToPush> actions_to_push;
+        std::vector<ActionToPush> actions_to_push;
         std::thread push_thread;
         std::atomic_bool end_push_thread;
+        std::atomic_int remaining_packages_to_push = 0;
         Filesystem& filesystem;
     };
 

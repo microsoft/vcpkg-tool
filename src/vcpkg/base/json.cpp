@@ -1466,9 +1466,14 @@ namespace vcpkg::Json
         for (auto&& s : m_path)
         {
             if (s.index < 0)
-                Strings::append(p, '.', s.field);
+            {
+                p.push_back('.');
+                p.append(s.field.data(), s.field.size());
+            }
             else
-                Strings::append(p, '[', s.index, ']');
+            {
+                fmt::format_to(std::back_inserter(p), "[{}]", s.index);
+            }
         }
         return p;
     }

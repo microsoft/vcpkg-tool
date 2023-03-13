@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/expected.h>
+#include <vcpkg/base/fwd/optional.h>
 
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/stringview.h>

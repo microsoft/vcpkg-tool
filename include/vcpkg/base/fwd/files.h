@@ -28,6 +28,12 @@ namespace vcpkg
         junction // implementation-defined value indicating an NT junction
     };
 
+    enum class Append
+    {
+        NO = 0,
+        YES,
+    };
+
     struct IgnoreErrors;
     struct Path;
     struct FilePointer;

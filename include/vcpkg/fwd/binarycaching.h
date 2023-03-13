@@ -25,5 +25,5 @@ namespace vcpkg
     struct IBinaryProvider;
     struct BinaryCache;
     struct BinaryConfigParserState;
-    struct BinaryPackageInformation;
+    struct BinaryProviderPushRequest;
 }

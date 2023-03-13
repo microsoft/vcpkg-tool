@@ -3,6 +3,7 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
@@ -884,13 +885,10 @@ namespace vcpkg
             {
                 if (urls.size() != 0)
                 {
-                    const auto download_path_part_path =
-                        download_path + Strings::concat(".", get_process_id(), ".part");
-
+                    const auto download_path_part_path = download_path + fmt::format(".{}.part", get_process_id());
                     const auto escaped_url = Command(urls[0]).extract();
                     const auto escaped_sha512 = Command(*hash).extract();
                     const auto escaped_dpath = Command(download_path_part_path).extract();
-
                     auto cmd = api_stable_format(*script, [&](std::string& out, StringView key) {
                                    if (key == "url")
                                    {

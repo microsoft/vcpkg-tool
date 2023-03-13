@@ -24,9 +24,9 @@ struct KnowNothingBinaryProvider : IBinaryProvider
         return RestoreResult::unavailable;
     }
 
-    void push_success(const BinaryPackageInformation& info, const Path&, MessageSink&) override
+    void push_success(const BinaryProviderPushRequest& request, MessageSink&) override
     {
-        CHECK_FALSE(info.package_abi.empty());
+        CHECK_FALSE(request.info.package_abi.empty());
     }
 
     void prefetch(View<InstallPlanAction> actions, View<CacheStatus* const> cache_status) const override
@@ -280,7 +280,7 @@ Build-Depends: bzip
     REQUIRE(ref.nupkg_filename() == "zlib2_x64-windows.1.5.0-vcpkgpackageabi.nupkg");
 
     {
-        auto nuspec = generate_nuspec(pkgPath, BinaryPackageInformation{ipa}, ref, {});
+        auto nuspec = generate_nuspec(pkgPath, ipa, ref, {});
         std::string expected = R"(<package>
   <metadata>
     <id>zlib2_x64-windows</id>
@@ -308,7 +308,7 @@ Dependencies:
     }
 
     {
-        auto nuspec = generate_nuspec(pkgPath, BinaryPackageInformation{ipa}, ref, {"urlvalue"});
+        auto nuspec = generate_nuspec(pkgPath, ipa, ref, {"urlvalue"});
         std::string expected = R"(<package>
   <metadata>
     <id>zlib2_x64-windows</id>
@@ -336,8 +336,7 @@ Dependencies:
         REQUIRE_EQUAL_TEXT(nuspec, expected);
     }
     {
-        auto nuspec =
-            generate_nuspec(pkgPath, BinaryPackageInformation{ipa}, ref, {"urlvalue", "branchvalue", "commitvalue"});
+        auto nuspec = generate_nuspec(pkgPath, ipa, ref, {"urlvalue", "branchvalue", "commitvalue"});
         std::string expected = R"(<package>
   <metadata>
     <id>zlib2_x64-windows</id>

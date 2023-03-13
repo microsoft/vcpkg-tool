@@ -225,6 +225,7 @@ namespace vcpkg::Commands::Upgrade
             summary.print();
         }
 
+        binary_cache.wait_for_async_complete();
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 

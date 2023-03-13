@@ -1,16 +1,16 @@
 ﻿#pragma once
 
-#include <vcpkg/base/fwd/files.h>
-#include <vcpkg/base/fwd/json.h>
 #include <vcpkg/base/fwd/messages.h>
 #include <vcpkg/base/fwd/span.h>
 
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/lineinfo.h>
 
+#include <mutex>
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 namespace vcpkg
 {
@@ -367,63 +367,12 @@ namespace vcpkg::msg
     {
         return format(msgErrorMessage).append(m, args...);
     }
+
+    inline LocalizedString format_error(const LocalizedString& msg) { return format(msgErrorMessage).append(msg); }
 }
 
 namespace vcpkg
 {
-    struct MessageSink
-    {
-        virtual void print(Color c, StringView sv) = 0;
-
-        void println() { this->print(Color::none, "\n"); }
-        void print(const LocalizedString& s) { this->print(Color::none, s); }
-        void println(Color c, const LocalizedString& s)
-        {
-            this->print(c, s);
-            this->print(Color::none, "\n");
-        }
-        inline void println(const LocalizedString& s)
-        {
-            this->print(Color::none, s);
-            this->print(Color::none, "\n");
-        }
-
-        template<class Message, class... Ts>
-        typename Message::is_message_type print(Message m, Ts... args)
-        {
-            this->print(Color::none, msg::format(m, args...));
-        }
-
-        template<class Message, class... Ts>
-        typename Message::is_message_type println(Message m, Ts... args)
-        {
-            this->print(Color::none, msg::format(m, args...).append_raw('\n'));
-        }
-
-        template<class Message, class... Ts>
-        typename Message::is_message_type print(Color c, Message m, Ts... args)
-        {
-            this->print(c, msg::format(m, args...));
-        }
-
-        template<class Message, class... Ts>
-        typename Message::is_message_type println(Color c, Message m, Ts... args)
-        {
-            this->print(c, msg::format(m, args...).append_raw('\n'));
-        }
-
-        MessageSink(const MessageSink&) = delete;
-        MessageSink& operator=(const MessageSink&) = delete;
-
-    protected:
-        MessageSink() = default;
-        ~MessageSink() = default;
-    };
-
-    extern MessageSink& null_sink;
-    extern MessageSink& stdout_sink;
-    extern MessageSink& stderr_sink;
-
     DECLARE_MESSAGE(ABaseline, (), "", "a baseline");
     DECLARE_MESSAGE(ABaselineObject, (), "", "a baseline object");
     DECLARE_MESSAGE(ABoolean, (), "", "a boolean");
@@ -548,6 +497,7 @@ namespace vcpkg
                     "example of {value} is 'foo bar {'",
                     "unbalanced brace in format string \"{value}\"");
     DECLARE_MESSAGE(AllPackagesAreUpdated, (), "", "All installed packages are up-to-date with the local portfile.");
+    DECLARE_MESSAGE(AllPackagesUploaded, (), "", "All packages uploaded");
     DECLARE_MESSAGE(AlreadyInstalled, (msg::spec), "", "{spec} is already installed");
     DECLARE_MESSAGE(AlreadyInstalledNotHead,
                     (msg::spec),
@@ -1822,7 +1772,7 @@ namespace vcpkg
     DECLARE_MESSAGE(HelpRemoveOutdatedCommand, (), "", "Uninstall all out-of-date packages.");
     DECLARE_MESSAGE(HelpResponseFileCommand, (), "", "Specify a response file to provide additional parameters.");
     DECLARE_MESSAGE(HelpSearchCommand, (), "", "Search for packages available to be built.");
-    DECLARE_MESSAGE(HelpTextOptFullDesc, (), "", "Do not truncate long text");
+    DECLARE_MESSAGE(HelpTextOptFullDesc, (), "", "Do not truncate long text.");
     DECLARE_MESSAGE(HelpTopicCommand, (), "", "Display help for a specific topic.");
     DECLARE_MESSAGE(HelpTopicsCommand, (), "", "Display the list of help topics.");
     DECLARE_MESSAGE(HelpTxtOptAllowUnsupportedPort,
@@ -1832,10 +1782,10 @@ namespace vcpkg
     DECLARE_MESSAGE(HelpTxtOptCleanAfterBuild,
                     (),
                     "",
-                    "Clean buildtrees, packages and downloads after building each package");
-    DECLARE_MESSAGE(HelpTxtOptCleanBuildTreesAfterBuild, (), "", "Clean buildtrees after building each package");
-    DECLARE_MESSAGE(HelpTxtOptCleanDownloadsAfterBuild, (), "", "Clean downloads after building each package");
-    DECLARE_MESSAGE(HelpTxtOptCleanPkgAfterBuild, (), "", "Clean packages after building each package");
+                    "Clean buildtrees, packages and downloads after building each package.");
+    DECLARE_MESSAGE(HelpTxtOptCleanBuildTreesAfterBuild, (), "", "Clean buildtrees after building each package.");
+    DECLARE_MESSAGE(HelpTxtOptCleanDownloadsAfterBuild, (), "", "Clean downloads after building each package.");
+    DECLARE_MESSAGE(HelpTxtOptCleanPkgAfterBuild, (), "", "Clean packages after building each package.");
     DECLARE_MESSAGE(HelpTxtOptDryRun, (), "", "Do not actually build or install.");
     DECLARE_MESSAGE(HelpTxtOptEditable,
                     (),
@@ -1845,7 +1795,7 @@ namespace vcpkg
                     (),
                     "",
                     "Fail install if a port has detected problems or attempts to use a deprecated feature");
-    DECLARE_MESSAGE(HelpTxtOptKeepGoing, (), "", "Continue installing packages on failure");
+    DECLARE_MESSAGE(HelpTxtOptKeepGoing, (), "", "Continue installing packages on failure.");
     DECLARE_MESSAGE(HelpTxtOptManifestFeature,
                     (),
                     "",
@@ -1854,16 +1804,19 @@ namespace vcpkg
                     (),
                     "",
                     "Don't install the default features from the top-level manifest (manifest mode).");
-    DECLARE_MESSAGE(HelpTxtOptNoDownloads, (), "", "Do not download new sources");
+    DECLARE_MESSAGE(HelpTxtOptNoDownloads, (), "", "Do not download new sources.");
     DECLARE_MESSAGE(HelpTxtOptNoUsage, (), "", "Don't print CMake usage information after install.");
-    DECLARE_MESSAGE(HelpTxtOptOnlyBinCache, (), "", "Fail if cached binaries are not available");
-    DECLARE_MESSAGE(HelpTxtOptOnlyDownloads, (), "", "Download sources but don't build packages");
-    DECLARE_MESSAGE(HelpTxtOptRecurse, (), "", "Allow removal of packages as part of installation");
-    DECLARE_MESSAGE(HelpTxtOptUseAria2, (), "", "Use aria2 to perform download tasks");
+    DECLARE_MESSAGE(HelpTxtOptOnlyBinCache, (), "", "Fail if cached binaries are not available.");
+    DECLARE_MESSAGE(HelpTxtOptOnlyDownloads,
+                    (),
+                    "",
+                    "Make a best-effort attempt to download sources without building.");
+    DECLARE_MESSAGE(HelpTxtOptRecurse, (), "", "Allow removal of packages as part of installation.");
+    DECLARE_MESSAGE(HelpTxtOptUseAria2, (), "", "Use aria2 to perform download tasks.");
     DECLARE_MESSAGE(HelpTxtOptUseHeadVersion,
                     (),
                     "",
-                    "Install the libraries on the command line using the latest upstream sources (classic mode)");
+                    "Install the libraries on the command line using the latest upstream sources (classic mode).");
     DECLARE_MESSAGE(
         HelpTxtOptWritePkgConfig,
         (),
@@ -2955,20 +2908,6 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is the name of a port dependency.",
                     "- dependency {value} is not supported.");
-    DECLARE_MESSAGE(UnsupportedSupportsExpression,
-                    (msg::package_name, msg::supports_expression, msg::triplet),
-                    "",
-                    "{package_name} is only supported on '{supports_expression}', "
-                    "which does not match {triplet}. This usually means that there are known "
-                    "build failures, or runtime problems, when building other platforms. To ignore this and attempt to "
-                    "build {package_name} anyway, rerun vcpkg with `--allow-unsupported`.");
-    DECLARE_MESSAGE(
-        UnsupportedSupportsExpressionWarning,
-        (msg::package_name, msg::supports_expression, msg::triplet),
-        "",
-        "{package_name} is only supported on '{supports_expression}', "
-        "which does not match {triplet}. This usually means that there are known build failures, "
-        "or runtime problems, when building other platforms. Proceeding anyway due to `--allow-unsupported`.");
     DECLARE_MESSAGE(UnsupportedShortOptions,
                     (msg::value),
                     "'{value}' is the short option given",
@@ -3040,6 +2979,7 @@ namespace vcpkg
                     (msg::spec, msg::vendor, msg::path),
                     "",
                     "Uploading binaries for '{spec}' using '{vendor}' \"{path}\".");
+    DECLARE_MESSAGE(UploadRemainingPackages, (msg::count), "", "Upload remaining {count} package(s)");
     DECLARE_MESSAGE(UseEnvVar,
                     (msg::env_var),
                     "An example of env_var is \"HTTP(S)_PROXY\""
@@ -3055,8 +2995,8 @@ namespace vcpkg
     DECLARE_MESSAGE(Utf8ConversionFailed, (), "", "Failed to convert to UTF-8");
     DECLARE_MESSAGE(VcpkgCeIsExperimental,
                     (),
-                    "",
-                    "vcpkg-ce ('configure environment') is experimental and may change at any time.");
+                    "The name of the feature is 'vcpkg-artifacts' and should be singular despite ending in s",
+                    "vcpkg-artifacts is experimental and may change at any time.");
     DECLARE_MESSAGE(VcpkgCommitTableHeader, (), "", "VCPKG Commit");
     DECLARE_MESSAGE(
         VcpkgCompletion,
@@ -3117,7 +3057,7 @@ namespace vcpkg
     DECLARE_MESSAGE(VersionConstraintPortVersionMustBePositiveInteger,
                     (),
                     "",
-                    "port-version (after the '#') in \"version>=\" must be a positive integer");
+                    "port-version (after the '#') in \"version>=\" must be a non-negative integer");
     DECLARE_MESSAGE(VersionConstraintUnresolvable,
                     (msg::package_name, msg::spec),
                     "",
@@ -3271,6 +3211,10 @@ namespace vcpkg
     DECLARE_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance");
     DECLARE_MESSAGE(WaitingForChildrenToExit, (), "", "Waiting for child processes to exit...");
     DECLARE_MESSAGE(WaitingToTakeFilesystemLock, (msg::path), "", "waiting to take filesystem lock on {path}...");
+    DECLARE_MESSAGE(WaitUntilPackagesUploaded,
+                    (msg::count),
+                    "",
+                    "Wait until the remaining packages ({count}) are uploaded");
     DECLARE_MESSAGE(WarningMessageMustUsePrintWarning,
                     (msg::value),
                     "{value} is is a localized message name like WarningMessageMustUsePrintWarning",
