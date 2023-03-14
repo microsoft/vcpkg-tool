@@ -41,5 +41,8 @@ such as https://github.com/microsoft/vcpkg/pull/23757
   with the new release date, and update SHAs as appropriate in the .sh script. (For example, see
   https://github.com/microsoft/vcpkg/pull/23757)
 13. Merge the tool update PR.
-14. Change the github release in vcpkg-tool from "prerelease" to "release". (This automatically
+14. Follow the instructions at
+https://devdiv.visualstudio.com/DevDiv/_git/vscode-embedded-tools?path=/docs/updating-vcpkg.md
+to update the copy embedded in VS Code.
+15. Change the github release in vcpkg-tool from "prerelease" to "release". (This automatically
   updates the aka.ms links)
