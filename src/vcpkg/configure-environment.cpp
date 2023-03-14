@@ -24,7 +24,7 @@
 namespace
 {
     using namespace vcpkg;
-#if !defined(VCPKG_ARTIFACTS_PATH)
+#if !defined(VCPKG_ARTIFACTS_DEVELOPMENT)
     void extract_ce_tarball(const VcpkgPaths& paths,
                             const Path& ce_tarball,
                             const Path& node_path,
@@ -64,7 +64,7 @@ namespace
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgFailedToProvisionCe);
         }
     }
-#endif // ^^^ !defined(VCPKG_ARTIFACTS_PATH)
+#endif // ^^^ !defined(VCPKG_ARTIFACTS_DEVELOPMENT)
 
     void track_telemetry(Filesystem& fs, const Path& telemetry_file_path)
     {
@@ -125,15 +125,17 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         auto& download_manager = paths.get_download_manager();
         auto node_path = paths.get_tool_exe(Tools::NODE, stdout_sink);
-#if defined(VCPKG_ARTIFACTS_PATH)
+#if defined(VCPKG_ARTIFACTS_DEVELOPMENT)
         // use hard coded in-source copy
         (void)fs;
         (void)download_manager;
-        Path ce_path = MACRO_TO_STRING(VCPKG_ARTIFACTS_PATH);
+        Path ce_path = get_exe_path_of_current_process();
+        ce_path.replace_filename("vcpkg-artifacts/main.js");
+        ce_path.make_preferred();
         // development support: intentionally unlocalized
         msg::println(Color::warning,
                      LocalizedString::from_raw("Using in-development vcpkg-artifacts built at: ").append_raw(ce_path));
-#else // ^^^ VCPKG_ARTIFACTS_PATH / might need to download vvv
+#else // ^^^ VCPKG_ARTIFACTS_DEVELOPMENT / might need to download vvv
 #if defined(VCPKG_CE_SHA)
         auto base_path =
             get_platform_cache_vcpkg().value_or_exit(VCPKG_LINE_INFO) / "artifacts-" VCPKG_BASE_VERSION_AS_STRING;

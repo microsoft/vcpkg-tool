@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "rootDir": ".",
+    "alwaysStrict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "CommonJS",
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitThis": true,
+    "inlineSourceMap": true,
+    "sourceRoot": "https://github.com/microsoft/vcpkg-tool/tree/main/vcpkg-artifacts",
+    "declarationMap": true,
+    "strict": true,
+    "declaration": true,
+    "stripInternal": true,
+    "noEmitHelpers": false,
+    "target": "ESNext",
+    "types": [
+      "node"
+    ],
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "newLine": "LF"
+  },
+  "include": [
+    "./**/*.ts"
+  ],
+  "exclude": [
+    "node_modules/**"
+  ]
+}
