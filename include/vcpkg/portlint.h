@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/files.h>
+#include <vcpkg/base/fwd/message_sinks.h>
 #include <vcpkg/base/fwd/stringview.h>
 
 #include <vcpkg/fwd/packagespec.h>

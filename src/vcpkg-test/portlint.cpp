@@ -1,5 +1,7 @@
 #include <catch2/catch.hpp>
 
+#include <vcpkg/base/message_sinks.h>
+
 #include <vcpkg/portlint.h>
 
 using namespace vcpkg;

@@ -1,3 +1,4 @@
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/util.h>
 

@@ -90,28 +90,39 @@ jobs:
     - script: npm install -g @microsoft/rush
       displayName: Install Rush
       workingDirectory: ce\common\config\rush
-    - script: rush update
+    - script: |
+        set PATH=%PATH%;%APPDATA%\npm
+        rush update
       displayName: Install vcpkg-artifacts Dependencies
       workingDirectory: ce
-    - script: rush lint
+    - script: |
+        set PATH=%PATH%;%APPDATA%\npm
+        rush lint
       displayName: Check vcpkg-artifacts for Linting Errors
       workingDirectory: ce
     - task: CodeQL3000Init@0
       displayName: 'CodeQL Initialize'
-    - script: rush rebuild
+    - script: |
+        set PATH=%PATH%;%APPDATA%\npm
+        rush rebuild
       displayName: Build vcpkg-artifacts Packages
       workingDirectory: ce
     - task: CodeQL3000Finalize@0
       displayName: 'CodeQL Finalize'
-    - script: rush test
+    - script: |
+        set PATH=%PATH%;%APPDATA%\npm
+        rush test
       displayName: Run vcpkg-artifacts Tests
       workingDirectory: ce
     - script: |
+        set PATH=%PATH%;%APPDATA%\npm
         rush set-versions
         node -e "const c = require('./ce/package.json'); p = require('./assets/package.json') ; p.version = c.version; require('fs').writeFileSync('./assets/package.json', JSON.stringify(p,undefined,2)); console.log(``set asset version to `${p.version}``);"
       displayName: Set vcpkg-artifacts Package Versions
       workingDirectory: ce
-    - script: mkdir "$(Build.BinariesDirectory)\ce" && rush deploy -t "$(Build.BinariesDirectory)\ce"
+    - script: |
+        set PATH=%PATH%;%APPDATA%\npm
+        mkdir "$(Build.BinariesDirectory)\ce" && rush deploy -t "$(Build.BinariesDirectory)\ce"
       displayName: Collect vcpkg-artifacts Dependencies
       workingDirectory: ce
     - script: |
@@ -156,7 +167,7 @@ jobs:
       inputs:
         pwsh: true
         filePath: vcpkg-init/mint-standalone-bundle.ps1
-        arguments: '-DestinationTarball "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" -TempDir standalone-temp -SignedFilesRoot "$(Build.BinariesDirectory)" -Deployment OneLiner'
+        arguments: '-DestinationTarball "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" -TempDir standalone-temp -SignedFilesRoot "$(Build.BinariesDirectory)" -Deployment OneLiner -VcpkgBaseVersion "$(VCPKG_INITIAL_BASE_VERSION)"'
     - script: npm pack
       displayName: Create vcpkg-artifacts Pack
       workingDirectory: $(Build.BinariesDirectory)/ce
@@ -366,7 +377,7 @@ jobs:
       inputs:
         pwsh: true
         filePath: vcpkg-init/mint-standalone-bundle.ps1
-        arguments: '-DestinationDir "$(Build.ArtifactStagingDirectory)/vs-insertion/staging" -TempDir standalone-temp -SignedFilesRoot "$(Build.ArtifactStagingDirectory)\staging" -Deployment "VisualStudio"'
+        arguments: '-DestinationDir "$(Build.ArtifactStagingDirectory)/vs-insertion/staging" -TempDir standalone-temp -SignedFilesRoot "$(Build.ArtifactStagingDirectory)\staging" -Deployment "VisualStudio" -VcpkgBaseVersion "$(VCPKG_BASE_VERSION)"'
     - task: CmdLine@2
       displayName: 'Arrange Drop'
       inputs:

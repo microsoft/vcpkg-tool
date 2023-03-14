@@ -6,11 +6,16 @@ Param(
     [string]$DestinationDir,
     [Parameter(Mandatory = $True)]
     [string]$TempDir,
-    [Parameter()]
+    [Parameter(Mandatory = $True)]
     [string]$Deployment,
     [Parameter(Mandatory = $True)]
-    [string]$SignedFilesRoot
+    [string]$SignedFilesRoot,
+    [Parameter(Mandatory = $true)]
+    [string]$VcpkgBaseVersion
 )
+
+$sha = Get-Content "$PSScriptRoot/vcpkg-scripts-sha.txt" -Raw
+$sha = $sha.Trim()
 
 if ($Deployment -eq 'VisualStudio') {
     $BundleConfig = @{
@@ -28,9 +33,6 @@ if ($Deployment -eq 'VisualStudio') {
         'deployment'     = $Deployment;
     }
 }
-
-$sha = Get-Content "$PSScriptRoot/vcpkg-scripts-sha.txt" -Raw
-$sha = $sha.Trim()
 
 $scripts_dependencies = @(
     'build_info.cmake',
@@ -82,6 +84,8 @@ try {
         Pop-Location
     }
 
+    Set-Content -Path "out/vcpkg-version.txt" -Value $VcpkgBaseVersion -NoNewLine -Encoding Ascii
+    Copy-Item -Path "$PSScriptRoot/vcpkg-cmd.cmd" -Destination 'out/vcpkg-cmd.cmd'
     Copy-Item -Path "$SignedFilesRoot/vcpkg-init" -Destination 'out/vcpkg-init'
     Copy-Item -Path "$SignedFilesRoot/vcpkg-init.ps1" -Destination 'out/vcpkg-init.ps1'
     Copy-Item -Path "$SignedFilesRoot/vcpkg-init.cmd" -Destination 'out/vcpkg-init.cmd'

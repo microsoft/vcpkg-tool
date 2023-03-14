@@ -470,48 +470,6 @@ namespace vcpkg::msg
 namespace vcpkg
 {
 
-    void MessageSink::println_warning(const LocalizedString& s)
-    {
-        print(Color::warning, format(msg::msgWarningMessage).append(s).append_raw('\n'));
-    }
-
-    void MessageSink::println_error(const LocalizedString& s)
-    {
-        print(Color::error, format(msg::msgErrorMessage).append(s).append_raw('\n'));
-    }
-}
-
-namespace
-{
-    struct NullMessageSink : MessageSink
-    {
-        virtual void print(Color, StringView) override { }
-    };
-
-    NullMessageSink null_sink_instance;
-
-    struct StdOutMessageSink : MessageSink
-    {
-        virtual void print(Color c, StringView sv) override { msg::write_unlocalized_text_to_stdout(c, sv); }
-    };
-
-    StdOutMessageSink stdout_sink_instance;
-
-    struct StdErrMessageSink : MessageSink
-    {
-        virtual void print(Color c, StringView sv) override { msg::write_unlocalized_text_to_stderr(c, sv); }
-    };
-
-    StdErrMessageSink stderr_sink_instance;
-}
-
-namespace vcpkg
-{
-
-    MessageSink& null_sink = null_sink_instance;
-    MessageSink& stderr_sink = stderr_sink_instance;
-    MessageSink& stdout_sink = stdout_sink_instance;
-
     REGISTER_MESSAGE(ABaseline);
     REGISTER_MESSAGE(ABoolean);
     REGISTER_MESSAGE(ABaselineObject);
@@ -1267,8 +1225,6 @@ namespace vcpkg
     REGISTER_MESSAGE(UnsupportedPort);
     REGISTER_MESSAGE(UnsupportedPortDependency);
     REGISTER_MESSAGE(UnsupportedShortOptions);
-    REGISTER_MESSAGE(UnsupportedSupportsExpression);
-    REGISTER_MESSAGE(UnsupportedSupportsExpressionWarning);
     REGISTER_MESSAGE(UnsupportedSyntaxInCDATA);
     REGISTER_MESSAGE(UnsupportedSystemName);
     REGISTER_MESSAGE(UnsupportedToolchain);

@@ -1,4 +1,5 @@
 #include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/message_sinks.h>
 
 #include <vcpkg/configuration.h>
 #include <vcpkg/documentation.h>
