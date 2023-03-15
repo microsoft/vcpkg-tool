@@ -355,8 +355,8 @@ namespace vcpkg
                 continue;
             }
 
-            const StringView file_name(*first);
-            auto maybe_response_file_lines = response_file_source.read_lines(file_name.substr(1));
+            const auto file_name = StringView{*first}.substr(1);
+            auto maybe_response_file_lines = response_file_source.read_lines(file_name);
             if (auto response_file_lines = maybe_response_file_lines.get())
             {
                 if (response_file_lines->empty())
