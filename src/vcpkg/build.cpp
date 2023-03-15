@@ -3,6 +3,7 @@
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
@@ -979,8 +980,13 @@ namespace vcpkg
         }
 
         const BuildInfo build_info = read_build_info(fs, paths.build_info_file_path(action.spec));
-        const size_t error_count =
-            perform_post_build_lint_checks(action.spec, paths, pre_build_info, build_info, scfl.source_location);
+        size_t error_count = 0;
+        {
+            FileSink file_sink{fs, stdoutlog, Append::YES};
+            CombiningSink combo_sink{stdout_sink, file_sink};
+            error_count = perform_post_build_lint_checks(
+                action.spec, paths, pre_build_info, build_info, scfl.source_location, combo_sink);
+        };
 
         auto find_itr = action.feature_dependencies.find("core");
         Checks::check_exit(VCPKG_LINE_INFO, find_itr != action.feature_dependencies.end());

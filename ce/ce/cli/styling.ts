@@ -3,6 +3,7 @@
 
 import { cyan, red, yellow } from 'chalk';
 import { argv } from 'process';
+import { i } from '../i18n';
 import { Session } from '../session';
 import { CommandLine } from './command-line';
 
@@ -23,8 +24,14 @@ export function indent(text: string | Array<string>): string | Array<string> {
 }
 
 export const log: (message?: any) => void = console.log;
-export const error: (message?: any) => void = (text) => console.log(`${red.bold('ERROR: ')}${text}`);
-export const warning: (message?: any) => void = (text) => console.log(`${yellow.bold('WARNING: ')}${text}`);
+export const error: (message?: any) => void = (text) => {
+  const errorLocalized = i`error:`;
+  return console.log(`${red.bold(errorLocalized)} ${text}`);
+};
+export const warning: (message?: any) => void = (text) => {
+  const warningLocalized = i`warning:`;
+  return console.log(`${yellow.bold(warningLocalized)} ${text}`);
+};
 export const debug: (message?: any) => void = (text) => {
   if (argv.any(arg => arg === '--debug')) {
     console.log(`${cyan.bold('debug: ')}${text}`);

@@ -1,6 +1,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
@@ -485,7 +486,7 @@ namespace vcpkg
                 {
                     auto opt = Strings::strto<int>(ZStringView{constraint_value}.substr(h + 1));
                     auto v = opt.get();
-                    if (v && *v > 0)
+                    if (v && *v >= 0)
                     {
                         dep.constraint.port_version = *v;
                     }

@@ -3,6 +3,7 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/lazy.h>
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>

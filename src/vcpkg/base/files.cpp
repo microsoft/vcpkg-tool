@@ -1473,14 +1473,15 @@ namespace vcpkg
 
     WriteFilePointer::WriteFilePointer(WriteFilePointer&&) noexcept = default;
 
-    WriteFilePointer::WriteFilePointer(const Path& file_path, std::error_code& ec) : FilePointer(file_path)
+    WriteFilePointer::WriteFilePointer(const Path& file_path, Append append, std::error_code& ec)
+        : FilePointer(file_path)
     {
 #if defined(_WIN32)
-        m_fs = ::_wfsopen(to_stdfs_path(file_path).c_str(), L"wb", _SH_DENYWR);
+        m_fs = ::_wfsopen(to_stdfs_path(file_path).c_str(), append == Append::YES ? L"ab" : L"wb", _SH_DENYWR);
         ec.assign(m_fs == nullptr ? errno : 0, std::generic_category());
         if (m_fs != nullptr) ::setvbuf(m_fs, NULL, _IONBF, 0);
 #else  // ^^^ _WIN32 / !_WIN32 vvv
-        m_fs = ::fopen(file_path.c_str(), "wb");
+        m_fs = ::fopen(file_path.c_str(), append == Append::YES ? "ab" : "wb");
         if (m_fs)
         {
             ec.clear();
@@ -2051,16 +2052,26 @@ namespace vcpkg
         return ExpectedL<ReadFilePointer>{std::move(ret)};
     }
 
-    WriteFilePointer Filesystem::open_for_write(const Path& file_path, LineInfo li)
+    WriteFilePointer Filesystem::open_for_write(const Path& file_path, Append append, LineInfo li)
     {
         std::error_code ec;
-        auto ret = this->open_for_write(file_path, ec);
+        auto ret = this->open_for_write(file_path, append, ec);
         if (ec)
         {
             exit_filesystem_call_error(li, ec, __func__, {file_path});
         }
 
         return ret;
+    }
+
+    WriteFilePointer Filesystem::open_for_write(const Path& file_path, std::error_code& ec)
+    {
+        return open_for_write(file_path, Append::NO, ec);
+    }
+
+    WriteFilePointer Filesystem::open_for_write(const Path& file_path, LineInfo li)
+    {
+        return open_for_write(file_path, Append::NO, li);
     }
 
     struct RealFilesystem final : Filesystem
@@ -2627,7 +2638,7 @@ namespace vcpkg
                                  const std::vector<std::string>& lines,
                                  std::error_code& ec) override
         {
-            vcpkg::WriteFilePointer output{file_path, ec};
+            vcpkg::WriteFilePointer output{file_path, Append::NO, ec};
             if (!ec)
             {
                 for (const auto& line : lines)
@@ -3313,7 +3324,7 @@ namespace vcpkg
         virtual void write_contents(const Path& file_path, StringView data, std::error_code& ec) override
         {
             StatsTimer t(g_us_filesystem_stats);
-            auto f = open_for_write(file_path, ec);
+            auto f = open_for_write(file_path, Append::NO, ec);
             if (!ec)
             {
                 auto count = f.write(data.data(), 1, data.size());
@@ -3579,9 +3590,9 @@ namespace vcpkg
             return ReadFilePointer{file_path, ec};
         }
 
-        virtual WriteFilePointer open_for_write(const Path& file_path, std::error_code& ec) override
+        virtual WriteFilePointer open_for_write(const Path& file_path, Append append, std::error_code& ec) override
         {
-            return WriteFilePointer{file_path, ec};
+            return WriteFilePointer{file_path, append, ec};
         }
     };
 
