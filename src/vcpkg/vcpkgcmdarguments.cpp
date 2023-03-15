@@ -294,7 +294,7 @@ namespace vcpkg
         parse_feature_flags(feature_flags, args);
 
         // --debug-env implies --debug
-        if (const auto p = args.debug_env.get()) args.debug_env = *p;
+        if (const auto p = args.debug_env.get()) args.debug = *p;
 
         auto maybe_command = args.parser.extract_first_command_like_arg_lowercase();
         if (auto command = maybe_command.get())
