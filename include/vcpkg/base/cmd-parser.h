@@ -61,7 +61,7 @@ namespace vcpkg
 
         // Parses a switch from the input named switch_name, assumed to default to off, returning
         // true if the switch was encountered and is true.
-        bool parse_switch(StringView switch_name, StabilityTag stability);
+        bool parse_switch_combined(StringView switch_name, StabilityTag stability);
 
         // And also adds a help entry:
         bool parse_switch(StringView switch_name,
@@ -72,7 +72,7 @@ namespace vcpkg
                           StabilityTag stability,
                           Optional<bool>& value,
                           const LocalizedString& help_text);
-        bool parse_switch(StringView switch_name, StabilityTag stability, const LocalizedString& help_text);
+        bool parse_switch_combined(StringView switch_name, StabilityTag stability, const LocalizedString& help_text);
 
         // Parses an option from the input named option_name, and stores the value if
         // encountered into value. Returns true if the option was encountered.

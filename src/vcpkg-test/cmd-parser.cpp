@@ -248,7 +248,7 @@ TEST_CASE ("Arguments can be parsed as switches", "[cmd_parser]")
     CHECK(casey_switch);
 
     // Switches can use the simple return value form
-    CHECK(uut.parse_switch("simple", StabilityTag::Standard));
+    CHECK(uut.parse_switch_combined("simple", StabilityTag::Standard));
 
     auto actual_remaining = uut.get_remaining_args();
     CHECK(expected_remaining == actual_remaining);
@@ -415,7 +415,7 @@ TEST_CASE ("Options missing values in the middle generate errors", "[cmd_parser]
     v.emplace_back("--switch");
     v.emplace_back("a");
     CmdParser uut{v};
-    CHECK(uut.parse_switch("switch", StabilityTag::Standard));
+    CHECK(uut.parse_switch_combined("switch", StabilityTag::Standard));
     std::string value;
     CHECK(!uut.parse_option("missing-value", StabilityTag::Standard, value));
     CHECK(value.empty());
@@ -550,7 +550,7 @@ TEST_CASE ("Multi-options missing values in the middle generate errors", "[cmd_p
     v.emplace_back("--switch");
     v.emplace_back("a");
     CmdParser uut{v};
-    CHECK(uut.parse_switch("switch", StabilityTag::Standard));
+    CHECK(uut.parse_switch_combined("switch", StabilityTag::Standard));
     std::vector<std::string> value;
     CHECK(!uut.parse_multi_option("missing-value", StabilityTag::Standard, value));
     CHECK(value.empty());
@@ -571,8 +571,8 @@ TEST_CASE ("Help table is generated", "[cmd_parser]")
     uut.parse_switch("y", StabilityTag::Standard, unused_optional_bool, LocalizedString::from_raw("y help"));
     uut.parse_switch("d", StabilityTag::Experimental, unused_optional_bool, LocalizedString::from_raw("d help"));
 
-    uut.parse_switch("x", StabilityTag::Standard, LocalizedString::from_raw("x help"));
-    uut.parse_switch("f", StabilityTag::Experimental, LocalizedString::from_raw("f help"));
+    uut.parse_switch_combined("x", StabilityTag::Standard, LocalizedString::from_raw("x help"));
+    uut.parse_switch_combined("f", StabilityTag::Experimental, LocalizedString::from_raw("f help"));
 
     std::string unused_option;
     uut.parse_option("g", StabilityTag::Standard, unused_option, LocalizedString::from_raw("g help"));
@@ -1053,7 +1053,7 @@ TEST_CASE ("real world commands", "[cmd_parser]")
         CHECK(sort_value.empty());
         CHECK(uut.get_errors() == localized({"error: the option 'sort' requires a value; if you intended to set 'sort' "
                                              "to '--dot', use the equals form instead: --sort=--dot"}));
-        CHECK(uut.parse_switch("dot", StabilityTag::Standard));
+        CHECK(uut.parse_switch_combined("dot", StabilityTag::Standard));
         CHECK(uut.consume_only_remaining_arg("depend-info").empty());
         CHECK(uut.get_errors() == localized({"error: the option 'sort' requires a value; if you intended to set 'sort' "
                                              "to '--dot', use the equals form instead: --sort=--dot",
@@ -1068,7 +1068,7 @@ TEST_CASE ("real world commands", "[cmd_parser]")
         CmdParser uut{std::vector<std::string>{"depend-info", "--sort", "--dot", "--x-tree", "--zlib", "bar"}};
         CHECK(uut.extract_first_command_like_arg_lowercase().value_or_exit(VCPKG_LINE_INFO) == "depend-info");
         CHECK(uut.get_errors().empty());
-        CHECK(uut.parse_switch("dot", StabilityTag::Standard));
+        CHECK(uut.parse_switch_combined("dot", StabilityTag::Standard));
         CHECK(uut.get_errors().empty());
         std::string sort_value;
         CHECK(!uut.parse_option("sort", StabilityTag::Standard, sort_value));
@@ -1087,42 +1087,42 @@ TEST_CASE ("inverted switches", "[cmd_parser]")
     // Support for existing switches that already start with "no-"
     {
         CmdParser uut{std::vector<std::string>{"--no-switch"}};
-        CHECK(uut.parse_switch("no-switch", StabilityTag::Standard));
+        CHECK(uut.parse_switch_combined("no-switch", StabilityTag::Standard));
         CHECK(uut.get_errors().empty());
         CHECK(uut.get_remaining_args().empty());
     }
 
     {
         CmdParser uut{std::vector<std::string>{"--switch"}};
-        CHECK(!uut.parse_switch("no-switch", StabilityTag::Standard));
+        CHECK(!uut.parse_switch_combined("no-switch", StabilityTag::Standard));
         CHECK(uut.get_errors().empty());
         CHECK(uut.get_remaining_args().empty());
     }
 
     {
         CmdParser uut{std::vector<std::string>{}};
-        CHECK(!uut.parse_switch("no-switch", StabilityTag::Standard));
+        CHECK(!uut.parse_switch_combined("no-switch", StabilityTag::Standard));
         CHECK(uut.get_errors().empty());
         CHECK(uut.get_remaining_args().empty());
     }
 
     {
         CmdParser uut{std::vector<std::string>{"--no-x-switch"}};
-        CHECK(uut.parse_switch("no-switch", StabilityTag::Standard));
+        CHECK(uut.parse_switch_combined("no-switch", StabilityTag::Standard));
         CHECK(uut.get_errors().empty());
         CHECK(uut.get_remaining_args().empty());
     }
 
     {
         CmdParser uut{std::vector<std::string>{"--x-switch"}};
-        CHECK(!uut.parse_switch("no-switch", StabilityTag::Standard));
+        CHECK(!uut.parse_switch_combined("no-switch", StabilityTag::Standard));
         CHECK(uut.get_errors().empty());
         CHECK(uut.get_remaining_args().empty());
     }
 
     {
         CmdParser uut{std::vector<std::string>{}};
-        CHECK(!uut.parse_switch("no-switch", StabilityTag::Standard));
+        CHECK(!uut.parse_switch_combined("no-switch", StabilityTag::Standard));
         CHECK(uut.get_errors().empty());
         CHECK(uut.get_remaining_args().empty());
     }
@@ -1134,7 +1134,7 @@ TEST_CASE ("inverted switches", "[cmd_parser]")
             "--no-x-switch",
         }};
 
-        CHECK(uut.parse_switch("no-switch", StabilityTag::Experimental));
+        CHECK(uut.parse_switch_combined("no-switch", StabilityTag::Experimental));
         CHECK(uut.get_errors() == localized({"error: the switch 'no-switch' was specified multiple times"}));
         CHECK(uut.get_remaining_args().empty());
     }
@@ -1142,7 +1142,7 @@ TEST_CASE ("inverted switches", "[cmd_parser]")
     // Also note that x- and no- can be in either order.
     {
         CmdParser uut{std::vector<std::string>{"--x-no-switch"}};
-        CHECK(uut.parse_switch("no-switch", StabilityTag::Standard));
+        CHECK(uut.parse_switch_combined("no-switch", StabilityTag::Standard));
         CHECK(uut.get_errors().empty());
         CHECK(uut.get_remaining_args().empty());
     }
@@ -1154,7 +1154,7 @@ TEST_CASE ("inverted switches", "[cmd_parser]")
             "--x-no-switch",
         }};
 
-        CHECK(uut.parse_switch("no-switch", StabilityTag::Experimental));
+        CHECK(uut.parse_switch_combined("no-switch", StabilityTag::Experimental));
         CHECK(uut.get_errors() == localized({"error: the switch 'no-switch' was specified multiple times"}));
         CHECK(uut.get_remaining_args().empty());
     }
@@ -1162,21 +1162,21 @@ TEST_CASE ("inverted switches", "[cmd_parser]")
     // But not both
     {
         CmdParser uut{std::vector<std::string>{"--no-x-no-switch"}};
-        CHECK(!uut.parse_switch("no-switch", StabilityTag::Standard));
+        CHECK(!uut.parse_switch_combined("no-switch", StabilityTag::Standard));
         CHECK(uut.get_errors().empty());
         CHECK(uut.get_remaining_args() == std::vector<std::string>{"--no-x-no-switch"});
     }
 
     {
         CmdParser uut{std::vector<std::string>{"--x-z-no-switch"}};
-        CHECK(!uut.parse_switch("no-switch", StabilityTag::Standard));
+        CHECK(!uut.parse_switch_combined("no-switch", StabilityTag::Standard));
         CHECK(uut.get_errors().empty());
         CHECK(uut.get_remaining_args() == std::vector<std::string>{"--x-z-no-switch"});
     }
 
     {
         CmdParser uut{std::vector<std::string>{"--z-x-no-switch"}};
-        CHECK(!uut.parse_switch("no-switch", StabilityTag::Standard));
+        CHECK(!uut.parse_switch_combined("no-switch", StabilityTag::Standard));
         CHECK(uut.get_errors().empty());
         CHECK(uut.get_remaining_args() == std::vector<std::string>{"--z-x-no-switch"});
     }

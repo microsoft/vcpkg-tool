@@ -455,7 +455,7 @@ namespace vcpkg
         return parsed;
     }
 
-    bool CmdParser::parse_switch(StringView switch_name, StabilityTag stability)
+    bool CmdParser::parse_switch_combined(StringView switch_name, StabilityTag stability)
     {
         bool target = false;
         parse_switch(switch_name, stability, target);
@@ -482,11 +482,13 @@ namespace vcpkg
         return parse_switch(switch_name, stability, value);
     }
 
-    bool CmdParser::parse_switch(StringView switch_name, StabilityTag stability, const LocalizedString& help_text)
+    bool CmdParser::parse_switch_combined(StringView switch_name,
+                                          StabilityTag stability,
+                                          const LocalizedString& help_text)
     {
         Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
         options_table.emplace(SwitchName{switch_name.to_string(), stability}, help_text);
-        return parse_switch(switch_name, stability);
+        return parse_switch_combined(switch_name, stability);
     }
 
     bool CmdParser::parse_option(StringView option_name, StabilityTag stability, std::string& value)
