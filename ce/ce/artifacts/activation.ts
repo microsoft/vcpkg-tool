@@ -317,10 +317,6 @@ export class Activation {
     }
   }
 
-  get environmentVariables() {
-    return linq.entries(this.#environmentChanges).selectAsync(async ([key, value]) => <Tuple<string, Set<string>>>[key, await this.resolveAndVerify(value)]);
-  }
-
   /** a collection of arbitrary properties from artifacts */
   addProperty(name: string, value: string | Iterable<string>) {
     if (!name) {
@@ -573,7 +569,9 @@ export class Activation {
     }
 
     // combine environment variables with multiple values with spaces (uses: CFLAGS, etc)
-    for await (const [variable, values] of this.environmentVariables) {
+    const environmentVariables = linq.entries(this.#environmentChanges)
+      .selectAsync(async ([key, value]) => <Tuple<string, Set<string>>>[key, await this.resolveAndVerify(value)]);
+    for await (const [variable, values] of environmentVariables) {
       env[variable] = linq.join(values, ' ');
       undo[variable] = this.environment[variable] || '';
     }
@@ -668,10 +666,7 @@ export class Activation {
       this.channels.message(i`Activating: ${newUndoStack.join(' + ')}`);
 
       // generate shell script
-      const contents = generateScriptContent(extname(postscriptFile.fsPath), variables, aliases);
-      this.channels.debug(`--------[START SHELL SCRIPT FILE]--------\n${contents}\n--------[END SHELL SCRIPT FILE]---------`);
-      this.channels.debug(`Postscript file ${postscriptFile}`);
-      await postscriptFile.writeUTF8(contents);
+      await writePostscript(this.channels, postscriptFile, variables, aliases);
 
       const nonEmptyAliases : Array<string> = [];
       for (const alias in aliases) {
@@ -727,6 +722,13 @@ function generateScriptContent(kind: string, variables: Record<string, string | 
   return '';
 }
 
+async function writePostscript(channels: Channels, postscriptFile: Uri, variables: Record<string, string | undefined>, aliases: Record<string, string>) {
+  const contents = generateScriptContent(extname(postscriptFile.fsPath), variables, aliases);
+  channels.debug(`--------[START SHELL SCRIPT FILE]--------\n${contents}\n--------[END SHELL SCRIPT FILE]---------`);
+  channels.debug(`Postscript file ${postscriptFile}`);
+  await postscriptFile.writeUTF8(contents);
+}
+
 function generateJson(variables: Record<string, string>, defines: Record<string, string>, aliases: Record<string, string>,
   properties:Record<string, Array<string>>, locations: Record<string, string>, paths: Record<string, Array<string>>, tools: Record<string, string>): string {
 
@@ -747,6 +749,7 @@ function generateJson(variables: Record<string, string>, defines: Record<string,
 function printDeactivatingMessage(channels: Channels, stack: Array<string>) {
   channels.message(i`Deactivating: ${stack.join(' + ')}`);
 }
+
 
 export async function deactivate(session: Session, warnIfNoActivation: boolean) {
   const undoVariableValue = process.env[undoVariableName];
@@ -785,11 +788,7 @@ export async function deactivate(session: Session, warnIfNoActivation: boolean) 
       }
     }
 
-    const scriptContent = generateScriptContent(extname(postscriptFileName),
-      deactivationEnvironment, deactivateAliases);
-    session.channels.debug(`--------[START SHELL SCRIPT FILE]--------\n${scriptContent}\n--------[END SHELL SCRIPT FILE]---------`);
-    session.channels.debug(`Postscript file ${postscriptFile}`);
-    await postscriptFile.writeUTF8(scriptContent);
+    await writePostscript(session.channels, postscriptFile, deactivationEnvironment, deactivateAliases);
     await undoFileUri.delete();
   }
 
@@ -797,7 +796,7 @@ export async function deactivate(session: Session, warnIfNoActivation: boolean) 
 }
 
 // replace all values in target with those in source
-function undoActivation(target: Record<string, string | undefined>, source: Record<string, string | undefined>) {
+function undoActivation(target: NodeJS.ProcessEnv, source: Record<string, string | undefined>) {
   for (const key in source) {
     const value = source[key];
     if (value) {
