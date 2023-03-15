@@ -36,11 +36,12 @@ namespace vcpkg
     ExpectedL<Unit> replace_response_file_parameters(std::vector<std::string>& inputs,
                                                      const ILineReader& response_file_source);
 
-    struct SwitchName
+    // This exists so that options sort without the x- or z- prefix
+    struct OptionTableKey
     {
         std::string switch_name;
         StabilityTag stability;
-        bool operator<(const SwitchName& rhs) const;
+        bool operator<(const OptionTableKey& rhs) const;
     };
 
     struct CmdParser
@@ -167,7 +168,7 @@ namespace vcpkg
         std::vector<std::string> argument_strings_lowercase;
         std::vector<char> argument_parsed;   // Think vector<bool>, records whether the argument was consumed.
         std::vector<LocalizedString> errors; // Pretty messages for any errors that are encountered, if any.
-        std::map<SwitchName, LocalizedString> options_table;
+        std::map<OptionTableKey, LocalizedString> options_table;
     };
 
     void delistify_conjoined_multivalue(std::vector<std::string>& target);

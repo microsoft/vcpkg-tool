@@ -388,7 +388,7 @@ namespace vcpkg
         return Unit{};
     }
 
-    bool SwitchName::operator<(const SwitchName& rhs) const { return switch_name < rhs.switch_name; }
+    bool OptionTableKey::operator<(const OptionTableKey& rhs) const { return switch_name < rhs.switch_name; }
 
     CmdParser::CmdParser() = default;
 
@@ -467,7 +467,7 @@ namespace vcpkg
                                  const LocalizedString& help_text)
     {
         Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
-        options_table.emplace(SwitchName{switch_name.to_string(), stability}, help_text);
+        options_table.emplace(OptionTableKey{switch_name.to_string(), stability}, help_text);
         return parse_switch(switch_name, stability, value);
     }
 
@@ -477,7 +477,7 @@ namespace vcpkg
                                  const LocalizedString& help_text)
     {
         Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
-        options_table.emplace(SwitchName{switch_name.to_string(), stability}, help_text);
+        options_table.emplace(OptionTableKey{switch_name.to_string(), stability}, help_text);
         return parse_switch(switch_name, stability, value);
     }
 
@@ -486,7 +486,7 @@ namespace vcpkg
                                           const LocalizedString& help_text)
     {
         Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
-        options_table.emplace(SwitchName{switch_name.to_string(), stability}, help_text);
+        options_table.emplace(OptionTableKey{switch_name.to_string(), stability}, help_text);
         return parse_switch_combined(switch_name, stability);
     }
 
@@ -565,7 +565,7 @@ namespace vcpkg
                                  const LocalizedString& help_text)
     {
         Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
-        options_table.emplace(SwitchName{switch_name_to_option_name(option_name), stability}, help_text);
+        options_table.emplace(OptionTableKey{switch_name_to_option_name(option_name), stability}, help_text);
         return parse_option(option_name, stability, value);
     }
 
@@ -575,7 +575,7 @@ namespace vcpkg
                                  const LocalizedString& help_text)
     {
         Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
-        options_table.emplace(SwitchName{switch_name_to_option_name(option_name), stability}, help_text);
+        options_table.emplace(OptionTableKey{switch_name_to_option_name(option_name), stability}, help_text);
         return parse_option(option_name, stability, value);
     }
 
@@ -665,7 +665,7 @@ namespace vcpkg
                                        const LocalizedString& help_text)
     {
         Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
-        options_table.emplace(SwitchName{switch_name_to_option_name(option_name), stability}, help_text);
+        options_table.emplace(OptionTableKey{switch_name_to_option_name(option_name), stability}, help_text);
         return parse_multi_option(option_name, stability, value);
     }
 
@@ -675,7 +675,7 @@ namespace vcpkg
                                        const LocalizedString& help_text)
     {
         Checks::check_exit(VCPKG_LINE_INFO, stability != StabilityTag::ImplementationDetail);
-        options_table.emplace(SwitchName{switch_name_to_option_name(option_name), stability}, help_text);
+        options_table.emplace(OptionTableKey{switch_name_to_option_name(option_name), stability}, help_text);
         return parse_multi_option(option_name, stability, value);
     }
 
