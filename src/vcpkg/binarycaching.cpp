@@ -949,20 +949,15 @@ namespace
     };
     struct GHABinaryProvider : IBinaryProvider
     {
-        GHABinaryProvider(const VcpkgPaths& paths, bool read, bool write) : paths(paths)
+        GHABinaryProvider(const VcpkgPaths& paths,
+                          bool read,
+                          bool write,
+                          const Optional<std::string>& url,
+                          const Optional<std::string>& token)
+            : paths(paths)
         {
             m_read_cache_key = get_environment_variable("VCPKG_GHA_READ_KEY").value_or("vcpkg");
             m_write_cache_key = get_environment_variable("VCPKG_GHA_WRITE_KEY").value_or("vcpkg");
-
-            auto url = get_environment_variable("ACTIONS_CACHE_URL");
-            auto token = get_environment_variable("ACTIONS_RUNTIME_TOKEN");
-            if (!url.has_value() || !token.has_value())
-            {
-                msg::println(Color::error,
-                             msgGHAParametersMissing,
-                             msg::url = "https://learn.microsoft.com/en-us/vcpkg/users/binarycaching#gha");
-                return;
-            }
 
             if (read) m_read_url = url.value_or_exit(VCPKG_LINE_INFO) + "_apis/artifactcache/cache";
             if (write) m_write_url = url.value_or_exit(VCPKG_LINE_INFO) + "_apis/artifactcache/caches";
@@ -2570,7 +2565,13 @@ ExpectedL<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
 
     if (s.gha_read || s.gha_write)
     {
-        providers.push_back(std::make_unique<GHABinaryProvider>(paths, s.gha_read, s.gha_write));
+        auto url = get_environment_variable("ACTIONS_CACHE_URL");
+        auto token = get_environment_variable("ACTIONS_RUNTIME_TOKEN");
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               (url.has_value() && token.has_value()),
+                               msgGHAParametersMissing,
+                               msg::url = "https://learn.microsoft.com/en-us/vcpkg/users/binarycaching#gha");
+        providers.push_back(std::make_unique<GHABinaryProvider>(paths, s.gha_read, s.gha_write, url, token));
     }
 
     if (!s.url_templates_to_get.empty())
