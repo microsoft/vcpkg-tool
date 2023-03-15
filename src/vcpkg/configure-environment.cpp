@@ -85,20 +85,34 @@ namespace
         }
 
         auto acquired_artifacts = pparsed->get("acquired_artifacts");
-        if (!acquired_artifacts)
+        if (acquired_artifacts)
+        {
+            if (acquired_artifacts->is_string())
+            {
+                get_global_metrics_collector().track_string(StringMetric::AcquiredArtifacts,
+                                                            acquired_artifacts->string(VCPKG_LINE_INFO));
+            }
+            Debug::println("Acquired artifacts was not a string.");
+        }
+        else
         {
             Debug::println("No artifacts acquired.");
-            return;
         }
 
-        if (!acquired_artifacts->is_string())
+        auto activated_artifacts = pparsed->get("activated_artifacts");
+        if (activated_artifacts)
         {
-            Debug::println("Acquired artifacts was not a string.");
-            return;
+            if (activated_artifacts->is_string())
+            {
+                get_global_metrics_collector().track_string(StringMetric::ActivatedArtifacts,
+                                                            activated_artifacts->string(VCPKG_LINE_INFO));
+            }
+            Debug::println("Activated artifacts was not a string.");
         }
-
-        get_global_metrics_collector().track_string(StringMetric::AcquiredArtifacts,
-                                                    acquired_artifacts->string(VCPKG_LINE_INFO));
+        else
+        {
+            Debug::println("No artifacts activated.");
+        }
     }
 }
 

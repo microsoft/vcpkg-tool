@@ -59,7 +59,7 @@ export type SessionSettings = {
   readonly globalConfig?: string;
 }
 
-interface AcquiredArtifactEntry {
+interface ArtifactEntry {
   registryUri: string;
   id: string;
   version: string;
@@ -69,7 +69,7 @@ function hexsha(content: string) {
   return createHash('sha256').update(content, 'ascii').digest('hex');
 }
 
-function formatAcquiredArtifactEntry(entry: AcquiredArtifactEntry): string {
+function formatArtifactEntry(entry: ArtifactEntry): string {
   // we hash all the things to remove PII
   return `${hexsha(entry.registryUri)}:${hexsha(entry.id)}:${hexsha(entry.version)}`;
 }
@@ -244,21 +244,27 @@ export class Session {
     return await MetadataFile.parseConfiguration(filename, await uri.readUTF8(), this);
   }
 
-  readonly #acquiredArtifacts: Array<AcquiredArtifactEntry> = [];
+  readonly #acquiredArtifacts: Array<ArtifactEntry> = [];
+  readonly #activatedArtifacts: Array<ArtifactEntry> = [];
 
   trackAcquire(registryUri: string, id: string, version: string) {
-    this.#acquiredArtifacts.push({registryUri: registryUri, id: id, version: version});
+    this.#acquiredArtifacts.push({ registryUri: registryUri, id: id, version: version });
+  }
+
+  trackActivate(registryUri: string, id: string, version: string) {
+    this.#activatedArtifacts.push({ registryUri: registryUri, id: id, version: version });
   }
 
   writeTelemetry(): Promise<any> {
-    if (this.#acquiredArtifacts.length !== 0) {
-      const acquiredArtifacts = this.#acquiredArtifacts.map(formatAcquiredArtifactEntry).join(',');
-      const telemetryFile = this.telemetryFile;
-      if (telemetryFile) {
-        return telemetryFile.writeUTF8(JSON.stringify({
-          'acquired_artifacts': acquiredArtifacts
-        }));
-      }
+    const acquiredArtifacts = this.#acquiredArtifacts.map(formatArtifactEntry).join(',');
+    const activatedArtifacts = this.#activatedArtifacts.map(formatArtifactEntry).join(',');
+
+    const telemetryFile = this.telemetryFile;
+    if (telemetryFile) {
+      return telemetryFile.writeUTF8(JSON.stringify({
+        'acquired_artifacts': acquiredArtifacts,
+        'activated_artifacts': activatedArtifacts
+      }));
     }
 
     return Promise.resolve(undefined);
