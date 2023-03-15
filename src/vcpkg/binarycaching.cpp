@@ -956,9 +956,6 @@ namespace
                           const Optional<std::string>& token)
             : paths(paths)
         {
-            m_read_cache_key = get_environment_variable("VCPKG_GHA_READ_KEY").value_or("vcpkg");
-            m_write_cache_key = get_environment_variable("VCPKG_GHA_WRITE_KEY").value_or("vcpkg");
-
             if (read) m_read_url = url.value_or_exit(VCPKG_LINE_INFO) + "_apis/artifactcache/cache";
             if (write) m_write_url = url.value_or_exit(VCPKG_LINE_INFO) + "_apis/artifactcache/caches";
             m_token_header = "Authorization: Bearer " + token.value_or_exit(VCPKG_LINE_INFO);
@@ -984,7 +981,7 @@ namespace
                            .string_arg(m_read_url)
                            .string_arg("-G")
                            .string_arg("-d")
-                           .string_arg("keys=" + m_read_cache_key)
+                           .string_arg("keys=vcpkg")
                            .string_arg("-d")
                            .string_arg("version=" + abi);
 
@@ -999,7 +996,7 @@ namespace
         Optional<int64_t> reserve_cache_entry(const std::string& abi, int64_t cacheSize) const
         {
             Json::Object payload;
-            payload.insert("key", m_write_cache_key);
+            payload.insert("key", "vcpkg");
             payload.insert("version", abi);
             payload.insert("cacheSize", Json::Value::integer(cacheSize));
             auto cmd = command().string_arg(m_write_url).string_arg("-d").string_arg(stringify(payload));
@@ -1176,9 +1173,6 @@ namespace
 
         static constexpr StringLiteral m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
         std::string m_token_header;
-
-        std::string m_read_cache_key;
-        std::string m_write_cache_key;
 
         std::string m_read_url;
         std::string m_write_url;
