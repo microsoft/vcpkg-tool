@@ -19,7 +19,6 @@ namespace
 
     void insert_lowercase_strings(std::vector<std::string>& target, const std::vector<std::string>& source)
     {
-        target.reserve(source.size());
         for (const std::string& value : source)
         {
             target.emplace_back(Strings::ascii_to_lowercase(value));
