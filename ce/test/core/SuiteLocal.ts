@@ -46,7 +46,7 @@ export class SuiteLocal {
       vcpkgArtifactsRoot: join(this.tempFolder, 'artifacts'),
       vcpkgDownloads: join(this.tempFolder, 'downloads'),
       vcpkgRegistriesCache: join(this.tempFolder, 'registries'),
-    }, {});
+    });
 
     this.fs = new LocalFileSystem(this.session);
     this.rootFolderUri = this.fs.file(this.rootFolder);
