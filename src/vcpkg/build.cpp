@@ -183,12 +183,12 @@ namespace vcpkg::Build
     {
         // Build only takes a single package and all dependencies must already be installed
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
-        std::string first_arg = args.command_arguments[0];
+        std::string first_arg = options.command_arguments[0];
 
         BinaryCache binary_cache{args, paths};
         const FullPackageSpec spec = check_and_get_full_package_spec(
             std::move(first_arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
-        print_default_triplet_warning(args, {&args.command_arguments[0], 1});
+        print_default_triplet_warning(args, {&options.command_arguments[0], 1});
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
@@ -1502,7 +1502,8 @@ namespace vcpkg
             "\n-",
             paths.get_toolver_diagnostics(),
             "\n**To Reproduce**\n\n",
-            Strings::concat("`vcpkg ", args.command, " ", Strings::join(" ", args.command_arguments), "`\n"),
+            Strings::concat(
+                "`vcpkg ", args.get_command(), " ", Strings::join(" ", args.get_forwardable_arguments()), "`\n"),
             "\n**Failure logs**\n\n```\n",
             paths.get_filesystem().read_contents(build_result.stdoutlog.value_or_exit(VCPKG_LINE_INFO),
                                                  VCPKG_LINE_INFO),
