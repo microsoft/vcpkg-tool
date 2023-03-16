@@ -1498,6 +1498,11 @@ namespace vcpkg
     DECLARE_MESSAGE(GeneratingInstaller, (msg::path), "", "Generating installer {path}...");
     DECLARE_MESSAGE(GeneratingRepo, (msg::path), "", "Generating repository {path}...");
     DECLARE_MESSAGE(GetParseFailureInfo, (), "", "Use '--debug' to get more information about the parse failures.");
+    DECLARE_MESSAGE(GHAParametersMissing,
+                    (msg::url),
+                    "",
+                    "The GHA binary source requires the ACTIONS_RUNTIME_TOKEN and ACTIONS_CACHE_URL environment "
+                    "variables to be set. See {url} for details.");
     DECLARE_MESSAGE(GitCommandFailed, (msg::command_line), "", "failed to execute: {command_line}");
     DECLARE_MESSAGE(GitFailedToFetch,
                     (msg::value, msg::url),
@@ -1989,6 +1994,10 @@ namespace vcpkg
                     "",
                     "invalid argument: binary config '{binary_source}' requires a SAS token without a "
                     "preceeding '?' as the second argument");
+    DECLARE_MESSAGE(InvalidArgumentRequiresZeroOrOneArgument,
+                    (msg::binary_source),
+                    "",
+                    "invalid argument: binary config '{binary_source}' requires 0 or 1 argument");
     DECLARE_MESSAGE(InvalidBuildInfo, (msg::error_msg), "", "Invalid BUILD_INFO file for package: {error_msg}");
     DECLARE_MESSAGE(
         InvalidBuiltInBaseline,

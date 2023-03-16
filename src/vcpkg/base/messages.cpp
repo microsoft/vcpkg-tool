@@ -826,6 +826,7 @@ namespace vcpkg
     REGISTER_MESSAGE(GeneratingInstaller);
     REGISTER_MESSAGE(GeneratingRepo);
     REGISTER_MESSAGE(GetParseFailureInfo);
+    REGISTER_MESSAGE(GHAParametersMissing);
     REGISTER_MESSAGE(GitCommandFailed);
     REGISTER_MESSAGE(GitFailedToFetch);
     REGISTER_MESSAGE(GitFailedToInitializeLocalRepository);
@@ -944,6 +945,7 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidArgumentRequiresSourceArgument);
     REGISTER_MESSAGE(InvalidArgumentRequiresTwoOrThreeArguments);
     REGISTER_MESSAGE(InvalidArgumentRequiresValidToken);
+    REGISTER_MESSAGE(InvalidArgumentRequiresZeroOrOneArgument);
     REGISTER_MESSAGE(InvalidBuildInfo);
     REGISTER_MESSAGE(InvalidBuiltInBaseline);
     REGISTER_MESSAGE(InvalidBundleDefinition);
