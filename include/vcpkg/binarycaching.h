@@ -82,7 +82,7 @@ namespace vcpkg
 
     struct BinaryConfigParserState
     {
-        bool interactive = false;
+        bool nuget_interactive = false;
         std::set<StringLiteral> binary_cache_providers;
 
         std::string nugettimeout = "100";
@@ -103,6 +103,9 @@ namespace vcpkg
         std::vector<std::string> cos_read_prefixes;
         std::vector<std::string> cos_write_prefixes;
 
+        bool gha_write = false;
+        bool gha_read = false;
+
         std::vector<std::string> sources_to_read;
         std::vector<std::string> sources_to_write;
 
@@ -114,9 +117,9 @@ namespace vcpkg
         void clear();
     };
 
-    ExpectedS<BinaryConfigParserState> create_binary_providers_from_configs_pure(const std::string& env_string,
+    ExpectedL<BinaryConfigParserState> create_binary_providers_from_configs_pure(const std::string& env_string,
                                                                                  View<std::string> args);
-    ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> create_binary_providers_from_configs(
+    ExpectedL<std::vector<std::unique_ptr<IBinaryProvider>>> create_binary_providers_from_configs(
         const VcpkgPaths& paths, View<std::string> args);
 
     struct BinaryCache
@@ -147,10 +150,10 @@ namespace vcpkg
         std::vector<std::unique_ptr<IBinaryProvider>> m_providers;
     };
 
-    ExpectedS<DownloadManagerConfig> parse_download_configuration(const Optional<std::string>& arg);
+    ExpectedL<DownloadManagerConfig> parse_download_configuration(const Optional<std::string>& arg);
 
     std::string generate_nuget_packages_config(const ActionPlan& action);
 
-    void help_topic_asset_caching(const VcpkgPaths& paths);
-    void help_topic_binary_caching(const VcpkgPaths& paths);
+    LocalizedString format_help_topic_asset_caching();
+    LocalizedString format_help_topic_binary_caching();
 }

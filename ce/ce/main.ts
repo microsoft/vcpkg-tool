@@ -24,15 +24,15 @@ import { UpdateCommand } from './cli/commands/update';
 import { UseCommand } from './cli/commands/use';
 import { cli } from './cli/constants';
 import { command as formatCommand, hint } from './cli/format';
-import { debug, error, initStyling, log } from './cli/styling';
+import { error, initStyling, log } from './cli/styling';
 import { i, setLocale } from './i18n';
 import { Session } from './session';
 
 // parse the command line
 const commandline = new CommandLine(argv.slice(2));
 
-// try to set the locale based on the users's settings.
-setLocale(commandline.language, `${__dirname}/i18n/`);
+
+setLocale(commandline.language);
 
 export let session: Session;
 require('./exports');
@@ -45,7 +45,7 @@ async function main() {
   spawn(process.argv0, ['--version']);
 
   // create our session for this process.
-  session = new Session(process.cwd(), commandline.context, <any>commandline, process.env);
+  session = new Session(process.cwd(), commandline.context, <any>commandline);
 
   initStyling(commandline, session);
 
@@ -74,8 +74,6 @@ async function main() {
 
   const cache = new CacheCommand(commandline);
   const clean = new CleanCommand(commandline);
-
-  debug(`Postscript file ${session.postscriptFile}`);
 
   const needsHelp = !!(commandline.switches['help'] || commandline.switches['?'] || (['-h', '-help', '-?', '/?'].find(each => argv.includes(each))));
   // check if --help -h -? --? /? are asked for

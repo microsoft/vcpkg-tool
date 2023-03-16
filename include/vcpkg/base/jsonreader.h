@@ -5,9 +5,9 @@
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>
+#include <vcpkg/base/span.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/view.h>
 
 namespace vcpkg::Json
 {
@@ -17,21 +17,21 @@ namespace vcpkg::Json
     struct IDeserializer
     {
         using type = Type;
-        virtual StringView type_name() const = 0;
+        virtual LocalizedString type_name() const = 0;
 
     private:
         friend struct Reader;
-        Optional<Type> visit(Reader&, const Value&);
-        Optional<Type> visit(Reader&, const Object&);
+        Optional<Type> visit(Reader&, const Value&) const;
+        Optional<Type> visit(Reader&, const Object&) const;
 
     public:
-        virtual Optional<Type> visit_null(Reader&);
-        virtual Optional<Type> visit_boolean(Reader&, bool);
-        virtual Optional<Type> visit_integer(Reader& r, int64_t i);
-        virtual Optional<Type> visit_number(Reader&, double);
-        virtual Optional<Type> visit_string(Reader&, StringView);
-        virtual Optional<Type> visit_array(Reader&, const Array&);
-        virtual Optional<Type> visit_object(Reader&, const Object&);
+        virtual Optional<Type> visit_null(Reader&) const;
+        virtual Optional<Type> visit_boolean(Reader&, bool) const;
+        virtual Optional<Type> visit_integer(Reader& r, int64_t i) const;
+        virtual Optional<Type> visit_number(Reader&, double) const;
+        virtual Optional<Type> visit_string(Reader&, StringView) const;
+        virtual Optional<Type> visit_array(Reader&, const Array&) const;
+        virtual Optional<Type> visit_object(Reader&, const Object&) const;
         virtual View<StringView> valid_fields() const;
 
         virtual ~IDeserializer() = default;
@@ -48,19 +48,14 @@ namespace vcpkg::Json
     {
         Reader();
 
-        const std::vector<std::string>& errors() const { return m_errors; }
-        std::vector<std::string>& errors() { return m_errors; }
+        const std::vector<LocalizedString>& errors() const { return m_errors; }
 
-        void add_missing_field_error(StringView type, StringView key, StringView key_type);
-        void add_expected_type_error(StringView expected_type);
-        void add_extra_field_error(StringView type, StringView fields, StringView suggestion = {});
-        template<class... Args>
-        void add_generic_error(StringView type, Args&&... args)
-        {
-            m_errors.push_back(Strings::concat(path(), " (", type, "): ", args...));
-        }
+        void add_missing_field_error(const LocalizedString& type, StringView key, const LocalizedString& key_type);
+        void add_expected_type_error(const LocalizedString& expected_type);
+        void add_extra_field_error(const LocalizedString& type, StringView fields, StringView suggestion = {});
+        void add_generic_error(const LocalizedString& type, LocalizedString&& message);
 
-        void add_warning(StringView type, StringView msg);
+        void add_warning(LocalizedString type, StringView msg);
 
         const std::vector<LocalizedString>& warnings() const { return m_warnings; }
 
@@ -70,7 +65,7 @@ namespace vcpkg::Json
         template<class Type>
         friend struct IDeserializer;
 
-        std::vector<std::string> m_errors;
+        std::vector<LocalizedString> m_errors;
         std::vector<LocalizedString> m_warnings;
         struct JsonPathElement
         {
@@ -102,11 +97,16 @@ namespace vcpkg::Json
         // * don't start with a `$`
         // * are not in `valid_fields`
         // if known_fields.empty(), then it's treated as if all field names are valid
-        void check_for_unexpected_fields(const Object& obj, View<StringView> valid_fields, StringView type_name);
+        void check_for_unexpected_fields(const Object& obj,
+                                         View<StringView> valid_fields,
+                                         const LocalizedString& type_name);
 
         template<class Type>
-        void required_object_field(
-            StringView type, const Object& obj, StringView key, Type& place, IDeserializer<Type>& visitor)
+        void required_object_field(const LocalizedString& type,
+                                   const Object& obj,
+                                   StringView key,
+                                   Type& place,
+                                   const IDeserializer<Type>& visitor)
         {
             if (auto value = obj.get(key))
             {
@@ -120,7 +120,7 @@ namespace vcpkg::Json
 
         // value should be the value at key of the currently visited object
         template<class Type>
-        void visit_in_key(const Value& value, StringView key, Type& place, IDeserializer<Type>& visitor)
+        void visit_in_key(const Value& value, StringView key, Type& place, const IDeserializer<Type>& visitor)
         {
             PathGuard guard{m_path, key};
             auto opt = visitor.visit(*this, value);
@@ -136,7 +136,7 @@ namespace vcpkg::Json
 
         // value should be the value at key of the currently visited object
         template<class Type>
-        void visit_at_index(const Value& value, int64_t index, Type& place, IDeserializer<Type>& visitor)
+        void visit_at_index(const Value& value, int64_t index, Type& place, const IDeserializer<Type>& visitor)
         {
             PathGuard guard{m_path, index};
             auto opt = visitor.visit(*this, value);
@@ -152,7 +152,7 @@ namespace vcpkg::Json
 
         // returns whether key \in obj
         template<class Type>
-        bool optional_object_field(const Object& obj, StringView key, Type& place, IDeserializer<Type>& visitor)
+        bool optional_object_field(const Object& obj, StringView key, Type& place, const IDeserializer<Type>& visitor)
         {
             if (auto value = obj.get(key))
             {
@@ -166,18 +166,18 @@ namespace vcpkg::Json
         }
 
         template<class Type>
-        Optional<Type> visit(const Value& value, IDeserializer<Type>& visitor)
+        Optional<Type> visit(const Value& value, const IDeserializer<Type>& visitor)
         {
             return visitor.visit(*this, value);
         }
         template<class Type>
-        Optional<Type> visit(const Object& value, IDeserializer<Type>& visitor)
+        Optional<Type> visit(const Object& value, const IDeserializer<Type>& visitor)
         {
             return visitor.visit(*this, value);
         }
 
         template<class Type>
-        Optional<std::vector<Type>> array_elements(const Array& arr, IDeserializer<Type>& visitor)
+        Optional<std::vector<Type>> array_elements(const Array& arr, const IDeserializer<Type>& visitor)
         {
             Optional<std::vector<Type>> result{std::vector<Type>()};
             auto& result_vec = *result.get();
@@ -212,7 +212,7 @@ namespace vcpkg::Json
     };
 
     template<class Type>
-    Optional<Type> IDeserializer<Type>::visit(Reader& r, const Value& value)
+    Optional<Type> IDeserializer<Type>::visit(Reader& r, const Value& value) const
     {
         switch (value.kind())
         {
@@ -229,7 +229,7 @@ namespace vcpkg::Json
     }
 
     template<class Type>
-    Optional<Type> IDeserializer<Type>::visit(Reader& r, const Object& obj)
+    Optional<Type> IDeserializer<Type>::visit(Reader& r, const Object& obj) const
     {
         r.check_for_unexpected_fields(obj, valid_fields(), type_name());
         return visit_object(r, obj);
@@ -242,146 +242,141 @@ namespace vcpkg::Json
     }
 
     template<class Type>
-    Optional<Type> IDeserializer<Type>::visit_null(Reader&)
+    Optional<Type> IDeserializer<Type>::visit_null(Reader&) const
     {
         return nullopt;
     }
     template<class Type>
-    Optional<Type> IDeserializer<Type>::visit_boolean(Reader&, bool)
+    Optional<Type> IDeserializer<Type>::visit_boolean(Reader&, bool) const
     {
         return nullopt;
     }
     template<class Type>
-    Optional<Type> IDeserializer<Type>::visit_integer(Reader& r, int64_t i)
+    Optional<Type> IDeserializer<Type>::visit_integer(Reader& r, int64_t i) const
     {
         return this->visit_number(r, static_cast<double>(i));
     }
     template<class Type>
-    Optional<Type> IDeserializer<Type>::visit_number(Reader&, double)
+    Optional<Type> IDeserializer<Type>::visit_number(Reader&, double) const
     {
         return nullopt;
     }
     template<class Type>
-    Optional<Type> IDeserializer<Type>::visit_string(Reader&, StringView)
+    Optional<Type> IDeserializer<Type>::visit_string(Reader&, StringView) const
     {
         return nullopt;
     }
     template<class Type>
-    Optional<Type> IDeserializer<Type>::visit_array(Reader&, const Array&)
+    Optional<Type> IDeserializer<Type>::visit_array(Reader&, const Array&) const
     {
         return nullopt;
     }
     template<class Type>
-    Optional<Type> IDeserializer<Type>::visit_object(Reader&, const Object&)
+    Optional<Type> IDeserializer<Type>::visit_object(Reader&, const Object&) const
     {
         return nullopt;
     }
 
-    struct StringDeserializer final : IDeserializer<std::string>
+    struct StringDeserializer : IDeserializer<std::string>
     {
-        virtual StringView type_name() const override { return type_name_; }
-        virtual Optional<std::string> visit_string(Reader&, StringView sv) override { return sv.to_string(); }
+        virtual Optional<std::string> visit_string(Reader&, StringView sv) const override;
+    };
 
-        constexpr explicit StringDeserializer(StringLiteral type_name_) : type_name_(type_name_) { }
-
-    private:
-        StringLiteral type_name_;
+    struct UntypedStringDeserializer final : StringDeserializer
+    {
+        virtual LocalizedString type_name() const override;
+        static const UntypedStringDeserializer instance;
     };
 
     struct PathDeserializer final : IDeserializer<Path>
     {
-        virtual StringView type_name() const override { return "a path"; }
-        virtual Optional<Path> visit_string(Reader&, StringView sv) override { return sv; }
+        virtual LocalizedString type_name() const override;
+        virtual Optional<Path> visit_string(Reader&, StringView sv) const override;
 
-        static PathDeserializer instance;
+        static const PathDeserializer instance;
     };
 
     struct NaturalNumberDeserializer final : IDeserializer<int>
     {
-        virtual StringView type_name() const override { return "a nonnegative integer"; }
-
-        virtual Optional<int> visit_integer(Reader&, int64_t value) override
-        {
-            if (value > std::numeric_limits<int>::max() || value < 0)
-            {
-                return nullopt;
-            }
-            return static_cast<int>(value);
-        }
-
-        static NaturalNumberDeserializer instance;
+        virtual LocalizedString type_name() const override;
+        virtual Optional<int> visit_integer(Reader&, int64_t value) const override;
+        static const NaturalNumberDeserializer instance;
     };
 
     struct BooleanDeserializer final : IDeserializer<bool>
     {
-        virtual StringView type_name() const override { return "a boolean"; }
-
-        virtual Optional<bool> visit_boolean(Reader&, bool b) override { return b; }
-
-        static BooleanDeserializer instance;
+        virtual LocalizedString type_name() const override;
+        virtual Optional<bool> visit_boolean(Reader&, bool b) const override;
+        static const BooleanDeserializer instance;
     };
 
     template<class Underlying>
-    struct ArrayDeserializer final : IDeserializer<std::vector<typename Underlying::type>>
+    struct ArrayDeserializer : IDeserializer<std::vector<typename Underlying::type>>
     {
         using type = std::vector<typename Underlying::type>;
 
-        virtual StringView type_name() const override { return m_type_name; }
-
-        constexpr ArrayDeserializer(StringLiteral type_name_, Underlying&& t = {})
-            : m_type_name(type_name_), m_underlying_visitor(static_cast<Underlying&&>(t))
+        virtual Optional<type> visit_array(Reader& r, const Array& arr) const override
         {
+            return r.array_elements(arr, Underlying::instance);
         }
-
-        virtual Optional<type> visit_array(Reader& r, const Array& arr) override
-        {
-            return r.array_elements(arr, m_underlying_visitor);
-        }
-
-    private:
-        StringLiteral m_type_name;
-        Underlying m_underlying_visitor;
     };
 
     struct ParagraphDeserializer final : IDeserializer<std::vector<std::string>>
     {
-        virtual StringView type_name() const override { return "a string or array of strings"; }
+        virtual LocalizedString type_name() const override;
+        virtual Optional<std::vector<std::string>> visit_string(Reader&, StringView sv) const override;
+        virtual Optional<std::vector<std::string>> visit_array(Reader& r, const Array& arr) const override;
 
-        virtual Optional<std::vector<std::string>> visit_string(Reader&, StringView sv) override;
-        virtual Optional<std::vector<std::string>> visit_array(Reader& r, const Array& arr) override;
-
-        static ParagraphDeserializer instance;
+        static const ParagraphDeserializer instance;
     };
 
     struct IdentifierDeserializer final : Json::IDeserializer<std::string>
     {
-        virtual StringView type_name() const override { return "an identifier"; }
-
+        virtual LocalizedString type_name() const override;
         // [a-z0-9]+(-[a-z0-9]+)*, plus not any of {prn, aux, nul, con, lpt[1-9], com[1-9], core, default}
         static bool is_ident(StringView sv);
-
-        virtual Optional<std::string> visit_string(Json::Reader&, StringView sv) override;
-
-        static IdentifierDeserializer instance;
+        virtual Optional<std::string> visit_string(Json::Reader&, StringView sv) const override;
+        static const IdentifierDeserializer instance;
     };
 
     struct IdentifierArrayDeserializer final : Json::IDeserializer<std::vector<std::string>>
     {
-        virtual StringView type_name() const override { return "an array of identifiers"; }
-
-        virtual Optional<std::vector<std::string>> visit_array(Reader& r, const Array& arr) override;
-
-        static IdentifierArrayDeserializer instance;
+        virtual LocalizedString type_name() const override;
+        virtual Optional<std::vector<std::string>> visit_array(Reader& r, const Array& arr) const override;
+        static const IdentifierArrayDeserializer instance;
     };
 
     struct PackageNameDeserializer final : Json::IDeserializer<std::string>
     {
-        virtual StringView type_name() const override { return "a package name"; }
+        virtual LocalizedString type_name() const override;
+        virtual Optional<std::string> visit_string(Json::Reader&, StringView sv) const override;
+        static const PackageNameDeserializer instance;
+    };
 
-        static bool is_package_name(StringView sv);
+    /// <summary>
+    /// A registry package pattern (e.g.: boost*) and the in-file location where it was declared.
+    /// </summary>
+    struct PackagePatternDeclaration
+    {
+        std::string pattern;
+        std::string location;
+    };
 
-        virtual Optional<std::string> visit_string(Json::Reader&, StringView sv) override;
+    /// <summary>
+    /// Deserializes a list of package names and patterns along with their respective in-file declaration locations.
+    /// </summary>
+    struct PackagePatternDeserializer final : Json::IDeserializer<PackagePatternDeclaration>
+    {
+        virtual LocalizedString type_name() const override;
+        virtual Optional<PackagePatternDeclaration> visit_string(Json::Reader&, StringView sv) const override;
 
-        static PackageNameDeserializer instance;
+        static bool is_package_pattern(StringView sv);
+        static const PackagePatternDeserializer instance;
+    };
+
+    struct PackagePatternArrayDeserializer final : Json::ArrayDeserializer<PackagePatternDeserializer>
+    {
+        virtual LocalizedString type_name() const override;
+        static const PackagePatternArrayDeserializer instance;
     };
 }

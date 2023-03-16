@@ -1,11 +1,14 @@
+#include <vcpkg/base/fwd/message_sinks.h>
+
+#include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/json.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/xmlserializer.h>
 
@@ -20,8 +23,6 @@
 #include <vcpkg/vcpkgpaths.h>
 
 #include <iterator>
-
-#include "vcpkg/base/api_stable_format.h"
 
 using namespace vcpkg;
 
@@ -64,8 +65,39 @@ namespace
             }
             else
             {
-                return add_error("unexpected argument: expected 'read', readwrite', or 'write'",
-                                 segments[segment_idx].first);
+                return add_error(msg::format(msgExpectedReadWriteReadWrite), segments[segment_idx].first);
+            }
+        }
+
+        void handle_readwrite(bool& read,
+                              bool& write,
+                              const std::vector<std::pair<SourceLoc, std::string>>& segments,
+                              size_t segment_idx)
+        {
+            if (segment_idx >= segments.size())
+            {
+                read = true;
+                return;
+            }
+
+            auto& mode = segments[segment_idx].second;
+
+            if (mode == "read")
+            {
+                read = true;
+            }
+            else if (mode == "write")
+            {
+                write = true;
+            }
+            else if (mode == "readwrite")
+            {
+                read = true;
+                write = true;
+            }
+            else
+            {
+                return add_error(msg::format(msgExpectedReadWriteReadWrite), segments[segment_idx].first);
             }
         }
     };
@@ -91,7 +123,7 @@ namespace
                     ch = next();
                     if (ch == Unicode::end_of_file)
                     {
-                        return add_error("unexpected eof: trailing unescaped backticks (`) are not allowed");
+                        return add_error(msg::format(msgUnexpectedEOFAfterBacktick));
                     }
                     else
                     {
@@ -166,8 +198,10 @@ namespace
     static void clean_prepare_dir(Filesystem& fs, const Path& dir)
     {
         fs.remove_all(dir, VCPKG_LINE_INFO);
-        bool created_last = fs.create_directories(dir, VCPKG_LINE_INFO);
-        Checks::check_exit(VCPKG_LINE_INFO, created_last, "unable to clear path: %s", dir);
+        if (!fs.create_directories(dir, VCPKG_LINE_INFO))
+        {
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgUnableToClearPath, msg::path = dir);
+        }
     }
 
     static Path make_temp_archive_path(const Path& buildtrees, const PackageSpec& spec)
@@ -325,15 +359,14 @@ namespace
             for (auto&& put_url_template : m_put_url_templates)
             {
                 auto url = put_url_template.instantiate_variables(action);
-                auto maybe_success = put_file(fs, url, put_url_template.headers_for_put, tmp_archive_path);
+                auto maybe_success = put_file(fs, url, m_secrets, put_url_template.headers_for_put, tmp_archive_path);
                 if (maybe_success)
                 {
                     http_remotes_pushed++;
                     continue;
                 }
 
-                auto errors = replace_secrets(std::move(maybe_success).error(), m_secrets);
-                msg::println(Color::warning, msgReplaceSecretsError, msg::error_msg = errors);
+                msg::println(Color::warning, maybe_success.error());
             }
 
             if (!m_put_url_templates.empty())
@@ -555,14 +588,14 @@ namespace
                             std::vector<Path>&& read_configs,
                             std::vector<Path>&& write_configs,
                             std::string&& timeout,
-                            bool interactive)
+                            bool nuget_interactive)
             : paths(paths)
             , m_read_sources(std::move(read_sources))
             , m_write_sources(std::move(write_sources))
             , m_read_configs(std::move(read_configs))
             , m_write_configs(std::move(write_configs))
             , m_timeout(std::move(timeout))
-            , m_interactive(interactive)
+            , m_interactive(nuget_interactive)
             , m_use_nuget_cache(false)
         {
             const std::string use_nuget_cache = get_environment_variable("VCPKG_USE_NUGET_CACHE").value_or("");
@@ -570,71 +603,66 @@ namespace
                 Strings::case_insensitive_ascii_equals(use_nuget_cache, "true") || use_nuget_cache == "1";
         }
 
-        ExpectedS<Unit> run_nuget_commandline(const Command& cmdline) const
+        ExpectedL<Unit> run_nuget_commandline(const Command& cmdline) const
         {
             if (m_interactive)
             {
-                return cmd_execute(cmdline)
-                    .map_error([](LocalizedString&& ls) { return ls.extract_data(); })
-                    .then([](int exit_code) -> ExpectedS<Unit> {
-                        if (exit_code == 0)
-                        {
-                            return {Unit{}};
-                        }
-
-                        return "NuGet command failed and output was not captured because --interactive was specified";
-                    });
-            }
-
-            return cmd_execute_and_capture_output(cmdline)
-                .map_error([](LocalizedString&& ls) { return ls.extract_data(); })
-                .then([&](ExitCodeAndOutput&& res) -> ExpectedS<Unit> {
-                    if (Debug::g_debugging)
-                    {
-                        msg::write_unlocalized_text_to_stdout(Color::error, res.output);
-                    }
-
-                    if (res.output.find("Authentication may require manual action.") != std::string::npos)
-                    {
-                        msg::println(Color::warning, msgAuthenticationMayRequireManualAction, msg::vendor = "Nuget");
-                    }
-
-                    if (res.exit_code == 0)
+                return cmd_execute(cmdline).then([](int exit_code) -> ExpectedL<Unit> {
+                    if (exit_code == 0)
                     {
                         return {Unit{}};
                     }
 
-                    if (res.output.find("Response status code does not indicate success: 401 (Unauthorized)") !=
-                        std::string::npos)
-                    {
-                        msg::println(Color::warning,
-                                     msgFailedVendorAuthentication,
-                                     msg::vendor = "NuGet",
-                                     msg::url = docs::binarycaching_url);
-                    }
-                    else if (res.output.find("for example \"-ApiKey AzureDevOps\"") != std::string::npos)
-                    {
-                        auto real_cmdline = cmdline;
-                        real_cmdline.string_arg("-ApiKey").string_arg("AzureDevOps");
-                        return cmd_execute_and_capture_output(real_cmdline)
-                            .map_error([](LocalizedString&& ls) { return ls.extract_data(); })
-                            .then([](ExitCodeAndOutput&& res) -> ExpectedS<Unit> {
-                                if (Debug::g_debugging)
-                                {
-                                    msg::write_unlocalized_text_to_stdout(Color::error, res.output);
-                                }
-
-                                if (res.exit_code == 0)
-                                {
-                                    return {Unit{}};
-                                }
-
-                                return {std::move(res.output), expected_right_tag};
-                            });
-                    }
-
-                    return {std::move(res.output), expected_right_tag};
+                    return msg::format_error(msgNugetOutputNotCapturedBecauseInteractiveSpecified);
                 });
+            }
+
+            return cmd_execute_and_capture_output(cmdline).then([&](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
+                if (Debug::g_debugging)
+                {
+                    msg::write_unlocalized_text_to_stdout(Color::error, res.output);
+                }
+
+                if (res.output.find("Authentication may require manual action.") != std::string::npos)
+                {
+                    msg::println(Color::warning, msgAuthenticationMayRequireManualAction, msg::vendor = "Nuget");
+                }
+
+                if (res.exit_code == 0)
+                {
+                    return {Unit{}};
+                }
+
+                if (res.output.find("Response status code does not indicate success: 401 (Unauthorized)") !=
+                    std::string::npos)
+                {
+                    msg::println(Color::warning,
+                                 msgFailedVendorAuthentication,
+                                 msg::vendor = "NuGet",
+                                 msg::url = docs::binarycaching_url);
+                }
+                else if (res.output.find("for example \"-ApiKey AzureDevOps\"") != std::string::npos)
+                {
+                    auto real_cmdline = cmdline;
+                    real_cmdline.string_arg("-ApiKey").string_arg("AzureDevOps");
+                    return cmd_execute_and_capture_output(real_cmdline)
+                        .then([](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
+                            if (Debug::g_debugging)
+                            {
+                                msg::write_unlocalized_text_to_stdout(Color::error, res.output);
+                            }
+
+                            if (res.exit_code == 0)
+                            {
+                                return {Unit{}};
+                            }
+
+                            return LocalizedString::from_raw(std::move(res).output);
+                        });
+                }
+
+                return LocalizedString::from_raw(std::move(res).output);
+            });
         }
 
         struct NuGetPrefetchAttempt
@@ -785,10 +813,6 @@ namespace
                     if (fs.exists(nupkg_path, IgnoreErrors{}))
                     {
                         fs.remove(nupkg_path, VCPKG_LINE_INFO);
-                        Checks::check_exit(VCPKG_LINE_INFO,
-                                           !fs.exists(nupkg_path, IgnoreErrors{}),
-                                           "Unable to remove nupkg after restoring: %s",
-                                           nupkg_path);
                         const auto nuget_dir = nuget_ref.spec.dir();
                         if (nuget_dir != nuget_ref.reference.id)
                         {
@@ -796,6 +820,7 @@ namespace
                             const auto path_to = paths.packages() / nuget_dir;
                             fs.rename(path_from, path_to, VCPKG_LINE_INFO);
                         }
+
                         cache_status[nuget_ref.result_index]->mark_restored();
                         return true;
                     }
@@ -923,6 +948,238 @@ namespace
         std::string m_timeout;
         bool m_interactive;
         bool m_use_nuget_cache;
+    };
+    struct GHABinaryProvider : IBinaryProvider
+    {
+        GHABinaryProvider(const VcpkgPaths& paths,
+                          bool read,
+                          bool write,
+                          const Optional<std::string>& url,
+                          const Optional<std::string>& token)
+            : paths(paths)
+        {
+            if (read) m_read_url = url.value_or_exit(VCPKG_LINE_INFO) + "_apis/artifactcache/cache";
+            if (write) m_write_url = url.value_or_exit(VCPKG_LINE_INFO) + "_apis/artifactcache/caches";
+            m_token_header = "Authorization: Bearer " + token.value_or_exit(VCPKG_LINE_INFO);
+        }
+
+        Command command() const
+        {
+            Command cmd;
+            cmd.string_arg("curl")
+                .string_arg("-s")
+                .string_arg("-H")
+                .string_arg("Content-Type: application/json")
+                .string_arg("-H")
+                .string_arg(m_token_header)
+                .string_arg("-H")
+                .string_arg(m_accept_header);
+            return cmd;
+        }
+
+        std::string lookup_cache_entry(const std::string& abi) const
+        {
+            auto cmd = command()
+                           .string_arg(m_read_url)
+                           .string_arg("-G")
+                           .string_arg("-d")
+                           .string_arg("keys=vcpkg")
+                           .string_arg("-d")
+                           .string_arg("version=" + abi);
+
+            std::vector<std::string> lines;
+            auto res = cmd_execute_and_capture_output(cmd);
+            if (!res.has_value() || res.get()->exit_code) return {};
+            auto json = Json::parse_object(res.get()->output);
+            if (!json.has_value() || !json.get()->contains("archiveLocation")) return {};
+            return json.get()->get("archiveLocation")->string(VCPKG_LINE_INFO).to_string();
+        }
+
+        Optional<int64_t> reserve_cache_entry(const std::string& abi, int64_t cacheSize) const
+        {
+            Json::Object payload;
+            payload.insert("key", "vcpkg");
+            payload.insert("version", abi);
+            payload.insert("cacheSize", Json::Value::integer(cacheSize));
+            auto cmd = command().string_arg(m_write_url).string_arg("-d").string_arg(stringify(payload));
+
+            auto res = cmd_execute_and_capture_output(cmd);
+            if (!res.has_value() || res.get()->exit_code) return {};
+            auto json = Json::parse_object(res.get()->output);
+            if (!json.has_value() || !json.get()->contains("cacheId")) return {};
+            return json.get()->get("cacheId")->integer(VCPKG_LINE_INFO);
+        }
+
+        void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
+        {
+            auto& fs = paths.get_filesystem();
+
+            const ElapsedTimer timer;
+            size_t restored_count = 0;
+            std::vector<std::pair<std::string, Path>> url_paths;
+            std::vector<size_t> url_indices;
+            if (!m_read_url.empty())
+            {
+                for (size_t idx = 0; idx < cache_status.size(); ++idx)
+                {
+                    const auto this_cache_status = cache_status[idx];
+                    if (!this_cache_status || !this_cache_status->should_attempt_restore(this))
+                    {
+                        continue;
+                    }
+
+                    auto&& action = actions[idx];
+                    auto url = lookup_cache_entry(action.package_abi().value_or_exit(VCPKG_LINE_INFO));
+                    if (url.empty()) continue;
+
+                    clean_prepare_dir(fs, paths.package_dir(action.spec));
+                    url_paths.emplace_back(std::move(url), make_temp_archive_path(paths.buildtrees(), action.spec));
+                    url_indices.push_back(idx);
+                }
+            }
+
+            if (!url_paths.empty())
+            {
+                msg::println(
+                    msgAttemptingToFetchPackagesFromVendor, msg::count = url_paths.size(), msg::vendor = "GHA");
+
+                auto codes = download_files(fs, url_paths, {});
+                std::vector<size_t> action_idxs;
+                std::vector<Command> jobs;
+                for (size_t i = 0; i < codes.size(); ++i)
+                {
+                    if (codes[i] == 200)
+                    {
+                        action_idxs.push_back(i);
+                        jobs.push_back(decompress_zip_archive_cmd(paths.get_tool_cache(),
+                                                                  stdout_sink,
+                                                                  paths.package_dir(actions[url_indices[i]].spec),
+                                                                  url_paths[i].second));
+                    }
+                }
+                auto job_results = decompress_in_parallel(jobs);
+                for (size_t j = 0; j < jobs.size(); ++j)
+                {
+                    const auto i = action_idxs[j];
+                    if (job_results[j])
+                    {
+                        ++restored_count;
+                        fs.remove(url_paths[i].second, VCPKG_LINE_INFO);
+                        cache_status[url_indices[i]]->mark_restored();
+                    }
+                    else
+                    {
+                        Debug::print("Failed to decompress ", url_paths[i].second, '\n');
+                    }
+                }
+            }
+
+            msg::println(msgRestoredPackagesFromVendor,
+                         msg::count = restored_count,
+                         msg::elapsed = timer.elapsed(),
+                         msg::value = "GHA");
+        }
+
+        RestoreResult try_restore(const InstallPlanAction&) const override { return RestoreResult::unavailable; }
+
+        void push_success(const InstallPlanAction& action) const override
+        {
+            if (m_write_url.empty()) return;
+            const ElapsedTimer timer;
+            auto& fs = paths.get_filesystem();
+            const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
+            auto& spec = action.spec;
+            const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
+            auto compression_result = compress_directory_to_zip(
+                paths.get_filesystem(), paths.get_tool_cache(), stdout_sink, paths.package_dir(spec), tmp_archive_path);
+            if (!compression_result)
+            {
+                vcpkg::msg::println(Color::warning,
+                                    msg::format_warning(msgCompressFolderFailed, msg::path = paths.package_dir(spec))
+                                        .append_raw(' ')
+                                        .append_raw(compression_result.error()));
+                return;
+            }
+
+            int64_t cache_size;
+            {
+                auto archive = fs.open_for_read(tmp_archive_path, VCPKG_LINE_INFO);
+                archive.try_seek_to(0, SEEK_END);
+                cache_size = archive.tell();
+            }
+
+            size_t upload_count = 0;
+            if (!m_write_url.empty())
+            {
+                if (auto cacheId = reserve_cache_entry(abi, cache_size))
+                {
+                    std::vector<std::string> headers{
+                        m_token_header,
+                        m_accept_header.to_string(),
+                        "Content-Type: application/octet-stream",
+                        "Content-Range: bytes 0-" + std::to_string(cache_size) + "/*",
+                    };
+                    auto url = m_write_url + "/" + std::to_string(*cacheId.get());
+                    if (put_file(fs, url, {}, headers, tmp_archive_path, "PATCH"))
+                    {
+                        Json::Object commit;
+                        commit.insert("size", std::to_string(cache_size));
+                        auto cmd = command().string_arg(url).string_arg("-d").string_arg(stringify(commit));
+
+                        auto res = cmd_execute_and_capture_output(cmd);
+                        if (res.has_value() && !res.get()->exit_code)
+                        {
+                            ++upload_count;
+                        }
+                    }
+                }
+            }
+
+            msg::println(msgUploadedPackagesToVendor,
+                         msg::count = upload_count,
+                         msg::elapsed = timer.elapsed(),
+                         msg::vendor = "GHA");
+        }
+
+        void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
+        {
+            std::vector<CacheAvailability> actions_availability{actions.size()};
+            if (!m_read_url.empty())
+            {
+                for (size_t idx = 0; idx < actions.size(); ++idx)
+                {
+                    auto&& action = actions[idx];
+                    const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
+                    if (!cache_status[idx]->should_attempt_precheck(this))
+                    {
+                        continue;
+                    }
+
+                    if (!lookup_cache_entry(abi).empty())
+                    {
+                        actions_availability[idx] = CacheAvailability::available;
+                        cache_status[idx]->mark_available(this);
+                    }
+                }
+            }
+
+            for (size_t idx = 0; idx < actions.size(); ++idx)
+            {
+                const auto this_cache_status = cache_status[idx];
+                if (this_cache_status && actions_availability[idx] == CacheAvailability::unavailable)
+                {
+                    this_cache_status->mark_unavailable(this);
+                }
+            }
+        }
+
+        static constexpr StringLiteral m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
+        std::string m_token_header;
+
+        std::string m_read_url;
+        std::string m_write_url;
+
+        const VcpkgPaths& paths;
     };
 
     struct ObjectStorageProvider : IBinaryProvider
@@ -1257,7 +1514,7 @@ namespace vcpkg
     {
         std::vector<std::string> invalid_keys;
         auto result = api_stable_format(url_template, [&](std::string&, StringView key) {
-            StringView valid_keys[] = {"name", "version", "sha", "triplet"};
+            static constexpr std::array<StringLiteral, 4> valid_keys = {"name", "version", "sha", "triplet"};
             if (!Util::Vectors::contains(valid_keys, key))
             {
                 invalid_keys.push_back(key.to_string());
@@ -1436,10 +1693,11 @@ namespace vcpkg
         {
             auto& action = actions[idx];
             const auto abi = action.package_abi().get();
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               abi,
-                               "Error: package %s did not have an abi during ci. This is an internal error.\n",
-                               action.spec);
+            if (!abi)
+            {
+                Checks::unreachable(VCPKG_LINE_INFO, fmt::format("{} did not have an ABI", action.spec));
+            }
+
             cache_status[idx] = &m_status[*abi];
         }
 
@@ -1549,7 +1807,7 @@ namespace vcpkg
     {
         binary_cache_providers.clear();
         binary_cache_providers.insert("clear");
-        interactive = false;
+        nuget_interactive = false;
         nugettimeout = "100";
         archives_to_read.clear();
         archives_to_write.clear();
@@ -1562,6 +1820,8 @@ namespace vcpkg
         aws_no_sign_request = false;
         cos_read_prefixes.clear();
         cos_write_prefixes.clear();
+        gha_read = false;
+        gha_write = false;
         sources_to_read.clear();
         sources_to_write.clear();
         configs_to_read.clear();
@@ -1572,42 +1832,42 @@ namespace vcpkg
 
 namespace
 {
-    const ExpectedS<Path>& default_cache_path()
+    ExpectedL<Path> default_cache_path_impl()
     {
-        static auto cachepath = get_platform_cache_home().then([](Path p) -> ExpectedS<Path> {
-            auto maybe_cachepath = get_environment_variable("VCPKG_DEFAULT_BINARY_CACHE");
-            if (auto p_str = maybe_cachepath.get())
+        auto maybe_cachepath = get_environment_variable("VCPKG_DEFAULT_BINARY_CACHE");
+        if (auto p_str = maybe_cachepath.get())
+        {
+            get_global_metrics_collector().track_define(DefineMetric::VcpkgDefaultBinaryCache);
+            Path path = std::move(*p_str);
+            path.make_preferred();
+            if (!get_real_filesystem().is_directory(path))
             {
-                get_global_metrics_collector().track_define(DefineMetric::VcpkgDefaultBinaryCache);
-                Path path = *p_str;
-                path.make_preferred();
-                if (!get_real_filesystem().is_directory(path))
-                {
-                    return {"Value of environment variable VCPKG_DEFAULT_BINARY_CACHE is not a directory: " +
-                                path.native(),
-                            expected_right_tag};
-                }
-
-                if (!path.is_absolute())
-                {
-                    return {"Value of environment variable VCPKG_DEFAULT_BINARY_CACHE is not absolute: " +
-                                path.native(),
-                            expected_right_tag};
-                }
-
-                return {std::move(path), expected_left_tag};
+                return msg::format(msgDefaultBinaryCacheRequiresDirectory, msg::path = path);
             }
-            p /= "vcpkg/archives";
-            p.make_preferred();
+
+            if (!path.is_absolute())
+            {
+                return msg::format(msgDefaultBinaryCacheRequiresAbsolutePath, msg::path = path);
+            }
+
+            return std::move(path);
+        }
+
+        return get_platform_cache_vcpkg().then([](Path p) -> ExpectedL<Path> {
             if (p.is_absolute())
             {
-                return {std::move(p), expected_left_tag};
+                p /= "archives";
+                p.make_preferred();
+                return std::move(p);
             }
-            else
-            {
-                return {"default path was not absolute: " + p.native(), expected_right_tag};
-            }
+
+            return msg::format(msgDefaultBinaryCachePlatformCacheRequiresAbsolutePath, msg::path = p);
         });
+    }
+
+    const ExpectedL<Path>& default_cache_path()
+    {
+        static auto cachepath = default_cache_path_impl();
         return cachepath;
     }
 
@@ -1676,7 +1936,7 @@ namespace
                         segments[1].first);
                 }
 
-                state->interactive = true;
+                state->nuget_interactive = true;
             }
             else if (segments[0].second == "nugetconfig")
             {
@@ -1733,25 +1993,19 @@ namespace
             {
                 if (segments.size() != 2)
                 {
-                    return add_error(
-                        "expected arguments: binary config 'nugettimeout' expects a single positive integer argument");
+                    return add_error(msg::format(msgNugetTimeoutExpectsSinglePositiveInteger));
                 }
 
                 auto&& t = segments[1].second;
                 if (t.empty())
                 {
-                    return add_error(
-                        "unexpected arguments: binary config 'nugettimeout' requires non-empty nugettimeout");
+                    return add_error(msg::format(msgNugetTimeoutExpectsSinglePositiveInteger));
                 }
                 char* end;
                 long timeout = std::strtol(t.c_str(), &end, 0);
-                if (*end != '\0')
+                if (*end != '\0' || timeout <= 0)
                 {
-                    return add_error("invalid value: binary config 'nugettimeout' requires a valid integer");
-                }
-                if (timeout <= 0)
-                {
-                    return add_error("invalid value: binary config 'nugettimeout' requires integers greater than 0");
+                    return add_error(msg::format(msgNugetTimeoutExpectsSinglePositiveInteger));
                 }
 
                 state->nugettimeout = std::to_string(timeout);
@@ -1769,7 +2023,7 @@ namespace
                 const auto& maybe_home = default_cache_path();
                 if (!maybe_home)
                 {
-                    return add_error(maybe_home.error(), segments[0].first);
+                    return add_error(LocalizedString{maybe_home.error()}, segments[0].first);
                 }
 
                 handle_readwrite(
@@ -1951,6 +2205,20 @@ namespace
                 handle_readwrite(state->cos_read_prefixes, state->cos_write_prefixes, std::move(p), segments, 2);
                 state->binary_cache_providers.insert("cos");
             }
+            else if (segments[0].second == "x-gha")
+            {
+                // Scheme: x-gha[,<readwrite>]
+                if (segments.size() > 2)
+                {
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresZeroOrOneArgument, msg::binary_source = "gha"),
+                        segments[2].first);
+                }
+
+                handle_readwrite(state->gha_read, state->gha_write, segments, 1);
+
+                state->binary_cache_providers.insert("gha");
+            }
             else if (segments[0].second == "http")
             {
                 // Scheme: http,<url_template>[,<readwrite>[,<header>]]
@@ -2068,16 +2336,18 @@ namespace
             {
                 if (segments.size() >= 2)
                 {
-                    return add_error("unexpected arguments: asset config 'x-block-origin' does not accept arguments",
-                                     segments[1].first);
+                    return add_error(
+                        msg::format(msgAssetCacheProviderAcceptsNoArguments, msg::value = "x-block-origin"),
+                        segments[1].first);
                 }
+
                 state->block_origin = true;
             }
             else if (segments[0].second == "clear")
             {
-                if (segments.size() != 1)
+                if (segments.size() >= 2)
                 {
-                    return add_error("unexpected arguments: asset config 'clear' does not take arguments",
+                    return add_error(msg::format(msgAssetCacheProviderAcceptsNoArguments, msg::value = "clear"),
                                      segments[1].first);
                 }
 
@@ -2088,20 +2358,17 @@ namespace
                 // Scheme: x-azurl,<baseurl>[,<sas>[,<readwrite>]]
                 if (segments.size() < 2)
                 {
-                    return add_error("expected arguments: asset config 'azurl' requires at least a base url",
-                                     segments[0].first);
+                    return add_error(msg::format(msgAzUrlAssetCacheRequiresBaseUrl), segments[0].first);
                 }
 
                 if (segments.size() > 4)
                 {
-                    return add_error("unexpected arguments: asset config 'azurl' requires less than 4 arguments",
-                                     segments[4].first);
+                    return add_error(msg::format(msgAzUrlAssetCacheRequiresLessThanFour), segments[4].first);
                 }
 
                 if (segments[1].second.empty())
                 {
-                    return add_error("unexpected arguments: asset config 'azurl' requires a base uri",
-                                     segments[1].first);
+                    return add_error(msg::format(msgAzUrlAssetCacheRequiresBaseUrl), segments[1].first);
                 }
 
                 auto p = segments[1].second;
@@ -2129,23 +2396,20 @@ namespace
                 // Scheme: x-script,<script-template>
                 if (segments.size() != 2)
                 {
-                    return add_error(
-                        "expected arguments: asset config 'x-script' requires exactly the exec template as an argument",
-                        segments[0].first);
+                    return add_error(msg::format(msgScriptAssetCacheRequiresScript), segments[0].first);
                 }
                 state->script = segments[1].second;
             }
             else
             {
-                return add_error("unknown asset provider type: valid source types are 'x-azurl', "
-                                 "'x-script', 'x-block-origin', and 'clear'",
-                                 segments[0].first);
+                // Don't forget to update this message if new providers are added.
+                return add_error(msg::format(msgUnexpectedAssetCacheProvider), segments[0].first);
             }
         }
     };
 }
 
-ExpectedS<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optional<std::string>& arg)
+ExpectedL<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optional<std::string>& arg)
 {
     if (!arg || arg.get()->empty()) return DownloadManagerConfig{};
 
@@ -2157,22 +2421,25 @@ ExpectedS<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
     parser.parse();
     if (auto err = parser.get_error())
     {
-        return Strings::concat(err->to_string(), "\nFor more information, see ", docs::assetcaching_url, "\n");
+        return LocalizedString::from_raw(err->to_string()) // note that this already contains error:
+            .append_raw('\n')
+            .append(msg::msgNoteMessage)
+            .append(msg::msgSeeURL, msg::url = docs::assetcaching_url);
     }
 
     if (s.azblob_templates_to_put.size() > 1)
     {
-        return Strings::concat("Error: a maximum of one asset write url can be specified\n"
-                               "For more information, see ",
-                               docs::assetcaching_url,
-                               "\n");
+        return msg::format_error(msgAMaximumOfOneAssetWriteUrlCanBeSpecified)
+            .append_raw('\n')
+            .append(msg::msgNoteMessage)
+            .append(msg::msgSeeURL, msg::url = docs::assetcaching_url);
     }
     if (s.url_templates_to_get.size() > 1)
     {
-        return Strings::concat("Error: a maximum of one asset read url can be specified\n"
-                               "For more information, see ",
-                               docs::assetcaching_url,
-                               "\n");
+        return msg::format_error(msgAMaximumOfOneAssetReadUrlCanBeSpecified)
+            .append_raw('\n')
+            .append(msg::msgNoteMessage)
+            .append(msg::msgSeeURL, msg::url = docs::assetcaching_url);
     }
 
     Optional<std::string> get_url;
@@ -2198,7 +2465,7 @@ ExpectedS<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
                                  s.script};
 }
 
-ExpectedS<BinaryConfigParserState> vcpkg::create_binary_providers_from_configs_pure(const std::string& env_string,
+ExpectedL<BinaryConfigParserState> vcpkg::create_binary_providers_from_configs_pure(const std::string& env_string,
                                                                                     View<std::string> args)
 {
     if (!env_string.empty())
@@ -2217,14 +2484,14 @@ ExpectedS<BinaryConfigParserState> vcpkg::create_binary_providers_from_configs_p
     default_parser.parse();
     if (auto err = default_parser.get_error())
     {
-        return err->message;
+        return LocalizedString::from_raw(err->message);
     }
 
     BinaryConfigParser env_parser(env_string, "VCPKG_BINARY_SOURCES", &s);
     env_parser.parse();
     if (auto err = env_parser.get_error())
     {
-        return err->to_string();
+        return LocalizedString::from_raw(err->to_string());
     }
 
     for (auto&& arg : args)
@@ -2233,14 +2500,14 @@ ExpectedS<BinaryConfigParserState> vcpkg::create_binary_providers_from_configs_p
         arg_parser.parse();
         if (auto err = arg_parser.get_error())
         {
-            return err->to_string();
+            return LocalizedString::from_raw(err->to_string());
         }
     }
 
     return s;
 }
 
-ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_providers_from_configs(
+ExpectedL<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_providers_from_configs(
     const VcpkgPaths& paths, View<std::string> args)
 {
     std::string env_string = get_environment_variable("VCPKG_BINARY_SOURCES").value_or("");
@@ -2292,6 +2559,17 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
             paths, std::move(s.cos_read_prefixes), std::move(s.cos_write_prefixes)));
     }
 
+    if (s.gha_read || s.gha_write)
+    {
+        auto url = get_environment_variable("ACTIONS_CACHE_URL");
+        auto token = get_environment_variable("ACTIONS_RUNTIME_TOKEN");
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               (url.has_value() && token.has_value()),
+                               msgGHAParametersMissing,
+                               msg::url = "https://learn.microsoft.com/en-us/vcpkg/users/binarycaching#gha");
+        providers.push_back(std::make_unique<GHABinaryProvider>(paths, s.gha_read, s.gha_write, url, token));
+    }
+
     if (!s.url_templates_to_get.empty())
     {
         providers.push_back(
@@ -2307,7 +2585,7 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
                                                                   std::move(s.configs_to_read),
                                                                   std::move(s.configs_to_write),
                                                                   std::move(s.nugettimeout),
-                                                                  s.interactive));
+                                                                  s.nuget_interactive));
     }
 
     return providers;
@@ -2442,127 +2720,69 @@ std::string vcpkg::generate_nuspec(const Path& package_dir,
     return std::move(xml.buf);
 }
 
-void vcpkg::help_topic_asset_caching(const VcpkgPaths&)
+LocalizedString vcpkg::format_help_topic_asset_caching()
 {
-    HelpTableFormatter tbl;
-    tbl.text("**Experimental feature: this may change or be removed at any time**");
-    tbl.blank();
-    tbl.text("Vcpkg can use mirrors to cache downloaded assets, ensuring continued operation even if the original "
-             "source changes or disappears.");
-    tbl.blank();
-    tbl.blank();
-    tbl.text(Strings::concat("Asset caching can be configured either by setting the environment variable ",
-                             VcpkgCmdArguments::ASSET_SOURCES_ENV,
-                             " to a semicolon-delimited list of source strings or by passing a sequence of `--",
-                             VcpkgCmdArguments::ASSET_SOURCES_ARG,
-                             "=<source>` command line options. Command line sources are interpreted after environment "
-                             "sources. Commas, semicolons, and backticks can be escaped using backtick (`)."));
-    tbl.blank();
-    tbl.blank();
-    tbl.header("Valid source strings");
-    tbl.format("clear", "Removes all previous sources");
-    tbl.format(
-        "x-azurl,<url>[,<sas>[,<rw>]]",
-        "Adds an Azure Blob Storage source, optionally using Shared Access Signature validation. URL should include "
-        "the container path and be terminated with a trailing `/`. SAS, if defined, should be prefixed with a `?`. "
-        "Non-Azure servers will also work if they respond to GET and PUT requests of the form: `<url><sha512><sas>`.");
-    tbl.format("x-script,<template>",
-               "Dispatches to an external tool to fetch the asset. Within the template, \"{url}\" will be replaced by "
-               "the original url, \"{sha512}\" will be replaced by the SHA512 value, and \"{dst}\" will be replaced by "
-               "the output path to save to. These substitutions will all be properly shell escaped, so an example "
-               "template would be: \"curl -L {url} --output {dst}\". \"{{\" will be replaced by \"}\" and \"}}\" will "
-               "be replaced by \"}\" to avoid expansion. Note that this will be executed inside the build environment, "
-               "so the PATH and other environment variables will be modified by the triplet.");
-    tbl.format("x-block-origin",
-               "Disables fallback to the original URLs in case the mirror does not have the file available.");
-    tbl.blank();
-    tbl.text("The `<rw>` optional parameter for certain strings controls how they will be accessed. It can be "
-             "specified as `read`, `write`, or `readwrite` and defaults to `read`.");
-    tbl.blank();
-    print2(tbl.m_str);
-    msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::assetcaching_url);
+    HelpTableFormatter table;
+    table.format("clear", msg::format(msgHelpCachingClear));
+    table.format("x-azurl,<url>[,<sas>[,<rw>]]", msg::format(msgHelpAssetCachingAzUrl));
+    table.format("x-script,<template>", msg::format(msgHelpAssetCachingScript));
+    table.format("x-block-origin", msg::format(msgHelpAssetCachingBlockOrigin));
+    return msg::format(msgHelpAssetCaching)
+        .append_raw('\n')
+        .append_raw(table.m_str)
+        .append_raw('\n')
+        .append(msgExtendedDocumentationAtUrl, msg::url = docs::assetcaching_url);
 }
 
-void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
+LocalizedString vcpkg::format_help_topic_binary_caching()
 {
-    HelpTableFormatter tbl;
-    tbl.text("Vcpkg can cache compiled packages to accelerate restoration on a single machine or across the network."
-             " By default, vcpkg will save builds to a local machine cache. This can be disabled by passing "
-             "`--binarysource=clear` as the last option on the command line.");
-    tbl.blank();
-    tbl.blank();
-    tbl.text(
-        "Binary caching can be further configured by either passing `--binarysource=<source>` options "
-        "to every command line or setting the `VCPKG_BINARY_SOURCES` environment variable to a set of sources (Ex: "
-        "\"<source>;<source>;...\"). Command line sources are interpreted after environment sources.");
-    tbl.blank();
-    tbl.blank();
-    tbl.header("Valid source strings");
-    tbl.format("clear", "Removes all previous sources");
-    tbl.format("default[,<rw>]", "Adds the default file-based location.");
-    tbl.format("files,<path>[,<rw>]", "Adds a custom file-based location.");
-    tbl.format("http,<url_template>[,<rw>[,<header>]]",
-               "Adds a custom http-based location. GET, HEAD and PUT request are done to download, check and upload "
-               "the binaries. You can use the variables 'name', 'version', 'sha' and 'triplet'. An example url would "
-               "be 'https://cache.example.com/{triplet}/{name}/{version}/{sha}'. Via the header field you can set a "
-               "custom header to pass an authorization token.");
-    tbl.format("nuget,<uri>[,<rw>]",
-               "Adds a NuGet-based source; equivalent to the `-Source` parameter of the NuGet CLI.");
-    tbl.format("nugetconfig,<path>[,<rw>]",
-               "Adds a NuGet-config-file-based source; equivalent to the `-Config` parameter of the NuGet CLI. This "
-               "config should specify `defaultPushSource` for uploads.");
-    tbl.format("nugettimeout,<seconds>",
-               "Specifies a nugettimeout for NuGet network operations; equivalent to the `-Timeout` parameter of the "
-               "NuGet CLI.");
-    tbl.format("x-azblob,<url>,<sas>[,<rw>]",
-               "**Experimental: will change or be removed without warning** Adds an Azure Blob Storage source. Uses "
-               "Shared Access Signature validation. URL should include the container path.");
-    tbl.format("x-gcs,<prefix>[,<rw>]",
-               "**Experimental: will change or be removed without warning** Adds a Google Cloud Storage (GCS) source. "
-               "Uses the gsutil CLI for uploads and downloads. Prefix should include the gs:// scheme and be suffixed "
-               "with a `/`.");
-    tbl.format("x-aws,<prefix>[,<rw>]",
-               "**Experimental: will change or be removed without warning** Adds an AWS S3 source. "
-               "Uses the aws CLI for uploads and downloads. Prefix should include s3:// scheme and be suffixed "
-               "with a `/`.");
-    tbl.format(
-        "x-aws-config,<parameter>",
-        "**Experimental: will change or be removed without warning** Adds an AWS S3 source. "
-        "Adds an AWS configuration; currently supports only 'no-sign-request' parameter that is an equivalent to the "
-        "'--no-sign-request parameter of the AWS cli.");
-    tbl.format("x-cos,<prefix>[,<rw>]",
-               "**Experimental: will change or be removed without warning** Adds an COS source. "
-               "Uses the cos CLI for uploads and downloads. Prefix should include cos:// scheme and be suffixed "
-               "with a `/`.");
-    tbl.format("interactive", "Enables interactive credential management for some source types");
-    tbl.blank();
-    tbl.text("The `<rw>` optional parameter for certain strings controls whether they will be consulted for "
-             "downloading binaries and whether on-demand builds will be uploaded to that remote. It can be specified "
-             "as 'read', 'write', or 'readwrite'.");
-    tbl.blank();
-    tbl.text("The `nuget` and `nugetconfig` source providers additionally respect certain environment variables while "
-             "generating nuget packages. The `metadata.repository` field will be optionally generated like:\n"
-             "\n"
-             "    <repository type=\"git\" url=\"$VCPKG_NUGET_REPOSITORY\"/>\n"
-             "or\n"
-             "    <repository type=\"git\"\n"
-             "                url=\"${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git\"\n"
-             "                branch=\"${GITHUB_REF}\"\n"
-             "                commit=\"${GITHUB_SHA}\"/>\n"
-             "\n"
-             "if the appropriate environment variables are defined and non-empty.\n");
-    tbl.blank();
-    tbl.text("NuGet's cache is not used by default. To use it for every nuget-based source, set the environment "
-             "variable `VCPKG_USE_NUGET_CACHE` to `true` (case-insensitive) or `1`.\n");
-    tbl.blank();
-    print2(tbl.m_str);
+    HelpTableFormatter table;
+
+    // General sources:
+    table.format("clear", msg::format(msgHelpCachingClear));
     const auto& maybe_cachepath = default_cache_path();
     if (auto p = maybe_cachepath.get())
     {
-        msg::println(msgDefaultPathToBinaries, msg::path = *p);
+        table.format("default[,<rw>]", msg::format(msgHelpBinaryCachingDefaults, msg::path = *p));
+    }
+    else
+    {
+        table.format("default[,<rw>]", msg::format(msgHelpBinaryCachingDefaultsError));
     }
 
-    msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::binarycaching_url);
+    table.format("files,<path>[,<rw>]", msg::format(msgHelpBinaryCachingFiles));
+    table.format("http,<url_template>[,<rw>[,<header>]]", msg::format(msgHelpBinaryCachingHttp));
+    table.format("x-azblob,<url>,<sas>[,<rw>]", msg::format(msgHelpBinaryCachingAzBlob));
+    table.format("x-gcs,<prefix>[,<rw>]", msg::format(msgHelpBinaryCachingGcs));
+    table.format("x-cos,<prefix>[,<rw>]", msg::format(msgHelpBinaryCachingCos));
+    table.blank();
+
+    // NuGet sources:
+    table.header(msg::format(msgHelpBinaryCachingNuGetHeader));
+    table.format("nuget,<uri>[,<rw>]", msg::format(msgHelpBinaryCachingNuGet));
+    table.format("nugetconfig,<path>[,<rw>]", msg::format(msgHelpBinaryCachingNuGetConfig));
+    table.format("nugettimeout,<seconds>", msg::format(msgHelpBinaryCachingNuGetTimeout));
+    table.format("interactive", msg::format(msgHelpBinaryCachingNuGetInteractive));
+    table.text(msg::format(msgHelpBinaryCachingNuGetFooter), 2);
+    table.text("\n<repository type=\"git\" url=\"${VCPKG_NUGET_REPOSITORY}\"/>\n"
+               "<repository type=\"git\"\n"
+               "            url=\"${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git\"\n"
+               "            branch=\"${GITHUB_REF}\"\n"
+               "            commit=\"${GITHUB_SHA}\"/>",
+               4);
+    table.blank();
+
+    // AWS sources:
+    table.blank();
+    table.header(msg::format(msgHelpBinaryCachingAwsHeader));
+    table.format("x-aws,<prefix>[,<rw>]", msg::format(msgHelpBinaryCachingAws));
+    table.format("x-aws-config,<parameter>", msg::format(msgHelpBinaryCachingAwsConfig));
+
+    return msg::format(msgHelpBinaryCaching)
+        .append_raw('\n')
+        .append_raw(table.m_str)
+        .append_raw('\n')
+        .append(msgExtendedDocumentationAtUrl, msg::url = docs::binarycaching_url);
 }
 
 std::string vcpkg::generate_nuget_packages_config(const ActionPlan& action)

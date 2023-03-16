@@ -11,30 +11,40 @@ if ($IsWindows) {
 } else {
     $cache_home = "$env:HOME/.cache"
 }
-$bundle = Join-Path $TestingRoot "bundle"
+
+$OriginalVcpkgExe = $VcpkgExe
+$OriginalVcpkgPs1 = $VcpkgPs1
+$deployment = Join-Path $TestingRoot "deploy"
+$VcpkgExe = Join-Path $deployment (Get-Item $VcpkgExe).Name
+$VcpkgPs1 = Join-Path $deployment (Get-Item $VcpkgPs1).Name
+$bundle = Join-Path $deployment "vcpkg-bundle.json"
 $manifestdir = Join-Path $TestingRoot "manifest"
 $commonArgs = @(
-    "--vcpkg-root=$bundle",
-    "--overlay-triplets=$env:VCPKG_ROOT/triplets",
-    "--overlay-triplets=$env:VCPKG_ROOT/triplets/community",
-    "--x-scripts-root=$env:VCPKG_ROOT/scripts"
+    "--overlay-triplets=$VcpkgRoot/triplets",
+    "--overlay-triplets=$VcpkgRoot/triplets/community"
 )
 
-# Test classic bundle
-New-Item -ItemType Directory -Force $bundle | Out-Null
-New-Item -ItemType File -Force $bundle/.vcpkg-root | Out-Null
+function Refresh-Deploy {
+    Refresh-TestRoot
+    New-Item -ItemType Directory -Force $deployment | Out-Null
+    Copy-Item $OriginalVcpkgExe $VcpkgExe
+    Copy-Item $OriginalVcpkgPs1 $VcpkgPs1
+}
 
+Refresh-Deploy
+
+# Test classic (not existing) bundle
 $a = Run-VcpkgAndCaptureOutput z-print-config @commonArgs
 Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
 $b = @{
-    buildtrees = Join-Path $bundle "buildtrees"
-    downloads = Join-Path $bundle "downloads"
-    packages = Join-Path $bundle "packages"
-    installed = Join-Path $bundle "installed"
-    versions_output = Join-Path $bundle "buildtrees" "versioning_" "versions"
-    tools = Join-Path $bundle "downloads" "tools"
-    vcpkg_root = $bundle
+    buildtrees = Join-Path $VcpkgRoot "buildtrees"
+    downloads = Join-Path $VcpkgRoot "downloads"
+    packages = Join-Path $VcpkgRoot "packages"
+    installed = Join-Path $VcpkgRoot "installed"
+    versions_output = Join-Path $VcpkgRoot "buildtrees" "versioning_" "versions"
+    tools = Join-Path $VcpkgRoot "downloads" "tools"
+    vcpkg_root = $VcpkgRoot
 }
 foreach ($k in $b.keys) {
     if ($a[$k] -ne $b[$k]) {
@@ -43,13 +53,10 @@ foreach ($k in $b.keys) {
 }
 
 # Test readonly bundle without manifest
-Refresh-TestRoot
-
-New-Item -ItemType Directory -Force $bundle | Out-Null
-New-Item -ItemType File -Force $bundle/.vcpkg-root | Out-Null
+Refresh-Deploy
 @{
     readonly = $True
-} | ConvertTo-JSON | out-file -enc ascii $bundle/vcpkg-bundle.json | Out-Null
+} | ConvertTo-JSON | out-file -enc ascii $bundle | Out-Null
 
 $a = Run-VcpkgAndCaptureOutput z-print-config @commonArgs
 Throw-IfFailed
@@ -62,7 +69,7 @@ $b = @{
     installed = $null
     versions_output = $null
     tools = Join-Path $cache_home "vcpkg" "downloads" "tools"
-    vcpkg_root = $bundle
+    vcpkg_root = $VcpkgRoot
 }
 foreach ($k in $b.keys) {
     if ($a[$k] -ne $b[$k]) {
@@ -71,14 +78,11 @@ foreach ($k in $b.keys) {
 }
 
 # Test readonly bundle with manifest
-Refresh-TestRoot
-
+Refresh-Deploy
 New-Item -ItemType Directory -Force $manifestdir | Out-Null
-New-Item -ItemType Directory -Force $bundle | Out-Null
-New-Item -ItemType File -Force $bundle/.vcpkg-root | Out-Null
 @{
     readonly = $True
-} | ConvertTo-JSON | out-file -enc ascii $bundle/vcpkg-bundle.json | Out-Null
+} | ConvertTo-JSON | out-file -enc ascii $bundle | Out-Null
 @{
     name = "manifest"
     version = "0"
@@ -95,7 +99,7 @@ $b = @{
     installed = Join-Path $manifestdir "vcpkg_installed"
     versions_output = Join-Path $manifestdir "vcpkg_installed" "vcpkg" "blds" "versioning_" "versions"
     tools = Join-Path $cache_home "vcpkg" "downloads" "tools"
-    vcpkg_root = $bundle
+    vcpkg_root = $VcpkgRoot
     manifest_mode_enabled = $True
 }
 foreach ($k in $b.keys) {
@@ -105,20 +109,18 @@ foreach ($k in $b.keys) {
 }
 
 # Test packages and buildtrees redirection
-Refresh-TestRoot
-
-$manifestdir = Join-Path $TestingRoot "manifest"
-
+Refresh-Deploy
 New-Item -ItemType Directory -Force $manifestdir | Out-Null
-New-Item -ItemType Directory -Force $bundle | Out-Null
-New-Item -ItemType File -Force $bundle/.vcpkg-root | Out-Null
 @{
     readonly = $True
-} | ConvertTo-JSON | out-file -enc ascii $bundle/vcpkg-bundle.json | Out-Null
+} | ConvertTo-JSON | out-file -enc ascii $bundle | Out-Null
 @{
     name = "manifest"
     version = "0"
-    dependencies = @("rapidjson")
+    dependencies = @(@{
+        name = "vcpkg-cmake"
+        host = $true
+    })
 } | ConvertTo-JSON | out-file -enc ascii $manifestdir/vcpkg.json | Out-Null
 
 $a = Run-VcpkgAndCaptureOutput z-print-config `
@@ -137,7 +139,7 @@ $b = @{
     installed = $installRoot
     versions_output = Join-Path $buildtreesRoot "versioning_" "versions"
     tools = Join-Path $cache_home "vcpkg" "downloads" "tools"
-    vcpkg_root = $bundle
+    vcpkg_root = $VcpkgRoot
     manifest_mode_enabled = $True
 }
 foreach ($k in $b.keys) {
@@ -146,9 +148,9 @@ foreach ($k in $b.keys) {
     }
 }
 
-Run-Vcpkg install zlib --dry-run @commonArgs `
+Run-Vcpkg install vcpkg-hello-world-1 --dry-run @commonArgs `
     --x-buildtrees-root=$buildtreesRoot `
-    --x-builtin-ports-root=$env:VCPKG_ROOT/ports `
+    --x-builtin-ports-root=$deploy/ports `
     --x-install-root=$installRoot `
     --x-packages-root=$packagesRoot
 Throw-IfNotFailed
@@ -158,11 +160,11 @@ $CurrentTest = "Testing bundle.usegitregistry"
 @{
     readonly = $True
     usegitregistry = $True
-} | ConvertTo-JSON | out-file -enc ascii $bundle/vcpkg-bundle.json | Out-Null
+} | ConvertTo-JSON | out-file -enc ascii $bundle | Out-Null
 Run-Vcpkg install --dry-run @commonArgs `
     --x-manifest-root=$manifestdir `
     --x-buildtrees-root=$buildtreesRoot `
-    --x-builtin-ports-root=$env:VCPKG_ROOT/ports `
+    --x-builtin-ports-root=$deploy/ports `
     --x-install-root=$installRoot `
     --x-packages-root=$packagesRoot
 Throw-IfNotFailed
@@ -172,22 +174,25 @@ New-Item -ItemType Directory -Force $manifestdir2 | Out-Null
 @{
     name = "manifest"
     version = "0"
-    dependencies = @("rapidjson")
+    dependencies = @(@{
+        name = "vcpkg-cmake"
+        host = $true
+    })
     "builtin-baseline" = "897ff9372f15c032f1e6cd1b97a59b57d66ee5b2"
 } | ConvertTo-JSON | out-file -enc ascii $manifestdir2/vcpkg.json | Out-Null
 
 Run-Vcpkg install @commonArgs `
     --x-manifest-root=$manifestdir2 `
     --x-buildtrees-root=$buildtreesRoot `
-    --x-builtin-ports-root=$env:VCPKG_ROOT/ports `
+    --x-builtin-ports-root=$deploy/ports `
     --x-install-root=$installRoot `
     --x-packages-root=$packagesRoot
 Throw-IfFailed
 
-Run-Vcpkg search zlib @commonArgs `
+Run-Vcpkg search vcpkg-hello-world-1 @commonArgs `
     --x-manifest-root=$manifestdir2 `
     --x-buildtrees-root=$buildtreesRoot `
-    --x-builtin-ports-root=$env:VCPKG_ROOT/ports `
+    --x-builtin-ports-root=$deploy/ports `
     --x-install-root=$installRoot `
     --x-packages-root=$packagesRoot
 Throw-IfFailed

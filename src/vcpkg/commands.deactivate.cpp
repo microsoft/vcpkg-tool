@@ -1,4 +1,4 @@
-#include <vcpkg/base/basic_checks.h>
+#include <vcpkg/base/basic-checks.h>
 
 #include <vcpkg/commands.deactivate.h>
 #include <vcpkg/configure-environment.h>
@@ -8,7 +8,7 @@ namespace
 {
     using namespace vcpkg;
 
-    const CommandStructure COMMAND_STRUCTURE = {create_example_string("deactivate"), 0, 0};
+    const CommandStructure COMMAND_STRUCTURE = {[] { return create_example_string("deactivate"); }, 0, 0};
 }
 
 namespace vcpkg::Commands

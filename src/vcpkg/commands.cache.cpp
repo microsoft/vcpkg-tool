@@ -1,5 +1,4 @@
 #include <vcpkg/base/files.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/binaryparagraph.h>
 #include <vcpkg/commands.cache.h>
@@ -27,9 +26,7 @@ namespace vcpkg::Commands::Cache
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
-        Strings::format(
-            "The argument should be a substring to search for, or no argument to display all cached libraries.\n%s",
-            create_example_string("cache png")),
+        [] { return msg::format(msgCacheHelp).append_raw('\n').append(create_example_string("cache png")); },
         0,
         1,
         {},
@@ -38,7 +35,7 @@ namespace vcpkg::Commands::Cache
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        (void)(args.parse_arguments(COMMAND_STRUCTURE));
+        auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
 
         const std::vector<BinaryParagraph> binary_paragraphs = read_all_binary_paragraphs(paths);
         if (binary_paragraphs.empty())
@@ -47,7 +44,7 @@ namespace vcpkg::Commands::Cache
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        if (args.command_arguments.empty())
+        if (parsed.command_arguments.empty())
         {
             for (const BinaryParagraph& binary_paragraph : binary_paragraphs)
             {
@@ -60,7 +57,7 @@ namespace vcpkg::Commands::Cache
             for (const BinaryParagraph& binary_paragraph : binary_paragraphs)
             {
                 const std::string displayname = binary_paragraph.displayname();
-                if (!Strings::case_insensitive_ascii_contains(displayname, args.command_arguments[0]))
+                if (!Strings::case_insensitive_ascii_contains(displayname, parsed.command_arguments[0]))
                 {
                     continue;
                 }

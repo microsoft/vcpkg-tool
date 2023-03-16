@@ -1,5 +1,4 @@
 #include <vcpkg/base/hash.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.find.h>
 #include <vcpkg/configure-environment.h>
@@ -98,14 +97,21 @@ namespace
     }
 
     constexpr StringLiteral OPTION_FULLDESC = "x-full-desc"; // TODO: This should find a better home, eventually
+    constexpr StringLiteral OPTION_JSON = "x-json";
 
-    constexpr std::array<CommandSwitch, 1> FindSwitches = {{{OPTION_FULLDESC, "Do not truncate long text"}}};
+    constexpr std::array<CommandSwitch, 2> FindSwitches = {{
+        {OPTION_FULLDESC, []() { return msg::format(msgHelpTextOptFullDesc); }},
+        {OPTION_JSON, []() { return msg::format(msgJsonSwitch); }},
+    }};
 
     const CommandStructure FindCommandStructure = {
-        Strings::format("Searches for the indicated artifact or port. With no parameter after 'artifact' or 'port', "
-                        "displays everything.\n%s\n%s",
-                        create_example_string("find port png"),
-                        create_example_string("find artifact cmake")),
+        [] {
+            return msg::format(msgFindHelp)
+                .append_raw('\n')
+                .append(create_example_string("find port png"))
+                .append_raw('\n')
+                .append(create_example_string("find artifact cmake"));
+        },
         1,
         2,
         {FindSwitches, {}},
@@ -121,7 +127,9 @@ namespace vcpkg::Commands
                                     Optional<StringView> filter,
                                     View<std::string> overlay_ports)
     {
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, overlay_ports));
+        auto& fs = paths.get_filesystem();
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, overlay_ports));
         auto source_paragraphs =
             Util::fmap(provider.load_all_control_files(),
                        [](auto&& port) -> const SourceControlFile* { return port->source_control_file.get(); });
@@ -213,12 +221,12 @@ namespace vcpkg::Commands
     {
         const ParsedArguments options = args.parse_arguments(FindCommandStructure);
         const bool full_description = Util::Sets::contains(options.switches, OPTION_FULLDESC);
-        const bool enable_json = args.json.value_or(false);
-        auto&& selector = args.command_arguments[0];
+        const bool enable_json = Util::Sets::contains(options.switches, OPTION_JSON);
+        auto&& selector = options.command_arguments[0];
         Optional<StringView> filter;
-        if (args.command_arguments.size() == 2)
+        if (options.command_arguments.size() == 2)
         {
-            filter = StringView{args.command_arguments[1]};
+            filter = StringView{options.command_arguments[1]};
         }
 
         if (selector == "artifact")

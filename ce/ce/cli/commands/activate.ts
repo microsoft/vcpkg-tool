@@ -59,16 +59,9 @@ export class ActivateCommand extends Command {
 
     // print the status of what is going to be activated.
     if (!await showArtifacts(resolved, projectResolver, options)) {
-      session.channels.error(i`Unable to activate project`);
       return false;
     }
 
-    if (await activate(session, resolved, projectResolver, true, options)) {
-      session.channels.message(i`Project ${projectFile(projectManifest.metadata.file.parent)} activated`);
-      return true;
-    }
-
-    session.channels.message(i`Failed to activate project ${projectFile(projectManifest.metadata.file.parent)}`);
-    return false;
+    return activate(session, false, [projectFile(projectManifest.metadata.file.parent)], resolved, projectResolver, options);
   }
 }

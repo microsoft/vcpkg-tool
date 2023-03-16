@@ -6,13 +6,14 @@
 import { lstat } from 'fs/promises';
 import { delimiter, extname, resolve } from 'path';
 import { isScalar } from 'yaml';
-import { undo as undoVariableName } from '../constants';
+import { postscriptVariable, undoVariableName } from '../constants';
 import { i } from '../i18n';
 import { Exports } from '../interfaces/metadata/exports';
 import { Session } from '../session';
+import { Channels } from '../util/channels';
 import { isIterable } from '../util/checks';
 import { replaceCurlyBraces } from '../util/curly-replacements';
-import { linq, Record } from '../util/linq';
+import { linq } from '../util/linq';
 import { Queue } from '../util/promise';
 import { Uri } from '../util/uri';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -26,16 +27,25 @@ export interface XmlWriter {
   endElement(): XmlWriter;
 }
 
+export interface UndoFile {
+  environment: Record<string, string | undefined> | undefined;
+  aliases: Array<string> | undefined;
+  stack: Array<string> | undefined;
+}
+
 function findCaseInsensitiveOnWindows<V>(map: Map<string, V>, key: string): V | undefined {
   return process.platform === 'win32' ? linq.find(map, key) : map.get(key);
 }
 export type Tuple<K, V> = [K, V];
 
-export class Activation {
+function displayNoPostScriptError(channels: Channels) {
+  channels.error(i`no postscript file: rerun with the vcpkg shell function rather than executable`);
+}
 
+export class Activation {
   #defines = new Map<string, string>();
   #aliases = new Map<string, string>();
-  #environment = new Map<string, Set<string>>();
+  #environmentChanges = new Map<string, Set<string>>();
   #properties = new Map<string, Set<string>>();
   #msbuild_properties = new Array<Tuple<string, string>>();
 
@@ -44,9 +54,42 @@ export class Activation {
   #paths = new Map<string, Set<string>>();
   #tools = new Map<string, string>();
 
-  #session: Session;
-  constructor(session: Session) {
-    this.#session = session;
+  private constructor(
+    private readonly allowStacking: boolean,
+    private readonly channels: Channels,
+    private readonly environment: NodeJS.ProcessEnv,
+    private readonly postscriptFile: Uri | undefined,
+    private readonly undoFile: UndoFile | undefined,
+    private readonly nextUndoEnvironmentFile: Uri) {
+  }
+
+  static async start(session: Session, allowStacking: boolean) : Promise<Activation> {
+    const environment = process.env;
+    const postscriptFileName = environment[postscriptVariable];
+    const postscriptFile = postscriptFileName ? session.fileSystem.file(postscriptFileName) : undefined;
+
+    const undoVariableValue = environment[undoVariableName];
+    const undoFileUri = undoVariableValue ? session.fileSystem.file(undoVariableValue) : undefined;
+    const undoFileRaw = undoFileUri ? await undoFileUri.tryReadUTF8() : undefined;
+    const undoFile = undoFileRaw ? <UndoFile>JSON.parse(undoFileRaw) : undefined;
+
+    const undoStack = undoFile?.stack;
+    if (undoFile && !allowStacking) {
+      if (undoStack) {
+        printDeactivatingMessage(session.channels, undoStack);
+        undoStack.length = 0;
+      }
+
+      if (undoFile.environment) {
+        // form what the environment "would have been" had we deactivated first for figuring out
+        // what the new environment should be
+        undoActivation(environment, undoFile.environment);
+      }
+    }
+
+    const nextUndoEnvironmentFile = session.nextPreviousEnvironment;
+
+    return new Activation(allowStacking, session.channels, environment, postscriptFile, undoFile, nextUndoEnvironmentFile);
   }
 
   addExports(exports: Exports, targetFolder: Uri) {
@@ -125,11 +168,13 @@ export class Activation {
   addDefine(name: string, value: string) {
     const v = findCaseInsensitiveOnWindows(this.#defines, name);
 
-    if (v && v !== value) {
+    if (v === undefined) {
+      this.#defines.set(name, value);
+    } else if (v !== value) {
       // conflict. todo: what do we want to do?
-      this.#session.channels.warning(i`Duplicate define ${name} during activation. New value will replace old.`);
+      this.channels.warning(i`Duplicate define ${name} during activation. New value will replace old.`);
+      this.#defines.set(name, value);
     }
-    this.#defines.set(name, value);
   }
 
   get defines() {
@@ -144,10 +189,12 @@ export class Activation {
   /** a collection of tool locations from artifacts */
   addTool(name: string, value: string) {
     const t = findCaseInsensitiveOnWindows(this.#tools, name);
-    if (t && t !== value) {
-      this.#session.channels.error(i`Duplicate tool declared ${name} during activation.  New value will replace old.`);
+    if (t === undefined) {
+      this.#tools.set(name, value);
+    } else if (t !== value) {
+      this.channels.warning(i`Duplicate tool declared ${name} during activation.  New value will replace old.`);
+      this.#tools.set(name, value);
     }
-    this.#tools.set(name, value);
   }
 
   get tools() {
@@ -166,10 +213,12 @@ export class Activation {
   /** Aliases are tools that get exposed to the user as shell aliases */
   addAlias(name: string, value: string) {
     const a = findCaseInsensitiveOnWindows(this.#aliases, name);
-    if (a && a !== value) {
-      this.#session.channels.error(i`Duplicate alias declared ${name} during activation.  New value will replace old.`);
+    if (a === undefined) {
+      this.#aliases.set(name, value);
+    } else if (a !== value) {
+      this.channels.warning(i`Duplicate alias declared ${name} during activation.  New value will replace old.`);
+      this.#aliases.set(name, value);
     }
-    this.#aliases.set(name, value);
   }
 
   async getAlias(name: string, refcheck = new Set<string>()): Promise<string | undefined> {
@@ -196,10 +245,12 @@ export class Activation {
     location = typeof location === 'string' ? location : location.fsPath;
 
     const l = this.#locations.get(name);
-    if (l !== location) {
-      this.#session.channels.error(i`Duplicate location declared ${name} during activation. New value will replace old.`);
+    if (l === undefined) {
+      this.#locations.set(name, location);
+    } else if (l !== location) {
+      this.channels.warning(i`Duplicate location declared ${name} during activation. New value will replace old.`);
+      this.#locations.set(name, location);
     }
-    this.#locations.set(name, location);
   }
 
   get locations() {
@@ -251,10 +302,10 @@ export class Activation {
       return;
     }
 
-    let v = findCaseInsensitiveOnWindows(this.#environment, name);
+    let v = findCaseInsensitiveOnWindows(this.#environmentChanges, name);
     if (!v) {
       v = new Set<string>();
-      this.#environment.set(name, v);
+      this.#environmentChanges.set(name, v);
     }
 
     if (typeof value === 'string') {
@@ -266,17 +317,13 @@ export class Activation {
     }
   }
 
-  get environmentVariables() {
-    return linq.entries(this.#environment).selectAsync(async ([key, value]) => <Tuple<string, Set<string>>>[key, await this.resolveAndVerify(value)]);
-  }
-
   /** a collection of arbitrary properties from artifacts */
   addProperty(name: string, value: string | Iterable<string>) {
     if (!name) {
       return;
     }
     let v = this.#properties.get(name);
-    if (!v) {
+    if (v === undefined) {
       v = new Set<string>();
       this.#properties.set(name, v);
     }
@@ -338,7 +385,7 @@ export class Activation {
 
   private resolveVariables(text: string, locals: Array<string> = [], refcheck = new Set<string>()): string {
     if (isScalar(text)) {
-      this.#session.channels.debug(`internal warning: scalar value being used directly : ${text.value}`);
+      this.channels.debug(`internal warning: scalar value being used directly : ${text.value}`);
       text = <any>text.value; // spews a --debug warning if a scalar makes its way thru for some reason
     }
 
@@ -349,8 +396,8 @@ export class Activation {
 
     // prevent circular resolution
     if (refcheck.has(text)) {
-      this.#session.channels.warning(i`Circular variable reference detected: ${text}`);
-      this.#session.channels.debug(i`Circular variable reference detected: ${text} - ${linq.join(refcheck, ' -> ')}`);
+      this.channels.warning(i`Circular variable reference detected: ${text}`);
+      this.channels.debug(i`Circular variable reference detected: ${text} - ${linq.join(refcheck, ' -> ')}`);
       return text;
     }
 
@@ -363,13 +410,13 @@ export class Activation {
     switch (obj) {
       case 'environment': {
         // lookup environment variable value
-        const v = findCaseInsensitiveOnWindows(this.#environment, member);
+        const v = findCaseInsensitiveOnWindows(this.#environmentChanges, member);
         if (v) {
           return this.resolveVariables(linq.join(v, ' '), [], refcheck);
         }
 
         // lookup the environment variable in the original environment
-        const orig = this.#session.environment[member];
+        const orig = this.environment[member];
         if (orig) {
           return orig;
         }
@@ -425,11 +472,11 @@ export class Activation {
       }
 
       default:
-        this.#session.channels.warning(i`Variable reference found '$${obj}.${member}' that is referencing an unknown base object.`);
+        this.channels.warning(i`Variable reference found '$${obj}.${member}' that is referencing an unknown base object.`);
         return `$${obj}.${member}`;
     }
 
-    this.#session.channels.debug(i`Unresolved variable reference found ($${obj}.${member}) during variable substitution.`);
+    this.channels.debug(i`Unresolved variable reference found ($${obj}.${member}) during variable substitution.`);
     return `$${obj}.${member}`;
   }
 
@@ -451,7 +498,7 @@ export class Activation {
         return path;
       } catch {
         // does not exist
-        this.#session.channels.error(i`Invalid path - does not exist: ${path}`);
+        this.channels.error(i`Invalid path - does not exist: ${path}`);
       }
     }
     return '';
@@ -499,14 +546,13 @@ export class Activation {
     return result.toString();
   }
 
-  protected async generateEnvironmentVariables(originalEnvironment: Record<string, string | undefined>): Promise<[Record<string, string>, Record<string, string>]> {
-
-    const undo = new Record<string, string>();
-    const env = new Record<string, string>();
+  protected async generateEnvironmentVariables(): Promise<[Record<string, string>, Record<string, string>]> {
+    const undo : Record<string, string> = {};
+    const env : Record<string, string> = {};
 
     for await (const [pathVariable, locations] of this.paths) {
       if (locations.size) {
-        const originalVariable = linq.find(originalEnvironment, pathVariable) || '';
+        const originalVariable = linq.find(this.environment, pathVariable) || '';
         if (originalVariable) {
           for (const p of originalVariable.split(delimiter)) {
             if (p) {
@@ -523,15 +569,17 @@ export class Activation {
     }
 
     // combine environment variables with multiple values with spaces (uses: CFLAGS, etc)
-    for await (const [variable, values] of this.environmentVariables) {
+    const environmentVariables = linq.entries(this.#environmentChanges)
+      .selectAsync(async ([key, value]) => <Tuple<string, Set<string>>>[key, await this.resolveAndVerify(value)]);
+    for await (const [variable, values] of environmentVariables) {
       env[variable] = linq.join(values, ' ');
-      undo[variable] = originalEnvironment[variable] || '';
+      undo[variable] = this.environment[variable] || '';
     }
 
     // .tools get defined as environment variables too.
     for await (const [variable, value] of this.tools) {
       env[variable] = value;
-      undo[variable] = originalEnvironment[variable] || '';
+      undo[variable] = this.environment[variable] || '';
     }
 
     // .defines get compiled into a single environment variable.
@@ -539,35 +587,21 @@ export class Activation {
     for await (const [name, value] of this.defines) {
       defines += value ? `-D${name}=${value} ` : `-D${name} `;
     }
+
     if (defines) {
       env['DEFINES'] = defines;
-      undo['DEFINES'] = originalEnvironment['DEFINES'] || '';
+      undo['DEFINES'] = this.environment['DEFINES'] || '';
     }
 
     return [env, undo];
   }
 
-  async activate(undoEnvironmentFile: Uri | undefined, msbuildFile: Uri | undefined, json: Uri | undefined) {
-    let undoDeactivation = '';
-    const scriptKind = extname(this.#session.postscriptFile?.fsPath || '');
-
-    const currentEnvironment = {...this.#session.environment};
-
-    // load previous activation undo data
-    const previous = currentEnvironment[undoVariableName];
-    if (previous && undoEnvironmentFile) {
-      const deactivationDataFile = this.#session.fileSystem.file(previous);
-      const deactivationData = await deactivationDataFile.tryReadUTF8();
-      if (deactivationData) {
-        const deactivationParsed = JSON.parse(deactivationData);
-        const previousEnvironmentValues = deactivationParsed.environment || {};
-        undoActivation(currentEnvironment, previousEnvironmentValues);
-        delete currentEnvironment[undoVariableName];
-        undoDeactivation = generateScriptContent(scriptKind, previousEnvironmentValues, deactivationParsed.aliases || {});
-      }
+  async activate(thisStackEntries: Array<string>, msbuildFile: Uri | undefined, json: Uri | undefined) {
+    const postscriptFile = this.postscriptFile;
+    if (!postscriptFile && !msbuildFile && !json) {
+      displayNoPostScriptError(this.channels);
+      return;
     }
-
-    const [variables, undo] = await this.generateEnvironmentVariables(currentEnvironment);
 
     async function transformtoRecord<T, U = T> (
       orig: AsyncGenerator<Promise<Tuple<string, T>>, any, unknown>,
@@ -585,100 +619,98 @@ export class Activation {
     const properties = await transformtoRecord(this.properties, (set) => Array.from(set));
     const paths = await transformtoRecord(this.paths, (set) => Array.from(set));
 
-    // generate undo file if requested
-    if (undoEnvironmentFile) {
-      const undoContents = {
-        environment: undo,
-        aliases: linq.keys(aliases).select(each => <[string, string]>[each, '']).toObject(each => each)
-      };
+    const [variables, undo] = await this.generateEnvironmentVariables();
 
-      // make a note of the location
-      variables[undoVariableName] = undoEnvironmentFile.fsPath;
-
-      const contents = JSON.stringify(undoContents, (k, v) => this.#session.serializer(k, v), 2);
-      this.#session.channels.debug(`--------[START UNDO FILE]--------\n${contents}\n--------[END UNDO FILE]---------`);
-      // create the file on disk
-      await undoEnvironmentFile.writeUTF8(contents);
-    }
-
-    // generate shell script if requested
-    if (this.#session.postscriptFile) {
-      const contents = undoDeactivation + generateScriptContent(scriptKind, variables, aliases);
-
-      this.#session.channels.debug(`--------[START SHELL SCRIPT FILE]--------\n${contents}\n--------[END SHELL SCRIPT FILE]---------`);
-      await this.#session.postscriptFile.writeUTF8(contents);
-    }
-
-    // generate msbuild props file if requested
+    // msbuildFile and json are always generated as if deactivation happend first so that their
+    // content does not depend on the stacked environment.
     if (msbuildFile) {
       const contents = await this.generateMSBuild();
-      this.#session.channels.debug(`--------[START MSBUILD FILE]--------\n${contents}\n--------[END MSBUILD FILE]---------`);
+      this.channels.debug(`--------[START MSBUILD FILE]--------\n${contents}\n--------[END MSBUILD FILE]---------`);
       await msbuildFile.writeUTF8(contents);
     }
 
     if (json) {
       const contents = generateJson(variables, defines, aliases, properties, locations, paths, tools);
-      this.#session.channels.debug(`--------[START ENV VAR FILE]--------\n${contents}\n--------[END ENV VAR FILE]---------`);
+      this.channels.debug(`--------[START ENV VAR FILE]--------\n${contents}\n--------[END ENV VAR FILE]---------`);
       await json.writeUTF8(contents);
     }
-  }
 
-
-  /** produces an environment block that can be passed to child processes to leverage dependent artifacts during installation/activation. */
-  async getEnvironmentBlock(): Promise<NodeJS.ProcessEnv> {
-    const result = { ... this.#session.environment };
-
-    // add environment variables
-    for await (const [k, v] of this.environmentVariables) {
-      result[k] = linq.join(v, ' ');
-    }
-
-    // update environment path variables
-    for await (const [pathVariable, locations] of this.paths) {
-      if (locations.size) {
-        const originalVariable = linq.find(result, pathVariable) || '';
-        if (originalVariable) {
-          for (const p of originalVariable.split(delimiter)) {
-            if (p) {
-              locations.add(p);
-            }
+    if (postscriptFile) {
+      // preserve undo environment variables for anything this particular activation did not touch
+      const oldEnvironment = this.undoFile?.environment;
+      if (oldEnvironment) {
+        for (const oldUndoKey in oldEnvironment) {
+          undo[oldUndoKey] = oldEnvironment[oldUndoKey] ?? '';
+          if (!this.allowStacking && variables[oldUndoKey] === undefined) {
+            variables[oldUndoKey] = '';
           }
         }
-        result[pathVariable] = linq.join(locations, delimiter);
       }
-    }
 
-    // define tool environment variables
-    for await (const [toolName, toolLocation] of this.tools) {
-      result[toolName] = toolLocation;
-    }
+      if (!variables[undoVariableName]) {
+        variables[undoVariableName] = this.nextUndoEnvironmentFile.fsPath;
+      }
 
-    return result;
+      // if any aliases were undone, remove them
+      const oldAliases = this.undoFile?.aliases;
+      if (oldAliases) {
+        for (const oldAlias in oldAliases) {
+          if (aliases[oldAlias] === undefined) {
+            aliases[oldAlias] = '';
+          }
+        }
+      }
+
+      const newUndoStack = this.undoFile?.stack ?? [];
+      Array.prototype.push.apply(newUndoStack, thisStackEntries);
+      this.channels.message(i`Activating: ${newUndoStack.join(' + ')}`);
+
+      // generate shell script
+      await writePostscript(this.channels, postscriptFile, variables, aliases);
+
+      const nonEmptyAliases : Array<string> = [];
+      for (const alias in aliases) {
+        if (aliases[alias]) {
+          nonEmptyAliases.push(alias);
+        }
+      }
+
+      const undoContents : UndoFile = {
+        environment: undo,
+        aliases: nonEmptyAliases,
+        stack: newUndoStack
+      };
+
+      const undoStringified = JSON.stringify(undoContents);
+      this.channels.debug(`--------[START UNDO FILE]--------\n${undoStringified}\n--------[END UNDO FILE]---------`);
+      await this.nextUndoEnvironmentFile.writeUTF8(undoStringified);
+    }
   }
+
 }
 
-function generateCmdScript(variables: Record<string, string>, aliases: Record<string, string>): string {
+function generateCmdScript(variables: Record<string, string | undefined>, aliases: Record<string, string>): string {
   return linq.entries(variables).select(([k, v]) => { return v ? `set ${k}=${v}` : `set ${k}=`; }).join('\r\n') +
     '\r\n' +
     linq.entries(aliases).select(([k, v]) => { return v ? `doskey ${k}=${v} $*` : `doskey ${k}=`; }).join('\r\n') +
     '\r\n';
 }
 
-function generatePowerShellScript(variables: Record<string, string>, aliases: Record<string, string>): string {
+function generatePowerShellScript(variables: Record<string, string | undefined>, aliases: Record<string, string>): string {
   return linq.entries(variables).select(([k, v]) => { return v ? `$\{ENV:${k}}="${v}"` : `$\{ENV:${k}}=$null`; }).join('\n') +
     '\n' +
     linq.entries(aliases).select(([k, v]) => { return v ? `function global:${k} { & ${v} @args }` : `remove-item -ea 0 "function:${k}"`; }).join('\n') +
     '\n';
 }
 
-function generatePosixScript(variables: Record<string, string>, aliases: Record<string, string>): string {
+function generatePosixScript(variables: Record<string, string | undefined>, aliases: Record<string, string>): string {
   return linq.entries(variables).select(([k, v]) => { return v ? `export ${k}="${v}"` : `unset ${k[0]}`; }).join('\n') +
     '\n' +
     linq.entries(aliases).select(([k, v]) => { return v ? `${k}() {\n  ${v} $* \n}` : `unset -f ${v} > /dev/null 2>&1`; }).join('\n') +
     '\n';
 }
 
-function generateScriptContent(kind: string, variables: Record<string, string>, aliases: Record<string, string>) {
+function generateScriptContent(kind: string, variables: Record<string, string | undefined>, aliases: Record<string, string>) {
   switch (kind) {
     case '.ps1':
       return generatePowerShellScript(variables, aliases);
@@ -688,6 +720,13 @@ function generateScriptContent(kind: string, variables: Record<string, string>, 
       return generatePosixScript(variables, aliases);
   }
   return '';
+}
+
+async function writePostscript(channels: Channels, postscriptFile: Uri, variables: Record<string, string | undefined>, aliases: Record<string, string>) {
+  const contents = generateScriptContent(extname(postscriptFile.fsPath), variables, aliases);
+  channels.debug(`--------[START SHELL SCRIPT FILE]--------\n${contents}\n--------[END SHELL SCRIPT FILE]---------`);
+  channels.debug(`Postscript file ${postscriptFile}`);
+  await postscriptFile.writeUTF8(contents);
 }
 
 function generateJson(variables: Record<string, string>, defines: Record<string, string>, aliases: Record<string, string>,
@@ -707,17 +746,63 @@ function generateJson(variables: Record<string, string>, defines: Record<string,
   return JSON.stringify(contents);
 }
 
-export async function deactivate(shellScriptFile: Uri, variables: Record<string, string>, aliases: Record<string, string>) {
-  const kind = extname(shellScriptFile.fsPath);
-  await shellScriptFile.writeUTF8(generateScriptContent(kind, variables, aliases));
+function printDeactivatingMessage(channels: Channels, stack: Array<string>) {
+  channels.message(i`Deactivating: ${stack.join(' + ')}`);
 }
 
-function undoActivation(targetEnvironment: Record<string, string | undefined>, oldVariableValues: Record<string, string>) {
-  for (const [key, value] of linq.entries(oldVariableValues)) {
+
+export async function deactivate(session: Session, warnIfNoActivation: boolean) {
+  const undoVariableValue = process.env[undoVariableName];
+  if (!undoVariableValue) {
+    if (warnIfNoActivation) {
+      session.channels.warning(i`nothing is activated, no changes have been made`);
+    }
+
+    return true;
+  }
+
+  const postscriptFileName = process.env[postscriptVariable];
+  if (!postscriptFileName) {
+    displayNoPostScriptError(session.channels);
+    return false;
+  }
+
+  const postscriptFile = session.fileSystem.file(postscriptFileName);
+  const undoFileUri = session.fileSystem.file(undoVariableValue);
+  const undoFileRaw = await undoFileUri.tryReadUTF8();
+  if (undoFileRaw) {
+    const undoFile = <UndoFile>JSON.parse(undoFileRaw);
+    const deactivationStack = undoFile.stack;
+    if (deactivationStack) {
+      printDeactivatingMessage(session.channels, deactivationStack);
+    }
+
+    const deactivationEnvironment = {...undoFile.environment};
+    deactivationEnvironment[undoVariableName] = '';
+
+    const deactivateAliases : Record<string, string> = {};
+    const aliases = undoFile.aliases;
+    if (aliases) {
+      for (const alias of aliases) {
+        deactivateAliases[alias] = '';
+      }
+    }
+
+    await writePostscript(session.channels, postscriptFile, deactivationEnvironment, deactivateAliases);
+    await undoFileUri.delete();
+  }
+
+  return true;
+}
+
+// replace all values in target with those in source
+function undoActivation(target: NodeJS.ProcessEnv, source: Record<string, string | undefined>) {
+  for (const key in source) {
+    const value = source[key];
     if (value) {
-      targetEnvironment[key] = value;
+      target[key] = value;
     } else {
-      delete targetEnvironment[key];
+      delete target[key];
     }
   }
 }

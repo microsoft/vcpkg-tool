@@ -4,9 +4,8 @@
 import { strict } from 'assert';
 import { createHash } from 'crypto';
 import { MetadataFile } from './amf/metadata-file';
-import { deactivate } from './artifacts/activation';
 import { Artifact, InstalledArtifact } from './artifacts/artifact';
-import { configurationName, defaultConfig, globalConfigurationFile, postscriptVariable, undo } from './constants';
+import { configurationName, defaultConfig } from './constants';
 import { FileSystem } from './fs/filesystem';
 import { HttpsFileSystem } from './fs/http-filesystem';
 import { LocalFileSystem } from './fs/local-filesystem';
@@ -56,9 +55,11 @@ export type SessionSettings = {
   readonly vcpkgDownloads?: string;
   readonly vcpkgRegistriesCache?: string;
   readonly telemetryFile?: string;
+  readonly nextPreviousEnvironment?: string;
+  readonly globalConfig?: string;
 }
 
-interface AcquiredArtifactEntry {
+interface ArtifactEntry {
   registryUri: string;
   id: string;
   version: string;
@@ -68,7 +69,7 @@ function hexsha(content: string) {
   return createHash('sha256').update(content, 'ascii').digest('hex');
 }
 
-function formatAcquiredArtifactEntry(entry: AcquiredArtifactEntry): string {
+function formatArtifactEntry(entry: ArtifactEntry): string {
   // we hash all the things to remove PII
   return `${hexsha(entry.registryUri)}:${hexsha(entry.id)}:${hexsha(entry.version)}`;
 }
@@ -86,7 +87,7 @@ export class Session {
   readonly fileSystem: FileSystem;
   readonly channels: Channels;
   readonly homeFolder: Uri;
-  readonly tmpFolder: Uri;
+  readonly nextPreviousEnvironment: Uri;
   readonly installFolder: Uri;
   readonly registryFolder: Uri;
   readonly telemetryFile: Uri | undefined;
@@ -96,7 +97,6 @@ export class Session {
   readonly downloads: Uri;
   currentDirectory: Uri;
   configuration?: MetadataFile;
-  readonly postscriptFile?: Uri;
 
   /** register installer functions here */
   private installers = new Map<string, InstallerTool>([
@@ -113,11 +113,11 @@ export class Session {
     return argSetting ? this.fileSystem.file(argSetting) : this.homeFolder.join(defaultName);
   }
 
-  constructor(currentDirectory: string, public readonly context: Context, public readonly settings: SessionSettings, public readonly environment: NodeJS.ProcessEnv) {
+  constructor(currentDirectory: string, public readonly context: Context, public readonly settings: SessionSettings) {
     this.fileSystem = new UnifiedFileSystem(this).
       register('file', new LocalFileSystem(this)).
       register('vsix', new VsixLocalFilesystem(this)).
-      register(['https'], new HttpsFileSystem(this)
+      register('https', new HttpsFileSystem(this)
       );
 
     this.channels = new Channels(this);
@@ -128,15 +128,11 @@ export class Session {
 
     this.homeFolder = this.fileSystem.file(settings.homeFolder);
     this.downloads = this.processVcpkgArg(settings.vcpkgDownloads, 'downloads');
-    this.globalConfig = this.homeFolder.join(globalConfigurationFile);
-
-    this.tmpFolder = this.homeFolder.join('tmp');
+    this.globalConfig = this.processVcpkgArg(settings.globalConfig, configurationName);
 
     this.registryFolder = this.processVcpkgArg(settings.vcpkgRegistriesCache, 'registries').join('artifact');
     this.installFolder = this.processVcpkgArg(settings.vcpkgArtifactsRoot, 'artifacts');
-
-    const postscriptFileName = this.environment[postscriptVariable];
-    this.postscriptFile = postscriptFileName ? this.fileSystem.file(postscriptFileName) : undefined;
+    this.nextPreviousEnvironment = this.processVcpkgArg(settings.nextPreviousEnvironment, `previous-environment-${Date.now().toFixed()}.json`);
 
     this.currentDirectory = this.fileSystem.file(currentDirectory);
   }
@@ -210,20 +206,6 @@ export class Session {
     return (location.toString() === startLocation.toString()) ? undefined : this.findProjectProfile(location);
   }
 
-  async deactivate() {
-    const previous = this.environment[undo];
-    if (previous && this.postscriptFile) {
-      const deactivationDataFile = this.fileSystem.file(previous);
-      if (deactivationDataFile.scheme === 'file' && await deactivationDataFile.exists()) {
-
-        const deactivationData = JSON.parse(await deactivationDataFile.readUTF8());
-        delete deactivationData.environment[undo];
-        await deactivate(this.postscriptFile, deactivationData.environment || {}, deactivationData.aliases || {});
-        await deactivationDataFile.delete();
-      }
-    }
-  }
-
   async getInstalledArtifacts() {
     const result = new Array<{ folder: Uri, id: string, artifact: Artifact }>();
     if (! await this.installFolder.exists()) {
@@ -254,41 +236,27 @@ export class Session {
     return await MetadataFile.parseConfiguration(filename, await uri.readUTF8(), this);
   }
 
-  serializer(key: any, value: any) {
-    if (value instanceof Map) {
-      return { dataType: 'Map', value: Array.from(value.entries()) };
-    }
-    return value;
-  }
-
-  deserializer(key: any, value: any) {
-    if (typeof value === 'object' && value !== null) {
-      switch (value.dataType) {
-        case 'Map':
-          return new Map(value.value);
-      }
-      if (value.scheme && value.path) {
-        return this.fileSystem.from(value);
-      }
-    }
-    return value;
-  }
-
-  readonly #acquiredArtifacts: Array<AcquiredArtifactEntry> = [];
+  readonly #acquiredArtifacts: Array<ArtifactEntry> = [];
+  readonly #activatedArtifacts: Array<ArtifactEntry> = [];
 
   trackAcquire(registryUri: string, id: string, version: string) {
-    this.#acquiredArtifacts.push({registryUri: registryUri, id: id, version: version});
+    this.#acquiredArtifacts.push({ registryUri: registryUri, id: id, version: version });
+  }
+
+  trackActivate(registryUri: string, id: string, version: string) {
+    this.#activatedArtifacts.push({ registryUri: registryUri, id: id, version: version });
   }
 
   writeTelemetry(): Promise<any> {
-    if (this.#acquiredArtifacts.length !== 0) {
-      const acquiredArtifacts = this.#acquiredArtifacts.map(formatAcquiredArtifactEntry).join(',');
-      const telemetryFile = this.telemetryFile;
-      if (telemetryFile) {
-        return telemetryFile.writeUTF8(JSON.stringify({
-          'acquired_artifacts': acquiredArtifacts
-        }));
-      }
+    const acquiredArtifacts = this.#acquiredArtifacts.map(formatArtifactEntry).join(',');
+    const activatedArtifacts = this.#activatedArtifacts.map(formatArtifactEntry).join(',');
+
+    const telemetryFile = this.telemetryFile;
+    if (telemetryFile) {
+      return telemetryFile.writeUTF8(JSON.stringify({
+        'acquired_artifacts': acquiredArtifacts,
+        'activated_artifacts': activatedArtifacts
+      }));
     }
 
     return Promise.resolve(undefined);

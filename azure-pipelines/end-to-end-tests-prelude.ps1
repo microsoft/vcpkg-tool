@@ -99,9 +99,9 @@ function Run-VcpkgAndCaptureOutput {
         [Parameter(ValueFromRemainingArguments)]
         [string[]]$TestArgs
     )
-    $Script:CurrentTest = "$VcpkgExe $($testArgs -join ' ')"
+    $Script:CurrentTest = "$VcpkgPs1 $($testArgs -join ' ')"
     if (!$EndToEndTestSilent) { Write-Host -ForegroundColor red $Script:CurrentTest }
-    $result = (& $VcpkgExe @testArgs) | Out-String
+    $result = (& "$VcpkgPs1" @testArgs) | Out-String
     if (!$EndToEndTestSilent) { Write-Host -ForegroundColor Gray $result }
     $result
 }

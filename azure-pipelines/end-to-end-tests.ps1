@@ -28,7 +28,9 @@ Param(
     [ValidateNotNullOrEmpty()]
     [string]$Filter,
     [Parameter(Mandatory = $false)]
-    [string]$VcpkgExe
+    [string]$VcpkgExe,
+    [Parameter(Mandatory = $false, HelpMessage="Run artifacts tests, only usable when vcpkg was built with VCPKG_ARTIFACTS_DEVELOPMENT=ON")]
+    [switch]$RunArtifactsTests
 )
 
 $ErrorActionPreference = "Stop"
@@ -71,6 +73,7 @@ if ([string]::IsNullOrEmpty($VcpkgExe))
 }
 
 $VcpkgExe = (Get-Item $VcpkgExe).FullName
+$VcpkgPs1 = Join-Path ((Get-Item $VcpkgExe).Directory) "vcpkg.ps1"
 
 [Array]$AllTests = Get-ChildItem $PSScriptRoot/end-to-end-tests-dir/*.ps1
 if ($Filter -ne $Null) {

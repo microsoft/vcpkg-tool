@@ -1,10 +1,10 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/configuration.h>
@@ -19,6 +19,15 @@
 
 namespace vcpkg
 {
+    struct UrlDeserializer : Json::StringDeserializer
+    {
+        LocalizedString type_name() const override { return msg::format(msgAUrl); }
+
+        static const UrlDeserializer instance;
+    };
+
+    const UrlDeserializer UrlDeserializer::instance;
+
     template<class Lhs, class Rhs>
     static bool paragraph_equal(const Lhs& lhs, const Rhs& rhs)
     {
@@ -42,7 +51,6 @@ namespace vcpkg
         if (lhs.default_features != rhs.default_features) return false;
         if (lhs.license != rhs.license) return false;
 
-        if (lhs.type != rhs.type) return false;
         if (!structurally_equal(lhs.supports_expression, rhs.supports_expression)) return false;
 
         if (lhs.extra_info != rhs.extra_info) return false;
@@ -73,17 +81,17 @@ namespace vcpkg
 
     namespace SourceParagraphFields
     {
-        static const std::string BUILD_DEPENDS = "Build-Depends";
-        static const std::string DEFAULT_FEATURES = "Default-Features";
-        static const std::string DESCRIPTION = "Description";
-        static const std::string FEATURE = "Feature";
-        static const std::string MAINTAINERS = "Maintainer";
-        static const std::string NAME = "Source";
-        static const std::string VERSION = "Version";
-        static const std::string PORT_VERSION = "Port-Version";
-        static const std::string HOMEPAGE = "Homepage";
-        static const std::string TYPE = "Type";
-        static const std::string SUPPORTS = "Supports";
+        static constexpr StringLiteral BUILD_DEPENDS = "Build-Depends";
+        static constexpr StringLiteral DEFAULT_FEATURES = "Default-Features";
+        static constexpr StringLiteral DESCRIPTION = "Description";
+        static constexpr StringLiteral FEATURE = "Feature";
+        static constexpr StringLiteral MAINTAINERS = "Maintainer";
+        static constexpr StringLiteral NAME = "Source";
+        static constexpr StringLiteral VERSION = "Version";
+        static constexpr StringLiteral PORT_VERSION = "Port-Version";
+        static constexpr StringLiteral HOMEPAGE = "Homepage";
+        static constexpr StringLiteral TYPE = "Type";
+        static constexpr StringLiteral SUPPORTS = "Supports";
     }
 
     static Span<const StringView> get_list_of_valid_fields()
@@ -105,26 +113,6 @@ namespace vcpkg
     }
 
     void print_error_message(Span<const std::unique_ptr<ParseControlErrorInfo>> error_info_list);
-
-    std::string Type::to_string(const Type& t)
-    {
-        switch (t.type)
-        {
-            case Type::ALIAS: return "Alias";
-            case Type::PORT: return "Port";
-            default: return "Unknown";
-        }
-    }
-
-    Type Type::from_string(const std::string& t)
-    {
-        if (t == "Alias") return Type{Type::ALIAS};
-        if (t == "Port" || t.empty()) return Type{Type::PORT};
-        return Type{Type::UNKNOWN};
-    }
-
-    bool operator==(const Type& lhs, const Type& rhs) { return lhs.type == rhs.type; }
-    bool operator!=(const Type& lhs, const Type& rhs) { return !(lhs == rhs); }
 
     static void trim_all(std::vector<std::string>& arr)
     {
@@ -237,10 +225,9 @@ namespace vcpkg
                 {
                     auto error_info = std::make_unique<ParseControlErrorInfo>();
                     error_info->name = scf.core_paragraph->name;
-                    error_info->error = Strings::format(R"(Multiple features with the same name for port %s: %s
-    This is invalid; please make certain that features have distinct names.)",
-                                                        scf.core_paragraph->name,
-                                                        (*adjacent_equal)->name);
+                    error_info->error = msg::format_error(msgMultipleFeatures,
+                                                          msg::package_name = scf.core_paragraph->name,
+                                                          msg::feature = (*adjacent_equal)->name);
                     return error_info;
                 }
                 return nullptr;
@@ -267,7 +254,7 @@ namespace vcpkg
             }
             else
             {
-                parser.add_type_error(SourceParagraphFields::PORT_VERSION, "a non-negative integer");
+                parser.add_type_error(SourceParagraphFields::PORT_VERSION, msg::format(msgANonNegativeInteger));
             }
         }
 
@@ -322,11 +309,12 @@ namespace vcpkg
             }
             else
             {
-                parser.add_type_error(SourceParagraphFields::SUPPORTS, "a platform expression");
+                parser.add_type_error(SourceParagraphFields::SUPPORTS, msg::format(msgAPlatformExpression));
             }
         }
 
-        spgh->type = Type::from_string(parser.optional_field(SourceParagraphFields::TYPE));
+        // This is leftover from a previous attempt to add "alias ports", not currently used.
+        (void)parser.optional_field(SourceParagraphFields::TYPE);
         auto err = parser.error_info(spgh->name.empty() ? origin : spgh->name);
         if (err)
             return err;
@@ -402,11 +390,11 @@ namespace vcpkg
         return control_file;
     }
 
-    struct PlatformExprDeserializer : Json::IDeserializer<PlatformExpression::Expr>
+    struct PlatformExprDeserializer final : Json::IDeserializer<PlatformExpression::Expr>
     {
-        virtual StringView type_name() const override { return "a platform expression"; }
+        virtual LocalizedString type_name() const override { return msg::format(msgAPlatformExpression); }
 
-        virtual Optional<PlatformExpression::Expr> visit_string(Json::Reader& r, StringView sv) override
+        virtual Optional<PlatformExpression::Expr> visit_string(Json::Reader& r, StringView sv) const override
         {
             auto opt =
                 PlatformExpression::parse_platform_expression(sv, PlatformExpression::MultipleBinaryOperators::Deny);
@@ -416,18 +404,19 @@ namespace vcpkg
             }
             else
             {
-                r.add_generic_error(type_name(), opt.error());
+                r.add_generic_error(type_name(), std::move(opt).error());
                 return PlatformExpression::Expr::Empty();
             }
         }
 
-        static PlatformExprDeserializer instance;
+        static const PlatformExprDeserializer instance;
     };
-    PlatformExprDeserializer PlatformExprDeserializer::instance;
 
-    struct DependencyDeserializer : Json::IDeserializer<Dependency>
+    const PlatformExprDeserializer PlatformExprDeserializer::instance;
+
+    struct DependencyDeserializer final : Json::IDeserializer<Dependency>
     {
-        virtual StringView type_name() const override { return "a dependency"; }
+        virtual LocalizedString type_name() const override { return msg::format(msgADependency); }
 
         constexpr static StringLiteral NAME = "name";
         constexpr static StringLiteral HOST = "host";
@@ -438,7 +427,7 @@ namespace vcpkg
 
         virtual Span<const StringView> valid_fields() const override
         {
-            static const StringView t[] = {
+            static constexpr StringView t[] = {
                 NAME,
                 HOST,
                 FEATURES,
@@ -450,12 +439,11 @@ namespace vcpkg
             return t;
         }
 
-        virtual Optional<Dependency> visit_string(Json::Reader& r, StringView sv) override
+        virtual Optional<Dependency> visit_string(Json::Reader& r, StringView sv) const override
         {
-            if (!Json::PackageNameDeserializer::is_package_name(sv))
+            if (!Json::IdentifierDeserializer::is_ident(sv))
             {
-                r.add_generic_error(type_name(),
-                                    "must be lowercase alphanumeric+hyphens, split with periods, and not reserved");
+                r.add_generic_error(type_name(), msg::format(msgInvalidDependency));
             }
 
             Dependency dep;
@@ -463,7 +451,7 @@ namespace vcpkg
             return dep;
         }
 
-        virtual Optional<Dependency> visit_object(Json::Reader& r, const Json::Object& obj) override
+        virtual Optional<Dependency> visit_object(Json::Reader& r, const Json::Object& obj) const override
         {
             Dependency dep;
 
@@ -475,10 +463,8 @@ namespace vcpkg
                 }
             }
 
-            static Json::ArrayDeserializer<Json::IdentifierDeserializer> arr_id_d{"an array of identifiers"};
-
             r.required_object_field(type_name(), obj, NAME, dep.name, Json::PackageNameDeserializer::instance);
-            r.optional_object_field(obj, FEATURES, dep.features, arr_id_d);
+            r.optional_object_field(obj, FEATURES, dep.features, Json::IdentifierArrayDeserializer::instance);
 
             bool default_features = true;
             r.optional_object_field(obj, DEFAULT_FEATURES, default_features, Json::BooleanDeserializer::instance);
@@ -486,15 +472,11 @@ namespace vcpkg
             {
                 dep.features.emplace_back("core");
             }
+
             r.optional_object_field(obj, HOST, dep.host, Json::BooleanDeserializer::instance);
-
             r.optional_object_field(obj, PLATFORM, dep.platform, PlatformExprDeserializer::instance);
-
-            static Json::StringDeserializer version_deserializer("a version");
-
-            auto has_ge_constraint =
-                r.optional_object_field(obj, VERSION_GE, dep.constraint.value, version_deserializer);
-
+            auto has_ge_constraint = r.optional_object_field(
+                obj, VERSION_GE, dep.constraint.value, VersionConstraintStringDeserializer::instance);
             if (has_ge_constraint)
             {
                 dep.constraint.type = VersionConstraintKind::Minimum;
@@ -504,17 +486,14 @@ namespace vcpkg
                 {
                     auto opt = Strings::strto<int>(ZStringView{constraint_value}.substr(h + 1));
                     auto v = opt.get();
-                    if (v && *v > 0)
+                    if (v && *v >= 0)
                     {
                         dep.constraint.port_version = *v;
                     }
                     else
                     {
                         r.add_generic_error(type_name(),
-                                            "embedded port-version ('#') in the primary "
-                                            "constraint (\"",
-                                            VERSION_GE,
-                                            "\") must be a positive integer");
+                                            msg::format(msgVersionConstraintPortVersionMustBePositiveInteger));
                     }
                     dep.constraint.value.erase(h);
                 }
@@ -529,16 +508,17 @@ namespace vcpkg
 
     struct DependencyArrayDeserializer final : Json::IDeserializer<std::vector<Dependency>>
     {
-        virtual StringView type_name() const override { return "an array of dependencies"; }
+        virtual LocalizedString type_name() const override { return msg::format(msgAnArrayOfDependencies); }
 
-        virtual Optional<std::vector<Dependency>> visit_array(Json::Reader& r, const Json::Array& arr) override
+        virtual Optional<std::vector<Dependency>> visit_array(Json::Reader& r, const Json::Array& arr) const override
         {
             return r.array_elements(arr, DependencyDeserializer::instance);
         }
 
-        static DependencyArrayDeserializer instance;
+        static const DependencyArrayDeserializer instance;
     };
-    DependencyArrayDeserializer DependencyArrayDeserializer::instance;
+
+    const DependencyArrayDeserializer DependencyArrayDeserializer::instance;
 
     constexpr StringLiteral DependencyDeserializer::NAME;
     constexpr StringLiteral DependencyDeserializer::HOST;
@@ -547,20 +527,20 @@ namespace vcpkg
     constexpr StringLiteral DependencyDeserializer::PLATFORM;
     constexpr StringLiteral DependencyDeserializer::VERSION_GE;
 
-    struct DependencyOverrideDeserializer : Json::IDeserializer<DependencyOverride>
+    struct DependencyOverrideDeserializer final : Json::IDeserializer<DependencyOverride>
     {
-        virtual StringView type_name() const override { return "an override"; }
+        virtual LocalizedString type_name() const override { return msg::format(msgAnOverride); }
 
         constexpr static StringLiteral NAME = "name";
 
         virtual Span<const StringView> valid_fields() const override
         {
-            static const StringView u[] = {NAME};
+            static constexpr StringView u[] = {NAME};
             static const auto t = Util::Vectors::concat<StringView>(schemed_deserializer_fields(), u);
             return t;
         }
 
-        static void visit_impl(StringView type_name,
+        static void visit_impl(const LocalizedString& type_name,
                                Json::Reader& r,
                                const Json::Object& obj,
                                std::string& name,
@@ -576,7 +556,7 @@ namespace vcpkg
             port_version = schemed_version.version.port_version();
         }
 
-        virtual Optional<DependencyOverride> visit_object(Json::Reader& r, const Json::Object& obj) override
+        virtual Optional<DependencyOverride> visit_object(Json::Reader& r, const Json::Object& obj) const override
         {
             DependencyOverride dep;
 
@@ -593,20 +573,30 @@ namespace vcpkg
             return dep;
         }
 
-        static DependencyOverrideDeserializer instance;
+        static const DependencyOverrideDeserializer instance;
     };
-    DependencyOverrideDeserializer DependencyOverrideDeserializer::instance;
+
+    const DependencyOverrideDeserializer DependencyOverrideDeserializer::instance;
 
     constexpr StringLiteral DependencyOverrideDeserializer::NAME;
+
+    struct DependencyOverrideArrayDeserializer : Json::ArrayDeserializer<DependencyOverrideDeserializer>
+    {
+        LocalizedString type_name() const override { return msg::format(msgAnArrayOfDependencyOverrides); }
+
+        static const DependencyOverrideArrayDeserializer instance;
+    };
+
+    const DependencyOverrideArrayDeserializer DependencyOverrideArrayDeserializer::instance;
 
     // reasoning for these two distinct types -- FeatureDeserializer and ArrayFeatureDeserializer:
     // `"features"` may be defined in one of two ways:
     // - An array of feature objects, which contains the `"name"` field
     // - An object mapping feature names to feature objects, which do not contain the `"name"` field
     // `ArrayFeatureDeserializer` is used for the former, `FeatureDeserializer` is used for the latter.
-    struct FeatureDeserializer : Json::IDeserializer<std::unique_ptr<FeatureParagraph>>
+    struct FeatureDeserializer final : Json::IDeserializer<std::unique_ptr<FeatureParagraph>>
     {
-        virtual StringView type_name() const override { return "a feature"; }
+        virtual LocalizedString type_name() const override { return msg::format(msgAFeature); }
 
         constexpr static StringLiteral NAME = "name";
         constexpr static StringLiteral DESCRIPTION = "description";
@@ -615,12 +605,12 @@ namespace vcpkg
 
         virtual Span<const StringView> valid_fields() const override
         {
-            static const StringView t[] = {DESCRIPTION, DEPENDENCIES, SUPPORTS};
+            static constexpr StringView t[] = {DESCRIPTION, DEPENDENCIES, SUPPORTS};
             return t;
         }
 
         virtual Optional<std::unique_ptr<FeatureParagraph>> visit_object(Json::Reader& r,
-                                                                         const Json::Object& obj) override
+                                                                         const Json::Object& obj) const override
         {
             auto feature = std::make_unique<FeatureParagraph>();
             for (const auto& el : obj)
@@ -638,9 +628,11 @@ namespace vcpkg
 
             return std::move(feature); // gcc-7 bug workaround redundant move
         }
-        static FeatureDeserializer instance;
+
+        static const FeatureDeserializer instance;
     };
-    FeatureDeserializer FeatureDeserializer::instance;
+
+    const FeatureDeserializer FeatureDeserializer::instance;
     constexpr StringLiteral FeatureDeserializer::NAME;
     constexpr StringLiteral FeatureDeserializer::DESCRIPTION;
     constexpr StringLiteral FeatureDeserializer::DEPENDENCIES;
@@ -652,13 +644,13 @@ namespace vcpkg
         Json::Object extra_features_info;
     };
 
-    struct FeaturesFieldDeserializer : Json::IDeserializer<FeaturesObject>
+    struct FeaturesFieldDeserializer final : Json::IDeserializer<FeaturesObject>
     {
-        virtual StringView type_name() const override { return "a set of features"; }
+        virtual LocalizedString type_name() const override { return msg::format(msgASetOfFeatures); }
 
         virtual Span<const StringView> valid_fields() const override { return {}; }
 
-        virtual Optional<FeaturesObject> visit_object(Json::Reader& r, const Json::Object& obj) override
+        virtual Optional<FeaturesObject> visit_object(Json::Reader& r, const Json::Object& obj) const override
         {
             FeaturesObject res;
             std::vector<std::string> extra_fields;
@@ -672,10 +664,7 @@ namespace vcpkg
                 }
                 if (!Json::IdentifierDeserializer::is_ident(pr.first))
                 {
-                    r.add_generic_error(type_name(),
-                                        "unexpected field '",
-                                        pr.first,
-                                        "': must be lowercase alphanumeric+hyphens and not reserved");
+                    r.add_generic_error(type_name(), msg::format(msgInvalidFeature));
                     continue;
                 }
                 std::unique_ptr<FeatureParagraph> v;
@@ -690,23 +679,25 @@ namespace vcpkg
             return std::move(res); // gcc-7 bug workaround redundant move
         }
 
-        static FeaturesFieldDeserializer instance;
+        static const FeaturesFieldDeserializer instance;
     };
-    FeaturesFieldDeserializer FeaturesFieldDeserializer::instance;
+
+    const FeaturesFieldDeserializer FeaturesFieldDeserializer::instance;
 
     struct ContactsDeserializer final : Json::IDeserializer<Json::Object>
     {
-        virtual StringView type_name() const override { return "a dictionary of contacts"; }
+        virtual LocalizedString type_name() const override { return msg::format(msgADictionaryOfContacts); }
 
-        virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) override
+        virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) const override
         {
             (void)r;
             return obj;
         }
 
-        static ContactsDeserializer instance;
+        static const ContactsDeserializer instance;
     };
-    ContactsDeserializer ContactsDeserializer::instance;
+
+    const ContactsDeserializer ContactsDeserializer::instance;
 
     static constexpr StringLiteral VALID_LICENSES[] = {
 #include "spdx-licenses.inc"
@@ -717,7 +708,7 @@ namespace vcpkg
 
     // The "license" field; either:
     // * a string, which must be an SPDX license expression.
-    //   EBNF located at: https://github.com/microsoft/vcpkg/blob/master/docs/maintainers/manifest-files.md#license
+    //   EBNF located at: https://learn.microsoft.com/vcpkg/reference/vcpkg-json#license
     // * `null`, for when the license of the package cannot be described by an SPDX expression
     struct SpdxLicenseExpressionParser : ParserBase
     {
@@ -925,21 +916,22 @@ namespace vcpkg
 
     std::string parse_spdx_license_expression(StringView sv, ParseMessages& messages)
     {
-        auto parser = SpdxLicenseExpressionParser(sv, "<license string>");
+        auto license_string = msg::format(msgLicenseExpressionString); // must live through parse
+        auto parser = SpdxLicenseExpressionParser(sv, license_string);
         auto result = parser.parse();
         messages = parser.extract_messages();
         return result;
     }
 
-    struct LicenseExpressionDeserializer : Json::IDeserializer<std::string>
+    struct LicenseExpressionDeserializer final : Json::IDeserializer<std::string>
     {
-        virtual StringView type_name() const override { return "an SPDX license expression"; }
+        virtual LocalizedString type_name() const override { return msg::format(msgAnSpdxLicenseExpression); }
 
-        virtual Optional<std::string> visit_null(Json::Reader&) override { return {std::string()}; }
+        virtual Optional<std::string> visit_null(Json::Reader&) const override { return {std::string()}; }
 
         // if `sv` is a valid SPDX license expression, returns sv,
         // but with whitespace normalized
-        virtual Optional<std::string> visit_string(Json::Reader& r, StringView sv) override
+        virtual Optional<std::string> visit_string(Json::Reader& r, StringView sv) const override
         {
             auto parser = SpdxLicenseExpressionParser(sv, "");
             auto res = parser.parse();
@@ -950,22 +942,23 @@ namespace vcpkg
             }
             if (auto err = parser.get_error())
             {
-                r.add_generic_error(type_name(), err->to_string());
+                r.add_generic_error(type_name(), LocalizedString::from_raw(err->to_string()));
                 return std::string();
             }
 
             return res;
         }
 
-        static LicenseExpressionDeserializer instance;
+        static const LicenseExpressionDeserializer instance;
     };
-    LicenseExpressionDeserializer LicenseExpressionDeserializer::instance;
+
+    const LicenseExpressionDeserializer LicenseExpressionDeserializer::instance;
 
     struct BaselineCommitDeserializer final : Json::IDeserializer<std::string>
     {
-        virtual StringView type_name() const override { return "a vcpkg repository commit"; }
+        virtual LocalizedString type_name() const override { return msg::format(msgAVcpkgRepositoryCommit); }
 
-        virtual Optional<std::string> visit_string(Json::Reader&, StringView s) override
+        virtual Optional<std::string> visit_string(Json::Reader&, StringView s) const override
         {
             // We allow non-sha strings here to allow the core vcpkg code to provide better error
             // messages including the current git commit
@@ -978,7 +971,7 @@ namespace vcpkg
 
     struct ManifestDeserializer : Json::IDeserializer<std::unique_ptr<SourceControlFile>>
     {
-        virtual StringView type_name() const override { return "a manifest"; }
+        virtual LocalizedString type_name() const override { return msg::format(msgAManifest); }
 
         constexpr static StringLiteral NAME = "name";
         constexpr static StringLiteral MAINTAINERS = "maintainers";
@@ -998,7 +991,7 @@ namespace vcpkg
 
         virtual Span<const StringView> valid_fields() const override
         {
-            static const StringView u[] = {
+            static constexpr StringView u[] = {
                 NAME,
                 MAINTAINERS,
                 CONTACTS,
@@ -1038,9 +1031,8 @@ namespace vcpkg
             r.optional_object_field(obj, CONTACTS, spgh.contacts, ContactsDeserializer::instance);
             r.optional_object_field(obj, SUMMARY, spgh.summary, Json::ParagraphDeserializer::instance);
             r.optional_object_field(obj, DESCRIPTION, spgh.description, Json::ParagraphDeserializer::instance);
-            static Json::StringDeserializer url_deserializer{"a url"};
-            r.optional_object_field(obj, HOMEPAGE, spgh.homepage, url_deserializer);
-            r.optional_object_field(obj, DOCUMENTATION, spgh.documentation, url_deserializer);
+            r.optional_object_field(obj, HOMEPAGE, spgh.homepage, UrlDeserializer::instance);
+            r.optional_object_field(obj, DOCUMENTATION, spgh.documentation, UrlDeserializer::instance);
 
             std::string license;
             if (r.optional_object_field(obj, LICENSE, license, LicenseExpressionDeserializer::instance))
@@ -1049,9 +1041,7 @@ namespace vcpkg
             }
 
             r.optional_object_field(obj, DEPENDENCIES, spgh.dependencies, DependencyArrayDeserializer::instance);
-            static Json::ArrayDeserializer<DependencyOverrideDeserializer> overrides_deserializer{
-                "an array of overrides"};
-            r.optional_object_field(obj, OVERRIDES, spgh.overrides, overrides_deserializer);
+            r.optional_object_field(obj, OVERRIDES, spgh.overrides, DependencyOverrideArrayDeserializer::instance);
 
             std::string baseline;
             if (r.optional_object_field(obj, BUILTIN_BASELINE, baseline, BaselineCommitDeserializer::instance))
@@ -1073,7 +1063,8 @@ namespace vcpkg
             {
                 if (!configuration->is_object())
                 {
-                    r.add_generic_error(type_name(), VCPKG_CONFIGURATION, " must be an object");
+                    r.add_generic_error(type_name(),
+                                        msg::format(msgJsonFieldNotObject, msg::json_field = VCPKG_CONFIGURATION));
                 }
                 else
                 {
@@ -1083,7 +1074,7 @@ namespace vcpkg
 
             if (auto maybe_error = canonicalize(*control_file))
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO, maybe_error->error);
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, maybe_error->error);
             }
 
             return std::move(control_file); // gcc-7 bug workaround redundant move
@@ -1107,7 +1098,7 @@ namespace vcpkg
     struct ProjectManifestDeserializer final : ManifestDeserializer
     {
         virtual Optional<std::unique_ptr<SourceControlFile>> visit_object(Json::Reader& r,
-                                                                          const Json::Object& obj) override
+                                                                          const Json::Object& obj) const override
         {
             auto control_file = std::make_unique<SourceControlFile>();
             control_file->core_paragraph = std::make_unique<SourceParagraph>();
@@ -1130,15 +1121,15 @@ namespace vcpkg
             return visit_object_common(obj, spgh, r, control_file);
         }
 
-        static ProjectManifestDeserializer instance;
+        static const ProjectManifestDeserializer instance;
     };
 
-    ProjectManifestDeserializer ProjectManifestDeserializer::instance;
+    const ProjectManifestDeserializer ProjectManifestDeserializer::instance;
 
     struct PortManifestDeserializer final : ManifestDeserializer
     {
         virtual Optional<std::unique_ptr<SourceControlFile>> visit_object(Json::Reader& r,
-                                                                          const Json::Object& obj) override
+                                                                          const Json::Object& obj) const override
         {
             auto control_file = std::make_unique<SourceControlFile>();
             control_file->core_paragraph = std::make_unique<SourceParagraph>();
@@ -1154,17 +1145,17 @@ namespace vcpkg
             return visit_object_common(obj, spgh, r, control_file);
         }
 
-        static PortManifestDeserializer instance;
+        static const PortManifestDeserializer instance;
     };
 
-    PortManifestDeserializer PortManifestDeserializer::instance;
+    const PortManifestDeserializer PortManifestDeserializer::instance;
 
     // Extracts just the configuration information from a manifest object
     struct ManifestConfigurationDeserializer final : Json::IDeserializer<ManifestConfiguration>
     {
-        virtual StringView type_name() const override { return "a manifest"; }
+        virtual LocalizedString type_name() const override { return msg::format(msgAManifest); }
 
-        virtual Optional<ManifestConfiguration> visit_object(Json::Reader& r, const Json::Object& obj) override
+        virtual Optional<ManifestConfiguration> visit_object(Json::Reader& r, const Json::Object& obj) const override
         {
             Optional<ManifestConfiguration> x;
             ManifestConfiguration& ret = x.emplace();
@@ -1189,29 +1180,42 @@ namespace vcpkg
     };
     ManifestConfigurationDeserializer ManifestConfigurationDeserializer::instance;
 
-    ExpectedS<struct ManifestConfiguration> parse_manifest_configuration(StringView origin,
-                                                                         const Json::Object& manifest)
+    ExpectedL<ManifestConfiguration> parse_manifest_configuration(const Json::Object& manifest,
+                                                                  StringView origin,
+                                                                  MessageSink& warningsSink)
     {
         Json::Reader reader;
-
         auto res = reader.visit(manifest, ManifestConfigurationDeserializer::instance);
+
+        if (!reader.warnings().empty())
+        {
+            warningsSink.println(Color::warning, msgWarnOnParseConfig, msg::path = origin);
+            for (auto&& warning : reader.warnings())
+            {
+                warningsSink.println(Color::warning, LocalizedString::from_raw(warning));
+            }
+            warningsSink.println(Color::warning, msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
+            warningsSink.println(Color::warning, msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url);
+        }
 
         if (!reader.errors().empty())
         {
-            std::string ret = "Error: in the manifest ";
-            Strings::append(ret, origin, "\nwhile obtaining configuration information from the manifest:\n");
+            LocalizedString ret;
+            ret.append(msgFailedToParseConfig, msg::path = origin);
+            ret.append_raw('\n');
             for (auto&& err : reader.errors())
             {
-                Strings::append(ret, "    ", err, "\n");
+                ret.append_indent();
+                ret.append_fmt_raw("{}\n", err);
             }
-            msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
-            msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url);
+            ret.append(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
+            ret.append_raw('\n');
+            ret.append(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url);
+            ret.append_raw('\n');
             return std::move(ret);
         }
-        else
-        {
-            return std::move(res).value_or_exit(VCPKG_LINE_INFO);
-        }
+
+        return std::move(res).value_or_exit(VCPKG_LINE_INFO);
     }
 
     SourceControlFile SourceControlFile::clone() const
@@ -1270,61 +1274,57 @@ namespace vcpkg
         return parse_manifest_object_impl<PortManifestDeserializer>(origin, manifest, warnings_sink);
     }
 
-    Optional<std::string> SourceControlFile::check_against_feature_flags(const Path& origin,
-                                                                         const FeatureFlagSettings& flags,
-                                                                         bool is_default_builtin_registry) const
+    ExpectedL<Unit> SourceControlFile::check_against_feature_flags(const Path& origin,
+                                                                   const FeatureFlagSettings& flags,
+                                                                   bool is_default_builtin_registry) const
     {
-        static constexpr StringLiteral s_extended_help = "See `vcpkg help versioning` for more information.";
-        auto format_error_message = [&](StringView manifest_field, StringView feature_flag) {
-            return Strings::format(" was rejected because it uses \"%s\" and the `%s` feature flag is disabled.\n"
-                                   "This can be fixed by removing \"%s\".\n",
-                                   manifest_field,
-                                   feature_flag,
-                                   manifest_field);
-        };
-
         if (!flags.versions)
         {
-            auto check_deps = [&](View<Dependency> deps) -> Optional<std::string> {
+            auto check_deps = [&](View<Dependency> deps) -> ExpectedL<Unit> {
                 for (auto&& dep : deps)
                 {
                     if (dep.constraint.type != VersionConstraintKind::None)
                     {
                         get_global_metrics_collector().track_define(DefineMetric::ErrorVersioningDisabled);
-                        return Strings::concat(
-                            origin,
-                            " was rejected because it uses constraints and the `",
-                            VcpkgCmdArguments::VERSIONS_FEATURE,
-                            "` feature flag is disabled.\nThis can be fixed by removing uses of \"version>=\".\n",
-                            s_extended_help);
+                        return msg::format_error(
+                            msgVersionRejectedDueToFeatureFlagOff, msg::path = origin, msg::json_field = "version>=");
                     }
                 }
-                return nullopt;
+
+                return Unit{};
             };
 
-            if (auto r = check_deps(core_paragraph->dependencies)) return r;
+            {
+                auto maybe_good = check_deps(core_paragraph->dependencies);
+                if (!maybe_good)
+                {
+                    return maybe_good;
+                }
+            }
 
             for (auto&& fpgh : feature_paragraphs)
             {
-                if (auto r = check_deps(fpgh->dependencies)) return r;
+                auto maybe_good = check_deps(fpgh->dependencies);
+                if (!maybe_good)
+                {
+                    return maybe_good;
+                }
             }
 
             if (core_paragraph->overrides.size() != 0)
             {
                 get_global_metrics_collector().track_define(DefineMetric::ErrorVersioningDisabled);
-                return Strings::concat(
-                    origin,
-                    format_error_message(ManifestDeserializer::OVERRIDES, VcpkgCmdArguments::VERSIONS_FEATURE),
-                    s_extended_help);
+                return msg::format_error(msgVersionRejectedDueToFeatureFlagOff,
+                                         msg::path = origin,
+                                         msg::json_field = ManifestDeserializer::OVERRIDES);
             }
 
             if (core_paragraph->builtin_baseline.has_value())
             {
                 get_global_metrics_collector().track_define(DefineMetric::ErrorVersioningDisabled);
-                return Strings::concat(
-                    origin,
-                    format_error_message(ManifestDeserializer::BUILTIN_BASELINE, VcpkgCmdArguments::VERSIONS_FEATURE),
-                    s_extended_help);
+                return msg::format_error(msgVersionRejectedDueToFeatureFlagOff,
+                                         msg::path = origin,
+                                         msg::json_field = ManifestDeserializer::BUILTIN_BASELINE);
             }
         }
         else
@@ -1338,23 +1338,20 @@ namespace vcpkg
                                 }))
                 {
                     get_global_metrics_collector().track_define(DefineMetric::ErrorVersioningNoBaseline);
-                    return Strings::concat(
-                        origin,
-                        " was rejected because it uses \"version>=\" and does not have a \"builtin-baseline\".\n",
-                        s_extended_help);
+                    return msg::format_error(
+                        msgVersionRejectedDueToBaselineMissing, msg::path = origin, msg::json_field = "version>=");
                 }
 
                 if (!core_paragraph->overrides.empty())
                 {
                     get_global_metrics_collector().track_define(DefineMetric::ErrorVersioningNoBaseline);
-                    return Strings::concat(
-                        origin,
-                        " was rejected because it uses \"overrides\" and does not have a \"builtin-baseline\".\n",
-                        s_extended_help);
+                    return msg::format_error(
+                        msgVersionRejectedDueToBaselineMissing, msg::path = origin, msg::json_field = "overrides");
                 }
             }
         }
-        return nullopt;
+
+        return Unit{};
     }
 
     std::string ParseControlErrorInfo::format_errors(View<std::unique_ptr<ParseControlErrorInfo>> error_info_list)
@@ -1500,25 +1497,22 @@ namespace vcpkg
                dep.constraint.type == VersionConstraintKind::None && !dep.host;
     }
 
-    static Json::Object serialize_manifest_impl(const SourceControlFile& scf, bool debug)
+    Json::Object serialize_manifest(const SourceControlFile& scf)
     {
         auto serialize_paragraph =
             [&](Json::Object& obj, StringLiteral name, const std::vector<std::string>& pgh, bool always = false) {
-                if (!debug)
+                if (pgh.empty())
                 {
-                    if (pgh.empty())
+                    if (always)
                     {
-                        if (always)
-                        {
-                            obj.insert(name, Json::Array());
-                        }
-                        return;
+                        obj.insert(name, Json::Array());
                     }
-                    if (pgh.size() == 1)
-                    {
-                        obj.insert(name, pgh.front());
-                        return;
-                    }
+                    return;
+                }
+                if (pgh.size() == 1)
+                {
+                    obj.insert(name, pgh.front());
+                    return;
                 }
 
                 auto& arr = obj.insert(name, Json::Array());
@@ -1529,7 +1523,7 @@ namespace vcpkg
             };
         auto serialize_optional_array =
             [&](Json::Object& obj, StringLiteral name, const std::vector<std::string>& pgh) {
-                if (pgh.empty() && !debug) return;
+                if (pgh.empty()) return;
 
                 auto& arr = obj.insert(name, Json::Array());
                 for (const auto& s : pgh)
@@ -1538,7 +1532,7 @@ namespace vcpkg
                 }
             };
         auto serialize_optional_string = [&](Json::Object& obj, StringLiteral name, const std::string& s) {
-            if (!s.empty() || debug)
+            if (!s.empty())
             {
                 obj.insert(name, s);
             }
@@ -1574,7 +1568,7 @@ namespace vcpkg
                     auto s = dep.constraint.value;
                     if (dep.constraint.port_version != 0)
                     {
-                        Strings::append(s, '#', dep.constraint.port_version);
+                        fmt::format_to(std::back_inserter(s), "#{}", dep.constraint.port_version);
                     }
                     dep_obj.insert(DependencyDeserializer::VERSION_GE, std::move(s));
                 }
@@ -1602,18 +1596,8 @@ namespace vcpkg
 
         if (auto configuration = scf.core_paragraph->vcpkg_configuration.get())
         {
-            Json::Reader reader;
-            auto maybe_configuration = reader.visit(*configuration, get_configuration_deserializer());
-            if (!reader.errors().empty())
-            {
-                msg::println_error(msgErrorWhileParsing, msg::path = ManifestDeserializer::VCPKG_CONFIGURATION);
-                for (auto&& msg : reader.errors())
-                {
-                    msg::println_error(LocalizedString().append_indent().append_raw(msg));
-                }
-                msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
-                Checks::exit_fail(VCPKG_LINE_INFO);
-            }
+            auto maybe_configuration =
+                parse_configuration(*configuration, ManifestDeserializer::VCPKG_CONFIGURATION, stdout_sink);
             obj.insert(ManifestDeserializer::VCPKG_CONFIGURATION,
                        maybe_configuration.value_or_exit(VCPKG_LINE_INFO).serialize());
         }
@@ -1625,8 +1609,7 @@ namespace vcpkg
             serialize_schemed_version(obj,
                                       scf.core_paragraph->version_scheme,
                                       scf.core_paragraph->raw_version,
-                                      scf.core_paragraph->port_version,
-                                      debug);
+                                      scf.core_paragraph->port_version);
         }
 
         serialize_paragraph(obj, ManifestDeserializer::MAINTAINERS, scf.core_paragraph->maintainers);
@@ -1650,10 +1633,7 @@ namespace vcpkg
                 obj.insert(ManifestDeserializer::LICENSE, Json::Value::string(*license));
             }
         }
-        else if (debug)
-        {
-            obj.insert(ManifestDeserializer::LICENSE, Json::Value::string(""));
-        }
+
         serialize_optional_string(
             obj, ManifestDeserializer::SUPPORTS, to_string(scf.core_paragraph->supports_expression));
         if (scf.core_paragraph->builtin_baseline.has_value())
@@ -1662,7 +1642,7 @@ namespace vcpkg
                        Json::Value::string(scf.core_paragraph->builtin_baseline.value_or_exit(VCPKG_LINE_INFO)));
         }
 
-        if (!scf.core_paragraph->dependencies.empty() || debug)
+        if (!scf.core_paragraph->dependencies.empty())
         {
             auto& deps = obj.insert(ManifestDeserializer::DEPENDENCIES, Json::Array());
 
@@ -1674,7 +1654,7 @@ namespace vcpkg
 
         serialize_optional_array(obj, ManifestDeserializer::DEFAULT_FEATURES, scf.core_paragraph->default_features);
 
-        if (debug || !scf.feature_paragraphs.empty() || !scf.extra_features_info.is_empty())
+        if (!scf.feature_paragraphs.empty() || !scf.extra_features_info.is_empty())
         {
             auto& map = obj.insert(ManifestDeserializer::FEATURES, Json::Object());
             for (const auto& pr : scf.extra_features_info)
@@ -1693,7 +1673,7 @@ namespace vcpkg
                 serialize_optional_string(
                     feature_obj, FeatureDeserializer::SUPPORTS, to_string(feature->supports_expression));
 
-                if (!feature->dependencies.empty() || debug)
+                if (!feature->dependencies.empty())
                 {
                     auto& deps = feature_obj.insert(FeatureDeserializer::DEPENDENCIES, Json::Array());
                     for (const auto& dep : feature->dependencies)
@@ -1704,7 +1684,7 @@ namespace vcpkg
             }
         }
 
-        if (!scf.core_paragraph->overrides.empty() || debug)
+        if (!scf.core_paragraph->overrides.empty())
         {
             auto& overrides = obj.insert(ManifestDeserializer::OVERRIDES, Json::Array());
 
@@ -1716,8 +1696,4 @@ namespace vcpkg
 
         return obj;
     }
-
-    Json::Object serialize_debug_manifest(const SourceControlFile& scf) { return serialize_manifest_impl(scf, true); }
-
-    Json::Object serialize_manifest(const SourceControlFile& scf) { return serialize_manifest_impl(scf, false); }
 }

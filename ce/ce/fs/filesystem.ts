@@ -3,7 +3,7 @@
 
 /* eslint-disable @typescript-eslint/ban-types */
 
-import { EventEmitter } from 'ee-ts';
+import { EventEmitter } from 'node:events';
 import { Readable, Writable } from 'stream';
 import { Session } from '../session';
 import { Uri } from '../util/uri';
@@ -196,7 +196,7 @@ async function* asyncIterableOverHandle(start: number, end: number, handle: Read
   }
 }
 
-export abstract class FileSystem extends EventEmitter<FileSystemEvents> {
+export abstract class FileSystem extends EventEmitter {
 
   protected baseUri?: Uri;
 
@@ -363,7 +363,7 @@ export abstract class FileSystem extends EventEmitter<FileSystemEvents> {
     return false;
   }
 
-  constructor(protected session: Session) {
+  constructor(protected readonly session: Session) {
     super();
   }
 

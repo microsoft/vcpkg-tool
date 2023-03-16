@@ -1,7 +1,6 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
 #include <vcpkg/base/strings.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/cmakevars.h>
@@ -51,7 +50,7 @@ namespace vcpkg
         /// </summary>
         struct Cluster
         {
-            Cluster(const InstalledPackageView& ipv, ExpectedS<const SourceControlFileAndLocation&>&& scfl)
+            Cluster(const InstalledPackageView& ipv, ExpectedL<const SourceControlFileAndLocation&>&& scfl)
                 : m_spec(ipv.spec()), m_scfl(std::move(scfl)), m_installed(ipv)
             {
             }
@@ -117,8 +116,10 @@ namespace vcpkg
                     scfl.source_control_file->find_dependencies_for_feature(feature);
                 if (!maybe_qualified_deps.has_value())
                 {
-                    Checks::msg_exit_with_message(
-                        VCPKG_LINE_INFO, msgFailedToFindPortFeature, msg::feature = feature, msg::spec = m_spec.name());
+                    Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                                  msgFailedToFindPortFeature,
+                                                  msg::feature = feature,
+                                                  msg::package_name = m_spec.name());
                 }
                 const std::vector<Dependency>* qualified_deps = &maybe_qualified_deps.value_or_exit(VCPKG_LINE_INFO);
 
@@ -183,9 +184,12 @@ namespace vcpkg
                 bool defaults_requested = false;
                 if (const ClusterInstalled* inst = m_installed.get())
                 {
+                    out_reinstall_requirements.emplace_back(m_spec, "core");
+                    auto& scfl = get_scfl_or_exit();
                     for (const std::string& installed_feature : inst->original_features)
                     {
-                        out_reinstall_requirements.emplace_back(m_spec, installed_feature);
+                        if (scfl.source_control_file->find_feature(installed_feature).has_value())
+                            out_reinstall_requirements.emplace_back(m_spec, installed_feature);
                     }
                     defaults_requested = inst->defaults_requested;
                 }
@@ -229,10 +233,11 @@ namespace vcpkg
                     return *scfl;
                 }
 
-                Checks::msg_exit_with_error(VCPKG_LINE_INFO,
-                                            msg::format(msgFailedToLoadInstalledManifest, msg::spec = m_spec)
-                                                .append_raw('\n')
-                                                .append_raw(m_scfl.error()));
+                Checks::msg_exit_with_error(
+                    VCPKG_LINE_INFO,
+                    msg::format(msgFailedToLoadInstalledManifest, msg::package_name = m_spec.name())
+                        .append_raw('\n')
+                        .append_raw(m_scfl.error()));
             }
 
             Optional<const PlatformExpression::Expr&> get_applicable_supports_expression(const FeatureSpec& spec) const
@@ -248,7 +253,7 @@ namespace vcpkg
                                                     maybe_paragraph.has_value(),
                                                     msgFailedToFindPortFeature,
                                                     msg::feature = spec.feature(),
-                                                    msg::spec = spec.port());
+                                                    msg::package_name = spec.port());
 
                     return maybe_paragraph.get()->supports_expression;
                 }
@@ -270,7 +275,7 @@ namespace vcpkg
             }
 
             PackageSpec m_spec;
-            ExpectedS<const SourceControlFileAndLocation&> m_scfl;
+            ExpectedL<const SourceControlFileAndLocation&> m_scfl;
 
             Optional<ClusterInstalled> m_installed;
             Optional<ClusterInstallInfo> m_install_info;
@@ -297,7 +302,7 @@ namespace vcpkg
             const CMakeVars::CMakeVarProvider& m_var_provider;
 
             std::unique_ptr<ClusterGraph> m_graph;
-            std::vector<std::string> m_warnings;
+            std::map<FeatureSpec, PlatformExpression::Expr> m_unsupported_features;
         };
 
         /// <summary>
@@ -346,17 +351,8 @@ namespace vcpkg
 
             Cluster& insert(const InstalledPackageView& ipv)
             {
-                ExpectedS<const SourceControlFileAndLocation&> maybe_scfl =
+                ExpectedL<const SourceControlFileAndLocation&> maybe_scfl =
                     m_port_provider.get_control_file(ipv.spec().name());
-
-                if (const auto scfl = maybe_scfl.get())
-                {
-                    Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                           scfl->source_control_file->core_paragraph->type.type ==
-                                               ipv.core->package.type.type,
-                                           msgPortTypeConflict,
-                                           msg::spec = ipv.spec());
-                }
 
                 return m_graph
                     .emplace(std::piecewise_construct,
@@ -491,7 +487,7 @@ namespace vcpkg
         }
 
         const std::string features = Strings::join(",", feature_list);
-        return Strings::format("%s[%s]:%s", this->spec.name(), features, this->spec.triplet());
+        return fmt::format("{}[{}]:{}", this->spec.name(), features, this->spec.triplet());
     }
     const std::string& InstallPlanAction::public_abi() const
     {
@@ -541,6 +537,34 @@ namespace vcpkg
                                        const RequestType& request_type)
         : spec(spec), plan_type(plan_type), request_type(request_type)
     {
+    }
+
+    template<class Message>
+    static LocalizedString create_unsupported_message(Message m,
+                                                      const FeatureSpec& spec,
+                                                      const PlatformExpression::Expr& expr)
+    {
+        const auto feature_spec =
+            (spec.feature() == "core" ? spec.port() : format_name_only_feature_spec(spec.port(), spec.feature()));
+        return msg::format(m,
+                           msg::package_name = spec.port(),
+                           msg::feature_spec = feature_spec,
+                           msg::supports_expression = to_string(expr),
+                           msg::triplet = spec.triplet());
+    }
+
+    void ActionPlan::print_unsupported_warnings()
+    {
+        for (const auto& entry : unsupported_features)
+        {
+            const auto& spec = entry.first;
+            const auto feature_spec =
+                (spec.feature() == "core" ? spec.port() : format_name_only_feature_spec(spec.port(), spec.feature()));
+            msg::println_warning(msgUnsupportedFeatureSupportsExpressionWarning,
+                                 msg::feature_spec = feature_spec,
+                                 msg::supports_expression = to_string(entry.second),
+                                 msg::triplet = spec.triplet());
+        }
     }
 
     bool ExportPlanAction::compare_by_name(const ExportPlanAction* left, const ExportPlanAction* right)
@@ -799,7 +823,7 @@ namespace vcpkg
                                                         maybe_paragraph.has_value(),
                                                         msgFailedToFindPortFeature,
                                                         msg::feature = spec.feature(),
-                                                        msg::spec = spec.port());
+                                                        msg::package_name = spec.port());
                         paragraph_depends = &maybe_paragraph.value_or_exit(VCPKG_LINE_INFO).dependencies;
                         has_supports = !maybe_paragraph.get()->supports_expression.is_empty();
                     }
@@ -815,25 +839,24 @@ namespace vcpkg
                 }
                 else
                 {
-                    auto supports_expression = clust.get_applicable_supports_expression(spec);
-                    if (supports_expression && !supports_expression.get()->is_empty())
+                    auto maybe_supports_expression = clust.get_applicable_supports_expression(spec);
+                    auto supports_expression = maybe_supports_expression.get();
+                    if (supports_expression && !supports_expression->is_empty())
                     {
-                        if (!supports_expression.get()->evaluate(
+                        if (!supports_expression->evaluate(
                                 m_var_provider.get_dep_info_vars(spec.spec()).value_or_exit(VCPKG_LINE_INFO)))
                         {
-                            auto localized_msg =
-                                msg::format(msgUnsupportedPortFeature,
-                                            msg::spec = spec,
-                                            msg::supports_expression = to_string(*supports_expression.get()));
-
+                            const auto supports_expression_text = to_string(*supports_expression);
                             if (unsupported_port_action == UnsupportedPortAction::Error)
                             {
-                                Checks::msg_exit_with_message(VCPKG_LINE_INFO, localized_msg);
+                                Checks::msg_exit_with_message(
+                                    VCPKG_LINE_INFO,
+                                    create_unsupported_message(
+                                        msgUnsupportedFeatureSupportsExpression, spec, *supports_expression));
                             }
                             else
                             {
-                                m_warnings.push_back(
-                                    msg::format(msg::msgWarningMessage).append(localized_msg).extract_data());
+                                m_unsupported_features.emplace(spec, *supports_expression);
                             }
                         }
                     }
@@ -1009,11 +1032,10 @@ namespace vcpkg
                         {
                             if (compare_any(*v, constraint) == VerComp::lt)
                             {
-                                constraint_violations.push_back(msg::format(msg::msgWarningMessage)
-                                                                    .append(msgVersionConstraintViolated,
-                                                                            msg::spec = constraints.first,
-                                                                            msg::expected_version = constraint,
-                                                                            msg::actual_version = *v));
+                                constraint_violations.push_back(msg::format_warning(msgVersionConstraintViolated,
+                                                                                    msg::spec = constraints.first,
+                                                                                    msg::expected_version = constraint,
+                                                                                    msg::actual_version = *v));
                                 msg::println(msg::format(msgConstraintViolation)
                                                  .append_raw('\n')
                                                  .append_indent()
@@ -1059,7 +1081,7 @@ namespace vcpkg
                 plan.already_installed.emplace_back(InstalledPackageView(installed.ipv), p_cluster->request_type);
             }
         }
-        plan.warnings = m_warnings;
+        plan.unsupported_features = m_unsupported_features;
         return plan;
     }
 
@@ -1249,7 +1271,7 @@ namespace vcpkg
 
             void add_roots(View<Dependency> dep, const PackageSpec& toplevel);
 
-            ExpectedS<ActionPlan> finalize_extract_plan(const PackageSpec& toplevel,
+            ExpectedL<ActionPlan> finalize_extract_plan(const PackageSpec& toplevel,
                                                         UnsupportedPortAction unsupported_port_action);
 
         private:
@@ -1366,12 +1388,11 @@ namespace vcpkg
 
             ExpectedL<Version> dep_to_version(const std::string& name, const DependencyConstraint& dc);
 
-            static std::string format_incomparable_versions_message(const PackageSpec& on,
-                                                                    StringView from,
-                                                                    const VersionSchemeInfo& current,
-                                                                    const VersionSchemeInfo& target);
-
-            std::vector<std::string> m_errors;
+            static LocalizedString format_incomparable_versions_message(const PackageSpec& on,
+                                                                        StringView from,
+                                                                        const VersionSchemeInfo& current,
+                                                                        const VersionSchemeInfo& target);
+            std::vector<LocalizedString> m_errors;
         };
 
         VersionedPackageGraph::VersionSchemeInfo& VersionedPackageGraph::PackageNode::emplace_node(VersionScheme scheme,
@@ -1683,19 +1704,6 @@ namespace vcpkg
             m_overrides.emplace(name, v);
         }
 
-        static std::string format_missing_baseline_message(const std::string& onto, const PackageSpec& from)
-        {
-            return Strings::concat(
-                "Error: Cannot resolve a minimum constraint for dependency ",
-                onto,
-                " from ",
-                from,
-                ".\nThe dependency was not found in the baseline, indicating that the package did not "
-                "exist at that time. This may be fixed by providing an explicit override version via the "
-                "\"overrides\" field or by updating the baseline.\nSee `vcpkg help versioning` for more "
-                "information.");
-        }
-
         void VersionedPackageGraph::add_roots(View<Dependency> deps, const PackageSpec& toplevel)
         {
             auto dep_to_spec = [&toplevel, this](const Dependency& d) {
@@ -1798,7 +1806,8 @@ namespace vcpkg
                     }
                     else
                     {
-                        m_errors.push_back(format_missing_baseline_message(dep.name, toplevel));
+                        m_errors.push_back(msg::format(
+                            msgVersionConstraintUnresolvable, msg::package_name = dep.name, msg::spec = toplevel));
                     }
                 }
 
@@ -1809,47 +1818,45 @@ namespace vcpkg
             }
         }
 
-        std::string VersionedPackageGraph::format_incomparable_versions_message(const PackageSpec& on,
-                                                                                StringView from,
-                                                                                const VersionSchemeInfo& current,
-                                                                                const VersionSchemeInfo& target)
+        LocalizedString VersionedPackageGraph::format_incomparable_versions_message(const PackageSpec& on,
+                                                                                    StringView from,
+                                                                                    const VersionSchemeInfo& current,
+                                                                                    const VersionSchemeInfo& target)
         {
-            return Strings::concat(
-                "Error: Version conflict on ",
-                on,
-                ": ",
-                from,
-                " required ",
-                target.version,
-                " but vcpkg could not compare it to ",
-                current.version,
-                "\n\nThe two versions used incomparable schemes:\n    \"",
-                current.version,
-                "\" was of scheme ",
-                current.scheme,
-                "\n    \"",
-                target.version,
-                "\" was of scheme ",
-                target.scheme,
-                "\n\nThis can be resolved by adding an explicit override to the preferred version, for example:\n\n",
-                Strings::format(R"(    "overrides": [
-        { "name": "%s", "version": "%s" }
-    ])",
-                                on.name(),
-                                current.version),
-                "\n\nSee `vcpkg help versioning` for more information.");
+            return msg::format_error(msgVersionIncomparable1,
+                                     msg::spec = on,
+                                     msg::package_name = from,
+                                     msg::expected = target.version,
+                                     msg::actual = current.version)
+                .append_raw('\n')
+                .append_indent()
+                .append(msgVersionIncomparable2, msg::version = current.version, msg::new_scheme = current.scheme)
+                .append_raw('\n')
+                .append_indent()
+                .append(msgVersionIncomparable2, msg::version = target.version, msg::new_scheme = target.scheme)
+                .append_raw('\n')
+                .append(msgVersionIncomparable3)
+                .append_raw('\n')
+                .append_indent()
+                .append_raw("\"overrides\": [\n")
+                .append_indent(2)
+                .append_raw(fmt::format(R"({{ "name": "{}", "version": "{}" }})", on.name(), current.version))
+                .append_raw('\n')
+                .append_indent()
+                .append_raw("]\n")
+                .append(msgVersionIncomparable4);
         }
 
         // This function is called after all versioning constraints have been resolved. It is responsible for
         // serializing out the final execution graph and performing all final validations (such as all required
         // features being selected and present)
-        ExpectedS<ActionPlan> VersionedPackageGraph::finalize_extract_plan(
+        ExpectedL<ActionPlan> VersionedPackageGraph::finalize_extract_plan(
             const PackageSpec& toplevel, UnsupportedPortAction unsupported_port_action)
         {
             if (!m_errors.empty())
             {
                 Util::sort_unique_erase(m_errors);
-                return Strings::join("\n", m_errors);
+                return LocalizedString::from_raw(Strings::join("\n", m_errors));
             }
 
             ActionPlan ret;
@@ -1868,7 +1875,7 @@ namespace vcpkg
                             const PackageSpec& spec,
                             const Version& new_ver,
                             const PackageSpec& origin,
-                            View<std::string> features) -> Optional<std::string> {
+                            View<std::string> features) -> Optional<LocalizedString> {
                 auto&& node = emplace_package(spec).second;
                 auto overlay = m_o_provider.get_control_file(spec.name());
                 auto over_it = m_overrides.find(spec.name());
@@ -1883,13 +1890,8 @@ namespace vcpkg
 
                 if (!p_vnode)
                 {
-                    return Strings::concat(
-                        "Error: Version was not found during discovery: ",
-                        spec,
-                        "@",
-                        new_ver,
-                        "\nThis is an internal vcpkg error. Please open an issue on https://github.com/Microsoft/vcpkg "
-                        "with detailed steps to reproduce the problem.");
+                    return msg::format_error(
+                        msgVersionNotFoundDuringDiscovery, msg::spec = spec, msg::version = new_ver);
                 }
 
                 { // use if(init;condition) if we support c++17
@@ -1898,13 +1900,15 @@ namespace vcpkg
                     {
                         if (!supports_expr.evaluate(m_var_provider.get_or_load_dep_info_vars(spec, m_host_triplet)))
                         {
-                            const auto msg = Strings::concat(
-                                spec, "@", new_ver, " is only supported on '", to_string(supports_expr), "'\n");
+                            FeatureSpec feature_spec(spec, "core");
+
                             if (unsupported_port_action == UnsupportedPortAction::Error)
                             {
-                                return "Error: " + msg;
+                                return msg::format_error(create_unsupported_message(
+                                    msgUnsupportedFeatureSupportsExpression, feature_spec, supports_expr));
                             }
-                            ret.warnings.emplace_back("Warning: " + msg);
+
+                            ret.unsupported_features.insert({FeatureSpec(spec, "core"), supports_expr});
                         }
                     }
                 }
@@ -1916,27 +1920,29 @@ namespace vcpkg
                     auto feature = p_vnode->scfl->source_control_file->find_feature(f);
                     if (!feature)
                     {
-                        return Strings::concat(
-                            "Error: ", spec, "@", new_ver, " does not have required feature ", f, "\n");
+                        return msg::format_error(msgVersionMissingRequiredFeature,
+                                                 msg::spec = spec,
+                                                 msg::version = new_ver,
+                                                 msg::feature = f);
                     }
+
                     const auto& supports_expr = feature.get()->supports_expression;
                     if (!supports_expr.is_empty())
                     {
                         if (!supports_expr.evaluate(m_var_provider.get_or_load_dep_info_vars(spec, m_host_triplet)))
                         {
-                            const auto msg = Strings::concat(spec,
-                                                             "@",
-                                                             new_ver,
-                                                             " The feature ",
-                                                             f,
-                                                             " is only supported on '",
-                                                             to_string(supports_expr),
-                                                             "'\n");
                             if (unsupported_port_action == UnsupportedPortAction::Error)
                             {
-                                return "Error: " + msg;
+                                const auto feature_spec_text = format_name_only_feature_spec(spec.name(), f);
+                                const auto supports_expression_text = to_string(supports_expr);
+                                return msg::format_error(msgUnsupportedFeatureSupportsExpression,
+                                                         msg::package_name = spec.name(),
+                                                         msg::feature_spec = feature_spec_text,
+                                                         msg::supports_expression = supports_expression_text,
+                                                         msg::triplet = spec.triplet());
                             }
-                            ret.warnings.emplace_back("Warning: " + msg);
+
+                            ret.unsupported_features.emplace(FeatureSpec{spec, f}, supports_expr);
                         }
                     }
                 }
@@ -1994,7 +2000,9 @@ namespace vcpkg
                                 }
                                 else
                                 {
-                                    return format_missing_baseline_message(dep.name, spec);
+                                    msg::format_error(msgVersionConstraintUnresolvable,
+                                                      msg::package_name = dep.name,
+                                                      msg::spec = spec);
                                 }
                             }
                         }
@@ -2007,11 +2015,10 @@ namespace vcpkg
                     // spec already present in map
                     if (p.first->second == nullptr)
                     {
-                        return Strings::concat(
-                            "Error: Cycle detected during ",
-                            spec,
-                            ":\n",
-                            Strings::join("\n", stack, [](const auto& p) -> const PackageSpec& { return p.ipa.spec; }));
+                        return msg::format_error(msgCycleDetectedDuring, msg::spec = spec)
+                            .append_raw('\n')
+                            .append_raw(Strings::join(
+                                "\n", stack, [](const auto& p) -> const PackageSpec& { return p.ipa.spec; }));
                     }
                     else if (p.first->second != p_vnode)
                     {
@@ -2057,7 +2064,7 @@ namespace vcpkg
         }
     }
 
-    ExpectedS<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& provider,
+    ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& provider,
                                                         const IBaselineProvider& bprovider,
                                                         const IOverlayProvider& oprovider,
                                                         const CMakeVars::CMakeVarProvider& var_provider,
@@ -2069,7 +2076,10 @@ namespace vcpkg
     {
         VersionedPackageGraph vpg(provider, bprovider, oprovider, var_provider, host_triplet);
         for (auto&& o : overrides)
+        {
             vpg.add_override(o.name, {o.version, o.port_version});
+        }
+
         vpg.add_roots(deps, toplevel);
         return vpg.finalize_extract_plan(toplevel, unsupported_port_action);
     }

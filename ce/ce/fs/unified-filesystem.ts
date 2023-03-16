@@ -4,7 +4,6 @@
 import { strict } from 'assert';
 import { Readable, Writable } from 'stream';
 import { i } from '../i18n';
-import { Record } from '../util/linq';
 import { Uri } from '../util/uri';
 import { FileStat, FileSystem, FileType, ReadHandle, WriteStreamOptions } from './filesystem';
 
@@ -20,20 +19,14 @@ export function schemeOf(uri: string) {
 
 export class UnifiedFileSystem extends FileSystem {
 
-  private filesystems = new Record<string, FileSystem>();
+  private filesystems : Record<string, FileSystem> = {};
 
   /** registers a scheme to a given filesystem
    *
    * @param scheme the Uri scheme to reserve
    * @param fileSystem the filesystem to associate with the scheme
    */
-  register(scheme: string | Array<string>, fileSystem: FileSystem) {
-    if (Array.isArray(scheme)) {
-      for (const each of scheme) {
-        this.register(each, fileSystem);
-      }
-      return this;
-    }
+  register(scheme: string, fileSystem: FileSystem) {
     strict.ok(!this.filesystems[scheme], i`scheme '${scheme}' already registered`);
     this.filesystems[scheme] = fileSystem;
     return this;

@@ -1,6 +1,8 @@
+#pragma once
+
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-#include <vcpkg/base/view.h>
+#include <vcpkg/base/span.h>
 
 #include <string>
 

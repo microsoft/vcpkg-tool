@@ -1,8 +1,9 @@
+#include <vcpkg/base/fwd/message_sinks.h>
+
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.format-manifest.h>
 #include <vcpkg/paragraphs.h>
@@ -31,13 +32,11 @@ namespace
         auto parsed_json_opt = Json::parse(contents, manifest_path);
         if (!parsed_json_opt)
         {
-            msg::println_error(msg::format(msgFailedToParseJson, msg::path = path_string)
-                                   .append_raw(": ")
-                                   .append_raw(parsed_json_opt.error()->to_string()));
+            msg::println(Color::error, LocalizedString::from_raw(parsed_json_opt.error()->to_string()));
             return nullopt;
         }
 
-        const auto& parsed_json = parsed_json_opt.value_or_exit(VCPKG_LINE_INFO).first;
+        const auto& parsed_json = parsed_json_opt.value_or_exit(VCPKG_LINE_INFO).value;
         if (!parsed_json.is_object())
         {
             msg::println_error(msgJsonErrorMustBeAnObject, msg::path = path_string);
@@ -106,49 +105,30 @@ namespace
         {
             Debug::println("Converting ", file_to_write_string, " -> ", original_path_string);
         }
+
         auto res = serialize_manifest(data.scf);
 
-        auto check = SourceControlFile::parse_project_manifest_object(StringView{}, res, null_sink);
-        if (!check)
+        // reparse res to ensure no semantic changes were made
+        auto maybe_reparsed = SourceControlFile::parse_project_manifest_object(StringView{}, res, null_sink);
+        bool reparse_matches;
+        if (auto reparsed = maybe_reparsed.get())
         {
-            vcpkg::printf(Color::error,
-                          R"([correctness check] Failed to parse serialized manifest file of %s
-Please open an issue at https://github.com/microsoft/vcpkg, with the following output:
-Error:)",
-                          data.scf.core_paragraph->name);
-            print_error_message(check.error());
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                       R"(
-=== Serialized manifest file ===
-%s
-)",
-                                       Json::stringify(res));
+            reparse_matches = **reparsed == data.scf;
+        }
+        else
+        {
+            // if we failed to reparse clearly it differs
+            reparse_matches = false;
         }
 
-        auto check_scf = std::move(check).value_or_exit(VCPKG_LINE_INFO);
-        if (*check_scf != data.scf)
+        if (!reparse_matches)
         {
-            Checks::exit_maybe_upgrade(
+            Checks::msg_exit_maybe_upgrade(
                 VCPKG_LINE_INFO,
-                R"([correctness check] The serialized manifest SCF was different from the original SCF.
-Please open an issue at https://github.com/microsoft/vcpkg, with the following output:
-
-=== Original File ===
-%s
-
-=== Serialized File ===
-%s
-
-=== Original SCF ===
-%s
-
-=== Serialized SCF ===
-%s
-)",
-                data.original_source,
-                Json::stringify(res, {}),
-                Json::stringify(serialize_debug_manifest(data.scf)),
-                Json::stringify(serialize_debug_manifest(*check_scf)));
+                msg::format(msgMismatchedManifestAfterReserialize)
+                    .append_raw(fmt::format("\n=== Original File ===\n{}\n=== Serialized File ===\n{}\n",
+                                            data.original_source,
+                                            Json::stringify(res, {}))));
         }
 
         // the manifest scf is correct
@@ -181,12 +161,12 @@ namespace vcpkg::Commands::FormatManifest
     static constexpr StringLiteral OPTION_CONVERT_CONTROL = "convert-control";
 
     const CommandSwitch FORMAT_SWITCHES[] = {
-        {OPTION_ALL, "Format all ports' manifest files."},
-        {OPTION_CONVERT_CONTROL, "Convert CONTROL files to manifest files."},
+        {OPTION_ALL, []() { return msg::format(msgCmdFormatManifestOptAll); }},
+        {OPTION_CONVERT_CONTROL, []() { return msg::format(msgCmdFormatManifestOptConvertControl); }},
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string(R"###(format-manifest --all)###"),
+        [] { return create_example_string("format-manifest --all"); },
         0,
         SIZE_MAX,
         {FORMAT_SWITCHES, {}, {}},
@@ -208,7 +188,7 @@ namespace vcpkg::Commands::FormatManifest
             msg::println_warning(msgMissingArgFormatManifest);
         }
 
-        if (!format_all && args.command_arguments.empty())
+        if (!format_all && parsed_args.command_arguments.empty())
         {
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgFailedToFormatMissingFile);
         }
@@ -217,12 +197,16 @@ namespace vcpkg::Commands::FormatManifest
 
         const auto add_file = [&to_write, &has_error](Optional<ToWrite>&& opt) {
             if (auto t = opt.get())
+            {
                 to_write.push_back(std::move(*t));
+            }
             else
+            {
                 has_error = true;
+            }
         };
 
-        for (Path path : args.command_arguments)
+        for (Path path : parsed_args.command_arguments)
         {
             if (path.is_relative())
             {

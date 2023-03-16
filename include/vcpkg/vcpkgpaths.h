@@ -4,6 +4,9 @@
 #include <vcpkg/base/fwd/json.h>
 #include <vcpkg/base/fwd/system.process.h>
 
+#include <vcpkg/fwd/binaryparagraph.h>
+#include <vcpkg/fwd/build.h>
+#include <vcpkg/fwd/bundlesettings.h>
 #include <vcpkg/fwd/configuration.h>
 #include <vcpkg/fwd/installedpaths.h>
 #include <vcpkg/fwd/registries.h>
@@ -34,7 +37,6 @@ namespace vcpkg
     struct Toolset
     {
         Path visual_studio_root_path;
-        Path dumpbin;
         Path vcvarsall;
         std::vector<std::string> vcvarsall_options;
         ZStringView version;
@@ -42,37 +44,23 @@ namespace vcpkg
         std::vector<ToolsetArchOption> supported_architectures;
     };
 
-    struct PreBuildInfo;
-    struct AbiInfo;
-    struct CompilerInfo;
-
-    namespace details
-    {
-        struct VcpkgPathsImpl;
-    }
-
-    struct BinaryParagraph;
-    struct Environment;
-    struct PackageSpec;
-    struct Triplet;
-
     struct ManifestAndPath
     {
         Json::Object manifest;
         Path path;
     };
 
+    struct TripletFile
+    {
+        std::string name;
+        Path location;
+
+        TripletFile(StringView name, StringView location) : name(name.data(), name.size()), location(location) { }
+    };
+
     struct VcpkgPaths
     {
-        struct TripletFile
-        {
-            std::string name;
-            Path location;
-
-            TripletFile(StringView name, StringView location) : name(name.data(), name.size()), location(location) { }
-        };
-
-        VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args);
+        VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args, const BundleSettings& bundle);
         VcpkgPaths(const VcpkgPaths&) = delete;
         VcpkgPaths& operator=(const VcpkgPaths&) = delete;
         ~VcpkgPaths();
@@ -96,6 +84,7 @@ namespace vcpkg
         const Optional<Path>& maybe_buildtrees() const;
         const Optional<Path>& maybe_packages() const;
 
+        const Path& global_config() const;
         const InstalledPaths& installed() const;
         const Path& buildtrees() const;
         const Path& packages() const;
@@ -107,7 +96,7 @@ namespace vcpkg
         const Path root;
 
     private:
-        const std::unique_ptr<details::VcpkgPathsImpl> m_pimpl;
+        const std::unique_ptr<VcpkgPathsImpl> m_pimpl;
 
     public:
         const Path& scripts;
@@ -127,6 +116,8 @@ namespace vcpkg
 
         std::string get_toolver_diagnostics() const;
 
+        Filesystem& get_filesystem() const;
+        const DownloadManager& get_download_manager() const;
         const ToolCache& get_tool_cache() const;
         const Path& get_tool_exe(StringView tool, MessageSink& status_messages) const;
         const std::string& get_tool_version(StringView tool, MessageSink& status_messages) const;
@@ -136,34 +127,30 @@ namespace vcpkg
 
         // Git manipulation in the vcpkg directory
         ExpectedL<std::string> get_current_git_sha() const;
-        std::string get_current_git_sha_baseline_message() const;
-        ExpectedS<Path> git_checkout_port(StringView port_name, StringView git_tree, const Path& dot_git_dir) const;
+        LocalizedString get_current_git_sha_baseline_message() const;
+        ExpectedL<Path> git_checkout_port(StringView port_name, StringView git_tree, const Path& dot_git_dir) const;
         ExpectedL<std::string> git_show(StringView treeish, const Path& dot_git_dir) const;
 
-        const DownloadManager& get_download_manager() const;
-
-        ExpectedS<std::map<std::string, std::string, std::less<>>> git_get_local_port_treeish_map() const;
+        ExpectedL<std::map<std::string, std::string, std::less<>>> git_get_local_port_treeish_map() const;
 
         // Git manipulation for remote registries
         // runs `git fetch {uri} {treeish}`, and returns the hash of FETCH_HEAD.
         // Use {treeish} of "HEAD" for the default branch
-        ExpectedS<std::string> git_fetch_from_remote_registry(StringView uri, StringView treeish) const;
+        ExpectedL<std::string> git_fetch_from_remote_registry(StringView uri, StringView treeish) const;
         // runs `git fetch {uri} {treeish}`
-        ExpectedS<Unit> git_fetch(StringView uri, StringView treeish) const;
+        ExpectedL<Unit> git_fetch(StringView uri, StringView treeish) const;
         ExpectedL<std::string> git_show_from_remote_registry(StringView hash, const Path& relative_path_to_file) const;
         ExpectedL<std::string> git_find_object_id_for_remote_registry_path(StringView hash,
                                                                            const Path& relative_path_to_file) const;
-        ExpectedS<Path> git_checkout_object_from_remote_registry(StringView tree) const;
+        ExpectedL<Path> git_checkout_object_from_remote_registry(StringView tree) const;
 
         Optional<const ManifestAndPath&> get_manifest() const;
         bool manifest_mode_enabled() const;
         const ConfigurationAndSource& get_configuration() const;
-        const RegistrySet& get_registry_set() const;
+        std::unique_ptr<RegistrySet> make_registry_set() const;
 
         // Retrieve a toolset matching the requirements in prebuildinfo
         const Toolset& get_toolset(const PreBuildInfo& prebuildinfo) const;
-
-        Filesystem& get_filesystem() const;
 
         const Environment& get_action_env(const AbiInfo& abi_info) const;
         const std::string& get_triplet_info(const AbiInfo& abi_info) const;
