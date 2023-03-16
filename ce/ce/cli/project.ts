@@ -17,8 +17,8 @@ export interface ActivationOptions {
 }
 
 function trackActivationPlan(session: Session, resolved: Array<ResolvedArtifact>) {
-  for (let idx = 0; idx < resolved.length; ++idx) {
-    const artifact = resolved[idx].artifact;
+  for (const resolvedEntry of resolved) {
+    const artifact = resolvedEntry.artifact;
     if (artifact instanceof Artifact) {
       session.trackActivate(artifact.registryUri.toString(), artifact.id, artifact.version);
     }
