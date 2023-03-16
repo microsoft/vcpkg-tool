@@ -15,11 +15,15 @@
 
 namespace vcpkg::Commands
 {
+    static constexpr StringLiteral OPTION_JSON{"x-json"};
+    static constexpr std::array<CommandSwitch, 1> CHECK_SUPPORT_SWITCHES = {
+        {{OPTION_JSON, []() { return msg::format(msgJsonSwitch); }}}};
+
     const CommandStructure COMMAND_STRUCTURE = {
         [] { return create_example_string("x-check-support <package>..."); },
         1,
         SIZE_MAX,
-        {},
+        {CHECK_SUPPORT_SWITCHES},
         nullptr,
     };
 
@@ -105,14 +109,15 @@ namespace vcpkg::Commands
                                         Triplet host_triplet)
     {
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
-        const bool use_json = args.json.value_or(false);
+        const bool use_json = Util::Sets::contains(options.switches, OPTION_JSON);
         Json::Array json_to_print; // only used when `use_json`
 
-        const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
+        const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
                 std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
         });
-        print_default_triplet_warning(args, args.command_arguments);
+
+        print_default_triplet_warning(args, options.command_arguments);
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();

@@ -17,14 +17,14 @@ namespace vcpkg::Commands::Hash
 
     void HashCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
     {
-        (void)args.parse_arguments(COMMAND_STRUCTURE);
+        const auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
 
-        const auto file_to_hash = (fs.current_path(VCPKG_LINE_INFO) / args.command_arguments[0]).lexically_normal();
+        const auto file_to_hash = (fs.current_path(VCPKG_LINE_INFO) / parsed.command_arguments[0]).lexically_normal();
 
         auto algorithm = vcpkg::Hash::Algorithm::Sha512;
-        if (args.command_arguments.size() == 2)
+        if (parsed.command_arguments.size() == 2)
         {
-            algorithm = vcpkg::Hash::algorithm_from_string(args.command_arguments[1]).value_or_exit(VCPKG_LINE_INFO);
+            algorithm = vcpkg::Hash::algorithm_from_string(parsed.command_arguments[1]).value_or_exit(VCPKG_LINE_INFO);
         }
 
         const std::string hash = vcpkg::Hash::get_file_hash(fs, file_to_hash, algorithm).value_or_exit(VCPKG_LINE_INFO);
