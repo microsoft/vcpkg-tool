@@ -521,7 +521,7 @@ namespace vcpkg
                             const std::vector<std::string>& secrets,
                             View<std::string> headers,
                             const Path& file,
-                            StringView request)
+                            StringView method)
     {
         static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
 
@@ -550,7 +550,7 @@ namespace vcpkg
         }
 
         Command cmd;
-        cmd.string_arg("curl").string_arg("-X").string_arg(request);
+        cmd.string_arg("curl").string_arg("-X").string_arg(method);
         for (auto&& header : headers)
         {
             cmd.string_arg("-H").string_arg(header);
