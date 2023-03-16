@@ -954,13 +954,13 @@ namespace
         GHABinaryProvider(const VcpkgPaths& paths,
                           bool read,
                           bool write,
-                          const Optional<std::string>& url,
-                          const Optional<std::string>& token)
+                          std::string url,
+                          std::string token)
             : paths(paths)
         {
-            if (read) m_read_url = url.value_or_exit(VCPKG_LINE_INFO) + "_apis/artifactcache/cache";
-            if (write) m_write_url = url.value_or_exit(VCPKG_LINE_INFO) + "_apis/artifactcache/caches";
-            m_token_header = "Authorization: Bearer " + token.value_or_exit(VCPKG_LINE_INFO);
+            if (read) m_read_url = url + "_apis/artifactcache/cache";
+            if (write) m_write_url = url + "_apis/artifactcache/caches";
+            m_token_header = "Authorization: Bearer " + token;
         }
 
         Command command() const
@@ -2567,7 +2567,8 @@ ExpectedL<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
                                (url.has_value() && token.has_value()),
                                msgGHAParametersMissing,
                                msg::url = "https://learn.microsoft.com/en-us/vcpkg/users/binarycaching#gha");
-        providers.push_back(std::make_unique<GHABinaryProvider>(paths, s.gha_read, s.gha_write, url, token));
+        providers.push_back(std::make_unique<GHABinaryProvider>(
+            paths, s.gha_read, s.gha_write, url.value_or_exit(VCPKG_LINE_INFO), token.value_or_exit(VCPKG_LINE_INFO)));
     }
 
     if (!s.url_templates_to_get.empty())
