@@ -1450,11 +1450,11 @@ namespace vcpkg
     {
         const auto& fs = paths.get_filesystem();
         const auto create_log_details = [&fs](vcpkg::Path&& path) {
-            static constexpr auto MAX_LOG_LENGTH = 20'000;
+            static constexpr auto MAX_LOG_LENGTH = 50'000;
             static constexpr auto START_BLOCK_LENGTH = 3'000;
             static constexpr auto START_BLOCK_MAX_LENGTH = 5'000;
-            static constexpr auto END_BLOCK_LENGTH = 13'000;
-            static constexpr auto END_BLOCK_MAX_LENGTH = 15'000;
+            static constexpr auto END_BLOCK_LENGTH = 43'000;
+            static constexpr auto END_BLOCK_MAX_LENGTH = 45'000;
             auto log = fs.read_contents(path, VCPKG_LINE_INFO);
             if (log.size() > MAX_LOG_LENGTH)
             {
