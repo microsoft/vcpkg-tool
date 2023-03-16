@@ -1,5 +1,7 @@
 #include <catch2/catch.hpp>
 
+#include <vcpkg/base/fwd/message_sinks.h>
+
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/util.h>
 
@@ -272,31 +274,39 @@ TEST_CASE ("manifest versioning", "[manifests]")
 
 TEST_CASE ("manifest constraints hash", "[manifests]")
 {
-    auto m_pgh = test_parse_port_manifest(R"json({
-    "name": "zlib",
-    "version-string": "abcd",
-    "dependencies": [
-        {
-            "name": "d",
-            "version>=": "2018-09-01#1"
-        }
-    ]
-})json");
-    REQUIRE(m_pgh.has_value());
-    const auto& p = *m_pgh.get();
-    REQUIRE(p->core_paragraph->dependencies.at(0).constraint.value == "2018-09-01");
-    REQUIRE(p->core_paragraph->dependencies.at(0).constraint.port_version == 1);
+    {
+        auto m_pgh = test_parse_port_manifest(R"json({
+            "name": "zlib",
+            "version-string": "abcd",
+            "dependencies": [
+                {
+                    "name": "d",
+                    "version>=": "2018-09-01#1"
+                }
+            ]
+        })json");
+        REQUIRE(m_pgh.has_value());
+        const auto& p = *m_pgh.get();
+        REQUIRE(p->core_paragraph->dependencies.at(0).constraint.value == "2018-09-01");
+        REQUIRE(p->core_paragraph->dependencies.at(0).constraint.port_version == 1);
+    }
 
-    REQUIRE_FALSE(port_manifest_is_parsable(R"json({
-    "name": "zlib",
-    "version-string": "abcd",
-    "dependencies": [
-        {
-            "name": "d",
-            "version>=": "2018-09-01#0"
-        }
-    ]
-})json"));
+    {
+        auto m_pgh = test_parse_port_manifest(R"json({
+            "name": "zlib",
+            "version-string": "abcd",
+            "dependencies": [
+                {
+                    "name": "d",
+                    "version>=": "2018-09-01#0"
+                }
+            ]
+        })json");
+        REQUIRE(m_pgh.has_value());
+        const auto& p = *m_pgh.get();
+        REQUIRE(p->core_paragraph->dependencies.at(0).constraint.value == "2018-09-01");
+        REQUIRE(p->core_paragraph->dependencies.at(0).constraint.port_version == 0);
+    }
 
     REQUIRE_FALSE(port_manifest_is_parsable(R"json({
     "name": "zlib",

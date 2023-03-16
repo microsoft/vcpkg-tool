@@ -166,15 +166,18 @@ namespace vcpkg
     std::string BinaryParagraph::displayname() const
     {
         if (!this->is_feature() || this->feature == "core")
-            return Strings::format("%s:%s", this->spec.name(), this->spec.triplet());
-        return Strings::format("%s[%s]:%s", this->spec.name(), this->feature, this->spec.triplet());
+        {
+            return fmt::format("{}:{}", this->spec.name(), this->spec.triplet());
+        }
+
+        return fmt::format("{}[{}]:{}", this->spec.name(), this->feature, this->spec.triplet());
     }
 
     std::string BinaryParagraph::dir() const { return this->spec.dir(); }
 
     std::string BinaryParagraph::fullstem() const
     {
-        return Strings::format("%s_%s_%s", this->spec.name(), this->version, this->spec.triplet());
+        return fmt::format("{}_{}_{}", this->spec.name(), this->version, this->spec.triplet());
     }
 
     bool operator==(const BinaryParagraph& lhs, const BinaryParagraph& rhs)

@@ -88,7 +88,7 @@ namespace vcpkg
         static std::atomic<int> update_id = 0;
 
         const auto my_update_id = update_id++;
-        const auto update_path = installed.vcpkg_dir_updates() / Strings::format("%010d", my_update_id);
+        const auto update_path = installed.vcpkg_dir_updates() / fmt::format("{:010}", my_update_id);
 
         fs.write_rename_contents(update_path, "incomplete", Strings::serialize(p), VCPKG_LINE_INFO);
     }

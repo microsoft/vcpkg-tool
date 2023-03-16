@@ -370,7 +370,4 @@ namespace vcpkg
 
         bool value_is_error;
     };
-
-    template<class T>
-    using ExpectedS = ExpectedT<T, std::string>;
 }

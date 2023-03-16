@@ -105,7 +105,6 @@ namespace vcpkg::msg
     REGISTER_MESSAGE(ErrorMessage);
     REGISTER_MESSAGE(InternalErrorMessage);
     REGISTER_MESSAGE(InternalErrorMessageContact);
-    REGISTER_MESSAGE(BothYesAndNoOptionSpecifiedError);
 
     // basic implementation - the write_unlocalized_text_to_stdout
 #if defined(_WIN32)
@@ -467,36 +466,8 @@ namespace vcpkg::msg
     }
 }
 
-namespace
-{
-    struct NullMessageSink : MessageSink
-    {
-        virtual void print(Color, StringView) override { }
-    };
-
-    NullMessageSink null_sink_instance;
-
-    struct StdOutMessageSink : MessageSink
-    {
-        virtual void print(Color c, StringView sv) override { msg::write_unlocalized_text_to_stdout(c, sv); }
-    };
-
-    StdOutMessageSink stdout_sink_instance;
-
-    struct StdErrMessageSink : MessageSink
-    {
-        virtual void print(Color c, StringView sv) override { msg::write_unlocalized_text_to_stderr(c, sv); }
-    };
-
-    StdErrMessageSink stderr_sink_instance;
-}
-
 namespace vcpkg
 {
-
-    MessageSink& null_sink = null_sink_instance;
-    MessageSink& stderr_sink = stderr_sink_instance;
-    MessageSink& stdout_sink = stdout_sink_instance;
 
     REGISTER_MESSAGE(ABaseline);
     REGISTER_MESSAGE(ABoolean);
@@ -668,7 +639,6 @@ namespace vcpkg
     REGISTER_MESSAGE(CommunityTriplets);
     REGISTER_MESSAGE(Commands);
     REGISTER_MESSAGE(ComparingUtf8Decoders);
-    REGISTER_MESSAGE(ConflictingValuesForOption);
     REGISTER_MESSAGE(ConstraintViolation);
     REGISTER_MESSAGE(ContinueCodeUnitInStart);
     REGISTER_MESSAGE(ControlAndManifestFilesPresent);
@@ -723,9 +693,7 @@ namespace vcpkg
     REGISTER_MESSAGE(DownloadingVcpkgStandaloneBundle);
     REGISTER_MESSAGE(DownloadingVcpkgStandaloneBundleLatest);
     REGISTER_MESSAGE(DownloadRootsDir);
-    REGISTER_MESSAGE(DuplicateCommandOption);
     REGISTER_MESSAGE(DuplicatedKeyInObj);
-    REGISTER_MESSAGE(DuplicateOptions);
     REGISTER_MESSAGE(DuplicatePackagePattern);
     REGISTER_MESSAGE(DuplicatePackagePatternFirstOcurrence);
     REGISTER_MESSAGE(DuplicatePackagePatternIgnoredLocations);
@@ -735,7 +703,6 @@ namespace vcpkg
     REGISTER_MESSAGE(ElapsedTimeForChecks);
     REGISTER_MESSAGE(EmailVcpkgTeam);
     REGISTER_MESSAGE(EmbeddingVcpkgConfigInManifest);
-    REGISTER_MESSAGE(EmptyArg);
     REGISTER_MESSAGE(EmptyLicenseExpression);
     REGISTER_MESSAGE(EndOfStringInCodeUnit);
     REGISTER_MESSAGE(EnvInvalidMaxConcurrency);
@@ -785,7 +752,6 @@ namespace vcpkg
     REGISTER_MESSAGE(ExpectedPortName);
     REGISTER_MESSAGE(ExpectedStatusField);
     REGISTER_MESSAGE(ExpectedTripletName);
-    REGISTER_MESSAGE(ExpectedValueForOption);
     REGISTER_MESSAGE(ExtendedDocumentationAtUrl);
     REGISTER_MESSAGE(ExtractingTool);
     REGISTER_MESSAGE(FailedToDetermineCurrentCommit);
@@ -862,6 +828,7 @@ namespace vcpkg
     REGISTER_MESSAGE(GeneratingInstaller);
     REGISTER_MESSAGE(GeneratingRepo);
     REGISTER_MESSAGE(GetParseFailureInfo);
+    REGISTER_MESSAGE(GHAParametersMissing);
     REGISTER_MESSAGE(GitCommandFailed);
     REGISTER_MESSAGE(GitFailedToFetch);
     REGISTER_MESSAGE(GitFailedToInitializeLocalRepository);
@@ -938,7 +905,6 @@ namespace vcpkg
     REGISTER_MESSAGE(ImproperShaLength);
     REGISTER_MESSAGE(IncorrectArchiveFileSignature);
     REGISTER_MESSAGE(IncorrectPESignature);
-    REGISTER_MESSAGE(IncorrectNumberOfArgs);
     REGISTER_MESSAGE(IncrementedUtf8Decoder);
     REGISTER_MESSAGE(InfoSetEnvVar);
     REGISTER_MESSAGE(InitRegistryFailedNoRepo);
@@ -981,6 +947,7 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidArgumentRequiresSourceArgument);
     REGISTER_MESSAGE(InvalidArgumentRequiresTwoOrThreeArguments);
     REGISTER_MESSAGE(InvalidArgumentRequiresValidToken);
+    REGISTER_MESSAGE(InvalidArgumentRequiresZeroOrOneArgument);
     REGISTER_MESSAGE(InvalidBuildInfo);
     REGISTER_MESSAGE(InvalidBuiltInBaseline);
     REGISTER_MESSAGE(InvalidBundleDefinition);
@@ -1089,6 +1056,11 @@ namespace vcpkg
     REGISTER_MESSAGE(NoError);
     REGISTER_MESSAGE(NoInstalledPackages);
     REGISTER_MESSAGE(NoLocalizationForMessages);
+    REGISTER_MESSAGE(NonExactlyArgs);
+    REGISTER_MESSAGE(NonOneRemainingArgs);
+    REGISTER_MESSAGE(NonRangeArgs);
+    REGISTER_MESSAGE(NonZeroOrOneRemainingArgs);
+    REGISTER_MESSAGE(NonZeroRemainingArgs);
     REGISTER_MESSAGE(NoOutdatedPackages);
     REGISTER_MESSAGE(NoRegistryForPort);
     REGISTER_MESSAGE(NoUrlsAndHashSpecified);
@@ -1099,7 +1071,11 @@ namespace vcpkg
     REGISTER_MESSAGE(OptionalCommand);
     REGISTER_MESSAGE(OptionMustBeInteger);
     REGISTER_MESSAGE(OptionRequired);
+    REGISTER_MESSAGE(OptionRequiresAValue);
+    REGISTER_MESSAGE(OptionRequiresANonDashesValue);
     REGISTER_MESSAGE(OptionRequiresOption);
+    REGISTER_MESSAGE(OptionUsedMultipleTimes);
+    REGISTER_MESSAGE(Options);
     REGISTER_MESSAGE(OriginalBinParagraphHeader);
     REGISTER_MESSAGE(OverlayPatchDir);
     REGISTER_MESSAGE(OverlayTriplets);
@@ -1184,6 +1160,7 @@ namespace vcpkg
     REGISTER_MESSAGE(SuggestStartingBashShell);
     REGISTER_MESSAGE(SuggestUpdateVcpkg);
     REGISTER_MESSAGE(SupportedPort);
+    REGISTER_MESSAGE(SwitchUsedMultipleTimes);
     REGISTER_MESSAGE(SystemApiErrorMessage);
     REGISTER_MESSAGE(SystemTargetsInstallFailed);
     REGISTER_MESSAGE(SystemRootMustAlwaysBePresent);
@@ -1221,6 +1198,7 @@ namespace vcpkg
     REGISTER_MESSAGE(UnexpectedEOFMidUnicodeEscape);
     REGISTER_MESSAGE(UnexpectedErrorDuringBulkDownload);
     REGISTER_MESSAGE(UnexpectedEscapeSequence);
+    REGISTER_MESSAGE(UnexpectedArgument);
     REGISTER_MESSAGE(UnexpectedByteSize);
     REGISTER_MESSAGE(UnexpectedExtension);
     REGISTER_MESSAGE(UnexpectedFeatureList);
@@ -1246,8 +1224,6 @@ namespace vcpkg
     REGISTER_MESSAGE(UnsupportedPort);
     REGISTER_MESSAGE(UnsupportedPortDependency);
     REGISTER_MESSAGE(UnsupportedShortOptions);
-    REGISTER_MESSAGE(UnsupportedSupportsExpression);
-    REGISTER_MESSAGE(UnsupportedSupportsExpressionWarning);
     REGISTER_MESSAGE(UnsupportedSyntaxInCDATA);
     REGISTER_MESSAGE(UnsupportedSystemName);
     REGISTER_MESSAGE(UnsupportedToolchain);
@@ -1336,9 +1312,11 @@ namespace vcpkg
     REGISTER_MESSAGE(WindowsOnlyCommand);
     REGISTER_MESSAGE(WroteNuGetPkgConfInfo);
     REGISTER_MESSAGE(FailedToFetchError);
+    REGISTER_MESSAGE(UnexpectedOption);
     REGISTER_MESSAGE(UnexpectedPlatformExpression);
     REGISTER_MESSAGE(UnexpectedPortName);
     REGISTER_MESSAGE(UnexpectedPortversion);
+    REGISTER_MESSAGE(UnexpectedSwitch);
     REGISTER_MESSAGE(ExpectedReadWriteReadWrite);
     REGISTER_MESSAGE(FailedToLoadUnnamedPortFromPath);
     REGISTER_MESSAGE(TrailingCommaInArray);
@@ -1450,7 +1428,6 @@ namespace vcpkg
     REGISTER_MESSAGE(CmdFetchOptXStderrStatus);
     REGISTER_MESSAGE(CmdFormatManifestOptAll);
     REGISTER_MESSAGE(CmdFormatManifestOptConvertControl);
-    REGISTER_MESSAGE(CmdGenerateMessageMapOptOutputComments);
     REGISTER_MESSAGE(CmdGenerateMessageMapOptNoOutputComments);
     REGISTER_MESSAGE(CmdInfoOptInstalled);
     REGISTER_MESSAGE(CmdInfoOptTransitive);

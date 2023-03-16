@@ -4,9 +4,8 @@
 import { strict } from 'assert';
 import { createHash } from 'crypto';
 import { MetadataFile } from './amf/metadata-file';
-import { deactivate } from './artifacts/activation';
 import { Artifact, InstalledArtifact } from './artifacts/artifact';
-import { configurationName, defaultConfig, globalConfigurationFile, postscriptVariable, undo } from './constants';
+import { configurationName, defaultConfig, postscriptVariable } from './constants';
 import { FileSystem } from './fs/filesystem';
 import { HttpsFileSystem } from './fs/http-filesystem';
 import { LocalFileSystem } from './fs/local-filesystem';
@@ -56,6 +55,8 @@ export type SessionSettings = {
   readonly vcpkgDownloads?: string;
   readonly vcpkgRegistriesCache?: string;
   readonly telemetryFile?: string;
+  readonly nextPreviousEnvironment?: string;
+  readonly globalConfig?: string;
 }
 
 interface AcquiredArtifactEntry {
@@ -86,7 +87,7 @@ export class Session {
   readonly fileSystem: FileSystem;
   readonly channels: Channels;
   readonly homeFolder: Uri;
-  readonly tmpFolder: Uri;
+  readonly nextPreviousEnvironment: Uri;
   readonly installFolder: Uri;
   readonly registryFolder: Uri;
   readonly telemetryFile: Uri | undefined;
@@ -128,12 +129,11 @@ export class Session {
 
     this.homeFolder = this.fileSystem.file(settings.homeFolder);
     this.downloads = this.processVcpkgArg(settings.vcpkgDownloads, 'downloads');
-    this.globalConfig = this.homeFolder.join(globalConfigurationFile);
-
-    this.tmpFolder = this.homeFolder.join('tmp');
+    this.globalConfig = this.processVcpkgArg(settings.globalConfig, configurationName);
 
     this.registryFolder = this.processVcpkgArg(settings.vcpkgRegistriesCache, 'registries').join('artifact');
     this.installFolder = this.processVcpkgArg(settings.vcpkgArtifactsRoot, 'artifacts');
+    this.nextPreviousEnvironment = this.processVcpkgArg(settings.nextPreviousEnvironment, `previous-environment-${Date.now().toFixed()}.json`);
 
     const postscriptFileName = this.environment[postscriptVariable];
     this.postscriptFile = postscriptFileName ? this.fileSystem.file(postscriptFileName) : undefined;
@@ -210,18 +210,8 @@ export class Session {
     return (location.toString() === startLocation.toString()) ? undefined : this.findProjectProfile(location);
   }
 
-  async deactivate() {
-    const previous = this.environment[undo];
-    if (previous && this.postscriptFile) {
-      const deactivationDataFile = this.fileSystem.file(previous);
-      if (deactivationDataFile.scheme === 'file' && await deactivationDataFile.exists()) {
-
-        const deactivationData = JSON.parse(await deactivationDataFile.readUTF8());
-        delete deactivationData.environment[undo];
-        await deactivate(this.postscriptFile, deactivationData.environment || {}, deactivationData.aliases || {});
-        await deactivationDataFile.delete();
-      }
-    }
+  displayNoPostScriptError() {
+    this.channels.error(i`no postscript file: rerun with the vcpkg shell function rather than executable`);
   }
 
   async getInstalledArtifacts() {
@@ -252,26 +242,6 @@ export class Session {
 
   async openManifest(filename: string, uri: Uri): Promise<MetadataFile> {
     return await MetadataFile.parseConfiguration(filename, await uri.readUTF8(), this);
-  }
-
-  serializer(key: any, value: any) {
-    if (value instanceof Map) {
-      return { dataType: 'Map', value: Array.from(value.entries()) };
-    }
-    return value;
-  }
-
-  deserializer(key: any, value: any) {
-    if (typeof value === 'object' && value !== null) {
-      switch (value.dataType) {
-        case 'Map':
-          return new Map(value.value);
-      }
-      if (value.scheme && value.path) {
-        return this.fileSystem.from(value);
-      }
-    }
-    return value;
   }
 
   readonly #acquiredArtifacts: Array<AcquiredArtifactEntry> = [];

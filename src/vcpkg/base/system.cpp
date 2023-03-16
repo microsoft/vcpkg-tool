@@ -484,13 +484,16 @@ namespace vcpkg
     }
 #endif
 
-    const ExpectedL<Path>& get_platform_cache_home() noexcept
+    const ExpectedL<Path>& get_platform_cache_vcpkg() noexcept
     {
+        static ExpectedL<Path> s_vcpkg =
 #ifdef _WIN32
-        return get_appdata_local();
+            get_appdata_local()
 #else
-        return get_xdg_cache_home();
+            get_xdg_cache_home()
 #endif
+                .map([](const Path& p) { return p / "vcpkg"; });
+        return s_vcpkg;
     }
 
     const ExpectedL<Path>& get_user_configuration_home() noexcept

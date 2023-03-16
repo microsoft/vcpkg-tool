@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#include <vcpkg/base/fwd/files.h>
-#include <vcpkg/base/fwd/json.h>
 #include <vcpkg/base/fwd/messages.h>
 #include <vcpkg/base/fwd/span.h>
 
@@ -277,6 +275,7 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(feature, "avisynthplus");
     DECLARE_MSG_ARG(json_field, "identifer");
     DECLARE_MSG_ARG(json_type, "an array of identifiers");
+    DECLARE_MSG_ARG(lower, "42");
     DECLARE_MSG_ARG(new_scheme, "version");
     DECLARE_MSG_ARG(old_scheme, "version-string");
     DECLARE_MSG_ARG(option, "editable");
@@ -292,6 +291,7 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(system_name, "Darwin");
     DECLARE_MSG_ARG(tool_name, "aria2");
     DECLARE_MSG_ARG(triplet, "x64-windows");
+    DECLARE_MSG_ARG(upper, "42");
     DECLARE_MSG_ARG(url, "https://github.com/microsoft/vcpkg");
     DECLARE_MSG_ARG(vcpkg_line_info, "/a/b/foo.cpp(13)");
     DECLARE_MSG_ARG(vendor, "Azure");
@@ -337,10 +337,6 @@ namespace vcpkg::msg
         "Please open an issue at "
         "https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug "
         "with detailed steps to reproduce the problem.");
-    DECLARE_MESSAGE(BothYesAndNoOptionSpecifiedError,
-                    (msg::option),
-                    "",
-                    "cannot specify both --no-{option} and --{option}.");
 
     void println_warning(const LocalizedString& s);
     template<class Message, class... Ts>
@@ -367,62 +363,12 @@ namespace vcpkg::msg
     {
         return format(msgErrorMessage).append(m, args...);
     }
+
+    inline LocalizedString format_error(const LocalizedString& msg) { return format(msgErrorMessage).append(msg); }
 }
 
 namespace vcpkg
 {
-    struct MessageSink
-    {
-        virtual void print(Color c, StringView sv) = 0;
-
-        void println() { this->print(Color::none, "\n"); }
-        void print(const LocalizedString& s) { this->print(Color::none, s); }
-        void println(Color c, const LocalizedString& s)
-        {
-            this->print(c, s);
-            this->print(Color::none, "\n");
-        }
-        inline void println(const LocalizedString& s)
-        {
-            this->print(Color::none, s);
-            this->print(Color::none, "\n");
-        }
-
-        template<class Message, class... Ts>
-        typename Message::is_message_type print(Message m, Ts... args)
-        {
-            this->print(Color::none, msg::format(m, args...));
-        }
-
-        template<class Message, class... Ts>
-        typename Message::is_message_type println(Message m, Ts... args)
-        {
-            this->print(Color::none, msg::format(m, args...).append_raw('\n'));
-        }
-
-        template<class Message, class... Ts>
-        typename Message::is_message_type print(Color c, Message m, Ts... args)
-        {
-            this->print(c, msg::format(m, args...));
-        }
-
-        template<class Message, class... Ts>
-        typename Message::is_message_type println(Color c, Message m, Ts... args)
-        {
-            this->print(c, msg::format(m, args...).append_raw('\n'));
-        }
-
-        MessageSink(const MessageSink&) = delete;
-        MessageSink& operator=(const MessageSink&) = delete;
-
-    protected:
-        MessageSink() = default;
-        ~MessageSink() = default;
-    };
-
-    extern MessageSink& null_sink;
-    extern MessageSink& stdout_sink;
-    extern MessageSink& stderr_sink;
 
     DECLARE_MESSAGE(ABaseline, (), "", "a baseline");
     DECLARE_MESSAGE(ABaselineObject, (), "", "a baseline object");
@@ -975,10 +921,6 @@ namespace vcpkg
         (),
         "",
         "When generating the message map, exclude comments (useful for generating the English localization file)");
-    DECLARE_MESSAGE(CmdGenerateMessageMapOptOutputComments,
-                    (),
-                    "",
-                    "When generating the message map, include comments (the default)");
     DECLARE_MESSAGE(CmdInfoOptInstalled, (), "", "(experimental) Report on installed packages instead of available");
     DECLARE_MESSAGE(CmdInfoOptTransitive, (), "", "(experimental) Also report on dependencies of installed packages");
     DECLARE_MESSAGE(CmdNewOptApplication, (), "", "Create an application manifest (don't require name or version).");
@@ -1062,7 +1004,6 @@ namespace vcpkg
                     (msg::path, msg::spec),
                     "",
                     "The following files are already installed in {path} and are in conflict with {spec}");
-    DECLARE_MESSAGE(ConflictingValuesForOption, (msg::option), "", "conflicting values specified for '--{option}'.");
     DECLARE_MESSAGE(ConstraintViolation, (), "", "Found a constraint violation:");
     DECLARE_MESSAGE(ContinueCodeUnitInStart, (), "", "found continue code unit in start position");
     DECLARE_MESSAGE(ControlAndManifestFilesPresent,
@@ -1223,15 +1164,10 @@ namespace vcpkg
                     (msg::env_var),
                     "",
                     "Specify the downloads root directory.\n(default: {env_var})");
-    DECLARE_MESSAGE(DuplicateCommandOption, (msg::option), "", "The option --{option} can only be passed once.");
     DECLARE_MESSAGE(DuplicatedKeyInObj,
                     (msg::value),
                     "{value} is a json property/object",
                     "Duplicated key \"{value}\" in an object");
-    DECLARE_MESSAGE(DuplicateOptions,
-                    (msg::value),
-                    "'{value}' is a command line option.",
-                    "'--{value}' specified multiple times.");
     DECLARE_MESSAGE(DuplicatePackagePattern, (msg::package_name), "", "Package \"{package_name}\" is duplicated.");
     DECLARE_MESSAGE(DuplicatePackagePatternFirstOcurrence, (), "", "First declared in:");
     DECLARE_MESSAGE(DuplicatePackagePatternIgnoredLocations, (), "", "The following redeclarations will be ignored:");
@@ -1244,7 +1180,6 @@ namespace vcpkg
                     (),
                     "",
                     "Embedding `vcpkg-configuration` in a manifest file is an EXPERIMENTAL feature.");
-    DECLARE_MESSAGE(EmptyArg, (msg::option), "", "The option --{option} must be passed a non-empty argument.");
     DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
     DECLARE_MESSAGE(EndOfStringInCodeUnit, (), "", "found end of string in middle of code point");
     DECLARE_MESSAGE(EnvInvalidMaxConcurrency,
@@ -1360,7 +1295,6 @@ namespace vcpkg
     DECLARE_MESSAGE(ExpectedReadWriteReadWrite, (), "", "unexpected argument: expected 'read', readwrite', or 'write'");
     DECLARE_MESSAGE(ExpectedStatusField, (), "", "Expected 'status' field in status paragraph");
     DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here (must be lowercase, digits, '-')");
-    DECLARE_MESSAGE(ExpectedValueForOption, (msg::option), "", "expected value after --{option}.");
     DECLARE_MESSAGE(ExportArchitectureReq,
                     (),
                     "",
@@ -1566,6 +1500,11 @@ namespace vcpkg
     DECLARE_MESSAGE(GeneratingInstaller, (msg::path), "", "Generating installer {path}...");
     DECLARE_MESSAGE(GeneratingRepo, (msg::path), "", "Generating repository {path}...");
     DECLARE_MESSAGE(GetParseFailureInfo, (), "", "Use '--debug' to get more information about the parse failures.");
+    DECLARE_MESSAGE(GHAParametersMissing,
+                    (msg::url),
+                    "",
+                    "The GHA binary source requires the ACTIONS_RUNTIME_TOKEN and ACTIONS_CACHE_URL environment "
+                    "variables to be set. See {url} for details.");
     DECLARE_MESSAGE(GitCommandFailed, (msg::command_line), "", "failed to execute: {command_line}");
     DECLARE_MESSAGE(GitFailedToFetch,
                     (msg::value, msg::url),
@@ -1824,7 +1763,7 @@ namespace vcpkg
     DECLARE_MESSAGE(HelpRemoveOutdatedCommand, (), "", "Uninstall all out-of-date packages.");
     DECLARE_MESSAGE(HelpResponseFileCommand, (), "", "Specify a response file to provide additional parameters.");
     DECLARE_MESSAGE(HelpSearchCommand, (), "", "Search for packages available to be built.");
-    DECLARE_MESSAGE(HelpTextOptFullDesc, (), "", "Do not truncate long text");
+    DECLARE_MESSAGE(HelpTextOptFullDesc, (), "", "Do not truncate long text.");
     DECLARE_MESSAGE(HelpTopicCommand, (), "", "Display help for a specific topic.");
     DECLARE_MESSAGE(HelpTopicsCommand, (), "", "Display the list of help topics.");
     DECLARE_MESSAGE(HelpTxtOptAllowUnsupportedPort,
@@ -1834,10 +1773,10 @@ namespace vcpkg
     DECLARE_MESSAGE(HelpTxtOptCleanAfterBuild,
                     (),
                     "",
-                    "Clean buildtrees, packages and downloads after building each package");
-    DECLARE_MESSAGE(HelpTxtOptCleanBuildTreesAfterBuild, (), "", "Clean buildtrees after building each package");
-    DECLARE_MESSAGE(HelpTxtOptCleanDownloadsAfterBuild, (), "", "Clean downloads after building each package");
-    DECLARE_MESSAGE(HelpTxtOptCleanPkgAfterBuild, (), "", "Clean packages after building each package");
+                    "Clean buildtrees, packages and downloads after building each package.");
+    DECLARE_MESSAGE(HelpTxtOptCleanBuildTreesAfterBuild, (), "", "Clean buildtrees after building each package.");
+    DECLARE_MESSAGE(HelpTxtOptCleanDownloadsAfterBuild, (), "", "Clean downloads after building each package.");
+    DECLARE_MESSAGE(HelpTxtOptCleanPkgAfterBuild, (), "", "Clean packages after building each package.");
     DECLARE_MESSAGE(HelpTxtOptDryRun, (), "", "Do not actually build or install.");
     DECLARE_MESSAGE(HelpTxtOptEditable,
                     (),
@@ -1847,7 +1786,7 @@ namespace vcpkg
                     (),
                     "",
                     "Fail install if a port has detected problems or attempts to use a deprecated feature");
-    DECLARE_MESSAGE(HelpTxtOptKeepGoing, (), "", "Continue installing packages on failure");
+    DECLARE_MESSAGE(HelpTxtOptKeepGoing, (), "", "Continue installing packages on failure.");
     DECLARE_MESSAGE(HelpTxtOptManifestFeature,
                     (),
                     "",
@@ -1856,16 +1795,19 @@ namespace vcpkg
                     (),
                     "",
                     "Don't install the default features from the top-level manifest (manifest mode).");
-    DECLARE_MESSAGE(HelpTxtOptNoDownloads, (), "", "Do not download new sources");
+    DECLARE_MESSAGE(HelpTxtOptNoDownloads, (), "", "Do not download new sources.");
     DECLARE_MESSAGE(HelpTxtOptNoUsage, (), "", "Don't print CMake usage information after install.");
-    DECLARE_MESSAGE(HelpTxtOptOnlyBinCache, (), "", "Fail if cached binaries are not available");
-    DECLARE_MESSAGE(HelpTxtOptOnlyDownloads, (), "", "Download sources but don't build packages");
-    DECLARE_MESSAGE(HelpTxtOptRecurse, (), "", "Allow removal of packages as part of installation");
-    DECLARE_MESSAGE(HelpTxtOptUseAria2, (), "", "Use aria2 to perform download tasks");
+    DECLARE_MESSAGE(HelpTxtOptOnlyBinCache, (), "", "Fail if cached binaries are not available.");
+    DECLARE_MESSAGE(HelpTxtOptOnlyDownloads,
+                    (),
+                    "",
+                    "Make a best-effort attempt to download sources without building.");
+    DECLARE_MESSAGE(HelpTxtOptRecurse, (), "", "Allow removal of packages as part of installation.");
+    DECLARE_MESSAGE(HelpTxtOptUseAria2, (), "", "Use aria2 to perform download tasks.");
     DECLARE_MESSAGE(HelpTxtOptUseHeadVersion,
                     (),
                     "",
-                    "Install the libraries on the command line using the latest upstream sources (classic mode)");
+                    "Install the libraries on the command line using the latest upstream sources (classic mode).");
     DECLARE_MESSAGE(
         HelpTxtOptWritePkgConfig,
         (),
@@ -1913,10 +1855,6 @@ namespace vcpkg
                     "{value} is a sha.",
                     "SHA512's must be 128 hex characters: {value}");
     DECLARE_MESSAGE(IncorrectArchiveFileSignature, (), "", "Incorrect archive file signature");
-    DECLARE_MESSAGE(IncorrectNumberOfArgs,
-                    (msg::command_name, msg::expected, msg::actual),
-                    "'{expected}' is the required number of arguments. '{actual}' is the number of arguments provided.",
-                    "'{command_name}' requires '{expected}' arguments, but '{actual}' were provided.");
     DECLARE_MESSAGE(IncorrectPESignature, (), "", "Incorrect PE signature");
     DECLARE_MESSAGE(IncrementedUtf8Decoder, (), "", "Incremented Utf8Decoder at the end of the string");
     DECLARE_MESSAGE(InfoSetEnvVar,
@@ -2058,6 +1996,10 @@ namespace vcpkg
                     "",
                     "invalid argument: binary config '{binary_source}' requires a SAS token without a "
                     "preceeding '?' as the second argument");
+    DECLARE_MESSAGE(InvalidArgumentRequiresZeroOrOneArgument,
+                    (msg::binary_source),
+                    "",
+                    "invalid argument: binary config '{binary_source}' requires 0 or 1 argument");
     DECLARE_MESSAGE(InvalidBuildInfo, (msg::error_msg), "", "Invalid BUILD_INFO file for package: {error_msg}");
     DECLARE_MESSAGE(
         InvalidBuiltInBaseline,
@@ -2371,6 +2313,28 @@ namespace vcpkg
                     "The name 'search' is the name of a command that is not localized.",
                     "No packages are installed. Did you mean `search`?");
     DECLARE_MESSAGE(NoLocalizationForMessages, (), "", "No localized messages for the following: ");
+    DECLARE_MESSAGE(NonExactlyArgs,
+                    (msg::command_name, msg::expected, msg::actual),
+                    "{expected} and {actual} are integers",
+                    "the command '{command_name}' requires exactly {expected} arguments, but {actual} were provided");
+    DECLARE_MESSAGE(NonOneRemainingArgs,
+                    (msg::command_name),
+                    "",
+                    "the command '{command_name}' requires exactly one argument");
+    DECLARE_MESSAGE(
+        NonRangeArgs,
+        (msg::command_name, msg::lower, msg::upper, msg::actual),
+        "{actual} is an integer",
+        "the command '{command_name}' requires between {lower} and {upper} arguments, inclusive, but {actual} "
+        "were provided");
+    DECLARE_MESSAGE(NonZeroOrOneRemainingArgs,
+                    (msg::command_name),
+                    "",
+                    "the command '{command_name}' requires zero or one arguments");
+    DECLARE_MESSAGE(NonZeroRemainingArgs,
+                    (msg::command_name),
+                    "",
+                    "the command '{command_name}' does not accept any additional arguments");
     DECLARE_MESSAGE(NoOutdatedPackages, (), "", "There are no outdated packages.");
     DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}");
     DECLARE_MESSAGE(NoUrlsAndHashSpecified, (msg::sha), "", "No urls specified to download SHA: {sha}");
@@ -2390,10 +2354,20 @@ namespace vcpkg
     DECLARE_MESSAGE(OptionalCommand, (), "", "optional command");
     DECLARE_MESSAGE(OptionMustBeInteger, (msg::option), "", "Value of --{option} must be an integer.");
     DECLARE_MESSAGE(OptionRequired, (msg::option), "", "--{option} option is required.");
+    DECLARE_MESSAGE(OptionRequiresAValue, (msg::option), "", "the option '{option}' requires a value");
+    DECLARE_MESSAGE(OptionRequiresANonDashesValue,
+                    (msg::option, msg::actual, msg::value),
+                    "{value} is the value the user typed, {actual} is {option} potentially with prefixes like '--x-'. "
+                    "Full example: the option 'evil-option' requires a value; if you intended to set 'evil-option' to "
+                    "'--evil-value', use the equals form instead: --x-evil-option=--evil-value",
+                    "the option '{option}' requires a value; if you intended to set '{option}' to '{value}', use the "
+                    "equals form instead: {actual}={value}");
+    DECLARE_MESSAGE(OptionUsedMultipleTimes, (msg::option), "", "the option '{option}' was specified multiple times");
     DECLARE_MESSAGE(OptionRequiresOption,
                     (msg::value, msg::option),
                     "{value} is a command line option.",
                     "--{value} requires --{option}");
+    DECLARE_MESSAGE(Options, (), "Printed just before a list of options for a command", "Options");
     DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph");
     DECLARE_MESSAGE(OverlayPatchDir, (msg::path), "", "Overlay path \"{path}\" must exist and must be a directory.");
     DECLARE_MESSAGE(OverlayTriplets, (msg::path), "", "Overlay triplets from {path} :");
@@ -2787,6 +2761,7 @@ namespace vcpkg
                     "",
                     "You may need to update the vcpkg binary; try running {command_line} to update.");
     DECLARE_MESSAGE(SupportedPort, (msg::package_name), "", "Port {package_name} is supported.");
+    DECLARE_MESSAGE(SwitchUsedMultipleTimes, (msg::option), "", "the switch '{option}' was specified multiple times");
     DECLARE_MESSAGE(SystemApiErrorMessage,
                     (msg::system_api, msg::exit_code, msg::error_msg),
                     "",
@@ -2828,6 +2803,10 @@ namespace vcpkg
                     "Unable to determine toolchain use for {triplet} with with CMAKE_SYSTEM_NAME {system_name}. Did "
                     "you mean to use "
                     "VCPKG_CHAINLOAD_TOOLCHAIN_FILE?");
+    DECLARE_MESSAGE(UnexpectedArgument,
+                    (msg::option),
+                    "Argument is literally what the user passed on the command line.",
+                    "unexpected argument: {option}");
     DECLARE_MESSAGE(
         UnexpectedAssetCacheProvider,
         (),
@@ -2874,6 +2853,10 @@ namespace vcpkg
                     (msg::expected, msg::actual),
                     "{expected} is the expected format, {actual} is the actual format.",
                     "Expected format is [{expected}], but was [{actual}].");
+    DECLARE_MESSAGE(UnexpectedOption,
+                    (msg::option),
+                    "Option is a command line option like --option=value",
+                    "unexpected option: {option}");
     DECLARE_MESSAGE(UnexpectedPlatformExpression, (), "", "unexpected platform expression");
     DECLARE_MESSAGE(UnexpectedPortName,
                     (msg::expected, msg::actual, msg::path),
@@ -2883,6 +2866,10 @@ namespace vcpkg
                     (),
                     "'field' means a JSON key/value pair here",
                     "unexpected \"port-version\" without a versioning field");
+    DECLARE_MESSAGE(UnexpectedSwitch,
+                    (msg::option),
+                    "Switch is a command line switch like --switch",
+                    "unexpected switch: {option}");
     DECLARE_MESSAGE(UnexpectedToolOutput,
                     (msg::tool_name, msg::path),
                     "The actual command line output will be appended after this message.",
@@ -2957,20 +2944,6 @@ namespace vcpkg
                     (msg::value),
                     "'{value}' is the name of a port dependency.",
                     "- dependency {value} is not supported.");
-    DECLARE_MESSAGE(UnsupportedSupportsExpression,
-                    (msg::package_name, msg::supports_expression, msg::triplet),
-                    "",
-                    "{package_name} is only supported on '{supports_expression}', "
-                    "which does not match {triplet}. This usually means that there are known "
-                    "build failures, or runtime problems, when building other platforms. To ignore this and attempt to "
-                    "build {package_name} anyway, rerun vcpkg with `--allow-unsupported`.");
-    DECLARE_MESSAGE(
-        UnsupportedSupportsExpressionWarning,
-        (msg::package_name, msg::supports_expression, msg::triplet),
-        "",
-        "{package_name} is only supported on '{supports_expression}', "
-        "which does not match {triplet}. This usually means that there are known build failures, "
-        "or runtime problems, when building other platforms. Proceeding anyway due to `--allow-unsupported`.");
     DECLARE_MESSAGE(UnsupportedShortOptions,
                     (msg::value),
                     "'{value}' is the short option given",
@@ -3057,8 +3030,8 @@ namespace vcpkg
     DECLARE_MESSAGE(Utf8ConversionFailed, (), "", "Failed to convert to UTF-8");
     DECLARE_MESSAGE(VcpkgCeIsExperimental,
                     (),
-                    "",
-                    "vcpkg-ce ('configure environment') is experimental and may change at any time.");
+                    "The name of the feature is 'vcpkg-artifacts' and should be singular despite ending in s",
+                    "vcpkg-artifacts is experimental and may change at any time.");
     DECLARE_MESSAGE(VcpkgCommitTableHeader, (), "", "VCPKG Commit");
     DECLARE_MESSAGE(
         VcpkgCompletion,
@@ -3119,7 +3092,7 @@ namespace vcpkg
     DECLARE_MESSAGE(VersionConstraintPortVersionMustBePositiveInteger,
                     (),
                     "",
-                    "port-version (after the '#') in \"version>=\" must be a positive integer");
+                    "port-version (after the '#') in \"version>=\" must be a non-negative integer");
     DECLARE_MESSAGE(VersionConstraintUnresolvable,
                     (msg::package_name, msg::spec),
                     "",
