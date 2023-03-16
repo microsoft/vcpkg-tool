@@ -30,14 +30,14 @@ export async function activate(session: Session, allowStacking: boolean, stackEn
   // install the items in the project
   const success = await acquireArtifacts(session, artifacts, registries, options);
   if (success) {
-    const activation = new Activation(session);
+    const activation = await Activation.start(session, allowStacking);
     for (const artifact of artifacts) {
       if (!await artifact.artifact.loadActivationSettings(activation)) {
         return false;
       }
     }
 
-    await activation.activate(session.nextPreviousEnvironment, allowStacking, stackEntries, options?.msbuildProps, options?.json);
+    await activation.activate(stackEntries, options?.msbuildProps, options?.json);
   }
 
   return success;

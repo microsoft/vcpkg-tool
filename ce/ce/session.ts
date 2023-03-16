@@ -5,7 +5,7 @@ import { strict } from 'assert';
 import { createHash } from 'crypto';
 import { MetadataFile } from './amf/metadata-file';
 import { Artifact, InstalledArtifact } from './artifacts/artifact';
-import { configurationName, defaultConfig, postscriptVariable } from './constants';
+import { configurationName, defaultConfig } from './constants';
 import { FileSystem } from './fs/filesystem';
 import { HttpsFileSystem } from './fs/http-filesystem';
 import { LocalFileSystem } from './fs/local-filesystem';
@@ -97,7 +97,6 @@ export class Session {
   readonly downloads: Uri;
   currentDirectory: Uri;
   configuration?: MetadataFile;
-  readonly postscriptFile?: Uri;
 
   /** register installer functions here */
   private installers = new Map<string, InstallerTool>([
@@ -114,11 +113,11 @@ export class Session {
     return argSetting ? this.fileSystem.file(argSetting) : this.homeFolder.join(defaultName);
   }
 
-  constructor(currentDirectory: string, public readonly context: Context, public readonly settings: SessionSettings, public readonly environment: NodeJS.ProcessEnv) {
+  constructor(currentDirectory: string, public readonly context: Context, public readonly settings: SessionSettings) {
     this.fileSystem = new UnifiedFileSystem(this).
       register('file', new LocalFileSystem(this)).
       register('vsix', new VsixLocalFilesystem(this)).
-      register(['https'], new HttpsFileSystem(this)
+      register('https', new HttpsFileSystem(this)
       );
 
     this.channels = new Channels(this);
@@ -134,9 +133,6 @@ export class Session {
     this.registryFolder = this.processVcpkgArg(settings.vcpkgRegistriesCache, 'registries').join('artifact');
     this.installFolder = this.processVcpkgArg(settings.vcpkgArtifactsRoot, 'artifacts');
     this.nextPreviousEnvironment = this.processVcpkgArg(settings.nextPreviousEnvironment, `previous-environment-${Date.now().toFixed()}.json`);
-
-    const postscriptFileName = this.environment[postscriptVariable];
-    this.postscriptFile = postscriptFileName ? this.fileSystem.file(postscriptFileName) : undefined;
 
     this.currentDirectory = this.fileSystem.file(currentDirectory);
   }
@@ -208,10 +204,6 @@ export class Session {
 
     location = location.join('..');
     return (location.toString() === startLocation.toString()) ? undefined : this.findProjectProfile(location);
-  }
-
-  displayNoPostScriptError() {
-    this.channels.error(i`no postscript file: rerun with the vcpkg shell function rather than executable`);
   }
 
   async getInstalledArtifacts() {
