@@ -156,14 +156,8 @@ namespace vcpkg
                 Checks::check_exit(VCPKG_LINE_INFO,
                                    !this->name.empty() && this->name != "core" && this->name != "default");
             }
-            friend bool operator==(const Feature& lhs, const Feature& rhs)
-            {
-                if (lhs.name != rhs.name) return false;
-                if (!structurally_equal(lhs.platform, rhs.platform)) return false;
-
-                return true;
-            }
-            friend bool operator!=(const Feature& lhs, const Feature& rhs) { return !(lhs == rhs); }
+            friend bool operator==(const Feature& lhs, const Feature& rhs);
+            friend bool operator!=(const Feature& lhs, const Feature& rhs);
         };
         std::string name;
         // a list of "real" features without "core" or "default". Use member default_features instead.

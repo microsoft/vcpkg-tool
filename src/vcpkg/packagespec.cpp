@@ -315,4 +315,14 @@ namespace vcpkg
         return lhs.extra_info == rhs.extra_info;
     }
     bool operator!=(const DependencyOverride& lhs, const DependencyOverride& rhs);
+
+    bool operator==(const Dependency::Feature& lhs, const Dependency::Feature& rhs)
+    {
+        if (lhs.name != rhs.name) return false;
+        if (!structurally_equal(lhs.platform, rhs.platform)) return false;
+
+        return true;
+    }
+
+    bool operator!=(const Dependency::Feature& lhs, const Dependency::Feature& rhs) { return !(lhs == rhs); }
 }
