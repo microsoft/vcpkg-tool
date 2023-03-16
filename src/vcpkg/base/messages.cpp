@@ -609,6 +609,7 @@ namespace vcpkg
     REGISTER_MESSAGE(BuildTroubleshootingMessage1);
     REGISTER_MESSAGE(BuildTroubleshootingMessage2);
     REGISTER_MESSAGE(BuildTroubleshootingMessage3);
+    REGISTER_MESSAGE(BuildTroubleshootingMessageGH);
     REGISTER_MESSAGE(BuildTroubleshootingMessage4);
     REGISTER_MESSAGE(BuiltInTriplets);
     REGISTER_MESSAGE(CacheHelp);

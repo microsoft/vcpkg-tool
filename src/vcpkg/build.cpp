@@ -172,7 +172,7 @@ namespace vcpkg::Build
                 msg::print(Color::warning, warnings);
             }
             msg::println_error(create_error_message(result, spec));
-            msg::print(create_user_troubleshooting_message(*action, paths));
+            msg::print(create_user_troubleshooting_message(*action, paths, nullopt));
             return 1;
         }
 
@@ -1513,7 +1513,9 @@ namespace vcpkg
             manifest);
     }
 
-    LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action, const VcpkgPaths& paths)
+    LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action,
+                                                        const VcpkgPaths& paths,
+                                                        const Optional<Path>& issue_body)
     {
         std::string package = action.displayname();
         if (auto scfl = action.source_control_file_and_location.get())
@@ -1527,13 +1529,26 @@ namespace vcpkg
             .append_raw(spec_name)
             .append_raw('\n');
         result.append(msgBuildTroubleshootingMessage2).append_raw('\n');
-        result.append_indent()
-            .append_fmt_raw("https://github.com/microsoft/vcpkg/issues/"
-                            "new?template=report-package-build-failure.md&title=[{}]+Build+error",
-                            spec_name)
-            .append_raw('\n');
-        result.append(msgBuildTroubleshootingMessage3, msg::package_name = spec_name).append_raw('\n');
-        result.append_raw(paths.get_toolver_diagnostics()).append_raw('\n');
+        if (issue_body.has_value())
+        {
+            auto path = issue_body.get()->generic_u8string();
+            result.append_indent().append_fmt_raw("https://github.com/microsoft/vcpkg/issues/"
+                                                  "new?title=[{}]+Build+error&body=Copy+issue+body+from+{}\n",
+                                                  spec_name,
+                                                  Strings::percent_encode(path));
+            result.append(msgBuildTroubleshootingMessageGH).append_raw('\n');
+            result.append_indent().append_fmt_raw(
+                "gh issue create -R microsoft/vcpkg --title '[{}] Build failue' --body-file '{}'\n", spec_name, path);
+        }
+        else
+        {
+            result.append_indent().append_fmt_raw(
+                "https://github.com/microsoft/vcpkg/issues/"
+                "new?template=report-package-build-failure.md&title=[{}]+Build+error\n",
+                spec_name);
+            result.append(msgBuildTroubleshootingMessage3, msg::package_name = spec_name).append_raw('\n');
+            result.append_raw(paths.get_toolver_diagnostics()).append_raw('\n');
+        }
 
         return result;
     }
