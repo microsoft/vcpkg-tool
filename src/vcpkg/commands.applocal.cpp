@@ -1,7 +1,12 @@
 #if defined(_WIN32)
+#include <vcpkg/base/cache.h>
 #include <vcpkg/base/cofffilereader.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
+#include <vcpkg/base/json.h>
+#include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/lazy.h>
+#include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/util.h>
 
@@ -32,7 +37,7 @@ namespace
 
     struct MutantGuard
     {
-        MutantGuard(StringView name)
+        explicit MutantGuard(StringView name)
         {
             h = ::CreateMutexW(nullptr, FALSE, Strings::to_utf16(name).c_str());
             if (h)
@@ -60,446 +65,269 @@ namespace
 
     struct Deployment
     {
+        enum
+        {
+            // source = "a/b/c", dest = "a/b/d"
+            // a/b/c -> C:/a/b/d
+            regular,
+            // source = "a/b/x*y", dest = "a/b/d"
+            // a/b/xAAy, a/b/xBBy -> C:/a/b/d/xAAy, C:/a/b/d/xBBy, ...
+            file_filter,
+            // source = "a/b", dest = "a/b/d"
+            // a/b/AA, a/b/sub/BB -> C:/a/b/d/AA, C:/a/b/d/sub/BB, ...
+            recursive,
+        } source_kind;
+        Path source;
+        Path dest;
+    };
+
+    ExpectedL<Unit> parse_deployment_source(Path src, Deployment& out)
+    {
+        out.source = std::move(src);
+        auto idx = out.source.parent_path().find('*');
+        if (idx != SIZE_MAX)
+        {
+            return LocalizedString::from_raw("invalid filename pattern: parent path must not contain wildcards");
+        }
+
+        const auto filename = out.source.filename();
+        if (filename == "**")
+        {
+            out.source_kind = Deployment::recursive;
+            out.source.make_parent_path();
+        }
+        else
+        {
+            idx = filename.find('*');
+            if (idx == SIZE_MAX)
+            {
+                out.source_kind = Deployment::regular;
+            }
+            else
+            {
+                out.source_kind = Deployment::file_filter;
+                idx = filename.find('*', idx + 1);
+                if (idx != SIZE_MAX)
+                {
+                    return LocalizedString::from_raw(
+                        "invalid filename pattern: must contain at most one wildcard or be \"**\"");
+                }
+            }
+        }
+        return Unit{};
+    }
+
+    struct BuiltinDeployment
+    {
         StringLiteral source;
         StringLiteral dest;
     };
 
-    struct AppLocalInvocation
+    struct BuiltinDeploymentEntry
     {
-        AppLocalInvocation(Filesystem& fs,
-                           const Path& deployment_dir,
-                           const Path& installed_bin_dir,
-                           WriteFilePointer&& tlog_file,
-                           WriteFilePointer&& copied_files_log)
-            : m_fs(fs)
-            , m_deployment_dir(deployment_dir)
-            , m_installed_bin_dir(fs.almost_canonical(installed_bin_dir, VCPKG_LINE_INFO))
-            , m_installed(m_installed_bin_dir.parent_path())
-            , m_is_debug(m_installed.stem() == "debug")
-            , m_tlog_file(std::move(tlog_file))
-            , m_copied_files_log(std::move(copied_files_log))
-            , m_openni2_installed(m_fs.exists(m_installed / "bin/OpenNI2/openni2deploy.ps1", VCPKG_LINE_INFO))
-            , m_azurekinectsdk_installed(
-                  m_fs.exists(m_installed / "tools/azure-kinect-sensor-sdk/k4adeploy.ps1", VCPKG_LINE_INFO))
-            , m_magnum_installed(m_fs.exists(m_installed / "bin/magnum/magnumdeploy.ps1", VCPKG_LINE_INFO) ||
-                                 m_fs.exists(m_installed / "bin/magnum-d/magnumdeploy.ps1", VCPKG_LINE_INFO))
-            , m_qt_installed(m_fs.exists(m_installed / "plugins/qtdeploy.ps1", VCPKG_LINE_INFO))
-        {
-            if (m_openni2_installed)
-            {
-                static const Deployment s_openni2_deploy[] = {
-                    {"bin/OpenNI2/OpenNI.ini", "OpenNI.ini"},
-                    {"bin/OpenNI2/Drivers/Kinect.dll", "OpenNI2/Drivers/Kinect.dll"},
-                    {"bin/OpenNI2/Drivers/OniFile.dll", "OpenNI2/Drivers/OniFile.dll"},
-                    {"bin/OpenNI2/Drivers/PS1080.dll", "OpenNI2/Drivers/PS1080.dll"},
-                    {"bin/OpenNI2/Drivers/PS1080.ini", "OpenNI2/Drivers/PS1080.ini"},
-                    {"bin/OpenNI2/Drivers/PSLink.dll", "OpenNI2/Drivers/PSLink.dll"},
-                    {"bin/OpenNI2/Drivers/PSLink.ini", "OpenNI2/Drivers/PSLink.ini"},
-                };
+        StringLiteral dll_name;
+        View<BuiltinDeployment> deployments;
+    };
 
-                m_registered_deployments.emplace("OpenNI2.dll", s_openni2_deploy);
-            }
+    Optional<View<BuiltinDeployment>> get_magnum_deployments(StringView dll_name)
+    {
+        // clang-format off
+#define MAGNUM_PATTERNS(subdir)                                                                                      \
+    {"bin/" subdir "/*.conf", subdir},                                                                               \
+    {"bin/" subdir "/*.dll", subdir},                                                                                \
+    {"bin/" subdir "/*.pdb", subdir}
+        // clang-format on
 
-            if (m_azurekinectsdk_installed)
-            {
-                static const Deployment s_k4a_deploy[] = {
-                    {"tools/azure-kinect-sensor-sdk/depthengine_2_0.dll", "depthengine_2_0.dll"},
-                };
-                m_registered_deployments.emplace("k4a.dll", s_k4a_deploy);
-            }
+        static constexpr BuiltinDeployment s_rel_MagnumTrade[] = {
+            MAGNUM_PATTERNS("magnum/importers"),
+            MAGNUM_PATTERNS("magnum/imageconverters"),
+            MAGNUM_PATTERNS("magnum/sceneconverters"),
+        };
+        static constexpr BuiltinDeployment s_dbg_MagnumTrade[] = {
+            MAGNUM_PATTERNS("magnum-d/importers"),
+            MAGNUM_PATTERNS("magnum-d/imageconverters"),
+            MAGNUM_PATTERNS("magnum-d/sceneconverters"),
+        };
+        static constexpr BuiltinDeployment s_rel_MagnumAudio[] = {MAGNUM_PATTERNS("magnum/audioconverters")};
+        static constexpr BuiltinDeployment s_dbg_MagnumAudio[] = {MAGNUM_PATTERNS("magnum-d/audioconverters")};
+        static constexpr BuiltinDeployment s_rel_MagnumShaderTools[] = {MAGNUM_PATTERNS("magnum/shaderconverters")};
+        static constexpr BuiltinDeployment s_dbg_MagnumShaderTools[] = {MAGNUM_PATTERNS("magnum-d/shaderconverters")};
+        static constexpr BuiltinDeployment s_rel_MagnumText[] = {MAGNUM_PATTERNS("magnum/fonts"),
+                                                                 MAGNUM_PATTERNS("magnum/fontconverters")};
+        static constexpr BuiltinDeployment s_dbg_MagnumText[] = {MAGNUM_PATTERNS("magnum-d/fonts"),
+                                                                 MAGNUM_PATTERNS("magnum-d/fontconverters")};
+#undef MAGNUM_PATTERNS
 
-            if (m_magnum_installed)
-            {
-                registerMagnum();
-            }
+        static constexpr BuiltinDeploymentEntry s_magnum_entries[] = {
+            {"MagnumAudio.dll", s_rel_MagnumAudio},
+            {"MagnumAudio-d.dll", s_dbg_MagnumAudio},
+            {"MagnumText.dll", s_rel_MagnumText},
+            {"MagnumText-d.dll", s_dbg_MagnumText},
+            {"MagnumTrade.dll", s_rel_MagnumTrade},
+            {"MagnumTrade-d.dll", s_dbg_MagnumTrade},
+            {"MagnumShaderTools.dll", s_rel_MagnumShaderTools},
+            {"MagnumShaderTools-d.dll", s_dbg_MagnumShaderTools},
+        };
 
-            if (m_qt_installed)
-            {
-                registerQt();
-            }
-        }
-
-        void resolve(const Path& binary)
-        {
-            msg::println(msgApplocalProcessing, msg::path = binary);
-            auto dll_file = m_fs.open_for_read(binary, VCPKG_LINE_INFO);
-            const auto dll_metadata = vcpkg::try_read_dll_metadata(dll_file).value_or_exit(VCPKG_LINE_INFO);
-            const auto imported_names =
-                vcpkg::try_read_dll_imported_dll_names(dll_metadata, dll_file).value_or_exit(VCPKG_LINE_INFO);
-            Debug::print("Imported DLLs of ", binary, " were ", Strings::join("\n", imported_names), "\n");
-
-            for (auto&& imported_name : imported_names)
-            {
-                if (m_searched.find(imported_name) != m_searched.end())
-                {
-                    Debug::println(" ", imported_name, "previously searched - Skip");
-                    continue;
-                }
-                m_searched.insert(imported_name);
-
-                Path target_binary_dir = binary.parent_path();
-                Path installed_item_file_path = m_installed_bin_dir / imported_name;
-                Path target_item_file_path = target_binary_dir / imported_name;
-
-                if (m_fs.exists(installed_item_file_path, VCPKG_LINE_INFO))
-                {
-                    deploy_binary(m_deployment_dir, m_installed_bin_dir, imported_name);
-
-                    auto it = m_registered_deployments.find(imported_name);
-                    if (it != m_registered_deployments.end())
-                    {
-                        deployArray(it->second);
-                    }
-
-                    if (m_qt_installed)
-                    {
-                        if (imported_name == "Qt5Cored.dll" || imported_name == "Qt5Core.dll")
-                        {
-                            if (!m_fs.exists(m_deployment_dir / "qt.conf", IgnoreErrors{}))
-                            {
-                                m_fs.write_contents(m_deployment_dir / "qt.conf", "[Paths]\n", IgnoreErrors{});
-                            }
-                        }
-                        deployQt(m_deployment_dir, m_installed / "plugins", imported_name);
-                    }
-
-                    resolve(m_deployment_dir / imported_name);
-                }
-                else if (m_fs.exists(target_item_file_path, VCPKG_LINE_INFO))
-                {
-                    Debug::println("  ", imported_name, " not found in ", m_installed, "; locally deployed");
-                    resolve(target_item_file_path);
-                }
-                else
-                {
-                    Debug::println("  ", imported_name, ": ", installed_item_file_path, " not found");
-                }
-            }
-        }
-
-    private:
-        void deployArray(View<Deployment> arr)
-        {
-            for (auto&& a : arr)
-            {
-                Path dest = m_deployment_dir / a.dest;
-                deploy_file(dest, m_installed / a.source);
-                if (dest.extension() == ".dll")
-                {
-                    resolve(dest);
-                }
-            }
-        }
-
-        void registerMagnum()
-        {
-#define MAGNUM_REL(subdir, name)                                                                                       \
-    {"bin/magnum/" #subdir "/" #name ".conf", "magnum/" #subdir "/" #name ".conf"},                                    \
-        {"bin/magnum/" #subdir "/" #name ".dll", "magnum/" #subdir "/" #name ".dll"},                                  \
-    {                                                                                                                  \
-        "bin/magnum/" #subdir "/" #name ".pdb", "magnum/" #subdir "/" #name ".pdb"                                     \
-    }
-#define MAGNUM_DBG(subdir, name)                                                                                       \
-    {"bin/magnum-d/" #subdir "/" #name ".conf", "magnum-d/" #subdir "/" #name ".conf"},                                \
-        {"bin/magnum-d/" #subdir "/" #name ".dll", "magnum-d/" #subdir "/" #name ".dll"},                              \
-    {                                                                                                                  \
-        "bin/magnum-d/" #subdir "/" #name ".pdb", "magnum-d/" #subdir "/" #name ".pdb"                                 \
+        if (Strings::case_insensitive_ascii_starts_with(dll_name, "magnum"))
+            for (auto&& entry : s_magnum_entries)
+                if (Strings::case_insensitive_ascii_equals(entry.dll_name, dll_name)) return entry.deployments;
+        return nullopt;
     }
 
-            static const Deployment s_magnum_deploy_audio[] = {
-                MAGNUM_REL(audioimporters, AnyAudioImporter),
-                MAGNUM_REL(audioimporters, WavAudioImporter),
-            };
-            m_registered_deployments.emplace("MagnumAudio.dll", s_magnum_deploy_audio);
-            static const Deployment s_magnum_deploy_audiod[] = {
-                MAGNUM_DBG(audioimporters, AnyAudioImporter),
-                MAGNUM_DBG(audioimporters, WavAudioImporter),
-            };
-            m_registered_deployments.emplace("MagnumAudio.dll", s_magnum_deploy_audio);
-            static const Deployment s_magnum_deploy_text[] = {
-                MAGNUM_REL(fonts, MagnumFont),
-                MAGNUM_REL(fontconverters, MagnumFontConverter),
-            };
-            m_registered_deployments.emplace("MagnumText.dll", s_magnum_deploy_text);
-            static const Deployment s_magnum_deploy_textd[] = {
-                MAGNUM_DBG(fonts, MagnumFont),
-                MAGNUM_DBG(fontconverters, MagnumFontConverter),
-            };
-            m_registered_deployments.emplace("MagnumText-d.dll", s_magnum_deploy_textd);
-            static const Deployment s_magnum_deploy_trade[] = {
-                MAGNUM_REL(importers, AnyImageImporter),
-                MAGNUM_REL(importers, AnySceneImporter),
-                MAGNUM_REL(importers, TgaImporter),
-                MAGNUM_REL(importers, ObjImporter),
-                MAGNUM_REL(imageconverters, AnyImageConverter),
-                MAGNUM_REL(imageconverters, TgaImageConverter),
-                MAGNUM_REL(sceneconverters, AnySceneConverter),
-            };
-            m_registered_deployments.emplace("MagnumTrade.dll", s_magnum_deploy_trade);
-            static const Deployment s_magnum_deploy_traded[] = {
-                MAGNUM_DBG(importers, AnyImageImporter),
-                MAGNUM_DBG(importers, AnySceneImporter),
-                MAGNUM_DBG(importers, TgaImporter),
-                MAGNUM_DBG(importers, ObjImporter),
-                MAGNUM_DBG(imageconverters, AnyImageConverter),
-                MAGNUM_DBG(sceneconverters, AnySceneConverter),
-            };
-            m_registered_deployments.emplace("MagnumTrade-d.dll", s_magnum_deploy_traded);
-            static const Deployment s_magnum_deploy_shadertools[] = {
-                MAGNUM_REL(shaderconverters, AnyShaderConverter),
-            };
-            m_registered_deployments.emplace("MagnumShaderTools.dll", s_magnum_deploy_shadertools);
-            static const Deployment s_magnum_deploy_shadertoolsd[] = {
-                MAGNUM_DBG(shaderconverters, AnyShaderConverter),
-            };
-            m_registered_deployments.emplace("MagnumShaderTools-d.dll", s_magnum_deploy_shadertoolsd);
-        }
+    Optional<View<BuiltinDeployment>> get_qt_deployments(StringView dll_name)
+    {
+#define QT_DEPLOY_PLUGINS(subdir) BuiltinDeployment({"plugins/" #subdir "/*.dll", "plugins/" #subdir})
 
-        // Qt plugins
-        // Helper function for Qt
-        void deployPluginsQt(const std::string& plugins_subdir_name,
-                             const Path& target_binary_dir,
-                             const Path& qt_plugins_dir)
+        static constexpr BuiltinDeployment s_rel_Qt5Gui[] = {
+            {"plugins/platforms/qwindows.dll", "plugins/platforms/qwindows.dll"},
+            QT_DEPLOY_PLUGINS(accessible),
+            QT_DEPLOY_PLUGINS(imageformats),
+            QT_DEPLOY_PLUGINS(iconengines),
+            QT_DEPLOY_PLUGINS(platforminputcontexts),
+            QT_DEPLOY_PLUGINS(styles),
+        };
+        static constexpr BuiltinDeployment s_dbg_Qt5Gui[] = {
+            {"plugins/platforms/qwindowsd.dll", "plugins/platforms/qwindowsd.dll"},
+            QT_DEPLOY_PLUGINS(accessible),
+            QT_DEPLOY_PLUGINS(imageformats),
+            QT_DEPLOY_PLUGINS(iconengines),
+            QT_DEPLOY_PLUGINS(platforminputcontexts),
+            QT_DEPLOY_PLUGINS(styles),
+        };
+        static constexpr BuiltinDeployment s_rel_Qt5Qml[] = {
+            {"bin/Qt5Quick.dll", "Qt5Quick.dll"},
+            {"bin/Qt5QmlModels.dll", "Qt5QmlModels.dll"},
+        };
+        static constexpr BuiltinDeployment s_dbg_Qt5Qml[] = {
+            {"bin/Qt5Quickd.dll", "Qt5Quickd.dll"},
+            {"bin/Qt5QmlModelsd.dll", "Qt5QmlModelsd.dll"},
+        };
+        static constexpr BuiltinDeployment s_rel_Qt5Quick[] = {
+            {"qml/*", "qml"},
+            {"bin/Qt5QuickControls2.dll", "Qt5QuickControls2.dll"},
+            {"bin/Qt5QuickShapes.dll", "Qt5QuickShapes.dll"},
+            {"bin/Qt5QuickTemplates2.dll", "Qt5QuickTemplates2.dll"},
+            {"bin/Qt5QmlWorkerScript.dll", "Qt5QmlWorkerScript.dll"},
+            {"bin/Qt5QuickParticles.dll", "Qt5QuickParticles.dll"},
+            {"bin/Qt5QuickWidgets.dll", "Qt5QuickWidgets.dll"},
+            QT_DEPLOY_PLUGINS(scenegraph),
+            QT_DEPLOY_PLUGINS(qmltooling),
+        };
+        static constexpr BuiltinDeployment s_dbg_Qt5Quick[] = {
+            {"../qml/*", "qml"},
+            {"bin/Qt5QuickControls2d.dll", "Qt5QuickControls2d.dll"},
+            {"bin/Qt5QuickShapesd.dll", "Qt5QuickShapesd.dll"},
+            {"bin/Qt5QuickTemplates2d.dll", "Qt5QuickTemplates2d.dll"},
+            {"bin/Qt5QmlWorkerScriptd.dll", "Qt5QmlWorkerScriptd.dll"},
+            {"bin/Qt5QuickParticlesd.dll", "Qt5QuickParticlesd.dll"},
+            {"bin/Qt5QuickWidgetsd.dll", "Qt5QuickWidgetsd.dll"},
+            QT_DEPLOY_PLUGINS(scenegraph),
+            QT_DEPLOY_PLUGINS(qmltooling),
+        };
+        static constexpr BuiltinDeployment s_Qt5Declarative[] = {QT_DEPLOY_PLUGINS(qml1tooling)};
+        static constexpr BuiltinDeployment s_Qt5Positioning[] = {QT_DEPLOY_PLUGINS(position)};
+        static constexpr BuiltinDeployment s_Qt5Location[] = {QT_DEPLOY_PLUGINS(geoservices)};
+        static constexpr BuiltinDeployment s_Qt5Sensors[] = {QT_DEPLOY_PLUGINS(sensors),
+                                                             QT_DEPLOY_PLUGINS(sensorgestures)};
+        static constexpr BuiltinDeployment s_Qt5WebEngineCore[] = {QT_DEPLOY_PLUGINS(qtwebengine)};
+        static constexpr BuiltinDeployment s_Qt53DRenderer[] = {QT_DEPLOY_PLUGINS(sceneparsers)};
+        static constexpr BuiltinDeployment s_Qt5TextToSpeech[] = {QT_DEPLOY_PLUGINS(texttospeech)};
+        static constexpr BuiltinDeployment s_Qt5SerialBus[] = {QT_DEPLOY_PLUGINS(canbus)};
+        static constexpr BuiltinDeployment s_Qt5Network[] = {
+            QT_DEPLOY_PLUGINS(bearer),
+            {"bin/libcrypto-*.dll", "./"},
+            {"bin/libssl-*.dll", "./"},
+        };
+        static constexpr BuiltinDeployment s_Qt5Sql[] = {QT_DEPLOY_PLUGINS(sqldrivers)};
+        static constexpr BuiltinDeployment s_Qt5Multimedia[] = {
+            QT_DEPLOY_PLUGINS(audio),
+            QT_DEPLOY_PLUGINS(mediaservice),
+            QT_DEPLOY_PLUGINS(playlistformats),
+        };
+        static constexpr BuiltinDeployment s_Qt5PrintSupport[] = {
+            {"plugins/printsupport/windowsprintersupport.dll", "windowsprintersupport.dll"},
+        };
+#undef QT_DEPLOY_PLUGINS
+
+#define QT_ENTRY_BOTH(root)                                                                                            \
+    BuiltinDeploymentEntry({#root ".dll", s_##root}), BuiltinDeploymentEntry({#root "d.dll", s_##root})
+#define QT_ENTRY_SPLIT(root)                                                                                           \
+    BuiltinDeploymentEntry({#root ".dll", s_rel_##root}), BuiltinDeploymentEntry({#root "d.dll", s_dbg_##root})
+        static constexpr BuiltinDeploymentEntry s_qt_entries[] = {
+            QT_ENTRY_SPLIT(Qt5Gui),
+            QT_ENTRY_SPLIT(Qt5Qml),
+            QT_ENTRY_SPLIT(Qt5Quick),
+            QT_ENTRY_BOTH(Qt5Declarative),
+            QT_ENTRY_BOTH(Qt5Positioning),
+            QT_ENTRY_BOTH(Qt5Location),
+            QT_ENTRY_BOTH(Qt5Sensors),
+            QT_ENTRY_BOTH(Qt5WebEngineCore),
+            QT_ENTRY_BOTH(Qt53DRenderer),
+            QT_ENTRY_BOTH(Qt5TextToSpeech),
+            QT_ENTRY_BOTH(Qt5SerialBus),
+            QT_ENTRY_BOTH(Qt5Network),
+            QT_ENTRY_BOTH(Qt5Sql),
+            QT_ENTRY_BOTH(Qt5Multimedia),
+            QT_ENTRY_BOTH(Qt5PrintSupport),
+        };
+#undef QT_ENTRY_BOTH
+#undef QT_ENTRY_SPLIT
+
+        if (Strings::case_insensitive_ascii_starts_with(dll_name, "qt5"))
         {
-            std::error_code ec;
-            if (m_fs.exists(qt_plugins_dir / plugins_subdir_name, ec))
-            {
-                Debug::println("  Deploying plugins directory ", plugins_subdir_name);
+            if (Strings::case_insensitive_ascii_equals(dll_name, "Qt5Core.dll") ||
+                Strings::case_insensitive_ascii_equals(dll_name, "Qt5Cored.dll"))
+                return View<BuiltinDeployment>{};
 
-                Path new_dir = target_binary_dir / "plugins" / plugins_subdir_name;
-                m_fs.create_directories(new_dir, ec);
-
-                std::vector<Path> children = m_fs.get_files_non_recursive(qt_plugins_dir / plugins_subdir_name, ec);
-
-                for (auto&& c : children)
-                {
-                    const std::string& c_filename = c.filename().to_string();
-                    if (Strings::ends_with(c_filename, ".dll"))
-                    {
-                        deploy_binary(new_dir, qt_plugins_dir / plugins_subdir_name, c_filename);
-                        resolve(c);
-                    }
-                }
-            }
-            else
-            {
-                Debug::println("  Skipping plugins directory ", plugins_subdir_name, ": doesn't exist");
-            }
+            for (auto&& entry : s_qt_entries)
+                if (Strings::case_insensitive_ascii_equals(entry.dll_name, dll_name)) return entry.deployments;
         }
+        return nullopt;
+    }
 
-        void deployDirectoryTo(const Path& dst, const Path& src)
+    Optional<View<BuiltinDeployment>> get_openni2_deployments(StringView dll_name)
+    {
+        static constexpr BuiltinDeployment s_openni2_deploy[] = {
+            {"bin/OpenNI2/OpenNI.ini", "OpenNI.ini"},
+            {"bin/OpenNI2/Drivers/Kinect.dll", "OpenNI2/Drivers/Kinect.dll"},
+            {"bin/OpenNI2/Drivers/OniFile.dll", "OpenNI2/Drivers/OniFile.dll"},
+            {"bin/OpenNI2/Drivers/PS1080.dll", "OpenNI2/Drivers/PS1080.dll"},
+            {"bin/OpenNI2/Drivers/PS1080.ini", "OpenNI2/Drivers/PS1080.ini"},
+            {"bin/OpenNI2/Drivers/PSLink.dll", "OpenNI2/Drivers/PSLink.dll"},
+            {"bin/OpenNI2/Drivers/PSLink.ini", "OpenNI2/Drivers/PSLink.ini"},
+        };
+        if (Strings::case_insensitive_ascii_equals(dll_name, "OpenNI2.dll")) return s_openni2_deploy;
+        return nullopt;
+    }
+
+    Optional<View<BuiltinDeployment>> get_k4a_deployments(StringView dll_name)
+    {
+        static constexpr BuiltinDeployment s_k4a_deploy[] = {
+            {"tools/azure-kinect-sensor-sdk/depthengine_2_0.dll", "depthengine_2_0.dll"}};
+        if (Strings::case_insensitive_ascii_equals(dll_name, "k4a.dll")) return s_k4a_deploy;
+        return nullopt;
+    }
+
+    ExpectedL<std::vector<std::string>> get_imported_names(const Filesystem& fs, const Path& binary)
+    {
+        std::error_code ec;
+        auto dll_file = fs.open_for_read(binary, ec);
+        if (ec) return format_filesystem_call_error(ec, "open_for_read", {binary});
+        return vcpkg::try_read_dll_metadata(dll_file).then([&dll_file](const DllMetadata& dll_metadata) {
+            return vcpkg::try_read_dll_imported_dll_names(dll_metadata, dll_file);
+        });
+    }
+
+    struct FileDeployer
+    {
+        Filesystem& m_fs;
+        WriteFilePointer m_tlog_file;
+        WriteFilePointer m_copied_files_log;
+
+        void deploy_file(const Path& source, const Path& target) const
         {
-            if (m_fs.exists(src, IgnoreErrors{}))
-            {
-                std::vector<Path> children = m_fs.get_files_non_recursive(src, IgnoreErrors{});
-                if (!children.empty())
-                {
-                    m_fs.create_directories(dst, IgnoreErrors{});
-                }
-                for (auto&& c : children)
-                {
-                    auto c_filename = c.filename();
-                    if (Strings::ends_with(c_filename, ".dll"))
-                    {
-                        deploy_binary(dst, src, c_filename);
-                        resolve(dst / c_filename);
-                    }
-                }
-            }
-        }
-        void deployBinaryTo(const Path& dst, const Path& src)
-        {
-            if (m_fs.exists(src, IgnoreErrors{}))
-            {
-                std::vector<Path> children = m_fs.get_files_non_recursive(src, IgnoreErrors{});
-                if (!children.empty())
-                {
-                    m_fs.create_directories(dst, IgnoreErrors{});
-                }
-                for (auto&& c : children)
-                {
-                    auto c_filename = c.filename();
-                    if (Strings::ends_with(c_filename, ".dll"))
-                    {
-                        deploy_binary(dst, src, c_filename);
-                        resolve(c);
-                    }
-                }
-            }
-        }
-        void registerQt()
-        {
-            static const Deployment s_gui_d[] = {
-                {"plugins/platforms/qwindowsd.dll", "plugins/platforms/qwindowsd.dll"},
-            };
-            static const Deployment s_gui[] = {
-                {"plugins/platforms/qwindows.dll", "plugins/platforms/qwindows.dll"},
-            };
-            m_registered_deployments.emplace("Qt5Gui.dll", s_gui);
-            m_registered_deployments.emplace("Qt5Guid.dll", s_gui_d);
-        }
-
-        void deployQt(const Path& target_binary_dir, const Path& qt_plugins_dir, const std::string& imported_name)
-        {
-            Path bin_dir = Path(qt_plugins_dir.parent_path()) / "bin";
-
-            if (imported_name == "Qt5Guid.dll" || imported_name == "Qt5Gui.dll")
-            {
-                Debug::println("  Deploying platforms");
-
-                deployPluginsQt("accessible", target_binary_dir, qt_plugins_dir);
-                deployPluginsQt("imageformats", target_binary_dir, qt_plugins_dir);
-                deployPluginsQt("iconengines", target_binary_dir, qt_plugins_dir);
-                deployPluginsQt("platforminputcontexts", target_binary_dir, qt_plugins_dir);
-                deployPluginsQt("styles", target_binary_dir, qt_plugins_dir);
-            }
-            else if (imported_name == "Qt5Networkd.dll" || imported_name == "Qt5Network.dll")
-            {
-                deployPluginsQt("bearer", target_binary_dir, qt_plugins_dir);
-
-                std::error_code ec;
-                std::vector<Path> children = m_fs.get_files_non_recursive(bin_dir, ec);
-                for (auto&& c : children)
-                {
-                    const std::string& c_filename = c.filename().to_string();
-                    if (Strings::starts_with(c_filename, "libcrypto-") && Strings::ends_with(c_filename, ".dll"))
-                    {
-                        deploy_binary(target_binary_dir, bin_dir, c_filename);
-                    }
-
-                    if (Strings::starts_with(c_filename, "libssl-") && Strings::ends_with(c_filename, ".dll"))
-                    {
-                        deploy_binary(target_binary_dir, bin_dir, c_filename);
-                    }
-                }
-            }
-            else if (imported_name == "Qt5Sqld.dll" || imported_name == "Qt5Sql.dll")
-            {
-                deployPluginsQt("sqldrivers", target_binary_dir, qt_plugins_dir);
-            }
-            else if (imported_name == "Qt5Multimediad.dll" || imported_name == "Qt5Multimedia.dll")
-            {
-                deployPluginsQt("audio", target_binary_dir, qt_plugins_dir);
-                deployPluginsQt("mediaservice", target_binary_dir, qt_plugins_dir);
-                deployPluginsQt("playlistformats", target_binary_dir, qt_plugins_dir);
-            }
-            else if (imported_name == "Qt5PrintSupportd.dll" || imported_name == "Qt5PrintSupport.dll")
-            {
-                deploy_binary(target_binary_dir, qt_plugins_dir / "printsupport", "windowsprintersupport.dll");
-            }
-            else if (imported_name == "Qt5Qmld.dll" || imported_name == "Qt5Qml.dll")
-            {
-                std::error_code ec;
-                if (!m_fs.exists(target_binary_dir / "qml", ec))
-                {
-                    if (m_fs.exists(bin_dir / "../qml", ec))
-                    {
-                        m_fs.copy_regular_recursive(bin_dir / "../qml", target_binary_dir, VCPKG_LINE_INFO);
-                    }
-                    else if (m_fs.exists(bin_dir / "../../qml", ec))
-                    {
-                        m_fs.copy_regular_recursive(bin_dir / "../../qml", target_binary_dir, VCPKG_LINE_INFO);
-                    }
-                    else
-                    {
-                        Checks::exit_with_message(VCPKG_LINE_INFO, "qml directory must exist with Qt5Qml.dll");
-                    }
-                }
-                std::vector<std::string> libs = {"Qt5Quick.dll",
-                                                 "Qt5Quickd.dll",
-                                                 "Qt5QmlModels.dll",
-                                                 "Qt5QmlModelsd.dll",
-                                                 "Qt5QuickControls2.dll",
-                                                 "Qt5QuickControls2d.dll",
-                                                 "Qt5QuickShapes.dll",
-                                                 "Qt5QuickShapesd.dll",
-                                                 "Qt5QuickTemplates2.dll",
-                                                 "Qt5QuickTemplates2d.dll",
-                                                 "Qt5QmlWorkerScript.dll",
-                                                 "Qt5QmlWorkerScriptd.dll",
-                                                 "Qt5QuickParticles.dll",
-                                                 "Qt5QuickParticlesd.dll",
-                                                 "Qt5QuickWidgets.dll",
-                                                 "Qt5QuickWidgetsd.dll"};
-                for (const auto& lib : libs)
-                {
-                    deploy_binary(target_binary_dir, bin_dir, lib);
-                }
-
-                deployPluginsQt("scenegraph", target_binary_dir, qt_plugins_dir);
-                deployPluginsQt("qmltooling", target_binary_dir, qt_plugins_dir);
-            }
-            else if (imported_name == "Qt5Quickd.dll" || imported_name == "Qt5Quick.dll")
-            {
-                std::vector<std::string> libs = {"Qt5QuickControls2.dll",
-                                                 "Qt5QuickControls2d.dll",
-                                                 "Qt5QuickShapes.dll",
-                                                 "Qt5QuickShapesd.dll",
-                                                 "Qt5QuickTemplates2.dll",
-                                                 "Qt5QuickTemplates2d.dll",
-                                                 "Qt5QmlWorkerScript.dll",
-                                                 "Qt5QmlWorkerScriptd.dll",
-                                                 "Qt5QuickParticles.dll",
-                                                 "Qt5QuickParticlesd.dll",
-                                                 "Qt5QuickWidgets.dll",
-                                                 "Qt5QuickWidgetsd.dll"};
-                for (const auto& lib : libs)
-                {
-                    deploy_binary(target_binary_dir, bin_dir, lib);
-                }
-
-                deployPluginsQt("scenegraph", target_binary_dir, qt_plugins_dir);
-                deployPluginsQt("qmltooling", target_binary_dir, qt_plugins_dir);
-            }
-            else if (Strings::starts_with(imported_name, "Qt5Declarative") && Strings::ends_with(imported_name, ".dll"))
-            {
-                deployPluginsQt("qml1tooling", target_binary_dir, qt_plugins_dir);
-            }
-            else if (Strings::starts_with(imported_name, "Qt5Positioning") && Strings::ends_with(imported_name, ".dll"))
-            {
-                deployPluginsQt("position", target_binary_dir, qt_plugins_dir);
-            }
-            else if (Strings::starts_with(imported_name, "Qt5Location") && Strings::ends_with(imported_name, ".dll"))
-            {
-                deployPluginsQt("geoservices", target_binary_dir, qt_plugins_dir);
-            }
-            else if (Strings::starts_with(imported_name, "Qt5Sensors") && Strings::ends_with(imported_name, ".dll"))
-            {
-                deployPluginsQt("sensors", target_binary_dir, qt_plugins_dir);
-                deployPluginsQt("sensorgestures", target_binary_dir, qt_plugins_dir);
-            }
-            else if (Strings::starts_with(imported_name, "Qt5WebEngineCore") &&
-                     Strings::ends_with(imported_name, ".dll"))
-            {
-                deployPluginsQt("qtwebengine", target_binary_dir, qt_plugins_dir);
-            }
-            else if (Strings::starts_with(imported_name, "Qt53DRenderer") && Strings::ends_with(imported_name, ".dll"))
-            {
-                deployPluginsQt("sceneparsers", target_binary_dir, qt_plugins_dir);
-            }
-            else if (Strings::starts_with(imported_name, "Qt5TextToSpeech") &&
-                     Strings::ends_with(imported_name, ".dll"))
-            {
-                deployPluginsQt("texttospeech", target_binary_dir, qt_plugins_dir);
-            }
-            else if (Strings::starts_with(imported_name, "Qt5SerialBus") && Strings::ends_with(imported_name, ".dll"))
-            {
-                deployPluginsQt("canbus", target_binary_dir, qt_plugins_dir);
-            }
-        }
-
-        bool deploy_binary(const Path& target_binary_dir, const Path& installed_dir, StringView target_binary_name)
-        {
-            const auto source = installed_dir / target_binary_name;
-            const auto target = target_binary_dir / target_binary_name;
-            const auto mutant_name = "vcpkg-applocal-" + Hash::get_string_sha256(target_binary_dir);
-            const MutantGuard mutant(mutant_name);
-
-            return deploy_file(source, target);
-        }
-
-        bool deploy_file(const Path& source, const Path& target)
-        {
+            MutantGuard mutant("vcpkg-applocal-" + Hash::get_string_sha256(target));
             std::error_code ec;
             const bool did_deploy = m_fs.copy_file(source, target, CopyOptions::update_existing, ec);
             if (did_deploy)
@@ -513,7 +341,7 @@ namespace
             else if (ec == std::errc::no_such_file_or_directory)
             {
                 Debug::println("Attempted to deploy ", source, ", but it didn't exist");
-                return false;
+                return;
             }
             else
             {
@@ -539,25 +367,303 @@ namespace
                                    m_copied_files_log.write(native.c_str(), 1, native.size()) == native.size());
                 Checks::check_exit(VCPKG_LINE_INFO, m_copied_files_log.put('\n') == '\n');
             }
-
-            return did_deploy;
         }
 
-        Filesystem& m_fs;
-        Path m_deployment_dir;
-        Path m_installed_bin_dir;
-        // Either installed/<triplet>/ or installed/<triplet>/debug/
-        Path m_installed;
-        bool m_is_debug;
-        std::unordered_map<std::string, View<Deployment>> m_registered_deployments;
-        WriteFilePointer m_tlog_file;
-        WriteFilePointer m_copied_files_log;
-        std::unordered_set<std::string> m_searched;
-        bool m_openni2_installed;
-        bool m_azurekinectsdk_installed;
-        bool m_magnum_installed;
-        bool m_qt_installed;
+        // Patterns supported:
+        // 1. "C:/a/b/c", "C:/a/b/d" -- copies file "C:/a/b/c" to "C:/a/b/d" (note: renames file to "d")
+        // 2. "C:/a/b/x*y", "C:/a/b/d" -- copies all regular files in "C:/a/b" with optional prefix "x" and optional
+        //    suffix "y" into directory "C:/a/b/d"
+        // 3. "C:/a/b/c/**", "C:/a/b/d" -- copies all files recursively in "C:/a/b/c" into directory "C:/a/b/d"
+        void deploy_pattern(const Path& source, const Path& target, std::vector<Path>& out_dlls) const
+        {
+            const auto filename = source.filename();
+            const NotExtensionCaseInsensitive not_dll{".dll"};
+            const auto wildcard = Util::find(filename, '*');
+            if (wildcard != filename.end())
+            {
+                if (filename == "**")
+                {
+                    // (3) glob all files recursively
+                    const auto parent = source.parent_path();
+                    std::vector<Path> files =
+                        m_fs.get_regular_files_recursive_lexically_proximate(parent, IgnoreErrors{});
+                    if (!files.empty())
+                    {
+                        Path source_file, target_file;
+                        m_fs.create_directories(target, IgnoreErrors{});
+                        for (auto&& file : files)
+                        {
+                            source_file = parent;
+                            source_file /= file;
+                            target_file = target;
+                            target_file /= file;
+                            deploy_file(source_file, target_file);
+                            if (not_dll(file)) continue;
+                            out_dlls.push_back(target_file);
+                        }
+                    }
+                }
+                else
+                {
+                    // (2) prefix+suffix pattern
+                    const StringView prefix{filename.begin(), wildcard}, suffix{wildcard + 1, filename.end()};
+                    if (Strings::contains(suffix, '*'))
+                    {
+                        // only support one wildcard
+                        msg::println_error(LocalizedString::from_raw("* must only appear once in a pattern"));
+                    }
+                    else
+                    {
+                        const auto parent = source.parent_path();
+                        std::vector<Path> files = m_fs.get_regular_files_non_recursive(parent, IgnoreErrors{});
+                        if (!prefix.empty() || !suffix.empty())
+                        {
+                            Util::erase_remove_if(files, [prefix, suffix](const Path& p) {
+                                const auto filename = p.filename();
+                                return !(prefix.empty() ||
+                                         Strings::case_insensitive_ascii_starts_with(filename, prefix)) ||
+                                       !(suffix.empty() || Strings::case_insensitive_ascii_ends_with(filename, suffix));
+                            });
+                        }
+                        if (!files.empty())
+                        {
+                            Path file_to_deploy;
+                            m_fs.create_directories(target, IgnoreErrors{});
+                            // deploy files in directory
+                            for (auto&& file : files)
+                            {
+                                file_to_deploy = target;
+                                file_to_deploy /= file.filename();
+                                deploy_file(file, file_to_deploy);
+                                if (not_dll(file)) continue;
+                                out_dlls.push_back(file_to_deploy);
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // (1) simple file copy
+                deploy_file(source, target);
+                if (!not_dll(target)) out_dlls.push_back(target);
+            }
+        }
     };
+
+    struct Deployments
+    {
+        Deployments() : deps(), create_qt_conf(false) { }
+        Deployments(std::vector<Deployment> deps, bool create_qt_conf)
+            : deps(std::move(deps)), create_qt_conf(create_qt_conf)
+        {
+        }
+        std::vector<Deployment> deps;
+        // Qt has a unique one-off behavior of creating a qt.conf file.
+        bool create_qt_conf;
+    };
+
+    Deployments instantiate_deployments(View<BuiltinDeployment> v)
+    {
+        return {Util::fmap(v,
+                           [](const BuiltinDeployment& d) {
+                               Deployment r;
+                               // based on static data -- should be unreachable
+                               parse_deployment_source(d.source.to_string(), r).value_or_exit(VCPKG_LINE_INFO);
+                               r.dest = d.dest.to_string();
+                               return r;
+                           }),
+                false};
+    }
+
+    struct DeploymentPatternSetDeserializer : Json::IDeserializer<std::vector<Deployment>>
+    {
+        virtual LocalizedString type_name() const override
+        {
+            return LocalizedString::from_raw("a deployment pattern set");
+        }
+
+        virtual Optional<std::vector<Deployment>> visit_object(Json::Reader& r, const Json::Object& obj) const override
+        {
+            std::vector<Deployment> ret;
+            for (auto&& p : obj)
+            {
+                ret.emplace_back();
+                parse_deployment_source(p.first.to_string(), ret.back()).consume_error([&r](LocalizedString&& err) {
+                    r.add_generic_error(DeploymentPatternSetDeserializer::instance.type_name(), std::move(err));
+                });
+                r.visit_in_key(p.second, p.first, ret.back().dest, Json::PathDeserializer::instance);
+            }
+            return std::move(ret);
+        }
+        static DeploymentPatternSetDeserializer instance;
+    };
+    DeploymentPatternSetDeserializer DeploymentPatternSetDeserializer::instance;
+    struct PluginFileDeserializer : Json::IDeserializer<Deployments>
+    {
+        virtual LocalizedString type_name() const override { return LocalizedString::from_raw("a plugin file"); }
+        static constexpr StringLiteral FIELD_CREATE_QT_CONF = "create_qt_conf";
+        static constexpr StringLiteral FIELD_PATTERNS = "patterns";
+        virtual View<StringView> valid_fields() const override
+        {
+            static constexpr StringView fields[] = {FIELD_CREATE_QT_CONF, FIELD_PATTERNS};
+            return fields;
+        }
+        virtual Optional<Deployments> visit_object(Json::Reader& r, const Json::Object& obj) const override
+        {
+            Deployments ret;
+            r.optional_object_field(obj, FIELD_CREATE_QT_CONF, ret.create_qt_conf, Json::BooleanDeserializer::instance);
+            r.optional_object_field(obj, FIELD_PATTERNS, ret.deps, DeploymentPatternSetDeserializer::instance);
+            return std::move(ret);
+        }
+        static PluginFileDeserializer instance;
+    };
+    PluginFileDeserializer PluginFileDeserializer::instance;
+
+    ExpectedL<Deployments> parse_deployments(const std::string& info, StringView origin)
+    {
+        LocalizedString err;
+        auto parsed = Json::parse(info, origin);
+        if (auto p = parsed.get())
+        {
+            Deployments ret;
+            Json::Reader r;
+            r.visit_here(p->value, ret, PluginFileDeserializer::instance);
+            for (auto&& s : r.warnings())
+                err.append(s).append_raw('\n');
+            for (auto&& s : r.errors())
+                err.append(s).append_raw('\n');
+
+            if (err.empty()) return std::move(ret);
+        }
+        else
+        {
+            err = LocalizedString::from_raw(parsed.error()->to_string());
+        }
+        return err;
+    }
+
+    struct DeploymentProvider
+    {
+        const Filesystem& m_fs;
+        const Path& m_installed_dir;
+        // Avoid checking for ps1 existence multiple times -- these apply to multiple DLLs
+        Lazy<bool> m_magnum_ps1;
+        Lazy<bool> m_qt_ps1;
+
+        Deployments get_deployments(const Path& src_path) const
+        {
+            const auto filename = src_path.filename();
+            Path json_path = src_path + ".plugin.json";
+            std::error_code ec;
+            auto plugin_info = m_fs.read_contents(json_path, ec);
+            if (!ec)
+            {
+                auto parsed = parse_deployments(plugin_info, json_path);
+                if (auto p = parsed.get())
+                {
+                    return std::move(*p);
+                }
+                else
+                {
+                    msg::print(parsed.error());
+                    return {};
+                }
+            }
+            else if (ec != std::errc::no_such_file_or_directory)
+            {
+                msg::println_error(format_filesystem_call_error(ec, "read_contents", {json_path}));
+                return {};
+            }
+
+            // Check for backcompat definitions
+            if (auto a = get_qt_deployments(filename))
+            {
+                if (m_qt_ps1.get_lazy(
+                        [this]() { return m_fs.exists(m_installed_dir / "plugins/qtdeploy.ps1", IgnoreErrors{}); }))
+                {
+                    Deployments ret = instantiate_deployments(*a.get());
+                    ret.create_qt_conf = Strings::case_insensitive_ascii_equals(filename, "Qt5Core.dll") ||
+                                         Strings::case_insensitive_ascii_equals(filename, "Qt5Cored.dll");
+                    return std::move(ret);
+                }
+            }
+            else if (auto b = get_magnum_deployments(filename))
+            {
+                if (m_magnum_ps1.get_lazy([this]() {
+                        return m_fs.exists(m_installed_dir / "bin/magnum/magnumdeploy.ps1", IgnoreErrors{}) ||
+                               m_fs.exists(m_installed_dir / "bin/magnum-d/magnumdeploy.ps1", IgnoreErrors{});
+                    }))
+                    return instantiate_deployments(*b.get());
+            }
+            else if (auto c = get_openni2_deployments(filename))
+            {
+                if (m_fs.exists(m_installed_dir / "bin/OpenNI2/openni2deploy.ps1", IgnoreErrors{}))
+                    return instantiate_deployments(*c.get());
+            }
+            else if (auto d = get_k4a_deployments(filename))
+            {
+                if (m_fs.exists(m_installed_dir / "tools/azure-kinect-sensor-sdk/k4adeploy.ps1", IgnoreErrors{}))
+                    return instantiate_deployments(*d.get());
+            }
+            return {};
+        }
+    };
+
+    void copy_deps(Filesystem& fs,
+                   const Path& app_dir,
+                   const Path& installed_dir,
+                   View<Path> roots,
+                   WriteFilePointer&& tlog_file,
+                   WriteFilePointer&& copied_files_log)
+    {
+        const FileDeployer deployer{fs, std::move(tlog_file), std::move(copied_files_log)};
+        const DeploymentProvider builtins{fs, installed_dir};
+
+        const Path bin_dir = installed_dir / "bin";
+        Path src_path, dest_path;
+        std::unordered_set<std::string> examined;
+        std::vector<Path> to_examine{roots.begin(), roots.end()};
+
+        while (!to_examine.empty())
+        {
+            Path p = std::move(to_examine.back());
+            to_examine.pop_back();
+
+            auto maybe_names = get_imported_names(fs, p);
+            if (!maybe_names)
+            {
+                msg::println(maybe_names.error());
+                continue;
+            }
+            for (auto&& name : *maybe_names.get())
+            {
+                // skip names that have been examined
+                if (!examined.insert(name).second) continue;
+
+                dest_path = app_dir;
+                dest_path /= name;
+                src_path = bin_dir;
+                src_path /= name;
+                if (fs.exists(src_path, VCPKG_LINE_INFO))
+                {
+                    deployer.deploy_file(src_path, dest_path);
+                    auto deployments = builtins.get_deployments(src_path);
+                    if (deployments.create_qt_conf)
+                    {
+                        Path conf_file = app_dir / "qt.conf";
+                        if (!fs.exists(conf_file, IgnoreErrors{}))
+                            fs.write_contents(conf_file, "[Paths]\n", IgnoreErrors{});
+                    }
+                    for (auto&& d : deployments.deps)
+                    {
+                        deployer.deploy_pattern(installed_dir / d.source, app_dir / d.dest, to_examine);
+                    }
+                }
+                if (fs.exists(dest_path, VCPKG_LINE_INFO)) to_examine.push_back(dest_path);
+            }
+        }
+    }
 }
 
 namespace vcpkg::Commands
@@ -599,14 +705,12 @@ namespace vcpkg::Commands
                            "The --installed-bin-dir setting is required.");
 
         const auto target_binary_path = fs.almost_canonical(target_binary->second, VCPKG_LINE_INFO);
-        AppLocalInvocation invocation(fs,
-                                      target_binary_path.parent_path(),
-                                      target_installed_bin_dir->second,
-                                      maybe_create_log(parsed.settings, OPTION_TLOG_FILE, fs),
-                                      maybe_create_log(parsed.settings, OPTION_COPIED_FILES_LOG, fs));
-        const auto mutant_name = "vcpkg-applocal2-" + Hash::get_string_sha256(target_binary_path.parent_path());
-        const MutantGuard mutant(mutant_name);
-        invocation.resolve(target_binary_path);
+        copy_deps(fs,
+                  target_binary_path.parent_path(),
+                  Path(target_installed_bin_dir->second).parent_path(),
+                  {&target_binary_path, 1},
+                  maybe_create_log(parsed.settings, OPTION_TLOG_FILE, fs),
+                  maybe_create_log(parsed.settings, OPTION_COPIED_FILES_LOG, fs));
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 }
