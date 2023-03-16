@@ -1,3 +1,5 @@
+#include <vcpkg/base/fwd/message_sinks.h>
+
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
@@ -186,7 +188,7 @@ namespace vcpkg::Commands::FormatManifest
             msg::println_warning(msgMissingArgFormatManifest);
         }
 
-        if (!format_all && args.command_arguments.empty())
+        if (!format_all && parsed_args.command_arguments.empty())
         {
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgFailedToFormatMissingFile);
         }
@@ -204,7 +206,7 @@ namespace vcpkg::Commands::FormatManifest
             }
         };
 
-        for (Path path : args.command_arguments)
+        for (Path path : parsed_args.command_arguments)
         {
             if (path.is_relative())
             {
