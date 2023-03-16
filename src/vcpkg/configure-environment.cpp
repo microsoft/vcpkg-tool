@@ -1,3 +1,5 @@
+#include <vcpkg/base/fwd/message_sinks.h>
+
 #include <vcpkg/base/basic-checks.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/json.h>
@@ -28,6 +30,12 @@ namespace
                             const Path& ce_base_path)
     {
         auto& fs = paths.get_filesystem();
+        if (!fs.is_regular_file(ce_tarball))
+        {
+            Debug::println("Download succeeded but file isn't present?");
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgFailedToProvisionCe);
+        }
+
         fs.remove_all(ce_base_path, VCPKG_LINE_INFO);
         fs.create_directories(ce_base_path, VCPKG_LINE_INFO);
         Path node_root = node_path.parent_path();

@@ -7,11 +7,9 @@
 
 namespace vcpkg::Commands
 {
-    static constexpr StringLiteral OPTION_OUTPUT_COMMENTS = "output-comments";
     static constexpr StringLiteral OPTION_NO_OUTPUT_COMMENTS = "no-output-comments";
 
     static constexpr CommandSwitch GENERATE_MESSAGE_MAP_SWITCHES[]{
-        {OPTION_OUTPUT_COMMENTS, []() { return msg::format(msgCmdGenerateMessageMapOptOutputComments); }},
         {OPTION_NO_OUTPUT_COMMENTS, []() { return msg::format(msgCmdGenerateMessageMapOptNoOutputComments); }},
     };
 
@@ -128,15 +126,7 @@ namespace vcpkg::Commands
     void GenerateDefaultMessageMapCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
     {
         auto parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
-
         const bool output_comments = !Util::Sets::contains(parsed_args.switches, OPTION_NO_OUTPUT_COMMENTS);
-
-        if (!output_comments && Util::Sets::contains(parsed_args.switches, OPTION_OUTPUT_COMMENTS))
-        {
-            Checks::msg_exit_with_error(
-                VCPKG_LINE_INFO, msg::msgBothYesAndNoOptionSpecifiedError, msg::option = OPTION_OUTPUT_COMMENTS);
-        }
-
         // in order to implement sorting, we create a vector of messages before converting into a JSON object
         struct Message
         {
@@ -225,7 +215,7 @@ namespace vcpkg::Commands
         }
 
         // get the path to artifacts messages.json
-        Path path_to_artifact_messages = args.command_arguments[1];
+        Path path_to_artifact_messages = parsed_args.command_arguments[1];
 
         // parse file to get json obj
         auto artifact_messages = Json::parse_file(VCPKG_LINE_INFO, fs, path_to_artifact_messages).value;
@@ -237,7 +227,7 @@ namespace vcpkg::Commands
         }
 
         auto stringified = Json::stringify(obj);
-        Path filepath = fs.current_path(VCPKG_LINE_INFO) / args.command_arguments[0];
+        Path filepath = fs.current_path(VCPKG_LINE_INFO) / parsed_args.command_arguments[0];
         fs.write_contents(filepath, stringified, VCPKG_LINE_INFO);
         Checks::exit_success(VCPKG_LINE_INFO);
     }

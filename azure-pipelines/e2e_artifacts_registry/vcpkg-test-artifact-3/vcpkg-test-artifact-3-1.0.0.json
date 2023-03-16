@@ -1,0 +1,9 @@
+{
+  "id": "vcpkg-test-artifact-3",
+  "version": "1.0.0",
+  "exports": {
+    "environment": {
+      "VCPKG_TEST_ARTIFACT_3_ACTIVATED": "YES"
+    }
+  }
+}
