@@ -191,7 +191,7 @@ namespace vcpkg::Commands::TestFeatures
         }
         else
         {
-            feature_test_ports = Util::fmap(args.command_arguments, [&](auto&& arg) {
+            feature_test_ports = Util::fmap(args.forwardable_arguments, [&](auto&& arg) {
                 return provider.get_control_file(arg).value_or_exit(VCPKG_LINE_INFO).source_control_file.get();
             });
         }
@@ -254,9 +254,7 @@ namespace vcpkg::Commands::TestFeatures
         for (const auto port : feature_test_ports)
         {
             ++i;
-            msg::write_unlocalized_text_to_stdout(
-                Color::none,
-                Strings::concat("\nTest ", i, "/", feature_test_ports.size(), " ", port->core_paragraph->name, "\n"));
+            fmt::print("\n{}/{} {}\n", i, feature_test_ports.size(), port->core_paragraph->name);
             const auto& baseline = feature_baseline.get_port(port->core_paragraph->name);
             if (baseline.state == CiFeatureBaselineState::Skip) continue;
             PackageSpec package_spec(port->core_paragraph->name, target_triplet);
