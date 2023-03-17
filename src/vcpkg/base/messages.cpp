@@ -67,8 +67,6 @@ namespace vcpkg
         return *this;
     }
 
-    const char* to_printf_arg(const LocalizedString& s) noexcept { return s.data().c_str(); }
-
     bool operator==(const LocalizedString& lhs, const LocalizedString& rhs) noexcept
     {
         return lhs.data() == rhs.data();
@@ -108,17 +106,16 @@ namespace vcpkg::msg
         template<class T>
         struct ArgExample;
     }
-
+}
 #define DECLARE_MSG_ARG(NAME, EXAMPLE)                                                                                 \
-    StringLiteral NAME##_t::name = #NAME;                                                                              \
+    StringLiteral vcpkg::msg::NAME##_t::name = #NAME;                                                                  \
     template<>                                                                                                         \
-    struct ArgExample<NAME##_t>                                                                                        \
+    struct vcpkg::msg::ArgExample<::vcpkg::msg::NAME##_t>                                                              \
     {                                                                                                                  \
         static constexpr StringLiteral example = EXAMPLE;                                                              \
     };
 #include <vcpkg/base/message-args.inc.h>
 #undef DECLARE_MSG_ARG
-}
 
 namespace vcpkg
 {
@@ -465,10 +462,10 @@ namespace vcpkg::msg
     }
 
     LocalizedString format_error() { return format(msgErrorMessage); }
-    LocalizedString format_error(const LocalizedString& s) { return format(msgErrorMessage); }
+    LocalizedString format_error(const LocalizedString& s) { return format(msgErrorMessage).append(s); }
     void println_error(const LocalizedString& s) { println(Color::error, format_error(s)); }
 
     LocalizedString format_warning() { return format(msgWarningMessage); }
-    LocalizedString format_warning(const LocalizedString& s) { return format(msgWarningMessage); }
+    LocalizedString format_warning(const LocalizedString& s) { return format(msgWarningMessage).append(s); }
     void println_warning(const LocalizedString& s) { println(Color::warning, format_warning(s)); }
 }
