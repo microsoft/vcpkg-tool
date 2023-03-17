@@ -968,7 +968,11 @@ namespace
 
         std::string lookup_cache_entry(const std::string& abi) const
         {
-            auto res = get_entry("-G", headers(), std::vector<std::string>{"keys=vcpkg", "version=" + abi}, m_read_url);
+            msg::write_unlocalized_text_to_stdout(Color::none, "lookup_cache_entry...");
+            auto res = get_entry("-G",
+                                 std::vector<StringView>{m_content_type_header, m_token_header, m_accept_header},
+                                 std::vector<std::string>{"keys=vcpkg", "version=" + abi},
+                                 m_read_url);
             auto json = Json::parse_object(res);
 
             if (!json.has_value() || !json.get()->contains("archiveLocation"))
@@ -985,8 +989,12 @@ namespace
             payload.insert("key", "vcpkg");
             payload.insert("version", abi);
             payload.insert("cacheSize", Json::Value::integer(cacheSize));
+            msg::write_unlocalized_text_to_stdout(Color::none, "reserve_cache_entry...");
+            auto res = get_entry({},
+                                 std::vector<StringView>{m_content_type_header, m_token_header, m_accept_header},
+                                 std::vector<std::string>{stringify(payload)},
+                                 m_write_url);
 
-            auto res = get_entry({}, headers(), std::vector<std::string>{stringify(payload)}, m_write_url);
             auto json = Json::parse_object(res);
 
             if (!json.has_value() || !json.get()->contains("cacheId"))
@@ -999,6 +1007,8 @@ namespace
 
         void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
+            msg::write_unlocalized_text_to_stdout(Color::none, "prefetch...");
+
             auto& fs = paths.get_filesystem();
 
             const ElapsedTimer timer;
@@ -1071,7 +1081,11 @@ namespace
 
         void push_success(const InstallPlanAction& action) const override
         {
-            if (m_write_url.empty()) return;
+            if (m_write_url.empty())
+            {
+                return;
+            }
+
             const ElapsedTimer timer;
             auto& fs = paths.get_filesystem();
             const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
