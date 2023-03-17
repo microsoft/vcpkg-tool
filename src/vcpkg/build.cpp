@@ -1536,9 +1536,16 @@ namespace vcpkg
                                                   "new?title=[{}]+Build+error&body=Copy+issue+body+from+{}\n",
                                                   spec_name,
                                                   Strings::percent_encode(path));
-            result.append(msgBuildTroubleshootingMessageGH).append_raw('\n');
-            result.append_indent().append_fmt_raw(
-                "gh issue create -R microsoft/vcpkg --title '[{}] Build failue' --body-file '{}'\n", spec_name, path);
+            if (!paths.get_filesystem().find_from_PATH("gh").empty())
+            {
+                Command gh("gh");
+                gh.string_arg("issue").string_arg("create").string_arg("-R").string_arg("microsoft/vcpkg");
+                gh.string_arg("--title").string_arg(fmt::format("[{}] Build failue", spec_name));
+                gh.string_arg("--body-file").string_arg(path);
+
+                result.append(msgBuildTroubleshootingMessageGH).append_raw('\n');
+                result.append_indent().append_raw(gh.command_line());
+            }
         }
         else
         {
