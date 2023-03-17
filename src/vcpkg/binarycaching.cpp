@@ -962,14 +962,16 @@ namespace
             m_content_type_header = "Content-Type: application/json";
         }
 
+
+
         std::string lookup_cache_entry(const std::string& abi) const
         {
-            msg::write_unlocalized_text_to_stdout(Color::none, "lookup_cache_entry...\n");
+            auto res =
+                invoke_http_request("-G",
+                                    std::vector<std::string>{m_content_type_header, m_token_header, m_accept_header},
+                                    std::vector<std::string>{"keys=vcpkg", "version=" + abi},
+                                    m_read_url);
 
-            auto res = get_entry("-G",
-                                 std::vector<std::string>{m_content_type_header, m_token_header, m_accept_header},
-                                 std::vector<std::string>{"keys=vcpkg", "version=" + abi},
-                                 m_read_url);
             auto json = Json::parse_object(res);
 
             if (!json.has_value() || !json.get()->contains("archiveLocation"))
@@ -987,12 +989,11 @@ namespace
             payload.insert("version", abi);
             payload.insert("cacheSize", Json::Value::integer(cacheSize));
 
-            msg::write_unlocalized_text_to_stdout(Color::none, "reserve_cache_entry...\n");
-
-            auto res = get_entry({},
-                                 std::vector<std::string>{m_content_type_header, m_token_header, m_accept_header},
-                                 std::vector<std::string>{stringify(payload)},
-                                 m_write_url);
+            auto res =
+                invoke_http_request({},
+                                    std::vector<std::string>{m_content_type_header, m_token_header, m_accept_header},
+                                    std::vector<std::string>{stringify(payload)},
+                                    m_write_url);
 
             auto json = Json::parse_object(res);
 
@@ -1006,8 +1007,6 @@ namespace
 
         void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
-            msg::write_unlocalized_text_to_stdout(Color::none, "prefetch...\n");
-
             auto& fs = paths.get_filesystem();
 
             const ElapsedTimer timer;
@@ -1093,6 +1092,7 @@ namespace
 
             auto compression_result = compress_directory_to_zip(
                 paths.get_filesystem(), paths.get_tool_cache(), stdout_sink, paths.package_dir(spec), tmp_archive_path);
+
             if (!compression_result)
             {
                 vcpkg::msg::println(Color::warning,
@@ -1127,7 +1127,13 @@ namespace
                     {
                         Json::Object commit;
                         commit.insert("size", std::to_string(cache_size));
-                        auto res = get_entry({}, std::vector<std::string>{m_accept_header, m_content_type_header, m_token_header}, std::vector<std::string>{stringify(commit)}, url);
+
+                        auto res = invoke_http_request(
+                            {},
+                            std::vector<std::string>{m_accept_header, m_content_type_header, m_token_header},
+                            std::vector<std::string>{stringify(commit)},
+                            url);
+
                         if (!res.empty())
                         {
                             ++upload_count;
