@@ -961,17 +961,17 @@ namespace
             m_content_type_header = "Content-Type: application/json";
         }
 
-        View<StringView> headers() const
-        {
-            return std::vector<StringView> { m_content_type_header, m_token_header, m_accept_header };
-        }
+        //View<StringView> headers() const
+        //{
+        //    return std::vector<StringView> { m_content_type_header, m_token_header, m_accept_header };
+        //}
 
         std::string lookup_cache_entry(const std::string& abi) const
         {
             msg::write_unlocalized_text_to_stdout(Color::none, "lookup_cache_entry...");
 
             auto res = get_entry("-G",
-                                 std::vector<StringView>{m_content_type_header, m_token_header, m_accept_header},
+                                 std::vector<std::string>{m_content_type_header, m_token_header, m_accept_header},
                                  std::vector<std::string>{"keys=vcpkg", "version=" + abi},
                                  m_read_url);
             auto json = Json::parse_object(res);
@@ -1131,7 +1131,7 @@ namespace
                     {
                         Json::Object commit;
                         commit.insert("size", std::to_string(cache_size));
-                        auto res = get_entry({}, headers(), std::vector<std::string>{stringify(commit)}, url);
+                        auto res = get_entry({}, std::vector<std::string>{m_accept_header, m_content_type_header, m_token_header}, std::vector<std::string>{stringify(commit)}, url);
                         if (!res.empty())
                         {
                             ++upload_count;
