@@ -951,24 +951,20 @@ namespace
     };
     struct GHABinaryProvider : IBinaryProvider
     {
-        GHABinaryProvider(const VcpkgPaths& paths, bool read, bool write, StringView url, StringView token)
+        GHABinaryProvider(const VcpkgPaths& paths, bool read, bool write, const std::string& url, const std::string& token)
             : paths(paths)
         {
-            if (read) m_read_url = std::string(url) + "_apis/artifactcache/cache";
-            if (write) m_write_url = std::string(url) + "_apis/artifactcache/caches";
-            m_token_header = "Authorization: Bearer " + std::string(token);
+            msg::write_unlocalized_text_to_stdout(Color::none, "constructor...\n");
+            if (read) m_read_url = url;
+            if (write) m_write_url = url;
+            m_token_header = token;
             m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
             m_content_type_header = "Content-Type: application/json";
         }
 
-        //View<StringView> headers() const
-        //{
-        //    return std::vector<StringView> { m_content_type_header, m_token_header, m_accept_header };
-        //}
-
         std::string lookup_cache_entry(const std::string& abi) const
         {
-            msg::write_unlocalized_text_to_stdout(Color::none, "lookup_cache_entry...");
+            msg::write_unlocalized_text_to_stdout(Color::none, "lookup_cache_entry...\n");
 
             auto res = get_entry("-G",
                                  std::vector<std::string>{m_content_type_header, m_token_header, m_accept_header},
@@ -991,7 +987,7 @@ namespace
             payload.insert("version", abi);
             payload.insert("cacheSize", Json::Value::integer(cacheSize));
 
-            msg::write_unlocalized_text_to_stdout(Color::none, "reserve_cache_entry...");
+            msg::write_unlocalized_text_to_stdout(Color::none, "reserve_cache_entry...\n");
 
             auto res = get_entry({},
                                  std::vector<std::string>{m_content_type_header, m_token_header, m_accept_header},
@@ -1010,7 +1006,7 @@ namespace
 
         void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
-            msg::write_unlocalized_text_to_stdout(Color::none, "prefetch...");
+            msg::write_unlocalized_text_to_stdout(Color::none, "prefetch...\n");
 
             auto& fs = paths.get_filesystem();
 
@@ -2571,8 +2567,10 @@ ExpectedL<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
                                (url.has_value() && token.has_value()),
                                msgGHAParametersMissing,
                                msg::url = "https://learn.microsoft.com/en-us/vcpkg/users/binarycaching#gha");
-        providers.push_back(std::make_unique<GHABinaryProvider>(
-            paths, s.gha_read, s.gha_write, url.value_or_exit(VCPKG_LINE_INFO), token.value_or_exit(VCPKG_LINE_INFO)));
+        auto url_string = url.value_or_exit(VCPKG_LINE_INFO) + "_apis/artifactcache/cache";
+        auto token_string = "Authorization: Bearer " + token.value_or_exit(VCPKG_LINE_INFO);
+        providers.push_back(
+            std::make_unique<GHABinaryProvider>(paths, s.gha_read, s.gha_write, url_string, token_string));
     }
 
     if (!s.url_templates_to_get.empty())
