@@ -127,33 +127,13 @@ namespace vcpkg::Commands
     {
         auto parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
         const bool output_comments = !Util::Sets::contains(parsed_args.switches, OPTION_NO_OUTPUT_COMMENTS);
-        // in order to implement sorting, we create a vector of messages before converting into a JSON object
-        struct Message
-        {
-            std::string name;
-            std::string value;
-            std::string comment;
-        };
-        struct MessageSorter
-        {
-            bool operator()(const Message& lhs, const Message& rhs) const { return lhs.name < rhs.name; }
-        };
 
-        const ::size_t size = msg::detail::number_of_messages();
-        std::vector<Message> messages(size);
-        for (::size_t index = 0; index < size; ++index)
-        {
-            auto& msg = messages[index];
-            msg.name = msg::detail::get_message_name(index).to_string();
-            msg.value = msg::detail::get_default_format_string(index).to_string();
-            msg.comment = msg::detail::get_localization_comment(index).to_string();
-        }
-        std::sort(messages.begin(), messages.end(), MessageSorter{});
+        auto messages = msg::get_sorted_raw_messages();
 
         bool has_errors = false;
         LocalizedString format_string_parsing_error;
         Json::Object obj;
-        for (Message& msg : messages)
+        for (auto& msg : messages)
         {
             if (msg.name != "ErrorMessage" && Strings::case_insensitive_ascii_starts_with(msg.value, "error:"))
             {
@@ -205,7 +185,7 @@ namespace vcpkg::Commands
             obj.insert(msg.name, Json::Value::string(std::move(msg.value)));
             if (output_comments && !msg.comment.empty())
             {
-                obj.insert(fmt::format("_{}.comment", msg.name), Json::Value::string(std::move(msg.comment)));
+                obj.insert("_" + msg.name + ".comment", Json::Value::string(std::move(msg.comment)));
             }
         }
 

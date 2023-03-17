@@ -16,7 +16,6 @@ namespace vcpkg::Remove
 {
     using Update::OutdatedPackage;
 
-    REGISTER_MESSAGE(RemovingPackage);
     static void remove_package(Filesystem& fs,
                                const InstalledPaths& installed,
                                const PackageSpec& spec,

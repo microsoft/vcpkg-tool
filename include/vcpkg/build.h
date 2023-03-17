@@ -27,8 +27,6 @@
 
 namespace vcpkg
 {
-    DECLARE_MESSAGE(ElapsedForPackage, (msg::spec, msg::elapsed), "", "Elapsed time to handle {spec}: {elapsed}");
-
     struct IBuildLogsRecorder
     {
         virtual void record_build_result(const VcpkgPaths& paths,

@@ -24,6 +24,32 @@ namespace vcpkg
 
     struct LocalizedString;
     struct MessageSink;
+
+#define VCPKG_DECL_MSG_TEMPLATE class... MessageTags, class... MessageTypes
+#define VCPKG_DECL_MSG_ARGS                                                                                            \
+    ::vcpkg::msg::MessageT<MessageTags...> _message_token,                                                             \
+        ::vcpkg::msg::TagArg<::vcpkg::identity_t<MessageTags>, MessageTypes>... _message_args
+#define VCPKG_EXPAND_MSG_ARGS _message_token, _message_args...
+
+    template<class T>
+    struct identity
+    {
+        using type = T;
+    };
+    template<class T>
+    using identity_t = typename identity<T>::type;
+
+    namespace msg
+    {
+        template<class... Tags>
+        struct MessageT;
+
+        template<class Tag, class Type>
+        struct TagArg;
+
+        template<VCPKG_DECL_MSG_TEMPLATE>
+        LocalizedString format(VCPKG_DECL_MSG_ARGS);
+    }
 }
 
 namespace vcpkg::msg
