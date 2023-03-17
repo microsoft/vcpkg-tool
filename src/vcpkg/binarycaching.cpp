@@ -975,21 +975,17 @@ namespace
 
         std::string lookup_cache_entry(const std::string& abi) const
         {
-            
-            std::vector<std::string> headers = 
-            {
-                m_content_type_header,
-                m_token_header, 
-                m_accept_header
-            };
-
+            std::vector<std::string> headers = {m_content_type_header, m_token_header, m_accept_header};
             std::vector<std::string> query_params = {"keys=vcpkg", "version=" + abi};
 
             auto res = get_cache_entry(m_read_url, headers, query_params);
-
-            //if (!res.has_value() || res.get()->exit_code) return {};
             auto json = Json::parse_object(res);
-            if (!json.has_value() || !json.get()->contains("archiveLocation")) return {};
+
+            if (!json.has_value() || !json.get()->contains("archiveLocation"))
+            {
+                return {};
+            }
+
             return json.get()->get("archiveLocation")->string(VCPKG_LINE_INFO).to_string();
         }
 
@@ -999,7 +995,7 @@ namespace
             payload.insert("key", "vcpkg");
             payload.insert("version", abi);
             payload.insert("cacheSize", Json::Value::integer(cacheSize));
-            
+
             auto cmd = command().string_arg(m_write_url).string_arg("-d").string_arg(stringify(payload));
             auto res = cmd_execute_and_capture_output(cmd);
 
@@ -1114,7 +1110,7 @@ namespace
                 {
                     std::vector<std::string> headers{
                         m_token_header,
-                        m_accept_header.to_string(),
+                        m_accept_header,
                         "Content-Type: application/octet-stream",
                         "Content-Range: bytes 0-" + std::to_string(cache_size) + "/*",
                     };

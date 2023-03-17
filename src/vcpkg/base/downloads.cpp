@@ -601,7 +601,7 @@ namespace vcpkg
 
         auto maybe_res = cmd_execute_and_capture_output(cmd);
 
-        //TODO error handling
+        //TODO: error handling
         return maybe_res.get()->output;
     }
 
