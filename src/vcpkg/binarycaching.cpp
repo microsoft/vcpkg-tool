@@ -969,6 +969,7 @@ namespace
         std::string lookup_cache_entry(const std::string& abi) const
         {
             msg::write_unlocalized_text_to_stdout(Color::none, "lookup_cache_entry...");
+
             auto res = get_entry("-G",
                                  std::vector<StringView>{m_content_type_header, m_token_header, m_accept_header},
                                  std::vector<std::string>{"keys=vcpkg", "version=" + abi},
@@ -989,9 +990,11 @@ namespace
             payload.insert("key", "vcpkg");
             payload.insert("version", abi);
             payload.insert("cacheSize", Json::Value::integer(cacheSize));
+
             msg::write_unlocalized_text_to_stdout(Color::none, "reserve_cache_entry...");
+
             auto res = get_entry({},
-                                 std::vector<StringView>{m_content_type_header, m_token_header, m_accept_header},
+                                 std::vector<std::string>{m_content_type_header, m_token_header, m_accept_header},
                                  std::vector<std::string>{stringify(payload)},
                                  m_write_url);
 
@@ -1091,6 +1094,7 @@ namespace
             const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
             auto& spec = action.spec;
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
+
             auto compression_result = compress_directory_to_zip(
                 paths.get_filesystem(), paths.get_tool_cache(), stdout_sink, paths.package_dir(spec), tmp_archive_path);
             if (!compression_result)

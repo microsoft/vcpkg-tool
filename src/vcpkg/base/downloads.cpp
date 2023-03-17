@@ -580,8 +580,8 @@ namespace vcpkg
         return res;
     }
 
-    std::string get_entry(std::string method,
-                          View<StringView> headers,
+    std::string get_entry(std::string method, 
+                          View<std::string> headers,
                           View<std::string> query_params,
                           StringView url)
     {
@@ -604,6 +604,7 @@ namespace vcpkg
 
         //TODO: error handling
         msg::write_unlocalized_text_to_stdout(Color::none, maybe_res.get()->output);
+
         return maybe_res.get()->output;
     }
 
