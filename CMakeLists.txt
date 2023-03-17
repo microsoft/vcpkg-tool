@@ -365,18 +365,13 @@ target_link_libraries(vcpkglib
 )
 
 if(MSVC)
-    get_target_property(_srcs vcpkglib SOURCES)
-
-    if(NOT CMAKE_GENERATOR MATCHES "Visual Studio .*")
-        set_property(SOURCE src/pch.cpp APPEND PROPERTY OBJECT_OUTPUTS "${CMAKE_CURRENT_BINARY_DIR}/pch.pch")
-        set_property(SOURCE ${_srcs} APPEND PROPERTY OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/pch.pch")
-    endif()
-
-    set_source_files_properties(src/pch.cpp PROPERTIES COMPILE_FLAGS "/Ycpch.h")
-    target_sources(vcpkglib PRIVATE src/pch.cpp)
-    target_compile_options(vcpkglib PRIVATE /Yupch.h /FIpch.h /Zm200)
+    target_compile_options(vcpkglib PRIVATE /FIpch.h)
 else()
     target_compile_options(vcpkglib PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
+endif()
+
+if(CMAKE_VERSION GREATER_EQUAL "3.16")
+    target_precompile_headers(vcpkglib PRIVATE "include/pch.h")
 endif()
 
 if(MINGW)
@@ -451,6 +446,16 @@ if (BUILD_TESTING)
     target_link_libraries(vcpkg-test PRIVATE vcpkglib)
     if(ANDROID)
         target_link_libraries(vcpkg-test PRIVATE log)
+    endif()
+
+    if(MSVC)
+        target_compile_options(vcpkg-test PRIVATE /FIpch.h)
+    else()
+        target_compile_options(vcpkg-test PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
+    endif()
+
+    if(CMAKE_VERSION GREATER_EQUAL "3.16")
+        target_precompile_headers(vcpkg-test PRIVATE "include/pch.h")
     endif()
 
     add_test(NAME default COMMAND vcpkg-test --order rand --rng-seed time)
