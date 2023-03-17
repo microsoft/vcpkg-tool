@@ -603,6 +603,7 @@ namespace vcpkg
         auto maybe_res = cmd_execute_and_capture_output(cmd);
 
         //TODO: error handling
+        msg::write_unlocalized_text_to_stdout(Color::none, maybe_res.get()->output);
         return maybe_res.get()->output;
     }
 

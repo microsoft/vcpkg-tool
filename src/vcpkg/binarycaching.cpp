@@ -998,7 +998,7 @@ namespace
             payload.insert("version", abi);
             payload.insert("cacheSize", Json::Value::integer(cacheSize));
 
-            auto res = get_entry("", headers(), std::vector<std::string>{stringify(payload)}, m_write_url);
+            auto res = get_entry({}, headers(), std::vector<std::string>{stringify(payload)}, m_write_url);
             auto json = Json::parse_object(res);
 
             if (!json.has_value() || !json.get()->contains("cacheId"))
@@ -1127,7 +1127,7 @@ namespace
                         commit.insert("size", std::to_string(cache_size));
                         //auto cmd = command().string_arg(url).string_arg("-d").string_arg(stringify(commit));
                         //auto res = cmd_execute_and_capture_output(cmd);
-                        auto res = get_entry("", headers(), std::vector<std::string>{stringify(commit)}, url);
+                        auto res = get_entry({}, headers(), std::vector<std::string>{stringify(commit)}, url);
                         if (!res.empty())
                         {
                             ++upload_count;
