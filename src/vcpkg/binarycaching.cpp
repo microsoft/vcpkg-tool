@@ -951,11 +951,7 @@ namespace
     };
     struct GHABinaryProvider : IBinaryProvider
     {
-        GHABinaryProvider(const VcpkgPaths& paths,
-                          bool read,
-                          bool write,
-                          std::string url,
-                          std::string token)
+        GHABinaryProvider(const VcpkgPaths& paths, bool read, bool write, std::string url, std::string token)
             : paths(paths)
         {
             if (read) m_read_url = url + "_apis/artifactcache/cache";
@@ -979,18 +975,20 @@ namespace
 
         std::string lookup_cache_entry(const std::string& abi) const
         {
-            auto cmd = command()
-                           .string_arg(m_read_url)
-                           .string_arg("-G")
-                           .string_arg("-d")
-                           .string_arg("keys=vcpkg")
-                           .string_arg("-d")
-                           .string_arg("version=" + abi);
+            
+            std::vector<std::string> headers = 
+            {
+                m_content_type_header,
+                m_token_header, 
+                m_accept_header
+            };
 
-            std::vector<std::string> lines;
-            auto res = cmd_execute_and_capture_output(cmd);
-            if (!res.has_value() || res.get()->exit_code) return {};
-            auto json = Json::parse_object(res.get()->output);
+            std::vector<std::string> query_params = {"keys=vcpkg", "version=" + abi};
+
+            auto res = get_cache_entry(m_read_url, headers, query_params);
+
+            //if (!res.has_value() || res.get()->exit_code) return {};
+            auto json = Json::parse_object(res);
             if (!json.has_value() || !json.get()->contains("archiveLocation")) return {};
             return json.get()->get("archiveLocation")->string(VCPKG_LINE_INFO).to_string();
         }
@@ -1001,9 +999,10 @@ namespace
             payload.insert("key", "vcpkg");
             payload.insert("version", abi);
             payload.insert("cacheSize", Json::Value::integer(cacheSize));
+            
             auto cmd = command().string_arg(m_write_url).string_arg("-d").string_arg(stringify(payload));
-
             auto res = cmd_execute_and_capture_output(cmd);
+
             if (!res.has_value() || res.get()->exit_code) return {};
             auto json = Json::parse_object(res.get()->output);
             if (!json.has_value() || !json.get()->contains("cacheId")) return {};
@@ -1119,7 +1118,9 @@ namespace
                         "Content-Type: application/octet-stream",
                         "Content-Range: bytes 0-" + std::to_string(cache_size) + "/*",
                     };
+
                     auto url = m_write_url + "/" + std::to_string(*cacheId.get());
+
                     if (put_file(fs, url, {}, headers, tmp_archive_path, "PATCH"))
                     {
                         Json::Object commit;
@@ -1173,12 +1174,11 @@ namespace
             }
         }
 
-        static constexpr StringLiteral m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
+        std::string m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
+        std::string m_content_type_header = "Content-Type: application/json";
         std::string m_token_header;
-
         std::string m_read_url;
         std::string m_write_url;
-
         const VcpkgPaths& paths;
     };
 

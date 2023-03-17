@@ -551,6 +551,7 @@ namespace vcpkg
 
         Command cmd;
         cmd.string_arg("curl").string_arg("-X").string_arg(method);
+
         for (auto&& header : headers)
         {
             cmd.string_arg("-H").string_arg(header);
@@ -577,6 +578,31 @@ namespace vcpkg
         }
 
         return res;
+    }
+
+    std::string get_cache_entry(StringView url,
+                                                 View<std::string> headers,
+                                                 View<std::string> query_params)
+    {
+        Command cmd;
+        cmd.string_arg("curl").string_arg("-s");
+
+        for (auto&& header : headers)
+        {
+            cmd.string_arg("-H").string_arg(header);
+        }
+
+        cmd.string_arg("-G").string_arg(url);
+     
+        for (auto&& query_param : query_params)
+        {
+            cmd.string_arg("-d").string_arg(query_param);
+        }
+
+        auto maybe_res = cmd_execute_and_capture_output(cmd);
+
+        //TODO error handling
+        return maybe_res.get()->output;
     }
 
 #if defined(_WIN32)
