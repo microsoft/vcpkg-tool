@@ -959,26 +959,28 @@ namespace
             m_token_header = "Authorization: Bearer " + token;
         }
 
-        Command command() const
+        //Command command() const
+        //{
+        //    Command cmd;
+        //    cmd.string_arg("curl")
+        //        .string_arg("-s")
+        //        .string_arg("-H")
+        //        .string_arg("Content-Type: application/json")
+        //        .string_arg("-H")
+        //        .string_arg(m_token_header)
+        //        .string_arg("-H")
+        //        .string_arg(m_accept_header);
+        //    return cmd;
+        //}
+
+        View<std::string> headers() const
         {
-            Command cmd;
-            cmd.string_arg("curl")
-                .string_arg("-s")
-                .string_arg("-H")
-                .string_arg("Content-Type: application/json")
-                .string_arg("-H")
-                .string_arg(m_token_header)
-                .string_arg("-H")
-                .string_arg(m_accept_header);
-            return cmd;
+            return std::vector<std::string> { m_content_type_header, m_token_header, m_accept_header };
         }
 
         std::string lookup_cache_entry(const std::string& abi) const
         {
-            std::vector<std::string> headers = {m_content_type_header, m_token_header, m_accept_header};
-            std::vector<std::string> query_params = {"keys=vcpkg", "version=" + abi};
-
-            auto res = get_cache_entry(m_read_url, headers, query_params);
+            auto res = get_entry("-G", headers(), std::vector<std::string>{"keys=vcpkg", "version=" + abi}, m_read_url);
             auto json = Json::parse_object(res);
 
             if (!json.has_value() || !json.get()->contains("archiveLocation"))
@@ -996,12 +998,14 @@ namespace
             payload.insert("version", abi);
             payload.insert("cacheSize", Json::Value::integer(cacheSize));
 
-            auto cmd = command().string_arg(m_write_url).string_arg("-d").string_arg(stringify(payload));
-            auto res = cmd_execute_and_capture_output(cmd);
+            auto res = get_entry("", headers(), std::vector<std::string>{stringify(payload)}, m_write_url);
+            auto json = Json::parse_object(res);
 
-            if (!res.has_value() || res.get()->exit_code) return {};
-            auto json = Json::parse_object(res.get()->output);
-            if (!json.has_value() || !json.get()->contains("cacheId")) return {};
+            if (!json.has_value() || !json.get()->contains("cacheId"))
+            {
+                return {};
+            }
+
             return json.get()->get("cacheId")->integer(VCPKG_LINE_INFO);
         }
 
@@ -1108,7 +1112,7 @@ namespace
             {
                 if (auto cacheId = reserve_cache_entry(abi, cache_size))
                 {
-                    std::vector<std::string> headers{
+                    std::vector<std::string> custom_headers{
                         m_token_header,
                         m_accept_header,
                         "Content-Type: application/octet-stream",
@@ -1117,14 +1121,14 @@ namespace
 
                     auto url = m_write_url + "/" + std::to_string(*cacheId.get());
 
-                    if (put_file(fs, url, {}, headers, tmp_archive_path, "PATCH"))
+                    if (put_file(fs, url, {}, custom_headers, tmp_archive_path, "PATCH"))
                     {
                         Json::Object commit;
                         commit.insert("size", std::to_string(cache_size));
-                        auto cmd = command().string_arg(url).string_arg("-d").string_arg(stringify(commit));
-
-                        auto res = cmd_execute_and_capture_output(cmd);
-                        if (res.has_value() && !res.get()->exit_code)
+                        //auto cmd = command().string_arg(url).string_arg("-d").string_arg(stringify(commit));
+                        //auto res = cmd_execute_and_capture_output(cmd);
+                        auto res = get_entry("", headers(), std::vector<std::string>{stringify(commit)}, url);
+                        if (!res.empty())
                         {
                             ++upload_count;
                         }

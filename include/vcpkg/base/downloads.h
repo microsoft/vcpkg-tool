@@ -41,7 +41,10 @@ namespace vcpkg
                             const Path& file,
                             StringView method = "PUT");
 
-    std::string get_cache_entry(StringView url, View<std::string> headers, View<std::string> query_params);
+    std::string get_entry(std::string method,
+                          View<std::string> headers,
+                          View<std::string> query_params,
+                          StringView url);
 
     std::vector<int> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets);
 

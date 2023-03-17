@@ -580,9 +580,10 @@ namespace vcpkg
         return res;
     }
 
-    std::string get_cache_entry(StringView url,
-                                                 View<std::string> headers,
-                                                 View<std::string> query_params)
+    std::string get_entry(std::string method,
+                          View<std::string> headers,
+                          View<std::string> query_params,
+                          StringView url)
     {
         Command cmd;
         cmd.string_arg("curl").string_arg("-s");
@@ -592,7 +593,7 @@ namespace vcpkg
             cmd.string_arg("-H").string_arg(header);
         }
 
-        cmd.string_arg("-G").string_arg(url);
+        cmd.string_arg(method).string_arg(url);
      
         for (auto&& query_param : query_params)
         {
