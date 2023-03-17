@@ -951,31 +951,19 @@ namespace
     };
     struct GHABinaryProvider : IBinaryProvider
     {
-        GHABinaryProvider(const VcpkgPaths& paths, bool read, bool write, std::string url, std::string token)
+        GHABinaryProvider(const VcpkgPaths& paths, bool read, bool write, StringView url, StringView token)
             : paths(paths)
         {
-            if (read) m_read_url = url + "_apis/artifactcache/cache";
-            if (write) m_write_url = url + "_apis/artifactcache/caches";
-            m_token_header = "Authorization: Bearer " + token;
+            if (read) m_read_url = std::string(url) + "_apis/artifactcache/cache";
+            if (write) m_write_url = std::string(url) + "_apis/artifactcache/caches";
+            m_token_header = "Authorization: Bearer " + std::string(token);
+            m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
+            m_content_type_header = "Content-Type: application/json";
         }
 
-        //Command command() const
-        //{
-        //    Command cmd;
-        //    cmd.string_arg("curl")
-        //        .string_arg("-s")
-        //        .string_arg("-H")
-        //        .string_arg("Content-Type: application/json")
-        //        .string_arg("-H")
-        //        .string_arg(m_token_header)
-        //        .string_arg("-H")
-        //        .string_arg(m_accept_header);
-        //    return cmd;
-        //}
-
-        View<std::string> headers() const
+        View<StringView> headers() const
         {
-            return std::vector<std::string> { m_content_type_header, m_token_header, m_accept_header };
+            return std::vector<StringView> { m_content_type_header, m_token_header, m_accept_header };
         }
 
         std::string lookup_cache_entry(const std::string& abi) const
@@ -1125,8 +1113,6 @@ namespace
                     {
                         Json::Object commit;
                         commit.insert("size", std::to_string(cache_size));
-                        //auto cmd = command().string_arg(url).string_arg("-d").string_arg(stringify(commit));
-                        //auto res = cmd_execute_and_capture_output(cmd);
                         auto res = get_entry({}, headers(), std::vector<std::string>{stringify(commit)}, url);
                         if (!res.empty())
                         {
@@ -1174,8 +1160,8 @@ namespace
             }
         }
 
-        std::string m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
-        std::string m_content_type_header = "Content-Type: application/json";
+        std::string m_accept_header;
+        std::string m_content_type_header;
         std::string m_token_header;
         std::string m_read_url;
         std::string m_write_url;

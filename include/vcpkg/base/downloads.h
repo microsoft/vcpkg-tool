@@ -42,7 +42,7 @@ namespace vcpkg
                             StringView method = "PUT");
 
     std::string get_entry(std::string method,
-                          View<std::string> headers,
+                          View<StringView> headers,
                           View<std::string> query_params,
                           StringView url);
 
