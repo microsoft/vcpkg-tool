@@ -112,7 +112,8 @@ namespace vcpkg::msg
     template<>                                                                                                         \
     struct vcpkg::msg::ArgExample<::vcpkg::msg::NAME##_t>                                                              \
     {                                                                                                                  \
-        static constexpr StringLiteral example = EXAMPLE;                                                              \
+        static constexpr StringLiteral example = sizeof(EXAMPLE) > 1 ? StringLiteral("{" #NAME "} is " EXAMPLE ".")    \
+                                                                     : StringLiteral("");                              \
     };
 #include <vcpkg/base/message-args.inc.h>
 #undef DECLARE_MSG_ARG
@@ -172,8 +173,9 @@ namespace vcpkg
                 for (auto&& ex : message_data[index].arg_examples)
                 {
                     if (ex == nullptr || ex->empty()) continue;
-                    msg.push_back(' ');
-                    Strings::append(msg, *ex);
+                    if (!msg.empty()) msg.push_back(' ');
+                    msg.append("An example of ");
+                    msg.append(ex->data(), ex->size());
                 }
                 return msg;
             }

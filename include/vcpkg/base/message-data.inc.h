@@ -1341,7 +1341,7 @@ DECLARE_MESSAGE(HelpTxtOptManifestNoDefault,
 DECLARE_MESSAGE(HelpTxtOptNoDownloads, (), "", "Do not download new sources.")
 DECLARE_MESSAGE(HelpTxtOptNoUsage, (), "", "Don't print CMake usage information after install.")
 DECLARE_MESSAGE(HelpTxtOptOnlyBinCache, (), "", "Fail if cached binaries are not available.")
-DECLARE_MESSAGE(HelpTxtOptOnlyDownloads, (), "", "Download sources but don't build packages.")
+DECLARE_MESSAGE(HelpTxtOptOnlyDownloads, (), "", "Make a best-effort attempt to download sources without building.")
 DECLARE_MESSAGE(HelpTxtOptRecurse, (), "", "Allow removal of packages as part of installation.")
 DECLARE_MESSAGE(HelpTxtOptUseAria2, (), "", "Use aria2 to perform download tasks.")
 DECLARE_MESSAGE(HelpTxtOptUseHeadVersion,
@@ -1595,7 +1595,6 @@ DECLARE_MESSAGE(InvalidFormatString,
 DECLARE_MESSAGE(InvalidHexDigit, (), "", "Invalid hex digit in unicode escape")
 DECLARE_MESSAGE(InvalidIntegerConst, (msg::count), "", "Invalid integer constant: {count}")
 DECLARE_MESSAGE(InvalidLibraryMissingLinkerMembers, (), "", "Library was invalid: could not find a linker member.")
-DECLARE_MESSAGE(InvalidLibraryMissingSignature, (), "", "Library was invalid: did not find !<arch> signature.")
 DECLARE_MESSAGE(
     InvalidLinkage,
     (msg::system_name, msg::value),
@@ -1650,8 +1649,8 @@ DECLARE_MESSAGE(LicenseExpressionContainsInvalidCharacter,
 DECLARE_MESSAGE(LicenseExpressionContainsUnicode,
                 (msg::value, msg::pretty_value),
                 "example of {value:04X} is '22BB'\nexample of {pretty_value} is '⊻'",
-                "SPDX license expression contains a unicode character (U+{value:04X} "
-                "'{pretty_value}'), but these expressions are ASCII-only.")
+                "SPDX license expression contains a unicode character (U+{value:04X} '{pretty_value}'), but these "
+                "expressions are ASCII-only.")
 DECLARE_MESSAGE(LicenseExpressionDocumentRefUnsupported,
                 (),
                 "",
