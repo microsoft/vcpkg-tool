@@ -103,11 +103,15 @@ namespace vcpkg::msg
 namespace
 {
     template<class T>
-    constexpr StringLiteral arg_example;
+    struct ArgExample;
+
 #define DECLARE_MSG_ARG(NAME, EXAMPLE)                                                                                 \
     template<>                                                                                                         \
-    constexpr StringLiteral arg_example<::vcpkg::msg::NAME##_t> =                                                      \
-        sizeof(EXAMPLE) > 1 ? StringLiteral(#NAME "} is " EXAMPLE) : StringLiteral("");
+    struct ArgExample<::vcpkg::msg::NAME##_t>                                                                          \
+    {                                                                                                                  \
+        static constexpr StringLiteral example = sizeof(EXAMPLE) > 1 ? StringLiteral(#NAME "} is " EXAMPLE)            \
+                                                                     : StringLiteral("");                              \
+    };
 #include <vcpkg/base/message-args.inc.h>
 #undef DECLARE_MSG_ARG
 }
@@ -132,7 +136,7 @@ namespace vcpkg
         template<class... Args>
         constexpr std::array<const StringLiteral*, max_number_of_args> make_arg_examples_array(Args...)
         {
-            return std::array<const StringLiteral*, max_number_of_args>{&arg_example<Args>...};
+            return std::array<const StringLiteral*, max_number_of_args>{&ArgExample<Args>::example...};
         }
 
         constexpr MessageData message_data[] = {
