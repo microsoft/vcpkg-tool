@@ -12,6 +12,23 @@
 #include <type_traits>
 #include <vector>
 
+namespace vcpkg
+{
+    template<class T>
+    struct identity
+    {
+        using type = T;
+    };
+    template<class T>
+    using identity_t = typename identity<T>::type;
+}
+
+#define VCPKG_DECL_MSG_TEMPLATE class... MessageTags, class... MessageTypes
+#define VCPKG_DECL_MSG_ARGS                                                                                            \
+    ::vcpkg::msg::MessageT<MessageTags...> _message_token,                                                             \
+        ::vcpkg::msg::TagArg<::vcpkg::identity_t<MessageTags>, MessageTypes>... _message_args
+#define VCPKG_EXPAND_MSG_ARGS _message_token, _message_args...
+
 namespace vcpkg::msg
 {
     namespace detail
@@ -32,7 +49,6 @@ namespace vcpkg::msg
     struct TagArg<Tag, StringView>
     {
         StringView const t;
-
         auto arg() const { return fmt::arg(Tag::name.c_str(), t); }
     };
 
@@ -45,6 +61,11 @@ namespace vcpkg::msg
         using is_message_type = void;
         const size_t index;
     };
+
+    template<VCPKG_DECL_MSG_TEMPLATE>
+    LocalizedString format(VCPKG_DECL_MSG_ARGS);
+
+    extern template LocalizedString format<>(MessageT<>);
 }
 
 namespace vcpkg
@@ -110,14 +131,6 @@ namespace vcpkg::msg
     {
         return detail::format_message_by_index(m.index, fmt::make_format_args(args.arg()...));
     }
-
-    struct RawMessage
-    {
-        std::string name;
-        std::string value;
-        std::string comment;
-    };
-    std::vector<RawMessage> get_sorted_raw_messages();
 
     inline void println() { msg::write_unlocalized_text_to_stdout(Color::none, "\n"); }
 
@@ -186,7 +199,7 @@ namespace vcpkg::msg
 #define DECLARE_MSG_ARG(NAME, EXAMPLE)                                                                                 \
     static constexpr struct NAME##_t                                                                                   \
     {                                                                                                                  \
-        static ::vcpkg::StringLiteral name;                                                                            \
+        static const ::vcpkg::StringLiteral name;                                                                      \
         template<class T>                                                                                              \
         TagArg<NAME##_t, StringViewable<T>> operator=(const T& t) const noexcept                                       \
         {                                                                                                              \

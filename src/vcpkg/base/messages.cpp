@@ -13,9 +13,6 @@ CMRC_DECLARE(cmakerc);
 
 using namespace vcpkg;
 
-// This belongs in a lineinfo.cpp if it was worth having a separate file.
-std::string vcpkg::LineInfo::to_string() const { return fmt::format("{}({})", file_name, line_number); }
-
 namespace vcpkg
 {
     LocalizedString::operator StringView() const noexcept { return m_data; }
@@ -101,20 +98,20 @@ namespace vcpkg
 
 namespace vcpkg::msg
 {
-    namespace
-    {
-        template<class T>
-        struct ArgExample;
-    }
+    template LocalizedString format<>(MessageT<>);
 }
+namespace
+{
+    template<class T>
+    constexpr StringLiteral arg_example;
 #define DECLARE_MSG_ARG(NAME, EXAMPLE)                                                                                 \
-    StringLiteral vcpkg::msg::NAME##_t::name = #NAME;                                                                  \
     template<>                                                                                                         \
-    struct vcpkg::msg::ArgExample<::vcpkg::msg::NAME##_t>                                                              \
-    {                                                                                                                  \
-        static constexpr StringLiteral example = sizeof(EXAMPLE) > 1 ? StringLiteral("{" #NAME "} is " EXAMPLE ".")    \
-                                                                     : StringLiteral("");                              \
-    };
+    constexpr StringLiteral arg_example<::vcpkg::msg::NAME##_t> =                                                      \
+        sizeof(EXAMPLE) > 1 ? StringLiteral(#NAME "} is " EXAMPLE) : StringLiteral("");
+#include <vcpkg/base/message-args.inc.h>
+#undef DECLARE_MSG_ARG
+}
+#define DECLARE_MSG_ARG(NAME, EXAMPLE) const StringLiteral vcpkg::msg::NAME##_t::name = #NAME;
 #include <vcpkg/base/message-args.inc.h>
 #undef DECLARE_MSG_ARG
 
@@ -128,14 +125,14 @@ namespace vcpkg
         {
             StringLiteral name;
             std::array<const StringLiteral*, max_number_of_args> arg_examples;
-            StringLiteral comment;
+            const char* comment;
             StringLiteral builtin_message;
         };
 
         template<class... Args>
         constexpr std::array<const StringLiteral*, max_number_of_args> make_arg_examples_array(Args...)
         {
-            return std::array<const StringLiteral*, max_number_of_args>{&msg::ArgExample<Args>::example...};
+            return std::array<const StringLiteral*, max_number_of_args>{&arg_example<Args>...};
         }
 
         constexpr MessageData message_data[] = {
@@ -147,10 +144,11 @@ namespace vcpkg
 
     namespace msg::detail
     {
-        static constexpr const ::size_t number_of_messages = sizeof(message_data) / sizeof(message_data[0]);
+        static constexpr const size_t number_of_messages = std::size(message_data);
     }
     static std::string* loaded_localization_data = 0;
-    static const char *loaded_localization_file_begin = 0, *loaded_localization_file_end = 0;
+    static const char* loaded_localization_file_begin = 0;
+    static const char* loaded_localization_file_end = 0;
 
     namespace
     {
@@ -169,19 +167,20 @@ namespace vcpkg
             std::string get_localization_comment(::size_t index)
             {
                 if (index >= detail::number_of_messages) Checks::unreachable(VCPKG_LINE_INFO);
-                std::string msg = message_data[index].comment.to_string();
+                std::string msg = message_data[index].comment;
                 for (auto&& ex : message_data[index].arg_examples)
                 {
                     if (ex == nullptr || ex->empty()) continue;
                     if (!msg.empty()) msg.push_back(' ');
-                    msg.append("An example of ");
+                    msg.append("An example of {");
                     msg.append(ex->data(), ex->size());
+                    msg.push_back('.');
                 }
                 return msg;
             }
         }
 
-        std::vector<RawMessage> get_sorted_raw_messages()
+        std::vector<RawMessage> get_sorted_english_messages()
         {
             struct MessageSorter
             {
@@ -189,11 +188,11 @@ namespace vcpkg
             };
 
             std::vector<RawMessage> messages(msg::detail::number_of_messages);
-            for (::size_t index = 0; index < msg::detail::number_of_messages; ++index)
+            for (size_t index = 0; index < msg::detail::number_of_messages; ++index)
             {
                 auto& msg = messages[index];
-                msg.name = message_data[index].name.to_string();
-                msg.value = message_data[index].builtin_message.to_string();
+                msg.name = message_data[index].name;
+                msg.value = message_data[index].builtin_message;
                 msg.comment = get_localization_comment(index);
             }
             std::sort(messages.begin(), messages.end(), MessageSorter{});
@@ -210,8 +209,9 @@ namespace vcpkg
                     return LocalizedString::from_raw(fmt::vformat(loaded_localization_data[index], args));
                 }
             }
-            catch (...)
+            catch (const fmt::format_error&)
             {
+                Debug::println("Failed to use localized message ", message_data[index].name);
             }
             const auto default_format_string = message_data[index].builtin_message;
             try
@@ -219,14 +219,14 @@ namespace vcpkg
                 return LocalizedString::from_raw(
                     fmt::vformat({default_format_string.data(), default_format_string.size()}, args));
             }
-            catch (...)
+            catch (const fmt::format_error&)
             {
             }
-            ::fprintf(stderr,
-                      "INTERNAL ERROR: failed to format default format string for index %zu\nformat string: %.*s\n",
-                      index,
-                      (int)default_format_string.size(),
-                      default_format_string.data());
+            msg::write_unlocalized_text_to_stdout(
+                Color::error,
+                fmt::format("INTERNAL ERROR: failed to format default format string for index {}\nformat string: {}\n",
+                            index,
+                            default_format_string));
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
     }

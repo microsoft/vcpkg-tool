@@ -10,6 +10,13 @@
 
 namespace vcpkg::msg
 {
+    struct RawMessage
+    {
+        StringView name;
+        StringView value;
+        std::string comment;
+    };
+    std::vector<RawMessage> get_sorted_english_messages();
 
     struct MessageMapAndFile
     {

@@ -1,5 +1,6 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/setup-messages.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
@@ -128,7 +129,7 @@ namespace vcpkg::Commands
         auto parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
         const bool output_comments = !Util::Sets::contains(parsed_args.switches, OPTION_NO_OUTPUT_COMMENTS);
 
-        auto messages = msg::get_sorted_raw_messages();
+        auto messages = msg::get_sorted_english_messages();
 
         bool has_errors = false;
         LocalizedString format_string_parsing_error;
