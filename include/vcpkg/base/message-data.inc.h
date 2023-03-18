@@ -2784,15 +2784,3 @@ DECLARE_MESSAGE(WhileParsingVersionsForPort,
 DECLARE_MESSAGE(WhileValidatingVersion, (msg::version), "", "while validating version: {version}")
 DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.")
 DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}")
-
-// Messages for fuzzer
-DECLARE_MESSAGE(FuzzExpectedOneOf,
-                (),
-                "the list after the colon should stay the same, they're literal values",
-                "expected one of: utf-8, json, platform-expr")
-DECLARE_MESSAGE(FuzzHelpInput, (), "", "accepts input on stdin.")
-DECLARE_MESSAGE(FuzzHelpOptionKind, (), "", "one of {{utf-8, json, platform-expr}}")
-DECLARE_MESSAGE(FuzzHelpOptions, (), "", "options:")
-DECLARE_MESSAGE(FuzzHelpUsage, (), "", "usage: vcpkg-fuzz --kind=<kind>")
-DECLARE_MESSAGE(FuzzInvalidKind, (msg::value), "example of {value} is 'utf-8'", "invalid kind: '{value}'")
-DECLARE_MESSAGE(FuzzUnknownOption, (msg::option), "", "unknown option: --{option}")

@@ -1,6 +1,7 @@
+#include <vcpkg/base/fwd/messages.h>
+
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/json.h>
-#include <vcpkg/base/messages.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/unicode.h>
 
@@ -68,16 +69,17 @@ namespace
                     }
                     else
                     {
-                        msg::println_error(msg::format(msgFuzzInvalidKind, msg::value = value)
-                                               .append_raw('\n')
-                                               .append_indent()
-                                               .append(msgFuzzExpectedOneOf));
+                        msg::write_unlocalized_text_to_stdout(
+                            Color::error,
+                            fmt::format("error: invalid kind: '{}'\n"
+                                        "expected one of: utf-8, json, platform-expr\n",
+                                        value));
                         print_help_and_exit(true);
                     }
                 }
                 else
                 {
-                    msg::println_error(msgFuzzUnknownOption, msg::option = key);
+                    msg::write_unlocalized_text_to_stdout(Color::error, "error: unknown option: --" + key + "\n");
                     print_help_and_exit(true);
                 }
             }
@@ -103,28 +105,12 @@ namespace
         {
             auto color = invalid ? Color::error : Color::none;
 
-            auto message = msg::format(msgFuzzHelpUsage).append_raw("\n\n");
-            message.append(msgFuzzHelpInput).append_raw("\n\n");
-            message.append(msgFuzzHelpOptions).append_raw('\n');
+            StringLiteral message = "usage: vcpkg-fuzz --kind=<kind>\n\n"
+                                    "accepts input on stdin.\n\n"
+                                    "options:\n"
+                                    "  --kind=...            one of {{utf-8, json, platform-expr}}\n";
 
-            struct
-            {
-                StringLiteral option;
-                LocalizedString help;
-            } options[] = {
-                {"kind", msg::format(msgFuzzHelpOptionKind)},
-            };
-
-            for (const auto& option : options)
-            {
-                auto start_option = fmt::format("  --{}=...", option.option);
-                message.append_raw(start_option)
-                    .append_raw(std::string(30 - start_option.size(), ' '))
-                    .append(option.help)
-                    .append_raw('\n');
-            }
-
-            msg::print(color, message);
+            msg::write_unlocalized_text_to_stdout(color, message);
             if (invalid)
             {
                 Checks::exit_fail(VCPKG_LINE_INFO);
