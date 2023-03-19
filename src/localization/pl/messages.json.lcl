@@ -4822,6 +4822,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";GHAParametersMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The GHA binary source requires the ACTIONS_RUNTIME_TOKEN and ACTIONS_CACHE_URL environment variables to be set. See {url} for details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Źródło binarne GHA wymaga ustawienia zmiennych środowiskowych ACTIONS_RUNTIME_TOKEN i ACTIONS_CACHE_URL. Aby uzyskać szczegółowe informacje, zobacz {url}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";GenerateMsgErrorParsingFormatArgs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[parsing format string for {value}:]]></Val>
@@ -6324,6 +6333,15 @@
           <Val><![CDATA[invalid argument: binary config '{binary_source}' requires a SAS token without a preceeding '?' as the second argument]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[nieprawidłowy argument: konfiguracja binarna "{binary_source}" wymaga tokenu SAS bez poprzedzającego znaku "?", jako drugiego argumentu]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresZeroOrOneArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires 0 or 1 argument]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nieprawidłowy argument: konfiguracja binarna „{binary_source}” wymaga argumentu 0 lub 1]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
