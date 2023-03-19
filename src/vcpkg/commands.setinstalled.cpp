@@ -21,13 +21,15 @@ namespace vcpkg::Commands::SetInstalled
 
     static constexpr CommandSwitch INSTALL_SWITCHES[] = {
         {OPTION_DRY_RUN, []() { return msg::format(msgCmdSetInstalledOptDryRun); }},
-        {OPTION_NO_PRINT_USAGE, []() { return msg::format(msgCmdSetInstalledOptNoUsage); }}};
+        {OPTION_NO_PRINT_USAGE, []() { return msg::format(msgCmdSetInstalledOptNoUsage); }},
+        {OPTION_ONLY_DOWNLOADS, []() { return msg::format(msgHelpTxtOptOnlyDownloads); }},
+    };
     static constexpr CommandSetting INSTALL_SETTINGS[] = {
         {OPTION_WRITE_PACKAGES_CONFIG, []() { return msg::format(msgCmdSetInstalledOptWritePkgConfig); }},
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string(R"(x-set-installed <package>...)"),
+        [] { return create_example_string("x-set-installed <package>..."); },
         0,
         SIZE_MAX,
         {INSTALL_SWITCHES, INSTALL_SETTINGS},
@@ -163,11 +165,12 @@ namespace vcpkg::Commands::SetInstalled
         // input sanitization
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
 
-        const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
+        const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
-                std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+                std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
         });
-        print_default_triplet_warning(args, args.command_arguments);
+
+        print_default_triplet_warning(args, options.command_arguments);
 
         BinaryCache binary_cache{args, paths};
 

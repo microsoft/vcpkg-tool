@@ -1,10 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { deactivate } from '../../artifacts/activation';
 import { i } from '../../i18n';
 import { session } from '../../main';
 import { Command } from '../command';
-import { debug, log } from '../styling';
+import { log } from '../styling';
 import { Switch } from '../switch';
 
 export class All extends Switch {
@@ -56,10 +57,7 @@ export class CleanCommand extends Command {
   override async run() {
 
     if (this.all.active || this.artifacts.active) {
-      // if we're removing artifacts
-      debug(i`Deactivating project`);
-      await session.deactivate();
-
+      await deactivate(session, false);
       await session.installFolder.delete({ recursive: true });
       await session.installFolder.createDirectory();
       log(i`Installed Artifact folder cleared (${session.installFolder.fsPath}) `);

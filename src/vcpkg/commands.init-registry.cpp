@@ -6,7 +6,7 @@
 namespace vcpkg::Commands::InitRegistry
 {
     static const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string(R"(x-init-registry .)"),
+        [] { return create_example_string(R"(x-init-registry .)"); },
         1,
         1,
         {{}, {}, {}},
@@ -17,7 +17,7 @@ namespace vcpkg::Commands::InitRegistry
     {
         auto parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
 
-        const Path string_argument = args.command_arguments.front();
+        const Path string_argument = parsed_args.command_arguments.front();
         const auto path = fs.current_path(VCPKG_LINE_INFO) / string_argument;
         if (!fs.exists(path / ".git", IgnoreErrors{}))
         {

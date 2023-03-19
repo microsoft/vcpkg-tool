@@ -10,7 +10,7 @@
 namespace vcpkg::Commands::BuildExternal
 {
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string(R"(build-external zlib2 C:\path\to\dir\with\controlfile\)"),
+        [] { return create_example_string(R"(build-external zlib2 C:\path\to\dir\with\vcpkg.json)"); },
         2,
         2,
         {},
@@ -27,10 +27,10 @@ namespace vcpkg::Commands::BuildExternal
         BinaryCache binary_cache{args, paths};
 
         const FullPackageSpec spec = check_and_get_full_package_spec(
-            std::string(args.command_arguments.at(0)), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+            std::string(options.command_arguments[0]), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
 
         auto overlays = paths.overlay_ports;
-        overlays.insert(overlays.begin(), args.command_arguments.at(1));
+        overlays.insert(overlays.begin(), options.command_arguments[1]);
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();

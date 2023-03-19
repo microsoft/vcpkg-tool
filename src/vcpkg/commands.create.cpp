@@ -22,7 +22,7 @@ namespace
 namespace vcpkg::Commands::Create
 {
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string(R"###(create zlib2 http://zlib.net/zlib1211.zip "zlib1211-2.zip")###"),
+        [] { return create_example_string(R"###(create zlib2 http://zlib.net/zlib1211.zip "zlib1211-2.zip")###"); },
         2,
         3,
         {},
@@ -31,9 +31,9 @@ namespace vcpkg::Commands::Create
 
     int perform(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        (void)args.parse_arguments(COMMAND_STRUCTURE);
-        const std::string port_name = args.command_arguments.at(0);
-        const std::string url = remove_trailing_url_slashes(args.command_arguments.at(1));
+        auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
+        const std::string port_name = parsed.command_arguments[0];
+        const std::string url = remove_trailing_url_slashes(parsed.command_arguments[1]);
 
         std::vector<CMakeVariable> cmake_args{
             {"CMD", "CREATE"},
@@ -43,9 +43,9 @@ namespace vcpkg::Commands::Create
             {"VCPKG_BASE_VERSION", VCPKG_BASE_VERSION_AS_STRING},
         };
 
-        if (args.command_arguments.size() >= 3)
+        if (parsed.command_arguments.size() >= 3)
         {
-            const std::string& zip_file_name = args.command_arguments.at(2);
+            const std::string& zip_file_name = parsed.command_arguments[2];
             Checks::msg_check_exit(VCPKG_LINE_INFO,
                                    !has_invalid_chars_for_filesystem(zip_file_name),
                                    msgInvalidFilename,

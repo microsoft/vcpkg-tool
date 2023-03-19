@@ -2,8 +2,7 @@
 // Licensed under the MIT License.
 
 import { Activation } from '../artifacts/activation';
-import { ResolvedArtifact } from '../artifacts/artifact';
-import { i } from '../i18n';
+import { Artifact, ResolvedArtifact } from '../artifacts/artifact';
 import { RegistryDisplayContext } from '../registries/registries';
 import { Session } from '../session';
 import { Uri } from '../util/uri';
@@ -17,20 +16,28 @@ export interface ActivationOptions {
   json?: Uri;
 }
 
-export async function activate(session: Session, artifacts: Array<ResolvedArtifact>, registries: RegistryDisplayContext, createUndoFile: boolean, options?: ActivationOptions) {
+function trackActivationPlan(session: Session, resolved: Array<ResolvedArtifact>) {
+  for (const resolvedEntry of resolved) {
+    const artifact = resolvedEntry.artifact;
+    if (artifact instanceof Artifact) {
+      session.trackActivate(artifact.registryUri.toString(), artifact.id, artifact.version);
+    }
+  }
+}
+
+export async function activate(session: Session, allowStacking: boolean, stackEntries: Array<string>, artifacts: Array<ResolvedArtifact>, registries: RegistryDisplayContext, options?: ActivationOptions): Promise<boolean> {
+  trackActivationPlan(session, artifacts);
   // install the items in the project
   const success = await acquireArtifacts(session, artifacts, registries, options);
   if (success) {
-    const backupFile = createUndoFile ? session.tmpFolder.join(`previous-environment-${Date.now().toFixed()}.json`) : undefined;
-    const activation = new Activation(session);
+    const activation = await Activation.start(session, allowStacking);
     for (const artifact of artifacts) {
       if (!await artifact.artifact.loadActivationSettings(activation)) {
-        session.channels.error(i`Unable to activate project`);
         return false;
       }
     }
 
-    await activation.activate(backupFile, options?.msbuildProps, options?.json);
+    await activation.activate(stackEntries, options?.msbuildProps, options?.json);
   }
 
   return success;

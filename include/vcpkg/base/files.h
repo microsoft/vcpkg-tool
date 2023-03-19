@@ -1,10 +1,12 @@
 #pragma once
 
+#include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/format.h>
 #include <vcpkg/base/fwd/span.h>
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/file-contents.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/pragmas.h>
@@ -15,8 +17,10 @@
 
 #include <initializer_list>
 #include <memory>
+#include <string>
 #include <system_error>
 #include <utility>
+#include <vector>
 
 #if defined(_WIN32)
 #define VCPKG_PREFERRED_SEPARATOR "\\"
@@ -144,7 +148,7 @@ namespace vcpkg
     {
         WriteFilePointer() noexcept;
         WriteFilePointer(WriteFilePointer&&) noexcept;
-        explicit WriteFilePointer(const Path& file_path, std::error_code& ec);
+        explicit WriteFilePointer(const Path& file_path, Append append, std::error_code& ec);
         WriteFilePointer& operator=(WriteFilePointer&& other) noexcept;
         size_t write(const void* buffer, size_t element_size, size_t element_count) const noexcept;
         int put(int c) const noexcept;
@@ -169,6 +173,8 @@ namespace vcpkg
     {
         virtual std::string read_contents(const Path& file_path, std::error_code& ec) const = 0;
         std::string read_contents(const Path& file_path, LineInfo li) const;
+
+        ExpectedL<FileContents> try_read_contents(const Path& file_path) const;
 
         virtual Path find_file_recursively_up(const Path& starting_dir,
                                               const Path& filename,
@@ -320,7 +326,9 @@ namespace vcpkg
         ReadFilePointer open_for_read(const Path& file_path, LineInfo li) const;
         ExpectedL<ReadFilePointer> try_open_for_read(const Path& file_path) const;
 
-        virtual WriteFilePointer open_for_write(const Path& file_path, std::error_code& ec) = 0;
+        virtual WriteFilePointer open_for_write(const Path& file_path, Append append, std::error_code& ec) = 0;
+        WriteFilePointer open_for_write(const Path& file_path, Append append, LineInfo li);
+        WriteFilePointer open_for_write(const Path& file_path, std::error_code& ec);
         WriteFilePointer open_for_write(const Path& file_path, LineInfo li);
     };
 

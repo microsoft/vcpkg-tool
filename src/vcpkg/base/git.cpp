@@ -46,7 +46,7 @@ namespace vcpkg
         return {};
     }
 
-    ExpectedL<std::vector<GitStatusLine>> parse_git_status_output(StringView output)
+    ExpectedL<std::vector<GitStatusLine>> parse_git_status_output(StringView output, StringView cmd_line)
     {
         // Output of git status --porcelain=v1 is in the form:
         //
@@ -139,7 +139,9 @@ namespace vcpkg
 
         if (auto error = parser.get_error())
         {
-            return msg::format(msgGitUnexpectedCommandOutput).append_raw('\n').append_raw(error->to_string());
+            return msg::format(msgGitUnexpectedCommandOutputCmd, msg::command_line = cmd_line)
+                .append_raw('\n')
+                .append_raw(error->to_string());
         }
 
         return results;
@@ -163,7 +165,7 @@ namespace vcpkg
                     .append_raw(output->output);
             }
 
-            return parse_git_status_output(output->output);
+            return parse_git_status_output(output->output, cmd.command_line());
         }
 
         return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())

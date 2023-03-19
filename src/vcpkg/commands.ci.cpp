@@ -113,7 +113,7 @@ namespace vcpkg::Commands::CI
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("ci --triplet=x64-windows"),
+        [] { return create_example_string("ci --triplet=x64-windows"); },
         0,
         0,
         {CI_SWITCHES, CI_SETTINGS},
@@ -477,8 +477,8 @@ namespace vcpkg::Commands::CI
         if (it_parent_hashes != settings.end())
         {
             const Path parent_hashes_path = paths.original_cwd / it_parent_hashes->second;
-            auto parsed_json = Json::parse_file(VCPKG_LINE_INFO, filesystem, parent_hashes_path);
-            parent_hashes = Util::fmap(parsed_json.first.array(VCPKG_LINE_INFO), [](const auto& json_object) {
+            auto parsed_json = Json::parse_file(VCPKG_LINE_INFO, filesystem, parent_hashes_path).value;
+            parent_hashes = Util::fmap(parsed_json.array(VCPKG_LINE_INFO), [](const auto& json_object) {
                 auto abi = json_object.object(VCPKG_LINE_INFO).get("abi");
                 Checks::check_exit(VCPKG_LINE_INFO, abi);
 #ifdef _MSC_VER

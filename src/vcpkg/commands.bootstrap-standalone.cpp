@@ -1,3 +1,5 @@
+#include <vcpkg/base/fwd/message_sinks.h>
+
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/optional.h>
 
@@ -11,14 +13,6 @@
 
 namespace vcpkg::Commands
 {
-    static const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("bootstrap-standalone"),
-        0,
-        0,
-        {{}, {}},
-        nullptr,
-    };
-
     void BootstrapStandaloneCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
     {
         DownloadManager download_manager{{}};

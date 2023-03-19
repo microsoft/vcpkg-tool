@@ -8,15 +8,26 @@
 #include <vcpkg/base/util.h>
 
 #include <ctype.h>
-#include <locale.h>
 #include <stdarg.h>
-#include <stdio.h>
 
 #include <algorithm>
+#include <iterator>
 #include <string>
 #include <vector>
 
 using namespace vcpkg;
+
+namespace vcpkg::Strings::details
+{
+    void append_internal(std::string& into, char c) { into += c; }
+    void append_internal(std::string& into, const char* v) { into.append(v); }
+    void append_internal(std::string& into, const std::string& s) { into.append(s); }
+    void append_internal(std::string& into, StringView s) { into.append(s.begin(), s.end()); }
+    void append_internal(std::string& into, LineInfo ln)
+    {
+        fmt::format_to(std::back_inserter(into), "{}:{}:", ln.file_name, ln.line_number);
+    }
+}
 
 vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView sv,
                                                                      void (*cb)(void*, std::string&, StringView),
@@ -82,42 +93,7 @@ namespace vcpkg::Strings::details
 
     // Avoids C4244 warnings because of char<->int conversion that occur when using std::tolower()
     static char toupper_char(const char c) { return (c < 'a' || c > 'z') ? c : c - 'a' + 'A'; }
-
-#if defined(_WIN32)
-    static _locale_t& c_locale()
-    {
-        static _locale_t c_locale_impl = _create_locale(LC_ALL, "C");
-        return c_locale_impl;
-    }
-#endif
-
-    std::string format_internal(const char* fmtstr, ...)
-    {
-        va_list args;
-        va_start(args, fmtstr);
-
-#if defined(_WIN32)
-        const int sz = _vscprintf_l(fmtstr, c_locale(), args);
-#else
-        const int sz = vsnprintf(nullptr, 0, fmtstr, args);
-#endif
-        Checks::check_exit(VCPKG_LINE_INFO, sz > 0);
-
-        std::string output(sz, '\0');
-
-#if defined(_WIN32)
-        _vsnprintf_s_l(&output.at(0), output.size() + 1, output.size(), fmtstr, c_locale(), args);
-#else
-        va_start(args, fmtstr);
-        vsnprintf(&output.at(0), output.size() + 1, fmtstr, args);
-#endif
-        va_end(args);
-
-        return output;
-    }
 }
-
-using namespace vcpkg;
 
 #if defined(_WIN32)
 std::wstring Strings::to_utf16(StringView s)
@@ -196,6 +172,12 @@ bool Strings::case_insensitive_ascii_equals(StringView left, StringView right)
 }
 
 void Strings::ascii_to_lowercase(char* first, char* last) { std::transform(first, last, first, tolower_char); }
+
+std::string Strings::ascii_to_lowercase(const std::string& s)
+{
+    auto result = s;
+    return ascii_to_lowercase(std::move(result));
+}
 
 std::string Strings::ascii_to_lowercase(std::string&& s)
 {

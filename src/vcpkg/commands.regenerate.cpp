@@ -25,7 +25,11 @@ namespace
     }};
 
     static const CommandStructure command_structure = {
-        Strings::format("Regenerates an artifact registry.\n%s\n", create_example_string("x-regenerate")),
+        [] {
+            return msg::format(msgRegeneratesArtifactRegistry)
+                .append_raw('\n')
+                .append(create_example_string("x-regenerate"));
+        },
         1,
         1,
         {command_switches},
@@ -40,7 +44,7 @@ namespace vcpkg
         std::vector<std::string> forwarded_args;
         forwarded_args.emplace_back("regenerate");
         const auto parsed = args.parse_arguments(command_structure);
-        forwarded_args.push_back(args.command_arguments[0]);
+        forwarded_args.push_back(parsed.command_arguments[0]);
 
         if (Util::Sets::contains(parsed.switches, FORCE))
         {

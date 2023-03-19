@@ -37,7 +37,7 @@ namespace
         xml.start_complex_open_tag("test")
             .attr("name", test.name)
             .attr("method", test.method)
-            .attr("time", test.time.as<std::chrono::seconds>().count())
+            .attr("time", fmt::format("{}", test.time.as<std::chrono::seconds>().count()))
             .attr("result", result_string)
             .finish_complex_open_tag()
             .line_break();
@@ -126,7 +126,7 @@ std::string XunitWriter::build_xml(Triplet controlling_triplet) const
             elapsed_sum += port_result.time;
         }
 
-        const auto elapsed_seconds = elapsed_sum.as<std::chrono::seconds>().count();
+        const auto elapsed_seconds = fmt::format("{}", elapsed_sum.as<std::chrono::seconds>().count());
 
         auto earliest_start_time =
             std::min_element(port_results.begin(), port_results.end(), [](const XunitTest& lhs, const XunitTest& rhs) {

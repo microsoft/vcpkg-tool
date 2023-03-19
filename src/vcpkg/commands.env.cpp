@@ -30,7 +30,10 @@ namespace vcpkg::Commands::Env
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("env <optional command> --triplet x64-windows"),
+        [] {
+            return create_example_string(
+                fmt::format("env <{}> --triplet x64-windows", msg::format(msgOptionalCommand)));
+        },
         0,
         1,
         {SWITCHES, {}},
@@ -111,9 +114,9 @@ namespace vcpkg::Commands::Env
         Command cmd("");
         Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgEnvPlatformNotSupported);
 #endif // ^^^ !_WIN32
-        if (!args.command_arguments.empty())
+        if (!options.command_arguments.empty())
         {
-            cmd.string_arg("/c").raw_arg(args.command_arguments[0]);
+            cmd.string_arg("/c").raw_arg(options.command_arguments[0]);
         }
 #ifdef _WIN32
         enter_interactive_subprocess();
