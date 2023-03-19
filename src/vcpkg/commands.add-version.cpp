@@ -351,13 +351,13 @@ namespace vcpkg::Commands::AddVersion
         }
 
         std::vector<std::string> port_names;
-        if (!args.command_arguments.empty())
+        if (!parsed_args.command_arguments.empty())
         {
             if (add_all)
             {
                 msg::println_warning(msgAddVersionIgnoringOptionAll, msg::option = OPTION_ALL);
             }
-            port_names.emplace_back(args.command_arguments[0]);
+            port_names.emplace_back(parsed_args.command_arguments[0]);
         }
         else
         {

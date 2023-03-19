@@ -52,11 +52,6 @@ namespace
     static const NullBuildLogsRecorder null_build_logs_recorder_instance;
 }
 
-namespace vcpkg
-{
-    REGISTER_MESSAGE(ElapsedForPackage);
-}
-
 namespace vcpkg::Build
 {
     void perform_and_exit_ex(const VcpkgCmdArguments& args,
@@ -183,12 +178,12 @@ namespace vcpkg::Build
     {
         // Build only takes a single package and all dependencies must already be installed
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
-        std::string first_arg = args.command_arguments[0];
+        std::string first_arg = options.command_arguments[0];
 
         BinaryCache binary_cache{args, paths};
         const FullPackageSpec spec = check_and_get_full_package_spec(
             std::move(first_arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
-        print_default_triplet_warning(args, {&args.command_arguments[0], 1});
+        print_default_triplet_warning(args, {&options.command_arguments[0], 1});
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
@@ -1450,11 +1445,11 @@ namespace vcpkg
     {
         const auto& fs = paths.get_filesystem();
         const auto create_log_details = [&fs](vcpkg::Path&& path) {
-            static constexpr auto MAX_LOG_LENGTH = 20'000;
+            static constexpr auto MAX_LOG_LENGTH = 50'000;
             static constexpr auto START_BLOCK_LENGTH = 3'000;
             static constexpr auto START_BLOCK_MAX_LENGTH = 5'000;
-            static constexpr auto END_BLOCK_LENGTH = 13'000;
-            static constexpr auto END_BLOCK_MAX_LENGTH = 15'000;
+            static constexpr auto END_BLOCK_LENGTH = 43'000;
+            static constexpr auto END_BLOCK_MAX_LENGTH = 45'000;
             auto log = fs.read_contents(path, VCPKG_LINE_INFO);
             if (log.size() > MAX_LOG_LENGTH)
             {
@@ -1502,7 +1497,8 @@ namespace vcpkg
             "\n-",
             paths.get_toolver_diagnostics(),
             "\n**To Reproduce**\n\n",
-            Strings::concat("`vcpkg ", args.command, " ", Strings::join(" ", args.command_arguments), "`\n"),
+            Strings::concat(
+                "`vcpkg ", args.get_command(), " ", Strings::join(" ", args.get_forwardable_arguments()), "`\n"),
             "\n**Failure logs**\n\n```\n",
             paths.get_filesystem().read_contents(build_result.stdoutlog.value_or_exit(VCPKG_LINE_INFO),
                                                  VCPKG_LINE_INFO),

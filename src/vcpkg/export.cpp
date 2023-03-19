@@ -416,11 +416,11 @@ namespace vcpkg::Export
         else
         {
             // input sanitization
-            ret.specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
+            ret.specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
                 return check_and_get_package_spec(
                     std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
             });
-            print_default_triplet_warning(args, args.command_arguments);
+            print_default_triplet_warning(args, options.command_arguments);
         }
 
         if (!ret.raw && !ret.nuget && !ret.ifw && !ret.zip && !ret.seven_zip && !ret.dry_run && !ret.chocolatey &&
