@@ -52,11 +52,6 @@ namespace
     static const NullBuildLogsRecorder null_build_logs_recorder_instance;
 }
 
-namespace vcpkg
-{
-    REGISTER_MESSAGE(ElapsedForPackage);
-}
-
 namespace vcpkg::Build
 {
     void perform_and_exit_ex(const VcpkgCmdArguments& args,

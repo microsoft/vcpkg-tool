@@ -8,21 +8,27 @@
 
 #include <string>
 
-#include <cmrc/cmrc.hpp>
-
 namespace vcpkg::msg
 {
+    struct RawMessage
+    {
+        StringView name;
+        StringView value;
+        std::string comment;
+    };
+    std::vector<RawMessage> get_sorted_english_messages();
 
     struct MessageMapAndFile
     {
         Json::Object map;
-        cmrc::file map_file;
+        StringView map_file;
     };
 
     void load_from_message_map(const MessageMapAndFile& message_map);
 
+    StringView get_loaded_file();
+
     Optional<std::string> get_locale_path(int LCID);
     Optional<StringLiteral> get_language_tag(int LCID);
     ExpectedL<MessageMapAndFile> get_message_map_from_lcid(int LCID);
-    const Optional<cmrc::file> get_file();
 }
