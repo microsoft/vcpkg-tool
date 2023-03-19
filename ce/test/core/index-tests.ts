@@ -3,10 +3,9 @@
 
 
 import { Index, IndexSchema, SemverKey, StringKey } from '@microsoft/vcpkg-ce/dist/registries/indexer';
-import { Record } from '@microsoft/vcpkg-ce/dist/util/linq';
+import { strict } from 'assert';
 import { describe, it } from 'mocha';
 import { SemVer } from 'semver';
-import { SuiteLocal } from './SuiteLocal';
 
 interface TestData {
   id: string,
@@ -68,7 +67,6 @@ describe('Index Tests', () => {
     const results2 = index.where.
       version.greaterThan(new SemVer('0.3.0')).
       items;
-
-    SuiteLocal.log(results2);
+    strict.sequenceEqual(results2, [ 'sam/blam/bam', 'foo/bob', 'foo/tom' ]);
   });
 });

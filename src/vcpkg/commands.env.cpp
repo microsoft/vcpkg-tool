@@ -19,15 +19,21 @@ namespace vcpkg::Commands::Env
     static constexpr StringLiteral OPTION_PYTHON = "python";
 
     static constexpr std::array<CommandSwitch, 5> SWITCHES = {{
-        {OPTION_BIN, "Add installed bin/ to PATH"},
-        {OPTION_INCLUDE, "Add installed include/ to INCLUDE"},
-        {OPTION_DEBUG_BIN, "Add installed debug/bin/ to PATH"},
-        {OPTION_TOOLS, "Add installed tools/*/ to PATH"},
-        {OPTION_PYTHON, "Add installed python/ to PYTHONPATH"},
+        {OPTION_BIN, []() { return msg::format(msgCmdEnvOptions, msg::path = "bin/", msg::env_var = "PATH"); }},
+        {OPTION_INCLUDE,
+         []() { return msg::format(msgCmdEnvOptions, msg::path = "include/", msg::env_var = "INCLUDE"); }},
+        {OPTION_DEBUG_BIN,
+         []() { return msg::format(msgCmdEnvOptions, msg::path = "debug/bin/", msg::env_var = "PATH"); }},
+        {OPTION_TOOLS, []() { return msg::format(msgCmdEnvOptions, msg::path = "tools/*/", msg::env_var = "PATH"); }},
+        {OPTION_PYTHON,
+         []() { return msg::format(msgCmdEnvOptions, msg::path = "python/", msg::env_var = "PYTHONPATH"); }},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("env <optional command> --triplet x64-windows"),
+        [] {
+            return create_example_string(
+                fmt::format("env <{}> --triplet x64-windows", msg::format(msgOptionalCommand)));
+        },
         0,
         1,
         {SWITCHES, {}},
@@ -44,7 +50,9 @@ namespace vcpkg::Commands::Env
 
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(
+            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
@@ -96,14 +104,19 @@ namespace vcpkg::Commands::Env
 #if defined(_WIN32)
             env = cmd_execute_and_capture_environment(build_env_cmd, env);
 #else  // ^^^ _WIN32 / !_WIN32 vvv
-            Checks::exit_with_message(VCPKG_LINE_INFO, "Build environment commands are not supported on this platform");
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgEnvPlatformNotSupported);
 #endif // ^^^ !_WIN32
         }
 
+#if defined(_WIN32)
         Command cmd("cmd");
-        if (!args.command_arguments.empty())
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+        Command cmd("");
+        Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgEnvPlatformNotSupported);
+#endif // ^^^ !_WIN32
+        if (!options.command_arguments.empty())
         {
-            cmd.string_arg("/c").raw_arg(args.command_arguments[0]);
+            cmd.string_arg("/c").raw_arg(options.command_arguments[0]);
         }
 #ifdef _WIN32
         enter_interactive_subprocess();

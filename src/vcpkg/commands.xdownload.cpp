@@ -1,8 +1,9 @@
+#include <vcpkg/base/fwd/message_sinks.h>
+
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binarycaching.h>
@@ -16,23 +17,26 @@ namespace vcpkg::Commands::X_Download
     static constexpr StringLiteral OPTION_SHA512 = "sha512";
     static constexpr StringLiteral OPTION_URL = "url";
     static constexpr StringLiteral OPTION_HEADER = "header";
+    static constexpr StringLiteral OPTION_MACHINE_PROGRESS = "z-machine-readable-progress";
 
     static constexpr CommandSwitch FETCH_SWITCHES[] = {
-        {OPTION_STORE, "Indicates the file should be stored instead of fetched"},
-        {OPTION_SKIP_SHA512, "Do not check the SHA512 of the downloaded file"},
-    };
+        {OPTION_STORE, []() { return msg::format(msgCmdXDownloadOptStore); }},
+        {OPTION_SKIP_SHA512, []() { return msg::format(msgCmdXDownloadOptSkipSha); }},
+        {OPTION_MACHINE_PROGRESS, nullptr}};
     static constexpr CommandSetting FETCH_SETTINGS[] = {
-        {OPTION_SHA512, "The hash of the file to be downloaded"},
+        {OPTION_SHA512, []() { return msg::format(msgCmdXDownloadOptSha); }},
     };
     static constexpr CommandMultiSetting FETCH_MULTISETTINGS[] = {
-        {OPTION_URL, "URL to download and store if missing from cache"},
-        {OPTION_HEADER, "Additional header to use when fetching from URLs"},
+        {OPTION_URL, []() { return msg::format(msgCmdXDownloadOptUrl); }},
+        {OPTION_HEADER, []() { return msg::format(msgCmdXDownloadOptHeader); }},
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
-        Strings::format("%s\n%s",
-                        create_example_string("x-download <filepath> [--sha512=]<sha512> [--url=https://...]..."),
-                        create_example_string("x-download <filepath> --skip-sha512 [--url=https://...]...")),
+        [] {
+            return create_example_string("x-download <filepath> [--sha512=]<sha512> [--url=https://...]...")
+                .append_raw('\n')
+                .append(create_example_string("x-download <filepath> --skip-sha512 [--url=https://...]..."));
+        },
         1,
         2,
         {FETCH_SWITCHES, FETCH_SETTINGS, FETCH_MULTISETTINGS},
@@ -42,17 +46,17 @@ namespace vcpkg::Commands::X_Download
     static bool is_hex(StringView sha) { return std::all_of(sha.begin(), sha.end(), ParserBase::is_hex_digit); }
     static bool is_sha512(StringView sha) { return sha.size() == 128 && is_hex(sha); }
 
-    static Optional<std::string> get_sha512_check(const VcpkgCmdArguments& args, const ParsedArguments& parsed)
+    static Optional<std::string> get_sha512_check(const ParsedArguments& parsed)
     {
         Optional<std::string> sha = nullopt;
         auto sha_it = parsed.settings.find(OPTION_SHA512);
-        if (args.command_arguments.size() > 1)
+        if (parsed.command_arguments.size() > 1)
         {
             if (sha_it != parsed.settings.end())
             {
                 Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgShaPassedAsArgAndOption);
             }
-            sha = args.command_arguments[1];
+            sha = parsed.command_arguments[1];
         }
         else if (sha_it != parsed.settings.end())
         {
@@ -88,9 +92,9 @@ namespace vcpkg::Commands::X_Download
         auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
         DownloadManager download_manager{
             parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)};
-        auto file = fs.absolute(args.command_arguments[0], VCPKG_LINE_INFO);
+        auto file = fs.absolute(parsed.command_arguments[0], VCPKG_LINE_INFO);
 
-        auto sha = get_sha512_check(args, parsed);
+        auto sha = get_sha512_check(parsed);
 
         // Is this a store command?
         if (Util::Sets::contains(parsed.switches, OPTION_STORE))
@@ -133,7 +137,13 @@ namespace vcpkg::Commands::X_Download
                 urls = it_urls->second;
             }
 
-            download_manager.download_file(fs, urls, headers, file, sha);
+            download_manager.download_file(fs,
+                                           urls,
+                                           headers,
+                                           file,
+                                           sha,
+                                           Util::Sets::contains(parsed.switches, OPTION_MACHINE_PROGRESS) ? stdout_sink
+                                                                                                          : null_sink);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
     }

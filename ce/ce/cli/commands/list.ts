@@ -4,8 +4,8 @@
 import { i } from '../../i18n';
 import { session } from '../../main';
 import { Command } from '../command';
+import { Table } from '../console-table';
 import { artifactIdentity } from '../format';
-import { Table } from '../markdown-table';
 import { log } from '../styling';
 import { Installed } from '../switches/installed';
 

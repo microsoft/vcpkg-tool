@@ -1,4 +1,4 @@
-#include <vcpkg/base/api_stable_format.h>
+#include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/messages.h>
@@ -8,15 +8,26 @@
 #include <vcpkg/base/util.h>
 
 #include <ctype.h>
-#include <locale.h>
 #include <stdarg.h>
-#include <stdio.h>
 
 #include <algorithm>
+#include <iterator>
 #include <string>
 #include <vector>
 
 using namespace vcpkg;
+
+namespace vcpkg::Strings::details
+{
+    void append_internal(std::string& into, char c) { into += c; }
+    void append_internal(std::string& into, const char* v) { into.append(v); }
+    void append_internal(std::string& into, const std::string& s) { into.append(s); }
+    void append_internal(std::string& into, StringView s) { into.append(s.begin(), s.end()); }
+    void append_internal(std::string& into, LineInfo ln)
+    {
+        fmt::format_to(std::back_inserter(into), "{}:{}:", ln.file_name, ln.line_number);
+    }
+}
 
 vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView sv,
                                                                      void (*cb)(void*, std::string&, StringView),
@@ -24,7 +35,7 @@ vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView 
 {
     // Transforms similarly to std::format -- "{xyz}" -> f(xyz), "{{" -> "{", "}}" -> "}"
 
-    static const char s_brackets[] = "{}";
+    static constexpr char s_brackets[] = "{}";
 
     std::string out;
     auto prev = sv.begin();
@@ -82,42 +93,7 @@ namespace vcpkg::Strings::details
 
     // Avoids C4244 warnings because of char<->int conversion that occur when using std::tolower()
     static char toupper_char(const char c) { return (c < 'a' || c > 'z') ? c : c - 'a' + 'A'; }
-
-#if defined(_WIN32)
-    static _locale_t& c_locale()
-    {
-        static _locale_t c_locale_impl = _create_locale(LC_ALL, "C");
-        return c_locale_impl;
-    }
-#endif
-
-    std::string format_internal(const char* fmtstr, ...)
-    {
-        va_list args;
-        va_start(args, fmtstr);
-
-#if defined(_WIN32)
-        const int sz = _vscprintf_l(fmtstr, c_locale(), args);
-#else
-        const int sz = vsnprintf(nullptr, 0, fmtstr, args);
-#endif
-        Checks::check_exit(VCPKG_LINE_INFO, sz > 0);
-
-        std::string output(sz, '\0');
-
-#if defined(_WIN32)
-        _vsnprintf_s_l(&output.at(0), output.size() + 1, output.size(), fmtstr, c_locale(), args);
-#else
-        va_start(args, fmtstr);
-        vsnprintf(&output.at(0), output.size() + 1, fmtstr, args);
-#endif
-        va_end(args);
-
-        return output;
-    }
 }
-
-using namespace vcpkg;
 
 #if defined(_WIN32)
 std::wstring Strings::to_utf16(StringView s)
@@ -156,10 +132,11 @@ void Strings::to_utf8(std::string& output, const wchar_t* w, size_t size_in_char
     if (size <= 0)
     {
         unsigned long last_error = ::GetLastError();
-        Checks::exit_with_message(VCPKG_LINE_INFO,
-                                  "Failed to convert to UTF-8. %08lX %s",
-                                  last_error,
-                                  std::system_category().message(static_cast<int>(last_error)));
+        Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                      msg::format(msgUtf8ConversionFailed)
+                                          .append_raw(std::system_category().message(static_cast<int>(last_error)))
+                                          .append_raw('\n')
+                                          .append_raw(std::system_category().message(static_cast<int>(last_error))));
     }
 
     output.resize(size);
@@ -195,6 +172,12 @@ bool Strings::case_insensitive_ascii_equals(StringView left, StringView right)
 }
 
 void Strings::ascii_to_lowercase(char* first, char* last) { std::transform(first, last, first, tolower_char); }
+
+std::string Strings::ascii_to_lowercase(const std::string& s)
+{
+    auto result = s;
+    return ascii_to_lowercase(std::move(result));
+}
 
 std::string Strings::ascii_to_lowercase(std::string&& s)
 {
@@ -352,26 +335,26 @@ std::vector<StringView> Strings::find_all_enclosed(StringView input, StringView 
 StringView Strings::find_exactly_one_enclosed(StringView input, StringView left_tag, StringView right_tag)
 {
     std::vector<StringView> result = find_all_enclosed(input, left_tag, right_tag);
-    Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
-                                result.size() == 1,
-                                "Found %d sets of %s.*%s but expected exactly 1, in block:\n%s",
-                                result.size(),
-                                left_tag,
-                                right_tag,
-                                input);
+    Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
+                                    result.size() == 1,
+                                    msgExpectedOneSetOfTags,
+                                    msg::count = result.size(),
+                                    msg::old_value = left_tag,
+                                    msg::new_value = right_tag,
+                                    msg::value = input);
     return result.front();
 }
 
 Optional<StringView> Strings::find_at_most_one_enclosed(StringView input, StringView left_tag, StringView right_tag)
 {
     std::vector<StringView> result = find_all_enclosed(input, left_tag, right_tag);
-    Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
-                                result.size() <= 1,
-                                "Found %d sets of %s.*%s but expected at most 1, in block:\n%s",
-                                result.size(),
-                                left_tag,
-                                right_tag,
-                                input);
+    Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
+                                    result.size() <= 1,
+                                    msgExpectedAtMostOneSetOfTags,
+                                    msg::count = result.size(),
+                                    msg::old_value = left_tag,
+                                    msg::new_value = right_tag,
+                                    msg::value = input);
 
     if (result.empty())
     {
@@ -379,6 +362,102 @@ Optional<StringView> Strings::find_at_most_one_enclosed(StringView input, String
     }
 
     return result.front();
+}
+
+bool vcpkg::Strings::contains_any_ignoring_c_comments(const std::string& source, View<StringView> to_find)
+{
+    std::string::size_type offset = 0;
+    std::string::size_type no_comment_offset = 0;
+    while (offset != std::string::npos)
+    {
+        no_comment_offset = std::max(offset, no_comment_offset);
+        auto start = source.find_first_of("/\"", no_comment_offset);
+        if (start == std::string::npos || start + 1 == source.size() || no_comment_offset == std::string::npos)
+        {
+            return Strings::contains_any(StringView(source).substr(offset), to_find);
+        }
+
+        if (source[start] == '/')
+        {
+            if (source[start + 1] == '/' || source[start + 1] == '*')
+            {
+                if (Strings::contains_any(StringView(source).substr(offset, start - offset), to_find))
+                {
+                    return true;
+                }
+                if (source[start + 1] == '/')
+                {
+                    offset = source.find_first_of('\n', start);
+                    while (offset != std::string::npos && source[offset - 1] == '\\')
+                        offset = source.find_first_of('\n', offset + 1);
+                    if (offset != std::string::npos) ++offset;
+                    continue;
+                }
+                offset = source.find_first_of('/', start + 1);
+                while (offset != std::string::npos && source[offset - 1] != '*')
+                    offset = source.find_first_of('/', offset + 1);
+                if (offset != std::string::npos) ++offset;
+                continue;
+            }
+        }
+        else if (source[start] == '\"')
+        {
+            if (start > 0 && source[start - 1] == 'R') // raw string literals
+            {
+                auto end = source.find_first_of('(', start);
+                if (end == std::string::npos)
+                {
+                    // invalid c++, but allowed: auto test = 'R"'
+                    no_comment_offset = start + 1;
+                    continue;
+                }
+                auto d_char_sequence = ')' + source.substr(start + 1, end - start - 1);
+                d_char_sequence.push_back('\"');
+                no_comment_offset = source.find(d_char_sequence, end);
+                if (no_comment_offset != std::string::npos) no_comment_offset += d_char_sequence.size();
+                continue;
+            }
+            no_comment_offset = source.find_first_of('"', start + 1);
+            while (no_comment_offset != std::string::npos && source[no_comment_offset - 1] == '\\')
+                no_comment_offset = source.find_first_of('"', no_comment_offset + 1);
+            if (no_comment_offset != std::string::npos) ++no_comment_offset;
+            continue;
+        }
+        no_comment_offset = start + 1;
+    }
+    return false;
+}
+
+bool Strings::contains_any_ignoring_hash_comments(StringView source, View<StringView> to_find)
+{
+    auto first = source.data();
+    auto block_start = first;
+    const auto last = first + source.size();
+    for (; first != last; ++first)
+    {
+        if (*first == '#')
+        {
+            if (Strings::contains_any(StringView{block_start, first}, to_find))
+            {
+                return true;
+            }
+
+            first = std::find(first, last, '\n'); // skip comment
+            if (first == last)
+            {
+                return false;
+            }
+
+            block_start = first;
+        }
+    }
+
+    return Strings::contains_any(StringView{block_start, last}, to_find);
+}
+
+bool Strings::contains_any(StringView source, View<StringView> to_find)
+{
+    return Util::any_of(to_find, [=](StringView s) { return Strings::contains(source, s); });
 }
 
 bool Strings::equals(StringView a, StringView b)
@@ -466,6 +545,20 @@ Optional<int> Strings::strto<int>(StringView sv)
 }
 
 template<>
+Optional<unsigned int> Strings::strto<unsigned int>(StringView sv)
+{
+    auto opt = strto<unsigned long>(sv);
+    if (auto p = opt.get())
+    {
+        if (*p <= UINT_MAX)
+        {
+            return static_cast<unsigned int>(*p);
+        }
+    }
+    return nullopt;
+}
+
+template<>
 Optional<long> Strings::strto<long>(StringView sv)
 {
     // disallow initial whitespace
@@ -493,6 +586,33 @@ Optional<long> Strings::strto<long>(StringView sv)
 }
 
 template<>
+Optional<unsigned long> Strings::strto<unsigned long>(StringView sv)
+{
+    // disallow initial whitespace
+    if (sv.empty() || ParserBase::is_whitespace(sv[0]))
+    {
+        return nullopt;
+    }
+
+    auto with_nul_terminator = sv.to_string();
+
+    errno = 0;
+    char* endptr = nullptr;
+    long res = strtoul(with_nul_terminator.c_str(), &endptr, 10);
+    if (endptr != with_nul_terminator.data() + with_nul_terminator.size())
+    {
+        // contains invalid characters
+        return nullopt;
+    }
+    else if (errno == ERANGE)
+    {
+        return nullopt;
+    }
+
+    return res;
+}
+
+template<>
 Optional<long long> Strings::strto<long long>(StringView sv)
 {
     // disallow initial whitespace
@@ -506,6 +626,33 @@ Optional<long long> Strings::strto<long long>(StringView sv)
     errno = 0;
     char* endptr = nullptr;
     long long res = strtoll(with_nul_terminator.c_str(), &endptr, 10);
+    if (endptr != with_nul_terminator.data() + with_nul_terminator.size())
+    {
+        // contains invalid characters
+        return nullopt;
+    }
+    else if (errno == ERANGE)
+    {
+        return nullopt;
+    }
+
+    return res;
+}
+
+template<>
+Optional<unsigned long long> Strings::strto<unsigned long long>(StringView sv)
+{
+    // disallow initial whitespace
+    if (sv.empty() || ParserBase::is_whitespace(sv[0]))
+    {
+        return nullopt;
+    }
+
+    auto with_nul_terminator = sv.to_string();
+
+    errno = 0;
+    char* endptr = nullptr;
+    long long res = strtoull(with_nul_terminator.c_str(), &endptr, 10);
     if (endptr != with_nul_terminator.data() + with_nul_terminator.size())
     {
         // contains invalid characters

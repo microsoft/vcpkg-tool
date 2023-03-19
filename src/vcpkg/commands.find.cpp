@@ -1,5 +1,4 @@
 #include <vcpkg/base/hash.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.find.h>
 #include <vcpkg/configure-environment.h>
@@ -98,14 +97,21 @@ namespace
     }
 
     constexpr StringLiteral OPTION_FULLDESC = "x-full-desc"; // TODO: This should find a better home, eventually
+    constexpr StringLiteral OPTION_JSON = "x-json";
 
-    constexpr std::array<CommandSwitch, 1> FindSwitches = {{{OPTION_FULLDESC, "Do not truncate long text"}}};
+    constexpr std::array<CommandSwitch, 2> FindSwitches = {{
+        {OPTION_FULLDESC, []() { return msg::format(msgHelpTextOptFullDesc); }},
+        {OPTION_JSON, []() { return msg::format(msgJsonSwitch); }},
+    }};
 
     const CommandStructure FindCommandStructure = {
-        Strings::format("Searches for the indicated artifact or port. With no parameter after 'artifact' or 'port', "
-                        "displays everything.\n%s\n%s",
-                        create_example_string("find port png"),
-                        create_example_string("find artifact cmake")),
+        [] {
+            return msg::format(msgFindHelp)
+                .append_raw('\n')
+                .append(create_example_string("find port png"))
+                .append_raw('\n')
+                .append(create_example_string("find artifact cmake"));
+        },
         1,
         2,
         {FindSwitches, {}},
@@ -121,7 +127,9 @@ namespace vcpkg::Commands
                                     Optional<StringView> filter,
                                     View<std::string> overlay_ports)
     {
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, overlay_ports));
+        auto& fs = paths.get_filesystem();
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, overlay_ports));
         auto source_paragraphs =
             Util::fmap(provider.load_all_control_files(),
                        [](auto&& port) -> const SourceControlFile* { return port->source_control_file.get(); });
@@ -188,7 +196,7 @@ namespace vcpkg::Commands
         if (!enable_json)
         {
             msg::println(msg::format(msgSuggestGitPull)
-                             .append_raw("\n")
+                             .append_raw('\n')
                              .append(msgMissingPortSuggestPullRequest)
                              .append_indent()
                              .append_raw("-  https://github.com/Microsoft/vcpkg/issues"));
@@ -200,7 +208,7 @@ namespace vcpkg::Commands
     void perform_find_artifact_and_exit(const VcpkgPaths& paths, Optional<StringView> filter)
     {
         std::vector<std::string> ce_args;
-        ce_args.push_back("find");
+        ce_args.emplace_back("find");
         if (auto* filter_str = filter.get())
         {
             ce_args.emplace_back(filter_str->data(), filter_str->size());
@@ -213,12 +221,12 @@ namespace vcpkg::Commands
     {
         const ParsedArguments options = args.parse_arguments(FindCommandStructure);
         const bool full_description = Util::Sets::contains(options.switches, OPTION_FULLDESC);
-        const bool enable_json = args.json.value_or(false);
-        auto&& selector = args.command_arguments[0];
+        const bool enable_json = Util::Sets::contains(options.switches, OPTION_JSON);
+        auto&& selector = options.command_arguments[0];
         Optional<StringView> filter;
-        if (args.command_arguments.size() == 2)
+        if (options.command_arguments.size() == 2)
         {
-            filter = StringView{args.command_arguments[1]};
+            filter = StringView{options.command_arguments[1]};
         }
 
         if (selector == "artifact")
@@ -235,31 +243,29 @@ namespace vcpkg::Commands
 
             Optional<std::string> filter_hash = filter.map(Hash::get_string_sha256);
             auto args_hash = Hash::get_string_hash(filter.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256);
+            MetricsSubmission metrics;
+            metrics.track_string(StringMetric::CommandContext, "artifact");
+            if (auto p_filter_hash = filter_hash.get())
             {
-                auto metrics = LockGuardPtr<Metrics>(g_metrics);
-                metrics->track_string_property(StringMetric::CommandContext, "artifact");
-                if (auto p_filter_hash = filter_hash.get())
-                {
-                    metrics->track_string_property(StringMetric::CommandArgs, *p_filter_hash);
-                }
-            } // unlock metrics
+                metrics.track_string(StringMetric::CommandArgs, *p_filter_hash);
+            }
 
+            get_global_metrics_collector().track_submission(std::move(metrics));
             perform_find_artifact_and_exit(paths, filter);
         }
 
         if (selector == "port")
         {
             Optional<std::string> filter_hash = filter.map(Hash::get_string_sha256);
+            MetricsSubmission metrics;
+            metrics.track_string(StringMetric::CommandContext, "port");
+            if (auto p_filter_hash = filter_hash.get())
             {
-                auto metrics = LockGuardPtr<Metrics>(g_metrics);
-                metrics->track_string_property(StringMetric::CommandContext, "port");
-                if (auto p_filter_hash = filter_hash.get())
-                {
-                    metrics->track_string_property(StringMetric::CommandArgs, *p_filter_hash);
-                }
-            } // unlock metrics
+                metrics.track_string(StringMetric::CommandArgs, *p_filter_hash);
+            }
 
-            perform_find_port_and_exit(paths, full_description, enable_json, filter, args.overlay_ports);
+            get_global_metrics_collector().track_submission(std::move(metrics));
+            perform_find_port_and_exit(paths, full_description, enable_json, filter, paths.overlay_ports);
         }
 
         Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgAddCommandFirstArg);

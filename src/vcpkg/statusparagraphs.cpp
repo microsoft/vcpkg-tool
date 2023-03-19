@@ -124,7 +124,11 @@ namespace vcpkg
 
     StatusParagraphs::iterator StatusParagraphs::insert(std::unique_ptr<StatusParagraph> pgh)
     {
-        Checks::check_exit(VCPKG_LINE_INFO, pgh != nullptr, "Inserted null paragraph");
+        if (pgh == nullptr)
+        {
+            Checks::unreachable(VCPKG_LINE_INFO, "Inserted null paragraph");
+        }
+
         const PackageSpec& spec = pgh->package.spec;
         const auto ptr = find(spec.name(), spec.triplet(), pgh->package.feature);
         if (ptr == end())
@@ -175,10 +179,12 @@ namespace vcpkg
         {
             iobj.insert("usage", Json::Value::string(std::move(usage.message)));
         }
-        auto owns_files = fs.read_lines(installed.listfile_path(ipv.core->package), VCPKG_LINE_INFO);
+        auto owns_files = fs.read_lines(installed.listfile_path(ipv.core->package)).value_or_exit(VCPKG_LINE_INFO);
         Json::Array owns;
         for (auto&& owns_file : owns_files)
+        {
             owns.push_back(Json::Value::string(std::move(owns_file)));
+        }
 
         iobj.insert("owns", std::move(owns));
         return Json::Value::object(std::move(iobj));

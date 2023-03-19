@@ -29,7 +29,7 @@ namespace vcpkg
                               const std::string& abi_tag,
                               const std::vector<std::string>& features);
 
-        std::string build_xml(Triplet controlling_triplet);
+        std::string build_xml(Triplet controlling_triplet) const;
 
     private:
         std::map<std::string, std::vector<XunitTest>> m_tests;

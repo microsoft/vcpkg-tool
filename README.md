@@ -16,9 +16,9 @@ tracking, and edits to which libraries are available.
 This repository contains the contents formerly at https://github.com/microsoft/vcpkg in the
 "toolsrc" tree, and build support.
 
-# Vcpkg-ce: "Configure Environment" / artifacts
+# vcpkg-artifacts
 
-Parts of vcpkg powered by "ce" are currently in 'preview' -- there will most certainly be changes between now
+vcpkg-artifacts are currently in 'preview' -- there will most certainly be changes between now
 and when the tool is 'released' based on feedback.
 
 You can use it, but be forewarned that we may change formats, commands, etc.
@@ -32,9 +32,9 @@ It
 
 ## Installation
 
-While the usage of `ce` is the same on all platforms, the installation/loading/removal is slightly different depending on the platform you're using.
+While the usage of `vcpkg-artifacts` is the same on all platforms, the installation/loading/removal is slightly different depending on the platform you're using.
 
-`ce` doesn't persist any changes to the environment, nor does it automatically add itself to the start-up environment. If you wish to make it load in a window, you can just execute the script. Manually adding that in your profile will load it in every new window.
+`vcpkg-artifacts` don't persist any changes to the environment, nor do they automatically add themselves to the start-up environment. If you wish to make it load in a window, you can just execute the script. Manually adding that in your profile will load it in every new window.
 
 <hr>
 
@@ -109,5 +109,5 @@ You can opt-out of telemetry by re-running the bootstrap-vcpkg script with -disa
 passing --disable-metrics to vcpkg on the command line,
 or by setting the VCPKG_DISABLE_METRICS environment variable.
 
-Read more about vcpkg telemetry at [docs/about/privacy.md](https://github.com/microsoft/vcpkg/blob/master/docs/about/privacy.md)
+Read more about vcpkg telemetry at https://learn.microsoft.com/vcpkg/about/privacy
 in the main repository

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { EventEmitter } from 'ee-ts';
+import { EventEmitter } from 'node:events';
 import { Session } from '../session';
 
 /** Event defintions for channel events */
@@ -40,7 +40,7 @@ export class Stopwatch {
  *
  * Warning, Error, Message, Debug
  */
-export class Channels extends EventEmitter<ChannelEvents> {
+export class Channels extends EventEmitter {
   /** @internal */
   readonly stopwatch: Stopwatch;
 
@@ -55,9 +55,6 @@ export class Channels extends EventEmitter<ChannelEvents> {
   }
   debug(text: string | Array<string>) {
     typeof text === 'string' ? this.emit('debug', text, this.stopwatch.total) : text.forEach(t => this.emit('debug', t, this.stopwatch.total));
-  }
-  verbose(text: string | Array<string>) {
-    typeof text === 'string' ? this.emit('verbose', text, this.stopwatch.total) : text.forEach(t => this.emit('verbose', t, this.stopwatch.total));
   }
   constructor(session: Session) {
     super();

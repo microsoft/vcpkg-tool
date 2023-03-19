@@ -175,7 +175,7 @@ $.default-registry (a registry): unexpected field 'packages', did you mean 'path
     }
 })json";
         check_errors(raw_default_artifact, R"(
-$ (a configuration object): default-registry cannot be of kind "artifact"
+$ (a configuration object): The default registry cannot be an artifact registry.
 )");
         std::string raw_bad_kind = R"json({
     "registries": [{
@@ -183,7 +183,7 @@ $ (a configuration object): default-registry cannot be of kind "artifact"
     }]
 })json";
         check_errors(raw_bad_kind, R"(
-$.registries[0] (a registry): Field "kind" did not have an expected value (expected one of: "builtin", "filesystem", "git", "artifact"; found "custom")
+$.registries[0] (a registry): "kind" did not have an expected value: (expected one of: builtin, filesystem, git, artifact; found custom)
 $.registries[0]: mismatched type: expected a registry
 )");
 
@@ -197,7 +197,7 @@ $.registries[0]: mismatched type: expected a registry
 })json";
         check_errors(raw_bad_fs_registry, R"(
 $.registries[0] (a filesystem registry): unexpected field 'reference', did you mean 'baseline'?
-$.registries[0] (a registry): missing required field 'packages' (an array of package names)
+$.registries[0] (a registry): missing required field 'packages' (a package pattern array)
 )");
 
         std::string raw_bad_git_registry = R"json({
@@ -214,7 +214,7 @@ $.registries[0] (a registry): unexpected field 'no-repository', did you mean 're
 $.registries[0] (a git registry): missing required field 'repository' (a git repository URL)
 $.registries[0].reference: mismatched type: expected a git reference (for example, a branch)
 $.registries[0] (a git registry): unexpected field 'no-repository', did you mean 'repository'?
-$.registries[0].packages: mismatched type: expected an array of package names
+$.registries[0].packages: mismatched type: expected a package pattern array
 )");
 
         std::string raw_bad_artifact_registry = R"json({
@@ -228,7 +228,7 @@ $.registries[0].packages: mismatched type: expected an array of package names
         check_errors(raw_bad_artifact_registry, R"(
 $.registries[0] (a registry): unexpected field 'no-location', did you mean 'location'?
 $.registries[0] (an artifacts registry): missing required field 'name' (an identifier)
-$.registries[0] (an artifacts registry): missing required field 'location' (an artifacts git repository URL)
+$.registries[0] (an artifacts registry): missing required field 'location' (an artifacts git registry URL)
 $.registries[0] (an artifacts registry): unexpected field 'no-location', did you mean 'location'?
 $.registries[0] (an artifacts registry): unexpected field 'baseline', did you mean 'kind'?
 $.registries[0] (an artifacts registry): unexpected field 'packages', did you mean 'name'?
@@ -382,11 +382,11 @@ TEST_CASE ("metadata dictionaries", "[ce-metadata]")
 })json";
         check_errors(invalid_raw, R"(
 $ (settings): expected an object
-$.requires (a `string: string` dictionary): value of ["fruits/a/apple"] must be a string
-$.requires (a `string: string` dictionary): value of ["fruits/a/avocado"] must be a string
+$.requires (a "string": "string" dictionary): value of ["fruits/a/apple"] must be a string
+$.requires (a "string": "string" dictionary): value of ["fruits/a/avocado"] must be a string
 $.demands (settings): expected an object
-$.demands.requires (a `string: string` dictionary): value of ["fruits/a/apple"] must be a string
-$.demands.requires (a `string: string` dictionary): value of ["fruits/a/avocado"] must be a string
+$.demands.requires (a "string": "string" dictionary): value of ["fruits/a/apple"] must be a string
+$.demands.requires (a "string": "string" dictionary): value of ["fruits/a/avocado"] must be a string
 )");
     }
 }
@@ -459,13 +459,112 @@ $.demands (a demand object): value of ["b"] must be an object
 $.demands (a demand object): value of ["c"] must be an object
 $.demands (a demand object): value of ["d"] must be an object
 $.demands (a demand object): value of ["e"] must be an object
-$.demands (a demand object): $.demands.["f"] contains a `demands` object (nested `demands` have no effect)
+$.demands (a demand object): ["f"] contains a nested `demands` object (nested `demands` have no effect)
 )");
     }
 }
 
 TEST_CASE ("serialize configuration", "[ce-metadata]")
 {
+    SECTION ("only overlay ports")
+    {
+        std::string raw = R"json({
+    "overlay-ports": [
+		"./my-ports/fmt",
+		"/custom-ports",
+		"../share/team-ports",
+        "my-ports/fmt"
+	]
+})json";
+        // parsing of configuration is tested elsewhere
+        auto config = parse_test_configuration(raw);
+        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+    }
+
+    SECTION ("invalid overlay ports")
+    {
+        std::string raw = R"json({
+    "overlay-ports": [
+		"./my-ports/fmt" ,
+		"/custom-ports",
+		123
+	]
+})json";
+        check_errors(raw, R"(
+$.overlay-ports[2]: mismatched type: expected an overlay path
+)");
+    }
+
+    SECTION ("only overlay triplets")
+    {
+        std::string raw = R"json({
+    "overlay-triplets": [
+		"./team-triplets"
+	]
+})json";
+        // parsing of configuration is tested elsewhere
+        auto config = parse_test_configuration(raw);
+        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+    }
+
+    SECTION ("invalid overlay triplets")
+    {
+        std::string raw = R"json({
+    "overlay-triplets": [
+		123
+	]
+})json";
+        check_errors(raw, R"(
+$.overlay-triplets[0]: mismatched type: expected a triplet path
+)");
+    }
+
+    SECTION ("both overlay ports and overlay triplets")
+    {
+        std::string raw = R"json({
+    "overlay-ports": [
+		"./my-ports/fmt" ,
+		"/custom-ports",
+		"../share/team-ports"
+	],
+    "overlay-triplets": [
+		"./team-triplets"
+	]
+})json";
+        // parsing of configuration is tested elsewhere
+        auto config = parse_test_configuration(raw);
+        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+    }
+
+    SECTION ("overriden default registry, registries and overlays")
+    {
+        std::string raw = R"json({
+    "default-registry": {
+        "kind": "builtin",
+        "baseline": "843e0ba0d8f9c9c572e45564263eedfc7745e74f"
+    },
+    "registries": [
+        {
+            "kind": "git",
+            "repository": "https://github.com/microsoft/vcpkg",
+            "baseline": "843e0ba0d8f9c9c572e45564263eedfc7745e74f",
+            "packages": [ "zlib" ]
+        }
+    ],
+    "overlay-ports": [
+		"./my-ports/fmt" ,
+		"/custom-ports",
+		"../share/team-ports"
+	],
+    "overlay-triplets": [
+		"./team-triplets"
+	]
+})json";
+        // parsing of configuration is tested elsewhere
+        auto config = parse_test_configuration(raw);
+        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+    }
+
     SECTION ("null default registry")
     {
         std::string raw = R"json({

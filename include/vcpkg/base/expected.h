@@ -6,7 +6,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/to_string.h>
+#include <vcpkg/base/to-string.h>
 
 #include <functional>
 #include <system_error>
@@ -172,6 +172,18 @@ namespace vcpkg
         explicit constexpr operator bool() const noexcept { return !value_is_error; }
         constexpr bool has_value() const noexcept { return !value_is_error; }
 
+        template<class... Args>
+        T value_or(Args&&... or_args) &&
+        {
+            return !value_is_error ? std::move(*m_t.get()) : T(std::forward<Args>(or_args)...);
+        }
+
+        template<class... Args>
+        T value_or(Args&&... or_args) const&
+        {
+            return !value_is_error ? *m_t.get() : T(std::forward<Args>(or_args)...);
+        }
+
         const T&& value_or_exit(const LineInfo& line_info) const&&
         {
             exit_if_error(line_info);
@@ -208,7 +220,7 @@ namespace vcpkg
             return std::move(m_error);
         }
 
-        typename ExpectedHolder<T>::const_pointer get() const
+        typename ExpectedHolder<T>::const_pointer get() const noexcept
         {
             if (value_is_error)
             {
@@ -218,7 +230,7 @@ namespace vcpkg
             return m_t.get();
         }
 
-        typename ExpectedHolder<T>::pointer get()
+        typename ExpectedHolder<T>::pointer get() noexcept
         {
             if (value_is_error)
             {
@@ -358,7 +370,4 @@ namespace vcpkg
 
         bool value_is_error;
     };
-
-    template<class T>
-    using ExpectedS = ExpectedT<T, std::string>;
 }

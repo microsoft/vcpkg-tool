@@ -1,6 +1,5 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/files.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.ciclean.h>
 #include <vcpkg/installedpaths.h>
@@ -29,7 +28,6 @@ namespace vcpkg::Commands::CIClean
 {
     void perform_and_exit(const VcpkgCmdArguments&, const VcpkgPaths& paths)
     {
-        using vcpkg::print2;
         auto& fs = paths.get_filesystem();
         clear_directory(fs, paths.buildtrees());
         clear_directory(fs, paths.installed().root());

@@ -1,6 +1,5 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.zprintconfig.h>
 #include <vcpkg/installedpaths.h>
@@ -11,14 +10,6 @@
 
 namespace vcpkg::Commands::Z_PrintConfig
 {
-    static const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("z-print-config"),
-        0,
-        0,
-        {{}, {}},
-        nullptr,
-    };
-
     static void opt_add(Json::Object& obj, StringLiteral key, const Optional<Path>& opt)
     {
         if (auto p = opt.get())
@@ -27,7 +18,7 @@ namespace vcpkg::Commands::Z_PrintConfig
         }
     }
 
-    void PrintConfigCommand::perform_and_exit(const VcpkgCmdArguments&,
+    void PrintConfigCommand::perform_and_exit(const VcpkgCmdArguments& args,
                                               const VcpkgPaths& paths,
                                               Triplet default_triplet,
                                               Triplet host_triplet) const
@@ -38,6 +29,10 @@ namespace vcpkg::Commands::Z_PrintConfig
         obj.insert("host_triplet", host_triplet.canonical_name());
         obj.insert("vcpkg_root", paths.root.native());
         obj.insert("tools", paths.tools.native());
+        if (auto ci_env = args.detected_ci_environment().get())
+        {
+            obj.insert("detected_ci_environment", *ci_env);
+        }
         if (auto i = paths.maybe_installed().get())
         {
             obj.insert("installed", i->root().native());

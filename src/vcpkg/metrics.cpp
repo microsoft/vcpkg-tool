@@ -2,17 +2,24 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/span.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.h>
 #include <vcpkg/base/system.mac.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/uuid.h>
-#include <vcpkg/base/view.h>
 
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/metrics.h>
-#include <vcpkg/userconfig.h>
+#include <vcpkg/paragraphs.h>
+
+#include <math.h>
+
+#include <iterator>
+#include <mutex>
+#include <utility>
 
 #if defined(_WIN32)
 #pragma comment(lib, "version")
@@ -34,12 +41,53 @@ namespace
         // abort() is used because Checks:: will call back into metrics machinery.
         abort();
     }
+
+    static constexpr char METRICS_CONFIG_FILE_NAME[] = "config";
+
+    void set_value_if_set(std::string& target, const Paragraph& p, const std::string& key)
+    {
+        auto position = p.find(key);
+        if (position != p.end())
+        {
+            target = position->second.first;
+        }
+    }
+
+    std::string get_os_version_string()
+    {
+#if defined(_WIN32)
+        std::wstring path;
+        path.resize(MAX_PATH);
+        const auto n = GetSystemDirectoryW(path.data(), static_cast<UINT>(path.size()));
+        path.resize(n);
+        path += L"\\kernel32.dll";
+
+        const auto versz = GetFileVersionInfoSizeW(path.c_str(), nullptr);
+        if (versz == 0) return {};
+
+        std::vector<char> verbuf;
+        verbuf.resize(versz);
+
+        if (!GetFileVersionInfoW(path.c_str(), 0, static_cast<DWORD>(verbuf.size()), verbuf.data())) return {};
+
+        void* rootblock;
+        UINT rootblocksize;
+        if (!VerQueryValueW(verbuf.data(), L"\\", &rootblock, &rootblocksize)) return {};
+
+        auto rootblock_ffi = static_cast<VS_FIXEDFILEINFO*>(rootblock);
+
+        return fmt::format("{}.{}.{}",
+                           static_cast<int>(HIWORD(rootblock_ffi->dwProductVersionMS)),
+                           static_cast<int>(LOWORD(rootblock_ffi->dwProductVersionMS)),
+                           static_cast<int>(HIWORD(rootblock_ffi->dwProductVersionLS)));
+#else
+        return "unknown";
+#endif
+    }
 }
 
 namespace vcpkg
 {
-    LockGuarded<Metrics> g_metrics;
-
     const constexpr std::array<DefineMetricEntry, static_cast<size_t>(DefineMetric::COUNT)> all_define_metrics{{
         {DefineMetric::AssetSource, "asset-source"},
         {DefineMetric::BinaryCachingAws, "binarycaching_aws"},
@@ -68,15 +116,25 @@ namespace vcpkg
         {DefineMetric::X_WriteNugetPackagesConfig, "x-write-nuget-packages-config"},
     }};
 
+    // SHA256s separated by colons, separated by commas
+    static constexpr char plan_example[] = "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff:"
+                                           "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff:"
+                                           "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff,"
+                                           "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff:"
+                                           "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff:"
+                                           "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff";
+
     const constexpr std::array<StringMetricEntry, static_cast<size_t>(StringMetric::COUNT)> all_string_metrics{{
-        {StringMetric::BuildError, "build_error", "gsl:x64-windows"},
+        // registryUri:id:version,...
+        {StringMetric::AcquiredArtifacts, "acquired_artifacts", plan_example},
+        {StringMetric::ActivatedArtifacts, "activated_artifacts", plan_example},
         {StringMetric::CommandArgs, "command_args", "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff"},
         {StringMetric::CommandContext, "command_context", "artifact"},
         {StringMetric::CommandName, "command_name", "z-preregister-telemetry"},
-        {StringMetric::Error, "error", "build failed"},
-        {StringMetric::InstallPlan_1,
-         "installplan_1",
-         "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff"},
+        {StringMetric::DeploymentKind, "deployment_kind", "Git"},
+        {StringMetric::DetectedCiEnvironment, "detected_ci_environment", "Generic"},
+        // spec:triplet:version,...
+        {StringMetric::InstallPlan_1, "installplan_1", plan_example},
         {StringMetric::ListFile, "listfile", "update to new format"},
         {StringMetric::RegistriesDefaultRegistryKind, "registries-default-registry-kind", "builtin-files"},
         {StringMetric::RegistriesKindsUsed, "registries-kinds-used", "git,filesystem"},
@@ -87,255 +145,320 @@ namespace vcpkg
     }};
 
     const constexpr std::array<BoolMetricEntry, static_cast<size_t>(BoolMetric::COUNT)> all_bool_metrics{{
+        {BoolMetric::DetectedContainer, "detected_container"},
+        {BoolMetric::FeatureFlagBinaryCaching, "feature-flag-binarycaching"},
+        {BoolMetric::FeatureFlagCompilerTracking, "feature-flag-compilertracking"},
+        {BoolMetric::FeatureFlagManifests, "feature-flag-manifests"},
+        {BoolMetric::FeatureFlagRegistries, "feature-flag-registries"},
+        {BoolMetric::FeatureFlagVersions, "feature-flag-versions"},
         {BoolMetric::InstallManifestMode, "install_manifest_mode"},
         {BoolMetric::OptionOverlayPorts, "option_overlay_ports"},
     }};
 
-    static std::string get_current_date_time_string()
+    void MetricsSubmission::track_elapsed_us(double value)
     {
-        auto maybe_time = CTime::get_current_date_time();
-        if (auto ptime = maybe_time.get())
+        if (!isfinite(value) || value <= 0.0)
         {
-            return ptime->to_string();
+            Checks::unreachable(VCPKG_LINE_INFO);
         }
 
-        return "";
+        elapsed_us = value;
     }
 
-    static const std::string& get_session_id()
+    void MetricsSubmission::track_buildtime(StringView name, double value)
     {
-        static const std::string ID = generate_random_UUID();
-        return ID;
+        const auto position = buildtimes.lower_bound(name);
+        if (position == buildtimes.end() || name < position->first)
+        {
+            buildtimes.emplace_hint(position,
+                                    std::piecewise_construct,
+                                    std::forward_as_tuple(name.data(), name.size()),
+                                    std::forward_as_tuple(value));
+        }
+        else
+        {
+            position->second = value;
+        }
     }
 
-    static std::string get_os_version_string()
+    void MetricsSubmission::track_define(DefineMetric metric) { defines.insert(metric); }
+
+    void MetricsSubmission::track_string(StringMetric metric, StringView value)
     {
-#if defined(_WIN32)
-        std::wstring path;
-        path.resize(MAX_PATH);
-        const auto n = GetSystemDirectoryW(&path[0], static_cast<UINT>(path.size()));
-        path.resize(n);
-        path += L"\\kernel32.dll";
-
-        const auto versz = GetFileVersionInfoSizeW(path.c_str(), nullptr);
-        if (versz == 0) return "";
-
-        std::vector<char> verbuf;
-        verbuf.resize(versz);
-
-        if (!GetFileVersionInfoW(path.c_str(), 0, static_cast<DWORD>(verbuf.size()), &verbuf[0])) return "";
-
-        void* rootblock;
-        UINT rootblocksize;
-        if (!VerQueryValueW(&verbuf[0], L"\\", &rootblock, &rootblocksize)) return "";
-
-        auto rootblock_ffi = static_cast<VS_FIXEDFILEINFO*>(rootblock);
-
-        return Strings::format("%d.%d.%d",
-                               static_cast<int>(HIWORD(rootblock_ffi->dwProductVersionMS)),
-                               static_cast<int>(LOWORD(rootblock_ffi->dwProductVersionMS)),
-                               static_cast<int>(HIWORD(rootblock_ffi->dwProductVersionLS)));
-#else
-        return "unknown";
-#endif
+        const auto position = strings.lower_bound(metric);
+        if (position == strings.end() || metric < position->first)
+        {
+            strings.emplace_hint(position,
+                                 std::piecewise_construct,
+                                 std::forward_as_tuple(metric),
+                                 std::forward_as_tuple(value.data(), value.size()));
+        }
+        else
+        {
+            position->second.assign(value.data(), value.size());
+        }
     }
 
-    struct MetricMessage
+    void MetricsSubmission::track_bool(BoolMetric metric, bool value) { bools.insert_or_assign(metric, value); }
+
+    void MetricsSubmission::merge(MetricsSubmission&& other)
     {
-        std::string user_id;
-        std::string user_timestamp;
-
-        Json::Object properties;
-        Json::Object measurements;
-
-        Json::Array buildtime_names;
-        Json::Array buildtime_times;
-
-        void track_string(StringView name, StringView value)
+        if (other.elapsed_us != 0.0)
         {
-            properties.insert_or_replace(name, Json::Value::string(value));
+            elapsed_us = other.elapsed_us;
         }
 
-        void track_bool(StringView name, bool value)
+        buildtimes.merge(other.buildtimes);
+        defines.merge(other.defines);
+        strings.merge(other.strings);
+        bools.merge(other.bools);
+    }
+
+    void MetricsCollector::track_elapsed_us(double value)
+    {
+        std::lock_guard<std::mutex> lock{mtx};
+        submission.track_elapsed_us(value);
+    }
+
+    void MetricsCollector::track_buildtime(StringView name, double value)
+    {
+        std::lock_guard<std::mutex> lock{mtx};
+        submission.track_buildtime(name, value);
+    }
+
+    void MetricsCollector::track_define(DefineMetric metric)
+    {
+        std::lock_guard<std::mutex> lock{mtx};
+        submission.track_define(metric);
+    }
+
+    void MetricsCollector::track_string(StringMetric metric, StringView value)
+    {
+        std::lock_guard<std::mutex> lock{mtx};
+        submission.track_string(metric, value);
+    }
+
+    void MetricsCollector::track_bool(BoolMetric metric, bool value)
+    {
+        std::lock_guard<std::mutex> lock{mtx};
+        submission.track_bool(metric, value);
+    }
+
+    void MetricsCollector::track_submission(MetricsSubmission&& submission_)
+    {
+        std::lock_guard<std::mutex> lock{mtx};
+        submission.merge(std::move(submission_));
+    }
+
+    MetricsSubmission MetricsCollector::get_submission() const
+    {
+        std::lock_guard<std::mutex> lock{mtx};
+        return submission;
+    }
+
+    MetricsCollector& get_global_metrics_collector() noexcept
+    {
+        static MetricsCollector g_metrics_collector;
+        return g_metrics_collector;
+    }
+
+    void MetricsUserConfig::to_string(std::string& target) const
+    {
+        fmt::format_to(std::back_inserter(target),
+                       "User-Id: {}\n"
+                       "User-Since: {}\n"
+                       "Mac-Hash: {}\n"
+                       "Survey-Completed: {}\n",
+                       user_id,
+                       user_time,
+                       user_mac,
+                       last_completed_survey);
+    }
+
+    std::string MetricsUserConfig::to_string() const
+    {
+        std::string ret;
+        to_string(ret);
+        return ret;
+    }
+
+    void MetricsUserConfig::try_write(Filesystem& fs) const
+    {
+        const auto& maybe_user_dir = get_user_configuration_home();
+        if (auto p_user_dir = maybe_user_dir.get())
         {
-            properties.insert_or_replace(name, Json::Value::boolean(value));
+            fs.create_directory(*p_user_dir, IgnoreErrors{});
+            fs.write_contents(*p_user_dir / METRICS_CONFIG_FILE_NAME, to_string(), IgnoreErrors{});
+        }
+    }
+
+    bool MetricsUserConfig::fill_in_system_values()
+    {
+        bool result = false;
+        // config file not found, could not be read, or invalid
+        if (user_id.empty() || user_time.empty())
+        {
+            user_id = generate_random_UUID();
+            user_time = CTime::now_string();
+            result = true;
         }
 
-        void track_metric(StringView name, double value)
+        if (user_mac.empty() || user_mac == "{}")
         {
-            measurements.insert_or_replace(name, Json::Value::number(value));
+            user_mac = get_user_mac_hash();
+            result = true;
         }
 
-        void track_buildtime(StringView name, double value)
+        return result;
+    }
+
+    MetricsUserConfig try_parse_metrics_user(StringView content)
+    {
+        MetricsUserConfig ret;
+        auto maybe_paragraph = Paragraphs::parse_single_merged_paragraph(content, "userconfig");
+        if (const auto p = maybe_paragraph.get())
         {
-            buildtime_names.push_back(Json::Value::string(name));
-            buildtime_times.push_back(Json::Value::number(value));
-        }
-        void track_feature(StringView name, bool value)
-        {
-            properties.insert(Strings::concat("feature-flag-", name), Json::Value::boolean(value));
+            const auto& paragraph = *p;
+            set_value_if_set(ret.user_id, paragraph, "User-Id");
+            set_value_if_set(ret.user_time, paragraph, "User-Since");
+            set_value_if_set(ret.user_mac, paragraph, "Mac-Hash");
+            set_value_if_set(ret.last_completed_survey, paragraph, "Survey-Completed");
         }
 
-        std::string format_event_data_template() const
+        return ret;
+    }
+
+    MetricsUserConfig try_read_metrics_user(const Filesystem& fs)
+    {
+        const auto& maybe_user_dir = get_user_configuration_home();
+        if (auto p_user_dir = maybe_user_dir.get())
         {
-            auto props_plus_buildtimes = properties;
-            if (buildtime_names.size() > 0)
+            std::error_code ec;
+            const auto content = fs.read_contents(*p_user_dir / METRICS_CONFIG_FILE_NAME, ec);
+            if (!ec)
             {
-                props_plus_buildtimes.insert("buildnames_1", buildtime_names);
-                props_plus_buildtimes.insert("buildtimes", buildtime_times);
+                return try_parse_metrics_user(content);
             }
+        }
 
-            Json::Array arr = Json::Array();
-            Json::Object& obj = arr.push_back(Json::Object());
+        return MetricsUserConfig{};
+    }
 
-            obj.insert("ver", Json::Value::integer(1));
-            obj.insert("name", Json::Value::string("Microsoft.ApplicationInsights.Event"));
-            obj.insert("time", Json::Value::string(get_current_date_time_string()));
-            obj.insert("sampleRate", Json::Value::number(100.0));
-            obj.insert("seq", Json::Value::string("0:0"));
-            obj.insert("iKey", Json::Value::string("b4e88960-4393-4dd9-ab8e-97e8fe6d7603"));
-            obj.insert("flags", Json::Value::integer(0));
-
-            {
-                Json::Object& tags = obj.insert("tags", Json::Object());
-
-                tags.insert("ai.device.os", Json::Value::string("Other"));
-
-                const char* os_name =
+    MetricsSessionData MetricsSessionData::from_system()
+    {
+        MetricsSessionData result;
+        result.submission_time = CTime::now_string();
+        StringLiteral os_name =
 #if defined(_WIN32)
-                    "Windows";
+            "Windows";
 #elif defined(__APPLE__)
-                    "OSX";
+            "OSX";
 #elif defined(__linux__)
-                    "Linux";
+            "Linux";
 #elif defined(__FreeBSD__)
-                    "FreeBSD";
+            "FreeBSD";
 #elif defined(__unix__)
-                    "Unix";
+            "Unix";
 #else
-                    "Other";
+            "Other";
 #endif
 
-                tags.insert("ai.device.osVersion",
-                            Json::Value::string(Strings::format("%s-%s", os_name, get_os_version_string())));
-                tags.insert("ai.session.id", Json::Value::string(get_session_id()));
-                tags.insert("ai.user.id", Json::Value::string(user_id));
-                tags.insert("ai.user.accountAcquisitionDate", Json::Value::string(user_timestamp));
-            }
+        result.os_version.assign(os_name.data(), os_name.size());
+        result.os_version.push_back('-');
+        result.os_version.append(get_os_version_string());
 
-            {
-                Json::Object& data = obj.insert("data", Json::Object());
+        result.session_id = generate_random_UUID();
+        return result;
+    }
 
-                data.insert("baseType", Json::Value::string("EventData"));
-                Json::Object& base_data = data.insert("baseData", Json::Object());
+    std::string format_metrics_payload(const MetricsUserConfig& user,
+                                       const MetricsSessionData& session,
+                                       const MetricsSubmission& submission)
+    {
+        Json::Array arr = Json::Array();
+        Json::Object& obj = arr.push_back(Json::Object());
 
-                base_data.insert("ver", Json::Value::integer(2));
-                base_data.insert("name", Json::Value::string("commandline_test7"));
-                base_data.insert("properties", std::move(props_plus_buildtimes));
-                base_data.insert("measurements", measurements);
-            }
+        obj.insert("ver", Json::Value::integer(1));
+        obj.insert("name", Json::Value::string("Microsoft.ApplicationInsights.Event"));
+        obj.insert("time", Json::Value::string(session.submission_time));
+        obj.insert("sampleRate", Json::Value::number(100.0));
+        obj.insert("seq", Json::Value::string("0:0"));
+        obj.insert("iKey", Json::Value::string("b4e88960-4393-4dd9-ab8e-97e8fe6d7603"));
+        obj.insert("flags", Json::Value::integer(0));
 
-            return Json::stringify(arr);
+        Json::Object& tags = obj.insert("tags", Json::Object());
+
+        tags.insert("ai.device.os", Json::Value::string("Other"));
+
+        tags.insert("ai.device.osVersion", Json::Value::string(session.os_version));
+        tags.insert("ai.session.id", Json::Value::string(session.session_id));
+        tags.insert("ai.user.id", Json::Value::string(user.user_id));
+        tags.insert("ai.user.accountAcquisitionDate", Json::Value::string(user.user_time));
+
+        Json::Object& data = obj.insert("data", Json::Object());
+
+        data.insert("baseType", Json::Value::string("EventData"));
+        Json::Object& base_data = data.insert("baseData", Json::Object());
+
+        base_data.insert("ver", Json::Value::integer(2));
+        base_data.insert("name", Json::Value::string("commandline_test7"));
+        Json::Object& properties = base_data.insert("properties", Json::Object());
+        for (auto&& define_property : submission.defines)
+        {
+            properties.insert_or_replace(get_metric_name(define_property, all_define_metrics),
+                                         Json::Value::string("defined"));
         }
-    };
 
-    static MetricMessage g_metricmessage;
-    static bool g_should_send_metrics =
+        properties.insert_or_replace(get_metric_name(StringMetric::UserMac, all_string_metrics),
+                                     Json::Value::string(user.user_mac));
+        for (auto&& string_property : submission.strings)
+        {
+            properties.insert_or_replace(get_metric_name(string_property.first, all_string_metrics),
+                                         Json::Value::string(string_property.second));
+        }
+
+        for (auto&& bool_property : submission.bools)
+        {
+            properties.insert_or_replace(get_metric_name(bool_property.first, all_bool_metrics),
+                                         Json::Value::boolean(bool_property.second));
+        }
+
+        if (!submission.buildtimes.empty())
+        {
+            Json::Array buildtime_names;
+            Json::Array buildtime_times;
+            for (auto&& buildtime : submission.buildtimes)
+            {
+                buildtime_names.push_back(Json::Value::string(buildtime.first));
+                buildtime_times.push_back(Json::Value::number(buildtime.second));
+            }
+
+            properties.insert("buildnames_1", buildtime_names);
+            properties.insert("buildtimes", buildtime_times);
+        }
+
+        Json::Object& measurements = base_data.insert("measurements", Json::Object());
+        if (submission.elapsed_us != 0.0)
+        {
+            measurements.insert_or_replace("elapsed_us", Json::Value::number(submission.elapsed_us));
+        }
+
+        return Json::stringify(arr);
+    }
+
+    std::atomic<bool> g_should_send_metrics =
 #if defined(NDEBUG)
         true
 #else
         false
 #endif
         ;
-    static bool g_should_print_metrics = false;
-    static std::atomic<bool> g_metrics_disabled = true;
-
-    void Metrics::set_send_metrics(bool should_send_metrics) { g_should_send_metrics = should_send_metrics; }
-
-    void Metrics::set_print_metrics(bool should_print_metrics) { g_should_print_metrics = should_print_metrics; }
-
-    static bool g_initializing_metrics = false;
-
-    void Metrics::enable()
-    {
-        {
-            LockGuardPtr<Metrics> metrics(g_metrics);
-            if (g_initializing_metrics) return;
-            g_initializing_metrics = true;
-        }
-
-        // Execute this body exactly once
-        auto& fs = get_real_filesystem();
-        auto config = UserConfig::try_read_data(fs);
-
-        bool write_config = false;
-
-        // config file not found, could not be read, or invalid
-        if (config.user_id.empty() || config.user_time.empty())
-        {
-            config.user_id = generate_random_UUID();
-            config.user_time = get_current_date_time_string();
-            write_config = true;
-        }
-
-        // For a while we had a bug where we always set "{}" without attempting to get a MAC address.
-        // We will attempt to get a MAC address and store a "0" if we fail.
-        if (config.user_mac.empty() || config.user_mac == "{}")
-        {
-            config.user_mac = get_user_mac_hash();
-            write_config = true;
-        }
-
-        if (write_config)
-        {
-            config.try_write_data(fs);
-        }
-
-        {
-            LockGuardPtr<Metrics> metrics(g_metrics);
-            g_metricmessage.user_id = config.user_id;
-            g_metricmessage.user_timestamp = config.user_time;
-
-            metrics->track_string_property(StringMetric::UserMac, config.user_mac);
-
-            g_metrics_disabled = false;
-        }
-    }
-
-    bool Metrics::metrics_enabled() { return !g_metrics_disabled; }
-
-    void Metrics::track_metric(const std::string& name, double value) { g_metricmessage.track_metric(name, value); }
-
-    void Metrics::track_buildtime(const std::string& name, double value)
-    {
-        g_metricmessage.track_buildtime(name, value);
-    }
-
-    void Metrics::track_define_property(DefineMetric metric)
-    {
-        g_metricmessage.track_string(get_metric_name(metric, all_define_metrics), "defined");
-    }
-
-    void Metrics::track_string_property(StringMetric metric, StringView value)
-    {
-        g_metricmessage.track_string(get_metric_name(metric, all_string_metrics), value);
-    }
-
-    void Metrics::track_bool_property(BoolMetric metric, bool value)
-    {
-        g_metricmessage.track_bool(get_metric_name(metric, all_bool_metrics), value);
-    }
-
-    void Metrics::track_feature(const std::string& name, bool value) { g_metricmessage.track_feature(name, value); }
-
-    void Metrics::upload(const std::string& payload)
-    {
-        if (!metrics_enabled())
-        {
-            return;
-        }
+    std::atomic<bool> g_should_print_metrics = false;
+    std::atomic<bool> g_metrics_enabled = false;
 
 #if defined(_WIN32)
+    void winhttp_upload_metrics(StringView payload)
+    {
         HINTERNET connect = nullptr, request = nullptr;
         BOOL results = FALSE;
 
@@ -361,15 +484,15 @@ namespace vcpkg
 
         if (request)
         {
-            if (MAXDWORD <= payload.size()) abort();
+            auto mutable_payload = payload.to_string();
+            if (MAXDWORD <= mutable_payload.size()) abort();
             std::wstring hdrs = L"Content-Type: application/json\r\n";
-            std::string& p = const_cast<std::string&>(payload);
             results = WinHttpSendRequest(request,
                                          hdrs.c_str(),
                                          static_cast<DWORD>(hdrs.size()),
-                                         static_cast<void*>(&p[0]),
-                                         static_cast<DWORD>(payload.size()),
-                                         static_cast<DWORD>(payload.size()),
+                                         static_cast<void*>(mutable_payload.data()),
+                                         static_cast<DWORD>(mutable_payload.size()),
+                                         static_cast<DWORD>(mutable_payload.size()),
                                          0);
         }
 
@@ -398,7 +521,7 @@ namespace vcpkg
             {
                 response_buffer.resize(response_buffer.size() + available_data);
 
-                results = WinHttpReadData(request, &response_buffer.data()[total_data], available_data, &read_data);
+                results = WinHttpReadData(request, &response_buffer[total_data], available_data, &read_data);
 
                 if (!results)
                 {
@@ -423,20 +546,27 @@ namespace vcpkg
         if (request) WinHttpCloseHandle(request);
         if (connect) WinHttpCloseHandle(connect);
         if (session) WinHttpCloseHandle(session);
-#else  // ^^^ _WIN32 // !_WIN32 vvv
-        (void)payload;
-#endif // ^^^ !_WIN32
     }
+#endif // ^^^ _WIN32
 
-    void Metrics::flush(Filesystem& fs)
+    void flush_global_metrics(Filesystem& fs)
     {
-        if (!metrics_enabled())
+        if (!g_metrics_enabled.load())
         {
             return;
         }
 
-        const std::string payload = g_metricmessage.format_event_data_template();
-        if (g_should_print_metrics)
+        auto user = try_read_metrics_user(fs);
+        if (user.fill_in_system_values())
+        {
+            user.try_write(fs);
+        }
+
+        auto session = MetricsSessionData::from_system();
+
+        auto submission = get_global_metrics_collector().get_submission();
+        const std::string payload = format_metrics_payload(user, session, submission);
+        if (g_should_print_metrics.load())
         {
             fprintf(stderr, "%s\n", payload.c_str());
         }
@@ -446,54 +576,39 @@ namespace vcpkg
             return;
         }
 
-#if defined(_WIN32)
-        wchar_t temp_folder[MAX_PATH];
-        GetTempPathW(MAX_PATH, temp_folder);
-
-        const Path temp_folder_path = Path(Strings::to_utf8(temp_folder)) / "vcpkg";
-        const Path temp_folder_path_exe = temp_folder_path / "vcpkg-" VCPKG_BASE_VERSION_AS_STRING ".exe";
-#endif
-
-        std::error_code ec;
-#if defined(_WIN32)
-        fs.create_directories(temp_folder_path, ec);
-        if (ec) return;
-        fs.copy_file(get_exe_path_of_current_process(), temp_folder_path_exe, CopyOptions::skip_existing, ec);
-        if (ec) return;
-#else
-        if (!fs.exists("/tmp", IgnoreErrors{})) return;
-        const Path temp_folder_path = "/tmp/vcpkg";
-        fs.create_directory(temp_folder_path, IgnoreErrors{});
-#endif
+        const Path temp_folder_path = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
         const Path vcpkg_metrics_txt_path = temp_folder_path / ("vcpkg" + generate_random_UUID() + ".txt");
+        Debug::println("Uploading metrics ", vcpkg_metrics_txt_path);
+        std::error_code ec;
         fs.write_contents(vcpkg_metrics_txt_path, payload, ec);
         if (ec) return;
 
 #if defined(_WIN32)
+        const Path temp_folder_path_exe = temp_folder_path / "vcpkg-" VCPKG_BASE_VERSION_AS_STRING ".exe";
+        fs.copy_file(get_exe_path_of_current_process(), temp_folder_path_exe, CopyOptions::skip_existing, ec);
+        if (ec) return;
         Command builder;
         builder.string_arg(temp_folder_path_exe);
         builder.string_arg("x-upload-metrics");
         builder.string_arg(vcpkg_metrics_txt_path);
         cmd_execute_background(builder);
 #else
-        // TODO: convert to cmd_execute_background or something.
-        auto curl = Command("curl")
-                        .string_arg("https://dc.services.visualstudio.com/v2/track")
-                        .string_arg("--max-time")
-                        .string_arg("3")
-                        .string_arg("-H")
-                        .string_arg("Content-Type: application/json")
-                        .string_arg("-X")
-                        .string_arg("POST")
-                        .string_arg("--tlsv1.2")
-                        .string_arg("--data")
-                        .string_arg(Strings::concat("@", vcpkg_metrics_txt_path))
-                        .raw_arg(">/dev/null")
-                        .raw_arg("2>&1");
-        auto remove = Command("rm").string_arg(vcpkg_metrics_txt_path);
-        Command cmd_line;
-        cmd_line.raw_arg("(").raw_arg(curl.command_line()).raw_arg(";").raw_arg(remove.command_line()).raw_arg(") &");
-        cmd_execute_clean(cmd_line);
+        cmd_execute_background(Command("curl")
+                                   .string_arg("https://dc.services.visualstudio.com/v2/track")
+                                   .string_arg("--max-time")
+                                   .string_arg("60")
+                                   .string_arg("-H")
+                                   .string_arg("Content-Type: application/json")
+                                   .string_arg("-X")
+                                   .string_arg("POST")
+                                   .string_arg("--tlsv1.2")
+                                   .string_arg("--data")
+                                   .string_arg(Strings::concat("@", vcpkg_metrics_txt_path))
+                                   .raw_arg(">/dev/null")
+                                   .raw_arg("2>&1")
+                                   .raw_arg(";")
+                                   .string_arg("rm")
+                                   .string_arg(vcpkg_metrics_txt_path));
 #endif
     }
 }

@@ -1,4 +1,4 @@
-#include <vcpkg/base/basic_checks.h>
+#include <vcpkg/base/basic-checks.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.new.h>
@@ -24,21 +24,20 @@ namespace
     static constexpr StringLiteral OPTION_VERSION_STRING = "version-string";
 
     const CommandSwitch SWITCHES[] = {
-        {OPTION_APPLICATION, "Create an application manifest (don't require name or version)."},
-        {OPTION_SINGLE_FILE, "Embed vcpkg-configuration.json into vcpkg.json."},
-        {OPTION_VERSION_RELAXED,
-         "Interpret --version as a relaxed-numeric version. (Nonnegative numbers separated by dots)"},
-        {OPTION_VERSION_DATE, "Interpret --version as an ISO 8601 date. (YYYY-MM-DD)"},
-        {OPTION_VERSION_STRING, "Interpret --version as a string with no ordering behavior."},
+        {OPTION_APPLICATION, []() { return msg::format(msgCmdNewOptApplication); }},
+        {OPTION_SINGLE_FILE, []() { return msg::format(msgCmdNewOptSingleFile); }},
+        {OPTION_VERSION_RELAXED, []() { return msg::format(msgCmdNewOptVersionRelaxed); }},
+        {OPTION_VERSION_DATE, []() { return msg::format(msgCmdNewOptVersionDate); }},
+        {OPTION_VERSION_STRING, []() { return msg::format(msgCmdNewOptVersionString); }},
     };
 
     const CommandSetting SETTINGS[] = {
-        {SETTING_NAME, "Name for the new manifest."},
-        {SETTING_VERSION, "Version for the new manifest."},
+        {SETTING_NAME, []() { return msg::format(msgCmdNewSettingName); }},
+        {SETTING_VERSION, []() { return msg::format(msgCmdNewSettingVersion); }},
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string(R"###(new --name=example --version=1.0 --version-kind=relaxed)###"),
+        [] { return create_example_string("new --name=example --version=1.0 --version-kind=relaxed"); },
         0,
         0,
         {SWITCHES, SETTINGS, {}},

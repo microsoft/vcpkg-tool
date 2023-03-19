@@ -2,14 +2,11 @@
 // Licensed under the MIT License.
 
 import { Activation } from '../artifacts/activation';
-import { buildRegistryResolver, ProjectManifest, ResolvedArtifact, resolveDependencies } from '../artifacts/artifact';
-import { i } from '../i18n';
-import { trackActivation } from '../insights';
+import { Artifact, ResolvedArtifact } from '../artifacts/artifact';
 import { RegistryDisplayContext } from '../registries/registries';
 import { Session } from '../session';
 import { Uri } from '../util/uri';
-import { installArtifacts, showArtifacts } from './artifacts';
-import { projectFile } from './format';
+import { acquireArtifacts } from './artifacts';
 
 export interface ActivationOptions {
   force?: boolean;
@@ -19,43 +16,29 @@ export interface ActivationOptions {
   json?: Uri;
 }
 
-export async function activate(session: Session, artifacts: Array<ResolvedArtifact>, registries: RegistryDisplayContext, createUndoFile: boolean, options?: ActivationOptions) {
-  // install the items in the project
-  const [success, artifactStatus] = await installArtifacts(session, artifacts, registries, options);
+function trackActivationPlan(session: Session, resolved: Array<ResolvedArtifact>) {
+  for (const resolvedEntry of resolved) {
+    const artifact = resolvedEntry.artifact;
+    if (artifact instanceof Artifact) {
+      session.trackActivate(artifact.registryUri.toString(), artifact.id, artifact.version);
+    }
+  }
+}
 
+export async function activate(session: Session, allowStacking: boolean, stackEntries: Array<string>, artifacts: Array<ResolvedArtifact>, registries: RegistryDisplayContext, options?: ActivationOptions): Promise<boolean> {
+  trackActivationPlan(session, artifacts);
+  // install the items in the project
+  const success = await acquireArtifacts(session, artifacts, registries, options);
   if (success) {
-    const backupFile = createUndoFile ? session.tmpFolder.join(`previous-environment-${Date.now().toFixed()}.json`) : undefined;
-    const activation = new Activation(session);
+    const activation = await Activation.start(session, allowStacking);
     for (const artifact of artifacts) {
       if (!await artifact.artifact.loadActivationSettings(activation)) {
-        session.channels.error(i`Unable to activate project.`);
         return false;
       }
     }
 
-    await activation.activate(backupFile, options?.msbuildProps, options?.json);
+    await activation.activate(stackEntries, options?.msbuildProps, options?.json);
   }
 
   return success;
-}
-
-export async function activateProject(session: Session, project: ProjectManifest, options?: ActivationOptions) {
-  // track what got installed
-  const projectResolver = await buildRegistryResolver(session, project.metadata.registries);
-  const resolved = await resolveDependencies(session, projectResolver, [project], 3);
-
-  // print the status of what is going to be activated.
-  if (!await showArtifacts(resolved, projectResolver, options)) {
-    session.channels.error(i`Unable to activate project`);
-    return false;
-  }
-
-  if (await activate(session, resolved, projectResolver, true, options)) {
-    trackActivation();
-    session.channels.message(i`Project ${projectFile(project.metadata.file.parent)} activated`);
-    return true;
-  }
-
-  session.channels.message(i`Failed to activate project ${projectFile(project.metadata.file.parent)}`);
-  return false;
 }

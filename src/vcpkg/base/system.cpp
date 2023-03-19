@@ -13,11 +13,124 @@
 #endif
 
 #if defined(_WIN32)
+#include <lmcons.h>
+#include <winbase.h>
 // needed for mingw
 #include <processenv.h>
 #else
 extern char** environ;
 #endif
+
+namespace
+{
+    using namespace vcpkg;
+#ifdef _WIN32
+    struct RegistryValue
+    {
+        DWORD type;
+        std::vector<unsigned char> data;
+    };
+
+    const HKEY INVALID_HKEY_VALUE = ((HKEY)(ULONG_PTR)((LONG)0xFFFFFFFF));
+    struct HKey
+    {
+        HKEY hkey = INVALID_HKEY_VALUE;
+
+        static ExpectedL<HKey> open(void* base_hkey, StringView sub_key, DWORD desired_access)
+        {
+            HKEY constructed_hkey = nullptr;
+            const LSTATUS ec = RegOpenKeyExW(reinterpret_cast<HKEY>(base_hkey),
+                                             Strings::to_utf16(sub_key).c_str(),
+                                             0,
+                                             desired_access,
+                                             &constructed_hkey);
+            if (ec == ERROR_SUCCESS)
+            {
+                return HKey{constructed_hkey};
+            }
+            else
+            {
+                return LocalizedString::from_raw(std::system_category().message(static_cast<int>(ec)));
+            }
+        }
+
+        HKey(HKey&& other) : hkey(std::exchange(other.hkey, INVALID_HKEY_VALUE)) { }
+        HKey& operator=(HKey&& other)
+        {
+            HKey moved{std::move(other)};
+            std::swap(hkey, moved.hkey);
+            return *this;
+        }
+        ~HKey()
+        {
+            if (hkey != INVALID_HKEY_VALUE)
+            {
+                RegCloseKey(hkey);
+            }
+        }
+
+        ExpectedL<RegistryValue> query_value(StringView valuename) const
+        {
+            if (hkey == INVALID_HKEY_VALUE)
+            {
+                Checks::unreachable(VCPKG_LINE_INFO, "Tried to query invalid key");
+            }
+
+            auto w_valuename = Strings::to_utf16(valuename);
+            RegistryValue result;
+            DWORD dw_buffer_size = 4;
+            for (;;)
+            {
+                result.data.resize(dw_buffer_size);
+                LSTATUS attempt_result = ::RegQueryValueExW(
+                    hkey, w_valuename.c_str(), nullptr, &result.type, result.data.data(), &dw_buffer_size);
+                switch (attempt_result)
+                {
+                    case ERROR_SUCCESS: result.data.resize(dw_buffer_size); return result;
+                    case ERROR_MORE_DATA: continue;
+                    default: return LocalizedString::from_raw(std::system_category().message(attempt_result));
+                }
+            }
+        }
+
+        explicit operator bool() const noexcept { return hkey != INVALID_HKEY_VALUE; }
+
+    private:
+        explicit HKey(HKEY constructed_hkey) : hkey(constructed_hkey) { }
+    };
+
+    StringLiteral format_base_hkey_name(void* base_hkey)
+    {
+        // copied these values out of winreg.h because HKEY can't be used as a switch/case as it isn't integral
+        switch (reinterpret_cast<std::uintptr_t>(base_hkey))
+        {
+            case 0x80000000u: return "HKEY_CLASSES_ROOT";
+            case 0x80000001u: return "HKEY_CURRENT_USER";
+            case 0x80000002u: return "HKEY_LOCAL_MACHINE";
+            case 0x80000003u: return "HKEY_USERS";
+            case 0x80000004u: return "HKEY_PERFORMANCE_DATA";
+            case 0x80000005u: return "HKEY_CURRENT_CONFIG";
+            case 0x80000050u: return "HKEY_PERFORMANCE_TEXT";
+            case 0x80000060u: return "HKEY_PERFORMANCE_NLSTEXT";
+            default: return "UNKNOWN_BASE_HKEY";
+        }
+    }
+
+    std::string format_registry_value_name(void* base_hkey, StringView sub_key, StringView valuename)
+    {
+        auto result = format_base_hkey_name(base_hkey).to_string();
+        if (!sub_key.empty())
+        {
+            result.push_back('\\');
+            result.append(sub_key.data(), sub_key.size());
+        }
+
+        result.append(2, '\\');
+        result.append(valuename.data(), valuename.size());
+        return result;
+    }
+#endif // ^^^ _WIN32
+}
 
 namespace vcpkg
 {
@@ -27,7 +140,7 @@ namespace vcpkg
         return ::_getpid();
 #else
         return ::getpid();
-#endif
+#endif // ^^^ !_WIN32
     }
 
     Optional<CPUArchitecture> to_cpu_architecture(StringView arch)
@@ -40,6 +153,9 @@ namespace vcpkg
         if (Strings::case_insensitive_ascii_equals(arch, "arm64ec")) return CPUArchitecture::ARM64EC;
         if (Strings::case_insensitive_ascii_equals(arch, "s390x")) return CPUArchitecture::S390X;
         if (Strings::case_insensitive_ascii_equals(arch, "ppc64le")) return CPUArchitecture::PPC64LE;
+        if (Strings::case_insensitive_ascii_equals(arch, "riscv32")) return CPUArchitecture::RISCV32;
+        if (Strings::case_insensitive_ascii_equals(arch, "riscv64")) return CPUArchitecture::RISCV64;
+
         return nullopt;
     }
 
@@ -54,6 +170,8 @@ namespace vcpkg
             case CPUArchitecture::ARM64EC: return "arm64ec";
             case CPUArchitecture::S390X: return "s390x";
             case CPUArchitecture::PPC64LE: return "ppc64le";
+            case CPUArchitecture::RISCV32: return "riscv32";
+            case CPUArchitecture::RISCV64: return "riscv64";
             default: Checks::exit_with_message(VCPKG_LINE_INFO, "unexpected vcpkg::CPUArchitecture");
         }
     }
@@ -61,44 +179,64 @@ namespace vcpkg
     CPUArchitecture get_host_processor()
     {
 #if defined(_WIN32)
-        auto raw_identifier = get_environment_variable("PROCESSOR_IDENTIFIER");
-        if (const auto id = raw_identifier.get())
+        const HMODULE hKernel32 = ::GetModuleHandleW(L"kernel32.dll");
+        if (hKernel32)
         {
-            // might be either ARMv8 (64-bit) or ARMv9 (64-bit)
-            if (Strings::contains(*id, "ARMv") && Strings::contains(*id, "(64-bit)"))
+            BOOL(__stdcall* const isWow64Process2)
+            (HANDLE /* hProcess */, USHORT* /* pProcessMachine */, USHORT * /*pNativeMachine*/) =
+                reinterpret_cast<decltype(isWow64Process2)>(::GetProcAddress(hKernel32, "IsWow64Process2"));
+            if (isWow64Process2)
             {
-                return CPUArchitecture::ARM64;
+                USHORT processMachine;
+                USHORT nativeMachine;
+                if (isWow64Process2(::GetCurrentProcess(), &processMachine, &nativeMachine))
+                {
+                    Debug::println("Detecting host with IsWow64Process2");
+                    switch (nativeMachine)
+                    {
+                        case 0x014c: // IMAGE_FILE_MACHINE_I386
+                            return CPUArchitecture::X86;
+                        case 0x01c0: // IMAGE_FILE_MACHINE_ARM
+                        case 0x01c2: // IMAGE_FILE_MACHINE_THUMB
+                        case 0x01c4: // IMAGE_FILE_MACHINE_ARMNT
+                            return CPUArchitecture::ARM;
+                        case 0x8664: // IMAGE_FILE_MACHINE_AMD64
+                            return CPUArchitecture::X64;
+                        case 0xAA64: // IMAGE_FILE_MACHINE_ARM64
+                            return CPUArchitecture::ARM64;
+                        default: Checks::unreachable(VCPKG_LINE_INFO);
+                    }
+                }
             }
         }
 
-        auto raw_w6432 = get_environment_variable("PROCESSOR_ARCHITEW6432");
-        if (const auto w6432 = raw_w6432.get())
+        Debug::println("Could not use IsWow64Process2, trying IsWow64Process");
+        BOOL isWow64Legacy;
+        if (::IsWow64Process(::GetCurrentProcess(), &isWow64Legacy))
         {
-            const auto parsed_w6432 = to_cpu_architecture(*w6432);
-            if (const auto parsed = parsed_w6432.get())
+            if (isWow64Legacy)
             {
-                return *parsed;
+                Debug::println("Is WOW64, assuming host is X64");
+                return CPUArchitecture::X64;
             }
-
-            msg::print(Color::warning, msgProcessorArchitectureW6432Malformed, msg::arch = *w6432);
         }
-
-        const auto raw_processor_architecture = get_environment_variable("PROCESSOR_ARCHITECTURE");
-        const auto processor_architecture = raw_processor_architecture.get();
-        if (!processor_architecture)
+        else
         {
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgProcessorArchitectureMissing);
+            Debug::println("IsWow64Process failed, falling back to compiled architecture.");
         }
 
-        const auto raw_parsed_processor_architecture = to_cpu_architecture(*processor_architecture);
-        if (const auto parsed_processor_architecture = raw_parsed_processor_architecture.get())
-        {
-            return *parsed_processor_architecture;
-        }
-
-        Checks::msg_exit_with_message(
-            VCPKG_LINE_INFO, msgProcessorArchitectureMalformed, msg::arch = *processor_architecture);
-#else // ^^^ defined(_WIN32) / !defined(_WIN32) vvv
+#if defined(_M_IX86)
+        return CPUArchitecture::X86;
+#elif defined(_M_ARM)
+        return CPUArchitecture::ARM;
+#elif defined(_M_ARM64)
+        return CPUArchitecture::ARM64;
+#elif defined(_M_X64)
+        return CPUArchitecture::X64;
+#else
+#error "Unknown host architecture"
+#endif // architecture
+#else  // ^^^ defined(_WIN32) / !defined(_WIN32) vvv
 #if defined(__x86_64__) || defined(_M_X64)
 #if defined(__APPLE__)
         // check for rosetta 2 emulation
@@ -127,6 +265,10 @@ namespace vcpkg
 #elif (defined(__ppc64__) || defined(__PPC64__) || defined(__ppc64le__) || defined(__PPC64LE__)) &&                    \
     defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
         return CPUArchitecture::PPC64LE;
+#elif defined(__riscv) && defined(__riscv_xlen) && (__riscv_xlen == 32)
+        return CPUArchitecture::RISCV32;
+#elif defined(__riscv) && defined(__riscv_xlen) && (__riscv_xlen == 64)
+        return CPUArchitecture::RISCV64;
 #else // choose architecture
 #error "Unknown host architecture"
 #endif // choose architecture
@@ -235,34 +377,40 @@ namespace vcpkg
         return result;
     }
 
-    const ExpectedS<Path>& get_home_dir() noexcept
+    const ExpectedL<Path>& get_home_dir() noexcept
     {
-        static ExpectedS<Path> s_home = []() -> ExpectedS<Path> {
+        static ExpectedL<Path> s_home = []() -> ExpectedL<Path> {
 #ifdef _WIN32
-#define HOMEVAR "%USERPROFILE%"
-            auto maybe_home = get_environment_variable("USERPROFILE");
-            if (!maybe_home.has_value() || maybe_home.get()->empty())
-                return {"unable to read " HOMEVAR, ExpectedRightTag{}};
-#else
-#define HOMEVAR "$HOME"
-            auto maybe_home = get_environment_variable("HOME");
-            if (!maybe_home.has_value() || maybe_home.get()->empty())
-                return {"unable to read " HOMEVAR, ExpectedRightTag{}};
-#endif
+            static constexpr StringLiteral HOMEVAR = "%USERPROFILE%";
+            static constexpr StringLiteral HOMEVARNAME = "USERPROFILE";
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            static constexpr StringLiteral HOMEVAR = "$HOME";
+            static constexpr StringLiteral HOMEVARNAME = "HOME";
+#endif // ^^^ !_WIN32
 
-            Path p = *maybe_home.get();
-            if (!p.is_absolute()) return {HOMEVAR " was not an absolute path", ExpectedRightTag{}};
+            auto maybe_home = get_environment_variable(HOMEVARNAME);
+            if (!maybe_home.has_value() || maybe_home.get()->empty())
+            {
+                return msg::format(msgUnableToReadEnvironmentVariable, msg::env_var = HOMEVAR);
+            }
 
-            return {std::move(p), ExpectedLeftTag{}};
+            Path p = std::move(*maybe_home.get());
+            if (!p.is_absolute())
+            {
+                return msg::format(msgEnvVarMustBeAbsolutePath, msg::path = p, msg::env_var = HOMEVAR);
+            }
+
+            return p;
         }();
+
         return s_home;
 #undef HOMEVAR
     }
 
 #ifdef _WIN32
-    const ExpectedS<Path>& get_appdata_local() noexcept
+    const ExpectedL<Path>& get_appdata_local() noexcept
     {
-        static ExpectedS<Path> s_home = []() -> ExpectedS<Path> {
+        static ExpectedL<Path> s_home = []() -> ExpectedL<Path> {
             auto maybe_home = get_environment_variable("LOCALAPPDATA");
             if (!maybe_home.has_value() || maybe_home.get()->empty())
             {
@@ -271,26 +419,33 @@ namespace vcpkg
                 maybe_home = get_environment_variable("APPDATA");
                 if (!maybe_home.has_value() || maybe_home.get()->empty())
                 {
-                    return {"unable to read %LOCALAPPDATA% or %APPDATA%", ExpectedRightTag{}};
+                    return msg::format(msgUnableToReadAppDatas);
                 }
 
                 auto p = Path(Path(*maybe_home.get()).parent_path());
                 p /= "Local";
-                if (!p.is_absolute()) return {"%APPDATA% was not an absolute path", ExpectedRightTag{}};
-                return {std::move(p), ExpectedLeftTag{}};
+                if (!p.is_absolute())
+                {
+                    return msg::format(msgEnvVarMustBeAbsolutePath, msg::path = p, msg::env_var = "%APPDATA%");
+                }
+
+                return p;
             }
 
             auto p = Path(*maybe_home.get());
-            if (!p.is_absolute()) return {"%LOCALAPPDATA% was not an absolute path", ExpectedRightTag{}};
+            if (!p.is_absolute())
+            {
+                return msg::format(msgEnvVarMustBeAbsolutePath, msg::path = p, msg::env_var = "%LOCALAPPDATA%");
+            }
 
-            return {std::move(p), ExpectedLeftTag{}};
+            return p;
         }();
         return s_home;
     }
 
-    const ExpectedS<Path>& get_system_root() noexcept
+    const ExpectedL<Path>& get_system_root() noexcept
     {
-        static const ExpectedS<Path> s_system_root = []() -> ExpectedS<Path> {
+        static const ExpectedL<Path> s_system_root = []() -> ExpectedL<Path> {
             auto env = get_environment_variable("SystemRoot");
             if (const auto p = env.get())
             {
@@ -298,82 +453,135 @@ namespace vcpkg
             }
             else
             {
-                return std::string("Expected the SystemRoot environment variable to be always set on Windows.");
+                return msg::format(msgSystemRootMustAlwaysBePresent);
             }
         }();
         return s_system_root;
     }
 
-    const ExpectedS<Path>& get_system32() noexcept
+    const ExpectedL<Path>& get_system32() noexcept
     {
         // This needs to be lowercase or msys-ish tools break. See https://github.com/microsoft/vcpkg-tool/pull/418/
-        static const ExpectedS<Path> s_system32 = get_system_root().map([](const Path& p) { return p / "system32"; });
+        static const ExpectedL<Path> s_system32 = get_system_root().map([](const Path& p) { return p / "system32"; });
         return s_system32;
     }
 #else
-    static const ExpectedS<Path>& get_xdg_cache_home() noexcept
+    static const ExpectedL<Path>& get_xdg_cache_home() noexcept
     {
-        static ExpectedS<Path> s_home = [] {
+        static ExpectedL<Path> s_home = []() -> ExpectedL<Path> {
             auto maybe_home = get_environment_variable("XDG_CACHE_HOME");
             if (auto p = maybe_home.get())
             {
-                return ExpectedS<Path>(Path(*p));
+                return Path(std::move(*p));
             }
-            else
-            {
-                return get_home_dir().map([](Path home) {
-                    home /= ".cache";
-                    return home;
-                });
-            }
+
+            return get_home_dir().map([](Path home) {
+                home /= ".cache";
+                return home;
+            });
         }();
         return s_home;
     }
 #endif
 
-    const ExpectedS<Path>& get_platform_cache_home() noexcept
+    const ExpectedL<Path>& get_platform_cache_vcpkg() noexcept
     {
+        static ExpectedL<Path> s_vcpkg =
 #ifdef _WIN32
-        return get_appdata_local();
+            get_appdata_local()
 #else
-        return get_xdg_cache_home();
+            get_xdg_cache_home()
 #endif
+                .map([](const Path& p) { return p / "vcpkg"; });
+        return s_vcpkg;
+    }
+
+    const ExpectedL<Path>& get_user_configuration_home() noexcept
+    {
+#if defined(_WIN32)
+        static const ExpectedL<Path> result =
+            get_appdata_local().map([](const Path& appdata_local) { return appdata_local / "vcpkg"; });
+#else
+        static const ExpectedL<Path> result = Path(get_environment_variable("HOME").value_or("/var")) / ".vcpkg";
+#endif
+        return result;
     }
 
 #if defined(_WIN32)
-    static bool is_string_keytype(const DWORD hkey_type)
+    std::wstring get_username()
     {
-        return hkey_type == REG_SZ || hkey_type == REG_MULTI_SZ || hkey_type == REG_EXPAND_SZ;
+        DWORD buffer_size = UNLEN + 1;
+        std::wstring buffer;
+        buffer.resize(static_cast<size_t>(buffer_size));
+        GetUserNameW(buffer.data(), &buffer_size);
+        buffer.resize(buffer_size);
+        return buffer;
     }
 
-    Optional<std::string> get_registry_string(void* base_hkey, StringView sub_key, StringView valuename)
+    bool test_registry_key(void* base_hkey, StringView sub_key)
     {
-        HKEY k = nullptr;
-        const LSTATUS ec =
-            RegOpenKeyExW(reinterpret_cast<HKEY>(base_hkey), Strings::to_utf16(sub_key).c_str(), 0, KEY_READ, &k);
-        if (ec != ERROR_SUCCESS) return nullopt;
-
-        auto w_valuename = Strings::to_utf16(valuename);
-
-        DWORD dw_buffer_size = 0;
-        DWORD dw_type = 0;
-        auto rc = RegQueryValueExW(k, w_valuename.c_str(), nullptr, &dw_type, nullptr, &dw_buffer_size);
-        if (rc != ERROR_SUCCESS || !is_string_keytype(dw_type) || dw_buffer_size == 0 ||
-            dw_buffer_size % sizeof(wchar_t) != 0)
-            return nullopt;
-        std::wstring ret;
-        ret.resize(dw_buffer_size / sizeof(wchar_t));
-
-        rc = RegQueryValueExW(
-            k, w_valuename.c_str(), nullptr, &dw_type, reinterpret_cast<LPBYTE>(ret.data()), &dw_buffer_size);
-        if (rc != ERROR_SUCCESS || !is_string_keytype(dw_type) || dw_buffer_size != sizeof(wchar_t) * ret.size())
-            return nullopt;
-
-        ret.pop_back(); // remove extra trailing null byte
-        return Strings::to_utf8(ret);
+        return HKey::open(base_hkey, sub_key, KEY_QUERY_VALUE).has_value();
     }
-#else
-    Optional<std::string> get_registry_string(void*, StringView, StringView) { return nullopt; }
+
+    ExpectedL<std::string> get_registry_string(void* base_hkey, StringView sub_key, StringView valuename)
+    {
+        auto maybe_k = HKey::open(base_hkey, sub_key, KEY_QUERY_VALUE);
+        if (auto k = maybe_k.get())
+        {
+            auto maybe_value = k->query_value(valuename);
+            if (auto value = maybe_value.get())
+            {
+                switch (value->type)
+                {
+                    case REG_SZ:
+                    case REG_EXPAND_SZ:
+                        // remove trailing nulls
+                        while (!value->data.empty() && !value->data.back())
+                        {
+                            value->data.pop_back();
+                        }
+
+                        {
+                            auto length_in_wchar_ts = value->data.size() >> 1;
+                            return Strings::to_utf8(reinterpret_cast<const wchar_t*>(value->data.data()),
+                                                    length_in_wchar_ts);
+                        }
+                    default:
+                        return msg::format_error(msgRegistryValueWrongType,
+                                                 msg::path = format_registry_value_name(base_hkey, sub_key, valuename));
+                }
+            }
+
+            return std::move(maybe_value).error();
+        }
+
+        return std::move(maybe_k).error();
+    }
+
+    ExpectedL<std::uint32_t> get_registry_dword(void* base_hkey, StringView sub_key, StringView valuename)
+    {
+        auto maybe_k = HKey::open(base_hkey, sub_key, KEY_QUERY_VALUE);
+        if (auto k = maybe_k.get())
+        {
+            auto maybe_value = k->query_value(valuename);
+            if (auto value = maybe_value.get())
+            {
+                if (value->type == REG_DWORD && value->data.size() >= sizeof(DWORD))
+                {
+                    DWORD result{};
+                    ::memcpy(&result, value->data.data(), sizeof(DWORD));
+                    return result;
+                }
+
+                return msg::format_error(msgRegistryValueWrongType,
+                                         msg::path = format_registry_value_name(base_hkey, sub_key, valuename));
+            }
+
+            return std::move(maybe_value).error();
+        }
+
+        return std::move(maybe_k).error();
+    }
 #endif
 
     static const Optional<Path>& get_program_files()
@@ -417,17 +625,35 @@ namespace vcpkg
         return ProgramW6432;
     }
 
-    int get_concurrency()
+    unsigned int get_concurrency()
     {
-        static int concurrency = [] {
+        static unsigned int concurrency = [] {
             auto user_defined_concurrency = get_environment_variable("VCPKG_MAX_CONCURRENCY");
             if (user_defined_concurrency)
             {
-                return std::stoi(user_defined_concurrency.value_or_exit(VCPKG_LINE_INFO));
+                int res = -1;
+                try
+                {
+                    res = std::stoi(user_defined_concurrency.value_or_exit(VCPKG_LINE_INFO));
+                }
+                catch (std::exception&)
+                {
+                    Checks::msg_exit_with_message(
+                        VCPKG_LINE_INFO, msgOptionMustBeInteger, msg::option = "VCPKG_MAX_CONCURRENCY");
+                }
+
+                if (!(res > 0))
+                {
+                    Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                                  msgEnvInvalidMaxConcurrency,
+                                                  msg::env_var = "VCPKG_MAX_CONCURRENCY",
+                                                  msg::value = res);
+                }
+                return static_cast<unsigned int>(res);
             }
             else
             {
-                return static_cast<int>(std::thread::hardware_concurrency()) + 1;
+                return std::thread::hardware_concurrency() + 1;
             }
         }();
 

@@ -3,6 +3,7 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/lazy.h>
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
@@ -79,20 +80,23 @@ namespace vcpkg
 
     Optional<ToolData> parse_tool_data_from_xml(StringView XML, StringView XML_PATH, StringView tool, StringView os)
     {
-        static const std::string XML_VERSION = "2";
+        static const char* XML_VERSION = "2";
         static const std::regex XML_VERSION_REGEX{R"###(<tools[\s]+version="([^"]+)">)###"};
         std::cmatch match_xml_version;
         const bool has_xml_version = std::regex_search(XML.begin(), XML.end(), match_xml_version, XML_VERSION_REGEX);
-        Checks::check_exit(
-            VCPKG_LINE_INFO, has_xml_version, R"(Could not find <tools version="%s"> in %s)", XML_VERSION, XML_PATH);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           XML_VERSION == match_xml_version[1],
-                           "Expected %s version: [%s], but was [%s]. Please re-run bootstrap-vcpkg.",
-                           XML_PATH,
-                           XML_VERSION,
-                           match_xml_version[1].str());
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               has_xml_version,
+                               msgCouldNotFindToolVersion,
+                               msg::version = XML_VERSION,
+                               msg::path = XML_PATH);
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               XML_VERSION == match_xml_version[1],
+                               msgVersionConflictXML,
+                               msg::path = XML_PATH,
+                               msg::expected_version = XML_VERSION,
+                               msg::actual_version = match_xml_version[1].str());
 
-        const std::regex tool_regex{Strings::format(R"###(<tool[\s]+name="%s"[\s]+os="%s">)###", tool, os)};
+        const std::regex tool_regex{fmt::format(R"###(<tool[\s]+name="{}"[\s]+os="{}">)###", tool, os)};
         std::cmatch match_tool_entry;
         const bool has_tool_entry = std::regex_search(XML.begin(), XML.end(), match_tool_entry, tool_regex);
         if (!has_tool_entry) return nullopt;
@@ -108,13 +112,13 @@ namespace vcpkg
         auto archive_name = Strings::find_at_most_one_enclosed(tool_data, "<archiveName>", "</archiveName>");
 
         const Optional<std::array<int, 3>> version = parse_tool_version_string(version_as_string);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           version.has_value(),
-                           "Could not parse version for tool %s. Version string was: %s",
-                           tool,
-                           version_as_string);
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               version.has_value(),
+                               msgFailedToParseVersionXML,
+                               msg::tool_name = tool,
+                               msg::version = version_as_string);
 
-        Path tool_dir_name = Strings::format("%s-%s-%s", tool, version_as_string, os);
+        Path tool_dir_name = fmt::format("{}-{}-{}", tool, version_as_string, os);
         Path download_subpath;
         if (auto a = archive_name.get())
         {
@@ -141,18 +145,17 @@ namespace vcpkg
         std::string version;
     };
 
-    static ExpectedS<std::string> run_to_extract_version(StringLiteral tool_name, const Path& exe_path, Command&& cmd)
+    static ExpectedL<std::string> run_to_extract_version(StringLiteral tool_name, const Path& exe_path, Command&& cmd)
     {
         return flatten_out(cmd_execute_and_capture_output(cmd), exe_path).map_error([&](LocalizedString&& output) {
             return msg::format_error(
                        msgFailedToRunToolToDetermineVersion, msg::tool_name = tool_name, msg::path = exe_path)
-                .append_raw("\n")
-                .append(std::move(output))
-                .extract_data();
+                .append_raw('\n')
+                .append(output);
         });
     }
 
-    ExpectedS<std::string> extract_prefixed_nonwhitespace(StringLiteral prefix,
+    ExpectedL<std::string> extract_prefixed_nonwhitespace(StringLiteral prefix,
                                                           StringLiteral tool_name,
                                                           std::string&& output,
                                                           const Path& exe_path)
@@ -171,10 +174,9 @@ namespace vcpkg
             return {std::move(output), expected_left_tag};
         }
 
-        auto error_prefix =
-            msg::format_error(msgUnexpectedToolOutput, msg::tool_name = tool_name, msg::path = exe_path).extract_data();
-        error_prefix.push_back('\n');
-        return {std::move(error_prefix) + std::move(output), expected_right_tag};
+        return std::move(msg::format_error(msgUnexpectedToolOutput, msg::tool_name = tool_name, msg::path = exe_path)
+                             .append_raw('\n')
+                             .append_raw(std::move(output)));
     }
 
     struct ToolProvider
@@ -196,7 +198,7 @@ namespace vcpkg
             (void)out_candidate_paths;
         }
 
-        virtual ExpectedS<std::string> get_version(const ToolCache& cache,
+        virtual ExpectedL<std::string> get_version(const ToolCache& cache,
                                                    MessageSink& status_sink,
                                                    const Path& exe_path) const = 0;
 
@@ -209,7 +211,7 @@ namespace vcpkg
 
         virtual void add_system_package_info(LocalizedString& out) const
         {
-            out.append_raw(" ").append(msgInstallWithSystemManager);
+            out.append_raw(' ').append(msgInstallWithSystemManager);
         }
     };
 
@@ -224,7 +226,7 @@ namespace vcpkg
         virtual std::array<int, 3> default_min_version() const override { return {0}; }
         virtual bool ignore_version() const override { return true; }
 
-        virtual ExpectedS<std::string> get_version(const ToolCache&, MessageSink&, const Path&) const override
+        virtual ExpectedL<std::string> get_version(const ToolCache&, MessageSink&, const Path&) const override
         {
             return {"0", expected_left_tag};
         }
@@ -253,7 +255,7 @@ namespace vcpkg
             }
         }
 #endif
-        virtual ExpectedS<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
+        virtual ExpectedL<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
         {
             return run_to_extract_version(Tools::CMAKE, exe_path, Command(exe_path).string_arg("--version"))
                 .then([&](std::string&& output) {
@@ -276,7 +278,7 @@ namespace vcpkg
         virtual std::vector<StringView> system_exe_stems() const override { return {Tools::NINJA}; }
         virtual std::array<int, 3> default_min_version() const override { return {3, 5, 1}; }
 
-        virtual ExpectedS<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
+        virtual ExpectedL<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
         {
             // Sample output: 1.8.2
             return run_to_extract_version(Tools::NINJA, exe_path, Command(exe_path).string_arg("--version"));
@@ -290,7 +292,7 @@ namespace vcpkg
         virtual std::vector<StringView> system_exe_stems() const override { return {Tools::NUGET}; }
         virtual std::array<int, 3> default_min_version() const override { return {4, 6, 2}; }
 
-        virtual ExpectedS<std::string> get_version(const ToolCache& cache,
+        virtual ExpectedL<std::string> get_version(const ToolCache& cache,
                                                    MessageSink& status_sink,
                                                    const Path& exe_path) const override
         {
@@ -303,10 +305,8 @@ namespace vcpkg
             cmd.string_arg(exe_path);
             return run_to_extract_version(Tools::NUGET, exe_path, std::move(cmd))
 #if !defined(_WIN32)
-                .map_error([](std::string&& error) {
-                    error.push_back('\n');
-                    error.append(msg::format(msgMonoInstructions).extract_data());
-                    return std::move(error);
+                .map_error([](LocalizedString&& error) {
+                    return std::move(error.append_raw('\n').append(msg::format(msgMonoInstructions)));
                 })
 #endif // ^^^ !_WIN32
 
@@ -326,7 +326,7 @@ namespace vcpkg
         virtual StringView tool_data_name() const override { return Tools::ARIA2; }
         virtual std::vector<StringView> system_exe_stems() const override { return {"aria2c"}; }
         virtual std::array<int, 3> default_min_version() const override { return {1, 33, 1}; }
-        virtual ExpectedS<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
+        virtual ExpectedL<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
         {
             return run_to_extract_version(Tools::ARIA2, exe_path, Command(exe_path).string_arg("--version"))
                 .then([&](std::string&& output) {
@@ -355,7 +355,7 @@ namespace vcpkg
         }
 #endif
 
-        virtual ExpectedS<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
+        virtual ExpectedL<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
         {
             return run_to_extract_version(Tools::NODE, exe_path, Command(exe_path).string_arg("--version"))
                 .then([&](std::string&& output) {
@@ -385,7 +385,7 @@ namespace vcpkg
         }
 #endif
 
-        virtual ExpectedS<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
+        virtual ExpectedL<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
         {
             return run_to_extract_version(Tools::GIT, exe_path, Command(exe_path).string_arg("--version"))
                 .then([&](std::string&& output) {
@@ -402,7 +402,7 @@ namespace vcpkg
         virtual std::vector<StringView> system_exe_stems() const override { return {Tools::MONO}; }
         virtual std::array<int, 3> default_min_version() const override { return {0, 0, 0}; }
 
-        virtual ExpectedS<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
+        virtual ExpectedL<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
         {
             return run_to_extract_version(Tools::MONO, exe_path, Command(exe_path).string_arg("--version"))
                 .then([&](std::string&& output) {
@@ -416,11 +416,11 @@ namespace vcpkg
         virtual void add_system_package_info(LocalizedString& out) const override
         {
 #if defined(__APPLE__)
-            out.append_raw(" ").append(msgInstallWithSystemManagerPkg, msg::command_line = "brew install mono");
+            out.append_raw(' ').append(msgInstallWithSystemManagerPkg, msg::command_line = "brew install mono");
 #else
-            out.append_raw(" ").append(msgInstallWithSystemManagerPkg,
+            out.append_raw(' ').append(msgInstallWithSystemManagerPkg,
                                        msg::command_line = "sudo apt install mono-complete");
-            out.append_raw(" ").append(msgInstallWithSystemManagerMono,
+            out.append_raw(' ').append(msgInstallWithSystemManagerMono,
                                        msg::url = "https://www.mono-project.com/download/stable/");
 #endif
         }
@@ -433,7 +433,7 @@ namespace vcpkg
         virtual std::vector<StringView> system_exe_stems() const override { return {Tools::GSUTIL}; }
         virtual std::array<int, 3> default_min_version() const override { return {4, 56, 0}; }
 
-        virtual ExpectedS<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
+        virtual ExpectedL<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
         {
             return run_to_extract_version(Tools::GSUTIL, exe_path, Command(exe_path).string_arg("version"))
                 .then([&](std::string&& output) {
@@ -451,7 +451,7 @@ namespace vcpkg
         virtual std::vector<StringView> system_exe_stems() const override { return {Tools::AWSCLI}; }
         virtual std::array<int, 3> default_min_version() const override { return {2, 4, 4}; }
 
-        virtual ExpectedS<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
+        virtual ExpectedL<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
         {
             return run_to_extract_version(Tools::AWSCLI, exe_path, Command(exe_path).string_arg("--version"))
                 .then([&](std::string&& output) {
@@ -468,7 +468,7 @@ namespace vcpkg
         virtual std::vector<StringView> system_exe_stems() const override { return {"cos"}; }
         virtual std::array<int, 3> default_min_version() const override { return {0, 11, 0}; }
 
-        virtual ExpectedS<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
+        virtual ExpectedL<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
         {
             return run_to_extract_version(Tools::COSCLI, exe_path, Command(exe_path).string_arg("--version"))
                 .then([&](std::string&& output) {
@@ -485,7 +485,7 @@ namespace vcpkg
         virtual StringView tool_data_name() const override { return "installerbase"; }
         virtual std::array<int, 3> default_min_version() const override { return {0, 0, 0}; }
 
-        virtual ExpectedS<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
+        virtual ExpectedL<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
         {
             // Sample output: 3.1.81
             return run_to_extract_version(
@@ -508,7 +508,7 @@ namespace vcpkg
         virtual std::vector<StringView> system_exe_stems() const override { return {"pwsh"}; }
         virtual std::array<int, 3> default_min_version() const override { return {7, 0, 3}; }
 
-        virtual ExpectedS<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
+        virtual ExpectedL<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
         {
             return run_to_extract_version(Tools::POWERSHELL_CORE, exe_path, Command(exe_path).string_arg("--version"))
                 .then([&](std::string&& output) {
@@ -558,7 +558,7 @@ namespace vcpkg
         }
 #endif // ^^^ _WIN32
 
-        virtual ExpectedS<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
+        virtual ExpectedL<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
         {
             return run_to_extract_version(Tools::PYTHON3, exe_path, Command(exe_path).string_arg("--version"))
                 .then([&](std::string&& output) {
@@ -570,9 +570,9 @@ namespace vcpkg
         virtual void add_system_package_info(LocalizedString& out) const override
         {
 #if defined(__APPLE__)
-            out.append_raw(" ").append(msgInstallWithSystemManagerPkg, msg::command_line = "brew install python3");
+            out.append_raw(' ').append(msgInstallWithSystemManagerPkg, msg::command_line = "brew install python3");
 #else
-            out.append_raw(" ").append(msgInstallWithSystemManagerPkg, msg::command_line = "sudo apt install python3");
+            out.append_raw(' ').append(msgInstallWithSystemManagerPkg, msg::command_line = "sudo apt install python3");
 #endif
         }
     };
@@ -592,9 +592,9 @@ namespace vcpkg
         virtual void add_system_package_info(LocalizedString& out) const override
         {
 #if defined(__APPLE__)
-            out.append_raw(" ").append(msgInstallWithSystemManagerPkg, msg::command_line = "brew install python3");
+            out.append_raw(' ').append(msgInstallWithSystemManagerPkg, msg::command_line = "brew install python3");
 #else
-            out.append_raw(" ").append(msgInstallWithSystemManagerPkg,
+            out.append_raw(' ').append(msgInstallWithSystemManagerPkg,
                                        msg::command_line = "sudo apt install python3-virtualenv");
 #endif
         }
@@ -654,35 +654,27 @@ namespace vcpkg
         Path download_tool(const ToolData& tool_data, MessageSink& status_sink) const
         {
             const std::array<int, 3>& version = tool_data.version;
-            const std::string version_as_string = Strings::format("%d.%d.%d", version[0], version[1], version[2]);
-            Checks::check_maybe_upgrade(
-                VCPKG_LINE_INFO,
-                !tool_data.url.empty(),
-                "A suitable version of %s was not found (required v%s) and unable to automatically "
-                "download a portable one. Please install a newer version of %s.",
-                tool_data.name,
-                version_as_string,
-                tool_data.name);
-
-            status_sink.print(Color::none,
-                              Strings::concat("A suitable version of ",
-                                              tool_data.name,
-                                              " was not found (required v",
-                                              version_as_string,
-                                              "). Downloading portable ",
-                                              tool_data.name,
-                                              " v",
-                                              version_as_string,
-                                              "...\n"));
+            const std::string version_as_string = fmt::format("{}.{}.{}", version[0], version[1], version[2]);
+            Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
+                                            !tool_data.url.empty(),
+                                            msgToolOfVersionXNotFound,
+                                            msg::tool_name = tool_data.name,
+                                            msg::version = version_as_string);
+            status_sink.println(Color::none,
+                                msgDownloadingPortableToolVersionX,
+                                msg::tool_name = tool_data.name,
+                                msg::version = version_as_string);
 
             const auto download_path = downloads / tool_data.download_subpath;
             if (!fs.exists(download_path, IgnoreErrors{}))
             {
-                status_sink.print(
-                    Color::none,
-                    Strings::concat(
-                        "Downloading ", tool_data.name, "...\n  ", tool_data.url, " -> ", download_path, "\n"));
-                downloader->download_file(fs, tool_data.url, download_path, tool_data.sha512);
+                status_sink.println(Color::none,
+                                    msgDownloadingTool,
+                                    msg::tool_name = tool_data.name,
+                                    msg::url = tool_data.url,
+                                    msg::path = download_path);
+
+                downloader->download_file(fs, tool_data.url, {}, download_path, tool_data.sha512, null_sink);
             }
             else
             {
@@ -694,7 +686,7 @@ namespace vcpkg
 
             if (tool_data.is_archive)
             {
-                status_sink.print(Color::none, Strings::concat("Extracting ", tool_data.name, "...\n"));
+                status_sink.println(Color::none, msgExtractingTool, msg::tool_name = tool_data.name);
 #if defined(_WIN32)
                 if (tool_data.name == "cmake")
                 {
@@ -714,8 +706,10 @@ namespace vcpkg
                 fs.rename(download_path, exe_path, IgnoreErrors{});
             }
 
-            Checks::check_exit(
-                VCPKG_LINE_INFO, fs.exists(exe_path, IgnoreErrors{}), "Expected %s to exist after fetching", exe_path);
+            if (!fs.exists(exe_path, IgnoreErrors{}))
+            {
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgExpectedPathToExist, msg::path = exe_path);
+            }
 
             return exe_path;
         }
@@ -834,7 +828,7 @@ namespace vcpkg
             s.append(msgToolFetchFailed, msg::tool_name = tool.tool_data_name());
             if (env_force_system_binaries && download_available)
             {
-                s.append_raw(" ").append(msgDownloadAvailable, msg::env_var = s_env_vcpkg_force_system_binaries);
+                s.append_raw(' ').append(msgDownloadAvailable, msg::env_var = s_env_vcpkg_force_system_binaries);
             }
             if (consider_system)
             {
@@ -842,7 +836,7 @@ namespace vcpkg
             }
             else if (!download_available)
             {
-                s.append_raw(" ").append(msgUnknownTool);
+                s.append_raw(' ').append(msgUnknownTool);
             }
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, s);
         }
@@ -870,6 +864,10 @@ namespace vcpkg
                 if (tool == Tools::TAR)
                 {
                     return {find_system_tar(fs).value_or_exit(VCPKG_LINE_INFO), {}};
+                }
+                if (tool == Tools::CMAKE_SYSTEM)
+                {
+                    return {find_system_cmake(fs).value_or_exit(VCPKG_LINE_INFO), {}};
                 }
                 GenericToolProvider provider{tool};
                 return get_path(provider, status_sink);
@@ -900,6 +898,39 @@ namespace vcpkg
         {
             return tools[0];
         }
+    }
+
+    ExpectedL<Path> find_system_cmake(const Filesystem& fs)
+    {
+        auto tools = fs.find_from_PATH(Tools::CMAKE);
+        if (!tools.empty())
+        {
+            return std::move(tools[0]);
+        }
+
+#if defined(_WIN32)
+        std::vector<Path> candidate_paths;
+        const auto& program_files = get_program_files_platform_bitness();
+        if (const auto pf = program_files.get())
+        {
+            auto path = *pf / "CMake" / "bin" / "cmake.exe";
+            if (fs.exists(path, IgnoreErrors{})) return path;
+        }
+
+        const auto& program_files_32_bit = get_program_files_32_bit();
+        if (const auto pf = program_files_32_bit.get())
+        {
+            auto path = *pf / "CMake" / "bin" / "cmake.exe";
+            if (fs.exists(path, IgnoreErrors{})) return path;
+        }
+#endif
+
+        return msg::format(msg::msgErrorMessage)
+            .append(msgToolFetchFailed, msg::tool_name = Tools::CMAKE)
+#if !defined(_WIN32)
+            .append(msgInstallWithSystemManager)
+#endif
+            ;
     }
 
     std::unique_ptr<ToolCache> get_tool_cache(Filesystem& fs,

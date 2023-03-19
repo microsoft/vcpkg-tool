@@ -1,21 +1,16 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { deactivate } from '../../artifacts/activation';
 import { i } from '../../i18n';
 import { session } from '../../main';
 import { Command } from '../command';
-import { projectFile } from '../format';
-import { log } from '../styling';
-import { Project } from '../switches/project';
-import { WhatIf } from '../switches/whatIf';
 
 export class DeactivateCommand extends Command {
   readonly command = 'deactivate';
   readonly aliases = [];
   seeAlso = [];
   argumentsHelp = [];
-  project = new Project(this);
-  whatIf = new WhatIf(this);
 
   get summary() {
     return i`Deactivates the current session`;
@@ -27,15 +22,7 @@ export class DeactivateCommand extends Command {
     ];
   }
 
-  override async run() {
-    const project = await this.project.value;
-    if (!project) {
-      return false;
-    }
-
-    log(i`Deactivating project ${projectFile(project)}`);
-    await session.deactivate();
-
-    return true;
+  override run() {
+    return deactivate(session, true);
   }
 }

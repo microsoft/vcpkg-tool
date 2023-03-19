@@ -1,7 +1,6 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/strings.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/cmakevars.h>
@@ -16,11 +15,15 @@
 
 namespace vcpkg::Commands
 {
+    static constexpr StringLiteral OPTION_JSON{"x-json"};
+    static constexpr std::array<CommandSwitch, 1> CHECK_SUPPORT_SWITCHES = {
+        {{OPTION_JSON, []() { return msg::format(msgJsonSwitch); }}}};
+
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string(R"(x-check-support <package>...)"),
+        [] { return create_example_string("x-check-support <package>..."); },
         1,
         SIZE_MAX,
-        {},
+        {CHECK_SUPPORT_SWITCHES},
         nullptr,
     };
 
@@ -57,8 +60,8 @@ namespace vcpkg::Commands
         void print_port_supported(const Port& p, bool is_top_level_supported, View<Port> reasons)
         {
             const auto full_port_name = [](const Port& port) {
-                return Strings::format(
-                    "%s[%s]:%s", port.port_name, Strings::join(",", port.features), port.triplet.to_string());
+                return fmt::format(
+                    "{}[{}]:{}", port.port_name, Strings::join(",", port.features), port.triplet.to_string());
             };
 
             if (reasons.size() == 0)
@@ -71,13 +74,13 @@ namespace vcpkg::Commands
                 else
                 {
                     msg::println(msg::format(msgUnsupportedPort, msg::package_name = full_port_name(p))
-                                     .append_raw("\n")
+                                     .append_raw('\n')
                                      .append(msgPortSupportsField, msg::supports_expression = p.supports_expr));
                 }
 
                 return;
             }
-            auto message = msg::format(msgUnsupportedPort, msg::package_name = full_port_name(p)).append_raw("\n");
+            auto message = msg::format(msgUnsupportedPort, msg::package_name = full_port_name(p)).append_raw('\n');
             if (is_top_level_supported)
             {
                 message.append(msgPortDependencyConflict, msg::package_name = full_port_name(p));
@@ -85,13 +88,13 @@ namespace vcpkg::Commands
             else
             {
                 message.append(msgPortSupportsField, msg::supports_expression = p.supports_expr)
-                    .append_raw("\n")
+                    .append_raw('\n')
                     .append(msgPortDependencyConflict, msg::package_name = full_port_name(p));
             }
 
             for (const Port& reason : reasons)
             {
-                message.append_raw("\n")
+                message.append_raw('\n')
                     .append_indent()
                     .append(msgUnsupportedPortDependency, msg::value = full_port_name(p))
                     .append(msgPortSupportsField, msg::supports_expression = reason.supports_expr);
@@ -106,15 +109,20 @@ namespace vcpkg::Commands
                                         Triplet host_triplet)
     {
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
-        const bool use_json = args.json.value_or(false);
+        const bool use_json = Util::Sets::contains(options.switches, OPTION_JSON);
         Json::Array json_to_print; // only used when `use_json`
 
-        const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
+        const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
-                std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+                std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
         });
 
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
+        print_default_triplet_warning(args, options.command_arguments);
+
+        auto& fs = paths.get_filesystem();
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(
+            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
 
         // for each spec in the user-requested specs, check all dependencies
@@ -186,7 +194,7 @@ namespace vcpkg::Commands
 
         if (use_json)
         {
-            print2(Json::stringify(json_to_print));
+            msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(json_to_print));
         }
     }
 

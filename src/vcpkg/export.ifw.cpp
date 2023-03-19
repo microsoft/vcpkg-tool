@@ -1,4 +1,5 @@
-#include <vcpkg/base/system.print.h>
+#include <vcpkg/base/fwd/message_sinks.h>
+
 #include <vcpkg/base/system.process.h>
 
 #include <vcpkg/commands.h>
@@ -96,10 +97,12 @@ namespace vcpkg::Export::IFW
             // 10 characters + 1 null terminating character will be written for a total of 11 chars
             char mbstr[11];
             const size_t bytes_written = std::strftime(mbstr, sizeof(mbstr), "%Y-%m-%d", &date_time);
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               bytes_written == 10,
-                               "Expected 10 bytes to be written, but %u were written",
-                               bytes_written);
+            if (bytes_written != 10)
+            {
+                Checks::unreachable(VCPKG_LINE_INFO,
+                                    fmt::format("Formatting a year used {} bytes rather than 10.", bytes_written));
+            }
+
             const std::string date_time_as_string(mbstr);
             return date_time_as_string;
         }
@@ -139,7 +142,7 @@ namespace vcpkg::Export::IFW
             // Prepare meta dir
             const auto package_xml_dir_path =
                 ifw_packages_dir_path /
-                Strings::format("packages.%s.%s/meta", action.spec.name(), action.spec.triplet().canonical_name());
+                fmt::format("packages.{}.{}/meta", action.spec.name(), action.spec.triplet().canonical_name());
             const auto package_xml_file_path = package_xml_dir_path / "package.xml";
             fs.create_directories(package_xml_dir_path, VCPKG_LINE_INFO);
             auto deps = Strings::join(
@@ -148,13 +151,13 @@ namespace vcpkg::Export::IFW
             if (!deps.empty()) deps = "\n    <Dependencies>" + deps + "</Dependencies>";
 
             fs.write_contents(package_xml_file_path,
-                              Strings::format(
+                              fmt::format(
                                   R"###(<?xml version="1.0"?>
 <Package>
-    <DisplayName>%s</DisplayName>
-    <Version>%s</Version>
-    <ReleaseDate>%s</ReleaseDate>
-    <AutoDependOn>packages.%s:,triplets.%s:</AutoDependOn>%s
+    <DisplayName>{}</DisplayName>
+    <Version>{}</Version>
+    <ReleaseDate>{}</ReleaseDate>
+    <AutoDependOn>packages.{}:,triplets.{}:</AutoDependOn>{}
     <Virtual>true</Virtual>
 </Package>
 )###",
@@ -167,9 +170,9 @@ namespace vcpkg::Export::IFW
                               VCPKG_LINE_INFO);
 
             // Return dir path for export package data
-            return ifw_packages_dir_path / Strings::format("packages.%s.%s/data/installed",
-                                                           action.spec.name(),
-                                                           action.spec.triplet().canonical_name());
+            return ifw_packages_dir_path / fmt::format("packages.{}.{}/data/installed",
+                                                       action.spec.name(),
+                                                       action.spec.triplet().canonical_name());
         }
 
         void export_unique_packages(const Path& raw_exported_dir_path,
@@ -180,12 +183,12 @@ namespace vcpkg::Export::IFW
             auto package_xml_file_path = package_xml_dir_path / "package.xml";
             fs.create_directories(package_xml_dir_path, VCPKG_LINE_INFO);
             fs.write_contents(package_xml_file_path,
-                              Strings::format(
+                              fmt::format(
                                   R"###(<?xml version="1.0"?>
 <Package>
     <DisplayName>Packages</DisplayName>
     <Version>1.0.0</Version>
-    <ReleaseDate>%s</ReleaseDate>
+    <ReleaseDate>{}</ReleaseDate>
 </Package>
 )###",
                                   create_release_date()),
@@ -196,17 +199,17 @@ namespace vcpkg::Export::IFW
                 const ExportPlanAction& action = *(unique_package.second);
                 const BinaryParagraph& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
 
-                package_xml_dir_path = raw_exported_dir_path / Strings::format("packages.%s", unique_package.first);
+                package_xml_dir_path = raw_exported_dir_path / fmt::format("packages.{}", unique_package.first);
                 package_xml_file_path = package_xml_dir_path / "export_integration_files";
                 fs.create_directories(package_xml_dir_path, VCPKG_LINE_INFO);
                 fs.write_contents(package_xml_file_path,
-                                  Strings::format(
+                                  fmt::format(
                                       R"###(<?xml version="1.0"?>
 <Package>
-    <DisplayName>%s</DisplayName>
-    <Description>%s</Description>
-    <Version>%s</Version>
-    <ReleaseDate>%s</ReleaseDate>
+    <DisplayName>{}</DisplayName>
+    <Description>{}</Description>
+    <Version>{}</Version>
+    <ReleaseDate>{}</ReleaseDate>
 </Package>
 )###",
                                       action.spec.name(),
@@ -227,12 +230,12 @@ namespace vcpkg::Export::IFW
             auto package_xml_file_path = package_xml_dir_path / "package.xml";
             fs.create_directories(package_xml_dir_path, VCPKG_LINE_INFO);
             fs.write_contents(package_xml_file_path,
-                              Strings::format(
+                              fmt::format(
                                   R"###(<?xml version="1.0"?>
 <Package>
     <DisplayName>Triplets</DisplayName>
     <Version>1.0.0</Version>
-    <ReleaseDate>%s</ReleaseDate>
+    <ReleaseDate>{}</ReleaseDate>
 </Package>
 )###",
                                   create_release_date()),
@@ -240,16 +243,16 @@ namespace vcpkg::Export::IFW
 
             for (const std::string& triplet : unique_triplets)
             {
-                package_xml_dir_path = raw_exported_dir_path / Strings::format("triplets.%s/meta", triplet);
+                package_xml_dir_path = raw_exported_dir_path / fmt::format("triplets.{}/meta", triplet);
                 package_xml_file_path = raw_exported_dir_path / "package.xml";
                 fs.create_directories(package_xml_dir_path, VCPKG_LINE_INFO);
                 fs.write_contents(package_xml_file_path,
-                                  Strings::format(
+                                  fmt::format(
                                       R"###(<?xml version="1.0"?>
 <Package>
-    <DisplayName>%s</DisplayName>
+    <DisplayName>{}</DisplayName>
     <Version>1.0.0</Version>
-    <ReleaseDate>%s</ReleaseDate>
+    <ReleaseDate>{}</ReleaseDate>
 </Package>
 )###",
                                       triplet,
@@ -265,12 +268,12 @@ namespace vcpkg::Export::IFW
             auto package_xml_file_path = package_xml_dir_path / "package.xml";
             fs.create_directories(package_xml_dir_path, VCPKG_LINE_INFO);
             fs.write_contents(package_xml_file_path,
-                              Strings::format(
+                              fmt::format(
                                   R"###(<?xml version="1.0"?>
 <Package>
     <DisplayName>Integration</DisplayName>
     <Version>1.0.0</Version>
-    <ReleaseDate>%s</ReleaseDate>
+    <ReleaseDate>{}</ReleaseDate>
 </Package>
 )###",
                                   create_release_date()),
@@ -287,23 +290,23 @@ namespace vcpkg::Export::IFW
             std::string ifw_repo_url = ifw_options.maybe_repository_url.value_or("");
             if (!ifw_repo_url.empty())
             {
-                formatted_repo_url = Strings::format(R"###(
+                formatted_repo_url = fmt::format(R"###(
     <RemoteRepositories>
         <Repository>
-            <Url>%s</Url>
+            <Url>{}</Url>
         </Repository>
     </RemoteRepositories>)###",
-                                                     ifw_repo_url);
+                                                 ifw_repo_url);
             }
 
             fs.write_contents(config_xml_file_path,
-                              Strings::format(
+                              fmt::format(
                                   R"###(<?xml version="1.0"?>
 <Installer>
     <Name>vcpkg</Name>
     <Version>1.0.0</Version>
     <StartMenuDir>vcpkg</StartMenuDir>
-    <TargetDir>@RootDir@/src/vcpkg</TargetDir>%s
+    <TargetDir>@RootDir@/src/vcpkg</TargetDir>{}
 </Installer>
 )###",
                                   formatted_repo_url),
@@ -312,7 +315,7 @@ namespace vcpkg::Export::IFW
 
         void export_maintenance_tool(const Path& ifw_packages_dir_path, const VcpkgPaths& paths)
         {
-            print2("Exporting maintenance tool...\n");
+            msg::println(msgExportingMaintenanceTool);
 
             Filesystem& fs = paths.get_filesystem();
 
@@ -326,13 +329,13 @@ namespace vcpkg::Export::IFW
             auto package_xml_file_path = package_xml_dir_path / "package.xml";
             fs.create_directories(package_xml_dir_path, VCPKG_LINE_INFO);
             fs.write_contents(package_xml_file_path,
-                              Strings::format(
+                              fmt::format(
                                   R"###(<?xml version="1.0"?>
 <Package>
     <DisplayName>Maintenance Tool</DisplayName>
     <Description>Maintenance Tool</Description>
     <Version>1.0.0</Version>
-    <ReleaseDate>%s</ReleaseDate>
+    <ReleaseDate>{}</ReleaseDate>
     <Script>maintenance.qs</Script>
     <Essential>true</Essential>
     <Virtual>true</Virtual>
@@ -344,8 +347,6 @@ namespace vcpkg::Export::IFW
             const auto script_source = paths.root / "scripts" / "ifw" / "maintenance.qs";
             const auto script_destination = ifw_packages_dir_path / "maintenance" / "meta" / "maintenance.qs";
             fs.copy_file(script_source, script_destination, CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
-
-            print2("Exporting maintenance tool... done\n");
         }
 
         void do_repository(const std::string& export_id, const Options& ifw_options, const VcpkgPaths& paths)
@@ -354,8 +355,7 @@ namespace vcpkg::Export::IFW
             repogen_exe.replace_filename("repogen.exe");
             const auto packages_dir = get_packages_dir_path(export_id, ifw_options, paths);
             const auto repository_dir = get_repository_dir_path(export_id, ifw_options, paths);
-
-            print2("Generating repository ", repository_dir, "...\n");
+            msg::println(msgGeneratingRepo, msg::path = repository_dir);
 
             Filesystem& fs = paths.get_filesystem();
             fs.remove_all(repository_dir, VCPKG_LINE_INFO);
@@ -366,7 +366,6 @@ namespace vcpkg::Export::IFW
             flatten(cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()),
                     repogen_exe)
                 .value_or_exit(VCPKG_LINE_INFO);
-            vcpkg::printf(Color::success, "Generating repository %s... done.\n", repository_dir);
         }
 
         void do_installer(const std::string& export_id, const Options& ifw_options, const VcpkgPaths& paths)
@@ -377,8 +376,7 @@ namespace vcpkg::Export::IFW
             const auto packages_dir = get_packages_dir_path(export_id, ifw_options, paths);
             const auto repository_dir = get_repository_dir_path(export_id, ifw_options, paths);
             const auto installer_file = get_installer_file_path(export_id, ifw_options, paths);
-
-            vcpkg::printf("Generating installer %s...\n", installer_file);
+            msg::println(msgGeneratingInstaller, msg::path = installer_file);
 
             Command cmd_line;
 
@@ -406,8 +404,7 @@ namespace vcpkg::Export::IFW
             flatten(cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()),
                     binarycreator_exe)
                 .value_or_exit(VCPKG_LINE_INFO);
-
-            vcpkg::printf(Color::success, "Generating installer %s... done.\n", installer_file);
+            msg::println(Color::success, msgGeneratedInstaller, msg::path = installer_file);
         }
     }
 
@@ -423,20 +420,14 @@ namespace vcpkg::Export::IFW
         // Prepare packages directory
         const auto ifw_packages_dir_path = get_packages_dir_path(export_id, ifw_options, paths);
 
-        fs.remove_all(ifw_packages_dir_path, ec, failure_point);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           !ec,
-                           "Could not remove outdated packages directory %s due to file %s",
-                           ifw_packages_dir_path,
-                           failure_point);
+        fs.remove_all(ifw_packages_dir_path, VCPKG_LINE_INFO);
 
         fs.create_directory(ifw_packages_dir_path, ec);
-        Checks::check_exit(VCPKG_LINE_INFO, !ec, "Could not create packages directory %s", ifw_packages_dir_path);
+        Checks::msg_check_exit(VCPKG_LINE_INFO, !ec, msgCreationFailed, msg::path = ifw_packages_dir_path);
 
         // Export maintenance tool
         export_maintenance_tool(ifw_packages_dir_path, paths);
-
-        vcpkg::printf("Exporting packages %s...\n", ifw_packages_dir_path);
+        msg::println(msgExportingPackage, msg::package_name = ifw_packages_dir_path);
 
         // execute the plan
         std::map<std::string, const ExportPlanAction*> unique_packages;
@@ -447,8 +438,7 @@ namespace vcpkg::Export::IFW
             {
                 Checks::unreachable(VCPKG_LINE_INFO);
             }
-
-            print2("Exporting package ", action.spec, "...\n");
+            msg::println(msgExportingPackage, msg::package_name = action.spec);
 
             const BinaryParagraph& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
 
@@ -465,11 +455,8 @@ namespace vcpkg::Export::IFW
             install_package_and_write_listfile(fs, paths.package_dir(action.spec), dirs);
         }
 
-        vcpkg::printf("Exporting packages %s... done\n", ifw_packages_dir_path);
-
         const auto config_file = get_config_file_path(export_id, ifw_options, paths);
-
-        vcpkg::printf("Generating configuration %s...\n", config_file);
+        msg::println(msgGeneratingConfiguration, msg::path = config_file);
 
         // Unique packages
         export_unique_packages(ifw_packages_dir_path, unique_packages, fs);
@@ -485,7 +472,7 @@ namespace vcpkg::Export::IFW
         // Configuration
         export_config(export_id, ifw_options, paths);
 
-        vcpkg::printf("Generating configuration %s... done.\n", config_file);
+        msg::println(Color::success, msgGeneratedConfiguration, msg::path = config_file);
 
         // Do repository (optional)
         std::string ifw_repo_url = ifw_options.maybe_repository_url.value_or("");

@@ -6,10 +6,10 @@ $manifestPath = Join-Path $manifestDir 'vcpkg.json'
 $configurationPath = Join-Path $manifestDir 'vcpkg-configuration.json'
 
 Push-Location $manifestDir
-$result = Run-Vcpkg new
+$result = Run-VcpkgAndCaptureOutput new
 Pop-Location
 Throw-IfNotFailed
-if (-not $result -contains '--application') {
+if (-not $result.Contains('--application')) {
     throw "New without --name or --version didn't require setting --application"
 }
 
@@ -31,19 +31,19 @@ if ($expected -ne $actual) {
 }
 
 Push-Location $manifestDir
-$result = Run-Vcpkg new --application
+$result = Run-VcpkgAndCaptureOutput new --application
 Pop-Location
 Throw-IfNotFailed
-if (-not $result -contains 'A manifest is already present at') {
+if (-not $result.Contains('A manifest is already present at')) {
     throw "New didn't detect existing manifest correctly"
 }
 
 Remove-Item $manifestPath
 Push-Location $manifestDir
-$result = Run-Vcpkg new --application
+$result = Run-VcpkgAndCaptureOutput new --application
 Pop-Location
 Throw-IfNotFailed
-if (-not $result -contains 'Creating a manifest would overwrite a vcpkg-configuration.json') {
+if (-not $result.Contains('Creating a manifest would overwrite a vcpkg-configuration.json')) {
     throw "New didn't detect existing configuration correctly"
 }
 

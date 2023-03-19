@@ -3,11 +3,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { green, white } from 'chalk';
 import { spawn } from 'child_process';
 import { argv } from 'process';
 import { CommandLine } from './cli/command-line';
 import { AcquireCommand } from './cli/commands/acquire';
+import { AcquireProjectCommand } from './cli/commands/acquire-project';
 import { ActivateCommand } from './cli/commands/activate';
 import { AddCommand } from './cli/commands/add';
 import { CacheCommand } from './cli/commands/cache';
@@ -22,37 +22,20 @@ import { RegenerateCommand } from './cli/commands/regenerate-index';
 import { RemoveCommand } from './cli/commands/remove';
 import { UpdateCommand } from './cli/commands/update';
 import { UseCommand } from './cli/commands/use';
-import { VersionCommand } from './cli/commands/version';
-import { cli, product } from './cli/constants';
+import { cli } from './cli/constants';
 import { command as formatCommand, hint } from './cli/format';
-import { debug, error, initStyling, log } from './cli/styling';
+import { error, initStyling, log } from './cli/styling';
 import { i, setLocale } from './i18n';
-import { flushTelemetry, trackEvent } from './insights';
 import { Session } from './session';
-import { Version as cliVersion } from './version';
 
 // parse the command line
 const commandline = new CommandLine(argv.slice(2));
 
-// try to set the locale based on the users's settings.
-setLocale(commandline.language, `${__dirname}/i18n/`);
 
-function header() {
-  if (!commandline.vcpkgCommand) {
-    if (commandline.debug) {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      log(`${green.bold(`${product} command line utility`)} ${white.bold(cliVersion)} [node: ${white.bold(process.version)}; max-memory: ${white.bold(Math.round((require('v8').getHeapStatistics().heap_size_limit) / (1024 * 1024)) & 0xffffffff00)} gb]`);
-    } else {
-      log(`${green.bold(`${product} command line utility`)} ${white.bold(cliVersion)}`);
-    }
-    log('');
-  }
-}
+setLocale(commandline.language);
 
 export let session: Session;
 require('./exports');
-
-trackEvent; // ensure it's loaded asap.
 
 async function main() {
 
@@ -62,19 +45,12 @@ async function main() {
   spawn(process.argv0, ['--version']);
 
   // create our session for this process.
-  session = new Session(process.cwd(), commandline.context, <any>commandline, process.env);
+  session = new Session(process.cwd(), commandline.context, <any>commandline);
 
   initStyling(commandline, session);
 
-  // dump out the version information
-  header();
-
   // start up the session and init the channel listeners.
   await session.init();
-
-  const telemetryEnabled = await session.telemetryEnabled;
-  debug(`Anonymous Telemetry Enabled: ${telemetryEnabled}`);
-  // find a project profile.
 
   const help = new HelpCommand(commandline);
 
@@ -82,6 +58,7 @@ async function main() {
   const list = new ListCommand(commandline);
 
   const add = new AddCommand(commandline);
+  const acquire_project = new AcquireProjectCommand(commandline);
   const acquire = new AcquireCommand(commandline);
   const use = new UseCommand(commandline);
 
@@ -95,11 +72,8 @@ async function main() {
   const regenerate = new RegenerateCommand(commandline);
   const update = new UpdateCommand(commandline);
 
-  const version = new VersionCommand(commandline);
   const cache = new CacheCommand(commandline);
   const clean = new CleanCommand(commandline);
-
-  debug(`Postscript file ${session.postscriptFile}`);
 
   const needsHelp = !!(commandline.switches['help'] || commandline.switches['?'] || (['-h', '-help', '-?', '/?'].find(each => argv.includes(each))));
   // check if --help -h -? --? /? are asked for
@@ -139,14 +113,10 @@ async function main() {
 
     error(e);
 
-    if (session.telemetryEnabled) {
-      flushTelemetry();
-    }
+    await session.writeTelemetry();
     return process.exit(result ? 0 : 1);
   } finally {
-    if (session.telemetryEnabled) {
-      flushTelemetry();
-    }
+    await session.writeTelemetry();
   }
 
   return process.exit(result ? 0 : 1);

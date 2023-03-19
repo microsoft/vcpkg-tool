@@ -8,11 +8,10 @@ import { selectArtifacts, showArtifacts } from '../artifacts';
 import { Command } from '../command';
 import { cmdSwitch } from '../format';
 import { activate } from '../project';
-import { error, log, warning } from '../styling';
+import { error, warning } from '../styling';
 import { MSBuildProps } from '../switches/msbuild-props';
 import { Project } from '../switches/project';
 import { Version } from '../switches/version';
-import { WhatIf } from '../switches/whatIf';
 
 export class UseCommand extends Command {
   readonly command = 'use';
@@ -20,7 +19,6 @@ export class UseCommand extends Command {
   seeAlso = [];
   argumentsHelp = [];
   version = new Version(this);
-  whatIf = new WhatIf(this);
   project = new Project(this);
   msbuildProps = new MSBuildProps(this);
 
@@ -34,7 +32,7 @@ export class UseCommand extends Command {
     ];
   }
 
-  override async run() {
+  override async run() : Promise<boolean> {
     if (this.inputs.length === 0) {
       error(i`No artifacts specified`);
       return false;
@@ -49,7 +47,7 @@ export class UseCommand extends Command {
     }
 
     const selections = new Map(this.inputs.map((v, i) => [v, versions[i] || '*']));
-    const artifacts = await selectArtifacts(session, selections, resolver, 1);
+    const artifacts = await selectArtifacts(session, selections, resolver, 2);
     if (!artifacts) {
       return false;
     }
@@ -59,12 +57,7 @@ export class UseCommand extends Command {
       return false;
     }
 
-    const success = await activate(session, artifacts, resolver, false, { force: this.commandLine.force, language: this.commandLine.language, allLanguages: this.commandLine.allLanguages });
-    if (success) {
-      log(i`Activating individual artifacts`);
-    } else {
-      return false;
-    }
-    return true;
+    return activate(session, true, this.inputs, artifacts, resolver,
+      { force: this.commandLine.force, language: this.commandLine.language, allLanguages: this.commandLine.allLanguages });
   }
 }

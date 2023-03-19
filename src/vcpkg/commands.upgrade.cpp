@@ -1,6 +1,4 @@
-#include <vcpkg/base/lockguarded.h>
 #include <vcpkg/base/messages.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binarycaching.h>
@@ -23,44 +21,22 @@ using namespace vcpkg;
 namespace vcpkg::Commands::Upgrade
 {
     static constexpr StringLiteral OPTION_NO_DRY_RUN = "no-dry-run";
-    // --keep-going is preserved for compatibility with old releases of vcpkg.
-    static constexpr StringLiteral OPTION_KEEP_GOING = "keep-going";
     static constexpr StringLiteral OPTION_NO_KEEP_GOING = "no-keep-going";
     static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
 
-    static constexpr std::array<CommandSwitch, 4> INSTALL_SWITCHES = {{
-        {OPTION_NO_DRY_RUN, "Actually upgrade"},
-        {OPTION_KEEP_GOING, ""},
-        {OPTION_NO_KEEP_GOING, "Stop installing packages on failure"},
-        {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
+    static constexpr std::array<CommandSwitch, 3> INSTALL_SWITCHES = {{
+        {OPTION_NO_DRY_RUN, []() { return msg::format(msgCmdUpgradeOptNoDryRun); }},
+        {OPTION_NO_KEEP_GOING, []() { return msg::format(msgCmdUpgradeOptNoKeepGoing); }},
+        {OPTION_ALLOW_UNSUPPORTED_PORT, []() { return msg::format(msgCmdUpgradeOptAllowUnsupported); }},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("upgrade --no-dry-run"),
+        [] { return create_example_string("upgrade --no-dry-run"); },
         0,
         SIZE_MAX,
         {INSTALL_SWITCHES, {}},
         nullptr,
     };
-
-    static KeepGoing determine_keep_going(bool keep_going_set, bool no_keep_going_set)
-    {
-        Checks::msg_check_exit(VCPKG_LINE_INFO,
-                               !(keep_going_set && no_keep_going_set),
-                               msg::msgBothYesAndNoOptionSpecifiedError,
-                               msg::option = OPTION_KEEP_GOING);
-        if (keep_going_set)
-        {
-            return KeepGoing::YES;
-        }
-
-        if (no_keep_going_set)
-        {
-            return KeepGoing::NO;
-        }
-
-        return KeepGoing::YES;
-    }
 
     void perform_and_exit(const VcpkgCmdArguments& args,
                           const VcpkgPaths& paths,
@@ -76,8 +52,8 @@ namespace vcpkg::Commands::Upgrade
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
 
         const bool no_dry_run = Util::Sets::contains(options.switches, OPTION_NO_DRY_RUN);
-        const KeepGoing keep_going = determine_keep_going(Util::Sets::contains(options.switches, OPTION_KEEP_GOING),
-                                                          Util::Sets::contains(options.switches, OPTION_NO_KEEP_GOING));
+        const KeepGoing keep_going =
+            Util::Sets::contains(options.switches, OPTION_NO_KEEP_GOING) ? KeepGoing::NO : KeepGoing::YES;
         const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
@@ -86,13 +62,17 @@ namespace vcpkg::Commands::Upgrade
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
         // Load ports from ports dirs
-        PathsPortFileProvider provider(paths, make_overlay_provider(paths, args.overlay_ports));
+        auto& fs = paths.get_filesystem();
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(
+            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
         // input sanitization
-        const std::vector<PackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
-            return check_and_get_package_spec(std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+        const std::vector<PackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
+            return check_and_get_package_spec(
+                std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
         });
 
         ActionPlan action_plan;
@@ -116,6 +96,8 @@ namespace vcpkg::Commands::Upgrade
         }
         else
         {
+            print_default_triplet_warning(args, options.command_arguments);
+
             std::vector<PackageSpec> not_installed;
             std::vector<PackageSpec> no_control_file;
             std::vector<PackageSpec> to_upgrade;
@@ -196,10 +178,7 @@ namespace vcpkg::Commands::Upgrade
         }
 
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty());
-        for (const auto& warning : action_plan.warnings)
-        {
-            msg::write_unlocalized_text_to_stdout(Color::warning, warning + "\n");
-        }
+        action_plan.print_unsupported_warnings();
         // Set build settings for all install actions
         for (auto&& action : action_plan.install_actions)
         {
@@ -218,8 +197,6 @@ namespace vcpkg::Commands::Upgrade
 
         const InstallSummary summary = Install::perform(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), var_provider);
-
-        msg::println(msgTotalTime, msg::elapsed = GlobalState::timer.to_string());
 
         if (keep_going == KeepGoing::YES)
         {

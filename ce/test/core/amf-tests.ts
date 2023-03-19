@@ -21,7 +21,7 @@ describe('Amf', () => {
     const content = await (await readFile(join(rootFolder(), 'resources', 'sample1.json'))).toString('utf-8');
     const doc = await MetadataFile.parseConfiguration('./sample1.json', content, local.session);
 
-    strict.ok(doc.isFormatValid, 'Ensure it is valid json');
+    strict.ok(doc.isFormatValid);
     strict.sequenceEqual(doc.validate(), []);
 
     strict.equal(doc.id, 'sample1', 'name incorrect');
@@ -32,21 +32,16 @@ describe('Amf', () => {
     const content = await (await readFile(join(rootFolder(), 'resources', 'repo', 'sdks', 'microsoft', 'windows.json'))).toString('utf-8');
     const doc = await MetadataFile.parseConfiguration('./windows.json', content, local.session);
 
-    strict.ok(doc.isFormatValid, 'Ensure it is valid json');
+    strict.ok(doc.isFormatValid);
     strict.sequenceEqual(doc.validate(), []);
-
-    SuiteLocal.log(doc.toJsonString());
   });
 
   it('load/persist an artifact', async () => {
     const content = await (await readFile(join(rootFolder(), 'resources', 'example-artifact.json'))).toString('utf-8');
     const doc = await MetadataFile.parseConfiguration('./example-artifact.json', content, local.session);
 
-    SuiteLocal.log(doc.toJsonString());
-    strict.ok(doc.isFormatValid, 'Ensure it\'s valid');
-    for (const each of doc.validate()) {
-      SuiteLocal.log(doc.formatVMessage(each));
-    }
+    strict.ok(doc.isFormatValid);
+    strict.sequenceEqual(doc.validate(), []);
   });
 
   it('profile checks', async () => {
@@ -55,8 +50,6 @@ describe('Amf', () => {
 
     strict.ok(doc.isFormatValid, 'Ensure that it is valid json');
     strict.sequenceEqual(doc.validate(), []);
-
-    SuiteLocal.log(doc.contacts.get('Bob Smith'));
 
     strict.sequenceEqual(doc.contacts.get('Bob Smith')!.roles, ['fallguy', 'otherguy'], 'Should return the two roles');
     doc.contacts.get('Bob Smith')!.roles.delete('fallguy');
@@ -70,10 +63,8 @@ describe('Amf', () => {
     strict.sequenceEqual(doc.contacts.get('Bob Smith')!.roles, ['otherguy', 'the dude'], 'Should return only two roles');
 
     const k = doc.contacts.add('James Brown');
-    SuiteLocal.log(doc.contacts.keys);
 
     k.email = 'jim@contoso.net';
-    SuiteLocal.log(doc.contacts.keys);
 
     strict.equal(doc.contacts.keys.length, 3, 'Should have 3 contacts');
 
@@ -85,7 +76,6 @@ describe('Amf', () => {
     doc.contacts.delete('James Brown'); // this is ok.
 
     // version can be coerced to be a string (via tostring)
-    SuiteLocal.log(doc.requires.get('foo/bar/bin')?.raw);
     strict.equal(doc.requires.get('foo/bar/bin')?.raw == '~2.0.0', true, 'Version must match');
 
     // can we get the normalized range?
@@ -119,13 +109,6 @@ describe('Amf', () => {
     strict.deepEqual(doc.exports.paths.get('bin')?.length, 3, 'there should be three paths in bin now');
 
     strict.sequenceEqual(doc.conditionalDemands.keys, ['windows and arm'], 'should have one conditional demand');
-    /*
-    const install = doc.get('windows and arm').install[0];
-
-    strict.ok(isNupkg(install), 'the install type should be nupkg');
-    strict.equal((install).location, 'floobaloo/1.2.3', 'should have correct location');
-*/
-    SuiteLocal.log(doc.toString());
   });
 
   it('read invalid json file', async () => {
@@ -143,8 +126,13 @@ describe('Amf', () => {
     const content = await (await readFile(join(rootFolder(), 'resources', 'empty.json'))).toString('utf-8');
     const doc = await MetadataFile.parseConfiguration('./empty.json', content, local.session);
 
-    strict.ok(doc.isFormatValid, 'Ensure it is valid json');
+    strict.ok(doc.isFormatValid);
 
+    const validationErrors = Array.from(doc.validate(), (error) => doc.formatVMessage(error));
+    strict.sequenceEqual(validationErrors, [
+      './empty.json:1:1 FieldMissing, Missing identity \'id\'',
+      './empty.json:1:1 FieldMissing, Missing version \'version\''
+    ]);
     const [firstError] = doc.validate();
     strict.equal(doc.formatVMessage(firstError), './empty.json:1:1 FieldMissing, Missing identity \'id\'', 'Should have an error about id');
   });
@@ -153,9 +141,17 @@ describe('Amf', () => {
     const content = await (await readFile(join(rootFolder(), 'resources', 'validation-errors.json'))).toString('utf-8');
     const doc = await MetadataFile.parseConfiguration('./validation-errors.json', content, local.session);
 
-    strict.ok(doc.isFormatValid, 'Ensure it is valid json');
+    strict.ok(doc.isFormatValid);
 
     const validationErrors = Array.from(doc.validate(), (error) => doc.formatVMessage(error));
-    strict.equal(validationErrors.length, 7, `Expecting 7 errors, found: ${JSON.stringify(validationErrors, null, 2)}`);
+    strict.sequenceEqual(validationErrors,[
+      './validation-errors.json:5:15 InvalidChild, Unexpected \'goober )\' found in $',
+      './validation-errors.json:8:13 InvalidChild, Unexpected \'goober\' found in $',
+      './validation-errors.json:11:13 InvalidChild, Unexpected \'floopy\' found in $',
+      './validation-errors.json:12:29 InvalidChild, Unexpected \'windows and target:x64\' found in $',
+      './validation-errors.json:3:16 InvalidChild, Unexpected \'nothing\' found in $.info',
+      './validation-errors.json:2:11 FieldMissing, Missing identity \'info.id\'',
+      './validation-errors.json:2:11 FieldMissing, Missing version \'info.version\''
+    ]);
   });
 });

@@ -160,7 +160,7 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
                         .value_or_exit(VCPKG_LINE_INFO);
 
     auto doc = Json::parse(sbom).value_or_exit(VCPKG_LINE_INFO);
-    Test::check_json_eq(expected.first, doc.first);
+    Test::check_json_eq(expected.value, doc.value);
 }
 
 TEST_CASE ("spdx minimum serialization", "[spdx]")
@@ -288,7 +288,7 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
                         .value_or_exit(VCPKG_LINE_INFO);
 
     auto doc = Json::parse(sbom).value_or_exit(VCPKG_LINE_INFO);
-    Test::check_json_eq(expected.first, doc.first);
+    Test::check_json_eq(expected.value, doc.value);
 }
 
 TEST_CASE ("spdx concat resources", "[spdx]")
@@ -312,14 +312,14 @@ TEST_CASE ("spdx concat resources", "[spdx]")
   "files": [ "f1", "f2", "f3" ]
 })json")
                     .value_or_exit(VCPKG_LINE_INFO)
-                    .first;
+                    .value;
     auto doc2 = Json::parse(R"json(
 {
   "packages": [ "p1", "p2", "p3" ],
   "files": [ "f4", "f5" ]
 })json")
                     .value_or_exit(VCPKG_LINE_INFO)
-                    .first;
+                    .value;
 
     const auto sbom = create_spdx_sbom(ipa, {}, {}, "now+1", "ns", {std::move(doc1), std::move(doc2)});
 
@@ -388,5 +388,5 @@ TEST_CASE ("spdx concat resources", "[spdx]")
                         .value_or_exit(VCPKG_LINE_INFO);
 
     auto doc = Json::parse(sbom).value_or_exit(VCPKG_LINE_INFO);
-    Test::check_json_eq(expected.first, doc.first);
+    Test::check_json_eq(expected.value, doc.value);
 }
