@@ -1318,6 +1318,7 @@ namespace vcpkg
     REGISTER_MESSAGE(CISwitchOptXUnitAll);
     REGISTER_MESSAGE(CmdContactOptSurvey);
     REGISTER_MESSAGE(CISettingsVerifyVersion);
+    REGISTER_MESSAGE(CISkipInstallation);
     REGISTER_MESSAGE(CISettingsVerifyGitTree);
     REGISTER_MESSAGE(CISettingsExclude);
     REGISTER_MESSAGE(CmdDependInfoOptDot);

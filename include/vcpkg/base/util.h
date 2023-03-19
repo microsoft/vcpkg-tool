@@ -60,6 +60,22 @@ namespace vcpkg::Util
         {
             return container.find(item) != container.end();
         }
+
+        template<class Container, class Pred>
+        void erase_if(Container& container, Pred pred)
+        {
+            for (auto i = container.begin(), last = container.end(); i != last;)
+            {
+                if (pred(*i))
+                {
+                    i = container.erase(i);
+                }
+                else
+                {
+                    ++i;
+                }
+            }
+        }
     }
 
     // Treats the range [first, last) a range sorted by cmp, and copies any duplicate elements to

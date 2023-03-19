@@ -34,7 +34,7 @@ namespace vcpkg::Commands::SetInstalled
         nullptr,
     };
 
-    void adjust_action_plan_to_status_db(ActionPlan& action_plan, const StatusParagraphs& status_db)
+    std::set<PackageSpec> adjust_action_plan_to_status_db(ActionPlan& action_plan, const StatusParagraphs& status_db)
     {
         std::set<std::string> all_abis;
         for (const auto& action : action_plan.install_actions)
@@ -72,6 +72,7 @@ namespace vcpkg::Commands::SetInstalled
         Util::erase_remove_if(action_plan.install_actions, [&](const InstallPlanAction& ipa) {
             return Util::Sets::contains(specs_installed, ipa.spec);
         });
+        return specs_installed;
     }
 
     void perform_and_exit_ex(const VcpkgCmdArguments& args,
