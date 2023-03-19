@@ -10,7 +10,7 @@ export class VsixLocalFilesystem extends LocalFileSystem {
 
   constructor(session: Session) {
     super(session);
-    const programData = session.environment['ProgramData'];
+    const programData = process.env['ProgramData'];
     if (programData) {
       this.vsixBaseUri = this.file(programData).join('Microsoft/VisualStudio/Packages');
     }
