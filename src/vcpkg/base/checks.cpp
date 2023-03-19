@@ -13,7 +13,10 @@ namespace
     {
         return LocalizedString::from_raw(fmt::format("{}: ", line_info));
     }
+
 }
+
+std::string vcpkg::LineInfo::to_string() const { return fmt::format("{}({})", file_name, line_number); }
 
 namespace vcpkg
 {
