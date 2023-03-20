@@ -1000,6 +1000,7 @@ namespace
                                     std::vector<std::string>{m_content_type_header, m_token_header, m_accept_header},
                                     std::vector<std::string>{stringify(payload)},
                                     m_write_url);
+
             msg::write_unlocalized_text_to_stdout(Color::none, "Checking result from invoke...\n");
             msg::write_unlocalized_text_to_stdout(Color::none, res.get()->c_str());
             msg::write_unlocalized_text_to_stdout(Color::none, "\n");
