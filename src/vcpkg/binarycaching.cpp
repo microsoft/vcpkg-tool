@@ -1002,9 +1002,17 @@ namespace
                                     m_write_url);
 
             auto maybe_json = Json::parse_object(res.get()->c_str());
+            // print some stuff
+            maybe_json.has_value() ? msg::write_unlocalized_text_to_stdout(Color::none, "maybe_json.has_value = true\n")
+                                   : msg::write_unlocalized_text_to_stdout(Color::none, "maybe_json.has_value = false\n");
+
             if (auto json = maybe_json.get())
             {
-				auto cache_id = json->get("cacheId");
+                auto cache_id = json->get("cacheId");
+                cache_id->is_number()
+                    ? msg::write_unlocalized_text_to_stdout(Color::none, "cacheid\n")
+                    : msg::write_unlocalized_text_to_stdout(Color::none, "no cache id\n");
+
                 if (cache_id && cache_id->is_integer())
                 {
                     msg::write_unlocalized_text_to_stdout(Color::none, "cachId: \n"); //remove
