@@ -964,8 +964,6 @@ namespace
 
         std::string lookup_cache_entry(std::string& name, const std::string& abi) const
         {
-            msg::write_unlocalized_text_to_stdout(Color::none, "lookup_cache_entry... \n");
-
             auto res =
                 invoke_http_request("-G",
                                     std::vector<std::string>{m_content_type_header, m_token_header, m_accept_header},
@@ -978,8 +976,6 @@ namespace
 				auto archive_location = json->get("archiveLocation");
                 if (archive_location && archive_location->is_string())
                 {
-                    msg::write_unlocalized_text_to_stdout(Color::none,
-                                                          archive_location->string(VCPKG_LINE_INFO).to_string() + "\n"); //remove
 					return archive_location->string(VCPKG_LINE_INFO).to_string();
 				}
 			}
@@ -989,7 +985,6 @@ namespace
 
         Optional<int64_t> reserve_cache_entry(const std::string& package_name, const std::string& abi, int64_t cacheSize) const
         {
-            msg::write_unlocalized_text_to_stdout(Color::none, "reserve_cache_entry... \n");
             Json::Object payload;
             payload.insert("key", package_name + "-" + abi);
             payload.insert("version", abi);
@@ -1001,7 +996,6 @@ namespace
                                     std::vector<std::string>{stringify(payload)},
                                     m_write_url);
 
-            msg::write_unlocalized_text_to_stdout(Color::none, "Checking result from invoke...\n");
             msg::write_unlocalized_text_to_stdout(Color::none, res.get()->c_str());
             msg::write_unlocalized_text_to_stdout(Color::none, "\n");
 
@@ -1012,13 +1006,8 @@ namespace
             if (auto json = maybe_json.get())
             {
                 auto cache_id = json->get("cacheId");
-                cache_id->is_number()
-                    ? msg::write_unlocalized_text_to_stdout(Color::none, "cacheid\n")
-                    : msg::write_unlocalized_text_to_stdout(Color::none, "no cache id\n");
-
                 if (cache_id && cache_id->is_integer())
                 {
-                    msg::write_unlocalized_text_to_stdout(Color::none, "cachId: \n"); //remove
 					return cache_id->integer(VCPKG_LINE_INFO);
 				}
 			}
@@ -1028,8 +1017,6 @@ namespace
 
         void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
-            msg::write_unlocalized_text_to_stdout(Color::none, "Prefetch... \n");
-
             auto& fs = paths.get_filesystem();
             const ElapsedTimer timer;
             size_t restored_count = 0;
@@ -1047,7 +1034,6 @@ namespace
 
                     auto&& action = actions[idx];
                     auto package_name = action.spec.name();
-                    msg::write_unlocalized_text_to_stdout(Color::none, "Package Name: " + package_name + "\n"); // remove
                     auto url = lookup_cache_entry(package_name, action.package_abi().value_or_exit(VCPKG_LINE_INFO));
                     if (url.empty()) continue;
 
@@ -1103,7 +1089,6 @@ namespace
 
         void push_success(const InstallPlanAction& action) const override
         {
-            msg::write_unlocalized_text_to_stdout(Color::none, "push_success... \n");
             if (m_write_url.empty())
             {
                 return;
