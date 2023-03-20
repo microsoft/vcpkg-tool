@@ -996,13 +996,7 @@ namespace
                                     std::vector<std::string>{stringify(payload)},
                                     m_write_url);
 
-            msg::write_unlocalized_text_to_stdout(Color::none, res.get()->c_str());
-            msg::write_unlocalized_text_to_stdout(Color::none, "\n");
-
             auto maybe_json = Json::parse_object(res.get()->c_str());
-
-            // maybe_json.has_value() is false...
-           
             if (auto json = maybe_json.get())
             {
                 auto cache_id = json->get("cacheId");
@@ -1143,10 +1137,6 @@ namespace
                             std::vector<std::string>{m_accept_header, m_content_type_header, m_token_header},
                             std::vector<std::string>{stringify(commit)},
                             url);
-
-                        msg::write_unlocalized_text_to_stdout(Color::none, "push_success: \n");
-                        msg::write_unlocalized_text_to_stdout(Color::none,  res.get()->c_str());
-                        msg::write_unlocalized_text_to_stdout(Color::none, "\n");
 
                         if (!res.get()->empty())
                         {
