@@ -962,12 +962,12 @@ namespace
         }
 
 
-        std::string lookup_cache_entry(const std::string& abi) const
+        std::string lookup_cache_entry(std::string& name, const std::string& abi) const
         {
             auto res =
                 invoke_http_request("-G",
                                     std::vector<std::string>{m_content_type_header, m_token_header, m_accept_header},
-                                    std::vector<std::string>{"keys=vcpkg", "version=" + abi},
+                                    std::vector<std::string>{"keys=" + name + "-" + abi, "version=" + abi},
                                     m_read_url);
             
             auto maybe_json = Json::parse_object(res.get()->c_str());
@@ -983,10 +983,10 @@ namespace
             return {};
         }
 
-        Optional<int64_t> reserve_cache_entry(const std::string& abi, int64_t cacheSize) const
+        Optional<int64_t> reserve_cache_entry(const std::string& package_name, const std::string& abi, int64_t cacheSize) const
         {
             Json::Object payload;
-            payload.insert("key", "vcpkg");
+            payload.insert("key", package_name + "-" + abi);
             payload.insert("version", abi);
             payload.insert("cacheSize", Json::Value::integer(cacheSize));
 
@@ -1028,7 +1028,8 @@ namespace
                     }
 
                     auto&& action = actions[idx];
-                    auto url = lookup_cache_entry(action.package_abi().value_or_exit(VCPKG_LINE_INFO));
+                    auto package_name = action.spec.name();
+                    auto url = lookup_cache_entry(package_name, action.package_abi().value_or_exit(VCPKG_LINE_INFO));
                     if (url.empty()) continue;
 
                     clean_prepare_dir(fs, paths.package_dir(action.spec));
@@ -1116,7 +1117,7 @@ namespace
             size_t upload_count = 0;
             if (!m_write_url.empty())
             {
-                if (auto cacheId = reserve_cache_entry(abi, cache_size))
+                if (auto cacheId = reserve_cache_entry(spec.name(), abi, cache_size))
                 {
                     std::vector<std::string> custom_headers{
                         m_token_header,
@@ -1165,8 +1166,8 @@ namespace
                     {
                         continue;
                     }
-
-                    if (!lookup_cache_entry(abi).empty())
+                    auto package_name = action.spec.name();
+                    if (!lookup_cache_entry(package_name, abi).empty())
                     {
                         actions_availability[idx] = CacheAvailability::available;
                         cache_status[idx]->mark_available(this);
@@ -2577,6 +2578,7 @@ ExpectedL<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
                                (url_optional.has_value() && token.has_value()),
                                msgGHAParametersMissing,
                                msg::url = "https://learn.microsoft.com/en-us/vcpkg/users/binarycaching#gha");
+
         auto url = url_optional.value_or_exit(VCPKG_LINE_INFO) + "_apis/artifactcache/cache";
         auto token_header = "Authorization: Bearer " + token.value_or_exit(VCPKG_LINE_INFO);
 
