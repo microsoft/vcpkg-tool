@@ -1139,7 +1139,6 @@ namespace
             {
                 if (auto cacheId = reserve_cache_entry(spec.name(), abi, cache_size))
                 {
-                    msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("Cache Id: ", cacheId.value_or("no value")));
                     std::vector<std::string> custom_headers{
                         m_token_header,
                         m_accept_header,
