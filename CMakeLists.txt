@@ -487,7 +487,6 @@ find_program(CLANG_FORMAT clang-format PATHS "$ENV{PROGRAMFILES}/LLVM/bin")
 if(CLANG_FORMAT)
     # doing all of these formats in one line has a tendency to overflow the command line length
     add_custom_target(format
-        COMMAND "${CLANG_FORMAT}" -i -verbose ${CMAKE_CURRENT_SOURCE_DIR}/src/pch.cpp
         COMMAND "${CLANG_FORMAT}" -i -verbose ${VCPKGLIB_BASE_SOURCES}
         COMMAND "${CLANG_FORMAT}" -i -verbose ${VCPKGLIB_SOURCES}
         COMMAND "${CLANG_FORMAT}" -i -verbose ${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h
