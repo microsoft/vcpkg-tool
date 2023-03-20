@@ -181,8 +181,6 @@ namespace vcpkg::Commands::TestFeatures
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
-        // const auto precheck_results = binary_cache.precheck(action_plan.install_actions);
-
         std::vector<SourceControlFile*> feature_test_ports;
         if (all_ports)
         {
@@ -212,6 +210,67 @@ namespace vcpkg::Commands::TestFeatures
                                                          var_provider);
             ci_parse_messages.exit_if_errors_or_warnings(ci_feature_baseline_file_name);
         }
+
+        // to reduce number of cmake invocations
+        auto all_specs = Util::fmap(feature_test_ports,
+                                    [&](auto scf) { return PackageSpec(scf->core_paragraph->name, target_triplet); });
+        var_provider.load_dep_info_vars(all_specs, host_triplet);
+
+        // check what should be tested
+        std::vector<FullPackageSpec> specs_to_test;
+        for (const auto port : feature_test_ports)
+        {
+            const auto& baseline = feature_baseline.get_port(port->core_paragraph->name);
+            if (baseline.state == CiFeatureBaselineState::Skip) continue;
+            PackageSpec package_spec(port->core_paragraph->name, target_triplet);
+            if (test_feature_core && !Util::Sets::contains(baseline.skip_features, "core"))
+            {
+                specs_to_test.emplace_back(package_spec, InternalFeatureSet{{"core"}});
+            }
+            const auto dep_info_vars = var_provider.get_or_load_dep_info_vars(package_spec, host_triplet);
+            if (!port->core_paragraph->supports_expression.evaluate(dep_info_vars))
+            {
+                fmt::print("Port {} is not supported on {}\n", port->core_paragraph->name, target_triplet);
+                continue;
+            }
+            InternalFeatureSet all_features{{"core"}};
+            for (const auto& feature : port->feature_paragraphs)
+            {
+                if (feature->supports_expression.evaluate(dep_info_vars) &&
+                    !Util::Sets::contains(baseline.skip_features, feature->name))
+                {
+                    // if we expect a feature to cascade don't add it the the all features test because this test
+                    // will them simply cascade too
+                    if (!Util::Sets::contains(baseline.cascade_features, feature->name))
+                    {
+                        all_features.push_back(feature->name);
+                    }
+                    if (test_features_seperatly &&
+                        !Util::Sets::contains(baseline.no_separate_feature_test, feature->name))
+                    {
+                        specs_to_test.emplace_back(package_spec, InternalFeatureSet{{"core", feature->name}});
+                    }
+                }
+            }
+            // if test_features_seperatly == true and there is only one feature test_features_combined is not needed
+            if (test_features_combined && all_features.size() > (test_features_seperatly ? size_t{2} : size_t{1}))
+            {
+                specs_to_test.emplace_back(package_spec, all_features);
+            }
+        }
+        fmt::print("compute {} install plans\n", specs_to_test.size());
+        auto install_plans = Util::fmap(specs_to_test, [&](auto& spec) {
+            return std::make_pair(spec,
+                                  create_feature_install_plan(provider,
+                                                              var_provider,
+                                                              Span<FullPackageSpec>(&spec, 1),
+                                                              {},
+                                                              {host_triplet, UnsupportedPortAction::Warn}));
+        });
+
+        Util::sort(install_plans, [](const auto& left, const auto& right) {
+            return left.second.install_actions.size() < right.second.install_actions.size();
+        });
 
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
@@ -251,178 +310,121 @@ namespace vcpkg::Commands::TestFeatures
         };
 
         int i = 0;
-        for (const auto port : feature_test_ports)
+        for (auto&& [spec, install_plan] : std::move(install_plans))
         {
             ++i;
-            fmt::print("\n{}/{} {}\n", i, feature_test_ports.size(), port->core_paragraph->name);
-            const auto& baseline = feature_baseline.get_port(port->core_paragraph->name);
-            if (baseline.state == CiFeatureBaselineState::Skip) continue;
-            PackageSpec package_spec(port->core_paragraph->name, target_triplet);
-            std::vector<FullPackageSpec> specs_to_test;
-            if (test_feature_core && !Util::Sets::contains(baseline.skip_features, "core"))
+            fmt::print("\n{}/{} {}\n", i, install_plans.size(), spec.to_string());
+            const auto& baseline = feature_baseline.get_port(spec.package_spec.name());
+
+            if (!install_plan.unsupported_features.empty())
             {
-                specs_to_test.emplace_back(package_spec, InternalFeatureSet{{"core"}});
-            }
-            const auto dep_info_vars = var_provider.get_or_load_dep_info_vars(package_spec, host_triplet);
-            if (!port->core_paragraph->supports_expression.evaluate(dep_info_vars))
-            {
-                msg::write_unlocalized_text_to_stdout(Color::none, "Port is not supported on this triplet\n");
+                std::string out;
+                for (const auto& entry : install_plan.unsupported_features)
+                {
+                    Strings::append(out, entry.first, " only supported on  ", to_string(entry.second), '\n');
+                }
+                msg::write_unlocalized_text_to_stdout(Color::none,
+                                                      Strings::concat("Skipping testing of ",
+                                                                      install_plan.install_actions.back().displayname(),
+                                                                      " because of the following warnings: \n",
+                                                                      out,
+                                                                      '\n'));
+                handle_result(std::move(spec), CiFeatureBaselineState::Cascade, baseline);
                 continue;
             }
-            InternalFeatureSet all_features{{"core"}};
-            for (const auto& feature : port->feature_paragraphs)
+            var_provider.load_tag_vars(install_plan, provider, host_triplet);
+            compute_all_abis(paths, install_plan, var_provider, status_db);
+
+            if (auto iter = Util::find_if(install_plan.install_actions,
+                                          [&known_failures](const auto& install_action) {
+                                              return Util::Sets::contains(
+                                                  known_failures,
+                                                  install_action.package_abi().value_or_exit(VCPKG_LINE_INFO));
+                                          });
+                iter != install_plan.install_actions.end())
             {
-                if (feature->supports_expression.evaluate(dep_info_vars) &&
-                    !Util::Sets::contains(baseline.skip_features, feature->name))
-                {
-                    // if we expect a feature to cascade don't add it the the all features test because this test
-                    // will them simply cascade too
-                    if (!Util::Sets::contains(baseline.cascade_features, feature->name))
-                    {
-                        all_features.push_back(feature->name);
-                    }
-                    if (test_features_seperatly &&
-                        !Util::Sets::contains(baseline.no_separate_feature_test, feature->name))
-                    {
-                        specs_to_test.emplace_back(package_spec, InternalFeatureSet{{"core", feature->name}});
-                    }
-                }
-            }
-            // if test_features_seperatly == true and there is only one feature test_features_combined is not needed
-            if (test_features_combined && all_features.size() > (test_features_seperatly ? size_t{2} : size_t{1}))
-            {
-                specs_to_test.emplace_back(package_spec, all_features);
+                msg::write_unlocalized_text_to_stdout(
+                    Color::none, Strings::concat(spec, " dependency ", iter->displayname(), " will fail => cascade\n"));
+                handle_result(std::move(spec), CiFeatureBaselineState::Cascade, baseline);
+                continue;
             }
 
-            for (auto&& spec : std::move(specs_to_test))
+            // only install the absolute minimum
+            SetInstalled::adjust_action_plan_to_status_db(install_plan, status_db);
+            if (install_plan.install_actions.empty()) // already installed
             {
-                auto install_plan = create_feature_install_plan(provider,
-                                                                var_provider,
-                                                                Span<FullPackageSpec>(&spec, 1),
-                                                                {},
-                                                                {host_triplet, UnsupportedPortAction::Warn});
+                handle_result(std::move(spec), CiFeatureBaselineState::Pass, baseline);
+                continue;
+            }
 
-                if (!install_plan.unsupported_features.empty())
-                {
-                    std::string out;
-                    for (const auto& entry : install_plan.unsupported_features)
-                    {
-                        Strings::append(out, entry.first, " only supported on  ", to_string(entry.second), '\n');
-                    }
-                    msg::write_unlocalized_text_to_stdout(
-                        Color::none,
-                        Strings::concat("Skipping testing of ",
-                                        install_plan.install_actions.back().displayname(),
-                                        " because of the following warnings: \n",
-                                        out,
-                                        '\n'));
-                    handle_result(std::move(spec), CiFeatureBaselineState::Cascade, baseline);
-                    continue;
-                }
-                var_provider.load_tag_vars(install_plan, provider, host_triplet);
-                compute_all_abis(paths, install_plan, var_provider, status_db);
+            if (binary_cache.precheck({&install_plan.install_actions.back(), 1}).front() ==
+                CacheAvailability::available)
+            {
+                handle_result(std::move(spec), CiFeatureBaselineState::Pass, baseline);
+                continue;
+            }
+            msg::write_unlocalized_text_to_stdout(Color::none, Strings::concat("Test feature ", spec, '\n'));
+            for (auto&& action : install_plan.install_actions)
+            {
+                action.build_options = backcompat_prohibiting_package_options;
+            }
+            Optional<CiBuildLogsRecorder> feature_build_logs_recorder_storage =
+                build_logs_recorder_storage.map([&, &spec = spec](const CiBuildLogsRecorder& recorder) {
+                    return recorder.create_for_feature_test(spec, filesystem);
+                });
+            Optional<Path> logs_dir = feature_build_logs_recorder_storage.map(
+                [](const CiBuildLogsRecorder& recorder) { return recorder.base_path; });
+            const IBuildLogsRecorder& build_logs_recorder = feature_build_logs_recorder_storage
+                                                                ? *(feature_build_logs_recorder_storage.get())
+                                                                : null_build_logs_recorder();
+            ElapsedTimer install_timer;
+            const auto summary = Install::perform(
+                args, install_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder, var_provider);
+            binary_cache.clear_cache();
 
-                if (auto iter = Util::find_if(install_plan.install_actions,
-                                              [&known_failures](const auto& install_action) {
-                                                  return Util::Sets::contains(
-                                                      known_failures,
-                                                      install_action.package_abi().value_or_exit(VCPKG_LINE_INFO));
-                                              });
-                    iter != install_plan.install_actions.end())
+            for (const auto& result : summary.results)
+            {
+                switch (result.build_result.value_or_exit(VCPKG_LINE_INFO).code)
                 {
-                    msg::write_unlocalized_text_to_stdout(
-                        Color::none,
-                        Strings::concat(spec, " dependency ", iter->displayname(), " will fail => cascade\n"));
-                    handle_result(std::move(spec), CiFeatureBaselineState::Cascade, baseline);
-                    continue;
-                }
-
-                // only install the absolute minimum
-                SetInstalled::adjust_action_plan_to_status_db(install_plan, status_db);
-                if (install_plan.install_actions.empty()) // already installed
-                {
-                    handle_result(std::move(spec), CiFeatureBaselineState::Pass, baseline);
-                    continue;
-                }
-
-                if (binary_cache.precheck({&install_plan.install_actions.back(), 1}).front() ==
-                    CacheAvailability::available)
-                {
-                    handle_result(std::move(spec), CiFeatureBaselineState::Pass, baseline);
-                    continue;
-                }
-                msg::write_unlocalized_text_to_stdout(Color::none, Strings::concat("Test feature ", spec, '\n'));
-                for (auto&& action : install_plan.install_actions)
-                {
-                    action.build_options = backcompat_prohibiting_package_options;
-                }
-                Optional<CiBuildLogsRecorder> feature_build_logs_recorder_storage =
-                    build_logs_recorder_storage.map([&](const CiBuildLogsRecorder& recorder) {
-                        return recorder.create_for_feature_test(spec, filesystem);
-                    });
-                Optional<Path> logs_dir = feature_build_logs_recorder_storage.map(
-                    [](const CiBuildLogsRecorder& recorder) { return recorder.base_path; });
-                const IBuildLogsRecorder& build_logs_recorder = feature_build_logs_recorder_storage
-                                                                    ? *(feature_build_logs_recorder_storage.get())
-                                                                    : null_build_logs_recorder();
-                ElapsedTimer install_timer;
-                const auto summary = Install::perform(args,
-                                                      install_plan,
-                                                      KeepGoing::YES,
-                                                      paths,
-                                                      status_db,
-                                                      binary_cache,
-                                                      build_logs_recorder,
-                                                      var_provider);
-                binary_cache.clear_cache();
-
-                for (const auto& result : summary.results)
-                {
-                    switch (result.build_result.value_or_exit(VCPKG_LINE_INFO).code)
-                    {
-                        case BuildResult::BUILD_FAILED:
-                            if (Path* dir = logs_dir.get())
-                            {
-                                auto issue_body_path = *dir / "issue_body.md";
-                                paths.get_filesystem().write_contents(
-                                    issue_body_path,
-                                    create_github_issue(
-                                        args,
-                                        result.build_result.value_or_exit(VCPKG_LINE_INFO),
-                                        paths,
-                                        result.get_install_plan_action().value_or_exit(VCPKG_LINE_INFO)),
-                                    VCPKG_LINE_INFO);
-                            }
-                            [[fallthrough]];
-                        case BuildResult::POST_BUILD_CHECKS_FAILED:
-                        case BuildResult::FILE_CONFLICTS:
-                            known_failures.insert(result.get_abi().value_or_exit(VCPKG_LINE_INFO));
-                            break;
-                        default: break;
-                    }
-                }
-                const auto time_to_install = install_timer.elapsed();
-                switch (summary.results.back().build_result.value_or_exit(VCPKG_LINE_INFO).code)
-                {
-                    case BuildResult::DOWNLOADED:
-                    case vcpkg::BuildResult::SUCCEEDED:
-                        handle_result(
-                            std::move(spec), CiFeatureBaselineState::Pass, baseline, logs_dir, time_to_install);
-                        break;
-                    case vcpkg::BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
-                        handle_result(
-                            std::move(spec), CiFeatureBaselineState::Cascade, baseline, logs_dir, time_to_install);
-                        break;
                     case BuildResult::BUILD_FAILED:
+                        if (Path* dir = logs_dir.get())
+                        {
+                            auto issue_body_path = *dir / "issue_body.md";
+                            paths.get_filesystem().write_contents(
+                                issue_body_path,
+                                create_github_issue(args,
+                                                    result.build_result.value_or_exit(VCPKG_LINE_INFO),
+                                                    paths,
+                                                    result.get_install_plan_action().value_or_exit(VCPKG_LINE_INFO)),
+                                VCPKG_LINE_INFO);
+                        }
+                        [[fallthrough]];
                     case BuildResult::POST_BUILD_CHECKS_FAILED:
                     case BuildResult::FILE_CONFLICTS:
-                    case BuildResult::CACHE_MISSING:
-                    case BuildResult::REMOVED:
-                    case BuildResult::EXCLUDED:
-                        handle_result(
-                            std::move(spec), CiFeatureBaselineState::Fail, baseline, logs_dir, time_to_install);
+                        known_failures.insert(result.get_abi().value_or_exit(VCPKG_LINE_INFO));
                         break;
+                    default: break;
                 }
+            }
+            const auto time_to_install = install_timer.elapsed();
+            switch (summary.results.back().build_result.value_or_exit(VCPKG_LINE_INFO).code)
+            {
+                case BuildResult::DOWNLOADED:
+                case vcpkg::BuildResult::SUCCEEDED:
+                    handle_result(std::move(spec), CiFeatureBaselineState::Pass, baseline, logs_dir, time_to_install);
+                    break;
+                case vcpkg::BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
+                    handle_result(
+                        std::move(spec), CiFeatureBaselineState::Cascade, baseline, logs_dir, time_to_install);
+                    break;
+                case BuildResult::BUILD_FAILED:
+                case BuildResult::POST_BUILD_CHECKS_FAILED:
+                case BuildResult::FILE_CONFLICTS:
+                case BuildResult::CACHE_MISSING:
+                case BuildResult::REMOVED:
+                case BuildResult::EXCLUDED:
+                    handle_result(std::move(spec), CiFeatureBaselineState::Fail, baseline, logs_dir, time_to_install);
+                    break;
             }
         }
 
