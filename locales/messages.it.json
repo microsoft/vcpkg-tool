@@ -141,6 +141,7 @@
   "BuildTroubleshootingMessage2": "È possibile inviare un nuovo problema all'indirizzo:",
   "BuildTroubleshootingMessage3": "Includere 'Errore di compilazione [{package_name}]' nel titolo del report sui bug, le seguenti informazioni sulla versione nella descrizione del bug, e allegare tutti i log di errore rilevanti di cui sopra.",
   "BuildTroubleshootingMessage4": "Usare il modello precompilato di {path} per la creazione del report del problema.",
+  "BuildTroubleshootingMessageGH": "You can also sumbit an issue by running (GitHub cli must be installed):",
   "BuildingFromHead": "Creazione di {spec} da HEAD...",
   "BuildingPackage": "Creazione di {spec}...",
   "BuildingPackageFailed": "compilazione {spec} non riuscita con: {build_result}",
