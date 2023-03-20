@@ -26,13 +26,7 @@ export class UnifiedFileSystem extends FileSystem {
    * @param scheme the Uri scheme to reserve
    * @param fileSystem the filesystem to associate with the scheme
    */
-  register(scheme: string | Array<string>, fileSystem: FileSystem) {
-    if (Array.isArray(scheme)) {
-      for (const each of scheme) {
-        this.register(each, fileSystem);
-      }
-      return this;
-    }
+  register(scheme: string, fileSystem: FileSystem) {
     strict.ok(!this.filesystems[scheme], i`scheme '${scheme}' already registered`);
     this.filesystems[scheme] = fileSystem;
     return this;

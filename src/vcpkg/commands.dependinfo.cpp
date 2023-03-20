@@ -179,7 +179,7 @@ namespace vcpkg::Commands::DependInfo
                 }
             }
 
-            fmt::format_to(std::back_inserter(s), "empty [label=\"{} singletons...\"]; }", empty_node_count);
+            fmt::format_to(std::back_inserter(s), "empty [label=\"{} singletons...\"]; }}", empty_node_count);
             return s;
         }
 
