@@ -955,7 +955,7 @@ namespace
             : paths(paths)
         {
             if (read) m_read_url = url;
-            if (write) m_write_url = url;
+            if (write) m_write_url = url + "s";
             m_token_header = token_header;
             m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
             m_content_type_header = "Content-Type: application/json";
