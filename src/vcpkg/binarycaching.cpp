@@ -962,16 +962,15 @@ namespace
         }
 
 
-
         std::string lookup_cache_entry(const std::string& abi) const
         {
-            auto maybe_res =
+            auto res =
                 invoke_http_request("-G",
                                     std::vector<std::string>{m_content_type_header, m_token_header, m_accept_header},
                                     std::vector<std::string>{"keys=vcpkg", "version=" + abi},
                                     m_read_url);
             
-            auto maybe_json = Json::parse_object(res);
+            auto maybe_json = Json::parse_object(res.get()->c_str());
             if (auto json = maybe_json.get())
             {
 				auto archive_location = json->get("archiveLocation");
@@ -997,14 +996,17 @@ namespace
                                     std::vector<std::string>{stringify(payload)},
                                     m_write_url);
 
-            auto json = Json::parse_object(res);
-
-            if (!json.has_value() || !json.get()->contains("cacheId"))
+            auto maybe_json = Json::parse_object(res.get()->c_str());
+            if (auto json = maybe_json.get())
             {
-                return {};
-            }
-
-            return json.get()->get("cacheId")->integer(VCPKG_LINE_INFO);
+				auto cache_id = json->get("cacheId");
+                if (cache_id && cache_id->is_integer())
+                {
+					return cache_id->integer(VCPKG_LINE_INFO);
+				}
+			}
+            
+            return {};
         }
 
         void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
@@ -1136,7 +1138,7 @@ namespace
                             std::vector<std::string>{stringify(commit)},
                             url);
 
-                        if (!res.empty())
+                        if (!res.get()->empty())
                         {
                             ++upload_count;
                         }
