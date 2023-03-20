@@ -467,7 +467,7 @@ namespace vcpkg::Commands::Integrate
                        .string_arg("-ExecutionPolicy")
                        .string_arg("Bypass")
                        .string_arg("-Command")
-                       .string_arg(fmt::format("& {& '{}' }", script_path));
+                       .string_arg(fmt::format("& {{& '{}' }}", script_path));
         const int rc = cmd_execute(cmd).value_or_exit(VCPKG_LINE_INFO);
         if (rc)
         {
