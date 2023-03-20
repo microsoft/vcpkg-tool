@@ -964,6 +964,8 @@ namespace
 
         std::string lookup_cache_entry(std::string& name, const std::string& abi) const
         {
+            msg::write_unlocalized_text_to_stdout(Color::none, "lookup_cache_entry... \n");
+
             auto res =
                 invoke_http_request("-G",
                                     std::vector<std::string>{m_content_type_header, m_token_header, m_accept_header},
@@ -987,6 +989,7 @@ namespace
 
         Optional<int64_t> reserve_cache_entry(const std::string& package_name, const std::string& abi, int64_t cacheSize) const
         {
+            msg::write_unlocalized_text_to_stdout(Color::none, "reserve_cache_entry... \n");
             Json::Object payload;
             payload.insert("key", package_name + "-" + abi);
             payload.insert("version", abi);
@@ -1014,6 +1017,8 @@ namespace
 
         void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
+            msg::write_unlocalized_text_to_stdout(Color::none, "Prefetch... \n");
+
             auto& fs = paths.get_filesystem();
             const ElapsedTimer timer;
             size_t restored_count = 0;
@@ -1087,6 +1092,7 @@ namespace
 
         void push_success(const InstallPlanAction& action) const override
         {
+            msg::write_unlocalized_text_to_stdout(Color::none, "push_success... \n");
             if (m_write_url.empty())
             {
                 return;
@@ -1142,6 +1148,10 @@ namespace
                             std::vector<std::string>{stringify(commit)},
                             url);
 
+                        msg::write_unlocalized_text_to_stdout(Color::none, "push_success: \n");
+                        msg::write_unlocalized_text_to_stdout(Color::none,  res.get()->c_str());
+                        msg::write_unlocalized_text_to_stdout(Color::none, "\n");
+
                         if (!res.get()->empty())
                         {
                             ++upload_count;
@@ -1158,6 +1168,7 @@ namespace
 
         void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
+            msg::write_unlocalized_text_to_stdout(Color::none, "Precheck... \n");
             std::vector<CacheAvailability> actions_availability{actions.size()};
             if (!m_read_url.empty())
             {
