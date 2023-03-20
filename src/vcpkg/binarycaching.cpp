@@ -1031,7 +1031,7 @@ namespace
 
                     auto&& action = actions[idx];
                     auto package_name = action.spec.name();
-                    msg::write_unlocalized_text_to_stdout(Color::none, "Package Name: " + package_name); //remove
+                    msg::write_unlocalized_text_to_stdout(Color::none, "Package Name: " + package_name + "\n"); // remove
                     auto url = lookup_cache_entry(package_name, action.package_abi().value_or_exit(VCPKG_LINE_INFO));
                     if (url.empty()) continue;
 

@@ -593,14 +593,13 @@ namespace vcpkg
             cmd.string_arg("-H").string_arg(header);
         }
 
-        cmd.string_arg(method).string_arg(url);
+        cmd.string_arg(url).string_arg(method);
      
         for (auto&& query_param : query_params)
         {
             cmd.string_arg("-d").string_arg(query_param);
         }
-        msg::write_unlocalized_text_to_stdout(Color::none, cmd.c_str());
-        msg::write_unlocalized_text_to_stdout(Color::none, "\n");
+
         return flatten_out(cmd_execute_and_capture_output(cmd), "curl");
     }
 
