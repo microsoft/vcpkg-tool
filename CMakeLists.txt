@@ -356,12 +356,10 @@ target_link_libraries(vcpkglib
         ${CPP_ATOMIC_LIBRARY}
 )
 
-if(NOT MSVC)
-    target_compile_options(vcpkglib PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
-endif()
-
 if(CMAKE_VERSION GREATER_EQUAL "3.16")
     target_precompile_headers(vcpkglib PRIVATE "include/pch.h")
+elseif(NOT MSVC)
+    target_compile_options(vcpkglib PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
 endif()
 
 if(MINGW)
@@ -442,12 +440,10 @@ if (BUILD_TESTING)
         target_link_libraries(vcpkg-test PRIVATE log)
     endif()
 
-    if(NOT MSVC)
-        target_compile_options(vcpkg-test PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
-    endif()
-
     if(CMAKE_VERSION GREATER_EQUAL "3.16")
         target_precompile_headers(vcpkg-test REUSE_FROM vcpkglib)
+    elseif(NOT MSVC)
+       target_compile_options(vcpkg-test PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
     endif()
 
     add_test(NAME default COMMAND vcpkg-test --order rand --rng-seed time)
