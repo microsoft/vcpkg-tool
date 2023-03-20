@@ -976,6 +976,8 @@ namespace
 				auto archive_location = json->get("archiveLocation");
                 if (archive_location && archive_location->is_string())
                 {
+                    msg::write_unlocalized_text_to_stdout(Color::none,
+                                                          archive_location->string(VCPKG_LINE_INFO).to_string() + "\n"); //remove
 					return archive_location->string(VCPKG_LINE_INFO).to_string();
 				}
 			}
@@ -1002,6 +1004,7 @@ namespace
 				auto cache_id = json->get("cacheId");
                 if (cache_id && cache_id->is_integer())
                 {
+                    msg::write_unlocalized_text_to_stdout(Color::none, "cachId: \n"); //remove
 					return cache_id->integer(VCPKG_LINE_INFO);
 				}
 			}
@@ -1012,7 +1015,6 @@ namespace
         void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             auto& fs = paths.get_filesystem();
-
             const ElapsedTimer timer;
             size_t restored_count = 0;
             std::vector<std::pair<std::string, Path>> url_paths;
@@ -1029,6 +1031,7 @@ namespace
 
                     auto&& action = actions[idx];
                     auto package_name = action.spec.name();
+                    msg::write_unlocalized_text_to_stdout(Color::none, "Package Name: " + package_name); //remove
                     auto url = lookup_cache_entry(package_name, action.package_abi().value_or_exit(VCPKG_LINE_INFO));
                     if (url.empty()) continue;
 
