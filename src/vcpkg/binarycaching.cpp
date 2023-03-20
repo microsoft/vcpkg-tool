@@ -1000,12 +1000,14 @@ namespace
                                     std::vector<std::string>{m_content_type_header, m_token_header, m_accept_header},
                                     std::vector<std::string>{stringify(payload)},
                                     m_write_url);
+    
+            msg::write_unlocalized_text_to_stdout(Color::none, res.get()->c_str());
+            msg::write_unlocalized_text_to_stdout(Color::none, "\n");
 
             auto maybe_json = Json::parse_object(res.get()->c_str());
-            // print some stuff
-            maybe_json.has_value() ? msg::write_unlocalized_text_to_stdout(Color::none, "maybe_json.has_value = true\n")
-                                   : msg::write_unlocalized_text_to_stdout(Color::none, "maybe_json.has_value = false\n");
 
+            // maybe_json.has_value() is false...
+           
             if (auto json = maybe_json.get())
             {
                 auto cache_id = json->get("cacheId");
