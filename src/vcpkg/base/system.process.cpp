@@ -1148,7 +1148,7 @@ namespace vcpkg
     {
         if (auto exit = maybe_exit.get())
         {
-            msg::write_unlocalized_text_to_stdout(Color::none, "exit code: " + exit->exit_code);
+            msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("exit code: {}", exit->exit_code));
             if (exit->exit_code == 0)
             {
                 return {std::move(exit->output), expected_left_tag};
