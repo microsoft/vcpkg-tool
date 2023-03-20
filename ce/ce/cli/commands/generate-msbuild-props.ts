@@ -47,7 +47,7 @@ export class GenerateMSBuildPropsCommand extends Command {
       return false;
     }
 
-    const activation = new Activation(session);
+    const activation = await Activation.start(session, false);
     for (const artifact of resolved) {
       if (!await artifact.artifact.loadActivationSettings(activation)) {
         session.channels.error(i`Unable to activate project`);
