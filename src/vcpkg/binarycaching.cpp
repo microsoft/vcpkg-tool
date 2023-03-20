@@ -965,20 +965,23 @@ namespace
 
         std::string lookup_cache_entry(const std::string& abi) const
         {
-            auto res =
+            auto maybe_res =
                 invoke_http_request("-G",
                                     std::vector<std::string>{m_content_type_header, m_token_header, m_accept_header},
                                     std::vector<std::string>{"keys=vcpkg", "version=" + abi},
                                     m_read_url);
-
-            auto json = Json::parse_object(res);
-
-            if (!json.has_value() || !json.get()->contains("archiveLocation"))
+            
+            auto maybe_json = Json::parse_object(res);
+            if (auto json = maybe_json.get())
             {
-                return {};
-            }
+				auto archive_location = json->get("archiveLocation");
+                if (archive_location && archive_location->is_string())
+                {
+					return archive_location->string(VCPKG_LINE_INFO).to_string();
+				}
+			}
 
-            return json.get()->get("archiveLocation")->string(VCPKG_LINE_INFO).to_string();
+            return {};
         }
 
         Optional<int64_t> reserve_cache_entry(const std::string& abi, int64_t cacheSize) const

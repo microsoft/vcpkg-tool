@@ -580,7 +580,7 @@ namespace vcpkg
         return res;
     }
 
-    std::string invoke_http_request(std::string method, 
+    ExpectedL<std::string> invoke_http_request(std::string method, 
                           View<std::string> headers,
                           View<std::string> query_params,
                           StringView url)
@@ -600,10 +600,7 @@ namespace vcpkg
             cmd.string_arg("-d").string_arg(query_param);
         }
 
-        auto maybe_res = cmd_execute_and_capture_output(cmd);
-
-        //TODO: error handling
-        return maybe_res.get()->output;
+        return flatten_out(cmd_execute_and_capture_output(cmd), "curl");
     }
 
 #if defined(_WIN32)

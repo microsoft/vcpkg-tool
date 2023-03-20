@@ -41,7 +41,7 @@ namespace vcpkg
                             const Path& file,
                             StringView method = "PUT");
 
-    std::string invoke_http_request(std::string method,
+    ExpectedL<std::string> invoke_http_request(std::string method,
                                     View<std::string> headers,
                                     View<std::string> query_params,
                                     StringView url);
