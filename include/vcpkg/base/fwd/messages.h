@@ -24,6 +24,15 @@ namespace vcpkg
 
     struct LocalizedString;
     struct MessageSink;
+
+    namespace msg
+    {
+        template<class... Tags>
+        struct MessageT;
+
+        template<class Tag, class Type>
+        struct TagArg;
+    }
 }
 
 namespace vcpkg::msg

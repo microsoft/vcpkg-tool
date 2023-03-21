@@ -6,6 +6,9 @@ namespace fmt
     {
         template<typename T, typename Char, typename Enable>
         struct formatter;
+
+        template<typename Char>
+        class basic_string_view;
     }
 }
 

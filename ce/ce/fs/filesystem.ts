@@ -363,7 +363,7 @@ export abstract class FileSystem extends EventEmitter {
     return false;
   }
 
-  constructor(protected session: Session) {
+  constructor(protected readonly session: Session) {
     super();
   }
 
