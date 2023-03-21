@@ -595,8 +595,9 @@ namespace vcpkg
 
         cmd.string_arg(url).string_arg("-X").string_arg(method);
 
-        std::string query = Strings::join("&", query_params);
-        cmd.string_arg(query);
+        std::string query_param;
+        query_params.empty() ? query_param = "" : query_param = Strings::join("&", query_params);
+        cmd.string_arg(query_param);
 
         return flatten_out(cmd_execute_and_capture_output(cmd), "curl");
     }
