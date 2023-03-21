@@ -965,7 +965,7 @@ namespace
         std::string lookup_cache_entry(std::string& name, const std::string& abi) const
         {
             auto res =
-                invoke_http_request("-G",
+                invoke_http_request("GET",
                                     std::vector<std::string>{m_content_type_header, m_token_header, m_accept_header},
                                     std::vector<std::string>{"keys=" + name + "-" + abi, "version=" + abi},
                                     m_read_url);
@@ -991,7 +991,7 @@ namespace
             payload.insert("cacheSize", Json::Value::integer(cacheSize));
 
             auto res =
-                invoke_http_request({},
+                invoke_http_request({"POST"},
                                     std::vector<std::string>{m_content_type_header, m_token_header, m_accept_header},
                                     std::vector<std::string>{stringify(payload)},
                                     m_write_url);
@@ -1133,7 +1133,7 @@ namespace
                         commit.insert("size", std::to_string(cache_size));
 
                         auto res = invoke_http_request(
-                            {},
+                            {"POST"},
                             std::vector<std::string>{m_accept_header, m_content_type_header, m_token_header},
                             std::vector<std::string>{stringify(commit)},
                             url);
@@ -1154,7 +1154,6 @@ namespace
 
         void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
-            msg::write_unlocalized_text_to_stdout(Color::none, "Precheck... \n");
             std::vector<CacheAvailability> actions_availability{actions.size()};
             if (!m_read_url.empty())
             {

@@ -593,12 +593,10 @@ namespace vcpkg
             cmd.string_arg("-H").string_arg(header);
         }
 
-        cmd.string_arg(url).string_arg(method);
-     
-        for (auto&& query_param : query_params)
-        {
-            cmd.string_arg("-d").string_arg(query_param);
-        }
+        cmd.string_arg(url).string_arg("-X").string_arg(method);
+
+        std::string query = Strings::join("&", query_params);
+        cmd.string_arg(query);
 
         return flatten_out(cmd_execute_and_capture_output(cmd), "curl");
     }
