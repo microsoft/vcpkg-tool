@@ -593,18 +593,23 @@ namespace vcpkg
             cmd.string_arg("-H").string_arg(header);
         }
 
-        std::string flattened_queries = "";
+        for (auto&& query : query_params)
+        {
+			cmd.string_arg("-d").string_arg(query);
+		}
 
-        if (method == "GET")
-        {
-            flattened_queries = Strings::join("?", query_params);
-            cmd.string_arg(flattened_queries);
-        }
-        else
-        {
-            flattened_queries = Strings::join("&", query_params);
-            cmd.string_arg("-d").string_arg(flattened_queries);
-        }
+        //std::string flattened_queries = "";
+
+        //if (method == "GET")
+        //{
+        //    flattened_queries = Strings::join("?", query_params);
+        //    cmd.string_arg(flattened_queries);
+        //}
+        //else
+        //{
+        //    flattened_queries = Strings::join("&", query_params);
+        //    cmd.string_arg("-d").string_arg(flattened_queries);
+        //}
 
         cmd.string_arg(url);
 
