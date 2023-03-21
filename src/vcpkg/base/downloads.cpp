@@ -586,17 +586,20 @@ namespace vcpkg
                           StringView url)
     {
         Command cmd;
-        cmd.string_arg("curl").string_arg("-s").string_arg("-L").string_arg("-X").string_arg(method);
+        cmd.string_arg("curl").string_arg("-s").string_arg("-L");
 
         for (auto&& header : headers)
         {
             cmd.string_arg("-H").string_arg(header);
         }
 
+        cmd.string_arg("-X").string_arg(method);
+
         for (auto&& query : query_params)
         {
 			cmd.string_arg("-d").string_arg(query);
 		}
+
         //std::string flattened_queries = "";
 
         //if (method == "GET")
@@ -612,6 +615,7 @@ namespace vcpkg
 
         cmd.string_arg(url);
         msg::write_unlocalized_text_to_stdout(Color::none, cmd.c_str());
+        msg::write_unlocalized_text_to_stdout(Color::none, "\n");
 
         return flatten_out(cmd_execute_and_capture_output(cmd), "curl");
     }
