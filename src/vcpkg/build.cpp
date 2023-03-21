@@ -1245,7 +1245,9 @@ namespace vcpkg
                         auto status_it = status_db.find(pspec);
                         if (status_it == status_db.end())
                         {
-                            Checks::unreachable(VCPKG_LINE_INFO, fmt::format("Failed to find dependency abi for {} -> {}", action.spec, pspec));
+                            Checks::unreachable(
+                                VCPKG_LINE_INFO,
+                                fmt::format("Failed to find dependency abi for {} -> {}", action.spec, pspec));
                         }
 
                         dependency_abis.emplace_back(pspec.name(), status_it->get()->package.abi);
