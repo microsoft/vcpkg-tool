@@ -595,7 +595,7 @@ namespace vcpkg
 
         cmd.string_arg(url);
 
-        std::string flattened_queries;
+        std::string flattened_queries = "";
         query_params.empty() ? flattened_queries = "" : flattened_queries = Strings::join("&", query_params);
 
         if (!flattened_queries.empty())
