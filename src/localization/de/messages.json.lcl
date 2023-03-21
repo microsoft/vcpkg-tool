@@ -4825,6 +4825,9 @@
       <Item ItemId=";GHAParametersMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The GHA binary source requires the ACTIONS_RUNTIME_TOKEN and ACTIONS_CACHE_URL environment variables to be set. See {url} for details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Die binäre GHA-Quelle erfordert, dass die Umgebungsvariablen ACTIONS_RUNTIME_TOKEN und ACTIONS_CACHE_URL festgelegt werden. Weitere Informationen finden Sie unter {url}.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6337,6 +6340,9 @@
       <Item ItemId=";InvalidArgumentRequiresZeroOrOneArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[invalid argument: binary config '{binary_source}' requires 0 or 1 argument]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ungültiges Argument: Binärkonfiguration „{binary_source}“ erfordert 0 oder 1 Argument.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
