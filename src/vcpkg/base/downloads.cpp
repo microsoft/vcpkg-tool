@@ -593,8 +593,8 @@ namespace vcpkg
             cmd.string_arg("-H").string_arg(header);
         }
 
-        // GET behaves like -G or --get.
-        // I.e. behaves as if -d/--data was passed in a HTTP GET request instead of the POST request that otherwise would be used.
+        // GET behaves like -G or --get. 
+        // It converts data typically specified with -d into a GET request instead of a POST request.
         if (method == "GET")
         {
             std::string queried_url = url.to_string() + "?" + Strings::join("&", query_params);
@@ -608,24 +608,6 @@ namespace vcpkg
         }
 		
         cmd.string_arg(url);
-
-        //std::string flattened_queries = "";
-
-        //if (method == "GET")
-        //{
-        //    flattened_queries = Strings::join("?", query_params);
-        //    cmd.string_arg(flattened_queries);
-        //}
-        //else
-        //{
-        //    flattened_queries = Strings::join("&", query_params);
-        //    cmd.string_arg("-d").string_arg(flattened_queries);
-        //}
-        msg::write_unlocalized_text_to_stdout(Color::none, "\n");
-        msg::write_unlocalized_text_to_stdout(Color::none, "\n");
-        msg::write_unlocalized_text_to_stdout(Color::none, cmd.c_str());
-        msg::write_unlocalized_text_to_stdout(Color::none, "\n");
-        msg::write_unlocalized_text_to_stdout(Color::none, "\n");
 
         return flatten_out(cmd_execute_and_capture_output(cmd), "curl");
     }
