@@ -586,13 +586,15 @@ namespace vcpkg
                           StringView url)
     {
         Command cmd;
-        cmd.string_arg("curl").string_arg("-s").string_arg("-X").string_arg(method);
+        cmd.string_arg("curl").string_arg("-s").string_arg("-L");
 
         for (auto&& header : headers)
         {
             cmd.string_arg("-H").string_arg(header);
         }
 
+        // GET behaves like -G or --get.
+        // I.e. behaves as if -d/--data was passed in a HTTP GET request instead of the POST request that otherwise would be used.
         if (method == "GET")
         {
             std::string queried_url = url.to_string() + "?" + Strings::join("&", query_params);
