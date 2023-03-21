@@ -991,7 +991,7 @@ namespace
             payload.insert("cacheSize", Json::Value::integer(cacheSize));
 
             auto res =
-                invoke_http_request({"POST"},
+                invoke_http_request("POST",
                                     std::vector<std::string>{m_content_type_header, m_token_header, m_accept_header},
                                     std::vector<std::string>{stringify(payload)},
                                     m_write_url);
@@ -1133,7 +1133,7 @@ namespace
                         commit.insert("size", std::to_string(cache_size));
 
                         auto res = invoke_http_request(
-                            {"POST"},
+                            "POST",
                             std::vector<std::string>{m_accept_header, m_content_type_header, m_token_header},
                             std::vector<std::string>{stringify(commit)},
                             url);
