@@ -579,6 +579,10 @@ namespace vcpkg
 
         return res;
     }
+    std::string format_url_request(std::string base_url, std::vector<std::string> query_params) 
+    { 
+        return "";
+    }
 
     ExpectedL<std::string> invoke_http_request(std::string method, 
                           View<std::string> headers,
