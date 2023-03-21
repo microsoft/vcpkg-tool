@@ -141,6 +141,7 @@
   "BuildTroubleshootingMessage2": "Yeni bir sorun gönderebilirsiniz:",
   "BuildTroubleshootingMessage3": "Hata raporu başlığınıza '[{package_name}] Derleme hatası' ekleyin, hata açıklamanıza aşağıdaki sürüm bilgilerini ekleyin ve yukarıdaki ilgili hata günlüklerini ekleyin.",
   "BuildTroubleshootingMessage4": "Lütfen sorununuzu bildirirken {path} adresindeki önceden doldurulmuş şablonu kullanın.",
+  "BuildTroubleshootingMessageGH": "You can also sumbit an issue by running (GitHub cli must be installed):",
   "BuildingFromHead": "HEAD'den {spec} derleniyor...",
   "BuildingPackage": "{spec} derleniyor...",
   "BuildingPackageFailed": "derleme {spec} başarısız oldu: {build_result}",

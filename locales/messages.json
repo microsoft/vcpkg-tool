@@ -201,6 +201,8 @@
   "_BuildTroubleshootingMessage3.comment": "Third part of build troubleshooting message, printed after the URI to file a bug but before version information about vcpkg itself. An example of {package_name} is zlib.",
   "BuildTroubleshootingMessage4": "Please use the prefilled template from {path} when reporting your issue.",
   "_BuildTroubleshootingMessage4.comment": "Fourth optional part of build troubleshooting message, printed after the versioninformation about vcpkg itself. An example of {path} is /foo/bar.",
+  "BuildTroubleshootingMessageGH": "You can also sumbit an issue by running (GitHub cli must be installed):",
+  "_BuildTroubleshootingMessageGH.comment": "Another part of build troubleshooting message, printed after the URI. An alternative version to create an issue in some cases.",
   "BuildingFromHead": "Building {spec} from HEAD...",
   "_BuildingFromHead.comment": "'HEAD' means the most recent version of source code An example of {spec} is zlib:x64-windows.",
   "BuildingPackage": "Building {spec}...",

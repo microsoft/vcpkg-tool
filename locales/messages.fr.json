@@ -141,6 +141,7 @@
   "BuildTroubleshootingMessage2": "Vous pouvez soumettre un nouveau problème à l’adresse :",
   "BuildTroubleshootingMessage3": "Incluez « [{package_name}] Erreur de build » dans le titre de votre rapport de bogues, les informations de version suivantes dans votre description de bogue et joignez les journaux des échecs pertinents ci-dessus.",
   "BuildTroubleshootingMessage4": "Utilisez le modèle prérempli de {path} lors du signalement de votre problème.",
+  "BuildTroubleshootingMessageGH": "You can also sumbit an issue by running (GitHub cli must be installed):",
   "BuildingFromHead": "Génération de {spec} à partir de HEAD...",
   "BuildingPackage": "Génération de {spec}...",
   "BuildingPackageFailed": "échec de la génération de {spec} avec : {build_result}",

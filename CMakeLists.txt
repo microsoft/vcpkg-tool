@@ -356,12 +356,10 @@ target_link_libraries(vcpkglib
         ${CPP_ATOMIC_LIBRARY}
 )
 
-if(NOT MSVC)
-    target_compile_options(vcpkglib PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
-endif()
-
 if(CMAKE_VERSION GREATER_EQUAL "3.16")
     target_precompile_headers(vcpkglib PRIVATE "include/pch.h")
+elseif(NOT MSVC)
+    target_compile_options(vcpkglib PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
 endif()
 
 if(MINGW)
@@ -442,12 +440,10 @@ if (BUILD_TESTING)
         target_link_libraries(vcpkg-test PRIVATE log)
     endif()
 
-    if(NOT MSVC)
-        target_compile_options(vcpkg-test PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
-    endif()
-
     if(CMAKE_VERSION GREATER_EQUAL "3.16")
         target_precompile_headers(vcpkg-test REUSE_FROM vcpkglib)
+    elseif(NOT MSVC)
+       target_compile_options(vcpkg-test PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
     endif()
 
     add_test(NAME default COMMAND vcpkg-test --order rand --rng-seed time)
@@ -459,9 +455,8 @@ endif()
 
 # === Target: vcpkg-fuzz ===
 
+file(GLOB VCPKG_FUZZ_SOURCES CONFIGURE_DEPENDS "src/vcpkg-fuzz/*.cpp")
 if(VCPKG_BUILD_FUZZING)
-    file(GLOB VCPKG_FUZZ_SOURCES CONFIGURE_DEPENDS "src/vcpkg-fuzz/*.cpp")
-
     add_executable(vcpkg-fuzz ${VCPKG_FUZZ_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
     target_link_libraries(vcpkg-fuzz PRIVATE vcpkglib)
 endif()
@@ -469,8 +464,8 @@ endif()
 
 # === Target: tls12-download ===
 
+set(TLS12_DOWNLOAD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/tls12-download.c")
 if(VCPKG_BUILD_TLS12_DOWNLOADER)
-    set(TLS12_DOWNLOAD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/tls12-download.c")
     add_executable(tls12-download ${TLS12_DOWNLOAD_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
     set_property(TARGET tls12-download PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
     set_property(TARGET tls12-download APPEND PROPERTY LINK_OPTIONS "$<IF:$<CONFIG:Debug>,,/ENTRY:entry>")
@@ -487,7 +482,6 @@ find_program(CLANG_FORMAT clang-format PATHS "$ENV{PROGRAMFILES}/LLVM/bin")
 if(CLANG_FORMAT)
     # doing all of these formats in one line has a tendency to overflow the command line length
     add_custom_target(format
-        COMMAND "${CLANG_FORMAT}" -i -verbose ${CMAKE_CURRENT_SOURCE_DIR}/src/pch.cpp
         COMMAND "${CLANG_FORMAT}" -i -verbose ${VCPKGLIB_BASE_SOURCES}
         COMMAND "${CLANG_FORMAT}" -i -verbose ${VCPKGLIB_SOURCES}
         COMMAND "${CLANG_FORMAT}" -i -verbose ${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h
