@@ -1531,7 +1531,7 @@ namespace vcpkg
             result.append_indent().append_fmt_raw("https://github.com/microsoft/vcpkg/issues/"
                                                   "new?title=[{}]+Build+error&body=Copy+issue+body+from+{}\n",
                                                   spec_name,
-                                                  Strings::percent_encode(path));
+                                                  Strings::url_encode(path));
             if (!paths.get_filesystem().find_from_PATH("gh").empty())
             {
                 Command gh("gh");

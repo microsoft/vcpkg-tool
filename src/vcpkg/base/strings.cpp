@@ -716,7 +716,7 @@ namespace vcpkg::Strings
         return result;
     }
 
-    std::string percent_encode(StringView sv) noexcept
+    std::string url_encode(StringView sv) noexcept
     {
         std::string result;
         for (auto c : sv)

@@ -579,15 +579,38 @@ namespace vcpkg
 
         return res;
     }
-    std::string format_url_request(std::string base_url, std::vector<std::string> query_params) 
-    { 
-        return "";
+
+    std::string format_url_query(std::string base_url, std::vector<std::string> query_params)
+    {
+        if (query_params.empty())
+        {
+            return base_url;
+        }
+
+        for (auto query : query_params)
+        {
+            query = Strings::url_encode(query);
+        }
+
+        std::string query = Strings::join("&", query_params);
+
+        return base_url + "?" + query;
     }
 
-    ExpectedL<std::string> invoke_http_request(std::string method, 
-                          View<std::string> headers,
-                          View<std::string> query_params,
-                          StringView url)
+    static std::string encode_data(std::vector<std::string> data) 
+    {
+        for (auto d : data)
+        {
+            d = Strings::url_encode(d);
+        }
+
+        return Strings::join("&", data);
+	}
+
+    ExpectedL<std::string> invoke_http_request(std::string method,
+                                               View<std::string> headers,
+                                               StringView url,
+                                               std::vector<std::string> data)
     {
         Command cmd;
         cmd.string_arg("curl").string_arg("-s").string_arg("-L");
@@ -597,20 +620,13 @@ namespace vcpkg
             cmd.string_arg("-H").string_arg(header);
         }
 
-        // GET behaves like -G or --get. 
-        // It converts data typically specified with -d into a GET request instead of a POST request.
-        if (method == "GET")
-        {
-            std::string queried_url = url.to_string() + "?" + Strings::join("&", query_params);
-			cmd.string_arg(queried_url);
-            return flatten_out(cmd_execute_and_capture_output(cmd), "curl");
-		}
+        cmd.string_arg("-X").string_arg(method);
 
-        for (auto&& query : query_params)
+        if (!data.empty())
         {
-            cmd.string_arg("-d").string_arg(query);
+            cmd.string_arg("--data-binary").string_arg(encode_data(data));
         }
-		
+
         cmd.string_arg(url);
 
         return flatten_out(cmd_execute_and_capture_output(cmd), "curl");

@@ -964,11 +964,11 @@ namespace
 
         std::string lookup_cache_entry(std::string& name, const std::string& abi) const
         {
-            auto res =
-                invoke_http_request("GET",
-                                    std::vector<std::string>{m_content_type_header, m_token_header, m_accept_header},
-                                    std::vector<std::string>{"keys=" + name + "-" + abi, "version=" + abi},
-                                    m_read_url);
+            auto url =
+                format_url_query(m_read_url, std::vector<std::string>{"keys=" + name + "-" + abi, "version=" + abi});
+
+            auto res = invoke_http_request(
+                "GET", std::vector<std::string>{m_content_type_header, m_token_header, m_accept_header}, url);
             
             auto maybe_json = Json::parse_object(res.get()->c_str());
             if (auto json = maybe_json.get())
@@ -993,8 +993,8 @@ namespace
             auto res =
                 invoke_http_request("POST",
                                     std::vector<std::string>{m_content_type_header, m_token_header, m_accept_header},
-                                    std::vector<std::string>{stringify(payload)},
-                                    m_write_url);
+                                    m_write_url,
+                                    std::vector<std::string>{stringify(payload)});
 
             auto maybe_json = Json::parse_object(res.get()->c_str());
             if (auto json = maybe_json.get())
@@ -1135,8 +1135,8 @@ namespace
                         auto res = invoke_http_request(
                             "POST",
                             std::vector<std::string>{m_accept_header, m_content_type_header, m_token_header},
-                            std::vector<std::string>{stringify(commit)},
-                            url);
+                            url,
+                            std::vector<std::string>{stringify(commit)});
 
                         if (!res.get()->empty())
                         {
