@@ -597,7 +597,6 @@ namespace vcpkg
         {
 			cmd.string_arg("-d").string_arg(query);
 		}
-
         //std::string flattened_queries = "";
 
         //if (method == "GET")
@@ -612,6 +611,7 @@ namespace vcpkg
         //}
 
         cmd.string_arg(url);
+        msg::write_unlocalized_text_to_stdout(Color::none, cmd.c_str());
 
         return flatten_out(cmd_execute_and_capture_output(cmd), "curl");
     }
