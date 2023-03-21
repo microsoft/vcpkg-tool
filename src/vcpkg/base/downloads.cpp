@@ -586,7 +586,7 @@ namespace vcpkg
                           StringView url)
     {
         Command cmd;
-        cmd.string_arg("curl").string_arg("-s");
+        cmd.string_arg("curl").string_arg("-s").string_arg("-L");
 
         for (auto&& header : headers)
         {
