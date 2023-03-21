@@ -244,11 +244,12 @@ namespace vcpkg::Commands::Integrate
     }
 #endif
 
-    static constexpr StringLiteral vcpkg_user_props = "vcpkg.user.props";
-    static constexpr StringLiteral vcpkg_user_targets = "vcpkg.user.targets";
     static constexpr StringLiteral vcpkg_path_txt = "vcpkg.path.txt";
 
 #if defined(_WIN32)
+    static constexpr StringLiteral vcpkg_user_props = "vcpkg.user.props";
+    static constexpr StringLiteral vcpkg_user_targets = "vcpkg.user.targets";
+
     static void integrate_install_msbuild14(Filesystem& fs)
     {
         std::array<Path, 2> OLD_SYSTEM_TARGET_FILES = {
