@@ -1509,10 +1509,10 @@ namespace vcpkg
 
     ILineReader::~ILineReader() = default;
 
-    uint64_t Filesystem::filesize(const Path& file_path, LineInfo li) const
+    uint64_t Filesystem::file_size(const Path& file_path, LineInfo li) const
     {
         std::error_code ec;
-        auto maybe_contents = this->filesize(file_path, ec);
+        auto maybe_contents = this->file_size(file_path, ec);
         if (ec)
         {
             exit_filesystem_call_error(li, ec, __func__, {file_path});
@@ -2088,13 +2088,13 @@ namespace vcpkg
 
     struct RealFilesystem final : Filesystem
     {
-        virtual uint64_t filesize(const Path& file_path, std::error_code& ec) const override 
+        virtual uint64_t file_size(const Path& file_path, std::error_code& ec) const override 
         { 
 #ifdef _WIN32
             WIN32_FILE_ATTRIBUTE_DATA file_info;
             if (!GetFileAttributesEx(file_path.c_str(), GetFileExInfoStandard, &file_info))
             {
-                ec = std::error_code(GetLastError(), std::system_category());
+                ec.assign(static_cast<int>(GetLastError()), std::system_category());
                 return 0;
             }
 

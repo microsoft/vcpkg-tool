@@ -171,8 +171,8 @@ namespace vcpkg
 
     struct Filesystem : ILineReader
     {
-        virtual std::uint64_t filesize(const Path& file_path, std::error_code& ec) const = 0;
-        std::uint64_t filesize(const Path& file_path, LineInfo li) const;
+        virtual std::uint64_t file_size(const Path& file_path, std::error_code& ec) const = 0;
+        std::uint64_t file_size(const Path& file_path, LineInfo li) const;
         
         virtual std::string read_contents(const Path& file_path, std::error_code& ec) const = 0;
         std::string read_contents(const Path& file_path, LineInfo li) const;

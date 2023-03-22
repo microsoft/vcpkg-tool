@@ -1107,16 +1107,9 @@ namespace
                                         .append_raw(compression_result.error()));
                 return;
             }
-
-            //int64_t cache_size;
-            //{
-            //    auto archive = fs.open_for_read(tmp_archive_path, VCPKG_LINE_INFO);
-            //    archive.try_seek_to(0, SEEK_END);
-            //    cache_size = archive.tell();
-            //}
-
-            auto cache_size = fs.filesize(tmp_archive_path, VCPKG_LINE_INFO);
-
+            
+            auto cache_size = fs.file_size(tmp_archive_path, VCPKG_LINE_INFO);
+            
             size_t upload_count = 0;
             if (!m_write_url.empty())
             {
