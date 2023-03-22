@@ -24,9 +24,10 @@ struct KnowNothingBinaryProvider : IBinaryProvider
         return RestoreResult::unavailable;
     }
 
-    void push_success(const BinaryProviderPushRequest& request, MessageSink&) override
+    int push_success(const BinaryProviderPushRequest& request, MessageSink&) override
     {
         CHECK_FALSE(request.info.package_abi.empty());
+        return 0;
     }
 
     void prefetch(View<InstallPlanAction> actions, View<CacheStatus* const> cache_status) const override
