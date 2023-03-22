@@ -1685,16 +1685,7 @@ namespace vcpkg
         const auto abi = action.package_abi().get();
         if (abi)
         {
-            const auto clean_packages = action.build_options.clean_packages == CleanPackages::YES;
-            if (clean_packages)
-            {
-                static int counter = 0;
-                Path new_packaged_dir = package_dir + "_push_" + std::to_string(++counter);
-                filesystem.remove_all(new_packaged_dir, VCPKG_LINE_INFO);
-                filesystem.rename(package_dir, new_packaged_dir, VCPKG_LINE_INFO);
-                package_dir = new_packaged_dir;
-            }
-
+            const auto clean_packages = action.build_options.clean_packages == CleanPackages::YES;            
             std::string nuspec;
             if (needs_nuspec_data)
             {
