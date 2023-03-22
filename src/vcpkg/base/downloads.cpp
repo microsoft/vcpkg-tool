@@ -587,7 +587,7 @@ namespace vcpkg
             return base_url;
         }
 
-        for (auto query : query_params)
+        for (auto&& query : query_params)
         {
             query = Strings::url_encode(query);
         }
@@ -599,7 +599,7 @@ namespace vcpkg
 
     static std::string encode_data(std::vector<std::string> data) 
     {
-        for (auto d : data)
+        for (auto&& d : data)
         {
             d = Strings::url_encode(d);
         }
