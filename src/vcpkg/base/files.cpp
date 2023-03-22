@@ -2088,8 +2088,8 @@ namespace vcpkg
 
     struct RealFilesystem final : Filesystem
     {
-        virtual uint64_t file_size(const Path& file_path, std::error_code& ec) const override 
-        { 
+        virtual uint64_t file_size(const Path& file_path, std::error_code& ec) const override
+        {
 #ifdef _WIN32
             WIN32_FILE_ATTRIBUTE_DATA file_info;
             if (!GetFileAttributesEx(file_path.c_str(), GetFileExInfoStandard, &file_info))
@@ -2106,10 +2106,10 @@ namespace vcpkg
 #endif // defined(_WIN32)
             struct stat st;
             if (stat(file_path.c_str(), &st) != 0)
-			{
+            {
                 ec.assign(errno, std::generic_category());
                 return 0;
-			}
+            }
 
             return st.st_size;
         }

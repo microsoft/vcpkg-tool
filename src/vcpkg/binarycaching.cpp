@@ -1107,9 +1107,9 @@ namespace
                                         .append_raw(compression_result.error()));
                 return;
             }
-            
+
             auto cache_size = fs.file_size(tmp_archive_path, VCPKG_LINE_INFO);
-            
+
             size_t upload_count = 0;
             if (!m_write_url.empty())
             {
