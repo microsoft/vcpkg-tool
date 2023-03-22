@@ -2094,7 +2094,7 @@ namespace vcpkg
             WIN32_FILE_ATTRIBUTE_DATA file_info;
             if (!GetFileAttributesEx(file_path.c_str(), GetFileExInfoStandard, &file_info))
             {
-                ec.assign(static_cast<int>(GetLastError()), std::system_category());
+                ec.assign(errno, std::generic_category());
                 return 0;
             }
 
@@ -2107,7 +2107,7 @@ namespace vcpkg
             struct stat st;
             if (stat(file_path.c_str(), &st) != 0)
 			{
-                ec.assign(static_cast<int>(GetLastError()), std::system_category());
+                ec.assign(errno, std::generic_category());
                 return 0;
 			}
 
