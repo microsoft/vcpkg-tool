@@ -27,8 +27,6 @@
 
 namespace vcpkg
 {
-    DECLARE_MESSAGE(ElapsedForPackage, (msg::spec, msg::elapsed), "", "Elapsed time to handle {spec}: {elapsed}");
-
     struct IBuildLogsRecorder
     {
         virtual void record_build_result(const VcpkgPaths& paths,
@@ -132,17 +130,14 @@ namespace vcpkg
 
     StringLiteral to_string_locale_invariant(const BuildResult build_result);
     LocalizedString to_string(const BuildResult build_result);
-    LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action, const VcpkgPaths& paths);
+    LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action,
+                                                        const VcpkgPaths& paths,
+                                                        const Optional<Path>& issue_body);
     inline void print_user_troubleshooting_message(const InstallPlanAction& action,
                                                    const VcpkgPaths& paths,
                                                    Optional<Path>&& issue_body)
     {
-        msg::println_error(create_user_troubleshooting_message(action, paths));
-        if (issue_body)
-        {
-            msg::println(
-                Color::warning, msgBuildTroubleshootingMessage4, msg::path = issue_body.value_or_exit(VCPKG_LINE_INFO));
-        }
+        msg::println(Color::error, create_user_troubleshooting_message(action, paths, issue_body));
     }
 
     /// <summary>

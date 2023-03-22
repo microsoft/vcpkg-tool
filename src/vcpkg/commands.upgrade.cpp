@@ -21,14 +21,11 @@ using namespace vcpkg;
 namespace vcpkg::Commands::Upgrade
 {
     static constexpr StringLiteral OPTION_NO_DRY_RUN = "no-dry-run";
-    // --keep-going is preserved for compatibility with old releases of vcpkg.
-    static constexpr StringLiteral OPTION_KEEP_GOING = "keep-going";
     static constexpr StringLiteral OPTION_NO_KEEP_GOING = "no-keep-going";
     static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
 
-    static constexpr std::array<CommandSwitch, 4> INSTALL_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 3> INSTALL_SWITCHES = {{
         {OPTION_NO_DRY_RUN, []() { return msg::format(msgCmdUpgradeOptNoDryRun); }},
-        {OPTION_KEEP_GOING, nullptr},
         {OPTION_NO_KEEP_GOING, []() { return msg::format(msgCmdUpgradeOptNoKeepGoing); }},
         {OPTION_ALLOW_UNSUPPORTED_PORT, []() { return msg::format(msgCmdUpgradeOptAllowUnsupported); }},
     }};
@@ -40,25 +37,6 @@ namespace vcpkg::Commands::Upgrade
         {INSTALL_SWITCHES, {}},
         nullptr,
     };
-
-    static KeepGoing determine_keep_going(bool keep_going_set, bool no_keep_going_set)
-    {
-        Checks::msg_check_exit(VCPKG_LINE_INFO,
-                               !(keep_going_set && no_keep_going_set),
-                               msg::msgBothYesAndNoOptionSpecifiedError,
-                               msg::option = OPTION_KEEP_GOING);
-        if (keep_going_set)
-        {
-            return KeepGoing::YES;
-        }
-
-        if (no_keep_going_set)
-        {
-            return KeepGoing::NO;
-        }
-
-        return KeepGoing::YES;
-    }
 
     void perform_and_exit(const VcpkgCmdArguments& args,
                           const VcpkgPaths& paths,
@@ -74,8 +52,8 @@ namespace vcpkg::Commands::Upgrade
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
 
         const bool no_dry_run = Util::Sets::contains(options.switches, OPTION_NO_DRY_RUN);
-        const KeepGoing keep_going = determine_keep_going(Util::Sets::contains(options.switches, OPTION_KEEP_GOING),
-                                                          Util::Sets::contains(options.switches, OPTION_NO_KEEP_GOING));
+        const KeepGoing keep_going =
+            Util::Sets::contains(options.switches, OPTION_NO_KEEP_GOING) ? KeepGoing::NO : KeepGoing::YES;
         const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
@@ -92,7 +70,7 @@ namespace vcpkg::Commands::Upgrade
         auto& var_provider = *var_provider_storage;
 
         // input sanitization
-        const std::vector<PackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
+        const std::vector<PackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
             return check_and_get_package_spec(
                 std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
         });
@@ -118,7 +96,7 @@ namespace vcpkg::Commands::Upgrade
         }
         else
         {
-            print_default_triplet_warning(args, args.command_arguments);
+            print_default_triplet_warning(args, options.command_arguments);
 
             std::vector<PackageSpec> not_installed;
             std::vector<PackageSpec> no_control_file;

@@ -16,44 +16,11 @@
 
 namespace vcpkg::Strings::details
 {
-    // first looks up to_string on `T` using ADL; then, if that isn't found,
-    // uses the above definition which returns t.to_string()
-    template<class T, class = std::enable_if_t<!std::is_arithmetic_v<T>>>
-    auto to_printf_arg(const T& t) -> decltype(to_string(t))
-    {
-        return to_string(t);
-    }
-
-    inline const char* to_printf_arg(const std::string& s) { return s.c_str(); }
-
-    inline const char* to_printf_arg(const char* s) { return s; }
-
-    inline const wchar_t* to_printf_arg(const wchar_t* s) { return s; }
-
-    template<class T, class = std::enable_if_t<std::is_arithmetic_v<T>>>
-    T to_printf_arg(T s)
-    {
-        return s;
-    }
-
-    std::string format_internal(const char* fmtstr, ...);
-
-    inline void append_internal(std::string& into, char c) { into += c; }
-    template<class T, class = decltype(std::to_string(std::declval<T>()))>
-    inline void append_internal(std::string& into, T x)
-    {
-        into += std::to_string(x);
-    }
-    inline void append_internal(std::string& into, const char* v) { into.append(v); }
-    inline void append_internal(std::string& into, const std::string& s) { into.append(s); }
-    inline void append_internal(std::string& into, StringView s) { into.append(s.begin(), s.end()); }
-    inline void append_internal(std::string& into, LineInfo ln)
-    {
-        into.append(ln.file_name);
-        into.push_back(':');
-        into += std::to_string(ln.line_number);
-        into.push_back(':');
-    }
+    void append_internal(std::string& into, char c);
+    void append_internal(std::string& into, const char* v);
+    void append_internal(std::string& into, const std::string& s);
+    void append_internal(std::string& into, StringView s);
+    void append_internal(std::string& into, LineInfo ln);
 
     template<class T, class = decltype(std::declval<const T&>().to_string(std::declval<std::string&>()))>
     void append_internal(std::string& into, const T& t)
@@ -61,6 +28,8 @@ namespace vcpkg::Strings::details
         t.to_string(into);
     }
 
+    // first looks up to_string on `T` using ADL; then, if that isn't found,
+    // uses the above definition which returns t.to_string()
     template<class T, class = void, class = decltype(to_string(std::declval<std::string&>(), std::declval<const T&>()))>
     void append_internal(std::string& into, const T& t)
     {
@@ -120,13 +89,6 @@ namespace vcpkg::Strings
         return v;
     }
 
-    template<class... Args>
-    std::string format(const char* fmtstr, const Args&... args)
-    {
-        using vcpkg::Strings::details::to_printf_arg;
-        return details::format_internal(fmtstr, to_printf_arg(to_printf_arg(args))...);
-    }
-
 #if defined(_WIN32)
     std::wstring to_utf16(StringView s);
 
@@ -143,6 +105,7 @@ namespace vcpkg::Strings
     bool case_insensitive_ascii_equals(StringView left, StringView right);
 
     void ascii_to_lowercase(char* first, char* last);
+    std::string ascii_to_lowercase(const std::string& s);
     std::string ascii_to_lowercase(std::string&& s);
 
     std::string ascii_to_uppercase(std::string&& s);
@@ -260,8 +223,11 @@ namespace vcpkg::Strings
     bool contains(StringView haystack, StringView needle);
     bool contains(StringView haystack, char needle);
 
-    // base 32 encoding, following IETC RFC 4648
+    // base 32 encoding, following IETF RFC 4648
     std::string b32_encode(std::uint64_t x) noexcept;
+
+    // percent encoding, following IETF RFC 3986
+    std::string percent_encode(StringView sv) noexcept;
 
     // Implements https://en.wikipedia.org/wiki/Levenshtein_distance with a "give-up" clause for large strings
     // Guarantees 0 for equal strings and nonzero for inequal strings.

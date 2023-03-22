@@ -1,3 +1,5 @@
+#include <vcpkg/base/fwd/message_sinks.h>
+
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/messages.h>
@@ -494,7 +496,7 @@ namespace vcpkg
                                    const RemovePlanAction& action)
             : current_summary(results.emplace_back(action)), build_timer()
         {
-            msg::println(Remove::msgRemovingPackage,
+            msg::println(msgRemovingPackage,
                          msg::action_index = action_index,
                          msg::count = action_count,
                          msg::spec = action.spec);
@@ -969,7 +971,7 @@ namespace vcpkg
         if (auto p = paths.get_manifest().get())
         {
             bool failure = false;
-            if (!args.command_arguments.empty())
+            if (!options.command_arguments.empty())
             {
                 msg::println_error(msgErrorIndividualPackagesUnsupported);
                 msg::println(Color::error, msg::msgSeeURL, msg::url = docs::manifests_url);
@@ -996,7 +998,7 @@ namespace vcpkg
         else
         {
             bool failure = false;
-            if (args.command_arguments.empty())
+            if (options.command_arguments.empty())
             {
                 msg::println_error(msgErrorRequirePackagesList);
                 failure = true;
@@ -1184,11 +1186,12 @@ namespace vcpkg
         PathsPortFileProvider provider(
             fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
 
-        const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
+        const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
                 std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
         });
-        print_default_triplet_warning(args, args.command_arguments);
+
+        print_default_triplet_warning(args, options.command_arguments);
 
         // create the plan
         msg::println(msgComputingInstallPlan);

@@ -53,7 +53,7 @@ namespace vcpkg
     enum class StringMetric
     {
         AcquiredArtifacts,
-        BuildError,
+        ActivatedArtifacts,
         CommandArgs,
         CommandContext,
         CommandName,

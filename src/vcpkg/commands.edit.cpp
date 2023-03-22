@@ -127,26 +127,26 @@ namespace vcpkg::Commands::Edit
                 {
                     if (Strings::case_insensitive_ascii_starts_with(package.filename(), pattern))
                     {
-                        package_paths.append(Strings::format(" \"%s\"", package));
+                        package_paths.append(fmt::format(" \"{}\"", package));
                     }
                 }
 
-                return Strings::format(
-                    R"###("%s" "%s" "%s"%s)###", portpath, portfile, buildtrees_current_dir, package_paths);
+                return fmt::format(
+                    R"###("{}" "{}" "{}"{})###", portpath, portfile, buildtrees_current_dir, package_paths);
             });
         }
 
         if (Util::Sets::contains(options.switches, OPTION_BUILDTREES))
         {
             return Util::fmap(ports, [&](const std::string& port_name) -> std::string {
-                return Strings::format(R"###("%s")###", paths.build_dir(port_name));
+                return fmt::format(R"###("{}")###", paths.build_dir(port_name));
             });
         }
 
         return Util::fmap(ports, [&](const std::string& port_name) -> std::string {
             const auto portpath = paths.builtin_ports_directory() / port_name;
             const auto portfile = portpath / "portfile.cmake";
-            return Strings::format(R"###("%s" "%s")###", portpath, portfile);
+            return fmt::format(R"###("{}" "{}")###", portpath, portfile);
         });
     }
 
@@ -156,7 +156,7 @@ namespace vcpkg::Commands::Edit
 
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
 
-        const std::vector<std::string>& ports = args.command_arguments;
+        const std::vector<std::string>& ports = options.command_arguments;
         for (auto&& port_name : ports)
         {
             const auto portpath = paths.builtin_ports_directory() / port_name;

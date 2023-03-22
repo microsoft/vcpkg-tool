@@ -90,28 +90,39 @@ jobs:
     - script: npm install -g @microsoft/rush
       displayName: Install Rush
       workingDirectory: ce\common\config\rush
-    - script: rush update
+    - script: |
+        set PATH=%PATH%;%APPDATA%\npm
+        rush update
       displayName: Install vcpkg-artifacts Dependencies
       workingDirectory: ce
-    - script: rush lint
+    - script: |
+        set PATH=%PATH%;%APPDATA%\npm
+        rush lint
       displayName: Check vcpkg-artifacts for Linting Errors
       workingDirectory: ce
     - task: CodeQL3000Init@0
       displayName: 'CodeQL Initialize'
-    - script: rush rebuild
+    - script: |
+        set PATH=%PATH%;%APPDATA%\npm
+        rush rebuild
       displayName: Build vcpkg-artifacts Packages
       workingDirectory: ce
     - task: CodeQL3000Finalize@0
       displayName: 'CodeQL Finalize'
-    - script: rush test
+    - script: |
+        set PATH=%PATH%;%APPDATA%\npm
+        rush test
       displayName: Run vcpkg-artifacts Tests
       workingDirectory: ce
     - script: |
+        set PATH=%PATH%;%APPDATA%\npm
         rush set-versions
         node -e "const c = require('./ce/package.json'); p = require('./assets/package.json') ; p.version = c.version; require('fs').writeFileSync('./assets/package.json', JSON.stringify(p,undefined,2)); console.log(``set asset version to `${p.version}``);"
       displayName: Set vcpkg-artifacts Package Versions
       workingDirectory: ce
-    - script: mkdir "$(Build.BinariesDirectory)\ce" && rush deploy -t "$(Build.BinariesDirectory)\ce"
+    - script: |
+        set PATH=%PATH%;%APPDATA%\npm
+        mkdir "$(Build.BinariesDirectory)\ce" && rush deploy -t "$(Build.BinariesDirectory)\ce"
       displayName: Collect vcpkg-artifacts Dependencies
       workingDirectory: ce
     - script: |
@@ -121,11 +132,6 @@ jobs:
       displayName: Detect Components
       inputs:
         sourceScanPath: "$(Build.BinariesDirectory)/ce"
-    # Inject the NOTICE file. This must run after component detection.
-    - task: msospo.ospo-extension.8d7f9abb-6896-461d-9e25-4f74ed65ddb2.notice@0
-      displayName: Generate NOTICE File
-      inputs:
-        outputfile: $(Build.BinariesDirectory)/ce/NOTICE.txt
     - task: MicroBuildSigningPlugin@3
       displayName: Install MicroBuild Signing
       inputs:
@@ -149,6 +155,9 @@ jobs:
         msbuildArguments: '/p:OutDir=$(Build.BinariesDirectory)\ /p:IntermediateOutputPath=$(Build.BinariesDirectory)\'
       # Note that signing must happen before packing steps because the packs contain files that are themselves signed.
     - script: |
+        copy "$(Build.SourcesDirectory)\NOTICE.txt" "$(Build.BinariesDirectory)\ce\NOTICE.txt"
+      displayName: Inject NOTICE File
+    - script: |
         copy "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.BinariesDirectory)\vcpkg-init.cmd"
       displayName: 'Duplicate Install Scripts'
     - task: Powershell@2
@@ -156,7 +165,7 @@ jobs:
       inputs:
         pwsh: true
         filePath: vcpkg-init/mint-standalone-bundle.ps1
-        arguments: '-DestinationTarball "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" -TempDir standalone-temp -SignedFilesRoot "$(Build.BinariesDirectory)" -Deployment OneLiner'
+        arguments: '-DestinationTarball "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" -TempDir standalone-temp -SignedFilesRoot "$(Build.BinariesDirectory)" -Deployment OneLiner -VcpkgBaseVersion "$(VCPKG_INITIAL_BASE_VERSION)"'
     - script: npm pack
       displayName: Create vcpkg-artifacts Pack
       workingDirectory: $(Build.BinariesDirectory)/ce
@@ -366,13 +375,15 @@ jobs:
       inputs:
         pwsh: true
         filePath: vcpkg-init/mint-standalone-bundle.ps1
-        arguments: '-DestinationDir "$(Build.ArtifactStagingDirectory)/vs-insertion/staging" -TempDir standalone-temp -SignedFilesRoot "$(Build.ArtifactStagingDirectory)\staging" -Deployment "VisualStudio"'
+        arguments: '-DestinationDir "$(Build.ArtifactStagingDirectory)/vs-insertion/staging" -TempDir standalone-temp -SignedFilesRoot "$(Build.ArtifactStagingDirectory)\staging" -Deployment "VisualStudio" -VcpkgBaseVersion "$(VCPKG_BASE_VERSION)"'
     - task: CmdLine@2
       displayName: 'Arrange Drop'
       inputs:
         failOnStderr: true
         script: |
           mkdir "$(Build.ArtifactStagingDirectory)\drop"
+
+          copy "$(Build.SourcesDirectory)\NOTICE.txt" "$(Build.ArtifactStagingDirectory)\drop\NOTICE.txt"
 
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init.cmd" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init.cmd"
