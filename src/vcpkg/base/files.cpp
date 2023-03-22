@@ -2107,7 +2107,7 @@ namespace vcpkg
             struct stat st;
             if (stat(file_path.c_str(), &st) != 0)
 			{
-                ec = std::error_code(errno, std::system_category());
+                ec.assign(static_cast<int>(GetLastError()), std::system_category());
                 return 0;
 			}
 
