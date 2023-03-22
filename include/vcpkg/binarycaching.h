@@ -172,8 +172,7 @@ namespace vcpkg
         std::vector<ExtendedUrlTemplate> url_templates_to_get;
         std::vector<ExtendedUrlTemplate> url_templates_to_put;
 
-        bool gha_write = false;
-        bool gha_read = false;
+        Optional<IObjectProvider::Access> gha_access;
 
         std::vector<std::string> sources_to_read;
         std::vector<std::string> sources_to_write;
