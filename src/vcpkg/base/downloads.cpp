@@ -587,30 +587,15 @@ namespace vcpkg
             return base_url;
         }
 
-        for (auto&& query : query_params)
-        {
-            query = Strings::url_encode(query);
-        }
-
         std::string query = Strings::join("&", query_params);
 
         return base_url + "?" + query;
     }
 
-    static std::string encode_data(std::vector<std::string> data) 
-    {
-        for (auto&& d : data)
-        {
-            d = Strings::url_encode(d);
-        }
-
-        return Strings::join("&", data);
-	}
-
     ExpectedL<std::string> invoke_http_request(std::string method,
                                                View<std::string> headers,
                                                StringView url,
-                                               std::vector<std::string> data)
+                                               std::string data)
     {
         Command cmd;
         cmd.string_arg("curl").string_arg("-s").string_arg("-L");
@@ -624,7 +609,7 @@ namespace vcpkg
 
         if (!data.empty())
         {
-            cmd.string_arg("--data-binary").string_arg(encode_data(data));
+            cmd.string_arg("--data-raw").string_arg(data);
         }
 
         cmd.string_arg(url);

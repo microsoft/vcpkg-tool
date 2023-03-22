@@ -996,7 +996,7 @@ namespace
                 invoke_http_request("POST",
                                     std::vector<std::string>{m_content_type_header, m_token_header, m_accept_header},
                                     m_write_url,
-                                    std::vector<std::string>{stringify(payload)});
+                                    std::string{stringify(payload)});
 
             auto maybe_json = Json::parse_object(res.get()->c_str());
             if (auto json = maybe_json.get())
@@ -1138,7 +1138,7 @@ namespace
                             "POST",
                             std::vector<std::string>{m_accept_header, m_content_type_header, m_token_header},
                             url,
-                            std::vector<std::string>{stringify(commit)});
+                            std::string{stringify(commit)});
 
                         if (auto p = res.get())
                         {

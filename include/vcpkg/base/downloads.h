@@ -44,7 +44,7 @@ namespace vcpkg
     ExpectedL<std::string> invoke_http_request(std::string method,
                                                View<std::string> headers,
                                                StringView url,
-                                               std::vector<std::string> data = {});
+                                               std::string data = {});
 
     std::string format_url_query(std::string base_url, std::vector<std::string> query_params);
 
