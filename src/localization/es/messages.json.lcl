@@ -1519,6 +1519,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";BuildTroubleshootingMessageGH" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[You can also sumbit an issue by running (GitHub cli must be installed):]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[También puede enviar un problema mediante la ejecución (debe estar instalada la CLI de GitHub):]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";BuildingFromHead" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Building {spec} from HEAD...]]></Val>
