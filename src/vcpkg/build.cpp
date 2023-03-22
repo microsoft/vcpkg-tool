@@ -167,7 +167,7 @@ namespace vcpkg::Build
                 msg::print(Color::warning, warnings);
             }
             msg::println_error(create_error_message(result, spec));
-            msg::print(create_user_troubleshooting_message(*action, paths));
+            msg::print(create_user_troubleshooting_message(*action, paths, nullopt));
             return 1;
         }
         binary_cache.push_success(*action, paths.package_dir(action->spec));
@@ -1246,8 +1246,9 @@ namespace vcpkg
                         auto status_it = status_db.find(pspec);
                         if (status_it == status_db.end())
                         {
-                            Debug::println("Failed to find dependency abi for %s -> %s", action.spec, pspec);
-                            Checks::unreachable(VCPKG_LINE_INFO);
+                            Checks::unreachable(
+                                VCPKG_LINE_INFO,
+                                fmt::format("Failed to find dependency abi for {} -> {}", action.spec, pspec));
                         }
 
                         dependency_abis.emplace_back(pspec.name(), status_it->get()->package.abi);
@@ -1504,7 +1505,9 @@ namespace vcpkg
             manifest);
     }
 
-    LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action, const VcpkgPaths& paths)
+    LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action,
+                                                        const VcpkgPaths& paths,
+                                                        const Optional<Path>& issue_body)
     {
         std::string package = action.displayname();
         if (auto scfl = action.source_control_file_and_location.get())
@@ -1518,13 +1521,33 @@ namespace vcpkg
             .append_raw(spec_name)
             .append_raw('\n');
         result.append(msgBuildTroubleshootingMessage2).append_raw('\n');
-        result.append_indent()
-            .append_fmt_raw("https://github.com/microsoft/vcpkg/issues/"
-                            "new?template=report-package-build-failure.md&title=[{}]+Build+error",
-                            spec_name)
-            .append_raw('\n');
-        result.append(msgBuildTroubleshootingMessage3, msg::package_name = spec_name).append_raw('\n');
-        result.append_raw(paths.get_toolver_diagnostics()).append_raw('\n');
+        if (issue_body.has_value())
+        {
+            auto path = issue_body.get()->generic_u8string();
+            result.append_indent().append_fmt_raw("https://github.com/microsoft/vcpkg/issues/"
+                                                  "new?title=[{}]+Build+error&body=Copy+issue+body+from+{}\n",
+                                                  spec_name,
+                                                  Strings::percent_encode(path));
+            if (!paths.get_filesystem().find_from_PATH("gh").empty())
+            {
+                Command gh("gh");
+                gh.string_arg("issue").string_arg("create").string_arg("-R").string_arg("microsoft/vcpkg");
+                gh.string_arg("--title").string_arg(fmt::format("[{}] Build failue", spec_name));
+                gh.string_arg("--body-file").string_arg(path);
+
+                result.append(msgBuildTroubleshootingMessageGH).append_raw('\n');
+                result.append_indent().append_raw(gh.command_line());
+            }
+        }
+        else
+        {
+            result.append_indent().append_fmt_raw(
+                "https://github.com/microsoft/vcpkg/issues/"
+                "new?template=report-package-build-failure.md&title=[{}]+Build+error\n",
+                spec_name);
+            result.append(msgBuildTroubleshootingMessage3, msg::package_name = spec_name).append_raw('\n');
+            result.append_raw(paths.get_toolver_diagnostics()).append_raw('\n');
+        }
 
         return result;
     }

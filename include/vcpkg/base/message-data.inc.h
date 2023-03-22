@@ -339,6 +339,11 @@ DECLARE_MESSAGE(BuildTroubleshootingMessage2,
                 "Second part of build troubleshooting message, printed after the URI to look for "
                 "existing bugs but before the URI to file one.",
                 "You can submit a new issue at:")
+DECLARE_MESSAGE(BuildTroubleshootingMessageGH,
+                (),
+                "Another part of build troubleshooting message, printed after the URI. An alternative version to "
+                "create an issue in some cases.",
+                "You can also sumbit an issue by running (GitHub cli must be installed):")
 DECLARE_MESSAGE(
     BuildTroubleshootingMessage3,
     (msg::package_name),

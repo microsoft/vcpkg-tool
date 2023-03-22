@@ -2000,9 +2000,9 @@ namespace vcpkg
                                 }
                                 else
                                 {
-                                    msg::format_error(msgVersionConstraintUnresolvable,
-                                                      msg::package_name = dep.name,
-                                                      msg::spec = spec);
+                                    return msg::format_error(msgVersionConstraintUnresolvable,
+                                                             msg::package_name = dep.name,
+                                                             msg::spec = spec);
                                 }
                             }
                         }

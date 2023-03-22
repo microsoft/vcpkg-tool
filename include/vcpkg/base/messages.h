@@ -148,10 +148,10 @@ namespace vcpkg::msg
         msg::write_unlocalized_text_to_stdout(Color::none, "\n");
     }
 
-    LocalizedString format_error();
-    LocalizedString format_error(const LocalizedString& s);
+    [[nodiscard]] LocalizedString format_error();
+    [[nodiscard]] LocalizedString format_error(const LocalizedString& s);
     template<VCPKG_DECL_MSG_TEMPLATE>
-    LocalizedString format_error(VCPKG_DECL_MSG_ARGS)
+    [[nodiscard]] LocalizedString format_error(VCPKG_DECL_MSG_ARGS)
     {
         return format_error(msg::format(VCPKG_EXPAND_MSG_ARGS));
     }
@@ -162,10 +162,10 @@ namespace vcpkg::msg
         println_error(msg::format(VCPKG_EXPAND_MSG_ARGS));
     }
 
-    LocalizedString format_warning();
-    LocalizedString format_warning(const LocalizedString& s);
+    [[nodiscard]] LocalizedString format_warning();
+    [[nodiscard]] LocalizedString format_warning(const LocalizedString& s);
     template<VCPKG_DECL_MSG_TEMPLATE>
-    LocalizedString format_warning(VCPKG_DECL_MSG_ARGS)
+    [[nodiscard]] LocalizedString format_warning(VCPKG_DECL_MSG_ARGS)
     {
         return format_warning(msg::format(VCPKG_EXPAND_MSG_ARGS));
     }
