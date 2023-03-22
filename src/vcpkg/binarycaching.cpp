@@ -951,7 +951,8 @@ namespace
     };
     struct GHABinaryProvider : IBinaryProvider
     {
-        GHABinaryProvider(const VcpkgPaths& paths, bool read, bool write, const std::string& url, const std::string& token_header)
+        GHABinaryProvider(
+            const VcpkgPaths& paths, bool read, bool write, const std::string& url, const std::string& token_header)
             : paths(paths)
         {
             if (read) m_read_url = url;
@@ -961,7 +962,6 @@ namespace
             m_content_type_header = "Content-Type: application/json";
         }
 
-
         std::string lookup_cache_entry(std::string& name, const std::string& abi) const
         {
             auto url =
@@ -969,21 +969,23 @@ namespace
 
             auto res = invoke_http_request(
                 "GET", std::vector<std::string>{m_content_type_header, m_token_header, m_accept_header}, url);
-            
+
             auto maybe_json = Json::parse_object(res.get()->c_str());
             if (auto json = maybe_json.get())
             {
-				auto archive_location = json->get("archiveLocation");
+                auto archive_location = json->get("archiveLocation");
                 if (archive_location && archive_location->is_string())
                 {
-					return archive_location->string(VCPKG_LINE_INFO).to_string();
-				}
-			}
+                    return archive_location->string(VCPKG_LINE_INFO).to_string();
+                }
+            }
 
             return {};
         }
 
-        Optional<int64_t> reserve_cache_entry(const std::string& package_name, const std::string& abi, int64_t cacheSize) const
+        Optional<int64_t> reserve_cache_entry(const std::string& package_name,
+                                              const std::string& abi,
+                                              int64_t cacheSize) const
         {
             Json::Object payload;
             payload.insert("key", package_name + "-" + abi);
@@ -1002,10 +1004,10 @@ namespace
                 auto cache_id = json->get("cacheId");
                 if (cache_id && cache_id->is_integer())
                 {
-					return cache_id->integer(VCPKG_LINE_INFO);
-				}
-			}
-            
+                    return cache_id->integer(VCPKG_LINE_INFO);
+                }
+            }
+
             return {};
         }
 
@@ -1138,9 +1140,13 @@ namespace
                             url,
                             std::vector<std::string>{stringify(commit)});
 
-                        if (!res.get()->empty())
+                        if (auto p = res.get())
                         {
                             ++upload_count;
+                        }
+                        else
+                        {
+                            msg::print(res.error());
                         }
                     }
                 }
