@@ -5,6 +5,8 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 
+#include <mutex>
+
 namespace vcpkg
 {
 
@@ -90,8 +92,6 @@ namespace vcpkg
 
     struct BGMessageSink : MessageSink
     {
-        MessageSink& out_sink;
-
         BGMessageSink(MessageSink& out_sink) : out_sink(out_sink) { }
         ~BGMessageSink() { publish_directly_to_out_sink(); }
         // must be called from producer
@@ -103,10 +103,13 @@ namespace vcpkg
         void publish_directly_to_out_sink();
 
     private:
+        MessageSink& out_sink;
+
         std::mutex m_lock;
         // guarded by m_lock
         std::vector<std::pair<Color, std::string>> m_published;
-        // unguarded, buffers messages until newline is reached
+        // buffers messages until newline is reached
+        // guarded by m_print_directly_lock
         std::vector<std::pair<Color, std::string>> m_unpublished;
 
         std::mutex m_print_directly_lock;

@@ -107,7 +107,6 @@ DECLARE_MESSAGE(AllFormatArgsUnbalancedBraces,
                 "example of {value} is 'foo bar {'",
                 "unbalanced brace in format string \"{value}\"")
 DECLARE_MESSAGE(AllPackagesAreUpdated, (), "", "All installed packages are up-to-date with the local portfile.")
-DECLARE_MESSAGE(AllPackagesUploaded, (), "", "All packages uploaded")
 DECLARE_MESSAGE(AlreadyInstalled, (msg::spec), "", "{spec} is already installed")
 DECLARE_MESSAGE(AlreadyInstalledNotHead,
                 (msg::spec),

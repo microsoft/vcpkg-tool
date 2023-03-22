@@ -390,6 +390,10 @@ namespace
                                          .append_raw('\n')
                                          .append_raw(ec.message()));
                 }
+                else
+                {
+                    msg_sink.println(msgStoredBinaryCache, msg::path = archive_path);
+                }
             }
             // In the case of 1 write dir, the file will be moved instead of copied
             if (m_write_dirs.size() != 1)
@@ -598,7 +602,7 @@ namespace
                 Strings::case_insensitive_ascii_equals(use_nuget_cache, "true") || use_nuget_cache == "1";
         }
 
-        ExpectedL<Unit> run_nuget_commandline(const Command& cmdline) const
+        ExpectedL<Unit> run_nuget_commandline(const Command& cmdline, MessageSink& msg_sink) const
         {
             if (m_interactive)
             {
@@ -615,12 +619,12 @@ namespace
             return cmd_execute_and_capture_output(cmdline).then([&](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
                 if (Debug::g_debugging)
                 {
-                    msg::write_unlocalized_text_to_stdout(Color::error, res.output);
+                    msg_sink.print(Color::error, res.output);
                 }
 
                 if (res.output.find("Authentication may require manual action.") != std::string::npos)
                 {
-                    msg::println(Color::warning, msgAuthenticationMayRequireManualAction, msg::vendor = "Nuget");
+                    msg_sink.println(Color::warning, msgAuthenticationMayRequireManualAction, msg::vendor = "Nuget");
                 }
 
                 if (res.exit_code == 0)
@@ -631,20 +635,20 @@ namespace
                 if (res.output.find("Response status code does not indicate success: 401 (Unauthorized)") !=
                     std::string::npos)
                 {
-                    msg::println(Color::warning,
-                                 msgFailedVendorAuthentication,
-                                 msg::vendor = "NuGet",
-                                 msg::url = docs::binarycaching_url);
+                    msg_sink.println(Color::warning,
+                                     msgFailedVendorAuthentication,
+                                     msg::vendor = "NuGet",
+                                     msg::url = docs::binarycaching_url);
                 }
                 else if (res.output.find("for example \"-ApiKey AzureDevOps\"") != std::string::npos)
                 {
                     auto real_cmdline = cmdline;
                     real_cmdline.string_arg("-ApiKey").string_arg("AzureDevOps");
                     return cmd_execute_and_capture_output(real_cmdline)
-                        .then([](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
+                        .then([&](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
                             if (Debug::g_debugging)
                             {
-                                msg::write_unlocalized_text_to_stdout(Color::error, res.output);
+                                msg_sink.print(Color::error, res.output);
                             }
 
                             if (res.exit_code == 0)
@@ -799,7 +803,7 @@ namespace
                 }
 
                 generate_packages_config(fs, packages_config, attempts);
-                run_nuget_commandline(cmdline);
+                run_nuget_commandline(cmdline, stdout_sink);
                 Util::erase_remove_if(attempts, [&](const NuGetPrefetchAttempt& nuget_ref) -> bool {
                     // note that we would like the nupkg downloaded to buildtrees, but nuget.exe downloads it to the
                     // output directory
@@ -871,7 +875,7 @@ namespace
                 cmdline.string_arg("-NonInteractive");
             }
 
-            if (!run_nuget_commandline(cmdline))
+            if (!run_nuget_commandline(cmdline, msg_sink))
             {
                 msg_sink.println(Color::error, msgPackingVendorFailed, msg::vendor = "NuGet");
                 return;
@@ -899,7 +903,7 @@ namespace
                 }
                 msg_sink.println(
                     msgUploadingBinariesToVendor, msg::spec = spec, msg::vendor = "NuGet", msg::path = write_src);
-                if (!run_nuget_commandline(cmd))
+                if (!run_nuget_commandline(cmd, msg_sink))
                 {
                     msg_sink.println(
                         Color::error, msgPushingVendorFailed, msg::vendor = "NuGet", msg::path = write_src);
@@ -909,7 +913,7 @@ namespace
             {
                 Command cmd;
 #ifndef _WIN32
-                cmd.string_arg(paths.get_tool_exe(Tools::MONO, stdout_sink));
+                cmd.string_arg(paths.get_tool_exe(Tools::MONO, msg_sink));
 #endif
                 cmd.string_arg(nuget_exe)
                     .string_arg("push")
@@ -928,7 +932,7 @@ namespace
                                  msg::spec = spec,
                                  msg::vendor = "NuGet config",
                                  msg::path = write_cfg);
-                if (!run_nuget_commandline(cmd))
+                if (!run_nuget_commandline(cmd, msg_sink))
                 {
                     msg_sink.println(
                         Color::error, msgPushingVendorFailed, msg::vendor = "NuGet", msg::path = write_cfg);
@@ -1095,7 +1099,7 @@ namespace
             auto& spec = request.info.spec;
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
             auto compression_result = compress_directory_to_zip(
-                paths.get_filesystem(), paths.get_tool_cache(), stdout_sink, paths.package_dir(spec), tmp_archive_path);
+                paths.get_filesystem(), paths.get_tool_cache(), msg_sink, paths.package_dir(spec), tmp_archive_path);
             if (!compression_result)
             {
                 msg_sink.println(Color::warning,
@@ -1579,10 +1583,6 @@ namespace vcpkg
         end_push_thread = true;
         actions_to_push_notifier.notify_all();
         push_thread.join();
-        if (have_remaining_packages)
-        {
-            msg::println(msgAllPackagesUploaded);
-        }
     }
 
     BinaryCache::BinaryCache(Filesystem& filesystem)
@@ -1590,7 +1590,6 @@ namespace vcpkg
         , push_thread([this]() { push_thread_main(); })
         , end_push_thread{false}
         , filesystem(filesystem)
-
     {
     }
 

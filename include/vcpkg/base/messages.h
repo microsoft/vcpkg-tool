@@ -8,7 +8,6 @@
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
 
-#include <mutex>
 #include <string>
 #include <type_traits>
 #include <vector>

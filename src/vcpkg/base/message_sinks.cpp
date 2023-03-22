@@ -70,10 +70,13 @@ namespace vcpkg
         auto pos = s.find_last_of('\n');
         if (pos != std::string::npos)
         {
-            m_published.insert(m_published.end(),
-                               std::make_move_iterator(m_unpublished.begin()),
-                               std::make_move_iterator(m_unpublished.end()));
-            m_published.emplace_back(c, s.substr(0, pos + 1));
+            {
+                std::lock_guard<std::mutex> lk(m_lock);
+                m_published.insert(m_published.end(),
+                                   std::make_move_iterator(m_unpublished.begin()),
+                                   std::make_move_iterator(m_unpublished.end()));
+                m_published.emplace_back(c, s.substr(0, pos + 1));
+            }
             m_unpublished.clear();
             if (s.size() > pos + 1)
             {
