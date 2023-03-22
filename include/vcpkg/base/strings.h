@@ -227,7 +227,7 @@ namespace vcpkg::Strings
     std::string b32_encode(std::uint64_t x) noexcept;
 
     // percent encoding, following IETF RFC 3986
-    std::string url_encode(StringView sv) noexcept;
+    std::string percent_encode(StringView sv) noexcept;
 
     // Implements https://en.wikipedia.org/wiki/Levenshtein_distance with a "give-up" clause for large strings
     // Guarantees 0 for equal strings and nonzero for inequal strings.
