@@ -42,6 +42,7 @@ namespace vcpkg
         explicit operator std::string() const { return to_string(); }
 
         StringView substr(size_t pos, size_t count = std::numeric_limits<size_t>::max()) const noexcept;
+        size_t find(char ch, size_t off = 0) const noexcept;
 
         constexpr char operator[](size_t pos) const noexcept { return m_ptr[pos]; }
         friend std::string operator+(std::string&& l, const StringView& r);

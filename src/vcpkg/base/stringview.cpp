@@ -26,6 +26,12 @@ namespace vcpkg
 
         return StringView(m_ptr + pos, count);
     }
+    size_t StringView::find(char ch, size_t off) const noexcept
+    {
+        if (off >= m_size) return SIZE_MAX;
+        const char* p = static_cast<const char*>(memchr(m_ptr + off, ch, m_size - off));
+        return p ? p - m_ptr : SIZE_MAX;
+    }
 
     bool operator==(StringView lhs, StringView rhs) noexcept
     {

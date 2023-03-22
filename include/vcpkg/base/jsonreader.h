@@ -118,11 +118,10 @@ namespace vcpkg::Json
             }
         }
 
-        // value should be the value at key of the currently visited object
+        // value should be the currently visited object
         template<class Type>
-        void visit_in_key(const Value& value, StringView key, Type& place, const IDeserializer<Type>& visitor)
+        void visit_here(const Value& value, Type& place, const IDeserializer<Type>& visitor)
         {
-            PathGuard guard{m_path, key};
             auto opt = visitor.visit(*this, value);
             if (auto p_opt = opt.get())
             {
@@ -136,18 +135,18 @@ namespace vcpkg::Json
 
         // value should be the value at key of the currently visited object
         template<class Type>
+        void visit_in_key(const Value& value, StringView key, Type& place, const IDeserializer<Type>& visitor)
+        {
+            PathGuard guard{m_path, key};
+            visit_here(value, place, visitor);
+        }
+
+        // value should be the value at index of the currently visited object
+        template<class Type>
         void visit_at_index(const Value& value, int64_t index, Type& place, const IDeserializer<Type>& visitor)
         {
             PathGuard guard{m_path, index};
-            auto opt = visitor.visit(*this, value);
-            if (auto p_opt = opt.get())
-            {
-                place = std::move(*p_opt);
-            }
-            else
-            {
-                add_expected_type_error(visitor.type_name());
-            }
+            visit_here(value, place, visitor);
         }
 
         // returns whether key \in obj

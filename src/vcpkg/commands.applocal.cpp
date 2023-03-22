@@ -81,11 +81,11 @@ namespace
         Path dest;
     };
 
-    ExpectedL<Unit> parse_deployment_source(Path src, Deployment& out)
+    ExpectedL<Deployment> parse_deployment_source(Path src)
     {
+        Deployment out;
         out.source = std::move(src);
-        auto idx = out.source.parent_path().find('*');
-        if (idx != SIZE_MAX)
+        if (out.source.parent_path().find('*') == SIZE_MAX)
         {
             return LocalizedString::from_raw("invalid filename pattern: parent path must not contain wildcards");
         }
@@ -98,7 +98,7 @@ namespace
         }
         else
         {
-            idx = filename.find('*');
+            size_t idx = filename.find('*');
             if (idx == SIZE_MAX)
             {
                 out.source_kind = Deployment::regular;
@@ -114,7 +114,7 @@ namespace
                 }
             }
         }
-        return Unit{};
+        return std::move(out);
     }
 
     struct BuiltinDeployment
@@ -467,9 +467,8 @@ namespace
     {
         return {Util::fmap(v,
                            [](const BuiltinDeployment& d) {
-                               Deployment r;
                                // based on static data -- should be unreachable
-                               parse_deployment_source(d.source.to_string(), r).value_or_exit(VCPKG_LINE_INFO);
+                               Deployment r = parse_deployment_source(d.source).value_or_exit(VCPKG_LINE_INFO);
                                r.dest = d.dest.to_string();
                                return r;
                            }),
@@ -488,11 +487,16 @@ namespace
             std::vector<Deployment> ret;
             for (auto&& p : obj)
             {
-                ret.emplace_back();
-                parse_deployment_source(p.first.to_string(), ret.back()).consume_error([&r](LocalizedString&& err) {
-                    r.add_generic_error(DeploymentPatternSetDeserializer::instance.type_name(), std::move(err));
-                });
-                r.visit_in_key(p.second, p.first, ret.back().dest, Json::PathDeserializer::instance);
+                auto x = parse_deployment_source(p.first);
+                if (auto y = x.get())
+                {
+                    ret.push_back(std::move(*y));
+                    r.visit_in_key(p.second, p.first, ret.back().dest, Json::PathDeserializer::instance);
+                }
+                else
+                {
+                    r.add_generic_error(DeploymentPatternSetDeserializer::instance.type_name(), std::move(x).error());
+                }
             }
             return std::move(ret);
         }
