@@ -76,7 +76,8 @@ namespace vcpkg
 
         /// Called upon a successful build of `action` to store those contents in the binary cache.
         /// Prerequisite: action has a package_abi()
-        virtual void push_success(const BinaryProviderPushRequest& request, MessageSink& msg_sink) = 0;
+        /// returns the number of successful uploads
+        virtual int push_success(const BinaryProviderPushRequest& request, MessageSink& msg_sink) = 0;
 
         /// Gives the IBinaryProvider an opportunity to batch any downloading or server communication for
         /// executing `actions`.

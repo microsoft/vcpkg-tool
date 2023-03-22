@@ -333,11 +333,11 @@ namespace
             return RestoreResult::unavailable;
         }
 
-        void push_success(const BinaryProviderPushRequest& request, MessageSink& msg_sink) override
+        int push_success(const BinaryProviderPushRequest& request, MessageSink& msg_sink) override
         {
             if (m_write_dirs.empty() && m_put_url_templates.empty())
             {
-                return;
+                return 0;
             }
 
             const auto& abi_tag = request.info.package_abi;
@@ -353,16 +353,16 @@ namespace
                                  msg::format_warning(msgCompressFolderFailed, msg::path = request.package_dir)
                                      .append_raw(' ')
                                      .append_raw(compress_result.error()));
-                return;
+                return 0;
             }
-            size_t http_remotes_pushed = 0;
+            int count_stored = 0;
             for (auto&& put_url_template : m_put_url_templates)
             {
                 auto url = put_url_template.instantiate_variables(request.info);
                 auto maybe_success = put_file(fs, url, m_secrets, put_url_template.headers_for_put, tmp_archive_path);
                 if (maybe_success)
                 {
-                    http_remotes_pushed++;
+                    count_stored++;
                     continue;
                 }
 
@@ -392,7 +392,7 @@ namespace
                 }
                 else
                 {
-                    msg_sink.println(msgStoredBinaryCache, msg::path = archive_path);
+                    count_stored++;
                 }
             }
             // In the case of 1 write dir, the file will be moved instead of copied
@@ -400,10 +400,7 @@ namespace
             {
                 fs.remove(tmp_archive_path, IgnoreErrors{});
             }
-            if (!m_put_url_templates.empty())
-            {
-                msg_sink.println(msgUploadedBinaries, msg::count = http_remotes_pushed, msg::vendor = "HTTP remotes");
-            }
+            return count_stored;
         }
 
         void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
@@ -458,7 +455,7 @@ namespace
 
         RestoreResult try_restore(const InstallPlanAction&) const override { return RestoreResult::unavailable; }
 
-        void push_success(const BinaryProviderPushRequest&, MessageSink&) override { }
+        int push_success(const BinaryProviderPushRequest&, MessageSink&) override { return 0; }
 
         void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
@@ -837,11 +834,11 @@ namespace
 
         bool needs_nuspec_data() const override { return !m_write_sources.empty() || !m_write_configs.empty(); }
 
-        void push_success(const BinaryProviderPushRequest& request, MessageSink& msg_sink) override
+        int push_success(const BinaryProviderPushRequest& request, MessageSink& msg_sink) override
         {
             if (m_write_sources.empty() && m_write_configs.empty())
             {
-                return;
+                return 0;
             }
             if (request.info.nuspec.empty())
             {
@@ -878,9 +875,9 @@ namespace
             if (!run_nuget_commandline(cmdline, msg_sink))
             {
                 msg_sink.println(Color::error, msgPackingVendorFailed, msg::vendor = "NuGet");
-                return;
+                return 0;
             }
-
+            int count_stored = 0;
             auto nupkg_path = paths.buildtrees() / nuget_ref.nupkg_filename();
             for (auto&& write_src : m_write_sources)
             {
@@ -907,6 +904,10 @@ namespace
                 {
                     msg_sink.println(
                         Color::error, msgPushingVendorFailed, msg::vendor = "NuGet", msg::path = write_src);
+                }
+                else
+                {
+                    count_stored++;
                 }
             }
             for (auto&& write_cfg : m_write_configs)
@@ -937,9 +938,14 @@ namespace
                     msg_sink.println(
                         Color::error, msgPushingVendorFailed, msg::vendor = "NuGet", msg::path = write_cfg);
                 }
+                else
+                {
+                    count_stored++;
+                }
             }
 
             fs.remove(nupkg_path, IgnoreErrors{});
+            return count_stored;
         }
 
         void precheck(View<InstallPlanAction>, View<CacheStatus*>) const override { }
@@ -1090,9 +1096,9 @@ namespace
 
         RestoreResult try_restore(const InstallPlanAction&) const override { return RestoreResult::unavailable; }
 
-        void push_success(const BinaryProviderPushRequest& request, MessageSink& msg_sink) override
+        int push_success(const BinaryProviderPushRequest& request, MessageSink& msg_sink) override
         {
-            if (m_write_url.empty()) return;
+            if (m_write_url.empty()) return 0;
             const ElapsedTimer timer;
             auto& fs = paths.get_filesystem();
             const auto& abi = request.info.package_abi;
@@ -1106,7 +1112,7 @@ namespace
                                  msg::format_warning(msgCompressFolderFailed, msg::path = paths.package_dir(spec))
                                      .append_raw(' ')
                                      .append_raw(compression_result.error()));
-                return;
+                return 0;
             }
 
             int64_t cache_size;
@@ -1142,11 +1148,7 @@ namespace
                     }
                 }
             }
-
-            msg_sink.println(msgUploadedPackagesToVendor,
-                             msg::count = upload_count,
-                             msg::elapsed = timer.elapsed(),
-                             msg::vendor = "GHA");
+            return upload_count;
         }
 
         void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
@@ -1275,9 +1277,9 @@ namespace
 
         RestoreResult try_restore(const InstallPlanAction&) const override { return RestoreResult::unavailable; }
 
-        void push_success(const BinaryProviderPushRequest& request, MessageSink& msg_sink) override
+        int push_success(const BinaryProviderPushRequest& request, MessageSink& msg_sink) override
         {
-            if (m_write_prefixes.empty()) return;
+            if (m_write_prefixes.empty()) return 0;
             const ElapsedTimer timer;
             const auto& abi = request.info.package_abi;
             auto& spec = request.info.spec;
@@ -1290,7 +1292,7 @@ namespace
                                  msg::format_warning(msgCompressFolderFailed, msg::path = request.package_dir)
                                      .append_raw(' ')
                                      .append_raw(compression_result.error()));
-                return;
+                return 0;
             }
 
             size_t upload_count = 0;
@@ -1301,11 +1303,7 @@ namespace
                     ++upload_count;
                 }
             }
-
-            msg_sink.println(msgUploadedPackagesToVendor,
-                             msg::count = upload_count,
-                             msg::elapsed = timer.elapsed(),
-                             msg::vendor = vendor());
+            return upload_count;
         }
 
         void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
@@ -1685,7 +1683,7 @@ namespace vcpkg
         const auto abi = action.package_abi().get();
         if (abi)
         {
-            const auto clean_packages = action.build_options.clean_packages == CleanPackages::YES;            
+            const auto clean_packages = action.build_options.clean_packages == CleanPackages::YES;
             std::string nuspec;
             if (needs_nuspec_data)
             {
@@ -1761,6 +1759,7 @@ namespace vcpkg
     void BinaryCache::push_thread_main()
     {
         decltype(actions_to_push) my_tasks;
+        int count_pushed = 0;
         while (true)
         {
             {
@@ -1777,19 +1776,24 @@ namespace vcpkg
             // Now, consume all of `my_tasks` before taking the lock again.
             for (auto& action_to_push : my_tasks)
             {
-                if (end_push_thread)
-                {
-                    msg::println(msgUploadRemainingPackages, msg::count = remaining_packages_to_push);
-                }
+                int num_destinations = 0;
                 for (auto&& provider : m_providers)
                 {
-                    provider->push_success(action_to_push.request, bg_msg_sink);
+                    num_destinations += provider->push_success(action_to_push.request, bg_msg_sink);
                 }
+                remaining_packages_to_push--;
+                bg_msg_sink.print(msgStoredBinariesToDestinations, msg::count = num_destinations);
+                if (end_push_thread)
+                {
+                    count_pushed++;
+                    bg_msg_sink.print(LocalizedString::from_raw(
+                        fmt::format(" ({}/{})", count_pushed, count_pushed + remaining_packages_to_push)));
+                }
+                bg_msg_sink.println();
                 if (action_to_push.clean_after_push)
                 {
                     filesystem.remove_all(action_to_push.request.package_dir, VCPKG_LINE_INFO);
                 }
-                remaining_packages_to_push--;
             }
             my_tasks.clear();
         }

@@ -96,6 +96,7 @@ namespace vcpkg
         ~BGMessageSink() { publish_directly_to_out_sink(); }
         // must be called from producer
         void print(Color c, StringView sv) override;
+        using MessageSink::print;
 
         // must be called from consumer (synchronizer of out)
         void print_published();
