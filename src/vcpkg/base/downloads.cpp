@@ -609,7 +609,7 @@ namespace vcpkg
 
         if (!data.empty())
         {
-            cmd.string_arg("--data-raw").string_arg(data);
+            cmd.string_arg("-d").string_arg(data);
         }
 
         cmd.string_arg(url);
