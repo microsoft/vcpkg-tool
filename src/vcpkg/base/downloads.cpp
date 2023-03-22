@@ -580,7 +580,7 @@ namespace vcpkg
         return res;
     }
 
-    std::string format_url_query(std::string base_url, std::vector<std::string> query_params)
+    std::string format_url_query(std::string& base_url, const std::vector<std::string>& query_params)
     {
         if (query_params.empty())
         {
@@ -592,10 +592,10 @@ namespace vcpkg
         return base_url + "?" + query;
     }
 
-    ExpectedL<std::string> invoke_http_request(std::string method,
-                                               View<std::string> headers,
-                                               StringView url,
-                                               std::string data)
+    ExpectedL<std::string> invoke_http_request(const std::string& method,
+                                               const View<std::string>& headers,
+                                               const std::string& url,
+                                               const std::string& data)
     {
         Command cmd;
         cmd.string_arg("curl").string_arg("-s").string_arg("-L");
