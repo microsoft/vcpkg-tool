@@ -580,7 +580,7 @@ namespace vcpkg
         return res;
     }
 
-    std::string format_url_query(std::string& base_url, const std::vector<std::string>& query_params)
+    std::string format_url_query(const std::string& base_url, const std::vector<std::string>& query_params)
     {
         if (query_params.empty())
         {
