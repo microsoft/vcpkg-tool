@@ -951,8 +951,11 @@ namespace
     };
     struct GHABinaryProvider : IBinaryProvider
     {
-        GHABinaryProvider(
-            const VcpkgPaths& paths, const bool read, const bool write, const std::string& url, const std::string& token_header)
+        GHABinaryProvider(const VcpkgPaths& paths,
+                          const bool read,
+                          const bool write,
+                          const std::string& url,
+                          const std::string& token_header)
             : paths(paths)
         {
             if (read) m_read_url = url;
