@@ -44,7 +44,7 @@ namespace vcpkg
         std::vector<std::string> forwarded_args;
         forwarded_args.emplace_back("regenerate");
         const auto parsed = args.parse_arguments(command_structure);
-        forwarded_args.push_back(args.command_arguments[0]);
+        forwarded_args.push_back(parsed.command_arguments[0]);
 
         if (Util::Sets::contains(parsed.switches, FORCE))
         {

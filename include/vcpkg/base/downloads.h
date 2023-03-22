@@ -41,7 +41,8 @@ namespace vcpkg
                             StringView url,
                             const std::vector<std::string>& secrets,
                             View<std::string> headers,
-                            const Path& file);
+                            const Path& file,
+                            StringView request = "PUT");
     std::vector<int> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets);
 
     // Handles downloading and uploading to a content addressable mirror

@@ -5,6 +5,7 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/parse.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
@@ -336,18 +337,6 @@ namespace vcpkg
     {
         std::string actual_hash =
             vcpkg::Hash::get_file_hash(fs, downloaded_path, Hash::Algorithm::Sha512).value_or_exit(VCPKG_LINE_INFO);
-
-        // <HACK to handle NuGet.org changing nupkg hashes.>
-        // This is the NEW hash for 7zip
-        if (actual_hash == "a9dfaaafd15d98a2ac83682867ec5766720acf6e99d40d1a00d480692752603bf3f3742623f0ea85647a92374df"
-                           "405f331afd6021c5cf36af43ee8db198129c0")
-        {
-            // This is the OLD hash for 7zip
-            actual_hash = "8c75314102e68d2b2347d592f8e3eb05812e1ebb525decbac472231633753f1d4ca31c8e6881a36144a8da26b257"
-                          "1305b3ae3f4e2b85fc4a290aeda63d1a13b8";
-        }
-        // </HACK>
-
         if (!Strings::case_insensitive_ascii_equals(sha512, actual_hash))
         {
             return msg::format_error(msgDownloadFailedHashMismatch,
@@ -368,22 +357,18 @@ namespace vcpkg
         try_verify_downloaded_file_hash(fs, url, downloaded_path, sha512).value_or_exit(VCPKG_LINE_INFO);
     }
 
-    static bool check_downloaded_file_hash(Filesystem& fs,
-                                           const Optional<std::string>& hash,
-                                           StringView sanitized_url,
-                                           const Path& download_part_path,
-                                           std::vector<LocalizedString>& errors)
+    static ExpectedL<Unit> check_downloaded_file_hash(Filesystem& fs,
+                                                      const Optional<std::string>& hash,
+                                                      StringView sanitized_url,
+                                                      const Path& download_part_path)
     {
         if (auto p = hash.get())
         {
-            auto maybe_success = try_verify_downloaded_file_hash(fs, sanitized_url, download_part_path, *p);
-            if (!maybe_success.has_value())
-            {
-                errors.push_back(std::move(maybe_success).error());
-                return false;
-            }
+            return try_verify_downloaded_file_hash(fs, sanitized_url, download_part_path, *p);
         }
-        return true;
+
+        Debug::println("Skipping hash check because none was specified.");
+        return Unit{};
     }
 
     static void url_heads_inner(View<std::string> urls,
@@ -446,7 +431,11 @@ namespace vcpkg
         {
             url_heads_inner({urls.data() + i, batch_size}, headers, &ret, secrets);
         }
-        if (i != urls.size()) url_heads_inner({urls.begin() + i, urls.end()}, headers, &ret, secrets);
+
+        if (i != urls.size())
+        {
+            url_heads_inner({urls.begin() + i, urls.end()}, headers, &ret, secrets);
+        }
 
         return ret;
     }
@@ -515,7 +504,11 @@ namespace vcpkg
         {
             download_files_inner(fs, {url_pairs.data() + i, batch_size}, headers, &ret);
         }
-        if (i != url_pairs.size()) download_files_inner(fs, {url_pairs.begin() + i, url_pairs.end()}, headers, &ret);
+
+        if (i != url_pairs.size())
+        {
+            download_files_inner(fs, {url_pairs.begin() + i, url_pairs.end()}, headers, &ret);
+        }
 
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                ret.size() == url_pairs.size(),
@@ -529,7 +522,8 @@ namespace vcpkg
                             StringView url,
                             const std::vector<std::string>& secrets,
                             View<std::string> headers,
-                            const Path& file)
+                            const Path& file,
+                            StringView request)
     {
         static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
 
@@ -558,11 +552,12 @@ namespace vcpkg
         }
 
         Command cmd;
-        cmd.string_arg("curl").string_arg("-X").string_arg("PUT");
+        cmd.string_arg("curl").string_arg("-X").string_arg(request);
         for (auto&& header : headers)
         {
             cmd.string_arg("-H").string_arg(header);
         }
+
         cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
         cmd.string_arg(url);
         cmd.string_arg("-T").string_arg(file);
@@ -735,10 +730,15 @@ namespace vcpkg
                 {
                     if (download_winhttp(fs, download_path_part_path, split_uri, url, secrets, errors, progress_sink))
                     {
-                        if (check_downloaded_file_hash(fs, sha512, url, download_path_part_path, errors))
+                        auto maybe_hash_check = check_downloaded_file_hash(fs, sha512, url, download_path_part_path);
+                        if (maybe_hash_check.has_value())
                         {
                             fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
                             return true;
+                        }
+                        else
+                        {
+                            errors.push_back(std::move(maybe_hash_check).error());
                         }
                     }
                     return false;
@@ -760,7 +760,7 @@ namespace vcpkg
         }
 
         std::string non_progress_lines;
-        const auto maybe_exit_code = cmd_execute_and_stream_lines(
+        auto maybe_exit_code = cmd_execute_and_stream_lines(
             cmd,
             [&](StringView line) {
                 const auto maybe_parsed = try_parse_curl_progress_data(line);
@@ -784,14 +784,21 @@ namespace vcpkg
             if (*exit_code != 0)
             {
                 errors.push_back(
-                    msg::format_error(msgDownloadFailedCurl, msg::url = sanitized_url, msg::exit_code = *exit_code));
+                    msg::format_error(msgDownloadFailedCurl, msg::url = sanitized_url, msg::exit_code = *exit_code)
+                        .append_raw('\n')
+                        .append_raw(Strings::join("\n", non_progress_lines)));
                 return false;
             }
 
-            if (check_downloaded_file_hash(fs, sha512, sanitized_url, download_path_part_path, errors))
+            auto maybe_hash_check = check_downloaded_file_hash(fs, sha512, sanitized_url, download_path_part_path);
+            if (maybe_hash_check.has_value())
             {
                 fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
                 return true;
+            }
+            else
+            {
+                errors.push_back(std::move(maybe_hash_check).error());
             }
         }
         else

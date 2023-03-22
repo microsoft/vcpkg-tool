@@ -1,7 +1,9 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/format.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/uint128.h>
 #include <vcpkg/base/util.h>
@@ -516,8 +518,8 @@ namespace vcpkg::Hash
 #endif
     }
 
-    template<class F>
-    static std::string do_hash(Algorithm algo, const F& f)
+    template<class ReturnType, class F>
+    static ReturnType do_hash(Algorithm algo, const F& f)
     {
 #if defined(_WIN32)
         auto hasher = BCryptHasher(algo);
@@ -542,7 +544,7 @@ namespace vcpkg::Hash
 
     std::string get_bytes_hash(const void* first, const void* last, Algorithm algo)
     {
-        return do_hash(algo, [first, last](Hasher& hasher) {
+        return do_hash<std::string>(algo, [first, last](Hasher& hasher) {
             hasher.add_bytes(first, last);
             return hasher.get_hash();
         });
@@ -557,36 +559,37 @@ namespace vcpkg::Hash
 
     ExpectedL<std::string> get_file_hash(const Filesystem& fs, const Path& path, Algorithm algo)
     {
+        Debug::println("Trying to hash ", path);
         std::error_code ec;
         auto file = fs.open_for_read(path, ec);
-        if (!ec)
+        if (ec)
         {
-            auto result = do_hash(algo, [&file, &ec](Hasher& hasher) {
-                constexpr std::size_t buffer_size = 1024 * 32;
-                char buffer[buffer_size];
-                do
-                {
-                    const auto this_read = file.read(buffer, 1, buffer_size);
-                    if (this_read != 0)
-                    {
-                        hasher.add_bytes(buffer, buffer + this_read);
-                    }
-                    else if ((ec = file.error()))
-                    {
-                        return std::string();
-                    }
-                } while (!file.eof());
-                return hasher.get_hash();
-            });
-
-            if (!ec)
-            {
-                return std::move(result);
-            }
+            return msg::format(msg::msgErrorMessage)
+                .append(msgHashFileFailureToRead, msg::path = path)
+                .append_raw(ec.message());
         }
 
-        return msg::format(msg::msgErrorMessage)
-            .append(msgHashFileFailureToRead, msg::path = path)
-            .append_raw(ec.message());
+        return do_hash<ExpectedL<std::string>>(algo, [&](Hasher& hasher) -> ExpectedL<std::string> {
+            constexpr std::size_t buffer_size = 1024 * 32;
+            char buffer[buffer_size];
+            do
+            {
+                const auto this_read = file.read(buffer, 1, buffer_size);
+                if (this_read != 0)
+                {
+                    hasher.add_bytes(buffer, buffer + this_read);
+                }
+                else if ((ec = file.error()))
+                {
+                    return msg::format(msg::msgErrorMessage)
+                        .append(msgHashFileFailureToRead, msg::path = path)
+                        .append_raw(ec.message());
+                }
+            } while (!file.eof());
+
+            auto result_hash = hasher.get_hash();
+            Debug::print(fmt::format("{} has hash {}\n", path, result_hash));
+            return result_hash;
+        });
     }
 }

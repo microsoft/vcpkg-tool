@@ -4,6 +4,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/json.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
@@ -350,7 +351,7 @@ namespace
                 Strings::case_insensitive_ascii_equals(use_nuget_cache, "true") || use_nuget_cache == "1";
         }
 
-        ExpectedL<Unit> run_nuget_commandline(const Command& cmdline) const
+        ExpectedL<Unit> run_nuget_commandline(const Command& cmdline, MessageSink& msg_sink) const
         {
             if (m_interactive)
             {
@@ -367,12 +368,12 @@ namespace
             return cmd_execute_and_capture_output(cmdline).then([&](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
                 if (Debug::g_debugging)
                 {
-                    msg::write_unlocalized_text_to_stdout(Color::error, res.output);
+                    msg_sink.print(Color::error, res.output);
                 }
 
                 if (res.output.find("Authentication may require manual action.") != std::string::npos)
                 {
-                    msg::println(Color::warning, msgAuthenticationMayRequireManualAction, msg::vendor = "Nuget");
+                    msg_sink.println(Color::warning, msgAuthenticationMayRequireManualAction, msg::vendor = "Nuget");
                 }
 
                 if (res.exit_code == 0)
@@ -383,20 +384,20 @@ namespace
                 if (res.output.find("Response status code does not indicate success: 401 (Unauthorized)") !=
                     std::string::npos)
                 {
-                    msg::println(Color::warning,
-                                 msgFailedVendorAuthentication,
-                                 msg::vendor = "NuGet",
-                                 msg::url = docs::binarycaching_url);
+                    msg_sink.println(Color::warning,
+                                     msgFailedVendorAuthentication,
+                                     msg::vendor = "NuGet",
+                                     msg::url = docs::binarycaching_url);
                 }
                 else if (res.output.find("for example \"-ApiKey AzureDevOps\"") != std::string::npos)
                 {
                     auto real_cmdline = cmdline;
                     real_cmdline.string_arg("-ApiKey").string_arg("AzureDevOps");
                     return cmd_execute_and_capture_output(real_cmdline)
-                        .then([](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
+                        .then([&](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
                             if (Debug::g_debugging)
                             {
-                                msg::write_unlocalized_text_to_stdout(Color::error, res.output);
+                                msg_sink.print(Color::error, res.output);
                             }
 
                             if (res.exit_code == 0)
@@ -551,7 +552,7 @@ namespace
                 }
 
                 generate_packages_config(fs, packages_config, attempts);
-                run_nuget_commandline(cmdline);
+                run_nuget_commandline(cmdline, stdout_sink);
                 Util::erase_remove_if(attempts, [&](const NuGetPrefetchAttempt& nuget_ref) -> bool {
                     // note that we would like the nupkg downloaded to buildtrees, but nuget.exe downloads it to the
                     // output directory
@@ -623,7 +624,7 @@ namespace
                 cmdline.string_arg("-NonInteractive");
             }
 
-            if (!run_nuget_commandline(cmdline))
+            if (!run_nuget_commandline(cmdline, msg_sink))
             {
                 msg_sink.println(Color::error, msgPackingVendorFailed, msg::vendor = "NuGet");
                 return;
@@ -651,7 +652,7 @@ namespace
                 }
                 msg_sink.println(
                     msgUploadingBinariesToVendor, msg::spec = spec, msg::vendor = "NuGet", msg::path = write_src);
-                if (!run_nuget_commandline(cmd))
+                if (!run_nuget_commandline(cmd, msg_sink))
                 {
                     msg_sink.println(
                         Color::error, msgPushingVendorFailed, msg::vendor = "NuGet", msg::path = write_src);
@@ -661,7 +662,7 @@ namespace
             {
                 Command cmd;
 #ifndef _WIN32
-                cmd.string_arg(paths.get_tool_exe(Tools::MONO, stdout_sink));
+                cmd.string_arg(paths.get_tool_exe(Tools::MONO, msg_sink));
 #endif
                 cmd.string_arg(nuget_exe)
                     .string_arg("push")
@@ -680,7 +681,7 @@ namespace
                                  msg::spec = spec,
                                  msg::vendor = "NuGet config",
                                  msg::path = write_cfg);
-                if (!run_nuget_commandline(cmd))
+                if (!run_nuget_commandline(cmd, msg_sink))
                 {
                     msg_sink.println(
                         Color::error, msgPushingVendorFailed, msg::vendor = "NuGet", msg::path = write_cfg);
@@ -704,6 +705,238 @@ namespace
         std::string m_timeout;
         bool m_interactive;
         bool m_use_nuget_cache;
+    };
+    struct GHABinaryProvider : IBinaryProvider
+    {
+        GHABinaryProvider(const VcpkgPaths& paths,
+                          bool read,
+                          bool write,
+                          const Optional<std::string>& url,
+                          const Optional<std::string>& token)
+            : paths(paths)
+        {
+            if (read) m_read_url = url.value_or_exit(VCPKG_LINE_INFO) + "_apis/artifactcache/cache";
+            if (write) m_write_url = url.value_or_exit(VCPKG_LINE_INFO) + "_apis/artifactcache/caches";
+            m_token_header = "Authorization: Bearer " + token.value_or_exit(VCPKG_LINE_INFO);
+        }
+
+        Command command() const
+        {
+            Command cmd;
+            cmd.string_arg("curl")
+                .string_arg("-s")
+                .string_arg("-H")
+                .string_arg("Content-Type: application/json")
+                .string_arg("-H")
+                .string_arg(m_token_header)
+                .string_arg("-H")
+                .string_arg(m_accept_header);
+            return cmd;
+        }
+
+        std::string lookup_cache_entry(const std::string& abi) const
+        {
+            auto cmd = command()
+                           .string_arg(m_read_url)
+                           .string_arg("-G")
+                           .string_arg("-d")
+                           .string_arg("keys=vcpkg")
+                           .string_arg("-d")
+                           .string_arg("version=" + abi);
+
+            std::vector<std::string> lines;
+            auto res = cmd_execute_and_capture_output(cmd);
+            if (!res.has_value() || res.get()->exit_code) return {};
+            auto json = Json::parse_object(res.get()->output);
+            if (!json.has_value() || !json.get()->contains("archiveLocation")) return {};
+            return json.get()->get("archiveLocation")->string(VCPKG_LINE_INFO).to_string();
+        }
+
+        Optional<int64_t> reserve_cache_entry(const std::string& abi, int64_t cacheSize) const
+        {
+            Json::Object payload;
+            payload.insert("key", "vcpkg");
+            payload.insert("version", abi);
+            payload.insert("cacheSize", Json::Value::integer(cacheSize));
+            auto cmd = command().string_arg(m_write_url).string_arg("-d").string_arg(stringify(payload));
+
+            auto res = cmd_execute_and_capture_output(cmd);
+            if (!res.has_value() || res.get()->exit_code) return {};
+            auto json = Json::parse_object(res.get()->output);
+            if (!json.has_value() || !json.get()->contains("cacheId")) return {};
+            return json.get()->get("cacheId")->integer(VCPKG_LINE_INFO);
+        }
+
+        void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
+        {
+            auto& fs = paths.get_filesystem();
+
+            const ElapsedTimer timer;
+            size_t restored_count = 0;
+            std::vector<std::pair<std::string, Path>> url_paths;
+            std::vector<size_t> url_indices;
+            if (!m_read_url.empty())
+            {
+                for (size_t idx = 0; idx < cache_status.size(); ++idx)
+                {
+                    const auto this_cache_status = cache_status[idx];
+                    if (!this_cache_status || !this_cache_status->should_attempt_restore(this))
+                    {
+                        continue;
+                    }
+
+                    auto&& action = actions[idx];
+                    auto url = lookup_cache_entry(action.package_abi().value_or_exit(VCPKG_LINE_INFO));
+                    if (url.empty()) continue;
+
+                    clean_prepare_dir(fs, paths.package_dir(action.spec));
+                    url_paths.emplace_back(std::move(url), make_temp_archive_path(paths.buildtrees(), action.spec));
+                    url_indices.push_back(idx);
+                }
+            }
+
+            if (!url_paths.empty())
+            {
+                msg::println(
+                    msgAttemptingToFetchPackagesFromVendor, msg::count = url_paths.size(), msg::vendor = "GHA");
+
+                auto codes = download_files(fs, url_paths, {});
+                std::vector<size_t> action_idxs;
+                std::vector<Command> jobs;
+                for (size_t i = 0; i < codes.size(); ++i)
+                {
+                    if (codes[i] == 200)
+                    {
+                        action_idxs.push_back(i);
+                        jobs.push_back(decompress_zip_archive_cmd(paths.get_tool_cache(),
+                                                                  stdout_sink,
+                                                                  paths.package_dir(actions[url_indices[i]].spec),
+                                                                  url_paths[i].second));
+                    }
+                }
+                auto job_results = decompress_in_parallel(jobs);
+                for (size_t j = 0; j < jobs.size(); ++j)
+                {
+                    const auto i = action_idxs[j];
+                    if (job_results[j])
+                    {
+                        ++restored_count;
+                        fs.remove(url_paths[i].second, VCPKG_LINE_INFO);
+                        cache_status[url_indices[i]]->mark_restored();
+                    }
+                    else
+                    {
+                        Debug::print("Failed to decompress ", url_paths[i].second, '\n');
+                    }
+                }
+            }
+
+            msg::println(msgRestoredPackagesFromVendor,
+                         msg::count = restored_count,
+                         msg::elapsed = timer.elapsed(),
+                         msg::value = "GHA");
+        }
+
+        RestoreResult try_restore(const InstallPlanAction&) const override { return RestoreResult::unavailable; }
+
+        void push_success(const BinaryProviderPushRequest& request, MessageSink& msg_sink) override
+        {
+            if (m_write_url.empty()) return;
+            const ElapsedTimer timer;
+            auto& fs = paths.get_filesystem();
+            const auto& abi = request.info.package_abi;
+            auto& spec = request.info.spec;
+            const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
+            auto compression_result = compress_directory_to_zip(
+                paths.get_filesystem(), paths.get_tool_cache(), msg_sink, paths.package_dir(spec), tmp_archive_path);
+            if (!compression_result)
+            {
+                msg_sink.println(Color::warning,
+                                 msg::format_warning(msgCompressFolderFailed, msg::path = paths.package_dir(spec))
+                                     .append_raw(' ')
+                                     .append_raw(compression_result.error()));
+                return;
+            }
+
+            int64_t cache_size;
+            {
+                auto archive = fs.open_for_read(tmp_archive_path, VCPKG_LINE_INFO);
+                archive.try_seek_to(0, SEEK_END);
+                cache_size = archive.tell();
+            }
+
+            size_t upload_count = 0;
+            if (!m_write_url.empty())
+            {
+                if (auto cacheId = reserve_cache_entry(abi, cache_size))
+                {
+                    std::vector<std::string> headers{
+                        m_token_header,
+                        m_accept_header.to_string(),
+                        "Content-Type: application/octet-stream",
+                        "Content-Range: bytes 0-" + std::to_string(cache_size) + "/*",
+                    };
+                    auto url = m_write_url + "/" + std::to_string(*cacheId.get());
+                    if (put_file(fs, url, {}, headers, tmp_archive_path, "PATCH"))
+                    {
+                        Json::Object commit;
+                        commit.insert("size", std::to_string(cache_size));
+                        auto cmd = command().string_arg(url).string_arg("-d").string_arg(stringify(commit));
+
+                        auto res = cmd_execute_and_capture_output(cmd);
+                        if (res.has_value() && !res.get()->exit_code)
+                        {
+                            ++upload_count;
+                        }
+                    }
+                }
+            }
+
+            msg_sink.println(msgUploadedPackagesToVendor,
+                             msg::count = upload_count,
+                             msg::elapsed = timer.elapsed(),
+                             msg::vendor = "GHA");
+        }
+
+        void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
+        {
+            std::vector<CacheAvailability> actions_availability{actions.size()};
+            if (!m_read_url.empty())
+            {
+                for (size_t idx = 0; idx < actions.size(); ++idx)
+                {
+                    auto&& action = actions[idx];
+                    const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
+                    if (!cache_status[idx]->should_attempt_precheck(this))
+                    {
+                        continue;
+                    }
+
+                    if (!lookup_cache_entry(abi).empty())
+                    {
+                        actions_availability[idx] = CacheAvailability::available;
+                        cache_status[idx]->mark_available(this);
+                    }
+                }
+            }
+
+            for (size_t idx = 0; idx < actions.size(); ++idx)
+            {
+                const auto this_cache_status = cache_status[idx];
+                if (this_cache_status && actions_availability[idx] == CacheAvailability::unavailable)
+                {
+                    this_cache_status->mark_unavailable(this);
+                }
+            }
+        }
+
+        static constexpr StringLiteral m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
+        std::string m_token_header;
+
+        std::string m_read_url;
+        std::string m_write_url;
+
+        const VcpkgPaths& paths;
     };
 
     struct BinaryObjectProvider : IBinaryProvider
@@ -1181,10 +1414,6 @@ namespace vcpkg
         end_push_thread = true;
         actions_to_push_notifier.notify_all();
         push_thread.join();
-        if (have_remaining_packages)
-        {
-            msg::println(msgAllPackagesUploaded);
-        }
     }
 
     BinaryCache::BinaryCache(Filesystem& filesystem)
@@ -1192,7 +1421,6 @@ namespace vcpkg
         , push_thread([this]() { push_thread_main(); })
         , end_push_thread{false}
         , filesystem(filesystem)
-
     {
     }
 
@@ -1816,6 +2044,20 @@ namespace
                         std::make_unique<CosObjectProvider>(maybe_access.value_or_exit(VCPKG_LINE_INFO), std::move(p)));
                 }
             }
+            else if (segments[0].second == "x-gha")
+            {
+                // Scheme: x-gha[,<readwrite>]
+                if (segments.size() > 2)
+                {
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresZeroOrOneArgument, msg::binary_source = "gha"),
+                        segments[2].first);
+                }
+
+                handle_readwrite(state->gha_read, state->gha_write, segments, 1);
+
+                state->binary_cache_providers.insert("gha");
+            }
             else if (segments[0].second == "http")
             {
                 // Scheme: http,<url_template>[,<readwrite>[,<header>]]
@@ -2237,6 +2479,16 @@ ExpectedL<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
     {
         providers.push_back(std::make_unique<BinaryObjectProvider>(
             paths, std::move(s.object_providers), std::move(s.url_templates_to_put), s.secrets));
+    }
+    if (s.gha_read || s.gha_write)
+    {
+        auto url = get_environment_variable("ACTIONS_CACHE_URL");
+        auto token = get_environment_variable("ACTIONS_RUNTIME_TOKEN");
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               (url.has_value() && token.has_value()),
+                               msgGHAParametersMissing,
+                               msg::url = "https://learn.microsoft.com/en-us/vcpkg/users/binarycaching#gha");
+        providers.push_back(std::make_unique<GHABinaryProvider>(paths, s.gha_read, s.gha_write, url, token));
     }
 
     if (!s.sources_to_read.empty() || !s.sources_to_write.empty() || !s.configs_to_read.empty() ||

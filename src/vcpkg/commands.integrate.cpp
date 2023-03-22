@@ -467,7 +467,7 @@ namespace vcpkg::Commands::Integrate
                        .string_arg("-ExecutionPolicy")
                        .string_arg("Bypass")
                        .string_arg("-Command")
-                       .string_arg(fmt::format("& {& '{}' }", script_path));
+                       .string_arg(fmt::format("& {{& '{}' }}", script_path));
         const int rc = cmd_execute(cmd).value_or_exit(VCPKG_LINE_INFO);
         if (rc)
         {
@@ -643,41 +643,41 @@ namespace vcpkg::Commands::Integrate
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        (void)args.parse_arguments(COMMAND_STRUCTURE);
+        const auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
 
-        if (args.command_arguments[0] == Subcommand::INSTALL)
+        if (parsed.command_arguments[0] == Subcommand::INSTALL)
         {
             return integrate_install(paths);
         }
-        if (args.command_arguments[0] == Subcommand::REMOVE)
+        if (parsed.command_arguments[0] == Subcommand::REMOVE)
         {
             return integrate_remove(paths.get_filesystem());
         }
 #if defined(_WIN32)
-        if (args.command_arguments[0] == Subcommand::PROJECT)
+        if (parsed.command_arguments[0] == Subcommand::PROJECT)
         {
             return integrate_project(paths);
         }
-        if (args.command_arguments[0] == Subcommand::POWERSHELL)
+        if (parsed.command_arguments[0] == Subcommand::POWERSHELL)
         {
             return integrate_powershell(paths);
         }
 #else
-        if (args.command_arguments[0] == Subcommand::BASH)
+        if (parsed.command_arguments[0] == Subcommand::BASH)
         {
             return integrate_bash(paths);
         }
-        if (args.command_arguments[0] == Subcommand::ZSH)
+        if (parsed.command_arguments[0] == Subcommand::ZSH)
         {
             return integrate_zsh(paths);
         }
-        if (args.command_arguments[0] == Subcommand::FISH)
+        if (parsed.command_arguments[0] == Subcommand::FISH)
         {
             return integrate_fish(paths);
         }
 #endif
         Checks::msg_exit_maybe_upgrade(
-            VCPKG_LINE_INFO, msgUnknownParameterForIntegrate, msg::value = args.command_arguments[0]);
+            VCPKG_LINE_INFO, msgUnknownParameterForIntegrate, msg::value = parsed.command_arguments[0]);
     }
 
     void IntegrateCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
