@@ -223,15 +223,15 @@ namespace vcpkg::Commands::TestFeatures
             const auto& baseline = feature_baseline.get_port(port->core_paragraph->name);
             if (baseline.state == CiFeatureBaselineState::Skip) continue;
             PackageSpec package_spec(port->core_paragraph->name, target_triplet);
-            if (test_feature_core && !Util::Sets::contains(baseline.skip_features, "core"))
-            {
-                specs_to_test.emplace_back(package_spec, InternalFeatureSet{{"core"}});
-            }
             const auto dep_info_vars = var_provider.get_or_load_dep_info_vars(package_spec, host_triplet);
             if (!port->core_paragraph->supports_expression.evaluate(dep_info_vars))
             {
                 fmt::print("Port {} is not supported on {}\n", port->core_paragraph->name, target_triplet);
                 continue;
+            }
+            if (test_feature_core && !Util::Sets::contains(baseline.skip_features, "core"))
+            {
+                specs_to_test.emplace_back(package_spec, InternalFeatureSet{{"core"}});
             }
             InternalFeatureSet all_features{{"core"}};
             for (const auto& feature : port->feature_paragraphs)
