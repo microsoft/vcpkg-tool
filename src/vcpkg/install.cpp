@@ -496,7 +496,7 @@ namespace vcpkg
                                    const RemovePlanAction& action)
             : current_summary(results.emplace_back(action)), build_timer()
         {
-            msg::println(Remove::msgRemovingPackage,
+            msg::println(msgRemovingPackage,
                          msg::action_index = action_index,
                          msg::count = action_count,
                          msg::spec = action.spec);

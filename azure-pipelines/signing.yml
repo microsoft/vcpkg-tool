@@ -132,11 +132,6 @@ jobs:
       displayName: Detect Components
       inputs:
         sourceScanPath: "$(Build.BinariesDirectory)/ce"
-    # Inject the NOTICE file. This must run after component detection.
-    - task: msospo.ospo-extension.8d7f9abb-6896-461d-9e25-4f74ed65ddb2.notice@0
-      displayName: Generate NOTICE File
-      inputs:
-        outputfile: $(Build.BinariesDirectory)/ce/NOTICE.txt
     - task: MicroBuildSigningPlugin@3
       displayName: Install MicroBuild Signing
       inputs:
@@ -159,6 +154,9 @@ jobs:
         solution: 'azure-pipelines\arch-independent-signing.signproj'
         msbuildArguments: '/p:OutDir=$(Build.BinariesDirectory)\ /p:IntermediateOutputPath=$(Build.BinariesDirectory)\'
       # Note that signing must happen before packing steps because the packs contain files that are themselves signed.
+    - script: |
+        copy "$(Build.SourcesDirectory)\NOTICE.txt" "$(Build.BinariesDirectory)\ce\NOTICE.txt"
+      displayName: Inject NOTICE File
     - script: |
         copy "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.BinariesDirectory)\vcpkg-init.cmd"
       displayName: 'Duplicate Install Scripts'
@@ -384,6 +382,8 @@ jobs:
         failOnStderr: true
         script: |
           mkdir "$(Build.ArtifactStagingDirectory)\drop"
+
+          copy "$(Build.SourcesDirectory)\NOTICE.txt" "$(Build.ArtifactStagingDirectory)\drop\NOTICE.txt"
 
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init.cmd" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init.cmd"
