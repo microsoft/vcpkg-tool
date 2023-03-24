@@ -868,6 +868,10 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
                         "$extra": [],
                         "$my": [],
                         "name": "tea"
+                    },
+                    {
+                        "name": "z-no-defaults",
+                        "default-features": false
                     }
                 ]
             },
@@ -918,10 +922,11 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(pgh.feature_paragraphs[0]->name == "iroh");
     REQUIRE(pgh.feature_paragraphs[0]->description.size() == 1);
     REQUIRE(pgh.feature_paragraphs[0]->description[0] == "zuko's uncle");
-    REQUIRE(pgh.feature_paragraphs[0]->dependencies.size() == 3);
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies.size() == 4);
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[0].name == "firebending");
 
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].name == "order-white-lotus");
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].default_features == true);
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features.size() == 2);
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features[0].name == "the-ancient-ways");
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features[0].platform.is_empty());
@@ -940,6 +945,8 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         {{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
 
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[2].name == "tea");
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[3].name == "z-no-defaults");
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[3].default_features == false);
 
     REQUIRE(pgh.feature_paragraphs[1]->name == "zuko");
     REQUIRE(pgh.feature_paragraphs[1]->description.size() == 2);

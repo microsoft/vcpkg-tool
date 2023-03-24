@@ -1550,7 +1550,7 @@ namespace vcpkg
 
     static bool is_dependency_trivial(const Dependency& dep)
     {
-        return dep.features.empty() && dep.platform.is_empty() && dep.extra_info.is_empty() &&
+        return dep.features.empty() && dep.default_features && dep.platform.is_empty() && dep.extra_info.is_empty() &&
                dep.constraint.type == VersionConstraintKind::None && !dep.host;
     }
 
