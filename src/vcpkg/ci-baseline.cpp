@@ -392,7 +392,15 @@ namespace vcpkg
 
     bool CiFeatureBaselineEntry::will_fail(const InternalFeatureSet& internal_feature_set) const
     {
-        return Util::Vectors::contains(fail_configurations, internal_feature_set);
+        if (std::is_sorted(internal_feature_set.begin(), internal_feature_set.end()))
+        {
+            return Util::Vectors::contains(fail_configurations, internal_feature_set);
+        }
+        return Util::any_of(fail_configurations, [&](auto& fail_configuration) {
+            return fail_configuration.size() == internal_feature_set.size() &&
+                   Util::all_of(internal_feature_set,
+                                [&](auto& feature) { return Util::contains(fail_configuration, feature); });
+        });
     }
 
     std::string to_string(CiFeatureBaselineState state)
