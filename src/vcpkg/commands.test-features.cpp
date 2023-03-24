@@ -189,7 +189,7 @@ namespace vcpkg::Commands::TestFeatures
         }
         else
         {
-            feature_test_ports = Util::fmap(args.forwardable_arguments, [&](auto&& arg) {
+            feature_test_ports = Util::fmap(options.command_arguments, [&](auto&& arg) {
                 return provider.get_control_file(arg).value_or_exit(VCPKG_LINE_INFO).source_control_file.get();
             });
         }
