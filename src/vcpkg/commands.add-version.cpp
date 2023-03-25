@@ -412,7 +412,7 @@ namespace vcpkg::Commands::AddVersion
                 continue;
             }
 
-            const auto& scf = maybe_scf.value_or_exit(VCPKG_LINE_INFO);
+            const auto& scf = maybe_scf.value();
 
             if (!skip_formatting_check)
             {

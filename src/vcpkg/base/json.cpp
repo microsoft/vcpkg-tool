@@ -1139,7 +1139,7 @@ namespace vcpkg::Json
         {
             Checks::msg_exit_with_message(li, LocalizedString::from_raw(ret.error()->to_string()));
         }
-        return ret.value_or_exit(li);
+        return std::move(ret).value();
     }
 
     ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse(StringView json, StringView origin)

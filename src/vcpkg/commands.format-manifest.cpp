@@ -36,7 +36,7 @@ namespace
             return nullopt;
         }
 
-        const auto& parsed_json = parsed_json_opt.value_or_exit(VCPKG_LINE_INFO).value;
+        const auto& parsed_json = parsed_json_opt.value().value;
         if (!parsed_json.is_object())
         {
             msg::println_error(msgJsonErrorMustBeAnObject, msg::path = path_string);
@@ -54,7 +54,7 @@ namespace
         }
 
         return ToWrite{
-            std::move(*scf.value_or_exit(VCPKG_LINE_INFO)),
+            std::move(*scf.value()),
             manifest_path,
             manifest_path,
             std::move(contents),
@@ -76,8 +76,7 @@ namespace
                                    .append_raw(paragraphs.error()));
             return {};
         }
-        auto scf_res =
-            SourceControlFile::parse_control_file(control_path, std::move(paragraphs).value_or_exit(VCPKG_LINE_INFO));
+        auto scf_res = SourceControlFile::parse_control_file(control_path, std::move(paragraphs).value());
         if (!scf_res)
         {
             msg::println_error(msgFailedToParseControl, msg::path = control_path);
@@ -86,7 +85,7 @@ namespace
         }
 
         return ToWrite{
-            std::move(*scf_res.value_or_exit(VCPKG_LINE_INFO)),
+            std::move(*scf_res.value()),
             manifest_path,
             control_path,
             std::move(contents),

@@ -213,8 +213,8 @@ TEST_CASE ("move assignment value value", "[expected]")
         ExpectedT<ConstructTracker<0>, ConstructTracker<1>> originally_value{value};
         ExpectedT<ConstructTracker<0>, ConstructTracker<1>> originally_value2{value};
         originally_value = std::move(originally_value2);
-        CHECK(!originally_value.value_or_exit(VCPKG_LINE_INFO).moved_from);
-        CHECK(originally_value2.value_or_exit(VCPKG_LINE_INFO).moved_from);
+        CHECK(!originally_value.value().moved_from);
+        CHECK(originally_value2.value().moved_from);
         CHECK(value.alive == 2);
         CHECK(value.copies == 0);
         CHECK(value.copy_assigns == 0);
@@ -267,8 +267,8 @@ TEST_CASE ("move assignment error value", "[expected]")
         ExpectedT<ConstructTracker<0>, ConstructTracker<1>> originally_value{value};
         ExpectedT<ConstructTracker<0>, ConstructTracker<1>> originally_error{error};
         originally_error = std::move(originally_value);
-        CHECK(originally_value.value_or_exit(VCPKG_LINE_INFO).moved_from);
-        CHECK(!originally_error.value_or_exit(VCPKG_LINE_INFO).moved_from);
+        CHECK(originally_value.value().moved_from);
+        CHECK(!originally_error.value().moved_from);
         error.check_nothing();
         CHECK(value.alive == 2);
         CHECK(value.copies == 0);
@@ -326,7 +326,7 @@ TEST_CASE ("map", "[expected]")
                 return 42;
             });
         static_assert(std::is_same_v<decltype(result), ExpectedT<int, ConstructTracker<1>>>, "Bad map(const&) type");
-        CHECK(result.value_or_exit(VCPKG_LINE_INFO) == 42);
+        CHECK(result.value() == 42);
     }
 
     value.check_nothing();
@@ -342,7 +342,7 @@ TEST_CASE ("map", "[expected]")
                     return 42;
                 });
         static_assert(std::is_same_v<decltype(result), ExpectedT<int, ConstructTracker<1>>>, "Bad map(&&) type");
-        CHECK(result.value_or_exit(VCPKG_LINE_INFO) == 42);
+        CHECK(result.value() == 42);
     }
 
     value.check_nothing();

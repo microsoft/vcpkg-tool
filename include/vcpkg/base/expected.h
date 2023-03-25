@@ -208,6 +208,18 @@ namespace vcpkg
             return *m_t.get();
         }
 
+        const T& value() const&
+        {
+            exit_if_error();
+            return *m_t.get();
+        }
+
+        T&& value() &&
+        {
+            exit_if_error();
+            return std::move(*m_t.get());
+        }
+
         const Error& error() const&
         {
             exit_if_not_error();
@@ -350,7 +362,15 @@ namespace vcpkg
         {
             if (value_is_error)
             {
-                Checks::exit_with_message(line_info, to_string(error()));
+                Checks::msg_exit_with_message(line_info, error());
+            }
+        }
+
+        void exit_if_error() const
+        {
+            if (value_is_error)
+            {
+                Checks::unreachable(VCPKG_LINE_INFO);
             }
         }
 
