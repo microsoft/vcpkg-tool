@@ -1,9 +1,9 @@
 #pragma once
 
+#include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/json.h>
 
 #include <vcpkg/base/expected.h>
-#include <vcpkg/base/files.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/stringview.h>
 

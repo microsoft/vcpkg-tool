@@ -1,29 +1,29 @@
 #pragma once
 
 #include <vcpkg/base/fwd/downloads.h>
-#include <vcpkg/base/fwd/json.h>
+#include <vcpkg/base/fwd/files.h>
+#include <vcpkg/base/fwd/git.h>
 #include <vcpkg/base/fwd/system.process.h>
 
-#include <vcpkg/fwd/binaryparagraph.h>
 #include <vcpkg/fwd/build.h>
 #include <vcpkg/fwd/bundlesettings.h>
 #include <vcpkg/fwd/configuration.h>
 #include <vcpkg/fwd/installedpaths.h>
+#include <vcpkg/fwd/packagespec.h>
 #include <vcpkg/fwd/registries.h>
+#include <vcpkg/fwd/sourceparagraph.h>
 #include <vcpkg/fwd/tools.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-#include <vcpkg/base/cache.h>
-#include <vcpkg/base/files.h>
-#include <vcpkg/base/git.h>
-#include <vcpkg/base/lazy.h>
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/system.h>
-#include <vcpkg/base/util.h>
 
-#include <vcpkg/packagespec.h>
 #include <vcpkg/triplet.h>
+
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace vcpkg
 {
@@ -42,12 +42,6 @@ namespace vcpkg
         ZStringView version;
         std::string full_version;
         std::vector<ToolsetArchOption> supported_architectures;
-    };
-
-    struct ManifestAndPath
-    {
-        Json::Object manifest;
-        Path path;
     };
 
     struct TripletFile

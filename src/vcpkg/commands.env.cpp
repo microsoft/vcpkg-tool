@@ -1,4 +1,5 @@
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 
 #include <vcpkg/build.h>
@@ -7,6 +8,7 @@
 #include <vcpkg/help.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/portfileprovider.h>
+#include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 

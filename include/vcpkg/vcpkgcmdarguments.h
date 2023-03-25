@@ -6,7 +6,6 @@
 #include <vcpkg/fwd/vcpkgpaths.h>
 
 #include <vcpkg/base/cmd-parser.h>
-#include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>

@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/chrono.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
@@ -9,7 +10,9 @@
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/util.h>
 #include <vcpkg/base/xmlserializer.h>
 
 #include <vcpkg/archives.h>

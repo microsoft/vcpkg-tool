@@ -1,8 +1,10 @@
+#include <vcpkg/base/cache.h>
 #include <vcpkg/base/delayed-init.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>

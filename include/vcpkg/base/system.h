@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/system.h>
+
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
@@ -36,19 +38,6 @@ namespace vcpkg
 #endif
 
     long get_process_id();
-
-    enum class CPUArchitecture
-    {
-        X86,
-        X64,
-        ARM,
-        ARM64,
-        ARM64EC,
-        S390X,
-        PPC64LE,
-        RISCV32,
-        RISCV64,
-    };
 
     Optional<CPUArchitecture> to_cpu_architecture(StringView arch);
 

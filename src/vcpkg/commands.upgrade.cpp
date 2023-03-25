@@ -10,6 +10,7 @@
 #include <vcpkg/input.h>
 #include <vcpkg/install.h>
 #include <vcpkg/portfileprovider.h>
+#include <vcpkg/registries.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/update.h>
 #include <vcpkg/vcpkgcmdarguments.h>

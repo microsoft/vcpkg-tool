@@ -6,14 +6,11 @@
 #include <vcpkg/fwd/packagespec.h>
 
 #include <vcpkg/base/expected.h>
-#include <vcpkg/base/format.h>
-#include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
 
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/triplet.h>
-#include <vcpkg/versions.h>
 
 namespace vcpkg
 {
