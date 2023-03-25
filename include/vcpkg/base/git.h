@@ -3,7 +3,7 @@
 #include <vcpkg/base/fwd/git.h>
 
 #include <vcpkg/base/expected.h>
-#include <vcpkg/base/path.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/stringview.h>
 
 #include <set>

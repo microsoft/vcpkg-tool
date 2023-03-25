@@ -4,8 +4,8 @@
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
-#include <vcpkg/base/path.h>
 #include <vcpkg/base/span.h>
 
 #include <vcpkg/packagespec.h>

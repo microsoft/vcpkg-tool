@@ -7,6 +7,7 @@
 #include <vcpkg/fwd/registries.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
+#include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
 
