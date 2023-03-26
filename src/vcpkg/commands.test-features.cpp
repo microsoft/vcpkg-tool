@@ -300,6 +300,7 @@ namespace vcpkg::Commands::TestFeatures
             if (actual_cascade != expected_cascade)
             {
                 unexpected_states.push_back(UnexpectedResult{std::move(spec), result, logs_dir, build_time});
+                return;
             }
             bool expected_fail = (baseline.state == CiFeatureBaselineState::Fail || baseline.will_fail(spec.features));
             bool actual_fail = (result == CiFeatureBaselineState::Fail);
