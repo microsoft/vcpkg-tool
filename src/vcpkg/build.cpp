@@ -1511,8 +1511,7 @@ namespace vcpkg
 
     static std::string make_gh_issue_search_url(StringView spec_name)
     {
-        return Strings::concat("https://github.com/microsoft/vcpkg/issues?q=is%3Aissue+is%3Aopen+in%3Atitle+",
-                               spec_name);
+        return "https://github.com/microsoft/vcpkg/issues?q=is%3Aissue+is%3Aopen+in%3Atitle+" + spec_name.to_string();
     }
 
     static std::string make_gh_issue_open_url(StringView spec_name, const Path& path)
