@@ -67,6 +67,44 @@
       ]
     },
     {
+      "name": "x64-Debug-NoArtifacts-NoAnalyze",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "variables": [
+        {
+          "name": "VCPKG_MSVC_ANALYZE",
+          "value": "False",
+          "type": "BOOL"
+        },
+        {
+          "name": "VCPKG_ARTIFACTS_DEVELOPMENT",
+          "value": "False",
+          "type": "BOOL"
+        },
+        {
+          "name": "VCPKG_BUILD_TLS12_DOWNLOADER",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "VCPKG_BUILD_BENCHMARKING",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "VCPKG_BUILD_FUZZING",
+          "value": "True",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
       "name": "x64-Debug-Official-2022-11-10",
       "generator": "Ninja",
       "configurationType": "Debug",

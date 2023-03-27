@@ -74,34 +74,34 @@ namespace vcpkg
         if (duration_cast<hours>(nanos) > hours())
         {
             const auto t = nanos_as_double / duration_cast<nanoseconds>(hours(1)).count();
-            return fmt::format("{:4} h", t);
+            return fmt::format("{:.2} h", t);
         }
 
         if (duration_cast<minutes>(nanos) > minutes())
         {
             const auto t = nanos_as_double / duration_cast<nanoseconds>(minutes(1)).count();
-            return fmt::format("{:4} min", t);
+            return fmt::format("{:.2} min", t);
         }
 
         if (duration_cast<seconds>(nanos) > seconds())
         {
             const auto t = nanos_as_double / duration_cast<nanoseconds>(seconds(1)).count();
-            return fmt::format("{:4} s", t);
+            return fmt::format("{:.2} s", t);
         }
 
         if (duration_cast<milliseconds>(nanos) > milliseconds())
         {
             const auto t = nanos_as_double / duration_cast<nanoseconds>(milliseconds(1)).count();
-            return fmt::format("{:4} ms", t);
+            return fmt::format("{:.3} ms", t);
         }
 
         if (duration_cast<microseconds>(nanos) > microseconds())
         {
             const auto t = nanos_as_double / duration_cast<nanoseconds>(microseconds(1)).count();
-            return fmt::format("{:4} us", t);
+            return fmt::format("{:.3} us", t);
         }
 
-        return fmt::format("{:4} ns", nanos_as_double);
+        return fmt::format("{:.3} ns", nanos_as_double);
     }
 
     ElapsedTimer::ElapsedTimer() noexcept

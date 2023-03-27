@@ -11,16 +11,16 @@ describe('MSBuild Generator', () => {
 
   after(local.after.bind(local));
 
-  it('Generates roots without a trailing slash', () => {
-    const activation = new Activation(local.session);
+  it('Generates roots without a trailing slash', async () => {
+    const activation = await Activation.start(local.session, false);
     const expectedPosix = 'c:/tmp';
     const expected = (platform() === 'win32') ? expectedPosix.replaceAll('/', '\\') : expectedPosix;
     strict.equal(activation.msBuildProcessPropertyValue('{root}', local.fs.file('c:/tmp')), expected);
     strict.equal(activation.msBuildProcessPropertyValue('{root}', local.fs.file('c:/tmp/')), expected);
   });
 
-  it('Generates locations in order', () => {
-    const activation = new Activation(local.session);
+  it('Generates locations in order', async () => {
+    const activation = await Activation.start(local.session, false);
 
     // Note that only "addMSBuildProperty" has an effect on the output for now but that we'll probably
     // need to respond to the others in the future.

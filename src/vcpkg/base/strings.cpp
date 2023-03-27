@@ -15,6 +15,8 @@
 #include <string>
 #include <vector>
 
+#include <fmt/compile.h>
+
 using namespace vcpkg;
 
 namespace vcpkg::Strings::details
@@ -711,6 +713,25 @@ namespace vcpkg::Strings
             value >>= shift;
         }
 
+        return result;
+    }
+
+    std::string percent_encode(StringView sv) noexcept
+    {
+        std::string result;
+        for (auto c : sv)
+        {
+            // list from https://datatracker.ietf.org/doc/html/rfc3986#section-2.3
+            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '.' ||
+                c == '_' || c == '~')
+            {
+                result.push_back(c);
+            }
+            else
+            {
+                fmt::format_to(std::back_inserter(result), FMT_COMPILE("%{:02X}"), static_cast<uint8_t>(c));
+            }
+        }
         return result;
     }
 
