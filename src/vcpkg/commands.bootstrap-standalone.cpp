@@ -1,6 +1,7 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/base/downloads.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/optional.h>
 
 #include <vcpkg/archives.h>

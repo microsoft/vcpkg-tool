@@ -3,6 +3,7 @@
 #include <vcpkg/base/fwd/json.h>
 
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
