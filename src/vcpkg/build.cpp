@@ -1539,12 +1539,7 @@ namespace vcpkg
         if (issue_body.has_value())
         {
             auto path = issue_body.get()->generic_u8string();
-            result.append_indent()
-                .append_raw("https://github.com/microsoft/vcpkg/issues/new?title=[")
-                .append_raw(spec_name)
-                .append_raw("]+Build+error&body=Copy+issue+body+from+")
-                .append_raw(Strings::percent_encode(path))
-                .append_raw("\n");
+            result.append_indent().append_raw(make_gh_issue_open_url(spec_name, path)).append_raw("\n");
             if (!paths.get_filesystem().find_from_PATH("gh").empty())
             {
                 Command gh("gh");
