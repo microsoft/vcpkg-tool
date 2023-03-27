@@ -2103,7 +2103,8 @@ namespace vcpkg
             size.HighPart = file_info.nFileSizeHigh;
 
             return size.QuadPart;
-#endif // defined(_WIN32)
+
+#else
             struct stat st;
             if (stat(file_path.c_str(), &st) != 0)
             {
@@ -2112,6 +2113,7 @@ namespace vcpkg
             }
 
             return st.st_size;
+#endif // defined(_WIN32)
         }
 
         virtual std::string read_contents(const Path& file_path, std::error_code& ec) const override
