@@ -110,7 +110,7 @@ namespace vcpkg
         bool empty() const noexcept;
         void clear() noexcept;
 
-        std::string& unsafe_data() noexcept { return m_data; }
+        friend void msg::detail::format_message_by_index_to(LocalizedString& s, size_t index, fmt::format_args args);
 
     private:
         std::string m_data;

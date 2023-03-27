@@ -217,7 +217,7 @@ namespace vcpkg
             {
                 if (loaded_localization_data)
                 {
-                    fmt::vformat_to(std::back_inserter(s.unsafe_data()), loaded_localization_data[index], args);
+                    fmt::vformat_to(std::back_inserter(s.m_data), loaded_localization_data[index], args);
                     return;
                 }
             }
@@ -228,9 +228,8 @@ namespace vcpkg
             const auto default_format_string = message_data[index].builtin_message;
             try
             {
-                fmt::vformat_to(std::back_inserter(s.unsafe_data()),
-                                {default_format_string.data(), default_format_string.size()},
-                                args);
+                fmt::vformat_to(
+                    std::back_inserter(s.m_data), {default_format_string.data(), default_format_string.size()}, args);
                 return;
             }
             catch (const fmt::format_error&)
