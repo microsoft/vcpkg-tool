@@ -1138,7 +1138,7 @@ namespace
                             url,
                             std::string{stringify(commit)});
 
-                        if (auto p = res.get())
+                        if (res.get())
                         {
                             ++upload_count;
                         }
