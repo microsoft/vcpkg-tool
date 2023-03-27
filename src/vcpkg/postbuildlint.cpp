@@ -394,8 +394,8 @@ namespace vcpkg
                                         1); // The +1 is needed to remove the "/"
             const Path relative_path = found_relative_native;
             msg_sink.print(Color::none,
-                           fmt::format("\n    configure_file(\"${CURRENT_BUILDTREES_DIR}/{}/{}\" "
-                                       "\"${CURRENT_PACKAGES_DIR}/share/{}/copyright\" COPYONLY)\n",
+                           fmt::format("\n    configure_file(\"${{CURRENT_BUILDTREES_DIR}}/{}/{}\" "
+                                       "\"${{CURRENT_PACKAGES_DIR}}/share/{}/copyright\" COPYONLY)\n",
                                        relative_path.generic_u8string(),
                                        found_file.filename(),
                                        spec.name()));

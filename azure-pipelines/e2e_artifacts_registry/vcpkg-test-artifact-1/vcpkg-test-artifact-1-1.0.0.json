@@ -4,6 +4,9 @@
   "exports": {
     "environment": {
       "VCPKG_TEST_ARTIFACT_1_ACTIVATED": "YES"
+    },
+    "paths": {
+      "VCPKG_TEST_ARTIFACTS_PATHS": "."
     }
   }
 }
