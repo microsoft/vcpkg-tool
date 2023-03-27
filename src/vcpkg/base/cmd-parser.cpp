@@ -781,7 +781,8 @@ namespace vcpkg
                 }
                 else
                 {
-                    results.emplace_back(argument_strings[idx]);
+                    if (!argument_strings[idx].empty())
+                        results.emplace_back(argument_strings[idx]);
                 }
             }
         }

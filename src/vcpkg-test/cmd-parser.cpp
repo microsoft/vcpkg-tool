@@ -1180,6 +1180,13 @@ TEST_CASE ("inverted switches", "[cmd_parser]")
         CHECK(uut.get_errors().empty());
         CHECK(uut.get_remaining_args() == std::vector<std::string>{"--z-x-no-switch"});
     }
+
+    {
+        CmdParser uut{std::vector<std::string>{""}};
+        CHECK(uut.consume_remaining_args().empty());
+        CHECK(uut.get_errors().empty());
+        CHECK(uut.get_remaining_args().empty());
+    }
 }
 
 TEST_CASE ("Options do not return consumed args", "[cmd_parser]")
