@@ -12,6 +12,8 @@
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/commands.version.h>
+
 namespace vcpkg
 {
     static std::string replace_secrets(std::string input, View<std::string> secrets)
@@ -599,6 +601,7 @@ namespace vcpkg
     {
         Command cmd;
         cmd.string_arg("curl").string_arg("-s").string_arg("-L");
+        cmd.string_arg("-H").string_arg(fmt::format("User-Agent: vcpkg/{} (curl)", VCPKG_VERSION_AS_STRING));
 
         for (auto&& header : headers)
         {
