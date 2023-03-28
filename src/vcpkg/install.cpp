@@ -566,6 +566,7 @@ namespace vcpkg
         return InstallSummary{std::move(results)};
     }
 
+    static constexpr StringLiteral OPTION_DEPENDENCY_GRAPH = "x-graph-deps";
     static constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
     static constexpr StringLiteral OPTION_USE_HEAD_VERSION = "head";
     static constexpr StringLiteral OPTION_NO_DOWNLOADS = "no-downloads";
@@ -588,8 +589,9 @@ namespace vcpkg
     static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
     static constexpr StringLiteral OPTION_NO_PRINT_USAGE = "no-print-usage";
 
-    static constexpr std::array<CommandSwitch, 18> INSTALL_SWITCHES = {
-        {{OPTION_DRY_RUN, []() { return msg::format(msgHelpTxtOptDryRun); }},
+    static constexpr std::array<CommandSwitch, 19> INSTALL_SWITCHES = {
+        {{OPTION_DEPENDENCY_GRAPH, []() { return msg::format(msgHelpTxtOptDryRun); }},
+         {OPTION_DRY_RUN, []() { return msg::format(msgHelpTxtOptDryRun); }},
          {OPTION_USE_HEAD_VERSION, []() { return msg::format(msgHelpTxtOptUseHeadVersion); }},
          {OPTION_NO_DOWNLOADS, []() { return msg::format(msgHelpTxtOptNoDownloads); }},
          {OPTION_ONLY_DOWNLOADS, []() { return msg::format(msgHelpTxtOptOnlyDownloads); }},
@@ -939,6 +941,7 @@ namespace vcpkg
         const ParsedArguments options =
             args.parse_arguments(paths.manifest_mode_enabled() ? MANIFEST_COMMAND_STRUCTURE : COMMAND_STRUCTURE);
 
+        const bool deps_graph = Util::Sets::contains(options.switches, OPTION_DEPENDENCY_GRAPH);
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
         const bool use_head_version = Util::Sets::contains(options.switches, (OPTION_USE_HEAD_VERSION));
         const bool no_downloads = Util::Sets::contains(options.switches, (OPTION_NO_DOWNLOADS));
@@ -1179,7 +1182,8 @@ namespace vcpkg
                                                         host_triplet,
                                                         keep_going,
                                                         only_downloads,
-                                                        print_cmake_usage);
+                                                        print_cmake_usage,
+                                                        deps_graph);
         }
 
         auto registry_set = paths.make_registry_set();

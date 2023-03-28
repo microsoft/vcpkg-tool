@@ -19,7 +19,8 @@ namespace vcpkg::Commands::SetInstalled
                              Triplet host_triplet,
                              const KeepGoing keep_going,
                              const bool only_downloads,
-                             const PrintUsage print_cmake_usage);
+                             const PrintUsage print_cmake_usage,
+                             const bool graph_deps);
     void perform_and_exit(const VcpkgCmdArguments& args,
                           const VcpkgPaths& paths,
                           Triplet default_triplet,

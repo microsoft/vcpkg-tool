@@ -1,3 +1,6 @@
+#include <vcpkg/base/json.h>
+#include <vcpkg/base/system.debug.h>
+
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/commands.setinstalled.h>
 #include <vcpkg/globalstate.h>
@@ -36,6 +39,85 @@ namespace vcpkg::Commands::SetInstalled
         nullptr,
     };
 
+    static void create_dependency_graph_json(const ActionPlan& action_plan, const VcpkgCmdArguments& args)
+    {
+        auto gh_ref = get_environment_variable("GITHUB_REF").value_or_exit(VCPKG_LINE_INFO);
+        auto gh_sha = get_environment_variable("GITHUB_SHA").value_or_exit(VCPKG_LINE_INFO);
+        auto gh_owner = get_environment_variable("GITHUB_OWNER").value_or_exit(VCPKG_LINE_INFO);
+        auto gh_repo = get_environment_variable("GITHUB_REPO").value_or_exit(VCPKG_LINE_INFO);
+        auto gh_token = get_environment_variable("GITHUB_TOKEN").value_or_exit(VCPKG_LINE_INFO);
+
+        Json::Object detector;
+        detector.insert("name", Json::Value::string("vcpkg"));
+        detector.insert("url", Json::Value::string(Strings::concat("https://github.com/", gh_owner, "/", gh_repo)));
+        detector.insert("version", Json::Value::string("0.0.1"));
+        Json::Object job;
+        job.insert("id", Json::Value::string("job_id"));
+        job.insert("correlator", Json::Value::string("workflow_job_id"));
+
+        Json::Object snapshot;
+        snapshot.insert("job", job);
+        snapshot.insert("version", Json::Value::integer(0));
+        snapshot.insert("sha", Json::Value::string(gh_sha));
+        snapshot.insert("ref", Json::Value::string(gh_ref));
+        snapshot.insert("scanned", Json::Value::string(CTime::now_string()));
+        snapshot.insert("detector", detector);
+
+        Json::Object manifests;
+        Json::Object manifest;
+        Json::Object resolved;
+        manifest.insert("name", "vcpkg.json");
+
+        std::unordered_map<std::string, std::string> map;
+        for (auto&& action : action_plan.install_actions)
+        {
+            auto version =
+                action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version().to_string();
+            auto pkg_url = Strings::concat("pkg:github/vcpkg/", action.spec.name(), "@", version);
+            map[action.spec.to_string()] = pkg_url;
+        }
+
+        for (auto&& action : action_plan.install_actions)
+        {
+            Json::Object resolved_item;
+            if (map.find(action.spec.to_string()) != map.end())
+            {
+                auto pkg_url = map[action.spec.to_string()];
+                resolved_item.insert("package_url", pkg_url);
+                resolved_item.insert("relationship", Json::Value::string("direct"));
+                Json::Array deps_list;
+                for (auto&& dep : action.package_dependencies)
+                {
+                    if (map.find(dep.to_string()) != map.end())
+                    {
+                        auto dep_pkg_url = map[dep.to_string()];
+                        deps_list.push_back(dep_pkg_url);
+                    }
+                }
+                resolved_item.insert("dependencies", deps_list);
+                resolved.insert(pkg_url, resolved_item);
+            }
+        }
+        manifest.insert("resolved", resolved);
+        manifests.insert("vcpkg.json", manifest);
+        snapshot.insert("manifests", manifests);
+
+        Debug::print(Json::stringify(snapshot));
+
+        Command cmd;
+        cmd.string_arg("curl").string_arg("-X").string_arg("POST");
+        cmd.string_arg("-H").string_arg("Accept: application/vnd.github+json");
+
+        std::string res = "Authorization: Bearer " + gh_token;
+        cmd.string_arg("-H").string_arg(res);
+        cmd.string_arg("-H").string_arg("X-GitHub-Api-Version: 2022-11-28");
+        cmd.string_arg(
+            Strings::concat("https://api.github.com/repos/", gh_owner, "/", gh_repo, "/dependency-graph/snapshots"));
+        cmd.string_arg("-d").string_arg(Json::stringify(snapshot));
+
+        cmd_execute_and_stream_lines(cmd, [](StringView line) { Debug::println(line); });
+    }
+
     void perform_and_exit_ex(const VcpkgCmdArguments& args,
                              const VcpkgPaths& paths,
                              const PathsPortFileProvider& provider,
@@ -47,8 +129,11 @@ namespace vcpkg::Commands::SetInstalled
                              Triplet host_triplet,
                              const KeepGoing keep_going,
                              const bool only_downloads,
-                             const PrintUsage print_cmake_usage)
+                             const PrintUsage print_cmake_usage,
+                             const bool graph_deps)
     {
+        create_dependency_graph_json(action_plan, args);
+
         auto& fs = paths.get_filesystem();
 
         cmake_vars.load_tag_vars(action_plan, provider, host_triplet);
@@ -145,6 +230,11 @@ namespace vcpkg::Commands::SetInstalled
             }
         }
 
+        if (graph_deps)
+        {
+            Checks::exit_success(VCPKG_LINE_INFO);
+        }
+
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
@@ -208,7 +298,8 @@ namespace vcpkg::Commands::SetInstalled
                             host_triplet,
                             keep_going,
                             only_downloads,
-                            print_cmake_usage);
+                            print_cmake_usage,
+                            false);
     }
 
     void SetInstalledCommand::perform_and_exit(const VcpkgCmdArguments& args,
