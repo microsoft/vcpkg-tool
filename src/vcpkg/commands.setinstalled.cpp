@@ -132,8 +132,6 @@ namespace vcpkg::Commands::SetInstalled
                              const PrintUsage print_cmake_usage,
                              const bool graph_deps)
     {
-        create_dependency_graph_json(action_plan);
-
         auto& fs = paths.get_filesystem();
 
         cmake_vars.load_tag_vars(action_plan, provider, host_triplet);
@@ -232,7 +230,7 @@ namespace vcpkg::Commands::SetInstalled
 
         if (graph_deps)
         {
-            Checks::exit_success(VCPKG_LINE_INFO);
+            create_dependency_graph_json(action_plan);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
