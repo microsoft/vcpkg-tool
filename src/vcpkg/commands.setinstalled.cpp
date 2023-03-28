@@ -39,7 +39,7 @@ namespace vcpkg::Commands::SetInstalled
         nullptr,
     };
 
-    static void create_dependency_graph_json(const ActionPlan& action_plan, const VcpkgCmdArguments& args)
+    static void create_dependency_graph_json(const ActionPlan& action_plan)
     {
         auto gh_ref = get_environment_variable("GITHUB_REF").value_or_exit(VCPKG_LINE_INFO);
         auto gh_sha = get_environment_variable("GITHUB_SHA").value_or_exit(VCPKG_LINE_INFO);
@@ -132,7 +132,7 @@ namespace vcpkg::Commands::SetInstalled
                              const PrintUsage print_cmake_usage,
                              const bool graph_deps)
     {
-        create_dependency_graph_json(action_plan, args);
+        create_dependency_graph_json(action_plan);
 
         auto& fs = paths.get_filesystem();
 
