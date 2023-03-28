@@ -601,7 +601,8 @@ namespace vcpkg
     {
         Command cmd;
         cmd.string_arg("curl").string_arg("-s").string_arg("-L");
-        cmd.string_arg("-H").string_arg(fmt::format("User-Agent: vcpkg/{} (curl)", VCPKG_BASE_VERSION_AS_STRING));
+        cmd.string_arg("-H").string_arg(
+            fmt::format("User-Agent: vcpkg/{}-{} (curl)", VCPKG_BASE_VERSION_AS_STRING, VCPKG_VERSION_AS_STRING));
 
         for (auto&& header : headers)
         {
