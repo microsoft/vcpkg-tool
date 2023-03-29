@@ -184,25 +184,25 @@ namespace vcpkg
             return !value_is_error ? *m_t.get() : T(std::forward<Args>(or_args)...);
         }
 
-        const T&& value_or_exit(const LineInfo& line_info = VCPKG_LINE_INFO) const&&
+        const T&& value_or_exit(const LineInfo& line_info) const&&
         {
             exit_if_error(line_info);
             return std::move(*m_t.get());
         }
 
-        T&& value_or_exit(const LineInfo& line_info = VCPKG_LINE_INFO) &&
+        T&& value_or_exit(const LineInfo& line_info) &&
         {
             exit_if_error(line_info);
             return std::move(*m_t.get());
         }
 
-        T& value_or_exit(const LineInfo& line_info = VCPKG_LINE_INFO) &
+        T& value_or_exit(const LineInfo& line_info) &
         {
             exit_if_error(line_info);
             return *m_t.get();
         }
 
-        const T& value_or_exit(const LineInfo& line_info = VCPKG_LINE_INFO) const&
+        const T& value_or_exit(const LineInfo& line_info) const&
         {
             exit_if_error(line_info);
             return *m_t.get();
