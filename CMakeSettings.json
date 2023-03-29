@@ -95,7 +95,7 @@
       ]
     },
     {
-      "name": "x64-Debug-Official-2023-03-14",
+      "name": "x64-Debug-Official-2023-03-28",
       "generator": "Ninja",
       "configurationType": "Debug",
       "inheritEnvironments": [ "msvc_x64_x64" ],
@@ -112,17 +112,17 @@
         },
         {
           "name": "VCPKG_BASE_VERSION",
-          "value": "2023-03-14",
+          "value": "2023-03-28",
           "type": "STRING"
         },
         {
           "name": "VCPKG_STANDALONE_BUNDLE_SHA",
-          "value": "32024d3d703aaa5961e8072ab883537a858885c501223530285926f919bad67003d40ba35686eb9d24673c4b030bb289a82d515c7bdf9931e9249d873b2b2abd",
+          "value": "bdf19a9e602f237d3906321a13e883f72e8804e0bbbd4369b6fca3acdd98238371445c8cab2e7a155cf56db43a2f1e30060c71eaf4e3cb55d892d100a312ada5",
           "type": "STRING"
         },
         {
           "name": "VCPKG_CE_SHA",
-          "value": "fb2c2f568b563a88d2ebf2b29ced491e8109134529c477629e5e1dde89f52bf8a60d9b5ce8285f260cc94b7c100704128d3724bbda523edb57233dbda5a2c02a",
+          "value": "ffae1cb2fee518aba585a45f5e25c4eedf6218126821ae75808b9575b0c9d9b096ddb28475979a9c1a5ce217d920a91e1b510433a9f5a0ab5c4a44f6ff82a210",
           "type": "STRING"
         },
         {

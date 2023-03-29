@@ -77,6 +77,11 @@ namespace
                 name.erase(0, 2);
                 tag = StabilityTag::Experimental;
             }
+            else if (Strings::starts_with(name, "z-"))
+            {
+                name.erase(0, 2);
+                tag = StabilityTag::ImplementationDetail;
+            }
 
             if (switch_.helpmsg)
             {
@@ -105,6 +110,11 @@ namespace
                     name.erase(0, 2);
                     tag = StabilityTag::Experimental;
                 }
+                else if (Strings::starts_with(name, "z-"))
+                {
+                    name.erase(0, 2);
+                    tag = StabilityTag::ImplementationDetail;
+                }
 
                 if (option.helpmsg)
                 {
@@ -131,6 +141,11 @@ namespace
             {
                 name.erase(0, 2);
                 tag = StabilityTag::Experimental;
+            }
+            else if (Strings::starts_with(name, "z-"))
+            {
+                name.erase(0, 2);
+                tag = StabilityTag::ImplementationDetail;
             }
 
             std::vector<std::string> maybe_parse_result;
