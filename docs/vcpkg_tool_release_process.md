@@ -20,10 +20,20 @@ such as https://github.com/microsoft/vcpkg/pull/23757
   the "auto generate release notes" button. Manually remove any entries created by the automated
   localization tools which will start with `* LEGO: Pull request from juno/`.
 7. Publish that draft release as "pre-release".
-8. Clean up a machine for the following tests:
+8. Publish symbols.
+  * Download `vcpkg.exe`, `vcpkg-arm64.exe`, `vcpkg.pdb`, `vcpkg-arm64.pdb` and put them in a
+    directory with nothing else.
+  * Make a different empty directory and run the following, with 2023-03-29 replaced with the right
+  release name.
+```
+curl -L -o symbol.zip https://microsoft.artifacts.visualstudio.com/defaultcollection/_apis/symbol/client/exe
+tar xf symbol.zip
+.\lib\net45\Symbol.exe publish -d "Directory\With\exes\and\PDBs" -n vcpkg-2023-03-29 -s microsoft -a
+```
+9. Clean up a machine for the following tests:
   * Delete `VCPKG_DOWNLOADS/artifacts` (which forces artifacts to be reacquired)
   * Delete `LOCALAPPDATA/vcpkg` (which forces registries to be reacquired)
-9. Smoke test the 'one liner' installer: (Where 2023-03-29 is replaced with the right release name)
+10. Smoke test the 'one liner' installer: (Where 2023-03-29 is replaced with the right release name)
     * Powershell:
         `iex (iwr https://github.com/microsoft/vcpkg-tool/releases/download/2023-03-29/vcpkg-init.ps1)`
     * Batch:
@@ -31,21 +41,21 @@ such as https://github.com/microsoft/vcpkg/pull/23757
     * Bash:
         `. <(curl https://github.com/microsoft/vcpkg-tool/releases/download/2023-03-29/vcpkg-init -L)`
   (and test that `vcpkg use cmake` works from each of these)
-10. In the vcpkg repo, draft a PR which updates `bootstrap-vcpkg.sh` and `boostrap-vcpkg.ps1`
+11. In the vcpkg repo, draft a PR which updates `bootstrap-vcpkg.sh` and `boostrap-vcpkg.ps1`
   with the new release date, and update SHAs as appropriate in the .sh script. (For example, see
   https://github.com/microsoft/vcpkg/pull/23757)
-11. If changes in this release that might affect ports, submit a new full tree rebuild by
+12. If changes in this release that might affect ports, submit a new full tree rebuild by
   microsoft.vcpkg.ci (https://dev.azure.com/vcpkg/public/_build?definitionId=29 as of this writing)
   targeting `refs/pull/NUMBER/head`
-12. (Probably the next day) Check over the failures and ensure any differences with the most recent
+13. (Probably the next day) Check over the failures and ensure any differences with the most recent
   full rebuild using the previous tool version are understood.
-13. In the DevDiv VS repo, update `default.config`, run the VcpkgInsertionUtility, and submit a PR
+14. In the DevDiv VS repo, update `default.config`, run the VcpkgInsertionUtility, and submit a PR
   with those changes.
-14. Smoke test the copy of vcpkg inserted into VS. See smoke test steps below.
-15. In the DevDiv vscode-embedded-tools repo, follow the
+15. Smoke test the copy of vcpkg inserted into VS. See smoke test steps below.
+16. In the DevDiv vscode-embedded-tools repo, follow the
   [update instructions](https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_git/vscode-embedded-tools?path=/docs/updating-vcpkg.md&_a=preview)
   to make a VS Code update PR.
-16. (After all tests have passed, at the same time) Merge all 3 PRs, and change the github release
+17. (After all tests have passed, at the same time) Merge all 3 PRs, and change the github release
   in vcpkg-tool from "prerelease" to "release". (This automatically updates the aka.ms links)
 
 # Release Data Flow
@@ -86,12 +96,16 @@ flowchart TD
         vs_embedded_tools_repo[(vs_embedded_tools Repo)]
     end
     create_vs_code_update_pr{Create Visual Studio Code Update PR}
+    publish_symbols{Publish Symbols}
+    symweb[(//symweb, etc.)]
     
     %% Build the Release
     vcpkg_tool_repo --> vcpkg_signed_binaries
     vcpkg_repo -- vcpkg-tool/vcpkg-scripts-sha.txt --> vcpkg_signed_binaries
     vcpkg_signed_binaries --> vcpkg_tool_releases
     vcpkg_signed_binaries --> release_version
+    vcpkg_tool_releases --> publish_symbols
+    publish_symbols --> symweb
     
     %% vcpkg Update
     release_version --> bootstrap_ps1
