@@ -405,17 +405,24 @@ namespace vcpkg
         Checks::unreachable(VCPKG_LINE_INFO);
     }
 
+    static LocalizedString format_result_row(const SpecSummary& result)
+    {
+        return LocalizedString()
+            .append_indent()
+            .append_raw(result.get_spec().to_string())
+            .append_raw(": ")
+            .append(to_string(result.build_result.value_or_exit(VCPKG_LINE_INFO).code))
+            .append_raw(": ")
+            .append_raw(result.timing.to_string());
+    }
+
     void InstallSummary::print() const
     {
         msg::println(msgResultsHeader);
 
         for (const SpecSummary& result : this->results)
         {
-            msg::println(LocalizedString().append_indent().append_fmt_raw(
-                "{}: {}: {}",
-                result.get_spec(),
-                to_string(result.build_result.value_or_exit(VCPKG_LINE_INFO).code),
-                result.timing));
+            msg::println(format_result_row(result));
         }
 
         std::map<Triplet, BuildResultCounts> summary;
@@ -441,11 +448,7 @@ namespace vcpkg
         {
             if (result.build_result.value_or_exit(VCPKG_LINE_INFO).code != BuildResult::SUCCEEDED)
             {
-                msg::println(LocalizedString().append_indent().append_fmt_raw(
-                    "{}: {}: {}",
-                    result.get_spec(),
-                    to_string(result.build_result.value_or_exit(VCPKG_LINE_INFO).code),
-                    result.timing));
+                msg::println(format_result_row(result));
             }
         }
         msg::println();
@@ -888,8 +891,7 @@ namespace vcpkg
                     if (targets.empty()) continue;
 
                     msg.append_indent();
-                    msg.append_fmt_raw("find_package({} CONFIG REQUIRED)", package_name);
-                    msg.append_raw('\n');
+                    msg.append_raw("find_package(").append_raw(package_name).append_raw(" CONFIG REQUIRED)\n");
 
                     const auto omitted = (targets.size() > 4) ? (targets.size() - 4) : 0;
                     if (omitted)
@@ -900,10 +902,10 @@ namespace vcpkg
                             .append_raw('\n');
                     }
 
-                    msg.append_indent()
-                        .append_fmt_raw("target_link_libraries(main PRIVATE {})",
-                                        Strings::join(" ", targets.begin(), targets.end() - omitted))
-                        .append_raw("\n\n");
+                    msg.append_indent();
+                    msg.append_raw("target_link_libraries(main PRIVATE ")
+                        .append_raw(Strings::join(" ", targets.begin(), targets.end() - omitted))
+                        .append_raw(")\n\n");
                 }
 
                 ret.message = msg.extract_data();
