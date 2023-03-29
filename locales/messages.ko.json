@@ -141,7 +141,7 @@
   "BuildTroubleshootingMessage2": "다음 위치에서 새 문제를 제출할 수 있습니다.",
   "BuildTroubleshootingMessage3": "버그 보고서 제목에 '[{package_name}] 빌드 오류'를 포함하고, 버그 설명에 다음 버전 정보를 포함하고, 위의 관련 오류 로그를 첨부합니다.",
   "BuildTroubleshootingMessage4": "문제를 보고할 때 {path}에서 미리 채워진 템플릿을 사용하세요.",
-  "BuildTroubleshootingMessageGH": "You can also sumbit an issue by running (GitHub cli must be installed):",
+  "BuildTroubleshootingMessageGH": "실행하여 문제를 합산할 수도 있습니다(GitHub cli를 설치해야 합니다).",
   "BuildingFromHead": "HEAD에서 {spec} 빌드 중...",
   "BuildingPackage": "{spec} 구축 중...",
   "BuildingPackageFailed": "{build_result}(으)로 {spec}을(를) 빌드하지 못했습니다.",

@@ -141,7 +141,7 @@
   "BuildTroubleshootingMessage2": "Sie können ein neues Problem einreichen unter:",
   "BuildTroubleshootingMessage3": "Schließen Sie „[{package_name}] Buildfehler“ in Ihren Titel des Fehlerberichts, die folgenden Versionsinformationen in Ihre Fehlerbeschreibung ein, und fügen Sie alle relevanten Fehlerprotokolle von oben an.",
   "BuildTroubleshootingMessage4": "Bitte verwenden Sie die vorausgefüllte Vorlage von {path}, wenn Sie Ihr Problem melden.",
-  "BuildTroubleshootingMessageGH": "You can also sumbit an issue by running (GitHub cli must be installed):",
+  "BuildTroubleshootingMessageGH": "Sie können ein Problem auch einreichen, indem Sie Folgendes tun (GitHub-Cli muss installiert sein):",
   "BuildingFromHead": "{spec} wird aus HEAD erstellt...",
   "BuildingPackage": "{spec} wird erstellt...",
   "BuildingPackageFailed": "Fehler beim Erstellen von \"{spec}\": {build_result}",

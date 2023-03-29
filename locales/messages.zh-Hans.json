@@ -141,7 +141,7 @@
   "BuildTroubleshootingMessage2": "可在以下位置提交新问题:",
   "BuildTroubleshootingMessage3": "在 Bug 报告标题中包含“[{package_name}] 内部版本错误”，bug 描述中的以下版本信息，并从上面附加任何相关的失败日志。",
   "BuildTroubleshootingMessage4": "报告问题时，请使用 {path} 中的预填充模板。",
-  "BuildTroubleshootingMessageGH": "You can also sumbit an issue by running (GitHub cli must be installed):",
+  "BuildTroubleshootingMessageGH": "还可以通过运行来对问题求和(必须安装 GitHub cli):",
   "BuildingFromHead": "正在从 HEAD 生成 {spec}...",
   "BuildingPackage": "正在生成 {spec}...",
   "BuildingPackageFailed": "生成 {spec} 失败，结果为: {build_result}",
