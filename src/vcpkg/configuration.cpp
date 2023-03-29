@@ -855,7 +855,7 @@ namespace vcpkg
             return nullopt;
         }
 
-        auto conf_value = std::move(conf).value().value;
+        auto conf_value = std::move(conf).value(VCPKG_LINE_INFO).value;
         if (!conf_value.is_object())
         {
             messageSink.println(msgFailedToParseNoTopLevelObj, msg::path = origin);

@@ -108,7 +108,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                                 expected_right_tag};
                     }
 
-                    const auto& scf = maybe_scf.value();
+                    const auto& scf = maybe_scf.value(VCPKG_LINE_INFO);
                     auto&& git_tree_version = scf->to_schemed_version();
                     if (version_entry.first.version != git_tree_version.version)
                     {
@@ -153,7 +153,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                     expected_right_tag};
         }
 
-        const auto local_port_version = maybe_scf.value()->to_schemed_version();
+        const auto local_port_version = maybe_scf.value(VCPKG_LINE_INFO)->to_schemed_version();
 
         auto versions_end = versions.end();
         auto it =

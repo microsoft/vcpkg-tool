@@ -184,51 +184,51 @@ namespace vcpkg
             return !value_is_error ? *m_t.get() : T(std::forward<Args>(or_args)...);
         }
 
-        const T&& value_or_exit(const LineInfo& line_info) const&&
+        const T&& value_or_exit(const LineInfo& line_info = VCPKG_LINE_INFO) const&&
         {
             exit_if_error(line_info);
             return std::move(*m_t.get());
         }
 
-        T&& value_or_exit(const LineInfo& line_info) &&
+        T&& value_or_exit(const LineInfo& line_info = VCPKG_LINE_INFO) &&
         {
             exit_if_error(line_info);
             return std::move(*m_t.get());
         }
 
-        T& value_or_exit(const LineInfo& line_info) &
+        T& value_or_exit(const LineInfo& line_info = VCPKG_LINE_INFO) &
         {
             exit_if_error(line_info);
             return *m_t.get();
         }
 
-        const T& value_or_exit(const LineInfo& line_info) const&
+        const T& value_or_exit(const LineInfo& line_info = VCPKG_LINE_INFO) const&
         {
             exit_if_error(line_info);
             return *m_t.get();
         }
 
-        const T& value() const&
+        const T& value(const LineInfo& line_info) const&
         {
-            exit_if_error();
+            unreachable_if_error(line_info);
             return *m_t.get();
         }
 
-        T&& value() &&
+        T&& value(const LineInfo& line_info) &&
         {
-            exit_if_error();
+            unreachable_if_error(line_info);
             return std::move(*m_t.get());
         }
 
         const Error& error() const&
         {
-            exit_if_not_error();
+            unreachable_if_not_error(VCPKG_LINE_INFO);
             return m_error;
         }
 
         Error&& error() &&
         {
-            exit_if_not_error();
+            unreachable_if_not_error(VCPKG_LINE_INFO);
             return std::move(m_error);
         }
 
@@ -366,19 +366,19 @@ namespace vcpkg
             }
         }
 
-        void exit_if_error() const
+        void unreachable_if_error(const LineInfo& line_info) const
         {
             if (value_is_error)
             {
-                Checks::unreachable(VCPKG_LINE_INFO);
+                Checks::unreachable(line_info);
             }
         }
 
-        void exit_if_not_error() const noexcept
+        void unreachable_if_not_error(const LineInfo& line_info) const noexcept
         {
             if (!value_is_error)
             {
-                Checks::unreachable(VCPKG_LINE_INFO);
+                Checks::unreachable(line_info);
             }
         }
 

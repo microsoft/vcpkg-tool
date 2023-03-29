@@ -1066,7 +1066,7 @@ namespace vcpkg
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            auto manifest_scf = std::move(maybe_manifest_scf).value();
+            auto manifest_scf = std::move(maybe_manifest_scf).value(VCPKG_LINE_INFO);
             const auto& manifest_core = *manifest_scf->core_paragraph;
             auto registry_set = paths.make_registry_set();
             manifest_scf
