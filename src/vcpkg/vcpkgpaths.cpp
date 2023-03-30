@@ -79,7 +79,7 @@ namespace
                                            LocalizedString::from_raw(manifest_opt.error()->to_string()));
         }
 
-        auto manifest_value = std::move(manifest_opt).value_or_exit(VCPKG_LINE_INFO).value;
+        auto manifest_value = std::move(manifest_opt).value(VCPKG_LINE_INFO).value;
         if (!manifest_value.is_object())
         {
             msg::println_error(msgFailedToParseNoTopLevelObj, msg::path = manifest_path);

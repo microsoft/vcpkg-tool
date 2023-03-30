@@ -1130,16 +1130,12 @@ namespace vcpkg::Json
     ParsedJson parse_file(vcpkg::LineInfo li, const Filesystem& fs, const Path& json_file)
     {
         std::error_code ec;
-        auto ret = parse_file(fs, json_file, ec);
+        auto ret = parse_file(fs, json_file, ec).map_error(parse_error_formatter);
         if (ec)
         {
             Checks::msg_exit_with_error(li, format_filesystem_call_error(ec, "read_contents", {json_file}));
         }
-        else if (!ret)
-        {
-            Checks::msg_exit_with_message(li, LocalizedString::from_raw(ret.error()->to_string()));
-        }
-        return ret.value_or_exit(li);
+        return std::move(ret).value_or_exit(VCPKG_LINE_INFO);
     }
 
     ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse(StringView json, StringView origin)

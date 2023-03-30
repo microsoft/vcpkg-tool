@@ -92,7 +92,7 @@ namespace vcpkg::Commands
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            auto& manifest_scf = *maybe_manifest_scf.value_or_exit(VCPKG_LINE_INFO);
+            auto& manifest_scf = *maybe_manifest_scf.value(VCPKG_LINE_INFO);
             for (const auto& spec : specs)
             {
                 auto dep = Util::find_if(manifest_scf.core_paragraph->dependencies, [&spec](Dependency& dep) {
