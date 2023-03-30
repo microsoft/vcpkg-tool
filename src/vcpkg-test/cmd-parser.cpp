@@ -1,6 +1,7 @@
 #include <catch2/catch.hpp>
 
 #include <vcpkg/base/cmd-parser.h>
+#include <vcpkg/base/files.h>
 
 using namespace vcpkg;
 

@@ -1,4 +1,5 @@
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/system.h>
 
 #include <vcpkg/packagespec.h>
 #include <vcpkg/triplet.h>

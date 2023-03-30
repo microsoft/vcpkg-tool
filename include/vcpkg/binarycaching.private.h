@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/files.h>
+
 #include <vcpkg/fwd/packagespec.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 

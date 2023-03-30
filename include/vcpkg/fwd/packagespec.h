@@ -12,8 +12,5 @@ namespace vcpkg
     struct FeatureSpec;
     struct InternalFeatureSet;
     struct FullPackageSpec;
-    struct DependencyConstraint;
-    struct Dependency;
-    struct DependencyOverride;
     struct ParsedQualifiedSpecifier;
 }

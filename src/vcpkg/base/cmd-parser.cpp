@@ -1,4 +1,5 @@
 #include <vcpkg/base/cmd-parser.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/strings.h>
 
 #include <stdint.h>

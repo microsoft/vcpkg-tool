@@ -1,15 +1,16 @@
 #pragma once
 
+#include <vcpkg/base/fwd/files.h>
+#include <vcpkg/base/fwd/json.h>
+
 #include <vcpkg/fwd/configuration.h>
 #include <vcpkg/fwd/registries.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-#include <vcpkg/base/files.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
 
-#include <vcpkg/versiondeserializers.h>
 #include <vcpkg/versions.h>
 
 #include <map>

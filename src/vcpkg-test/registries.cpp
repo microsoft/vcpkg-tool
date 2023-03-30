@@ -1,6 +1,7 @@
 #include <catch2/catch.hpp>
 
 #include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/strings.h>
 
 #include <vcpkg/configuration.h>
 #include <vcpkg/registries.h>

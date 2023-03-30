@@ -1,3 +1,4 @@
+#include <vcpkg/dependencies.h>
 #include <vcpkg/spdx.h>
 
 #include <vcpkg-test/util.h>
