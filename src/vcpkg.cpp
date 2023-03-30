@@ -12,6 +12,7 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/binarycaching.h>
 #include <vcpkg/bundlesettings.h>
 #include <vcpkg/cgroup-parser.h>
 #include <vcpkg/commands.contact.h>

@@ -57,4 +57,61 @@ namespace vcpkg
         m_second.print(c, sv);
     }
 
+    void BGMessageSink::print(Color c, StringView sv)
+    {
+        std::lock_guard<std::mutex> print_lk(m_print_directly_lock);
+        if (m_print_directly_to_out_sink)
+        {
+            out_sink.print(c, sv);
+            return;
+        }
+
+        std::string s = sv.to_string();
+        auto pos = s.find_last_of('\n');
+        if (pos != std::string::npos)
+        {
+            {
+                std::lock_guard<std::mutex> lk(m_lock);
+                m_published.insert(m_published.end(),
+                                   std::make_move_iterator(m_unpublished.begin()),
+                                   std::make_move_iterator(m_unpublished.end()));
+                m_published.emplace_back(c, s.substr(0, pos + 1));
+            }
+            m_unpublished.clear();
+            if (s.size() > pos + 1)
+            {
+                m_unpublished.emplace_back(c, s.substr(pos + 1));
+            }
+        }
+        else
+        {
+            m_unpublished.emplace_back(c, std::move(s));
+        }
+    }
+
+    void BGMessageSink::print_published()
+    {
+        std::lock_guard<std::mutex> lk(m_lock);
+        for (auto&& m : m_published)
+        {
+            out_sink.print(m.first, m.second);
+        }
+        m_published.clear();
+    }
+
+    void BGMessageSink::publish_directly_to_out_sink()
+    {
+        std::lock_guard<std::mutex> print_lk(m_print_directly_lock);
+        std::lock_guard<std::mutex> lk(m_lock);
+
+        m_print_directly_to_out_sink = true;
+        for (auto& messages : {&m_published, &m_unpublished})
+        {
+            for (auto&& m : *messages)
+            {
+                out_sink.print(m.first, m.second);
+            }
+            messages->clear();
+        }
+    }
 }

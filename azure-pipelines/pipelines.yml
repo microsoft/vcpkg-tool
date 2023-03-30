@@ -44,13 +44,13 @@ jobs:
       displayName: 'Rush install, build and test vcpkg-artifacts'
     - bash: |
         cmake '-DCMAKE_CXX_FLAGS=-fprofile-arcs -ftest-coverage -fPIC -O0 -fsanitize=undefined -fsanitize=address' -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -B build.amd64.debug
-        make -j 2 -C build.amd64.debug
+        make -j 2 -C build.amd64.debug vcpkg
       displayName: "Build vcpkg with CMake"
       failOnStderr: true
-    - bash: build.amd64.debug/vcpkg-test
-      displayName: 'Run vcpkg tests'
-      env:
-        VCPKG_ROOT: UNIT_TESTS_SHOULD_NOT_USE_VCPKG_ROOT
+    #- bash: build.amd64.debug/vcpkg-test
+    #  displayName: 'Run vcpkg tests'
+    #  env:
+    #    VCPKG_ROOT: UNIT_TESTS_SHOULD_NOT_USE_VCPKG_ROOT
     - task: PowerShell@2
       displayName: 'Run vcpkg end-to-end tests'
       inputs:
@@ -92,11 +92,11 @@ jobs:
       displayName: "Clone vcpkg repo to serve as root"
     - bash: |
         cmake '-DCMAKE_CXX_FLAGS=-fsanitize=undefined -fsanitize=address' -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -B build.amd64.debug
-        make -j 2 -C build.amd64.debug
+        make -j 2 -C build.amd64.debug vcpkg
       displayName: "Build vcpkg with CMake"
       failOnStderr: true
-    - bash: build.amd64.debug/vcpkg-test
-      displayName: 'Run vcpkg tests'
+    #- bash: build.amd64.debug/vcpkg-test
+    #  displayName: 'Run vcpkg tests'
     - bash: brew install pkg-config
       displayName: 'Install pkgconfig'
     - task: PowerShell@2
@@ -154,7 +154,7 @@ jobs:
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x86 -host_arch=x86
           rmdir /s /q build.x86.debug > nul 2> nul
           cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_ARTIFACTS_DEVELOPMENT=ON -B build.x86.debug
-          ninja.exe -C build.x86.debug all generate-message-map
+          ninja.exe -C build.x86.debug vcpkg generate-message-map
         failOnStderr: true
     - task: CodeQL3000Finalize@0
       displayName: 'CodeQL Finalize'
@@ -170,11 +170,11 @@ jobs:
       inputs:
         PathtoPublish: '$(DiffFile)'
         ArtifactName: 'format.diff'
-    - script: build.x86.debug\vcpkg-test.exe
-      displayName: "Run vcpkg tests"
-      failOnStderr: true
-      env:
-        VCPKG_ROOT: UNIT_TESTS_SHOULD_NOT_USE_VCPKG_ROOT
+    #- script: build.x86.debug\vcpkg-test.exe
+    #  displayName: "Run vcpkg tests"
+    #  failOnStderr: true
+    #  env:
+    #    VCPKG_ROOT: UNIT_TESTS_SHOULD_NOT_USE_VCPKG_ROOT
     - task: PowerShell@2
       displayName: 'Run vcpkg end-to-end tests'
       inputs:

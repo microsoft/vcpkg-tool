@@ -3,11 +3,15 @@
 #include <vcpkg/base/fwd/downloads.h>
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/messages.h>
+#include <vcpkg/base/fwd/optional.h>
 
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
+
+#include <vcpkg/binarycaching.h>
+#include <vcpkg/tools.h>
 
 #include <string>
 #include <vector>
@@ -42,25 +46,14 @@ namespace vcpkg
                             StringView request = "PUT");
     std::vector<int> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets);
 
-    struct DownloadManagerConfig
-    {
-        Optional<std::string> m_read_url_template;
-        std::vector<std::string> m_read_headers;
-        Optional<std::string> m_write_url_template;
-        std::vector<std::string> m_write_headers;
-        std::vector<std::string> m_secrets;
-        bool m_block_origin = false;
-        Optional<std::string> m_script;
-    };
-
     // Handles downloading and uploading to a content addressable mirror
     struct DownloadManager
     {
         DownloadManager() = default;
-        explicit DownloadManager(const DownloadManagerConfig& config) : m_config(config) { }
         explicit DownloadManager(DownloadManagerConfig&& config) : m_config(std::move(config)) { }
 
-        void download_file(Filesystem& fs,
+        void download_file(Optional<const ToolCache&> tool_cache,
+                           Filesystem& fs,
                            const std::string& url,
                            View<std::string> headers,
                            const Path& download_path,
@@ -68,14 +61,18 @@ namespace vcpkg
                            MessageSink& progress_sink) const;
 
         // Returns url that was successfully downloaded from
-        std::string download_file(Filesystem& fs,
+        std::string download_file(Optional<const ToolCache&> tool_cache,
+                                  Filesystem& fs,
                                   View<std::string> urls,
                                   View<std::string> headers,
                                   const Path& download_path,
                                   const Optional<std::string>& sha512,
                                   MessageSink& progress_sink) const;
 
-        ExpectedL<int> put_file_to_mirror(const Filesystem& fs, const Path& file_to_put, StringView sha512) const;
+        ExpectedL<int> put_file_to_mirror(Optional<const ToolCache&> tool_cache,
+                                          const Filesystem&,
+                                          const Path& file_to_put,
+                                          StringView sha512) const;
 
     private:
         DownloadManagerConfig m_config;

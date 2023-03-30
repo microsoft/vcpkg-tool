@@ -12,6 +12,8 @@
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/tools.h>
+
 namespace vcpkg
 {
     static std::string replace_secrets(std::string input, View<std::string> secrets)
@@ -833,17 +835,19 @@ namespace vcpkg
         return s_headers;
     }
 
-    void DownloadManager::download_file(Filesystem& fs,
+    void DownloadManager::download_file(Optional<const ToolCache&> tool_cache,
+                                        Filesystem& fs,
                                         const std::string& url,
                                         View<std::string> headers,
                                         const Path& download_path,
                                         const Optional<std::string>& sha512,
                                         MessageSink& progress_sink) const
     {
-        this->download_file(fs, View<std::string>(&url, 1), headers, download_path, sha512, progress_sink);
+        this->download_file(tool_cache, fs, View<std::string>(&url, 1), headers, download_path, sha512, progress_sink);
     }
 
-    std::string DownloadManager::download_file(Filesystem& fs,
+    std::string DownloadManager::download_file(Optional<const ToolCache&> tool_cache,
+                                               Filesystem& fs,
                                                View<std::string> urls,
                                                View<std::string> headers,
                                                const Path& download_path,
@@ -865,22 +869,26 @@ namespace vcpkg
 
         if (auto hash = sha512.get())
         {
-            if (auto read_template = m_config.m_read_url_template.get())
+            static thread_local int recursive_min = 0;
+            int counter = 0;
+            for (auto& provider : m_config.object_providers)
             {
-                auto read_url = Strings::replace_all(*read_template, "<SHA>", *hash);
-                if (try_download_file(fs,
-                                      read_url,
-                                      m_config.m_read_headers,
-                                      download_path,
-                                      sha512,
-                                      m_config.m_secrets,
-                                      errors,
-                                      progress_sink))
+                if (!provider->supports_read()) continue;
+                ++counter;
+                if (counter <= recursive_min) continue;
+                StringView hash_view{*hash};
+                int old_counter = counter;
+                recursive_min = counter;
+                provider->download(tool_cache, Span<StringView>{&hash_view, 1}, download_path.parent_path());
+                recursive_min = old_counter;
+                Path downloaded_to = Path{download_path.parent_path()} / hash_view;
+                if (fs.exists(downloaded_to, VCPKG_LINE_INFO))
                 {
-                    return read_url;
+                    fs.rename(downloaded_to, download_path, VCPKG_LINE_INFO);
+                    return "<object-provider>";
                 }
             }
-            else if (auto script = m_config.m_script.get())
+            if (auto script = m_config.script.get())
             {
                 if (urls.size() != 0)
                 {
@@ -930,17 +938,17 @@ namespace vcpkg
             }
         }
 
-        if (!m_config.m_block_origin)
+        if (!m_config.block_origin)
         {
             if (urls.size() != 0)
             {
                 auto maybe_url = try_download_file(
-                    fs, urls, headers, download_path, sha512, m_config.m_secrets, errors, progress_sink);
+                    fs, urls, headers, download_path, sha512, m_config.secrets, errors, progress_sink);
                 if (auto url = maybe_url.get())
                 {
                     if (auto hash = sha512.get())
                     {
-                        auto maybe_push = put_file_to_mirror(fs, download_path, *hash);
+                        auto maybe_push = put_file_to_mirror(tool_cache, fs, download_path, *hash);
                         if (!maybe_push)
                         {
                             msg::println_warning(msgFailedToStoreBackToMirror);
@@ -961,14 +969,17 @@ namespace vcpkg
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
-    ExpectedL<int> DownloadManager::put_file_to_mirror(const Filesystem& fs,
+    ExpectedL<int> DownloadManager::put_file_to_mirror(Optional<const ToolCache&> tool_cache,
+                                                       const Filesystem&,
                                                        const Path& file_to_put,
                                                        StringView sha512) const
     {
-        auto maybe_mirror_url = Strings::replace_all(m_config.m_write_url_template.value_or(""), "<SHA>", sha512);
-        if (!maybe_mirror_url.empty())
+        for (auto& provider : m_config.object_providers)
         {
-            return put_file(fs, maybe_mirror_url, m_config.m_secrets, m_config.m_write_headers, file_to_put);
+            if (provider->supports_write())
+            {
+                provider->upload(tool_cache, sha512, file_to_put, stdout_sink);
+            }
         }
         return 0;
     }

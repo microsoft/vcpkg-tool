@@ -130,6 +130,7 @@ namespace vcpkg::Commands::SetInstalled
             summary.print_failed();
             if (!only_downloads)
             {
+                binary_cache.wait_for_async_complete();
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
@@ -146,7 +147,7 @@ namespace vcpkg::Commands::SetInstalled
                 }
             }
         }
-
+        binary_cache.wait_for_async_complete();
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
