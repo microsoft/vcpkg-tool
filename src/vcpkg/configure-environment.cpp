@@ -15,57 +15,11 @@
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
-
-#if defined(VCPKG_CE_SHA)
-#define VCPKG_CE_SHA_AS_STRING MACRO_TO_STRING(VCPKG_CE_SHA)
-#endif // ^^^ VCPKG_CE_SHA
 #include <vcpkg/base/uuid.h>
 
 namespace
 {
     using namespace vcpkg;
-#if !defined(VCPKG_ARTIFACTS_DEVELOPMENT)
-    void extract_ce_tarball(const VcpkgPaths& paths,
-                            const Path& ce_tarball,
-                            const Path& node_path,
-                            const Path& ce_base_path)
-    {
-        auto& fs = paths.get_filesystem();
-        if (!fs.is_regular_file(ce_tarball))
-        {
-            Debug::println("Download succeeded but file isn't present?");
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgFailedToProvisionCe);
-        }
-
-        fs.remove_all(ce_base_path, VCPKG_LINE_INFO);
-        fs.create_directories(ce_base_path, VCPKG_LINE_INFO);
-        Path node_root = node_path.parent_path();
-        auto npm_path = node_root / "node_modules" / "npm" / "bin" / "npm-cli.js";
-        if (!fs.exists(npm_path, VCPKG_LINE_INFO))
-        {
-            npm_path = Path(node_root.parent_path()) / "lib" / "node_modules" / "npm" / "bin" / "npm-cli.js";
-        }
-
-        Command cmd_provision(node_path);
-        cmd_provision.string_arg(npm_path);
-        cmd_provision.string_arg("--force");
-        cmd_provision.string_arg("install");
-        cmd_provision.string_arg("--no-save");
-        cmd_provision.string_arg("--no-lockfile");
-        cmd_provision.string_arg("--scripts-prepend-node-path=true");
-        cmd_provision.string_arg("--silent");
-        cmd_provision.string_arg(ce_tarball);
-        auto env = get_modified_clean_environment({}, node_root);
-        const auto provision_status = cmd_execute(cmd_provision, WorkingDirectory{ce_base_path}, env);
-        fs.remove(ce_tarball, VCPKG_LINE_INFO);
-        if (!succeeded(provision_status))
-        {
-            fs.remove_all(ce_base_path, VCPKG_LINE_INFO);
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgFailedToProvisionCe);
-        }
-    }
-#endif // ^^^ !defined(VCPKG_ARTIFACTS_DEVELOPMENT)
-
     void track_telemetry(Filesystem& fs, const Path& telemetry_file_path)
     {
         std::error_code ec;
@@ -123,51 +77,23 @@ namespace vcpkg
     {
         msg::println_warning(msgVcpkgCeIsExperimental);
         auto& fs = paths.get_filesystem();
-        auto& download_manager = paths.get_download_manager();
-        auto node_path = paths.get_tool_exe(Tools::NODE, stdout_sink);
-#if defined(VCPKG_ARTIFACTS_DEVELOPMENT)
-        // use hard coded in-source copy
-        (void)fs;
-        (void)download_manager;
-        Path ce_path = get_exe_path_of_current_process();
-        ce_path.replace_filename("vcpkg-artifacts/main.js");
-        ce_path.make_preferred();
-        // development support: intentionally unlocalized
-        msg::println(Color::warning,
-                     LocalizedString::from_raw("Using in-development vcpkg-artifacts built at: ").append_raw(ce_path));
-#else // ^^^ VCPKG_ARTIFACTS_DEVELOPMENT / might need to download vvv
-#if defined(VCPKG_CE_SHA)
-        auto base_path =
-            get_platform_cache_vcpkg().value_or_exit(VCPKG_LINE_INFO) / "artifacts-" VCPKG_BASE_VERSION_AS_STRING;
-        Debug::println("vcpkg-artifacts base path: ", base_path);
-        auto ce_path = base_path / "node_modules" / "vcpkg-ce";
-        bool needs_provisioning = !fs.is_directory(ce_path);
-        if (needs_provisioning)
+
+        // if artifacts is deployed in development, with Visual Studio, or with the One Liner, it will be deployed here
+        Path vcpkg_artifacts_path = get_exe_path_of_current_process();
+        vcpkg_artifacts_path.replace_filename("vcpkg-artifacts/main.js");
+        vcpkg_artifacts_path.make_preferred();
+        if (!fs.exists(vcpkg_artifacts_path, VCPKG_LINE_INFO))
         {
-            msg::println(msgDownloadingVcpkgCeBundle, msg::version = VCPKG_BASE_VERSION_AS_STRING);
-            const auto ce_uri =
-                "https://github.com/microsoft/vcpkg-tool/releases/download/" VCPKG_BASE_VERSION_AS_STRING
-                "/vcpkg-ce.tgz";
-            const auto ce_tarball = paths.downloads / "vcpkg-ce-" VCPKG_BASE_VERSION_AS_STRING ".tgz";
-            download_manager.download_file(fs, ce_uri, {}, ce_tarball, VCPKG_CE_SHA_AS_STRING, null_sink);
-            extract_ce_tarball(paths, ce_tarball, node_path, base_path);
+            // otherwise, if this is an official build we can try to extract a copy of vcpkg-artifacts out of the matching standalone bundle
+            // FIXME
+            // otherwise, fail
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgArtifactsNotInstalled);
         }
-#else  // ^^^ VCPKG_CE_SHA (official build) // always get latest vvv
-        auto base_path = get_platform_cache_vcpkg().value_or_exit(VCPKG_LINE_INFO) / "artifacts-latest";
-        Debug::println("vcpkg-artifacts base path: ", base_path);
-        auto ce_path = base_path / "node_modules" / "vcpkg-ce";
-        msg::println(Color::warning, msgDownloadingVcpkgCeBundleLatest);
-        const auto ce_uri = "https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-ce.tgz";
-        const auto ce_tarball = paths.downloads / "vcpkg-ce-latest.tgz";
-        download_manager.download_file(fs, ce_uri, {}, ce_tarball, nullopt, null_sink);
-        extract_ce_tarball(paths, ce_tarball, node_path, base_path);
-#endif // ^^^ always get latest
-#endif // ^^^ might need to download
 
         auto temp_directory = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
 
-        Command cmd_run(node_path);
-        cmd_run.string_arg(ce_path);
+        Command cmd_run(paths.get_tool_exe(Tools::NODE, stdout_sink));
+        cmd_run.string_arg(vcpkg_artifacts_path);
         cmd_run.forwarded_args(args);
         if (Debug::g_debugging)
         {

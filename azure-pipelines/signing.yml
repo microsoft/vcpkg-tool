@@ -76,62 +76,55 @@ jobs:
         pwsh: true
         filePath: vcpkg-init/lock-versions.ps1
         arguments: '-Destination "$(Build.BinariesDirectory)" -VcpkgBaseVersion $(VCPKG_INITIAL_BASE_VERSION)'
-    # Build and test vcpkg-artifacts
     - task: UseNode@1
       displayName: Use Node 18 or later
       inputs:
         version: "18.x"
-    - script: copy azure-pipelines\.npmrc-internal ce\common\config\rush\.npmrc
-      displayName: Use internal .npmrc
-    - task: npmAuthenticate@0
+    - task: Npm@1
       inputs:
-        workingFile: 'ce\common\config\rush\.npmrc'
-      # The working directory change is to get the above .npmrc used when installing rush
-    - script: npm install -g @microsoft/rush
-      displayName: Install Rush
-      workingDirectory: ce\common\config\rush
-    - script: |
-        set PATH=%PATH%;%APPDATA%\npm
-        rush update
-      displayName: Install vcpkg-artifacts Dependencies
-      workingDirectory: ce
-    - script: |
-        set PATH=%PATH%;%APPDATA%\npm
-        rush lint
-      displayName: Check vcpkg-artifacts for Linting Errors
-      workingDirectory: ce
-    - task: CodeQL3000Init@0
-      displayName: 'CodeQL Initialize'
-    - script: |
-        set PATH=%PATH%;%APPDATA%\npm
-        rush rebuild
-      displayName: Build vcpkg-artifacts Packages
-      workingDirectory: ce
-    - task: CodeQL3000Finalize@0
-      displayName: 'CodeQL Finalize'
-    - script: |
-        set PATH=%PATH%;%APPDATA%\npm
-        rush test
-      displayName: Run vcpkg-artifacts Tests
-      workingDirectory: ce
-    - script: |
-        set PATH=%PATH%;%APPDATA%\npm
-        rush set-versions
-        node -e "const c = require('./ce/package.json'); p = require('./assets/package.json') ; p.version = c.version; require('fs').writeFileSync('./assets/package.json', JSON.stringify(p,undefined,2)); console.log(``set asset version to `${p.version}``);"
-      displayName: Set vcpkg-artifacts Package Versions
-      workingDirectory: ce
-    - script: |
-        set PATH=%PATH%;%APPDATA%\npm
-        mkdir "$(Build.BinariesDirectory)\ce" && rush deploy -t "$(Build.BinariesDirectory)\ce"
-      displayName: Collect vcpkg-artifacts Dependencies
-      workingDirectory: ce
-    - script: |
-        xcopy /F "$(Build.SourcesDirectory)/scripts" "$(Build.BinariesDirectory)"
-      displayName: Collect PowerShell scripts
+        command: 'custom'
+        workingDir: 'vcpkg-artifacts'
+        customCommand: 'install'
+        customRegistry: 'useFeed'
+        customFeed: '0bdbc590-a062-4c3f-b0f6-9383f67865ee/105b4584-173c-41aa-8061-612294abe099'
+      displayName: Install vcpkg-artifacts Dev Dependencies
     - task: ComponentGovernanceComponentDetection@0
       displayName: Detect Components
       inputs:
-        sourceScanPath: "$(Build.BinariesDirectory)/ce"
+        sourceScanPath: vcpkg-artifacts
+    - task: CodeQL3000Init@0
+      displayName: CodeQL Initialize
+    - script: |
+        mkdir "$(Build.BinariesDirectory)"
+        mkdir "$(Build.BinariesDirectory)\vcpkg-artifacts"
+        node "$(Build.SourcesDirectory)\vcpkg-artifacts\node_modules\typescript\bin\tsc" -p "$(Build.SourcesDirectory)\vcpkg-artifacts" --outDir "$(Build.BinariesDirectory)\vcpkg-artifacts"
+      displayName: Build TypeScript
+    - task: CodeQL3000Finalize@0
+      displayName: CodeQL Finalize
+    - task: Npm@1
+      inputs:
+        command: 'custom'
+        workingDir: 'vcpkg-artifacts'
+        customCommand: 'install --omit=dev'
+        customRegistry: 'useFeed'
+        customFeed: '0bdbc590-a062-4c3f-b0f6-9383f67865ee/105b4584-173c-41aa-8061-612294abe099'
+      displayName: Install vcpkg-artifacts Prod Dependencies
+    - script: | # This script must be kept in sync with vcpkg-artifacts-target in CMakeLists.txt
+        rmdir /s /q "$(Build.BinariesDirectory)\vcpkg-artifacts\test"
+        rmdir /s /q "$(Build.BinariesDirectory)\vcpkg-artifacts\test_resources"
+        mkdir "$(Build.BinariesDirectory)\vcpkg-artifacts\locales"
+        mkdir "$(Build.BinariesDirectory)\vcpkg-artifacts\node_modules"
+        xcopy /F /E "$(Build.SourcesDirectory)\vcpkg-artifacts\node_modules" "$(Build.BinariesDirectory)\vcpkg-artifacts\node_modules"
+        copy "$(Build.SourcesDirectory)\vcpkg-artifacts\package.json" "$(Build.BinariesDirectory)\vcpkg-artifacts\package.json"
+        copy "$(Build.SourcesDirectory)\vcpkg-artifacts\package-lock.json" "$(Build.BinariesDirectory)\vcpkg-artifacts\package-lock.json"
+        copy "$(Build.SourcesDirectory)\vcpkg-artifacts\.npmrc" "$(Build.BinariesDirectory)\vcpkg-artifacts\.npmrc"
+        copy "$(Build.SourcesDirectory)\vcpkg-artifacts\mocha-config.yaml" "$(Build.BinariesDirectory)\vcpkg-artifacts\mocha-config.yaml"
+        copy "$(Build.SourcesDirectory)\vcpkg-artifacts\locales\messages.json" "$(Build.BinariesDirectory)\vcpkg-artifacts\locales\messages.json"
+      displayName: Delete Tests, Store Dependencies and Static Components for Signing
+    - script: |
+        mkdir "$(Build.BinariesDirectory)\scripts"
+        xcopy /F /E "$(Build.SourcesDirectory)\scripts" "$(Build.BinariesDirectory)\scripts"
+      displayName: Collect PowerShell Scripts for Signing
     - task: MicroBuildSigningPlugin@3
       displayName: Install MicroBuild Signing
       inputs:
@@ -155,9 +148,6 @@ jobs:
         msbuildArguments: '/p:OutDir=$(Build.BinariesDirectory)\ /p:IntermediateOutputPath=$(Build.BinariesDirectory)\'
       # Note that signing must happen before packing steps because the packs contain files that are themselves signed.
     - script: |
-        copy "$(Build.SourcesDirectory)\NOTICE.txt" "$(Build.BinariesDirectory)\ce\NOTICE.txt"
-      displayName: Inject NOTICE File
-    - script: |
         copy "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.BinariesDirectory)\vcpkg-init.cmd"
       displayName: 'Duplicate Install Scripts'
     - task: Powershell@2
@@ -166,12 +156,8 @@ jobs:
         pwsh: true
         filePath: vcpkg-init/mint-standalone-bundle.ps1
         arguments: '-DestinationTarball "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" -TempDir standalone-temp -SignedFilesRoot "$(Build.BinariesDirectory)" -Deployment OneLiner -VcpkgBaseVersion "$(VCPKG_INITIAL_BASE_VERSION)"'
-    - script: npm pack
-      displayName: Create vcpkg-artifacts Pack
-      workingDirectory: $(Build.BinariesDirectory)/ce
     - script: |
         mkdir "$(Build.ArtifactStagingDirectory)\staging"
-        move "$(Build.BinariesDirectory)\ce\vcpkg-ce-*.tgz" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-ce.tgz"
         move "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-standalone-bundle.tar.gz"
         move "$(Build.BinariesDirectory)\vcpkg-init" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init"
         move "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init.ps1"
@@ -189,8 +175,6 @@ jobs:
         script: |
           $standaloneBundleSha = (Get-FileHash "$(Build.ArtifactStagingDirectory)\staging\vcpkg-standalone-bundle.tar.gz" -Algorithm SHA512).Hash.ToLowerInvariant()
           Write-Host "##vso[task.setvariable variable=VCPKG_STANDALONE_BUNDLE_SHA;isOutput=true]$standaloneBundleSha"
-          $ceSha = (Get-FileHash "$(Build.ArtifactStagingDirectory)\staging\vcpkg-ce.tgz" -Algorithm SHA512).Hash.ToLowerInvariant()
-          Write-Host "##vso[task.setvariable variable=VCPKG_CE_SHA;isOutput=true]$ceSha"
     - task: PublishBuildArtifacts@1
       displayName: "Publish Architecture Independent Staging"
       inputs:
@@ -391,7 +375,6 @@ jobs:
           move "$(Build.ArtifactStagingDirectory)\staging\applocal.ps1" "$(Build.ArtifactStagingDirectory)\drop\applocal.ps1"
           move "$(Build.ArtifactStagingDirectory)\staging\addPoshVcpkgToPowershellProfile.ps1" "$(Build.ArtifactStagingDirectory)\drop\addPoshVcpkgToPowershellProfile.ps1"
           move "$(Build.ArtifactStagingDirectory)\staging\posh-vcpkg.psm1" "$(Build.ArtifactStagingDirectory)\drop\posh-vcpkg.psm1"
-          move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-ce.tgz" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-ce.tgz"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-glibc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-glibc"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-muslc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-muslc"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-standalone-bundle.tar.gz" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-standalone-bundle.tar.gz"

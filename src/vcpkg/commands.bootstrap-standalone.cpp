@@ -40,6 +40,7 @@ namespace vcpkg::Commands
         download_manager.download_file(fs, bundle_uri, {}, bundle_tarball, nullopt, null_sink);
 #endif // ^^^ !VCPKG_STANDALONE_BUNDLE_SHA
 
+        fs.remove_all(vcpkg_root / "vcpkg-artifacts", VCPKG_LINE_INFO);
         extract_tar(find_system_tar(fs).value_or_exit(VCPKG_LINE_INFO), bundle_tarball, vcpkg_root);
         fs.remove(bundle_tarball, VCPKG_LINE_INFO);
         Checks::exit_success(VCPKG_LINE_INFO);

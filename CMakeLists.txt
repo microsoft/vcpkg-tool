@@ -22,7 +22,7 @@ option(VCPKG_BUILD_TLS12_DOWNLOADER "Enable building the tls12-downloader" OFF)
 option(VCPKG_BUILD_FUZZING "Option for enabling vcpkg-fuzz support" OFF)
 option(VCPKG_EMBED_GIT_SHA "Option for to fill in the Git SHA version; off by default to avoid privacy concerns out of official builds" OFF)
 option(VCPKG_ADD_SOURCELINK "Option for enabling SourceLink in debug information on Windows/MSVC builds" "${VCPKG_EMBED_GIT_SHA}")
-option(VCPKG_ARTIFACTS_DEVELOPMENT "Hard code path to artifacts TypeScript. Requires node.js and global install of @microsoft/rush." OFF)
+option(VCPKG_ARTIFACTS_DEVELOPMENT "Hard code path to artifacts TypeScript. Requires node.js and npm." OFF)
 option(VCPKG_OFFICIAL_BUILD "Option to cause immediate failure if variables required for official builds are unset." OFF)
 set(VCPKG_PDB_SUFFIX "" CACHE STRING "Append this string to the name of the PDB for shipping vcpkg binaries.")
 
@@ -37,11 +37,6 @@ endif()
 set(LANGUAGES "CXX")
 if(VCPKG_BUILD_TLS12_DOWNLOADER)
     list(APPEND LANGUAGES "C")
-endif()
-
-if (VCPKG_ARTIFACTS_DEVELOPMENT)
-    # https://gitlab.kitware.com/cmake/cmake/-/issues/20245
-    cmake_minimum_required(VERSION 3.17)
 endif()
 
 project(vcpkg
@@ -210,159 +205,147 @@ target_compile_definitions(vcpkglib PUBLIC
     _FILE_OFFSET_BITS=64
 )
 
-if(NOT DEFINED VCPKG_STANDALONE_BUNDLE_SHA OR VCPKG_STANDALONE_BUNDLE_SHA STREQUAL "")
-    if(VCPKG_OFFICIAL_BUILD)
-        message(FATAL_ERROR "VCPKG_STANDALONE_BUNDLE_SHA is required for official builds.")
-    endif()
-else()
+if(VCPKG_STANDALONE_BUNDLE_SHA)
     target_compile_definitions(vcpkglib PUBLIC
         "VCPKG_STANDALONE_BUNDLE_SHA=${VCPKG_STANDALONE_BUNDLE_SHA}"
     )
+elseif(VCPKG_OFFICIAL_BUILD)
+    message(FATAL_ERROR "VCPKG_STANDALONE_BUNDLE_SHA is required for official builds.")
 endif()
 
-if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
-    if(VCPKG_OFFICIAL_BUILD)
-        message(FATAL_ERROR "VCPKG_CE_SHA is required for official builds.")
+if (VCPKG_ARTIFACTS_DEVELOPMENT)
+    # The directory constructed by this portion of the build script needs to be kept in sync with
+    # that created by azure-pipelines/signing.yml
+    file(TO_CMAKE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg-artifacts" VCPKG_ARTIFACTS_SOURCE_DIR)
+    file(TO_CMAKE_PATH "${CMAKE_CURRENT_BINARY_DIR}/vcpkg-artifacts" VCPKG_ARTIFACTS_BINARY_DIR)
+    mark_as_advanced(VCPKG_ARTIFACTS_SOURCE_DIR)
+    mark_as_advanced(VCPKG_ARTIFACTS_BINARY_DIR)
+
+    if (WIN32)
+        set(NPM_SUFFIX ".cmd")
+    else()
+        set(NPM_SUFFIX "")
     endif()
-    if (VCPKG_ARTIFACTS_DEVELOPMENT)
-        file(TO_CMAKE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg-artifacts" VCPKG_ARTIFACTS_SOURCE_DIR)
-        file(TO_CMAKE_PATH "${CMAKE_CURRENT_BINARY_DIR}/vcpkg-artifacts" VCPKG_ARTIFACTS_BINARY_DIR)
-        target_compile_definitions(vcpkglib PUBLIC "VCPKG_ARTIFACTS_DEVELOPMENT")
-        mark_as_advanced(VCPKG_ARTIFACTS_SOURCE_DIR)
-        mark_as_advanced(VCPKG_ARTIFACTS_BINARY_DIR)
 
-        if (WIN32)
-            set(NPM_SUFFIX ".cmd")
-        else()
-            set(NPM_SUFFIX "")
-        endif()
+    find_program(NODEJS "node")
+    find_program(NPM "npm${NPM_SUFFIX}")
+    if (NOT NODEJS OR NOT NPM)
+        message(FATAL_ERROR "node.js and npm must be installed when VCPKG_ARTIFACTS_DEVELOPMENT is set")
+    endif()
 
-        find_program(NODEJS "node")
-        find_program(NPM "npm${NPM_SUFFIX}")
-        if (NOT NODEJS OR NOT NPM)
-            message(FATAL_ERROR "node.js and npm must be installed when VCPKG_ARTIFACTS_DEVELOPMENT is set")
-        endif()
-
-        add_custom_command(
-            OUTPUT
-                "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules"
-            COMMAND "${NPM}" ARGS "install"
-            WORKING_DIRECTORY
-                "${VCPKG_ARTIFACTS_SOURCE_DIR}"
-            COMMENT
-                "Running npm install..."
-            MAIN_DEPENDENCY
-                "${VCPKG_ARTIFACTS_SOURCE_DIR}/package.json"
-            VERBATIM
-            )
-
-        add_custom_target(npm-install
-            ALL
-            DEPENDS
-                "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules"
-                )
-        set_target_properties(npm-install
-            PROPERTIES
-                ADDITIONAL_CLEAN_FILES "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules"
+    add_custom_command(
+        OUTPUT
+            "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules"
+        COMMAND "${NPM}" ARGS "install"
+        WORKING_DIRECTORY
+            "${VCPKG_ARTIFACTS_SOURCE_DIR}"
+        COMMENT
+            "Running npm install..."
+        MAIN_DEPENDENCY
+            "${VCPKG_ARTIFACTS_SOURCE_DIR}/package.json"
+        VERBATIM
         )
+
+    add_custom_target(npm-install
+        ALL
+        DEPENDS
+            "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules"
+            )
+    set_target_properties(npm-install
+        PROPERTIES
+            ADDITIONAL_CLEAN_FILES "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules"
+    )
 
 # === Target: vcpkg-artifacts-target ===
 # The suffix "-target" is added to avoid a conflict in CMake with the directory named vcpkg-artifacts and the target named vcpkg-artifacts.
-        file(GLOB VCPKG_ARTIFACTS_ROOT_SOURCES LIST_DIRECTORIES false RELATIVE "${VCPKG_ARTIFACTS_SOURCE_DIR}" CONFIGURE_DEPENDS "${VCPKG_ARTIFACTS_SOURCE_DIR}/*.ts")
-        file(GLOB_RECURSE VCPKG_ARTIFACTS_NESTED_SOURCES LIST_DIRECTORIES false RELATIVE "${VCPKG_ARTIFACTS_SOURCE_DIR}" CONFIGURE_DEPENDS
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/amf/*.ts"
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/archivers/*.ts"
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/artifacts/*.ts"
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/cli/*.ts"
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/fs/*.ts"
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/installers/*.ts"
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/interfaces/*.ts"
-            # "${VCPKG_ARTIFACTS_SOURCE_DIR}/locales/*.ts" 
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/mediaquery/*.ts"
-            # "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules/*.ts"
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/registries/*.ts"
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/test/*.ts"
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/test-resources/*" # Note no *.ts
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/util/*.ts"
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/yaml/*.ts"
-        )
-        set(VCPKG_ARTIFACTS_SOURCES ${VCPKG_ARTIFACTS_ROOT_SOURCES} ${VCPKG_ARTIFACTS_NESTED_SOURCES})
-        list(TRANSFORM VCPKG_ARTIFACTS_SOURCES PREPEND "${VCPKG_ARTIFACTS_SOURCE_DIR}/")
+    file(GLOB VCPKG_ARTIFACTS_ROOT_SOURCES LIST_DIRECTORIES false RELATIVE "${VCPKG_ARTIFACTS_SOURCE_DIR}" CONFIGURE_DEPENDS "${VCPKG_ARTIFACTS_SOURCE_DIR}/*.ts")
+    file(GLOB_RECURSE VCPKG_ARTIFACTS_NESTED_SOURCES LIST_DIRECTORIES false RELATIVE "${VCPKG_ARTIFACTS_SOURCE_DIR}" CONFIGURE_DEPENDS
+        "${VCPKG_ARTIFACTS_SOURCE_DIR}/amf/*.ts"
+        "${VCPKG_ARTIFACTS_SOURCE_DIR}/archivers/*.ts"
+        "${VCPKG_ARTIFACTS_SOURCE_DIR}/artifacts/*.ts"
+        "${VCPKG_ARTIFACTS_SOURCE_DIR}/cli/*.ts"
+        "${VCPKG_ARTIFACTS_SOURCE_DIR}/fs/*.ts"
+        "${VCPKG_ARTIFACTS_SOURCE_DIR}/installers/*.ts"
+        "${VCPKG_ARTIFACTS_SOURCE_DIR}/interfaces/*.ts"
+        # "${VCPKG_ARTIFACTS_SOURCE_DIR}/locales/*.ts" 
+        "${VCPKG_ARTIFACTS_SOURCE_DIR}/mediaquery/*.ts"
+        # "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules/*.ts"
+        "${VCPKG_ARTIFACTS_SOURCE_DIR}/registries/*.ts"
+        "${VCPKG_ARTIFACTS_SOURCE_DIR}/test/*.ts"
+        "${VCPKG_ARTIFACTS_SOURCE_DIR}/test-resources/*" # Note no *.ts
+        "${VCPKG_ARTIFACTS_SOURCE_DIR}/util/*.ts"
+        "${VCPKG_ARTIFACTS_SOURCE_DIR}/yaml/*.ts"
+    )
+    set(VCPKG_ARTIFACTS_SOURCES ${VCPKG_ARTIFACTS_ROOT_SOURCES} ${VCPKG_ARTIFACTS_NESTED_SOURCES})
+    list(TRANSFORM VCPKG_ARTIFACTS_SOURCES PREPEND "${VCPKG_ARTIFACTS_SOURCE_DIR}/")
 
-        set(VCPKG_ARTIFACTS_BINARIES ${VCPKG_ARTIFACTS_ROOT_SOURCES} ${VCPKG_ARTIFACTS_NESTED_SOURCES}) 
-        list(TRANSFORM VCPKG_ARTIFACTS_BINARIES PREPEND "${VCPKG_ARTIFACTS_BINARY_DIR}/")
-        list(TRANSFORM VCPKG_ARTIFACTS_BINARIES REPLACE "\\.ts" ".js")
-        add_custom_command(
-            OUTPUT
-                ${VCPKG_ARTIFACTS_BINARIES}
-                "${VCPKG_ARTIFACTS_BINARY_DIR}/package.json"
-                "${VCPKG_ARTIFACTS_BINARY_DIR}/package-lock.json"
-                "${VCPKG_ARTIFACTS_BINARY_DIR}/.npmrc"
-                "${VCPKG_ARTIFACTS_BINARY_DIR}/mocha-config.yaml"
-                "${VCPKG_ARTIFACTS_BINARY_DIR}/locales/messages.json"
-            COMMAND
-                "${CMAKE_COMMAND}" ARGS -E rm -rf "${VCPKG_ARTIFACTS_BINARY_DIR}"
-            COMMAND
-                "${CMAKE_COMMAND}" ARGS -E make_directory "${VCPKG_ARTIFACTS_BINARY_DIR}"
-            COMMAND
-                "${CMAKE_COMMAND}" ARGS -E make_directory "${VCPKG_ARTIFACTS_BINARY_DIR}/locales"
-            COMMAND
-                "${NODEJS}" ARGS "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules/typescript/bin/tsc"
-                    -p "${VCPKG_ARTIFACTS_SOURCE_DIR}"
-                    --outDir "${VCPKG_ARTIFACTS_BINARY_DIR}"
-            COMMAND
-                "${CMAKE_COMMAND}" ARGS -E copy
-                    "${VCPKG_ARTIFACTS_SOURCE_DIR}/package.json"
-                    "${VCPKG_ARTIFACTS_SOURCE_DIR}/package-lock.json"
-                    "${VCPKG_ARTIFACTS_SOURCE_DIR}/.npmrc"
-                    "${VCPKG_ARTIFACTS_SOURCE_DIR}/mocha-config.yaml"
-                    "${VCPKG_ARTIFACTS_BINARY_DIR}"
-            COMMAND
-                "${CMAKE_COMMAND}" ARGS -E copy
-                    "${VCPKG_ARTIFACTS_SOURCE_DIR}/locales/messages.json"
-                    "${VCPKG_ARTIFACTS_BINARY_DIR}/locales/messages.json"
-            COMMAND
-                "${CMAKE_COMMAND}" ARGS -E copy_directory
-                    "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules"
-                    "${VCPKG_ARTIFACTS_BINARY_DIR}/node_modules"
-            COMMAND
-                "${CMAKE_COMMAND}" ARGS -E copy_directory
-                    "${VCPKG_ARTIFACTS_SOURCE_DIR}/test-resources"
-                    "${VCPKG_ARTIFACTS_BINARY_DIR}/test-resources"
-            DEPENDS
-                ${VCPKG_ARTIFACTS_SOURCES}
-                "${VCPKG_ARTIFACTS_SOURCE_DIR}/tsconfig.json"
+    set(VCPKG_ARTIFACTS_BINARIES ${VCPKG_ARTIFACTS_ROOT_SOURCES} ${VCPKG_ARTIFACTS_NESTED_SOURCES}) 
+    list(TRANSFORM VCPKG_ARTIFACTS_BINARIES PREPEND "${VCPKG_ARTIFACTS_BINARY_DIR}/")
+    list(TRANSFORM VCPKG_ARTIFACTS_BINARIES REPLACE "\\.ts" ".js")
+    add_custom_command(
+        OUTPUT
+            ${VCPKG_ARTIFACTS_BINARIES}
+            "${VCPKG_ARTIFACTS_BINARY_DIR}/package.json"
+            "${VCPKG_ARTIFACTS_BINARY_DIR}/package-lock.json"
+            "${VCPKG_ARTIFACTS_BINARY_DIR}/.npmrc"
+            "${VCPKG_ARTIFACTS_BINARY_DIR}/mocha-config.yaml"
+            "${VCPKG_ARTIFACTS_BINARY_DIR}/locales/messages.json"
+        COMMAND
+            "${CMAKE_COMMAND}" ARGS -E rm -rf "${VCPKG_ARTIFACTS_BINARY_DIR}"
+        COMMAND
+            "${CMAKE_COMMAND}" ARGS -E make_directory "${VCPKG_ARTIFACTS_BINARY_DIR}"
+        COMMAND
+            "${CMAKE_COMMAND}" ARGS -E make_directory "${VCPKG_ARTIFACTS_BINARY_DIR}/locales"
+        COMMAND
+            "${CMAKE_COMMAND}" ARGS -E copy_directory
+                "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules"
+                "${VCPKG_ARTIFACTS_BINARY_DIR}/node_modules"
+        COMMAND
+            "${CMAKE_COMMAND}" ARGS -E copy_directory
+                "${VCPKG_ARTIFACTS_SOURCE_DIR}/test-resources"
+                "${VCPKG_ARTIFACTS_BINARY_DIR}/test-resources"
+        # Files are after directories for more accurate cmake tracking of interrupted runs
+        COMMAND
+            "${CMAKE_COMMAND}" ARGS -E copy
                 "${VCPKG_ARTIFACTS_SOURCE_DIR}/package.json"
                 "${VCPKG_ARTIFACTS_SOURCE_DIR}/package-lock.json"
                 "${VCPKG_ARTIFACTS_SOURCE_DIR}/.npmrc"
                 "${VCPKG_ARTIFACTS_SOURCE_DIR}/mocha-config.yaml"
+                "${VCPKG_ARTIFACTS_BINARY_DIR}"
+        COMMAND
+            "${CMAKE_COMMAND}" ARGS -E copy
                 "${VCPKG_ARTIFACTS_SOURCE_DIR}/locales/messages.json"
-            COMMENT
-                "Building vcpkg-artifacts..."
-            VERBATIM
-            )
-
-        add_custom_target(vcpkg-artifacts-target
-            ALL
-            DEPENDS
-                ${VCPKG_ARTIFACTS_BINARIES}
-                "${VCPKG_ARTIFACTS_BINARY_DIR}/package.json"
-                "${VCPKG_ARTIFACTS_BINARY_DIR}/package-lock.json"
-                "${VCPKG_ARTIFACTS_BINARY_DIR}/.npmrc"
-                "${VCPKG_ARTIFACTS_BINARY_DIR}/mocha-config.yaml"
                 "${VCPKG_ARTIFACTS_BINARY_DIR}/locales/messages.json"
-            )
-        set_target_properties(vcpkg-artifacts-target
-            PROPERTIES
-                ADDITIONAL_CLEAN_FILES "${VCPKG_ARTIFACTS_BINARY_DIR}")
-    endif()
-else()
-    if (VCPKG_ARTIFACTS_DEVELOPMENT)
-        message(WARNING "VCPKG_CE_SHA overrides VCPKG_ARTIFACTS_DEVELOPMENT")
-    endif()
-    target_compile_definitions(vcpkglib PUBLIC
-        "VCPKG_CE_SHA=${VCPKG_CE_SHA}"
-    )
+        COMMAND
+            "${NODEJS}" ARGS "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules/typescript/bin/tsc"
+                -p "${VCPKG_ARTIFACTS_SOURCE_DIR}"
+                --outDir "${VCPKG_ARTIFACTS_BINARY_DIR}"
+        DEPENDS
+            ${VCPKG_ARTIFACTS_SOURCES}
+            "${VCPKG_ARTIFACTS_SOURCE_DIR}/tsconfig.json"
+            "${VCPKG_ARTIFACTS_SOURCE_DIR}/package.json"
+            "${VCPKG_ARTIFACTS_SOURCE_DIR}/package-lock.json"
+            "${VCPKG_ARTIFACTS_SOURCE_DIR}/.npmrc"
+            "${VCPKG_ARTIFACTS_SOURCE_DIR}/mocha-config.yaml"
+            "${VCPKG_ARTIFACTS_SOURCE_DIR}/locales/messages.json"
+        COMMENT
+            "Building vcpkg-artifacts..."
+        VERBATIM
+        )
+
+    add_custom_target(vcpkg-artifacts-target
+        ALL
+        DEPENDS
+            ${VCPKG_ARTIFACTS_BINARIES}
+            "${VCPKG_ARTIFACTS_BINARY_DIR}/package.json"
+            "${VCPKG_ARTIFACTS_BINARY_DIR}/package-lock.json"
+            "${VCPKG_ARTIFACTS_BINARY_DIR}/.npmrc"
+            "${VCPKG_ARTIFACTS_BINARY_DIR}/mocha-config.yaml"
+            "${VCPKG_ARTIFACTS_BINARY_DIR}/locales/messages.json"
+        )
+    set_target_properties(vcpkg-artifacts-target
+        PROPERTIES
+            ADDITIONAL_CLEAN_FILES "${VCPKG_ARTIFACTS_BINARY_DIR}")
 endif()
 
 set(CPP_ATOMIC_LIBRARY "")
