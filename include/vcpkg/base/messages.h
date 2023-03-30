@@ -59,7 +59,6 @@ namespace vcpkg::msg
     template<class... Tags>
     struct MessageT
     {
-        using is_message_type = void;
         const size_t index;
     };
 
