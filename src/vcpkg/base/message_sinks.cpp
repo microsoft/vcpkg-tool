@@ -71,7 +71,7 @@ namespace vcpkg
         if (pos != std::string::npos)
         {
             {
-                std::lock_guard<std::mutex> lk(m_lock);
+                std::lock_guard<std::mutex> lk(m_published_lock);
                 m_published.insert(m_published.end(),
                                    std::make_move_iterator(m_unpublished.begin()),
                                    std::make_move_iterator(m_unpublished.end()));
@@ -91,7 +91,7 @@ namespace vcpkg
 
     void BGMessageSink::print_published()
     {
-        std::lock_guard<std::mutex> lk(m_lock);
+        std::lock_guard<std::mutex> lk(m_published_lock);
         for (auto&& m : m_published)
         {
             out_sink.print(m.first, m.second);
@@ -102,7 +102,7 @@ namespace vcpkg
     void BGMessageSink::publish_directly_to_out_sink()
     {
         std::lock_guard<std::mutex> print_lk(m_print_directly_lock);
-        std::lock_guard<std::mutex> lk(m_lock);
+        std::lock_guard<std::mutex> lk(m_published_lock);
 
         m_print_directly_to_out_sink = true;
         for (auto& messages : {&m_published, &m_unpublished})

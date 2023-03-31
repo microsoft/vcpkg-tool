@@ -106,13 +106,12 @@ namespace vcpkg
     private:
         MessageSink& out_sink;
 
-        std::mutex m_lock;
-        // guarded by m_lock
+        std::mutex m_published_lock;
         std::vector<std::pair<Color, std::string>> m_published;
+
         // buffers messages until newline is reached
         // guarded by m_print_directly_lock
         std::vector<std::pair<Color, std::string>> m_unpublished;
-
         std::mutex m_print_directly_lock;
         bool m_print_directly_to_out_sink = false;
     };
