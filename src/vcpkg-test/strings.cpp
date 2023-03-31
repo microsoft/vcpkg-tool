@@ -68,6 +68,14 @@ TEST_CASE ("find_first_of", "[strings]")
     REQUIRE(find_first_of("abcdefg", "gb") == std::string("bcdefg"));
 }
 
+TEST_CASE ("find_last", "[strings]")
+{
+    using vcpkg::Strings::find_last;
+    REQUIRE(find_last("abcdefg", 'a') == 0);
+    REQUIRE(find_last("abcdefg", 'g') == 6);
+    REQUIRE(find_last("abcdefg", 'z') == std::string::npos);
+}
+
 TEST_CASE ("contains_any_ignoring_c_comments", "[strings]")
 {
     using vcpkg::Strings::contains_any_ignoring_c_comments;

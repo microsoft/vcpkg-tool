@@ -1,4 +1,5 @@
 #include <vcpkg/base/message_sinks.h>
+#include <vcpkg/base/strings.h>
 
 namespace
 {
@@ -66,8 +67,7 @@ namespace vcpkg
             return;
         }
 
-        std::string s = sv.to_string();
-        auto pos = s.find_last_of('\n');
+        auto pos = Strings::find_last(sv, '\n');
         if (pos != std::string::npos)
         {
             {
@@ -75,17 +75,17 @@ namespace vcpkg
                 m_published.insert(m_published.end(),
                                    std::make_move_iterator(m_unpublished.begin()),
                                    std::make_move_iterator(m_unpublished.end()));
-                m_published.emplace_back(c, s.substr(0, pos + 1));
+                m_published.emplace_back(c, sv.substr(0, pos + 1));
             }
             m_unpublished.clear();
-            if (s.size() > pos + 1)
+            if (sv.size() > pos + 1)
             {
-                m_unpublished.emplace_back(c, s.substr(pos + 1));
+                m_unpublished.emplace_back(c, sv.substr(pos + 1));
             }
         }
         else
         {
-            m_unpublished.emplace_back(c, std::move(s));
+            m_unpublished.emplace_back(c, sv);
         }
     }
 

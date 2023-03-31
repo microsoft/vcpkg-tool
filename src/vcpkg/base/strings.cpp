@@ -309,6 +309,12 @@ const char* Strings::find_first_of(StringView input, StringView chars)
     return std::find_first_of(input.begin(), input.end(), chars.begin(), chars.end());
 }
 
+std::string::size_type Strings::find_last(StringView searched, char c)
+{
+    auto iter = std::find(searched.rbegin(), searched.rend(), c);
+    return iter == searched.rend() ? std::string::npos : (&*iter - searched.begin());
+}
+
 std::vector<StringView> Strings::find_all_enclosed(StringView input, StringView left_delim, StringView right_delim)
 {
     auto it_left = input.begin();
