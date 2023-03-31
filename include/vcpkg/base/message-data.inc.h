@@ -2276,6 +2276,7 @@ DECLARE_MESSAGE(SpecifyTargetArch,
                 "Specify the target architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')")
 DECLARE_MESSAGE(StartCodeUnitInContinue, (), "", "found start code unit in continue position")
 DECLARE_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: \"{path}\"")
+DECLARE_MESSAGE(StoredBinariesToDestinations, (msg::count), "", "Stored binaries in {count} destinations.")
 DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512")
 DECLARE_MESSAGE(SuccessfulyExported, (msg::package_name, msg::path), "", "Exported {package_name} to {path}")
 DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.")
@@ -2527,11 +2528,6 @@ DECLARE_MESSAGE(
     (),
     "",
     "If you are sure you want to rebuild the above packages, run this command with the --no-dry-run option.")
-DECLARE_MESSAGE(UploadedBinaries, (msg::count, msg::vendor), "", "Uploaded binaries to {count} {vendor}.")
-DECLARE_MESSAGE(UploadedPackagesToVendor,
-                (msg::count, msg::elapsed, msg::vendor),
-                "",
-                "Uploaded {count} package(s) to {vendor} in {elapsed}")
 DECLARE_MESSAGE(UploadingBinariesToVendor,
                 (msg::spec, msg::vendor, msg::path),
                 "",
@@ -2765,6 +2761,7 @@ DECLARE_MESSAGE(VSExaminedPaths, (), "", "The following paths were examined for 
 DECLARE_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance")
 DECLARE_MESSAGE(WaitingForChildrenToExit, (), "", "Waiting for child processes to exit...")
 DECLARE_MESSAGE(WaitingToTakeFilesystemLock, (msg::path), "", "waiting to take filesystem lock on {path}...")
+DECLARE_MESSAGE(WaitUntilPackagesUploaded, (msg::count), "", "Wait until the remaining packages ({count}) are uploaded")
 DECLARE_MESSAGE(WarningMessage, (), "", "warning: ")
 DECLARE_MESSAGE(WarningMessageMustUsePrintWarning,
                 (msg::value),
