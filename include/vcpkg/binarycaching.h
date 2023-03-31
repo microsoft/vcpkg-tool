@@ -46,19 +46,16 @@ namespace vcpkg
 
     struct BinaryPackageInformation
     {
-        explicit BinaryPackageInformation(const InstallPlanAction& action, std::string&& nuspec = "");
+        explicit BinaryPackageInformation(const InstallPlanAction& action, Optional<std::string> nuspec);
         std::string package_abi;
         PackageSpec spec;
         std::string raw_version;
-        std::string nuspec; // only filled if BinaryCache has a provider that returns true for needs_nuspec_data()
+        // only filled if BinaryCache has a provider that returns true for needs_nuspec_data()
+        Optional<std::string> nuspec;
     };
 
     struct BinaryProviderPushRequest
     {
-        BinaryProviderPushRequest(BinaryPackageInformation&& info, Path package_dir)
-            : info(std::move(info)), package_dir(std::move(package_dir))
-        {
-        }
         BinaryPackageInformation info;
         Path package_dir;
     };
