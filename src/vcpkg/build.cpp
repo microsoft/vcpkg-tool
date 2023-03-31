@@ -142,7 +142,7 @@ namespace vcpkg::Build
         action->build_options.clean_packages = CleanPackages::NO;
 
         const ElapsedTimer build_timer;
-        const auto result = build_package(args, paths, *action, binary_cache, build_logs_recorder, status_db);
+        const auto result = build_package(args, paths, *action, build_logs_recorder, status_db);
         msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
         if (result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
         {
@@ -172,6 +172,7 @@ namespace vcpkg::Build
             msg::print(create_user_troubleshooting_message(*action, paths, nullopt));
             return 1;
         }
+        binary_cache.push_success(*action, paths.package_dir(action->spec));
 
         return 0;
     }
@@ -1285,7 +1286,6 @@ namespace vcpkg
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,
                                       const InstallPlanAction& action,
-                                      BinaryCache& binary_cache,
                                       const IBuildLogsRecorder& build_logs_recorder,
                                       const StatusParagraphs& status_db)
     {
@@ -1336,10 +1336,6 @@ namespace vcpkg
             build_logs_recorder.record_build_result(paths, spec, result.code);
             filesystem.create_directories(abi_package_dir, VCPKG_LINE_INFO);
             filesystem.copy_file(abi_file, abi_file_in_package, CopyOptions::none, VCPKG_LINE_INFO);
-            if (result.code == BuildResult::SUCCEEDED)
-            {
-                binary_cache.push_success(action);
-            }
         }
 
         return result;
