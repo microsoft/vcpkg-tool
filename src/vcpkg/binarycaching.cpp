@@ -840,7 +840,7 @@ namespace
             {
                 return 0;
             }
-            if (request.info.nuspec.empty())
+            if (!request.info.nuspec.has_value())
             {
                 Checks::unreachable(
                     VCPKG_LINE_INFO,
@@ -852,7 +852,7 @@ namespace
             NugetReference nuget_ref = make_nugetref(request.info, get_nuget_prefix());
             auto nuspec_path = paths.buildtrees() / spec.name() / (spec.triplet().to_string() + ".nuspec");
             auto& fs = paths.get_filesystem();
-            fs.write_contents(nuspec_path, request.info.nuspec, VCPKG_LINE_INFO);
+            fs.write_contents(nuspec_path, request.info.nuspec.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
 
             const auto& nuget_exe = paths.get_tool_exe("nuget", stdout_sink);
             Command cmdline;
@@ -1912,13 +1912,18 @@ namespace vcpkg
         secrets.clear();
     }
 
-    BinaryPackageInformation::BinaryPackageInformation(const InstallPlanAction& action, std::string&& nuspec)
+    BinaryPackageInformation::BinaryPackageInformation(const InstallPlanAction& action)
         : package_abi(action.package_abi().value_or_exit(VCPKG_LINE_INFO))
         , spec(action.spec)
         , raw_version(action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
                           .source_control_file->core_paragraph->raw_version)
-        , nuspec(std::move(nuspec))
     {
+    }
+
+    BinaryPackageInformation::BinaryPackageInformation(const InstallPlanAction& action, std::string&& nuspec)
+        : BinaryPackageInformation(action)
+    {
+        this->nuspec = std::move(nuspec);
     }
 }
 
