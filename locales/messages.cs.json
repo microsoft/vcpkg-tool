@@ -860,6 +860,7 @@
   "SpecifyTargetArch": "Zadejte trojnásobnou cílovou architekturu. Podívejte se na článek „vcpkg help triplet“.\n(výchozí: {env_var})",
   "StartCodeUnitInContinue": "našla se jednotka počátečního kódu na pozici pro pokračování",
   "StoreOptionMissingSha": "Možnost --store je bez sha512 neplatná.",
+  "StoredBinariesToDestinations": "Stored binaries in {count} destinations.",
   "StoredBinaryCache": "Uložená binární mezipaměť: {path}",
   "SuccessfulyExported": "{package_name} se exportoval do cesty {path}.",
   "SuggestGitPull": "Výsledek může být zastaralý. Nejnovější výsledky získáte spuštěním příkazu git pull.",

@@ -860,6 +860,7 @@
   "SpecifyTargetArch": "指定目标体系结构三联。请参阅“vcpkg 帮助三联”。\n(默认值:“{env_var}”)",
   "StartCodeUnitInContinue": "在“继续”位置找到了起始代码单元",
   "StoreOptionMissingSha": "--store 选项无效，没有 sha512",
+  "StoredBinariesToDestinations": "Stored binaries in {count} destinations.",
   "StoredBinaryCache": "存储的二进制缓存:“{path}”",
   "SuccessfulyExported": "已将 {package_name} 导出到 {path}",
   "SuggestGitPull": "结果可能已过时。运行 `git pull` 以获取最新结果。",

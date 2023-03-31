@@ -860,6 +860,7 @@
   "SpecifyTargetArch": "Especificar o tripleto da arquitetura de destino. Consulte 'vcpkg help triplet'.\n(padrão: '{env_var}')",
   "StartCodeUnitInContinue": "unidade de código inicial encontrada na posição continuar",
   "StoreOptionMissingSha": "--store opção é inválida sem um sha512",
+  "StoredBinariesToDestinations": "Stored binaries in {count} destinations.",
   "StoredBinaryCache": "Cache binário armazenado: \"{path}\"",
   "SuccessfulyExported": "Exportou {package_name} para {path}",
   "SuggestGitPull": "O resultado pode estar desatualizado. Execute `git pull` para obter os resultados mais recentes.",

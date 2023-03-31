@@ -860,6 +860,7 @@
   "SpecifyTargetArch": "Geben Sie das Triplet für die Zielarchitektur an. Siehe „vcpkg help triplet“.\n(Standard: „{env_var}“)",
   "StartCodeUnitInContinue": "Startcodeeinheit in Fortsetzungsposition gefunden",
   "StoreOptionMissingSha": "Die Option \"--store\" ist ohne sha512 ungültig.",
+  "StoredBinariesToDestinations": "Stored binaries in {count} destinations.",
   "StoredBinaryCache": "Gespeicherter binärer Cache: „{path}“",
   "SuccessfulyExported": "{package_name} nach {path} exportiert",
   "SuggestGitPull": "Das Ergebnis ist möglicherweise veraltet. Führen Sie \"git pull\" aus, um die neuesten Ergebnisse zu erhalten.",
