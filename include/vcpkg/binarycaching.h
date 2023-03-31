@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/message_sinks.h>
+
 #include <vcpkg/fwd/binarycaching.h>
 #include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
@@ -7,10 +9,8 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
-#include <vcpkg/base/message_sinks.h>
 
 #include <vcpkg/packagespec.h>
-#include <vcpkg/sourceparagraph.h>
 
 #include <iterator>
 #include <set>
