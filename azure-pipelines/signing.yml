@@ -69,7 +69,9 @@ jobs:
         pwsh: true
         targetType: 'inline'
         script: |
+          $headSha = &git rev-parse HEAD
           Write-Host "##vso[task.setvariable variable=VCPKG_BASE_VERSION;isOutput=true]$env:VCPKG_INITIAL_BASE_VERSION"
+          Write-Host "##vso[task.setvariable variable=VCPKG_FULL_VERSION;isOutput=true]$env:VCPKG_INITIAL_BASE_VERSION-$headSha"
     - task: Powershell@2
       displayName: 'Lock Installer Scripts Versions'
       inputs:
@@ -268,6 +270,7 @@ jobs:
     variables:
       VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
       VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
+      VCPKG_FULL_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_FULL_VERSION'] ]
       Codeql.BuildIdentifier: vcpkg_cpp
       Codeql.Language: cpp
     steps:
@@ -414,7 +417,7 @@ jobs:
       displayName: 'NuGet pack for VS Insertion'
       inputs:
         command: custom
-        arguments: 'pack $(Build.ArtifactStagingDirectory)/vs-insertion/staging/vcpkg.nuspec -NoDefaultExcludes -OutputDirectory "$(Build.ArtifactStagingDirectory)/vs-insertion/drop" -Properties version=$(VCPKG_BASE_VERSION)'
+        arguments: 'pack $(Build.ArtifactStagingDirectory)/vs-insertion/staging/vcpkg.nuspec -NoDefaultExcludes -OutputDirectory "$(Build.ArtifactStagingDirectory)/vs-insertion/drop" -Properties version=$(VCPKG_FULL_VERSION)'
     - task: PublishBuildArtifacts@1
       displayName: 'Publish nupkg as Artifact'
       inputs:
@@ -479,7 +482,7 @@ jobs:
       condition: and(eq(variables.SignType, 'real'), succeeded())
       inputs:
         command: push
-        packagesToPush: '$(Build.ArtifactStagingDirectory)/vs-insertion/drop/VS.Redist.Vcpkg.x86.1.0.0-$(VCPKG_BASE_VERSION).nupkg'
+        packagesToPush: '$(Build.ArtifactStagingDirectory)/vs-insertion/drop/VS.Redist.Vcpkg.x86.1.0.0-$(VCPKG_FULL_VERSION).nupkg'
         publishVstsFeed: '97a41293-2972-4f48-8c0e-05493ae82010'
     # Publish everything to a GitHub Release
     - ${{ if eq(parameters.PublishTo, 'GitHub and NuGet') }}:
