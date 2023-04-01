@@ -173,7 +173,7 @@ namespace
         if (last - first >= 4 && is_slash(first[3]) && (last - first == 4 || !is_slash(first[4])) // \xx\$
             && ((is_slash(first[1]) && (first[2] == '?' || first[2] == '.'))                      // \\?\$ or \\.\$
                 || (first[1] == '?' && first[2] == '?')))
-        { // \??\$
+        {                                                                                         // \??\$
             return first + 3;
         }
 
@@ -259,7 +259,7 @@ namespace
         }
 
         if (*extension == '.')
-        { // we might have found the end of stem
+        {     // we might have found the end of stem
             if (filename == extension - 1 && extension[-1] == '.')
             { // dotdot special case
                 return ads;
@@ -292,9 +292,9 @@ namespace
 #if defined(_WIN32)
         const auto ads = std::find(filename, last, ':'); // strip alternate data streams in intra-filename decomposition
         const auto extension = find_extension(filename, ads);
-#else  // ^^^ _WIN32 / !_WIN32 vvv
+#else                                                    // ^^^ _WIN32 / !_WIN32 vvv
         const auto extension = find_extension(filename, last);
-#endif // _WIN32
+#endif                                                   // _WIN32
         return StringView(filename, static_cast<size_t>(extension - filename));
     }
 
@@ -2850,7 +2850,7 @@ namespace vcpkg
             StatsTimer t(g_us_filesystem_stats);
 #if defined(_WIN32)
             return stdfs::create_directories(to_stdfs_path(new_directory), ec);
-#else // ^^^ _WIN32 // !_WIN32 vvv
+#else  // ^^^ _WIN32 // !_WIN32 vvv
             ec.clear();
             if (new_directory.empty())
             {

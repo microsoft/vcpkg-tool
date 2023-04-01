@@ -7,6 +7,7 @@
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/uuid.h>
 
 #include <vcpkg/archives.h>
 #include <vcpkg/commands.version.h>
@@ -15,7 +16,6 @@
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
-#include <vcpkg/base/uuid.h>
 
 namespace
 {
@@ -84,7 +84,8 @@ namespace vcpkg
         vcpkg_artifacts_path.make_preferred();
         if (!fs.exists(vcpkg_artifacts_path, VCPKG_LINE_INFO))
         {
-            // otherwise, if this is an official build we can try to extract a copy of vcpkg-artifacts out of the matching standalone bundle
+            // otherwise, if this is an official build we can try to extract a copy of vcpkg-artifacts out of the
+            // matching standalone bundle
             // FIXME
             // otherwise, fail
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgArtifactsNotInstalled);

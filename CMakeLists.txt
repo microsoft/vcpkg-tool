@@ -213,13 +213,11 @@ elseif(VCPKG_OFFICIAL_BUILD)
     message(FATAL_ERROR "VCPKG_STANDALONE_BUNDLE_SHA is required for official builds.")
 endif()
 
+file(TO_CMAKE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg-artifacts" VCPKG_ARTIFACTS_SOURCE_DIR)
 if (VCPKG_ARTIFACTS_DEVELOPMENT)
+    file(TO_CMAKE_PATH "${CMAKE_CURRENT_BINARY_DIR}/vcpkg-artifacts" VCPKG_ARTIFACTS_BINARY_DIR)
     # The directory constructed by this portion of the build script needs to be kept in sync with
     # that created by azure-pipelines/signing.yml
-    file(TO_CMAKE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg-artifacts" VCPKG_ARTIFACTS_SOURCE_DIR)
-    file(TO_CMAKE_PATH "${CMAKE_CURRENT_BINARY_DIR}/vcpkg-artifacts" VCPKG_ARTIFACTS_BINARY_DIR)
-    mark_as_advanced(VCPKG_ARTIFACTS_SOURCE_DIR)
-    mark_as_advanced(VCPKG_ARTIFACTS_BINARY_DIR)
 
     if (WIN32)
         set(NPM_SUFFIX ".cmd")
@@ -282,6 +280,17 @@ if (VCPKG_ARTIFACTS_DEVELOPMENT)
     set(VCPKG_ARTIFACTS_BINARIES ${VCPKG_ARTIFACTS_ROOT_SOURCES} ${VCPKG_ARTIFACTS_NESTED_SOURCES}) 
     list(TRANSFORM VCPKG_ARTIFACTS_BINARIES PREPEND "${VCPKG_ARTIFACTS_BINARY_DIR}/")
     list(TRANSFORM VCPKG_ARTIFACTS_BINARIES REPLACE "\\.ts" ".js")
+    add_custom_command(
+        OUTPUT "${VCPKG_ARTIFACTS_SOURCE_DIR}/locales/messages.json"
+        COMMAND "${NODEJS}" ARGS "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules/translate-strings/dist/main.js" "." "--json"
+        DEPENDS
+            ${VCPKG_ARTIFACTS_SOURCES}
+            "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules"
+        WORKING_DIRECTORY "${VCPKG_ARTIFACTS_SOURCE_DIR}"
+        COMMENT "Running artifacts translate-strings..."
+        VERBATIM
+    )
+
     add_custom_command(
         OUTPUT
             ${VCPKG_ARTIFACTS_BINARIES}
@@ -434,23 +443,18 @@ if(VCPKG_PDB_SUFFIX)
 endif()
 
 # === Target: generate-message-map ===
-add_custom_target(generate-message-map
-   COMMAND vcpkg x-generate-default-message-map locales/messages.json "${VCPKG_ARTIFACTS_SOURCE_DIR}/locales/messages.json"
-   DEPENDS "${VCPKG_ARTIFACTS_SOURCE_DIR}/locales/messages.json"
-   WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
-   COMMENT "Update locales/messages.json"
-   VERBATIM
-)
+set(GENERATE_MESSAGE_MAP_DEPENDENCIES vcpkg)
 if (VCPKG_ARTIFACTS_DEVELOPMENT)
-    add_custom_command(
-        OUTPUT "${VCPKG_ARTIFACTS_SOURCE_DIR}/locales/messages.json"
-        COMMAND "${NODEJS}" ARGS "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules/translate-strings/dist/main.js" "." "--json"
-        DEPENDS "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules"
-        WORKING_DIRECTORY "${VCPKG_ARTIFACTS_SOURCE_DIR}"
-        COMMENT "Running translate-strings..."
-        VERBATIM
-    )
+    list(APPEND GENERATE_MESSAGE_MAP_DEPENDENCIES "${VCPKG_ARTIFACTS_SOURCE_DIR}/locales/messages.json")
 endif()
+
+add_custom_target(generate-message-map
+    COMMAND "$<TARGET_FILE:vcpkg>" x-generate-default-message-map locales/messages.json "${VCPKG_ARTIFACTS_SOURCE_DIR}/locales/messages.json"
+    DEPENDS ${GENERATE_MESSAGE_MAP_DEPENDENCIES}
+    WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
+    COMMENT "Update locales/messages.json"
+    VERBATIM
+)
 
 # === Target: vcpkg-test ===
 
