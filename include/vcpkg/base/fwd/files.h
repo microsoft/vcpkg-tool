@@ -1,5 +1,11 @@
 #pragma once
 
+#if defined(_WIN32)
+#define VCPKG_PREFERRED_SEPARATOR "\\"
+#else // ^^^ _WIN32 / !_WIN32 vvv
+#define VCPKG_PREFERRED_SEPARATOR "/"
+#endif // _WIN32
+
 namespace vcpkg
 {
     enum class CopyOptions

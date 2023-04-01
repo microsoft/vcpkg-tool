@@ -87,7 +87,6 @@ TEST_CASE ("registry_set_selects_registry", "[registries]")
 TEST_CASE ("check valid package patterns", "[registries]")
 {
     using ID = Json::IdentifierDeserializer;
-    using PD = Json::PackagePatternDeserializer;
 
     // test identifiers
     CHECK(ID::is_ident("co"));
@@ -123,17 +122,17 @@ TEST_CASE ("check valid package patterns", "[registries]")
     CHECK(!ID::is_ident("---"));
 
     // accept prefixes
-    CHECK(PD::is_package_pattern("*"));
-    CHECK(PD::is_package_pattern("b*"));
-    CHECK(PD::is_package_pattern("boost*"));
-    CHECK(PD::is_package_pattern("boost-*"));
+    CHECK(is_package_pattern("*"));
+    CHECK(is_package_pattern("b*"));
+    CHECK(is_package_pattern("boost*"));
+    CHECK(is_package_pattern("boost-*"));
 
     // reject invalid patterns
-    CHECK(!PD::is_package_pattern("*a"));
-    CHECK(!PD::is_package_pattern("a*a"));
-    CHECK(!PD::is_package_pattern("a**"));
-    CHECK(!PD::is_package_pattern("a+"));
-    CHECK(!PD::is_package_pattern("a?"));
+    CHECK(!is_package_pattern("*a"));
+    CHECK(!is_package_pattern("a*a"));
+    CHECK(!is_package_pattern("a**"));
+    CHECK(!is_package_pattern("a+"));
+    CHECK(!is_package_pattern("a?"));
 }
 
 TEST_CASE ("calculate prefix priority", "[registries]")
@@ -509,7 +508,7 @@ TEST_CASE ("registries ignored patterns warning", "[registries]")
 
 TEST_CASE ("git_version_db_parsing", "[registries]")
 {
-    VersionDbEntryArrayDeserializer filesystem_version_db{VersionDbType::Git, "a/b"};
+    auto filesystem_version_db = make_version_db_deserializer(VersionDbType::Git, "a/b");
     Json::Reader r;
     auto test_json = parse_json(R"json(
 [
@@ -531,7 +530,7 @@ TEST_CASE ("git_version_db_parsing", "[registries]")
 ]
 )json");
 
-    auto results_opt = r.visit(test_json, filesystem_version_db);
+    auto results_opt = r.visit(test_json, *filesystem_version_db);
     auto& results = results_opt.value_or_exit(VCPKG_LINE_INFO);
     CHECK(results[0].version == Version{"2021-06-26", 0});
     CHECK(results[0].git_tree == "9b07f8a38bbc4d13f8411921e6734753e15f8d50");
@@ -544,7 +543,7 @@ TEST_CASE ("git_version_db_parsing", "[registries]")
 
 TEST_CASE ("filesystem_version_db_parsing", "[registries]")
 {
-    VersionDbEntryArrayDeserializer filesystem_version_db{VersionDbType::Filesystem, "a/b"};
+    auto filesystem_version_db = make_version_db_deserializer(VersionDbType::Filesystem, "a/b");
 
     {
         Json::Reader r;
@@ -567,7 +566,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        auto results_opt = r.visit(test_json, filesystem_version_db);
+        auto results_opt = r.visit(test_json, *filesystem_version_db);
         auto& results = results_opt.value_or_exit(VCPKG_LINE_INFO);
         CHECK(results[0].version == Version{"puppies", 0});
         CHECK(results[0].p == "a/b" VCPKG_PREFERRED_SEPARATOR "c/d");
@@ -589,7 +588,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(r.visit(test_json, *filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
         CHECK(!r.errors().empty());
     }
 
@@ -604,7 +603,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(r.visit(test_json, *filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
         CHECK(!r.errors().empty());
     }
 
@@ -619,7 +618,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(r.visit(test_json, *filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
         CHECK(!r.errors().empty());
     }
 
@@ -634,7 +633,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(r.visit(test_json, *filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
         CHECK(!r.errors().empty());
     }
 
@@ -649,7 +648,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(r.visit(test_json, *filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
         CHECK(!r.errors().empty());
     }
 
@@ -664,7 +663,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(r.visit(test_json, *filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
         CHECK(!r.errors().empty());
     }
 
@@ -679,7 +678,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(r.visit(test_json, *filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
         CHECK(!r.errors().empty());
     }
 
@@ -694,7 +693,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(r.visit(test_json, *filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
         CHECK(!r.errors().empty());
     }
 
@@ -709,7 +708,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(r.visit(test_json, *filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
         CHECK(!r.errors().empty());
     }
 }
