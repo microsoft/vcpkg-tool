@@ -297,6 +297,8 @@ namespace vcpkg
     private:
         struct TripletMapEntry
         {
+            TripletMapEntry(std::string&& hash) : hash(std::move(hash)) { }
+
             std::string hash;
             Cache<std::string, std::string> triplet_infos;
             Cache<std::string, std::string> triplet_infos_without_compiler;
@@ -310,6 +312,7 @@ namespace vcpkg
 #if defined(_WIN32)
         struct EnvMapEntry
         {
+            EnvMapEntry(std::unordered_map<std::string, std::string>&& map) : env_map(std::move(map)) { }
             std::unordered_map<std::string, std::string> env_map;
             Cache<vcpkg::Command, Environment, CommandLess> cmd_cache;
         };

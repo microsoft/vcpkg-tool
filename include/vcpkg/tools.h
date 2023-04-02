@@ -39,7 +39,20 @@ namespace vcpkg
         static constexpr StringLiteral PYTHON3_WITH_VENV = "python3_with_venv";
     }
 
-    struct ToolCache
+    // Subset of well-known tools used for extracting
+    struct CoreToolCache
+    {
+        virtual ~CoreToolCache() = default;
+
+        virtual const Path& get_7z_msi(MessageSink& status_sink) const = 0;
+        virtual const Path& get_cmake(MessageSink& status_sink) const = 0;
+        virtual const Path& get_mono(MessageSink& status_sink) const = 0;
+        virtual const Path& get_nuget(MessageSink& status_sink) const = 0;
+        virtual const Path& get_tar(MessageSink& status_sink) const = 0;
+    };
+
+    // Thread safe
+    struct ToolCache : CoreToolCache
     {
         virtual ~ToolCache() = default;
 

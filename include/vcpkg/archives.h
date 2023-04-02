@@ -16,7 +16,7 @@ namespace vcpkg
     void extract_tar_cmake(const Path& cmake_tool, const Path& archive, const Path& to_path);
     // Extract `archive` to `to_path`, deleting `to_path` first.
     void extract_archive(
-        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path);
+        Filesystem& fs, const CoreToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path);
 
 #ifdef _WIN32
     // Extract the 7z archive part of a self extracting 7z installer
@@ -24,7 +24,7 @@ namespace vcpkg
     // Extract `archive` to `to_path`, deleting `to_path` first. `archive` must be a zip file.
     // This function will use potentially less performant tools that are reliably available on any machine.
     void win32_extract_bootstrap_zip(
-        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path);
+        Filesystem& fs, const CoreToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path);
 #endif
 
     // Compress the source directory into the destination file.

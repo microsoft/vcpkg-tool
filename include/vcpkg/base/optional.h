@@ -193,15 +193,9 @@ namespace vcpkg
             template<class... Args>
             T& emplace(Args&&... args)
             {
-                if (m_is_present)
-                {
-                    m_t = T(static_cast<Args&&>(args)...);
-                }
-                else
-                {
-                    new (&m_t) T(static_cast<Args&&>(args)...);
-                    m_is_present = true;
-                }
+                if (m_is_present) destroy();
+                new (&m_t) T(static_cast<Args&&>(args)...);
+                m_is_present = true;
                 return m_t;
             }
 

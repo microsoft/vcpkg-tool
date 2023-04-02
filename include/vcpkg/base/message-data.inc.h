@@ -1908,7 +1908,7 @@ DECLARE_MESSAGE(OverlayTriplets, (msg::path), "", "Overlay triplets from {path} 
 DECLARE_MESSAGE(OverwritingFile, (msg::path), "", "File {path} was already present and will be overwritten")
 DECLARE_MESSAGE(PackageAlreadyRemoved, (msg::spec), "", "unable to remove {spec}: already removed")
 DECLARE_MESSAGE(PackageInfoHelp, (), "", "Display detailed information on packages.")
-DECLARE_MESSAGE(PackageFailedtWhileExtracting,
+DECLARE_MESSAGE(PackageFailedWhileExtracting,
                 (msg::value, msg::path),
                 "'{value}' is either a tool name or a package name.",
                 "'{value}' failed while extracting {path}.")

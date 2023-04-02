@@ -1,5 +1,6 @@
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/parse.h>
-#include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
@@ -13,10 +14,8 @@ namespace
     using namespace vcpkg;
 
 #if defined(_WIN32)
-    void win32_extract_nupkg(const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
+    [[nodiscard]] ExpectedL<Unit> win32_extract_nupkg(const Path& nuget_exe, const Path& archive, const Path& to_path)
     {
-        const auto nuget_exe = tools.get_tool_path(Tools::NUGET, status_sink);
-
         const auto stem = archive.stem();
 
         // assuming format of [name].[version in the form d.d.d]
@@ -26,7 +25,7 @@ namespace
         auto is_digit_or_dot = [](char ch) { return ch == '.' || ParserBase::is_ascii_digit(ch); };
         if (dot_after_name == stem.end() || !std::all_of(dot_after_name, stem.end(), is_digit_or_dot))
         {
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgCouldNotDeduceNugetIdAndVersion, msg::path = archive);
+            return msg::format(msgCouldNotDeduceNugetIdAndVersion, msg::path = archive);
         }
 
         auto nugetid = StringView{stem.begin(), dot_after_name};
@@ -48,16 +47,12 @@ namespace
             .string_arg("-PackageSaveMode")
             .string_arg("nuspec");
 
-        const auto result = flatten(cmd_execute_and_capture_output(nuget_command), Tools::NUGET);
-        if (!result)
-        {
-            Checks::msg_exit_with_message(
-                VCPKG_LINE_INFO,
-                msg::format(msgFailedToExtract, msg::path = archive).append_raw('\n').append(result.error()));
-        }
+        return flatten(cmd_execute_and_capture_output(nuget_command), Tools::NUGET).map_error([&archive](auto&& err) {
+            return msg::format(msgFailedToExtract, msg::path = archive).append_raw('\n').append(err);
+        });
     }
 
-    void win32_extract_msi(const Path& archive, const Path& to_path)
+    [[nodiscard]] ExpectedL<Unit> win32_extract_msi(const Path& archive, const Path& to_path, MessageSink& sink)
     {
         // MSI installation sometimes requires a global lock and fails if another installation is concurrent. Loop
         // to enable retries.
@@ -91,14 +86,15 @@ namespace
                 if (i < 19 && code_and_output->exit_code == 1618)
                 {
                     // ERROR_INSTALL_ALREADY_RUNNING
-                    msg::println(msgAnotherInstallationInProgress);
+                    sink.println(msgAnotherInstallationInProgress);
                     std::this_thread::sleep_for(std::chrono::seconds(6));
                     continue;
                 }
             }
 
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO, flatten(maybe_code_and_output, "msiexec").error());
+            return flatten(maybe_code_and_output, "msiexec");
         }
+        Checks::unreachable(VCPKG_LINE_INFO);
     }
 
     void win32_extract_with_seven_zip(const Path& seven_zip, const Path& archive, const Path& to_path)
@@ -117,7 +113,7 @@ namespace
         {
             Checks::msg_exit_with_message(
                 VCPKG_LINE_INFO,
-                msg::format(msgPackageFailedtWhileExtracting, msg::value = "7zip", msg::path = archive)
+                msg::format(msgPackageFailedWhileExtracting, msg::value = "7zip", msg::path = archive)
                     .append_raw('\n')
                     .append(maybe_output.error()));
         }
@@ -127,22 +123,22 @@ namespace
 #endif // ^^^ _WIN32
 
     void extract_archive_to_empty(
-        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
+        Filesystem& fs, const CoreToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
     {
         const auto ext = archive.extension();
 #if defined(_WIN32)
         if (Strings::case_insensitive_ascii_equals(ext, ".nupkg"))
         {
-            win32_extract_nupkg(tools, status_sink, archive, to_path);
+            win32_extract_nupkg(tools.get_nuget(status_sink), archive, to_path).value_or_exit(VCPKG_LINE_INFO);
         }
         else if (Strings::case_insensitive_ascii_equals(ext, ".msi"))
         {
-            win32_extract_msi(archive, to_path);
+            win32_extract_msi(archive, to_path, status_sink).value_or_exit(VCPKG_LINE_INFO);
         }
         else if (Strings::case_insensitive_ascii_equals(ext, ".zip") ||
                  Strings::case_insensitive_ascii_equals(ext, ".7z"))
         {
-            extract_tar_cmake(tools.get_tool_path(Tools::CMAKE, status_sink), archive, to_path);
+            extract_tar_cmake(tools.get_cmake(status_sink), archive, to_path);
         }
         else if (Strings::case_insensitive_ascii_equals(ext, ".exe"))
         {
@@ -168,7 +164,7 @@ namespace
 #endif
         else if (ext == ".gz" || ext == ".bz2" || ext == ".tgz")
         {
-            vcpkg::extract_tar(tools.get_tool_path(Tools::TAR, status_sink), archive, to_path);
+            vcpkg::extract_tar(tools.get_tar(status_sink), archive, to_path);
         }
         else
         {
@@ -177,7 +173,7 @@ namespace
     }
 
     Path extract_archive_to_temp_subdirectory(
-        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
+        Filesystem& fs, const CoreToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
     {
         Path to_path_partial = to_path + ".partial";
 #if defined(_WIN32)
@@ -202,14 +198,14 @@ namespace vcpkg
         const auto subext = stem.extension();
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                Strings::case_insensitive_ascii_equals(subext, ".7z"),
-                               msg::format(msgPackageFailedtWhileExtracting, msg::value = "7zip", msg::path = archive)
+                               msg::format(msgPackageFailedWhileExtracting, msg::value = "7zip", msg::path = archive)
                                    .append(msgMissingExtension, msg::extension = ".7.exe"));
 
         auto contents = fs.read_contents(archive, VCPKG_LINE_INFO);
         const auto pos = contents.find(header_7z);
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                pos != std::string::npos,
-                               msg::format(msgPackageFailedtWhileExtracting, msg::value = "7zip", msg::path = archive)
+                               msg::format(msgPackageFailedWhileExtracting, msg::value = "7zip", msg::path = archive)
                                    .append(msgMissing7zHeader));
 
         contents = contents.substr(pos);
@@ -228,7 +224,7 @@ namespace vcpkg
     // 3) As a last resource, install 7zip using a MSI installer
     //     msiexec installs 7zip.msi -> 7zip unpacks cmake.zip -> cmake.exe unpacks 7z.7z
     void win32_extract_bootstrap_zip(
-        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
+        Filesystem& fs, const CoreToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
     {
         fs.remove_all(to_path, VCPKG_LINE_INFO);
         Path to_path_partial = to_path + ".partial." + std::to_string(GetCurrentProcessId());
@@ -252,8 +248,7 @@ namespace vcpkg
             else
             {
                 // On Windows <10, we attempt to use msiexec to unpack 7zip.
-                win32_extract_with_seven_zip(
-                    tools.get_tool_path(Tools::SEVEN_ZIP_MSI, status_sink), archive, to_path_partial);
+                win32_extract_with_seven_zip(tools.get_7z_msi(status_sink), archive, to_path_partial);
             }
         }
         fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
@@ -264,11 +259,8 @@ namespace vcpkg
     {
         const auto code =
             cmd_execute(Command{tar_tool}.string_arg("xzf").string_arg(archive), WorkingDirectory{to_path});
-        Checks::msg_check_exit(VCPKG_LINE_INFO,
-                               succeeded(code),
-                               msgPackageFailedtWhileExtracting,
-                               msg::value = "tar",
-                               msg::path = archive);
+        Checks::msg_check_exit(
+            VCPKG_LINE_INFO, succeeded(code), msgPackageFailedWhileExtracting, msg::value = "tar", msg::path = archive);
     }
 
     void extract_tar_cmake(const Path& cmake_tool, const Path& archive, const Path& to_path)
@@ -279,13 +271,13 @@ namespace vcpkg
                         WorkingDirectory{to_path});
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                succeeded(code),
-                               msgPackageFailedtWhileExtracting,
+                               msgPackageFailedWhileExtracting,
                                msg::value = "CMake",
                                msg::path = archive);
     }
 
     void extract_archive(
-        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
+        Filesystem& fs, const CoreToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
     {
         fs.remove_all(to_path, VCPKG_LINE_INFO);
         Path to_path_partial = extract_archive_to_temp_subdirectory(fs, tools, status_sink, archive, to_path);
@@ -298,7 +290,6 @@ namespace vcpkg
         fs.remove(destination, VCPKG_LINE_INFO);
 #if defined(_WIN32)
         auto&& seven_zip_exe = tools.get_tool_path(Tools::SEVEN_ZIP, status_sink);
-
         return flatten(cmd_execute_and_capture_output(
                            Command{seven_zip_exe}.string_arg("a").string_arg(destination).string_arg(source / "*"),
                            default_working_directory,

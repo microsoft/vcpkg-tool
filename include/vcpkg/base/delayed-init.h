@@ -7,23 +7,26 @@
 
 namespace vcpkg
 {
+    constexpr struct EmptyDelayedInit
+    {
+    } delayed_init_empty;
+
     // implements the equivalent of function static initialization for an object
     template<class T>
     struct DelayedInit
     {
+        DelayedInit() = default;
+        DelayedInit(EmptyDelayedInit) { }
+
         template<class F>
         const T& get(F&& f) const
         {
-            std::call_once(underlying_->flag_, [&f, this]() { underlying_->storage_ = std::forward<F>(f)(); });
-            return *underlying_->storage_.get();
+            std::call_once(m_flag, [&f, this]() { m_storage.emplace(std::forward<F>(f)()); });
+            return *m_storage.get();
         }
 
     private:
-        struct Storage
-        {
-            std::once_flag flag_;
-            Optional<T> storage_;
-        };
-        std::unique_ptr<Storage> underlying_ = std::make_unique<Storage>();
+        mutable std::once_flag m_flag;
+        mutable Optional<T> m_storage;
     };
 }

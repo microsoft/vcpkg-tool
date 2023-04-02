@@ -359,7 +359,7 @@ namespace vcpkg
         auto build_env_cmd =
             make_build_env_cmd(*abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO));
 
-        const auto& base_env = envs.get_lazy(abi_info.pre_build_info->passthrough_env_vars, [&]() -> EnvMapEntry {
+        const auto& base_env = envs.get_lazy(abi_info.pre_build_info->passthrough_env_vars, [&]() {
             std::unordered_map<std::string, std::string> env;
 
             for (auto&& env_var : abi_info.pre_build_info->passthrough_env_vars)
@@ -471,7 +471,7 @@ namespace vcpkg
                     }
                 }
             }
-            return {env};
+            return env;
         });
 
         return base_env.cmd_cache.get_lazy(build_env_cmd, [&]() {
@@ -500,9 +500,8 @@ namespace vcpkg
 
     const EnvCache::TripletMapEntry& EnvCache::get_triplet_cache(const Filesystem& fs, const Path& p) const
     {
-        return m_triplet_cache.get_lazy(p, [&]() -> TripletMapEntry {
-            return TripletMapEntry{Hash::get_file_hash(fs, p, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO)};
-        });
+        return m_triplet_cache.get_lazy(
+            p, [&]() { return Hash::get_file_hash(fs, p, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO); });
     }
 
     const CompilerInfo& EnvCache::get_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info)
