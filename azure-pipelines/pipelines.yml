@@ -43,7 +43,7 @@ jobs:
         fi
       displayName: 'Rush install, build and test vcpkg-artifacts'
     - bash: |
-        cmake '-DCMAKE_CXX_FLAGS=-fprofile-arcs -ftest-coverage -fPIC -O0 -fsanitize=undefined -fsanitize=address' -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -B build.amd64.debug
+        cmake '-DCMAKE_CXX_FLAGS=-fprofile-arcs -fPIC -O0 -fsanitize=undefined -fsanitize=address' -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -B build.amd64.debug
         make -j 2 -C build.amd64.debug
       displayName: "Build vcpkg with CMake"
       failOnStderr: true
@@ -57,27 +57,6 @@ jobs:
         filePath: 'azure-pipelines/end-to-end-tests.ps1'
         workingDirectory: '$(Build.SourcesDirectory)/build.amd64.debug'
         pwsh: true
-    - bash: |
-        sudo pip install gcovr
-      displayName: "Install coverage tools"
-    - bash: |
-        mkdir -p "$(Build.SourcesDirectory)/coverage"
-        cd build.amd64.debug
-        gcovr --xml --output "$(Build.SourcesDirectory)/coverage/coverage.xml" \
-          --root "$(Build.SourcesDirectory)" \
-          --exclude '(.+/)?CMakeFiles/' \
-          --exclude '(.+/)?catch2/' \
-          --exclude '(.+/)?vcpkg-fuzz/' \
-          --exclude '(.+/)?vcpkg-test/' \
-          --print-summary \
-          .
-      displayName: "Analyse test coverage"
-      failOnStderr: true
-    - task: PublishCodeCoverageResults@1
-      inputs:
-        codeCoverageTool: 'Cobertura'
-        summaryFileLocation: '$(Build.SourcesDirectory)/coverage/coverage.xml'
-      displayName: 'Publish test coverage results'
 - job: osx
   displayName: 'OSX'
   pool:
